@@ -1,0 +1,11 @@
+Make sure you have following macros in /usr/share/aclocal:
+ - AX_CXX_COMPILE_STDCXX_11 
+ - AX_CHECK_COMPILE_FLAG
+
+ You can download the missing macros from here:
+  - https://www.gnu.org/software/autoconf-archive/The-Macros.html#The-Macros
+
+
+Eclipse Project:
+- Add C++11 supports to get rid of eclipse errors: http://stackoverflow.com/questions/13635079/enable-c11-in-eclipse-cdt-juno-kepler-luna-indexer
+- Right click project and select index -> Freshen all files
