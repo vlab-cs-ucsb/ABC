@@ -7,8 +7,8 @@ AC_CONFIG_LIBOBJ_DIR([lib])
 AM_MAINTAINER_MODE([enable])
 
 # lib building
-AC_ENABLE_SHARED
-AC_DISABLE_STATIC
+#AC_ENABLE_SHARED
+#AC_DISABLE_STATIC
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
@@ -28,7 +28,8 @@ AM_PROG_LEX
 AC_PROG_YACC
 
 # Check for libraries
-LT_INIT([disable-shared])
+#LT_INIT([disable-shared])
+LT_INIT
 
 # Check for headers
 
@@ -37,6 +38,7 @@ LT_INIT([disable-shared])
 # set global compiler options
 
 # Create Makefile files
-AC_CONFIG_FILES([Makefile src/Makefile src/parser/Makefile]  )
+AC_CONFIG_FILES([Makefile src/Makefile src/parser/Makefile])
+AC_CONFIG_SUBDIRS([external/glog external/googletest])
 AC_OUTPUT
 

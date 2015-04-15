@@ -9,3 +9,8 @@ Make sure you have following macros in /usr/share/aclocal:
 Eclipse Project:
 - Add C++11 supports to get rid of eclipse errors: http://stackoverflow.com/questions/13635079/enable-c11-in-eclipse-cdt-juno-kepler-luna-indexer
 - Right click project and select index -> Freshen all files
+
+External Projects:
+- Google test is obtained from chromium git repos: http://git.chromium.org/external/googletest.git
+- googletest is missing configure script, you need to run autoheader or/and autoreconf manually inside googletest. 
+- glog seems to be working without any problems.

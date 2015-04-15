@@ -211,13 +211,13 @@ AUTOMAKE = ${SHELL} /home/baki/workspaces/default/ABC/missing automake-1.14
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -g
+CFLAGS = -g -O2
 CPP = gcc -E
 CPPFLAGS = 
 CXX = g++
 CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -g -std=c++11 -Wall -Wextra -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter
+CXXFLAGS = -g -O2 -std=c++11 -Wall -Wextra -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter
 CYGPATH_W = echo
 DEFS = -DPACKAGE_NAME=\"ABC\" -DPACKAGE_TARNAME=\"abc\" -DPACKAGE_VERSION=\"1.0\" -DPACKAGE_STRING=\"ABC\ 1.0\" -DPACKAGE_BUGREPORT=\"baki@cs.ucsb.edu\" -DPACKAGE_URL=\"\" -DPACKAGE=\"abc\" -DVERSION=\"1.0\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\"
 DEPDIR = .deps
@@ -322,6 +322,7 @@ psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
 srcdir = .
+subdirs =  external/glog external/googletest
 sysconfdir = ${prefix}/etc
 target = x86_64-unknown-linux-gnu
 target_alias = 
