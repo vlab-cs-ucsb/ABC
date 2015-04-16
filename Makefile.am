@@ -4,3 +4,6 @@ SUBDIRS= \
 	external/googletest \
 	src
 EXTRA_DIST = autogen.sh
+
+test-local:
+	@echo top, $(srcdir) $(top_srcdir)

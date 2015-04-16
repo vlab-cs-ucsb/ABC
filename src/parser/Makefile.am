@@ -19,3 +19,6 @@ CLEANFILES = \
 	parser.cpp \
 	position.hh \
 	stack.hh
+	
+test-local: 
+	@echo parser, $(srcdir), $(top_srcdir)	

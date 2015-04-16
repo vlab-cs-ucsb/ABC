@@ -1,5 +1,5 @@
 SUBDIRS=parser
-AM_CXXFLAGS = -I$(srcdir)/parser
+AM_CXXFLAGS = -I$(top_srcdir)/external/glog -I$(srcdir)/parser
 bin_PROGRAMS = abc
 abc_SOURCES = \
   ./solver/Ast2Dot.cpp \
@@ -10,3 +10,6 @@ abc_SOURCES = \
 	
 abc_LDADD = \
 	parser/libabcparser.la
+
+test-local:
+	@echo src, $(srcdir), $(top_srcdir)	
