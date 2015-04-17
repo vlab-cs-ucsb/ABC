@@ -17,6 +17,7 @@
 
 
 %x START_STRING
+%x START_REGEX
 %x START_QUOTEDSYMBOL
 
 
@@ -57,6 +58,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 
 
 "and"               { return Vlab::Parser::make_AND             (loc);  }
+"or"                { return Vlab::Parser::make_OR              (loc);  }
 "not"               { return Vlab::Parser::make_NOT             (loc);  }
 "-"                 { return Vlab::Parser::make_MINUS           (loc);  }
 "+"                 { return Vlab::Parser::make_PLUS            (loc);  }
@@ -65,9 +67,17 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 ">="                { return Vlab::Parser::make_GE              (loc);  }                 
 "<"                 { return Vlab::Parser::make_LT              (loc);  }
 "<="                { return Vlab::Parser::make_LE              (loc);  }
+"concat"            { return Vlab::Parser::make_CONCAT          (loc);  }
+"in"                { return Vlab::Parser::make_IN              (loc);  }
+"len"               { return Vlab::Parser::make_LEN             (loc);  }
+"contains"          { return Vlab::Parser::make_CONTAINS        (loc);  }
+"begins"            { return Vlab::Parser::make_BEGINS          (loc);  }
+"ends"              { return Vlab::Parser::make_ENDS            (loc);  }
+"indexof"           { return Vlab::Parser::make_INDEXOF         (loc);  }
+"replace"           { return Vlab::Parser::make_REPLACE         (loc);  }
 "ite"               { return Vlab::Parser::make_ITE             (loc);  }
 "re.++"             { return Vlab::Parser::make_RE_CONCAT       (loc);  }
-"re.or"             { return Vlab::Parser::make_RE_OR           (loc);  }
+"re.or"             { return Vlab::Parser::make_OR              (loc);  }
 "str.++"            { return Vlab::Parser::make_CONCAT          (loc);  }
 "str.in.re"         { return Vlab::Parser::make_IN              (loc);  }
 "str.len"           { return Vlab::Parser::make_LEN             (loc);  }
@@ -112,6 +122,16 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 	[^\"\n]           { quoted_value << yytext;}
 	\n                { quoted_value << '\n'; }
 	\"                { yy_pop_state(); return Vlab::Parser::make_STRING (quoted_value.str(), loc); }
+}
+
+\/                  { quoted_value.str(std::string()); yy_push_state(START_REGEX); }
+
+<START_REGEX>{
+  \\\/              { quoted_value << '/'; }
+  \\\\              { quoted_value << '\\'; }
+  [^\/\n]           { quoted_value << yytext;}
+  \n                { quoted_value << '\n'; }
+  \/                { yy_pop_state(); return Vlab::Parser::make_REGEX (quoted_value.str(), loc); }
 }
 
 \|                  { quoted_value.str(std::string()); yy_push_state(START_QUOTEDSYMBOL); }

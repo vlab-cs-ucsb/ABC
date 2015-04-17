@@ -86,6 +86,8 @@ void Ast2Dot::visitIdentifier(Identifier_ptr identifier) { draw("Identifier", id
 
 void Ast2Dot::visitAnd(And_ptr and_term) { visitTerm(and_term); }
 
+void Ast2Dot::visitOr(Or_ptr or_term) { visitTerm(or_term); }
+
 void Ast2Dot::visitNot(Not_ptr not_term) { visitTerm(not_term); }
 
 void Ast2Dot::visitUMinus(UMinus_ptr u_minus_term) { visitTerm(u_minus_term); }
@@ -104,17 +106,25 @@ void Ast2Dot::visitLt(Lt_ptr lt_term) { visitTerm(lt_term); }
 
 void Ast2Dot::visitLe(Le_ptr le_term) { visitTerm(le_term); }
 
-void Ast2Dot::visitIte(Ite_ptr ite_term) { visitTerm(ite_term); }
-
-void Ast2Dot::visitReConcat(ReConcat_ptr re_concat_term) { visitTerm(re_concat_term); }
-
-void Ast2Dot::visitReOr(ReOr_ptr re_or_term) { visitTerm(re_or_term); }
-
 void Ast2Dot::visitConcat(Concat_ptr concat_term) { visitTerm(concat_term); }
 
 void Ast2Dot::visitIn(In_ptr in_term) { visitTerm(in_term); }
 
 void Ast2Dot::visitLen(Len_ptr len_term) { visitTerm(len_term); }
+
+void Ast2Dot::visitContains(Contains_ptr contains_term) { visitTerm(contains_term); }
+
+void Ast2Dot::visitBegins(Begins_ptr begins_term) { visitTerm(begins_term); }
+
+void Ast2Dot::visitEnds(Ends_ptr ends_term) { visitTerm(ends_term); }
+
+void Ast2Dot::visitIndexOf(IndexOf_ptr index_of_term) { visitTerm(index_of_term); }
+
+void Ast2Dot::visitReplace(Replace_ptr replace_term) { visitTerm(replace_term); }
+
+void Ast2Dot::visitIte(Ite_ptr ite_term) { visitTerm(ite_term); }
+
+void Ast2Dot::visitReConcat(ReConcat_ptr re_concat_term) { visitTerm(re_concat_term); }
 
 void Ast2Dot::visitToRegex(ToRegex_ptr to_regex_term) { visitTerm(to_regex_term); }
 
@@ -142,5 +152,3 @@ void Ast2Dot::exception(std::string what) { }
 
 } /* namespace SMT */
 } /* namespace Vlab */
-
-

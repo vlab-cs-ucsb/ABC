@@ -62,9 +62,7 @@ SetLogic::SetLogic(const SetLogic& other)
 SetLogic* SetLogic::clone() const { return new SetLogic(*this); }
 SetLogic::~SetLogic() { delete symbol; }
 
-void SetLogic::visit_children(Visitor_ptr v) {
-	v->visit(symbol);
-}
+void SetLogic::visit_children(Visitor_ptr v) { v->visit(symbol); }
 
 DeclareFun::DeclareFun(Primitive_ptr symbol, SortList_ptr sort_list, Sort_ptr sort)
 	: Command::Command (type_CMD::DECLARE_FUN), symbol (symbol), sort_list (sort_list), sort (sort) { }
@@ -106,13 +104,17 @@ Assert::~Assert() {	debug_deallocation("assert"); delete term; }
 void Assert::visit_children(Visitor_ptr v) { v->visit(term); }
 
 CheckSat::CheckSat()
-	: Command::Command (type_CMD::CHECK_SAT) { }
+	: Command::Command (type_CMD::CHECK_SAT), symbol (nullptr) { }
+CheckSat::CheckSat(Primitive_ptr symbol)
+	: Command::Command (type_CMD::CHECK_SAT), symbol (symbol) { }
 CheckSat::CheckSat(const CheckSat& other)
-	: Command::Command (type_CMD::CHECK_SAT) { }
+	: Command::Command (type_CMD::CHECK_SAT) {
+	symbol = (other.symbol == nullptr) ? other.symbol : other.symbol->clone();
+}
 CheckSat* CheckSat::clone() const {	return new CheckSat(*this); }
-CheckSat::~CheckSat() { }
+CheckSat::~CheckSat() { delete symbol; }
 
-void CheckSat::visit_children(Visitor_ptr v) { }
+void CheckSat::visit_children(Visitor_ptr v) { v->visit(symbol); }
 
 /* ends commands */
 
@@ -122,7 +124,7 @@ Term::Term(std::string name)
 	: name (name) { }
 Term::Term(const Term& other) {	name = other.name; }
 Term_ptr Term::clone() const { return new Term(*this); }
-Term::~Term() {}
+Term::~Term() { debug_deallocation(this->name + " ends"); }
 
 std::string Term::str() { return name; }
 
@@ -149,6 +151,26 @@ And::~And() {
 
 void And::accept(Visitor_ptr v) { v->visitAnd(this); }
 void And::visit_children(Visitor_ptr v) { v->visit_list(term_list); }
+
+Or::Or(TermList_ptr term_list)
+	: Term("and"), term_list (term_list) { }
+Or::Or(const Or& other)
+	: Term("or") {
+	term_list = new TermList();
+	for (auto& term : *(other.term_list)) {
+		term_list->push_back(term->clone());
+	}
+}
+Or_ptr Or::clone() const { return new Or(*this); }
+Or::~Or() {
+	debug_deallocation(this->name);
+	deallocate_list(term_list);
+	delete term_list;
+}
+
+void Or::accept(Visitor_ptr v) { v->visitOr(this); }
+void Or::visit_children(Visitor_ptr v) { v->visit_list(term_list); }
+
 
 Not::Not(Term_ptr term)
 	: Term("not"), term (term) { }
@@ -285,62 +307,6 @@ void Le::visit_children(Visitor_ptr v) {
 	v->visit(right_term);
 }
 
-Ite::Ite(Term_ptr cond, Term_ptr then_branch, Term_ptr else_branch)
-	: Term("ite"), cond (cond), then_branch (then_branch), else_branch (else_branch) { }
-Ite::Ite(const Ite& other)
-	: Term("ite") {
-	cond = other.cond->clone();
-	then_branch = other.then_branch->clone();
-	else_branch = other.else_branch->clone();
-}
-Ite_ptr Ite::clone() const { return new Ite(*this); }
-Ite::~Ite() { debug_deallocation(this->name); delete cond; delete then_branch; delete else_branch; }
-
-void Ite::accept(Visitor_ptr v) { v->visitIte(this); }
-void Ite::visit_children(Visitor_ptr v) {
-	v->visit(cond);
-	v->visit(then_branch);
-	v->visit(else_branch);
-}
-
-ReConcat::ReConcat(TermList_ptr term_list)
-	: Term("re.++"), term_list (term_list) { }
-ReConcat::ReConcat(const ReConcat& other)
-	: Term("re.++") {
-	term_list = new TermList();
-	for (auto& term : *(other.term_list)) {
-		term_list->push_back(term->clone());
-	}
-}
-ReConcat_ptr ReConcat::clone() const { return new ReConcat(*this); }
-ReConcat::~ReConcat() {
-	debug_deallocation(this->name);
-	deallocate_list(term_list);
-	delete term_list;
-}
-
-void ReConcat::accept(Visitor_ptr v) { v->visitReConcat(this); }
-void ReConcat::visit_children(Visitor_ptr v) { v->visit_list(term_list); }
-
-ReOr::ReOr(TermList_ptr term_list)
-	: Term("re.or"), term_list (term_list) { }
-ReOr::ReOr(const ReOr& other)
-	: Term("re.or") {
-	term_list = new TermList();
-	for (auto& term : *(other.term_list)) {
-		term_list->push_back(term->clone());
-	}
-}
-ReOr_ptr ReOr::clone() const { return new ReOr(*this); }
-ReOr::~ReOr() {
-	debug_deallocation(this->name);
-	deallocate_list(term_list);
-	delete term_list;
-}
-
-void ReOr::accept(Visitor_ptr v) { v->visitReOr(this); }
-void ReOr::visit_children(Visitor_ptr v) { v->visit_list(term_list); }
-
 Concat::Concat(TermList_ptr term_list)
 	: Term("str.++"), term_list (term_list) { }
 Concat::Concat(const Concat& other)
@@ -385,6 +351,138 @@ Len::~Len() { debug_deallocation(this->name); delete term; }
 
 void Len::accept(Visitor_ptr v) { v->visitLen(this); }
 void Len::visit_children(Visitor_ptr v) { v->visit(term); }
+
+Contains::Contains(Term_ptr subject_term, Term_ptr search_term)
+	: Term("contains"), subject_term (subject_term), search_term (search_term) { }
+
+Contains::Contains(const Contains& other)
+	: Term ("contains") {
+	subject_term = other.subject_term->clone();
+	search_term = other.search_term->clone();
+}
+
+Contains_ptr Contains::clone() const { return new Contains(*this); }
+
+Contains::~Contains() { debug_deallocation(this->name); delete subject_term; delete search_term; }
+
+void Contains::accept(Visitor_ptr v) {
+}
+
+void Contains::visit_children(Visitor_ptr v) {
+}
+
+Begins::Begins(Term_ptr subject_term, Term_ptr search_term)
+	: Term("begins"), subject_term (subject_term), search_term (search_term) { }
+
+Begins::Begins(const Begins& other)
+	: Term ("begins") {
+	subject_term = other.subject_term->clone();
+	search_term = other.search_term->clone();
+}
+Begins_ptr Begins::clone() const { return new Begins(*this); }
+
+Begins::~Begins() { debug_deallocation(this->name); delete subject_term; delete search_term; }
+
+void Begins::accept(Visitor_ptr v) {
+}
+
+void Begins::visit_children(Visitor_ptr v) {
+}
+
+Ends::Ends(Term_ptr subject_term, Term_ptr search_term)
+	: Term("ends"), subject_term (subject_term), search_term (search_term) { }
+
+Ends::Ends(const Ends& other)
+	: Term ("ends") {
+	subject_term = other.subject_term->clone();
+	search_term = other.search_term->clone();
+}
+
+Ends_ptr Ends::clone() const { return new Ends(*this); }
+
+Ends::~Ends() { debug_deallocation(this->name); delete subject_term; delete search_term; }
+
+void Ends::accept(Visitor_ptr v) {
+}
+
+void Ends::visit_children(Visitor_ptr v) {
+}
+
+IndexOf::IndexOf(Term_ptr subject_term, Term_ptr search_term)
+	: Term("indexof"), subject_term (subject_term), search_term (search_term) { }
+
+IndexOf::IndexOf(const IndexOf& other)
+	: Term ("indexof") {
+	subject_term = other.subject_term->clone();
+	search_term = other.search_term->clone();
+}
+
+IndexOf_ptr IndexOf::clone() const { return new IndexOf(*this); }
+
+IndexOf::~IndexOf() { debug_deallocation(this->name); delete subject_term; delete search_term; }
+
+void IndexOf::accept(Visitor_ptr v) {
+}
+
+void IndexOf::visit_children(Visitor_ptr v) {
+}
+
+Replace::Replace(Term_ptr subject_term, Term_ptr search_term, Term_ptr replace_term)
+	: Term("replace"), subject_term (subject_term), search_term (search_term), replace_term (replace_term) { }
+
+Replace::Replace(const Replace& other)
+	: Term ("replace") {
+	subject_term = other.subject_term->clone();
+	search_term = other.search_term->clone();
+	replace_term = other.replace_term->clone();
+}
+
+Replace_ptr Replace::clone() const { return new Replace(*this); }
+
+Replace::~Replace() { debug_deallocation(this->name); delete subject_term; delete search_term; delete replace_term;}
+
+void Replace::accept(Visitor_ptr v) {
+}
+
+void Replace::visit_children(Visitor_ptr v) {
+}
+
+Ite::Ite(Term_ptr cond, Term_ptr then_branch, Term_ptr else_branch)
+	: Term("ite"), cond (cond), then_branch (then_branch), else_branch (else_branch) { }
+Ite::Ite(const Ite& other)
+	: Term("ite") {
+	cond = other.cond->clone();
+	then_branch = other.then_branch->clone();
+	else_branch = other.else_branch->clone();
+}
+Ite_ptr Ite::clone() const { return new Ite(*this); }
+Ite::~Ite() { debug_deallocation(this->name); delete cond; delete then_branch; delete else_branch; }
+
+void Ite::accept(Visitor_ptr v) { v->visitIte(this); }
+void Ite::visit_children(Visitor_ptr v) {
+	v->visit(cond);
+	v->visit(then_branch);
+	v->visit(else_branch);
+}
+
+ReConcat::ReConcat(TermList_ptr term_list)
+	: Term("re.++"), term_list (term_list) { }
+ReConcat::ReConcat(const ReConcat& other)
+	: Term("re.++") {
+	term_list = new TermList();
+	for (auto& term : *(other.term_list)) {
+		term_list->push_back(term->clone());
+	}
+}
+ReConcat_ptr ReConcat::clone() const { return new ReConcat(*this); }
+ReConcat::~ReConcat() {
+	debug_deallocation(this->name);
+	deallocate_list(term_list);
+	delete term_list;
+}
+
+void ReConcat::accept(Visitor_ptr v) { v->visitReConcat(this); }
+void ReConcat::visit_children(Visitor_ptr v) { v->visit_list(term_list); }
 
 ToRegex::ToRegex(Term_ptr term)
 	: Term("str.to.re"), term (term) { }
@@ -699,6 +797,7 @@ Variable::Variable(const Variable& other) {
 	primitive = other.primitive->clone();
 	type = other.type;
 }
+
 Variable_ptr Variable::clone() const { return new Variable(*this); }
 Variable::~Variable() { delete primitive; }
 
@@ -719,3 +818,5 @@ void debug_deallocation(std::string msg) {
 
 } /* namespace SMT */
 } /* namespace Vlab */
+
+

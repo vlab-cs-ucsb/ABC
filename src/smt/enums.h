@@ -29,6 +29,11 @@ enum class type_CMD : u_int8_t {
 	GET_ASSIGNMENT, GET_OPTION, GET_INFO, EXIT
 };
 
+enum class type_Primitive {
+	NONE = 0, BINARY, DECIMAL, HEXADECIMAL, KEYWORD,
+	NUMERAL, STRING, REGEX, SYMBOL
+};
+
 
 template <typename T>
 static inline std::string enumToStr(T type) {

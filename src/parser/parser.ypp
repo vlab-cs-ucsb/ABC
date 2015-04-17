@@ -58,6 +58,7 @@
 	PAR                  "par"
 	
 	AND                  "and"
+	OR                   "or"
 	NOT                  "not"
 	MINUS                "-"
 	PLUS                 "+"
@@ -66,12 +67,20 @@
 	GE                   ">="
 	LT                   "<"
 	LE                   "<="
+	CONCAT               "concat"
+	IN                   "in"
+	LEN                  "len"
+	CONTAINS             "contains"
+	BEGINS               "begins"
+	ENDS                 "ends"
+	INDEXOF              "indexof"
+	REPLACE              "replace"
 	ITE                  "ite"
   RE_CONCAT            "re.++"
   RE_OR                "re.or"
-	CONCAT               "str.++"
-	IN                   "str.in.re"
-	LEN                  "str.len"
+	CONCAT_CVC           "str.++"
+	IN_CVC               "str.in.re"
+	LEN_CVC              "str.len"
 	TO_REGEX             "str.to.re"  
 	
 	TBOOL                 "TBool"
@@ -105,6 +114,7 @@
 %token <std::string>  KEYWORD      "keyword"
 %token <std::string>	NUMERAL      "number"		
 %token <std::string>  STRING       "string"
+%token <std::string>  REGEX        "regex"
 %token <std::string>	SYMBOL       "symbol"
 
 %type <smtlib::CommandList_ptr> command_list
@@ -157,6 +167,7 @@ command               :
               				| "(" "pop" NUMERAL ")"                                             { $$ = new smtlib::Command(); }
               				| "(" "assert" term ")"                                             { $$ = new smtlib::Assert($3); }
                       | "(" "check-sat" ")"                                               { $$ = new smtlib::CheckSat(); }
+                      | "(" "check-sat" SYMBOL ")"                                        { $$ = new smtlib::CheckSat(new smtlib::Primitive($3, smtlib::Primitive::SYMBOL)); }
             					| "(" "get-assertions" ")"                                          { $$ = new smtlib::Command(); } 
             					| "(" "get-proof" ")"                                               { $$ = new smtlib::Command(); } 
             					| "(" "get-unsat-core" ")"                                          { $$ = new smtlib::Command(); }   
@@ -213,9 +224,17 @@ term                  :
                       | "(" ">=" term term ")"                                            { $$ = new smtlib::Ge($3, $4); }
                       | "(" "<" term term ")"                                             { $$ = new smtlib::Lt($3, $4); }                                              
                       | "(" "<=" term term ")"                                            { $$ = new smtlib::Le($3, $4); }
+                      | "(" "concat" term_list_ ")"                                       { $$ = new smtlib::Concat($3); }
+                      | "(" "in" term term ")"                                            { $$ = new smtlib::In($3, $4); }
+                      | "(" "len" term ")"                                                { $$ = new smtlib::Len($3); }
+                      | "(" "contains" term term ")"                                      { $$ = new smtlib::Contains($3, $4); }
+                      | "(" "begins" term term ")"                                        { $$ = new smtlib::Begins($3, $4); }
+                      | "(" "ends" term term ")"                                          { $$ = new smtlib::Ends($3, $4); }                                            
+                      | "(" "indexof" term term ")"                                       { $$ = new smtlib::IndexOf($3, $4); }
+                      | "(" "replace" term term term ")"                                  { $$ = new smtlib::Replace($3, $4, $5); }
                       | "(" "ite" term term term ")"                                      { $$ = new smtlib::Ite($3, $4, $5); }
                       | "(" "re.++" term_list_ ")"                                        { $$ = new smtlib::ReConcat($3); }
-                      | "(" "re.or" term_list_ ")"                                        { $$ = new smtlib::ReOr($3); }
+                      | "(" "re.or" term_list_ ")"                                        { $$ = new smtlib::Or($3); }
                       | "(" "str.++" term_list_ ")"                                       { $$ = new smtlib::Concat($3); }
                       | "(" "str.in.re" term term ")"                                     { $$ = new smtlib::In($3, $4); }
                       | "(" "str.len" term ")"                                            { $$ = new smtlib::Len($3); }                                            
@@ -334,6 +353,7 @@ spec_constant         :
                       | HEXADECIMAL         { $$ = new smtlib::Primitive($1, smtlib::Primitive::HEXADECIMAL); }
                       | BINARY              { $$ = new smtlib::Primitive($1, smtlib::Primitive::BINARY); }
                       | STRING              { $$ = new smtlib::Primitive($1, smtlib::Primitive::STRING); }
+                      | REGEX               { $$ = new smtlib::Primitive($1, smtlib::Primitive::REGEX); }
                       ;
 
  

@@ -111,12 +111,15 @@ public:
 class CheckSat : public Command {
 public:
 	CheckSat();
+	CheckSat(Primitive_ptr);
 	CheckSat(const CheckSat&);
 	virtual CheckSat* clone() const;
 	virtual ~CheckSat();
 
 	virtual void visit_children(Visitor_ptr);
 	virtual std::string str() { return "check-sat"; };
+
+	Primitive_ptr symbol;
 
 };
 
@@ -174,6 +177,19 @@ public:
 
 	TermList_ptr term_list;
 
+};
+
+class Or : public Term {
+public:
+	Or(TermList_ptr);
+	Or(const Or&);
+	virtual Or_ptr clone() const;
+	virtual ~Or();
+
+	virtual void accept(Visitor_ptr);
+	virtual void visit_children(Visitor_ptr);
+
+	TermList_ptr term_list;
 };
 
 class Not : public Term {
@@ -300,49 +316,6 @@ public:
 	Term_ptr right_term;
 };
 
-class Ite : public Term {
-public:
-	Ite(Term_ptr, Term_ptr, Term_ptr);
-	Ite(const Ite&);
-	virtual Ite_ptr clone() const;
-	virtual ~Ite();
-
-	virtual void accept(Visitor_ptr);
-	virtual void visit_children(Visitor_ptr);
-
-	Term_ptr cond;
-	Term_ptr then_branch;
-	Term_ptr else_branch;
-};
-
-class ReConcat: public Term {
-public:
-	ReConcat(TermList_ptr);
-	ReConcat(const ReConcat&);
-	virtual ReConcat_ptr clone() const;
-	virtual ~ReConcat();
-
-	virtual void accept(Visitor_ptr);
-	virtual void visit_children(Visitor_ptr);
-
-	TermList_ptr term_list;
-	// ToRegex specifically
-};
-
-class ReOr: public Term {
-public:
-	ReOr(TermList_ptr);
-	ReOr(const ReOr&);
-	virtual ReOr_ptr clone() const;
-	virtual ~ReOr();
-
-	virtual void accept(Visitor_ptr);
-	virtual void visit_children(Visitor_ptr);
-
-	TermList_ptr term_list;
-	// ToRegex specifically
-};
-
 class Concat : public Term {
 public:
 	Concat(TermList_ptr);
@@ -381,6 +354,106 @@ public:
 	virtual void visit_children(Visitor_ptr);
 
 	Term_ptr term;
+};
+
+class Contains : public Term {
+public:
+	Contains(Term_ptr, Term_ptr);
+	Contains(const Contains&);
+	virtual Contains_ptr clone() const;
+	virtual ~Contains();
+
+	virtual void accept(Visitor_ptr);
+	virtual void visit_children(Visitor_ptr);
+
+	Term_ptr subject_term;
+	Term_ptr search_term;
+};
+
+class Begins : public Term {
+public:
+	Begins(Term_ptr, Term_ptr);
+	Begins(const Begins&);
+	virtual Begins_ptr clone() const;
+	virtual ~Begins();
+
+	virtual void accept(Visitor_ptr);
+	virtual void visit_children(Visitor_ptr);
+
+	Term_ptr subject_term;
+	Term_ptr search_term;
+};
+
+class Ends : public Term {
+public:
+	Ends(Term_ptr, Term_ptr);
+	Ends(const Ends&);
+	virtual Ends_ptr clone() const;
+	virtual ~Ends();
+
+	virtual void accept(Visitor_ptr);
+	virtual void visit_children(Visitor_ptr);
+
+	Term_ptr subject_term;
+	Term_ptr search_term;
+};
+
+class IndexOf : public Term {
+public:
+	IndexOf(Term_ptr, Term_ptr);
+	IndexOf(const IndexOf&);
+	virtual IndexOf_ptr clone() const;
+	virtual ~IndexOf();
+
+	virtual void accept(Visitor_ptr);
+	virtual void visit_children(Visitor_ptr);
+
+	Term_ptr subject_term;
+	Term_ptr search_term;
+};
+
+class Replace : public Term {
+public:
+	Replace(Term_ptr, Term_ptr, Term_ptr);
+	Replace(const Replace&);
+	virtual Replace_ptr clone() const;
+	virtual ~Replace();
+
+	virtual void accept(Visitor_ptr);
+	virtual void visit_children(Visitor_ptr);
+
+	Term_ptr subject_term;
+	Term_ptr search_term;
+	Term_ptr replace_term;
+};
+
+class Ite : public Term {
+public:
+	Ite(Term_ptr, Term_ptr, Term_ptr);
+	Ite(const Ite&);
+	virtual Ite_ptr clone() const;
+	virtual ~Ite();
+
+	virtual void accept(Visitor_ptr);
+	virtual void visit_children(Visitor_ptr);
+
+	Term_ptr cond;
+	Term_ptr then_branch;
+	Term_ptr else_branch;
+};
+
+class ReConcat: public Term {
+public:
+	ReConcat(TermList_ptr);
+	ReConcat(const ReConcat&);
+	virtual ReConcat_ptr clone() const;
+	virtual ~ReConcat();
+
+	virtual void accept(Visitor_ptr);
+	virtual void visit_children(Visitor_ptr);
+
+	TermList_ptr term_list;
+	// ToRegex specifically
 };
 
 class ToRegex : public Term {
@@ -633,10 +706,6 @@ public:
 	type_VAR type;
 };
 
-enum class type_Primitive {
-	NONE = 0, BINARY, DECIMAL, HEXADECIMAL, KEYWORD,
-	NUMERAL, STRING, SYMBOL
-};
 class Primitive : public Visitable {
 public:
 	Primitive(std::string data, const std::string type);

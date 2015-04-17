@@ -33,6 +33,7 @@ public:
 	void visitCommand(Command_ptr);
 	void visitTerm(Term_ptr);
 	void visitAnd(And_ptr);
+	void visitOr(Or_ptr);
 	void visitNot(Not_ptr);
 	void visitUMinus(UMinus_ptr);
 	void visitMinus(Minus_ptr);
@@ -42,12 +43,16 @@ public:
 	void visitGe(Ge_ptr);
 	void visitLt(Lt_ptr);
 	void visitLe(Le_ptr);
-	void visitIte(Ite_ptr);
-	void visitReConcat(ReConcat_ptr);
-	void visitReOr(ReOr_ptr);
 	void visitConcat(Concat_ptr);
 	void visitIn(In_ptr);
 	void visitLen(Len_ptr);
+	void visitContains(Contains_ptr);
+	void visitBegins(Begins_ptr);
+	void visitEnds(Ends_ptr);
+	void visitIndexOf(IndexOf_ptr);
+	void visitReplace(Replace_ptr);
+	void visitIte(Ite_ptr);
+	void visitReConcat(ReConcat_ptr);
 	void visitToRegex(ToRegex_ptr);
 	void visitUnknownTerm(Unknown_ptr);
 	void visitAsQualIdentifier(AsQualIdentifier_ptr);
