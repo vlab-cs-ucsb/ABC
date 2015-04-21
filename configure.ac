@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([ABC],[1.0],[baki@cs.ucsb.edu])
+AC_INIT([ABC],[1.0],[vlab@cs.ucsb.edu])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_LIBOBJ_DIR([lib])
 AM_MAINTAINER_MODE([enable])

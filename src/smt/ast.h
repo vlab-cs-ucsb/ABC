@@ -5,6 +5,7 @@
  *      Author: baki
  */
 
+// TODO add specialized functions
 #ifndef SMT_AST_H_
 #define SMT_AST_H_
 
