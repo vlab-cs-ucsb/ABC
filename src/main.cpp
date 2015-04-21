@@ -11,6 +11,7 @@
 #include <iostream>
 #include <string>
 
+#include <glog/logging.h>
 #include "Driver.h"
 
 using namespace std;
@@ -23,6 +24,11 @@ int main(const int argc, const char **argv) {
 
 	std::string project_root = "/home/baki/workspaces/default/ABC";
 
+	google::InitGoogleLogging(argv[0]);
+
+	LOG(WARNING) << "google log start";
+
+
 	bool model_count_only = false;
 	std::string bound_string = "50";
 	for (int i = 1; i < argc; ++i) {
@@ -32,11 +38,12 @@ int main(const int argc, const char **argv) {
 			bound_string = argv[i+1];
 			i++;
 		} else if (argv[i] == std::string ("-f")) {
-
-		} else {
-			file_name = argv[i];
+			file_name = argv[i+1];
 			file = new std::ifstream(file_name);
 			in = file;
+			i++;
+		} else {
+
 		}
 	}
 
