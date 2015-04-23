@@ -1,3 +1,8 @@
+# Custom
+/output
+/log
+
+
 *.pydevproject
 .metadata
 .gradle
@@ -47,7 +52,7 @@ Makefile
 /src/parser/position.hh
 /src/parser/stack.hh
 .dirstamp
-
+.libs
 # http://www.gnu.org/software/autoconf
 
 .deps

@@ -21,7 +21,7 @@ Script::Script(const Script& other) {
 }
 Script_ptr Script::clone() const { return new Script(*this); }
 Script::~Script() {
-	debug_deallocation("script");
+	DVLOG(20) << "Script deallocated.";
 	deallocate_list(commands);
 	delete commands;
 }
@@ -37,20 +37,19 @@ Command::Command(type_CMD type)
 	: type (type) { }
 Command::Command(const Command& other) { type = other.type; }
 Command_ptr Command::clone() const { return new Command(*this); }
-Command::~Command() { }
-
+Command::~Command() { DVLOG(20) << "Command( " << *this << " ) deallocated."; }
 std::string Command::str() {
 	std::stringstream ss;
-	ss << static_cast<u_int8_t>(type);
+	ss << static_cast<int>(type);
 	return ss.str();
 }
-
 type_CMD Command::getType() { return type; }
-
 void Command::accept(Visitor_ptr v) { v->visitCommand(this); }
-
 void Command::visit_children(Visitor_ptr v) { }
 
+std::ostream& operator<<(std::ostream& os, const Command& command){
+   return os << enumToStr(command.type);
+}
 
 
 SetLogic::SetLogic(Primitive_ptr symbol)
@@ -99,7 +98,7 @@ Assert::Assert(const Assert& other)
 	term = other.term->clone();
 }
 Assert_ptr Assert::clone() const { return new Assert(*this); }
-Assert::~Assert() {	debug_deallocation("assert"); delete term; }
+Assert::~Assert() { delete term; }
 
 void Assert::visit_children(Visitor_ptr v) { v->visit(term); }
 
@@ -116,6 +115,27 @@ CheckSat::~CheckSat() { delete symbol; }
 
 void CheckSat::visit_children(Visitor_ptr v) { v->visit(symbol); }
 
+CheckSatAndCount::CheckSatAndCount(Primitive_ptr bound)
+	: Command::Command (type_CMD::CHECK_SAT_AND_COUNT), bound( bound ), symbol (nullptr) {
+	CHECK_EQ(bound->getType(), Primitive::NUMERAL) << ": first parameter must be numeral";
+	CHECK_EQ(symbol->getType(), Primitive::SYMBOL) << ": second parameter must be a symbol";
+}
+
+CheckSatAndCount::CheckSatAndCount(Primitive_ptr bound, Primitive_ptr symbol)
+	: Command::Command (type_CMD::CHECK_SAT_AND_COUNT), bound( bound ), symbol (symbol) { }
+
+CheckSatAndCount::CheckSatAndCount(const CheckSatAndCount& other)
+	: Command::Command(type_CMD::CHECK_SAT_AND_COUNT) {
+	bound = other.bound->clone();
+	symbol = (other.symbol == nullptr) ? other.symbol : other.symbol->clone();
+}
+
+CheckSatAndCount* CheckSatAndCount::clone() const { return new CheckSatAndCount(*this); }
+
+CheckSatAndCount::~CheckSatAndCount() { delete bound; delete symbol; }
+
+void CheckSatAndCount::visit_children(Visitor_ptr v) { v->visit(bound); v->visit(symbol); }
+
 /* ends commands */
 
 /* Terms */
@@ -124,13 +144,16 @@ Term::Term(std::string name)
 	: name (name) { }
 Term::Term(const Term& other) {	name = other.name; }
 Term_ptr Term::clone() const { return new Term(*this); }
-Term::~Term() { debug_deallocation(this->name + " ends"); }
+Term::~Term() { DVLOG(20) << "Term( " << *this << " ) deallocated."; }
 
 std::string Term::str() { return name; }
 
 void Term::accept(Visitor_ptr v) { v->visitTerm(this); }
 void Term::visit_children(Visitor_ptr v) {
 	throw new std::runtime_error("Unhandled term production rule!");
+}
+std::ostream& operator<<(std::ostream& os, const Term& term){
+   return os << term.name;
 }
 
 And::And(TermList_ptr term_list)
@@ -144,7 +167,6 @@ And::And(const And& other)
 }
 And_ptr And::clone() const { return new And(*this); }
 And::~And() {
-	debug_deallocation(this->name);
 	deallocate_list(term_list);
 	delete term_list;
 }
@@ -163,7 +185,6 @@ Or::Or(const Or& other)
 }
 Or_ptr Or::clone() const { return new Or(*this); }
 Or::~Or() {
-	debug_deallocation(this->name);
 	deallocate_list(term_list);
 	delete term_list;
 }
@@ -177,7 +198,7 @@ Not::Not(Term_ptr term)
 Not::Not(const Not& other)
 	: Term("not") {	term = other.term->clone(); }
 Not_ptr Not::clone() const { return new Not(*this); }
-Not::~Not() { debug_deallocation(this->name); delete term; }
+Not::~Not() { delete term; }
 
 void Not::accept(Visitor_ptr v) { v->visitNot(this); }
 void Not::visit_children(Visitor_ptr v) { v->visit(term); }
@@ -187,7 +208,7 @@ UMinus::UMinus(Term_ptr term)
 UMinus::UMinus(const UMinus& other)
 	: Term("-") { term = other.term->clone(); }
 UMinus_ptr UMinus::clone() const { return new UMinus(*this); }
-UMinus::~UMinus() {debug_deallocation("uminus"); delete term; }
+UMinus::~UMinus() { delete term; }
 
 void UMinus::accept(Visitor_ptr v) { v->visitUMinus(this); }
 void UMinus::visit_children(Visitor_ptr v) { v->visit(term); }
@@ -200,7 +221,7 @@ Minus::Minus(const Minus& other)
 	right_term = other.right_term->clone();
 }
 Minus_ptr Minus::clone() const { return new Minus(*this); }
-Minus::~Minus() { debug_deallocation(this->name); delete left_term; delete right_term; }
+Minus::~Minus() { delete left_term; delete right_term; }
 
 void Minus::accept(Visitor_ptr v) { v->visitMinus(this); }
 void Minus::visit_children(Visitor_ptr v) {
@@ -216,7 +237,7 @@ Plus::Plus(const Plus& other)
 	right_term = other.right_term->clone();
 }
 Plus_ptr Plus::clone() const { return new Plus(*this); }
-Plus::~Plus() { debug_deallocation(this->name); delete left_term; delete right_term; }
+Plus::~Plus() { delete left_term; delete right_term; }
 
 void Plus::accept(Visitor_ptr v) { v->visitPlus(this); }
 void Plus::visit_children(Visitor_ptr v) {
@@ -232,7 +253,7 @@ Eq::Eq(const Eq& other)
 	right_term = other.right_term->clone();
 }
 Eq_ptr Eq::clone() const { return new Eq(*this); }
-Eq::~Eq() { debug_deallocation(this->name); delete left_term; delete right_term; }
+Eq::~Eq() { delete left_term; delete right_term; }
 
 void Eq::accept(Visitor_ptr v) { v->visitEq(this); }
 void Eq::visit_children(Visitor_ptr v) {
@@ -251,7 +272,7 @@ Gt::Gt(const Gt& other)
 }
 
 Gt_ptr Gt::clone() const { return new Gt(*this); }
-Gt::~Gt() { debug_deallocation(this->name);  delete left_term, delete right_term; }
+Gt::~Gt() { delete left_term, delete right_term; }
 
 void Gt::accept(Visitor_ptr v) { v->visitGt(this); }
 void Gt::visit_children(Visitor_ptr v) {
@@ -267,7 +288,7 @@ Ge::Ge(const Ge& other)
 	right_term = other.right_term->clone();
 }
 Ge_ptr Ge::clone() const { return new Ge(*this); }
-Ge::~Ge() { debug_deallocation(this->name); delete left_term, delete right_term; }
+Ge::~Ge() { delete left_term, delete right_term; }
 
 void Ge::accept(Visitor_ptr v) { v->visitGe(this); }
 void Ge::visit_children(Visitor_ptr v) {
@@ -283,7 +304,7 @@ Lt::Lt(const Lt& other)
 	right_term = other.right_term->clone();
 }
 Lt_ptr Lt::clone() const { return new Lt(*this); }
-Lt::~Lt() { debug_deallocation(this->name); delete left_term, delete right_term; }
+Lt::~Lt() { delete left_term, delete right_term; }
 
 void Lt::accept(Visitor_ptr v) { v->visitLt(this); }
 void Lt::visit_children(Visitor_ptr v) {
@@ -299,7 +320,7 @@ Le::Le(const Le& other)
 	right_term = other.right_term->clone();
 }
 Le_ptr Le::clone() const { return new Le(*this); }
-Le::~Le() { debug_deallocation(this->name); delete left_term, delete right_term; }
+Le::~Le() { delete left_term, delete right_term; }
 
 void Le::accept(Visitor_ptr v) { v->visitLe(this); }
 void Le::visit_children(Visitor_ptr v) {
@@ -308,9 +329,9 @@ void Le::visit_children(Visitor_ptr v) {
 }
 
 Concat::Concat(TermList_ptr term_list)
-	: Term("str.++"), term_list (term_list) { }
+	: Term("concat"), term_list (term_list) { }
 Concat::Concat(const Concat& other)
-	: Term("str.++") {
+	: Term("concat") {
 	term_list = new TermList();
 	for (auto& term : *(other.term_list)) {
 		term_list->push_back(term->clone());
@@ -318,7 +339,6 @@ Concat::Concat(const Concat& other)
 }
 Concat_ptr Concat::clone() const { return new Concat(*this); }
 Concat::~Concat() {
-	debug_deallocation(this->name);
 	deallocate_list(term_list);
 	delete term_list;
 }
@@ -327,14 +347,14 @@ void Concat::accept(Visitor_ptr v) { v->visitConcat(this); }
 void Concat::visit_children(Visitor_ptr v) { v->visit_list(term_list); }
 
 In::In(Term_ptr left_term, Term_ptr right_term)
-	: Term("str.in.re"), left_term (left_term), right_term (right_term) { }
+	: Term("in"), left_term (left_term), right_term (right_term) { }
 In::In(const In& other)
-	: Term("str.in.re") {
+	: Term("in") {
 	left_term = other.left_term->clone();
 	right_term = other.right_term->clone();
 }
 In_ptr In::clone() const { return new In(*this); }
-In::~In() { debug_deallocation(this->name); delete left_term, delete right_term; }
+In::~In() { delete left_term, delete right_term; }
 
 void In::accept(Visitor_ptr v) { v->visitIn(this); }
 void In::visit_children(Visitor_ptr v) {
@@ -347,7 +367,7 @@ Len::Len(Term_ptr term)
 Len::Len(const Len& other)
 	: Term("str.len") { term = other.term->clone(); }
 Len_ptr Len::clone() const { return new Len(*this); }
-Len::~Len() { debug_deallocation(this->name); delete term; }
+Len::~Len() { delete term; }
 
 void Len::accept(Visitor_ptr v) { v->visitLen(this); }
 void Len::visit_children(Visitor_ptr v) { v->visit(term); }
@@ -363,7 +383,7 @@ Contains::Contains(const Contains& other)
 
 Contains_ptr Contains::clone() const { return new Contains(*this); }
 
-Contains::~Contains() { debug_deallocation(this->name); delete subject_term; delete search_term; }
+Contains::~Contains() { delete subject_term; delete search_term; }
 
 void Contains::accept(Visitor_ptr v) {
 }
@@ -381,7 +401,7 @@ Begins::Begins(const Begins& other)
 }
 Begins_ptr Begins::clone() const { return new Begins(*this); }
 
-Begins::~Begins() { debug_deallocation(this->name); delete subject_term; delete search_term; }
+Begins::~Begins() { delete subject_term; delete search_term; }
 
 void Begins::accept(Visitor_ptr v) {
 }
@@ -400,7 +420,7 @@ Ends::Ends(const Ends& other)
 
 Ends_ptr Ends::clone() const { return new Ends(*this); }
 
-Ends::~Ends() { debug_deallocation(this->name); delete subject_term; delete search_term; }
+Ends::~Ends() { delete subject_term; delete search_term; }
 
 void Ends::accept(Visitor_ptr v) {
 }
@@ -419,7 +439,7 @@ IndexOf::IndexOf(const IndexOf& other)
 
 IndexOf_ptr IndexOf::clone() const { return new IndexOf(*this); }
 
-IndexOf::~IndexOf() { debug_deallocation(this->name); delete subject_term; delete search_term; }
+IndexOf::~IndexOf() { delete subject_term; delete search_term; }
 
 void IndexOf::accept(Visitor_ptr v) {
 }
@@ -439,12 +459,31 @@ Replace::Replace(const Replace& other)
 
 Replace_ptr Replace::clone() const { return new Replace(*this); }
 
-Replace::~Replace() { debug_deallocation(this->name); delete subject_term; delete search_term; delete replace_term;}
+Replace::~Replace() { delete subject_term; delete search_term; delete replace_term;}
 
 void Replace::accept(Visitor_ptr v) {
 }
 
 void Replace::visit_children(Visitor_ptr v) {
+}
+
+Count::Count(Term_ptr bound_term, Term_ptr subject_term)
+	: Term("count"), bound_term (bound_term), subject_term (subject_term) { }
+
+Count::Count(const Count& other)
+	: Term("count") {
+	bound_term = other.bound_term->clone();
+	subject_term = other.subject_term->clone();
+}
+
+Count_ptr Count::clone() const { return new Count(*this); }
+
+Count::~Count() { delete bound_term; delete subject_term;}
+
+void Count::accept(Visitor_ptr v) { v->visitCount(this); }
+void Count::visit_children(Visitor_ptr v) {
+	v->visit(bound_term);
+	v->visit(subject_term);
 }
 
 Ite::Ite(Term_ptr cond, Term_ptr then_branch, Term_ptr else_branch)
@@ -456,7 +495,7 @@ Ite::Ite(const Ite& other)
 	else_branch = other.else_branch->clone();
 }
 Ite_ptr Ite::clone() const { return new Ite(*this); }
-Ite::~Ite() { debug_deallocation(this->name); delete cond; delete then_branch; delete else_branch; }
+Ite::~Ite() { delete cond; delete then_branch; delete else_branch; }
 
 void Ite::accept(Visitor_ptr v) { v->visitIte(this); }
 void Ite::visit_children(Visitor_ptr v) {
@@ -476,7 +515,6 @@ ReConcat::ReConcat(const ReConcat& other)
 }
 ReConcat_ptr ReConcat::clone() const { return new ReConcat(*this); }
 ReConcat::~ReConcat() {
-	debug_deallocation(this->name);
 	deallocate_list(term_list);
 	delete term_list;
 }
@@ -489,7 +527,7 @@ ToRegex::ToRegex(Term_ptr term)
 ToRegex::ToRegex(const ToRegex& other)
 	: Term("str.to.re") { term = other.term->clone(); }
 ToRegex_ptr ToRegex::clone() const { return new ToRegex(*this); }
-ToRegex::~ToRegex() { debug_deallocation(this->name); delete term; }
+ToRegex::~ToRegex() { delete term; }
 
 void ToRegex::accept(Visitor_ptr v) { v->visitToRegex(this); }
 void ToRegex::visit_children(Visitor_ptr v) { v->visit(term); }
@@ -506,7 +544,6 @@ UnknownTerm::UnknownTerm(const UnknownTerm& other)
 }
 UnknownTerm* UnknownTerm::clone() const { return new UnknownTerm(*this); }
 UnknownTerm::~UnknownTerm() {
-	debug_deallocation(this->name);
 	delete term;
 	deallocate_list(term_list);
 	delete term_list;
@@ -527,7 +564,6 @@ AsQualIdentifier::AsQualIdentifier(const AsQualIdentifier& other)
 }
 AsQualIdentifier_ptr AsQualIdentifier::clone() const { return new AsQualIdentifier(*this); }
 AsQualIdentifier::~AsQualIdentifier() {
-	debug_deallocation(this->name);
 	delete identifier;
 	delete sort;
 }
@@ -543,7 +579,7 @@ QualIdentifier::QualIdentifier(Identifier_ptr identifier)
 QualIdentifier::QualIdentifier(const QualIdentifier& other)
 	: Term("QualIdentifier") { identifier = other.identifier->clone(); }
 QualIdentifier_ptr QualIdentifier::clone() const { return new QualIdentifier(*this); }
-QualIdentifier::~QualIdentifier() { debug_deallocation(this->name); delete identifier; }
+QualIdentifier::~QualIdentifier() { delete identifier; }
 
 std::string QualIdentifier::getVarName() { return identifier->getName(); }
 bool QualIdentifier::isSymbolic() { return identifier->isSymbolic(); }
@@ -556,7 +592,7 @@ TermConstant::TermConstant(Primitive_ptr primitive)
 TermConstant::TermConstant(const TermConstant& other)
 	: Term("TermConstant") { primitive = other.primitive->clone(); }
 TermConstant_ptr TermConstant::clone() const { return new TermConstant(*this); }
-TermConstant::~TermConstant() { debug_deallocation(this->name); delete primitive; }
+TermConstant::~TermConstant() { delete primitive; }
 
 void TermConstant::accept(Visitor_ptr v) { v->visitTermConstant(this); }
 void TermConstant::visit_children(Visitor_ptr v) { v->visit(primitive); }
@@ -681,7 +717,6 @@ Identifier::Identifier(const Identifier& other) {
 }
 Identifier_ptr Identifier::clone() const { return new Identifier(*this); }
 Identifier::~Identifier() {
-	debug_deallocation("identifier");
 	delete underscore;
 	delete symbol;
 	deallocate_list(numeral_list);
@@ -733,7 +768,7 @@ Primitive::Primitive(const Primitive& other) {
 	type = other.type;
 }
 Primitive_ptr Primitive::clone() const { return new Primitive(*this); }
-Primitive::~Primitive() { debug_deallocation(this->data);  }
+Primitive::~Primitive() { DVLOG(20) << "Primitive( " << *this << " ) deallocated.";  }
 
 std::string Primitive::str() const {
 	std::stringstream ss;
@@ -749,6 +784,10 @@ void Primitive::setType(std::string type) { this->type = type; }
 void Primitive::accept(Visitor_ptr v) { v->visitPrimitive(this); }
 
 void Primitive::visit_children(Visitor_ptr v) { }
+
+std::ostream& operator<<(std::ostream& os, const Primitive& primitive) {
+   return os << primitive.data << ":" << primitive.type;
+}
 
 VarType::VarType(type_VAR type)
 	: type (type) { }
@@ -809,14 +848,6 @@ void Variable::accept(Visitor_ptr v) { v->visitVariable(this); }
 
 void Variable::visit_children(Visitor_ptr v) { v->visit(primitive); }
 
-void debug_deallocation(std::string msg) {
-	bool enable_debug_deallocation = false;
-	if (enable_debug_deallocation) {
-		std::cout << "\t deallocate: " << msg << std::endl;
-	}
-}
-
 } /* namespace SMT */
 } /* namespace Vlab */
-
 

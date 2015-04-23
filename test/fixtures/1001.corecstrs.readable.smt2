@@ -40,4 +40,7 @@
 (assert T_6)
 
 (check-sat)
+(check-sat var_0xINPUT_15284)
+(check-sat-and-count 10)
+(check-sat-and-count var_0xINPUT_15284)
 

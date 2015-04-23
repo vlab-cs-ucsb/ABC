@@ -40,6 +40,7 @@ public:
 	virtual void visitEnds(Ends_ptr) = 0;
 	virtual void visitIndexOf(IndexOf_ptr) = 0;
 	virtual void visitReplace(Replace_ptr) = 0;
+	virtual void visitCount(Count_ptr) = 0;
 	virtual void visitIte(Ite_ptr) = 0;
 	virtual void visitReConcat(ReConcat_ptr) = 0;
 	virtual void visitToRegex(ToRegex_ptr) = 0;
@@ -58,7 +59,6 @@ public:
 	virtual void visitIdentifier(Identifier_ptr) = 0;
 	virtual void visitPrimitive(Primitive_ptr) = 0;
 	virtual void visitVariable(Variable_ptr) = 0;
-	virtual void exception(std::string) = 0;
 
 	void visit(Visitable_ptr p) {
 		if (p == nullptr) return;

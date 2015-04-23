@@ -122,6 +122,8 @@ void Ast2Dot::visitIndexOf(IndexOf_ptr index_of_term) { visitTerm(index_of_term)
 
 void Ast2Dot::visitReplace(Replace_ptr replace_term) { visitTerm(replace_term); }
 
+void Ast2Dot::visitCount(Count_ptr count_term) { visitTerm(count_term); }
+
 void Ast2Dot::visitIte(Ite_ptr ite_term) { visitTerm(ite_term); }
 
 void Ast2Dot::visitReConcat(ReConcat_ptr re_concat_term) { visitTerm(re_concat_term); }
@@ -147,8 +149,6 @@ void Ast2Dot::visitTString(TString_ptr t_string) { draw_terminal(t_string->str()
 void Ast2Dot::visitPrimitive(Primitive_ptr primitive) {	draw_terminal(primitive->str()); }
 
 void Ast2Dot::visitVariable(Variable_ptr var) { draw("Variable",var); }
-
-void Ast2Dot::exception(std::string what) { }
 
 } /* namespace SMT */
 } /* namespace Vlab */

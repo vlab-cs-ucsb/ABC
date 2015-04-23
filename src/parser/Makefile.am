@@ -1,4 +1,6 @@
 AM_YFLAGS = -d
+AM_CXXFLAGS = -I$(top_srcdir)/external/glog/src -I$(srcdir)/parser 
+AM_LDFLAGS = -L$(top_srcdir)/external/glog -lglog
 noinst_LTLIBRARIES = libabcparser.la
 libabcparser_la_SOURCES = \
 	../smt/ast.cpp \
@@ -11,6 +13,9 @@ libabcparser_la_SOURCES = \
 	Scanner.cpp \
 	Scanner.h \
 	lexer.lpp
+	
+libabcparser_la_LIBADD = \
+	$(top_srcdir)/external/glog/libglog.la
 
 CLEANFILES = \
 	lexer.cpp \

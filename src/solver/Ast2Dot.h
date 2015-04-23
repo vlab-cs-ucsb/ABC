@@ -51,6 +51,7 @@ public:
 	void visitEnds(Ends_ptr);
 	void visitIndexOf(IndexOf_ptr);
 	void visitReplace(Replace_ptr);
+	void visitCount(Count_ptr);
 	void visitIte(Ite_ptr);
 	void visitReConcat(ReConcat_ptr);
 	void visitToRegex(ToRegex_ptr);
@@ -69,7 +70,6 @@ public:
 	void visitIdentifier(Identifier_ptr);
 	void visitPrimitive(Primitive_ptr);
 	void visitVariable(Variable_ptr);
-	void exception(std::string);
 
 private:
 	std::ostream* m_out; //file for writting output

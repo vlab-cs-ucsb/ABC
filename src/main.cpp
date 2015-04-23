@@ -10,11 +10,17 @@
 
 #include <iostream>
 #include <string>
+#include <cstdlib>
+
+#define NDEBUG
 
 #include <glog/logging.h>
 #include "Driver.h"
 
 using namespace std;
+
+static const std::string get_default_output_dir();
+static const std::string get_default_log_dir();
 
 int main(const int argc, const char **argv) {
 
@@ -22,11 +28,22 @@ int main(const int argc, const char **argv) {
 	std::ifstream* file = nullptr;
 	std::string file_name;
 
-	std::string project_root = "/home/baki/workspaces/default/ABC";
+	std::string output_root = get_default_output_dir();
+	std::string log_root = get_default_log_dir();
+
+	FLAGS_log_dir = log_root;
+	FLAGS_v = 30;
 
 	google::InitGoogleLogging(argv[0]);
 
-	LOG(WARNING) << "google log start";
+	DLOG(INFO) << "debug log start";
+	LOG(INFO) << "production log";
+
+	DVLOG(1) << "vlog log";
+
+	if (VLOG_IS_ON(1)) {
+		std::cout << "yaaay" << std::endl;
+	}
 
 
 	bool model_count_only = false;
@@ -51,7 +68,28 @@ int main(const int argc, const char **argv) {
 
 	Vlab::Driver driver;
 	driver.parse(in);
-	driver.ast2dot("/home/baki/workspaces/default/ABC/test/parser_out.dot");
+	driver.ast2dot( output_root + "/parser_out.dot");
 
 	return 0;
 }
+
+static const std::string get_default_output_dir() {
+	  const char* env;
+	  env = getenv("ABC_OUTPUT_DIR");
+	  if (env != NULL && env[0] != '\0') {
+	    return std::string(env);
+	  }
+	  int r = std::system("mkdir -p ./output");
+	  return "./output";
+}
+
+static const std::string get_default_log_dir() {
+	  const char* env;
+	  env = getenv("ABC_LOG_DIR");
+	  if (env != NULL && env[0] != '\0') {
+	    return std::string(env);
+	  }
+	  int r = std::system("mkdir -p ./log");
+	  return "./log";
+}
+

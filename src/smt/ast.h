@@ -16,6 +16,7 @@
 #include <vector>
 #include <stdexcept>
 
+#include <glog/logging.h>
 #include "enums.h"
 #include "typedefs.h"
 #include "Visitable.h"
@@ -50,6 +51,8 @@ public:
 	virtual void accept(Visitor_ptr);
 	virtual void visit_children(Visitor_ptr);
 
+	friend std::ostream& operator<<(std::ostream& os, const Command& command);
+
 private:
 	type_CMD type;
 
@@ -62,11 +65,10 @@ class SetLogic : public Command {
 public:
 	SetLogic(Primitive_ptr);
 	SetLogic(const SetLogic&);
-	virtual SetLogic* clone() const;
+	virtual SetLogic_ptr clone() const;
 	virtual ~SetLogic();
 
 	virtual void visit_children(Visitor_ptr);
-	virtual std::string str() { return "set-logic"; };
 
 	Primitive_ptr symbol;
 };
@@ -79,11 +81,10 @@ class DeclareFun : public Command {
 public:
 	DeclareFun(Primitive_ptr, SortList_ptr, Sort_ptr);
 	DeclareFun(const DeclareFun&);
-	virtual DeclareFun* clone() const;
+	virtual DeclareFun_ptr clone() const;
 	virtual ~DeclareFun();
 
 	virtual void visit_children(Visitor_ptr);
-	virtual std::string str() { return "declare-fun"; };
 
 	Primitive_ptr symbol;
 	SortList_ptr sort_list;
@@ -101,7 +102,6 @@ public:
 	virtual ~Assert();
 
 	virtual void visit_children(Visitor_ptr);
-	virtual std::string str() { return "assert"; };
 
 	Term_ptr term;
 };
@@ -114,42 +114,33 @@ public:
 	CheckSat();
 	CheckSat(Primitive_ptr);
 	CheckSat(const CheckSat&);
-	virtual CheckSat* clone() const;
+	virtual CheckSat_ptr clone() const;
 	virtual ~CheckSat();
 
 	virtual void visit_children(Visitor_ptr);
-	virtual std::string str() { return "check-sat"; };
 
 	Primitive_ptr symbol;
 
 };
 
+class CheckSatAndCount : public Command {
+public:
+	CheckSatAndCount(Primitive_ptr);
+	CheckSatAndCount(Primitive_ptr, Primitive_ptr);
+	CheckSatAndCount(const CheckSatAndCount&);
+	virtual CheckSatAndCount* clone() const;
+	virtual ~CheckSatAndCount();
+
+	virtual void visit_children(Visitor_ptr);
+
+	Primitive_ptr bound;
+	Primitive_ptr symbol;
+
+};
 /* ends commands */
 
-/**
- *   "(" "!" term attribute_list_ ")"
- * | "(" "exists" "(" sorted_var_list_ ")" term ")"
- * | "(" "forall" "(" sorted_var_list_ ")" term ")"
- * | "(" "let" "(" var_binding_list_ ")" term ")"
- * | "(" "and" term_list_ ")"
- * | "(" "not" term_list_ ")"
- * | "(" "=" term_list_ ")"
- * | "(" ">" term_list_ ")"
- * | "(" ">=" term_list_ ")"
- * | "(" "<" term_list_ ")"
- * | "(" "<=" term_list_ ")"
- * | "(" "ite" term_list_ ")"
- * | "(" "re.++" term_list_ ")"
- * | "(" "re.or" term_list_ ")"
- * | "(" "str.++" term_list_ ")"
- * | "(" "str.in.re" term_list_ ")"
- * | "(" "str.len" term_list_ ")"
- * | "(" "str.to.re" term_list_ ")"
- * | "(" qual_identifier term_list_ ")"
- * | qual_identifier
- * | spec_constant
- */
 
+/* start terms */
 class Term : public Visitable {
 public:
 	Term();
@@ -164,6 +155,8 @@ public:
 	virtual void visit_children(Visitor_ptr);
 
 	std::string name;
+
+	friend std::ostream& operator<<(std::ostream& os, const Term& term);
 };
 
 class And : public Term {
@@ -427,6 +420,22 @@ public:
 	Term_ptr search_term;
 	Term_ptr replace_term;
 };
+
+
+class Count : public Term {
+public:
+	Count(Term_ptr, Term_ptr);
+	Count(const Count&);
+	virtual Count_ptr clone() const;
+	virtual ~Count();
+
+	virtual void accept(Visitor_ptr);
+	virtual void visit_children(Visitor_ptr);
+
+	Term_ptr bound_term;
+	Term_ptr subject_term;
+};
+
 
 class Ite : public Term {
 public:
@@ -732,15 +741,11 @@ public:
 	static const std::string SYMBOL;
 	static const std::string REGEX;
 
+	friend std::ostream& operator<<(std::ostream& os, const Primitive& primitive);
 private:
 	std::string data;
 	std::string type;
 };
-
-
-// helper functions
-void debug_deallocation(std::string msg);
-
 
 } /* namespace SMT */
 } /* namespace Vlab */
