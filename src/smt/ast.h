@@ -41,20 +41,41 @@ public:
 class Command : public Visitable {
 public:
 	Command();
-	Command(type_CMD);
+	Command(std::string name);
 	Command(const Command&);
 	virtual Command_ptr clone() const;
 	virtual ~Command();
-	virtual std::string str();
-	type_CMD getType();
+	virtual std::string str() const;
+	std::string getType() const;
 
 	virtual void accept(Visitor_ptr);
 	virtual void visit_children(Visitor_ptr);
 
 	friend std::ostream& operator<<(std::ostream& os, const Command& command);
 
+	static const std::string NONE;
+	static const std::string SET_LOGIC;
+	static const std::string SET_OPTION;
+	static const std::string SET_INFO;
+	static const std::string DECLARE_SORT;
+	static const std::string DEFINE_SORT;
+	static const std::string DECLARE_FUN;
+	static const std::string DEFINE_FUN;
+	static const std::string PUSH;
+	static const std::string POP;
+	static const std::string ASSERT;
+	static const std::string CHECK_SAT;
+	static const std::string CHECK_SAT_AND_COUNT;
+	static const std::string GET_ASSERTIONS;
+	static const std::string GET_PROOF;
+	static const std::string GET_UNSAT_CORE;
+	static const std::string GET_VALUE;
+	static const std::string GET_ASSIGNMENT;
+	static const std::string GET_OPTION;
+	static const std::string GET_INFO;
+	static const std::string EXIT;
 private:
-	type_CMD type;
+	const std::string type;
 
 };
 
@@ -149,7 +170,7 @@ public:
 	virtual Term_ptr clone() const;
 	virtual ~Term();
 
-	virtual std::string str();
+	virtual std::string str() const;
 
 	virtual void accept(Visitor_ptr);
 	virtual void visit_children(Visitor_ptr);

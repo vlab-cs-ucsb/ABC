@@ -30,32 +30,50 @@ void Script::accept(Visitor_ptr v) { v->visitScript(this); }
 
 void Script::visit_children(Visitor_ptr v) { v->visit_list(commands); }
 
+const std::string Command::NONE						= "none";
+const std::string Command::SET_LOGIC				= "set-logic";
+const std::string Command::SET_OPTION				= "set-option";
+const std::string Command::SET_INFO					= "set-info";
+const std::string Command::DECLARE_SORT				= "declare-sort";
+const std::string Command::DEFINE_SORT				= "define-sort";
+const std::string Command::DECLARE_FUN				= "declare-fun";
+const std::string Command::DEFINE_FUN				= "define-fun";
+const std::string Command::PUSH						= "push";
+const std::string Command::POP						= "pop";
+const std::string Command::ASSERT					= "assert";
+const std::string Command::CHECK_SAT				= "check-sat";
+const std::string Command::CHECK_SAT_AND_COUNT		= "check-sat-and-count";
+const std::string Command::GET_ASSERTIONS			= "get-assertions";
+const std::string Command::GET_PROOF				= "get-proof";
+const std::string Command::GET_UNSAT_CORE			= "get-unsat-core";
+const std::string Command::GET_ASSIGNMENT			= "get-assignment";
+const std::string Command::GET_OPTION				= "get-option";
+const std::string Command::GET_INFO					= "get-info";
+const std::string Command::EXIT						= "exit";
 
 Command::Command()
-	: type (type_CMD::NONE) { }
-Command::Command(type_CMD type)
+	: type (Command::NONE) { }
+Command::Command(std::string type)
 	: type (type) { }
-Command::Command(const Command& other) { type = other.type; }
+Command::Command(const Command& other) : type (other.type) { }
 Command_ptr Command::clone() const { return new Command(*this); }
 Command::~Command() { DVLOG(20) << "Command( " << *this << " ) deallocated."; }
-std::string Command::str() {
-	std::stringstream ss;
-	ss << static_cast<int>(type);
-	return ss.str();
+std::string Command::str() const {
+	return type;
 }
-type_CMD Command::getType() { return type; }
+std::string Command::getType() const { return type; }
 void Command::accept(Visitor_ptr v) { v->visitCommand(this); }
 void Command::visit_children(Visitor_ptr v) { }
 
 std::ostream& operator<<(std::ostream& os, const Command& command){
-   return os << enumToStr(command.type);
+   return os << command.str();
 }
 
 
 SetLogic::SetLogic(Primitive_ptr symbol)
-	: Command::Command (type_CMD::SET_LOGIC), symbol (symbol) { }
+	: Command::Command (Command::SET_LOGIC), symbol (symbol) { }
 SetLogic::SetLogic(const SetLogic& other)
-	: Command::Command (type_CMD::SET_LOGIC) {
+	: Command::Command (Command::SET_LOGIC) {
 	symbol = other.symbol->clone();
 }
 SetLogic* SetLogic::clone() const { return new SetLogic(*this); }
@@ -64,9 +82,9 @@ SetLogic::~SetLogic() { delete symbol; }
 void SetLogic::visit_children(Visitor_ptr v) { v->visit(symbol); }
 
 DeclareFun::DeclareFun(Primitive_ptr symbol, SortList_ptr sort_list, Sort_ptr sort)
-	: Command::Command (type_CMD::DECLARE_FUN), symbol (symbol), sort_list (sort_list), sort (sort) { }
+	: Command::Command (Command::DECLARE_FUN), symbol (symbol), sort_list (sort_list), sort (sort) { }
 DeclareFun::DeclareFun(const DeclareFun& other)
-	: Command::Command (type_CMD::DECLARE_FUN) {
+	: Command::Command (Command::DECLARE_FUN) {
 	symbol = other.symbol->clone();
 	if (other.sort_list == nullptr) {
 		sort_list = nullptr;
@@ -92,9 +110,9 @@ void DeclareFun::visit_children(Visitor_ptr v) {
 }
 
 Assert::Assert(Term_ptr term)
-	: Command::Command (type_CMD::ASSERT), term (term) { }
+	: Command::Command (Command::ASSERT), term (term) { }
 Assert::Assert(const Assert& other)
-	: Command::Command (type_CMD::ASSERT) {
+	: Command::Command (Command::ASSERT) {
 	term = other.term->clone();
 }
 Assert_ptr Assert::clone() const { return new Assert(*this); }
@@ -103,11 +121,11 @@ Assert::~Assert() { delete term; }
 void Assert::visit_children(Visitor_ptr v) { v->visit(term); }
 
 CheckSat::CheckSat()
-	: Command::Command (type_CMD::CHECK_SAT), symbol (nullptr) { }
+	: Command::Command (Command::CHECK_SAT), symbol (nullptr) { }
 CheckSat::CheckSat(Primitive_ptr symbol)
-	: Command::Command (type_CMD::CHECK_SAT), symbol (symbol) { }
+	: Command::Command (Command::CHECK_SAT), symbol (symbol) { }
 CheckSat::CheckSat(const CheckSat& other)
-	: Command::Command (type_CMD::CHECK_SAT) {
+	: Command::Command (Command::CHECK_SAT) {
 	symbol = (other.symbol == nullptr) ? other.symbol : other.symbol->clone();
 }
 CheckSat* CheckSat::clone() const {	return new CheckSat(*this); }
@@ -116,16 +134,16 @@ CheckSat::~CheckSat() { delete symbol; }
 void CheckSat::visit_children(Visitor_ptr v) { v->visit(symbol); }
 
 CheckSatAndCount::CheckSatAndCount(Primitive_ptr bound)
-	: Command::Command (type_CMD::CHECK_SAT_AND_COUNT), bound( bound ), symbol (nullptr) {
+	: Command::Command (Command::CHECK_SAT_AND_COUNT), bound( bound ), symbol (nullptr) {
 	CHECK_EQ(bound->getType(), Primitive::NUMERAL) << ": first parameter must be numeral";
 	CHECK_EQ(symbol->getType(), Primitive::SYMBOL) << ": second parameter must be a symbol";
 }
 
 CheckSatAndCount::CheckSatAndCount(Primitive_ptr bound, Primitive_ptr symbol)
-	: Command::Command (type_CMD::CHECK_SAT_AND_COUNT), bound( bound ), symbol (symbol) { }
+	: Command::Command (Command::CHECK_SAT_AND_COUNT), bound( bound ), symbol (symbol) { }
 
 CheckSatAndCount::CheckSatAndCount(const CheckSatAndCount& other)
-	: Command::Command(type_CMD::CHECK_SAT_AND_COUNT) {
+	: Command::Command(Command::CHECK_SAT_AND_COUNT) {
 	bound = other.bound->clone();
 	symbol = (other.symbol == nullptr) ? other.symbol : other.symbol->clone();
 }
@@ -146,14 +164,14 @@ Term::Term(const Term& other) {	name = other.name; }
 Term_ptr Term::clone() const { return new Term(*this); }
 Term::~Term() { DVLOG(20) << "Term( " << *this << " ) deallocated."; }
 
-std::string Term::str() { return name; }
+std::string Term::str() const { return name; }
 
 void Term::accept(Visitor_ptr v) { v->visitTerm(this); }
 void Term::visit_children(Visitor_ptr v) {
-	throw new std::runtime_error("Unhandled term production rule!");
+	LOG(FATAL) << "Unhandled term production rule!";
 }
 std::ostream& operator<<(std::ostream& os, const Term& term){
-   return os << term.name;
+   return os << term.str();
 }
 
 And::And(TermList_ptr term_list)
