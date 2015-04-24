@@ -75,6 +75,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "ends"              { return Vlab::Parser::make_ENDS            (loc);  }
 "indexof"           { return Vlab::Parser::make_INDEXOF         (loc);  }
 "replace"           { return Vlab::Parser::make_REPLACE         (loc);  }
+"count"             { return Vlab::Parser::make_COUNT           (loc);  }  
 "ite"               { return Vlab::Parser::make_ITE             (loc);  }
 "re.++"             { return Vlab::Parser::make_RE_CONCAT       (loc);  }
 "re.or"             { return Vlab::Parser::make_OR              (loc);  }
@@ -89,6 +90,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
                  
 "assert"            { return Vlab::Parser::make_ASSERT          (loc);  }
 "check-sat"         { return Vlab::Parser::make_CHECK_SAT       (loc);  }
+"check-sat-and-count" { return Vlab::Parser::make_CHECK_SAT_AND_COUNT       (loc);  }
 "declare-fun"       { return Vlab::Parser::make_DECLARE_FUN     (loc);  }
 "declare-sort"  		{ return Vlab::Parser::make_DECLARE_SORT    (loc); 	}
 "define-fun"        { return Vlab::Parser::make_DEFINE_FUN      (loc);  }

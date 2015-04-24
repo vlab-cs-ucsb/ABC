@@ -40,43 +40,51 @@ public:
 
 class Command : public Visitable {
 public:
+	enum class Type : int {
+		NONE = 0, SET_LOGIC, SET_OPTION, SET_INFO, DECLARE_SORT, DEFINE_SORT, DECLARE_FUN,
+				DEFINE_FUN,	PUSH, POP, ASSERT, CHECK_SAT, CHECK_SAT_AND_COUNT, GET_ASSERTIONS,
+				GET_PROOF, GET_UNSAT_CORE, GET_VALUE, GET_ASSIGNMENT, GET_OPTION, GET_INFO, EXIT
+	};
+
 	Command();
-	Command(std::string name);
+	Command(Command::Type type);
 	Command(const Command&);
 	virtual Command_ptr clone() const;
 	virtual ~Command();
 	virtual std::string str() const;
-	std::string getType() const;
+	Command::Type getType() const;
 
 	virtual void accept(Visitor_ptr);
 	virtual void visit_children(Visitor_ptr);
 
+	class Name {
+	public:
+		static const std::string NONE;
+		static const std::string SET_LOGIC;
+		static const std::string SET_OPTION;
+		static const std::string SET_INFO;
+		static const std::string DECLARE_SORT;
+		static const std::string DEFINE_SORT;
+		static const std::string DECLARE_FUN;
+		static const std::string DEFINE_FUN;
+		static const std::string PUSH;
+		static const std::string POP;
+		static const std::string ASSERT;
+		static const std::string CHECK_SAT;
+		static const std::string CHECK_SAT_AND_COUNT;
+		static const std::string GET_ASSERTIONS;
+		static const std::string GET_PROOF;
+		static const std::string GET_UNSAT_CORE;
+		static const std::string GET_VALUE;
+		static const std::string GET_ASSIGNMENT;
+		static const std::string GET_OPTION;
+		static const std::string GET_INFO;
+		static const std::string EXIT;
+	};
+
 	friend std::ostream& operator<<(std::ostream& os, const Command& command);
-
-	static const std::string NONE;
-	static const std::string SET_LOGIC;
-	static const std::string SET_OPTION;
-	static const std::string SET_INFO;
-	static const std::string DECLARE_SORT;
-	static const std::string DEFINE_SORT;
-	static const std::string DECLARE_FUN;
-	static const std::string DEFINE_FUN;
-	static const std::string PUSH;
-	static const std::string POP;
-	static const std::string ASSERT;
-	static const std::string CHECK_SAT;
-	static const std::string CHECK_SAT_AND_COUNT;
-	static const std::string GET_ASSERTIONS;
-	static const std::string GET_PROOF;
-	static const std::string GET_UNSAT_CORE;
-	static const std::string GET_VALUE;
-	static const std::string GET_ASSIGNMENT;
-	static const std::string GET_OPTION;
-	static const std::string GET_INFO;
-	static const std::string EXIT;
-private:
-	const std::string type;
-
+protected:
+	const Command::Type type;
 };
 
 /**
@@ -164,20 +172,80 @@ public:
 /* start terms */
 class Term : public Visitable {
 public:
+	enum class Type : int {
+		NONE = 0, EXCLAMATION, EXISTS, FORALL, LET, TERM, AND, OR, NOT, UMINUS, MINUS, PLUS, EQ, GT, GE, LT, LE, CONCAT, IN,
+				LEN, CONTAINS, BEGINS, ENDS, INDEXOF, REPLACE, COUNT, ITE, RECONCAT,
+				TOREGEX, UNKNOWN, ASQUALIDENTIFIER, QUALIDENTIFIER, TERMCONSTANT
+	};
+
 	Term();
-	Term(std::string name);
+	Term(Term::Type name);
 	Term(const Term&);
 	virtual Term_ptr clone() const;
 	virtual ~Term();
 
 	virtual std::string str() const;
+	Term::Type getType() const;
 
 	virtual void accept(Visitor_ptr);
 	virtual void visit_children(Visitor_ptr);
 
-	std::string name;
+	class Name {
+	public:
+		static const std::string NONE;
+		static const std::string EXCLAMATION;
+		static const std::string EXISTS;
+		static const std::string FORALL;
+		static const std::string LET;
+		static const std::string TERM;
+		static const std::string AND;
+		static const std::string OR;
+		static const std::string NOT;
+		static const std::string UMINUS;
+		static const std::string MINUS;
+		static const std::string PLUS;
+		static const std::string EQ;
+		static const std::string GT;
+		static const std::string GE;
+		static const std::string LT;
+		static const std::string LE;
+		static const std::string CONCAT;
+		static const std::string IN;
+		static const std::string LEN;
+		static const std::string CONTAINS;
+		static const std::string BEGINS;
+		static const std::string ENDS;
+		static const std::string INDEXOF;
+		static const std::string REPLACE;
+		static const std::string COUNT;
+		static const std::string ITE;
+		static const std::string RECONCAT;
+		static const std::string TOREGEX;
+		static const std::string ASQUALIDENTIFIER;
+		static const std::string QUALIDENTIFIER;
+		static const std::string TERMCONSTANT;
+		static const std::string UNKNOWN;
+	};
 
 	friend std::ostream& operator<<(std::ostream& os, const Term& term);
+protected:
+	const Term::Type type;
+};
+
+class Exclamation : public Term {
+
+};
+
+class Exist : public Term {
+
+};
+
+class ForAll : public Term {
+
+};
+
+class Let : public Term {
+
 };
 
 class And : public Term {

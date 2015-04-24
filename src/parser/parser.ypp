@@ -74,6 +74,7 @@
 	BEGINS               "begins"
 	ENDS                 "ends"
 	INDEXOF              "indexof"
+	COUNT                "count"
 	REPLACE              "replace"
 	ITE                  "ite"
   RE_CONCAT            "re.++"
@@ -89,6 +90,7 @@
 	
 	ASSERT               "assert"
 	CHECK_SAT            "check-sat"
+	CHECK_SAT_AND_COUNT  "check-sat-and-count"
 	DECLARE_FUN          "declare-fun"
 	DECLARE_SORT         "declare-sort"
 	DEFINE_FUN           "define-fun"
@@ -168,6 +170,8 @@ command               :
               				| "(" "assert" term ")"                                             { $$ = new smtlib::Assert($3); }
                       | "(" "check-sat" ")"                                               { $$ = new smtlib::CheckSat(); }
                       | "(" "check-sat" SYMBOL ")"                                        { $$ = new smtlib::CheckSat(new smtlib::Primitive($3, smtlib::Primitive::SYMBOL)); }
+                      | "(" "check-sat-and-count" SYMBOL ")"                              { $$ = new smtlib::CheckSatAndCount(new smtlib::Primitive($3, smtlib::Primitive::SYMBOL)); }
+                      | "(" "check-sat-and-count" SYMBOL SYMBOL ")"                       { $$ = new smtlib::CheckSatAndCount(new smtlib::Primitive($3, smtlib::Primitive::SYMBOL), new smtlib::Primitive($4, smtlib::Primitive::SYMBOL)); }
             					| "(" "get-assertions" ")"                                          { $$ = new smtlib::Command(); } 
             					| "(" "get-proof" ")"                                               { $$ = new smtlib::Command(); } 
             					| "(" "get-unsat-core" ")"                                          { $$ = new smtlib::Command(); }   
@@ -232,6 +236,7 @@ term                  :
                       | "(" "ends" term term ")"                                          { $$ = new smtlib::Ends($3, $4); }                                            
                       | "(" "indexof" term term ")"                                       { $$ = new smtlib::IndexOf($3, $4); }
                       | "(" "replace" term term term ")"                                  { $$ = new smtlib::Replace($3, $4, $5); }
+                      | "(" "count" term term ")"                                         { $$ = new smtlib::Count($3, $4); }
                       | "(" "ite" term term term ")"                                      { $$ = new smtlib::Ite($3, $4, $5); }
                       | "(" "re.++" term_list_ ")"                                        { $$ = new smtlib::ReConcat($3); }
                       | "(" "re.or" term_list_ ")"                                        { $$ = new smtlib::Or($3); }

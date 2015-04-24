@@ -30,38 +30,85 @@ void Script::accept(Visitor_ptr v) { v->visitScript(this); }
 
 void Script::visit_children(Visitor_ptr v) { v->visit_list(commands); }
 
-const std::string Command::NONE						= "none";
-const std::string Command::SET_LOGIC				= "set-logic";
-const std::string Command::SET_OPTION				= "set-option";
-const std::string Command::SET_INFO					= "set-info";
-const std::string Command::DECLARE_SORT				= "declare-sort";
-const std::string Command::DEFINE_SORT				= "define-sort";
-const std::string Command::DECLARE_FUN				= "declare-fun";
-const std::string Command::DEFINE_FUN				= "define-fun";
-const std::string Command::PUSH						= "push";
-const std::string Command::POP						= "pop";
-const std::string Command::ASSERT					= "assert";
-const std::string Command::CHECK_SAT				= "check-sat";
-const std::string Command::CHECK_SAT_AND_COUNT		= "check-sat-and-count";
-const std::string Command::GET_ASSERTIONS			= "get-assertions";
-const std::string Command::GET_PROOF				= "get-proof";
-const std::string Command::GET_UNSAT_CORE			= "get-unsat-core";
-const std::string Command::GET_ASSIGNMENT			= "get-assignment";
-const std::string Command::GET_OPTION				= "get-option";
-const std::string Command::GET_INFO					= "get-info";
-const std::string Command::EXIT						= "exit";
+const std::string Command::Name::NONE						= "none";
+const std::string Command::Name::SET_LOGIC					= "set-logic";
+const std::string Command::Name::SET_OPTION					= "set-option";
+const std::string Command::Name::SET_INFO					= "set-info";
+const std::string Command::Name::DECLARE_SORT				= "declare-sort";
+const std::string Command::Name::DEFINE_SORT				= "define-sort";
+const std::string Command::Name::DECLARE_FUN				= "declare-fun";
+const std::string Command::Name::DEFINE_FUN					= "define-fun";
+const std::string Command::Name::PUSH						= "push";
+const std::string Command::Name::POP						= "pop";
+const std::string Command::Name::ASSERT						= "assert";
+const std::string Command::Name::CHECK_SAT					= "check-sat";
+const std::string Command::Name::CHECK_SAT_AND_COUNT		= "check-sat-and-count";
+const std::string Command::Name::GET_ASSERTIONS				= "get-assertions";
+const std::string Command::Name::GET_PROOF					= "get-proof";
+const std::string Command::Name::GET_UNSAT_CORE				= "get-unsat-core";
+const std::string Command::Name::GET_VALUE					= "get-value";
+const std::string Command::Name::GET_ASSIGNMENT				= "get-assignment";
+const std::string Command::Name::GET_OPTION					= "get-option";
+const std::string Command::Name::GET_INFO					= "get-info";
+const std::string Command::Name::EXIT						= "exit";
 
 Command::Command()
-	: type (Command::NONE) { }
-Command::Command(std::string type)
+	: type (Command::Type::NONE) { }
+Command::Command(Command::Type type)
 	: type (type) { }
 Command::Command(const Command& other) : type (other.type) { }
 Command_ptr Command::clone() const { return new Command(*this); }
 Command::~Command() { DVLOG(20) << "Command( " << *this << " ) deallocated."; }
 std::string Command::str() const {
-	return type;
+	switch (type) {
+		case Command::Type::NONE:
+			return Command::Name::NONE;
+		case Command::Type::SET_LOGIC:
+			return Command::Name::SET_LOGIC;
+		case Command::Type::SET_OPTION:
+			return Command::Name::SET_OPTION;
+		case Command::Type::SET_INFO:
+			return Command::Name::SET_INFO;
+		case Command::Type::DECLARE_SORT:
+			return Command::Name::DECLARE_SORT;
+		case Command::Type::DEFINE_SORT:
+			return Command::Name::DEFINE_SORT;
+		case Command::Type::DECLARE_FUN:
+			return Command::Name::DECLARE_FUN;
+		case Command::Type::DEFINE_FUN:
+			return Command::Name::DEFINE_FUN;
+		case Command::Type::PUSH:
+			return Command::Name::PUSH;
+		case Command::Type::POP:
+			return Command::Name::POP;
+		case Command::Type::ASSERT:
+			return Command::Name::ASSERT;
+		case Command::Type::CHECK_SAT:
+			return Command::Name::CHECK_SAT;
+		case Command::Type::CHECK_SAT_AND_COUNT:
+			return Command::Name::CHECK_SAT_AND_COUNT;
+		case Command::Type::GET_ASSERTIONS:
+			return Command::Name::GET_ASSERTIONS;
+		case Command::Type::GET_PROOF:
+			return Command::Name::GET_PROOF;
+		case Command::Type::GET_UNSAT_CORE:
+			return Command::Name::GET_UNSAT_CORE;
+		case Command::Type::GET_VALUE:
+			return Command::Name::GET_VALUE;
+		case Command::Type::GET_ASSIGNMENT:
+			return Command::Name::GET_ASSIGNMENT;
+		case Command::Type::GET_OPTION:
+			return Command::Name::GET_OPTION;
+		case Command::Type::GET_INFO:
+			return Command::Name::GET_INFO;
+		case Command::Type::EXIT:
+			return Command::Name::EXIT;
+		default:
+			LOG(FATAL) << "Unknown command!";
+			return "";
+	}
 }
-std::string Command::getType() const { return type; }
+Command::Type Command::getType() const { return type; }
 void Command::accept(Visitor_ptr v) { v->visitCommand(this); }
 void Command::visit_children(Visitor_ptr v) { }
 
@@ -71,9 +118,9 @@ std::ostream& operator<<(std::ostream& os, const Command& command){
 
 
 SetLogic::SetLogic(Primitive_ptr symbol)
-	: Command::Command (Command::SET_LOGIC), symbol (symbol) { }
+	: Command (Command::Type::SET_LOGIC), symbol (symbol) { }
 SetLogic::SetLogic(const SetLogic& other)
-	: Command::Command (Command::SET_LOGIC) {
+	: Command (other.type) {
 	symbol = other.symbol->clone();
 }
 SetLogic* SetLogic::clone() const { return new SetLogic(*this); }
@@ -82,9 +129,9 @@ SetLogic::~SetLogic() { delete symbol; }
 void SetLogic::visit_children(Visitor_ptr v) { v->visit(symbol); }
 
 DeclareFun::DeclareFun(Primitive_ptr symbol, SortList_ptr sort_list, Sort_ptr sort)
-	: Command::Command (Command::DECLARE_FUN), symbol (symbol), sort_list (sort_list), sort (sort) { }
+	: Command (Command::Type::DECLARE_FUN), symbol (symbol), sort_list (sort_list), sort (sort) { }
 DeclareFun::DeclareFun(const DeclareFun& other)
-	: Command::Command (Command::DECLARE_FUN) {
+	: Command (other.type) {
 	symbol = other.symbol->clone();
 	if (other.sort_list == nullptr) {
 		sort_list = nullptr;
@@ -110,9 +157,9 @@ void DeclareFun::visit_children(Visitor_ptr v) {
 }
 
 Assert::Assert(Term_ptr term)
-	: Command::Command (Command::ASSERT), term (term) { }
+	: Command (Command::Type::ASSERT), term (term) { }
 Assert::Assert(const Assert& other)
-	: Command::Command (Command::ASSERT) {
+	: Command (other.type) {
 	term = other.term->clone();
 }
 Assert_ptr Assert::clone() const { return new Assert(*this); }
@@ -121,11 +168,11 @@ Assert::~Assert() { delete term; }
 void Assert::visit_children(Visitor_ptr v) { v->visit(term); }
 
 CheckSat::CheckSat()
-	: Command::Command (Command::CHECK_SAT), symbol (nullptr) { }
+	: Command (Command::Type::CHECK_SAT), symbol (nullptr) { }
 CheckSat::CheckSat(Primitive_ptr symbol)
-	: Command::Command (Command::CHECK_SAT), symbol (symbol) { }
+	: Command (Command::Type::CHECK_SAT), symbol (symbol) { }
 CheckSat::CheckSat(const CheckSat& other)
-	: Command::Command (Command::CHECK_SAT) {
+	: Command (other.type) {
 	symbol = (other.symbol == nullptr) ? other.symbol : other.symbol->clone();
 }
 CheckSat* CheckSat::clone() const {	return new CheckSat(*this); }
@@ -134,16 +181,16 @@ CheckSat::~CheckSat() { delete symbol; }
 void CheckSat::visit_children(Visitor_ptr v) { v->visit(symbol); }
 
 CheckSatAndCount::CheckSatAndCount(Primitive_ptr bound)
-	: Command::Command (Command::CHECK_SAT_AND_COUNT), bound( bound ), symbol (nullptr) {
+	: Command (Command::Type::CHECK_SAT_AND_COUNT), bound( bound ), symbol (nullptr) {
 	CHECK_EQ(bound->getType(), Primitive::NUMERAL) << ": first parameter must be numeral";
 	CHECK_EQ(symbol->getType(), Primitive::SYMBOL) << ": second parameter must be a symbol";
 }
 
 CheckSatAndCount::CheckSatAndCount(Primitive_ptr bound, Primitive_ptr symbol)
-	: Command::Command (Command::CHECK_SAT_AND_COUNT), bound( bound ), symbol (symbol) { }
+	: Command (Command::Type::CHECK_SAT_AND_COUNT), bound( bound ), symbol (symbol) { }
 
 CheckSatAndCount::CheckSatAndCount(const CheckSatAndCount& other)
-	: Command::Command(Command::CHECK_SAT_AND_COUNT) {
+	: Command(other.type) {
 	bound = other.bound->clone();
 	symbol = (other.symbol == nullptr) ? other.symbol : other.symbol->clone();
 }
@@ -157,27 +204,137 @@ void CheckSatAndCount::visit_children(Visitor_ptr v) { v->visit(bound); v->visit
 /* ends commands */
 
 /* Terms */
-Term::Term() { name = "Term"; }
-Term::Term(std::string name)
-	: name (name) { }
-Term::Term(const Term& other) {	name = other.name; }
+
+const std::string Term::Name::NONE						= "none";
+const std::string Term::Name::EXCLAMATION				= "!";
+const std::string Term::Name::EXISTS					= "exists";
+const std::string Term::Name::FORALL					= "forall";
+const std::string Term::Name::LET						= "let";
+const std::string Term::Name::TERM 						= "term";
+const std::string Term::Name::AND						= "and";
+const std::string Term::Name::OR						= "or";
+const std::string Term::Name::NOT						= "not";
+const std::string Term::Name::UMINUS					= "uminus";
+const std::string Term::Name::MINUS						= "-";
+const std::string Term::Name::PLUS						= "+";
+const std::string Term::Name::EQ						= "=";
+const std::string Term::Name::GT						= ">";
+const std::string Term::Name::GE						= ">=";
+const std::string Term::Name::LT						= "<";
+const std::string Term::Name::LE						= "<=";
+const std::string Term::Name::CONCAT					= "concat";
+const std::string Term::Name::IN						= "in";
+const std::string Term::Name::LEN						= "len";
+const std::string Term::Name::CONTAINS					= "contains";
+const std::string Term::Name::BEGINS					= "begins";
+const std::string Term::Name::ENDS						= "ends";
+const std::string Term::Name::INDEXOF					= "indexof";
+const std::string Term::Name::REPLACE					= "replace";
+const std::string Term::Name::COUNT						= "count";
+const std::string Term::Name::ITE						= "ite";
+const std::string Term::Name::RECONCAT					= "re.++";
+const std::string Term::Name::TOREGEX					= "str.to.re";
+const std::string Term::Name::ASQUALIDENTIFIER			= "as";
+const std::string Term::Name::QUALIDENTIFIER			= "qual identifier";
+const std::string Term::Name::TERMCONSTANT				= "term constant";
+const std::string Term::Name::UNKNOWN					= "unknown";
+
+
+Term::Term() : type (Term::Type::TERM) { }
+Term::Term(Term::Type type)
+	: type (type) { }
+Term::Term(const Term& other)
+	: type (other.type) { }
 Term_ptr Term::clone() const { return new Term(*this); }
 Term::~Term() { DVLOG(20) << "Term( " << *this << " ) deallocated."; }
 
-std::string Term::str() const { return name; }
+std::string Term::str() const {
+	switch (type) {
+		case Term::Type::NONE:
+			return Term::Name::NONE;
+		case Term::Type::EXCLAMATION:
+			return Term::Name::EXCLAMATION;
+		case Term::Type::EXISTS:
+			return Term::Name::EXISTS;
+		case Term::Type::FORALL:
+			return Term::Name::FORALL;
+		case Term::Type::LET:
+			return Term::Name::LET;
+		case Term::Type::TERM:
+			return Term::Name::TERM;
+		case Term::Type::AND:
+			return Term::Name::AND;
+		case Term::Type::OR:
+			return Term::Name::OR;
+		case Term::Type::UMINUS:
+			return Term::Name::UMINUS;
+		case Term::Type::MINUS:
+			return Term::Name::MINUS;
+		case Term::Type::PLUS:
+			return Term::Name::PLUS;
+		case Term::Type::EQ:
+			return Term::Name::EQ;
+		case Term::Type::GT:
+			return Term::Name::GT;
+		case Term::Type::GE:
+			return Term::Name::GE;
+		case Term::Type::LT:
+			return Term::Name::LT;
+		case Term::Type::LE:
+			return Term::Name::LE;
+		case Term::Type::CONCAT:
+			return Term::Name::CONCAT;
+		case Term::Type::IN:
+			return Term::Name::IN;
+		case Term::Type::LEN:
+			return Term::Name::LEN;
+		case Term::Type::CONTAINS:
+			return Term::Name::CONTAINS;
+		case Term::Type::BEGINS:
+			return Term::Name::BEGINS;
+		case Term::Type::ENDS:
+			return Term::Name::ENDS;
+		case Term::Type::INDEXOF:
+			return Term::Name::INDEXOF;
+		case Term::Type::REPLACE:
+			return Term::Name::REPLACE;
+		case Term::Type::COUNT:
+			return Term::Name::COUNT;
+		case Term::Type::ITE:
+			return Term::Name::ITE;
+		case Term::Type::RECONCAT:
+			return Term::Name::RECONCAT;
+		case Term::Type::TOREGEX:
+			return Term::Name::TOREGEX;
+		case Term::Type::ASQUALIDENTIFIER:
+			return Term::Name::ASQUALIDENTIFIER;
+		case Term::Type::QUALIDENTIFIER:
+			return Term::Name::QUALIDENTIFIER;
+		case Term::Type::TERMCONSTANT:
+			return Term::Name::TERMCONSTANT;
+		case Term::Type::UNKNOWN:
+			return Term::Name::UNKNOWN;
+		default:
+			LOG(FATAL) << "Unknown term!";
+			return "";
+	}
+}
 
 void Term::accept(Visitor_ptr v) { v->visitTerm(this); }
 void Term::visit_children(Visitor_ptr v) {
 	LOG(FATAL) << "Unhandled term production rule!";
 }
+
+Term::Type Term::getType() const { return type; }
+
 std::ostream& operator<<(std::ostream& os, const Term& term){
    return os << term.str();
 }
 
 And::And(TermList_ptr term_list)
-	: Term("and"), term_list (term_list) { }
+	: Term(Term::Type::AND), term_list (term_list) { }
 And::And(const And& other)
-	: Term("and") {
+	: Term(other.type) {
 	term_list = new TermList();
 	for (auto& term : *(other.term_list)) {
 		term_list->push_back(term->clone());
@@ -193,9 +350,9 @@ void And::accept(Visitor_ptr v) { v->visitAnd(this); }
 void And::visit_children(Visitor_ptr v) { v->visit_list(term_list); }
 
 Or::Or(TermList_ptr term_list)
-	: Term("and"), term_list (term_list) { }
+	: Term(Term::Type::OR), term_list (term_list) { }
 Or::Or(const Or& other)
-	: Term("or") {
+	: Term(other.type) {
 	term_list = new TermList();
 	for (auto& term : *(other.term_list)) {
 		term_list->push_back(term->clone());
@@ -212,9 +369,9 @@ void Or::visit_children(Visitor_ptr v) { v->visit_list(term_list); }
 
 
 Not::Not(Term_ptr term)
-	: Term("not"), term (term) { }
+	: Term(Term::Type::NOT), term (term) { }
 Not::Not(const Not& other)
-	: Term("not") {	term = other.term->clone(); }
+	: Term(other.type) {	term = other.term->clone(); }
 Not_ptr Not::clone() const { return new Not(*this); }
 Not::~Not() { delete term; }
 
@@ -222,9 +379,9 @@ void Not::accept(Visitor_ptr v) { v->visitNot(this); }
 void Not::visit_children(Visitor_ptr v) { v->visit(term); }
 
 UMinus::UMinus(Term_ptr term)
-	: Term("-"), term (term) { }
+	: Term(Term::Type::UMINUS), term (term) { }
 UMinus::UMinus(const UMinus& other)
-	: Term("-") { term = other.term->clone(); }
+	: Term(other.type) { term = other.term->clone(); }
 UMinus_ptr UMinus::clone() const { return new UMinus(*this); }
 UMinus::~UMinus() { delete term; }
 
@@ -232,9 +389,9 @@ void UMinus::accept(Visitor_ptr v) { v->visitUMinus(this); }
 void UMinus::visit_children(Visitor_ptr v) { v->visit(term); }
 
 Minus::Minus(Term_ptr left_term, Term_ptr right_term)
-	: Term("-"), left_term (left_term), right_term (right_term) { }
+	: Term(Term::Type::MINUS), left_term (left_term), right_term (right_term) { }
 Minus::Minus(const Minus& other)
-	: Term("-") {
+	: Term(other.type) {
 	left_term = other.left_term->clone();
 	right_term = other.right_term->clone();
 }
@@ -248,9 +405,9 @@ void Minus::visit_children(Visitor_ptr v) {
 }
 
 Plus::Plus(Term_ptr left_term, Term_ptr right_term)
-	: Term("+"), left_term (left_term), right_term (right_term) { }
+	: Term(Term::Type::PLUS), left_term (left_term), right_term (right_term) { }
 Plus::Plus(const Plus& other)
-	: Term("+") {
+	: Term(other.type) {
 	left_term = other.left_term->clone();
 	right_term = other.right_term->clone();
 }
@@ -264,9 +421,9 @@ void Plus::visit_children(Visitor_ptr v) {
 }
 
 Eq::Eq(Term_ptr left_term, Term_ptr right_term)
-	: Term("="), left_term (left_term), right_term (right_term) { }
+	: Term(Term::Type::EQ), left_term (left_term), right_term (right_term) { }
 Eq::Eq(const Eq& other)
-	: Term("=") {
+	: Term(other.type) {
 	left_term = other.left_term->clone();
 	right_term = other.right_term->clone();
 }
@@ -275,16 +432,14 @@ Eq::~Eq() { delete left_term; delete right_term; }
 
 void Eq::accept(Visitor_ptr v) { v->visitEq(this); }
 void Eq::visit_children(Visitor_ptr v) {
-//	std::cout << "eq left term: " + left_term->str() << std::endl;
-//	std::cout << "eq right term: " + right_term->str() << std::endl;
 	v->visit(left_term);
 	v->visit(right_term);
 }
 
 Gt::Gt(Term_ptr left_term, Term_ptr right_term)
-	: Term(">"), left_term (left_term), right_term (right_term) { }
+	: Term(Term::Type::GT), left_term (left_term), right_term (right_term) { }
 Gt::Gt(const Gt& other)
-	: Term(">") {
+	: Term(other.type) {
 	left_term = other.left_term->clone();
 	right_term = other.right_term->clone();
 }
@@ -299,9 +454,9 @@ void Gt::visit_children(Visitor_ptr v) {
 }
 
 Ge::Ge(Term_ptr left_term, Term_ptr right_term)
-	: Term(">="), left_term (left_term), right_term (right_term) { }
+	: Term(Term::Type::GE), left_term (left_term), right_term (right_term) { }
 Ge::Ge(const Ge& other)
-	: Term(">=") {
+	: Term(other.type) {
 	left_term = other.left_term->clone();
 	right_term = other.right_term->clone();
 }
@@ -315,9 +470,9 @@ void Ge::visit_children(Visitor_ptr v) {
 }
 
 Lt::Lt(Term_ptr left_term, Term_ptr right_term)
-	: Term("<"), left_term (left_term), right_term (right_term) { }
+	: Term(Term::Type::LT), left_term (left_term), right_term (right_term) { }
 Lt::Lt(const Lt& other)
-	: Term("<") {
+	: Term(other.type) {
 	left_term = other.left_term->clone();
 	right_term = other.right_term->clone();
 }
@@ -331,9 +486,9 @@ void Lt::visit_children(Visitor_ptr v) {
 }
 
 Le::Le(Term_ptr left_term, Term_ptr right_term)
-	: Term("<="), left_term (left_term), right_term (right_term) { }
+	: Term(Term::Type::LE), left_term (left_term), right_term (right_term) { }
 Le::Le(const Le& other)
-	: Term("<=") {
+	: Term(other.type) {
 	left_term = other.left_term->clone();
 	right_term = other.right_term->clone();
 }
@@ -347,9 +502,9 @@ void Le::visit_children(Visitor_ptr v) {
 }
 
 Concat::Concat(TermList_ptr term_list)
-	: Term("concat"), term_list (term_list) { }
+	: Term(Term::Type::CONCAT), term_list (term_list) { }
 Concat::Concat(const Concat& other)
-	: Term("concat") {
+	: Term(other.type) {
 	term_list = new TermList();
 	for (auto& term : *(other.term_list)) {
 		term_list->push_back(term->clone());
@@ -365,9 +520,9 @@ void Concat::accept(Visitor_ptr v) { v->visitConcat(this); }
 void Concat::visit_children(Visitor_ptr v) { v->visit_list(term_list); }
 
 In::In(Term_ptr left_term, Term_ptr right_term)
-	: Term("in"), left_term (left_term), right_term (right_term) { }
+	: Term(Term::Type::IN), left_term (left_term), right_term (right_term) { }
 In::In(const In& other)
-	: Term("in") {
+	: Term(other.type) {
 	left_term = other.left_term->clone();
 	right_term = other.right_term->clone();
 }
@@ -381,9 +536,9 @@ void In::visit_children(Visitor_ptr v) {
 }
 
 Len::Len(Term_ptr term)
-	: Term("str.len"), term (term) { }
+	: Term(Term::Type::LEN), term (term) { }
 Len::Len(const Len& other)
-	: Term("str.len") { term = other.term->clone(); }
+	: Term(other.type) { term = other.term->clone(); }
 Len_ptr Len::clone() const { return new Len(*this); }
 Len::~Len() { delete term; }
 
@@ -391,10 +546,10 @@ void Len::accept(Visitor_ptr v) { v->visitLen(this); }
 void Len::visit_children(Visitor_ptr v) { v->visit(term); }
 
 Contains::Contains(Term_ptr subject_term, Term_ptr search_term)
-	: Term("contains"), subject_term (subject_term), search_term (search_term) { }
+	: Term(Term::Type::CONTAINS), subject_term (subject_term), search_term (search_term) { }
 
 Contains::Contains(const Contains& other)
-	: Term ("contains") {
+	: Term (other.type) {
 	subject_term = other.subject_term->clone();
 	search_term = other.search_term->clone();
 }
@@ -410,10 +565,10 @@ void Contains::visit_children(Visitor_ptr v) {
 }
 
 Begins::Begins(Term_ptr subject_term, Term_ptr search_term)
-	: Term("begins"), subject_term (subject_term), search_term (search_term) { }
+	: Term(Term::Type::BEGINS), subject_term (subject_term), search_term (search_term) { }
 
 Begins::Begins(const Begins& other)
-	: Term ("begins") {
+	: Term (other.type) {
 	subject_term = other.subject_term->clone();
 	search_term = other.search_term->clone();
 }
@@ -428,10 +583,10 @@ void Begins::visit_children(Visitor_ptr v) {
 }
 
 Ends::Ends(Term_ptr subject_term, Term_ptr search_term)
-	: Term("ends"), subject_term (subject_term), search_term (search_term) { }
+	: Term(Term::Type::ENDS), subject_term (subject_term), search_term (search_term) { }
 
 Ends::Ends(const Ends& other)
-	: Term ("ends") {
+	: Term (other.type) {
 	subject_term = other.subject_term->clone();
 	search_term = other.search_term->clone();
 }
@@ -447,10 +602,10 @@ void Ends::visit_children(Visitor_ptr v) {
 }
 
 IndexOf::IndexOf(Term_ptr subject_term, Term_ptr search_term)
-	: Term("indexof"), subject_term (subject_term), search_term (search_term) { }
+	: Term(Term::Type::INDEXOF), subject_term (subject_term), search_term (search_term) { }
 
 IndexOf::IndexOf(const IndexOf& other)
-	: Term ("indexof") {
+	: Term (other.type) {
 	subject_term = other.subject_term->clone();
 	search_term = other.search_term->clone();
 }
@@ -466,10 +621,10 @@ void IndexOf::visit_children(Visitor_ptr v) {
 }
 
 Replace::Replace(Term_ptr subject_term, Term_ptr search_term, Term_ptr replace_term)
-	: Term("replace"), subject_term (subject_term), search_term (search_term), replace_term (replace_term) { }
+	: Term(Term::Type::REPLACE), subject_term (subject_term), search_term (search_term), replace_term (replace_term) { }
 
 Replace::Replace(const Replace& other)
-	: Term ("replace") {
+	: Term (other.type) {
 	subject_term = other.subject_term->clone();
 	search_term = other.search_term->clone();
 	replace_term = other.replace_term->clone();
@@ -486,10 +641,10 @@ void Replace::visit_children(Visitor_ptr v) {
 }
 
 Count::Count(Term_ptr bound_term, Term_ptr subject_term)
-	: Term("count"), bound_term (bound_term), subject_term (subject_term) { }
+	: Term(Term::Type::COUNT), bound_term (bound_term), subject_term (subject_term) { }
 
 Count::Count(const Count& other)
-	: Term("count") {
+	: Term(other.type) {
 	bound_term = other.bound_term->clone();
 	subject_term = other.subject_term->clone();
 }
@@ -505,9 +660,9 @@ void Count::visit_children(Visitor_ptr v) {
 }
 
 Ite::Ite(Term_ptr cond, Term_ptr then_branch, Term_ptr else_branch)
-	: Term("ite"), cond (cond), then_branch (then_branch), else_branch (else_branch) { }
+	: Term(Term::Type::ITE), cond (cond), then_branch (then_branch), else_branch (else_branch) { }
 Ite::Ite(const Ite& other)
-	: Term("ite") {
+	: Term(other.type) {
 	cond = other.cond->clone();
 	then_branch = other.then_branch->clone();
 	else_branch = other.else_branch->clone();
@@ -523,9 +678,9 @@ void Ite::visit_children(Visitor_ptr v) {
 }
 
 ReConcat::ReConcat(TermList_ptr term_list)
-	: Term("re.++"), term_list (term_list) { }
+	: Term(Term::Type::RECONCAT), term_list (term_list) { }
 ReConcat::ReConcat(const ReConcat& other)
-	: Term("re.++") {
+	: Term(other.type) {
 	term_list = new TermList();
 	for (auto& term : *(other.term_list)) {
 		term_list->push_back(term->clone());
@@ -541,9 +696,9 @@ void ReConcat::accept(Visitor_ptr v) { v->visitReConcat(this); }
 void ReConcat::visit_children(Visitor_ptr v) { v->visit_list(term_list); }
 
 ToRegex::ToRegex(Term_ptr term)
-	: Term("str.to.re"), term (term) { }
+	: Term(Term::Type::TOREGEX), term (term) { }
 ToRegex::ToRegex(const ToRegex& other)
-	: Term("str.to.re") { term = other.term->clone(); }
+	: Term(other.type) { term = other.term->clone(); }
 ToRegex_ptr ToRegex::clone() const { return new ToRegex(*this); }
 ToRegex::~ToRegex() { delete term; }
 
@@ -551,9 +706,9 @@ void ToRegex::accept(Visitor_ptr v) { v->visitToRegex(this); }
 void ToRegex::visit_children(Visitor_ptr v) { v->visit(term); }
 
 UnknownTerm::UnknownTerm(Term_ptr term, TermList_ptr term_list)
-	: Term("unknown"), term (term), term_list(term_list) { }
+	: Term(Term::Type::UNKNOWN), term (term), term_list(term_list) { }
 UnknownTerm::UnknownTerm(const UnknownTerm& other)
-	: Term("unknown") {
+	: Term(other.type) {
 	term = other.term->clone();
 	term_list = new TermList();
 	for (auto& term : *(other.term_list)) {
@@ -574,9 +729,9 @@ void UnknownTerm::visit_children(Visitor_ptr v) {
 }
 
 AsQualIdentifier::AsQualIdentifier(Identifier_ptr identifier, Sort_ptr sort)
-	: Term("as"), identifier (identifier), sort (sort) { }
+	: Term(Term::Type::ASQUALIDENTIFIER), identifier (identifier), sort (sort) { }
 AsQualIdentifier::AsQualIdentifier(const AsQualIdentifier& other)
-	: Term("as") {
+	: Term(other.type) {
 	identifier = other.identifier->clone();
 	sort = other.sort->clone();
 }
@@ -593,9 +748,9 @@ void AsQualIdentifier::visit_children(Visitor_ptr v) {
 }
 
 QualIdentifier::QualIdentifier(Identifier_ptr identifier)
-	: Term("QualIdentifier"), identifier (identifier) { }
+	: Term(Term::Type::QUALIDENTIFIER), identifier (identifier) { }
 QualIdentifier::QualIdentifier(const QualIdentifier& other)
-	: Term("QualIdentifier") { identifier = other.identifier->clone(); }
+	: Term(other.type) { identifier = other.identifier->clone(); }
 QualIdentifier_ptr QualIdentifier::clone() const { return new QualIdentifier(*this); }
 QualIdentifier::~QualIdentifier() { delete identifier; }
 
@@ -606,9 +761,9 @@ void QualIdentifier::accept(Visitor_ptr v) { v->visitQualIdentifier(this); }
 void QualIdentifier::visit_children(Visitor_ptr v) { v->visit(identifier); }
 
 TermConstant::TermConstant(Primitive_ptr primitive)
-	: Term("TermConstant"), primitive (primitive) { }
+	: Term(Term::Type::TERMCONSTANT), primitive (primitive) { }
 TermConstant::TermConstant(const TermConstant& other)
-	: Term("TermConstant") { primitive = other.primitive->clone(); }
+	: Term(other.type) { primitive = other.primitive->clone(); }
 TermConstant_ptr TermConstant::clone() const { return new TermConstant(*this); }
 TermConstant::~TermConstant() { delete primitive; }
 
