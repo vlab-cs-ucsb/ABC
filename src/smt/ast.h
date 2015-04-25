@@ -17,7 +17,6 @@
 #include <stdexcept>
 
 #include <glog/logging.h>
-#include "enums.h"
 #include "typedefs.h"
 #include "Visitable.h"
 #include "Visitor.h"
@@ -233,19 +232,59 @@ protected:
 };
 
 class Exclamation : public Term {
+public:
+	Exclamation(Term_ptr, AttributeList_ptr);
+	Exclamation(const Exclamation&);
+	virtual Exclamation_ptr clone() const;
+	virtual ~Exclamation();
 
+	virtual void accept(Visitor_ptr);
+	virtual void visit_children(Visitor_ptr);
+
+	Term_ptr term;
+	AttributeList_ptr attribute_list;
 };
 
-class Exist : public Term {
+class Exists : public Term {
+public:
+	Exists(SortedVarList_ptr, Term_ptr);
+	Exists(const Exists&);
+	virtual Exists_ptr clone() const;
+	virtual ~Exists();
 
+	virtual void accept(Visitor_ptr);
+	virtual void visit_children(Visitor_ptr);
+
+	SortedVarList_ptr sorted_var_list;
+	Term_ptr term;
 };
 
 class ForAll : public Term {
+public:
+	ForAll(SortedVarList_ptr, Term_ptr);
+	ForAll(const ForAll&);
+	virtual ForAll_ptr clone() const;
+	virtual ~ForAll();
 
+	virtual void accept(Visitor_ptr);
+	virtual void visit_children(Visitor_ptr);
+
+	SortedVarList_ptr sorted_var_list;
+	Term_ptr term;
 };
 
 class Let : public Term {
+public:
+	Let(VarBindingList_ptr, Term_ptr);
+	Let(const Let&);
+	virtual Let_ptr clone() const;
+	virtual ~Let();
 
+	virtual void accept(Visitor_ptr);
+	virtual void visit_children(Visitor_ptr);
+
+	VarBindingList_ptr var_binding_list;
+	Term_ptr term;
 };
 
 class And : public Term {
@@ -617,6 +656,45 @@ public:
 	Sort_ptr sort;
 };
 
+class Primitive : public Visitable {
+public:
+	enum class Type : int {
+		NONE = 0, BINARY, DECIMAL, HEXADECIMAL, KEYWORD,
+		NUMERAL, STRING, REGEX, SYMBOL
+	};
+
+	Primitive(const std::string data, const Primitive::Type type);
+	Primitive(const Primitive&);
+	virtual Primitive_ptr clone() const;
+	virtual ~Primitive();
+	virtual void accept(Visitor_ptr);
+	virtual void visit_children(Visitor_ptr);
+	std::string str() const;
+
+	std::string getData() const;
+	void setData(std::string data);
+	Primitive::Type getType() const;
+	void setType(Primitive::Type type);
+
+	class Name {
+	public:
+		static const std::string NONE;
+		static const std::string BINARY;
+		static const std::string DECIMAL;
+		static const std::string HEXADECIMAL;
+		static const std::string KEYWORD;
+		static const std::string NUMERAL;
+		static const std::string STRING;
+		static const std::string REGEX;
+		static const std::string SYMBOL;
+	};
+
+	friend std::ostream& operator<<(std::ostream& os, const Primitive& primitive);
+protected:
+	std::string data;
+	Primitive::Type type;
+};
+
 class TermConstant : public Term {
 public:
 	TermConstant(Primitive_ptr);
@@ -627,8 +705,8 @@ public:
 	virtual void accept(Visitor_ptr);
 	virtual void visit_children(Visitor_ptr);
 
-	std::string getValue();
-	std::string getType();
+	std::string getValue() const;
+	Primitive::Type getValueType() const;
 
 	Primitive_ptr primitive;
 };
@@ -642,7 +720,7 @@ class Sort : public Visitable {
 public:
 	Sort(Identifier_ptr);
 	Sort(Identifier_ptr, SortList_ptr);
-	Sort(VarType_ptr);
+	Sort(TVariable_ptr);
 	Sort(const Sort&);
 	virtual Sort_ptr clone() const;
 	virtual ~Sort();
@@ -652,61 +730,69 @@ public:
 
 	Identifier_ptr identifier;
 	SortList_ptr sort_list;
-	VarType_ptr var_type;
+	TVariable_ptr var_type;
 
 };
 
-class VarType : public Visitable {
+class TVariable : public Visitable {
 public:
-	VarType(type_VAR type);
-	VarType(const VarType&);
-	virtual VarType_ptr clone() const;
-	virtual ~VarType();
+	enum class Type : int {
+		NONE = 0, BOOL, INT, STRING
+	};
 
-	virtual std::string str();
-	virtual type_VAR getType();
+	TVariable(TVariable::Type type);
+	TVariable(const TVariable&);
+	virtual TVariable_ptr clone() const;
+	virtual ~TVariable();
+
+	virtual std::string str() const;
+	virtual TVariable::Type getType() const;
 
 	virtual void accept(Visitor_ptr);
 	virtual void visit_children(Visitor_ptr);
 
-	type_VAR type;
+	class Name {
+	public:
+		static const std::string NONE;
+		static const std::string BOOL;
+		static const std::string INT;
+		static const std::string STRING;
+	};
+
+	friend std::ostream& operator<<(std::ostream& os, const TVariable& t_variable);
+protected:
+	const TVariable::Type type;
 };
 
-class TBool : public VarType {
+class TBool : public TVariable {
 public:
 	TBool();
 	TBool(const TBool&);
 	virtual TBool_ptr clone() const;
 	virtual ~TBool();
 
-	virtual std::string str();
-
 	virtual void accept(Visitor_ptr);
 	virtual void visit_children(Visitor_ptr);
 };
 
-class TInt : public VarType {
+class TInt : public TVariable {
 public:
 	TInt();
 	TInt(const TInt&);
 	virtual TInt_ptr clone() const;
 	virtual ~TInt();
 
-	virtual std::string str();
-
 	virtual void accept(Visitor_ptr);
 	virtual void visit_children(Visitor_ptr);
 
 };
 
-class TString : public VarType {
+class TString : public TVariable {
 public:
 	TString();
 	TString(const TString&);
 	virtual TString_ptr clone() const;
 	virtual ~TString();
-
-	virtual std::string str();
 
 	virtual void accept(Visitor_ptr);
 	virtual void visit_children(Visitor_ptr);
@@ -743,8 +829,6 @@ public:
 
 	Primitive_ptr symbol;
 	Sort_ptr sort;
-
-
 };
 
 /**
@@ -780,7 +864,7 @@ public:
 	virtual void visit_children(Visitor_ptr);
 
 	std::string getName();
-	std::string getType();
+	Primitive::Type getType();
 	bool isSymbolic();
 
 	Primitive_ptr underscore;
@@ -788,52 +872,29 @@ public:
 	NumeralList_ptr numeral_list;
 };
 
-class Variable : public Visitable {
+class Variable : public TVariable {
 public:
-	Variable(Primitive_ptr);
+	Variable(std::string name, Variable::Type);
+	Variable(Primitive_ptr, Variable::Type);
+	Variable(std::string name, Variable::Type, bool is_symbolic);
+	Variable(Primitive_ptr, Variable::Type, bool is_symbolic);
 	Variable(const Variable&);
 	virtual Variable_ptr clone() const;
 	virtual ~Variable();
 
-	std::string getName();
-	type_VAR getType();
+	virtual std::string str() const;
+
+	std::string getName() const;
+	Variable::Type getType() const;
+	bool isSymbolic() const;
+	void setSymbolic(bool is_symbolic);
 
 	virtual void accept(Visitor_ptr);
 	virtual void visit_children(Visitor_ptr);
 
-	Primitive_ptr primitive;
-	type_VAR type;
-};
-
-class Primitive : public Visitable {
-public:
-	Primitive(std::string data, const std::string type);
-	Primitive(const Primitive&);
-	virtual Primitive_ptr clone() const;
-	virtual ~Primitive();
-	virtual void accept(Visitor_ptr);
-	virtual void visit_children(Visitor_ptr);
-	std::string str() const;
-
-	std::string getData();
-	void setData(std::string data);
-	std::string getType();
-	void setType(std::string type);
-
-
-	static const std::string BINARY;
-	static const std::string DECIMAL;
-	static const std::string HEXADECIMAL;
-	static const std::string KEYWORD;
-	static const std::string NUMERAL;
-	static const std::string STRING;
-	static const std::string SYMBOL;
-	static const std::string REGEX;
-
-	friend std::ostream& operator<<(std::ostream& os, const Primitive& primitive);
-private:
-	std::string data;
-	std::string type;
+protected:
+	std::string name;
+	bool is_symbolic;
 };
 
 } /* namespace SMT */

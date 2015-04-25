@@ -4,7 +4,6 @@ AM_LDFLAGS = -L$(top_srcdir)/external/glog -lglog
 noinst_LTLIBRARIES = libabcparser.la
 libabcparser_la_SOURCES = \
 	../smt/ast.cpp \
-	../smt/enums.h \
 	../smt/typedefs.h \
 	../smt/Visitable.h \
 	../smt/Visitor.h \

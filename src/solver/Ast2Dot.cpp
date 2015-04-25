@@ -84,6 +84,14 @@ void Ast2Dot::visitVarBinding(VarBinding_ptr var_binding) { draw("VarBinding", v
 
 void Ast2Dot::visitIdentifier(Identifier_ptr identifier) { draw("Identifier", identifier); }
 
+void Ast2Dot::visitExclamation(Exclamation_ptr exclamation_term) { visitTerm(exclamation_term); }
+
+void Ast2Dot::visitExists(Exists_ptr exists_term) { visitTerm(exists_term); }
+
+void Ast2Dot::visitForAll(ForAll_ptr for_all_term) { visitTerm(for_all_term); }
+
+void Ast2Dot::visitLet(Let_ptr let_term) { visitTerm(let_term); }
+
 void Ast2Dot::visitAnd(And_ptr and_term) { visitTerm(and_term); }
 
 void Ast2Dot::visitOr(Or_ptr or_term) { visitTerm(or_term); }
@@ -138,7 +146,7 @@ void Ast2Dot::visitQualIdentifier(QualIdentifier_ptr qi_term) { visitTerm(qi_ter
 
 void Ast2Dot::visitTermConstant(TermConstant_ptr term_constant) { visitTerm(term_constant); }
 
-void Ast2Dot::visitVarType(VarType_ptr t_var) { draw_terminal(t_var->str()); }
+void Ast2Dot::visitTVariable(TVariable_ptr t_variable) { draw_terminal(t_variable->str()); }
 
 void Ast2Dot::visitTBool(TBool_ptr t_bool) { draw_terminal(t_bool->str()); }
 
@@ -148,7 +156,8 @@ void Ast2Dot::visitTString(TString_ptr t_string) { draw_terminal(t_string->str()
 
 void Ast2Dot::visitPrimitive(Primitive_ptr primitive) {	draw_terminal(primitive->str()); }
 
-void Ast2Dot::visitVariable(Variable_ptr var) { draw("Variable",var); }
+void Ast2Dot::visitVariable(Variable_ptr variable) { draw_terminal(variable->str()); }
 
 } /* namespace SMT */
 } /* namespace Vlab */
+

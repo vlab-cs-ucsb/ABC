@@ -140,7 +140,7 @@
 
 %type <smtlib::Primitive_ptr> spec_constant
 %type <smtlib::Term_ptr> term_constant
-%type <smtlib::VarType_ptr> var_type
+%type <smtlib::TVariable_ptr> t_variable
 
 %printer { yyoutput << $$; } <std::string>;
 
@@ -158,20 +158,20 @@ command_list          :
                       ;
                       
 command               :
-                        "(" "set-logic" SYMBOL ")"                                        { $$ = new smtlib::SetLogic(new smtlib::Primitive($3, smtlib::Primitive::SYMBOL)); }
+                        "(" "set-logic" SYMBOL ")"                                        { $$ = new smtlib::SetLogic(new smtlib::Primitive($3, smtlib::Primitive::Type::SYMBOL)); }
                       | "(" "set-option" option ")"                                       { $$ = new smtlib::Command(); }
                       | "(" "set-info" attribute ")"                                      { $$ = new smtlib::Command(); }
                       | "(" "declare-sort" SYMBOL NUMERAL ")"                             { $$ = new smtlib::Command(); }
                       | "(" "define-sort" SYMBOL "(" symbol_list ")" sort ")"             { $$ = new smtlib::Command(); }
-                      | "(" "declare-fun" SYMBOL "(" sort_list ")" sort ")"               { $$ = new smtlib::DeclareFun(new smtlib::Primitive($3, smtlib::Primitive::SYMBOL), $5, $7);}
+                      | "(" "declare-fun" SYMBOL "(" sort_list ")" sort ")"               { $$ = new smtlib::DeclareFun(new smtlib::Primitive($3, smtlib::Primitive::Type::SYMBOL), $5, $7);}
                       | "(" "define-fun" SYMBOL "(" sorted_var_list ")" sort term ")"     { $$ = new smtlib::Command(); }                
               				| "(" "push" NUMERAL ")"                                            { $$ = new smtlib::Command(); }
               				| "(" "pop" NUMERAL ")"                                             { $$ = new smtlib::Command(); }
               				| "(" "assert" term ")"                                             { $$ = new smtlib::Assert($3); }
                       | "(" "check-sat" ")"                                               { $$ = new smtlib::CheckSat(); }
-                      | "(" "check-sat" SYMBOL ")"                                        { $$ = new smtlib::CheckSat(new smtlib::Primitive($3, smtlib::Primitive::SYMBOL)); }
-                      | "(" "check-sat-and-count" SYMBOL ")"                              { $$ = new smtlib::CheckSatAndCount(new smtlib::Primitive($3, smtlib::Primitive::SYMBOL)); }
-                      | "(" "check-sat-and-count" SYMBOL SYMBOL ")"                       { $$ = new smtlib::CheckSatAndCount(new smtlib::Primitive($3, smtlib::Primitive::SYMBOL), new smtlib::Primitive($4, smtlib::Primitive::SYMBOL)); }
+                      | "(" "check-sat" SYMBOL ")"                                        { $$ = new smtlib::CheckSat(new smtlib::Primitive($3, smtlib::Primitive::Type::SYMBOL)); }
+                      | "(" "check-sat-and-count" SYMBOL ")"                              { $$ = new smtlib::CheckSatAndCount(new smtlib::Primitive($3, smtlib::Primitive::Type::SYMBOL)); }
+                      | "(" "check-sat-and-count" SYMBOL SYMBOL ")"                       { $$ = new smtlib::CheckSatAndCount(new smtlib::Primitive($3, smtlib::Primitive::Type::SYMBOL), new smtlib::Primitive($4, smtlib::Primitive::Type::SYMBOL)); }
             					| "(" "get-assertions" ")"                                          { $$ = new smtlib::Command(); } 
             					| "(" "get-proof" ")"                                               { $$ = new smtlib::Command(); } 
             					| "(" "get-unsat-core" ")"                                          { $$ = new smtlib::Command(); }   
@@ -214,10 +214,10 @@ term_list_            :
                       ;
 
 term                  :
-                        "(" "!" term attribute_list_ ")"                                  { $$ = new smtlib::Term("!"); }
-                      | "(" "exists" "(" sorted_var_list_ ")" term ")"                    { $$ = new smtlib::Term("exists"); }
-                      | "(" "forall" "(" sorted_var_list_ ")" term ")"                    { $$ = new smtlib::Term("forall"); }
-                      | "(" "let" "(" var_binding_list_ ")" term ")"                      { $$ = new smtlib::Term("let"); }
+                        "(" "!" term attribute_list_ ")"                                  { $$ = new smtlib::Exclamation($3, $4); }
+                      | "(" "exists" "(" sorted_var_list_ ")" term ")"                    { $$ = new smtlib::Exists($4, $6); }
+                      | "(" "forall" "(" sorted_var_list_ ")" term ")"                    { $$ = new smtlib::ForAll($4, $6); }
+                      | "(" "let" "(" var_binding_list_ ")" term ")"                      { $$ = new smtlib::Let($4, $6); }
                       | "(" "and" term_list_ ")"                                          { $$ = new smtlib::And($3); }  
                       | "(" "not" term ")"                                                { $$ = new smtlib::Not($3); }
                       | "(" "-" term ")"                                                  { $$ = new smtlib::UMinus($3); }
@@ -260,7 +260,7 @@ sorted_var_list_      :
                       ;
                       
 sorted_var            :
-                        "(" SYMBOL sort ")"                                               { $$ = new smtlib::SortedVar(new smtlib::Primitive($2, smtlib::Primitive::SYMBOL), $3); }
+                        "(" SYMBOL sort ")"                                               { $$ = new smtlib::SortedVar(new smtlib::Primitive($2, smtlib::Primitive::Type::SYMBOL), $3); }
                       ;
                       
 var_binding_list_     :
@@ -269,7 +269,7 @@ var_binding_list_     :
                       ;
                       
 var_binding           :
-                        "(" SYMBOL  term ")"                                               { $$ = new smtlib::VarBinding(new smtlib::Primitive($2, smtlib::Primitive::SYMBOL), $3); }
+                        "(" SYMBOL  term ")"                                               { $$ = new smtlib::VarBinding(new smtlib::Primitive($2, smtlib::Primitive::Type::SYMBOL), $3); }
                       ;
                       
 qual_identifier       :
@@ -313,10 +313,10 @@ sort_list_            :
 sort                  :
                         "(" identifier sort_list_ ")"                                     { $$ = new smtlib::Sort($2, $3); }
                       | identifier                                                        { $$ = new smtlib::Sort($1); }
-                      | var_type                                                          { $$ = new smtlib::Sort($1); } 
+                      | t_variable                                                          { $$ = new smtlib::Sort($1); } 
                       ;
                       
-var_type              :
+t_variable              :
                         TBOOL                                                             { $$ = new smtlib::TBool(); }
                       | TINT                                                              { $$ = new smtlib::TInt(); }
                       | TSTRING                                                           { $$ = new smtlib::TString(); }
@@ -325,13 +325,13 @@ var_type              :
 
 /* Identifiers */
 identifier            :
-                        "(" "_" SYMBOL numeral_list_ ")"                                  { $$ = new smtlib::Identifier(new smtlib::Primitive("_", ""), new smtlib::Primitive($3, smtlib::Primitive::SYMBOL), $4); }
-                      | SYMBOL                                                            { $$ = new smtlib::Identifier(new smtlib::Primitive($1, smtlib::Primitive::SYMBOL)); } 
+                        "(" "_" SYMBOL numeral_list_ ")"                                  { $$ = new smtlib::Identifier(new smtlib::Primitive("_", smtlib::Primitive::Type::SYMBOL), new smtlib::Primitive($3, smtlib::Primitive::Type::SYMBOL), $4); }
+                      | SYMBOL                                                            { $$ = new smtlib::Identifier(new smtlib::Primitive($1, smtlib::Primitive::Type::SYMBOL)); } 
                       ;
                       
 numeral_list_         :
-                        numeral_list_ NUMERAL                                             { $1 -> push_back(new smtlib::Primitive($2, smtlib::Primitive::SYMBOL)); $$ = $1; }
-                      | NUMERAL                                                           { $$ = new smtlib::NumeralList(); $$ -> push_back(new smtlib::Primitive($1, smtlib::Primitive::SYMBOL)); }
+                        numeral_list_ NUMERAL                                             { $1 -> push_back(new smtlib::Primitive($2, smtlib::Primitive::Type::SYMBOL)); $$ = $1; }
+                      | NUMERAL                                                           { $$ = new smtlib::NumeralList(); $$ -> push_back(new smtlib::Primitive($1, smtlib::Primitive::Type::SYMBOL)); }
                       ;
 
 /* S-expressions */
@@ -353,12 +353,12 @@ s_expr                :
                       ;
 
 spec_constant         :
-                        NUMERAL             { $$ = new smtlib::Primitive($1, smtlib::Primitive::NUMERAL); }
-                      | DECIMAL             { $$ = new smtlib::Primitive($1, smtlib::Primitive::DECIMAL); }
-                      | HEXADECIMAL         { $$ = new smtlib::Primitive($1, smtlib::Primitive::HEXADECIMAL); }
-                      | BINARY              { $$ = new smtlib::Primitive($1, smtlib::Primitive::BINARY); }
-                      | STRING              { $$ = new smtlib::Primitive($1, smtlib::Primitive::STRING); }
-                      | REGEX               { $$ = new smtlib::Primitive($1, smtlib::Primitive::REGEX); }
+                        NUMERAL             { $$ = new smtlib::Primitive($1, smtlib::Primitive::Type::NUMERAL); }
+                      | DECIMAL             { $$ = new smtlib::Primitive($1, smtlib::Primitive::Type::DECIMAL); }
+                      | HEXADECIMAL         { $$ = new smtlib::Primitive($1, smtlib::Primitive::Type::HEXADECIMAL); }
+                      | BINARY              { $$ = new smtlib::Primitive($1, smtlib::Primitive::Type::BINARY); }
+                      | STRING              { $$ = new smtlib::Primitive($1, smtlib::Primitive::Type::STRING); }
+                      | REGEX               { $$ = new smtlib::Primitive($1, smtlib::Primitive::Type::REGEX); }
                       ;
 
  

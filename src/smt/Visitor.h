@@ -21,6 +21,10 @@ public:
 	virtual void visitScript(Script_ptr) = 0;
 	virtual void visitCommand(Command_ptr) = 0;
 	virtual void visitTerm(Term_ptr) = 0;
+	virtual void visitExclamation(Exclamation_ptr) = 0;
+	virtual void visitExists(Exists_ptr) = 0;
+	virtual void visitForAll(ForAll_ptr) = 0;
+	virtual void visitLet(Let_ptr) = 0;
 	virtual void visitAnd(And_ptr) = 0;
 	virtual void visitOr(Or_ptr) = 0;
 	virtual void visitNot(Not_ptr) = 0;
@@ -49,7 +53,7 @@ public:
 	virtual void visitQualIdentifier(QualIdentifier_ptr) = 0;
 	virtual void visitTermConstant(TermConstant_ptr) = 0;
 	virtual void visitSort(Sort_ptr) = 0;
-	virtual void visitVarType(VarType_ptr) = 0;
+	virtual void visitTVariable(TVariable_ptr) = 0;
 	virtual void visitTBool(TBool_ptr) = 0;
 	virtual void visitTInt(TInt_ptr) = 0;
 	virtual void visitTString(TString_ptr) = 0;

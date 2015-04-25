@@ -58,7 +58,7 @@ Command::Command(Command::Type type)
 	: type (type) { }
 Command::Command(const Command& other) : type (other.type) { }
 Command_ptr Command::clone() const { return new Command(*this); }
-Command::~Command() { DVLOG(20) << "Command( " << *this << " ) deallocated."; }
+Command::~Command() {  DVLOG(20) << "Command( " << *this << " ) deallocated."; }
 std::string Command::str() const {
 	switch (type) {
 		case Command::Type::NONE:
@@ -181,10 +181,7 @@ CheckSat::~CheckSat() { delete symbol; }
 void CheckSat::visit_children(Visitor_ptr v) { v->visit(symbol); }
 
 CheckSatAndCount::CheckSatAndCount(Primitive_ptr bound)
-	: Command (Command::Type::CHECK_SAT_AND_COUNT), bound( bound ), symbol (nullptr) {
-	CHECK_EQ(bound->getType(), Primitive::NUMERAL) << ": first parameter must be numeral";
-	CHECK_EQ(symbol->getType(), Primitive::SYMBOL) << ": second parameter must be a symbol";
-}
+	: Command (Command::Type::CHECK_SAT_AND_COUNT), bound( bound ), symbol (nullptr) { }
 
 CheckSatAndCount::CheckSatAndCount(Primitive_ptr bound, Primitive_ptr symbol)
 	: Command (Command::Type::CHECK_SAT_AND_COUNT), bound( bound ), symbol (symbol) { }
@@ -246,7 +243,7 @@ Term::Term(Term::Type type)
 Term::Term(const Term& other)
 	: type (other.type) { }
 Term_ptr Term::clone() const { return new Term(*this); }
-Term::~Term() { DVLOG(20) << "Term( " << *this << " ) deallocated."; }
+Term::~Term() { DVLOG(20) << "Term( " << this->str() << " ) deallocated."; }
 
 std::string Term::str() const {
 	switch (type) {
@@ -329,6 +326,115 @@ Term::Type Term::getType() const { return type; }
 
 std::ostream& operator<<(std::ostream& os, const Term& term){
    return os << term.str();
+}
+
+Exclamation::Exclamation(Term_ptr term, AttributeList_ptr attribute_list)
+	: Term(Term::Type::EXCLAMATION), term (term), attribute_list (attribute_list) { }
+
+Exclamation::Exclamation(const Exclamation& other)
+	: Term(other.type) {
+	term = other.term->clone();
+	attribute_list = new AttributeList();
+	for (auto& attribute: *(other.attribute_list)) {
+		attribute_list->push_back(attribute->clone());
+	}
+}
+
+Exclamation_ptr Exclamation::clone() const { return new Exclamation(*this); }
+
+Exclamation::~Exclamation() {
+	delete term;
+	deallocate_list(attribute_list);
+	delete attribute_list;
+}
+
+void Exclamation::accept(Visitor_ptr v) { v->visitExclamation(this); }
+
+void Exclamation::visit_children(Visitor_ptr v) {
+	v->visit(term);
+	v->visit_list(attribute_list);
+}
+
+Exists::Exists(SortedVarList_ptr sorted_var_list, Term_ptr term)
+	: Term(Term::Type::EXISTS), sorted_var_list (sorted_var_list), term (term) { }
+
+Exists::Exists(const Exists& other)
+	: Term(other.type) {
+	sorted_var_list = new SortedVarList();
+	for (auto& sorted_var: *(other.sorted_var_list)) {
+		sorted_var_list->push_back(sorted_var->clone());
+	}
+	term = other.term->clone();
+}
+
+Exists_ptr Exists::clone() const { return new Exists(*this); }
+
+Exists::~Exists() {
+	deallocate_list(sorted_var_list);
+	delete sorted_var_list;
+	delete term;
+}
+
+void Exists::accept(Visitor_ptr v) { v->visitExists(this); }
+
+void Exists::visit_children(Visitor_ptr v) {
+	v->visit_list(sorted_var_list);
+	v->visit(term);
+}
+
+ForAll::ForAll(SortedVarList_ptr sorted_var_list, Term_ptr term)
+	: Term(Term::Type::FORALL), sorted_var_list (sorted_var_list), term (term) { }
+
+
+ForAll::ForAll(const ForAll& other)
+	: Term(other.type) {
+	sorted_var_list = new SortedVarList();
+	for (auto& sorted_var: *(other.sorted_var_list)) {
+		sorted_var_list->push_back(sorted_var->clone());
+	}
+	term = other.term->clone();
+}
+
+ForAll_ptr ForAll::clone() const { return new ForAll(*this); }
+
+ForAll::~ForAll() {
+	deallocate_list(sorted_var_list);
+	delete sorted_var_list;
+	delete term;
+}
+
+void ForAll::accept(Visitor_ptr v) { v->visitForAll(this); }
+
+void ForAll::visit_children(Visitor_ptr v) {
+	v->visit_list(sorted_var_list);
+	v->visit(term);
+}
+
+Let::Let(VarBindingList_ptr var_binding_list, Term_ptr term)
+	: Term(Term::Type::LET), var_binding_list (var_binding_list), term (term) { }
+
+Let::Let(const Let& other)
+	: Term(other.type) {
+	var_binding_list = new VarBindingList();
+	for (auto& var_binding: *(other.var_binding_list)) {
+		var_binding_list->push_back(var_binding->clone());
+	}
+	term = other.term->clone();
+}
+
+Let_ptr Let::clone() const { return new Let(*this); }
+
+Let::~Let() {
+	deallocate_list(var_binding_list);
+	delete var_binding_list;
+	delete term;
+}
+
+void Let::accept(Visitor_ptr v) { v->visitLet(this); }
+
+void Let::visit_children(Visitor_ptr v) {
+	v->visit_list(var_binding_list);
+	v->visit(term);
 }
 
 And::And(TermList_ptr term_list)
@@ -770,18 +876,18 @@ TermConstant::~TermConstant() { delete primitive; }
 void TermConstant::accept(Visitor_ptr v) { v->visitTermConstant(this); }
 void TermConstant::visit_children(Visitor_ptr v) { v->visit(primitive); }
 
-std::string TermConstant::getValue() {
+std::string TermConstant::getValue() const {
 	return primitive->getData();
 }
 
-std::string TermConstant::getType() {
+Primitive::Type TermConstant::getValueType() const {
 	return primitive->getType();
 }
 
 
 /* ends Terms */
 
-Sort::Sort(VarType_ptr type)
+Sort::Sort(TVariable_ptr type)
 	: identifier (nullptr), sort_list (nullptr), var_type (type) { }
 Sort::Sort(Identifier_ptr identifier)
 	: identifier (identifier), sort_list (nullptr), var_type (nullptr) { }
@@ -905,37 +1011,38 @@ void Identifier::visit_children(Visitor_ptr v) {
 	v->visit_list(numeral_list);
 }
 
-std::string Identifier::getType() {
-	if (symbol == nullptr || symbol->getType() != Primitive::SYMBOL) {
-		throw new std::runtime_error("Unhandled identifier!");
-	}
+Primitive::Type Identifier::getType() {
+//	if (symbol == nullptr || symbol->getType() != Primitive::Type::SYMBOL) {
+//		throw new std::runtime_error("Unhandled identifier!");
+//	}
 	return symbol->getType();
 }
 
 std::string Identifier::getName() {
-	if (symbol == nullptr || symbol->getType() != Primitive::SYMBOL) {
-		throw new std::runtime_error("Unhandled identifier!");
-	}
+//	if (symbol == nullptr || symbol->getType() != Primitive::Type::SYMBOL) {
+//		throw new std::runtime_error("Unhandled identifier!");
+//	}
 	return symbol->getData();
 }
 
 bool Identifier::isSymbolic() {
-	if (symbol == nullptr || symbol->getType() != Primitive::SYMBOL) {
-		throw new std::runtime_error("Unhandled identifier!");
-	}
+//	if (symbol == nullptr || symbol->getType() != Primitive::Type::SYMBOL) {
+//		throw new std::runtime_error("Unhandled identifier!");
+//	}
 	return (symbol->getData().find("var_") == 0);
 }
 
-const std::string Primitive::BINARY = "BINARY";
-const std::string Primitive::DECIMAL = "DECIMAL";
-const std::string Primitive::HEXADECIMAL = "HEXADECIMAL";
-const std::string Primitive::KEYWORD = "KEYWORD";
-const std::string Primitive::NUMERAL = "NUMERAL";
-const std::string Primitive::STRING = "STRING";
-const std::string Primitive::SYMBOL = "SYMBOL";
-const std::string Primitive::REGEX = "REGEX";
+const std::string Primitive::Name::NONE			= "NONE";
+const std::string Primitive::Name::BINARY 		= "BINARY";
+const std::string Primitive::Name::DECIMAL 		= "DECIMAL";
+const std::string Primitive::Name::HEXADECIMAL 	= "HEXADECIMAL";
+const std::string Primitive::Name::KEYWORD 		= "KEYWORD";
+const std::string Primitive::Name::NUMERAL 		= "NUMERAL";
+const std::string Primitive::Name::STRING 		= "STRING";
+const std::string Primitive::Name::REGEX 		= "REGEX";
+const std::string Primitive::Name::SYMBOL 		= "SYMBOL";
 
-Primitive::Primitive(std::string data, std::string type) : data (data), type (type) { }
+Primitive::Primitive(const std::string data, const Primitive::Type type) : data (data), type (type) { }
 Primitive::Primitive(const Primitive& other) {
 	data = other.data;
 	type = other.type;
@@ -945,82 +1052,151 @@ Primitive::~Primitive() { DVLOG(20) << "Primitive( " << *this << " ) deallocated
 
 std::string Primitive::str() const {
 	std::stringstream ss;
-	ss << data << std::endl << "<" << type << ">";
+	ss << data << ":";
+
+	switch (type) {
+		case Primitive::Type::NONE:
+			ss << Primitive::Name::NONE;
+			break;
+		case Primitive::Type::BINARY:
+			ss << Primitive::Name::BINARY;
+			break;
+		case Primitive::Type::DECIMAL:
+			ss << Primitive::Name::DECIMAL;
+			break;
+		case Primitive::Type::HEXADECIMAL:
+			ss << Primitive::Name::HEXADECIMAL;
+			break;
+		case Primitive::Type::KEYWORD:
+			ss << Primitive::Name::KEYWORD;
+			break;
+		case Primitive::Type::NUMERAL:
+			ss << Primitive::Name::NUMERAL;
+			break;
+		case Primitive::Type::STRING:
+			ss << Primitive::Name::STRING;
+			break;
+		case Primitive::Type::SYMBOL:
+			ss << Primitive::Name::SYMBOL;
+			break;
+		case Primitive::Type::REGEX:
+			ss << Primitive::Name::REGEX;
+			LOG(FATAL) << "Unknown command!";
+			break;
+	}
+
 	return ss.str();
 }
 
-std::string Primitive::getData() { return data; }
+std::string Primitive::getData() const { return data; }
 void Primitive::setData(std::string data) { this->data = data; }
-std::string Primitive::getType() { return type; }
-void Primitive::setType(std::string type) { this->type = type; }
+Primitive::Type Primitive::getType() const { return type; }
+void Primitive::setType(Primitive::Type type) { this->type = type; }
 
 void Primitive::accept(Visitor_ptr v) { v->visitPrimitive(this); }
 
 void Primitive::visit_children(Visitor_ptr v) { }
 
 std::ostream& operator<<(std::ostream& os, const Primitive& primitive) {
-   return os << primitive.data << ":" << primitive.type;
+   return os << primitive.str();
 }
 
-VarType::VarType(type_VAR type)
+const std::string TVariable::Name::NONE 		= "none";
+const std::string TVariable::Name::BOOL			= "Bool";
+const std::string TVariable::Name::INT			= "Int";
+const std::string TVariable::Name::STRING		= "String";
+
+TVariable::TVariable(TVariable::Type type)
 	: type (type) { }
-VarType::VarType(const VarType& other) { type = other.type; }
-VarType_ptr VarType::clone() const { return new VarType(*this); }
-VarType::~VarType() { }
+TVariable::TVariable(const TVariable& other)
+	: type (other.type) { }
+TVariable_ptr TVariable::clone() const { return new TVariable(*this); }
+TVariable::~TVariable() { }
 
-std::string VarType::str() { throw std::runtime_error("unknown var type"); }
-type_VAR VarType::getType() { return type; }
+std::string TVariable::str() const {
+	switch (type) {
+			case TVariable::Type::NONE:
+				return TVariable::Name::NONE;
+			case TVariable::Type::BOOL:
+				return TVariable::Name::BOOL;
+			case TVariable::Type::INT:
+				return TVariable::Name::INT;
+			case TVariable::Type::STRING:
+				return TVariable::Name::STRING;
+			default:
+				LOG(FATAL) << "Unknown variable type!";
+				return "";
+		}
+}
+TVariable::Type TVariable::getType() const { return type; }
 
-void VarType::accept(Visitor_ptr v) { v->visitVarType(this); }
-void VarType::visit_children(Visitor_ptr v) { }
+void TVariable::accept(Visitor_ptr v) { v->visitTVariable(this); }
+void TVariable::visit_children(Visitor_ptr v) { }
 
-TBool::TBool() : VarType(type_VAR::BOOL) { }
-TBool::TBool(const TBool& other) : VarType(type_VAR::BOOL) { }
+std::ostream& operator<<(std::ostream& os, const TVariable& t_variable) {
+   return os <<  t_variable.str();
+}
+
+TBool::TBool() : TVariable(TVariable::Type::BOOL) { }
+TBool::TBool(const TBool& other) : TVariable(TVariable::Type::BOOL) { }
 TBool_ptr TBool::clone() const { return new TBool(*this); }
 TBool::~TBool() { }
-std::string TBool::str() { return "Bool"; }
 
 void TBool::accept(Visitor_ptr v) { v->visitTBool(this); }
 void TBool::visit_children(Visitor_ptr v) { }
 
-TInt::TInt() : VarType(type_VAR::INT) { }
-TInt::TInt(const TInt& other) : VarType(type_VAR::INT) { }
+TInt::TInt() : TVariable(TVariable::Type::INT) { }
+TInt::TInt(const TInt& other) : TVariable(TVariable::Type::INT) { }
 TInt_ptr TInt::clone() const { return new TInt(*this); }
 TInt::~TInt() { }
-
-std::string TInt::str() { return "Int"; }
 
 void TInt::accept(Visitor_ptr v) { v->visitTInt(this); }
 void TInt::visit_children(Visitor_ptr v) { }
 
-TString::TString() : VarType(type_VAR::STRING) { }
-TString::TString(const TString& other) : VarType(type_VAR::STRING) { }
+TString::TString() : TVariable(TVariable::Type::STRING) { }
+TString::TString(const TString& other) : TVariable(TVariable::Type::STRING) { }
 TString_ptr TString::clone() const { return new TString(*this); }
 TString::~TString() { }
-
-std::string TString::str() { return "String"; }
 
 void TString::accept(Visitor_ptr v) { v->visitTString(this); }
 void TString::visit_children(Visitor_ptr v) { }
 
-Variable::Variable(Primitive_ptr primitive)
-	: primitive (primitive), type (type_VAR::NONE){ }
-Variable::Variable(const Variable& other) {
-	primitive = other.primitive->clone();
-	type = other.type;
+Variable::Variable(std::string name, Variable::Type type)
+	: TVariable(type), name (name), is_symbolic (false) { }
+Variable::Variable(Primitive_ptr primitive, Variable::Type type)
+	: TVariable(type), name (primitive->getData()), is_symbolic (false) { }
+Variable::Variable(std::string name, Variable::Type type, bool is_symbolic)
+	: TVariable(type),name (name), is_symbolic (is_symbolic) { }
+Variable::Variable(Primitive_ptr primitive, Variable::Type type, bool is_symbolic)
+	: TVariable(type), name (primitive->getData()), is_symbolic (is_symbolic) { }
+Variable::Variable(const Variable& other)
+	: TVariable (other.type) {
+	name = other.name;
+	is_symbolic = other.is_symbolic;
 }
 
 Variable_ptr Variable::clone() const { return new Variable(*this); }
-Variable::~Variable() { delete primitive; }
+Variable::~Variable() { }
 
-std::string Variable::getName() { return primitive->getData(); }
+std::string Variable::str() const {
+	std::stringstream ss;
+	ss << name + ":" + TVariable::str();
+	std::string tmp = (is_symbolic) ? "\n<symbolic>" : "\n<pseudo>";
+	ss << tmp;
+	return ss.str();
+}
 
-type_VAR Variable::getType() { return type; }
+std::string Variable::getName() const { return name; }
+
+Variable::Type Variable::getType() const { return type; }
+
+bool Variable::isSymbolic() const { return is_symbolic; }
+
+void Variable::setSymbolic(bool is_symbolic) { this->is_symbolic = is_symbolic; }
 
 void Variable::accept(Visitor_ptr v) { v->visitVariable(this); }
 
-void Variable::visit_children(Visitor_ptr v) { v->visit(primitive); }
+void Variable::visit_children(Visitor_ptr v) { }
 
 } /* namespace SMT */
 } /* namespace Vlab */
-

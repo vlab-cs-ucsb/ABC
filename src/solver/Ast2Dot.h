@@ -32,6 +32,10 @@ public:
 	void visitScript(Script_ptr);
 	void visitCommand(Command_ptr);
 	void visitTerm(Term_ptr);
+	void visitExclamation(Exclamation_ptr);
+	void visitExists(Exists_ptr);
+	void visitForAll(ForAll_ptr);
+	void visitLet(Let_ptr);
 	void visitAnd(And_ptr);
 	void visitOr(Or_ptr);
 	void visitNot(Not_ptr);
@@ -60,7 +64,7 @@ public:
 	void visitQualIdentifier(QualIdentifier_ptr);
 	void visitTermConstant(TermConstant_ptr);
 	void visitSort(Sort_ptr);
-	void visitVarType(VarType_ptr);
+	void visitTVariable(TVariable_ptr);
 	void visitTBool(TBool_ptr);
 	void visitTInt(TInt_ptr);
 	void visitTString(TString_ptr);
