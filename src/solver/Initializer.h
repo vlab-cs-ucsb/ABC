@@ -1,33 +1,26 @@
 /*
- * Ast2Dot.h
+ * Initializer.h
  *
- *  Created on: Nov 23, 2014
+ *  Created on: Apr 27, 2015
  *      Author: baki
  */
 
-#ifndef SOLVER_AST2DOT_H_
-#define SOLVER_AST2DOT_H_
-
-#include <iostream>
-#include <stack>
+#ifndef SOLVER_INITIALIZER_H_
+#define SOLVER_INITIALIZER_H_
 
 #include "../smt/ast.h"
+#include "SVisitor.h"
 
 namespace Vlab {
 namespace SMT {
 
-class Ast2Dot : public Visitor {
+class Initializer: public Visitor, public SVisitor {
 public:
-	Ast2Dot(std::ostream* out);
+	Initializer(Script_ptr);
+	virtual ~Initializer();
 
-	~Ast2Dot();
-
-	void finish();
-	void add_edge(u_int64_t p, u_int64_t c);
-	void add_node(u_int64_t c, std::string label);
-	void draw(std::string label, Visitable_ptr p);
-	void draw_terminal(std::string label);
-	void visitPartial(Visitable_ptr);
+	void start();
+	void end();
 
 	void visitScript(Script_ptr);
 	void visitCommand(Command_ptr);
@@ -75,14 +68,11 @@ public:
 	void visitPrimitive(Primitive_ptr);
 	void visitVariable(Variable_ptr);
 
-private:
-	std::ostream* m_out; //file for writting output
-	u_int64_t count; //used to give each node a uniq id
-	std::stack<u_int64_t> s; //stack for tracking parent/child pairs
-
+protected:
+	Script_ptr root;
 };
 
 } /* namespace SMT */
 } /* namespace Vlab */
 
-#endif /* SOLVER_AST2DOT_H_ */
+#endif /* SOLVER_INITIALIZER_H_ */

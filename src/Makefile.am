@@ -5,6 +5,8 @@ bin_PROGRAMS = abc
 abc_SOURCES = \
   ./solver/Ast2Dot.cpp \
   ./solver/Ast2Dot.h \
+  ./solver/Initializer.cpp \
+  ./solver/Initializer.h \
 	Driver.cpp \
 	Driver.h \
 	main.cpp 

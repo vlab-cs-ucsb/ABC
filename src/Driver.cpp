@@ -51,8 +51,12 @@ void Driver::ast2dot(std::string file_name) {
 //	SMT::Statistics statistics;
 //	statistics.start(script, symbol_table);
 //}
-//
-//void Driver::initSolver() {
+
+void Driver::initializeSolver() {
+
+	SMT::Initializer initializer(script);
+	initializer.start();
+
 //	symbol_table = std::make_shared<SMT::SymbolTable>();
 //	SMT::Initializer initializer;
 //	initializer.start(script, symbol_table);
@@ -65,8 +69,8 @@ void Driver::ast2dot(std::string file_name) {
 //
 //	SMT::LengthConstraintReductor len_reductor;
 //	len_reductor.start(script, symbol_table);
-//}
-//
+}
+
 //void Driver::reduceVars() {
 //	SMT::IntVarReductor int_reductor;
 //	int_reductor.start(script, symbol_table);

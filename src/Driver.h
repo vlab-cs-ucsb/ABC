@@ -13,12 +13,9 @@
 #include <fstream>
 #include <memory>
 
-//#include "Log.h"
-//#include "PerfInfo.h"
-//#include "./smt/ast.h"
 #include "./solver/Ast2Dot.h"
 //#include "Statistics.h"
-//#include "Initializer.h"
+#include "./solver/Initializer.h"
 //#include "BooleanVarReductor.h"
 //#include "IntVarReductor.h"
 //#include "LengthConstraintReductor.h"
@@ -30,7 +27,6 @@
 //#include "AstOptimizer.h"
 //#include "PostImageComputer.h"
 #include "Scanner.h"
-//#include "parser.hpp"
 
 
 namespace Vlab {
@@ -48,7 +44,7 @@ public:
 	void ast2dot(std::string file_name);
 	void ast2dot(std::ostream* out);
 //	void collectStatistics();
-//	void initSolver();
+	void initializeSolver();
 //	void reduceVars();
 //	void preProcessAst();
 //	void solveAst();

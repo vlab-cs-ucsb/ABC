@@ -12,7 +12,7 @@
 #include <string>
 #include <cstdlib>
 
-#define NDEBUG
+//#define NDEBUG
 
 #include <glog/logging.h>
 #include "Driver.h"
@@ -31,7 +31,8 @@ int main(const int argc, const char **argv) {
 	std::string output_root = get_default_output_dir();
 	std::string log_root = get_default_log_dir();
 	FLAGS_log_dir = log_root;
-	FLAGS_v = 20;
+	FLAGS_v = 1;
+	FLAGS_logtostderr = 1;
 
 	bool model_count_only = false;
 	std::string bound_string = "50";
@@ -56,14 +57,15 @@ int main(const int argc, const char **argv) {
 
 	google::InitGoogleLogging(argv[0]);
 
+	/* log test start */
 	DLOG(INFO) << "debug log start";
 	LOG(INFO) << "production log";
-
 	DVLOG(1) << "vlog log";
 
 	if (VLOG_IS_ON(1)) {
 		std::cout << "yaaay" << std::endl;
 	}
+	/* log test end */
 
 
 
@@ -75,6 +77,8 @@ int main(const int argc, const char **argv) {
 		driver.ast2dot(&std::cout);
 	}
 	driver.ast2dot( output_root + "/parser_out.dot");
+
+	driver.initializeSolver();
 
 	return 0;
 }
