@@ -30,21 +30,8 @@ int main(const int argc, const char **argv) {
 
 	std::string output_root = get_default_output_dir();
 	std::string log_root = get_default_log_dir();
-
 	FLAGS_log_dir = log_root;
-	FLAGS_v = 30;
-
-	google::InitGoogleLogging(argv[0]);
-
-	DLOG(INFO) << "debug log start";
-	LOG(INFO) << "production log";
-
-	DVLOG(1) << "vlog log";
-
-	if (VLOG_IS_ON(1)) {
-		std::cout << "yaaay" << std::endl;
-	}
-
+	FLAGS_v = 20;
 
 	bool model_count_only = false;
 	std::string bound_string = "50";
@@ -59,15 +46,34 @@ int main(const int argc, const char **argv) {
 			file = new std::ifstream(file_name);
 			in = file;
 			i++;
+		} else if (argv[i] == std::string ("-v")) {
+			FLAGS_v = std::stoi(argv[i+1]);
+			i++;
 		} else {
 
 		}
 	}
 
+	google::InitGoogleLogging(argv[0]);
+
+	DLOG(INFO) << "debug log start";
+	LOG(INFO) << "production log";
+
+	DVLOG(1) << "vlog log";
+
+	if (VLOG_IS_ON(1)) {
+		std::cout << "yaaay" << std::endl;
+	}
+
+
+
 	int bound = std::stoi(bound_string);
 
 	Vlab::Driver driver;
 	driver.parse(in);
+	if (VLOG_IS_ON(21)) {
+		driver.ast2dot(&std::cout);
+	}
 	driver.ast2dot( output_root + "/parser_out.dot");
 
 	return 0;

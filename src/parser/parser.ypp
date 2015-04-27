@@ -170,8 +170,8 @@ command               :
               				| "(" "assert" term ")"                                             { $$ = new smtlib::Assert($3); }
                       | "(" "check-sat" ")"                                               { $$ = new smtlib::CheckSat(); }
                       | "(" "check-sat" SYMBOL ")"                                        { $$ = new smtlib::CheckSat(new smtlib::Primitive($3, smtlib::Primitive::Type::SYMBOL)); }
-                      | "(" "check-sat-and-count" SYMBOL ")"                              { $$ = new smtlib::CheckSatAndCount(new smtlib::Primitive($3, smtlib::Primitive::Type::SYMBOL)); }
-                      | "(" "check-sat-and-count" SYMBOL SYMBOL ")"                       { $$ = new smtlib::CheckSatAndCount(new smtlib::Primitive($3, smtlib::Primitive::Type::SYMBOL), new smtlib::Primitive($4, smtlib::Primitive::Type::SYMBOL)); }
+                      | "(" "check-sat-and-count" NUMERAL ")"                             { $$ = new smtlib::CheckSatAndCount(new smtlib::Primitive($3, smtlib::Primitive::Type::NUMERAL)); }
+                      | "(" "check-sat-and-count" NUMERAL SYMBOL ")"                      { $$ = new smtlib::CheckSatAndCount(new smtlib::Primitive($3, smtlib::Primitive::Type::NUMERAL), new smtlib::Primitive($4, smtlib::Primitive::Type::SYMBOL)); }
             					| "(" "get-assertions" ")"                                          { $$ = new smtlib::Command(); } 
             					| "(" "get-proof" ")"                                               { $$ = new smtlib::Command(); } 
             					| "(" "get-unsat-core" ")"                                          { $$ = new smtlib::Command(); }   
@@ -218,7 +218,8 @@ term                  :
                       | "(" "exists" "(" sorted_var_list_ ")" term ")"                    { $$ = new smtlib::Exists($4, $6); }
                       | "(" "forall" "(" sorted_var_list_ ")" term ")"                    { $$ = new smtlib::ForAll($4, $6); }
                       | "(" "let" "(" var_binding_list_ ")" term ")"                      { $$ = new smtlib::Let($4, $6); }
-                      | "(" "and" term_list_ ")"                                          { $$ = new smtlib::And($3); }  
+                      | "(" "and" term_list_ ")"                                          { $$ = new smtlib::And($3); }
+                      | "(" "or" term_list_ ")"                                           { $$ = new smtlib::Or($3); }  
                       | "(" "not" term ")"                                                { $$ = new smtlib::Not($3); }
                       | "(" "-" term ")"                                                  { $$ = new smtlib::UMinus($3); }
                       | "(" "-" term term ")"                                             { $$ = new smtlib::Minus($3, $4); }

@@ -263,6 +263,8 @@ std::string Term::str() const {
 			return Term::Name::AND;
 		case Term::Type::OR:
 			return Term::Name::OR;
+		case Term::Type::NOT:
+			return Term::Name::NOT;
 		case Term::Type::UMINUS:
 			return Term::Name::UMINUS;
 		case Term::Type::MINUS:
@@ -477,7 +479,7 @@ void Or::visit_children(Visitor_ptr v) { v->visit_list(term_list); }
 Not::Not(Term_ptr term)
 	: Term(Term::Type::NOT), term (term) { }
 Not::Not(const Not& other)
-	: Term(other.type) {	term = other.term->clone(); }
+	: Term(other.type) { term = other.term->clone(); }
 Not_ptr Not::clone() const { return new Not(*this); }
 Not::~Not() { delete term; }
 
@@ -1052,7 +1054,7 @@ Primitive::~Primitive() { DVLOG(20) << "Primitive( " << *this << " ) deallocated
 
 std::string Primitive::str() const {
 	std::stringstream ss;
-	ss << data << ":";
+	ss << data << ":<";
 
 	switch (type) {
 		case Primitive::Type::NONE:
@@ -1084,6 +1086,7 @@ std::string Primitive::str() const {
 			LOG(FATAL) << "Unknown command!";
 			break;
 	}
+	ss << ">";
 
 	return ss.str();
 }

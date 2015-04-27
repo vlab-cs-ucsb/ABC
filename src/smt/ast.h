@@ -34,7 +34,6 @@ public:
 	virtual void visit_children(Visitor_ptr);
 
 	CommandList_ptr commands;
-
 };
 
 class Command : public Visitable {
@@ -874,10 +873,10 @@ public:
 
 class Variable : public TVariable {
 public:
-	Variable(std::string name, Variable::Type);
-	Variable(Primitive_ptr, Variable::Type);
-	Variable(std::string name, Variable::Type, bool is_symbolic);
-	Variable(Primitive_ptr, Variable::Type, bool is_symbolic);
+	Variable(std::string name, Type);
+	Variable(Primitive_ptr, Type);
+	Variable(std::string name, Type, bool is_symbolic);
+	Variable(Primitive_ptr, Type, bool is_symbolic);
 	Variable(const Variable&);
 	virtual Variable_ptr clone() const;
 	virtual ~Variable();
