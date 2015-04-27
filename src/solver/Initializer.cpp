@@ -10,8 +10,8 @@
 namespace Vlab {
 namespace SMT {
 
-Initializer::Initializer(Script_ptr script)
-	: root (script) { }
+Initializer::Initializer(Script_ptr script, SymbolTable_ptr symbol_table)
+	: root (script), symbol_table (symbol_table) { }
 
 Initializer::~Initializer() { }
 
@@ -43,7 +43,31 @@ void Initializer::visitScript(Script_ptr script) {
 	visit_children_of(script);
 }
 
-void Initializer::visitCommand(Command_ptr command) { }
+void Initializer::visitCommand(Command_ptr command) {
+
+	switch (command->getType()) {
+	case Command::Type::DECLARE_FUN:
+	{
+		break;
+	}
+	case Command::Type::CHECK_SAT:
+	{
+		break;
+	}
+	case Command::Type::CHECK_SAT_AND_COUNT:
+	{
+		break;
+	}
+	case Command::Type::ASSERT:
+	{
+		break;
+	}
+	default:
+		LOG(WARNING) << "Command is not handled, skipping: " << *command;
+		LOG(WARNING) << "Please contact support for unhandled commands";
+		break;
+	}
+}
 
 void Initializer::visitTerm(Term_ptr term) {  }
 
@@ -130,7 +154,6 @@ void Initializer::visitTString(TString_ptr t_string) { }
 void Initializer::visitPrimitive(Primitive_ptr primitive) { }
 
 void Initializer::visitVariable(Variable_ptr variable) { }
-
 
 } /* namespace SMT */
 } /* namespace Vlab */

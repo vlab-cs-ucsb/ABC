@@ -10,13 +10,14 @@
 
 #include "../smt/ast.h"
 #include "SVisitor.h"
+#include "SymbolTable.h"
 
 namespace Vlab {
 namespace SMT {
 
 class Initializer: public Visitor, public SVisitor {
 public:
-	Initializer(Script_ptr);
+	Initializer(Script_ptr, SymbolTable_ptr);
 	virtual ~Initializer();
 
 	void start();
@@ -70,6 +71,7 @@ public:
 
 protected:
 	Script_ptr root;
+	SymbolTable_ptr symbol_table;
 };
 
 } /* namespace SMT */

@@ -54,7 +54,8 @@ void Driver::ast2dot(std::string file_name) {
 
 void Driver::initializeSolver() {
 
-	SMT::Initializer initializer(script);
+	symbol_table = new SMT::SymbolTable();
+	SMT::Initializer initializer(script, symbol_table);
 	initializer.start();
 
 //	symbol_table = std::make_shared<SMT::SymbolTable>();

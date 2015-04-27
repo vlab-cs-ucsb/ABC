@@ -13,9 +13,10 @@
 #include <fstream>
 #include <memory>
 
-#include "./solver/Ast2Dot.h"
+#include "solver/Ast2Dot.h"
 //#include "Statistics.h"
-#include "./solver/Initializer.h"
+#include "solver/SymbolTable.h"
+#include "solver/Initializer.h"
 //#include "BooleanVarReductor.h"
 //#include "IntVarReductor.h"
 //#include "LengthConstraintReductor.h"
@@ -50,7 +51,7 @@ public:
 //	void solveAst();
 
 	SMT::Script_ptr script;
-//	SMT::SymbolTable_ptr symbol_table;
+	SMT::SymbolTable_ptr symbol_table;
 
 	int trace_parsing = 0;
 	int trace_scanning = 0;

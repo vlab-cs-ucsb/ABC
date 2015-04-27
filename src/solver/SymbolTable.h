@@ -8,10 +8,12 @@
 #ifndef SOLVER_SYMBOLTABLE_H_
 #define SOLVER_SYMBOLTABLE_H_
 
+#include <map>
+
+#include "../smt/ast.h"
+
 namespace Vlab {
 namespace SMT {
-
-typedef SymbolTable* SymbolTable_ptr;
 
 class SymbolTable {
 public:
@@ -22,9 +24,11 @@ public:
 	void addVariable(std::string name, Variable::Type type, bool is_symbolic);
 
 private:
+	std::string global_var;
 	std::map<std::string, Variable_ptr> variables;
 };
 
+typedef SymbolTable* SymbolTable_ptr;
 
 } /* namespace SMT */
 } /* namespace Vlab */
