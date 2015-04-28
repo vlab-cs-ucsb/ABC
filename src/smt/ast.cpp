@@ -1165,9 +1165,9 @@ void TString::accept(Visitor_ptr v) { v->visitTString(this); }
 void TString::visit_children(Visitor_ptr v) { }
 
 Variable::Variable(std::string name, Variable::Type type)
-	: TVariable(type), name (name), is_symbolic (false) { }
+	: TVariable(type), name (name), is_symbolic (name.find("var_") == 0) { }
 Variable::Variable(Primitive_ptr primitive, Variable::Type type)
-	: TVariable(type), name (primitive->getData()), is_symbolic (false) { }
+	: TVariable(type), name (primitive->getData()), is_symbolic (name.find("var_") == 0) { }
 Variable::Variable(std::string name, Variable::Type type, bool is_symbolic)
 	: TVariable(type),name (name), is_symbolic (is_symbolic) { }
 Variable::Variable(Primitive_ptr primitive, Variable::Type type, bool is_symbolic)
@@ -1183,8 +1183,8 @@ Variable::~Variable() { }
 
 std::string Variable::str() const {
 	std::stringstream ss;
-	ss << name + ":" + TVariable::str();
-	std::string tmp = (is_symbolic) ? "\n<symbolic>" : "\n<pseudo>";
+	ss << name << ":<" << TVariable::str() << ">";
+	std::string tmp = (is_symbolic) ? " (symbolic)" : " (pseudo)";
 	ss << tmp;
 	return ss.str();
 }

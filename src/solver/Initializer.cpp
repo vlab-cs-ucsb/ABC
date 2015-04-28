@@ -31,7 +31,6 @@ void Initializer::visitScript(Script_ptr script) {
 
 	for (auto iter = commands->begin(); iter != commands->end();) {
 		if ((*iter)->getType() != Command::Type::ASSERT) {
-			VLOG(1) << (**iter);
 			visit (*iter);
 			delete (*iter);
 			iter = commands->erase(iter);
@@ -48,14 +47,32 @@ void Initializer::visitCommand(Command_ptr command) {
 	switch (command->getType()) {
 	case Command::Type::DECLARE_FUN:
 	{
+		visit_children_of(command);
+		CHECK_EQ(1, primitives.size()) << "Expecting one symbol name.";
+		CHECK_EQ(1, sorts.size()) << "Currently supports only functions with no arguments.";
+
+		Primitive_ptr primitive = primitives.top(); primitives.pop();
+		Sort_ptr sort = sorts.top(); sorts.pop();
+		Variable_ptr variable = new Variable(primitive, sort->var_type->getType());
+		symbol_table->addVariable(variable);
+
 		break;
 	}
 	case Command::Type::CHECK_SAT:
 	{
+		visit_children_of(command);
+		if (primitives.size() == 1) {
+			Primitive_ptr primitive = primitives.top(); primitives.pop();
+			Variable_ptr variable = symbol_table->getVariable(primitive->getData());
+			variable->setSymbolic(true);
+			DVLOG(19) << *variable << " is changed to a symbolic var.";
+		}
+		CHECK_EQ(0, primitives.size()) << "unexpected primitive on stack";
 		break;
 	}
 	case Command::Type::CHECK_SAT_AND_COUNT:
 	{
+		visit_children_of(command);
 		break;
 	}
 	case Command::Type::ASSERT:
@@ -63,15 +80,14 @@ void Initializer::visitCommand(Command_ptr command) {
 		break;
 	}
 	default:
-		LOG(WARNING) << "Command is not handled, skipping: " << *command;
-		LOG(WARNING) << "Please contact support for unhandled commands";
+		LOG(WARNING) << "'" << *command<< "' is not handled, skipping; contact us for any questions.";
 		break;
 	}
 }
 
 void Initializer::visitTerm(Term_ptr term) {  }
 
-void Initializer::visitSort(Sort_ptr sort) {  }
+void Initializer::visitSort(Sort_ptr sort) { sorts.push(sort); }
 
 void Initializer::visitAttribute(Attribute_ptr attribute) {  }
 
@@ -151,7 +167,7 @@ void Initializer::visitTInt(TInt_ptr t_int) { }
 
 void Initializer::visitTString(TString_ptr t_string) { }
 
-void Initializer::visitPrimitive(Primitive_ptr primitive) { }
+void Initializer::visitPrimitive(Primitive_ptr primitive) { primitives.push(primitive); }
 
 void Initializer::visitVariable(Variable_ptr variable) { }
 

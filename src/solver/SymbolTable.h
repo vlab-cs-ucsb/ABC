@@ -21,7 +21,7 @@ public:
 	virtual ~SymbolTable();
 
 	void addVariable(Variable_ptr);
-	void addVariable(std::string name, Variable::Type type, bool is_symbolic);
+	Variable_ptr getVariable(std::string name);
 
 private:
 	std::string global_var;

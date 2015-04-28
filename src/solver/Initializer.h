@@ -8,6 +8,8 @@
 #ifndef SOLVER_INITIALIZER_H_
 #define SOLVER_INITIALIZER_H_
 
+#include <stack>
+
 #include "../smt/ast.h"
 #include "SVisitor.h"
 #include "SymbolTable.h"
@@ -72,6 +74,9 @@ public:
 protected:
 	Script_ptr root;
 	SymbolTable_ptr symbol_table;
+	std::stack<Primitive_ptr> primitives;
+	std::stack<Sort_ptr> sorts;
+
 };
 
 } /* namespace SMT */

@@ -27,8 +27,10 @@ void SymbolTable::addVariable(Variable_ptr variable) {
 	}
 }
 
-void SymbolTable::addVariable(std::string name, Variable::Type type, bool is_symbolic) {
-
+Variable_ptr SymbolTable::getVariable(std::string name) {
+	auto it = variables.find(name);
+	CHECK(it != variables.end()) << "Could not find variable: " << name;
+	return it->second;
 }
 
 } /* namespace SMT */
