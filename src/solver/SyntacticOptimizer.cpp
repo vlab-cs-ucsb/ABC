@@ -16,6 +16,8 @@ SyntacticOptimizer::SyntacticOptimizer(Script_ptr script, SymbolTable_ptr symbol
 SyntacticOptimizer::~SyntacticOptimizer() { }
 
 void SyntacticOptimizer::start() {
+	visit(root);
+	end();
 }
 
 void SyntacticOptimizer::end() {
@@ -30,7 +32,8 @@ void SyntacticOptimizer::visitCommand(Command_ptr command) {
 	switch (command->getType()) {
 		case Command::Type::ASSERT:
 		{
-			visit_children_of(command);
+			Assert_ptr assert = dynamic_cast<Assert_ptr>(command);
+			visit_and_callback(assert->term);
 			break;
 		}
 	default:
@@ -103,11 +106,35 @@ void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {  }
 
 void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
 	for (auto& term_ptr : *(re_concat_term->term_list)) {
-		visit(term_ptr);
-		while(not callbacks.empty()) {
-//			callbacks.top()(term_ptr);
-			callbacks.pop();
+		visit_and_callback(term_ptr);
+	}
+
+	TermConstant_ptr initial_term_constant = nullptr;
+	for (auto iter = re_concat_term->term_list->begin(); iter != re_concat_term->term_list->end(); ) {
+		if (Term::Type::TERMCONSTANT == (*iter)->getType()) {
+			TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter);
+			if (initial_term_constant == nullptr) {
+				initial_term_constant = term_constant;
+			} else {
+				pre_concat_constants(initial_term_constant, term_constant);
+				delete term_constant; // deallocate
+				re_concat_term->term_list->erase(iter);
+				continue;
+			}
+		} else {
+			initial_term_constant = nullptr;
 		}
+		iter++;
+	}
+
+	if (re_concat_term->term_list->size() == 1 and
+			Term::Type::TERMCONSTANT == re_concat_term->term_list->front()->getType()) {
+		auto callback = [&re_concat_term](Term_ptr& term) mutable {
+			term = re_concat_term->term_list->front();
+			re_concat_term->term_list->clear();
+			delete re_concat_term;
+		};
+		callbacks.push(callback);
 	}
 }
 
@@ -118,7 +145,7 @@ void SyntacticOptimizer::visitToRegex(ToRegex_ptr to_regex_term) {
 			std::string regex_template = "/%s/";
 			std::string escaped_regex = escape_regex(term_constant->getValue());
 			regex_template.replace(regex_template.find_first_of("%s"), 2, escaped_regex);
-			Primitive_ptr regex_primitive = new Primitive(escaped_regex, Primitive::Type::REGEX);
+			Primitive_ptr regex_primitive = new Primitive(regex_template, Primitive::Type::REGEX);
 			delete term_constant->primitive;
 			term_constant->primitive = regex_primitive;
 
@@ -128,8 +155,7 @@ void SyntacticOptimizer::visitToRegex(ToRegex_ptr to_regex_term) {
 				delete to_regex_term;
 			};
 
-			std::function<void()> f = std::bind(callback,  to_regex_term->term);
-//			callbacks.push(std::bind(callback, std::placeholders::_1));
+			callbacks.push(callback);
 		}
 	}
 }
@@ -154,6 +180,14 @@ void SyntacticOptimizer::visitPrimitive(Primitive_ptr primitive) { }
 
 void SyntacticOptimizer::visitVariable(Variable_ptr variable) { }
 
+void SyntacticOptimizer::visit_and_callback(Term_ptr& term) {
+	visit(term);
+	if (not callbacks.empty()) {
+		callbacks.top()(term);
+		callbacks.pop();
+	}
+}
+
 std::string SyntacticOptimizer::escape_regex(std::string regex) {
 	std::stringstream ss;
 	for (auto ch : regex) {
@@ -164,6 +198,23 @@ std::string SyntacticOptimizer::escape_regex(std::string regex) {
 	return ss.str();
 }
 
+std::string SyntacticOptimizer::regex_to_str(std::string regex) {
+	std::string::size_type last = regex.substr(1).find_last_of("/");
+	return regex.substr(1, last);
+}
+
+void SyntacticOptimizer::pre_concat_constants(TermConstant_ptr left_constant, TermConstant_ptr right_constant) {
+	std::stringstream ss;
+	if (Primitive::Type::REGEX == left_constant->getValueType() or
+			Primitive::Type::REGEX == right_constant->getValueType()) {
+		std::string left_data = (Primitive::Type::REGEX == left_constant->getValueType()) ? regex_to_str(left_constant->getValue()) : left_constant->getValue();
+		std::string right_data = (Primitive::Type::REGEX == right_constant->getValueType()) ? regex_to_str(right_constant->getValue()) : right_constant->getValue();
+		ss << "/" << left_data << right_data << "/";
+		left_constant->primitive->setType(Primitive::Type::REGEX);
+		left_constant->primitive->setData( ss.str() );
+	}
+
+}
 
 } /* namespace SMT */
 } /* namespace Vlab */

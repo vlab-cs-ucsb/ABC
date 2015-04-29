@@ -72,10 +72,15 @@ public:
 	void visitPrimitive(Primitive_ptr);
 	void visitVariable(Variable_ptr);
 protected:
+	void visit_and_callback(Term_ptr&);
 	std::string escape_regex(std::string regex);
+	std::string regex_to_str(std::string regex);
+	void pre_concat_constants(TermConstant_ptr, TermConstant_ptr);
+
+
 	Script_ptr root;
 	SymbolTable_ptr symbol_table;
-	std::stack<std::function <void ()>> callbacks;
+	std::stack<std::function <void (Term_ptr&)>> callbacks;
 };
 
 } /* namespace SMT */

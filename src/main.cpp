@@ -80,6 +80,8 @@ int main(const int argc, const char **argv) {
 
 	driver.initializeSolver();
 
+	driver.ast2dot( output_root + "/optimized.dot");
+
 	return 0;
 }
 
