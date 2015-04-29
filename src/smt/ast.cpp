@@ -330,6 +330,10 @@ std::ostream& operator<<(std::ostream& os, const Term& term){
    return os << term.str();
 }
 
+//std::ostream& operator<<(std::ostream& os, const Term_ptr& term) {
+//	return os << term->str();
+//}
+
 Exclamation::Exclamation(Term_ptr term, AttributeList_ptr attribute_list)
 	: Term(Term::Type::EXCLAMATION), term (term), attribute_list (attribute_list) { }
 
@@ -666,10 +670,11 @@ Contains_ptr Contains::clone() const { return new Contains(*this); }
 
 Contains::~Contains() { delete subject_term; delete search_term; }
 
-void Contains::accept(Visitor_ptr v) {
-}
+void Contains::accept(Visitor_ptr v) { v->visitContains(this); }
 
 void Contains::visit_children(Visitor_ptr v) {
+	v->visit(subject_term);
+	v->visit(search_term);
 }
 
 Begins::Begins(Term_ptr subject_term, Term_ptr search_term)
@@ -684,10 +689,11 @@ Begins_ptr Begins::clone() const { return new Begins(*this); }
 
 Begins::~Begins() { delete subject_term; delete search_term; }
 
-void Begins::accept(Visitor_ptr v) {
-}
+void Begins::accept(Visitor_ptr v) { v->visitBegins(this); }
 
 void Begins::visit_children(Visitor_ptr v) {
+	v->visit(subject_term);
+	v->visit(search_term);
 }
 
 Ends::Ends(Term_ptr subject_term, Term_ptr search_term)
@@ -703,10 +709,11 @@ Ends_ptr Ends::clone() const { return new Ends(*this); }
 
 Ends::~Ends() { delete subject_term; delete search_term; }
 
-void Ends::accept(Visitor_ptr v) {
-}
+void Ends::accept(Visitor_ptr v) { v->visitEnds(this); }
 
 void Ends::visit_children(Visitor_ptr v) {
+	v->visit(subject_term);
+	v->visit(search_term);
 }
 
 IndexOf::IndexOf(Term_ptr subject_term, Term_ptr search_term)
@@ -722,10 +729,11 @@ IndexOf_ptr IndexOf::clone() const { return new IndexOf(*this); }
 
 IndexOf::~IndexOf() { delete subject_term; delete search_term; }
 
-void IndexOf::accept(Visitor_ptr v) {
-}
+void IndexOf::accept(Visitor_ptr v) { v->visitIndexOf(this); }
 
 void IndexOf::visit_children(Visitor_ptr v) {
+	v->visit(subject_term);
+	v->visit(search_term);
 }
 
 Replace::Replace(Term_ptr subject_term, Term_ptr search_term, Term_ptr replace_term)
@@ -742,10 +750,12 @@ Replace_ptr Replace::clone() const { return new Replace(*this); }
 
 Replace::~Replace() { delete subject_term; delete search_term; delete replace_term;}
 
-void Replace::accept(Visitor_ptr v) {
-}
+void Replace::accept(Visitor_ptr v) { v->visitReplace(this); }
 
 void Replace::visit_children(Visitor_ptr v) {
+	v->visit(subject_term);
+	v->visit(search_term);
+	v->visit(replace_term);
 }
 
 Count::Count(Term_ptr bound_term, Term_ptr subject_term)

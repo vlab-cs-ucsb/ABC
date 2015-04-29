@@ -76,7 +76,11 @@ protected:
 	std::string escape_regex(std::string regex);
 	std::string regex_to_str(std::string regex);
 	void pre_concat_constants(TermConstant_ptr, TermConstant_ptr);
-
+	bool check_and_process_in_transformation(Term_ptr, bool is_complement);
+	// TODO check len transformation later when pres. arith. added.
+	bool check_and_process_len_transformation(Term_ptr, Term_ptr&, Term_ptr&);
+	bool __check_and_process_len_transformation(std::string operation, Term_ptr&, Term_ptr&);
+	std::string syntactic_reverse_relation(std::string operation);
 
 	Script_ptr root;
 	SymbolTable_ptr symbol_table;

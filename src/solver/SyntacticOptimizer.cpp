@@ -62,47 +62,204 @@ void SyntacticOptimizer::visitForAll(ForAll_ptr for_all_term) {  }
 
 void SyntacticOptimizer::visitLet(Let_ptr let_term) { }
 
-void SyntacticOptimizer::visitAnd(And_ptr and_term) { }
+void SyntacticOptimizer::visitAnd(And_ptr and_term) {
+	for (auto& term : *(and_term->term_list)) {
+		visit_and_callback(term);
+	}
+}
 
-void SyntacticOptimizer::visitOr(Or_ptr or_term) { }
+void SyntacticOptimizer::visitOr(Or_ptr or_term) {
+	for (auto& term : *(or_term->term_list)) {
+		visit_and_callback(term);
+	}
+}
 
-void SyntacticOptimizer::visitNot(Not_ptr not_term) { }
+void SyntacticOptimizer::visitNot(Not_ptr not_term) {
+	visit_and_callback(not_term->term);
 
-void SyntacticOptimizer::visitUMinus(UMinus_ptr u_minus_term) { }
+	if (Term::Type::IN == not_term->term->getType()) {
+		In_ptr in_ptr = dynamic_cast<In_ptr>(not_term->term);
+		if (check_and_process_in_transformation(in_ptr->right_term, true)) {
 
-void SyntacticOptimizer::visitMinus(Minus_ptr minus_term) { }
+			auto callback = [&not_term](Term_ptr& term) mutable {
+				term = not_term->term;
+				not_term->term = nullptr;
+				delete not_term;
+			};
 
-void SyntacticOptimizer::visitPlus(Plus_ptr plus_term) { }
+			callbacks.push(callback);
+		}
+	}
+}
 
-void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {  }
+void SyntacticOptimizer::visitUMinus(UMinus_ptr u_minus_term) {
+	visit_and_callback(u_minus_term->term);
+}
 
-void SyntacticOptimizer::visitGt(Gt_ptr gt_term) {  }
+void SyntacticOptimizer::visitMinus(Minus_ptr minus_term) {
+	visit_and_callback(minus_term->left_term);
+	visit_and_callback(minus_term->right_term);
 
-void SyntacticOptimizer::visitGe(Ge_ptr ge_term) {  }
+	if (Term::Type::TERMCONSTANT == minus_term->right_term->getType()) {
+		TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(minus_term->right_term);
+		if (term_constant->getValue() == "0") {
+			auto callback = [minus_term](Term_ptr& term) mutable {
+				term = minus_term->left_term;
+				minus_term->left_term = nullptr;
+				delete minus_term;
+			};
+			callbacks.push(callback);
+		}
+	}
+}
 
-void SyntacticOptimizer::visitLt(Lt_ptr lt_term) {  }
+void SyntacticOptimizer::visitPlus(Plus_ptr plus_term) {
+	visit_and_callback(plus_term->left_term);
+	visit_and_callback(plus_term->right_term);
 
-void SyntacticOptimizer::visitLe(Le_ptr le_term) {  }
+	if (Term::Type::TERMCONSTANT == plus_term->right_term->getType()) {
+		TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(plus_term->right_term);
+		if (term_constant->getValue() == "0") {
+			auto callback = [plus_term](Term_ptr& term) mutable {
+				term = plus_term->left_term;
+				plus_term->left_term = nullptr;
+				delete plus_term;
+			};
+			callbacks.push(callback);
+		}
+	} else if (Term::Type::TERMCONSTANT == plus_term->left_term->getType()) {
+		TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(plus_term->left_term);
+		if (term_constant->getValue() == "0") {
+			auto callback = [plus_term](Term_ptr& term) mutable {
+				term = plus_term->right_term;
+				plus_term->right_term = nullptr;
+				delete plus_term;
+			};
+			callbacks.push(callback);
+		}
+	}
+}
 
-void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {  }
+void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
+	visit_and_callback(eq_term->left_term);
+	visit_and_callback(eq_term->right_term);
 
-void SyntacticOptimizer::visitIn(In_ptr in_term) {  }
+	check_and_process_len_transformation(eq_term, eq_term->left_term, eq_term->right_term);
+}
 
-void SyntacticOptimizer::visitLen(Len_ptr len_term) {  }
+void SyntacticOptimizer::visitGt(Gt_ptr gt_term) {
+	visit_and_callback(gt_term->left_term);
+	visit_and_callback(gt_term->right_term);
 
-void SyntacticOptimizer::visitContains(Contains_ptr contains_term) {  }
+	if ( check_and_process_len_transformation(gt_term, gt_term->left_term, gt_term->right_term) ) {
+		auto callback = [gt_term](Term_ptr& term) mutable {
+			term = new Eq(gt_term->left_term, gt_term->right_term);
+			gt_term->left_term = nullptr;
+			gt_term->right_term = nullptr;
+			delete gt_term;
+		};
+		callbacks.push(callback);
+	}
+}
 
-void SyntacticOptimizer::visitBegins(Begins_ptr begins_term) {  }
+void SyntacticOptimizer::visitGe(Ge_ptr ge_term) {
+	visit_and_callback(ge_term->left_term);
+	visit_and_callback(ge_term->right_term);
 
-void SyntacticOptimizer::visitEnds(Ends_ptr ends_term) { }
+	if ( check_and_process_len_transformation(ge_term, ge_term->left_term, ge_term->right_term) ) {
+		auto callback = [ge_term](Term_ptr& term) mutable {
+			term = new Eq(ge_term->left_term, ge_term->right_term);
+			ge_term->left_term = nullptr;
+			ge_term->right_term = nullptr;
+			delete ge_term;
+		};
+		callbacks.push(callback);
+	}
+}
 
-void SyntacticOptimizer::visitIndexOf(IndexOf_ptr index_of_term) { }
+void SyntacticOptimizer::visitLt(Lt_ptr lt_term) {
+	visit_and_callback(lt_term->left_term);
+	visit_and_callback(lt_term->right_term);
 
-void SyntacticOptimizer::visitReplace(Replace_ptr replace_term) {  }
+	if ( check_and_process_len_transformation(lt_term, lt_term->left_term, lt_term->right_term) ) {
+		auto callback = [lt_term](Term_ptr& term) mutable {
+			term = new Eq(lt_term->left_term, lt_term->right_term);
+			lt_term->left_term = nullptr;
+			lt_term->right_term = nullptr;
+			delete lt_term;
+		};
+		callbacks.push(callback);
+	}
+}
 
-void SyntacticOptimizer::visitCount(Count_ptr count_term) {  }
+void SyntacticOptimizer::visitLe(Le_ptr le_term) {
+	visit_and_callback(le_term->left_term);
+	visit_and_callback(le_term->right_term);
 
-void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {  }
+	if ( check_and_process_len_transformation(le_term, le_term->left_term, le_term->right_term) ) {
+		auto callback = [le_term](Term_ptr& term) mutable {
+			term = new Eq(le_term->left_term, le_term->right_term);
+			le_term->left_term = nullptr;
+			le_term->right_term = nullptr;
+			delete le_term;
+		};
+		callbacks.push(callback);
+	}
+}
+
+void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {
+	for (auto& term_ptr : *(concat_term->term_list)) {
+		visit_and_callback(term_ptr);
+	}
+}
+
+void SyntacticOptimizer::visitIn(In_ptr in_term) {
+	visit_and_callback(in_term->left_term);
+	visit_and_callback(in_term->right_term);
+}
+
+void SyntacticOptimizer::visitLen(Len_ptr len_term) {
+	visit_and_callback(len_term->term);
+}
+
+void SyntacticOptimizer::visitContains(Contains_ptr contains_term) {
+	visit_and_callback(contains_term->subject_term);
+	visit_and_callback(contains_term->search_term);
+}
+
+void SyntacticOptimizer::visitBegins(Begins_ptr begins_term) {
+	visit_and_callback(begins_term->subject_term);
+	visit_and_callback(begins_term->search_term);
+}
+
+void SyntacticOptimizer::visitEnds(Ends_ptr ends_term) {
+	visit_and_callback(ends_term->subject_term);
+	visit_and_callback(ends_term->search_term);
+}
+
+void SyntacticOptimizer::visitIndexOf(IndexOf_ptr index_of_term) {
+	visit_and_callback(index_of_term->subject_term);
+	visit_and_callback(index_of_term->search_term);
+}
+
+void SyntacticOptimizer::visitReplace(Replace_ptr replace_term) {
+	visit_and_callback(replace_term->subject_term);
+	visit_and_callback(replace_term->search_term);
+	visit_and_callback(replace_term->replace_term);
+}
+
+void SyntacticOptimizer::visitCount(Count_ptr count_term) {
+	visit_and_callback(count_term->bound_term);
+	visit_and_callback(count_term->subject_term);
+}
+
+void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {
+	visit_and_callback(ite_term->cond);
+	visit_and_callback(ite_term->then_branch);
+	visit_and_callback(ite_term->else_branch);
+
+
+}
 
 void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
 	for (auto& term_ptr : *(re_concat_term->term_list)) {
@@ -127,15 +284,17 @@ void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
 		iter++;
 	}
 
-	if (re_concat_term->term_list->size() == 1 and
-			Term::Type::TERMCONSTANT == re_concat_term->term_list->front()->getType()) {
-		auto callback = [&re_concat_term](Term_ptr& term) mutable {
+	auto callback = [re_concat_term](Term_ptr& term) mutable {
+		if (re_concat_term->term_list->size() == 1) {
 			term = re_concat_term->term_list->front();
 			re_concat_term->term_list->clear();
-			delete re_concat_term;
-		};
-		callbacks.push(callback);
-	}
+		} else {
+			term = new Concat(re_concat_term->term_list);
+			re_concat_term->term_list = nullptr;
+		}
+		delete re_concat_term;
+	};
+	callbacks.push(callback);
 }
 
 void SyntacticOptimizer::visitToRegex(ToRegex_ptr to_regex_term) {
@@ -149,7 +308,7 @@ void SyntacticOptimizer::visitToRegex(ToRegex_ptr to_regex_term) {
 			delete term_constant->primitive;
 			term_constant->primitive = regex_primitive;
 
-			auto callback = [&to_regex_term](Term_ptr& term) mutable {
+			auto callback = [to_regex_term](Term_ptr& term) mutable {
 				term = to_regex_term->term;
 				to_regex_term->term = nullptr;
 				delete to_regex_term;
@@ -214,6 +373,94 @@ void SyntacticOptimizer::pre_concat_constants(TermConstant_ptr left_constant, Te
 		left_constant->primitive->setData( ss.str() );
 	}
 
+}
+
+bool SyntacticOptimizer::check_and_process_in_transformation(Term_ptr term, bool isComplement) {
+	if (Term::Type::TERMCONSTANT == term->getType()) {
+		TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(term);
+		if (Primitive::Type::REGEX == term_constant->getValueType() and isComplement){
+			std::string data = regex_to_str(term_constant->getValue());
+			if (data.find_first_of("~(") == 0 and data.back() == ')') {
+				data.replace(0, 2, "");
+				data.pop_back();
+			} else {
+				std::string regex_template = "/~(%s)/";
+				regex_template.replace(regex_template.find_first_of("%s"), 2, data);
+				data = regex_template;
+			}
+			term_constant->primitive->setData(data);
+			return true;
+		} else if (Primitive::Type::STRING == term_constant->getValueType()  and isComplement) {
+			std::string regex_template = "/~(%s)/";
+			regex_template.replace(regex_template.find_first_of("%s"), 2, escape_regex(term_constant->getValue()));
+			term_constant->primitive->setData(regex_template);
+			term_constant->primitive->setType(Primitive::Type::REGEX);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool SyntacticOptimizer::check_and_process_len_transformation(Term_ptr operation, Term_ptr& left_term,Term_ptr& right_term) {
+	DVLOG(18) << "Checking and applying transformation for op: " << *operation;
+	return __check_and_process_len_transformation(operation->str(), left_term, right_term) ||
+			__check_and_process_len_transformation(syntactic_reverse_relation(operation->str()), right_term, left_term);
+}
+
+bool SyntacticOptimizer::__check_and_process_len_transformation(std::string operation, Term_ptr& left_term,Term_ptr& right_term) {
+	if (Term::Type::LEN == left_term->getType()) {
+		Len_ptr len_ptr = dynamic_cast<Len_ptr>(left_term);
+		if (Term::Type::TERMCONSTANT == right_term->getType()) {
+			TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(right_term);
+			if (term_constant->getValueType() == Primitive::Type::NUMERAL) {
+				int value = std::stoi(term_constant->getValue());
+				std::string regex_template = "/.{%s,%s}/";
+				std::string l_value = "";
+				std::string r_value = "";
+				if (operation == "=") {
+					l_value = std::to_string( value );
+					r_value = std::to_string( value );
+				} else if (operation == "<") {
+					l_value = "0";
+					r_value = std::to_string( value - 1 );
+				} else if (operation == "<=") {
+					l_value = "0";
+					r_value = std::to_string( value );
+				} else if (operation == ">") {
+					l_value = std::to_string( value + 1 );
+				} else if (operation == ">=") {
+					l_value = std::to_string( value );
+				} else {
+					return false;
+				}
+				regex_template.replace(regex_template.find_first_of("%s"), 2, l_value); // replace l
+				regex_template.replace(regex_template.find_first_of("%s"), 2, r_value); // replace r
+				term_constant->primitive->setData(regex_template);
+				term_constant->primitive->setType(Primitive::Type::REGEX);
+				left_term = len_ptr->term;
+				len_ptr->term = nullptr;
+				delete len_ptr;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+
+std::string SyntacticOptimizer::syntactic_reverse_relation(std::string operation) {
+	if (operation == "<") {
+		return ">";
+	} else if (operation == "<=") {
+		return ">=";
+	} else if (operation == ">") {
+		return "<";
+	} else if (operation == ">=") {
+		return "<=";
+	} else {
+		return operation;
+	}
 }
 
 } /* namespace SMT */

@@ -226,6 +226,7 @@ public:
 	};
 
 	friend std::ostream& operator<<(std::ostream& os, const Term& term);
+//	friend std::ostream& operator<<(std::ostream& os, const Term_ptr& term);
 protected:
 	const Term::Type type;
 };

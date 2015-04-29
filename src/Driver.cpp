@@ -30,6 +30,7 @@ int Driver::parse (std::istream* in) {
 	Parser parser (script, scanner);
 //	parser.set_debug_level (trace_parsing);
 	int res = parser.parse ();
+	CHECK_EQ(0, res);
 	return res;
 }
 
@@ -92,7 +93,7 @@ void Driver::initializeSolver() {
 //}
 
 void Driver::error(const Vlab::location& l, const std::string& m) {
-	std::cerr << l << ": " << m << std::endl;
+	LOG(FATAL) << "error: " << l << " : " << m;
 }
 
 
