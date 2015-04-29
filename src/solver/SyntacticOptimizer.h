@@ -1,13 +1,14 @@
 /*
- * Initializer.h
+ * SyntacticOptimizer.h
  *
- *  Created on: Apr 27, 2015
+ *  Created on: Apr 28, 2015
  *      Author: baki
  */
 
-#ifndef SOLVER_INITIALIZER_H_
-#define SOLVER_INITIALIZER_H_
+#ifndef SOLVER_SYNTACTICOPTIMIZER_H_
+#define SOLVER_SYNTACTICOPTIMIZER_H_
 
+#include <functional>
 #include <stack>
 
 #include "../smt/ast.h"
@@ -17,10 +18,10 @@
 namespace Vlab {
 namespace SMT {
 
-class Initializer: public Visitor, public SVisitor {
+class SyntacticOptimizer: public Visitor, public SVisitor {
 public:
-	Initializer(Script_ptr, SymbolTable_ptr);
-	virtual ~Initializer();
+	SyntacticOptimizer(Script_ptr, SymbolTable_ptr);
+	virtual ~SyntacticOptimizer();
 
 	void start();
 	void end();
@@ -70,18 +71,14 @@ public:
 	void visitIdentifier(Identifier_ptr);
 	void visitPrimitive(Primitive_ptr);
 	void visitVariable(Variable_ptr);
-
 protected:
-	void verifyVariableDefinitions();
-
+	std::string escape_regex(std::string regex);
 	Script_ptr root;
 	SymbolTable_ptr symbol_table;
-	std::stack<Primitive_ptr> primitives;
-	std::stack<Sort_ptr> sorts;
-
+	std::stack<std::function <void ()>> callbacks;
 };
 
 } /* namespace SMT */
 } /* namespace Vlab */
 
-#endif /* SOLVER_INITIALIZER_H_ */
+#endif /* SOLVER_SYNTACTICOPTIMIZER_H_ */

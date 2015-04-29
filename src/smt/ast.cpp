@@ -1083,7 +1083,9 @@ std::string Primitive::str() const {
 			break;
 		case Primitive::Type::REGEX:
 			ss << Primitive::Name::REGEX;
-			LOG(FATAL) << "Unknown command!";
+			break;
+		default:
+			LOG(FATAL) << "Unknown primitive!";
 			break;
 	}
 	ss << ">";
@@ -1184,7 +1186,7 @@ Variable::~Variable() { }
 std::string Variable::str() const {
 	std::stringstream ss;
 	ss << name << ":<" << TVariable::str() << ">";
-	std::string tmp = (is_symbolic) ? " (symbolic)" : " (pseudo)";
+	std::string tmp = (is_symbolic) ? " (symbolic)" : " (?)";
 	ss << tmp;
 	return ss.str();
 }

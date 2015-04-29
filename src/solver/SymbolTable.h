@@ -15,6 +15,8 @@
 namespace Vlab {
 namespace SMT {
 
+typedef std::map<std::string, Variable_ptr> VariableMap;
+
 class SymbolTable {
 public:
 	SymbolTable();
@@ -22,10 +24,15 @@ public:
 
 	void addVariable(Variable_ptr);
 	Variable_ptr getVariable(std::string name);
+	VariableMap& getVariables();
+
+	void setBound(int bound);
+	int getBound();
 
 private:
 	std::string global_var;
-	std::map<std::string, Variable_ptr> variables;
+	int bound;
+	VariableMap variables;
 };
 
 typedef SymbolTable* SymbolTable_ptr;

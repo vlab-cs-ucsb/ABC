@@ -13,7 +13,7 @@ namespace Vlab {
 //PerfInfo* Driver::perfInfo;
 
 Driver::Driver()
-	: script (nullptr)/*, symbol_table (nullptr)*/ {
+	: script (nullptr), symbol_table (nullptr) {
 }
 
 Driver::~Driver() {
@@ -58,10 +58,9 @@ void Driver::initializeSolver() {
 	SMT::Initializer initializer(script, symbol_table);
 	initializer.start();
 
-//	symbol_table = std::make_shared<SMT::SymbolTable>();
-//	SMT::Initializer initializer;
-//	initializer.start(script, symbol_table);
-//
+	SMT::SyntacticOptimizer syntactic_optimizer(script, symbol_table);
+	syntactic_optimizer.start();
+
 //	SMT::BooleanVarReductor boolean_reductor;
 //	boolean_reductor.start(script, symbol_table);
 //

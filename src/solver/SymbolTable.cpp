@@ -10,7 +10,7 @@
 namespace Vlab {
 namespace SMT {
 SymbolTable::SymbolTable()
-	: global_var ("__vlab_global_var") {}
+	: global_var ("__vlab_global_var"), bound(50) {}
 SymbolTable::~SymbolTable() {
 
 	for (auto& entry : variables) {
@@ -29,9 +29,15 @@ void SymbolTable::addVariable(Variable_ptr variable) {
 
 Variable_ptr SymbolTable::getVariable(std::string name) {
 	auto it = variables.find(name);
-	CHECK(it != variables.end()) << "Could not find variable: " << name;
+	CHECK(it != variables.end()) << "Variable is not found: " << name;
 	return it->second;
 }
+
+VariableMap& SymbolTable::getVariables() { return variables; }
+
+void SymbolTable::setBound(int bound) { this->bound = bound; }
+
+int SymbolTable::getBound() { return bound; }
 
 } /* namespace SMT */
 } /* namespace Vlab */

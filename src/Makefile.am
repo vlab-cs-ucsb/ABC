@@ -9,6 +9,8 @@ abc_SOURCES = \
   ./solver/SymbolTable.h \
   ./solver/Initializer.cpp \
   ./solver/Initializer.h \
+  ./solver/SyntacticOptimizer.cpp \
+  ./solver/SyntacticOptimizer.h \
 	Driver.cpp \
 	Driver.h \
 	main.cpp 

@@ -39,7 +39,9 @@ void Initializer::visitScript(Script_ptr script) {
 		}
 	}
 
-	visit_children_of(script);
+	verifyVariableDefinitions();
+
+//	visit_children_of(script);
 }
 
 void Initializer::visitCommand(Command_ptr command) {
@@ -67,12 +69,28 @@ void Initializer::visitCommand(Command_ptr command) {
 			variable->setSymbolic(true);
 			DVLOG(19) << *variable << " is changed to a symbolic var.";
 		}
-		CHECK_EQ(0, primitives.size()) << "unexpected primitive on stack";
+		CHECK_EQ(0, primitives.size()) << "unexpected primitive left.";
 		break;
 	}
 	case Command::Type::CHECK_SAT_AND_COUNT:
 	{
 		visit_children_of(command);
+		if (primitives.size() == 1) {
+			Primitive_ptr primitive = primitives.top(); primitives.pop();
+			int bound = std::stoi(primitive->getData());
+			symbol_table->setBound(bound);
+			DVLOG(19) << "Model count bound: " << bound;
+		} else if (primitives.size() == 2) {
+			Primitive_ptr primitive = primitives.top(); primitives.pop();
+			Variable_ptr variable = symbol_table->getVariable(primitive->getData());
+			variable->setSymbolic(true);
+			DVLOG(19) << *variable << " is changed to a symbolic var.";
+			primitive = primitives.top(); primitives.pop();
+			int bound = std::stoi(primitive->getData());
+			symbol_table->setBound(bound);
+			DVLOG(19) << "Model count bound: " << bound;
+		}
+		CHECK_EQ(0, primitives.size()) << "unexpected primitive left.";
 		break;
 	}
 	case Command::Type::ASSERT:
@@ -170,6 +188,46 @@ void Initializer::visitTString(TString_ptr t_string) { }
 void Initializer::visitPrimitive(Primitive_ptr primitive) { primitives.push(primitive); }
 
 void Initializer::visitVariable(Variable_ptr variable) { }
+
+void Initializer::verifyVariableDefinitions() {
+	bool is_symbolic = false;
+	VariableMap variable_map = symbol_table->getVariables();
+	Variable_ptr variable = variable_map.begin()->second;
+	for (auto& pair : variable_map) {
+		is_symbolic = pair.second->isSymbolic();
+		if (is_symbolic) {
+			variable = pair.second;
+			break;
+		}
+		switch (variable->getType()) {
+			case Variable::Type::BOOL:
+			{
+				variable = pair.second;
+				break;
+			}
+			case Variable::Type::INT:
+			{
+				if (pair.second->getType() != Variable::Type::BOOL) {
+					variable = pair.second;
+				}
+				break;
+			}
+			case Variable::Type::STRING:
+			{
+				if (pair.second->getType() == Variable::Type::STRING) {
+					variable = pair.second;
+				}
+				break;
+			}
+			default:
+				break;
+		}
+	}
+	if (not is_symbolic) {
+		variable->setSymbolic(true);
+		LOG(INFO) << "No target var defined by user; setting target var: " << *variable;
+	}
+}
 
 } /* namespace SMT */
 } /* namespace Vlab */

@@ -17,6 +17,7 @@
 //#include "Statistics.h"
 #include "solver/SymbolTable.h"
 #include "solver/Initializer.h"
+#include "solver/SyntacticOptimizer.h"
 //#include "BooleanVarReductor.h"
 //#include "IntVarReductor.h"
 //#include "LengthConstraintReductor.h"
