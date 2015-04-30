@@ -258,7 +258,26 @@ void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {
 	visit_and_callback(ite_term->then_branch);
 	visit_and_callback(ite_term->else_branch);
 
+	auto callback = [ite_term](Term_ptr& term) mutable {
+		And_ptr then_branch = dynamic_cast<And_ptr>(ite_term->then_branch);
+		And_ptr else_branch = dynamic_cast<And_ptr>(ite_term->else_branch);
+		then_branch->term_list->push_back(ite_term->cond->clone());
+		if (Not_ptr not_term = dynamic_cast<Not_ptr>(ite_term->cond)) {
+			else_branch->term_list->push_back(not_term->term->clone());
+		} else {
+			not_term = new Not(ite_term->cond);
+			else_branch->term_list->push_back(not_term->clone());
+		}
 
+		TermList_ptr term_list = new TermList();
+		term_list->push_back(then_branch);
+		term_list->push_back(else_branch);
+		term = new Or(term_list);
+		ite_term->then_branch = nullptr;
+		ite_term->else_branch = nullptr;
+		delete ite_term;
+	};
+	callbacks.push(callback);
 }
 
 void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
