@@ -22,7 +22,11 @@ void Initializer::start() {
 }
 
 void Initializer::end() {
-
+	if (VLOG_IS_ON(19)) {
+		for (auto& pair : symbol_table -> getVariables()) {
+			DVLOG(19) << *pair.second;
+		}
+	}
 }
 
 void Initializer::visitScript(Script_ptr script) {
@@ -105,16 +109,6 @@ void Initializer::visitCommand(Command_ptr command) {
 
 void Initializer::visitTerm(Term_ptr term) {  }
 
-void Initializer::visitSort(Sort_ptr sort) { sorts.push(sort); }
-
-void Initializer::visitAttribute(Attribute_ptr attribute) {  }
-
-void Initializer::visitSortedVar(SortedVar_ptr sorted_var) { }
-
-void Initializer::visitVarBinding(VarBinding_ptr var_binding) {  }
-
-void Initializer::visitIdentifier(Identifier_ptr identifier) { }
-
 void Initializer::visitExclamation(Exclamation_ptr exclamation_term) {  }
 
 void Initializer::visitExists(Exists_ptr exists_term) { }
@@ -177,6 +171,10 @@ void Initializer::visitQualIdentifier(QualIdentifier_ptr qi_term) { }
 
 void Initializer::visitTermConstant(TermConstant_ptr term_constant) { }
 
+void Initializer::visitIdentifier(Identifier_ptr identifier) { }
+
+void Initializer::visitPrimitive(Primitive_ptr primitive) { primitives.push(primitive); }
+
 void Initializer::visitTVariable(TVariable_ptr t_variable) { }
 
 void Initializer::visitTBool(TBool_ptr t_bool) { }
@@ -185,9 +183,15 @@ void Initializer::visitTInt(TInt_ptr t_int) { }
 
 void Initializer::visitTString(TString_ptr t_string) { }
 
-void Initializer::visitPrimitive(Primitive_ptr primitive) { primitives.push(primitive); }
-
 void Initializer::visitVariable(Variable_ptr variable) { }
+
+void Initializer::visitSort(Sort_ptr sort) { sorts.push(sort); }
+
+void Initializer::visitAttribute(Attribute_ptr attribute) {  }
+
+void Initializer::visitSortedVar(SortedVar_ptr sorted_var) { }
+
+void Initializer::visitVarBinding(VarBinding_ptr var_binding) {  }
 
 void Initializer::verifyVariableDefinitions() {
 	bool is_symbolic = false;

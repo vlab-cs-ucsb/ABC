@@ -1,12 +1,12 @@
 /*
- * BooleanVarReductor.h
+ * VariableOptimizer.h
  *
- *  Created on: May 2, 2015
+ *  Created on: May 4, 2015
  *      Author: baki
  */
 
-#ifndef SRC_SOLVER_BOOLEANVARREDUCTOR_H_
-#define SRC_SOLVER_BOOLEANVARREDUCTOR_H_
+#ifndef SOLVER_VARIABLEOPTIMIZER_H_
+#define SOLVER_VARIABLEOPTIMIZER_H_
 
 #include <stack>
 #include <functional>
@@ -14,15 +14,15 @@
 #include <glog/logging.h>
 #include "../smt/ast.h"
 #include "SymbolTable.h"
+#include "Counter.h"
 
 namespace Vlab {
 namespace SMT {
 
-class BooleanVarReductor: public Visitor {
+class VariableOptimizer: public Visitor {
 public:
-	BooleanVarReductor(Script_ptr, SymbolTable_ptr);
-	virtual ~BooleanVarReductor();
-
+	VariableOptimizer(Script_ptr, SymbolTable_ptr);
+	virtual ~VariableOptimizer();
 	void start();
 	void end();
 
@@ -77,10 +77,9 @@ protected:
 	Script_ptr root;
 	SymbolTable_ptr symbol_table;
 	std::stack<std::function <void (Term_ptr&)>> callbacks;
-
 };
 
 } /* namespace SMT */
 } /* namespace Vlab */
 
-#endif /* SRC_SOLVER_BOOLEANVARREDUCTOR_H_ */
+#endif /* SOLVER_VARIABLEOPTIMIZER_H_ */

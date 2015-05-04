@@ -19,7 +19,7 @@
 #include "solver/SymbolTable.h"
 #include "solver/Initializer.h"
 #include "solver/SyntacticOptimizer.h"
-//#include "BooleanVarReductor.h"
+#include "solver/VariableOptimizer.h"
 //#include "IntVarReductor.h"
 //#include "LengthConstraintReductor.h"
 //#include "StrVarReductor.h"

@@ -636,7 +636,6 @@ public:
 	virtual void visit_children(Visitor_ptr);
 
 	std::string getVarName();
-	bool isSymbolic();
 
 	Identifier_ptr identifier;
 
@@ -865,7 +864,6 @@ public:
 
 	std::string getName();
 	Primitive::Type getType();
-	bool isSymbolic();
 
 	Primitive_ptr underscore;
 	Primitive_ptr symbol;

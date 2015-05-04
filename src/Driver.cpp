@@ -61,9 +61,9 @@ void Driver::initializeSolver() {
 	SMT::SyntacticOptimizer syntactic_optimizer(script, symbol_table);
 	syntactic_optimizer.start();
 
-//	SMT::BooleanVarReductor boolean_reductor;
-//	boolean_reductor.start(script, symbol_table);
-//
+	SMT::VariableOptimizer variable_optimizer(script, symbol_table);
+	variable_optimizer.start();
+
 //	SMT::IntVarReductor int_reductor;
 //	int_reductor.start(script, symbol_table);
 //

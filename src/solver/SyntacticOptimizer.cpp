@@ -20,8 +20,7 @@ void SyntacticOptimizer::start() {
 	end();
 }
 
-void SyntacticOptimizer::end() {
-}
+void SyntacticOptimizer::end() { }
 
 void SyntacticOptimizer::visitScript(Script_ptr script) {
 	visit_children_of(script);
@@ -43,16 +42,6 @@ void SyntacticOptimizer::visitCommand(Command_ptr command) {
 }
 
 void SyntacticOptimizer::visitTerm(Term_ptr term) {  }
-
-void SyntacticOptimizer::visitSort(Sort_ptr sort) { }
-
-void SyntacticOptimizer::visitAttribute(Attribute_ptr attribute) {  }
-
-void SyntacticOptimizer::visitSortedVar(SortedVar_ptr sorted_var) { }
-
-void SyntacticOptimizer::visitVarBinding(VarBinding_ptr var_binding) {  }
-
-void SyntacticOptimizer::visitIdentifier(Identifier_ptr identifier) { }
 
 void SyntacticOptimizer::visitExclamation(Exclamation_ptr exclamation_term) {  }
 
@@ -80,7 +69,7 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
 	if (Term::Type::IN == not_term->term->getType()) {
 		In_ptr in_ptr = dynamic_cast<In_ptr>(not_term->term);
 		if (check_and_process_in_transformation(in_ptr->right_term, true)) {
-
+			DVLOG(18) << "Transforming operation: " << *not_term;
 			auto callback = [&not_term](Term_ptr& term) mutable {
 				term = not_term->term;
 				not_term->term = nullptr;
@@ -144,7 +133,9 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
 	visit_and_callback(eq_term->left_term);
 	visit_and_callback(eq_term->right_term);
 
-	check_and_process_len_transformation(eq_term, eq_term->left_term, eq_term->right_term);
+	if ( check_and_process_len_transformation(eq_term, eq_term->left_term, eq_term->right_term) ) {
+		DVLOG(18) << "Applying len transformation: " << *eq_term;
+	}
 }
 
 void SyntacticOptimizer::visitGt(Gt_ptr gt_term) {
@@ -152,6 +143,7 @@ void SyntacticOptimizer::visitGt(Gt_ptr gt_term) {
 	visit_and_callback(gt_term->right_term);
 
 	if ( check_and_process_len_transformation(gt_term, gt_term->left_term, gt_term->right_term) ) {
+		DVLOG(18) << "Applying len transformation: " << *gt_term;
 		auto callback = [gt_term](Term_ptr& term) mutable {
 			term = new Eq(gt_term->left_term, gt_term->right_term);
 			gt_term->left_term = nullptr;
@@ -167,6 +159,7 @@ void SyntacticOptimizer::visitGe(Ge_ptr ge_term) {
 	visit_and_callback(ge_term->right_term);
 
 	if ( check_and_process_len_transformation(ge_term, ge_term->left_term, ge_term->right_term) ) {
+		DVLOG(18) << "Applying len transformation: " << *ge_term;
 		auto callback = [ge_term](Term_ptr& term) mutable {
 			term = new Eq(ge_term->left_term, ge_term->right_term);
 			ge_term->left_term = nullptr;
@@ -182,6 +175,7 @@ void SyntacticOptimizer::visitLt(Lt_ptr lt_term) {
 	visit_and_callback(lt_term->right_term);
 
 	if ( check_and_process_len_transformation(lt_term, lt_term->left_term, lt_term->right_term) ) {
+		DVLOG(18) << "Applying len transformation: " << *lt_term;
 		auto callback = [lt_term](Term_ptr& term) mutable {
 			term = new Eq(lt_term->left_term, lt_term->right_term);
 			lt_term->left_term = nullptr;
@@ -197,6 +191,7 @@ void SyntacticOptimizer::visitLe(Le_ptr le_term) {
 	visit_and_callback(le_term->right_term);
 
 	if ( check_and_process_len_transformation(le_term, le_term->left_term, le_term->right_term) ) {
+		DVLOG(18) << "Applying len transformation: " << *le_term;
 		auto callback = [le_term](Term_ptr& term) mutable {
 			term = new Eq(le_term->left_term, le_term->right_term);
 			le_term->left_term = nullptr;
@@ -258,6 +253,7 @@ void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {
 	visit_and_callback(ite_term->then_branch);
 	visit_and_callback(ite_term->else_branch);
 
+	DVLOG(18) << "Transforming operation: " << *ite_term << "into 'or'";
 	auto callback = [ite_term](Term_ptr& term) mutable {
 		And_ptr then_branch = dynamic_cast<And_ptr>(ite_term->then_branch);
 		And_ptr else_branch = dynamic_cast<And_ptr>(ite_term->else_branch);
@@ -288,6 +284,7 @@ void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
 		visit_and_callback(term_ptr);
 	}
 
+	DVLOG(18) << "Transforming operation: " << *re_concat_term << "into 'concat'";
 	TermConstant_ptr initial_term_constant = nullptr;
 	for (auto iter = re_concat_term->term_list->begin(); iter != re_concat_term->term_list->end(); ) {
 		if (Term::Type::TERMCONSTANT == (*iter)->getType()) {
@@ -323,6 +320,7 @@ void SyntacticOptimizer::visitToRegex(ToRegex_ptr to_regex_term) {
 	if (Term::Type::TERMCONSTANT == to_regex_term->term->getType()) {
 		TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(to_regex_term->term);
 		if (Primitive::Type::STRING == term_constant->getValueType()) {
+			DVLOG(18) << "Transforming operation: " << *to_regex_term;
 			std::string regex_template = "/%s/";
 			std::string escaped_regex = escape_regex(term_constant->getValue());
 			regex_template.replace(regex_template.find_first_of("%s"), 2, escaped_regex);
@@ -349,6 +347,10 @@ void SyntacticOptimizer::visitQualIdentifier(QualIdentifier_ptr qi_term) { }
 
 void SyntacticOptimizer::visitTermConstant(TermConstant_ptr term_constant) { }
 
+void SyntacticOptimizer::visitIdentifier(Identifier_ptr identifier) { }
+
+void SyntacticOptimizer::visitPrimitive(Primitive_ptr primitive) { }
+
 void SyntacticOptimizer::visitTVariable(TVariable_ptr t_variable) { }
 
 void SyntacticOptimizer::visitTBool(TBool_ptr t_bool) { }
@@ -357,9 +359,16 @@ void SyntacticOptimizer::visitTInt(TInt_ptr t_int) { }
 
 void SyntacticOptimizer::visitTString(TString_ptr t_string) { }
 
-void SyntacticOptimizer::visitPrimitive(Primitive_ptr primitive) { }
-
 void SyntacticOptimizer::visitVariable(Variable_ptr variable) { }
+
+void SyntacticOptimizer::visitSort(Sort_ptr sort) { }
+
+void SyntacticOptimizer::visitAttribute(Attribute_ptr attribute) {  }
+
+void SyntacticOptimizer::visitSortedVar(SortedVar_ptr sorted_var) { }
+
+void SyntacticOptimizer::visitVarBinding(VarBinding_ptr var_binding) {  }
+
 
 void SyntacticOptimizer::visit_and_callback(Term_ptr& term) {
 	visit(term);
@@ -425,7 +434,6 @@ bool SyntacticOptimizer::check_and_process_in_transformation(Term_ptr term, bool
 }
 
 bool SyntacticOptimizer::check_and_process_len_transformation(Term_ptr operation, Term_ptr& left_term,Term_ptr& right_term) {
-	DVLOG(18) << "Checking and applying transformation for op: " << *operation;
 	return __check_and_process_len_transformation(operation->str(), left_term, right_term) ||
 			__check_and_process_len_transformation(syntactic_reverse_relation(operation->str()), right_term, left_term);
 }

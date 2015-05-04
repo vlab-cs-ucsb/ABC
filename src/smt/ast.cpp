@@ -873,7 +873,6 @@ QualIdentifier_ptr QualIdentifier::clone() const { return new QualIdentifier(*th
 QualIdentifier::~QualIdentifier() { delete identifier; }
 
 std::string QualIdentifier::getVarName() { return identifier->getName(); }
-bool QualIdentifier::isSymbolic() { return identifier->isSymbolic(); }
 
 void QualIdentifier::accept(Visitor_ptr v) { v->visitQualIdentifier(this); }
 void QualIdentifier::visit_children(Visitor_ptr v) { v->visit(identifier); }
@@ -1024,24 +1023,11 @@ void Identifier::visit_children(Visitor_ptr v) {
 }
 
 Primitive::Type Identifier::getType() {
-//	if (symbol == nullptr || symbol->getType() != Primitive::Type::SYMBOL) {
-//		throw new std::runtime_error("Unhandled identifier!");
-//	}
 	return symbol->getType();
 }
 
 std::string Identifier::getName() {
-//	if (symbol == nullptr || symbol->getType() != Primitive::Type::SYMBOL) {
-//		throw new std::runtime_error("Unhandled identifier!");
-//	}
 	return symbol->getData();
-}
-
-bool Identifier::isSymbolic() {
-//	if (symbol == nullptr || symbol->getType() != Primitive::Type::SYMBOL) {
-//		throw new std::runtime_error("Unhandled identifier!");
-//	}
-	return (symbol->getData().find("var_") == 0);
 }
 
 const std::string Primitive::Name::NONE			= "NONE";
