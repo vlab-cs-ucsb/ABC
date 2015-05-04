@@ -1,12 +1,12 @@
 /*
- * SyntacticOptimizer.h
+ * BooleanVarReductor.h
  *
- *  Created on: Apr 28, 2015
+ *  Created on: May 2, 2015
  *      Author: baki
  */
 
-#ifndef SOLVER_SYNTACTICOPTIMIZER_H_
-#define SOLVER_SYNTACTICOPTIMIZER_H_
+#ifndef SRC_SOLVER_BOOLEANVARREDUCTOR_H_
+#define SRC_SOLVER_BOOLEANVARREDUCTOR_H_
 
 #include <stack>
 #include <functional>
@@ -18,10 +18,10 @@
 namespace Vlab {
 namespace SMT {
 
-class SyntacticOptimizer: public Visitor {
+class BooleanVarReductor: public Visitor {
 public:
-	SyntacticOptimizer(Script_ptr, SymbolTable_ptr);
-	virtual ~SyntacticOptimizer();
+	BooleanVarReductor(Script_ptr, SymbolTable_ptr);
+	virtual ~BooleanVarReductor();
 
 	void start();
 	void end();
@@ -73,21 +73,14 @@ public:
 	void visitVariable(Variable_ptr);
 protected:
 	void visit_and_callback(Term_ptr&);
-	std::string escape_regex(std::string regex);
-	std::string regex_to_str(std::string regex);
-	void pre_concat_constants(TermConstant_ptr, TermConstant_ptr);
-	bool check_and_process_in_transformation(Term_ptr, bool is_complement);
-	// TODO check len transformation later when pres. arith. added.
-	bool check_and_process_len_transformation(Term_ptr, Term_ptr&, Term_ptr&);
-	bool __check_and_process_len_transformation(std::string operation, Term_ptr&, Term_ptr&);
-	std::string syntactic_reverse_relation(std::string operation);
 
 	Script_ptr root;
 	SymbolTable_ptr symbol_table;
 	std::stack<std::function <void (Term_ptr&)>> callbacks;
+
 };
 
 } /* namespace SMT */
 } /* namespace Vlab */
 
-#endif /* SOLVER_SYNTACTICOPTIMIZER_H_ */
+#endif /* SRC_SOLVER_BOOLEANVARREDUCTOR_H_ */

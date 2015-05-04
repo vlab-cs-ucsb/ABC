@@ -37,8 +37,7 @@ int Driver::parse (std::istream* in) {
 void Driver::ast2dot(std::ostream* out) {
 
 	SMT::Ast2Dot ast2dot(out);
-	ast2dot.visit(script);
-	ast2dot.finish();
+	ast2dot.start(script);
 }
 void Driver::ast2dot(std::string file_name) {
 	std::ofstream outfile(file_name.c_str());

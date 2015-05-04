@@ -13,6 +13,7 @@
 #include <fstream>
 #include <memory>
 
+#include <glog/logging.h>
 #include "solver/Ast2Dot.h"
 //#include "Statistics.h"
 #include "solver/SymbolTable.h"

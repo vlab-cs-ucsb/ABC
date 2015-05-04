@@ -11,6 +11,7 @@
 #include <iostream>
 #include <stack>
 
+#include <glog/logging.h>
 #include "../smt/ast.h"
 
 namespace Vlab {
@@ -22,13 +23,14 @@ public:
 
 	~Ast2Dot();
 
-	void finish();
 	void add_edge(u_int64_t p, u_int64_t c);
 	void add_node(u_int64_t c, std::string label);
 	void draw(std::string label, Visitable_ptr p);
 	void draw_terminal(std::string label);
-	void visitPartial(Visitable_ptr);
 
+	void start(Visitable_ptr);
+	void start();
+	void end();
 	void visitScript(Script_ptr);
 	void visitCommand(Command_ptr);
 	void visitTerm(Term_ptr);

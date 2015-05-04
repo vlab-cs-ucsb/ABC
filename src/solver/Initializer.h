@@ -10,14 +10,14 @@
 
 #include <stack>
 
+#include<glog/logging.h>
 #include "../smt/ast.h"
-#include "SVisitor.h"
 #include "SymbolTable.h"
 
 namespace Vlab {
 namespace SMT {
 
-class Initializer: public Visitor, public SVisitor {
+class Initializer: public Visitor {
 public:
 	Initializer(Script_ptr, SymbolTable_ptr);
 	virtual ~Initializer();

@@ -11,6 +11,8 @@ abc_SOURCES = \
   ./solver/Initializer.h \
   ./solver/SyntacticOptimizer.cpp \
   ./solver/SyntacticOptimizer.h \
+  ./solver/BooleanVarReductor.cpp \
+  ./solver/BoolelanVarReductor.h \
 	Driver.cpp \
 	Driver.h \
 	main.cpp 

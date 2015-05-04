@@ -10,6 +10,7 @@
 
 #include <map>
 
+#include <glog/logging.h>
 #include "../smt/ast.h"
 
 namespace Vlab {

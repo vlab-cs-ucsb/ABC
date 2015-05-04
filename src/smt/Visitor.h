@@ -18,6 +18,8 @@ namespace SMT {
 class Visitor {
 public:
 	virtual ~Visitor() {}
+	virtual void start() = 0;
+	virtual void end() = 0;
 	virtual void visitScript(Script_ptr) = 0;
 	virtual void visitCommand(Command_ptr) = 0;
 	virtual void visitTerm(Term_ptr) = 0;

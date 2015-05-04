@@ -262,11 +262,14 @@ void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {
 		And_ptr then_branch = dynamic_cast<And_ptr>(ite_term->then_branch);
 		And_ptr else_branch = dynamic_cast<And_ptr>(ite_term->else_branch);
 		then_branch->term_list->push_back(ite_term->cond->clone());
+		then_branch->term_list->insert(then_branch->term_list->begin(), ite_term->cond->clone());
 		if (Not_ptr not_term = dynamic_cast<Not_ptr>(ite_term->cond)) {
-			else_branch->term_list->push_back(not_term->term->clone());
+//			else_branch->term_list->push_back(not_term->term->clone());
+			else_branch->term_list->insert(else_branch->term_list->begin(), not_term->term->clone());
 		} else {
 			not_term = new Not(ite_term->cond);
-			else_branch->term_list->push_back(not_term->clone());
+//			else_branch->term_list->push_back(not_term->clone());
+			else_branch->term_list->insert(else_branch->term_list->begin(), not_term->clone());
 		}
 
 		TermList_ptr term_list = new TermList();

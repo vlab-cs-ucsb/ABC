@@ -9,14 +9,30 @@
 
 namespace Vlab { namespace SMT {
 
-Ast2Dot::Ast2Dot(std::ostream* out) : m_out (out) {
-	count = 0;
-	*m_out << "digraph G { " << std::endl;
-}
+Ast2Dot::Ast2Dot(std::ostream* out) : m_out (out), count (0) { }
 
 Ast2Dot::~Ast2Dot() {}
 
-void Ast2Dot::finish() {
+void Ast2Dot::start(Visitable_ptr p) {
+	count = 0;
+	*m_out << "digraph G { " << std::endl;
+
+	if (dynamic_cast<Script_ptr>(p)) {
+	    add_node( count, "Script" );
+	} else {
+		add_node( count, "Partial");
+	}
+
+	s.push(count);
+	visit(p);
+	s.pop();
+
+	end();
+}
+
+void Ast2Dot::start() { LOG(FATAL) << "Please use the start function that accepts a parameter."; }
+
+void Ast2Dot::end() {
 	*m_out << "}" << std::endl;
 }
 
@@ -47,27 +63,10 @@ void Ast2Dot::draw_terminal(std::string label) {
     add_edge( s.top(), count );
 }
 
-/* visit starting any node */
-void Ast2Dot::visitPartial(Visitable_ptr v) {
-	if (count != 0) {
-		count = 0;
-		*m_out << "digraph G { " << std::endl;
-	}
-	add_node( count, "Partial");
-	s.push(count);
-	visit(v);
-	s.pop();
-	finish();
-}
-
-/* root node */
 void Ast2Dot::visitScript(Script_ptr script) {
-    add_node( count, "Script" );
-	s.push(count);
     if (script != nullptr) {
     	visit_children_of(script);
     }
-    s.pop();
 }
 
 void Ast2Dot::visitCommand(Command_ptr command) { draw(command->str(), command); }
