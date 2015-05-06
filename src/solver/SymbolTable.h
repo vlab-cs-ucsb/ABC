@@ -20,6 +20,8 @@ namespace SMT {
 typedef std::map<std::string, Variable_ptr> VariableMap;
 typedef std::map<std::string, int> VariableCounterMap;
 typedef std::map<Visitable_ptr, VariableCounterMap> VariableCounterTable;
+typedef std::map<Variable_ptr, Term_ptr> VariableSubstitutionMap;
+typedef std::map<Visitable_ptr, VariableSubstitutionMap> VariableSubstitutionTable;
 
 class SymbolTable {
 public:
@@ -36,6 +38,10 @@ public:
 	void push_scope(Visitable_ptr);
 	Visitable_ptr pop_scope();
 
+	bool add_var_substitution_rule(Variable_ptr, Term_ptr);
+	VariableSubstitutionMap& get_variable_substitution_map();
+	VariableSubstitutionTable& get_variable_substitution_table();
+
 	/*
 	 * Variable count functions, used for reduction and optimization
 	 */
@@ -51,14 +57,20 @@ private:
 	VariableMap variables;
 
 	/**
-	 * A scope is generated when there is a disjuction of conjuctions
+	 * There is a global scope
+	 * A new scope is generated when there is a disjuction of conjuctions
 	 */
 	std::vector<Visitable_ptr> scope_stack;
 
 	/**
-	 * Non-symbolic variable counts used in reduction
+	 * Number of usages of variables
 	 */
 	VariableCounterTable variable_counts_table;
+
+	/**
+	 * Rules for eliminating variables
+	 */
+	VariableSubstitutionTable variable_substitution_table;
 
 
 };

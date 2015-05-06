@@ -9,6 +9,7 @@
 #define SOLVER_VARIABLEOPTIMIZER_H_
 
 #include <stack>
+#include <map>
 #include <functional>
 
 #include <glog/logging.h>
@@ -73,10 +74,17 @@ public:
 	void visitVariable(Variable_ptr);
 protected:
 	void visit_and_callback(Term_ptr&);
+	std::string get_variable_name(Term_ptr);
+	void add_variable_substitution_rule(Variable_ptr, Variable_ptr, Term_ptr);
 
 	Script_ptr root;
 	SymbolTable_ptr symbol_table;
 	std::stack<std::function <void (Term_ptr&)>> callbacks;
+
+	Variable::Type target_type;
+	bool existential_elimination_phase;
+	std::map<std::string, int> eq_constraint_count;
+
 };
 
 } /* namespace SMT */

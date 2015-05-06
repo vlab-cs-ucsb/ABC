@@ -47,6 +47,24 @@ Visitable_ptr SymbolTable::pop_scope() {
 	return scope;
 }
 
+bool SymbolTable::add_var_substitution_rule(Variable_ptr variable, Term_ptr target_term) {
+	auto result = variable_substitution_table[scope_stack.back()].insert(std::make_pair(variable, target_term));
+	return result.second;
+}
+
+/**
+ * Returns rules for the current scope
+ */
+VariableSubstitutionMap& SymbolTable::get_variable_substitution_map() {
+	return variable_substitution_table[scope_stack.back()];
+}
+
+/**
+ * Returns rules within all scopes
+ */
+VariableSubstitutionTable& SymbolTable::get_variable_substitution_table() {
+	return variable_substitution_table;
+}
 
 void SymbolTable::increment_count(std::string var_name) {
 	variable_counts_table[scope_stack.back()][var_name]++;
