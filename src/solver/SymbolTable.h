@@ -30,6 +30,7 @@ public:
 
 	void addVariable(Variable_ptr);
 	Variable_ptr getVariable(std::string name);
+	Variable_ptr getVariable(Term_ptr);
 	VariableMap& getVariables();
 
 	void setBound(int bound);
@@ -39,8 +40,11 @@ public:
 	Visitable_ptr pop_scope();
 
 	bool add_var_substitution_rule(Variable_ptr, Term_ptr);
+	bool remove_var_substitution_rule(Variable_ptr);
+	Term_ptr get_variable_substitution_term(Variable_ptr);
 	VariableSubstitutionMap& get_variable_substitution_map();
 	VariableSubstitutionTable& get_variable_substitution_table();
+	void reset_substitution_rules();
 
 	/*
 	 * Variable count functions, used for reduction and optimization

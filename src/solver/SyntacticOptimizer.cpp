@@ -373,7 +373,7 @@ void SyntacticOptimizer::visitVarBinding(VarBinding_ptr var_binding) {  }
 void SyntacticOptimizer::visit_and_callback(Term_ptr& term) {
 	visit(term);
 	if (not callbacks.empty()) {
-		callbacks.top()(term);
+		callbacks.front()(term);
 		callbacks.pop();
 	}
 }

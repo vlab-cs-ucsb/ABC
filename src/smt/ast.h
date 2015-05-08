@@ -33,7 +33,7 @@ public:
 	virtual void accept(Visitor_ptr);
 	virtual void visit_children(Visitor_ptr);
 
-	CommandList_ptr commands;
+	CommandList_ptr command_list;
 };
 
 class Command : public Visitable {

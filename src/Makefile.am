@@ -13,6 +13,8 @@ abc_SOURCES = \
   ./solver/SyntacticOptimizer.h \
   ./solver/Counter.cpp \
   ./solver/Counter.h \
+  ./solver/OptimizationRuleRunner.cpp \
+  ./solver/OptimizationRuleRunner.h \
   ./solver/VariableOptimizer.cpp \
   ./solver/VariableOptimizer.h \
 	Driver.cpp \

@@ -1,29 +1,31 @@
 /*
- * VariableOptimizer.h
+ * OptimizationRuleRunner.h
  *
- *  Created on: May 4, 2015
+ *  Created on: May 6, 2015
  *      Author: baki
  */
 
-#ifndef SOLVER_VARIABLEOPTIMIZER_H_
-#define SOLVER_VARIABLEOPTIMIZER_H_
+#ifndef SOLVER_OPTIMIZATIONRULERUNNER_H_
+#define SOLVER_OPTIMIZATIONRULERUNNER_H_
 
-#include <stack>
+#include <sstream>
+#include <queue>
 #include <map>
+#include <functional>
 
 #include <glog/logging.h>
 #include "../smt/ast.h"
+#include "Ast2Dot.h"
 #include "SymbolTable.h"
 #include "Counter.h"
-#include "OptimizationRuleRunner.h"
 
 namespace Vlab {
 namespace SMT {
 
-class VariableOptimizer: public Visitor {
+class OptimizationRuleRunner: public Visitor {
 public:
-	VariableOptimizer(Script_ptr, SymbolTable_ptr);
-	virtual ~VariableOptimizer();
+	OptimizationRuleRunner(Script_ptr, SymbolTable_ptr);
+	virtual ~OptimizationRuleRunner();
 	void start();
 	void end();
 
@@ -73,18 +75,20 @@ public:
 	void visitPrimitive(Primitive_ptr);
 	void visitVariable(Variable_ptr);
 protected:
-	void add_variable_substitution_rule(Variable_ptr, Variable_ptr, Term_ptr);
-	void add_variable_substitution_rule(Variable_ptr, Term_ptr);
+	void visit_and_callback(Term_ptr&);
+	bool has_optimization_rules();
+	bool is_equivalent(Term_ptr, Term_ptr);
+	std::string to_string(Visitable_ptr);
+	Term_ptr generate_dummy_term();
+
+	bool check_and_substitute_var(Term_ptr& term);
 
 	Script_ptr root;
 	SymbolTable_ptr symbol_table;
-
-	Variable::Type target_type;
-	bool existential_elimination_phase;
-	std::map<Variable_ptr, int> eq_constraint_count;
+	std::queue<std::function <void (Term_ptr&)>> callbacks;
 };
 
 } /* namespace SMT */
 } /* namespace Vlab */
 
-#endif /* SOLVER_VARIABLEOPTIMIZER_H_ */
+#endif /* SOLVER_OPTIMIZATIONRULERUNNER_H_ */

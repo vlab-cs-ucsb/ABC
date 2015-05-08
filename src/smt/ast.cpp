@@ -11,24 +11,24 @@ namespace Vlab { namespace SMT {
 
 
 Script::Script(CommandList_ptr commands)
-	: commands (commands) { }
+	: command_list (commands) { }
 
 Script::Script(const Script& other) {
-	commands = new CommandList();
-	for (auto& cmd : *(other.commands)) {
-		commands->push_back(cmd->clone());
+	command_list = new CommandList();
+	for (auto& cmd : *(other.command_list)) {
+		command_list->push_back(cmd->clone());
 	}
 }
 Script_ptr Script::clone() const { return new Script(*this); }
 Script::~Script() {
 	DVLOG(20) << "Script deallocated.";
-	deallocate_list(commands);
-	delete commands;
+	deallocate_list(command_list);
+	delete command_list;
 }
 
 void Script::accept(Visitor_ptr v) { v->visitScript(this); }
 
-void Script::visit_children(Visitor_ptr v) { v->visit_list(commands); }
+void Script::visit_children(Visitor_ptr v) { v->visit_list(command_list); }
 
 const std::string Command::Name::NONE						= "none";
 const std::string Command::Name::SET_LOGIC					= "set-logic";

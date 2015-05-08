@@ -31,7 +31,7 @@ void Initializer::end() {
 
 void Initializer::visitScript(Script_ptr script) {
 
-	CommandList_ptr commands = script->commands;
+	CommandList_ptr commands = script->command_list;
 
 	for (auto iter = commands->begin(); iter != commands->end();) {
 		if ((*iter)->getType() != Command::Type::ASSERT) {
@@ -44,8 +44,6 @@ void Initializer::visitScript(Script_ptr script) {
 	}
 
 	verifyVariableDefinitions();
-
-//	visit_children_of(script);
 }
 
 void Initializer::visitCommand(Command_ptr command) {

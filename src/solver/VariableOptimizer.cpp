@@ -24,36 +24,67 @@ VariableOptimizer::~VariableOptimizer() { }
  */
 void VariableOptimizer::start() {
 	Counter counter(root, symbol_table);
-	counter.start();
 
-	target_type = Variable::Type::BOOL;
+	DVLOG(16) << "Bool existential elimination";
 	existential_elimination_phase = true;
+
+	counter.start();
+	target_type = Variable::Type::BOOL;
 	symbol_table->push_scope(root);
 	visit(root);
 	symbol_table->pop_scope();
+	end();
 
-	// apply substition rule
-	// clear any previous rule
-	counter.start();
-
+	DVLOG(16) << "Bool variable reduction";
 	existential_elimination_phase = false;
+
+	counter.start();
 	symbol_table->push_scope(root);
 	visit(root);
 	symbol_table->pop_scope();
 
-	// apply substition rule
-	// clear any previous rule
-	counter.start();
-
 	end();
 
-	target_type = Variable::Type::INT;
-//	...
-	end();
+	DVLOG(16) << "Int existential elimination";
+
+//	Ast2Dot ast2dot(&std::cout);
+//	ast2dot.start(root);
+
+
+//	existential_elimination_phase = true;
+//
+//	counter.start();
+//	target_type = Variable::Type::INT;
+//	symbol_table->push_scope(root);
+//	visit(root);
+//	symbol_table->pop_scope();
+//	end();
+//
+//	counter.start();
+//	target_type = Variable::Type::STRING;
+//	symbol_table->push_scope(root);
+//	visit(root);
+//	symbol_table->pop_scope();
+//	end();
+
 }
 
 void VariableOptimizer::end() {
-//	call variable substitution
+
+	if (VLOG_IS_ON(16)) {
+		for (auto& rule_map : symbol_table -> get_variable_substitution_table()) {
+			DVLOG(16) << "Substitution map for scope: " << rule_map.first;
+			for (auto& rule : rule_map.second) {
+				DVLOG(16) << "\t" << *rule.first << " (" << rule.first << ") -> " << *rule.second << " (" << rule.second <<" )";
+			}
+		}
+	}
+
+	OptimizationRuleRunner rule_runner(root, symbol_table);
+	rule_runner.start();
+
+	eq_constraint_count.clear();
+	symbol_table -> reset_substitution_rules();
 }
 
 void VariableOptimizer::visitScript(Script_ptr script) {
@@ -84,11 +115,7 @@ void VariableOptimizer::visitForAll(ForAll_ptr for_all_term) {  }
 
 void VariableOptimizer::visitLet(Let_ptr let_term) { }
 
-void VariableOptimizer::visitAnd(And_ptr and_term) {
-	for (auto& term : *(and_term->term_list)) {
-		visit_and_callback(term);
-	}
-}
+void VariableOptimizer::visitAnd(And_ptr and_term) { visit_children_of(and_term); }
 
 void VariableOptimizer::visitOr(Or_ptr or_term) {
 	for (auto& term : *(or_term->term_list)) {
@@ -107,30 +134,71 @@ void VariableOptimizer::visitMinus(Minus_ptr minus_term) { }
 void VariableOptimizer::visitPlus(Plus_ptr plus_term) { }
 
 void VariableOptimizer::visitEq(Eq_ptr eq_term) {
-
 	if (existential_elimination_phase) {
 		if (Term::Type::QUALIDENTIFIER == eq_term->left_term->getType() and
 				Term::Type::QUALIDENTIFIER == eq_term->right_term->getType()) {
 
-			Variable_ptr left_var = symbol_table -> getVariable(get_variable_name(eq_term->left_term));
-			Variable_ptr right_var = symbol_table -> getVariable(get_variable_name(eq_term->right_term));
+			Variable_ptr left_var = symbol_table -> getVariable(eq_term->left_term);
+			Variable_ptr right_var = symbol_table -> getVariable(eq_term->right_term);
+//			std::cout << "rule add = " << *left_var << " " << *right_var << std::endl;
+//			std::cout << *left_var << ": " << symbol_table -> get_local_count(left_var->getName()) << ", " << symbol_table -> get_total_count(left_var->getName()) << std::endl;
+//			std::cout << *right_var << ": " << symbol_table -> get_local_count(right_var->getName()) << ", " << symbol_table -> get_total_count(right_var->getName()) << std::endl;
 
 			if (left_var->getType() == target_type) {
-				if (symbol_table -> get_total_count(left_var->getName()) == symbol_table -> get_local_count(left_var->getName()) and
-						symbol_table -> get_total_count(right_var->getName()) == symbol_table -> get_local_count(right_var->getName())) {
+				int left_var_total_count = symbol_table -> get_total_count(left_var->getName());
+				int left_var_local_count = symbol_table -> get_local_count(left_var->getName());
+				int right_var_total_count = symbol_table -> get_total_count(right_var->getName());
+				int right_var_local_count = symbol_table -> get_local_count(right_var->getName());
 
-					if (symbol_table -> get_total_count(left_var->getName()) <= symbol_table -> get_total_count(right_var->getName())) {
-						// replace left with right
+				if (left_var_total_count == left_var_local_count and right_var_total_count == right_var_local_count) {
+					if (left_var_total_count <= right_var_total_count) {
+						add_variable_substitution_rule(left_var, right_var, eq_term->right_term);
 					} else {
-						// replace right with left
+						add_variable_substitution_rule(right_var, left_var, eq_term->left_term);
 					}
+				} else if (left_var_total_count == left_var_local_count) {
+					add_variable_substitution_rule(left_var, right_var, eq_term->right_term);
+				} else if (right_var_total_count == right_var_local_count) {
+					add_variable_substitution_rule(right_var, left_var, eq_term->left_term);
 				}
 			}
 		}
-	} else {
-
 	}
+	/**
+	 * We can eliminate boolean variables that are used for asserting some other constraints
+	 * Following are the conditions to do reduction
+	 * 1 - Variable may appear in only at most one equality constraint
+	 * 2 - Variable may appear in other places
+	 */
+	else if (Variable::Type::BOOL == target_type) {
+		if ( (Term::Type::QUALIDENTIFIER == eq_term->left_term->getType() or
+				Term::Type::QUALIDENTIFIER == eq_term->right_term->getType()) and
+				(Term::Type::QUALIDENTIFIER != eq_term->left_term->getType() or
+				Term::Type::QUALIDENTIFIER != eq_term->right_term->getType())) {
 
+
+			Variable_ptr target_variable =
+					(Term::Type::QUALIDENTIFIER == eq_term->left_term->getType())
+					? symbol_table -> getVariable(eq_term->left_term)
+					: symbol_table -> getVariable(eq_term->right_term);
+
+
+			if (target_variable->getType() == target_type) {
+				Term_ptr target_term =
+									(Term::Type::QUALIDENTIFIER == eq_term->left_term->getType())
+									? eq_term->right_term
+									: eq_term->left_term;
+
+//				std::cout << "rule add = " << *target_variable << " " << *target_term << std::endl;
+				int target_var_total_count = symbol_table -> get_total_count(target_variable->getName());
+				int target_var_local_count = symbol_table -> get_local_count(target_variable->getName());
+
+				if (target_var_total_count == target_var_local_count) {
+					add_variable_substitution_rule(target_variable, target_term);
+				}
+			}
+		}
+	}
 }
 
 void VariableOptimizer::visitGt(Gt_ptr gt_term) { }
@@ -195,19 +263,6 @@ void VariableOptimizer::visitSortedVar(SortedVar_ptr sorted_var) { }
 
 void VariableOptimizer::visitVarBinding(VarBinding_ptr var_binding) {  }
 
-void VariableOptimizer::visit_and_callback(Term_ptr& term) {
-	visit(term);
-	if (not callbacks.empty()) {
-		callbacks.top()(term);
-		callbacks.pop();
-	}
-}
-
-std::string VariableOptimizer::get_variable_name(Term_ptr term) {
-	QualIdentifier_ptr variable_identifier = dynamic_cast<QualIdentifier_ptr>(term);
-	return variable_identifier->getVarName();
-}
-
 void VariableOptimizer::add_variable_substitution_rule(Variable_ptr subject_var, Variable_ptr target_var, Term_ptr target_term) {
 	if (subject_var->isSymbolic()) { return; }
 
@@ -219,19 +274,35 @@ void VariableOptimizer::add_variable_substitution_rule(Variable_ptr subject_var,
 		}
 	}
 
-	/* 2 - Update a rule with the target if the subject variable is already a target */
+	/* 2 - Insert substitution rule */
+	if (not symbol_table -> add_var_substitution_rule(subject_var, target_term->clone())) {
+		LOG(FATAL) << "A variable cannot have multiple substitution rule: " << *subject_var;
+	}
+
+	/* 3 - Update a rule with the target if the subject variable is already a target */
 	for (auto& substitution_rule : symbol_table -> get_variable_substitution_map()) {
 		if (Term::Type::QUALIDENTIFIER == substitution_rule.second->getType()) {
-			if (subject_var == symbol_table -> getVariable(get_variable_name(substitution_rule.second))) {
+			if (subject_var == symbol_table -> getVariable(substitution_rule.second)) {
 				Term_ptr tmp_term = substitution_rule.second;
 				substitution_rule.second = target_term->clone();
 				delete tmp_term;
 			}
 		}
 	}
+}
 
-	if (not symbol_table -> add_var_substitution_rule(subject_var, target_term->clone())) {
-		LOG(FATAL) << "A variable cannot have multiple rules: " << *subject_var;
+void VariableOptimizer::add_variable_substitution_rule(Variable_ptr subject_var, Term_ptr target_term) {
+	if (subject_var->isSymbolic()) { return; }
+	eq_constraint_count[subject_var]++;
+	switch (eq_constraint_count[subject_var]) {
+		case 1:
+			symbol_table -> add_var_substitution_rule(subject_var, target_term->clone());
+			break;
+		case 2:
+			symbol_table -> remove_var_substitution_rule(subject_var);
+			break;
+		default:
+			break;
 	}
 }
 

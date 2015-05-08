@@ -8,7 +8,7 @@
 #ifndef SOLVER_SYNTACTICOPTIMIZER_H_
 #define SOLVER_SYNTACTICOPTIMIZER_H_
 
-#include <stack>
+#include <queue>
 #include <functional>
 
 #include <glog/logging.h>
@@ -84,7 +84,7 @@ protected:
 
 	Script_ptr root;
 	SymbolTable_ptr symbol_table;
-	std::stack<std::function <void (Term_ptr&)>> callbacks;
+	std::queue<std::function <void (Term_ptr&)>> callbacks;
 };
 
 } /* namespace SMT */

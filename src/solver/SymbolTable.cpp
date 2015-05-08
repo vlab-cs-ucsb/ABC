@@ -13,6 +13,7 @@ SymbolTable::SymbolTable()
 	: global_var ("__vlab_global_var"), bound(50) {}
 SymbolTable::~SymbolTable() {
 
+	reset_substitution_rules();
 	for (auto& entry : variables) {
 		delete entry.second;
 	}
@@ -29,6 +30,12 @@ Variable_ptr SymbolTable::getVariable(std::string name) {
 	auto it = variables.find(name);
 	CHECK(it != variables.end()) << "Variable is not found: " << name;
 	return it->second;
+}
+
+Variable_ptr SymbolTable::getVariable(Term_ptr term_ptr) {
+	QualIdentifier_ptr variable_identifier = dynamic_cast<QualIdentifier_ptr>(term_ptr);
+	CHECK_NOTNULL(variable_identifier);
+	return getVariable(variable_identifier->getVarName());
 }
 
 VariableMap& SymbolTable::getVariables() { return variables; }
@@ -52,6 +59,24 @@ bool SymbolTable::add_var_substitution_rule(Variable_ptr variable, Term_ptr targ
 	return result.second;
 }
 
+
+bool SymbolTable::remove_var_substitution_rule(Variable_ptr variable) {
+	auto it = variable_substitution_table[scope_stack.back()].find(variable);
+	if (it != variable_substitution_table[scope_stack.back()].end()) {
+		variable_substitution_table[scope_stack.back()].erase(it);
+		return true;
+	}
+	return false;
+}
+
+Term_ptr SymbolTable::get_variable_substitution_term(Variable_ptr variable) {
+	auto it = variable_substitution_table[scope_stack.back()].find(variable);
+	if (it == variable_substitution_table[scope_stack.back()].end()) {
+		return nullptr;
+	}
+	return it->second;
+}
+
 /**
  * Returns rules for the current scope
  */
@@ -64,6 +89,15 @@ VariableSubstitutionMap& SymbolTable::get_variable_substitution_map() {
  */
 VariableSubstitutionTable& SymbolTable::get_variable_substitution_table() {
 	return variable_substitution_table;
+}
+
+void SymbolTable::reset_substitution_rules() {
+	for (auto& map_pair : variable_substitution_table) {
+		for (auto& rule_pair : map_pair.second) {
+			delete rule_pair.second;
+		}
+	}
+	variable_substitution_table.clear();
 }
 
 void SymbolTable::increment_count(std::string var_name) {
@@ -88,7 +122,6 @@ int SymbolTable::get_total_count(std::string var_name) {
 void SymbolTable::reset_count() {
 	variable_counts_table.clear();
 }
-
 
 } /* namespace SMT */
 } /* namespace Vlab */
