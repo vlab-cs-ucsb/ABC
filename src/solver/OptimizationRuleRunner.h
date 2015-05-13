@@ -10,6 +10,7 @@
 
 #include <sstream>
 #include <queue>
+#include <set>
 #include <map>
 #include <functional>
 
@@ -76,6 +77,7 @@ public:
 	void visitVariable(Variable_ptr);
 protected:
 	void visit_and_callback(Term_ptr&);
+	void visit_and_callback(Command_ptr&);
 	bool has_optimization_rules();
 	bool is_equivalent(Term_ptr, Term_ptr);
 	std::string to_string(Visitable_ptr);
@@ -85,7 +87,9 @@ protected:
 
 	Script_ptr root;
 	SymbolTable_ptr symbol_table;
+	Assert_ptr current_assert;
 	std::queue<std::function <void (Term_ptr&)>> callbacks;
+	std::set<Visitable_ptr> delete_list;
 };
 
 } /* namespace SMT */

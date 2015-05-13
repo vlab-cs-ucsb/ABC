@@ -46,20 +46,16 @@ void VariableOptimizer::start() {
 	end();
 
 	DVLOG(16) << "Int existential elimination";
+	existential_elimination_phase = true;
 
-//	Ast2Dot ast2dot(&std::cout);
-//	ast2dot.start(root);
+	counter.start();
+	target_type = Variable::Type::INT;
+	symbol_table->push_scope(root);
+	visit(root);
+	symbol_table->pop_scope();
+	end();
 
 
-//	existential_elimination_phase = true;
-//
-//	counter.start();
-//	target_type = Variable::Type::INT;
-//	symbol_table->push_scope(root);
-//	visit(root);
-//	symbol_table->pop_scope();
-//	end();
-//
 //	counter.start();
 //	target_type = Variable::Type::STRING;
 //	symbol_table->push_scope(root);
@@ -67,10 +63,12 @@ void VariableOptimizer::start() {
 //	symbol_table->pop_scope();
 //	end();
 
+
+	//	Ast2Dot ast2dot(&std::cout);
+	//	ast2dot.start(root);
 }
 
 void VariableOptimizer::end() {
-
 	if (VLOG_IS_ON(16)) {
 		for (auto& rule_map : symbol_table -> get_variable_substitution_table()) {
 			DVLOG(16) << "Substitution map for scope: " << rule_map.first;
@@ -167,8 +165,8 @@ void VariableOptimizer::visitEq(Eq_ptr eq_term) {
 	/**
 	 * We can eliminate boolean variables that are used for asserting some other constraints
 	 * Following are the conditions to do reduction
-	 * 1 - Variable may appear in only at most one equality constraint
-	 * 2 - Variable may appear in other places
+	 * 1 - Variable may appear in only at most one constraint with other theories
+	 * 2 - Variable may appear in other places with some other boolean variables
 	 */
 	else if (Variable::Type::BOOL == target_type) {
 		if ( (Term::Type::QUALIDENTIFIER == eq_term->left_term->getType() or

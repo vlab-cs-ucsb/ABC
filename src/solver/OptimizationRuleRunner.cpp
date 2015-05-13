@@ -11,7 +11,7 @@ namespace Vlab {
 namespace SMT {
 
 OptimizationRuleRunner::OptimizationRuleRunner(Script_ptr script, SymbolTable_ptr symbol_table)
-	: root (script), symbol_table (symbol_table) { }
+	: root (script), symbol_table (symbol_table), current_assert (nullptr) { }
 
 OptimizationRuleRunner::~OptimizationRuleRunner() { }
 
@@ -33,16 +33,17 @@ void OptimizationRuleRunner::end() { }
 void OptimizationRuleRunner::visitScript(Script_ptr script) {
 	CommandList_ptr commands = script->command_list;
 	for (auto iter = commands->begin(); iter != commands->end(); ) {
-		visit(*iter);
-//		if (to_be_removed.find((*iter)) != to_be_removed.end()) {
-//			to_be_removed.erase((*iter));
-//			delete (*iter);
-//			iter = commands->erase(iter);
-//		} else {
-//			iter++;
-//		}
-		iter++;
+		visit_and_callback(*iter);
+
+		if (current_assert->term == nullptr) {
+			delete (*iter);
+			iter = commands->erase(iter);
+			DVLOG(15) << "remove: assert command";
+		} else {
+			iter++;
+		}
 	}
+
 	if (script->command_list->empty()) {
 		script->command_list->push_back(new Assert(generate_dummy_term()));
 	}
@@ -53,9 +54,21 @@ void OptimizationRuleRunner::visitCommand(Command_ptr command) {
 	switch (command->getType()) {
 		case Command::Type::ASSERT:
 		{
-			Assert_ptr assert_command = dynamic_cast<Assert_ptr>(command);
-			check_and_substitute_var(assert_command->term);
-			visit_and_callback(assert_command->term);
+			current_assert = dynamic_cast<Assert_ptr>(command);
+			check_and_substitute_var(current_assert->term);
+			visit_and_callback(current_assert->term);
+			if (delete_list.find(current_assert->term) != delete_list.end()) {
+				delete_list.erase(current_assert->term);
+				delete_list.insert(current_assert);
+			} else {
+//				std::string assert_string = to_string(curr_assert->term);
+//				if (assert_equivalance.find(assert_string) != assert_equivalance.end()) {
+//					to_be_removed.insert(command);
+//				} else {
+//					assert_equivalance.insert(assert_string);
+//				}
+			}
+
 			break;
 		}
 	default:
@@ -75,30 +88,54 @@ void OptimizationRuleRunner::visitForAll(ForAll_ptr for_all_term) {  }
 void OptimizationRuleRunner::visitLet(Let_ptr let_term) { }
 
 void OptimizationRuleRunner::visitAnd(And_ptr and_term) {
-	for (auto& term : *(and_term->term_list)) {
-		visit_and_callback(term);
+	delete_list.clear();
+	for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
+		visit_and_callback(*iter);
+		if (delete_list.find(*iter) != delete_list.end()) {
+			delete_list.erase(*iter);
+			delete (*iter);
+			iter = and_term->term_list->erase(iter);
+			DVLOG(15) << "remove: term from and term list";
+		} else {
+			iter++;
+		}
 	}
+	delete_list.clear();
+
+	// if no element left remove and
 }
 
 void OptimizationRuleRunner::visitOr(Or_ptr or_term) {
-	for (auto& term : *(or_term->term_list)) {
-		symbol_table -> push_scope(term);
-		visit_and_callback(term);
+	delete_list.clear();
+	for (auto iter = or_term->term_list->begin(); iter != or_term->term_list->end();) {
+		symbol_table -> push_scope(*iter);
+		visit_and_callback(*iter);
 		symbol_table -> pop_scope();
+		if (delete_list.find(*iter) != delete_list.end()) {
+			delete_list.erase(*iter);
+			delete (*iter);
+			iter = or_term->term_list->erase(iter);
+			DVLOG(15) << "remove: term from and term list";
+		} else {
+			iter++;
+		}
 	}
+	delete_list.clear();
+
+	// if no term is left delete or term
 }
 
 void OptimizationRuleRunner::visitNot(Not_ptr not_term) {
 	check_and_substitute_var(not_term->term);
 	visit_and_callback(not_term->term);
 	if (Term::Type::NOT == not_term->term->getType()) {
-//		auto callback = [not_term](Term_ptr& term) mutable {
-//			Not_ptr child_not = dynamic_cast<Not_ptr>(not_term->term);
-//			term = child_not->term;
-//			child_not->term = nullptr;
-//			delete not_term;
-//		};
-//		callbacks.push(callback);
+		auto callback = [not_term](Term_ptr& term) mutable {
+			Not_ptr child_not = dynamic_cast<Not_ptr>(not_term->term);
+			term = child_not->term;
+			child_not->term = nullptr;
+			delete not_term;
+		};
+		callbacks.push(callback);
 	}
 }
 
@@ -106,13 +143,13 @@ void OptimizationRuleRunner::visitUMinus(UMinus_ptr u_minus_term) {
 	check_and_substitute_var(u_minus_term->term);
 	visit_and_callback(u_minus_term->term);
 	if (Term::Type::UMINUS == u_minus_term->term->getType()) {
-//		auto callback = [u_minus_term](Term_ptr& term) mutable {
-//			UMinus_ptr child_u_minus = dynamic_cast<UMinus_ptr>(u_minus_term->term);
-//			term = child_u_minus->term;
-//			child_u_minus->term = nullptr;
-//			delete u_minus_term;
-//		};
-//		callbacks.push(callback);
+		auto callback = [u_minus_term](Term_ptr& term) mutable {
+			UMinus_ptr child_u_minus = dynamic_cast<UMinus_ptr>(u_minus_term->term);
+			term = child_u_minus->term;
+			child_u_minus->term = nullptr;
+			delete u_minus_term;
+		};
+		callbacks.push(callback);
 	}
 }
 
@@ -123,14 +160,14 @@ void OptimizationRuleRunner::visitMinus(Minus_ptr minus_term) {
 	visit_and_callback(minus_term->right_term);
 	if (Term::Type::UMINUS == minus_term->right_term->getType()) {
 		// push call back to change (- a (- b)) into (+ a b)
-//		auto callback = [minus_term](Term_ptr& term) mutable {
-//			UMinus_ptr child_u_minus = dynamic_cast<UMinus_ptr>(minus_term->right_term);
-//			term = new Plus(minus_term->left_term, child_u_minus->term);
-//			minus_term->left_term = nullptr;
-//			child_u_minus->term = nullptr;
-//			delete minus_term;
-//		};
-//		callbacks.push(callback);
+		auto callback = [minus_term](Term_ptr& term) mutable {
+			UMinus_ptr child_u_minus = dynamic_cast<UMinus_ptr>(minus_term->right_term);
+			term = new Plus(minus_term->left_term, child_u_minus->term);
+			minus_term->left_term = nullptr;
+			child_u_minus->term = nullptr;
+			delete minus_term;
+		};
+		callbacks.push(callback);
 	}
 }
 
@@ -141,14 +178,14 @@ void OptimizationRuleRunner::visitPlus(Plus_ptr plus_term) {
 	visit_and_callback(plus_term->right_term);
 	if (Term::Type::UMINUS == plus_term->right_term->getType()) {
 		// push call back to change (+ a (- b)) into (- a b)
-//		auto callback = [plus_term](Term_ptr& term) mutable {
-//			UMinus_ptr child_u_minus = dynamic_cast<UMinus_ptr>(plus_term->right_term);
-//			term = new Minus(plus_term->left_term, child_u_minus->term);
-//			plus_term->left_term = nullptr;
-//			child_u_minus->term = nullptr;
-//			delete plus_term;
-//		};
-//		callbacks.push(callback);
+		auto callback = [plus_term](Term_ptr& term) mutable {
+			UMinus_ptr child_u_minus = dynamic_cast<UMinus_ptr>(plus_term->right_term);
+			term = new Minus(plus_term->left_term, child_u_minus->term);
+			plus_term->left_term = nullptr;
+			child_u_minus->term = nullptr;
+			delete plus_term;
+		};
+		callbacks.push(callback);
 	}
 }
 
@@ -160,22 +197,7 @@ void OptimizationRuleRunner::visitEq(Eq_ptr eq_term) {
 
 
 	if (is_equivalent(eq_term->left_term, eq_term->right_term)) {
-		// push a call back that checks the parent and adds a callback for parent to remove that
-		auto callback = [this](Term_ptr& term) mutable {
-			auto parent_callback = [&term](Term_ptr& parent_term) mutable {
-				switch (parent_term->getType()) {
-					case Term::Type::AND:
-					case Term::Type::OR:
-						delete term;
-						term = nullptr;
-						break;
-					default:
-						break;
-				}
-			};
-			this->callbacks.push(parent_callback);
-		};
-		callbacks.push(callback);
+		this->delete_list.insert(eq_term);
 	}
 }
 
@@ -185,7 +207,7 @@ void OptimizationRuleRunner::visitGt(Gt_ptr gt_term) {
 	visit_and_callback(gt_term->left_term);
 	visit_and_callback(gt_term->right_term);
 
-	// syntactic checks can be add here to
+	//TODO syntactic checks can be add here to check for false
 }
 
 void OptimizationRuleRunner::visitGe(Ge_ptr ge_term) {
@@ -195,7 +217,7 @@ void OptimizationRuleRunner::visitGe(Ge_ptr ge_term) {
 	visit_and_callback(ge_term->right_term);
 
 	if (is_equivalent(ge_term->left_term, ge_term->right_term)) {
-		// push a call back that checks the parent and removes the equality nicely
+		this->delete_list.insert(ge_term);
 	}
 }
 
@@ -204,6 +226,8 @@ void OptimizationRuleRunner::visitLt(Lt_ptr lt_term) {
 	check_and_substitute_var(lt_term->right_term);
 	visit_and_callback(lt_term->left_term);
 	visit_and_callback(lt_term->right_term);
+
+	//TODO syntactic checks can be add here to check for false
 }
 
 void OptimizationRuleRunner::visitLe(Le_ptr le_term) {
@@ -213,7 +237,7 @@ void OptimizationRuleRunner::visitLe(Le_ptr le_term) {
 	visit_and_callback(le_term->right_term);
 
 	if (is_equivalent(le_term->left_term, le_term->right_term)) {
-		// push a call back that checks the parent and removes the equality nicely
+		this->delete_list.insert(le_term);
 	}
 }
 
@@ -231,7 +255,7 @@ void OptimizationRuleRunner::visitIn(In_ptr in_term) {
 	visit_and_callback(in_term->right_term);
 
 	if (is_equivalent(in_term->left_term, in_term->right_term)) {
-		// push a call back that checks the parent and removes the equality nicely
+		this->delete_list.insert(in_term);
 	}
 }
 
@@ -247,7 +271,7 @@ void OptimizationRuleRunner::visitContains(Contains_ptr contains_term) {
 	visit_and_callback(contains_term->search_term);
 
 	if (is_equivalent(contains_term->subject_term, contains_term->search_term)) {
-		// push a call back that checks the parent and removes the equality nicely
+		this->delete_list.insert(contains_term);
 	}
 }
 
@@ -258,7 +282,7 @@ void OptimizationRuleRunner::visitBegins(Begins_ptr begins_term) {
 	visit_and_callback(begins_term->search_term);
 
 	if (is_equivalent(begins_term->subject_term, begins_term->search_term)) {
-		// push a call back that checks the parent and removes the equality nicely
+		this->delete_list.insert(begins_term);
 	}
 }
 
@@ -269,7 +293,7 @@ void OptimizationRuleRunner::visitEnds(Ends_ptr ends_term) {
 	visit_and_callback(ends_term->search_term);
 
 	if (is_equivalent(ends_term->subject_term, ends_term->search_term)) {
-		// push a call back that checks the parent and removes the equality nicely
+		this->delete_list.insert(ends_term);
 	}
 }
 
@@ -342,13 +366,26 @@ void OptimizationRuleRunner::visit_and_callback(Term_ptr& term) {
 	}
 }
 
-bool OptimizationRuleRunner::has_optimization_rules() {
-	for (auto& pair : symbol_table -> get_variable_substitution_table()) {
-		if (not pair.second.empty()) {
-			return true;
-		}
+void OptimizationRuleRunner::visit_and_callback(Command_ptr& command) {
+	visit(command);
+	if (not callbacks.empty()) {
+		Term_ptr null_term = nullptr;
+		callbacks.front()(null_term);
+		callbacks.pop();
+
 	}
-	return false;
+}
+
+
+
+bool OptimizationRuleRunner::has_optimization_rules() {
+//	for (auto& pair : symbol_table -> get_variable_substitution_table()) {
+//		if (not pair.second.empty()) {
+//			return true;
+//		}
+//	}
+//	return false;
+	return true;
 }
 
 bool OptimizationRuleRunner::is_equivalent(Term_ptr x, Term_ptr y) {
