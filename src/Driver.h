@@ -20,6 +20,7 @@
 #include "solver/Initializer.h"
 #include "solver/SyntacticOptimizer.h"
 #include "solver/VariableOptimizer.h"
+#include "solver/FormulaOptimizer.h"
 //#include "IntVarReductor.h"
 //#include "LengthConstraintReductor.h"
 //#include "StrVarReductor.h"

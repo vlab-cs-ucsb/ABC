@@ -55,17 +55,16 @@ void VariableOptimizer::start() {
 	symbol_table->pop_scope();
 	end();
 
+	DVLOG(16) << "String existential elimination";
+	counter.start();
+	target_type = Variable::Type::STRING;
+	symbol_table->push_scope(root);
+	visit(root);
+	symbol_table->pop_scope();
+	end();
 
-//	counter.start();
-//	target_type = Variable::Type::STRING;
-//	symbol_table->push_scope(root);
-//	visit(root);
-//	symbol_table->pop_scope();
-//	end();
-
-
-	//	Ast2Dot ast2dot(&std::cout);
-	//	ast2dot.start(root);
+//	Ast2Dot ast2dot(&std::cout);
+//	ast2dot.start(root);
 }
 
 void VariableOptimizer::end() {

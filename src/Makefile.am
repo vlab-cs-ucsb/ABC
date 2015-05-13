@@ -17,6 +17,8 @@ abc_SOURCES = \
   ./solver/OptimizationRuleRunner.h \
   ./solver/VariableOptimizer.cpp \
   ./solver/VariableOptimizer.h \
+  ./solver/FormulaOptimizer.cpp \
+  ./solver/FormulaOptimizer.h \
 	Driver.cpp \
 	Driver.h \
 	main.cpp 

@@ -33,8 +33,7 @@ void OptimizationRuleRunner::end() { }
 void OptimizationRuleRunner::visitScript(Script_ptr script) {
 	CommandList_ptr commands = script->command_list;
 	for (auto iter = commands->begin(); iter != commands->end(); ) {
-		visit_and_callback(*iter);
-
+		visit(*iter);
 		if (current_assert->term == nullptr) {
 			delete (*iter);
 			iter = commands->erase(iter);
@@ -42,6 +41,7 @@ void OptimizationRuleRunner::visitScript(Script_ptr script) {
 		} else {
 			iter++;
 		}
+		delete_list.clear();
 	}
 
 	if (script->command_list->empty()) {
@@ -59,16 +59,17 @@ void OptimizationRuleRunner::visitCommand(Command_ptr command) {
 			visit_and_callback(current_assert->term);
 			if (delete_list.find(current_assert->term) != delete_list.end()) {
 				delete_list.erase(current_assert->term);
-				delete_list.insert(current_assert);
-			} else {
-//				std::string assert_string = to_string(curr_assert->term);
+				delete current_assert->term;
+				current_assert->term = nullptr;
+			}
+//			else {
+//				std::string assert_string = to_string(current_assert->term);
 //				if (assert_equivalance.find(assert_string) != assert_equivalance.end()) {
 //					to_be_removed.insert(command);
 //				} else {
 //					assert_equivalance.insert(assert_string);
 //				}
-			}
-
+//			}
 			break;
 		}
 	default:
@@ -95,7 +96,7 @@ void OptimizationRuleRunner::visitAnd(And_ptr and_term) {
 			delete_list.erase(*iter);
 			delete (*iter);
 			iter = and_term->term_list->erase(iter);
-			DVLOG(15) << "remove: term from and term list";
+			DVLOG(15) << "remove: term from 'and'";
 		} else {
 			iter++;
 		}
@@ -115,7 +116,7 @@ void OptimizationRuleRunner::visitOr(Or_ptr or_term) {
 			delete_list.erase(*iter);
 			delete (*iter);
 			iter = or_term->term_list->erase(iter);
-			DVLOG(15) << "remove: term from and term list";
+			DVLOG(15) << "remove: term from 'or'";
 		} else {
 			iter++;
 		}
@@ -365,18 +366,6 @@ void OptimizationRuleRunner::visit_and_callback(Term_ptr& term) {
 
 	}
 }
-
-void OptimizationRuleRunner::visit_and_callback(Command_ptr& command) {
-	visit(command);
-	if (not callbacks.empty()) {
-		Term_ptr null_term = nullptr;
-		callbacks.front()(null_term);
-		callbacks.pop();
-
-	}
-}
-
-
 
 bool OptimizationRuleRunner::has_optimization_rules() {
 //	for (auto& pair : symbol_table -> get_variable_substitution_table()) {
