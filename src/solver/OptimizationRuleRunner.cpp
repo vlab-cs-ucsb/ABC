@@ -62,14 +62,6 @@ void OptimizationRuleRunner::visitCommand(Command_ptr command) {
 				delete current_assert->term;
 				current_assert->term = nullptr;
 			}
-//			else {
-//				std::string assert_string = to_string(current_assert->term);
-//				if (assert_equivalance.find(assert_string) != assert_equivalance.end()) {
-//					to_be_removed.insert(command);
-//				} else {
-//					assert_equivalance.insert(assert_string);
-//				}
-//			}
 			break;
 		}
 	default:
@@ -92,7 +84,7 @@ void OptimizationRuleRunner::visitAnd(And_ptr and_term) {
 	delete_list.clear();
 	for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
 		visit_and_callback(*iter);
-		if (delete_list.find(*iter) != delete_list.end()) {
+		if (delete_list.find(*iter) != delete_list.end() or (*iter) == nullptr) {
 			delete_list.erase(*iter);
 			delete (*iter);
 			iter = and_term->term_list->erase(iter);
@@ -103,7 +95,21 @@ void OptimizationRuleRunner::visitAnd(And_ptr and_term) {
 	}
 	delete_list.clear();
 
-	// if no element left remove and
+	if (and_term->term_list->empty()) {
+		auto callback = [and_term](Term_ptr& term) mutable {
+			delete and_term;
+			term = nullptr;
+		};
+		callbacks.push(callback);
+	} else if (and_term->term_list->size() == 1) {
+		auto callback = [and_term](Term_ptr& term) mutable {
+			Term_ptr child_term = and_term->term_list->front();
+			and_term->term_list->clear();
+			delete and_term;
+			term = child_term;
+		};
+		callbacks.push(callback);
+	}
 }
 
 void OptimizationRuleRunner::visitOr(Or_ptr or_term) {
@@ -112,7 +118,7 @@ void OptimizationRuleRunner::visitOr(Or_ptr or_term) {
 		symbol_table -> push_scope(*iter);
 		visit_and_callback(*iter);
 		symbol_table -> pop_scope();
-		if (delete_list.find(*iter) != delete_list.end()) {
+		if (delete_list.find(*iter) != delete_list.end() or (*iter) == nullptr) {
 			delete_list.erase(*iter);
 			delete (*iter);
 			iter = or_term->term_list->erase(iter);
@@ -123,7 +129,22 @@ void OptimizationRuleRunner::visitOr(Or_ptr or_term) {
 	}
 	delete_list.clear();
 
-	// if no term is left delete or term
+	if (or_term->term_list->empty()) {
+		auto callback = [or_term](Term_ptr& term) mutable {
+			delete or_term;
+			term = nullptr;
+//			this->delete_list.insert(term);
+		};
+		callbacks.push(callback);
+	} else if (or_term->term_list->size() == 1) {
+		auto callback = [or_term](Term_ptr& term) mutable {
+			Term_ptr child_term = or_term->term_list->front();
+			or_term->term_list->clear();
+			delete or_term;
+			term = child_term;
+		};
+		callbacks.push(callback);
+	}
 }
 
 void OptimizationRuleRunner::visitNot(Not_ptr not_term) {
@@ -368,13 +389,12 @@ void OptimizationRuleRunner::visit_and_callback(Term_ptr& term) {
 }
 
 bool OptimizationRuleRunner::has_optimization_rules() {
-//	for (auto& pair : symbol_table -> get_variable_substitution_table()) {
-//		if (not pair.second.empty()) {
-//			return true;
-//		}
-//	}
-//	return false;
-	return true;
+	for (auto& pair : symbol_table -> get_variable_substitution_table()) {
+		if (not pair.second.empty()) {
+			return true;
+		}
+	}
+	return false;
 }
 
 bool OptimizationRuleRunner::is_equivalent(Term_ptr x, Term_ptr y) {

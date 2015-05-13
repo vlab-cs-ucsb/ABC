@@ -11,7 +11,7 @@ namespace Vlab {
 namespace SMT {
 
 SyntacticOptimizer::SyntacticOptimizer(Script_ptr script, SymbolTable_ptr symbol_table)
-	: root (script), symbol_table (symbol_table) { }
+	: root (script), symbol_table (symbol_table), current_assert (nullptr) { }
 
 SyntacticOptimizer::~SyntacticOptimizer() { }
 
@@ -23,7 +23,27 @@ void SyntacticOptimizer::start() {
 void SyntacticOptimizer::end() { }
 
 void SyntacticOptimizer::visitScript(Script_ptr script) {
-	visit_children_of(script);
+	CommandList_ptr commands = script->command_list;
+	for (auto iter = commands->begin(); iter != commands->end(); ) {
+		if ( (*iter) == nullptr ) {
+			iter = commands->erase(iter);
+			continue;
+		}
+
+		visit(*iter);
+
+		if (current_assert->term == nullptr) {
+			delete (*iter);
+			iter = commands->erase(iter);
+			DVLOG(18) << "remove: assert command";
+		} else {
+			iter++;
+		}
+	}
+
+	if (script->command_list->empty()) {
+		script->command_list->push_back(new Assert(generate_dummy_term()));
+	}
 }
 
 void SyntacticOptimizer::visitCommand(Command_ptr command) {
@@ -31,8 +51,14 @@ void SyntacticOptimizer::visitCommand(Command_ptr command) {
 	switch (command->getType()) {
 		case Command::Type::ASSERT:
 		{
-			Assert_ptr assert = dynamic_cast<Assert_ptr>(command);
-			visit_and_callback(assert->term);
+			current_assert = dynamic_cast<Assert_ptr>(command);
+			visit_and_callback(current_assert->term);
+//			std::string assert_string = to_string(current_assert->term);
+//			if (assert_equivalance.find(assert_string) != assert_equivalance.end()) {
+//				to_be_removed.insert(command);
+//			} else {
+//				assert_equivalance.insert(assert_string);
+//			}
 			break;
 		}
 	default:
@@ -487,6 +513,26 @@ std::string SyntacticOptimizer::syntactic_reverse_relation(std::string operation
 		return "<=";
 	} else {
 		return operation;
+	}
+}
+
+Term_ptr SyntacticOptimizer::generate_dummy_term() {
+	std::string var_name;
+
+	for (auto& variable_pair : symbol_table -> getVariables()) {
+		var_name = variable_pair.first;
+		if (variable_pair.second->isSymbolic()) break;
+	}
+
+	if (var_name.empty()) {
+		Primitive_ptr primitive = new Primitive("dummy", Primitive::Type::STRING);
+		TermConstant_ptr term_constant = new TermConstant(primitive);
+		return term_constant;
+	} else {
+		Primitive_ptr primitive = new Primitive(var_name, Primitive::Type::SYMBOL);
+		Identifier_ptr identifier = new Identifier(primitive);
+		QualIdentifier_ptr var_ptr = new QualIdentifier(identifier);
+		return var_ptr;
 	}
 }
 

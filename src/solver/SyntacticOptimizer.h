@@ -81,9 +81,11 @@ protected:
 	bool check_and_process_len_transformation(Term_ptr, Term_ptr&, Term_ptr&);
 	bool __check_and_process_len_transformation(std::string operation, Term_ptr&, Term_ptr&);
 	std::string syntactic_reverse_relation(std::string operation);
+	Term_ptr generate_dummy_term();
 
 	Script_ptr root;
 	SymbolTable_ptr symbol_table;
+	Assert_ptr current_assert;
 	std::queue<std::function <void (Term_ptr&)>> callbacks;
 };
 
