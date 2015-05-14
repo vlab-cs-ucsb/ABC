@@ -110,6 +110,7 @@
 	SET_OPTION           "set-option"
 ;
 
+%token <std::string>  BOOL         "bool"
 %token <std::string>	BINARY       "binary"
 %token <std::string>  DECIMAL      "decimal"
 %token <std::string>	HEXADECIMAL  "hexadecimal"
@@ -354,10 +355,11 @@ s_expr                :
                       ;
 
 spec_constant         :
-                        NUMERAL             { $$ = new smtlib::Primitive($1, smtlib::Primitive::Type::NUMERAL); }
-                      | DECIMAL             { $$ = new smtlib::Primitive($1, smtlib::Primitive::Type::DECIMAL); }
-                      | HEXADECIMAL         { $$ = new smtlib::Primitive($1, smtlib::Primitive::Type::HEXADECIMAL); }
+                        BOOL                { $$ = new smtlib::Primitive($1, smtlib::Primitive::Type::BOOL); }
                       | BINARY              { $$ = new smtlib::Primitive($1, smtlib::Primitive::Type::BINARY); }
+                      | HEXADECIMAL         { $$ = new smtlib::Primitive($1, smtlib::Primitive::Type::HEXADECIMAL); }
+                      | NUMERAL             { $$ = new smtlib::Primitive($1, smtlib::Primitive::Type::NUMERAL); }
+                      | DECIMAL             { $$ = new smtlib::Primitive($1, smtlib::Primitive::Type::DECIMAL); }
                       | STRING              { $$ = new smtlib::Primitive($1, smtlib::Primitive::Type::STRING); }
                       | REGEX               { $$ = new smtlib::Primitive($1, smtlib::Primitive::Type::REGEX); }
                       ;

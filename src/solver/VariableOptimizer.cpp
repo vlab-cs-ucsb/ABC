@@ -10,6 +10,8 @@
 namespace Vlab {
 namespace SMT {
 
+const int VariableOptimizer::VLOG_LEVEL = 15;
+
 VariableOptimizer::VariableOptimizer(Script_ptr script, SymbolTable_ptr symbol_table)
 	: root (script), symbol_table (symbol_table),
 	  target_type(Variable::Type::NONE), existential_elimination_phase(true) { }
@@ -25,7 +27,7 @@ VariableOptimizer::~VariableOptimizer() { }
 void VariableOptimizer::start() {
 	Counter counter(root, symbol_table);
 
-	DVLOG(16) << "Bool existential elimination";
+	DVLOG(VLOG_LEVEL) << "Bool existential elimination";
 	existential_elimination_phase = true;
 
 	counter.start();
@@ -35,7 +37,7 @@ void VariableOptimizer::start() {
 	symbol_table->pop_scope();
 	end();
 
-	DVLOG(16) << "Bool variable reduction";
+	DVLOG(VLOG_LEVEL) << "Bool variable reduction";
 	existential_elimination_phase = false;
 
 	counter.start();
@@ -45,7 +47,7 @@ void VariableOptimizer::start() {
 
 	end();
 
-	DVLOG(16) << "Int existential elimination";
+	DVLOG(VLOG_LEVEL) << "Int existential elimination";
 	existential_elimination_phase = true;
 
 	counter.start();
@@ -55,7 +57,7 @@ void VariableOptimizer::start() {
 	symbol_table->pop_scope();
 	end();
 
-	DVLOG(16) << "String existential elimination";
+	DVLOG(VLOG_LEVEL) << "String existential elimination";
 	counter.start();
 	target_type = Variable::Type::STRING;
 	symbol_table->push_scope(root);
@@ -70,9 +72,9 @@ void VariableOptimizer::start() {
 void VariableOptimizer::end() {
 	if (VLOG_IS_ON(16)) {
 		for (auto& rule_map : symbol_table -> get_variable_substitution_table()) {
-			DVLOG(16) << "Substitution map for scope: " << rule_map.first;
+			DVLOG(VLOG_LEVEL) << "Substitution map for scope: " << rule_map.first;
 			for (auto& rule : rule_map.second) {
-				DVLOG(16) << "\t" << *rule.first << " (" << rule.first << ") -> " << *rule.second << " (" << rule.second <<" )";
+				DVLOG(VLOG_LEVEL) << "\t" << *rule.first << " (" << rule.first << ") -> " << *rule.second << " (" << rule.second <<" )";
 			}
 		}
 	}

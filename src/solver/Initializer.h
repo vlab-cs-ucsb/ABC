@@ -78,7 +78,8 @@ protected:
 	SymbolTable_ptr symbol_table;
 	std::stack<Primitive_ptr> primitives;
 	std::stack<Sort_ptr> sorts;
-
+private:
+	static const int VLOG_LEVEL;
 };
 
 } /* namespace SMT */

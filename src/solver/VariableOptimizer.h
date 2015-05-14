@@ -82,6 +82,8 @@ protected:
 	Variable::Type target_type;
 	bool existential_elimination_phase;
 	std::map<Variable_ptr, int> eq_constraint_count;
+private:
+	static const int VLOG_LEVEL;
 };
 
 } /* namespace SMT */

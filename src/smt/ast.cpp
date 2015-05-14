@@ -1031,6 +1031,7 @@ std::string Identifier::getName() {
 }
 
 const std::string Primitive::Name::NONE			= "NONE";
+const std::string Primitive::Name::BOOL			= "BOOL";
 const std::string Primitive::Name::BINARY 		= "BINARY";
 const std::string Primitive::Name::DECIMAL 		= "DECIMAL";
 const std::string Primitive::Name::HEXADECIMAL 	= "HEXADECIMAL";
@@ -1055,6 +1056,9 @@ std::string Primitive::str() const {
 	switch (type) {
 		case Primitive::Type::NONE:
 			ss << Primitive::Name::NONE;
+			break;
+		case Primitive::Type::BOOL:
+			ss << Primitive::Name::BOOL;
 			break;
 		case Primitive::Type::BINARY:
 			ss << Primitive::Name::BINARY;

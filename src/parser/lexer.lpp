@@ -20,11 +20,11 @@
 %x START_REGEX
 %x START_QUOTEDSYMBOL
 
-
+BOOL           true|false
 BINARY         #b[0-1]+
 HEXADECIMAL    #x[0-9a-fA-F]+
 NUMERAL        0|[1-9]+[0-9]*
-DECIMAL		   NUMERAL\.0*NUMERAL
+DECIMAL		     NUMERAL\.0*NUMERAL
 SYMBOL         [a-zA-Z0-9._+\-*=%/?!$_~&^<>@]+
 KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 
@@ -109,6 +109,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "set-info"          { return Vlab::Parser::make_SET_INFO        (loc);  }
 "set-option"     		{ return Vlab::Parser::make_SET_OPTION 	    (loc); 	}
 
+{BOOL}              { return Vlab::Parser::make_BOOL            (yytext, loc);  }
 {BINARY}            { return Vlab::Parser::make_BINARY 		      (yytext, loc); 	}
 {DECIMAL}           { return Vlab::Parser::make_DECIMAL         (yytext, loc);  }
 {HEXADECIMAL}  			{ return Vlab::Parser::make_HEXADECIMAL 	  (yytext, loc); 	}

@@ -10,6 +10,8 @@
 namespace Vlab {
 namespace SMT {
 
+const int Initializer::VLOG_LEVEL = 19;
+
 Initializer::Initializer(Script_ptr script, SymbolTable_ptr symbol_table)
 	: root (script), symbol_table (symbol_table) { }
 
@@ -24,7 +26,7 @@ void Initializer::start() {
 void Initializer::end() {
 	if (VLOG_IS_ON(19)) {
 		for (auto& pair : symbol_table -> getVariables()) {
-			DVLOG(19) << *pair.second;
+			DVLOG(VLOG_LEVEL) << *pair.second;
 		}
 	}
 }
@@ -69,7 +71,7 @@ void Initializer::visitCommand(Command_ptr command) {
 			Primitive_ptr primitive = primitives.top(); primitives.pop();
 			Variable_ptr variable = symbol_table->getVariable(primitive->getData());
 			variable->setSymbolic(true);
-			DVLOG(19) << *variable << " is changed to a symbolic var.";
+			DVLOG(VLOG_LEVEL) << *variable << " is changed to a symbolic var.";
 		}
 		CHECK_EQ(0, primitives.size()) << "unexpected primitive left.";
 		break;
@@ -81,16 +83,16 @@ void Initializer::visitCommand(Command_ptr command) {
 			Primitive_ptr primitive = primitives.top(); primitives.pop();
 			int bound = std::stoi(primitive->getData());
 			symbol_table->setBound(bound);
-			DVLOG(19) << "Model count bound: " << bound;
+			DVLOG(VLOG_LEVEL) << "Model count bound: " << bound;
 		} else if (primitives.size() == 2) {
 			Primitive_ptr primitive = primitives.top(); primitives.pop();
 			Variable_ptr variable = symbol_table->getVariable(primitive->getData());
 			variable->setSymbolic(true);
-			DVLOG(19) << *variable << " is changed to a symbolic var.";
+			DVLOG(VLOG_LEVEL) << *variable << " is changed to a symbolic var.";
 			primitive = primitives.top(); primitives.pop();
 			int bound = std::stoi(primitive->getData());
 			symbol_table->setBound(bound);
-			DVLOG(19) << "Model count bound: " << bound;
+			DVLOG(VLOG_LEVEL) << "Model count bound: " << bound;
 		}
 		CHECK_EQ(0, primitives.size()) << "unexpected primitive left.";
 		break;

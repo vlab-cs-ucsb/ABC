@@ -13,6 +13,7 @@
 
 #include <glog/logging.h>
 #include "../smt/ast.h"
+#include "Ast2Dot.h"
 #include "SymbolTable.h"
 
 namespace Vlab {
@@ -73,6 +74,8 @@ public:
 	void visitVariable(Variable_ptr);
 protected:
 	void visit_and_callback(Term_ptr&);
+	bool is_equivalent(Term_ptr, Term_ptr);
+	std::string to_string(Visitable_ptr);
 	std::string escape_regex(std::string regex);
 	std::string regex_to_str(std::string regex);
 	void pre_concat_constants(TermConstant_ptr, TermConstant_ptr);
@@ -81,12 +84,17 @@ protected:
 	bool check_and_process_len_transformation(Term_ptr, Term_ptr&, Term_ptr&);
 	bool __check_and_process_len_transformation(std::string operation, Term_ptr&, Term_ptr&);
 	std::string syntactic_reverse_relation(std::string operation);
+	Term_ptr generate_term_constant(std::string data, Primitive::Type type);
 	Term_ptr generate_dummy_term();
+	void add_callback_to_replace_with_bool(Term_ptr, std::string value);
+	bool check_bool_constant_value(Term_ptr, std::string value);
 
 	Script_ptr root;
 	SymbolTable_ptr symbol_table;
 	Assert_ptr current_assert;
 	std::queue<std::function <void (Term_ptr&)>> callbacks;
+private:
+	static const int VLOG_LEVEL;
 };
 
 } /* namespace SMT */

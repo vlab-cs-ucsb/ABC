@@ -18,6 +18,7 @@
 #include "../smt/ast.h"
 #include "Ast2Dot.h"
 #include "SymbolTable.h"
+#include "SyntacticOptimizer.h"
 
 namespace Vlab {
 namespace SMT {
@@ -90,6 +91,8 @@ protected:
 	std::vector<Visitable_ptr> scope_stack;
 	std::map<Visitable_ptr, std::vector<Term_ptr>> check_table;
 	std::queue<std::function <void (Term_ptr&)>> callbacks;
+private:
+	static const int VLOG_LEVEL;
 };
 
 } /* namespace SMT */

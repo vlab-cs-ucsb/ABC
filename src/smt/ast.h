@@ -658,7 +658,7 @@ public:
 class Primitive : public Visitable {
 public:
 	enum class Type : int {
-		NONE = 0, BINARY, DECIMAL, HEXADECIMAL, KEYWORD,
+		NONE = 0, BOOL, BINARY, DECIMAL, HEXADECIMAL, KEYWORD,
 		NUMERAL, STRING, REGEX, SYMBOL
 	};
 
@@ -678,6 +678,7 @@ public:
 	class Name {
 	public:
 		static const std::string NONE;
+		static const std::string BOOL;
 		static const std::string BINARY;
 		static const std::string DECIMAL;
 		static const std::string HEXADECIMAL;

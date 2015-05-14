@@ -8,17 +8,11 @@
 #ifndef SOLVER_OPTIMIZATIONRULERUNNER_H_
 #define SOLVER_OPTIMIZATIONRULERUNNER_H_
 
-#include <sstream>
-#include <queue>
-#include <set>
-#include <map>
-#include <functional>
-
 #include <glog/logging.h>
 #include "../smt/ast.h"
 #include "Ast2Dot.h"
 #include "SymbolTable.h"
-#include "Counter.h"
+#include "SyntacticOptimizer.h"
 
 namespace Vlab {
 namespace SMT {
@@ -76,19 +70,13 @@ public:
 	void visitPrimitive(Primitive_ptr);
 	void visitVariable(Variable_ptr);
 protected:
-	void visit_and_callback(Term_ptr&);
 	bool has_optimization_rules();
-	bool is_equivalent(Term_ptr, Term_ptr);
-	std::string to_string(Visitable_ptr);
-	Term_ptr generate_dummy_term();
-
 	bool check_and_substitute_var(Term_ptr& term);
 
 	Script_ptr root;
 	SymbolTable_ptr symbol_table;
-	Assert_ptr current_assert;
-	std::queue<std::function <void (Term_ptr&)>> callbacks;
-	std::set<Visitable_ptr> delete_list;
+private:
+	static const int VLOG_LEVEL;
 };
 
 } /* namespace SMT */

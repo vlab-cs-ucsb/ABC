@@ -10,6 +10,8 @@
 namespace Vlab {
 namespace SMT {
 
+const int FormulaOptimizer::VLOG_LEVEL = 14;
+
 FormulaOptimizer::FormulaOptimizer(Script_ptr script, SymbolTable_ptr symbol_table)
 	: root (script), symbol_table (symbol_table) { }
 
@@ -22,10 +24,12 @@ void FormulaOptimizer::start() {
 	pop_scope();
 
 	end();
-
 }
 
-void FormulaOptimizer::end() { }
+void FormulaOptimizer::end() {
+	SyntacticOptimizer syntactic_optimizer(root, symbol_table);
+	syntactic_optimizer.start();
+}
 
 void FormulaOptimizer::visitScript(Script_ptr script) {
 	for (auto& command : *(script->command_list)) {
@@ -72,36 +76,25 @@ void FormulaOptimizer::visitAnd(And_ptr and_term) {
 	}
 
 	if (remove_and_term) {
+		DVLOG(VLOG_LEVEL) << "replace: 'and' with constant 'false'";
 		auto callback = [and_term](Term_ptr& term) mutable {
+			term = new TermConstant(new Primitive("false", Primitive::Type::BOOL));
 			delete and_term;
-			term = nullptr;
 		};
 		callbacks.push(callback);
 	} else {
 		add_terms_to_check_list(and_term->term_list);
-		for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
-			visit_and_callback(*iter);
-			if ((*iter) == nullptr) {
-				iter = and_term->term_list->erase(iter);
-				DVLOG(14) << "remove: term from 'and'";
-			} else {
-				iter++;
-			}
+		for (auto& term : *(and_term->term_list)) {
+			visit_and_callback(term);
 		}
 	}
 }
 
 void FormulaOptimizer::visitOr(Or_ptr or_term) {
-	for (auto iter = or_term->term_list->begin(); iter != or_term->term_list->end();) {
-		push_scope(*iter);
-		visit_and_callback(*iter);
+	for (auto& term : *(or_term->term_list)) {
+		push_scope(term);
+		visit_and_callback(term);
 		pop_scope();
-		if ((*iter) == nullptr) {
-			iter = or_term->term_list->erase(iter);
-			DVLOG(14) << "remove: term from 'or'";
-		} else {
-			iter++;
-		}
 	}
 }
 
@@ -230,6 +223,8 @@ void FormulaOptimizer::push_scope(Visitable_ptr key) {
 
 Visitable_ptr FormulaOptimizer::pop_scope() {
 	Visitable_ptr scope = scope_stack.back();
+	auto it = check_table.find(scope);
+	check_table.erase(it);
 	scope_stack.pop_back();
 	return scope;
 }
@@ -247,15 +242,11 @@ bool FormulaOptimizer::check_term(Term_ptr term) {
 			if (term->getType() == Term::Type::NOT and other_term->getType() != Term::Type::NOT) {
 				Not_ptr not_term = dynamic_cast<Not_ptr>(term);
 				if (is_equivalent(not_term->term, other_term)) {
-					std::cout << "1 - left:" << std::endl << to_string(not_term) << std::endl;
-					std::cout << "1 - right:" << std::endl << to_string(term) << std::endl;
 					return true;
 				}
 			} else if (term->getType() != Term::Type::NOT and other_term->getType() == Term::Type::NOT) {
 				Not_ptr not_term = dynamic_cast<Not_ptr>(other_term);
 				if (is_equivalent(not_term->term, term)) {
-					std::cout << "2 - left:" << std::endl << to_string(not_term) << std::endl;
-					std::cout << "2 - right:" << std::endl << to_string(term) << std::endl;
 					return true;
 				}
 			}
@@ -266,7 +257,7 @@ bool FormulaOptimizer::check_term(Term_ptr term) {
 
 void FormulaOptimizer::visit_and_callback(Term_ptr& term) {
 	visit(term);
-	if (not callbacks.empty()) {
+	while (not callbacks.empty()) {
 		callbacks.front()(term);
 		callbacks.pop();
 
