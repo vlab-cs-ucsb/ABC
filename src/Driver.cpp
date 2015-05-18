@@ -69,16 +69,13 @@ void Driver::initializeSolver() {
 
 //	SMT::LengthConstraintReductor len_reductor;
 //	len_reductor.start(script, symbol_table);
+
+	SMT::ConstraintSorter graph_generator(script, symbol_table);
+	graph_generator.start();
+
 }
 
-//void Driver::reduceVars() {
-//	SMT::IntVarReductor int_reductor;
-//	int_reductor.start(script, symbol_table);
-//
-//	SMT::StrVarReductor str_reductor;
-//	str_reductor.start(script, symbol_table);
-//}
-//
+
 //void Driver::preProcessAst() {
 //	SMT::AstConditionalProcessor condProcessor;
 //	condProcessor.start(script, symbol_table);

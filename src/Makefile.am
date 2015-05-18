@@ -19,6 +19,8 @@ abc_SOURCES = \
   ./solver/VariableOptimizer.h \
   ./solver/FormulaOptimizer.cpp \
   ./solver/FormulaOptimizer.h \
+  ./solver/ConstraintSorter.cpp \
+  ./solver/ConstraintSorter.h \
 	Driver.cpp \
 	Driver.h \
 	main.cpp 

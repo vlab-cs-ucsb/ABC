@@ -388,7 +388,13 @@ void SyntacticOptimizer::visitIn(In_ptr in_term) {
 	visit_and_callback(in_term->right_term);
 
 	if (is_equivalent(in_term->left_term, in_term->right_term)) {
-		add_callback_to_replace_with_bool(in_term, "true");
+		auto callback = [in_term](Term_ptr& term) mutable {
+			term = in_term->left_term;
+			in_term->left_term = nullptr;
+			delete in_term;
+		};
+
+		callbacks.push(callback);
 	}
 }
 
@@ -401,7 +407,13 @@ void SyntacticOptimizer::visitContains(Contains_ptr contains_term) {
 	visit_and_callback(contains_term->search_term);
 
 	if (is_equivalent(contains_term->subject_term, contains_term->search_term)) {
-		add_callback_to_replace_with_bool(contains_term, "true");
+		auto callback = [contains_term](Term_ptr& term) mutable {
+			term = contains_term->subject_term;
+			contains_term->subject_term = nullptr;
+			delete contains_term;
+		};
+
+		callbacks.push(callback);
 	}
 }
 
@@ -410,7 +422,13 @@ void SyntacticOptimizer::visitBegins(Begins_ptr begins_term) {
 	visit_and_callback(begins_term->search_term);
 
 	if (is_equivalent(begins_term->subject_term, begins_term->search_term)) {
-		add_callback_to_replace_with_bool(begins_term, "true");
+		auto callback = [begins_term](Term_ptr& term) mutable {
+			term = begins_term->subject_term;
+			begins_term->subject_term = nullptr;
+			delete begins_term;
+		};
+
+		callbacks.push(callback);
 	}
 }
 
@@ -419,7 +437,13 @@ void SyntacticOptimizer::visitEnds(Ends_ptr ends_term) {
 	visit_and_callback(ends_term->search_term);
 
 	if (is_equivalent(ends_term->subject_term, ends_term->search_term)) {
-		add_callback_to_replace_with_bool(ends_term, "true");
+		auto callback = [ends_term](Term_ptr& term) mutable {
+			term = ends_term->subject_term;
+			ends_term->subject_term = nullptr;
+			delete ends_term;
+		};
+
+		callbacks.push(callback);
 	}
 }
 

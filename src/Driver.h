@@ -21,10 +21,7 @@
 #include "solver/SyntacticOptimizer.h"
 #include "solver/VariableOptimizer.h"
 #include "solver/FormulaOptimizer.h"
-//#include "LengthConstraintReductor.h"
-//#include "AstSorter.h"
-//#include "AstOptimizer.h"
-//#include "PostImageComputer.h"
+#include "solver/ConstraintSorter.h"
 #include "Scanner.h"
 
 
@@ -44,7 +41,6 @@ public:
 	void ast2dot(std::ostream* out);
 //	void collectStatistics();
 	void initializeSolver();
-//	void reduceVars();
 //	void preProcessAst();
 //	void solveAst();
 
