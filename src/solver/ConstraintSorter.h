@@ -9,10 +9,15 @@
 #define SOLVER_CONSTRAINTSORTER_H_
 
 #include <vector>
+#include <stack>
+#include <queue>
+#include <map>
+#include <functional>
 
 #include <glog/logging.h>
 #include "../smt/ast.h"
 #include "SymbolTable.h"
+#include "Counter.h"
 
 namespace Vlab {
 namespace SMT {
@@ -70,28 +75,60 @@ public:
 	void visitPrimitive(Primitive_ptr);
 	void visitVariable(Variable_ptr);
 protected:
+	class VariableNode;
+	class VisitableNode;
+	typedef VariableNode* VariableNode_ptr;
+	typedef VisitableNode* VisitableNode_ptr;
+
+	void push_node(Visitable_ptr);
+	Visitable_ptr pop_node();
+	VariableNode_ptr get_variable_node(Variable_ptr);
 
 	Script_ptr root;
 	SymbolTable_ptr symbol_table;
+	VisitableNode_ptr visitable_node;
+	bool is_left_side;
 
-private:
-	static const int VLOG_LEVEL;
+	std::stack<Visitable_ptr> node_stack;
 
-	class DependencyNode {
+	std::vector<VisitableNode_ptr> dependency_node_list;
+	std::map<Variable_ptr, VariableNode_ptr> variable_nodes;
+
+	class VisitableNode {
 	public:
-		DependencyNode(Visitable_ptr node);
-		~DependencyNode();
+		VisitableNode(Visitable_ptr node);
+		~VisitableNode();
 
-		void add_child_node(Visitable_ptr node, bool left_child);
+		void add_node(VariableNode_ptr variable, bool is_left_side);
+		void add_nodes(std::vector<VariableNode_ptr>&, bool is_left_side);
+		void shift_to_left();
+		void shift_to_right();
+		std::vector<VariableNode_ptr>& get_all_nodes();
 	protected:
 		Visitable_ptr node;
 		std::vector<Visitable_ptr> next_node_list;
-		std::vector<Visitable_ptr> all_child_node_list;
-		std::vector<Visitable_ptr> left_child_node_list;
-		std::vector<Visitable_ptr> right_child_node_list;
+		std::vector<VariableNode_ptr> all_child_node_list;
+		std::vector<VariableNode_ptr> left_child_node_list;
+		std::vector<VariableNode_ptr> right_child_node_list;
+	private:
+		void merge_vectors(std::vector<VariableNode_ptr>&,std::vector<VariableNode_ptr>&);
 	};
 
-	std::vector<DependencyNode*> dependency_node_list;
+	class VariableNode {
+	public:
+		VariableNode(Variable_ptr variable);
+		~VariableNode();
+
+		void add_node(VisitableNode_ptr node, bool is_left_side);
+	protected:
+		Variable_ptr variable;
+		std::vector<VisitableNode_ptr> all_var_appearance_list;
+		std::vector<VisitableNode_ptr> left_side_var_appearance_list;
+		std::vector<VisitableNode_ptr> right_side_var_appearance_list;
+	};
+
+private:
+	static const int VLOG_LEVEL;
 };
 
 } /* namespace SMT */
