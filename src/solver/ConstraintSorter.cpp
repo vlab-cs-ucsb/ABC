@@ -13,7 +13,7 @@ namespace SMT {
 const int ConstraintSorter::VLOG_LEVEL = 13;
 
 ConstraintSorter::ConstraintSorter(Script_ptr script, SymbolTable_ptr symbol_table)
-	: root (script), symbol_table (symbol_table), visitable_node (nullptr), is_left_side(true) { }
+	: root (script), symbol_table (symbol_table), visitable_node (nullptr) { }
 
 ConstraintSorter::~ConstraintSorter() { }
 
@@ -41,7 +41,11 @@ void ConstraintSorter::visitScript(Script_ptr script) {
 		dependency_node_list.push_back(visitable_node);
 	}
 
+
+	sort_visitable_nodes(dependency_node_list);
+
 	if (VLOG_IS_ON(VLOG_LEVEL)) {
+		DVLOG(VLOG_LEVEL) << "global dependency info: " << script;
 		for (auto& node : dependency_node_list) {
 			DVLOG(VLOG_LEVEL) << node->str();
 		}
@@ -51,21 +55,17 @@ void ConstraintSorter::visitScript(Script_ptr script) {
 		}
 	}
 
-	// initially sort based on number of variables in a constraint and where they appear in a constraint
-	std::sort(dependency_node_list.begin(), dependency_node_list.end(), [](VisitableNode_ptr left_node, VisitableNode_ptr right_node){
-		if (left_node->num_of_total_vars() == 0) { return true; }
-		if (left_node->num_of_left_vars() < right_node->num_of_right_vars()) { return true; }
-		if (left_node->num_of_left_vars() == right_node->num_of_left_vars()) {
 
-		}
-
-
-		if (right_node->num_of_total_vars() == 0) { return false; }
-	});
 
 	// figure out what will be the next commands in dependency node
 
 	// do topological sort
+
+	// update command list
+	script->command_list->clear();
+	for (auto& visitable_node : dependency_node_list) {
+		script->command_list->push_back(dynamic_cast<Command_ptr>(visitable_node->get_node()));
+	}
 }
 
 void ConstraintSorter::visitCommand(Command_ptr command) {
@@ -390,16 +390,6 @@ void ConstraintSorter::visitSortedVar(SortedVar_ptr sorted_var) { }
 
 void ConstraintSorter::visitVarBinding(VarBinding_ptr var_binding) {  }
 
-void ConstraintSorter::push_node(Visitable_ptr node) {
-	node_stack.push(node);
-}
-
-Visitable_ptr ConstraintSorter::pop_node() {
-	Visitable_ptr node = node_stack.top();
-	node_stack.pop();
-	return node;
-}
-
 ConstraintSorter::VariableNode_ptr ConstraintSorter::get_variable_node(Variable_ptr variable) {
 	auto it = variable_nodes.find(variable);
 	if (it != variable_nodes.end()) {
@@ -427,23 +417,51 @@ ConstraintSorter::VisitableNode_ptr ConstraintSorter::process_child_nodes(Visita
 	return result_node;
 }
 
-ConstraintSorter::VisitableNode::VisitableNode(): node (nullptr) { }
+void ConstraintSorter::sort_visitable_nodes(std::vector<VisitableNode_ptr>& visitable_node_list) {
+	std::sort(visitable_node_list.begin(), visitable_node_list.end(), [](VisitableNode_ptr left_node, VisitableNode_ptr right_node) -> bool {
+		if (left_node->num_of_total_vars() == 0) { return true; }
+		if (left_node->num_of_left_vars() < right_node->num_of_left_vars()) { return true; }
+		if (left_node->num_of_total_vars() < right_node->num_of_total_vars()) { return true; }
+		return false;
+	});
 
-ConstraintSorter::VisitableNode::VisitableNode(Visitable_ptr node): node (node) { }
+	auto begin = std::find_if(visitable_node_list.begin(), visitable_node_list.end(),
+			[](VisitableNode_ptr node) -> bool {
+		return node->num_of_total_vars() == 1;
+	});
+
+	auto end = std::find_if(begin, visitable_node_list.end(),
+			[](VisitableNode_ptr node) -> bool {
+		return node->num_of_total_vars() == 2;
+	});
+
+	std::sort(begin, end, [](VisitableNode_ptr left_node, VisitableNode_ptr right_node) -> bool {
+		if (left_node->num_of_left_vars() < right_node->num_of_right_vars()) { return false; }
+		return true;
+	});
+
+	DVLOG(VLOG_LEVEL) << "node list sorted";
+}
+
+ConstraintSorter::VisitableNode::VisitableNode()
+	: _node (nullptr), _has_symbolic_var_on_left (false), _has_symbolic_var_on_right (false) { }
+
+ConstraintSorter::VisitableNode::VisitableNode(Visitable_ptr node)
+	: _node (node), _has_symbolic_var_on_left (false), _has_symbolic_var_on_right (false) { }
 
 ConstraintSorter::VisitableNode::~VisitableNode() { }
 
 std::string ConstraintSorter::VisitableNode::str() {
 	std::stringstream ss;
-	ss << this->node << " -> l:" << left_child_node_list.size() << " r:" << right_child_node_list.size();
+	ss << this->_node << " -> l:" << _left_child_node_list.size() << " r:" << _right_child_node_list.size();
 
 	ss << " l:";
-	for (auto& variable_node : left_child_node_list) {
+	for (auto& variable_node : _left_child_node_list) {
 		ss << " " << *(variable_node->get_variable());
 	}
 
 	ss << " r:";
-	for (auto& variable_node : right_child_node_list) {
+	for (auto& variable_node : _right_child_node_list) {
 		ss << " " << *(variable_node->get_variable());
 	}
 
@@ -451,65 +469,92 @@ std::string ConstraintSorter::VisitableNode::str() {
 }
 
 void ConstraintSorter::VisitableNode::set_node(Visitable_ptr node) {
-	this->node = node;
+	this->_node = node;
 }
 
 Visitable_ptr ConstraintSorter::VisitableNode::get_node() {
-	return node;
+	return _node;
 }
 
 void ConstraintSorter::VisitableNode::add_node(ConstraintSorter::VariableNode_ptr variable, bool is_left_side) {
-	is_left_side ? left_child_node_list.push_back(variable) : right_child_node_list.push_back(variable);
+	is_left_side ? _left_child_node_list.push_back(variable) : _right_child_node_list.push_back(variable);
 }
 
 void ConstraintSorter::VisitableNode::add_nodes(std::vector<VariableNode_ptr>& var_node_list, bool is_left_side) {
-	is_left_side ? merge_vectors(left_child_node_list, var_node_list) : merge_vectors(right_child_node_list, var_node_list);
+	is_left_side ? merge_vectors(_left_child_node_list, var_node_list) : merge_vectors(_right_child_node_list, var_node_list);
 }
 
 std::vector<ConstraintSorter::VariableNode_ptr>& ConstraintSorter::VisitableNode::get_all_nodes() {
-	all_child_node_list.clear();
-	all_child_node_list.insert(all_child_node_list.begin(), left_child_node_list.begin(), left_child_node_list.end());
-	all_child_node_list.insert(all_child_node_list.end(), right_child_node_list.begin(), right_child_node_list.end());
-	return all_child_node_list;
+	_all_child_node_list.clear();
+	_all_child_node_list.insert(_all_child_node_list.begin(), _left_child_node_list.begin(), _left_child_node_list.end());
+	_all_child_node_list.insert(_all_child_node_list.end(), _right_child_node_list.begin(), _right_child_node_list.end());
+	return _all_child_node_list;
 }
 
 std::vector<ConstraintSorter::VariableNode_ptr>& ConstraintSorter::VisitableNode::get_left_nodes() {
-	return left_child_node_list;
+	return _left_child_node_list;
 }
 
 std::vector<ConstraintSorter::VariableNode_ptr>& ConstraintSorter::VisitableNode::get_right_nodes() {
-	return right_child_node_list;
+	return _right_child_node_list;
 }
 
 void ConstraintSorter::VisitableNode::shift_to_left() {
-	left_child_node_list.insert(left_child_node_list.end(), right_child_node_list.begin(), right_child_node_list.end());
-	right_child_node_list.clear();
+	_left_child_node_list.insert(_left_child_node_list.end(), _right_child_node_list.begin(), _right_child_node_list.end());
+	_right_child_node_list.clear();
 }
 
 void ConstraintSorter::VisitableNode::shift_to_right() {
-	right_child_node_list.insert(right_child_node_list.begin(), left_child_node_list.begin(), left_child_node_list.end());
-	left_child_node_list.clear();
+	_right_child_node_list.insert(_right_child_node_list.begin(), _left_child_node_list.begin(), _left_child_node_list.end());
+	_left_child_node_list.clear();
 }
 
 void ConstraintSorter::VisitableNode::add_me_to_child_variable_nodes() {
-	for (auto& left_node : left_child_node_list) {
+	for (auto& left_node : _left_child_node_list) {
 		left_node->add_node(this, true);
 	}
-	for (auto& right_node : right_child_node_list) {
+	for (auto& right_node : _right_child_node_list) {
 		right_node->add_node(this, false);
 	}
 }
 
 int ConstraintSorter::VisitableNode::num_of_total_vars() {
-	return left_child_node_list.size() + right_child_node_list.size();
+	return _left_child_node_list.size() + _right_child_node_list.size();
 }
 
 int ConstraintSorter::VisitableNode::num_of_left_vars() {
-	return left_child_node_list.size();
+	return _left_child_node_list.size();
 }
 
 int ConstraintSorter::VisitableNode::num_of_right_vars() {
-	return right_child_node_list.size();
+	return _right_child_node_list.size();
+}
+
+void ConstraintSorter::VisitableNode::check_for_symbolic_variables() {
+	for (auto& left_node : _left_child_node_list) {
+		if (left_node->get_variable()->isSymbolic()) {
+			_has_symbolic_var_on_left = true;
+			break;
+		}
+	}
+	for (auto& right_node : _right_child_node_list) {
+		if (right_node->get_variable()->isSymbolic()) {
+			_has_symbolic_var_on_right = true;
+			break;
+		}
+	}
+}
+
+bool ConstraintSorter::VisitableNode::has_symbolic_var_on_left() {
+	return _has_symbolic_var_on_left;
+}
+
+bool ConstraintSorter::VisitableNode::has_symbolic_var_on_right() {
+	return _has_symbolic_var_on_right;
+}
+
+bool ConstraintSorter::VisitableNode::has_symbolic_var() {
+	return _has_symbolic_var_on_left || _has_symbolic_var_on_right;
 }
 
 void ConstraintSorter::VisitableNode::merge_vectors(std::vector<VariableNode_ptr>& vector_1, std::vector<VariableNode_ptr>& vector_2) {

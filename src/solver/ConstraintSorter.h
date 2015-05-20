@@ -11,10 +11,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include <stack>
-#include <queue>
 #include <map>
-#include <functional>
 #include <algorithm>
 
 #include <glog/logging.h>
@@ -83,17 +80,13 @@ protected:
 	typedef VariableNode* VariableNode_ptr;
 	typedef VisitableNode* VisitableNode_ptr;
 
-	void push_node(Visitable_ptr);
-	Visitable_ptr pop_node();
 	VariableNode_ptr get_variable_node(Variable_ptr);
 	VisitableNode_ptr process_child_nodes(VisitableNode_ptr, VisitableNode_ptr);
+	void sort_visitable_nodes(std::vector<VisitableNode_ptr>& visitable_node_list);
 
 	Script_ptr root;
 	SymbolTable_ptr symbol_table;
 	VisitableNode_ptr visitable_node;
-	bool is_left_side;
-
-	std::stack<Visitable_ptr> node_stack;
 
 	std::vector<VisitableNode_ptr> dependency_node_list;
 	std::map<Variable_ptr, VariableNode_ptr> variable_nodes;
@@ -118,13 +111,18 @@ protected:
 		int num_of_total_vars();
 		int num_of_left_vars();
 		int num_of_right_vars();
-
+		void check_for_symbolic_variables();
+		bool has_symbolic_var_on_left();
+		bool has_symbolic_var_on_right();
+		bool has_symbolic_var();
 	protected:
-		Visitable_ptr node;
-		std::vector<Visitable_ptr> next_node_list;
-		std::vector<VariableNode_ptr> all_child_node_list;
-		std::vector<VariableNode_ptr> left_child_node_list;
-		std::vector<VariableNode_ptr> right_child_node_list;
+		Visitable_ptr _node;
+		bool _has_symbolic_var_on_left;
+		bool _has_symbolic_var_on_right;
+		std::vector<Visitable_ptr> _next_node_list;
+		std::vector<VariableNode_ptr> _all_child_node_list;
+		std::vector<VariableNode_ptr> _left_child_node_list;
+		std::vector<VariableNode_ptr> _right_child_node_list;
 	private:
 		void merge_vectors(std::vector<VariableNode_ptr>&,std::vector<VariableNode_ptr>&);
 	};

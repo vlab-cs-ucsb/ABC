@@ -70,9 +70,8 @@ void Driver::initializeSolver() {
 //	SMT::LengthConstraintReductor len_reductor;
 //	len_reductor.start(script, symbol_table);
 
-	SMT::ConstraintSorter graph_generator(script, symbol_table);
-	graph_generator.start();
-
+	SMT::ConstraintSorter constraint_sorter(script, symbol_table);
+	constraint_sorter.start();
 }
 
 
