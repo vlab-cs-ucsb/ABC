@@ -8,6 +8,7 @@
 #ifndef SRC_SOLVER_FORMULAOPTIMIZER_H_
 #define SRC_SOLVER_FORMULAOPTIMIZER_H_
 
+#include <iostream>
 #include <sstream>
 #include <queue>
 #include <vector>

@@ -184,8 +184,8 @@ void OptimizationRuleRunner::visitReplace(Replace_ptr replace_term) {
 }
 
 void OptimizationRuleRunner::visitCount(Count_ptr count_term) {
-	check_and_substitute_var(count_term->bound_term);
 	check_and_substitute_var(count_term->subject_term);
+	check_and_substitute_var(count_term->bound_term);
 	visit_children_of(count_term);
 }
 

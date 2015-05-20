@@ -23,6 +23,8 @@
 
 namespace Vlab { namespace SMT {
 
+static const int AST_VLOG_LEVEL = 20;
+
 class Script : public Visitable {
 public:
 	Script(CommandList_ptr);
@@ -560,8 +562,8 @@ public:
 	virtual void accept(Visitor_ptr);
 	virtual void visit_children(Visitor_ptr);
 
-	Term_ptr bound_term;
 	Term_ptr subject_term;
+	Term_ptr bound_term;
 };
 
 

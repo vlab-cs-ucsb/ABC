@@ -144,10 +144,10 @@ void VariableOptimizer::visitEq(Eq_ptr eq_term) {
 //			std::cout << *right_var << ": " << symbol_table -> get_local_count(right_var->getName()) << ", " << symbol_table -> get_total_count(right_var->getName()) << std::endl;
 
 			if (left_var->getType() == target_type) {
-				int left_var_total_count = symbol_table -> get_total_count(left_var->getName());
-				int left_var_local_count = symbol_table -> get_local_count(left_var->getName());
-				int right_var_total_count = symbol_table -> get_total_count(right_var->getName());
-				int right_var_local_count = symbol_table -> get_local_count(right_var->getName());
+				int left_var_total_count = symbol_table -> get_total_count(left_var);
+				int left_var_local_count = symbol_table -> get_local_count(left_var);
+				int right_var_total_count = symbol_table -> get_total_count(right_var);
+				int right_var_local_count = symbol_table -> get_local_count(right_var);
 
 				if (left_var_total_count == left_var_local_count and right_var_total_count == right_var_local_count) {
 					if (left_var_total_count <= right_var_total_count) {
@@ -189,8 +189,8 @@ void VariableOptimizer::visitEq(Eq_ptr eq_term) {
 									: eq_term->left_term;
 
 //				std::cout << "rule add = " << *target_variable << " " << *target_term << std::endl;
-				int target_var_total_count = symbol_table -> get_total_count(target_variable->getName());
-				int target_var_local_count = symbol_table -> get_local_count(target_variable->getName());
+				int target_var_total_count = symbol_table -> get_total_count(target_variable);
+				int target_var_local_count = symbol_table -> get_local_count(target_variable);
 
 				if (target_var_total_count == target_var_local_count) {
 					add_variable_substitution_rule(target_variable, target_term);

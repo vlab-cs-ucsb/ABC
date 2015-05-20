@@ -24,7 +24,7 @@ void Counter::start() {
 void Counter::end() {
 	if (VLOG_IS_ON(17)) {
 		for (auto& pair : symbol_table -> getVariables()) {
-			DVLOG(17) << pair.first << " : " << symbol_table->get_total_count(pair.first);
+			DVLOG(17) << pair.first << " : " << symbol_table->get_total_count(pair.second);
 		}
 	}
 }
@@ -115,7 +115,7 @@ void Counter::visitUnknownTerm(Unknown_ptr unknown_term) { LOG(FATAL) << "Unexpt
 
 void Counter::visitAsQualIdentifier(AsQualIdentifier_ptr as_qid_term) { LOG(FATAL) << "Unexpected term: " << *as_qid_term; }
 
-void Counter::visitQualIdentifier(QualIdentifier_ptr qi_term) { symbol_table -> increment_count(qi_term->getVarName()); }
+void Counter::visitQualIdentifier(QualIdentifier_ptr qi_term) { symbol_table -> increment_count(symbol_table->getVariable(qi_term->getVarName())); }
 
 void Counter::visitTermConstant(TermConstant_ptr term_constant) { }
 

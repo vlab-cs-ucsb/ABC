@@ -8,11 +8,14 @@
 #ifndef SOLVER_CONSTRAINTSORTER_H_
 #define SOLVER_CONSTRAINTSORTER_H_
 
+#include <iostream>
+#include <sstream>
 #include <vector>
 #include <stack>
 #include <queue>
 #include <map>
 #include <functional>
+#include <algorithm>
 
 #include <glog/logging.h>
 #include "../smt/ast.h"
@@ -83,6 +86,7 @@ protected:
 	void push_node(Visitable_ptr);
 	Visitable_ptr pop_node();
 	VariableNode_ptr get_variable_node(Variable_ptr);
+	VisitableNode_ptr process_child_nodes(VisitableNode_ptr, VisitableNode_ptr);
 
 	Script_ptr root;
 	SymbolTable_ptr symbol_table;
@@ -96,14 +100,25 @@ protected:
 
 	class VisitableNode {
 	public:
+		VisitableNode();
 		VisitableNode(Visitable_ptr node);
 		~VisitableNode();
+		std::string str();
 
+		void set_node(Visitable_ptr node);
+		Visitable_ptr get_node();
 		void add_node(VariableNode_ptr variable, bool is_left_side);
 		void add_nodes(std::vector<VariableNode_ptr>&, bool is_left_side);
+		std::vector<VariableNode_ptr>& get_left_nodes();
+		std::vector<VariableNode_ptr>& get_right_nodes();
+		std::vector<VariableNode_ptr>& get_all_nodes();
 		void shift_to_left();
 		void shift_to_right();
-		std::vector<VariableNode_ptr>& get_all_nodes();
+		void add_me_to_child_variable_nodes();
+		int num_of_total_vars();
+		int num_of_left_vars();
+		int num_of_right_vars();
+
 	protected:
 		Visitable_ptr node;
 		std::vector<Visitable_ptr> next_node_list;
@@ -118,7 +133,9 @@ protected:
 	public:
 		VariableNode(Variable_ptr variable);
 		~VariableNode();
+		std::string str();
 
+		Variable_ptr get_variable();
 		void add_node(VisitableNode_ptr node, bool is_left_side);
 	protected:
 		Variable_ptr variable;

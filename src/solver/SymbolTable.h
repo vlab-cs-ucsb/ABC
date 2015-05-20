@@ -18,7 +18,7 @@ namespace Vlab {
 namespace SMT {
 
 typedef std::map<std::string, Variable_ptr> VariableMap;
-typedef std::map<std::string, int> VariableCounterMap;
+typedef std::map<Variable_ptr, int> VariableCounterMap;
 typedef std::map<Visitable_ptr, VariableCounterMap> VariableCounterTable;
 typedef std::map<Variable_ptr, Term_ptr> VariableSubstitutionMap;
 typedef std::map<Visitable_ptr, VariableSubstitutionMap> VariableSubstitutionTable;
@@ -49,10 +49,10 @@ public:
 	/*
 	 * Variable count functions, used for reduction and optimization
 	 */
-	void increment_count(std::string var_name);
-	void decrement_count(std::string var_name);
-	int get_local_count(std::string var_name);
-	int get_total_count(std::string var_name);
+	void increment_count(Variable_ptr);
+	void decrement_count(Variable_ptr);
+	int get_local_count(Variable_ptr);
+	int get_total_count(Variable_ptr);
 	void reset_count();
 
 private:

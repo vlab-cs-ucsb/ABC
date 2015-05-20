@@ -8,6 +8,8 @@
 #ifndef SOLVER_SYNTACTICOPTIMIZER_H_
 #define SOLVER_SYNTACTICOPTIMIZER_H_
 
+#include <iostream>
+#include <sstream>
 #include <queue>
 #include <functional>
 

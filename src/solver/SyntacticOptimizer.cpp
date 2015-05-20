@@ -459,8 +459,8 @@ void SyntacticOptimizer::visitReplace(Replace_ptr replace_term) {
 }
 
 void SyntacticOptimizer::visitCount(Count_ptr count_term) {
-	visit_and_callback(count_term->bound_term);
 	visit_and_callback(count_term->subject_term);
+	visit_and_callback(count_term->bound_term);
 }
 
 void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {

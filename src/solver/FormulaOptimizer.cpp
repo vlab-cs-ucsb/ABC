@@ -177,8 +177,8 @@ void FormulaOptimizer::visitReplace(Replace_ptr replace_term) {
 }
 
 void FormulaOptimizer::visitCount(Count_ptr count_term) {
-	visit_and_callback(count_term->bound_term);
 	visit_and_callback(count_term->subject_term);
+	visit_and_callback(count_term->bound_term);
 }
 
 void FormulaOptimizer::visitIte(Ite_ptr ite_term) { }

@@ -9,7 +9,6 @@
 
 namespace Vlab { namespace SMT {
 
-
 Script::Script(CommandList_ptr commands)
 	: command_list (commands) { }
 
@@ -21,7 +20,7 @@ Script::Script(const Script& other) {
 }
 Script_ptr Script::clone() const { return new Script(*this); }
 Script::~Script() {
-	DVLOG(20) << "Script deallocated.";
+	DVLOG(AST_VLOG_LEVEL) << "Script deallocated.";
 	deallocate_list(command_list);
 	delete command_list;
 }
@@ -58,7 +57,7 @@ Command::Command(Command::Type type)
 	: type (type) { }
 Command::Command(const Command& other) : type (other.type) { }
 Command_ptr Command::clone() const { return new Command(*this); }
-Command::~Command() {  DVLOG(20) << "Command( " << *this << " ) deallocated."; }
+Command::~Command() {  DVLOG(AST_VLOG_LEVEL) << "Command( " << *this << " ) deallocated."; }
 std::string Command::str() const {
 	switch (type) {
 		case Command::Type::NONE:
@@ -243,7 +242,7 @@ Term::Term(Term::Type type)
 Term::Term(const Term& other)
 	: type (other.type) { }
 Term_ptr Term::clone() const { return new Term(*this); }
-Term::~Term() { DVLOG(20) << "Term( " << this->str() << " ) deallocated."; }
+Term::~Term() { DVLOG(AST_VLOG_LEVEL) << "Term( " << this->str() << " ) deallocated."; }
 
 std::string Term::str() const {
 	switch (type) {
@@ -759,22 +758,22 @@ void Replace::visit_children(Visitor_ptr v) {
 }
 
 Count::Count(Term_ptr bound_term, Term_ptr subject_term)
-	: Term(Term::Type::COUNT), bound_term (bound_term), subject_term (subject_term) { }
+	: Term(Term::Type::COUNT), subject_term (subject_term), bound_term (bound_term) { }
 
 Count::Count(const Count& other)
 	: Term(other.type) {
-	bound_term = other.bound_term->clone();
 	subject_term = other.subject_term->clone();
+	bound_term = other.bound_term->clone();
 }
 
 Count_ptr Count::clone() const { return new Count(*this); }
 
-Count::~Count() { delete bound_term; delete subject_term;}
+Count::~Count() { delete subject_term; delete bound_term;}
 
 void Count::accept(Visitor_ptr v) { v->visitCount(this); }
 void Count::visit_children(Visitor_ptr v) {
-	v->visit(bound_term);
 	v->visit(subject_term);
+	v->visit(bound_term);
 }
 
 Ite::Ite(Term_ptr cond, Term_ptr then_branch, Term_ptr else_branch)
@@ -1047,7 +1046,7 @@ Primitive::Primitive(const Primitive& other) {
 	type = other.type;
 }
 Primitive_ptr Primitive::clone() const { return new Primitive(*this); }
-Primitive::~Primitive() { DVLOG(20) << "Primitive( " << *this << " ) deallocated.";  }
+Primitive::~Primitive() { DVLOG(AST_VLOG_LEVEL) << "Primitive( " << *this << " ) deallocated.";  }
 
 std::string Primitive::str() const {
 	std::stringstream ss;

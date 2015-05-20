@@ -100,22 +100,22 @@ void SymbolTable::reset_substitution_rules() {
 	variable_substitution_table.clear();
 }
 
-void SymbolTable::increment_count(std::string var_name) {
-	variable_counts_table[scope_stack.back()][var_name]++;
+void SymbolTable::increment_count(Variable_ptr variable) {
+	variable_counts_table[scope_stack.back()][variable]++;
 }
 
-void SymbolTable::decrement_count(std::string var_name) {
-	variable_counts_table[scope_stack.back()][var_name]--;
+void SymbolTable::decrement_count(Variable_ptr variable) {
+	variable_counts_table[scope_stack.back()][variable]--;
 }
 
-int SymbolTable::get_local_count(std::string var_name) {
-	return variable_counts_table[scope_stack.back()][var_name];
+int SymbolTable::get_local_count(Variable_ptr variable) {
+	return variable_counts_table[scope_stack.back()][variable];
 }
 
-int SymbolTable::get_total_count(std::string var_name) {
+int SymbolTable::get_total_count(Variable_ptr variable) {
 	int total = 0;
 	for (auto& counters : variable_counts_table) {
-		total += counters.second[var_name];
+		total += counters.second[variable];
 	}
 	return total;
 }
