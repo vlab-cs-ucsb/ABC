@@ -105,6 +105,8 @@ void ConstraintSorter::visitAnd(And_ptr and_term) {
 		local_dependency_node_list.push_back(visitable_node);
 	}
 
+	sort_visitable_nodes(local_dependency_node_list);
+
 //	if (VLOG_IS_ON(VLOG_LEVEL)) {
 //		for (auto& node : local_dependency_node_list) {
 //			DVLOG(VLOG_LEVEL) << node->str();
@@ -120,7 +122,12 @@ void ConstraintSorter::visitAnd(And_ptr and_term) {
 // do topological sort
 	visitable_node = new VisitableNode();
 	for (auto& node : local_dependency_node_list) {
-		for (auto& var_node : node->get_all_nodes()) {
+		for (auto& var_node : node->get_left_nodes()) {
+			if (symbol_table->get_total_count(var_node->get_variable()) != symbol_table->get_local_count(var_node->get_variable())) {
+				visitable_node->add_node(var_node, true);
+			}
+		}
+		for (auto& var_node : node->get_right_nodes()) {
 			if (symbol_table->get_total_count(var_node->get_variable()) != symbol_table->get_local_count(var_node->get_variable())) {
 				visitable_node->add_node(var_node, false);
 			}
@@ -140,9 +147,20 @@ void ConstraintSorter::visitOr(Or_ptr or_term) {
 		symbol_table->pop_scope();
 		if (result_node == nullptr and visitable_node != nullptr) {
 			result_node = visitable_node;
-			result_node->shift_to_right();
 		} else if (visitable_node != nullptr) {
-			result_node->add_nodes(visitable_node->get_all_nodes(), false);
+			for (auto& var_node : visitable_node->get_left_nodes()) {
+				if (symbol_table->get_total_count(var_node->get_variable()) != symbol_table->get_local_count(var_node->get_variable())) {
+					result_node->add_node(var_node, true);
+				}
+			}
+			for (auto& var_node : visitable_node->get_right_nodes()) {
+				if (symbol_table->get_total_count(var_node->get_variable()) != symbol_table->get_local_count(var_node->get_variable())) {
+					result_node->add_node(var_node, false);
+				}
+			}
+			VisitableNode_ptr tmp = visitable_node;
+			visitable_node = nullptr;
+			delete tmp;
 		}
 	}
 	visitable_node = result_node;
@@ -151,17 +169,11 @@ void ConstraintSorter::visitOr(Or_ptr or_term) {
 void ConstraintSorter::visitNot(Not_ptr not_term) {
 	visitable_node = nullptr;
 	visit_children_of(not_term);
-	if (visitable_node != nullptr) {
-		visitable_node->shift_to_right();
-	}
 }
 
 void ConstraintSorter::visitUMinus(UMinus_ptr u_minus_term) {
 	visitable_node = nullptr;
 	visit_children_of(u_minus_term);
-	if (visitable_node != nullptr) {
-		visitable_node->shift_to_right();
-	}
 }
 
 void ConstraintSorter::visitMinus(Minus_ptr minus_term) {
