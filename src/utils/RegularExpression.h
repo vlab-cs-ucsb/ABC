@@ -11,11 +11,16 @@
 #include <stdexcept>
 #include <cstdint>
 #include <cstdlib>
+#include <sstream>
+#include <string>
 
-#include "StringBuilder.h"
+#include <glog/logging.h>
 
 namespace Vlab {
 namespace Util {
+
+class RegularExpression;
+typedef RegularExpression* RegularExpression_ptr;
 
 class RegularExpression {
 public:
@@ -87,8 +92,7 @@ public:
     };
 
     //    StrangerAutomaton_ptr toAutomaton();
-
-    static void restID();
+    std::string toString() const;
     void simplify();
     void copy(RegularExpression_ptr e);
     static RegularExpression_ptr makeUnion(RegularExpression_ptr exp1, RegularExpression_ptr exp2);
@@ -119,8 +123,7 @@ public:
     RegularExpression_ptr parseSimpleExp();
     char parseCharExp();
 
-    std::string toString();
-    std::string toStringBuilder(std::string b);
+    friend std::ostream& operator<<(std::ostream& os, const RegularExpression& regex);
 private:
 
     static RegularExpression_ptr makeString(RegularExpression_ptr exp1, RegularExpression_ptr exp2);
@@ -142,13 +145,10 @@ private:
     std::string regex_string;
     std::string s;
     std::string::size_type pos;
-    Type kind;
-	static int id;
+    Type type;
 
 	static const int VLOG_LEVEL;
 };
-
-typedef RegularExpression* RegularExpression_ptr;
 
 } /* namespace Util */
 } /* namespace Vlab */
