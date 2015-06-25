@@ -7,7 +7,7 @@
 
 #include "Ast2Dot.h"
 
-namespace Vlab { namespace SMT {
+namespace Vlab { namespace Solver {
 
 Ast2Dot::Ast2Dot(std::ostream* out) : m_out (out), count (0) { }
 
@@ -157,6 +157,6 @@ void Ast2Dot::visitPrimitive(Primitive_ptr primitive) {	draw_terminal(primitive-
 
 void Ast2Dot::visitVariable(Variable_ptr variable) { draw_terminal(variable->str()); }
 
-} /* namespace SMT */
+} /* namespace Solver */
 } /* namespace Vlab */
 

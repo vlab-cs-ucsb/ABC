@@ -19,8 +19,13 @@
 #include "SymbolTable.h"
 
 namespace Vlab {
-namespace SMT {
+namespace Solver {
 
+using namespace SMT;
+
+// TODO There may be a bug when we try to add multiple callbacks in one visit
+// check that behaviour especially for relational operations and
+// 'not' operation (add more optimizaiton for not)
 class SyntacticOptimizer: public Visitor {
 public:
 	SyntacticOptimizer(Script_ptr, SymbolTable_ptr);
@@ -99,7 +104,7 @@ private:
 	static const int VLOG_LEVEL;
 };
 
-} /* namespace SMT */
+} /* namespace Solver */
 } /* namespace Vlab */
 
 #endif /* SOLVER_SYNTACTICOPTIMIZER_H_ */

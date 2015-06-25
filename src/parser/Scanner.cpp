@@ -8,7 +8,7 @@
 #include "Scanner.h"
 
 namespace Vlab {
-
+namespace SMT {
 
 const std::string Scanner::TAG= "Scanner";
 
@@ -26,4 +26,5 @@ void Scanner::LexerError( const char* msg ) {
 	std::exit(2);
 }
 
-}
+} /* namespace SMT */
+} /* namespace Vlab */

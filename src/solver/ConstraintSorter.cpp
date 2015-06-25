@@ -8,7 +8,7 @@
 #include "ConstraintSorter.h"
 
 namespace Vlab {
-namespace SMT {
+namespace Solver {
 
 const int ConstraintSorter::VLOG_LEVEL = 13;
 
@@ -603,7 +603,7 @@ void ConstraintSorter::VariableNode::add_node(ConstraintSorter::VisitableNode_pt
 	is_left_side ? left_side_var_appearance_list.push_back(node) : right_side_var_appearance_list.push_back(node);
 }
 
-} /* namespace SMT */
+} /* namespace Solver */
 } /* namespace Vlab */
 
 

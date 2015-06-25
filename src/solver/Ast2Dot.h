@@ -15,7 +15,9 @@
 #include "../smt/ast.h"
 
 namespace Vlab {
-namespace SMT {
+namespace Solver {
+
+using namespace SMT;
 
 class Ast2Dot : public Visitor {
 public:
@@ -84,7 +86,7 @@ private:
 
 };
 
-} /* namespace SMT */
+} /* namespace Solver */
 } /* namespace Vlab */
 
 #endif /* SOLVER_AST2DOT_H_ */

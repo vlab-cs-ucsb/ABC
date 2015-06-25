@@ -8,7 +8,7 @@
 #include "SyntacticOptimizer.h"
 
 namespace Vlab {
-namespace SMT {
+namespace Solver {
 
 const int SyntacticOptimizer::VLOG_LEVEL = 18;
 
@@ -762,7 +762,7 @@ bool SyntacticOptimizer::check_bool_constant_value(Term_ptr term, std::string va
 	return false;
 }
 
-} /* namespace SMT */
+} /* namespace Solver */
 } /* namespace Vlab */
 
 

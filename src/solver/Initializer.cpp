@@ -8,7 +8,7 @@
 #include "Initializer.h"
 
 namespace Vlab {
-namespace SMT {
+namespace Solver {
 
 const int Initializer::VLOG_LEVEL = 19;
 
@@ -233,5 +233,5 @@ void Initializer::verifyVariableDefinitions() {
 	}
 }
 
-} /* namespace SMT */
+} /* namespace Solver */
 } /* namespace Vlab */

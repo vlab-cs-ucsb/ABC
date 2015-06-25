@@ -15,7 +15,9 @@
 #include "../smt/ast.h"
 
 namespace Vlab {
-namespace SMT {
+namespace Solver {
+
+using namespace SMT;
 
 typedef std::map<std::string, Variable_ptr> VariableMap;
 typedef std::map<Variable_ptr, int> VariableCounterMap;
@@ -81,7 +83,7 @@ private:
 
 typedef SymbolTable* SymbolTable_ptr;
 
-} /* namespace SMT */
+} /* namespace Solver */
 } /* namespace Vlab */
 
 #endif /* SOLVER_SYMBOLTABLE_H_ */

@@ -22,7 +22,9 @@
 #include "SyntacticOptimizer.h"
 
 namespace Vlab {
-namespace SMT {
+namespace Solver {
+
+using namespace SMT;
 
 class FormulaOptimizer: public Visitor {
 public:
@@ -96,7 +98,7 @@ private:
 	static const int VLOG_LEVEL;
 };
 
-} /* namespace SMT */
+} /* namespace Solver */
 } /* namespace Vlab */
 
 #endif /* SRC_SOLVER_FORMULAOPTIMIZER_H_ */

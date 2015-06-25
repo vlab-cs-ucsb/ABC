@@ -8,7 +8,7 @@
 #include "VariableOptimizer.h"
 
 namespace Vlab {
-namespace SMT {
+namespace Solver {
 
 const int VariableOptimizer::VLOG_LEVEL = 15;
 
@@ -305,5 +305,5 @@ void VariableOptimizer::add_variable_substitution_rule(Variable_ptr subject_var,
 	}
 }
 
-} /* namespace SMT */
+} /* namespace Solver */
 } /* namespace Vlab */

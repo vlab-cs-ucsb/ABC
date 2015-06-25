@@ -8,7 +8,9 @@
 #include "Counter.h"
 
 namespace Vlab {
-namespace SMT {
+namespace Solver {
+
+const int Counter::VLOG_LEVEL = 17;
 
 Counter::Counter(Script_ptr script, SymbolTable_ptr symbol_table)
 	: root (script), symbol_table (symbol_table) { }
@@ -22,9 +24,9 @@ void Counter::start() {
 }
 
 void Counter::end() {
-	if (VLOG_IS_ON(17)) {
+	if (VLOG_IS_ON(VLOG_LEVEL)) {
 		for (auto& pair : symbol_table -> getVariables()) {
-			DVLOG(17) << pair.first << " : " << symbol_table->get_total_count(pair.second);
+			DVLOG(VLOG_LEVEL) << pair.first << " : " << symbol_table->get_total_count(pair.second);
 		}
 	}
 }
@@ -143,5 +145,5 @@ void Counter::visitVarBinding(VarBinding_ptr var_binding) {  }
 
 
 
-} /* namespace SMT */
+} /* namespace Solver */
 } /* namespace Vlab */

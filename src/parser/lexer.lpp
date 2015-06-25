@@ -10,7 +10,7 @@
 %}
 
 %option c++
-%option yyclass="Vlab::Scanner"
+%option yyclass="Vlab::SMT::Scanner"
 %option outfile="lexer.cpp"
 %option noyywrap
 %option stack

@@ -8,7 +8,7 @@
 #include "FormulaOptimizer.h"
 
 namespace Vlab {
-namespace SMT {
+namespace Solver {
 
 const int FormulaOptimizer::VLOG_LEVEL = 14;
 
@@ -278,5 +278,5 @@ std::string FormulaOptimizer::to_string(Visitable_ptr visitable) {
 	return ss.str();
 }
 
-} /* namespace SMT */
+} /* namespace Solver */
 } /* namespace Vlab */

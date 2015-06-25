@@ -27,13 +27,14 @@
 #include "location.hh"
 
 namespace Vlab {
+namespace SMT {
 
 class Scanner: public yyFlexLexer {
 public:
 	Scanner();
 	Scanner(std::istream* in);
 	~Scanner();
-	virtual Vlab::Parser::symbol_type yylex_next_symbol();
+	virtual Parser::symbol_type yylex_next_symbol();
 	static const std::string TAG;
 
 protected:
@@ -46,6 +47,7 @@ private:
 	int yylex() { return 0; } // hide the default yylex, it is not compatible with bison c++ symbol_type
 };
 
-}
+} /* namespace SMT */
+} /* namespace Vlab */
 
 #endif /* PARSER_SCANNER_H_ */

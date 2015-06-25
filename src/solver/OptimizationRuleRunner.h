@@ -15,7 +15,9 @@
 #include "SyntacticOptimizer.h"
 
 namespace Vlab {
-namespace SMT {
+namespace Solver {
+
+using namespace SMT;
 
 class OptimizationRuleRunner: public Visitor {
 public:
@@ -79,7 +81,7 @@ private:
 	static const int VLOG_LEVEL;
 };
 
-} /* namespace SMT */
+} /* namespace Solver */
 } /* namespace Vlab */
 
 #endif /* SOLVER_OPTIMIZATIONRULERUNNER_H_ */

@@ -34,18 +34,18 @@ public:
 
 
 	  // Error handling.
-	void error (const Vlab::location& l, const std::string& m);
+	void error (const Vlab::SMT::location& l, const std::string& m);
 	void error (const std::string& m);
 	int parse (std::istream* in = &std::cin);
 	void ast2dot(std::string file_name);
 	void ast2dot(std::ostream* out);
 //	void collectStatistics();
 	void initializeSolver();
-//	void preProcessAst();
+	void solve();
 //	void solveAst();
 
 	SMT::Script_ptr script;
-	SMT::SymbolTable_ptr symbol_table;
+	Solver::SymbolTable_ptr symbol_table;
 
 	int trace_parsing = 0;
 	int trace_scanning = 0;

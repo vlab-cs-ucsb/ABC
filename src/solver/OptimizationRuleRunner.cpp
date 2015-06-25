@@ -8,7 +8,7 @@
 #include "OptimizationRuleRunner.h"
 
 namespace Vlab {
-namespace SMT {
+namespace Solver {
 
 const int OptimizationRuleRunner::VLOG_LEVEL = 16;
 
@@ -248,5 +248,5 @@ bool OptimizationRuleRunner::check_and_substitute_var(Term_ptr& term) {
 	return false;
 }
 
-} /* namespace SMT */
+} /* namespace Solver */
 } /* namespace Vlab */

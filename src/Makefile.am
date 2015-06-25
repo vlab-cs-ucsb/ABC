@@ -21,12 +21,16 @@ abc_SOURCES = \
   ./solver/FormulaOptimizer.h \
   ./solver/ConstraintSorter.cpp \
   ./solver/ConstraintSorter.h \
+  ./solver/PreImageComputer.cpp \
+  ./solver/PreImageComputer.h \
+  ./solver/PostImageComputer.cpp \
+  ./solver/PostImageComputer.h \
 	Driver.cpp \
 	Driver.h \
 	main.cpp 
 	
 abc_LDADD = \
-	parser/libabcparser.la \
+	./parser/libabcparser.la \
 	$(top_srcdir)/external/glog/libglog.la
 
 test-local:

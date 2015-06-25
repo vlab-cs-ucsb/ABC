@@ -25,9 +25,9 @@ void Driver::error (const std::string& m) {
 }
 
 int Driver::parse (std::istream* in) {
-	Scanner scanner(in);
+	SMT::Scanner scanner(in);
 //	scanner.set_debug(trace_scanning);
-	Parser parser (script, scanner);
+	SMT::Parser parser (script, scanner);
 //	parser.set_debug_level (trace_parsing);
 	int res = parser.parse ();
 	CHECK_EQ(0, res);
@@ -36,7 +36,7 @@ int Driver::parse (std::istream* in) {
 
 void Driver::ast2dot(std::ostream* out) {
 
-	SMT::Ast2Dot ast2dot(out);
+	Solver::Ast2Dot ast2dot(out);
 	ast2dot.start(script);
 }
 void Driver::ast2dot(std::string file_name) {
@@ -54,40 +54,31 @@ void Driver::ast2dot(std::string file_name) {
 
 void Driver::initializeSolver() {
 
-	symbol_table = new SMT::SymbolTable();
-	SMT::Initializer initializer(script, symbol_table);
+	symbol_table = new Solver::SymbolTable();
+	Solver::Initializer initializer(script, symbol_table);
 	initializer.start();
 
-	SMT::SyntacticOptimizer syntactic_optimizer(script, symbol_table);
+	Solver::SyntacticOptimizer syntactic_optimizer(script, symbol_table);
 	syntactic_optimizer.start();
 
-	SMT::VariableOptimizer variable_optimizer(script, symbol_table);
+	Solver::VariableOptimizer variable_optimizer(script, symbol_table);
 	variable_optimizer.start();
 
-	SMT::FormulaOptimizer formula_optimizer(script, symbol_table);
+	Solver::FormulaOptimizer formula_optimizer(script, symbol_table);
 	formula_optimizer.start();
 
 //	SMT::LengthConstraintReductor len_reductor;
 //	len_reductor.start(script, symbol_table);
 
-	SMT::ConstraintSorter constraint_sorter(script, symbol_table);
+	Solver::ConstraintSorter constraint_sorter(script, symbol_table);
 	constraint_sorter.start();
 }
 
+void Driver::solve() {
 
-//void Driver::preProcessAst() {
-//	SMT::AstConditionalProcessor condProcessor;
-//	condProcessor.start(script, symbol_table);
-//
-//	SMT::AstSorter::perfInfo = perfInfo;
-//	SMT::AstSorter command_sorter;
-//	command_sorter.start(script, symbol_table);
-//
-//	SMT::AstOptimizer optimizer;
-//	optimizer.start(script, symbol_table);
-//}
+}
 
-void Driver::error(const Vlab::location& l, const std::string& m) {
+void Driver::error(const Vlab::SMT::location& l, const std::string& m) {
 	LOG(FATAL) << "error: " << l << " : " << m;
 }
 

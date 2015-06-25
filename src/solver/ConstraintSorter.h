@@ -20,7 +20,9 @@
 #include "Counter.h"
 
 namespace Vlab {
-namespace SMT {
+namespace Solver {
+
+using namespace SMT;
 
 class ConstraintSorter: public Visitor {
 public:
@@ -146,7 +148,7 @@ private:
 	static const int VLOG_LEVEL;
 };
 
-} /* namespace SMT */
+} /* namespace Solver */
 } /* namespace Vlab */
 
 #endif /* SOLVER_CONSTRAINTSORTER_H_ */

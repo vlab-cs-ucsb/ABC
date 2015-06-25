@@ -1119,18 +1119,18 @@ TVariable::~TVariable() { }
 
 std::string TVariable::str() const {
 	switch (type) {
-			case TVariable::Type::NONE:
-				return TVariable::Name::NONE;
-			case TVariable::Type::BOOL:
-				return TVariable::Name::BOOL;
-			case TVariable::Type::INT:
-				return TVariable::Name::INT;
-			case TVariable::Type::STRING:
-				return TVariable::Name::STRING;
-			default:
-				LOG(FATAL) << "Unknown variable type!";
-				return "";
-		}
+		case TVariable::Type::NONE:
+			return TVariable::Name::NONE;
+		case TVariable::Type::BOOL:
+			return TVariable::Name::BOOL;
+		case TVariable::Type::INT:
+			return TVariable::Name::INT;
+		case TVariable::Type::STRING:
+			return TVariable::Name::STRING;
+		default:
+			LOG(FATAL) << "Unknown variable type!";
+			return "";
+	}
 }
 TVariable::Type TVariable::getType() const { return type; }
 

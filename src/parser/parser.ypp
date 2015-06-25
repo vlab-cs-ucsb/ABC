@@ -6,7 +6,8 @@
 %define api.token.constructor
 %define api.value.type variant
 %define parse.assert
-%define api.namespace { Vlab }
+%define api.namespace { Vlab::SMT }
+
 
 %code requires
 {
@@ -14,10 +15,12 @@
 #include <cstdlib>
 
 #include "../smt/ast.h"
-
   namespace Vlab  {
-    class Scanner;
+    namespace SMT {
+      class Scanner;
+    }
   }
+
 	namespace smtlib = Vlab::SMT;
 }
 
@@ -371,9 +374,7 @@ spec_constant         :
                       
 %%
 
-void
-Vlab::Parser::error (const location_type& l,
-                          const std::string& m)
+void Vlab::SMT::Parser::error (const location_type& l, std::string& m)
 {
   std::cerr << l << ": " << m << std::endl;
 }

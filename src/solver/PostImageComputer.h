@@ -1,12 +1,12 @@
 /*
- * Counter.h
+ * PostImageComputer.h
  *
- *  Created on: May 4, 2015
+ *  Created on: Jun 24, 2015
  *      Author: baki
  */
 
-#ifndef SOLVER_COUNTER_H_
-#define SOLVER_COUNTER_H_
+#ifndef SOLVER_POSTIMAGECOMPUTER_H_
+#define SOLVER_POSTIMAGECOMPUTER_H_
 
 #include <glog/logging.h>
 #include <../smt/ast.h>
@@ -17,10 +17,10 @@ namespace Solver {
 
 using namespace SMT;
 
-class Counter: public Visitor {
+class PostImageComputer: public Visitor {
 public:
-	Counter(Script_ptr, SymbolTable_ptr);
-	virtual ~Counter();
+	PostImageComputer(Script_ptr, SymbolTable_ptr);
+	virtual ~PostImageComputer();
 
 	void start();
 	void end();
@@ -77,10 +77,9 @@ protected:
 
 private:
 	static const int VLOG_LEVEL;
-
 };
 
 } /* namespace Solver */
 } /* namespace Vlab */
 
-#endif /* SOLVER_COUNTER_H_ */
+#endif /* SOLVER_POSTIMAGECOMPUTER_H_ */

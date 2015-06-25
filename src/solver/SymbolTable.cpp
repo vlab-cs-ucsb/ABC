@@ -8,7 +8,7 @@
 #include "SymbolTable.h"
 
 namespace Vlab {
-namespace SMT {
+namespace Solver {
 SymbolTable::SymbolTable()
 	: global_var ("__vlab_global_var"), bound(50) {}
 SymbolTable::~SymbolTable() {
@@ -123,7 +123,7 @@ void SymbolTable::reset_count() {
 	variable_counts_table.clear();
 }
 
-} /* namespace SMT */
+} /* namespace Solver */
 } /* namespace Vlab */
 
 
