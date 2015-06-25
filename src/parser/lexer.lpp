@@ -10,7 +10,7 @@
 %}
 
 %option c++
-%option yyclass="Vlab::SMT::Scanner"
+%option yyclass="Scanner"
 %option outfile="lexer.cpp"
 %option noyywrap
 %option stack
@@ -45,77 +45,77 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 \r                  { loc.lines (yyleng); loc.step (); }
 [ \t]            		{ loc.step (); }
 
-"("                 { return Vlab::Parser::make_PAREN_O         (loc); }				
-")"              		{ return Vlab::Parser::make_PAREN_C         (loc); }
+"("                 { return Parser::make_PAREN_O         (loc); }				
+")"              		{ return Parser::make_PAREN_C         (loc); }
 
-"!"                 { return Vlab::Parser::make_BANG            (loc);  }
-"_"                 { return Vlab::Parser::make_UNDERSCORE      (loc);  }
-"as"             		{ return Vlab::Parser::make_AS			        (loc);	}
-"exists"            { return Vlab::Parser::make_EXISTS          (loc);  }
-"forall"            { return Vlab::Parser::make_FORALL          (loc);  }
-"let"            		{ return Vlab::Parser::make_LET 			      (loc);	}
-"par"               { return Vlab::Parser::make_PAR             (loc);  }
+"!"                 { return Parser::make_BANG            (loc);  }
+"_"                 { return Parser::make_UNDERSCORE      (loc);  }
+"as"             		{ return Parser::make_AS			        (loc);	}
+"exists"            { return Parser::make_EXISTS          (loc);  }
+"forall"            { return Parser::make_FORALL          (loc);  }
+"let"            		{ return Parser::make_LET 			      (loc);	}
+"par"               { return Parser::make_PAR             (loc);  }
 
 
-"and"               { return Vlab::Parser::make_AND             (loc);  }
-"or"                { return Vlab::Parser::make_OR              (loc);  }
-"not"               { return Vlab::Parser::make_NOT             (loc);  }
-"-"                 { return Vlab::Parser::make_MINUS           (loc);  }
-"+"                 { return Vlab::Parser::make_PLUS            (loc);  }
-"="                 { return Vlab::Parser::make_EQ              (loc);  }
-">"                 { return Vlab::Parser::make_GT              (loc);  }
-">="                { return Vlab::Parser::make_GE              (loc);  }                 
-"<"                 { return Vlab::Parser::make_LT              (loc);  }
-"<="                { return Vlab::Parser::make_LE              (loc);  }
-"concat"            { return Vlab::Parser::make_CONCAT          (loc);  }
-"in"                { return Vlab::Parser::make_IN              (loc);  }
-"len"               { return Vlab::Parser::make_LEN             (loc);  }
-"contains"          { return Vlab::Parser::make_CONTAINS        (loc);  }
-"begins"            { return Vlab::Parser::make_BEGINS          (loc);  }
-"ends"              { return Vlab::Parser::make_ENDS            (loc);  }
-"indexof"           { return Vlab::Parser::make_INDEXOF         (loc);  }
-"replace"           { return Vlab::Parser::make_REPLACE         (loc);  }
-"count"             { return Vlab::Parser::make_COUNT           (loc);  }  
-"ite"               { return Vlab::Parser::make_ITE             (loc);  }
-"re.++"             { return Vlab::Parser::make_RE_CONCAT       (loc);  }
-"re.or"             { return Vlab::Parser::make_OR              (loc);  }
-"str.++"            { return Vlab::Parser::make_CONCAT          (loc);  }
-"str.in.re"         { return Vlab::Parser::make_IN              (loc);  }
-"str.len"           { return Vlab::Parser::make_LEN             (loc);  }
-"str.to.re"         { return Vlab::Parser::make_TO_REGEX        (loc);  }
+"and"               { return Parser::make_AND             (loc);  }
+"or"                { return Parser::make_OR              (loc);  }
+"not"               { return Parser::make_NOT             (loc);  }
+"-"                 { return Parser::make_MINUS           (loc);  }
+"+"                 { return Parser::make_PLUS            (loc);  }
+"="                 { return Parser::make_EQ              (loc);  }
+">"                 { return Parser::make_GT              (loc);  }
+">="                { return Parser::make_GE              (loc);  }                 
+"<"                 { return Parser::make_LT              (loc);  }
+"<="                { return Parser::make_LE              (loc);  }
+"concat"            { return Parser::make_CONCAT          (loc);  }
+"in"                { return Parser::make_IN              (loc);  }
+"len"               { return Parser::make_LEN             (loc);  }
+"contains"          { return Parser::make_CONTAINS        (loc);  }
+"begins"            { return Parser::make_BEGINS          (loc);  }
+"ends"              { return Parser::make_ENDS            (loc);  }
+"indexof"           { return Parser::make_INDEXOF         (loc);  }
+"replace"           { return Parser::make_REPLACE         (loc);  }
+"count"             { return Parser::make_COUNT           (loc);  }  
+"ite"               { return Parser::make_ITE             (loc);  }
+"re.++"             { return Parser::make_RE_CONCAT       (loc);  }
+"re.or"             { return Parser::make_OR              (loc);  }
+"str.++"            { return Parser::make_CONCAT          (loc);  }
+"str.in.re"         { return Parser::make_IN              (loc);  }
+"str.len"           { return Parser::make_LEN             (loc);  }
+"str.to.re"         { return Parser::make_TO_REGEX        (loc);  }
 
-"Bool"              { return Vlab::Parser::make_TBOOL           (loc);  } 
-"Int"               { return Vlab::Parser::make_TINT            (loc);  }
-"String"            { return Vlab::Parser::make_TSTRING         (loc);  }
+"Bool"              { return Parser::make_TBOOL           (loc);  } 
+"Int"               { return Parser::make_TINT            (loc);  }
+"String"            { return Parser::make_TSTRING         (loc);  }
                  
-"assert"            { return Vlab::Parser::make_ASSERT          (loc);  }
-"check-sat"         { return Vlab::Parser::make_CHECK_SAT       (loc);  }
-"check-sat-and-count" { return Vlab::Parser::make_CHECK_SAT_AND_COUNT       (loc);  }
-"declare-fun"       { return Vlab::Parser::make_DECLARE_FUN     (loc);  }
-"declare-sort"  		{ return Vlab::Parser::make_DECLARE_SORT    (loc); 	}
-"define-fun"        { return Vlab::Parser::make_DEFINE_FUN      (loc);  }
-"define-sort"   		{ return Vlab::Parser::make_DEFINE_SORT     (loc); 	}
-"exit"              { return Vlab::Parser::make_EXIT            (loc);  }
-"get-assertions"    { return Vlab::Parser::make_GET_ASSERTIONS  (loc);  }
-"get-assignment"    { return Vlab::Parser::make_GET_ASSIGNMENT  (loc);  }
-"get-info"          { return Vlab::Parser::make_GET_INFO        (loc);  }
-"get-option"        { return Vlab::Parser::make_GET_OPTION      (loc);  }  
-"get-proof"         { return Vlab::Parser::make_GET_PROOF       (loc);  }
-"get-unsat-core"    { return Vlab::Parser::make_GET_UNSAT_CORE  (loc);  }
-"get-value"         { return Vlab::Parser::make_GET_VALUE       (loc);  }
-"pop"               { return Vlab::Parser::make_POP             (loc);  }
-"push"          		{ return Vlab::Parser::make_PUSH 			      (loc); 	}
-"set-logic"         { return Vlab::Parser::make_SET_LOGIC       (loc);  }
-"set-info"          { return Vlab::Parser::make_SET_INFO        (loc);  }
-"set-option"     		{ return Vlab::Parser::make_SET_OPTION 	    (loc); 	}
+"assert"            { return Parser::make_ASSERT          (loc);  }
+"check-sat"         { return Parser::make_CHECK_SAT       (loc);  }
+"check-sat-and-count" { return Parser::make_CHECK_SAT_AND_COUNT       (loc);  }
+"declare-fun"       { return Parser::make_DECLARE_FUN     (loc);  }
+"declare-sort"  		{ return Parser::make_DECLARE_SORT    (loc); 	}
+"define-fun"        { return Parser::make_DEFINE_FUN      (loc);  }
+"define-sort"   		{ return Parser::make_DEFINE_SORT     (loc); 	}
+"exit"              { return Parser::make_EXIT            (loc);  }
+"get-assertions"    { return Parser::make_GET_ASSERTIONS  (loc);  }
+"get-assignment"    { return Parser::make_GET_ASSIGNMENT  (loc);  }
+"get-info"          { return Parser::make_GET_INFO        (loc);  }
+"get-option"        { return Parser::make_GET_OPTION      (loc);  }  
+"get-proof"         { return Parser::make_GET_PROOF       (loc);  }
+"get-unsat-core"    { return Parser::make_GET_UNSAT_CORE  (loc);  }
+"get-value"         { return Parser::make_GET_VALUE       (loc);  }
+"pop"               { return Parser::make_POP             (loc);  }
+"push"          		{ return Parser::make_PUSH 			      (loc); 	}
+"set-logic"         { return Parser::make_SET_LOGIC       (loc);  }
+"set-info"          { return Parser::make_SET_INFO        (loc);  }
+"set-option"     		{ return Parser::make_SET_OPTION 	    (loc); 	}
 
-{BOOL}              { return Vlab::Parser::make_BOOL            (yytext, loc);  }
-{BINARY}            { return Vlab::Parser::make_BINARY 		      (yytext, loc); 	}
-{DECIMAL}           { return Vlab::Parser::make_DECIMAL         (yytext, loc);  }
-{HEXADECIMAL}  			{ return Vlab::Parser::make_HEXADECIMAL 	  (yytext, loc); 	}
-{KEYWORD}           { return Vlab::Parser::make_KEYWORD         (yytext, loc);  }
-{NUMERAL}      			{ return Vlab::Parser::make_NUMERAL 		    (yytext, loc); 	}
-{SYMBOL}       			{ return Vlab::Parser::make_SYMBOL 		      (yytext, loc); 	}
+{BOOL}              { return Parser::make_BOOL            (yytext, loc);  }
+{BINARY}            { return Parser::make_BINARY 		      (yytext, loc); 	}
+{DECIMAL}           { return Parser::make_DECIMAL         (yytext, loc);  }
+{HEXADECIMAL}  			{ return Parser::make_HEXADECIMAL 	  (yytext, loc); 	}
+{KEYWORD}           { return Parser::make_KEYWORD         (yytext, loc);  }
+{NUMERAL}      			{ return Parser::make_NUMERAL 		    (yytext, loc); 	}
+{SYMBOL}       			{ return Parser::make_SYMBOL 		      (yytext, loc); 	}
 
 \"                  { quoted_value.str(std::string()); yy_push_state(START_STRING); }
 					
@@ -124,7 +124,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 	\\\\              { quoted_value << '\\'; }
 	[^\"\n]           { quoted_value << yytext;}
 	\n                { quoted_value << '\n'; }
-	\"                { yy_pop_state(); return Vlab::Parser::make_STRING (quoted_value.str(), loc); }
+	\"                { yy_pop_state(); return Parser::make_STRING (quoted_value.str(), loc); }
 }
 
 \/                  { quoted_value.str(std::string()); yy_push_state(START_REGEX); }
@@ -134,17 +134,17 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
   \\\\              { quoted_value << '\\'; }
   [^\/\n]           { quoted_value << yytext;}
   \n                { quoted_value << '\n'; }
-  \/                { yy_pop_state(); return Vlab::Parser::make_REGEX (quoted_value.str(), loc); }
+  \/                { yy_pop_state(); return Parser::make_REGEX (quoted_value.str(), loc); }
 }
 
 \|                  { quoted_value.str(std::string()); yy_push_state(START_QUOTEDSYMBOL); }
 					
 <START_QUOTEDSYMBOL>{
 	[^|\\]              { quoted_value << yytext; }
-	\|                { yy_pop_state(); return Vlab::Parser::make_SYMBOL (quoted_value.str(), loc); }
+	\|                { yy_pop_state(); return Parser::make_SYMBOL (quoted_value.str(), loc); }
 }
 
 .                   { LexerError("invalid character"); }
-<<EOF>>             { return Vlab::Parser::make_END              (loc); }
+<<EOF>>             { return Parser::make_END              (loc); }
 
 %%

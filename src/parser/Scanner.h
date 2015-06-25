@@ -21,7 +21,7 @@
 
 // change YY_DECL to symbol compatible one
 #undef YY_DECL
-#define YY_DECL Vlab::Parser::symbol_type Vlab::Scanner::yylex_next_symbol()
+#define YY_DECL Vlab::SMT::Parser::symbol_type Vlab::SMT::Scanner::yylex_next_symbol()
 
 #include "parser.hpp"
 #include "location.hh"
