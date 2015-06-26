@@ -10,6 +10,8 @@
 namespace Vlab {
 namespace Solver {
 
+using namespace SMT;
+
 const int VariableOptimizer::VLOG_LEVEL = 15;
 
 VariableOptimizer::VariableOptimizer(Script_ptr script, SymbolTable_ptr symbol_table)

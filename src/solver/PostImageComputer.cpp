@@ -10,6 +10,8 @@
 namespace Vlab {
 namespace Solver {
 
+using namespace SMT;
+
 const int PostImageComputer::VLOG_LEVEL = 12;
 
 PostImageComputer::PostImageComputer(Script_ptr script, SymbolTable_ptr symbol_table)

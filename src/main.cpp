@@ -17,8 +17,6 @@
 #include <glog/logging.h>
 #include "Driver.h"
 
-using namespace std;
-
 static const std::string get_default_output_dir();
 static const std::string get_default_log_dir();
 

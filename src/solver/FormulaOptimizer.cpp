@@ -10,6 +10,8 @@
 namespace Vlab {
 namespace Solver {
 
+using namespace SMT;
+
 const int FormulaOptimizer::VLOG_LEVEL = 14;
 
 FormulaOptimizer::FormulaOptimizer(Script_ptr script, SymbolTable_ptr symbol_table)

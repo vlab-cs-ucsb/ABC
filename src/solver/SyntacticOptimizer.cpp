@@ -10,6 +10,8 @@
 namespace Vlab {
 namespace Solver {
 
+using namespace SMT;
+
 const int SyntacticOptimizer::VLOG_LEVEL = 18;
 
 SyntacticOptimizer::SyntacticOptimizer(Script_ptr script, SymbolTable_ptr symbol_table)

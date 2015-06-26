@@ -10,6 +10,8 @@
 namespace Vlab {
 namespace Solver {
 
+using namespace SMT;
+
 const int PreImageComputer::VLOG_LEVEL = 11;
 
 PreImageComputer::PreImageComputer(Script_ptr script, SymbolTable_ptr symbol_table)

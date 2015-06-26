@@ -10,6 +10,8 @@
 namespace Vlab {
 namespace Solver {
 
+using namespace SMT;
+
 const int Initializer::VLOG_LEVEL = 19;
 
 Initializer::Initializer(Script_ptr script, SymbolTable_ptr symbol_table)

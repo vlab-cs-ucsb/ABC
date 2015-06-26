@@ -10,6 +10,8 @@
 namespace Vlab {
 namespace Solver {
 
+using namespace SMT;
+
 const int Counter::VLOG_LEVEL = 17;
 
 Counter::Counter(Script_ptr script, SymbolTable_ptr symbol_table)

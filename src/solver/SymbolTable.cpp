@@ -9,6 +9,9 @@
 
 namespace Vlab {
 namespace Solver {
+
+using namespace SMT;
+
 SymbolTable::SymbolTable()
 	: global_var ("__vlab_global_var"), bound(50) {}
 SymbolTable::~SymbolTable() {

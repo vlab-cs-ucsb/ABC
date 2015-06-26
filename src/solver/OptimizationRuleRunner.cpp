@@ -10,6 +10,8 @@
 namespace Vlab {
 namespace Solver {
 
+using namespace SMT;
+
 const int OptimizationRuleRunner::VLOG_LEVEL = 16;
 
 OptimizationRuleRunner::OptimizationRuleRunner(Script_ptr script, SymbolTable_ptr symbol_table)

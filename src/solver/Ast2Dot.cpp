@@ -9,6 +9,8 @@
 
 namespace Vlab { namespace Solver {
 
+using namespace SMT;
+
 Ast2Dot::Ast2Dot(std::ostream* out) : m_out (out), count (0) { }
 
 Ast2Dot::~Ast2Dot() {}
