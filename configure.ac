@@ -40,6 +40,6 @@ LT_INIT
 # Create Makefile files
 AC_CONFIG_FILES([Makefile src/Makefile src/parser/Makefile])
 #AC_CONFIG_SUBDIRS([external/glog external/googletest])
-AC_CONFIG_SUBDIRS([external/glog])
+AC_CONFIG_SUBDIRS([external/glog external/LibStranger])
 AC_OUTPUT
 
