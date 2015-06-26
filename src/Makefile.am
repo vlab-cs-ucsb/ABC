@@ -1,4 +1,4 @@
-SUBDIRS=parser
+SUBDIRS=parser theory
 AM_CXXFLAGS = -I$(top_srcdir)/external/glog/src -I$(srcdir)/parser 
 AM_LDFLAGS = -L$(top_srcdir)/external/glog -lglog
 bin_PROGRAMS = abc

@@ -13,6 +13,9 @@
 namespace Vlab {
 namespace Theory {
 
+class BoolAutomaton;
+typedef BoolAutomaton* BoolAutomaton_ptr;
+
 class BoolAutomaton: public Automaton {
 public:
 	BoolAutomaton();
@@ -24,8 +27,6 @@ public:
 private:
 	static const int VLOG_LEVEL;
 };
-
-typedef BoolAutomaton* BoolAutomaton_ptr;
 
 } /* namespace Theory */
 } /* namespace Vlab */

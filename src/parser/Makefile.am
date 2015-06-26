@@ -12,7 +12,9 @@ libabcparser_la_SOURCES = \
 	Scanner.cpp \
 	Scanner.h \
 	lexer.lpp
-	
+
+libabcparser_la_LDFLAGS = -version-info 0:1:0
+
 libabcparser_la_LIBADD = \
 	$(top_srcdir)/external/glog/libglog.la
 

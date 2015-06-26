@@ -9,10 +9,16 @@
 #define THEORY_STRINGAUTOMATON_H_
 
 #include <glog/logging.h>
+#include "stranger/stranger_lib_internal.h"
+#include "stranger/stranger.h"
+#include "../utils/RegularExpression.h"
 #include "Automaton.h"
 
 namespace Vlab {
 namespace Theory {
+
+class StringAutomaton;
+typedef StringAutomaton* StringAutomaton_ptr;
 
 class StringAutomaton: public Automaton {
 public:
@@ -25,8 +31,6 @@ public:
 private:
 	static const int VLOG_LEVEL;
 };
-
-typedef StringAutomaton* StringAutomaton_ptr;
 
 } /* namespace Theory */
 } /* namespace Vlab */

@@ -16,6 +16,9 @@
 namespace Vlab {
 namespace Theory {
 
+class Automaton;
+typedef Automaton* Automaton_ptr;
+
 class Automaton {
 public:
 	enum class Type : int {
@@ -45,8 +48,6 @@ protected:
 private:
 	static const int VLOG_LEVEL;
 };
-
-typedef Automaton* Automaton_ptr;
 
 } /* namespace Theory */
 } /* namespace Vlab */
