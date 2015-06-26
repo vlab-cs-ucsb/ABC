@@ -24,7 +24,6 @@
 #include "solver/ConstraintSorter.h"
 #include "Scanner.h"
 
-
 namespace Vlab {
 
 class Driver {
@@ -43,6 +42,8 @@ public:
 	void initializeSolver();
 	void solve();
 //	void solveAst();
+
+	void test();
 
 	SMT::Script_ptr script;
 	Solver::SymbolTable_ptr symbol_table;

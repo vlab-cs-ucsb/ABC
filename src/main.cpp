@@ -72,6 +72,7 @@ int main(const int argc, const char **argv) {
 	int bound = std::stoi(bound_string);
 
 	Vlab::Driver driver;
+	driver.test();
 	driver.parse(in);
 	if (VLOG_IS_ON(21)) {
 		driver.ast2dot(&std::cout);

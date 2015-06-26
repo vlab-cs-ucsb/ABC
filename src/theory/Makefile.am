@@ -10,7 +10,7 @@ AM_LDFLAGS = \
 	-L$(top_srcdir)/external/glog \
 	-L$(top_srcdir)/external/LibStranger/.libs \
 	-lglog \
-	-l \
+	$(MONADFALIB) $(MONABDDLIB) $(MONAMEMLIB) $(MLIB) \
 	-lstranger
 
 noinst_LTLIBRARIES = libabcautomaton.la

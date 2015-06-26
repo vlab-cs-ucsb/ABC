@@ -78,6 +78,12 @@ void Driver::solve() {
 
 }
 
+void Driver::test() {
+//	Theory::StringAutomaton_ptr any_string = Theory::StringAutomaton::makeAnyString();
+//	any_string->toDotAscii(0);
+//	std::exit(0);
+}
+
 void Driver::error(const Vlab::SMT::location& l, const std::string& m) {
 	LOG(FATAL) << "error: " << l << " : " << m;
 }

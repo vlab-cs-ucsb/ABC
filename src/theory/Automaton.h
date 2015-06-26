@@ -41,9 +41,12 @@ public:
 		static const std::string INTBOOl;
 		static const std::string STRING;
 	};
+
 	friend std::ostream& operator<<(std::ostream& os, const Automaton& automaton);
 
 protected:
+	static unsigned* get_unsigned_indices_main(int length);
+
 	const Automaton::Type type;
 private:
 	static const int VLOG_LEVEL;
