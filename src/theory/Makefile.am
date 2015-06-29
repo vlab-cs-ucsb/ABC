@@ -8,7 +8,7 @@ AM_CXXFLAGS = \
 
 AM_LDFLAGS = \
 	-L$(top_srcdir)/external/glog \
-	-L$(top_srcdir)/external/LibStranger/.libs \
+	-L$(top_srcdir)/external/LibStranger/ \
 	-lglog \
 	$(MONADFALIB) $(MONABDDLIB) $(MONAMEMLIB) $(MLIB) \
 	-lstranger
@@ -33,7 +33,7 @@ libabcautomaton_la_LDFLAGS = -version-info 0:1:0
 libabcautomaton_la_LIBADD = \
 	$(top_srcdir)/external/glog/libglog.la \
 	$(MONADFALIB) $(MONABDDLIB) $(MONAMEMLIB) $(MLIB) \
-	$(top_srcdir)/external/LibStranger/.libs/libstranger.so
+	$(top_srcdir)/external/LibStranger/libstranger.la
 	
 test-local: 
 	@echo parser, $(srcdir), $(top_srcdir)	

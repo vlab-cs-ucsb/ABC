@@ -8,9 +8,11 @@
 #ifndef THEORY_STRINGAUTOMATON_H_
 #define THEORY_STRINGAUTOMATON_H_
 
+#include <array>
+
 #include <glog/logging.h>
-#include <stranger_lib_internal.h>
 #include <stranger.h>
+#include <stranger_lib_internal.h>
 #include "../utils/RegularExpression.h"
 #include "Automaton.h"
 
@@ -20,26 +22,36 @@ namespace Theory {
 class StringAutomaton;
 typedef StringAutomaton* StringAutomaton_ptr;
 typedef DFA* DFA_ptr;
-
+/**
+ * TODO Try to refactor libstranger functions here
+ */
 class StringAutomaton: public Automaton {
 public:
-	StringAutomaton(DFA_ptr);
-	StringAutomaton(const StringAutomaton&);
-	virtual ~StringAutomaton();
+  StringAutomaton(DFA_ptr);
+  StringAutomaton(const StringAutomaton&);
+  virtual ~StringAutomaton();
 
-	virtual StringAutomaton_ptr clone() const;
+  virtual StringAutomaton_ptr clone() const;
 
-	static StringAutomaton_ptr makeAnyString();
+  static StringAutomaton_ptr makePhi();
+  static StringAutomaton_ptr makeEmptyString();
+  static StringAutomaton_ptr makeString(char c);
+  static StringAutomaton_ptr makeString(std::string str);
+  static StringAutomaton_ptr makeAnyString();
 
-	void toDotAscii(bool print_sink = true, std::ostream& out = std::cout);
+  void toDotAscii(bool print_sink = true, std::ostream& out = std::cout);
 protected:
-	DFA_ptr dfa;
-	static const int num_ascii_track;
-	static int* indices_main;
-	static unsigned* unsigned_indices_main;
+  static StringAutomaton_ptr makeString(std::string str, int num_of_variables, int variable_indices[]);
+
+  static int* allocateAscIIIndexWithExtraBit(int length);
+
+  DFA_ptr dfa;
+  static int DEFAULT_NUM_OF_VARIABLES;
+  static int* DEFAULT_VARIABLE_INDICES;
+  static unsigned* DEFAULT_UNSIGNED_VARIABLE_INDICES;
 private:
 
-	static const int VLOG_LEVEL;
+  static const int VLOG_LEVEL;
 };
 
 } /* namespace Theory */

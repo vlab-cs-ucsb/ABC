@@ -24,6 +24,8 @@
 #include "solver/ConstraintSorter.h"
 #include "Scanner.h"
 
+#include "StringAutomaton.h"
+
 namespace Vlab {
 
 class Driver {
