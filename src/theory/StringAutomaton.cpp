@@ -10,7 +10,7 @@
 namespace Vlab {
 namespace Theory {
 
-const int StringAutomaton::VLOG_LEVEL = 9;
+const int StringAutomaton::VLOG_LEVEL = 8;
 
 const int StringAutomaton::num_ascii_track = 8;
 
@@ -31,6 +31,8 @@ StringAutomaton::~StringAutomaton() {
 StringAutomaton_ptr StringAutomaton::clone() const { return new StringAutomaton(*this); }
 
 StringAutomaton_ptr StringAutomaton::makeAnyString() {
+	DVLOG(VLOG_LEVEL) << id << " = makeAnyString()";
+
 	DFA_ptr any_string_dfa = dfaAllStringASCIIExceptReserveWords(StringAutomaton::num_ascii_track, StringAutomaton::indices_main);
 	StringAutomaton_ptr any_string = new StringAutomaton(any_string_dfa);
 	return any_string;

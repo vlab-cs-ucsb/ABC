@@ -11,16 +11,20 @@ namespace Vlab {
 namespace Theory {
 
 const int Automaton::VLOG_LEVEL = 9;
+
+int Automaton::trace_id = 0;
+
 const std::string Automaton::Name::NONE		= "none";
 const std::string Automaton::Name::BOOL		= "BoolAutomaton";
 const std::string Automaton::Name::INT		= "IntAutomaton";
 const std::string Automaton::Name::INTBOOl	= "IntBoolAutomaton";
 const std::string Automaton::Name::STRING	= "StringAutomaton";
+
 Automaton::Automaton(Automaton::Type type)
-	: type (type) { }
+	: type (type), id (Automaton::trace_id++) { }
 
 Automaton::Automaton(const Automaton& other)
-	: type (other.type) { }
+	: type (other.type), id (Automaton::trace_id++) { }
 
 Automaton_ptr Automaton::clone() const { return new Automaton(*this); }
 
