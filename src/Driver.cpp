@@ -13,11 +13,11 @@ namespace Vlab {
 //PerfInfo* Driver::perfInfo;
 
 Driver::Driver()
-	: script (nullptr), symbol_table (nullptr) {
+: script (nullptr), symbol_table (nullptr) {
 }
 
 Driver::~Driver() {
-	delete script;
+  delete script;
 }
 
 void Driver::error (const std::string& m) {
@@ -25,25 +25,25 @@ void Driver::error (const std::string& m) {
 }
 
 int Driver::parse (std::istream* in) {
-	SMT::Scanner scanner(in);
-//	scanner.set_debug(trace_scanning);
-	SMT::Parser parser (script, scanner);
-//	parser.set_debug_level (trace_parsing);
-	int res = parser.parse ();
-	CHECK_EQ(0, res);
-	return res;
+  SMT::Scanner scanner(in);
+  //	scanner.set_debug(trace_scanning);
+  SMT::Parser parser (script, scanner);
+  //	parser.set_debug_level (trace_parsing);
+  int res = parser.parse ();
+  CHECK_EQ(0, res);
+  return res;
 }
 
 void Driver::ast2dot(std::ostream* out) {
 
-	Solver::Ast2Dot ast2dot(out);
-	ast2dot.start(script);
+  Solver::Ast2Dot ast2dot(out);
+  ast2dot.start(script);
 }
 void Driver::ast2dot(std::string file_name) {
-	std::ofstream outfile(file_name.c_str());
-	if ( !outfile.good() ) { std::cout << "cannot open file: " << file_name << std::endl; exit(2); }
-	ast2dot(&outfile);
-	outfile.close();
+  std::ofstream outfile(file_name.c_str());
+  if ( !outfile.good() ) { std::cout << "cannot open file: " << file_name << std::endl; exit(2); }
+  ast2dot(&outfile);
+  outfile.close();
 }
 
 //void Driver::collectStatistics() {
@@ -54,24 +54,24 @@ void Driver::ast2dot(std::string file_name) {
 
 void Driver::initializeSolver() {
 
-	symbol_table = new Solver::SymbolTable();
-	Solver::Initializer initializer(script, symbol_table);
-	initializer.start();
+  symbol_table = new Solver::SymbolTable();
+  Solver::Initializer initializer(script, symbol_table);
+  initializer.start();
 
-	Solver::SyntacticOptimizer syntactic_optimizer(script, symbol_table);
-	syntactic_optimizer.start();
+  Solver::SyntacticOptimizer syntactic_optimizer(script, symbol_table);
+  syntactic_optimizer.start();
 
-	Solver::VariableOptimizer variable_optimizer(script, symbol_table);
-	variable_optimizer.start();
+  Solver::VariableOptimizer variable_optimizer(script, symbol_table);
+  variable_optimizer.start();
 
-	Solver::FormulaOptimizer formula_optimizer(script, symbol_table);
-	formula_optimizer.start();
+  Solver::FormulaOptimizer formula_optimizer(script, symbol_table);
+  formula_optimizer.start();
 
-//	SMT::LengthConstraintReductor len_reductor;
-//	len_reductor.start(script, symbol_table);
+  //	SMT::LengthConstraintReductor len_reductor;
+  //	len_reductor.start(script, symbol_table);
 
-	Solver::ConstraintSorter constraint_sorter(script, symbol_table);
-	constraint_sorter.start();
+  Solver::ConstraintSorter constraint_sorter(script, symbol_table);
+  constraint_sorter.start();
 }
 
 void Driver::solve() {
@@ -79,16 +79,31 @@ void Driver::solve() {
 }
 
 void Driver::test() {
-	Theory::StringAutomaton_ptr any_string = Theory::StringAutomaton::makeAnyString();
-	any_string->toDotAscii(0);
+  Theory::StringAutomaton_ptr any_string = Theory::StringAutomaton::makeAnyString();
+//  Theory::StringAutomaton_ptr complement = nullptr;
+//  any_string->toDotAscii(1);
+//  complement = any_string->complement();
+//  complement->toDotAscii(1);
 
-	any_string = Theory::StringAutomaton::makeString("baki");
-	any_string->toDotAscii();
-	std::exit(0);
+  Theory::StringAutomaton_ptr make_string = Theory::StringAutomaton::makeString("baki");
+  make_string->complement()->toDotAscii();
+//
+//  Theory::StringAutomaton_ptr char_range = Theory::StringAutomaton::makeCharRange('e', 'm');
+//  char_range->toDotAscii(1);
+//
+//  Theory::StringAutomaton_ptr dot_auto = Theory::StringAutomaton::makeAnyChar();
+//  dot_auto->toDotAscii(1);
+
+//  Theory::StringAutomaton_ptr empty_string = Theory::StringAutomaton::makeEmptyString();
+
+  Theory::StringAutomaton_ptr result = make_string->union_(any_string);
+  result->toDotAscii();
+
+  std::exit(0);
 }
 
 void Driver::error(const Vlab::SMT::location& l, const std::string& m) {
-	LOG(FATAL) << "error: " << l << " : " << m;
+  LOG(FATAL) << "error: " << l << " : " << m;
 }
 
 

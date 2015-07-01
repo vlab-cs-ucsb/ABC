@@ -48,8 +48,8 @@ protected:
 	static unsigned* get_unsigned_indices_main(int length);
 
 	const Automaton::Type type;
-	int id;
-	static int trace_id;
+	unsigned long id;
+	static unsigned long trace_id;
 private:
 	static const int VLOG_LEVEL;
 };

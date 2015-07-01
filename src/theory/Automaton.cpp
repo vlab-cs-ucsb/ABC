@@ -12,7 +12,7 @@ namespace Theory {
 
 const int Automaton::VLOG_LEVEL = 9;
 
-int Automaton::trace_id = 0;
+unsigned long Automaton::trace_id = 0;
 
 const std::string Automaton::Name::NONE		= "none";
 const std::string Automaton::Name::BOOL		= "BoolAutomaton";
