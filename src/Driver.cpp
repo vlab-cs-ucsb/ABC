@@ -79,14 +79,14 @@ void Driver::solve() {
 }
 
 void Driver::test() {
-  Theory::StringAutomaton_ptr any_string = Theory::StringAutomaton::makeAnyString();
+//  Theory::StringAutomaton_ptr any_string = Theory::StringAutomaton::makeAnyString();
 //  Theory::StringAutomaton_ptr complement = nullptr;
 //  any_string->toDotAscii(1);
 //  complement = any_string->complement();
 //  complement->toDotAscii(1);
 
-  Theory::StringAutomaton_ptr make_string = Theory::StringAutomaton::makeString("baki");
-  make_string->complement()->toDotAscii();
+//  Theory::StringAutomaton_ptr make_string = Theory::StringAutomaton::makeString("baki");
+//  make_string->complement()->toDotAscii();
 //
 //  Theory::StringAutomaton_ptr char_range = Theory::StringAutomaton::makeCharRange('e', 'm');
 //  char_range->toDotAscii(1);
@@ -96,8 +96,11 @@ void Driver::test() {
 
 //  Theory::StringAutomaton_ptr empty_string = Theory::StringAutomaton::makeEmptyString();
 
-  Theory::StringAutomaton_ptr result = make_string->union_(any_string);
-  result->toDotAscii();
+//  Theory::StringAutomaton_ptr result = make_string->union_(any_string);
+//  result->toDotAscii();
+
+  Theory::StringAutomaton_ptr regex_auto = Theory::StringAutomaton::makeRegexAuto("/a{3,3}/");
+  regex_auto->toDotAscii();
 
   std::exit(0);
 }

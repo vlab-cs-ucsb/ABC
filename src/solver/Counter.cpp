@@ -15,42 +15,42 @@ using namespace SMT;
 const int Counter::VLOG_LEVEL = 17;
 
 Counter::Counter(Script_ptr script, SymbolTable_ptr symbol_table)
-	: root (script), symbol_table (symbol_table) { }
+: root (script), symbol_table (symbol_table) { }
 
 Counter::~Counter() { }
 
 void Counter::start() {
-	symbol_table -> reset_count();
-	visit(root);
-	end();
+  symbol_table -> reset_count();
+  visit(root);
+  end();
 }
 
 void Counter::end() {
-	if (VLOG_IS_ON(VLOG_LEVEL)) {
-		for (auto& pair : symbol_table -> getVariables()) {
-			DVLOG(VLOG_LEVEL) << pair.first << " : " << symbol_table->get_total_count(pair.second);
-		}
-	}
+  if (VLOG_IS_ON(VLOG_LEVEL)) {
+    for (auto& pair : symbol_table -> getVariables()) {
+      DVLOG(VLOG_LEVEL) << pair.first << " : " << symbol_table->get_total_count(pair.second);
+    }
+  }
 }
 
 void Counter::visitScript(Script_ptr script) {
-	symbol_table -> push_scope(script);
-	visit_children_of(script);
-	symbol_table -> pop_scope();
+  symbol_table -> push_scope(script);
+  visit_children_of(script);
+  symbol_table -> pop_scope();
 }
 
 void Counter::visitCommand(Command_ptr command) {
 
-	switch (command->getType()) {
-		case Command::Type::ASSERT:
-		{
-			visit_children_of(command);
-			break;
-		}
-	default:
-		LOG(FATAL) << "'" << *command<< "' is not expected.";
-		break;
-	}
+  switch (command->getType()) {
+  case Command::Type::ASSERT:
+  {
+    visit_children_of(command);
+    break;
+  }
+  default:
+    LOG(FATAL) << "'" << *command<< "' is not expected.";
+    break;
+  }
 }
 
 void Counter::visitTerm(Term_ptr term) { LOG(FATAL) << "Unexpected term: " << *term;  }
@@ -66,11 +66,11 @@ void Counter::visitLet(Let_ptr let_term) { LOG(FATAL) << "Unhandled term: " << *
 void Counter::visitAnd(And_ptr and_term) { visit_children_of(and_term); }
 
 void Counter::visitOr(Or_ptr or_term) {
-	for (auto& term : *(or_term->term_list)) {
-		symbol_table -> push_scope(term);
-		visit(term);
-		symbol_table -> pop_scope();
-	}
+  for (auto& term : *(or_term->term_list)) {
+    symbol_table -> push_scope(term);
+    visit(term);
+    symbol_table -> pop_scope();
+  }
 }
 
 void Counter::visitNot(Not_ptr not_term) { visit_children_of(not_term); }

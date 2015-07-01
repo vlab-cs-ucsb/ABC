@@ -96,14 +96,14 @@ std::string RegularExpression::toString() const {
     std::string max_str = std::to_string(max);
     ss << '<';
     if(digits > 0) {
-      for (int i = (int)min_str.length(); i < digits; i++) {
+      for (unsigned i = (unsigned)min_str.length(); i < digits; i++) {
         ss << '0';
       }
     }
 
     ss << min_str << '-';
     if(digits > 0) {
-      for (int i = (int)max_str.length(); i < digits; i++) {
+      for (unsigned i = (unsigned)max_str.length(); i < digits; i++) {
         ss << '0';
       }
     }
@@ -235,7 +235,7 @@ RegularExpression_ptr RegularExpression::makeRepeatPlus(RegularExpression_ptr ex
   return regex;
 }
 
-RegularExpression_ptr RegularExpression::makeRepeat(RegularExpression_ptr exp, int min) {
+RegularExpression_ptr RegularExpression::makeRepeat(RegularExpression_ptr exp, unsigned long min) {
   RegularExpression_ptr regex = new RegularExpression();
   regex->type = Type::REPEAT_MIN;
   regex->exp1 = exp;
@@ -243,7 +243,7 @@ RegularExpression_ptr RegularExpression::makeRepeat(RegularExpression_ptr exp, i
   return regex;
 }
 
-RegularExpression_ptr RegularExpression::makeRepeat(RegularExpression_ptr exp, int min, int max) {
+RegularExpression_ptr RegularExpression::makeRepeat(RegularExpression_ptr exp, unsigned long min, unsigned long max) {
   RegularExpression_ptr regex = new RegularExpression();
   regex->type = Type::REPEAT_MINMAX;
   regex->exp1 = exp;
@@ -306,7 +306,7 @@ RegularExpression_ptr RegularExpression::makeAutomaton(std::string s) {
   return regex;
 }
 
-RegularExpression_ptr RegularExpression::makeInterval(int min, int max, int digits) {
+RegularExpression_ptr RegularExpression::makeInterval(unsigned long min, unsigned long max, unsigned digits) {
   RegularExpression_ptr regex = new RegularExpression();
   regex->type = Type::INTERVAL;
   regex->min = min;
@@ -314,8 +314,6 @@ RegularExpression_ptr RegularExpression::makeInterval(int min, int max, int digi
   regex->digits = digits;
   return regex;
 }
-
-
 
 RegularExpression_ptr RegularExpression::parseUnionExp() {
   RegularExpression_ptr regex = parseInterExp();
@@ -360,8 +358,9 @@ RegularExpression_ptr RegularExpression::parseRepeatExp() {
         LOG(FATAL) << "integer expected at position: " << pos;
       }
 
-      int n = std::stoi(regex_string.substr(start, pos - start));
-      int m = -1;
+      unsigned long n = std::stoul(regex_string.substr(start, pos - start));
+      unsigned long m;
+      bool is_m_set = false;
       if (match(',')) {
         start = pos;
         while (peek("0123456789")) {
@@ -369,18 +368,20 @@ RegularExpression_ptr RegularExpression::parseRepeatExp() {
         }
 
         if(start != pos) {
-          m = std::stoi(regex_string.substr(start, pos - start));
+          m = std::stoul(regex_string.substr(start, pos - start));
+          is_m_set = true;
         }
 
       } else {
         m = n;
+        is_m_set = true;
       }
 
       if (!match('}')) {
         LOG(FATAL) << "expected '}' at position: " << pos;
       }
 
-      if (m == -1) {
+      if (not is_m_set) {
         return makeRepeat(regex, n);
       } else {
         return makeRepeat(regex, n, m);
@@ -495,17 +496,17 @@ RegularExpression_ptr RegularExpression::parseSimpleExp() {
 
       std::string smin = s.substr(0, i);
       std::string smax = s.substr(i + 1, (s.length()-(i + 1)));
-      int imin = std::stoi(smin);
-      int imax = std::stoi(smax);
-      int digits;
+      unsigned long imin = std::stoul(smin);
+      unsigned long imax = std::stoul(smax);
+      unsigned digits;
       if(smin.length() == smax.length()) {
-        digits = (int)smin.length();
+        digits = (unsigned)smin.length();
       } else {
         digits = 0;
       }
 
       if(imin > imax) {
-        int t = imin;
+        unsigned long t = imin;
         imin = imax;
         imax = t;
       }
@@ -533,6 +534,30 @@ RegularExpression_ptr RegularExpression::getExpr2() {
   return exp2;
 }
 
+unsigned long RegularExpression::getMin() {
+  return min;
+}
+
+unsigned long RegularExpression::getMax() {
+  return max;
+}
+
+char RegularExpression::getChar() {
+  return c;
+}
+
+char RegularExpression::getFrom() {
+  return from;
+}
+
+char RegularExpression::getTo() {
+  return to;
+}
+
+std::string RegularExpression::getS() {
+  return s;
+}
+
 std::ostream& operator<<(std::ostream& os, const RegularExpression& regex) {
   return os <<  regex.toString();
 }
@@ -558,7 +583,7 @@ void RegularExpression::init(std::string regex, int syntax_flags) {
 
   CHECK_EQ(0 , regex.find("/"));
   std::string::size_type last = regex.substr(1).find_last_of("/");
-  CHECK_EQ(std::string::npos, last);
+  CHECK_NE(std::string::npos, last);
 
   regex_string = regex.substr(1, last);;
   flags = syntax_flags;
@@ -612,116 +637,6 @@ char RegularExpression::next() {
 bool RegularExpression::check(int flag) {
   return (flags & flag) != 0;
 }
-
-//StrangerAutomaton_ptr RegularExpression::toAutomaton() {
-//    StrangerAutomaton_ptr a = nullptr;
-//    StrangerAutomaton_ptr auto1;
-//    StrangerAutomaton_ptr auto2;
-//    {
-//        Kind v = kind;
-//        if(v == Kind::RegularExpression_UNION) {
-//        	Log::i(TAG, "union");
-//            auto1 = exp1->toAutomaton();
-//            auto2 = exp2->toAutomaton();
-//            a = auto1->union_(auto2, ++id);
-//            delete auto1;
-//            delete auto2;
-//            goto end_switch1;;
-//        }
-//        if(v == Kind::RegularExpression_CONCATENATION) {
-//        	Log::i(TAG, "concatenation");
-//            auto1 = exp1->toAutomaton();
-//            auto2 = exp2->toAutomaton();
-//            a = auto1->concatenate(auto2, ++id);
-//            delete auto1;
-//            delete auto2;
-//            goto end_switch1;;
-//        }
-//        if(v == Kind::RegularExpression_INTERSECTION) {
-//        	Log::i(TAG, "intersection");
-//            auto1 = exp1->toAutomaton();
-//            auto2 = exp2->toAutomaton();
-//            a = auto1->intersect(auto2, ++id);
-//            delete auto1;
-//            delete auto2;
-//            goto end_switch1;;
-//        }
-//        if(v == Kind::RegularExpression_OPTIONAL) {
-//        	Log::i(TAG, "optional");
-//            auto1 = exp1->toAutomaton();
-//            a = auto1->optional(++id);
-//            delete auto1;
-//            goto end_switch1;;
-//        }
-//        if(v == Kind::RegularExpression_REPEAT_STAR) {
-//            auto1 = exp1->toAutomaton();
-//            a = auto1->kleensStar(++id);
-//            delete auto1;
-//            goto end_switch1;;
-//        }
-//        if(v == Kind::RegularExpression_REPEAT_PLUS) {
-//        	Log::i(TAG, "repeat plus");
-//            auto1 = exp1->toAutomaton();
-//            a = auto1->closure(++id);
-//            delete auto1;
-//            goto end_switch1;;
-//        }
-//        if(v == Kind::RegularExpression_REPEAT_MIN) {
-//        	Log::i(TAG, "repeat min");
-//            auto1 = exp1->toAutomaton();
-//            a = auto1->repeat(min, ++id);
-//            delete auto1;
-//            goto end_switch1;;
-//        }
-//        if(v == Kind::RegularExpression_REPEAT_MINMAX) {
-//        	Log::i(TAG, "repeat minmax");
-//            auto1 = exp1->toAutomaton();
-//            a = auto1->repeat(min, max, ++id);
-//            delete auto1;
-//            goto end_switch1;;
-//        }
-//        if(v == Kind::RegularExpression_COMPLEMENT) {
-//        	Log::i(TAG, "complement");
-//            auto1 = exp1->toAutomaton();
-//            a = auto1->complement(++id);
-//            delete auto1;
-//            goto end_switch1;;
-//        }
-//        if(v == Kind::RegularExpression_CHAR) {
-//        	Log::i(TAG, "char");
-//            a = StrangerAutomaton::makeChar(c, ++id);
-//            goto end_switch1;;
-//        }
-//        if(v == Kind::RegularExpression_CHAR_RANGE) {
-//        	Log::i(TAG, "char range");
-//            a = StrangerAutomaton::makeCharRange(from, to, ++id);
-//            goto end_switch1;;
-//        }
-//        if(v == Kind::RegularExpression_ANYCHAR) {
-//        	Log::i(TAG, "any char");
-//            a = StrangerAutomaton::makeDot(++id);
-//            goto end_switch1;;
-//        }
-//        if(v == Kind::RegularExpression_EMPTY) {
-//        	Log::i(TAG, "empty");
-//            a = StrangerAutomaton::makeEmptyString(++id);
-//            goto end_switch1;;
-//        }
-//        if(v == Kind::RegularExpression_STRING) {
-//        	Log::i(TAG, "string");
-//            a = StrangerAutomaton::makeString(s, ++id);
-//            goto end_switch1;;
-//        }
-//        if(v == Kind::RegularExpression_ANYSTRING) {
-//        	Log::i(TAG, "any string");
-//            a = StrangerAutomaton::makeAnyString(++id);
-//            goto end_switch1;;
-//        }
-//end_switch1:;
-//    }
-//
-//    return a;
-//}
 
 } /* namespace Util */
 } /* namespace Vlab */

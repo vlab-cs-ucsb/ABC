@@ -12,22 +12,26 @@ namespace Solver {
 
 using namespace SMT;
 
-const int PostImageComputer::VLOG_LEVEL = 12;
+const int PostImageComputer::VLOG_LEVEL = 11;
 
 PostImageComputer::PostImageComputer(Script_ptr script, SymbolTable_ptr symbol_table)
-	: root (script), symbol_table (symbol_table) { }
+: root (script), symbol_table (symbol_table) { }
 
 PostImageComputer::~PostImageComputer() { }
 
 void PostImageComputer::start() {
 
-	visit(root);
-	end();
+  visit(root);
+  end();
 }
 
 void PostImageComputer::end() { }
 
-void PostImageComputer::visitScript(Script_ptr script) { }
+void PostImageComputer::visitScript(Script_ptr script) {
+  symbol_table -> push_scope(script);
+  visit_children_of(script);
+  symbol_table -> pop_scope();
+}
 
 void PostImageComputer::visitCommand(Command_ptr command) { }
 

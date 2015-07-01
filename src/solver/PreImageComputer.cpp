@@ -12,7 +12,7 @@ namespace Solver {
 
 using namespace SMT;
 
-const int PreImageComputer::VLOG_LEVEL = 11;
+const int PreImageComputer::VLOG_LEVEL = 12;
 
 PreImageComputer::PreImageComputer(Script_ptr script, SymbolTable_ptr symbol_table)
 	: root (script), symbol_table (symbol_table) { }

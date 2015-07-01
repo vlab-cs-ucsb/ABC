@@ -25,7 +25,6 @@
 #include "Scanner.h"
 
 #include "StringAutomaton.h"
-#include <bitset>
 
 namespace Vlab {
 

@@ -101,8 +101,8 @@ public:
   static RegularExpression_ptr makeOptional(RegularExpression_ptr exp);
   static RegularExpression_ptr makeRepeatStar(RegularExpression_ptr exp);
   static RegularExpression_ptr makeRepeatPlus(RegularExpression_ptr exp);
-  static RegularExpression_ptr makeRepeat(RegularExpression_ptr exp, int min);
-  static RegularExpression_ptr makeRepeat(RegularExpression_ptr exp, int min, int max);
+  static RegularExpression_ptr makeRepeat(RegularExpression_ptr exp, unsigned long min);
+  static RegularExpression_ptr makeRepeat(RegularExpression_ptr exp, unsigned long min, unsigned long max);
   static RegularExpression_ptr makeComplement(RegularExpression_ptr exp);
   static RegularExpression_ptr makeChar(char c);
   static RegularExpression_ptr makeCharRange(char from, char to);
@@ -111,7 +111,7 @@ public:
   static RegularExpression_ptr makeString(std::string s);
   static RegularExpression_ptr makeAnyString();
   static RegularExpression_ptr makeAutomaton(std::string s);
-  static RegularExpression_ptr makeInterval(int min, int max, int digits);
+  static RegularExpression_ptr makeInterval(unsigned long min, unsigned long max, unsigned digits);
   RegularExpression_ptr parseUnionExp();
   RegularExpression_ptr parseInterExp();
   RegularExpression_ptr parseConcatExp();
@@ -126,6 +126,12 @@ public:
   Type getType();
   RegularExpression_ptr getExpr1();
   RegularExpression_ptr getExpr2();
+  unsigned long getMin();
+  unsigned long getMax();
+  char getChar();
+  char getFrom();
+  char getTo();
+  std::string getS();
 
 
   friend std::ostream& operator<<(std::ostream& os, const RegularExpression& regex);
@@ -141,9 +147,9 @@ private:
 
   RegularExpression_ptr exp1;
   RegularExpression_ptr exp2;
-  int min;
-  int max;
-  int digits;
+  unsigned long min;
+  unsigned long max;
+  unsigned digits;
   int flags;
   char c;
   char from, to;
