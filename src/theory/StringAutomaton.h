@@ -39,30 +39,22 @@ public:
 
   virtual StringAutomaton_ptr clone() const;
 
-  static StringAutomaton_ptr makePhi(
-          int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
+  static StringAutomaton_ptr makePhi(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
           int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeEmptyString(
-          int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
+  static StringAutomaton_ptr makeEmptyString(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
           int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeString(std::string str,
-          int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
+  static StringAutomaton_ptr makeString(std::string str, int num_of_variables =
+          StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  static StringAutomaton_ptr makeAnyString(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
           int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeAnyString(
-          int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
+  static StringAutomaton_ptr makeChar(char c, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
           int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeChar(char c,
-          int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
+  static StringAutomaton_ptr makeCharRange(char from, char to, int num_of_variables =
+          StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  static StringAutomaton_ptr makeAnyChar(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
           int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeCharRange(char from , char to,
-          int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
-          int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeAnyChar(
-          int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
-          int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeRegexAuto(std::string regex,
-          int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
-          int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  static StringAutomaton_ptr makeRegexAuto(std::string regex, int num_of_variables =
+          StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
 
   StringAutomaton_ptr complement();
   StringAutomaton_ptr union_(StringAutomaton_ptr other_auto);
@@ -78,8 +70,7 @@ public:
 
   bool checkEquivalence(StringAutomaton_ptr other_auto);
 
-  bool hasEmptyString();
-  bool isEmptyString();
+  bool hasEmptyString();bool isEmptyString();
 
   void toDotAscii(bool print_sink = false, std::ostream& out = std::cout);
 protected:

@@ -13,14 +13,19 @@ namespace Theory {
 const int IntAutomaton::VLOG_LEVEL = 9;
 
 IntAutomaton::IntAutomaton()
-	: Automaton (Automaton::Type::STRING) { }
+        : Automaton(Automaton::Type::STRING) {
+}
 
 IntAutomaton::IntAutomaton(const IntAutomaton& other)
-	: Automaton (Automaton::Type::STRING) { }
+        : Automaton(Automaton::Type::STRING) {
+}
 
-IntAutomaton_ptr IntAutomaton::clone() const { return new IntAutomaton(*this); }
+IntAutomaton_ptr IntAutomaton::clone() const {
+  return new IntAutomaton(*this);
+}
 
-IntAutomaton::~IntAutomaton() { }
+IntAutomaton::~IntAutomaton() {
+}
 
 } /* namespace Theory */
 } /* namespace Vlab */

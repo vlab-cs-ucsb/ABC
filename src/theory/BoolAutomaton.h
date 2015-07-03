@@ -18,14 +18,14 @@ typedef BoolAutomaton* BoolAutomaton_ptr;
 
 class BoolAutomaton: public Automaton {
 public:
-	BoolAutomaton();
-	BoolAutomaton(const BoolAutomaton&);
-	virtual ~BoolAutomaton();
+  BoolAutomaton();
+  BoolAutomaton(const BoolAutomaton&);
+  virtual ~BoolAutomaton();
 
-	virtual BoolAutomaton_ptr clone() const;
+  virtual BoolAutomaton_ptr clone() const;
 
 private:
-	static const int VLOG_LEVEL;
+  static const int VLOG_LEVEL;
 };
 
 } /* namespace Theory */

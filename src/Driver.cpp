@@ -13,23 +13,23 @@ namespace Vlab {
 //PerfInfo* Driver::perfInfo;
 
 Driver::Driver()
-: script (nullptr), symbol_table (nullptr) {
+        : script(nullptr), symbol_table(nullptr) {
 }
 
 Driver::~Driver() {
   delete script;
 }
 
-void Driver::error (const std::string& m) {
+void Driver::error(const std::string& m) {
   std::cerr << m << std::endl;
 }
 
-int Driver::parse (std::istream* in) {
+int Driver::parse(std::istream* in) {
   SMT::Scanner scanner(in);
   //	scanner.set_debug(trace_scanning);
-  SMT::Parser parser (script, scanner);
+  SMT::Parser parser(script, scanner);
   //	parser.set_debug_level (trace_parsing);
-  int res = parser.parse ();
+  int res = parser.parse();
   CHECK_EQ(0, res);
   return res;
 }
@@ -41,7 +41,10 @@ void Driver::ast2dot(std::ostream* out) {
 }
 void Driver::ast2dot(std::string file_name) {
   std::ofstream outfile(file_name.c_str());
-  if ( !outfile.good() ) { std::cout << "cannot open file: " << file_name << std::endl; exit(2); }
+  if (!outfile.good()) {
+    std::cout << "cannot open file: " << file_name << std::endl;
+    exit(2);
+  }
   ast2dot(&outfile);
   outfile.close();
 }
@@ -99,16 +102,15 @@ void Driver::test() {
 //  Theory::StringAutomaton_ptr result = make_string->union_(any_string);
 //  result->toDotAscii();
 
-  Theory::StringAutomaton_ptr regex_auto = Theory::StringAutomaton::makeRegexAuto("/a{3,3}/");
-  regex_auto->toDotAscii();
-
-  std::exit(0);
+//  Theory::StringAutomaton_ptr regex_auto = Theory::StringAutomaton::makeRegexAuto("/#/");
+//  regex_auto->toDotAscii();
+//
+//  std::exit(0);
 }
 
 void Driver::error(const Vlab::SMT::location& l, const std::string& m) {
-  LOG(FATAL) << "error: " << l << " : " << m;
+  LOG(FATAL)<<"error: " << l << " : " << m;
 }
-
 
 //void Driver::solveAst() {
 //	int i = 0;

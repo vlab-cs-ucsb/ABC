@@ -21,37 +21,38 @@ typedef Automaton* Automaton_ptr;
 
 class Automaton {
 public:
-	enum class Type : int {
-		NONE = 0, BOOL, INT, INTBOOl, STRING
-	};
+  enum class Type
+    : int {
+      NONE = 0, BOOL, INT, INTBOOl, STRING
+  };
 
-	Automaton(Automaton::Type type);
-	Automaton(const Automaton&);
-	virtual Automaton_ptr clone() const;
-	virtual ~Automaton();
+  Automaton(Automaton::Type type);
+  Automaton(const Automaton&);
+  virtual Automaton_ptr clone() const;
+  virtual ~Automaton();
 
-	virtual std::string str() const;
-	virtual Automaton::Type getType() const;
+  virtual std::string str() const;
+  virtual Automaton::Type getType() const;
 
-	class Name {
-	public:
-		static const std::string NONE;
-		static const std::string BOOL;
-		static const std::string INT;
-		static const std::string INTBOOl;
-		static const std::string STRING;
-	};
+  class Name {
+  public:
+    static const std::string NONE;
+    static const std::string BOOL;
+    static const std::string INT;
+    static const std::string INTBOOl;
+    static const std::string STRING;
+  };
 
-	friend std::ostream& operator<<(std::ostream& os, const Automaton& automaton);
+  friend std::ostream& operator<<(std::ostream& os, const Automaton& automaton);
 
 protected:
-	static unsigned* get_unsigned_indices_main(int length);
+  static unsigned* get_unsigned_indices_main(int length);
 
-	const Automaton::Type type;
-	unsigned long id;
-	static unsigned long trace_id;
+  const Automaton::Type type;
+  unsigned long id;
+  static unsigned long trace_id;
 private:
-	static const int VLOG_LEVEL;
+  static const int VLOG_LEVEL;
 };
 
 } /* namespace Theory */

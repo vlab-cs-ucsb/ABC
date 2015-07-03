@@ -15,9 +15,11 @@ using namespace SMT;
 const int PostImageComputer::VLOG_LEVEL = 11;
 
 PostImageComputer::PostImageComputer(Script_ptr script, SymbolTable_ptr symbol_table)
-: root (script), symbol_table (symbol_table) { }
+        : root(script), symbol_table(symbol_table) {
+}
 
-PostImageComputer::~PostImageComputer() { }
+PostImageComputer::~PostImageComputer() {
+}
 
 void PostImageComputer::start() {
 
@@ -25,101 +27,359 @@ void PostImageComputer::start() {
   end();
 }
 
-void PostImageComputer::end() { }
-
-void PostImageComputer::visitScript(Script_ptr script) {
-  symbol_table -> push_scope(script);
-  visit_children_of(script);
-  symbol_table -> pop_scope();
+void PostImageComputer::end() {
 }
 
-void PostImageComputer::visitCommand(Command_ptr command) { }
+void PostImageComputer::visitScript(Script_ptr script) {
+  symbol_table->push_scope(script);
 
-void PostImageComputer::visitTerm(Term_ptr term) { }
+  for (auto command : *(script->command_list)) {
+    visit(command);
+    if (not symbol_table->isAssertionsStillValid()) {
+      break;
+    }
+  }
 
-void PostImageComputer::visitExclamation(Exclamation_ptr exclamation_term) { }
+  symbol_table->pop_scope(); // TODO we will need global scope, it is reachable via script pointer all the time
+}
 
-void PostImageComputer::visitExists(Exists_ptr exists_term) { }
+void PostImageComputer::visitCommand(Command_ptr command) {
+  switch (command->getType()) {
+  case Command::Type::ASSERT: {
+    visit_children_of(command);
 
-void PostImageComputer::visitForAll(ForAll_ptr for_all_term) { }
+    Assert_ptr current_assert = dynamic_cast<Assert_ptr>(command);
+    Value_ptr result = getTermValue(current_assert->term);
+    symbol_table->updateAssertionValid(result->isSatisfiable());
 
-void PostImageComputer::visitLet(Let_ptr let_term) { }
+    if (symbol_table->isAssertionsStillValid()) {
+      // 3- if assertion is valid update variables with pre-image computation
+    }
 
-void PostImageComputer::visitAnd(And_ptr and_term) { }
+    clearTermValues();
+    break;
+  }
+  default:
+    LOG(FATAL)<< "'" << *command<< "' is not expected.";
+    break;
+  }
+}
 
-void PostImageComputer::visitOr(Or_ptr or_term) { }
+void PostImageComputer::visitTerm(Term_ptr term) {
+}
 
-void PostImageComputer::visitNot(Not_ptr not_term) { visit_children_of(not_term); }
+void PostImageComputer::visitExclamation(Exclamation_ptr exclamation_term) {
+}
 
-void PostImageComputer::visitUMinus(UMinus_ptr u_minus_term) { visit_children_of(u_minus_term); }
+void PostImageComputer::visitExists(Exists_ptr exists_term) {
+}
 
-void PostImageComputer::visitMinus(Minus_ptr minus_term) { visit_children_of(minus_term); }
+void PostImageComputer::visitForAll(ForAll_ptr for_all_term) {
+}
 
-void PostImageComputer::visitPlus(Plus_ptr plus_term) { visit_children_of(plus_term); }
+void PostImageComputer::visitLet(Let_ptr let_term) {
+}
 
-void PostImageComputer::visitEq(Eq_ptr eq_term) { visit_children_of(eq_term); }
+void PostImageComputer::visitAnd(And_ptr and_term) {
+  LOG(FATAL)<< "not implemented yet";
+}
 
-void PostImageComputer::visitGt(Gt_ptr gt_term) { visit_children_of(gt_term); }
+void PostImageComputer::visitOr(Or_ptr or_term) {
+  LOG(FATAL)<< "not implemented yet";
+}
 
-void PostImageComputer::visitGe(Ge_ptr ge_term) { visit_children_of(ge_term); }
+void PostImageComputer::visitNot(Not_ptr not_term) {
+  visit_children_of(not_term);
 
-void PostImageComputer::visitLt(Lt_ptr lt_term) {	visit_children_of(lt_term); }
+  Value_ptr result = nullptr,
+          param = getTermValue(not_term->term);
 
-void PostImageComputer::visitLe(Le_ptr le_term) {	visit_children_of(le_term); }
+  switch (param->getType()) {
+  case Value::Type::BOOl_CONSTANT: {
+    result = new Value(Value::Type::BOOl_CONSTANT, not param->getBoolConstant());
+    break;
+  }
+  case Value::Type::INT_CONSTANT: {
+    // return int automaton other than this constant
+    LOG(FATAL)<< "implement me";
+    break;
+  }
+  case Value::Type::BOOL_AUTOMATON: {
+    // 1- if singleton do not
+    // 2- else over-approximate
+    LOG(FATAL) << "implement me";
+    break;
+  }
+  case Value::Type::INT_AUTOMATON: {
+    // 1- if singleton do not
+    // 2- else over-approximate
+    LOG(FATAL) << "implement me";
+    break;
+  }
+  case Value::Type::INTBOOL_AUTOMATON: {
+    // 1- if singleton do not
+    // 2- else over-approximate
+    LOG(FATAL) << "implement me";
+    break;
+  }
+  case Value::Type::STRING_AUTOMATON: {
+    // 1- if singleton do not
+    // 2- else over-approximate
+    LOG(FATAL) << "implement me";
+    break;
+  }
+  default:
+  LOG(FATAL) << "not term child is not computed properly: " << *(not_term->term);
+  break;
+}
 
-void PostImageComputer::visitConcat(Concat_ptr concat_term) { visit_children_of(concat_term); }
+  setTermValue(not_term, result);
+  // TODO keep track of path for backward analysis
+}
 
-void PostImageComputer::visitIn(In_ptr in_term) {	visit_children_of(in_term); }
+void PostImageComputer::visitUMinus(UMinus_ptr u_minus_term) {
+  visit_children_of(u_minus_term);
 
-void PostImageComputer::visitLen(Len_ptr len_term) { visit_children_of(len_term); }
+  Value_ptr result = nullptr,
+          param = getTermValue(u_minus_term->term);
 
-void PostImageComputer::visitContains(Contains_ptr contains_term) { visit_children_of(contains_term); }
+  switch (param->getType()) {
+  case Value::Type::INT_CONSTANT: {
+    int data = -param->getIntConstant();
+    result = new Value(Value::Type::INT_CONSTANT, data);
+    break;
+  }
+  case Value::Type::INT_AUTOMATON: {
+    // do minus operation on automaton
+    LOG(FATAL)<< "implement me";
+    break;
+  }
+  case Value::Type::INTBOOL_AUTOMATON: {
+    // do minus operation on automaton
+    LOG(FATAL) << "implement me";
+    break;
+  }
+  default:
+    LOG(FATAL) << "unary minus term child is not computed properly: " << *(u_minus_term->term);
+    break;
+  }
 
-void PostImageComputer::visitBegins(Begins_ptr begins_term) { visit_children_of(begins_term); }
+  setTermValue(u_minus_term, result);
+  // TODO keep track of path for backward analysis
+}
 
-void PostImageComputer::visitEnds(Ends_ptr ends_term) { visit_children_of(ends_term); }
+void PostImageComputer::visitMinus(Minus_ptr minus_term) {
+  visit_children_of(minus_term);
 
-void PostImageComputer::visitIndexOf(IndexOf_ptr index_of_term) {	visit_children_of(index_of_term); }
+  Value_ptr result = nullptr,
+          param_left = getTermValue(minus_term->left_term),
+          param_right= getTermValue(minus_term->right_term);
 
-void PostImageComputer::visitReplace(Replace_ptr replace_term) { visit_children_of(replace_term); }
+  if (Value::Type::INT_CONSTANT == param_left->getType() and Value::Type::INT_CONSTANT == param_right->getType()) {
+    result = new Value(Value::Type::INT_CONSTANT, param_left->getIntConstant() - param_right->getIntConstant());
+  } else if (Value::Type::INT_AUTOMATON == param_left->getType() and Value::Type::INT_AUTOMATON == param_right->getType()) {
+    LOG(FATAL) << "implement me";
+  } else {
+    LOG(FATAL) << "implement me"; // handle cases in a better way
+  }
 
-void PostImageComputer::visitCount(Count_ptr count_term) { visit_children_of(count_term); }
+  setTermValue(minus_term, result);
+  // TODO keep track of path for backward analysis
 
-void PostImageComputer::visitIte(Ite_ptr ite_term) { }
+}
 
-void PostImageComputer::visitReConcat(ReConcat_ptr re_concat_term) { }
+void PostImageComputer::visitPlus(Plus_ptr plus_term) {
+  visit_children_of(plus_term);
 
-void PostImageComputer::visitToRegex(ToRegex_ptr to_regex_term) { }
+  Value_ptr result = nullptr,
+          param_left = getTermValue(plus_term->left_term),
+          param_right= getTermValue(plus_term->right_term);
 
-void PostImageComputer::visitUnknownTerm(Unknown_ptr unknown_term) { }
+  if (Value::Type::INT_CONSTANT == param_left->getType() and Value::Type::INT_CONSTANT == param_right->getType()) {
+    result = new Value(Value::Type::INT_CONSTANT, param_left->getIntConstant() + param_right->getIntConstant());
+  } else if (Value::Type::INT_AUTOMATON == param_left->getType() and Value::Type::INT_AUTOMATON == param_right->getType()) {
+    LOG(FATAL) << "implement me";
+  } else {
+    LOG(FATAL) << "implement me"; // handle cases in a better way
+  }
 
-void PostImageComputer::visitAsQualIdentifier(AsQualIdentifier_ptr as_qid_term) { }
+  setTermValue(plus_term, result);
+  // TODO keep track of path for backward analysis
+}
 
-void PostImageComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) { }
+void PostImageComputer::visitEq(Eq_ptr eq_term) {
+  visit_children_of(eq_term);
 
-void PostImageComputer::visitTermConstant(TermConstant_ptr term_constant) { }
+  Value_ptr result = nullptr,
+          param_left = getTermValue(eq_term->left_term),
+          param_right= getTermValue(eq_term->right_term);
 
-void PostImageComputer::visitIdentifier(Identifier_ptr identifier) { }
+  // TODO cases here does not cover all possibilities, improve code later
+  switch (param_left->getType()) {
+  case Value::Type::BOOl_CONSTANT: {
+    result = new Value(Value::Type::BOOl_CONSTANT, param_left->getBoolConstant() == param_right->getBoolConstant());
+    break;
+  }
+  case Value::Type::INT_CONSTANT: {
+    result = new Value(Value::Type::INT_CONSTANT, param_left->getIntConstant() == param_right->getIntConstant());
+    break;
+  }
+  case Value::Type::BOOL_AUTOMATON:
+  case Value::Type::INT_AUTOMATON:
+  case Value::Type::STRING_AUTOMATON: {
+    result = param_left->intersect(param_right);
+    break;
+  }
+  default:
+    LOG(FATAL) << "eq term child is not computed properly";
+    break;
+  }
 
-void PostImageComputer::visitPrimitive(Primitive_ptr primitive) { }
+  setTermValue(eq_term, result);
+  // TODO keep track of path for backward analysis
+}
 
-void PostImageComputer::visitTVariable(TVariable_ptr t_variable) { }
+void PostImageComputer::visitGt(Gt_ptr gt_term) {
+  visit_children_of(gt_term);
+  LOG(FATAL) << "implement me";
+}
 
-void PostImageComputer::visitTBool(TBool_ptr t_bool) { }
+void PostImageComputer::visitGe(Ge_ptr ge_term) {
+  visit_children_of(ge_term);
+  LOG(FATAL) << "implement me";
+}
 
-void PostImageComputer::visitTInt(TInt_ptr t_int) { }
+void PostImageComputer::visitLt(Lt_ptr lt_term) {
+  visit_children_of(lt_term);
+  LOG(FATAL) << "implement me";
+}
 
-void PostImageComputer::visitTString(TString_ptr t_string) { }
+void PostImageComputer::visitLe(Le_ptr le_term) {
+  visit_children_of(le_term);
+  LOG(FATAL) << "implement me";
+}
 
-void PostImageComputer::visitVariable(Variable_ptr variable) { }
+void PostImageComputer::visitConcat(Concat_ptr concat_term) {
+  visit_children_of(concat_term);
+}
 
-void PostImageComputer::visitSort(Sort_ptr sort) { }
+void PostImageComputer::visitIn(In_ptr in_term) {
+  visit_children_of(in_term);
+  LOG(FATAL) << "implement me";
+}
 
-void PostImageComputer::visitAttribute(Attribute_ptr attribute) {  }
+void PostImageComputer::visitLen(Len_ptr len_term) {
+  visit_children_of(len_term);
+  LOG(FATAL) << "implement me";
+}
 
-void PostImageComputer::visitSortedVar(SortedVar_ptr sorted_var) { }
+void PostImageComputer::visitContains(Contains_ptr contains_term) {
+  visit_children_of(contains_term);
+  LOG(FATAL) << "implement me";
+}
 
-void PostImageComputer::visitVarBinding(VarBinding_ptr var_binding) {  }
+void PostImageComputer::visitBegins(Begins_ptr begins_term) {
+  visit_children_of(begins_term);
+  LOG(FATAL) << "implement me";
+}
+
+void PostImageComputer::visitEnds(Ends_ptr ends_term) {
+  visit_children_of(ends_term);
+  LOG(FATAL) << "implement me";
+}
+
+void PostImageComputer::visitIndexOf(IndexOf_ptr index_of_term) {
+  visit_children_of(index_of_term);
+  LOG(FATAL) << "implement me";
+}
+
+void PostImageComputer::visitReplace(Replace_ptr replace_term) {
+  visit_children_of(replace_term);
+  LOG(FATAL) << "implement me";
+}
+
+void PostImageComputer::visitCount(Count_ptr count_term) {
+  visit_children_of(count_term);
+  LOG(FATAL) << "implement me";
+}
+
+void PostImageComputer::visitIte(Ite_ptr ite_term) {
+}
+
+void PostImageComputer::visitReConcat(ReConcat_ptr re_concat_term) {
+}
+
+void PostImageComputer::visitToRegex(ToRegex_ptr to_regex_term) {
+}
+
+void PostImageComputer::visitUnknownTerm(Unknown_ptr unknown_term) {
+}
+
+void PostImageComputer::visitAsQualIdentifier(AsQualIdentifier_ptr as_qid_term) {
+}
+
+void PostImageComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
+}
+
+void PostImageComputer::visitTermConstant(TermConstant_ptr term_constant) {
+}
+
+void PostImageComputer::visitIdentifier(Identifier_ptr identifier) {
+}
+
+void PostImageComputer::visitPrimitive(Primitive_ptr primitive) {
+}
+
+void PostImageComputer::visitTVariable(TVariable_ptr t_variable) {
+}
+
+void PostImageComputer::visitTBool(TBool_ptr t_bool) {
+}
+
+void PostImageComputer::visitTInt(TInt_ptr t_int) {
+}
+
+void PostImageComputer::visitTString(TString_ptr t_string) {
+}
+
+void PostImageComputer::visitVariable(Variable_ptr variable) {
+}
+
+void PostImageComputer::visitSort(Sort_ptr sort) {
+}
+
+void PostImageComputer::visitAttribute(Attribute_ptr attribute) {
+}
+
+void PostImageComputer::visitSortedVar(SortedVar_ptr sorted_var) {
+}
+
+void PostImageComputer::visitVarBinding(VarBinding_ptr var_binding) {
+}
+
+Value_ptr PostImageComputer::getTermValue(SMT::Term_ptr term) {
+  auto iter = post_images.find(term);
+  if (iter == post_images.end()) {
+    LOG(FATAL)<< "value is not computed for term: " << *term;
+  }
+  return iter->second;
+}
+
+bool PostImageComputer::setTermValue(SMT::Term_ptr term, Value_ptr value) {
+  auto result = post_images.insert(std::make_pair(term, value));
+  if (result.second == false) {
+    LOG(FATAL)<< "value is already computed for term: " << *term;
+  }
+  return result.second;
+}
+
+void PostImageComputer::clearTermValues() {
+  for (auto& entry : post_images) {
+    delete entry.second;
+  }
+
+  post_images.clear();
+}
 
 } /* namespace Solver */
 } /* namespace Vlab */

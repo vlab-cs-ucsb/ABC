@@ -5,6 +5,8 @@ bin_PROGRAMS = abc
 abc_SOURCES = \
   ./solver/Ast2Dot.cpp \
   ./solver/Ast2Dot.h \
+  ./solver/Value.cpp \
+  ./solver/Value.h \
   ./solver/SymbolTable.cpp \
   ./solver/SymbolTable.h \
   ./solver/Initializer.cpp \
@@ -24,7 +26,7 @@ abc_SOURCES = \
   ./solver/PreImageComputer.cpp \
   ./solver/PreImageComputer.h \
   ./solver/PostImageComputer.cpp \
-  ./solver/PostImageComputer.h \
+	./solver/PostImageComputer.h \
 	Driver.cpp \
 	Driver.h \
 	main.cpp 

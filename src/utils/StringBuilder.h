@@ -16,15 +16,15 @@ namespace Util {
 
 class StringBuilder {
 public:
-	StringBuilder();
-	virtual ~StringBuilder();
+  StringBuilder();
+  virtual ~StringBuilder();
 
-	template<typename T>
-	StringBuilder& operator << (const T& data);
+  template<typename T>
+  StringBuilder& operator <<(const T& data);
 
-	operator std::string();
+  operator std::string();
 protected:
-	std::stringstream ss;
+  std::stringstream ss;
 };
 
 } /* namespace Util */

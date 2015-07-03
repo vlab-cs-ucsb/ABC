@@ -32,63 +32,62 @@ public:
   /**
    * Syntax flag, enables intersection (<tt>&amp;</tt>).
    */
-  static int const INTERSECTION = 0x0001;
+  static int const INTERSECTION;
 
   /**
    * Syntax flag, enables complement (<tt>~</tt>).
    */
-  static int const COMPLEMENT = 0x0002;
+  static int const COMPLEMENT;
 
   /**
    * Syntax flag, enables empty language (<tt>#</tt>).
    */
-  static int const EMPTY = 0x0004;
+  static int const EMPTY;
 
   /**
    * Syntax flag, enables anystring (<tt>@</tt>).
    */
-  static int const ANYSTRING = 0x0008;
+  static int const ANYSTRING;
 
   /**
    * Syntax flag, enables named automata (<tt>&lt;</tt>identifier<tt>&gt;</tt>).
    */
-  static int const AUTOMATON = 0x0010;
+  static int const AUTOMATON;
 
   /**
    * Syntax flag, enables numerical intervals (<tt>&lt;<i>n</i>-<i>m</i>&gt;</tt>).
    */
-  static int const INTERVAL = 0x0020;
+  static int const INTERVAL;
 
   /**
    * Syntax flag, enables all optional RegularExpression syntax.
    */
-  static int const ALL = 0xffff;
-
+  static int const ALL;
 
   /**
    * Syntax flag, enables no optional RegularExpression syntax.
    */
-  static int const NONE = 0x0000;
+  static int const NONE;
 
   enum class Type : int {
     NONE = 0,
-            UNION,
-            CONCATENATION,
-            INTERSECTION,
-            OPTIONAL,
-            REPEAT_STAR,
-            REPEAT_PLUS,
-            REPEAT_MIN,
-            REPEAT_MINMAX,
-            COMPLEMENT,
-            CHAR,
-            CHAR_RANGE,
-            ANYCHAR,
-            EMPTY,
-            STRING,
-            ANYSTRING,
-            AUTOMATON,
-            INTERVAL
+    UNION,
+    CONCATENATION,
+    INTERSECTION,
+    OPTIONAL,
+    REPEAT_STAR,
+    REPEAT_PLUS,
+    REPEAT_MIN,
+    REPEAT_MINMAX,
+    COMPLEMENT,
+    CHAR,
+    CHAR_RANGE,
+    ANYCHAR,
+    EMPTY,
+    STRING,
+    ANYSTRING,
+    AUTOMATON,
+    INTERVAL
   };
 
   //    StrangerAutomaton_ptr toAutomaton();
@@ -132,7 +131,6 @@ public:
   char getFrom();
   char getTo();
   std::string getS();
-
 
   friend std::ostream& operator<<(std::ostream& os, const RegularExpression& regex);
 private:

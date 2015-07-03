@@ -31,20 +31,22 @@ namespace SMT {
 
 class Scanner: public yyFlexLexer {
 public:
-	Scanner();
-	Scanner(std::istream* in);
-	~Scanner();
-	virtual Parser::symbol_type yylex_next_symbol();
-	static const std::string TAG;
+  Scanner();
+  Scanner(std::istream* in);
+  ~Scanner();
+  virtual Parser::symbol_type yylex_next_symbol();
+  static const std::string TAG;
 
 protected:
-	std::stringstream quoted_value;
-	location loc;
-	void LexerOutput( const char* buf, int size );
-	void LexerError( const char* msg );
+  std::stringstream quoted_value;
+  location loc;
+  void LexerOutput(const char* buf, int size);
+  void LexerError(const char* msg);
 
 private:
-	int yylex() { return 0; } // hide the default yylex, it is not compatible with bison c++ symbol_type
+  int yylex() {
+    return 0;
+  } // hide the default yylex, it is not compatible with bison c++ symbol_type
 };
 
 } /* namespace SMT */

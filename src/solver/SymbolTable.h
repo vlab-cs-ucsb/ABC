@@ -12,7 +12,8 @@
 #include <map>
 
 #include <glog/logging.h>
-#include "../smt/ast.h"
+#include "smt/ast.h"
+#include "Value.h"
 
 namespace Vlab {
 namespace Solver {
@@ -22,60 +23,79 @@ typedef std::map<SMT::Variable_ptr, int> VariableCounterMap;
 typedef std::map<SMT::Visitable_ptr, VariableCounterMap> VariableCounterTable;
 typedef std::map<SMT::Variable_ptr, SMT::Term_ptr> VariableSubstitutionMap;
 typedef std::map<SMT::Visitable_ptr, VariableSubstitutionMap> VariableSubstitutionTable;
+typedef std::map<SMT::Variable_ptr, Value_ptr> VariableValueMap;
+typedef std::map<SMT::Visitable_ptr, VariableValueMap> VariableValueTable;
 
 class SymbolTable {
 public:
-	SymbolTable();
-	virtual ~SymbolTable();
+  SymbolTable();
+  virtual ~SymbolTable();
 
-	void addVariable(SMT::Variable_ptr);
-	SMT::Variable_ptr getVariable(std::string name);
-	SMT::Variable_ptr getVariable(SMT::Term_ptr);
-	VariableMap& getVariables();
+  bool isAssertionsStillValid();
+  void updateAssertionValid(bool value);
 
-	void setBound(int bound);
-	int getBound();
+  void addVariable(SMT::Variable_ptr);
+  SMT::Variable_ptr getVariable(std::string name);
+  SMT::Variable_ptr getVariable(SMT::Term_ptr);
+  VariableMap& getVariables();
 
-	void push_scope(SMT::Visitable_ptr);
-	SMT::Visitable_ptr pop_scope();
+  void setBound(int bound);
+  int getBound();
 
-	bool add_var_substitution_rule(SMT::Variable_ptr, SMT::Term_ptr);
-	bool remove_var_substitution_rule(SMT::Variable_ptr);
-	SMT::Term_ptr get_variable_substitution_term(SMT::Variable_ptr);
-	VariableSubstitutionMap& get_variable_substitution_map();
-	VariableSubstitutionTable& get_variable_substitution_table();
-	void reset_substitution_rules();
+  void push_scope(SMT::Visitable_ptr);
+  SMT::Visitable_ptr pop_scope();
 
-	/*
-	 * Variable count functions, used for reduction and optimization
-	 */
-	void increment_count(SMT::Variable_ptr);
-	void decrement_count(SMT::Variable_ptr);
-	int get_local_count(SMT::Variable_ptr);
-	int get_total_count(SMT::Variable_ptr);
-	void reset_count();
+  /*
+   * Variable count functions, used for reduction and optimization
+   */
+  void increment_count(SMT::Variable_ptr);
+  void decrement_count(SMT::Variable_ptr);
+  int get_local_count(SMT::Variable_ptr);
+  int get_total_count(SMT::Variable_ptr);
+  void reset_count();
+
+  bool add_var_substitution_rule(SMT::Variable_ptr, SMT::Term_ptr);
+  bool remove_var_substitution_rule(SMT::Variable_ptr);
+  SMT::Term_ptr get_variable_substitution_term(SMT::Variable_ptr);
+  VariableSubstitutionMap& get_variable_substitution_map();
+  VariableSubstitutionTable& get_variable_substitution_table();
+  void reset_substitution_rules();
+
+  Value_ptr getValue(std::string var_name);
+  Value_ptr getValue(SMT::Variable_ptr variable);
+  bool setValue(std::string var_name, Value_ptr value);
+  bool setValue(SMT::Variable_ptr variable, Value_ptr value);
+
 
 private:
-	std::string global_var;
-	int bound;
-	VariableMap variables;
+  bool global_assertion_result;
+  int bound;
 
-	/**
-	 * There is a global scope
-	 * A new scope is generated when there is a disjuction of conjuctions
-	 */
-	std::vector<SMT::Visitable_ptr> scope_stack;
+  /**
+   * Name to variable map
+   */
+  VariableMap variables;
 
-	/**
-	 * Number of usages of variables
-	 */
-	VariableCounterTable variable_counts_table;
+  /**
+   * There is a global scope
+   * A new scope is generated when there is a disjuction of conjuctions
+   */
+  std::vector<SMT::Visitable_ptr> scope_stack;
 
-	/**
-	 * Rules for eliminating variables
-	 */
-	VariableSubstitutionTable variable_substitution_table;
+  /**
+   * Number of usages of variables
+   */
+  VariableCounterTable variable_counts_table;
 
+  /**
+   * Rules for eliminating variables
+   */
+  VariableSubstitutionTable variable_substitution_table;
+
+  /**
+   * Values of each variable for each scope
+   */
+  VariableValueTable variable_value_table;
 
 };
 

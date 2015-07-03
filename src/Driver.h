@@ -30,29 +30,28 @@ namespace Vlab {
 
 class Driver {
 public:
-	Driver();
-	~Driver();
+  Driver();
+  ~Driver();
 
-
-	  // Error handling.
-	void error (const Vlab::SMT::location& l, const std::string& m);
-	void error (const std::string& m);
-	int parse (std::istream* in = &std::cin);
-	void ast2dot(std::string file_name);
-	void ast2dot(std::ostream* out);
+  // Error handling.
+  void error(const Vlab::SMT::location& l, const std::string& m);
+  void error(const std::string& m);
+  int parse(std::istream* in = &std::cin);
+  void ast2dot(std::string file_name);
+  void ast2dot(std::ostream* out);
 //	void collectStatistics();
-	void initializeSolver();
-	void solve();
+  void initializeSolver();
+  void solve();
 //	void solveAst();
 
-	void test();
+  void test();
 
-	SMT::Script_ptr script;
-	Solver::SymbolTable_ptr symbol_table;
+  SMT::Script_ptr script;
+  Solver::SymbolTable_ptr symbol_table;
 
-	int trace_parsing = 0;
-	int trace_scanning = 0;
-	std::string file;
+  int trace_parsing = 0;
+  int trace_scanning = 0;
+  std::string file;
 
 //	static const Log::Level TAG;
 //	static PerfInfo* perfInfo;

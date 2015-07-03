@@ -18,14 +18,14 @@ typedef IntAutomaton* IntAutomaton_ptr;
 
 class IntAutomaton: public Automaton {
 public:
-	IntAutomaton();
-	IntAutomaton(const IntAutomaton&);
-	virtual ~IntAutomaton();
+  IntAutomaton();
+  IntAutomaton(const IntAutomaton&);
+  virtual ~IntAutomaton();
 
-	virtual IntAutomaton_ptr clone() const;
+  virtual IntAutomaton_ptr clone() const;
 
 private:
-	static const int VLOG_LEVEL;
+  static const int VLOG_LEVEL;
 };
 
 } /* namespace Theory */

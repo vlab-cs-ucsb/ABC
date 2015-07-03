@@ -10,18 +10,20 @@
 namespace Vlab {
 namespace Util {
 
-StringBuilder::StringBuilder() { }
+StringBuilder::StringBuilder() {
+}
 
-StringBuilder::~StringBuilder() { }
+StringBuilder::~StringBuilder() {
+}
 
 template<typename T>
-StringBuilder& StringBuilder::operator << (const T& data) {
-	ss << data;
-	return *this;
+StringBuilder& StringBuilder::operator <<(const T& data) {
+  ss << data;
+  return *this;
 }
 
 StringBuilder::operator std::string() {
-	return ss.str();
+  return ss.str();
 }
 
 } /* namespace Util */

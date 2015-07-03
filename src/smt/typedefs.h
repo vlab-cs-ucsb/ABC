@@ -137,7 +137,6 @@ typedef NumeralList* NumeralList_ptr;
 typedef Visitor* Visitor_ptr;
 typedef Visitable* Visitable_ptr;
 
-
 } /* namespace SMT */
 } /* namespace Vlab */
 
