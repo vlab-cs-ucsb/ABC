@@ -12,6 +12,8 @@ namespace Solver {
 
 using namespace SMT;
 
+const int SymbolTable::VLOG_LEVEL = 10;
+
 SymbolTable::SymbolTable()
         : global_assertion_result(true), bound(50) {
 }
@@ -60,6 +62,18 @@ Variable_ptr SymbolTable::getVariable(Term_ptr term_ptr) {
 
 VariableMap& SymbolTable::getVariables() {
   return variables;
+}
+
+SMT::Variable_ptr SymbolTable::getSymbolicVariable() {
+  auto it = std::find_if(variables.begin(), variables.end(),
+      [](std::pair<std::string, SMT::Variable_ptr> entry) -> bool {
+        return entry.second->isSymbolic();
+  });
+  if (it != variables.end()) {
+    return it->second;
+  }
+  LOG(FATAL) << "no symbolic variable found";
+  return nullptr;
 }
 
 void SymbolTable::setBound(int bound) {
@@ -154,13 +168,32 @@ Value_ptr SymbolTable::getValue(std::string var_name) {
 }
 
 Value_ptr SymbolTable::getValue(SMT::Variable_ptr variable) {
+  Value_ptr result = nullptr;
+
   for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); it++) {
     auto entry = variable_value_table[(*it)].find(variable);
     if (entry != variable_value_table[(*it)].end()) {
       return entry->second;
     }
   }
-  return nullptr;
+
+  switch (variable->getType()) {
+  case Variable::Type::BOOL:
+    LOG(FATAL) << "implement me";
+    break;
+  case Variable::Type::INT:
+    LOG(FATAL) << "implement me";
+    break;
+  case Variable::Type::STRING:
+    result = new Value(Value::Type::STRING_AUTOMATON, Theory::StringAutomaton::makeAnyString());
+    DVLOG(VLOG_LEVEL) << "initialized variable as any string: " << *variable;
+    break;
+  default:
+    LOG(FATAL) << "unknown variable type" << *variable;
+    break;
+  }
+  setValue(variable, result);
+  return result;
 }
 
 bool SymbolTable::setValue(std::string var_name, Value_ptr value) {
@@ -168,8 +201,10 @@ return setValue(getVariable(var_name), value);
 }
 
 bool SymbolTable::setValue(SMT::Variable_ptr variable, Value_ptr value) {
-  auto result = variable_value_table[scope_stack.back()].insert(std::make_pair(variable, value));
-  return result.second;
+//  auto result = variable_value_table[scope_stack.back()].insert(std::make_pair(variable, value));
+//  return result.second;
+  variable_value_table[scope_stack.back()][variable] = value;
+  return true;
 }
 
 } /* namespace Solver */

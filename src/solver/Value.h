@@ -66,6 +66,8 @@ public:
   Value_ptr union_(Value_ptr other_value) const;
   Value_ptr intersect(Value_ptr other_value) const;
 
+  Value_ptr concat(Value_ptr other_value) const;
+
   bool isSatisfiable();
 
   class Name {

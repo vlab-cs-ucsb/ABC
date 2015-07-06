@@ -198,9 +198,24 @@ Value::~Value() {
 
   Value_ptr Value::intersect(Value_ptr other_value) const {
     Value_ptr intersection_value = nullptr;
-    LOG(FATAL) << "implement me";
-    // here handle the case where one side is constant and the other side is automaton
+    if (Type::STRING_AUTOMATON == type and Type::STRING_AUTOMATON == other_value->type) {
+      intersection_value = new Value(Type::STRING_AUTOMATON,
+          string_automaton->intersect(other_value->string_automaton));
+    } else {
+      LOG(FATAL) << "implement me";
+    }
     return intersection_value;
+  }
+
+  Value_ptr Value::concat(Value_ptr other_value) const {
+    Value_ptr concat_value = nullptr;
+    if (Type::STRING_AUTOMATON == type and type == other_value->type) {
+      concat_value = new Value(Type::STRING_AUTOMATON,
+          string_automaton->concatenate(other_value->string_automaton));
+    } else {
+      LOG(FATAL) << "cannot concatenate values";
+    }
+    return concat_value;
   }
 
   bool Value::isSatisfiable() {
@@ -224,7 +239,7 @@ Value::~Value() {
       LOG(FATAL) << "implement me";
       break;
     case Type::STRING_AUTOMATON:
-      LOG(FATAL) << "implement me";
+      is_satisfiable = not string_automaton->isEmptyLanguage();
       break;
     default:
       LOG(FATAL) << "value type is not supported";

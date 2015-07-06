@@ -78,7 +78,18 @@ void Driver::initializeSolver() {
 }
 
 void Driver::solve() {
+  Solver::PostImageComputer post_image_computer(script, symbol_table);
+  post_image_computer.start();
 
+  // TODO iterate to handle over-approximation
+}
+
+void Driver::printResult() {
+  symbol_table->push_scope(script);
+  SMT::Variable_ptr variable = symbol_table->getSymbolicVariable();
+  Solver::Value_ptr result = symbol_table->getValue(variable);
+  LOG(INFO) << "Symbolic variable: " << *result;
+  result->getStringAutomaton()->toDotAscii();
 }
 
 void Driver::test() {

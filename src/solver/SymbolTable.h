@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <map>
+#include <algorithm>
 
 #include <glog/logging.h>
 #include "smt/ast.h"
@@ -38,6 +39,7 @@ public:
   SMT::Variable_ptr getVariable(std::string name);
   SMT::Variable_ptr getVariable(SMT::Term_ptr);
   VariableMap& getVariables();
+  SMT::Variable_ptr getSymbolicVariable();
 
   void setBound(int bound);
   int getBound();
@@ -96,6 +98,8 @@ private:
    * Values of each variable for each scope
    */
   VariableValueTable variable_value_table;
+
+  static const int VLOG_LEVEL;
 
 };
 

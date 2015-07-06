@@ -21,11 +21,11 @@ const std::string Automaton::Name::INTBOOl = "IntBoolAutomaton";
 const std::string Automaton::Name::STRING = "StringAutomaton";
 
 Automaton::Automaton(Automaton::Type type)
-        : type(type), id(Automaton::trace_id++) {
+        : type(type), id (Automaton::trace_id++) {
 }
 
 Automaton::Automaton(const Automaton& other)
-        : type(other.type), id(Automaton::trace_id++) {
+        : type(other.type), id (Automaton::trace_id++) {
 }
 
 Automaton_ptr Automaton::clone() const {

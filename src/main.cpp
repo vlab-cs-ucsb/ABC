@@ -79,6 +79,10 @@ int main(const int argc, const char **argv) {
 
   driver.ast2dot(output_root + "/optimized.dot");
 
+  driver.solve();
+
+  driver.printResult();
+
   return 0;
 }
 

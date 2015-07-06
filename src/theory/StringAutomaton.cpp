@@ -33,12 +33,15 @@ StringAutomaton::StringAutomaton(const StringAutomaton& other)
 }
 
 StringAutomaton::~StringAutomaton() {
+//  DVLOG(VLOG_LEVEL) << "delete " << " [" << this->id << "]";
   dfaFree(dfa);
   dfa = nullptr;
 }
 
 StringAutomaton_ptr StringAutomaton::clone() const {
-  return new StringAutomaton(*this);
+  StringAutomaton_ptr cloned_auto = new StringAutomaton(*this);
+  DVLOG(VLOG_LEVEL) << cloned_auto->id << " = [" << this->id << "]->clone()";
+  return cloned_auto;
 }
 
 /**
@@ -579,6 +582,17 @@ bool StringAutomaton::checkEquivalence(StringAutomaton_ptr other_auto) {
     M[i] = nullptr;
   }
 
+  return result;
+}
+
+/**
+ * TODO implement this again independent of libstranger
+ */
+bool StringAutomaton::isEmptyLanguage() {
+  bool result;
+  int i = check_emptiness(this->dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  result = (i == 1);
+  DVLOG(VLOG_LEVEL) << "[" << this->id << "]->isEmptyLanguage? " << std::boolalpha << result;
   return result;
 }
 

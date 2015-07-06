@@ -8,6 +8,9 @@
 #ifndef SOLVER_POSTIMAGECOMPUTER_H_
 #define SOLVER_POSTIMAGECOMPUTER_H_
 
+#include <string>
+#include <sstream>
+
 #include <glog/logging.h>
 #include "smt/ast.h"
 #include "SymbolTable.h"
@@ -16,9 +19,9 @@
 namespace Vlab {
 namespace Solver {
 
-typedef std::map<SMT::Term_ptr, Value_ptr> TermValueMap;
-
 class PostImageComputer: public SMT::Visitor {
+  typedef std::map<SMT::Term_ptr, Value_ptr> TermValueMap;
+  typedef std::map<SMT::Variable_ptr, std::vector<SMT::Term_ptr>> VariablePathTable;
 public:
   PostImageComputer(SMT::Script_ptr, SymbolTable_ptr);
   virtual ~PostImageComputer();
@@ -76,14 +79,19 @@ protected:
   Value_ptr getTermValue(SMT::Term_ptr term);
   bool setTermValue(SMT::Term_ptr term, Value_ptr value);
   void clearTermValues();
+  void setVariablePath(SMT::QualIdentifier_ptr qi_term);
+  void update_variables();
 
   SMT::Script_ptr root;
   SymbolTable_ptr symbol_table;
 
   TermValueMap post_images;
 
-private:
+  std::vector<SMT::Term_ptr> path_trace;
+  VariablePathTable variable_path_table;
 
+private:
+  void __visit_children_of(SMT::Term_ptr term);
   static const int VLOG_LEVEL;
 };
 

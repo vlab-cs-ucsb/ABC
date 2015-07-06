@@ -22,9 +22,8 @@
 #include "solver/VariableOptimizer.h"
 #include "solver/FormulaOptimizer.h"
 #include "solver/ConstraintSorter.h"
+#include "solver/PostImageComputer.h"
 #include "Scanner.h"
-
-#include "StringAutomaton.h"
 
 namespace Vlab {
 
@@ -42,6 +41,8 @@ public:
 //	void collectStatistics();
   void initializeSolver();
   void solve();
+  void printResult();
+
 //	void solveAst();
 
   void test();

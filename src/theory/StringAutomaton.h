@@ -10,7 +10,7 @@
 
 #include <array>
 #include <vector>
-#include <bitset>
+#include <sstream>
 
 #include <glog/logging.h>
 #include <stranger.h>
@@ -69,8 +69,9 @@ public:
   StringAutomaton_ptr repeat(unsigned min, unsigned max);
 
   bool checkEquivalence(StringAutomaton_ptr other_auto);
-
-  bool hasEmptyString();bool isEmptyString();
+  bool isEmptyLanguage();
+  bool hasEmptyString();
+  bool isEmptyString();
 
   void toDotAscii(bool print_sink = false, std::ostream& out = std::cout);
 protected:

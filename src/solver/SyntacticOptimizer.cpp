@@ -384,6 +384,9 @@ void SyntacticOptimizer::visitLe(Le_ptr le_term) {
   }
 }
 
+//TODO Optimize concat based on concat test case,
+// reduce nested concats into one level
+// test case test_syntactic_optimization_concat_01.smt2
 void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {
   for (auto& term_ptr : *(concat_term->term_list)) {
     visit_and_callback(term_ptr);

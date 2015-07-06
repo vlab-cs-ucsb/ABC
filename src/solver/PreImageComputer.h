@@ -11,13 +11,16 @@
 #include <glog/logging.h>
 #include "smt/ast.h"
 #include "SymbolTable.h"
+#include "Value.h"
 
 namespace Vlab {
 namespace Solver {
 
 class PreImageComputer: public SMT::Visitor {
+  typedef std::map<SMT::Term_ptr, Value_ptr> TermValueMap;
+  typedef std::map<SMT::Variable_ptr, std::vector<SMT::Term_ptr>> VariablePathTable;
 public:
-  PreImageComputer(SMT::Script_ptr, SymbolTable_ptr);
+  PreImageComputer(SymbolTable_ptr, VariablePathTable& variable_path_table, const TermValueMap& post_images );
   virtual ~PreImageComputer();
 
   void start();
@@ -69,9 +72,17 @@ public:
   void visitPrimitive(SMT::Primitive_ptr);
   void visitVariable(SMT::Variable_ptr);
 protected:
+  Value_ptr getTermPostImage(SMT::Term_ptr term);
+  Value_ptr getTermPreImage(SMT::Term_ptr term);
+  bool setTermPreImage(SMT::Term_ptr term, Value_ptr value);
+  void popTerm(SMT::Term_ptr);
 
-  SMT::Script_ptr root;
   SymbolTable_ptr symbol_table;
+  VariablePathTable& variable_path_table;
+  const TermValueMap& post_images;
+  TermValueMap pre_images;
+  std::vector<SMT::Term_ptr> current_path;
+
 
 private:
   static const int VLOG_LEVEL;
