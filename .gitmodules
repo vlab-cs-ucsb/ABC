@@ -3,4 +3,4 @@
 	url = https://github.com/google/glog.git
 [submodule "external/LibStranger"]
 	path = external/LibStranger
-	url = git@github.com:vlab-cs-ucsb/LibStranger.git
+	url = https://github.com/vlab-cs-ucsb/LibStranger.git
