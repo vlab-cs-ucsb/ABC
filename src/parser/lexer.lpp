@@ -4,9 +4,9 @@
 #include <cstdlib>
 #include <string>
 #include <iostream>
-	
+
 #include "Scanner.h"
-	
+
 %}
 
 %option c++
@@ -24,7 +24,7 @@ BOOL           true|false
 BINARY         #b[0-1]+
 HEXADECIMAL    #x[0-9a-fA-F]+
 NUMERAL        0|[1-9]+[0-9]*
-DECIMAL		     NUMERAL\.0*NUMERAL
+DECIMAL        NUMERAL\.0*NUMERAL
 SYMBOL         [a-zA-Z0-9._+\-*=%/?!$_~&^<>@]+
 KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 
@@ -40,20 +40,20 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
   loc.step ();
 %}
 
-";"[^\n]*\n      		{ loc.lines (yyleng); loc.step (); }
-\n               		{ loc.lines (yyleng); loc.step (); }
-\r                  { loc.lines (yyleng); loc.step (); }
-[ \t]            		{ loc.step (); }
+";"[^\n]*\n         { loc.lines (yyleng); loc.step ();            }
+\n                  { loc.lines (yyleng); loc.step ();            }
+\r                  { loc.lines (yyleng); loc.step ();            }
+[ \t]               { loc.step ();                                }
 
-"("                 { return Parser::make_PAREN_O         (loc); }				
-")"              		{ return Parser::make_PAREN_C         (loc); }
+"("                 { return Parser::make_PAREN_O         (loc);  }
+")"                 { return Parser::make_PAREN_C         (loc);  }
 
 "!"                 { return Parser::make_BANG            (loc);  }
 "_"                 { return Parser::make_UNDERSCORE      (loc);  }
-"as"             		{ return Parser::make_AS			        (loc);	}
+"as"                { return Parser::make_AS              (loc);  }
 "exists"            { return Parser::make_EXISTS          (loc);  }
 "forall"            { return Parser::make_FORALL          (loc);  }
-"let"            		{ return Parser::make_LET 			      (loc);	}
+"let"               { return Parser::make_LET             (loc);  }
 "par"               { return Parser::make_PAR             (loc);  }
 
 
@@ -64,7 +64,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "+"                 { return Parser::make_PLUS            (loc);  }
 "="                 { return Parser::make_EQ              (loc);  }
 ">"                 { return Parser::make_GT              (loc);  }
-">="                { return Parser::make_GE              (loc);  }                 
+">="                { return Parser::make_GE              (loc);  }
 "<"                 { return Parser::make_LT              (loc);  }
 "<="                { return Parser::make_LE              (loc);  }
 "concat"            { return Parser::make_CONCAT          (loc);  }
@@ -90,11 +90,11 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
                  
 "assert"            { return Parser::make_ASSERT          (loc);  }
 "check-sat"         { return Parser::make_CHECK_SAT       (loc);  }
-"check-sat-and-count" { return Parser::make_CHECK_SAT_AND_COUNT       (loc);  }
+"check-sat-and-count" { return Parser::make_CHECK_SAT_AND_COUNT  (loc);  }
 "declare-fun"       { return Parser::make_DECLARE_FUN     (loc);  }
-"declare-sort"  		{ return Parser::make_DECLARE_SORT    (loc); 	}
+"declare-sort"      { return Parser::make_DECLARE_SORT    (loc);  }
 "define-fun"        { return Parser::make_DEFINE_FUN      (loc);  }
-"define-sort"   		{ return Parser::make_DEFINE_SORT     (loc); 	}
+"define-sort"       { return Parser::make_DEFINE_SORT     (loc);  }
 "exit"              { return Parser::make_EXIT            (loc);  }
 "get-assertions"    { return Parser::make_GET_ASSERTIONS  (loc);  }
 "get-assignment"    { return Parser::make_GET_ASSIGNMENT  (loc);  }
@@ -104,47 +104,47 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "get-unsat-core"    { return Parser::make_GET_UNSAT_CORE  (loc);  }
 "get-value"         { return Parser::make_GET_VALUE       (loc);  }
 "pop"               { return Parser::make_POP             (loc);  }
-"push"          		{ return Parser::make_PUSH 			      (loc); 	}
+"push"              { return Parser::make_PUSH            (loc);  }
 "set-logic"         { return Parser::make_SET_LOGIC       (loc);  }
 "set-info"          { return Parser::make_SET_INFO        (loc);  }
-"set-option"     		{ return Parser::make_SET_OPTION 	    (loc); 	}
+"set-option"        { return Parser::make_SET_OPTION      (loc);  }
 
 {BOOL}              { return Parser::make_BOOL            (yytext, loc);  }
-{BINARY}            { return Parser::make_BINARY 		      (yytext, loc); 	}
+{BINARY}            { return Parser::make_BINARY          (yytext, loc);  }
 {DECIMAL}           { return Parser::make_DECIMAL         (yytext, loc);  }
-{HEXADECIMAL}  			{ return Parser::make_HEXADECIMAL 	  (yytext, loc); 	}
+{HEXADECIMAL}       { return Parser::make_HEXADECIMAL     (yytext, loc);  }
 {KEYWORD}           { return Parser::make_KEYWORD         (yytext, loc);  }
-{NUMERAL}      			{ return Parser::make_NUMERAL 		    (yytext, loc); 	}
-{SYMBOL}       			{ return Parser::make_SYMBOL 		      (yytext, loc); 	}
+{NUMERAL}           { return Parser::make_NUMERAL         (yytext, loc);  }
+{SYMBOL}            { return Parser::make_SYMBOL          (yytext, loc);  }
 
 \"                  { quoted_value.str(std::string()); yy_push_state(START_STRING); }
-					
+
 <START_STRING>{
-	\\\"              { quoted_value << '"'; }
-	\\\\              { quoted_value << '\\'; }
-	[^\"\n]           { quoted_value << yytext;}
-	\n                { quoted_value << '\n'; }
-	\"                { yy_pop_state(); return Parser::make_STRING (quoted_value.str(), loc); }
+  \\\"              { quoted_value << '"';      }
+  \\\\              { quoted_value << '\\';     }
+  [^\"\n]           { quoted_value << yytext;   }
+  \n                { quoted_value << '\n';     }
+  \"                { yy_pop_state(); return Parser::make_STRING (quoted_value.str(), loc); }
 }
 
 \/                  { quoted_value.str(std::string()); yy_push_state(START_REGEX); }
 
 <START_REGEX>{
-  \\\/              { quoted_value << '/'; }
-  \\\\              { quoted_value << '\\'; }
-  [^\/\n]           { quoted_value << yytext;}
-  \n                { quoted_value << '\n'; }
+  \\\/              { quoted_value << '/';      }
+  \\\\              { quoted_value << '\\';     }
+  [^\/\n]           { quoted_value << yytext;   }
+  \n                { quoted_value << '\n';     }
   \/                { yy_pop_state(); return Parser::make_REGEX (quoted_value.str(), loc); }
 }
 
 \|                  { quoted_value.str(std::string()); yy_push_state(START_QUOTEDSYMBOL); }
-					
+
 <START_QUOTEDSYMBOL>{
-	[^|\\]              { quoted_value << yytext; }
-	\|                { yy_pop_state(); return Parser::make_SYMBOL (quoted_value.str(), loc); }
+  [^|\\]              { quoted_value << yytext; }
+  \|                { yy_pop_state(); return Parser::make_SYMBOL (quoted_value.str(), loc); }
 }
 
-.                   { LexerError("invalid character"); }
+.                   { LexerError("invalid character");            }
 <<EOF>>             { return Parser::make_END              (loc); }
 
 %%
