@@ -21,7 +21,7 @@ unsigned* StringAutomaton::DEFAULT_UNSIGNED_VARIABLE_INDICES = StringAutomaton::
         StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
 StringAutomaton::StringAutomaton(DFA_ptr dfa)
-        : Automaton(Automaton::Type::STRING), dfa(dfa), num_of_variables(StringAutomaton::DEFAULT_NUM_OF_VARIABLES) {
+        : Automaton(Automaton::Type::STRING), dfa (dfa), num_of_variables(StringAutomaton::DEFAULT_NUM_OF_VARIABLES) {
 }
 
 StringAutomaton::StringAutomaton(DFA_ptr dfa, int num_of_variables)

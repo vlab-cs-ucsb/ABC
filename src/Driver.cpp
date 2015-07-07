@@ -115,7 +115,11 @@ void Driver::test() {
 
 //  Theory::StringAutomaton_ptr regex_auto = Theory::StringAutomaton::makeRegexAuto("/#/");
 //  regex_auto->toDotAscii();
-//
+
+//  Theory::BoolAutomaton_ptr true_auto = Theory::BoolAutomaton::makeTrue();
+//  true_auto->toDot();
+//  Theory::BoolAutomaton_ptr false_auto = Theory::BoolAutomaton::makeFalse();
+//  false_auto->toDot();
 //  std::exit(0);
 }
 
