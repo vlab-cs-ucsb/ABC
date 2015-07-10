@@ -74,6 +74,12 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "begins"            { return Parser::make_BEGINS          (loc);  }
 "ends"              { return Parser::make_ENDS            (loc);  }
 "indexof"           { return Parser::make_INDEXOF         (loc);  }
+"lastindexof"       { }
+"charat"            { }
+"substring"         { }
+"touppercase"       { }
+"tolowercase"       { }
+"trim"              { }
 "replace"           { return Parser::make_REPLACE         (loc);  }
 "count"             { return Parser::make_COUNT           (loc);  }  
 "ite"               { return Parser::make_ITE             (loc);  }
@@ -145,6 +151,6 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 }
 
 .                   { LexerError("invalid character");            }
-<<EOF>>             { return Parser::make_END              (loc); }
+<<EOF>>             { return Parser::make_END             (loc);  }
 
 %%
