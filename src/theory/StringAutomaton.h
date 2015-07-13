@@ -68,6 +68,15 @@ public:
   StringAutomaton_ptr repeat(unsigned min);
   StringAutomaton_ptr repeat(unsigned min, unsigned max);
 
+  StringAutomaton_ptr contains(StringAutomaton_ptr other_auto);
+  StringAutomaton_ptr begins(StringAutomaton_ptr other_auto);
+  StringAutomaton_ptr ends(StringAutomaton_ptr other_auto);
+  StringAutomaton_ptr toUpperCase();
+  StringAutomaton_ptr toLowerCase();
+  StringAutomaton_ptr trim();
+
+  StringAutomaton_ptr replace(StringAutomaton_ptr search_auto, StringAutomaton_ptr replace_auto);
+
   bool checkEquivalence(StringAutomaton_ptr other_auto);
   bool isEmptyLanguage();
   bool hasEmptyString();

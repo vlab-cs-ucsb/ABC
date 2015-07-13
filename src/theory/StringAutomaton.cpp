@@ -563,6 +563,101 @@ StringAutomaton_ptr StringAutomaton::repeat(unsigned min, unsigned max) {
   return repeated_auto;
 }
 
+StringAutomaton_ptr StringAutomaton::contains(StringAutomaton_ptr other_auto) {
+  StringAutomaton_ptr contains_auto = nullptr, any_string_auto = nullptr,
+          tmp_auto_1 = nullptr, tmp_auto_2 = nullptr;
+
+  any_string_auto = StringAutomaton::makeAnyString();
+  tmp_auto_1 = any_string_auto->concatenate(other_auto);
+  tmp_auto_2 = tmp_auto_1->concatenate(any_string_auto);
+
+  contains_auto = this->intersect(tmp_auto_2);
+  delete any_string_auto;
+  delete tmp_auto_1; delete tmp_auto_2;
+
+  DVLOG(VLOG_LEVEL) << contains_auto->id << " = [" << this->id << "]->contains(" << other_auto->id << ")";
+
+  return contains_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::begins(StringAutomaton_ptr other_auto) {
+  StringAutomaton_ptr begins_auto = nullptr, any_string_auto = nullptr,
+          tmp_auto_1 = nullptr;
+
+  any_string_auto = StringAutomaton::makeAnyString();
+  tmp_auto_1 = other_auto->concatenate(any_string_auto);
+
+  begins_auto = this->intersect(tmp_auto_1);
+
+  DVLOG(VLOG_LEVEL) << begins_auto->id << " = [" << this->id << "]->begins(" << other_auto->id << ")";
+
+  return begins_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::ends(StringAutomaton_ptr other_auto) {
+  StringAutomaton_ptr ends_auto = nullptr, any_string_auto = nullptr,
+          tmp_auto_1 = nullptr;
+
+  any_string_auto = StringAutomaton::makeAnyString();
+  tmp_auto_1 = any_string_auto->concatenate(other_auto);
+
+  ends_auto = this->intersect(tmp_auto_1);
+
+  DVLOG(VLOG_LEVEL) << ends_auto->id << " = [" << this->id << "]->ends(" << other_auto->id << ")";
+
+  return ends_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::toUpperCase() {
+  DFA_ptr upper_case_dfa = nullptr;
+  StringAutomaton_ptr upper_case_auto = nullptr;
+
+  upper_case_dfa = dfaToUpperCase(dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  upper_case_auto = new StringAutomaton(upper_case_dfa, num_of_variables);
+
+  DVLOG(VLOG_LEVEL) << upper_case_auto->id << " = [" << this->id << "]->toUpperCase()";
+
+  return upper_case_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::toLowerCase() {
+  DFA_ptr lower_case_dfa = nullptr;
+  StringAutomaton_ptr lower_case_auto = nullptr;
+
+  lower_case_dfa = dfaToLowerCase(dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  lower_case_auto = new StringAutomaton(lower_case_dfa, num_of_variables);
+
+  DVLOG(VLOG_LEVEL) << lower_case_auto->id << " = [" << this->id << "]->toLowerCase()";
+
+  return lower_case_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::trim() {
+  DFA_ptr trimmed_dfa = nullptr;
+  StringAutomaton_ptr trimmed_auto = nullptr;
+
+  trimmed_dfa = dfaTrim(dfa, ' ', StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  trimmed_auto = new StringAutomaton(trimmed_dfa, num_of_variables);
+
+  DVLOG(VLOG_LEVEL) << trimmed_auto->id << " = [" << this->id << "]->trim()";
+
+  return trimmed_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::replace(StringAutomaton_ptr search_auto, StringAutomaton_ptr replace_auto) {
+  DFA_ptr result_dfa = nullptr;
+  StringAutomaton_ptr result_auto = nullptr;
+
+  result_dfa = dfa_general_replace_extrabit(dfa, search_auto->dfa, replace_auto->dfa,
+          StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
+
+  result_auto = new StringAutomaton(result_dfa, num_of_variables);
+
+  DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->repeat(" << search_auto->id << ", " << replace_auto->id << ")";
+
+  return result_auto;
+}
+
 /**
  * TODO Needs complete refactoring, has a lot of room for improvements
  * especially in libstranger function calls
@@ -663,4 +758,5 @@ char* StringAutomaton::binaryFormat(unsigned long number, int bit_length) {
 
 } /* namespace Theory */
 } /* namespace Vlab */
+
 
