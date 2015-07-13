@@ -145,6 +145,30 @@ void Counter::visitIndexOf(IndexOf_ptr index_of_term) {
   visit_children_of(index_of_term);
 }
 
+void Counter::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
+  visit_children_of(last_index_of_term);
+}
+
+void Counter::visitCharAt(SMT::CharAt_ptr char_at_term) {
+  visit_children_of(char_at_term);
+}
+
+void Counter::visitSubString(SMT::SubString_ptr sub_string_term) {
+  visit_children_of(sub_string_term);
+}
+
+void Counter::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
+  visit_children_of(to_upper_term);
+}
+
+void Counter::visitToLower(SMT::ToLower_ptr to_lower_term) {
+  visit_children_of(to_lower_term);
+}
+
+void Counter::visitTrim(SMT::Trim_ptr trim_term) {
+  visit_children_of(trim_term);
+}
+
 void Counter::visitReplace(Replace_ptr replace_term) {
   visit_children_of(replace_term);
 }

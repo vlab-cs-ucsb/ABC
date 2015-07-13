@@ -163,6 +163,36 @@ void PreImageComputer::visitIndexOf(IndexOf_ptr index_of_term) {
   visit_children_of(index_of_term);
 }
 
+void PreImageComputer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
+  LOG(FATAL) << "implement me";
+  visit_children_of(last_index_of_term);
+}
+
+void PreImageComputer::visitCharAt(SMT::CharAt_ptr char_at_term) {
+  LOG(FATAL) << "implement me";
+  visit_children_of(char_at_term);
+}
+
+void PreImageComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
+  LOG(FATAL) << "implement me";
+  visit_children_of(sub_string_term);
+}
+
+void PreImageComputer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
+  LOG(FATAL) << "implement me";
+  visit_children_of(to_upper_term);
+}
+
+void PreImageComputer::visitToLower(SMT::ToLower_ptr to_lower_term) {
+  LOG(FATAL) << "implement me";
+  visit_children_of(to_lower_term);
+}
+
+void PreImageComputer::visitTrim(SMT::Trim_ptr trim_term) {
+  LOG(FATAL) << "implement me";
+  visit_children_of(trim_term);
+}
+
 void PreImageComputer::visitReplace(Replace_ptr replace_term) {
   LOG(FATAL) << "implement me";
   visit_children_of(replace_term);

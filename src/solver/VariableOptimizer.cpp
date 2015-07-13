@@ -243,6 +243,30 @@ void VariableOptimizer::visitEnds(Ends_ptr ends_term) {
 void VariableOptimizer::visitIndexOf(IndexOf_ptr index_of_term) {
 }
 
+void VariableOptimizer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
+  visit_children_of(last_index_of_term);
+}
+
+void VariableOptimizer::visitCharAt(SMT::CharAt_ptr char_at_term) {
+  visit_children_of(char_at_term);
+}
+
+void VariableOptimizer::visitSubString(SMT::SubString_ptr sub_string_term) {
+  visit_children_of(sub_string_term);
+}
+
+void VariableOptimizer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
+  visit_children_of(to_upper_term);
+}
+
+void VariableOptimizer::visitToLower(SMT::ToLower_ptr to_lower_term) {
+  visit_children_of(to_lower_term);
+}
+
+void VariableOptimizer::visitTrim(SMT::Trim_ptr trim_term) {
+  visit_children_of(trim_term);
+}
+
 void VariableOptimizer::visitReplace(Replace_ptr replace_term) {
 }
 

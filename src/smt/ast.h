@@ -216,6 +216,12 @@ public:
     BEGINS,
     ENDS,
     INDEXOF,
+    LASTINDEXOF,
+    CHARAT,
+    SUBSTRING,
+    TOUPPER,
+    TOLOWER,
+    TRIM,
     REPLACE,
     COUNT,
     ITE,
@@ -265,6 +271,12 @@ public:
     static const std::string BEGINS;
     static const std::string ENDS;
     static const std::string INDEXOF;
+    static const std::string LASTINDEXOF;
+    static const std::string CHARAT;
+    static const std::string SUBSTRING;
+    static const std::string TOUPPER;
+    static const std::string TOLOWER;
+    static const std::string TRIM;
     static const std::string REPLACE;
     static const std::string COUNT;
     static const std::string ITE;
@@ -583,6 +595,87 @@ public:
 
   Term_ptr subject_term;
   Term_ptr search_term;
+};
+
+class LastIndexOf: public Term {
+public:
+  LastIndexOf(Term_ptr, Term_ptr);
+  LastIndexOf(const LastIndexOf&);
+  virtual LastIndexOf_ptr clone() const;
+  virtual ~LastIndexOf();
+
+  virtual void accept(Visitor_ptr);
+  virtual void visit_children(Visitor_ptr);
+
+  Term_ptr subject_term;
+  Term_ptr search_term;
+};
+
+class CharAt: public Term {
+public:
+  CharAt(Term_ptr, Term_ptr);
+  CharAt(const CharAt&);
+  virtual CharAt_ptr clone() const;
+  virtual ~CharAt();
+
+  virtual void accept(Visitor_ptr);
+  virtual void visit_children(Visitor_ptr);
+
+  Term_ptr subject_term;
+  Term_ptr index_term;
+};
+
+class SubString: public Term {
+public:
+  SubString(Term_ptr, Term_ptr);
+  SubString(const SubString&);
+  virtual SubString_ptr clone() const;
+  virtual ~SubString();
+
+  virtual void accept(Visitor_ptr);
+  virtual void visit_children(Visitor_ptr);
+
+  Term_ptr subject_term;
+  Term_ptr start_index_term;
+};
+
+class ToUpper: public Term {
+public:
+  ToUpper(Term_ptr);
+  ToUpper(const ToUpper&);
+  virtual ToUpper_ptr clone() const;
+  virtual ~ToUpper();
+
+  virtual void accept(Visitor_ptr);
+  virtual void visit_children(Visitor_ptr);
+
+  Term_ptr subject_term;
+};
+
+class ToLower: public Term {
+public:
+  ToLower(Term_ptr);
+  ToLower(const ToLower&);
+  virtual ToLower_ptr clone() const;
+  virtual ~ToLower();
+
+  virtual void accept(Visitor_ptr);
+  virtual void visit_children(Visitor_ptr);
+
+  Term_ptr subject_term;
+};
+
+class Trim: public Term {
+public:
+  Trim(Term_ptr);
+  Trim(const Trim&);
+  virtual Trim_ptr clone() const;
+  virtual ~Trim();
+
+  virtual void accept(Visitor_ptr);
+  virtual void visit_children(Visitor_ptr);
+
+  Term_ptr subject_term;
 };
 
 class Replace: public Term {

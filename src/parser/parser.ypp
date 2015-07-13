@@ -46,69 +46,75 @@
 %define api.token.prefix {TOK_}
 
 %token
-	END  0               "end of file"
-	PAREN_O              "("
-	PAREN_C              ")"
-  
+  END  0               "end of file"
+  PAREN_O              "("
+  PAREN_C              ")"
+
   BANG                  "!"
   UNDERSCORE           "_"
-	AS                   "as"
-  EXISTS               "exists"	
-	FORALL               "forall"
-	LET                  "let"
-	PAR                  "par"
-	
-	AND                  "and"
-	OR                   "or"
-	NOT                  "not"
-	MINUS                "-"
-	PLUS                 "+"
-	EQ                   "="
-	GT                   ">"
-	GE                   ">="
-	LT                   "<"
-	LE                   "<="
-	CONCAT               "concat"
-	IN                   "in"
-	LEN                  "len"
-	CONTAINS             "contains"
-	BEGINS               "begins"
-	ENDS                 "ends"
-	INDEXOF              "indexof"
-	COUNT                "count"
-	REPLACE              "replace"
-	ITE                  "ite"
+  AS                   "as"
+  EXISTS               "exists"
+  FORALL               "forall"
+  LET                  "let"
+  PAR                  "par"
+
+  AND                  "and"
+  OR                   "or"
+  NOT                  "not"
+  MINUS                "-"
+  PLUS                 "+"
+  EQ                   "="
+  GT                   ">"
+  GE                   ">="
+  LT                   "<"
+  LE                   "<="
+  CONCAT               "concat"
+  IN                   "in"
+  LEN                  "len"
+  CONTAINS             "contains"
+  BEGINS               "begins"
+  ENDS                 "ends"
+  INDEXOF              "indexOf"
+  LASTINDEXOF          "lastIndexOf"
+  CHARAT               "charAt"
+  SUBSTRING            "subString"
+  TOUPPER              "toUpper"
+  TOLOWER              "toLower"
+  TRIM                 "trim"
+  REPLACE              "replace"
+  COUNT                "count"
+  ITE                  "ite"
   RE_CONCAT            "re.++"
   RE_OR                "re.or"
-	CONCAT_CVC           "str.++"
-	IN_CVC               "str.in.re"
-	LEN_CVC              "str.len"
-	TO_REGEX             "str.to.re"  
-	
-	TBOOL                 "TBool"
-	TINT                  "TInt"
-	TSTRING               "TString"
-	
-	ASSERT               "assert"
-	CHECK_SAT            "check-sat"
-	CHECK_SAT_AND_COUNT  "check-sat-and-count"
-	DECLARE_FUN          "declare-fun"
-	DECLARE_SORT         "declare-sort"
-	DEFINE_FUN           "define-fun"
-	DEFINE_SORT          "define-sort"
-	EXIT                 "exit"
-	GET_ASSERTIONS       "get-assertions"
-	GET_ASSIGNMENT       "get-assignment"
-	GET_INFO             "get-info"
-	GET_OPTION           "get-option"
-	GET_PROOF            "get-proof"
-	GET_UNSAT_CORE       "get-unsat-core"
-	GET_VALUE            "get-value"
-	POP                  "pop"
-	PUSH                 "push"
-	SET_LOGIC            "set-logic"
-	SET_INFO             "set-info"
-	SET_OPTION           "set-option"
+  CONCAT_CVC           "str.++"
+  IN_CVC               "str.in.re"
+  LEN_CVC              "str.len"
+  TO_REGEX             "str.to.re"  
+
+  TBOOL                 "TBool"
+  TINT                  "TInt"
+  TSTRING               "TString"
+
+  ASSERT               "assert"
+  CHECK_SAT            "check-sat"
+  CHECK_SAT_AND_COUNT  "check-sat-and-count"
+  DECLARE_FUN          "declare-fun"
+  DECLARE_SORT         "declare-sort"
+  DEFINE_FUN           "define-fun"
+  DEFINE_SORT          "define-sort"
+  EXIT                 "exit"
+  GET_ASSERTIONS       "get-assertions"
+  GET_ASSIGNMENT       "get-assignment"
+  GET_INFO             "get-info"
+  GET_OPTION           "get-option"
+  GET_PROOF            "get-proof"
+  GET_UNSAT_CORE       "get-unsat-core"
+  GET_VALUE            "get-value"
+  POP                  "pop"
+  PUSH                 "push"
+  SET_LOGIC            "set-logic"
+  SET_INFO             "set-info"
+  SET_OPTION           "set-option"
 ;
 
 %token <std::string>  BOOL         "bool"
@@ -150,7 +156,7 @@
 %start script;
 
 /* Commands */
-script       				  : 
+script                :
                         command_list                                                      { script = new Script($1); }
                       ;
 
@@ -167,30 +173,30 @@ command               :
                       | "(" "define-sort" SYMBOL "(" symbol_list ")" sort ")"             { $$ = new Command(); }
                       | "(" "declare-fun" SYMBOL "(" sort_list ")" sort ")"               { $$ = new DeclareFun(new Primitive($3, Primitive::Type::SYMBOL), $5, $7);}
                       | "(" "define-fun" SYMBOL "(" sorted_var_list ")" sort term ")"     { $$ = new Command(); }                
-              				| "(" "push" NUMERAL ")"                                            { $$ = new Command(); }
-              				| "(" "pop" NUMERAL ")"                                             { $$ = new Command(); }
-              				| "(" "assert" term ")"                                             { $$ = new Assert($3); }
+                      | "(" "push" NUMERAL ")"                                            { $$ = new Command(); }
+                      | "(" "pop" NUMERAL ")"                                             { $$ = new Command(); }
+                      | "(" "assert" term ")"                                             { $$ = new Assert($3); }
                       | "(" "check-sat" ")"                                               { $$ = new CheckSat(); }
                       | "(" "check-sat" SYMBOL ")"                                        { $$ = new CheckSat(new Primitive($3, Primitive::Type::SYMBOL)); }
                       | "(" "check-sat-and-count" NUMERAL ")"                             { $$ = new CheckSatAndCount(new Primitive($3, Primitive::Type::NUMERAL)); }
                       | "(" "check-sat-and-count" NUMERAL SYMBOL ")"                      { $$ = new CheckSatAndCount(new Primitive($3, Primitive::Type::NUMERAL), new Primitive($4, Primitive::Type::SYMBOL)); }
-            					| "(" "get-assertions" ")"                                          { $$ = new Command(); } 
-            					| "(" "get-proof" ")"                                               { $$ = new Command(); } 
-            					| "(" "get-unsat-core" ")"                                          { $$ = new Command(); }   
+                      | "(" "get-assertions" ")"                                          { $$ = new Command(); } 
+                      | "(" "get-proof" ")"                                               { $$ = new Command(); } 
+                      | "(" "get-unsat-core" ")"                                          { $$ = new Command(); }   
                       | "(" "get-value" term_list_ ")"                                    { $$ = new Command(); }
-            					| "(" "get-assignment" ")"                                          { $$ = new Command(); } 
-            					| "(" "get-option" KEYWORD ")"                                      { $$ = new Command(); } 
+                      | "(" "get-assignment" ")"                                          { $$ = new Command(); } 
+                      | "(" "get-option" KEYWORD ")"                                      { $$ = new Command(); } 
                       | "(" "get-info" info_flag ")"                                      { $$ = new Command(); }  
-            					| "(" "exit" ")"                                                    { $$ = new Command(); } 
+                      | "(" "exit" ")"                                                    { $$ = new Command(); } 
                       ;
 
-option                : 
+option                :
                         attribute           { std::cout << "attribute" << std::endl; } /* option rule is not implemented fully, see smtlib V2 specs for details */
                       ;
                       
 info_flag             :
                         KEYWORD             { std::cout << $1 << std::endl; } /* info_flag rule is not implemented fully, see smtlibV2 specs for details */
-                      ;                      
+                      ;
 
 symbol_list           :
                         symbol_list_
@@ -227,17 +233,23 @@ term                  :
                       | "(" "-" term term ")"                                             { $$ = new Minus($3, $4); }
                       | "(" "+" term term ")"                                             { $$ = new Plus($3, $4); }
                       | "(" "=" term term ")"                                             { $$ = new Eq($3, $4); }
-                      | "(" ">" term term ")"                                             { $$ = new Gt($3, $4); }                                             
+                      | "(" ">" term term ")"                                             { $$ = new Gt($3, $4); }
                       | "(" ">=" term term ")"                                            { $$ = new Ge($3, $4); }
-                      | "(" "<" term term ")"                                             { $$ = new Lt($3, $4); }                                              
+                      | "(" "<" term term ")"                                             { $$ = new Lt($3, $4); }
                       | "(" "<=" term term ")"                                            { $$ = new Le($3, $4); }
                       | "(" "concat" term_list_ ")"                                       { $$ = new Concat($3); }
                       | "(" "in" term term ")"                                            { $$ = new In($3, $4); }
                       | "(" "len" term ")"                                                { $$ = new Len($3); }
                       | "(" "contains" term term ")"                                      { $$ = new Contains($3, $4); }
                       | "(" "begins" term term ")"                                        { $$ = new Begins($3, $4); }
-                      | "(" "ends" term term ")"                                          { $$ = new Ends($3, $4); }                                            
-                      | "(" "indexof" term term ")"                                       { $$ = new IndexOf($3, $4); }
+                      | "(" "ends" term term ")"                                          { $$ = new Ends($3, $4); }
+                      | "(" "indexOf" term term ")"                                       { $$ = new IndexOf($3, $4); }
+                      | "(" "lastIndexOf" term term ")"                                   { $$ = new LastIndexOf($3, $4); }
+                      | "(" "charAt" term term ")"                                        { $$ = new CharAt($3, $4); }
+                      | "(" "subString" term term ")"                                     { $$ = new SubString($3, $4); }
+                      | "(" "toUpper" term ")"                                            { $$ = new ToUpper($3); }
+                      | "(" "toLower" term ")"                                            { $$ = new ToLower($3); }
+                      | "(" "trim" term term ")"                                          { $$ = new Trim($3); }
                       | "(" "replace" term term term ")"                                  { $$ = new Replace($3, $4, $5); }
                       | "(" "count" term term ")"                                         { $$ = new Count($3, $4); }
                       | "(" "ite" term term term ")"                                      { $$ = new Ite($3, $4, $5); }
@@ -245,7 +257,7 @@ term                  :
                       | "(" "re.or" term_list_ ")"                                        { $$ = new Or($3); }
                       | "(" "str.++" term_list_ ")"                                       { $$ = new Concat($3); }
                       | "(" "str.in.re" term term ")"                                     { $$ = new In($3, $4); }
-                      | "(" "str.len" term ")"                                            { $$ = new Len($3); }                                            
+                      | "(" "str.len" term ")"                                            { $$ = new Len($3); }
                       | "(" "str.to.re" term ")"                                          { $$ = new ToRegex($3); }
                       | "(" qual_identifier term_list_ ")"                                { $$ = new UnknownTerm($2, $3); }
                       | qual_identifier                                                   { $$ = $1; }
@@ -309,7 +321,7 @@ sort_list             :
                       ;
                       
 sort_list_            :
-                        sort_list_ sort                                                   { $1->push_back($2); $$ = $1; }          
+                        sort_list_ sort                                                   { $1->push_back($2); $$ = $1; }
                       | sort                                                              { $$ = new SortList(); $$->push_back($1); }
                       ; 
                       
@@ -345,7 +357,7 @@ s_expr_list           :
 
 s_expr_list_          : 
                         s_expr_list_ s_expr {  }
-                      | s_expr              {  }                 
+                      | s_expr              {  }
                       ;
                       
 s_expr                :
@@ -365,11 +377,9 @@ spec_constant         :
                       | REGEX               { $$ = new Primitive($1, Primitive::Type::REGEX); }
                       ;
 
- 
-                      
-                    
 
-                      
+
+
 %%
 
 void Vlab::SMT::Parser::error (const location_type& l, const std::string& m)

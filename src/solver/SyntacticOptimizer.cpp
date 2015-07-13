@@ -462,6 +462,33 @@ void SyntacticOptimizer::visitIndexOf(IndexOf_ptr index_of_term) {
   visit_and_callback(index_of_term->search_term);
 }
 
+void SyntacticOptimizer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
+  visit_and_callback(last_index_of_term->subject_term);
+  visit_and_callback(last_index_of_term->search_term);
+}
+
+void SyntacticOptimizer::visitCharAt(SMT::CharAt_ptr char_at_term) {
+  visit_and_callback(char_at_term->subject_term);
+  visit_and_callback(char_at_term->index_term);
+}
+
+void SyntacticOptimizer::visitSubString(SMT::SubString_ptr sub_string_term) {
+  visit_and_callback(sub_string_term->subject_term);
+  visit_and_callback(sub_string_term->start_index_term);
+}
+
+void SyntacticOptimizer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
+  visit_and_callback(to_upper_term->subject_term);
+}
+
+void SyntacticOptimizer::visitToLower(SMT::ToLower_ptr to_lower_term) {
+  visit_and_callback(to_lower_term->subject_term);
+}
+
+void SyntacticOptimizer::visitTrim(SMT::Trim_ptr trim_term) {
+  visit_and_callback(trim_term->subject_term);
+}
+
 void SyntacticOptimizer::visitReplace(Replace_ptr replace_term) {
   visit_and_callback(replace_term->subject_term);
   visit_and_callback(replace_term->search_term);

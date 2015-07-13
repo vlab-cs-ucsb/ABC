@@ -279,7 +279,13 @@ const std::string Term::Name::LEN = "len";
 const std::string Term::Name::CONTAINS = "contains";
 const std::string Term::Name::BEGINS = "begins";
 const std::string Term::Name::ENDS = "ends";
-const std::string Term::Name::INDEXOF = "indexof";
+const std::string Term::Name::INDEXOF = "indexOf";
+const std::string Term::Name::LASTINDEXOF= "lastIndexOf";
+const std::string Term::Name::CHARAT = "charAt";
+const std::string Term::Name::SUBSTRING = "subString";
+const std::string Term::Name::TOUPPER = "toUpper";
+const std::string Term::Name::TOLOWER = "toLower";
+const std::string Term::Name::TRIM = "trim";
 const std::string Term::Name::REPLACE = "replace";
 const std::string Term::Name::COUNT = "count";
 const std::string Term::Name::ITE = "ite";
@@ -356,6 +362,18 @@ std::string Term::str() const {
     return Term::Name::ENDS;
   case Term::Type::INDEXOF:
     return Term::Name::INDEXOF;
+  case Term::Type::LASTINDEXOF:
+    return Term::Name::LASTINDEXOF;
+  case Term::Type::CHARAT:
+    return Term::Name::CHARAT;
+  case Term::Type::SUBSTRING:
+    return Term::Name::SUBSTRING;
+  case Term::Type::TOUPPER:
+    return Term::Name::TOUPPER;
+  case Term::Type::TOLOWER:
+    return Term::Name::TOLOWER;
+  case Term::Type::TRIM:
+    return Term::Name::TRIM;
   case Term::Type::REPLACE:
     return Term::Name::REPLACE;
   case Term::Type::COUNT:
@@ -962,6 +980,165 @@ void IndexOf::accept(Visitor_ptr v) {
 void IndexOf::visit_children(Visitor_ptr v) {
   v->visit(subject_term);
   v->visit(search_term);
+}
+
+LastIndexOf::LastIndexOf(Term_ptr subject_term, Term_ptr search_term)
+        : Term(Term::Type::LASTINDEXOF), subject_term(subject_term), search_term(search_term) {
+}
+
+LastIndexOf::LastIndexOf(const LastIndexOf& other)
+        : Term(other.type) {
+  subject_term = other.subject_term->clone();
+  search_term = other.search_term->clone();
+}
+
+LastIndexOf_ptr LastIndexOf::clone() const {
+  return new LastIndexOf(*this);
+}
+
+LastIndexOf::~LastIndexOf() {
+  delete subject_term;
+  delete search_term;
+}
+
+void LastIndexOf::accept(Visitor_ptr v) {
+  v->visitLastIndexOf(this);
+}
+
+void LastIndexOf::visit_children(Visitor_ptr v) {
+  v->visit(subject_term);
+  v->visit(search_term);
+}
+
+CharAt::CharAt(Term_ptr subject_term, Term_ptr index_term)
+        : Term(Term::Type::CHARAT), subject_term(subject_term), index_term(index_term) {
+}
+
+CharAt::CharAt(const CharAt& other)
+        : Term(other.type) {
+  subject_term = other.subject_term->clone();
+  index_term = other.index_term->clone();
+}
+
+CharAt_ptr CharAt::clone() const {
+  return new CharAt(*this);
+}
+
+CharAt::~CharAt() {
+  delete subject_term;
+  delete index_term;
+}
+
+void CharAt::accept(Visitor_ptr v) {
+  v->visitCharAt(this);
+}
+
+void CharAt::visit_children(Visitor_ptr v) {
+  v->visit(subject_term);
+  v->visit(index_term);
+}
+
+SubString::SubString(Term_ptr subject_term, Term_ptr start_index_term)
+        : Term(Term::Type::SUBSTRING), subject_term (subject_term), start_index_term (start_index_term) {
+}
+
+SubString::SubString(const SubString& other)
+        : Term(other.type) {
+  subject_term = other.subject_term->clone();
+  start_index_term = other.start_index_term->clone();
+}
+
+SubString_ptr SubString::clone() const {
+  return new SubString(*this);
+}
+
+SubString::~SubString() {
+  delete subject_term;
+  delete start_index_term;
+}
+
+void SubString::accept(Visitor_ptr v) {
+  v->visitSubString(this);
+}
+
+void SubString::visit_children(Visitor_ptr v) {
+  v->visit(subject_term);
+  v->visit(start_index_term);
+}
+
+ToUpper::ToUpper(Term_ptr subject_term)
+        : Term(Term::Type::TOUPPER), subject_term(subject_term) {
+}
+
+ToUpper::ToUpper(const ToUpper& other)
+        : Term(other.type) {
+  subject_term = other.subject_term->clone();
+}
+
+ToUpper_ptr ToUpper::clone() const {
+  return new ToUpper(*this);
+}
+
+ToUpper::~ToUpper() {
+  delete subject_term;
+}
+
+void ToUpper::accept(Visitor_ptr v) {
+  v->visitToUpper(this);
+}
+
+void ToUpper::visit_children(Visitor_ptr v) {
+  v->visit(subject_term);
+}
+
+ToLower::ToLower(Term_ptr subject_term)
+        : Term(Term::Type::TOLOWER), subject_term(subject_term) {
+}
+
+ToLower::ToLower(const ToLower& other)
+        : Term(other.type) {
+  subject_term = other.subject_term->clone();
+}
+
+ToLower_ptr ToLower::clone() const {
+  return new ToLower(*this);
+}
+
+ToLower::~ToLower() {
+  delete subject_term;
+}
+
+void ToLower::accept(Visitor_ptr v) {
+  v->visitToLower(this);
+}
+
+void ToLower::visit_children(Visitor_ptr v) {
+  v->visit(subject_term);
+}
+
+Trim::Trim(Term_ptr subject_term)
+        : Term(Term::Type::TRIM), subject_term(subject_term) {
+}
+
+Trim::Trim(const Trim& other)
+        : Term(other.type) {
+  subject_term = other.subject_term->clone();
+}
+
+Trim_ptr Trim::clone() const {
+  return new Trim(*this);
+}
+
+Trim::~Trim() {
+  delete subject_term;
+}
+
+void Trim::accept(Visitor_ptr v) {
+  v->visitTrim(this);
+}
+
+void Trim::visit_children(Visitor_ptr v) {
+  v->visit(subject_term);
 }
 
 Replace::Replace(Term_ptr subject_term, Term_ptr search_term, Term_ptr replace_term)

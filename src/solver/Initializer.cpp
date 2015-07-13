@@ -182,6 +182,24 @@ void Initializer::visitEnds(Ends_ptr ends_term) {
 void Initializer::visitIndexOf(IndexOf_ptr index_of_term) {
 }
 
+void Initializer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
+}
+
+void Initializer::visitCharAt(SMT::CharAt_ptr char_at_term) {
+}
+
+void Initializer::visitSubString(SMT::SubString_ptr sub_string_term) {
+}
+
+void Initializer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
+}
+
+void Initializer::visitToLower(SMT::ToLower_ptr to_lower_term) {
+}
+
+void Initializer::visitTrim(SMT::Trim_ptr trim_term) {
+}
+
 void Initializer::visitReplace(Replace_ptr replace_term) {
 }
 

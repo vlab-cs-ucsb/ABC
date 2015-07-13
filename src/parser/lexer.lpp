@@ -73,15 +73,15 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "contains"          { return Parser::make_CONTAINS        (loc);  }
 "begins"            { return Parser::make_BEGINS          (loc);  }
 "ends"              { return Parser::make_ENDS            (loc);  }
-"indexof"           { return Parser::make_INDEXOF         (loc);  }
-"lastindexof"       { }
-"charat"            { }
-"substring"         { }
-"touppercase"       { }
-"tolowercase"       { }
-"trim"              { }
+"indexOf"           { return Parser::make_INDEXOF         (loc);  }
+"lastIndexOf"       { return Parser::make_LASTINDEXOF     (loc);  }
+"charAt"            { return Parser::make_CHARAT          (loc);  }
+"subString"         { return Parser::make_SUBSTRING       (loc);  }
+"toUpper"           { return Parser::make_TOUPPER         (loc);  }
+"toLower"           { return Parser::make_TOLOWER         (loc);  }
+"trim"              { return Parser::make_TRIM            (loc);  }
 "replace"           { return Parser::make_REPLACE         (loc);  }
-"count"             { return Parser::make_COUNT           (loc);  }  
+"count"             { return Parser::make_COUNT           (loc);  }
 "ite"               { return Parser::make_ITE             (loc);  }
 "re.++"             { return Parser::make_RE_CONCAT       (loc);  }
 "re.or"             { return Parser::make_OR              (loc);  }

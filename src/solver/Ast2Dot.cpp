@@ -192,6 +192,30 @@ void Ast2Dot::visitIndexOf(IndexOf_ptr index_of_term) {
   visitTerm(index_of_term);
 }
 
+void Ast2Dot::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
+  visitTerm(last_index_of_term);
+}
+
+void Ast2Dot::visitCharAt(SMT::CharAt_ptr char_at_term) {
+  visitTerm(char_at_term);
+}
+
+void Ast2Dot::visitSubString(SMT::SubString_ptr sub_string_term) {
+  visitTerm(sub_string_term);
+}
+
+void Ast2Dot::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
+  visitTerm(to_upper_term);
+}
+
+void Ast2Dot::visitToLower(SMT::ToLower_ptr to_lower_term) {
+  visitTerm(to_lower_term);
+}
+
+void Ast2Dot::visitTrim(SMT::Trim_ptr trim_term) {
+  visitTerm(trim_term);
+}
+
 void Ast2Dot::visitReplace(Replace_ptr replace_term) {
   visitTerm(replace_term);
 }
@@ -254,4 +278,5 @@ void Ast2Dot::visitVariable(Variable_ptr variable) {
 
 } /* namespace Solver */
 } /* namespace Vlab */
+
 

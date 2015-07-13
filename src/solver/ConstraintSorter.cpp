@@ -341,6 +341,54 @@ void ConstraintSorter::visitIndexOf(IndexOf_ptr index_of_term) {
   visitable_node = process_child_nodes(left_node, right_node);
 }
 
+void ConstraintSorter::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
+  visitable_node = nullptr;
+  visit(last_index_of_term->subject_term);
+  VisitableNode_ptr left_node = visitable_node;
+  visitable_node = nullptr;
+  visit(last_index_of_term->search_term);
+  VisitableNode_ptr right_node = visitable_node;
+
+  visitable_node = process_child_nodes(left_node, right_node);
+}
+
+void ConstraintSorter::visitCharAt(SMT::CharAt_ptr char_at_term) {
+  visitable_node = nullptr;
+  visit(char_at_term->subject_term);
+  VisitableNode_ptr left_node = visitable_node;
+  visitable_node = nullptr;
+  visit(char_at_term->index_term);
+  VisitableNode_ptr right_node = visitable_node;
+
+  visitable_node = process_child_nodes(left_node, right_node);
+}
+
+void ConstraintSorter::visitSubString(SMT::SubString_ptr sub_string_term) {
+  visitable_node = nullptr;
+  visit(sub_string_term->subject_term);
+  VisitableNode_ptr left_node = visitable_node;
+  visitable_node = nullptr;
+  visit(sub_string_term->start_index_term);
+  VisitableNode_ptr right_node = visitable_node;
+
+  visitable_node = process_child_nodes(left_node, right_node);
+}
+
+void ConstraintSorter::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
+  visitable_node = nullptr;
+  visit_children_of(to_upper_term);
+}
+
+void ConstraintSorter::visitToLower(SMT::ToLower_ptr to_lower_term) {
+  visitable_node = nullptr;
+  visit_children_of(to_lower_term);
+}
+
+void ConstraintSorter::visitTrim(SMT::Trim_ptr trim_term) {
+  visitable_node = nullptr;
+  visit_children_of(trim_term);
+}
+
 void ConstraintSorter::visitReplace(Replace_ptr replace_term) {
   visitable_node = nullptr;
   visit(replace_term->subject_term);
