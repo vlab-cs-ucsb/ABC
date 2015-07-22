@@ -25,7 +25,7 @@ BINARY         #b[0-1]+
 HEXADECIMAL    #x[0-9a-fA-F]+
 NUMERAL        0|[1-9]+[0-9]*
 DECIMAL        NUMERAL\.0*NUMERAL
-SYMBOL         [a-zA-Z0-9._+\-*=%/?!$_~&^<>@]+
+SYMBOL         [a-zA-Z0-9._+\-*=%?!$_~&^<>@][a-zA-Z0-9._+\-*=%/?!$_~&^<>@]+
 KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 
 %{
