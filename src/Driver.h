@@ -41,7 +41,8 @@ public:
 //	void collectStatistics();
   void initializeSolver();
   void solve();
-  void printResult();
+  void printResult(std::ostream& out);
+  void printResult(std::string file_name);
 
 //	void solveAst();
 

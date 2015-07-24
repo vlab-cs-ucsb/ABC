@@ -84,12 +84,21 @@ void Driver::solve() {
   // TODO iterate to handle over-approximation
 }
 
-void Driver::printResult() {
+void Driver::printResult(std::string file_name) {
+  std::ofstream outfile(file_name.c_str());
+  if (!outfile.good()) {
+    std::cout << "cannot open file: " << file_name << std::endl;
+    exit(2);
+  }
+  printResult(outfile);
+}
+
+void Driver::printResult(std::ostream& out) {
   symbol_table->push_scope(script);
   SMT::Variable_ptr variable = symbol_table->getSymbolicVariable();
   Solver::Value_ptr result = symbol_table->getValue(variable);
   LOG(INFO) << "Symbolic variable: " << *result;
-  result->getStringAutomaton()->toDotAscii();
+  result->getStringAutomaton()->toDotAscii(false, out);
 }
 
 void Driver::test() {
@@ -141,3 +150,4 @@ void Driver::error(const Vlab::SMT::location& l, const std::string& m) {
 //}0--7
 
 }
+

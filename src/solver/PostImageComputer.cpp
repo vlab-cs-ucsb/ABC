@@ -280,8 +280,19 @@ void PostImageComputer::visitConcat(Concat_ptr concat_term) {
 }
 
 void PostImageComputer::visitIn(In_ptr in_term) {
-  visit_children_of(in_term);
-  LOG(FATAL)<< "implement me";
+  __visit_children_of(in_term);
+
+  Value_ptr result = nullptr, param_left = getTermValue(in_term->left_term),
+      param_right = getTermValue(in_term->right_term);
+
+  if (Value::Type::STRING_AUTOMATON == param_left->getType()
+      and Value::Type::STRING_AUTOMATON == param_right->getType()) {
+    result = param_left->intersect(param_right);
+  } else {
+    LOG(FATAL) << "unexpected parameter(s) of '" << *in_term << "' term"; // handle cases in a better way
+  }
+
+  setTermValue(in_term, result);
 }
 
 void PostImageComputer::visitLen(Len_ptr len_term) {
@@ -290,18 +301,39 @@ void PostImageComputer::visitLen(Len_ptr len_term) {
 }
 
 void PostImageComputer::visitContains(Contains_ptr contains_term) {
-  visit_children_of(contains_term);
-  LOG(FATAL)<< "implement me";
+  __visit_children_of(contains_term);
+
+  Value_ptr result = nullptr, param_subject = getTermValue(contains_term->subject_term),
+      param_search = getTermValue(contains_term->search_term);
+
+  result = new Value(Value::Type::STRING_AUTOMATON,
+      param_subject->getStringAutomaton()->contains(param_search->getStringAutomaton()));
+
+  setTermValue(contains_term, result);
 }
 
 void PostImageComputer::visitBegins(Begins_ptr begins_term) {
-  visit_children_of(begins_term);
-  LOG(FATAL)<< "implement me";
+  __visit_children_of(begins_term);
+
+  Value_ptr result = nullptr, param_left = getTermValue(begins_term->subject_term),
+      param_right = getTermValue(begins_term->search_term);
+
+  result = new Value(Value::Type::STRING_AUTOMATON,
+      param_left->getStringAutomaton()->begins(param_right->getStringAutomaton()));
+
+  setTermValue(begins_term, result);
 }
 
 void PostImageComputer::visitEnds(Ends_ptr ends_term) {
-  visit_children_of(ends_term);
-  LOG(FATAL)<< "implement me";
+  __visit_children_of(ends_term);
+
+  Value_ptr result = nullptr, param_left = getTermValue(ends_term->subject_term),
+      param_right = getTermValue(ends_term->search_term);
+
+  result = new Value(Value::Type::STRING_AUTOMATON,
+      param_left->getStringAutomaton()->ends(param_right->getStringAutomaton()));
+
+  setTermValue(ends_term, result);
 }
 
 void PostImageComputer::visitIndexOf(IndexOf_ptr index_of_term) {
@@ -325,23 +357,52 @@ void PostImageComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
 }
 
 void PostImageComputer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
-  visit_children_of(to_upper_term);
-  LOG(FATAL)<< "implement me";
+  __visit_children_of(to_upper_term);
+
+  Value_ptr result = nullptr, param = getTermValue(to_upper_term->subject_term);
+
+  result = new Value(Value::Type::STRING_AUTOMATON,
+      param->getStringAutomaton()->toUpperCase());
+
+  setTermValue(to_upper_term, result);
 }
 
 void PostImageComputer::visitToLower(SMT::ToLower_ptr to_lower_term) {
-  visit_children_of(to_lower_term);
-  LOG(FATAL)<< "implement me";
+  __visit_children_of(to_lower_term);
+
+  Value_ptr result = nullptr, param = getTermValue(to_lower_term->subject_term);
+
+  result = new Value(Value::Type::STRING_AUTOMATON,
+      param->getStringAutomaton()->toLowerCase());
+
+  setTermValue(to_lower_term, result);
 }
 
 void PostImageComputer::visitTrim(SMT::Trim_ptr trim_term) {
-  visit_children_of(trim_term);
-  LOG(FATAL)<< "implement me";
+  __visit_children_of(trim_term);
+
+  Value_ptr result = nullptr, param = getTermValue(trim_term->subject_term);
+
+  result = new Value(Value::Type::STRING_AUTOMATON,
+        param->getStringAutomaton()->trim());
+
+  setTermValue(trim_term, result);
+
 }
 
 void PostImageComputer::visitReplace(Replace_ptr replace_term) {
-  visit_children_of(replace_term);
-  LOG(FATAL)<< "implement me";
+  __visit_children_of(replace_term);
+
+  Value_ptr result = nullptr, param_subject = getTermValue(replace_term->subject_term),
+      param_search = getTermValue(replace_term->search_term),
+      param_replace = getTermValue(replace_term->replace_term);
+
+  result = new Value(Value::Type::STRING_AUTOMATON,
+      param_subject->getStringAutomaton()->replace(
+          param_search->getStringAutomaton(),
+          param_replace->getStringAutomaton()));
+
+  setTermValue(replace_term, result);
 }
 
 void PostImageComputer::visitCount(Count_ptr count_term) {
@@ -404,6 +465,7 @@ void PostImageComputer::visitTermConstant(TermConstant_ptr term_constant) {
     result = new Value(Value::Type::STRING_AUTOMATON, Theory::StringAutomaton::makeString(term_constant->getValue()));
     break;
   case SMT::Primitive::Type::REGEX:
+    std::cout << "!!!! " << term_constant->getValue() << std::endl;
     result = new Value(Value::Type::STRING_AUTOMATON, Theory::StringAutomaton::makeRegexAuto(term_constant->getValue()));
     break;
   default:

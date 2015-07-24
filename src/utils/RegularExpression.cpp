@@ -583,12 +583,13 @@ RegularExpression_ptr RegularExpression::makeString(RegularExpression_ptr exp1, 
 
 void RegularExpression::init(std::string regex, int syntax_flags) {
 
-  CHECK_EQ(0, regex.find("/"));
-  std::string::size_type last = regex.substr(1).find_last_of("/");
-  CHECK_NE(std::string::npos, last);
+//  CHECK_EQ(0, regex.find("/"));
+//  std::string::size_type last = regex.substr(1).find_last_of("/");
+//  CHECK_NE(std::string::npos, last);
+//
+//  regex_string = regex.substr(1, last);
 
-  regex_string = regex.substr(1, last);
-  ;
+  regex_string = regex;
   flags = syntax_flags;
   RegularExpression_ptr e = parseUnionExp();
 

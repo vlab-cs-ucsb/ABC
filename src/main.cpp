@@ -81,7 +81,7 @@ int main(const int argc, const char **argv) {
 
   driver.solve();
 
-  driver.printResult();
+  driver.printResult(output_root + "/result.dot");
 
   return 0;
 }

@@ -83,6 +83,7 @@ public:
   bool isEmptyString();
 
   void toDotAscii(bool print_sink = false, std::ostream& out = std::cout);
+
 protected:
 
   static StringAutomaton_ptr makeRegexAuto(Util::RegularExpression_ptr regular_expression);

@@ -133,9 +133,21 @@ void PreImageComputer::visitConcat(Concat_ptr concat_term) {
   visit_children_of(concat_term);
 }
 
+// TODO handle all cases
 void PreImageComputer::visitIn(In_ptr in_term) {
-  LOG(FATAL) << "implement me";
-  visit_children_of(in_term);
+  DVLOG(VLOG_LEVEL) << "pop: " << *in_term;
+  popTerm(in_term);
+  Term_ptr child_term = current_path.back();
+  Value_ptr child_value = getTermPreImage(child_term);
+  if (child_value not_eq nullptr) {
+    visit(child_term);
+    return;
+  }
+
+  Value_ptr term_value = getTermPreImage(in_term);
+  child_value = term_value->clone();
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
 }
 
 void PreImageComputer::visitLen(Len_ptr len_term) {
@@ -143,19 +155,55 @@ void PreImageComputer::visitLen(Len_ptr len_term) {
   visit_children_of(len_term);
 }
 
+// TODO handle all cases
 void PreImageComputer::visitContains(Contains_ptr contains_term) {
-  LOG(FATAL) << "implement me";
-  visit_children_of(contains_term);
+  DVLOG(VLOG_LEVEL) << "pop: " << *contains_term;
+  popTerm(contains_term);
+  Term_ptr child_term = current_path.back();
+  Value_ptr child_value = getTermPreImage(child_term);
+  if (child_value not_eq nullptr) {
+    visit(child_term);
+    return;
+  }
+
+  Value_ptr term_value = getTermPreImage(contains_term);
+  child_value = term_value->clone();
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
 }
 
+// TODO handle all cases
 void PreImageComputer::visitBegins(Begins_ptr begins_term) {
-  LOG(FATAL) << "implement me";
-  visit_children_of(begins_term);
+  DVLOG(VLOG_LEVEL) << "pop: " << *begins_term;
+  popTerm(begins_term);
+  Term_ptr child_term = current_path.back();
+  Value_ptr child_value = getTermPreImage(child_term);
+  if (child_value not_eq nullptr) {
+    visit(child_term);
+    return;
+  }
+
+  Value_ptr term_value = getTermPreImage(begins_term);
+  child_value = term_value->clone();
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
 }
 
+// TODO handle all cases
 void PreImageComputer::visitEnds(Ends_ptr ends_term) {
-  LOG(FATAL) << "implement me";
-  visit_children_of(ends_term);
+  DVLOG(VLOG_LEVEL) << "pop: " << *ends_term;
+  popTerm(ends_term);
+  Term_ptr child_term = current_path.back();
+  Value_ptr child_value = getTermPreImage(child_term);
+  if (child_value not_eq nullptr) {
+    visit(child_term);
+    return;
+  }
+
+  Value_ptr term_value = getTermPreImage(ends_term);
+  child_value = term_value->clone();
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
 }
 
 void PreImageComputer::visitIndexOf(IndexOf_ptr index_of_term) {
@@ -291,6 +339,9 @@ bool PreImageComputer::setTermPreImage(SMT::Term_ptr term, Value_ptr value) {
   return result.second;
 }
 
+/**
+ * TODO let this function check parent
+ */
 void PreImageComputer::popTerm(SMT::Term_ptr term) {
   if (current_path.back() == term) {
     current_path.pop_back();

@@ -570,7 +570,7 @@ StringAutomaton_ptr StringAutomaton::contains(StringAutomaton_ptr other_auto) {
   any_string_auto = StringAutomaton::makeAnyString();
   tmp_auto_1 = any_string_auto->concatenate(other_auto);
   tmp_auto_2 = tmp_auto_1->concatenate(any_string_auto);
-
+  tmp_auto_2->toDotAscii();
   contains_auto = this->intersect(tmp_auto_2);
   delete any_string_auto;
   delete tmp_auto_1; delete tmp_auto_2;
@@ -704,11 +704,194 @@ bool StringAutomaton::isEmptyString() {
   return false;
 }
 
+//void StringAutomaton::toDotAscii(bool print_sink, std::ostream& out) {
+//  int sink_status = (print_sink) ? 1 : 0;
+//  sink_status = (dfa->ns == 1 and dfa->f[0] == -1) ? 2 : sink_status;
+//  dfaPrintGraphvizAsciiRange(dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES,
+//          sink_status);
+//}
+
+/**
+ * TODO Refactor lib functions
+ *  - find_sink
+ *  - ....
+ */
 void StringAutomaton::toDotAscii(bool print_sink, std::ostream& out) {
-  int sink_status = (print_sink) ? 1 : 0;
-  sink_status = (dfa->ns == 1 and dfa->f[0] == -1) ? 2 : sink_status;
-  dfaPrintGraphvizAsciiRange(dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES,
-          sink_status);
+  bool force_sink_display = (dfa->ns == 1 and dfa->f[0] == -1) ? true : false;
+  paths state_paths, pp;
+  trace_descr tp;
+
+  int i, j, k, l, size, maxexp, sink;
+  pCharPair *buffer;//array of charpairs references
+  char *character;
+  pCharPair **toTrans;//array for all states, each entry is an array of charpair references
+  int *toTransIndecies;
+  char** ranges;
+
+  sink = find_sink(dfa);
+
+  out << "digraph MONA_DFA {\n"
+      " rankdir = LR;\n "
+      " center = true;\n"
+      " size = \"700.5,1000.5\";\n"
+      " edge [fontname = Courier];\n"
+      " node [height = .5, width = .5];\n"
+      " node [shape = doublecircle];";
+
+  for (i = 0; i < dfa->ns; i++) {
+    if (dfa->f[i] == 1) {
+      out << " " << i << ";";
+    }
+  }
+
+  out << "\n node [shape = circle];";
+
+  for (i = 0; i < dfa->ns; i++) {
+    if (dfa->f[i] == -1) {
+      if (i != sink || print_sink) {
+        out << " " << i << ";";
+      }
+    }
+  }
+
+  out << "\n node [shape = box];";
+
+  for (i = 0; i < dfa->ns; i++) {
+    if (dfa->f[i] == 0) {
+      out << " " << i << ";";
+    }
+  }
+
+  out << "\n init [shape = plaintext, label = \"\"];\n" <<
+      " init -> " << dfa->s << ";\n";
+
+  maxexp = 1 << StringAutomaton::DEFAULT_NUM_OF_VARIABLES;
+  //TODO convert into c++ style memory management
+  buffer = (pCharPair*) malloc(sizeof(pCharPair) * maxexp); //max no of chars from Si to Sj = 2^num_of_variables
+  character = (char*) malloc(( StringAutomaton::DEFAULT_NUM_OF_VARIABLES+1) * sizeof(char));
+  toTrans = (pCharPair**) malloc(sizeof(pCharPair*) * dfa->ns);//need this to gather all edges out to state Sj from Si
+  for (i = 0; i < dfa->ns; i++) {
+    toTrans[i] = (pCharPair*) malloc(maxexp * sizeof(pCharPair));
+  }
+  toTransIndecies = (int*) malloc(dfa->ns * sizeof(int));//for a state Si, how many edges out to each state Sj
+
+
+  for (i = 0; i < dfa->ns; i++) {
+    //get transitions out from state i
+    state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
+
+    //init buffer
+    for (j = 0; j < dfa->ns; j++) {
+      toTransIndecies[j] = 0;
+    }
+
+    for (j = 0; j < maxexp; j++) {
+      for (k = 0; k < dfa->ns; k++) {
+        toTrans[k][j] = 0;
+      }
+      buffer[j] = 0;
+    }
+
+    //gather transitions out from state i
+    //for each transition pp out from state i
+    while (pp) {
+      if (pp->to == sink && not print_sink){
+        pp = pp->next;
+        continue;
+      }
+      //get mona character on transition pp
+      for (j = 0; j < StringAutomaton::DEFAULT_NUM_OF_VARIABLES; j++) {
+        for (tp = pp->trace; tp && (tp->index != StringAutomaton::DEFAULT_VARIABLE_INDICES[j]); tp = tp->next);
+
+        if (tp) {
+          if (tp->value)
+            character[j] = '1';
+          else
+            character[j] = '0';
+        } else
+          character[j] = 'X';
+      }
+      character[j] = '\0';
+      if (StringAutomaton::DEFAULT_NUM_OF_VARIABLES == 8){
+        //break mona character into ranges of ascii chars (example: "0XXX000X" -> [\s-!], [0-1], [@-A], [P-Q])
+        size = 0;
+        getTransitionChars(character, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, buffer, &size);
+        //get current index
+        k = toTransIndecies[pp->to];
+        //print ranges
+        for (l = 0; l < size; l++) {
+          toTrans[pp->to][k++] = buffer[l];
+          buffer[l] = 0;//do not free just detach
+        }
+        toTransIndecies[pp->to] = k;
+      } else {
+//        k = toTransIndecies[pp->to];
+//        toTrans[pp->to][k] = (char*) malloc(sizeof(char) * (strlen(character) + 1));
+//        strcpy(toTrans[pp->to][k], character);
+//        toTransIndecies[pp->to] = k + 1;
+      }
+      pp = pp->next;
+    }
+
+    //print transitions out of state i
+    for (j = 0; j < dfa->ns; j++) {
+      size = toTransIndecies[j];
+      if (size == 0 || (sink == j && not print_sink)) {
+        continue;
+      }
+      ranges = mergeCharRanges(toTrans[j], &size);
+      //print edge from i to j
+      out << " " << i << " -> " << j << " [label=\"";
+      bool print_label = (j != sink || force_sink_display);
+      l = 0;//to help breaking into new line
+      //for each trans k on char/range from i to j
+      for (k = 0; k < size; k++) {
+        //print char/range
+        if (print_label) {
+          out << " " << ranges[k];
+        }
+        l += strlen(ranges[k]);
+        if (l > 18){
+          if (print_label) {
+            out << "\\n";
+          }
+          l = 0;
+        }
+        else if (k < (size - 1)) {
+          if (print_label) {
+            out << ",";
+          }
+        }
+        free(ranges[k]);
+      }//for
+      out << "\"];\n";
+      if (size > 0)
+        free(ranges);
+    }
+    //for each state free charRange
+    //merge with loop above for better performance
+    for (j = 0; j < dfa->ns; j++){
+      if (j == sink && not print_sink) {
+        continue;
+      }
+      size = toTransIndecies[j];
+      for (k = 0; k < size; k++) {
+        free(toTrans[j][k]);
+      }
+    }
+
+    kill_paths(state_paths);
+  }//end for each state
+
+  free(character);
+  free(buffer);
+  for (i = 0; i < dfa->ns; i++){
+    free(toTrans[i]);
+  }
+  free(toTrans);
+  free(toTransIndecies);
+
+  out << "}" << std::endl;
 }
 
 int* StringAutomaton::allocateAscIIIndexWithExtraBit(int length) {
