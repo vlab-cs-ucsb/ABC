@@ -61,7 +61,7 @@ int main(const int argc, const char **argv) {
   DVLOG(1) << "vlog log";
 
   if (VLOG_IS_ON(1)) {
-    std::cout << "yaaay" << std::endl;
+    //std::cout << "yaaay" << std::endl;
   }
   /* log test end */
 

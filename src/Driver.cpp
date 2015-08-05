@@ -102,34 +102,61 @@ void Driver::printResult(std::ostream& out) {
 }
 
 void Driver::test() {
-//  Theory::StringAutomaton_ptr any_string = Theory::StringAutomaton::makeAnyString();
-//  Theory::StringAutomaton_ptr complement = nullptr;
-//  any_string->toDotAscii(1);
-//  complement = any_string->complement();
-//  complement->toDotAscii(1);
+  Theory::StringAutomaton_ptr any_string = Theory::StringAutomaton::makeAnyString();
+  Theory::StringAutomaton_ptr complement = nullptr;
+  //any_string->toDotAscii(1);
+  complement = any_string->complement();
+  //complement->toDotAscii(1);
 
-//  Theory::StringAutomaton_ptr make_string = Theory::StringAutomaton::makeString("baki");
-//  make_string->complement()->toDotAscii();
-//
-//  Theory::StringAutomaton_ptr char_range = Theory::StringAutomaton::makeCharRange('e', 'm');
-//  char_range->toDotAscii(1);
-//
-//  Theory::StringAutomaton_ptr dot_auto = Theory::StringAutomaton::makeAnyChar();
-//  dot_auto->toDotAscii(1);
+  Theory::StringAutomaton_ptr a1 = Theory::StringAutomaton::makeString("Hi,");
+  //make_string->complement()->toDotAscii();
 
-//  Theory::StringAutomaton_ptr empty_string = Theory::StringAutomaton::makeEmptyString();
+  Theory::StringAutomaton_ptr a2 = Theory::StringAutomaton::makeString("World");
 
-//  Theory::StringAutomaton_ptr result = make_string->union_(any_string);
-//  result->toDotAscii();
+  Theory::StringAutomaton_ptr a3 = Theory::StringAutomaton::makeString("Hello,World");
+  Theory::StringAutomaton_ptr a4 = Theory::StringAutomaton::makeString("Lucas");
+  Theory::StringAutomaton_ptr a5 = Theory::StringAutomaton::makeString("Hello,Lucas");
+  Theory::StringAutomaton_ptr a6 = Theory::StringAutomaton::makeString("Hello");
 
-//  Theory::StringAutomaton_ptr regex_auto = Theory::StringAutomaton::makeRegexAuto("/#/");
-//  regex_auto->toDotAscii();
+  Theory::StringAutomaton_ptr char_range = Theory::StringAutomaton::makeCharRange('3', '3');
+  //char_range->toDotAscii(1);
 
-//  Theory::BoolAutomaton_ptr true_auto = Theory::BoolAutomaton::makeTrue();
-//  true_auto->toDot();
-//  Theory::BoolAutomaton_ptr false_auto = Theory::BoolAutomaton::makeFalse();
-//  false_auto->toDot();
-//  std::exit(0);
+  Theory::StringAutomaton_ptr char_range_closure  = char_range->kleeneClosure();
+
+  Theory::StringAutomaton_ptr dot_auto = Theory::StringAutomaton::makeAnyChar();
+  //dot_auto->toDotAscii(1);
+
+  Theory::StringAutomaton_ptr empty_string = Theory::StringAutomaton::makeEmptyString();
+
+  Theory::StringAutomaton_ptr result = a1->union_(any_string);
+  //result->toDotAscii();
+
+  Theory::StringAutomaton_ptr prefs = a1->prefixes();
+  //prefs->toDotAscii();
+
+  //Theory::StringAutomaton_ptr length_auto = Theory::StringAutomaton::makeLengthRange(5,-1);
+  //length_auto->toDotAscii(1);
+
+  Theory::StringAutomaton_ptr length_auto = Theory::StringAutomaton::makeLengthRange(0,4);
+  //length_auto->toDotAscii();
+
+  //Theory::StringAutomaton_ptr test_auto = a6->union_(a5->union_(a4->union_(a3->union_(a1->concatenate(char_range_closure)->concatenate(a2)))));
+  Theory::StringAutomaton_ptr test_auto = a5->union_(a4->union_(a3->union_(a1->concatenate(char_range)->concatenate(a2))));
+
+
+  //Theory::StringAutomaton_ptr result_auto = test_auto->charAt(5);
+  Theory::StringAutomaton_ptr result_auto = test_auto->suffixesFromIndex(12);
+  //Theory::StringAutomaton_ptr result_auto = test_auto->prefixesUntilIndex(20);
+  result_auto->toDotAscii();
+
+  //Theory::StringAutomaton_ptr regex_auto = Theory::StringAutomaton::makeRegexAuto("/#/");
+  //regex_auto->toDotAscii();
+
+  //Theory::BoolAutomaton_ptr true_auto = Theory::BoolAutomaton::makeTrue();
+  //true_auto->toDot();
+  //Theory::BoolAutomaton_ptr false_auto = Theory::BoolAutomaton::makeFalse();
+  //false_auto->toDot();
+  std::exit(0);
 }
 
 void Driver::error(const Vlab::SMT::location& l, const std::string& m) {

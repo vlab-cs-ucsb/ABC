@@ -334,19 +334,149 @@ StringAutomaton_ptr StringAutomaton::makeRegexAuto(Util::RegularExpression_ptr r
     regex_auto = StringAutomaton::makeAnyString();
     break;
   case Util::RegularExpression::Type::AUTOMATON:
-    LOG(FATAL)<< "Unsported regular expression" << *regular_expression;
+    LOG(FATAL)<< "Unsupported regular expression" << *regular_expression;
     break;
     case Util::RegularExpression::Type::INTERVAL:
     {
-      LOG(FATAL) << "Unsported regular expression" << *regular_expression;
+      LOG(FATAL) << "Unsupported regular expression" << *regular_expression;
       break;
     }
     default:
-    LOG(FATAL) << "Unsported regular expression" << *regular_expression;
+    LOG(FATAL) << "Unsupported regular expression" << *regular_expression;
     break;
   }
 
   return regex_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::makeLengthEqual(int length, int num_of_variables, int* variable_indices){
+  StringAutomaton_ptr length_auto = nullptr;
+  StringAutomaton_ptr anyChar_auto = nullptr;
+
+  anyChar_auto = StringAutomaton::makeAnyChar();
+
+  if(length < 0){
+    length_auto = StringAutomaton::makeAnyString();
+  }
+  else if (length == 0){
+    length_auto = StringAutomaton::makeEmptyString();
+  }
+  else{
+    length_auto = anyChar_auto->repeat(length,length);
+  }
+
+  delete anyChar_auto;
+  anyChar_auto = nullptr;
+
+  DVLOG(VLOG_LEVEL) << length_auto->id << " = makeLength(" << length <<  ")";
+
+  return length_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::makeLengthLessThan(int length, int num_of_variables, int* variable_indices){
+   StringAutomaton_ptr length_auto = nullptr;
+   StringAutomaton_ptr anyChar_auto = nullptr;
+
+   anyChar_auto = StringAutomaton::makeAnyChar();
+
+   if(length < 0){
+     length_auto = StringAutomaton::makeAnyString();
+   }
+   else if (length == 0){
+     length_auto = StringAutomaton::makePhi();
+   }
+   else{
+     length_auto = anyChar_auto->repeat(0,length-1);
+   }
+
+   delete anyChar_auto;
+   anyChar_auto = nullptr;
+
+   DVLOG(VLOG_LEVEL) << length_auto->id << " = makeLengthLessThan(" << length <<  ")";
+
+   return length_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::makeLengthLessThanEqual(int length, int num_of_variables, int* variable_indices){
+  StringAutomaton_ptr length_auto = nullptr;
+  StringAutomaton_ptr anyChar_auto = nullptr;
+
+  anyChar_auto = StringAutomaton::makeAnyChar();
+
+  if(length < 0){
+    length_auto = StringAutomaton::makeAnyString();
+  }
+  else if (length == 0){
+    length_auto = StringAutomaton::makeEmptyString();
+  }
+  else{
+    length_auto = anyChar_auto->repeat(0,length);
+  }
+
+  delete anyChar_auto;
+  anyChar_auto = nullptr;
+
+  DVLOG(VLOG_LEVEL) << length_auto->id << " = makeLengthLessThanEqual(" << length <<  ")";
+
+  return length_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::makeLengthGreaterThan(int length, int num_of_variables, int* variable_indices){
+  StringAutomaton_ptr length_auto = nullptr;
+
+  if(length < 0){
+    length_auto = StringAutomaton::makeAnyString();
+  }
+  else{
+    length_auto = StringAutomaton::makeLengthLessThanEqual(length)->complement();
+  }
+
+  DVLOG(VLOG_LEVEL) << length_auto->id << " = makeLengthGreaterThan(" << length <<  ")";
+
+  return length_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::makeLengthGreaterThanEqual(int length, int num_of_variables, int* variable_indices){
+  StringAutomaton_ptr length_auto = nullptr;
+
+  if(length < 0){
+    length_auto = StringAutomaton::makeAnyString();
+  }
+  else{
+    length_auto = StringAutomaton::makeLengthLessThan(length)->complement();
+  }
+
+  DVLOG(VLOG_LEVEL) << length_auto->id << " = makeLengthGreaterThanEqual(" << length <<  ")";
+
+  return length_auto;
+}
+
+
+StringAutomaton_ptr StringAutomaton::makeLengthRange(int start, int end, int num_of_variables, int* variable_indices){
+  StringAutomaton_ptr range_auto = nullptr, lessThan_auto = nullptr, greaterThanEqual_auto = nullptr;
+
+  greaterThanEqual_auto = StringAutomaton::makeLengthGreaterThanEqual(start);
+  lessThan_auto = StringAutomaton::makeLengthLessThan(end);
+  range_auto = lessThan_auto->intersect(greaterThanEqual_auto);
+
+  delete greaterThanEqual_auto;
+  delete lessThan_auto;
+
+  DVLOG(VLOG_LEVEL) << range_auto->id << " = makeLengthRange(" << start << "," << end <<  ")";
+
+  return range_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::minimize(){
+  DFA_ptr minimized_dfa = nullptr;
+  StringAutomaton_ptr minimized_auto = nullptr;
+
+  minimized_dfa = dfaMinimize(dfaCopy(dfa));
+  minimized_auto = new StringAutomaton(minimized_dfa, num_of_variables);
+
+  DVLOG(VLOG_LEVEL) << minimized_auto->id << " = [" << this->id << "]->minimize()";
+
+  return minimized_auto;
 }
 
 /**
@@ -477,6 +607,106 @@ StringAutomaton_ptr StringAutomaton::closure() {
   return closure_auto;
 }
 
+
+
+StringAutomaton_ptr StringAutomaton::suffixes(){
+  DFA_ptr suffix_dfa = nullptr;
+  StringAutomaton_ptr suffix_auto = nullptr;
+
+  suffix_dfa = dfaCopy(dfa);
+
+  suffix_auto = new StringAutomaton(dfaMinimize(dfa_Suffix(suffix_dfa,0,0,StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
+          StringAutomaton::DEFAULT_VARIABLE_INDICES)), num_of_variables);
+  return suffix_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::suffixesFromIndex(int start){
+  DFA_ptr suffix_dfa = nullptr;
+  DFA_ptr current_dfa = nullptr;
+  StringAutomaton_ptr suffix_auto = nullptr;
+
+  if(start <= 0){
+    suffix_dfa = dfaCopy(dfa);
+  }
+  else{
+    suffix_dfa = dfaMinimize(dfa_Suffix(dfaCopy(dfa),start,start,StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
+            StringAutomaton::DEFAULT_VARIABLE_INDICES));
+  }
+
+  suffix_auto = new StringAutomaton(suffix_dfa, num_of_variables);
+
+  DVLOG(VLOG_LEVEL) << suffix_auto->id << " = [" << this->id << "]->suffixesFromIndex()";
+
+  return suffix_auto;
+}
+
+
+
+
+StringAutomaton_ptr StringAutomaton::prefixes(){
+  DFA_ptr prefix_dfa = nullptr;
+  StringAutomaton_ptr prefix_auto = nullptr;
+  int sink;
+
+  prefix_dfa = dfaCopy(dfa);
+  sink = find_sink(prefix_dfa);
+
+  for (int i = 0; i < prefix_dfa->ns; i++) {
+    if(i != sink){
+      prefix_dfa->f[i] = 1;
+    }
+  }
+
+  prefix_auto = new StringAutomaton(dfaMinimize(prefix_dfa), num_of_variables);
+
+  DVLOG(VLOG_LEVEL) << prefix_auto->id << " = [" << this->id << "]->prefixes()";
+  return prefix_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::prefixesAtIndex(int index){
+  StringAutomaton_ptr prefixes_auto = nullptr;
+  StringAutomaton_ptr length_auto = nullptr;
+  StringAutomaton_ptr prefixesAt_auto = nullptr;
+
+  prefixes_auto = this->prefixes();
+  prefixesAt_auto = prefixes_auto->intersect(makeLengthEqual(index+1));
+  DVLOG(VLOG_LEVEL) << prefixesAt_auto->id << " = [" << this->id << "]->prefixesAtIndex("<<index<<")";
+  return prefixesAt_auto;
+}
+
+
+StringAutomaton_ptr StringAutomaton::prefixesUntilIndex(int index){
+  StringAutomaton_ptr prefixes_auto = nullptr;
+  StringAutomaton_ptr length_auto = nullptr;
+  StringAutomaton_ptr prefixesUntil_auto = nullptr;
+
+  prefixes_auto = this->prefixes();
+  length_auto = makeLengthLessThan(index);
+
+  prefixesUntil_auto = prefixes_auto->intersect(length_auto);
+  DVLOG(VLOG_LEVEL) << prefixesUntil_auto->id << " = [" << this->id << "]->prefixesUntilIndex("<<index<<")";
+  return prefixesUntil_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::substring(int start){
+  StringAutomaton_ptr substring_auto = nullptr;
+  substring_auto = this->suffixesFromIndex(start);
+  DVLOG(VLOG_LEVEL) << substring_auto->id << " = [" << this->id << "]->substring(" << start << ")";
+  return substring_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::substring(int start, int end){
+  StringAutomaton_ptr substring_auto = nullptr;
+  substring_auto = (this->suffixesFromIndex(start))->prefixesAtIndex(end - start);
+  DVLOG(VLOG_LEVEL) << substring_auto->id << " = [" << this->id << "]->substring(" << start << "," << end << ")";
+  return substring_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::charAt(int index){
+  return this->substring(index,index+1);
+}
+
+
 StringAutomaton_ptr StringAutomaton::kleeneClosure() {
   StringAutomaton_ptr kleene_closure_auto = nullptr, closure_auto = nullptr, empty_string = nullptr;
 
@@ -490,6 +720,7 @@ StringAutomaton_ptr StringAutomaton::kleeneClosure() {
 
   return kleene_closure_auto;
 }
+
 
 StringAutomaton_ptr StringAutomaton::repeat(unsigned min) {
   StringAutomaton_ptr repeated_auto = nullptr, union_auto = nullptr, concat_auto = nullptr, complement_auto = nullptr,

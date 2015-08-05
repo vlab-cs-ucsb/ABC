@@ -55,7 +55,20 @@ public:
           int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
   static StringAutomaton_ptr makeRegexAuto(std::string regex, int num_of_variables =
           StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  static StringAutomaton_ptr makeLengthRange(int start, int end, int num_of_variables =
+          StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  static StringAutomaton_ptr makeLengthEqual(int length, int num_of_variables =
+            StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  static StringAutomaton_ptr makeLengthLessThan(int length, int num_of_variables =
+              StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  static StringAutomaton_ptr makeLengthLessThanEqual(int length, int num_of_variables =
+                StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  static StringAutomaton_ptr makeLengthGreaterThan(int length, int num_of_variables =
+                  StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  static StringAutomaton_ptr makeLengthGreaterThanEqual(int length, int num_of_variables =
+                    StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
 
+  StringAutomaton_ptr minimize();
   StringAutomaton_ptr complement();
   StringAutomaton_ptr union_(StringAutomaton_ptr other_auto);
   StringAutomaton_ptr intersect(StringAutomaton_ptr other_auto);
@@ -68,6 +81,14 @@ public:
   StringAutomaton_ptr repeat(unsigned min);
   StringAutomaton_ptr repeat(unsigned min, unsigned max);
 
+  StringAutomaton_ptr charAt(int index);
+  StringAutomaton_ptr suffixes();
+  StringAutomaton_ptr prefixes();
+  StringAutomaton_ptr suffixesFromIndex(int start);
+  StringAutomaton_ptr prefixesUntilIndex(int end);
+  StringAutomaton_ptr prefixesAtIndex(int index);
+  StringAutomaton_ptr substring(int start);
+  StringAutomaton_ptr substring(int start, int end);
   StringAutomaton_ptr contains(StringAutomaton_ptr other_auto);
   StringAutomaton_ptr begins(StringAutomaton_ptr other_auto);
   StringAutomaton_ptr ends(StringAutomaton_ptr other_auto);
