@@ -226,24 +226,94 @@ void PreImageComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
   visit_children_of(sub_string_term);
 }
 
+/**
+ * TODO improve pre image computation
+ *
+ */
 void PreImageComputer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
-  LOG(FATAL) << "implement me";
-  visit_children_of(to_upper_term);
+  DVLOG(VLOG_LEVEL) << "pop: " << *to_upper_term;
+  popTerm(to_upper_term);
+  Term_ptr child_term = current_path.back();
+  Value_ptr child_value = getTermPreImage(child_term);
+  if (child_value not_eq nullptr) {
+    visit(child_term);
+    return;
+  }
+
+  Value_ptr term_value = getTermPreImage(to_upper_term);
+  Value_ptr child_post_value = getTermPostImage(child_term);
+  Theory::StringAutomaton_ptr child_pre_auto = term_value->getStringAutomaton()
+      ->preToUpperCase(child_post_value->getStringAutomaton());
+  child_value = new Value(Value::Type::STRING_AUTOMATON, child_pre_auto);
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
 }
 
 void PreImageComputer::visitToLower(SMT::ToLower_ptr to_lower_term) {
-  LOG(FATAL) << "implement me";
-  visit_children_of(to_lower_term);
+  DVLOG(VLOG_LEVEL) << "pop: " << *to_lower_term;
+  popTerm(to_lower_term);
+  Term_ptr child_term = current_path.back();
+  Value_ptr child_value = getTermPreImage(child_term);
+  if (child_value not_eq nullptr) {
+    visit(child_term);
+    return;
+  }
+
+  Value_ptr term_value = getTermPreImage(to_lower_term);
+  Value_ptr child_post_value = getTermPostImage(child_term);
+  Theory::StringAutomaton_ptr child_pre_auto = term_value->getStringAutomaton()
+      ->preToLowerCase(child_post_value->getStringAutomaton());
+  child_value = new Value(Value::Type::STRING_AUTOMATON, child_pre_auto);
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
 }
 
 void PreImageComputer::visitTrim(SMT::Trim_ptr trim_term) {
-  LOG(FATAL) << "implement me";
-  visit_children_of(trim_term);
+  DVLOG(VLOG_LEVEL) << "pop: " << *trim_term;
+  popTerm(trim_term);
+  Term_ptr child_term = current_path.back();
+  Value_ptr child_value = getTermPreImage(child_term);
+  if (child_value not_eq nullptr) {
+    visit(child_term);
+    return;
+  }
+
+  Value_ptr term_value = getTermPreImage(trim_term);
+  Value_ptr child_post_value = getTermPostImage(child_term);
+  Theory::StringAutomaton_ptr child_pre_auto = term_value->getStringAutomaton()
+      ->preTrim(child_post_value->getStringAutomaton());
+  child_value = new Value(Value::Type::STRING_AUTOMATON, child_pre_auto);
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
 }
 
 void PreImageComputer::visitReplace(Replace_ptr replace_term) {
-  LOG(FATAL) << "implement me";
-  visit_children_of(replace_term);
+  DVLOG(VLOG_LEVEL) << "pop: " << *replace_term;
+  popTerm(replace_term);
+  Term_ptr child_term = current_path.back();
+  Value_ptr child_value = getTermPreImage(child_term);
+  if (child_value not_eq nullptr) {
+    visit(child_term);
+    return;
+  }
+
+  Value_ptr term_value = getTermPreImage(replace_term);
+  Value_ptr child_post_value = getTermPostImage(child_term);
+  Value_ptr search_auto_value = getTermPostImage(replace_term->search_term);
+  Value_ptr replace_auto_value = getTermPostImage(replace_term->replace_term);
+
+  if (child_term == replace_term->replace_term) {
+    Theory::StringAutomaton_ptr child_pre_auto = term_value->getStringAutomaton()
+        ->preReplace(search_auto_value->getStringAutomaton(),
+            replace_auto_value->getStringAutomaton()->getString(),
+            child_post_value->getStringAutomaton());
+    child_value = new Value(Value::Type::STRING_AUTOMATON, child_pre_auto);
+  } else {
+    child_value = child_post_value->clone();
+  }
+
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
 }
 
 void PreImageComputer::visitCount(Count_ptr count_term) {

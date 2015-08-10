@@ -890,6 +890,90 @@ StringAutomaton_ptr StringAutomaton::replace(StringAutomaton_ptr search_auto, St
 }
 
 /**
+ * TODO Efficiency of the pre image computations can be improved
+ * if they are guided by the post image values
+ */
+
+
+StringAutomaton_ptr StringAutomaton::preToUpperCase(StringAutomaton_ptr rangeAuto) {
+  DFA_ptr result_dfa = nullptr;
+  StringAutomaton_ptr result_auto = nullptr;
+
+  result_dfa = dfaPreToUpperCase(dfa,
+      StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  result_auto = new StringAutomaton(result_dfa, num_of_variables);
+
+  if (rangeAuto not_eq nullptr) {
+    StringAutomaton_ptr tmp_auto = result_auto;
+    result_auto = tmp_auto->intersect(rangeAuto);
+    delete tmp_auto;
+  }
+
+  DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->preToUpperCase()";
+
+  return result_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::preToLowerCase(StringAutomaton_ptr rangeAuto) {
+  DFA_ptr result_dfa = nullptr;
+  StringAutomaton_ptr result_auto = nullptr;
+
+  result_dfa = dfaPreToLowerCase(dfa,
+      StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  result_auto = new StringAutomaton(result_dfa, num_of_variables);
+
+  if (rangeAuto not_eq nullptr) {
+    StringAutomaton_ptr tmp_auto = result_auto;
+    result_auto = tmp_auto->intersect(rangeAuto);
+    delete tmp_auto;
+  }
+
+  DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->preToLowerCase()";
+
+  return result_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::preTrim(StringAutomaton_ptr rangeAuto) {
+  DFA_ptr result_dfa = nullptr;
+  StringAutomaton_ptr result_auto = nullptr;
+
+  result_dfa = dfaPreTrim(dfa, ' ',
+      StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  result_auto = new StringAutomaton(result_dfa, num_of_variables);
+
+  if (rangeAuto not_eq nullptr) {
+    StringAutomaton_ptr tmp_auto = result_auto;
+    result_auto = tmp_auto->intersect(rangeAuto);
+    delete tmp_auto;
+  }
+
+  DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->preTrim()";
+
+  return result_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::preReplace(StringAutomaton_ptr searchAuto, std::string replaceString, StringAutomaton_ptr rangeAuto) {
+  DFA_ptr result_dfa = nullptr;
+  StringAutomaton_ptr result_auto = nullptr;
+  std::vector<char> replaceStringVector(replaceString.begin(), replaceString.end());
+  replaceStringVector.push_back('\0');
+
+  result_dfa = dfa_pre_replace_str(dfa, searchAuto->dfa, &replaceStringVector[0],
+      StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  result_auto = new StringAutomaton(result_dfa, num_of_variables);
+
+  if (rangeAuto not_eq nullptr) {
+    StringAutomaton_ptr tmp_auto = result_auto;
+    result_auto = tmp_auto->intersect(rangeAuto);
+    delete tmp_auto;
+  }
+
+  DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->preReplace(" << searchAuto->id << ", " << replaceString << ")";
+
+  return result_auto;
+}
+
+/**
  * TODO Needs complete refactoring, has a lot of room for improvements
  * especially in libstranger function calls
  */
@@ -933,6 +1017,11 @@ bool StringAutomaton::hasEmptyString() {
 bool StringAutomaton::isEmptyString() {
   LOG(FATAL)<< "implement me";
   return false;
+}
+
+std::string StringAutomaton::getString() {
+  char* result = isSingleton(this->dfa,StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  return std::string(result);
 }
 
 //void StringAutomaton::toDotAscii(bool print_sink, std::ostream& out) {

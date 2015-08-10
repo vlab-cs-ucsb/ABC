@@ -98,10 +98,23 @@ public:
 
   StringAutomaton_ptr replace(StringAutomaton_ptr search_auto, StringAutomaton_ptr replace_auto);
 
+  /**
+   * TODO Pre image computations can be gudied by a range auto
+   * which is the set that a pre image computation can takes values from,
+   * it corresponds to post image value of the operation
+   */
+
+  StringAutomaton_ptr preToUpperCase(StringAutomaton_ptr rangeAuto = nullptr);
+  StringAutomaton_ptr preToLowerCase(StringAutomaton_ptr rangeAuto = nullptr);
+  StringAutomaton_ptr preTrim(StringAutomaton_ptr rangeAuto = nullptr);
+
+  StringAutomaton_ptr preReplace(StringAutomaton_ptr searchAuto, std::string replaceString, StringAutomaton_ptr rangeAuto = nullptr);
+
   bool checkEquivalence(StringAutomaton_ptr other_auto);
   bool isEmptyLanguage();
   bool hasEmptyString();
   bool isEmptyString();
+  std::string getString();
 
   void toDotAscii(bool print_sink = false, std::ostream& out = std::cout);
 
