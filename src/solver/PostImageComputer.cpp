@@ -23,7 +23,7 @@ PostImageComputer::~PostImageComputer() {
 }
 
 void PostImageComputer::start() {
-
+  DVLOG(VLOG_LEVEL) << "start";
   visit(root);
   end();
 }
@@ -91,6 +91,7 @@ void PostImageComputer::visitOr(Or_ptr or_term) {
 
 void PostImageComputer::visitNot(Not_ptr not_term) {
   __visit_children_of(not_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *not_term;
 
   Value_ptr result = nullptr, param = getTermValue(not_term->term);
 
@@ -139,6 +140,7 @@ void PostImageComputer::visitNot(Not_ptr not_term) {
 
 void PostImageComputer::visitUMinus(UMinus_ptr u_minus_term) {
   __visit_children_of(u_minus_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *u_minus_term;
 
   Value_ptr result = nullptr, param = getTermValue(u_minus_term->term);
 
@@ -168,6 +170,7 @@ void PostImageComputer::visitUMinus(UMinus_ptr u_minus_term) {
 
 void PostImageComputer::visitMinus(Minus_ptr minus_term) {
   __visit_children_of(minus_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *minus_term;
 
   Value_ptr result = nullptr, param_left = getTermValue(minus_term->left_term),
       param_right = getTermValue(minus_term->right_term);
@@ -188,6 +191,7 @@ void PostImageComputer::visitMinus(Minus_ptr minus_term) {
 
 void PostImageComputer::visitPlus(Plus_ptr plus_term) {
   __visit_children_of(plus_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *plus_term;
 
   Value_ptr result = nullptr, param_left = getTermValue(plus_term->left_term),
       param_right = getTermValue(plus_term->right_term);
@@ -208,6 +212,7 @@ void PostImageComputer::visitPlus(Plus_ptr plus_term) {
 
 void PostImageComputer::visitEq(Eq_ptr eq_term) {
   __visit_children_of(eq_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *eq_term;
 
   Value_ptr result = nullptr, param_left = nullptr, param_right = nullptr;
 
@@ -261,6 +266,8 @@ void PostImageComputer::visitLe(Le_ptr le_term) {
 }
 
 void PostImageComputer::visitConcat(Concat_ptr concat_term) {
+  DVLOG(VLOG_LEVEL) << "visit: " << *concat_term << " ...";
+
   Value_ptr result = nullptr, concat_value = nullptr, param = nullptr;
   path_trace.push_back(concat_term);
   for (auto& term_ptr : *(concat_term->term_list)) {
@@ -276,11 +283,11 @@ void PostImageComputer::visitConcat(Concat_ptr concat_term) {
   }
   path_trace.pop_back();
   setTermValue(concat_term, result);
-
 }
 
 void PostImageComputer::visitIn(In_ptr in_term) {
   __visit_children_of(in_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *in_term;
 
   Value_ptr result = nullptr, param_left = getTermValue(in_term->left_term),
       param_right = getTermValue(in_term->right_term);
@@ -302,6 +309,7 @@ void PostImageComputer::visitLen(Len_ptr len_term) {
 
 void PostImageComputer::visitContains(Contains_ptr contains_term) {
   __visit_children_of(contains_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *contains_term;
 
   Value_ptr result = nullptr, param_subject = getTermValue(contains_term->subject_term),
       param_search = getTermValue(contains_term->search_term);
@@ -314,6 +322,7 @@ void PostImageComputer::visitContains(Contains_ptr contains_term) {
 
 void PostImageComputer::visitBegins(Begins_ptr begins_term) {
   __visit_children_of(begins_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *begins_term;
 
   Value_ptr result = nullptr, param_left = getTermValue(begins_term->subject_term),
       param_right = getTermValue(begins_term->search_term);
@@ -326,6 +335,7 @@ void PostImageComputer::visitBegins(Begins_ptr begins_term) {
 
 void PostImageComputer::visitEnds(Ends_ptr ends_term) {
   __visit_children_of(ends_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *ends_term;
 
   Value_ptr result = nullptr, param_left = getTermValue(ends_term->subject_term),
       param_right = getTermValue(ends_term->search_term);
@@ -347,17 +357,43 @@ void PostImageComputer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term
 }
 
 void PostImageComputer::visitCharAt(SMT::CharAt_ptr char_at_term) {
-  visit_children_of(char_at_term);
-  LOG(FATAL)<< "implement me";
+  __visit_children_of(char_at_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *char_at_term;
+
+  Value_ptr result = nullptr, param_subject = getTermValue(char_at_term->subject_term),
+      param_index = getTermValue(char_at_term->index_term);
+
+  result = new Value(Value::Type::STRING_AUTOMATON,
+      param_subject->getStringAutomaton()->charAt(param_index->getIntConstant()));
+
+  setTermValue(char_at_term, result);
 }
 
 void PostImageComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
-  visit_children_of(sub_string_term);
-  LOG(FATAL)<< "implement me";
+  __visit_children_of(sub_string_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *sub_string_term;
+
+  Value_ptr result = nullptr, param_subject = getTermValue(sub_string_term->subject_term),
+      param_start_index = getTermValue(sub_string_term->start_index_term);
+
+  if (sub_string_term->end_index_term == nullptr) {
+    param_subject->getStringAutomaton();
+    result = new Value(Value::Type::STRING_AUTOMATON,
+        param_subject->getStringAutomaton()->substring(param_start_index->getIntConstant()));
+  } else {
+    Value_ptr param_end_index = getTermValue(sub_string_term->end_index_term);
+    result = new Value(Value::Type::STRING_AUTOMATON,
+            param_subject->getStringAutomaton()->substring(
+                param_start_index->getIntConstant(),
+                param_end_index->getIntConstant()));
+  }
+
+  setTermValue(sub_string_term, result);
 }
 
 void PostImageComputer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
   __visit_children_of(to_upper_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *to_upper_term;
 
   Value_ptr result = nullptr, param = getTermValue(to_upper_term->subject_term);
 
@@ -369,6 +405,7 @@ void PostImageComputer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
 
 void PostImageComputer::visitToLower(SMT::ToLower_ptr to_lower_term) {
   __visit_children_of(to_lower_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *to_lower_term;
 
   Value_ptr result = nullptr, param = getTermValue(to_lower_term->subject_term);
 
@@ -380,6 +417,7 @@ void PostImageComputer::visitToLower(SMT::ToLower_ptr to_lower_term) {
 
 void PostImageComputer::visitTrim(SMT::Trim_ptr trim_term) {
   __visit_children_of(trim_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *trim_term;
 
   Value_ptr result = nullptr, param = getTermValue(trim_term->subject_term);
 
@@ -392,6 +430,7 @@ void PostImageComputer::visitTrim(SMT::Trim_ptr trim_term) {
 
 void PostImageComputer::visitReplace(Replace_ptr replace_term) {
   __visit_children_of(replace_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *replace_term;
 
   Value_ptr result = nullptr, param_subject = getTermValue(replace_term->subject_term),
       param_search = getTermValue(replace_term->search_term),
@@ -427,6 +466,8 @@ void PostImageComputer::visitAsQualIdentifier(
 }
 
 void PostImageComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
+  DVLOG(VLOG_LEVEL) << "visit: " << *qi_term;
+
   Variable_ptr variable = symbol_table->getVariable(qi_term->getVarName());
   Value_ptr result = nullptr, variable_value = symbol_table->getValue(variable);
 
@@ -437,6 +478,8 @@ void PostImageComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 }
 
 void PostImageComputer::visitTermConstant(TermConstant_ptr term_constant) {
+  DVLOG(VLOG_LEVEL) << "visit: " << *term_constant;
+
   Value_ptr result = nullptr;
 
   switch (term_constant->getValueType()) {
@@ -465,7 +508,6 @@ void PostImageComputer::visitTermConstant(TermConstant_ptr term_constant) {
     result = new Value(Value::Type::STRING_AUTOMATON, Theory::StringAutomaton::makeString(term_constant->getValue()));
     break;
   case SMT::Primitive::Type::REGEX:
-    std::cout << "!!!! " << term_constant->getValue() << std::endl;
     result = new Value(Value::Type::STRING_AUTOMATON, Theory::StringAutomaton::makeRegexAuto(term_constant->getValue()));
     break;
   default:

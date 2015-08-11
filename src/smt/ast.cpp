@@ -1039,13 +1039,22 @@ void CharAt::visit_children(Visitor_ptr v) {
 }
 
 SubString::SubString(Term_ptr subject_term, Term_ptr start_index_term)
-        : Term(Term::Type::SUBSTRING), subject_term (subject_term), start_index_term (start_index_term) {
+        : Term(Term::Type::SUBSTRING), subject_term (subject_term),
+          start_index_term (start_index_term), end_index_term (nullptr) {
+}
+
+SubString::SubString(Term_ptr subject_term, Term_ptr start_index_term, Term_ptr end_index_term)
+        : Term(Term::Type::SUBSTRING), subject_term (subject_term),
+          start_index_term (start_index_term), end_index_term (end_index_term) {
 }
 
 SubString::SubString(const SubString& other)
         : Term(other.type) {
   subject_term = other.subject_term->clone();
   start_index_term = other.start_index_term->clone();
+  if (end_index_term not_eq nullptr) {
+    end_index_term = other.end_index_term->clone();
+  }
 }
 
 SubString_ptr SubString::clone() const {
@@ -1055,6 +1064,7 @@ SubString_ptr SubString::clone() const {
 SubString::~SubString() {
   delete subject_term;
   delete start_index_term;
+  delete end_index_term;
 }
 
 void SubString::accept(Visitor_ptr v) {

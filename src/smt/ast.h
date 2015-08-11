@@ -628,6 +628,7 @@ public:
 class SubString: public Term {
 public:
   SubString(Term_ptr, Term_ptr);
+  SubString(Term_ptr, Term_ptr, Term_ptr);
   SubString(const SubString&);
   virtual SubString_ptr clone() const;
   virtual ~SubString();
@@ -637,6 +638,7 @@ public:
 
   Term_ptr subject_term;
   Term_ptr start_index_term;
+  Term_ptr end_index_term;
 };
 
 class ToUpper: public Term {

@@ -81,17 +81,18 @@ public:
   StringAutomaton_ptr repeat(unsigned min);
   StringAutomaton_ptr repeat(unsigned min, unsigned max);
 
-  StringAutomaton_ptr charAt(int index);
   StringAutomaton_ptr suffixes();
   StringAutomaton_ptr prefixes();
   StringAutomaton_ptr suffixesFromIndex(int start);
   StringAutomaton_ptr prefixesUntilIndex(int end);
   StringAutomaton_ptr prefixesAtIndex(int index);
+
+  StringAutomaton_ptr charAt(int index);
   StringAutomaton_ptr substring(int start);
   StringAutomaton_ptr substring(int start, int end);
-  StringAutomaton_ptr contains(StringAutomaton_ptr other_auto);
-  StringAutomaton_ptr begins(StringAutomaton_ptr other_auto);
-  StringAutomaton_ptr ends(StringAutomaton_ptr other_auto);
+  StringAutomaton_ptr contains(StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr begins(StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr ends(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr toUpperCase();
   StringAutomaton_ptr toLowerCase();
   StringAutomaton_ptr trim();
@@ -104,6 +105,12 @@ public:
    * it corresponds to post image value of the operation
    */
 
+  StringAutomaton_ptr preCharAt(int index, StringAutomaton_ptr rangeAuto = nullptr);
+  StringAutomaton_ptr preSubstring(int start, StringAutomaton_ptr rangeAuto = nullptr);
+  StringAutomaton_ptr preSubstring(int start, int end, StringAutomaton_ptr rangeAuto = nullptr);
+  StringAutomaton_ptr preContains();
+  StringAutomaton_ptr preBegins();
+  StringAutomaton_ptr preEnds();
   StringAutomaton_ptr preToUpperCase(StringAutomaton_ptr rangeAuto = nullptr);
   StringAutomaton_ptr preToLowerCase(StringAutomaton_ptr rangeAuto = nullptr);
   StringAutomaton_ptr preTrim(StringAutomaton_ptr rangeAuto = nullptr);

@@ -97,11 +97,11 @@ void Driver::printResult(std::ostream& out) {
   symbol_table->push_scope(script);
   SMT::Variable_ptr variable = symbol_table->getSymbolicVariable();
   Solver::Value_ptr result = symbol_table->getValue(variable);
-  LOG(INFO) << "Symbolic variable: " << *result;
   result->getStringAutomaton()->toDotAscii(false, out);
 }
 
 void Driver::test() {
+  return;
   Theory::StringAutomaton_ptr any_string = Theory::StringAutomaton::makeAnyString();
   Theory::StringAutomaton_ptr complement = nullptr;
   //any_string->toDotAscii(1);

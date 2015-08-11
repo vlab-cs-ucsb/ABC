@@ -246,6 +246,7 @@ term                  :
                       | "(" "indexOf" term term ")"                                       { $$ = new IndexOf($3, $4); }
                       | "(" "lastIndexOf" term term ")"                                   { $$ = new LastIndexOf($3, $4); }
                       | "(" "charAt" term term ")"                                        { $$ = new CharAt($3, $4); }
+                      | "(" "subString" term term term ")"                                     { $$ = new SubString($3, $4, $5); }
                       | "(" "subString" term term ")"                                     { $$ = new SubString($3, $4); }
                       | "(" "toUpper" term ")"                                            { $$ = new ToUpper($3); }
                       | "(" "toLower" term ")"                                            { $$ = new ToLower($3); }

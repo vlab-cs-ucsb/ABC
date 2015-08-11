@@ -34,6 +34,13 @@ void PreImageComputer::start() {
   for (auto& path_entry : variable_path_table) {
     current_path = path_entry.second;
     root_term = current_path.back();
+
+    initial_value = getTermPreImage(root_term);
+    if (initial_value not_eq nullptr) {
+      visit(root_term);
+      return;
+    }
+
     initial_value = getTermPostImage(root_term);
     setTermPreImage(root_term, initial_value->clone());
     visit(root_term);
@@ -216,14 +223,62 @@ void PreImageComputer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term)
   visit_children_of(last_index_of_term);
 }
 
+/**
+ * TODO Update visitCharAt when index is an automaton instead of an
+ * integer constant
+ */
 void PreImageComputer::visitCharAt(SMT::CharAt_ptr char_at_term) {
-  LOG(FATAL) << "implement me";
-  visit_children_of(char_at_term);
+  DVLOG(VLOG_LEVEL) << "pop: " << *char_at_term;
+  popTerm(char_at_term);
+  Term_ptr child_term = current_path.back();
+  Value_ptr child_value = getTermPreImage(child_term);
+  if (child_value not_eq nullptr) {
+    visit(child_term);
+    return;
+  }
+
+  Value_ptr term_value = getTermPreImage(char_at_term);
+  Value_ptr child_post_value = getTermPostImage(child_term);
+  Value_ptr index_value = getTermPostImage(char_at_term->index_term);
+  Theory::StringAutomaton_ptr child_pre_auto = term_value->getStringAutomaton()
+      ->preCharAt(index_value->getIntConstant(), child_post_value->getStringAutomaton());
+  child_value = new Value(Value::Type::STRING_AUTOMATON, child_pre_auto);
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
 }
 
+/**
+ * TODO Update visitSubString when index is an automaton instead of an
+ * integer constant
+ */
 void PreImageComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
-  LOG(FATAL) << "implement me";
-  visit_children_of(sub_string_term);
+  DVLOG(VLOG_LEVEL) << "pop: " << *sub_string_term;
+  popTerm(sub_string_term);
+  Term_ptr child_term = current_path.back();
+  Value_ptr child_value = getTermPreImage(child_term);
+  if (child_value not_eq nullptr) {
+    visit(child_term);
+    return;
+  }
+
+  Theory::StringAutomaton_ptr child_pre_auto = nullptr;
+  Value_ptr term_value = getTermPreImage(sub_string_term);
+  Value_ptr child_post_value = getTermPostImage(child_term);
+  Value_ptr start_index_value = getTermPostImage(sub_string_term->start_index_term);
+
+  if (sub_string_term->end_index_term == nullptr) {
+    child_pre_auto = term_value->getStringAutomaton()
+          ->preSubstring(start_index_value->getIntConstant(), child_post_value->getStringAutomaton());
+  } else {
+    Value_ptr end_index_value = getTermPostImage(sub_string_term->end_index_term);
+    child_pre_auto = term_value->getStringAutomaton()
+            ->preSubstring(start_index_value->getIntConstant(), end_index_value->getIntConstant(),
+                child_post_value->getStringAutomaton());
+  }
+
+  child_value = new Value(Value::Type::STRING_AUTOMATON, child_pre_auto);
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
 }
 
 /**
