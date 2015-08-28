@@ -2,6 +2,10 @@ package vlab.cs.ucsb.edu;
 
 /**
  * ABC Java Interface
+ * 
+ * set JVM argument -Djava.library.path=/usr/local/lib or
+ * set env. variable LD_LIBRARY_PATH to 
+ * make sure 'libabc' is available to JVM
  * @author baki
  *
  * TODO add more flexibility to constraint construction
