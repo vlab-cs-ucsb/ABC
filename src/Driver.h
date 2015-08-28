@@ -5,8 +5,8 @@
  *      Author: baki
  */
 
-#ifndef PARSER_DRIVER_H_
-#define PARSER_DRIVER_H_
+#ifndef SRC_DRIVER_H_
+#define SRC_DRIVER_H_
 
 #include <string>
 #include <map>
@@ -32,6 +32,7 @@ public:
   Driver();
   ~Driver();
 
+  void initializeABC();
   // Error handling.
   void error(const Vlab::SMT::location& l, const std::string& m);
   void error(const std::string& m);
@@ -41,9 +42,10 @@ public:
 //	void collectStatistics();
   void initializeSolver();
   void solve();
+  bool isSatisfiable();
   void printResult(std::ostream& out);
   void printResult(std::string file_name);
-
+  void reset();
 //	void solveAst();
 
   void test();
@@ -62,4 +64,4 @@ public:
 
 }
 
-#endif /* PARSER_DRIVER_H_ */
+#endif /* SRC_DRIVER_H_ */

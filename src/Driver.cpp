@@ -17,7 +17,16 @@ Driver::Driver()
 }
 
 Driver::~Driver() {
+  delete symbol_table;
   delete script;
+}
+
+// TODO parameterize flags later on
+void Driver::initializeABC() {
+//  FLAGS_log_dir = log_root;
+  FLAGS_v = 19;
+  FLAGS_logtostderr = 1;
+  google::InitGoogleLogging("ABC.Java.Driver");
 }
 
 void Driver::error(const std::string& m) {
@@ -84,6 +93,11 @@ void Driver::solve() {
   // TODO iterate to handle over-approximation
 }
 
+bool Driver::isSatisfiable() {
+  return symbol_table->isAssertionsStillValid();
+}
+
+
 void Driver::printResult(std::string file_name) {
   std::ofstream outfile(file_name.c_str());
   if (!outfile.good()) {
@@ -97,7 +111,15 @@ void Driver::printResult(std::ostream& out) {
   symbol_table->push_scope(script);
   SMT::Variable_ptr variable = symbol_table->getSymbolicVariable();
   Solver::Value_ptr result = symbol_table->getValue(variable);
-  result->getStringAutomaton()->toDotAscii(false, out);
+  result->getStringAutomaton()->toDotAscii(true, out);
+}
+
+void Driver::reset() {
+  delete symbol_table;
+  delete script;
+  script = nullptr;
+  symbol_table = nullptr;
+  LOG(INFO) << "Driver reseted.";
 }
 
 void Driver::test() {
@@ -177,4 +199,3 @@ void Driver::error(const Vlab::SMT::location& l, const std::string& m) {
 //}0--7
 
 }
-

@@ -347,12 +347,20 @@ void PostImageComputer::visitEnds(Ends_ptr ends_term) {
 }
 
 void PostImageComputer::visitIndexOf(IndexOf_ptr index_of_term) {
-  visit_children_of(index_of_term);
+  __visit_children_of(index_of_term);
+
+  DVLOG(VLOG_LEVEL) << "visit: " << *index_of_term;
+
+  Value_ptr result = nullptr, param_left = getTermValue(index_of_term->subject_term),
+      param_right = getTermValue(index_of_term->search_term);
+
+  param_left->getStringAutomaton()->indexOf(param_right->getStringAutomaton());
+
   LOG(FATAL)<< "implement me";
 }
 
 void PostImageComputer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
-  visit_children_of(last_index_of_term);
+  __visit_children_of(last_index_of_term);
   LOG(FATAL)<< "implement me";
 }
 

@@ -10,6 +10,7 @@
 
 #include <array>
 #include <vector>
+#include <map>
 #include <sstream>
 
 #include <glog/logging.h>
@@ -74,6 +75,7 @@ public:
   StringAutomaton_ptr intersect(StringAutomaton_ptr other_auto);
   StringAutomaton_ptr difference(StringAutomaton_ptr other_auto);
   StringAutomaton_ptr concatenate(StringAutomaton_ptr other_auto);
+  StringAutomaton_ptr concat(StringAutomaton_ptr other_auto);
 
   StringAutomaton_ptr optional();
   StringAutomaton_ptr closure();
@@ -90,6 +92,8 @@ public:
   StringAutomaton_ptr charAt(int index);
   StringAutomaton_ptr substring(int start);
   StringAutomaton_ptr substring(int start, int end);
+  StringAutomaton_ptr indexOf(StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr lastIndexOf(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr contains(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr begins(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr ends(StringAutomaton_ptr search_auto);
@@ -124,13 +128,25 @@ public:
   std::string getString();
 
   void toDotAscii(bool print_sink = false, std::ostream& out = std::cout);
+  // TODO merge toDot methods into one with options
+  void toDot();
+  void printBDD(std::ostream& out = std::cout);
+
 
 protected:
 
   static StringAutomaton_ptr makeRegexAuto(Util::RegularExpression_ptr regular_expression);
   static int* allocateAscIIIndexWithExtraBit(int length);
-  static std::vector<char> getReservedWord(char last_char, int length);
+  static int* getIndices(int num_of_variables);
+  static std::vector<char> getReservedWord(char last_char, int length, bool extra_bit = false);
   static char* binaryFormat(unsigned long n, int bit_length);
+  // TODO figure out better name
+  static StringAutomaton_ptr dfaSharpStringWithExtraBit(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
+      int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  inline bool isSinkState(int state_id);
+  inline bool isAcceptingState(int state_id);
+  int getSinkState();
+  bool isStartStateReachable();
 
   DFA_ptr dfa;
   int num_of_variables;
