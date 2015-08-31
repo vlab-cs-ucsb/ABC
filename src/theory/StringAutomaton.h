@@ -11,6 +11,9 @@
 #include <array>
 #include <vector>
 #include <map>
+#include <set>
+#include <stack>
+#include <queue>
 #include <sstream>
 
 #include <glog/logging.h>
@@ -69,7 +72,6 @@ public:
   static StringAutomaton_ptr makeLengthGreaterThanEqual(int length, int num_of_variables =
                     StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
 
-  StringAutomaton_ptr minimize();
   StringAutomaton_ptr complement();
   StringAutomaton_ptr union_(StringAutomaton_ptr other_auto);
   StringAutomaton_ptr intersect(StringAutomaton_ptr other_auto);
@@ -103,6 +105,7 @@ public:
 
   StringAutomaton_ptr replace(StringAutomaton_ptr search_auto, StringAutomaton_ptr replace_auto);
 
+  DFA_ptr length();
   /**
    * TODO Pre image computations can be gudied by a range auto
    * which is the set that a pre image computation can takes values from,
@@ -132,7 +135,6 @@ public:
   void toDot();
   void printBDD(std::ostream& out = std::cout);
 
-
 protected:
 
   static StringAutomaton_ptr makeRegexAuto(Util::RegularExpression_ptr regular_expression);
@@ -147,6 +149,9 @@ protected:
   inline bool isAcceptingState(int state_id);
   int getSinkState();
   bool isStartStateReachable();
+
+  void minimize();
+  void project(unsigned num_of_variables);
 
   DFA_ptr dfa;
   int num_of_variables;

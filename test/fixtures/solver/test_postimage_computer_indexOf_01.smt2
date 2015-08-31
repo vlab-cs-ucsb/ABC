@@ -2,7 +2,7 @@
 
 (declare-fun var_abc () String)
 
-(assert (= var_abc (indexOf /abc/ "b")))
+(assert (= var_abc (indexOf /(abc|debf)/ "b")))
 
 (check-sat)
 

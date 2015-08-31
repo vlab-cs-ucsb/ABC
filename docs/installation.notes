@@ -13,3 +13,7 @@ Eclipse Project:
 External Projects:
 - glog seems to be working fine without any problems.
   LibStranger seems to be working fine without any problems
+  
+Java JNI Interface:
+- JAVA_HOME must be set (java environment variables must be set)
+- set LD_LIBRARY_PATH or java.library.path for JVM (-Djava.library.path=/usr/local/lib)

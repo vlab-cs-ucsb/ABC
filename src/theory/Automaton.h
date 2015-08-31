@@ -12,6 +12,7 @@
 #include<string>
 
 #include <glog/logging.h>
+#include "utils.h"
 
 namespace Vlab {
 namespace Theory {
