@@ -20,6 +20,8 @@ int* StringAutomaton::DEFAULT_VARIABLE_INDICES = StringAutomaton::allocateAscIII
 unsigned* StringAutomaton::DEFAULT_UNSIGNED_VARIABLE_INDICES = StringAutomaton::get_unsigned_indices_main(
         StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
+int StringAutomaton::name_counter = 0;
+
 StringAutomaton::StringAutomaton(DFA_ptr dfa)
         : Automaton(Automaton::Type::STRING), dfa (dfa), num_of_variables(StringAutomaton::DEFAULT_NUM_OF_VARIABLES) {
 }
@@ -1102,6 +1104,9 @@ StringAutomaton_ptr StringAutomaton::substring(int start, int end){
  * TODO
  * 1) first check the existance with contains,
  * then continue with the result of contains.
+ * 2) if there are strings those contain search auto and
+ * there are strings those do not contain search result should include
+ * -1 as well.
  */
 StringAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
 
@@ -1232,12 +1237,142 @@ StringAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
   indexOf_auto = new StringAutomaton(dfaBuild(&*(statuses.begin())), StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
 //  DFA_ptr binary_dfa = indexOf_auto->length();
-  indexOf_auto->toDotAscii(true);
+//  indexOf_auto->inspectAuto(true);
   return indexOf_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto) {
-  return nullptr;
+  StringAutomaton_ptr contains_auto = nullptr, ends_auto = nullptr,
+      lastIndexOf_auto = nullptr, search_result_auto = nullptr;
+
+  DFA_ptr lastIndexOf_dfa = nullptr, minimized_dfa = nullptr;
+
+  contains_auto = this->contains(search_auto);
+  if (contains_auto->isEmptyLanguage()) {
+    delete contains_auto;
+    // return -1
+    return nullptr;
+  }
+  std::map<int, Node*> nodes;
+  std::map<int, int> state_id_map;
+  std::map<int, int> reverse_state_id_map;
+  paths state_paths = nullptr, pp = nullptr;
+  trace_descr tp = nullptr;
+  std::set<int> final_states;
+  std::stack<int> state_work_list;
+  std::set<int> processed;
+
+  StringAutomaton_ptr contains_duplicate_auto = new StringAutomaton(dfa_replace_step1_duplicate(contains_auto->dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES));
+  StringAutomaton_ptr search_complement_auto = new StringAutomaton(dfa_replace_step2_match_compliment(search_auto->dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES));
+  StringAutomaton_ptr tmp_auto = contains_duplicate_auto->intersect(search_complement_auto);
+  delete contains_auto; contains_auto = nullptr;
+  delete contains_duplicate_auto; contains_duplicate_auto = nullptr;
+  delete search_complement_auto; search_complement_auto = nullptr;
+  StringAutomaton_ptr sharp_auto = StringAutomaton::dfaSharpStringWithExtraBit();
+  search_result_auto = sharp_auto->intersect(tmp_auto);
+  delete tmp_auto; tmp_auto = nullptr;
+  delete sharp_auto; sharp_auto = nullptr;
+
+  search_result_auto->project((unsigned) StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  search_result_auto->minimize();
+
+  search_result_auto->inspectAuto(true);
+
+  // extract automaton
+  std::vector<char> marked_transition = StringAutomaton::getReservedWord('1', StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  int sink_state = search_result_auto->getSinkState();
+  int current_state;
+  int state_id = 0;
+  int* indices = StringAutomaton::DEFAULT_VARIABLE_INDICES;
+  std::vector<char>* current_exception = nullptr;
+  Node* current_node = nullptr;
+
+  state_work_list.push(search_result_auto->dfa->s);
+  while (not state_work_list.empty()) {
+    current_state = state_work_list.top(); state_work_list.pop();
+    if (processed.find(current_state) != processed.end()) {
+      continue;
+    }
+    processed.insert(current_state);
+    current_node = new Node(current_state);
+    state_paths = pp = make_paths(search_result_auto->dfa->bddm, search_result_auto->dfa->q[current_state]);
+
+    while (pp) {
+      if ( pp->to != sink_state) {
+        current_exception = new std::vector<char>();
+        for (int j = 0; j < search_result_auto->num_of_variables; j++) {
+          for (tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
+          if (tp) {
+            if (tp->value) {
+              current_exception->push_back('1');
+            }
+            else {
+              current_exception->push_back('0');
+            }
+          }
+          else {
+            current_exception->push_back('X');
+          }
+        }
+        current_exception->push_back('\0');
+        if (marked_transition == *current_exception) {
+          final_states.insert(current_state);
+          delete current_exception;
+        } else {
+          current_node->addExceptionToState(pp->to, current_exception);
+          if (processed.find(pp->to) == processed.end()) {
+            state_work_list.push(pp->to);
+          }
+        }
+      }
+
+      tp = nullptr;
+      pp = pp->next;
+    }
+
+    nodes[current_state] = current_node;
+    if (state_id == sink_state) {
+      state_id_map[state_id] = sink_state;
+      reverse_state_id_map[sink_state] = state_id;
+      nodes[sink_state] = new Node(sink_state);
+      state_id++;
+    }
+
+    state_id_map[state_id] = current_state;
+    reverse_state_id_map[current_state] = state_id;
+    state_id++;
+
+    current_node = nullptr;
+    kill_paths(state_paths);
+    state_paths = pp = nullptr;
+  }
+
+  // create automaton
+  int expected_num_of_states = nodes.size();
+  std::vector<char> statuses (expected_num_of_states);
+  int old_state_id;
+  statuses[sink_state] = '-';
+  dfaSetup(expected_num_of_states, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  for (int i = 0; i < expected_num_of_states; i++) {
+    old_state_id = state_id_map[i];
+    current_node = nodes[old_state_id];
+    dfaAllocExceptions(current_node->getNumberOfExceptions());
+    for (auto& entry: current_node->getExceptions()) {
+      dfaStoreException(reverse_state_id_map[entry.first], &*(entry.second->begin()));
+    }
+    dfaStoreState(sink_state);
+    if (final_states.find(old_state_id) != final_states.end()) {
+      statuses[i] = '+';
+    } else {
+      statuses[i] = '-';
+    }
+  }
+  statuses.push_back('\0');
+  lastIndexOf_auto = new StringAutomaton(dfaBuild(&*(statuses.begin())), StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+
+//  DFA_ptr binary_dfa = indexOf_auto->length();
+//  indexOf_auto->inspectAuto(true);
+  return lastIndexOf_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::contains(StringAutomaton_ptr search_auto) {
@@ -1338,9 +1473,10 @@ StringAutomaton_ptr StringAutomaton::replace(StringAutomaton_ptr search_auto, St
 DFA_ptr StringAutomaton::length() {
   DFA_ptr unary_dfa = nullptr, binary_dfa = nullptr;
   unary_dfa = dfa_string_to_unaryDFA(this->dfa, this->num_of_variables, StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  struct semilinear_type* coeff = getSemilinerSetCoefficients(unary_dfa);
-  print_semilinear_coefficients(coeff);
-  binary_dfa = dfa_semiliner_to_binaryDFA(coeff);
+  LOG(FATAL) << "implement me";
+//  struct semilinear_type* coeff = getSemilinerSetCoefficients(unary_dfa);
+//  print_semilinear_coefficients(coeff);
+//  binary_dfa = dfa_semiliner_to_binaryDFA(coeff);
   return binary_dfa;
 }
 
@@ -1743,6 +1879,8 @@ void StringAutomaton::toDotAscii(bool print_sink, std::ostream& out) {
   out << "}" << std::endl;
 }
 
+
+
 // TODO will be merge into one toDot function with above
 void StringAutomaton::toDot() {
   dfaPrintGraphviz(this->dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_UNSIGNED_VARIABLE_INDICES);
@@ -1813,6 +1951,20 @@ void StringAutomaton::printBDD(std::ostream& out) {
 //  }
 //  out << "}" << std::endl;
 //  tableFree(table);
+}
+
+void StringAutomaton::inspectAuto(bool print_sink) {
+  std::stringstream file_name;
+  file_name << "./output/inspect_auto_" << name_counter++ << ".dot";
+  std::string file = file_name.str();
+  std::ofstream outfile(file.c_str());
+  if (!outfile.good()) {
+    std::cout << "cannot open file: " << file_name << std::endl;
+    exit(2);
+  }
+  toDotAscii(print_sink, outfile);
+  std::string dot_cmd("xdot " + file + " &");
+  std::system(dot_cmd.c_str());
 }
 
 int* StringAutomaton::allocateAscIIIndexWithExtraBit(int length) {

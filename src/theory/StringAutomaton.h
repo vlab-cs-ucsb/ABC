@@ -8,13 +8,15 @@
 #ifndef THEORY_STRINGAUTOMATON_H_
 #define THEORY_STRINGAUTOMATON_H_
 
+#include <sstream>
+#include <iostream>
+#include <fstream>
 #include <array>
 #include <vector>
 #include <map>
 #include <set>
 #include <stack>
 #include <queue>
-#include <sstream>
 
 #include <glog/logging.h>
 #include <stranger.h>
@@ -134,6 +136,7 @@ public:
   // TODO merge toDot methods into one with options
   void toDot();
   void printBDD(std::ostream& out = std::cout);
+  void inspectAuto(bool print_sink = false);
 
 protected:
 
@@ -158,6 +161,7 @@ protected:
   static int DEFAULT_NUM_OF_VARIABLES;
   static int* DEFAULT_VARIABLE_INDICES;
   static unsigned* DEFAULT_UNSIGNED_VARIABLE_INDICES;
+  static int name_counter;
 private:
 
   static const int VLOG_LEVEL;
