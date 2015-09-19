@@ -1253,12 +1253,13 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
     // return -1
     return nullptr;
   }
+
   std::map<int, Node*> nodes;
   std::map<int, int> state_id_map;
   std::map<int, int> reverse_state_id_map;
   paths state_paths = nullptr, pp = nullptr;
   trace_descr tp = nullptr;
-  std::set<int> final_states;
+  std::set<int> final_states__remove_me;
   std::stack<int> state_work_list;
   std::set<int> processed;
 
@@ -1278,9 +1279,107 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
 
   search_result_auto->inspectAuto(true);
 
+  // figure out last index of states with graph manipulation
+
+  Graph_ptr graph = search_result_auto->toGraph();
+  // Mark start states and end states of matches
+  std::vector<char> flag_1_exception = {'1', '1', '1', '1', '1', '1', '1', '1'}; // 255
+  std::vector<char> flag_2_exception = {'1', '1', '1', '1', '1', '1', '1', '0'}; // 254
+  GraphNode_ptr node = nullptr;
+  for (int s = 0; s < search_result_auto->dfa->ns; s++) {
+    node = graph->getNode(s);
+    if (search_result_auto->hasExceptionToValidStateFrom(s, flag_1_exception)) {
+      node->setFlag(1); // flag 1 is to mark for beginning of a match
+    } else if (search_result_auto->hasExceptionToValidStateFrom(s, flag_2_exception)) {
+      node->setFlag(2); // flag 2 is to mark for end of a match
+    }
+  }
+
+  graph->inspectGraph(false);
+
+  // Need to operate on dag in order to handle cycles
+  DAGraph_ptr da_graph = new DAGraph(graph); // converts graph into a dag
+
+  // begin finding new final states
+  // Reverse DFS to find nodes with flag 1 that are closest to final states
+  // That step marks new final states at the dag level
+  DAGraphNodeSet last_index_da_nodes;
+  std::stack<DAGraphNode_ptr> da_stack;
+  std::map<DAGraphNode_ptr, bool> is_visited; // relies on c++ initializes bool as false
+  for (auto node : da_graph->getFinalNodes()) {
+    da_stack.push(node);
+    while (not da_stack.empty()) {
+      DAGraphNode_ptr curr_da_node = da_stack.top(); da_stack.pop();
+      if (is_visited[curr_da_node]) {
+        continue;
+      }
+      is_visited[curr_da_node] = true;
+      if (curr_da_node->hasFlag(1)) {
+        last_index_da_nodes.insert(curr_da_node);
+        curr_da_node->setFlag(3); // flag 3 is for new final states
+      } else {
+        for (auto next_da_node : curr_da_node->getPrevNodes()) {
+          da_stack.push(next_da_node);
+        }
+      }
+    }
+  }
+  // end of finding new final final states
+
+  while (not da_stack.empty()) {
+    da_stack.pop();
+  }
+  is_visited.clear(); // relies on c++ initializes bool as false
+
+  // Re-set final nodes for dag and for the corresponding cyclic graph
+  da_graph->resetFinalNodes(last_index_da_nodes);
+
+  // begin trimming step
+  // Figure out where to cut new graph, trim DAG graph and corresponding graph
+  // This step removes the unneccasary nodes that are left after final nodes
+
+  std::stack<DAGraphNode_ptr> da_trim_stack;
+  DAGraphNode_ptr sink_da_node = da_graph->getSinkNode();
+  is_visited[sink_da_node] = true; // do not visit sink
+  for (auto node : last_index_da_nodes) { // TODO iterate over new final states
+    da_stack.push(node);
+    is_visited[node] = true;
+    while (not da_stack.empty()) {
+      DAGraphNode_ptr curr_da_node = da_stack.top(); da_stack.pop();
+      da_trim_stack.push(curr_da_node);
+      for (auto next_da_node : curr_da_node->getNextNodes()) {
+        if ( not is_visited[next_da_node] ) {
+          da_stack.push(next_da_node);
+          is_visited[next_da_node] = true; // to avoid exploring common paths more than once
+        }
+      }
+    }
+
+    bool continue_trimming = true;
+    while (not da_trim_stack.empty()) {
+      DAGraphNode_ptr curr_da_node = da_trim_stack.top();
+      if (continue_trimming and curr_da_node->getFlag() != 3) {
+        da_graph->removeNode(curr_da_node);
+        graph->removeNodes(curr_da_node->getSubNodes()); // also remove the nodes from cyclic graph
+        delete curr_da_node;
+        continue_trimming = false; // do not trim anymore, but empty stack
+      }
+      da_trim_stack.pop();
+    }
+  }
+ // end of trimming step
+
+  da_graph->inspectGraph(false);
+  graph->inspectGraph(false);
+
+  // Map DAG to regular graph back;
+  // for each final dag node (with flag 3), figure out final nodes inside the dag and flag them with three.
+
+  std::exit(0);
+  int sink_state = search_result_auto->getSinkState();
   // extract automaton
   std::vector<char> marked_transition = StringAutomaton::getReservedWord('1', StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-  int sink_state = search_result_auto->getSinkState();
+  sink_state = search_result_auto->getSinkState();
   int current_state;
   int state_id = 0;
   int* indices = StringAutomaton::DEFAULT_VARIABLE_INDICES;
@@ -1316,7 +1415,7 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
         }
         current_exception->push_back('\0');
         if (marked_transition == *current_exception) {
-          final_states.insert(current_state);
+          final_states__remove_me.insert(current_state);
           delete current_exception;
         } else {
           current_node->addExceptionToState(pp->to, current_exception);
@@ -1361,7 +1460,7 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
       dfaStoreException(reverse_state_id_map[entry.first], &*(entry.second->begin()));
     }
     dfaStoreState(sink_state);
-    if (final_states.find(old_state_id) != final_states.end()) {
+    if (final_states__remove_me.find(old_state_id) != final_states__remove_me.end()) {
       statuses[i] = '+';
     } else {
       statuses[i] = '-';
@@ -1702,7 +1801,6 @@ std::string StringAutomaton::getString() {
  *  - ....
  */
 void StringAutomaton::toDotAscii(bool print_sink, std::ostream& out) {
-  bool force_sink_display = (dfa->ns == 1 and dfa->f[0] == -1) ? true : false;
   paths state_paths, pp;
   trace_descr tp;
 
@@ -1713,6 +1811,7 @@ void StringAutomaton::toDotAscii(bool print_sink, std::ostream& out) {
   int *toTransIndecies;
   char** ranges;
 
+  print_sink = print_sink || (dfa->ns == 1 and dfa->f[0] == -1);
   sink = find_sink(dfa);
 
   out << "digraph MONA_DFA {\n"
@@ -1827,7 +1926,7 @@ void StringAutomaton::toDotAscii(bool print_sink, std::ostream& out) {
       ranges = mergeCharRanges(toTrans[j], &size);
       //print edge from i to j
       out << " " << i << " -> " << j << " [label=\"";
-      bool print_label = (j != sink || force_sink_display);
+      bool print_label = (j != sink || print_sink);
       l = 0;//to help breaking into new line
       //for each trans k on char/range from i to j
       for (k = 0; k < size; k++) {
@@ -1887,70 +1986,70 @@ void StringAutomaton::toDot() {
 }
 
 void StringAutomaton::printBDD(std::ostream& out) {
-  LOG(FATAL) << "implement me, fix headers";
-//  Table *table = tableInit();
-//  int sink = getSinkState(), i = 0;
-//
-//  /* remove all marks in a->bddm */
-//  bdd_prepare_apply1(this->dfa->bddm);
-//
-//  /* build table of tuples (idx,lo,hi) */
-//  for (i = 0; i < this->dfa->ns; i++) {
-//      _export(this->dfa->bddm, this->dfa->q[i], table);
-//  }
-//
-//  /* renumber lo/hi pointers to new table ordering */
-//  for (i = 0; i < table->noelems; i++) {
-//      if (table->elms[i].idx != -1) {
-//          table->elms[i].lo = bdd_mark(this->dfa->bddm, table->elms[i].lo) - 1;
-//          table->elms[i].hi = bdd_mark(this->dfa->bddm, table->elms[i].hi) - 1;
-//      }
-//  }
-//
-//  out << "digraph MONA_DFA_BDD {\n"
-//      "  center = true;\n"
-//      "  size = \"100.5,70.5\"\n"
-////      "  orientation = landscape;\n"
-//      "  node [shape=record];\n"
-//      "   s1 [shape=record,label=\"";
-//
-//  for (i = 0; i < this->dfa->ns; i++) {
-//    out << "{" << this->dfa->f[i] << "|<" << i << "> " << i << "}";
-//    if (i+1 < table->noelems) {
-//      out << "|";
-//    }
-//  }
-//  out << "\"];" << std::endl;
-//
-//  out << "  node [shape = circle];";
-//  for (i = 0; i < table->noelems; i++) {
-//    if (table->elms[i].idx != -1) {
-//      out << " " << i << " [label=\"" << table->elms[i].idx << "\"];";
-//    }
-//  }
-//
-//  out << "\n  node [shape = box];";
-//  for (i = 0; i < table->noelems; i++) {
-//    if (table->elms[i].idx == -1) {
-//      out << " " << i << " [label=\"" << table->elms[i].lo << "\"];";
-//    }
-//  }
-//  out << std::endl;
-//
-//  for (i = 0; i < this->dfa->ns; i++) {
-//    out << " s1:" << i << " -> " << bdd_mark(this->dfa->bddm, this->dfa->q[i]) - 1 << " [style=bold];\n";
-//  }
-//
-//  for (i = 0; i < table->noelems; i++) {
-//      if (table->elms[i].idx != -1) {
-//          int lo = table->elms[i].lo;
-//          int hi = table->elms[i].hi;
-//          out << " " << i << " -> " << lo << " [style=dashed];\n";
-//          out << " " << i << " -> " << hi << " [style=filled];\n";
-//      }
-//  }
-//  out << "}" << std::endl;
-//  tableFree(table);
+//  LOG(FATAL) << "implement me, fix headers";
+  Table *table = tableInit();
+  int sink = getSinkState(), i = 0;
+
+  /* remove all marks in a->bddm */
+  bdd_prepare_apply1(this->dfa->bddm);
+
+  /* build table of tuples (idx,lo,hi) */
+  for (i = 0; i < this->dfa->ns; i++) {
+      __export(this->dfa->bddm, this->dfa->q[i], table);
+  }
+
+  /* renumber lo/hi pointers to new table ordering */
+  for (i = 0; i < table->noelems; i++) {
+      if (table->elms[i].idx != -1) {
+          table->elms[i].lo = bdd_mark(this->dfa->bddm, table->elms[i].lo) - 1;
+          table->elms[i].hi = bdd_mark(this->dfa->bddm, table->elms[i].hi) - 1;
+      }
+  }
+
+  out << "digraph MONA_DFA_BDD {\n"
+      "  center = true;\n"
+      "  size = \"100.5,70.5\"\n"
+//      "  orientation = landscape;\n"
+      "  node [shape=record];\n"
+      "   s1 [shape=record,label=\"";
+
+  for (i = 0; i < this->dfa->ns; i++) {
+    out << "{" << this->dfa->f[i] << "|<" << i << "> " << i << "}";
+    if (i+1 < table->noelems) {
+      out << "|";
+    }
+  }
+  out << "\"];" << std::endl;
+
+  out << "  node [shape = circle];";
+  for (i = 0; i < table->noelems; i++) {
+    if (table->elms[i].idx != -1) {
+      out << " " << i << " [label=\"" << table->elms[i].idx << "\"];";
+    }
+  }
+
+  out << "\n  node [shape = box];";
+  for (i = 0; i < table->noelems; i++) {
+    if (table->elms[i].idx == -1) {
+      out << " " << i << " [label=\"" << table->elms[i].lo << "\"];";
+    }
+  }
+  out << std::endl;
+
+  for (i = 0; i < this->dfa->ns; i++) {
+    out << " s1:" << i << " -> " << bdd_mark(this->dfa->bddm, this->dfa->q[i]) - 1 << " [style=bold];\n";
+  }
+
+  for (i = 0; i < table->noelems; i++) {
+      if (table->elms[i].idx != -1) {
+          int lo = table->elms[i].lo;
+          int hi = table->elms[i].hi;
+          out << " " << i << " -> " << lo << " [style=dashed];\n";
+          out << " " << i << " -> " << hi << " [style=filled];\n";
+      }
+  }
+  out << "}" << std::endl;
+  tableFree(table);
 }
 
 void StringAutomaton::inspectAuto(bool print_sink) {
@@ -2098,6 +2197,88 @@ bool StringAutomaton::isStartStateReachable() {
   return false;
 }
 
+/**
+ * @returns true if state has the given exception to a state that is not sink
+ */
+bool StringAutomaton::hasExceptionToValidStateFrom(int state, std::vector<char>& exception) {
+  int sink_state = this->getSinkState();
+  return (sink_state != this->getNextStateFrom(state, exception));
+}
+
+/**
+ * @returns the next state if there is a transition with given exception
+ */
+int StringAutomaton::getNextStateFrom(int state, std::vector<char>& exception) {
+
+  int next_state;
+  unsigned p, l, r, index; // BDD traversal variables
+
+  CHECK_EQ(num_of_variables, exception.size());
+
+  p = this->dfa->q[state];
+
+  for (int i = 0; i < num_of_variables; i++) {
+    LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
+    if (index == BDD_LEAF_INDEX) {
+      next_state = l;
+      break;
+    } else {
+      if (exception[i] == '0') {
+        p = l;
+      } else if (exception[i] == '1') {
+        p = r;
+      }
+    }
+  }
+
+  if (index != BDD_LEAF_INDEX) {
+    LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
+    if (index == BDD_LEAF_INDEX) {
+      next_state = l;
+    } else {
+      LOG(FATAL) << "Please check this algorithm, something wrong with bdd traversal";
+    }
+  }
+
+  return next_state;
+}
+
+/**
+ * Returns final states
+ */
+std::vector<int> StringAutomaton::getAcceptingStates() {
+  std::vector<int> final_states;
+  for (int s = 0; s < this->dfa->ns; s++) {
+    if (this->isAcceptingState(s)) {
+      final_states.push_back(s);
+    }
+  }
+  return final_states;
+}
+
+/**
+ * @return vector of states that are 1 walk away
+ */
+std::set<int>* StringAutomaton::getNextStates(int state) {
+  unsigned p, l, r, index; // BDD traversal variables
+  std::set<int>* next_states = new std::set<int>();
+  std::stack<unsigned> nodes;
+
+  p = this->dfa->q[state];
+  nodes.push(p);
+  while (not nodes.empty()) {
+    p = nodes.top(); nodes.pop();
+    LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
+    if (index == BDD_LEAF_INDEX) {
+      next_states->insert(l);
+    } else {
+      nodes.push(l);
+      nodes.push(r);
+    }
+  }
+  return next_states;
+}
+
 void StringAutomaton::minimize() {
   DFA_ptr tmp = this->dfa;
   this->dfa = dfaMinimize(tmp);
@@ -2110,6 +2291,68 @@ void StringAutomaton::project(unsigned index) {
   this->dfa = dfaProject(tmp, index);
   delete tmp;
   DVLOG(VLOG_LEVEL) << this->id << " = [" << this->id << "]->project()";
+}
+
+GraphOld* StringAutomaton::getGraph() {
+  int sink_state = this->getSinkState();
+  GraphOld* graph = new GraphOld();
+  Node* node = nullptr;
+  std::set<int>* states = nullptr;
+
+  for (int s = 0; s < this->dfa->ns; s++) {
+    if (s == sink_state) {
+      continue;
+    }
+    node = new Node(s);
+    node->setPrevStates(new std::set<int>());
+    graph->addNode(node);
+  }
+
+  for (auto& entry : *(graph->getNodeMap())) {
+    states = getNextStates(entry.first);
+    states->erase(states->find(sink_state));
+    entry.second->setNextStates(states);
+    for (int n : *states) {
+      graph->getNode(n)->addPrevState(entry.first);
+    }
+  }
+
+   return graph;
+}
+
+/**
+ * @returns graph representation of automaton
+ */
+Graph_ptr StringAutomaton::toGraph() {
+  Graph_ptr graph = new Graph();
+  std::set<int>* states = nullptr;
+  GraphNode_ptr node = nullptr, next_node = nullptr;
+  for (int s = 0; s < this->dfa->ns; s++) {
+    node = new GraphNode(s);
+    if (s == 0) {
+      graph->setStartNode(node);
+    }
+
+    if (this->isSinkState(s)) {
+      graph->setSinkNode(node);
+    } else if (this->isAcceptingState(s)) {
+      graph->addFinalNode(node);
+    } else {
+      graph->addNode(node);
+    }
+  }
+  node = nullptr;
+  for (auto& entry : graph->getNodeMap()) {
+    node = entry.second;
+    states = this->getNextStates(node->getID());
+    for (int id : *states) {
+      next_node = graph->getNode(id);
+      node->addNextNode(next_node);
+      next_node->addPrevNode(node);
+    }
+  }
+
+  return graph;
 }
 
 } /* namespace Theory */

@@ -17,6 +17,15 @@ noinst_LTLIBRARIES = libabcautomaton.la
 libabcautomaton_la_SOURCES = \
 	../utils/RegularExpression.cpp \
 	../utils/RegularExpression.h \
+	utils.h \
+	GraphNode.cpp \
+	GraphNode.h \
+	Graph.cpp \
+	Graph.h \
+	DAGraphNode.cpp \
+	DAGraphNode.h \
+	DAGraph.cpp \
+	DAGraph.h \
 	Automaton.cpp \
 	Automaton.h \
 	BoolAutomaton.cpp \

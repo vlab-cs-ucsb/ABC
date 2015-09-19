@@ -22,6 +22,8 @@
 #include <stranger.h>
 #include <stranger_lib_internal.h>
 #include "../utils/RegularExpression.h"
+#include "Graph.h"
+#include "DAGraph.h"
 #include "Automaton.h"
 
 namespace Vlab {
@@ -153,8 +155,17 @@ protected:
   int getSinkState();
   bool isStartStateReachable();
 
+  bool hasExceptionToValidStateFrom(int state, std::vector<char>& exception);
+  int getNextStateFrom(int state, std::vector<char>& exception);
+  std::vector<int> getAcceptingStates();
+
+  std::set<int>* getNextStates(int state);
+
   void minimize();
   void project(unsigned num_of_variables);
+
+  GraphOld* getGraph();
+  Graph_ptr toGraph();
 
   DFA_ptr dfa;
   int num_of_variables;
