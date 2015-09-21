@@ -138,7 +138,7 @@ public:
   // TODO merge toDot methods into one with options
   void toDot();
   void printBDD(std::ostream& out = std::cout);
-  void inspectAuto(bool print_sink = false);
+  int inspectAuto(bool print_sink = false);
 
 protected:
 

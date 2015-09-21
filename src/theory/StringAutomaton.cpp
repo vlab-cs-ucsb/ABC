@@ -682,16 +682,16 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
   dfaSetup(expected_num_of_states, tmp_num_of_variables, getIndices(tmp_num_of_variables)); //sink states are merged
   state_paths = pp = make_paths(other_auto->dfa->bddm, other_auto->dfa->q[other_auto->dfa->s]);
   while (pp) {
-    if ( pp->to != sink_state_right_auto ) {
+    if ( pp->to != (unsigned)sink_state_right_auto ) {
       state_map_right_auto[state_key_right_auto] = pp->to + state_id_shift_amount;
       // if there is a self loop keep it
-      if ( pp->to == other_auto->dfa->s ) {
+      if ( pp->to == (unsigned)other_auto->dfa->s ) {
         state_map_right_auto[state_key_right_auto] -= 2;
       } else {
-        if ( sink_state_right_auto >= 0 && pp->to > sink_state_right_auto ) {
+        if ( sink_state_right_auto >= 0 && pp->to > (unsigned)sink_state_right_auto ) {
           state_map_right_auto[state_key_right_auto]--; //to new state, sink state will be eliminated and hence need -1
         }
-        if ((not is_start_state_reachable) && pp->to > other_auto->dfa->s) {
+        if ((not is_start_state_reachable) && pp->to > (unsigned)other_auto->dfa->s) {
           state_map_right_auto[state_key_right_auto]--; // to new state, init state will be eliminated if init is not reachable
         }
       }
@@ -699,7 +699,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
       exceptions_right_auto[state_key_right_auto] = new std::vector<char>();
       for (j = 0; j < other_auto->num_of_variables; j++) {
         //the following for loop can be avoided if the indices are in order
-        for (tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
+        for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
         if (tp) {
           if (tp->value) {
             exceptions_right_auto[state_key_right_auto]->push_back('1');
@@ -730,7 +730,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
     state_paths = pp = make_paths(this->dfa->bddm, this->dfa->q[i]);
     state_key_left_auto = 0;
     while (pp) {
-      if (pp->to == sink_state_left_auto) {
+      if (pp->to == (unsigned)sink_state_left_auto) {
         pp = pp->next;
         continue;
       }
@@ -738,7 +738,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
       state_map_left_auto[state_key_left_auto] = pp->to;
       exceptions_left_auto[state_key_left_auto] = new std::vector<char>();
       for (j = 0; j < this->num_of_variables; j++) {
-        for (tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
+        for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
         if (tp) {
           if (tp->value) {
             exceptions_left_auto[state_key_left_auto]->push_back('1');
@@ -807,20 +807,20 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
         state_paths = pp = make_paths(other_auto->dfa->bddm, other_auto->dfa->q[i]);
         state_key_fix = 0;
         while (pp) {
-          if ( pp->to != sink_state_right_auto) {
+          if ( pp->to != (unsigned)sink_state_right_auto) {
             state_map_fix[state_key_fix] = pp->to + state_id_shift_amount;
 
-            if ( sink_state_right_auto >= 0 && pp->to > sink_state_right_auto) {
+            if ( sink_state_right_auto >= 0 && pp->to > (unsigned)sink_state_right_auto) {
               state_map_fix[state_key_fix]--; //to new state, sink state will be eliminated and hence need -1
             }
 
-            if ( (not is_start_state_reachable) && pp->to > other_auto->dfa->s) {
+            if ( (not is_start_state_reachable) && pp->to > (unsigned)other_auto->dfa->s) {
               state_map_fix[state_key_fix]--; // to new state, init state will be eliminated if init is not reachable
             }
 
             exceptions_fix[state_key_fix] = new std::vector<char>();
             for (j = 0; j < var; j++) {
-              for (tp = pp->trace; tp && (tp->index != indices[j]); tp =tp->next);
+              for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp =tp->next);
               if (tp) {
                 if (tp->value){
                   exceptions_fix[state_key_fix]->push_back('1');
@@ -1164,10 +1164,10 @@ StringAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
     state_paths = pp = make_paths(search_result_auto->dfa->bddm, search_result_auto->dfa->q[current_state]);
 
     while (pp) {
-      if ( pp->to != sink_state) {
+      if ( pp->to != (unsigned)sink_state) {
         current_exception = new std::vector<char>();
         for (int j = 0; j < search_result_auto->num_of_variables; j++) {
-          for (tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
+          for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
           if (tp) {
             if (tp->value) {
               current_exception->push_back('1');
@@ -1250,22 +1250,19 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
   contains_auto = this->contains(search_auto);
   if (contains_auto->isEmptyLanguage()) {
     delete contains_auto;
-    // return -1
+    // return  only -1
     return nullptr;
   }
 
-  std::map<int, Node*> nodes;
-  std::map<int, int> state_id_map;
-  std::map<int, int> reverse_state_id_map;
-  paths state_paths = nullptr, pp = nullptr;
-  trace_descr tp = nullptr;
-  std::set<int> final_states__remove_me;
-  std::stack<int> state_work_list;
-  std::set<int> processed;
+  // TODO check that if complement of contains auto has intersection with subject auto, if so -1 should be included in the results
+
 
   StringAutomaton_ptr contains_duplicate_auto = new StringAutomaton(dfa_replace_step1_duplicate(contains_auto->dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES));
   StringAutomaton_ptr search_complement_auto = new StringAutomaton(dfa_replace_step2_match_compliment(search_auto->dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES));
   StringAutomaton_ptr tmp_auto = contains_duplicate_auto->intersect(search_complement_auto);
+
+  contains_auto->inspectAuto();
+
   delete contains_auto; contains_auto = nullptr;
   delete contains_duplicate_auto; contains_duplicate_auto = nullptr;
   delete search_complement_auto; search_complement_auto = nullptr;
@@ -1277,9 +1274,9 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
   search_result_auto->project((unsigned) StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
   search_result_auto->minimize();
 
-  search_result_auto->inspectAuto(true);
+  search_result_auto->inspectAuto();
 
-  // figure out last index of states with graph manipulation
+  // figure out last index of states using graph algorithms
 
   Graph_ptr graph = search_result_auto->toGraph();
   // Mark start states and end states of matches
@@ -1296,14 +1293,11 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
   }
 
   graph->inspectGraph(false);
-
-  // Need to operate on dag in order to handle cycles
   DAGraph_ptr da_graph = new DAGraph(graph); // converts graph into a dag
 
-  // begin finding new final states
+  // -- begin finding new final states
   // Reverse DFS to find nodes with flag 1 that are closest to final states
   // That step marks new final states at the dag level
-  DAGraphNodeSet last_index_da_nodes;
   std::stack<DAGraphNode_ptr> da_stack;
   std::map<DAGraphNode_ptr, bool> is_visited; // relies on c++ initializes bool as false
   for (auto node : da_graph->getFinalNodes()) {
@@ -1315,33 +1309,64 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
       }
       is_visited[curr_da_node] = true;
       if (curr_da_node->hasFlag(1)) {
-        last_index_da_nodes.insert(curr_da_node);
         curr_da_node->setFlag(3); // flag 3 is for new final states
       } else {
-        for (auto next_da_node : curr_da_node->getPrevNodes()) {
-          da_stack.push(next_da_node);
+        for (auto prev_da_node : curr_da_node->getPrevNodes()) {
+          da_stack.push(prev_da_node);
         }
       }
     }
   }
-  // end of finding new final final states
+  // -- end of finding new final final states
+
+  // Re-set final nodes for dag
+  da_graph->resetFinalNodesToFlag(3);
+
+  // -- begin setting new final states inside scc state
+  for (auto& scc_node : da_graph->getFinalNodes()) {
+    GraphNodeSet out_sub_nodes = scc_node->getOutGoingSubNodes(); // get nodes that has outgoing transitions
+    GraphNodeSet sub_final_nodes = da_graph->selectSubFinalNodes(scc_node->getSubNodes()); // get final nodes if any
+    out_sub_nodes.insert(sub_final_nodes.begin(), sub_final_nodes.end());
+    for (auto& sub_node : out_sub_nodes) {
+      std::stack<GraphNode_ptr> sub_node_stack;
+      std::map<GraphNode_ptr, bool> is_visited; // relies on c++ initializes bool as false
+      sub_node_stack.push(sub_node);
+      while (not sub_node_stack.empty()) {
+        GraphNode_ptr curr_sub_node = sub_node_stack.top(); sub_node_stack.pop();
+        if (is_visited[curr_sub_node]) {
+          continue;
+        }
+        is_visited[curr_sub_node] = true;
+        if (curr_sub_node->getFlag() == 1) { // beginning of a match
+          curr_sub_node->setFlag(3); // flag 3 is for new final states
+        } else {
+          for (auto prev_sub_node : curr_sub_node->getPrevNodes()) {
+            if (da_graph->isMemberOfSCC(prev_sub_node, scc_node)) {
+              sub_node_stack.push(prev_sub_node);
+            }
+          }
+        }
+      }
+    }
+  }
+  // -- end setting new final states inside scc state
+
+  // re-set final nodes for cyclic graph
+  graph->resetFinalNodesToFlag(3);
 
   while (not da_stack.empty()) {
     da_stack.pop();
   }
   is_visited.clear(); // relies on c++ initializes bool as false
 
-  // Re-set final nodes for dag and for the corresponding cyclic graph
-  da_graph->resetFinalNodes(last_index_da_nodes);
-
-  // begin trimming step
-  // Figure out where to cut new graph, trim DAG graph and corresponding graph
-  // This step removes the unneccasary nodes that are left after final nodes
+  // -- begin trimming step
+  // Figure out where to cut new graph, trim DAG graph and corresponding cyclic graph
+  // This step removes the unneccasary nodes that are left after final nodes at dag level
 
   std::stack<DAGraphNode_ptr> da_trim_stack;
   DAGraphNode_ptr sink_da_node = da_graph->getSinkNode();
   is_visited[sink_da_node] = true; // do not visit sink
-  for (auto node : last_index_da_nodes) { // TODO iterate over new final states
+  for (auto node : da_graph->getFinalNodes()) { // TODO iterate over new final states
     da_stack.push(node);
     is_visited[node] = true;
     while (not da_stack.empty()) {
@@ -1355,14 +1380,18 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
       }
     }
 
-    bool continue_trimming = true;
+    bool stop_trimming = false;
     while (not da_trim_stack.empty()) {
       DAGraphNode_ptr curr_da_node = da_trim_stack.top();
-      if (continue_trimming and curr_da_node->getFlag() != 3) {
+      // to remove a node it must not be a final and it must have a next node other than sink node
+      if ( (curr_da_node->getFlag() == 3) or (curr_da_node->getNextNodes().size() > 1) ) {
+        stop_trimming = true;
+      } else if (stop_trimming) {
+//      do not remove anymore
+      } else {
         da_graph->removeNode(curr_da_node);
         graph->removeNodes(curr_da_node->getSubNodes()); // also remove the nodes from cyclic graph
         delete curr_da_node;
-        continue_trimming = false; // do not trim anymore, but empty stack
       }
       da_trim_stack.pop();
     }
@@ -1372,11 +1401,77 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
   da_graph->inspectGraph(false);
   graph->inspectGraph(false);
 
-  // Map DAG to regular graph back;
-  // for each final dag node (with flag 3), figure out final nodes inside the dag and flag them with three.
+  // figure out new number of states and new state mapping
+  // node ids in the graph corresponds the states ids in the search result automaton
+  int next_state_id = 0;
+  std::map<int, int> state_id_map;
+  std::map<int, int> reverse_state_id_map;
+  int sink_state = search_result_auto->getSinkState();
+  GraphNode_ptr start_node = graph->getStartNode();
+  GraphNode_ptr sink_node = graph->getSinkNode();
+  CHECK_EQ(sink_state, sink_node->getID()); // we should preserve that up until here
+
+  std::stack<GraphNode_ptr> node_stack;
+  std::stack<GraphNode_ptr> merge_stack;
+
+  state_id_map[sink_state] = sink_node->getID(); // do not change sink state
+  reverse_state_id_map[sink_node->getID()] = sink_state;
+  if (next_state_id == sink_state) { ++next_state_id; }
+
+  node_stack.push(start_node);
+  while (not node_stack.empty()) {
+    GraphNode_ptr curr_node = node_stack.top(); node_stack.pop();
+
+    const int node_id = curr_node->getID();
+    if (reverse_state_id_map.find(node_id) == reverse_state_id_map.end()) {
+      GraphNodeSet next_nodes = curr_node->getNextNodes();
+      if (curr_node->getFlag() > 0 and next_nodes.size() == 2) { // a marked node with at most 2 next states (1 of them is sink)
+          merge_stack.push(curr_node);
+      } else {
+        state_id_map[next_state_id] = node_id;
+        reverse_state_id_map[node_id] = next_state_id;
+        while (not merge_stack.empty()) {
+          auto merge_node = merge_stack.top(); merge_stack.pop();
+          reverse_state_id_map[merge_node->getID()] = next_state_id;
+        }
+        ++next_state_id;
+        if (next_state_id == sink_state) { ++next_state_id; }
+      }
+
+      for (auto next_node : next_nodes) {
+        if (sink_node != next_node) { // do not visit sink we already assigned it
+          node_stack.push(next_node);
+        }
+      }
+    } else if (sink_node != curr_node) { // to make sure sink node never reaches here
+      const int map_id = reverse_state_id_map[curr_node->getID()];
+      while (not merge_stack.empty()) {
+        auto merge_node = merge_stack.top(); merge_stack.pop();
+        reverse_state_id_map[merge_node->getID()] = map_id;
+      }
+    }
+  }
+
+  int expected_num_of_states = state_id_map.size();
+
+  std::cout << "graph size: " << graph->getNumOfNodes() << " , exp. size: " << expected_num_of_states << std::endl;
+  for (auto it : state_id_map) {
+    std::cout << it.first << " -> " << it.second << std::endl;
+  }
+
+  std::cout << "reverse map: "<< std::endl;
+  for (auto it : reverse_state_id_map) {
+    std::cout << it.first << " -> " << it.second << std::endl;
+  }
+
 
   std::exit(0);
-  int sink_state = search_result_auto->getSinkState();
+  std::map<int, Node*> nodes;
+    paths state_paths = nullptr, pp = nullptr;
+    trace_descr tp = nullptr;
+    std::stack<int> state_work_list;
+    std::set<int> processed;
+  sink_state = search_result_auto->getSinkState();
   // extract automaton
   std::vector<char> marked_transition = StringAutomaton::getReservedWord('1', StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
   sink_state = search_result_auto->getSinkState();
@@ -1397,10 +1492,10 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
     state_paths = pp = make_paths(search_result_auto->dfa->bddm, search_result_auto->dfa->q[current_state]);
 
     while (pp) {
-      if ( pp->to != sink_state) {
+      if ( pp->to != (unsigned)sink_state) {
         current_exception = new std::vector<char>();
         for (int j = 0; j < search_result_auto->num_of_variables; j++) {
-          for (tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
+          for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
           if (tp) {
             if (tp->value) {
               current_exception->push_back('1');
@@ -1415,7 +1510,7 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
         }
         current_exception->push_back('\0');
         if (marked_transition == *current_exception) {
-          final_states__remove_me.insert(current_state);
+//          final_states__remove_me.insert(current_state);
           delete current_exception;
         } else {
           current_node->addExceptionToState(pp->to, current_exception);
@@ -1447,7 +1542,7 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
   }
 
   // create automaton
-  int expected_num_of_states = nodes.size();
+  expected_num_of_states = nodes.size();
   std::vector<char> statuses (expected_num_of_states);
   int old_state_id;
   statuses[sink_state] = '-';
@@ -1460,11 +1555,11 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
       dfaStoreException(reverse_state_id_map[entry.first], &*(entry.second->begin()));
     }
     dfaStoreState(sink_state);
-    if (final_states__remove_me.find(old_state_id) != final_states__remove_me.end()) {
-      statuses[i] = '+';
-    } else {
-      statuses[i] = '-';
-    }
+//    if (final_states__remove_me.find(old_state_id) != final_states__remove_me.end()) {
+//      statuses[i] = '+';
+//    } else {
+//      statuses[i] = '-';
+//    }
   }
   statuses.push_back('\0');
   lastIndexOf_auto = new StringAutomaton(dfaBuild(&*(statuses.begin())), StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
@@ -1879,13 +1974,13 @@ void StringAutomaton::toDotAscii(bool print_sink, std::ostream& out) {
     //gather transitions out from state i
     //for each transition pp out from state i
     while (pp) {
-      if (pp->to == sink && not print_sink){
+      if (pp->to == (unsigned)sink && not print_sink){
         pp = pp->next;
         continue;
       }
       //get mona character on transition pp
       for (j = 0; j < StringAutomaton::DEFAULT_NUM_OF_VARIABLES; j++) {
-        for (tp = pp->trace; tp && (tp->index != StringAutomaton::DEFAULT_VARIABLE_INDICES[j]); tp = tp->next);
+        for (tp = pp->trace; tp && (tp->index != (unsigned)StringAutomaton::DEFAULT_VARIABLE_INDICES[j]); tp = tp->next);
 
         if (tp) {
           if (tp->value)
@@ -1988,18 +2083,18 @@ void StringAutomaton::toDot() {
 void StringAutomaton::printBDD(std::ostream& out) {
 //  LOG(FATAL) << "implement me, fix headers";
   Table *table = tableInit();
-  int sink = getSinkState(), i = 0;
+  int sink = getSinkState();
 
   /* remove all marks in a->bddm */
   bdd_prepare_apply1(this->dfa->bddm);
 
   /* build table of tuples (idx,lo,hi) */
-  for (i = 0; i < this->dfa->ns; i++) {
+  for (int i = 0; i < this->dfa->ns; i++) {
       __export(this->dfa->bddm, this->dfa->q[i], table);
   }
 
   /* renumber lo/hi pointers to new table ordering */
-  for (i = 0; i < table->noelems; i++) {
+  for (unsigned i = 0; i < table->noelems; i++) {
       if (table->elms[i].idx != -1) {
           table->elms[i].lo = bdd_mark(this->dfa->bddm, table->elms[i].lo) - 1;
           table->elms[i].hi = bdd_mark(this->dfa->bddm, table->elms[i].hi) - 1;
@@ -2013,34 +2108,34 @@ void StringAutomaton::printBDD(std::ostream& out) {
       "  node [shape=record];\n"
       "   s1 [shape=record,label=\"";
 
-  for (i = 0; i < this->dfa->ns; i++) {
+  for (int i = 0; i < this->dfa->ns; i++) {
     out << "{" << this->dfa->f[i] << "|<" << i << "> " << i << "}";
-    if (i+1 < table->noelems) {
+    if ( (unsigned)(i+1) < table->noelems) {
       out << "|";
     }
   }
   out << "\"];" << std::endl;
 
   out << "  node [shape = circle];";
-  for (i = 0; i < table->noelems; i++) {
+  for (unsigned i = 0; i < table->noelems; i++) {
     if (table->elms[i].idx != -1) {
       out << " " << i << " [label=\"" << table->elms[i].idx << "\"];";
     }
   }
 
   out << "\n  node [shape = box];";
-  for (i = 0; i < table->noelems; i++) {
+  for (unsigned i = 0; i < table->noelems; i++) {
     if (table->elms[i].idx == -1) {
       out << " " << i << " [label=\"" << table->elms[i].lo << "\"];";
     }
   }
   out << std::endl;
 
-  for (i = 0; i < this->dfa->ns; i++) {
+  for (int i = 0; i < this->dfa->ns; i++) {
     out << " s1:" << i << " -> " << bdd_mark(this->dfa->bddm, this->dfa->q[i]) - 1 << " [style=bold];\n";
   }
 
-  for (i = 0; i < table->noelems; i++) {
+  for (unsigned i = 0; i < table->noelems; i++) {
       if (table->elms[i].idx != -1) {
           int lo = table->elms[i].lo;
           int hi = table->elms[i].hi;
@@ -2052,7 +2147,7 @@ void StringAutomaton::printBDD(std::ostream& out) {
   tableFree(table);
 }
 
-void StringAutomaton::inspectAuto(bool print_sink) {
+int StringAutomaton::inspectAuto(bool print_sink) {
   std::stringstream file_name;
   file_name << "./output/inspect_auto_" << name_counter++ << ".dot";
   std::string file = file_name.str();
@@ -2063,7 +2158,7 @@ void StringAutomaton::inspectAuto(bool print_sink) {
   }
   toDotAscii(print_sink, outfile);
   std::string dot_cmd("xdot " + file + " &");
-  std::system(dot_cmd.c_str());
+  return std::system(dot_cmd.c_str());
 }
 
 int* StringAutomaton::allocateAscIIIndexWithExtraBit(int length) {
@@ -2185,7 +2280,7 @@ bool StringAutomaton::isStartStateReachable() {
     if (isAcceptingState(i)) {
       state_paths = pp = make_paths(this->dfa->bddm, this->dfa->q[i]);
       while (pp) {
-        if (pp->to == this->dfa->s) {
+        if (pp->to == (unsigned)  this->dfa->s) {
           kill_paths(state_paths);
           return true;
         }
@@ -2210,8 +2305,8 @@ bool StringAutomaton::hasExceptionToValidStateFrom(int state, std::vector<char>&
  */
 int StringAutomaton::getNextStateFrom(int state, std::vector<char>& exception) {
 
-  int next_state;
-  unsigned p, l, r, index; // BDD traversal variables
+  int next_state = -1; // only for initialization
+  unsigned p, l, r, index = 0; // BDD traversal variables
 
   CHECK_EQ(num_of_variables, exception.size());
 

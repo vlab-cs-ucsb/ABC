@@ -69,7 +69,7 @@ GraphNodeMap& Graph::getNodeMap() {
   return nodes;
 }
 
-void Vlab::Theory::Graph::removeNode(GraphNode_ptr node) {
+void Graph::removeNode(GraphNode_ptr node) {
   nodes.erase(node->getID());
   finalNodes.erase(node);
   for (auto prev_node : node->getPrevNodes()) {
@@ -77,22 +77,31 @@ void Vlab::Theory::Graph::removeNode(GraphNode_ptr node) {
   }
 }
 
-void Vlab::Theory::Graph::removeNodes(GraphNodeSet& nodes) {
+void Graph::removeNodes(GraphNodeSet& nodes) {
   for (auto& node : nodes) {
     removeNode(node);
     delete node;
   }
 }
 
-bool Vlab::Theory::Graph::isStartNode(GraphNode_ptr node) {
+void Graph::resetFinalNodesToFlag(int flag) {
+  finalNodes.clear();
+  for (auto& entry : nodes) {
+    if (entry.second->getFlag() == flag) {
+      finalNodes.insert(entry.second);
+    }
+  }
+}
+
+bool Graph::isStartNode(GraphNode_ptr node) {
   return (startNode == node);
 }
 
-bool Vlab::Theory::Graph::isSinkNode(GraphNode_ptr node) {
+bool Graph::isSinkNode(GraphNode_ptr node) {
   return (sinkNode == node);
 }
 
-bool Vlab::Theory::Graph::isFinalNode(GraphNode_ptr node) {
+bool Graph::isFinalNode(GraphNode_ptr node) {
   auto it = finalNodes.find(node);
   return (it != finalNodes.end());
 }

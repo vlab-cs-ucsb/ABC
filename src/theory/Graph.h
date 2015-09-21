@@ -41,6 +41,7 @@ public:
 
   void removeNode(GraphNode_ptr);
   void removeNodes(GraphNodeSet&);
+  void resetFinalNodesToFlag(int flag);
 
   bool isStartNode(GraphNode_ptr);
   bool isSinkNode(GraphNode_ptr);

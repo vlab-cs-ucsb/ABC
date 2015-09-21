@@ -37,12 +37,14 @@ public:
   bool addNode(DAGraphNode_ptr);
   void addFinalNode(DAGraphNode_ptr);
   DAGraphNodeSet& getFinalNodes();
+  void resetFinalNodesToFlag(int flag);
 
   DAGraphNodeMap& getNodeMap();
 
+  bool isMemberOfSCC(GraphNode_ptr, DAGraphNode_ptr);
   void removeNode(DAGraphNode_ptr);
   Graph_ptr getRawGraph();
-  void resetFinalNodes(DAGraphNodeSet& nodes);
+  GraphNodeSet selectSubFinalNodes(GraphNodeSet& nodes);
 
   void toDot(bool print_sink = false, std::ostream& out = std::cout);
   void inspectGraph(bool print_sink = false);

@@ -103,6 +103,10 @@ DAGraphNodeMap& DAGraph::getNodeMap() {
   return nodes;
 }
 
+bool DAGraph::isMemberOfSCC(GraphNode_ptr sub_node, DAGraphNode_ptr scc_node) {
+  return (scc_node == subNodes[sub_node]);
+}
+
 void DAGraph::removeNode(DAGraphNode_ptr scc_node) {
   nodes.erase(scc_node->getID());
   finalNodes.erase(scc_node);
@@ -115,12 +119,23 @@ Graph_ptr DAGraph::getRawGraph() {
   return graph;
 }
 
-void DAGraph::resetFinalNodes(DAGraphNodeSet& nodes) {
+void DAGraph::resetFinalNodesToFlag(int flag) {
   finalNodes.clear();
-  finalNodes.insert(nodes.begin(), nodes.end());
-  for (auto scc_node : finalNodes) {
-
+  for (auto entry : nodes) {
+    if (entry.second->getFlag() == flag) {
+      finalNodes.insert(entry.second);
+    }
   }
+}
+
+GraphNodeSet DAGraph::selectSubFinalNodes(GraphNodeSet& nodes) {
+  GraphNodeSet sub_final_nodes;
+  for (auto& node : nodes) {
+    if (graph->isFinalNode(node)) {
+      sub_final_nodes.insert(node);
+    }
+  }
+  return sub_final_nodes;
 }
 
 void DAGraph::toDot(bool print_sink, std::ostream& out) {

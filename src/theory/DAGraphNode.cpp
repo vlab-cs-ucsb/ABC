@@ -63,6 +63,30 @@ GraphNodeSet DAGraphNode::getPrevSubNodes() {
   return prev_sub_nodes;
 }
 
+GraphNodeSet DAGraphNode::getOutGoingSubNodes() {
+  GraphNodeSet out_sub_nodes;
+  for (GraphNode_ptr node : nodes) {
+    for (GraphNode_ptr next_node : node->getNextNodes()) {
+      if (nodes.find(next_node) == nodes.end()) {
+        out_sub_nodes.insert(node);
+      }
+    }
+  }
+  return out_sub_nodes;
+}
+
+GraphNodeSet DAGraphNode::getInComingSubNodes() {
+  GraphNodeSet in_sub_nodes;
+  for (GraphNode_ptr node : nodes) {
+    for (GraphNode_ptr prev_node : node->getPrevNodes()) {
+      if (nodes.find(prev_node) == nodes.end()) {
+        in_sub_nodes.insert(node);
+      }
+    }
+  }
+  return in_sub_nodes;
+}
+
 void DAGraphNode::addNextNode(DAGraphNode_ptr scc_node) {
   nextSCCNodes.insert(scc_node);
 }

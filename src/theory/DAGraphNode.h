@@ -31,6 +31,8 @@ public:
   GraphNodeSet& getSubNodes();
   GraphNodeSet getNextSubNodes();
   GraphNodeSet getPrevSubNodes();
+  GraphNodeSet getOutGoingSubNodes();
+  GraphNodeSet getInComingSubNodes();
   void addNextNode(DAGraphNode_ptr scc_node);
   void addPrevNode(DAGraphNode_ptr scc_node);
   DAGraphNodeSet& getNextNodes();
