@@ -38,6 +38,7 @@ public:
   void addPrevNode(GraphNode_ptr node);
   GraphNodeSet& getNextNodes();
   GraphNodeSet& getPrevNodes();
+  bool hasNextNode(GraphNode_ptr node);
 
 protected:
   int id;

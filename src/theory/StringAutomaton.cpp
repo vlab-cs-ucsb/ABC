@@ -1256,7 +1256,6 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
 
   // TODO check that if complement of contains auto has intersection with subject auto, if so -1 should be included in the results
 
-
   StringAutomaton_ptr contains_duplicate_auto = new StringAutomaton(dfa_replace_step1_duplicate(contains_auto->dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES));
   StringAutomaton_ptr search_complement_auto = new StringAutomaton(dfa_replace_step2_match_compliment(search_auto->dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES));
   StringAutomaton_ptr tmp_auto = contains_duplicate_auto->intersect(search_complement_auto);
@@ -1323,128 +1322,78 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
   graph->resetFinalNodesToFlag(3);
   graph->inspectGraph(false);
 
-  DAGraph_ptr da_graph = new DAGraph(graph); // converts graph into a dag
-
-  // -- begin finding new final states
-  // Reverse DFS to find nodes with flag 1 edge that are closest to final states
-  // That step marks new final states at the dag level
-  std::stack<DAGraphNode_ptr> da_stack;
-  std::map<DAGraphNode_ptr, bool> is_visited; // relies on c++ initializes bool as false
-  for (auto node : da_graph->getFinalNodes()) {
-    da_stack.push(node);
-    while (not da_stack.empty()) {
-      DAGraphNode_ptr curr_da_node = da_stack.top(); da_stack.pop();
-      if (is_visited[curr_da_node]) {
-        continue;
-      }
-      is_visited[curr_da_node] = true;
-      if (curr_da_node->hasEdgeFlag(1)) {
-        for (auto& next_scc_node : curr_da_node->getFlagNodes(1)) {
-          curr_da_node->setEdgeFlag(3, next_scc_node); // flag 3 is for new final states
-        }
-      } else {
-        for (auto prev_da_node : curr_da_node->getPrevNodes()) {
-          da_stack.push(prev_da_node);
-        }
-      }
-    }
-  }
-  // -- end of finding new final final states
-
-  // Re-set final nodes for dag
-  da_graph->resetFinalNodesToFlag(3);
-  da_graph->inspectGraph();
-
-  // -- begin setting new final states inside scc state
-  for (auto& scc_node : da_graph->getFinalNodes()) {
-    GraphNodeSet out_sub_nodes = scc_node->getOutGoingSubNodes(); // get nodes that has outgoing transitions
-    GraphNodeSet sub_final_nodes = da_graph->selectSubFinalNodes(scc_node->getSubNodes()); // get final nodes if any
-    out_sub_nodes.insert(sub_final_nodes.begin(), sub_final_nodes.end());
-    for (auto& sub_node : out_sub_nodes) {
-      std::stack<GraphNode_ptr> sub_node_stack;
-      std::map<GraphNode_ptr, bool> is_visited; // relies on c++ initializes bool as false
-      sub_node_stack.push(sub_node);
-      while (not sub_node_stack.empty()) {
-        GraphNode_ptr curr_sub_node = sub_node_stack.top(); sub_node_stack.pop();
-        if (is_visited[curr_sub_node]) {
-          continue;
-        }
-        is_visited[curr_sub_node] = true;
-        if (curr_sub_node->getFlag() == 1) { // beginning of a match
-          curr_sub_node->setFlag(3); // flag 3 is for new final states
-        } else {
-          for (auto prev_sub_node : curr_sub_node->getPrevNodes()) {
-            if (da_graph->isMemberOfSCC(prev_sub_node, scc_node)) {
-              sub_node_stack.push(prev_sub_node);
-            }
+  // BEGIN trim the states that are after final states
+  std::stack<GraphNode_ptr> trim_stack;
+  std::stack<GraphNode_ptr> node_stack;
+  std::map<GraphNode_ptr, bool> is_visited; // by default bool is initialized as false
+  GraphNode_ptr sink_node = graph->getSinkNode();
+  is_visited[sink_node] = true; // do not visit sink
+  GraphNodeSet final_nodes = graph->getFinalNodes();
+  for (auto final_node : final_nodes) { // TODO iterate over new final states
+    node_stack.push(final_node);
+    is_visited[final_node] = true;
+    while (not node_stack.empty()) {
+      GraphNode_ptr curr_node = node_stack.top(); node_stack.pop();
+      if (curr_node == final_node || final_nodes.find(curr_node) == final_nodes.end()) {
+        trim_stack.push(curr_node);
+        for (auto next_node : curr_node->getNextNodes()) {
+          if ( (is_visited.find(next_node) == is_visited.end()) ) {
+            node_stack.push(next_node);
+            is_visited[next_node] = true; // to avoid exploring common paths more than once
           }
         }
-      }
-    }
-  }
-  // -- end setting new final states inside scc state
-
-  // re-set final nodes for cyclic graph
-  graph->resetFinalNodesToFlag(3);
-
-  while (not da_stack.empty()) {
-    da_stack.pop();
-  }
-  is_visited.clear(); // relies on c++ initializes bool as false
-
-  // -- begin trimming step
-  // Figure out where to cut new graph, trim DAG graph and corresponding cyclic graph
-  // This step removes the unneccasary nodes that are left after final nodes at dag level
-
-  std::stack<DAGraphNode_ptr> da_trim_stack;
-  DAGraphNode_ptr sink_da_node = da_graph->getSinkNode();
-  is_visited[sink_da_node] = true; // do not visit sink
-  for (auto node : da_graph->getFinalNodes()) { // TODO iterate over new final states
-    da_stack.push(node);
-    is_visited[node] = true;
-    while (not da_stack.empty()) {
-      DAGraphNode_ptr curr_da_node = da_stack.top(); da_stack.pop();
-      da_trim_stack.push(curr_da_node);
-      for (auto next_da_node : curr_da_node->getNextNodes()) {
-        if ( not is_visited[next_da_node] ) {
-          da_stack.push(next_da_node);
-          is_visited[next_da_node] = true; // to avoid exploring common paths more than once
+      } else {
+        if (not node_stack.empty()) {
+          curr_node = node_stack.top();
+          while (not trim_stack.empty()) {
+            if (not curr_node->hasNextNode(trim_stack.top())) {
+              trim_stack.pop();
+            } else {
+              break;
+            }
+          }
+          if (not trim_stack.empty()) {
+            trim_stack.pop();
+          }
+        } else {
+          while ( not trim_stack.empty()) {
+            trim_stack.pop();
+          }
         }
       }
     }
 
     bool stop_trimming = false;
-    while (not da_trim_stack.empty()) {
-      DAGraphNode_ptr curr_da_node = da_trim_stack.top();
-      // to remove a node it must not be a final and it must have a next node other than sink node
-      if ( (curr_da_node->getFlag() == 3) or (curr_da_node->getNextNodes().size() > 1) ) {
+    while (not trim_stack.empty()) {
+      GraphNode_ptr curr_node = trim_stack.top();
+      if ( curr_node->hasEdgeFlag(3) ) {
         stop_trimming = true;
       } else if (stop_trimming) {
 //      do not remove anymore
       } else {
-        da_graph->removeNode(curr_da_node);
-        graph->removeNodes(curr_da_node->getSubNodes()); // also remove the nodes from cyclic graph
-        delete curr_da_node;
+        graph->removeNode(curr_node);
+        delete curr_node;
       }
-      da_trim_stack.pop();
+      trim_stack.pop();
     }
   }
- // end of trimming step
+  // END trim the states that are after final states
 
-  da_graph->inspectGraph();
+  // trimming can be done in a dag easy
+//  DAGraph_ptr da_graph = new DAGraph(graph); // converts graph into a dag
+//  da_graph->inspectGraph();
   graph->inspectGraph();
 
-  // figure out new number of states and new state mapping
+  // BEGIN figure out new number of states and new state mapping
   // node ids in the graph corresponds the states ids in the search result automaton
   int next_state_id = 0;
   std::map<int, int> state_id_map;
   std::map<int, int> reverse_state_id_map;
-//  int sink_state = search_result_auto->getSinkState();
   GraphNode_ptr start_node = graph->getStartNode();
-  GraphNode_ptr sink_node = graph->getSinkNode();
   CHECK_EQ(sink_state, sink_node->getID()); // we should preserve that up until here
 
-  std::stack<GraphNode_ptr> node_stack;
+//  std::stack<GraphNode_ptr> node_stack;
+  while (not node_stack.empty()) { node_stack.pop(); };
   std::stack<GraphNode_ptr> merge_stack;
 
   state_id_map[sink_state] = sink_node->getID(); // do not change sink state
@@ -1458,8 +1407,9 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
     const int node_id = curr_node->getID();
     if (reverse_state_id_map.find(node_id) == reverse_state_id_map.end()) {
       GraphNodeSet next_nodes = curr_node->getNextNodes();
-      if (curr_node->getFlag() > 0 and next_nodes.size() == 2) { // a marked node with at most 2 next states (1 of them is sink)
-          merge_stack.push(curr_node);
+      if (curr_node->getEdgeFlag(node) != 0) {
+
+
       } else {
         state_id_map[next_state_id] = node_id;
         reverse_state_id_map[node_id] = next_state_id;

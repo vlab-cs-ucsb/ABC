@@ -86,6 +86,10 @@ GraphNodeSet& GraphNode::getNextNodes() {
   return nextNodes;
 }
 
+bool GraphNode::hasNextNode(GraphNode_ptr node) {
+  return (nextNodes.find(node) != nextNodes.end());
+}
+
 GraphNodeSet& GraphNode::getPrevNodes() {
   return prevNodes;
 }

@@ -74,6 +74,9 @@ void Graph::removeNode(GraphNode_ptr node) {
   finalNodes.erase(node);
   for (auto prev_node : node->getPrevNodes()) {
     prev_node->getNextNodes().erase(node);
+    for (auto& it : prev_node->getEdgeFlagMap()) {
+      it.second.erase(node);
+    }
   }
 }
 
