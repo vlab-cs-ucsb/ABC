@@ -1276,27 +1276,57 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
 
   search_result_auto->inspectAuto();
 
-  // figure out last index of states using graph algorithms
+  // figure out last index of states using graph traversal algorithms
 
   Graph_ptr graph = search_result_auto->toGraph();
   // Mark start states and end states of matches
   std::vector<char> flag_1_exception = {'1', '1', '1', '1', '1', '1', '1', '1'}; // 255
   std::vector<char> flag_2_exception = {'1', '1', '1', '1', '1', '1', '1', '0'}; // 254
   GraphNode_ptr node = nullptr;
+  int sink_state = search_result_auto->getSinkState();
+  int next_state = -1;
   for (int s = 0; s < search_result_auto->dfa->ns; s++) {
     node = graph->getNode(s);
-    if (search_result_auto->hasExceptionToValidStateFrom(s, flag_1_exception)) {
-      node->setFlag(1); // flag 1 is to mark for beginning of a match
-    } else if (search_result_auto->hasExceptionToValidStateFrom(s, flag_2_exception)) {
-      node->setFlag(2); // flag 2 is to mark for end of a match
+    if (sink_state != (next_state = search_result_auto->getNextStateFrom(s, flag_1_exception))) {
+      node->addEdgeFlag(1, graph->getNode(next_state)); // flag 1 is to mark for beginning of a match
+    } else if ( sink_state != (next_state = search_result_auto->getNextStateFrom(s, flag_2_exception)) ) {
+      node->addEdgeFlag(2, graph->getNode(next_state)); // flag 2 is to mark for end of a match
     }
   }
 
   graph->inspectGraph(false);
+
+
+  // BEGIN find new final states using reverse DFS traversal
+  for (auto final_node : graph->getFinalNodes()) {
+    std::stack<GraphNode_ptr> node_stack;
+    std::map<GraphNode_ptr, bool> is_visited; // by default bool is initialized as false
+    GraphNode_ptr curr_node = nullptr;
+    node_stack.push(final_node);
+    while (not node_stack.empty()) {
+      curr_node = node_stack.top(); node_stack.pop();
+      is_visited[curr_node] = true;
+      for (auto& prev_node : curr_node->getPrevNodes()) {
+        if (prev_node->hasEdgeFlag(1, curr_node)) { // a match state found
+          prev_node->removeEdgeFlag(1, curr_node);
+          prev_node->addEdgeFlag(3, curr_node); // 3 is for new final state
+        } else {
+          if (is_visited.find(prev_node) == is_visited.end()) {
+            node_stack.push(prev_node);
+          }
+        }
+      }
+    }
+  }
+  // END find new final states using reverse DFS traversal
+
+  graph->resetFinalNodesToFlag(3);
+  graph->inspectGraph(false);
+
   DAGraph_ptr da_graph = new DAGraph(graph); // converts graph into a dag
 
   // -- begin finding new final states
-  // Reverse DFS to find nodes with flag 1 that are closest to final states
+  // Reverse DFS to find nodes with flag 1 edge that are closest to final states
   // That step marks new final states at the dag level
   std::stack<DAGraphNode_ptr> da_stack;
   std::map<DAGraphNode_ptr, bool> is_visited; // relies on c++ initializes bool as false
@@ -1308,8 +1338,10 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
         continue;
       }
       is_visited[curr_da_node] = true;
-      if (curr_da_node->hasFlag(1)) {
-        curr_da_node->setFlag(3); // flag 3 is for new final states
+      if (curr_da_node->hasEdgeFlag(1)) {
+        for (auto& next_scc_node : curr_da_node->getFlagNodes(1)) {
+          curr_da_node->setEdgeFlag(3, next_scc_node); // flag 3 is for new final states
+        }
       } else {
         for (auto prev_da_node : curr_da_node->getPrevNodes()) {
           da_stack.push(prev_da_node);
@@ -1321,6 +1353,7 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
 
   // Re-set final nodes for dag
   da_graph->resetFinalNodesToFlag(3);
+  da_graph->inspectGraph();
 
   // -- begin setting new final states inside scc state
   for (auto& scc_node : da_graph->getFinalNodes()) {
@@ -1398,15 +1431,15 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
   }
  // end of trimming step
 
-  da_graph->inspectGraph(false);
-  graph->inspectGraph(false);
+  da_graph->inspectGraph();
+  graph->inspectGraph();
 
   // figure out new number of states and new state mapping
   // node ids in the graph corresponds the states ids in the search result automaton
   int next_state_id = 0;
   std::map<int, int> state_id_map;
   std::map<int, int> reverse_state_id_map;
-  int sink_state = search_result_auto->getSinkState();
+//  int sink_state = search_result_auto->getSinkState();
   GraphNode_ptr start_node = graph->getStartNode();
   GraphNode_ptr sink_node = graph->getSinkNode();
   CHECK_EQ(sink_state, sink_node->getID()); // we should preserve that up until here

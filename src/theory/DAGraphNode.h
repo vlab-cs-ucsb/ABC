@@ -38,14 +38,20 @@ public:
   DAGraphNodeSet& getNextNodes();
   DAGraphNodeSet& getPrevNodes();
 
-  bool hasFlag(int f);
-
+  void setEdgeFlag(int f, DAGraphNode_ptr scc_node);
+  bool hasEdgeFlag(int f);
+  int getEdgeFlag(DAGraphNode_ptr scc_node);
+  DAGraphNodeSet& getFlagNodes(int f);
+  GraphNodeSet getFlagSubNodes(int f);
+  std::map<int, DAGraphNodeSet>& getFlagNodeMap();
 protected:
   int id;
   int flag;
   GraphNodeSet nodes;
   DAGraphNodeSet nextSCCNodes;
   DAGraphNodeSet prevSCCNodes;
+  DAGraphNodeSet flagSCCNodes;
+  std::map<int, DAGraphNodeSet> flagNodesMap;
 };
 
 } /* namespace Theory */

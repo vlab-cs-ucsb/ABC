@@ -48,7 +48,7 @@ public:
   bool isFinalNode(GraphNode_ptr);
 
   void toDot(bool print_sink = false, std::ostream& out = std::cout);
-  void inspectGraph(bool print_sink = false);
+  int inspectGraph(bool print_sink = false);
 
 protected:
   GraphNode_ptr startNode;

@@ -103,18 +103,42 @@ DAGraphNodeSet& DAGraphNode::getPrevNodes() {
   return prevSCCNodes;
 }
 
-bool DAGraphNode::hasFlag(int f) {
+void DAGraphNode::setEdgeFlag(int f, DAGraphNode_ptr scc_node) {
+  flag = f;
+  flagNodesMap[f].insert(scc_node);
+}
+
+bool DAGraphNode::hasEdgeFlag(int f) {
   if (flag == f) {
     return true;
   }
+  return (flagNodesMap.find(f) != flagNodesMap.end());
+}
 
-  for (GraphNode_ptr node : nodes) {
-    if (node->getFlag() == f) {
-      return true;
+int DAGraphNode::getEdgeFlag(DAGraphNode_ptr scc_node) {
+  for (auto& it : flagNodesMap) {
+    if (it.second.find(scc_node) != it.second.end()) {
+      return it.first;
     }
   }
+  return 0;
+}
 
-  return false;
+DAGraphNodeSet& DAGraphNode::getFlagNodes(int f) {
+  return flagNodesMap[f];
+}
+
+GraphNodeSet DAGraphNode::getFlagSubNodes(int f) {
+  GraphNodeSet sub_flag_nodes;
+  for (GraphNode_ptr node : nodes) {
+    GraphNodeSet node_flags = node->getFlagNodes(f);
+    sub_flag_nodes.insert(node_flags.begin(), node_flags.end());
+  }
+  return sub_flag_nodes;
+}
+
+std::map<int, DAGraphNodeSet>& DAGraphNode::getFlagNodeMap() {
+  return flagNodesMap;
 }
 
 } /* namespace Theory */

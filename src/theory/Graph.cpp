@@ -87,7 +87,7 @@ void Graph::removeNodes(GraphNodeSet& nodes) {
 void Graph::resetFinalNodesToFlag(int flag) {
   finalNodes.clear();
   for (auto& entry : nodes) {
-    if (entry.second->getFlag() == flag) {
+    if (entry.second->hasEdgeFlag(flag)) {
       finalNodes.insert(entry.second);
     }
   }
@@ -142,8 +142,8 @@ void Graph::toDot(bool print_sink, std::ostream& out) {
         continue;
       }
       out << " " << entry.first << " -> " << next_node->getID();
-      int node_flag = entry.second->getFlag();
-      if ( node_flag != 0 && next_node != sinkNode) {
+      int node_flag = entry.second->getEdgeFlag(next_node);
+      if ( node_flag != 0 ) {
         out << "[label = \"" << node_flag << "\"]";
       }
       out << ";\n";
@@ -152,7 +152,7 @@ void Graph::toDot(bool print_sink, std::ostream& out) {
   out << "}" << std::endl;
 }
 
-void Graph::inspectGraph(bool print_sink) {
+int Graph::inspectGraph(bool print_sink) {
   std::stringstream file_name;
   file_name << "./output/inspect_graph_" << name_counter++ << ".dot";
   std::string file = file_name.str();
@@ -163,7 +163,7 @@ void Graph::inspectGraph(bool print_sink) {
   }
   toDot(print_sink, outfile);
   std::string dot_cmd("xdot " + file + " &");
-  std::system(dot_cmd.c_str());
+  return std::system(dot_cmd.c_str());
 }
 
 } /* namespace Theory */

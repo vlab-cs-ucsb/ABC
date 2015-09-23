@@ -48,6 +48,14 @@ DAGraph::DAGraph(Graph_ptr graph) {
     for (GraphNode_ptr sub_node: da_node->getPrevSubNodes()) {
       da_node->addPrevNode(subNodes[sub_node]);
     }
+    for (GraphNode_ptr sub_node: da_node->getSubNodes()) {
+      for (auto& entry : sub_node->getEdgeFlagMap()) {
+        for (auto& sub_node_next : entry.second) {
+          da_node->setEdgeFlag(entry.first, subNodes[sub_node_next]);
+        }
+      }
+    }
+
   }
 
   delete disc;
@@ -122,7 +130,7 @@ Graph_ptr DAGraph::getRawGraph() {
 void DAGraph::resetFinalNodesToFlag(int flag) {
   finalNodes.clear();
   for (auto entry : nodes) {
-    if (entry.second->getFlag() == flag) {
+    if (entry.second->hasEdgeFlag(flag)) {
       finalNodes.insert(entry.second);
     }
   }
@@ -158,7 +166,20 @@ void DAGraph::toDot(bool print_sink, std::ostream& out) {
     if ((not print_sink) && sinkNode == entry.second) {
       continue;
     }
-    out << " " << entry.first << ";";
+    out << " " << entry.first << "[label = \"" << entry.first;
+
+    if (entry.second->getFlag() != 0) {
+      out << "\\n( ";
+    }
+    for (auto& it : entry.second->getFlagNodeMap()) {
+      out << it.first << " ";
+    }
+    if (entry.second->getFlag() != 0) {
+      out << ")";
+    }
+
+    out << "\"]" << ";";
+
   }
 
   out << "\n init [shape = plaintext, label = \"\"];\n" <<
@@ -173,8 +194,8 @@ void DAGraph::toDot(bool print_sink, std::ostream& out) {
         continue;
       }
       out << " " << entry.first << " -> " << next_node->getID();
-      int node_flag = entry.second->getFlag();
-      if ( node_flag != 0 && next_node != sinkNode) {
+      int node_flag = entry.second->getEdgeFlag(next_node);
+      if ( node_flag != 0) {
         out << "[label = \"" << node_flag << "\"]";
       }
       out << ";\n";
@@ -183,7 +204,7 @@ void DAGraph::toDot(bool print_sink, std::ostream& out) {
   out << "}" << std::endl;
 }
 
-void DAGraph::inspectGraph(bool print_sink) {
+int DAGraph::inspectGraph(bool print_sink) {
   std::stringstream file_name;
   file_name << "./output/inspect_dagraph_" << name_counter++ << ".dot";
   std::string file = file_name.str();
@@ -194,7 +215,7 @@ void DAGraph::inspectGraph(bool print_sink) {
   }
   toDot(print_sink, outfile);
   std::string dot_cmd("xdot " + file + " &");
-  std::system(dot_cmd.c_str());
+  return std::system(dot_cmd.c_str());
 }
 
 void DAGraph::findSCCs(int u, int disc[], int low[], std::stack<int>* st, bool is_stack_member[], int& time) {

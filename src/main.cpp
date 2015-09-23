@@ -84,8 +84,8 @@ int main(const int argc, const char **argv) {
   driver.printResult(output_root + "/result.dot");
 
   std::string dot_cmd("xdot " + output_root + "/result.dot &");
-  std::system(dot_cmd.c_str());
-  LOG(INFO) << "result rendered: " << dot_cmd;
+  int r = std::system(dot_cmd.c_str());
+  LOG(INFO) << "result rendered? " << r << " : " << dot_cmd;
   LOG(INFO) << "done.";
   return 0;
 }

@@ -47,7 +47,7 @@ public:
   GraphNodeSet selectSubFinalNodes(GraphNodeSet& nodes);
 
   void toDot(bool print_sink = false, std::ostream& out = std::cout);
-  void inspectGraph(bool print_sink = false);
+  int inspectGraph(bool print_sink = false);
 
 protected:
   Graph_ptr graph;

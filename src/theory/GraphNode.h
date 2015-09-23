@@ -9,6 +9,7 @@
 #define THEORY_GRAPHNODE_H_
 
 #include <set>
+#include <map>
 
 namespace Vlab {
 namespace Theory {
@@ -25,6 +26,14 @@ public:
   int getID();
   int getFlag();
   void setFlag(int f);
+  void addEdgeFlag(int f, GraphNode_ptr node);
+  int getEdgeFlag(GraphNode_ptr node);
+  bool isFlaggedEdge(int f, GraphNode_ptr node);
+  bool hasEdgeFlag(int f);
+  bool hasEdgeFlag(int f, GraphNode_ptr node);
+  void removeEdgeFlag(int f, GraphNode_ptr node);
+  GraphNodeSet& getFlagNodes(int f);
+  std::map<int, GraphNodeSet>& getEdgeFlagMap();
   void addNextNode(GraphNode_ptr node);
   void addPrevNode(GraphNode_ptr node);
   GraphNodeSet& getNextNodes();
@@ -35,6 +44,7 @@ protected:
   int flag;
   GraphNodeSet nextNodes;
   GraphNodeSet prevNodes;
+  std::map<int, GraphNodeSet> flagNodesMap;
 };
 
 } /* namespace Theory */
