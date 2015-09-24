@@ -29,6 +29,7 @@ public:
   void addEdgeFlag(int f, GraphNode_ptr node);
   int getEdgeFlag(GraphNode_ptr node);
   bool isFlaggedEdge(int f, GraphNode_ptr node);
+  bool hasEdgeFlags();
   bool hasEdgeFlag(int f);
   bool hasEdgeFlag(int f, GraphNode_ptr node);
   void removeEdgeFlag(int f, GraphNode_ptr node);

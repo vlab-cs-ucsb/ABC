@@ -109,6 +109,30 @@ bool Graph::isFinalNode(GraphNode_ptr node) {
   return (it != finalNodes.end());
 }
 
+void Graph::dfs(GraphNode_ptr start_node,
+        std::function<bool(GraphNode_ptr node)> check_callback,
+        std::function<void(GraphNode_ptr node, std::stack<GraphNode_ptr>&, std::map<GraphNode_ptr, bool>&)> cont_callback) {
+  std::stack<GraphNode_ptr> node_stack;
+  std::map<GraphNode_ptr, bool> is_visited;
+  GraphNode_ptr curr_node = nullptr;
+  node_stack.push(start_node);
+  while (not node_stack.empty()) {
+    curr_node = node_stack.top();
+    is_visited[curr_node] = true;
+    if (check_callback(curr_node)) {
+      return;
+    } else if (cont_callback == nullptr) {
+      for (auto& next_node : curr_node->getNextNodes()) {
+        if (is_visited.find(next_node) == is_visited.end()) {
+          node_stack.push(next_node);
+        }
+      }
+    } else {
+      cont_callback(curr_node, node_stack, is_visited);
+    }
+  }
+}
+
 void Graph::toDot(bool print_sink, std::ostream& out) {
 
   print_sink = print_sink || (nodes.size() == 1 and finalNodes.size() == 0);

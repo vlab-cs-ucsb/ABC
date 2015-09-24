@@ -12,6 +12,8 @@
 #include <sstream>
 #include <fstream>
 #include <map>
+#include <stack>
+#include <functional>
 
 #include "GraphNode.h"
 
@@ -46,6 +48,10 @@ public:
   bool isStartNode(GraphNode_ptr);
   bool isSinkNode(GraphNode_ptr);
   bool isFinalNode(GraphNode_ptr);
+
+  void dfs(GraphNode_ptr start_node,
+          std::function<bool(GraphNode_ptr node)> check_callback,
+          std::function<void(GraphNode_ptr node, std::stack<GraphNode_ptr>&, std::map<GraphNode_ptr, bool>&)> cont_callback = nullptr);
 
   void toDot(bool print_sink = false, std::ostream& out = std::cout);
   int inspectGraph(bool print_sink = false);

@@ -50,6 +50,10 @@ bool GraphNode::isFlaggedEdge(int f, GraphNode_ptr node) {
   return (it->second.find(node) != it->second.end());
 }
 
+bool GraphNode::hasEdgeFlags() {
+  return (flagNodesMap.size() != 0);
+}
+
 bool GraphNode::hasEdgeFlag(int f) {
   return (flagNodesMap.find(f) != flagNodesMap.end());
 }
@@ -63,7 +67,12 @@ bool GraphNode::hasEdgeFlag(int f, GraphNode_ptr node) {
 }
 
 void GraphNode::removeEdgeFlag(int f, GraphNode_ptr node) {
-  flagNodesMap[f].erase(node);
+  auto it = flagNodesMap.find(f);
+  it->second.erase(node);
+  if (it->second.size() == 0) {
+    flagNodesMap.erase(it);
+  }
+
 }
 
 GraphNodeSet& GraphNode::getFlagNodes(int f) {

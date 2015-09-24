@@ -1293,9 +1293,6 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
     }
   }
 
-  graph->inspectGraph(false);
-
-
   // BEGIN find new final states using reverse DFS traversal
   for (auto final_node : graph->getFinalNodes()) {
     std::stack<GraphNode_ptr> node_stack;
@@ -1320,8 +1317,7 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
   // END find new final states using reverse DFS traversal
 
   graph->resetFinalNodesToFlag(3);
-  graph->inspectGraph(false);
-
+//  graph->inspectGraph();
   // BEGIN trim the states that are after final states
   std::stack<GraphNode_ptr> trim_stack;
   std::stack<GraphNode_ptr> node_stack;
@@ -1379,67 +1375,99 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
   }
   // END trim the states that are after final states
 
-  // trimming can be done in a dag easy
+//  TODO trimming can be done in a dag easy, we may not need trimming if we minimize at the end??
 //  DAGraph_ptr da_graph = new DAGraph(graph); // converts graph into a dag
 //  da_graph->inspectGraph();
-  graph->inspectGraph();
 
+  while (not node_stack.empty()) { node_stack.pop(); };
+  is_visited.clear();
+  graph->inspectGraph();
   // BEGIN figure out new number of states and new state mapping
   // node ids in the graph corresponds the states ids in the search result automaton
   int next_state_id = 0;
-  std::map<int, int> state_id_map;
+  std::map<int, std::set<int>> state_id_map;
   std::map<int, int> reverse_state_id_map;
   GraphNode_ptr start_node = graph->getStartNode();
   CHECK_EQ(sink_state, sink_node->getID()); // we should preserve that up until here
 
-//  std::stack<GraphNode_ptr> node_stack;
-  while (not node_stack.empty()) { node_stack.pop(); };
-  std::stack<GraphNode_ptr> merge_stack;
-
-  state_id_map[sink_state] = sink_node->getID(); // do not change sink state
+  state_id_map[sink_state].insert(sink_node->getID()); // do not change sink state
   reverse_state_id_map[sink_node->getID()] = sink_state;
-  if (next_state_id == sink_state) { ++next_state_id; }
-
+//  TODO bug here !!!
   node_stack.push(start_node);
   while (not node_stack.empty()) {
     GraphNode_ptr curr_node = node_stack.top(); node_stack.pop();
+    std::cout << "visiting: " << curr_node->getID() << std::endl;
+    if (is_visited.find(curr_node) != is_visited.end()) {
+      continue;
+    }
 
-    const int node_id = curr_node->getID();
-    if (reverse_state_id_map.find(node_id) == reverse_state_id_map.end()) {
-      GraphNodeSet next_nodes = curr_node->getNextNodes();
-      if (curr_node->getEdgeFlag(node) != 0) {
+    if (next_state_id == sink_state) {
+      ++next_state_id;
+    }
 
-
-      } else {
-        state_id_map[next_state_id] = node_id;
-        reverse_state_id_map[node_id] = next_state_id;
-        while (not merge_stack.empty()) {
-          auto merge_node = merge_stack.top(); merge_stack.pop();
-          reverse_state_id_map[merge_node->getID()] = next_state_id;
+    if (curr_node->hasEdgeFlags()) { // node has a marked edge
+      std::stack<GraphNode_ptr> merge_stack;
+      auto check_callback = [&merge_stack](GraphNode_ptr node) mutable -> bool {
+        merge_stack.push(node);
+        if (node->hasEdgeFlags()) {
+          return false;
         }
-        ++next_state_id;
-        if (next_state_id == sink_state) { ++next_state_id; }
-      }
-
-      for (auto next_node : next_nodes) {
-        if (sink_node != next_node) { // do not visit sink we already assigned it
-          node_stack.push(next_node);
-        }
-      }
-    } else if (sink_node != curr_node) { // to make sure sink node never reaches here
-      const int map_id = reverse_state_id_map[curr_node->getID()];
+        return true;
+      };
+      auto cont_callback = [](GraphNode_ptr node, std::stack<GraphNode_ptr>& st, std::map<GraphNode_ptr, bool>& v) mutable {
+          std::map<int, GraphNodeSet> flags = node->getEdgeFlagMap();
+          CHECK_EQ(1, flags.size()); // that check is specific to lastIndexOf algorithm
+          for (auto it: flags) {
+            for (auto& next_node : it.second) {
+              if (v.find(next_node) == v.end()) {
+                st.push(next_node);
+              }
+            }
+          }
+      };
+      graph->dfs(curr_node, check_callback, cont_callback);
+      GraphNode_ptr merge_node = nullptr;
+      int map_id = -1;
       while (not merge_stack.empty()) {
-        auto merge_node = merge_stack.top(); merge_stack.pop();
-        reverse_state_id_map[merge_node->getID()] = map_id;
+        merge_node = merge_stack.top();
+        if (map_id == -1 and reverse_state_id_map.find(merge_node->getID()) == reverse_state_id_map.end()) {
+          state_id_map[next_state_id].insert(merge_node->getID());
+          reverse_state_id_map[merge_node->getID()] = next_state_id;
+          map_id = next_state_id;
+          ++next_state_id;
+        } else if (map_id == -1) {
+          map_id = reverse_state_id_map[merge_node->getID()];
+        } else {
+          state_id_map[map_id].insert(merge_node->getID());
+          reverse_state_id_map[merge_node->getID()] = map_id;
+        }
+        merge_stack.pop();
+      }
+    } else {
+      if (reverse_state_id_map.find(curr_node->getID()) == reverse_state_id_map.end()) {
+        state_id_map[next_state_id].insert(curr_node->getID());
+        reverse_state_id_map[curr_node->getID()] = next_state_id;
+        ++next_state_id;
       }
     }
+
+    for (auto next_node : curr_node->getNextNodes()) {
+      if (sink_node != next_node) { // do not visit sink we already assigned it
+        node_stack.push(next_node);
+      }
+    }
+    std::cout << "visited end: " << curr_node->getID() << std::endl;
+    is_visited[curr_node] = true;
   }
+  // END figure out new number of states and new state mapping
 
-  int expected_num_of_states = state_id_map.size();
-
-  std::cout << "graph size: " << graph->getNumOfNodes() << " , exp. size: " << expected_num_of_states << std::endl;
+  std::cout << "graph size: " << graph->getNumOfNodes() << " , exp. size: " << state_id_map.size() << std::endl;
   for (auto it : state_id_map) {
-    std::cout << it.first << " -> " << it.second << std::endl;
+    std::cout << it.first << " -> ";
+    for (auto id : it.second) {
+      std::cout << id << " ";
+    }
+    std::cout << std::endl;
   }
 
   std::cout << "reverse map: "<< std::endl;
@@ -1447,108 +1475,68 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
     std::cout << it.first << " -> " << it.second << std::endl;
   }
 
-
-  std::exit(0);
-  std::map<int, Node*> nodes;
-    paths state_paths = nullptr, pp = nullptr;
-    trace_descr tp = nullptr;
-    std::stack<int> state_work_list;
-    std::set<int> processed;
-  sink_state = search_result_auto->getSinkState();
-  // extract automaton
-  std::vector<char> marked_transition = StringAutomaton::getReservedWord('1', StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-  sink_state = search_result_auto->getSinkState();
-  int current_state;
-  int state_id = 0;
+  // BEGIN generate automaton
+  int expected_num_of_states = state_id_map.size();
+  std::vector<char> statuses (expected_num_of_states);
   int* indices = StringAutomaton::DEFAULT_VARIABLE_INDICES;
-  std::vector<char>* current_exception = nullptr;
-  Node* current_node = nullptr;
-
-  state_work_list.push(search_result_auto->dfa->s);
-  while (not state_work_list.empty()) {
-    current_state = state_work_list.top(); state_work_list.pop();
-    if (processed.find(current_state) != processed.end()) {
-      continue;
-    }
-    processed.insert(current_state);
-    current_node = new Node(current_state);
-    state_paths = pp = make_paths(search_result_auto->dfa->bddm, search_result_auto->dfa->q[current_state]);
-
-    while (pp) {
-      if ( pp->to != (unsigned)sink_state) {
-        current_exception = new std::vector<char>();
-        for (int j = 0; j < search_result_auto->num_of_variables; j++) {
-          for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
-          if (tp) {
-            if (tp->value) {
-              current_exception->push_back('1');
-            }
-            else {
-              current_exception->push_back('0');
-            }
-          }
-          else {
-            current_exception->push_back('X');
-          }
-        }
-        current_exception->push_back('\0');
-        if (marked_transition == *current_exception) {
-//          final_states__remove_me.insert(current_state);
-          delete current_exception;
-        } else {
-          current_node->addExceptionToState(pp->to, current_exception);
-          if (processed.find(pp->to) == processed.end()) {
-            state_work_list.push(pp->to);
-          }
-        }
-      }
-
-      tp = nullptr;
-      pp = pp->next;
-    }
-
-    nodes[current_state] = current_node;
-    if (state_id == sink_state) {
-      state_id_map[state_id] = sink_state;
-      reverse_state_id_map[sink_state] = state_id;
-      nodes[sink_state] = new Node(sink_state);
-      state_id++;
-    }
-
-    state_id_map[state_id] = current_state;
-    reverse_state_id_map[current_state] = state_id;
-    state_id++;
-
-    current_node = nullptr;
-    kill_paths(state_paths);
-    state_paths = pp = nullptr;
+  paths state_paths = nullptr, pp = nullptr;
+  trace_descr tp = nullptr;
+  for (auto& ch : statuses) {
+    ch = '-';
   }
 
-  // create automaton
-  expected_num_of_states = nodes.size();
-  std::vector<char> statuses (expected_num_of_states);
-  int old_state_id;
-  statuses[sink_state] = '-';
-  dfaSetup(expected_num_of_states, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  for (int i = 0; i < expected_num_of_states; i++) {
-    old_state_id = state_id_map[i];
-    current_node = nodes[old_state_id];
-    dfaAllocExceptions(current_node->getNumberOfExceptions());
-    for (auto& entry: current_node->getExceptions()) {
-      dfaStoreException(reverse_state_id_map[entry.first], &*(entry.second->begin()));
+  dfaSetup(expected_num_of_states, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, indices);
+  for (int s = 0; s < expected_num_of_states; s++) {
+
+    std::map<std::vector<char>*, int> exceptions;
+    for (auto old_state : state_id_map[s]) {
+      state_paths = pp = make_paths(search_result_auto->dfa->bddm, search_result_auto->dfa->q[old_state]);
+      GraphNode_ptr node = graph->getNode(old_state);
+      if (graph->isFinalNode(node)) {
+        statuses[s] = '+';
+      }
+      while (pp) {
+        if ( pp->to != (unsigned)sink_state and (node->getEdgeFlag(graph->getNode(pp->to)) == 0)) {
+          int to_state = reverse_state_id_map[pp->to];
+          std::vector<char> *current_exception = new std::vector<char>();
+          for (int j = 0; j < search_result_auto->num_of_variables; j++) {
+            for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
+            if (tp) {
+              if (tp->value) {
+                current_exception->push_back('1');
+              }
+              else {
+                current_exception->push_back('0');
+              }
+            }
+            else {
+              current_exception->push_back('X');
+            }
+          }
+          current_exception->push_back('\0');
+          exceptions.insert(std::make_pair(current_exception, to_state));
+        }
+        tp = nullptr;
+        pp = pp->next;
+      }
     }
+
+    dfaAllocExceptions(exceptions.size());
+    for (auto it = exceptions.begin(); it != exceptions.end();) {
+      dfaStoreException(it->second, &*(it->first->begin()));
+      delete it->first;
+      it = exceptions.erase(it);
+    }
+
     dfaStoreState(sink_state);
-//    if (final_states__remove_me.find(old_state_id) != final_states__remove_me.end()) {
-//      statuses[i] = '+';
-//    } else {
-//      statuses[i] = '-';
-//    }
   }
   statuses.push_back('\0');
   lastIndexOf_auto = new StringAutomaton(dfaBuild(&*(statuses.begin())), StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  // END generate automaton
 
-//  DFA_ptr binary_dfa = indexOf_auto->length();
-//  indexOf_auto->inspectAuto(true);
+  DVLOG(VLOG_LEVEL) << lastIndexOf_auto->id << " = [" << this->id << "]->lastIndexOf(" << search_auto->id << ")";
+//  lastIndexOf_auto->minimize();
+  lastIndexOf_auto->inspectAuto();
   return lastIndexOf_auto;
 }
 
