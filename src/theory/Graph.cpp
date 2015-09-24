@@ -117,7 +117,7 @@ void Graph::dfs(GraphNode_ptr start_node,
   GraphNode_ptr curr_node = nullptr;
   node_stack.push(start_node);
   while (not node_stack.empty()) {
-    curr_node = node_stack.top();
+    curr_node = node_stack.top(); node_stack.pop();
     is_visited[curr_node] = true;
     if (check_callback(curr_node)) {
       return;

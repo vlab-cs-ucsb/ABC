@@ -1241,6 +1241,10 @@ StringAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
   return indexOf_auto;
 }
 
+/**
+ * TODO include -1 in the result if it does not contain search
+ * TODO fix the bug when search auto is not a singleton, see test case 09
+ */
 StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto) {
   StringAutomaton_ptr contains_auto = nullptr, ends_auto = nullptr,
       lastIndexOf_auto = nullptr, search_result_auto = nullptr;
@@ -1259,8 +1263,7 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
   StringAutomaton_ptr contains_duplicate_auto = new StringAutomaton(dfa_replace_step1_duplicate(contains_auto->dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES));
   StringAutomaton_ptr search_complement_auto = new StringAutomaton(dfa_replace_step2_match_compliment(search_auto->dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES));
   StringAutomaton_ptr tmp_auto = contains_duplicate_auto->intersect(search_complement_auto);
-
-  contains_auto->inspectAuto();
+//  contains_auto->inspectAuto();
 
   delete contains_auto; contains_auto = nullptr;
   delete contains_duplicate_auto; contains_duplicate_auto = nullptr;
@@ -1272,10 +1275,6 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
 
   search_result_auto->project((unsigned) StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
   search_result_auto->minimize();
-
-  search_result_auto->inspectAuto();
-
-  // figure out last index of states using graph traversal algorithms
 
   Graph_ptr graph = search_result_auto->toGraph();
   // Mark start states and end states of matches
@@ -1317,71 +1316,10 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
   // END find new final states using reverse DFS traversal
 
   graph->resetFinalNodesToFlag(3);
-//  graph->inspectGraph();
-  // BEGIN trim the states that are after final states
-  std::stack<GraphNode_ptr> trim_stack;
   std::stack<GraphNode_ptr> node_stack;
   std::map<GraphNode_ptr, bool> is_visited; // by default bool is initialized as false
   GraphNode_ptr sink_node = graph->getSinkNode();
-  is_visited[sink_node] = true; // do not visit sink
-  GraphNodeSet final_nodes = graph->getFinalNodes();
-  for (auto final_node : final_nodes) { // TODO iterate over new final states
-    node_stack.push(final_node);
-    is_visited[final_node] = true;
-    while (not node_stack.empty()) {
-      GraphNode_ptr curr_node = node_stack.top(); node_stack.pop();
-      if (curr_node == final_node || final_nodes.find(curr_node) == final_nodes.end()) {
-        trim_stack.push(curr_node);
-        for (auto next_node : curr_node->getNextNodes()) {
-          if ( (is_visited.find(next_node) == is_visited.end()) ) {
-            node_stack.push(next_node);
-            is_visited[next_node] = true; // to avoid exploring common paths more than once
-          }
-        }
-      } else {
-        if (not node_stack.empty()) {
-          curr_node = node_stack.top();
-          while (not trim_stack.empty()) {
-            if (not curr_node->hasNextNode(trim_stack.top())) {
-              trim_stack.pop();
-            } else {
-              break;
-            }
-          }
-          if (not trim_stack.empty()) {
-            trim_stack.pop();
-          }
-        } else {
-          while ( not trim_stack.empty()) {
-            trim_stack.pop();
-          }
-        }
-      }
-    }
 
-    bool stop_trimming = false;
-    while (not trim_stack.empty()) {
-      GraphNode_ptr curr_node = trim_stack.top();
-      if ( curr_node->hasEdgeFlag(3) ) {
-        stop_trimming = true;
-      } else if (stop_trimming) {
-//      do not remove anymore
-      } else {
-        graph->removeNode(curr_node);
-        delete curr_node;
-      }
-      trim_stack.pop();
-    }
-  }
-  // END trim the states that are after final states
-
-//  TODO trimming can be done in a dag easy, we may not need trimming if we minimize at the end??
-//  DAGraph_ptr da_graph = new DAGraph(graph); // converts graph into a dag
-//  da_graph->inspectGraph();
-
-  while (not node_stack.empty()) { node_stack.pop(); };
-  is_visited.clear();
-  graph->inspectGraph();
   // BEGIN figure out new number of states and new state mapping
   // node ids in the graph corresponds the states ids in the search result automaton
   int next_state_id = 0;
@@ -1392,11 +1330,10 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
 
   state_id_map[sink_state].insert(sink_node->getID()); // do not change sink state
   reverse_state_id_map[sink_node->getID()] = sink_state;
-//  TODO bug here !!!
+
   node_stack.push(start_node);
   while (not node_stack.empty()) {
     GraphNode_ptr curr_node = node_stack.top(); node_stack.pop();
-    std::cout << "visiting: " << curr_node->getID() << std::endl;
     if (is_visited.find(curr_node) != is_visited.end()) {
       continue;
     }
@@ -1456,24 +1393,9 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
         node_stack.push(next_node);
       }
     }
-    std::cout << "visited end: " << curr_node->getID() << std::endl;
     is_visited[curr_node] = true;
   }
   // END figure out new number of states and new state mapping
-
-  std::cout << "graph size: " << graph->getNumOfNodes() << " , exp. size: " << state_id_map.size() << std::endl;
-  for (auto it : state_id_map) {
-    std::cout << it.first << " -> ";
-    for (auto id : it.second) {
-      std::cout << id << " ";
-    }
-    std::cout << std::endl;
-  }
-
-  std::cout << "reverse map: "<< std::endl;
-  for (auto it : reverse_state_id_map) {
-    std::cout << it.first << " -> " << it.second << std::endl;
-  }
 
   // BEGIN generate automaton
   int expected_num_of_states = state_id_map.size();
@@ -1533,10 +1455,10 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
   statuses.push_back('\0');
   lastIndexOf_auto = new StringAutomaton(dfaBuild(&*(statuses.begin())), StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
   // END generate automaton
+  lastIndexOf_auto->minimize(); // trims the automaton
 
   DVLOG(VLOG_LEVEL) << lastIndexOf_auto->id << " = [" << this->id << "]->lastIndexOf(" << search_auto->id << ")";
-//  lastIndexOf_auto->minimize();
-  lastIndexOf_auto->inspectAuto();
+
   return lastIndexOf_auto;
 }
 

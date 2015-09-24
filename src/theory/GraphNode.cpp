@@ -37,6 +37,9 @@ void GraphNode::addEdgeFlag(int f, GraphNode_ptr node) {
 }
 
 int GraphNode::getEdgeFlag(GraphNode_ptr node) {
+  if (node == nullptr) {
+    return -1;
+  }
   for (auto& it : flagNodesMap) {
     if (it.second.find(node) != it.second.end()) {
       return it.first;
