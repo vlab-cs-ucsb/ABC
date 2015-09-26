@@ -1771,6 +1771,33 @@ bool StringAutomaton::isEmptyString() {
   return false;
 }
 
+bool StringAutomaton::isAcceptingSingleString() {
+  int sink_state = getSinkState(),
+      curr_state = -1,
+      num_of_accepting_paths = 0;
+  std::stack<int> state_path;
+  std::set<int>* next_states = nullptr;
+
+  state_path.push(this->dfa->s);
+  while (not state_path.empty()) {
+    curr_state = state_path.top(); state_path.pop();
+    if (this->isAcceptingState(curr_state)) {
+      ++num_of_accepting_paths;
+    }
+    if (num_of_accepting_paths > 1) {
+      return false;
+    }
+    next_states = this->getNextStates(curr_state);
+    next_states->erase(sink_state);
+    for (int next_state : *next_states) {
+      state_path.push(next_state);
+    }
+    delete next_states; next_states = nullptr;
+  }
+
+  return (num_of_accepting_paths == 1);
+}
+
 std::string StringAutomaton::getString() {
   char* result = isSingleton(this->dfa,StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
   return std::string(result);

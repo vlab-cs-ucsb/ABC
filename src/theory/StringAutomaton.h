@@ -132,6 +132,7 @@ public:
   bool isEmptyLanguage();
   bool hasEmptyString();
   bool isEmptyString();
+  bool isAcceptingSingleString();
   std::string getString();
 
   void toDotAscii(bool print_sink = false, std::ostream& out = std::cout);

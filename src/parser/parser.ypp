@@ -64,16 +64,21 @@
   MINUS                "-"
   PLUS                 "+"
   EQ                   "="
+  NOTEQ                "!="
   GT                   ">"
   GE                   ">="
   LT                   "<"
   LE                   "<="
   CONCAT               "concat"
   IN                   "in"
+  NOTIN                "notIn"
   LEN                  "len"
   CONTAINS             "contains"
+  NOTCONTAINS          "notContains"
   BEGINS               "begins"
+  NOTBEGINS            "notBegins"
   ENDS                 "ends"
+  NOTENDS              "notEnds"
   INDEXOF              "indexOf"
   LASTINDEXOF          "lastIndexOf"
   CHARAT               "charAt"
@@ -233,16 +238,21 @@ term                  :
                       | "(" "-" term term ")"                                             { $$ = new Minus($3, $4); }
                       | "(" "+" term term ")"                                             { $$ = new Plus($3, $4); }
                       | "(" "=" term term ")"                                             { $$ = new Eq($3, $4); }
+                      | "(" "!=" term term ")"                                            { $$ = new NotEq($3, $4); }
                       | "(" ">" term term ")"                                             { $$ = new Gt($3, $4); }
                       | "(" ">=" term term ")"                                            { $$ = new Ge($3, $4); }
                       | "(" "<" term term ")"                                             { $$ = new Lt($3, $4); }
                       | "(" "<=" term term ")"                                            { $$ = new Le($3, $4); }
                       | "(" "concat" term_list_ ")"                                       { $$ = new Concat($3); }
                       | "(" "in" term term ")"                                            { $$ = new In($3, $4); }
+                      | "(" "notIn" term term ")"                                         { $$ = new NotIn($3, $4); }
                       | "(" "len" term ")"                                                { $$ = new Len($3); }
                       | "(" "contains" term term ")"                                      { $$ = new Contains($3, $4); }
+                      | "(" "notContains" term term ")"                                   { $$ = new NotContains($3, $4); }
                       | "(" "begins" term term ")"                                        { $$ = new Begins($3, $4); }
+                      | "(" "notBegins" term term ")"                                     { $$ = new NotBegins($3, $4); }
                       | "(" "ends" term term ")"                                          { $$ = new Ends($3, $4); }
+                      | "(" "notEnds" term term ")"                                       { $$ = new NotEnds($3, $4); }
                       | "(" "indexOf" term term ")"                                       { $$ = new IndexOf($3, $4); }
                       | "(" "lastIndexOf" term term ")"                                   { $$ = new LastIndexOf($3, $4); }
                       | "(" "charAt" term term ")"                                        { $$ = new CharAt($3, $4); }

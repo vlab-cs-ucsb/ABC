@@ -205,16 +205,21 @@ public:
     MINUS,
     PLUS,
     EQ,
+    NOTEQ,
     GT,
     GE,
     LT,
     LE,
     CONCAT,
     IN,
+    NOTIN,
     LEN,
     CONTAINS,
+    NOTCONTAINS,
     BEGINS,
+    NOTBEGINS,
     ENDS,
+    NOTENDS,
     INDEXOF,
     LASTINDEXOF,
     CHARAT,
@@ -260,16 +265,21 @@ public:
     static const std::string MINUS;
     static const std::string PLUS;
     static const std::string EQ;
+    static const std::string NOTEQ;
     static const std::string GT;
     static const std::string GE;
     static const std::string LT;
     static const std::string LE;
     static const std::string CONCAT;
     static const std::string IN;
+    static const std::string NOTIN;
     static const std::string LEN;
     static const std::string CONTAINS;
+    static const std::string NOTCONTAINS;
     static const std::string BEGINS;
+    static const std::string NOTBEGINS;
     static const std::string ENDS;
+    static const std::string NOTENDS;
     static const std::string INDEXOF;
     static const std::string LASTINDEXOF;
     static const std::string CHARAT;
@@ -445,6 +455,20 @@ public:
   Term_ptr right_term;
 };
 
+class NotEq: public Term {
+public:
+  NotEq(Term_ptr, Term_ptr);
+  NotEq(const NotEq&);
+  virtual NotEq_ptr clone() const;
+  virtual ~NotEq();
+
+  virtual void accept(Visitor_ptr);
+  virtual void visit_children(Visitor_ptr);
+
+  Term_ptr left_term;
+  Term_ptr right_term;
+};
+
 class Gt: public Term {
 public:
   Gt(Term_ptr, Term_ptr);
@@ -528,6 +552,20 @@ public:
   Term_ptr right_term;
 };
 
+class NotIn: public Term {
+public:
+  NotIn(Term_ptr, Term_ptr);
+  NotIn(const NotIn&);
+  virtual NotIn_ptr clone() const;
+  virtual ~NotIn();
+
+  virtual void accept(Visitor_ptr);
+  virtual void visit_children(Visitor_ptr);
+
+  Term_ptr left_term;
+  Term_ptr right_term;
+};
+
 class Len: public Term {
 public:
   Len(Term_ptr);
@@ -555,6 +593,20 @@ public:
   Term_ptr search_term;
 };
 
+class NotContains: public Term {
+public:
+  NotContains(Term_ptr, Term_ptr);
+  NotContains(const NotContains&);
+  virtual NotContains_ptr clone() const;
+  virtual ~NotContains();
+
+  virtual void accept(Visitor_ptr);
+  virtual void visit_children(Visitor_ptr);
+
+  Term_ptr subject_term;
+  Term_ptr search_term;
+};
+
 class Begins: public Term {
 public:
   Begins(Term_ptr, Term_ptr);
@@ -569,12 +621,40 @@ public:
   Term_ptr search_term;
 };
 
+class NotBegins: public Term {
+public:
+  NotBegins(Term_ptr, Term_ptr);
+  NotBegins(const NotBegins&);
+  virtual NotBegins_ptr clone() const;
+  virtual ~NotBegins();
+
+  virtual void accept(Visitor_ptr);
+  virtual void visit_children(Visitor_ptr);
+
+  Term_ptr subject_term;
+  Term_ptr search_term;
+};
+
 class Ends: public Term {
 public:
   Ends(Term_ptr, Term_ptr);
   Ends(const Ends&);
   virtual Ends_ptr clone() const;
   virtual ~Ends();
+
+  virtual void accept(Visitor_ptr);
+  virtual void visit_children(Visitor_ptr);
+
+  Term_ptr subject_term;
+  Term_ptr search_term;
+};
+
+class NotEnds: public Term {
+public:
+  NotEnds(Term_ptr, Term_ptr);
+  NotEnds(const NotEnds&);
+  virtual NotEnds_ptr clone() const;
+  virtual ~NotEnds();
 
   virtual void accept(Visitor_ptr);
   virtual void visit_children(Visitor_ptr);

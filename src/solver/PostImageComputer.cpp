@@ -125,9 +125,14 @@ void PostImageComputer::visitNot(Not_ptr not_term) {
     break;
   }
   case Value::Type::STRING_AUTOMATON: {
-    // 1- if singleton do not
-    // 2- else over-approximate
-    LOG(FATAL) << "implement me";
+    // TODO multi-track automaton solves over-approximation problem in most cases
+    if (param->getStringAutomaton()->isAcceptingSingleString()) {
+      result = new Value(Value::Type::STRING_AUTOMATON,
+              param->getStringAutomaton()->complement());
+    } else {
+      result = new Value(Value::Type::STRING_AUTOMATON,
+              param->getStringAutomaton()->clone());
+    }
     break;
   }
   default:

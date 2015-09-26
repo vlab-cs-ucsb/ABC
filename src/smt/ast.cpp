@@ -269,16 +269,21 @@ const std::string Term::Name::UMINUS = "uminus";
 const std::string Term::Name::MINUS = "-";
 const std::string Term::Name::PLUS = "+";
 const std::string Term::Name::EQ = "=";
+const std::string Term::Name::NOTEQ = "!=";
 const std::string Term::Name::GT = ">";
 const std::string Term::Name::GE = ">=";
 const std::string Term::Name::LT = "<";
 const std::string Term::Name::LE = "<=";
 const std::string Term::Name::CONCAT = "concat";
 const std::string Term::Name::IN = "in";
+const std::string Term::Name::NOTIN = "notIn";
 const std::string Term::Name::LEN = "len";
 const std::string Term::Name::CONTAINS = "contains";
+const std::string Term::Name::NOTCONTAINS = "notContains";
 const std::string Term::Name::BEGINS = "begins";
+const std::string Term::Name::NOTBEGINS = "notBegins";
 const std::string Term::Name::ENDS = "ends";
+const std::string Term::Name::NOTENDS = "notEnds";
 const std::string Term::Name::INDEXOF = "indexOf";
 const std::string Term::Name::LASTINDEXOF= "lastIndexOf";
 const std::string Term::Name::CHARAT = "charAt";
@@ -340,6 +345,8 @@ std::string Term::str() const {
     return Term::Name::PLUS;
   case Term::Type::EQ:
     return Term::Name::EQ;
+  case Term::Type::NOTEQ:
+    return Term::Name::NOTEQ;
   case Term::Type::GT:
     return Term::Name::GT;
   case Term::Type::GE:
@@ -352,14 +359,22 @@ std::string Term::str() const {
     return Term::Name::CONCAT;
   case Term::Type::IN:
     return Term::Name::IN;
+  case Term::Type::NOTIN:
+    return Term::Name::NOTIN;
   case Term::Type::LEN:
     return Term::Name::LEN;
   case Term::Type::CONTAINS:
     return Term::Name::CONTAINS;
+  case Term::Type::NOTCONTAINS:
+    return Term::Name::NOTCONTAINS;
   case Term::Type::BEGINS:
     return Term::Name::BEGINS;
+  case Term::Type::NOTBEGINS:
+    return Term::Name::NOTBEGINS;
   case Term::Type::ENDS:
     return Term::Name::ENDS;
+  case Term::Type::NOTENDS:
+    return Term::Name::NOTENDS;
   case Term::Type::INDEXOF:
     return Term::Name::INDEXOF;
   case Term::Type::LASTINDEXOF:
@@ -709,6 +724,30 @@ void Eq::visit_children(Visitor_ptr v) {
   v->visit(right_term);
 }
 
+NotEq::NotEq(Term_ptr left_term, Term_ptr right_term)
+        : Term(Term::Type::NOTEQ), left_term(left_term), right_term(right_term) {
+}
+NotEq::NotEq(const NotEq& other)
+        : Term(other.type) {
+  left_term = other.left_term->clone();
+  right_term = other.right_term->clone();
+}
+NotEq_ptr NotEq::clone() const {
+  return new NotEq(*this);
+}
+NotEq::~NotEq() {
+  delete left_term;
+  delete right_term;
+}
+
+void NotEq::accept(Visitor_ptr v) {
+  v->visitNotEq(this);
+}
+void NotEq::visit_children(Visitor_ptr v) {
+  v->visit(left_term);
+  v->visit(right_term);
+}
+
 Gt::Gt(Term_ptr left_term, Term_ptr right_term)
         : Term(Term::Type::GT), left_term(left_term), right_term(right_term) {
 }
@@ -850,6 +889,29 @@ void In::visit_children(Visitor_ptr v) {
   v->visit(right_term);
 }
 
+NotIn::NotIn(Term_ptr left_term, Term_ptr right_term)
+        : Term(Term::Type::NOTIN), left_term(left_term), right_term(right_term) {
+}
+NotIn::NotIn(const NotIn& other)
+        : Term(other.type) {
+  left_term = other.left_term->clone();
+  right_term = other.right_term->clone();
+}
+NotIn_ptr NotIn::clone() const {
+  return new NotIn(*this);
+}
+NotIn::~NotIn() {
+  delete left_term, delete right_term;
+}
+
+void NotIn::accept(Visitor_ptr v) {
+  v->visitNotIn(this);
+}
+void NotIn::visit_children(Visitor_ptr v) {
+  v->visit(left_term);
+  v->visit(right_term);
+}
+
 Len::Len(Term_ptr term)
         : Term(Term::Type::LEN), term(term) {
 }
@@ -899,6 +961,34 @@ void Contains::visit_children(Visitor_ptr v) {
   v->visit(search_term);
 }
 
+NotContains::NotContains(Term_ptr subject_term, Term_ptr search_term)
+        : Term(Term::Type::NOTCONTAINS), subject_term(subject_term), search_term(search_term) {
+}
+
+NotContains::NotContains(const NotContains& other)
+        : Term(other.type) {
+  subject_term = other.subject_term->clone();
+  search_term = other.search_term->clone();
+}
+
+NotContains_ptr NotContains::clone() const {
+  return new NotContains(*this);
+}
+
+NotContains::~NotContains() {
+  delete subject_term;
+  delete search_term;
+}
+
+void NotContains::accept(Visitor_ptr v) {
+  v->visitNotContains(this);
+}
+
+void NotContains::visit_children(Visitor_ptr v) {
+  v->visit(subject_term);
+  v->visit(search_term);
+}
+
 Begins::Begins(Term_ptr subject_term, Term_ptr search_term)
         : Term(Term::Type::BEGINS), subject_term(subject_term), search_term(search_term) {
 }
@@ -922,6 +1012,33 @@ void Begins::accept(Visitor_ptr v) {
 }
 
 void Begins::visit_children(Visitor_ptr v) {
+  v->visit(subject_term);
+  v->visit(search_term);
+}
+
+NotBegins::NotBegins(Term_ptr subject_term, Term_ptr search_term)
+        : Term(Term::Type::NOTBEGINS), subject_term(subject_term), search_term(search_term) {
+}
+
+NotBegins::NotBegins(const NotBegins& other)
+        : Term(other.type) {
+  subject_term = other.subject_term->clone();
+  search_term = other.search_term->clone();
+}
+NotBegins_ptr NotBegins::clone() const {
+  return new NotBegins(*this);
+}
+
+NotBegins::~NotBegins() {
+  delete subject_term;
+  delete search_term;
+}
+
+void NotBegins::accept(Visitor_ptr v) {
+  v->visitNotBegins(this);
+}
+
+void NotBegins::visit_children(Visitor_ptr v) {
   v->visit(subject_term);
   v->visit(search_term);
 }
@@ -950,6 +1067,34 @@ void Ends::accept(Visitor_ptr v) {
 }
 
 void Ends::visit_children(Visitor_ptr v) {
+  v->visit(subject_term);
+  v->visit(search_term);
+}
+
+NotEnds::NotEnds(Term_ptr subject_term, Term_ptr search_term)
+        : Term(Term::Type::NOTENDS), subject_term(subject_term), search_term(search_term) {
+}
+
+NotEnds::NotEnds(const NotEnds& other)
+        : Term(other.type) {
+  subject_term = other.subject_term->clone();
+  search_term = other.search_term->clone();
+}
+
+NotEnds_ptr NotEnds::clone() const {
+  return new NotEnds(*this);
+}
+
+NotEnds::~NotEnds() {
+  delete subject_term;
+  delete search_term;
+}
+
+void NotEnds::accept(Visitor_ptr v) {
+  v->visitNotEnds(this);
+}
+
+void NotEnds::visit_children(Visitor_ptr v) {
   v->visit(subject_term);
   v->visit(search_term);
 }
