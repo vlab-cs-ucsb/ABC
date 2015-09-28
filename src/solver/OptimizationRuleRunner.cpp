@@ -118,6 +118,13 @@ void OptimizationRuleRunner::visitEq(Eq_ptr eq_term) {
   visit_children_of(eq_term);
 }
 
+
+void OptimizationRuleRunner::visitNotEq(NotEq_ptr not_eq_term) {
+  check_and_substitute_var(not_eq_term->left_term);
+  check_and_substitute_var(not_eq_term->right_term);
+  visit_children_of(not_eq_term);
+}
+
 void OptimizationRuleRunner::visitGt(Gt_ptr gt_term) {
   check_and_substitute_var(gt_term->left_term);
   check_and_substitute_var(gt_term->right_term);
@@ -155,6 +162,12 @@ void OptimizationRuleRunner::visitIn(In_ptr in_term) {
   visit_children_of(in_term);
 }
 
+void OptimizationRuleRunner::visitNotIn(NotIn_ptr not_in_term) {
+  check_and_substitute_var(not_in_term->left_term);
+  check_and_substitute_var(not_in_term->right_term);
+  visit_children_of(not_in_term);
+}
+
 void OptimizationRuleRunner::visitLen(Len_ptr len_term) {
   check_and_substitute_var(len_term->term);
   visit_children_of(len_term);
@@ -166,16 +179,34 @@ void OptimizationRuleRunner::visitContains(Contains_ptr contains_term) {
   visit_children_of(contains_term);
 }
 
+void OptimizationRuleRunner::visitNotContains(NotContains_ptr not_contains_term) {
+  check_and_substitute_var(not_contains_term->subject_term);
+  check_and_substitute_var(not_contains_term->search_term);
+  visit_children_of(not_contains_term);
+}
+
 void OptimizationRuleRunner::visitBegins(Begins_ptr begins_term) {
   check_and_substitute_var(begins_term->subject_term);
   check_and_substitute_var(begins_term->search_term);
   visit_children_of(begins_term);
 }
 
+void OptimizationRuleRunner::visitNotBegins(NotBegins_ptr not_begins_term) {
+  check_and_substitute_var(not_begins_term->subject_term);
+  check_and_substitute_var(not_begins_term->search_term);
+  visit_children_of(not_begins_term);
+}
+
 void OptimizationRuleRunner::visitEnds(Ends_ptr ends_term) {
   check_and_substitute_var(ends_term->subject_term);
   check_and_substitute_var(ends_term->search_term);
   visit_children_of(ends_term);
+}
+
+void OptimizationRuleRunner::visitNotEnds(NotEnds_ptr not_ends_term) {
+  check_and_substitute_var(not_ends_term->subject_term);
+  check_and_substitute_var(not_ends_term->search_term);
+  visit_children_of(not_ends_term);
 }
 
 void OptimizationRuleRunner::visitIndexOf(IndexOf_ptr index_of_term) {

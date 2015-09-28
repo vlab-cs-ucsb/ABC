@@ -250,6 +250,9 @@ void PostImageComputer::visitEq(Eq_ptr eq_term) {
   setTermValue(eq_term, result);
 }
 
+void PostImageComputer::visitNotEq(NotEq_ptr not_eq_term) {
+}
+
 void PostImageComputer::visitGt(Gt_ptr gt_term) {
   visit_children_of(gt_term);
   LOG(FATAL)<< "implement me";
@@ -307,6 +310,9 @@ void PostImageComputer::visitIn(In_ptr in_term) {
   setTermValue(in_term, result);
 }
 
+void PostImageComputer::visitNotIn(NotIn_ptr not_in_term) {
+}
+
 void PostImageComputer::visitLen(Len_ptr len_term) {
   visit_children_of(len_term);
   LOG(FATAL)<< "implement me";
@@ -325,6 +331,9 @@ void PostImageComputer::visitContains(Contains_ptr contains_term) {
   setTermValue(contains_term, result);
 }
 
+void PostImageComputer::visitNotContains(NotContains_ptr not_contains_term) {
+}
+
 void PostImageComputer::visitBegins(Begins_ptr begins_term) {
   __visit_children_of(begins_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *begins_term;
@@ -338,6 +347,9 @@ void PostImageComputer::visitBegins(Begins_ptr begins_term) {
   setTermValue(begins_term, result);
 }
 
+void PostImageComputer::visitNotBegins(NotBegins_ptr not_begins_term) {
+}
+
 void PostImageComputer::visitEnds(Ends_ptr ends_term) {
   __visit_children_of(ends_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *ends_term;
@@ -349,6 +361,9 @@ void PostImageComputer::visitEnds(Ends_ptr ends_term) {
       param_left->getStringAutomaton()->ends(param_right->getStringAutomaton()));
 
   setTermValue(ends_term, result);
+}
+
+void PostImageComputer::visitNotEnds(NotEnds_ptr not_ends_term) {
 }
 
 void PostImageComputer::visitIndexOf(IndexOf_ptr index_of_term) {

@@ -149,6 +149,7 @@ public:
   virtual Assert_ptr clone() const;
   virtual ~Assert();
 
+  virtual void accept(Visitor_ptr);
   virtual void visit_children(Visitor_ptr);
 
   Term_ptr term;

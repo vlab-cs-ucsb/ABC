@@ -101,6 +101,10 @@ void Counter::visitEq(Eq_ptr eq_term) {
   visit_children_of(eq_term);
 }
 
+void Counter::visitNotEq(NotEq_ptr not_eq_term) {
+  visit_children_of(not_eq_term);
+}
+
 void Counter::visitGt(Gt_ptr gt_term) {
   visit_children_of(gt_term);
 }
@@ -125,6 +129,10 @@ void Counter::visitIn(In_ptr in_term) {
   visit_children_of(in_term);
 }
 
+void Counter::visitNotIn(NotIn_ptr not_in_term) {
+  visit_children_of(not_in_term);
+}
+
 void Counter::visitLen(Len_ptr len_term) {
   visit_children_of(len_term);
 }
@@ -133,12 +141,24 @@ void Counter::visitContains(Contains_ptr contains_term) {
   visit_children_of(contains_term);
 }
 
+void Counter::visitNotContains(NotContains_ptr not_contains_term) {
+  visit_children_of(not_contains_term);
+}
+
 void Counter::visitBegins(Begins_ptr begins_term) {
   visit_children_of(begins_term);
 }
 
+void Counter::visitNotBegins(NotBegins_ptr not_begins_term) {
+  visit_children_of(not_begins_term);
+}
+
 void Counter::visitEnds(Ends_ptr ends_term) {
   visit_children_of(ends_term);
+}
+
+void Counter::visitNotEnds(NotEnds_ptr not_ends_term) {
+  visit_children_of(not_ends_term);
 }
 
 void Counter::visitIndexOf(IndexOf_ptr index_of_term) {
@@ -234,3 +254,4 @@ void Counter::visitVarBinding(VarBinding_ptr var_binding) {
 
 } /* namespace Solver */
 } /* namespace Vlab */
+

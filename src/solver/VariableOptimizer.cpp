@@ -210,6 +210,9 @@ void VariableOptimizer::visitEq(Eq_ptr eq_term) {
   }
 }
 
+void VariableOptimizer::visitNotEq(SMT::NotEq_ptr not_eq_term) {
+}
+
 void VariableOptimizer::visitGt(Gt_ptr gt_term) {
 }
 
@@ -228,16 +231,30 @@ void VariableOptimizer::visitConcat(Concat_ptr concat_term) {
 void VariableOptimizer::visitIn(In_ptr in_term) {
 }
 
+
+void VariableOptimizer::visitNotIn(SMT::NotIn_ptr not_in_term) {
+}
+
 void VariableOptimizer::visitLen(Len_ptr len_term) {
 }
 
 void VariableOptimizer::visitContains(Contains_ptr contains_term) {
 }
 
+void VariableOptimizer::visitNotContains(
+    SMT::NotContains_ptr not_contains_term) {
+}
+
 void VariableOptimizer::visitBegins(Begins_ptr begins_term) {
 }
 
+void VariableOptimizer::visitNotBegins(SMT::NotBegins_ptr not_begins_term) {
+}
+
 void VariableOptimizer::visitEnds(Ends_ptr ends_term) {
+}
+
+void VariableOptimizer::visitNotEnds(SMT::NotEnds_ptr not_ends_term) {
 }
 
 void VariableOptimizer::visitIndexOf(IndexOf_ptr index_of_term) {
@@ -377,3 +394,4 @@ void VariableOptimizer::add_variable_substitution_rule(Variable_ptr subject_var,
 
 } /* namespace Solver */
 } /* namespace Vlab */
+

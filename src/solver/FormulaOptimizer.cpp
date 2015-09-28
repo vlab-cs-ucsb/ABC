@@ -129,6 +129,11 @@ void FormulaOptimizer::visitEq(Eq_ptr eq_term) {
   visit_and_callback(eq_term->right_term);
 }
 
+void FormulaOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
+  visit_and_callback(not_eq_term->left_term);
+  visit_and_callback(not_eq_term->right_term);
+}
+
 void FormulaOptimizer::visitGt(Gt_ptr gt_term) {
   visit_and_callback(gt_term->left_term);
   visit_and_callback(gt_term->right_term);
@@ -160,6 +165,11 @@ void FormulaOptimizer::visitIn(In_ptr in_term) {
   visit_and_callback(in_term->right_term);
 }
 
+void FormulaOptimizer::visitNotIn(NotIn_ptr not_in_term) {
+  visit_and_callback(not_in_term->left_term);
+  visit_and_callback(not_in_term->right_term);
+}
+
 void FormulaOptimizer::visitLen(Len_ptr len_term) {
   visit_and_callback(len_term->term);
 }
@@ -169,14 +179,29 @@ void FormulaOptimizer::visitContains(Contains_ptr contains_term) {
   visit_and_callback(contains_term->search_term);
 }
 
+void FormulaOptimizer::visitNotContains(NotContains_ptr not_contains_term) {
+  visit_and_callback(not_contains_term->subject_term);
+  visit_and_callback(not_contains_term->search_term);
+}
+
 void FormulaOptimizer::visitBegins(Begins_ptr begins_term) {
   visit_and_callback(begins_term->subject_term);
   visit_and_callback(begins_term->search_term);
 }
 
+void FormulaOptimizer::visitNotBegins(NotBegins_ptr not_begins_term) {
+  visit_and_callback(not_begins_term->subject_term);
+  visit_and_callback(not_begins_term->search_term);
+}
+
 void FormulaOptimizer::visitEnds(Ends_ptr ends_term) {
   visit_and_callback(ends_term->subject_term);
   visit_and_callback(ends_term->search_term);
+}
+
+void FormulaOptimizer::visitNotEnds(NotEnds_ptr not_ends_term) {
+  visit_and_callback(not_ends_term->subject_term);
+  visit_and_callback(not_ends_term->search_term);
 }
 
 void FormulaOptimizer::visitIndexOf(IndexOf_ptr index_of_term) {

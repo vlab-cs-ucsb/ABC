@@ -116,6 +116,10 @@ void PreImageComputer::visitEq(Eq_ptr eq_term) {
   visit(child_term);
 }
 
+
+void PreImageComputer::visitNotEq(NotEq_ptr not_eq_term) {
+}
+
 void PreImageComputer::visitGt(Gt_ptr gt_term) {
   LOG(FATAL) << "implement me";
   visit_children_of(gt_term);
@@ -157,6 +161,9 @@ void PreImageComputer::visitIn(In_ptr in_term) {
   visit(child_term);
 }
 
+void PreImageComputer::visitNotIn(NotIn_ptr not_in_term) {
+}
+
 void PreImageComputer::visitLen(Len_ptr len_term) {
   LOG(FATAL) << "implement me";
   visit_children_of(len_term);
@@ -179,6 +186,9 @@ void PreImageComputer::visitContains(Contains_ptr contains_term) {
   visit(child_term);
 }
 
+void PreImageComputer::visitNotContains(NotContains_ptr not_contains_term) {
+}
+
 // TODO handle all cases
 void PreImageComputer::visitBegins(Begins_ptr begins_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *begins_term;
@@ -196,6 +206,9 @@ void PreImageComputer::visitBegins(Begins_ptr begins_term) {
   visit(child_term);
 }
 
+void PreImageComputer::visitNotBegins(NotBegins_ptr not_begins_term) {
+}
+
 // TODO handle all cases
 void PreImageComputer::visitEnds(Ends_ptr ends_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *ends_term;
@@ -211,6 +224,9 @@ void PreImageComputer::visitEnds(Ends_ptr ends_term) {
   child_value = term_value->clone();
   setTermPreImage(child_term, child_value);
   visit(child_term);
+}
+
+void PreImageComputer::visitNotEnds(NotEnds_ptr not_ends_term) {
 }
 
 void PreImageComputer::visitIndexOf(IndexOf_ptr index_of_term) {

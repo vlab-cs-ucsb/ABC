@@ -1,32 +1,33 @@
 /*
- * VariableOptimizer.h
+ * PostOrderTraversal.h
  *
- *  Created on: May 4, 2015
+ *  Created on: Sep 27, 2015
  *      Author: baki
  */
 
-#ifndef SOLVER_VARIABLEOPTIMIZER_H_
-#define SOLVER_VARIABLEOPTIMIZER_H_
+#ifndef SRC_SOLVER_POSTORDERTRAVERSAL_H_
+#define SRC_SOLVER_POSTORDERTRAVERSAL_H_
 
-#include <stack>
-#include <map>
+#include <functional>
 
 #include <glog/logging.h>
+#include "smt/Visitable.h"
+#include "smt/Visitor.h"
 #include "smt/ast.h"
-#include "SymbolTable.h"
-#include "Counter.h"
-#include "OptimizationRuleRunner.h"
 
 namespace Vlab {
 namespace Solver {
 
-class VariableOptimizer: public SMT::Visitor {
+class PostOrderTraversal : public SMT::Visitor {
 public:
-  VariableOptimizer(SMT::Script_ptr, SymbolTable_ptr);
-  virtual ~VariableOptimizer();
+  PostOrderTraversal(SMT::Script_ptr script);
+  virtual ~PostOrderTraversal();
+
+  void setCommandCallback(std::function<bool (SMT::Command_ptr)> command_callback);
+  void setTermCallback(std::function<bool (SMT::Term_ptr)> term_callback);
+
   void start();
   void end();
-
   void visitScript(SMT::Script_ptr);
   void visitCommand(SMT::Command_ptr);
   void visitTerm(SMT::Term_ptr);
@@ -83,21 +84,17 @@ public:
   void visitIdentifier(SMT::Identifier_ptr);
   void visitPrimitive(SMT::Primitive_ptr);
   void visitVariable(SMT::Variable_ptr);
+
 protected:
-  void add_variable_substitution_rule(SMT::Variable_ptr, SMT::Variable_ptr, SMT::Term_ptr);
-  void add_variable_substitution_rule(SMT::Variable_ptr, SMT::Term_ptr);
 
-  SMT::Script_ptr root;
-  SymbolTable_ptr symbol_table;
 
-  SMT::Variable::Type target_type;
-  bool existential_elimination_phase;
-  std::map<SMT::Variable_ptr, int> eq_constraint_count;
 private:
-  static const int VLOG_LEVEL;
+  SMT::Script_ptr root;
+  std::function<bool (SMT::Command_ptr)> command_callback;
+  std::function<bool (SMT::Term_ptr)> term_callback;
 };
 
 } /* namespace Solver */
 } /* namespace Vlab */
 
-#endif /* SOLVER_VARIABLEOPTIMIZER_H_ */
+#endif /* SRC_SOLVER_POSTORDERTRAVERSAL_H_ */

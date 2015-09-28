@@ -219,6 +219,10 @@ void ConstraintSorter::visitEq(Eq_ptr eq_term) {
   visitable_node = process_child_nodes(left_node, right_node);
 }
 
+void ConstraintSorter::visitNotEq(NotEq_ptr not_eq_term) {
+}
+
+
 void ConstraintSorter::visitGt(Gt_ptr gt_term) {
   visitable_node = nullptr;
   visit(gt_term->left_term);
@@ -289,6 +293,10 @@ void ConstraintSorter::visitIn(In_ptr in_term) {
   visitable_node = process_child_nodes(left_node, right_node);
 }
 
+
+void ConstraintSorter::visitNotIn(NotIn_ptr not_in_term) {
+}
+
 void ConstraintSorter::visitLen(Len_ptr len_term) {
   visitable_node = nullptr;
   visit_children_of(len_term);
@@ -308,6 +316,9 @@ void ConstraintSorter::visitContains(Contains_ptr contains_term) {
   visitable_node = process_child_nodes(left_node, right_node);
 }
 
+void ConstraintSorter::visitNotContains(NotContains_ptr not_contains_term) {
+}
+
 void ConstraintSorter::visitBegins(Begins_ptr begins_term) {
   visitable_node = nullptr;
   visit(begins_term->subject_term);
@@ -319,6 +330,9 @@ void ConstraintSorter::visitBegins(Begins_ptr begins_term) {
   visitable_node = process_child_nodes(left_node, right_node);
 }
 
+void ConstraintSorter::visitNotBegins(NotBegins_ptr not_begins_term) {
+}
+
 void ConstraintSorter::visitEnds(Ends_ptr ends_term) {
   visitable_node = nullptr;
   visit(ends_term->subject_term);
@@ -328,6 +342,9 @@ void ConstraintSorter::visitEnds(Ends_ptr ends_term) {
   VisitableNode_ptr right_node = visitable_node;
 
   visitable_node = process_child_nodes(left_node, right_node);
+}
+
+void ConstraintSorter::visitNotEnds(NotEnds_ptr not_ends_term) {
 }
 
 void ConstraintSorter::visitIndexOf(IndexOf_ptr index_of_term) {
@@ -690,4 +707,3 @@ void ConstraintSorter::VariableNode::add_node(ConstraintSorter::VisitableNode_pt
 
 } /* namespace Solver */
 } /* namespace Vlab */
-

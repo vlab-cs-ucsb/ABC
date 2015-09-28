@@ -199,6 +199,10 @@ Assert::~Assert() {
   delete term;
 }
 
+void Assert::accept(Visitor_ptr v) {
+  v->visitAssert(this);
+}
+
 void Assert::visit_children(Visitor_ptr v) {
   v->visit(term);
 }
@@ -1219,6 +1223,7 @@ void SubString::accept(Visitor_ptr v) {
 void SubString::visit_children(Visitor_ptr v) {
   v->visit(subject_term);
   v->visit(start_index_term);
+  v->visit(end_index_term);
 }
 
 ToUpper::ToUpper(Term_ptr subject_term)

@@ -304,6 +304,13 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
   }
 }
 
+void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
+  visit_and_callback(not_eq_term->left_term);
+  visit_and_callback(not_eq_term->right_term);
+
+  LOG(FATAL) << "implement me";
+}
+
 void SyntacticOptimizer::visitGt(Gt_ptr gt_term) {
   visit_and_callback(gt_term->left_term);
   visit_and_callback(gt_term->right_term);
@@ -408,6 +415,13 @@ void SyntacticOptimizer::visitIn(In_ptr in_term) {
   }
 }
 
+void SyntacticOptimizer::visitNotIn(NotIn_ptr not_in_term) {
+  visit_and_callback(not_in_term->left_term);
+  visit_and_callback(not_in_term->right_term);
+
+  LOG(FATAL) << "implement me";
+}
+
 void SyntacticOptimizer::visitLen(Len_ptr len_term) {
   visit_and_callback(len_term->term);
 }
@@ -427,6 +441,13 @@ void SyntacticOptimizer::visitContains(Contains_ptr contains_term) {
   }
 }
 
+void SyntacticOptimizer::visitNotContains(NotContains_ptr not_contains_term) {
+  visit_and_callback(not_contains_term->subject_term);
+  visit_and_callback(not_contains_term->search_term);
+
+  LOG(FATAL) << "implement me";
+}
+
 void SyntacticOptimizer::visitBegins(Begins_ptr begins_term) {
   visit_and_callback(begins_term->subject_term);
   visit_and_callback(begins_term->search_term);
@@ -442,6 +463,12 @@ void SyntacticOptimizer::visitBegins(Begins_ptr begins_term) {
   }
 }
 
+void SyntacticOptimizer::visitNotBegins(NotBegins_ptr not_begins_term) {
+  visit_and_callback(not_begins_term->subject_term);
+  visit_and_callback(not_begins_term->search_term);
+  LOG(FATAL) << "implement me";
+}
+
 void SyntacticOptimizer::visitEnds(Ends_ptr ends_term) {
   visit_and_callback(ends_term->subject_term);
   visit_and_callback(ends_term->search_term);
@@ -455,6 +482,13 @@ void SyntacticOptimizer::visitEnds(Ends_ptr ends_term) {
 
     callbacks.push(callback);
   }
+}
+
+void SyntacticOptimizer::visitNotEnds(NotEnds_ptr not_ends_term) {
+  visit_and_callback(not_ends_term->subject_term);
+  visit_and_callback(not_ends_term->search_term);
+
+  LOG(FATAL) << "implement me";
 }
 
 void SyntacticOptimizer::visitIndexOf(IndexOf_ptr index_of_term) {

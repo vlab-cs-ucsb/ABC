@@ -70,6 +70,11 @@ void Driver::initializeSolver() {
   Solver::Initializer initializer(script, symbol_table);
   initializer.start();
 
+  Solver::SyntaxFixer syntax_fixer(script);
+  syntax_fixer.convertAssertsToAnd();
+
+  ast2dot("./output/test.dot");
+  std::exit(0);
   Solver::SyntacticOptimizer syntactic_optimizer(script, symbol_table);
   syntactic_optimizer.start();
 
@@ -79,8 +84,8 @@ void Driver::initializeSolver() {
   Solver::FormulaOptimizer formula_optimizer(script, symbol_table);
   formula_optimizer.start();
 
-  //	SMT::LengthConstraintReductor len_reductor;
-  //	len_reductor.start(script, symbol_table);
+//  	SMT::LengthConstraintReductor len_reductor;
+//  	len_reductor.start(script, symbol_table);
 
   Solver::ConstraintSorter constraint_sorter(script, symbol_table);
   constraint_sorter.start();

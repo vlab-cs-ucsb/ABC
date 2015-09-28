@@ -149,6 +149,9 @@ void Initializer::visitPlus(Plus_ptr plus_term) {
 void Initializer::visitEq(Eq_ptr eq_term) {
 }
 
+void Initializer::visitNotEq(NotEq_ptr not_eq_term) {
+}
+
 void Initializer::visitGt(Gt_ptr gt_term) {
 }
 
@@ -167,17 +170,30 @@ void Initializer::visitConcat(Concat_ptr concat_term) {
 void Initializer::visitIn(In_ptr in_term) {
 }
 
+void Initializer::visitNotIn(NotIn_ptr not_in_term) {
+}
+
 void Initializer::visitLen(Len_ptr len_term) {
 }
 
 void Initializer::visitContains(Contains_ptr contains_term) {
 }
 
+void Initializer::visitNotContains(NotContains_ptr not_contains_term) {
+}
+
 void Initializer::visitBegins(Begins_ptr begins_term) {
+}
+
+void Initializer::visitNotBegins(NotBegins_ptr not_begins_term) {
 }
 
 void Initializer::visitEnds(Ends_ptr ends_term) {
 }
+
+void Initializer::visitNotEnds(NotEnds_ptr not_ends_term) {
+}
+
 
 void Initializer::visitIndexOf(IndexOf_ptr index_of_term) {
 }

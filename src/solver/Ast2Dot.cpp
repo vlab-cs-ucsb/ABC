@@ -80,6 +80,10 @@ void Ast2Dot::visitCommand(Command_ptr command) {
   draw(command->str(), command);
 }
 
+void Ast2Dot::visitAssert(Assert_ptr assert_command) {
+  draw(assert_command->str(), assert_command);
+}
+
 void Ast2Dot::visitTerm(Term_ptr term) {
   draw(term->str(), term);
 }
@@ -148,6 +152,10 @@ void Ast2Dot::visitEq(Eq_ptr eq_term) {
   visitTerm(eq_term);
 }
 
+void Ast2Dot::visitNotEq(NotEq_ptr not_eq_term) {
+  visitTerm(not_eq_term);
+}
+
 void Ast2Dot::visitGt(Gt_ptr gt_term) {
   visitTerm(gt_term);
 }
@@ -172,6 +180,10 @@ void Ast2Dot::visitIn(In_ptr in_term) {
   visitTerm(in_term);
 }
 
+void Ast2Dot::visitNotIn(NotIn_ptr not_in_term) {
+  visitTerm(not_in_term);
+}
+
 void Ast2Dot::visitLen(Len_ptr len_term) {
   visitTerm(len_term);
 }
@@ -180,12 +192,24 @@ void Ast2Dot::visitContains(Contains_ptr contains_term) {
   visitTerm(contains_term);
 }
 
+void Ast2Dot::visitNotContains(NotContains_ptr not_contains_term) {
+  visitTerm(not_contains_term);
+}
+
 void Ast2Dot::visitBegins(Begins_ptr begins_term) {
   visitTerm(begins_term);
 }
 
+void Ast2Dot::visitNotBegins(NotBegins_ptr not_begins_term) {
+  visitTerm(not_begins_term);
+}
+
 void Ast2Dot::visitEnds(Ends_ptr ends_term) {
   visitTerm(ends_term);
+}
+
+void Ast2Dot::visitNotEnds(NotEnds_ptr not_ends_term) {
+  visitTerm(not_ends_term);
 }
 
 void Ast2Dot::visitIndexOf(IndexOf_ptr index_of_term) {

@@ -23,6 +23,7 @@ public:
   virtual void end() = 0;
   virtual void visitScript(Script_ptr) = 0;
   virtual void visitCommand(Command_ptr) = 0;
+  virtual void visitAssert(Assert_ptr) = 0;
   virtual void visitTerm(Term_ptr) = 0;
   virtual void visitExclamation(Exclamation_ptr) = 0;
   virtual void visitExists(Exists_ptr) = 0;

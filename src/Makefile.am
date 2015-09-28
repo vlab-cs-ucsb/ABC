@@ -13,6 +13,8 @@ AM_LDFLAGS = \
 
 lib_LTLIBRARIES = libabc.la
 libabc_la_SOURCES = \
+  ./solver/PreOrderTraversal.cpp \
+  ./solver/PreOrderTraversal.h \
   ./solver/Ast2Dot.cpp \
   ./solver/Ast2Dot.h \
   ./solver/Value.cpp \
@@ -21,6 +23,8 @@ libabc_la_SOURCES = \
   ./solver/SymbolTable.h \
   ./solver/Initializer.cpp \
   ./solver/Initializer.h \
+  ./solver/SyntaxFixer.cpp \
+  ./solver/SyntaxFixer.h \
   ./solver/SyntacticOptimizer.cpp \
   ./solver/SyntacticOptimizer.h \
   ./solver/Counter.cpp \
