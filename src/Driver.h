@@ -18,12 +18,12 @@
 //#include "Statistics.h"
 #include "solver/SymbolTable.h"
 #include "solver/Initializer.h"
-#include "solver/SyntaxFixer.h"
 #include "solver/SyntacticOptimizer.h"
 #include "solver/VariableOptimizer.h"
 #include "solver/FormulaOptimizer.h"
 #include "solver/ConstraintSorter.h"
 #include "solver/PostImageComputer.h"
+#include "solver/SyntacticProcessor.h"
 #include "Scanner.h"
 
 namespace Vlab {

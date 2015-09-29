@@ -39,14 +39,6 @@ void SyntacticOptimizer::visitScript(Script_ptr script) {
       delete (*iter);
       iter = commands->erase(iter);
       DVLOG(VLOG_LEVEL) << "remove: 'true' assert command";
-    } else if (Term::Type::AND == current_assert->term->getType()) {
-      iter = commands->erase(iter);
-      And_ptr and_term = dynamic_cast<And_ptr>(current_assert->term);
-      for (auto riter = and_term->term_list->rbegin(); riter != and_term->term_list->rend(); riter++) {
-        iter = commands->insert(iter, new Assert(*riter));
-        *riter = nullptr;
-      }
-      delete current_assert;
     } else {
       iter++;
     }
@@ -58,37 +50,11 @@ void SyntacticOptimizer::visitScript(Script_ptr script) {
 }
 
 void SyntacticOptimizer::visitCommand(Command_ptr command) {
-
-  switch (command->getType()) {
-  case Command::Type::ASSERT: {
-    current_assert = dynamic_cast<Assert_ptr>(command);
-    visit_and_callback(current_assert->term);
-
-//			std::string assert_string = to_string(current_assert->term);
-//			if (assert_equivalance.find(assert_string) != assert_equivalance.end()) {
-//				to_be_removed.insert(command);
-//			} else {
-//				assert_equivalance.insert(assert_string);
-//			}
-    break;
-  }
-  default:
-    LOG(FATAL)<< "'" << *command<< "' is not expected.";
-    break;
-  }
 }
 
 void SyntacticOptimizer::visitAssert(Assert_ptr assert_command) {
-
   current_assert = assert_command;
   visit_and_callback(current_assert->term);
-
-//  std::string assert_string = to_string(current_assert->term);
-//  if (assert_equivalance.find(assert_string) != assert_equivalance.end()) {
-//    to_be_removed.insert(assert_command);
-//  } else {
-//    assert_equivalance.insert(assert_string);
-//  }
 }
 
 void SyntacticOptimizer::visitTerm(Term_ptr term) {
@@ -124,20 +90,19 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
 
   if (has_false_term) {
     DVLOG(VLOG_LEVEL) << "replace: 'and' with constant 'false'";
-    auto callback = [this, and_term](Term_ptr& term) mutable {
+    callback = [this, and_term](Term_ptr& term) mutable {
       term = generate_term_constant("false", Primitive::Type::BOOL);
       delete and_term;
     };
   } else if (and_term->term_list->empty()) {
     add_callback_to_replace_with_bool(and_term, "true");
   } else if (and_term->term_list->size() == 1) {
-    auto callback = [and_term](Term_ptr& term) mutable {
+    callback = [and_term](Term_ptr& term) mutable {
       Term_ptr child_term = and_term->term_list->front();
       and_term->term_list->clear();
       delete and_term;
       term = child_term;
     };
-    callbacks.push(callback);
   }
 }
 
@@ -156,13 +121,12 @@ void SyntacticOptimizer::visitOr(Or_ptr or_term) {
   if (or_term->term_list->empty()) {
     add_callback_to_replace_with_bool(or_term, "false");
   } else if (or_term->term_list->size() == 1) {
-    auto callback = [or_term](Term_ptr& term) mutable {
+    callback = [or_term](Term_ptr& term) mutable {
       Term_ptr child_term = or_term->term_list->front();
       or_term->term_list->clear();
       delete or_term;
       term = child_term;
     };
-    callbacks.push(callback);
   }
 }
 
@@ -172,27 +136,12 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
   switch (not_term->term->getType()) {
   case Term::Type::NOT: {
     DVLOG(VLOG_LEVEL) << "Transforming operation: (not (not a) to a";
-    auto callback = [not_term](Term_ptr& term) mutable {
+    callback = [not_term](Term_ptr& term) mutable {
       Not_ptr child_not = dynamic_cast<Not_ptr>(not_term->term);
       term = child_not->term;
       child_not->term = nullptr;
       delete not_term;
     };
-    callbacks.push(callback);
-    break;
-  }
-  case Term::Type::IN: {
-    In_ptr in_ptr = dynamic_cast<In_ptr>(not_term->term);
-    if (check_and_process_in_transformation(in_ptr->right_term, true)) {
-      DVLOG(VLOG_LEVEL) << "Transforming operation: (not (in l r) to (in l r')";
-      auto callback = [not_term](Term_ptr& term) mutable {
-        term = not_term->term;
-        not_term->term = nullptr;
-        delete not_term;
-      };
-
-      callbacks.push(callback);
-    }
     break;
   }
   default:
@@ -205,13 +154,12 @@ void SyntacticOptimizer::visitUMinus(UMinus_ptr u_minus_term) {
 
   if (Term::Type::UMINUS == u_minus_term->term->getType()) {
     DVLOG(VLOG_LEVEL) << "Transforming operation: (- (- a) to a";
-    auto callback = [u_minus_term](Term_ptr& term) mutable {
+    callback = [u_minus_term](Term_ptr& term) mutable {
       UMinus_ptr child_u_minus = dynamic_cast<UMinus_ptr>(u_minus_term->term);
       term = child_u_minus->term;
       child_u_minus->term = nullptr;
       delete u_minus_term;
     };
-    callbacks.push(callback);
   }
 }
 
@@ -222,7 +170,7 @@ void SyntacticOptimizer::visitMinus(Minus_ptr minus_term) {
   if (Term::Type::TERMCONSTANT == minus_term->left_term->getType()
           and Term::Type::TERMCONSTANT == minus_term->right_term->getType()) {
     DVLOG(VLOG_LEVEL) << "Transforming operation: (- lc rc) to lc-rc";
-    auto callback = [this, minus_term](Term_ptr& term) mutable {
+    callback = [this, minus_term](Term_ptr& term) mutable {
       TermConstant_ptr left_constant = dynamic_cast<TermConstant_ptr>(minus_term->left_term);
       TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(minus_term->right_term);
 
@@ -237,28 +185,25 @@ void SyntacticOptimizer::visitMinus(Minus_ptr minus_term) {
       }
       delete minus_term;
     };
-    callbacks.push(callback);
   } else if (Term::Type::TERMCONSTANT == minus_term->right_term->getType()) {
     DVLOG(VLOG_LEVEL) << "Transforming operation: (- l 0) to l";
     TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(minus_term->right_term);
     if (term_constant->getValue() == "0") {
-      auto callback = [minus_term](Term_ptr& term) mutable {
+      callback = [minus_term](Term_ptr& term) mutable {
         term = minus_term->left_term;
         minus_term->left_term = nullptr;
         delete minus_term;
       };
-      callbacks.push(callback);
     }
   } else if (Term::Type::UMINUS == minus_term->right_term->getType()) {
     DVLOG(VLOG_LEVEL) << "Transforming operation: (- l (- r) to (+ l r)";
-    auto callback = [minus_term](Term_ptr& term) mutable {
+    callback = [minus_term](Term_ptr& term) mutable {
       UMinus_ptr child_u_minus = dynamic_cast<UMinus_ptr>(minus_term->right_term);
       term = new Plus(minus_term->left_term, child_u_minus->term);
       minus_term->left_term = nullptr;
       child_u_minus->term = nullptr;
       delete minus_term;
     };
-    callbacks.push(callback);
   }
 }
 
@@ -269,7 +214,7 @@ void SyntacticOptimizer::visitPlus(Plus_ptr plus_term) {
   if (Term::Type::TERMCONSTANT == plus_term->left_term->getType()
           and Term::Type::TERMCONSTANT == plus_term->right_term->getType()) {
     DVLOG(VLOG_LEVEL) << "Transforming operation: (+ lc rc) to lc+rc";
-    auto callback = [this, plus_term](Term_ptr& term) mutable {
+    callback = [this, plus_term](Term_ptr& term) mutable {
       TermConstant_ptr left_constant = dynamic_cast<TermConstant_ptr>(plus_term->left_term);
       TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(plus_term->right_term);
       int left_value = std::stoi(left_constant->getValue());
@@ -278,28 +223,25 @@ void SyntacticOptimizer::visitPlus(Plus_ptr plus_term) {
       term = this->generate_term_constant(std::to_string(result),Primitive::Type::NUMERAL);
       delete plus_term;
     };
-    callbacks.push(callback);
   } else if (Term::Type::TERMCONSTANT == plus_term->right_term->getType()) {
     TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(plus_term->right_term);
     if (term_constant->getValue() == "0") {
       DVLOG(VLOG_LEVEL) << "Transforming operation: (+ l 0) to l";
-      auto callback = [plus_term](Term_ptr& term) mutable {
+      callback = [plus_term](Term_ptr& term) mutable {
         term = plus_term->left_term;
         plus_term->left_term = nullptr;
         delete plus_term;
       };
-      callbacks.push(callback);
     }
   } else if (Term::Type::TERMCONSTANT == plus_term->left_term->getType()) {
     TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(plus_term->left_term);
     if (term_constant->getValue() == "0") {
       DVLOG(VLOG_LEVEL) << "Transforming operation: (+ 0 r) to r";
-      auto callback = [plus_term](Term_ptr& term) mutable {
+      callback = [plus_term](Term_ptr& term) mutable {
         term = plus_term->right_term;
         plus_term->right_term = nullptr;
         delete plus_term;
       };
-      callbacks.push(callback);
     }
   }
 }
@@ -321,26 +263,29 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
   visit_and_callback(not_eq_term->left_term);
   visit_and_callback(not_eq_term->right_term);
 
-  LOG(FATAL) << "implement me";
+  if (is_equivalent(not_eq_term->left_term, not_eq_term->right_term)) {
+    add_callback_to_replace_with_bool(not_eq_term, "false");
+  }
 }
 
 void SyntacticOptimizer::visitGt(Gt_ptr gt_term) {
   visit_and_callback(gt_term->left_term);
   visit_and_callback(gt_term->right_term);
 
-  if (check_and_process_len_transformation(gt_term, gt_term->left_term, gt_term->right_term)) {
-    DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *gt_term << "'";
-    auto callback = [gt_term](Term_ptr& term) mutable {
-      term = new Eq(gt_term->left_term, gt_term->right_term);
-      gt_term->left_term = nullptr;
-      gt_term->right_term = nullptr;
-      delete gt_term;
-    };
-    callbacks.push(callback);
-  }
-
   if (is_equivalent(gt_term->left_term, gt_term->right_term)) {
     add_callback_to_replace_with_bool(gt_term, "false");
+  } else if (check_and_process_len_transformation(gt_term, gt_term->left_term, gt_term->right_term)) {
+    DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *gt_term << "'";
+    if (is_equivalent(gt_term->left_term, gt_term->right_term)) {
+      add_callback_to_replace_with_bool(gt_term, "false");
+    } else {
+      callback = [gt_term](Term_ptr& term) mutable {
+        term = new Eq(gt_term->left_term, gt_term->right_term);
+        gt_term->left_term = nullptr;
+        gt_term->right_term = nullptr;
+        delete gt_term;
+      };
+    }
   }
 }
 
@@ -348,19 +293,20 @@ void SyntacticOptimizer::visitGe(Ge_ptr ge_term) {
   visit_and_callback(ge_term->left_term);
   visit_and_callback(ge_term->right_term);
 
-  if (check_and_process_len_transformation(ge_term, ge_term->left_term, ge_term->right_term)) {
-    DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *ge_term << "'";
-    auto callback = [ge_term](Term_ptr& term) mutable {
-      term = new Eq(ge_term->left_term, ge_term->right_term);
-      ge_term->left_term = nullptr;
-      ge_term->right_term = nullptr;
-      delete ge_term;
-    };
-    callbacks.push(callback);
-  }
-
   if (is_equivalent(ge_term->left_term, ge_term->right_term)) {
     add_callback_to_replace_with_bool(ge_term, "true");
+  } else if (check_and_process_len_transformation(ge_term, ge_term->left_term, ge_term->right_term)) {
+    DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *ge_term << "'";
+    if (is_equivalent(ge_term->left_term, ge_term->right_term)) {
+      add_callback_to_replace_with_bool(ge_term, "true");
+    } else {
+      callback = [ge_term](Term_ptr& term) mutable {
+        term = new Eq(ge_term->left_term, ge_term->right_term);
+        ge_term->left_term = nullptr;
+        ge_term->right_term = nullptr;
+        delete ge_term;
+      };
+    }
   }
 }
 
@@ -368,19 +314,20 @@ void SyntacticOptimizer::visitLt(Lt_ptr lt_term) {
   visit_and_callback(lt_term->left_term);
   visit_and_callback(lt_term->right_term);
 
-  if (check_and_process_len_transformation(lt_term, lt_term->left_term, lt_term->right_term)) {
-    DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *lt_term << "'";
-    auto callback = [lt_term](Term_ptr& term) mutable {
-      term = new Eq(lt_term->left_term, lt_term->right_term);
-      lt_term->left_term = nullptr;
-      lt_term->right_term = nullptr;
-      delete lt_term;
-    };
-    callbacks.push(callback);
-  }
-
   if (is_equivalent(lt_term->left_term, lt_term->right_term)) {
     add_callback_to_replace_with_bool(lt_term, "false");
+  } else if (check_and_process_len_transformation(lt_term, lt_term->left_term, lt_term->right_term)) {
+    DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *lt_term << "'";
+    if (is_equivalent(lt_term->left_term, lt_term->right_term)) {
+      add_callback_to_replace_with_bool(lt_term, "false");
+    } else {
+      callback = [lt_term](Term_ptr& term) mutable {
+        term = new Eq(lt_term->left_term, lt_term->right_term);
+        lt_term->left_term = nullptr;
+        lt_term->right_term = nullptr;
+        delete lt_term;
+      };
+    }
   }
 }
 
@@ -388,19 +335,20 @@ void SyntacticOptimizer::visitLe(Le_ptr le_term) {
   visit_and_callback(le_term->left_term);
   visit_and_callback(le_term->right_term);
 
-  if (check_and_process_len_transformation(le_term, le_term->left_term, le_term->right_term)) {
-    DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *le_term << "'";
-    auto callback = [le_term](Term_ptr& term) mutable {
-      term = new Eq(le_term->left_term, le_term->right_term);
-      le_term->left_term = nullptr;
-      le_term->right_term = nullptr;
-      delete le_term;
-    };
-    callbacks.push(callback);
-  }
-
   if (is_equivalent(le_term->left_term, le_term->right_term)) {
     add_callback_to_replace_with_bool(le_term, "true");
+  } else if (check_and_process_len_transformation(le_term, le_term->left_term, le_term->right_term)) {
+    DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *le_term << "'";
+    if (is_equivalent(le_term->left_term, le_term->right_term)) {
+      add_callback_to_replace_with_bool(le_term, "true");
+    } else {
+      callback = [le_term](Term_ptr& term) mutable {
+        term = new Eq(le_term->left_term, le_term->right_term);
+        le_term->left_term = nullptr;
+        le_term->right_term = nullptr;
+        delete le_term;
+      };
+    }
   }
 }
 
@@ -418,13 +366,11 @@ void SyntacticOptimizer::visitIn(In_ptr in_term) {
   visit_and_callback(in_term->right_term);
 
   if (is_equivalent(in_term->left_term, in_term->right_term)) {
-    auto callback = [in_term](Term_ptr& term) mutable {
+    callback = [in_term](Term_ptr& term) mutable {
       term = in_term->left_term;
       in_term->left_term = nullptr;
       delete in_term;
     };
-
-    callbacks.push(callback);
   }
 }
 
@@ -432,7 +378,12 @@ void SyntacticOptimizer::visitNotIn(NotIn_ptr not_in_term) {
   visit_and_callback(not_in_term->left_term);
   visit_and_callback(not_in_term->right_term);
 
-  LOG(FATAL) << "implement me";
+  if (is_equivalent(not_in_term->left_term, not_in_term->right_term)) {
+    callback = [this, not_in_term](Term_ptr& term) mutable {
+      term = generate_term_constant("/#/", Primitive::Type::REGEX);
+      delete not_in_term;
+    };
+  }
 }
 
 void SyntacticOptimizer::visitLen(Len_ptr len_term) {
@@ -444,13 +395,11 @@ void SyntacticOptimizer::visitContains(Contains_ptr contains_term) {
   visit_and_callback(contains_term->search_term);
 
   if (is_equivalent(contains_term->subject_term, contains_term->search_term)) {
-    auto callback = [contains_term](Term_ptr& term) mutable {
+    callback = [contains_term](Term_ptr& term) mutable {
       term = contains_term->subject_term;
       contains_term->subject_term = nullptr;
       delete contains_term;
     };
-
-    callbacks.push(callback);
   }
 }
 
@@ -458,7 +407,12 @@ void SyntacticOptimizer::visitNotContains(NotContains_ptr not_contains_term) {
   visit_and_callback(not_contains_term->subject_term);
   visit_and_callback(not_contains_term->search_term);
 
-  LOG(FATAL) << "implement me";
+  if (is_equivalent(not_contains_term->subject_term, not_contains_term->search_term)) {
+    callback = [this, not_contains_term](Term_ptr& term) mutable {
+      term = generate_term_constant("/#/", Primitive::Type::REGEX);
+      delete not_contains_term;
+    };
+  }
 }
 
 void SyntacticOptimizer::visitBegins(Begins_ptr begins_term) {
@@ -466,20 +420,24 @@ void SyntacticOptimizer::visitBegins(Begins_ptr begins_term) {
   visit_and_callback(begins_term->search_term);
 
   if (is_equivalent(begins_term->subject_term, begins_term->search_term)) {
-    auto callback = [begins_term](Term_ptr& term) mutable {
+    callback = [begins_term](Term_ptr& term) mutable {
       term = begins_term->subject_term;
       begins_term->subject_term = nullptr;
       delete begins_term;
     };
-
-    callbacks.push(callback);
   }
 }
 
 void SyntacticOptimizer::visitNotBegins(NotBegins_ptr not_begins_term) {
   visit_and_callback(not_begins_term->subject_term);
   visit_and_callback(not_begins_term->search_term);
-  LOG(FATAL) << "implement me";
+
+  if (is_equivalent(not_begins_term->subject_term, not_begins_term->search_term)) {
+    callback = [this, not_begins_term](Term_ptr& term) mutable {
+      term = generate_term_constant("/#/", Primitive::Type::REGEX);
+      delete not_begins_term;
+    };
+  }
 }
 
 void SyntacticOptimizer::visitEnds(Ends_ptr ends_term) {
@@ -487,13 +445,11 @@ void SyntacticOptimizer::visitEnds(Ends_ptr ends_term) {
   visit_and_callback(ends_term->search_term);
 
   if (is_equivalent(ends_term->subject_term, ends_term->search_term)) {
-    auto callback = [ends_term](Term_ptr& term) mutable {
+    callback = [ends_term](Term_ptr& term) mutable {
       term = ends_term->subject_term;
       ends_term->subject_term = nullptr;
       delete ends_term;
     };
-
-    callbacks.push(callback);
   }
 }
 
@@ -501,7 +457,12 @@ void SyntacticOptimizer::visitNotEnds(NotEnds_ptr not_ends_term) {
   visit_and_callback(not_ends_term->subject_term);
   visit_and_callback(not_ends_term->search_term);
 
-  LOG(FATAL) << "implement me";
+  if (is_equivalent(not_ends_term->subject_term, not_ends_term->search_term)) {
+    callback = [this, not_ends_term](Term_ptr& term) mutable {
+      term = generate_term_constant("/#/", Primitive::Type::REGEX);;
+      delete not_ends_term;
+    };
+  }
 }
 
 void SyntacticOptimizer::visitIndexOf(IndexOf_ptr index_of_term) {
@@ -540,6 +501,14 @@ void SyntacticOptimizer::visitReplace(Replace_ptr replace_term) {
   visit_and_callback(replace_term->subject_term);
   visit_and_callback(replace_term->search_term);
   visit_and_callback(replace_term->replace_term);
+
+  if (is_equivalent(replace_term->search_term, replace_term->replace_term)) {
+    callback = [replace_term](Term_ptr& term) mutable {
+      term = replace_term->subject_term;
+      replace_term->subject_term = nullptr;
+      delete replace_term;
+    };
+  }
 }
 
 void SyntacticOptimizer::visitCount(Count_ptr count_term) {
@@ -548,91 +517,12 @@ void SyntacticOptimizer::visitCount(Count_ptr count_term) {
 }
 
 void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {
-  visit_and_callback(ite_term->cond);
-  visit_and_callback(ite_term->then_branch);
-  visit_and_callback(ite_term->else_branch);
-
-  DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *ite_term << "' into 'or'";
-  auto callback = [ite_term](Term_ptr& term) mutable {
-    And_ptr then_branch = dynamic_cast<And_ptr>(ite_term->then_branch);
-    And_ptr else_branch = dynamic_cast<And_ptr>(ite_term->else_branch);
-    then_branch->term_list->insert(then_branch->term_list->begin(), ite_term->cond->clone());
-    if (Not_ptr not_term = dynamic_cast<Not_ptr>(ite_term->cond)) {
-      else_branch->term_list->insert(else_branch->term_list->begin(), not_term->term->clone());
-    } else {
-      not_term = new Not(ite_term->cond);
-      else_branch->term_list->insert(else_branch->term_list->begin(), not_term->clone());
-    }
-
-    TermList_ptr term_list = new TermList();
-    term_list->push_back(then_branch);
-    term_list->push_back(else_branch);
-    term = new Or(term_list);
-    ite_term->then_branch = nullptr;
-    ite_term->else_branch = nullptr;
-    delete ite_term;
-  };
-  callbacks.push(callback);
 }
 
 void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
-  for (auto& term_ptr : *(re_concat_term->term_list)) {
-    visit_and_callback(term_ptr);
-  }
-
-  DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *re_concat_term << "' into 'concat'";
-  TermConstant_ptr initial_term_constant = nullptr;
-  for (auto iter = re_concat_term->term_list->begin(); iter != re_concat_term->term_list->end();) {
-    if (Term::Type::TERMCONSTANT == (*iter)->getType()) {
-      TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter);
-      if (initial_term_constant == nullptr) {
-        initial_term_constant = term_constant;
-      } else {
-        pre_concat_constants(initial_term_constant, term_constant);
-        delete term_constant; // deallocate
-        re_concat_term->term_list->erase(iter);
-        continue;
-      }
-    } else {
-      initial_term_constant = nullptr;
-    }
-    iter++;
-  }
-
-  auto callback = [re_concat_term](Term_ptr& term) mutable {
-    if (re_concat_term->term_list->size() == 1) {
-      term = re_concat_term->term_list->front();
-      re_concat_term->term_list->clear();
-    } else {
-      term = new Concat(re_concat_term->term_list);
-      re_concat_term->term_list = nullptr;
-    }
-    delete re_concat_term;
-  };
-  callbacks.push(callback);
 }
 
 void SyntacticOptimizer::visitToRegex(ToRegex_ptr to_regex_term) {
-  if (Term::Type::TERMCONSTANT == to_regex_term->term->getType()) {
-    TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(to_regex_term->term);
-    if (Primitive::Type::STRING == term_constant->getValueType()) {
-      DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *to_regex_term << "'";
-      std::string regex_template = "/%s/";
-      std::string escaped_regex = escape_regex(term_constant->getValue());
-      regex_template.replace(regex_template.find_first_of("%s"), 2, escaped_regex);
-      Primitive_ptr regex_primitive = new Primitive(regex_template, Primitive::Type::REGEX);
-      delete term_constant->primitive;
-      term_constant->primitive = regex_primitive;
-
-      auto callback = [to_regex_term](Term_ptr& term) mutable {
-        term = to_regex_term->term;
-        to_regex_term->term = nullptr;
-        delete to_regex_term;
-      };
-
-      callbacks.push(callback);
-    }
-  }
 }
 
 void SyntacticOptimizer::visitUnknownTerm(Unknown_ptr unknown_term) {
@@ -682,9 +572,9 @@ void SyntacticOptimizer::visitVarBinding(VarBinding_ptr var_binding) {
 
 void SyntacticOptimizer::visit_and_callback(Term_ptr& term) {
   visit(term);
-  while (not callbacks.empty()) {
-    callbacks.front()(term);
-    callbacks.pop();
+  if (callback) {
+    callback(term);
+    callback = nullptr;
   }
 }
 
@@ -717,7 +607,7 @@ std::string SyntacticOptimizer::regex_to_str(std::string regex) {
   return regex.substr(1, last);
 }
 
-void SyntacticOptimizer::pre_concat_constants(TermConstant_ptr left_constant, TermConstant_ptr right_constant) {
+void SyntacticOptimizer::append_constant(TermConstant_ptr left_constant, TermConstant_ptr right_constant) {
   std::stringstream ss;
   if (Primitive::Type::REGEX == left_constant->getValueType()
           or Primitive::Type::REGEX == right_constant->getValueType()) {
@@ -732,33 +622,6 @@ void SyntacticOptimizer::pre_concat_constants(TermConstant_ptr left_constant, Te
     left_constant->primitive->setData(ss.str());
   }
 
-}
-
-bool SyntacticOptimizer::check_and_process_in_transformation(Term_ptr term, bool isComplement) {
-  if (Term::Type::TERMCONSTANT == term->getType()) {
-    TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(term);
-    if (Primitive::Type::REGEX == term_constant->getValueType() and isComplement) {
-      std::string data = regex_to_str(term_constant->getValue());
-      if (data.find_first_of("~(") == 0 and data.back() == ')') {
-        data.replace(0, 2, "");
-        data.pop_back();
-      } else {
-        std::string regex_template = "/~(%s)/";
-        regex_template.replace(regex_template.find_first_of("%s"), 2, data);
-        data = regex_template;
-      }
-      term_constant->primitive->setData(data);
-      return true;
-    } else if (Primitive::Type::STRING == term_constant->getValueType() and isComplement) {
-      std::string regex_template = "/~(%s)/";
-      regex_template.replace(regex_template.find_first_of("%s"), 2, escape_regex(term_constant->getValue()));
-      term_constant->primitive->setData(regex_template);
-      term_constant->primitive->setType(Primitive::Type::REGEX);
-      return true;
-    }
-  }
-
-  return false;
 }
 
 bool SyntacticOptimizer::check_and_process_len_transformation(Term_ptr operation, Term_ptr& left_term,
@@ -847,11 +710,10 @@ Term_ptr SyntacticOptimizer::generate_dummy_term() {
 
 void SyntacticOptimizer::add_callback_to_replace_with_bool(Term_ptr term, std::string value) {
   DVLOG(VLOG_LEVEL) << "Replacing with '" << value << "': '" << *term << "'";
-  auto callback = [this, term, value](Term_ptr& ref_term) mutable {
+  callback = [this, term, value](Term_ptr& ref_term) mutable {
     ref_term = generate_term_constant(value, Primitive::Type::BOOL);
     delete term;
   };
-  callbacks.push(callback);
 }
 
 bool SyntacticOptimizer::check_bool_constant_value(Term_ptr term, std::string value) {

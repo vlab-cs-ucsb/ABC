@@ -70,7 +70,7 @@ void Driver::initializeSolver() {
   Solver::Initializer initializer(script, symbol_table);
   initializer.start();
 
-  Solver::SyntaxFixer syntax_fixer(script);
+  Solver::SyntacticProcessor syntax_fixer(script);
   syntax_fixer.start();
 
   ast2dot("./output/test.dot");

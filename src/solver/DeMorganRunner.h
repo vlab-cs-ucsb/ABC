@@ -8,7 +8,7 @@
 #ifndef SRC_SOLVER_DEMORGANRUNNER_H_
 #define SRC_SOLVER_DEMORGANRUNNER_H_
 
-#include "PreOrderTraversal.h"
+#include "AstTraverser.h"
 
 namespace Vlab {
 namespace Solver {

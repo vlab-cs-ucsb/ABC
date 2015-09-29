@@ -95,8 +95,7 @@ protected:
   std::string to_string(SMT::Visitable_ptr);
   std::string escape_regex(std::string regex);
   std::string regex_to_str(std::string regex);
-  void pre_concat_constants(SMT::TermConstant_ptr, SMT::TermConstant_ptr);
-  bool check_and_process_in_transformation(SMT::Term_ptr, bool is_complement);
+  void append_constant(SMT::TermConstant_ptr, SMT::TermConstant_ptr);
   // TODO check len transformation later when pres. arith. added.
   bool check_and_process_len_transformation(SMT::Term_ptr, SMT::Term_ptr&, SMT::Term_ptr&);
   bool __check_and_process_len_transformation(std::string operation, SMT::Term_ptr&, SMT::Term_ptr&);
@@ -109,7 +108,7 @@ protected:
   SMT::Script_ptr root;
   SymbolTable_ptr symbol_table;
   SMT::Assert_ptr current_assert;
-  std::queue<std::function<void(SMT::Term_ptr&)>> callbacks;
+  std::function<void(SMT::Term_ptr&)> callback;
 private:
   static const int VLOG_LEVEL;
 };

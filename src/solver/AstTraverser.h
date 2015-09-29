@@ -1,12 +1,12 @@
 /*
- * PreOrderTraversal.h
+ * AstTraverser.h
  *
  *  Created on: Sep 27, 2015
  *      Author: baki
  */
 
-#ifndef SRC_SOLVER_PREORDERTRAVERSAL_H_
-#define SRC_SOLVER_PREORDERTRAVERSAL_H_
+#ifndef SRC_SOLVER_ASTTRAVERSER_H_
+#define SRC_SOLVER_ASTTRAVERSER_H_
 
 #include <functional>
 #include <stack>
@@ -19,13 +19,15 @@
 namespace Vlab {
 namespace Solver {
 
-class PreOrderTraversal : public SMT::Visitor {
+class AstTraverser : public SMT::Visitor {
 public:
-  PreOrderTraversal(SMT::Script_ptr script);
-  virtual ~PreOrderTraversal();
+  AstTraverser(SMT::Script_ptr script);
+  virtual ~AstTraverser();
 
-  void setCommandCallback(std::function<bool (SMT::Command_ptr)> command_callback);
-  void setTermCallback(std::function<bool (SMT::Term_ptr)> term_callback);
+  void setCommandPreCallback(std::function<bool (SMT::Command_ptr)> command_callback);
+  void setTermPreCallback(std::function<bool (SMT::Term_ptr)> term_callback);
+  void setCommandPostCallback(std::function<bool (SMT::Command_ptr)> command_callback);
+  void setTermPostCallback(std::function<bool (SMT::Term_ptr)> term_callback);
 
   void start();
   void end();
@@ -90,14 +92,18 @@ public:
   void push(SMT::Term_ptr*);
   void pop();
   SMT::Term_ptr* top();
+protected:
+  void visit(SMT::Term_ptr& term);
 private:
   SMT::Script_ptr root;
   std::stack<SMT::Term_ptr*> term_stack;
-  std::function<bool (SMT::Command_ptr)> command_callback;
-  std::function<bool (SMT::Term_ptr)> term_callback;
+  std::function<bool (SMT::Command_ptr)> command_pre_callback;
+  std::function<bool (SMT::Term_ptr)> term_pre_callback;
+  std::function<bool (SMT::Command_ptr)> command_post_callback;
+  std::function<bool (SMT::Term_ptr)> term_post_callback;
 };
 
 } /* namespace Solver */
 } /* namespace Vlab */
 
-#endif /* SRC_SOLVER_PREORDERTRAVERSAL_H_ */
+#endif /* SRC_SOLVER_ASTTRAVERSER_H_ */
