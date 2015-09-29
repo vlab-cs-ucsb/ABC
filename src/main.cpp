@@ -29,7 +29,7 @@ int main(const int argc, const char **argv) {
   std::string output_root = get_default_output_dir();
   std::string log_root = get_default_log_dir();
   FLAGS_log_dir = log_root;
-  FLAGS_v = 19;
+  FLAGS_v = 30;
   FLAGS_logtostderr = 1;
 
   bool model_count_only = false;
@@ -70,7 +70,7 @@ int main(const int argc, const char **argv) {
   Vlab::Driver driver;
   driver.test();
   driver.parse(in);
-  if (VLOG_IS_ON(21)) {
+  if (VLOG_IS_ON(32)) {
     driver.ast2dot(&std::cout);
   }
   driver.ast2dot(output_root + "/parser_out.dot");

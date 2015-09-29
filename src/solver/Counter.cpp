@@ -54,6 +54,10 @@ void Counter::visitCommand(Command_ptr command) {
   }
 }
 
+void Counter::visitAssert(Assert_ptr assert_command) {
+  visit_children_of(assert_command);
+}
+
 void Counter::visitTerm(Term_ptr term) {
   LOG(FATAL)<< "Unexpected term: " << *term;}
 

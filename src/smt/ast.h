@@ -24,7 +24,7 @@
 namespace Vlab {
 namespace SMT {
 
-static const int AST_VLOG_LEVEL = 20;
+static const int AST_VLOG_LEVEL = 31;
 
 class Script: public Visitable {
 public:

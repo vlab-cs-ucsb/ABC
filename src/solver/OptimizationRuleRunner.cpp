@@ -59,6 +59,11 @@ void OptimizationRuleRunner::visitCommand(Command_ptr command) {
   }
 }
 
+void OptimizationRuleRunner::visitAssert(Assert_ptr assert_command) {
+  check_and_substitute_var(assert_command->term);
+  visit_children_of(assert_command);
+}
+
 void OptimizationRuleRunner::visitTerm(Term_ptr term) {
 }
 

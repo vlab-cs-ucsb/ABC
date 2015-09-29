@@ -78,6 +78,19 @@ void SyntacticOptimizer::visitCommand(Command_ptr command) {
   }
 }
 
+void SyntacticOptimizer::visitAssert(Assert_ptr assert_command) {
+
+  current_assert = assert_command;
+  visit_and_callback(current_assert->term);
+
+//  std::string assert_string = to_string(current_assert->term);
+//  if (assert_equivalance.find(assert_string) != assert_equivalance.end()) {
+//    to_be_removed.insert(assert_command);
+//  } else {
+//    assert_equivalance.insert(assert_string);
+//  }
+}
+
 void SyntacticOptimizer::visitTerm(Term_ptr term) {
 }
 

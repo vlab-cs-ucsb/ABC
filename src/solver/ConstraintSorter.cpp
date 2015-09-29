@@ -82,6 +82,10 @@ void ConstraintSorter::visitCommand(Command_ptr command) {
   }
 }
 
+void ConstraintSorter::visitAssert(Assert_ptr assert_command) {
+  visit_children_of(assert_command);
+}
+
 void ConstraintSorter::visitTerm(Term_ptr term) {
 }
 

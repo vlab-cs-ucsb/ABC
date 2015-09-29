@@ -59,6 +59,10 @@ void FormulaOptimizer::visitCommand(Command_ptr command) {
   }
 }
 
+void FormulaOptimizer::visitAssert(Assert_ptr assert_command) {
+  visit_and_callback(assert_command->term);
+}
+
 void FormulaOptimizer::visitTerm(Term_ptr term) {
 }
 

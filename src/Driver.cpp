@@ -71,7 +71,7 @@ void Driver::initializeSolver() {
   initializer.start();
 
   Solver::SyntaxFixer syntax_fixer(script);
-  syntax_fixer.convertAssertsToAnd();
+  syntax_fixer.start();
 
   ast2dot("./output/test.dot");
   std::exit(0);

@@ -57,6 +57,9 @@ void PreImageComputer::visitScript(Script_ptr script) {
 void PreImageComputer::visitCommand(Command_ptr command) {
 }
 
+void PreImageComputer::visitAssert(Assert_ptr assert_command) {
+}
+
 void PreImageComputer::visitTerm(Term_ptr term) {
 }
 

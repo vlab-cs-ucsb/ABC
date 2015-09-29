@@ -28,6 +28,7 @@ public:
 
   void visitScript(SMT::Script_ptr);
   void visitCommand(SMT::Command_ptr);
+  void visitAssert(SMT::Assert_ptr);
   void visitTerm(SMT::Term_ptr);
   void visitExclamation(SMT::Exclamation_ptr);
   void visitExists(SMT::Exists_ptr);

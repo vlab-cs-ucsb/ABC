@@ -23,7 +23,7 @@ public:
   void start();
   void end();
   void convertAssertsToAnd();
-  void applyDeMorgansLaw();
+  void preProcessNegations();
   void convertToDNF();
 
 protected:

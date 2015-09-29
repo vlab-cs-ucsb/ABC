@@ -66,6 +66,18 @@ void PostImageComputer::visitCommand(Command_ptr command) {
   }
 }
 
+void PostImageComputer::visitAssert(Assert_ptr assert_command) {
+  visit_children_of(assert_command);
+  Value_ptr result = getTermValue(assert_command->term);
+  symbol_table->updateAssertionValid(result->isSatisfiable());
+
+  if (symbol_table->isAssertionsStillValid()) {
+    update_variables();
+  }
+
+  clearTermValues();
+}
+
 void PostImageComputer::visitTerm(Term_ptr term) {
 }
 

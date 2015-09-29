@@ -92,7 +92,7 @@ public:
   SMT::Term_ptr* top();
 private:
   SMT::Script_ptr root;
-  std::stack<SMT::Term_ptr*> parent_term_stack;
+  std::stack<SMT::Term_ptr*> term_stack;
   std::function<bool (SMT::Command_ptr)> command_callback;
   std::function<bool (SMT::Term_ptr)> term_callback;
 };
