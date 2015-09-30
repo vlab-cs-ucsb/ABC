@@ -14,7 +14,8 @@ using namespace SMT;
 
 const int SyntacticProcessor::VLOG_LEVEL = 20;
 
-SyntacticProcessor::SyntacticProcessor(Script_ptr script) : root (script) {
+SyntacticProcessor::SyntacticProcessor(Script_ptr script) : AstTraverser (script) {
+  setCallbacks();
 }
 
 SyntacticProcessor::~SyntacticProcessor() {
@@ -22,10 +23,32 @@ SyntacticProcessor::~SyntacticProcessor() {
 
 void SyntacticProcessor::start() {
   convertAssertsToAnd();
-  pushNegations();
+  visitScript(root);
 }
 
 void SyntacticProcessor::end() {
+}
+
+void SyntacticProcessor::setCallbacks() {
+  auto term_callback = [this] (Term_ptr term) -> bool {
+    switch (term->getType()) {
+    case Term::Type::TERMCONSTANT: {
+      return false;
+    }
+    default:
+      return true;
+    }
+  };
+
+  auto command_callback = [](Command_ptr command) -> bool {
+    if (Command::Type::ASSERT == command->getType()) {
+      return true;
+    }
+    return false;
+  };
+
+  setCommandPreCallback(command_callback);
+  setTermPreCallback(term_callback);
 }
 
 void SyntacticProcessor::convertAssertsToAnd() {
@@ -54,76 +77,59 @@ void SyntacticProcessor::convertAssertsToAnd() {
 /**
  * Applies De Morgan's Law and push negations down
  */
-void SyntacticProcessor::pushNegations() {
-  AstTraverser preorder_traverser(root);
-  auto term_pre_callback = [&preorder_traverser] (Term_ptr term) -> bool {
-    if (Term::Type::NOT == term->getType()) {
-      Not_ptr not_term = dynamic_cast<Not_ptr>(term);
-      switch (not_term->term->getType()) {
-      case Term::Type::AND: {
-        DVLOG(VLOG_LEVEL) << "pushNegations '(not (" << *not_term->term << " ... ))'";
-        Term_ptr* reference_term = preorder_traverser.top();
-        And_ptr and_term = dynamic_cast<And_ptr>(not_term->term);
+void SyntacticProcessor::visitNot(Not_ptr not_term) {
+  switch (not_term->term->getType()) {
+  case Term::Type::AND: {
+    DVLOG(VLOG_LEVEL) << "push negation '(not (" << *not_term->term << " ... ))'";
+    Term_ptr* reference_term = term_stack.top();
+    And_ptr and_term = dynamic_cast<And_ptr>(not_term->term);
 
-        for (auto& sub_term : *and_term->term_list) {
-          Not_ptr sub_not_term = new Not(sub_term);
-          sub_term = sub_not_term;
-        }
-
-        Or_ptr or_term = new Or(and_term->term_list);
-        and_term->term_list = nullptr;
-        delete not_term;
-
-        *reference_term = or_term;
-        preorder_traverser.visitOr(or_term);
-        return false;
-      }
-      case Term::Type::OR: {
-        DVLOG(VLOG_LEVEL) << "pushNegations '(not (" << *not_term->term << " ... ))'";
-        Term_ptr* reference_term = preorder_traverser.top();
-        Or_ptr or_term = dynamic_cast<Or_ptr>(not_term->term);
-
-        for (auto& sub_term : *or_term->term_list) {
-          Not_ptr sub_not_term = new Not(sub_term);
-          sub_term = sub_not_term;
-        }
-
-        And_ptr and_term = new And(or_term->term_list);
-        or_term->term_list = nullptr;
-        delete not_term;
-
-        *reference_term = and_term;
-        preorder_traverser.visitAnd(and_term);
-        return false;
-      }
-      case Term::Type::NOT: {
-        DVLOG(VLOG_LEVEL) << "pushNegations '(not (" << *not_term->term << " ... ))'";
-        Term_ptr* reference_term = preorder_traverser.top();
-        Not_ptr sub_not_term = dynamic_cast<Not_ptr>(not_term->term);
-
-        *reference_term = sub_not_term->term;
-        sub_not_term->term = nullptr;
-        delete not_term;
-        preorder_traverser.Visitor::visit(*reference_term);
-        return false;
-      }
-      default:
-        return true;
-      }
+    for (auto& sub_term : *and_term->term_list) {
+      Not_ptr sub_not_term = new Not(sub_term);
+      sub_term = sub_not_term;
     }
-    return true;
-  };
 
-  auto command_callback = [](Command_ptr command) -> bool {
-    if (Command::Type::ASSERT == command->getType()) {
-      return true;
+    Or_ptr or_term = new Or(and_term->term_list);
+    and_term->term_list = nullptr;
+    delete not_term;
+
+    *reference_term = or_term;
+    visitOr(or_term);
+    break;
+  }
+  case Term::Type::OR: {
+    DVLOG(VLOG_LEVEL) << "pushNegations '(not (" << *not_term->term << " ... ))'";
+    Term_ptr* reference_term = term_stack.top();
+    Or_ptr or_term = dynamic_cast<Or_ptr>(not_term->term);
+
+    for (auto& sub_term : *or_term->term_list) {
+      Not_ptr sub_not_term = new Not(sub_term);
+      sub_term = sub_not_term;
     }
-    return false;
-  };
 
-  preorder_traverser.setCommandPreCallback(command_callback);
-  preorder_traverser.setTermPreCallback(term_pre_callback);
-  preorder_traverser.start();
+    And_ptr and_term = new And(or_term->term_list);
+    or_term->term_list = nullptr;
+    delete not_term;
+
+    *reference_term = and_term;
+    visitAnd(and_term);
+    break;
+  }
+  case Term::Type::NOT: {
+    DVLOG(VLOG_LEVEL) << "pushNegations '(not (" << *not_term->term << " ... ))'";
+    Term_ptr* reference_term = term_stack.top();
+    Not_ptr sub_not_term = dynamic_cast<Not_ptr>(not_term->term);
+
+    *reference_term = sub_not_term->term;
+    sub_not_term->term = nullptr;
+    delete not_term;
+    visit(*reference_term);
+    break;
+  }
+  default:
+    visit(not_term->term);
+    break;
+  }
 }
 
 } /* namespace Solver */

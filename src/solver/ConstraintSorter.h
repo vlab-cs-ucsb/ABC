@@ -21,7 +21,7 @@
 
 namespace Vlab {
 namespace Solver {
-
+// TODO fix sorting algorithm based on latest updates
 class ConstraintSorter: public SMT::Visitor {
 public:
   ConstraintSorter(SMT::Script_ptr, SymbolTable_ptr);

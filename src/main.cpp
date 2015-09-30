@@ -65,6 +65,10 @@ int main(const int argc, const char **argv) {
   }
   /* log test end */
 
+  if (not in->good()) {
+    LOG(FATAL) << "Cannot find input";
+  }
+
   int bound = std::stoi(bound_string);
 
   Vlab::Driver driver;

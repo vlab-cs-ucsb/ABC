@@ -76,10 +76,6 @@ void Driver::initializeSolver() {
   Solver::SyntacticOptimizer syntactic_optimizer(script, symbol_table);
   syntactic_optimizer.start();
 
-  std::cout << "ok." << std::endl;
-  ast2dot("./output/test.dot");
-  std::exit(0);
-
   Solver::VariableOptimizer variable_optimizer(script, symbol_table);
   variable_optimizer.start();
 

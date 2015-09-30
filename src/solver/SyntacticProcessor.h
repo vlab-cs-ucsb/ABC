@@ -16,18 +16,16 @@
 namespace Vlab {
 namespace Solver {
 
-class SyntacticProcessor {
+class SyntacticProcessor: AstTraverser {
 public:
   SyntacticProcessor(SMT::Script_ptr script);
   virtual ~SyntacticProcessor();
 
   void start();
   void end();
+  void setCallbacks();
   void convertAssertsToAnd();
-  void pushNegations();
-
-protected:
-  SMT::Script_ptr root;
+  void visitNot(SMT::Not_ptr);
 
 private:
   static const int VLOG_LEVEL;

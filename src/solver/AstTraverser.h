@@ -92,9 +92,9 @@ public:
   void push(SMT::Term_ptr*);
   void pop();
   SMT::Term_ptr* top();
-protected:
   void visit(SMT::Term_ptr& term);
-private:
+
+protected:
   SMT::Script_ptr root;
   std::stack<SMT::Term_ptr*> term_stack;
   std::function<bool (SMT::Command_ptr)> command_pre_callback;

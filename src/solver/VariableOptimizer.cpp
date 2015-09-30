@@ -15,8 +15,9 @@ using namespace SMT;
 const int VariableOptimizer::VLOG_LEVEL = 15;
 
 VariableOptimizer::VariableOptimizer(Script_ptr script, SymbolTable_ptr symbol_table)
-        : root(script), symbol_table(symbol_table), target_type(Variable::Type::NONE), existential_elimination_phase(
-                true) {
+        : AstTraverser(script), symbol_table(symbol_table), target_type(Variable::Type::NONE),
+          existential_elimination_phase(true) {
+  setCallbacks();
 }
 
 VariableOptimizer::~VariableOptimizer() {
@@ -36,7 +37,7 @@ void VariableOptimizer::start() {
   counter.start();
   target_type = Variable::Type::BOOL;
   symbol_table->push_scope(root);
-  visit(root);
+  visitScript(root);
   symbol_table->pop_scope();
   end();
 
@@ -45,7 +46,7 @@ void VariableOptimizer::start() {
 
   counter.start();
   symbol_table->push_scope(root);
-  visit(root);
+  visitScript(root);
   symbol_table->pop_scope();
 
   end();
@@ -56,7 +57,7 @@ void VariableOptimizer::start() {
   counter.start();
   target_type = Variable::Type::INT;
   symbol_table->push_scope(root);
-  visit(root);
+  visitScript(root);
   symbol_table->pop_scope();
   end();
 
@@ -64,7 +65,7 @@ void VariableOptimizer::start() {
   counter.start();
   target_type = Variable::Type::STRING;
   symbol_table->push_scope(root);
-  visit(root);
+  visitScript(root);
   symbol_table->pop_scope();
   end();
 
@@ -73,7 +74,7 @@ void VariableOptimizer::start() {
 }
 
 void VariableOptimizer::end() {
-  if (VLOG_IS_ON(16)) {
+  if (VLOG_IS_ON(VLOG_LEVEL)) {
     for (auto& rule_map : symbol_table->get_variable_substitution_table()) {
       DVLOG(VLOG_LEVEL) << "Substitution map for scope: " << rule_map.first;
       for (auto& rule : rule_map.second) {
@@ -90,40 +91,20 @@ void VariableOptimizer::end() {
   symbol_table->reset_substitution_rules();
 }
 
-void VariableOptimizer::visitScript(Script_ptr script) {
-  visit_children_of(script);
-}
+void VariableOptimizer::setCallbacks() {
+  auto term_callback = [] (Term_ptr term) -> bool {
+    return false;
+  };
 
-void VariableOptimizer::visitCommand(Command_ptr command) {
+  auto command_callback = [](Command_ptr command) -> bool {
+    if (Command::Type::ASSERT == command->getType()) {
+      return true;
+    }
+    return false;
+  };
 
-  switch (command->getType()) {
-  case Command::Type::ASSERT: {
-    visit_children_of(command);
-    break;
-  }
-  default:
-    LOG(FATAL)<< "'" << *command<< "' is not expected.";
-    break;
-  }
-}
-
-void VariableOptimizer::visitAssert(Assert_ptr assert_command) {
-  visit_children_of(assert_command);
-}
-
-void VariableOptimizer::visitTerm(Term_ptr term) {
-}
-
-void VariableOptimizer::visitExclamation(Exclamation_ptr exclamation_term) {
-}
-
-void VariableOptimizer::visitExists(Exists_ptr exists_term) {
-}
-
-void VariableOptimizer::visitForAll(ForAll_ptr for_all_term) {
-}
-
-void VariableOptimizer::visitLet(Let_ptr let_term) {
+  setCommandPreCallback(command_callback);
+  setTermPreCallback(term_callback);
 }
 
 void VariableOptimizer::visitAnd(And_ptr and_term) {
@@ -136,18 +117,6 @@ void VariableOptimizer::visitOr(Or_ptr or_term) {
     visit(term);
     symbol_table->pop_scope();
   }
-}
-
-void VariableOptimizer::visitNot(Not_ptr not_term) {
-}
-
-void VariableOptimizer::visitUMinus(UMinus_ptr u_minus_term) {
-}
-
-void VariableOptimizer::visitMinus(Minus_ptr minus_term) {
-}
-
-void VariableOptimizer::visitPlus(Plus_ptr plus_term) {
 }
 
 void VariableOptimizer::visitEq(Eq_ptr eq_term) {
@@ -212,140 +181,6 @@ void VariableOptimizer::visitEq(Eq_ptr eq_term) {
       }
     }
   }
-}
-
-void VariableOptimizer::visitNotEq(SMT::NotEq_ptr not_eq_term) {
-}
-
-void VariableOptimizer::visitGt(Gt_ptr gt_term) {
-}
-
-void VariableOptimizer::visitGe(Ge_ptr ge_term) {
-}
-
-void VariableOptimizer::visitLt(Lt_ptr lt_term) {
-}
-
-void VariableOptimizer::visitLe(Le_ptr le_term) {
-}
-
-void VariableOptimizer::visitConcat(Concat_ptr concat_term) {
-}
-
-void VariableOptimizer::visitIn(In_ptr in_term) {
-}
-
-
-void VariableOptimizer::visitNotIn(SMT::NotIn_ptr not_in_term) {
-}
-
-void VariableOptimizer::visitLen(Len_ptr len_term) {
-}
-
-void VariableOptimizer::visitContains(Contains_ptr contains_term) {
-}
-
-void VariableOptimizer::visitNotContains(
-    SMT::NotContains_ptr not_contains_term) {
-}
-
-void VariableOptimizer::visitBegins(Begins_ptr begins_term) {
-}
-
-void VariableOptimizer::visitNotBegins(SMT::NotBegins_ptr not_begins_term) {
-}
-
-void VariableOptimizer::visitEnds(Ends_ptr ends_term) {
-}
-
-void VariableOptimizer::visitNotEnds(SMT::NotEnds_ptr not_ends_term) {
-}
-
-void VariableOptimizer::visitIndexOf(IndexOf_ptr index_of_term) {
-}
-
-void VariableOptimizer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
-  visit_children_of(last_index_of_term);
-}
-
-void VariableOptimizer::visitCharAt(SMT::CharAt_ptr char_at_term) {
-  visit_children_of(char_at_term);
-}
-
-void VariableOptimizer::visitSubString(SMT::SubString_ptr sub_string_term) {
-  visit_children_of(sub_string_term);
-}
-
-void VariableOptimizer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
-  visit_children_of(to_upper_term);
-}
-
-void VariableOptimizer::visitToLower(SMT::ToLower_ptr to_lower_term) {
-  visit_children_of(to_lower_term);
-}
-
-void VariableOptimizer::visitTrim(SMT::Trim_ptr trim_term) {
-  visit_children_of(trim_term);
-}
-
-void VariableOptimizer::visitReplace(Replace_ptr replace_term) {
-}
-
-void VariableOptimizer::visitCount(Count_ptr count_term) {
-}
-
-void VariableOptimizer::visitIte(Ite_ptr ite_term) {
-}
-
-void VariableOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
-}
-
-void VariableOptimizer::visitToRegex(ToRegex_ptr to_regex_term) {
-}
-
-void VariableOptimizer::visitUnknownTerm(Unknown_ptr unknown_term) {
-}
-
-void VariableOptimizer::visitAsQualIdentifier(AsQualIdentifier_ptr as_qid_term) {
-}
-
-void VariableOptimizer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
-}
-
-void VariableOptimizer::visitTermConstant(TermConstant_ptr term_constant) {
-}
-
-void VariableOptimizer::visitIdentifier(Identifier_ptr identifier) {
-}
-
-void VariableOptimizer::visitPrimitive(Primitive_ptr primitive) {
-}
-
-void VariableOptimizer::visitTVariable(TVariable_ptr t_variable) {
-}
-
-void VariableOptimizer::visitTBool(TBool_ptr t_bool) {
-}
-
-void VariableOptimizer::visitTInt(TInt_ptr t_int) {
-}
-
-void VariableOptimizer::visitTString(TString_ptr t_string) {
-}
-
-void VariableOptimizer::visitVariable(Variable_ptr variable) {
-}
-
-void VariableOptimizer::visitSort(Sort_ptr sort) {
-}
-
-void VariableOptimizer::visitAttribute(Attribute_ptr attribute) {
-}
-
-void VariableOptimizer::visitSortedVar(SortedVar_ptr sorted_var) {
-}
-
-void VariableOptimizer::visitVarBinding(VarBinding_ptr var_binding) {
 }
 
 void VariableOptimizer::add_variable_substitution_rule(Variable_ptr subject_var, Variable_ptr target_var,
