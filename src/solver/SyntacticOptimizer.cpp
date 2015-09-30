@@ -74,7 +74,7 @@ void SyntacticOptimizer::visitLet(Let_ptr let_term) {
 
 void SyntacticOptimizer::visitAnd(And_ptr and_term) {
   bool has_false_term = false;
-  TermList or_terms;
+  std::vector<TermList> or_term_lists;
   for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
     visit_and_callback(*iter);
     if (check_bool_constant_value(*iter, "true")) {
@@ -85,7 +85,10 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
       has_false_term = true;
       break;
     } else if (Term::Type::OR == (*iter)->getType()) {
-      or_terms.push_back(*iter);
+      Or_ptr or_term = dynamic_cast<Or_ptr>(*iter);
+      or_term_lists.push_back(*or_term->term_list);
+      or_term->term_list->clear();
+      delete or_term;
       iter = and_term->term_list->erase(iter);
     } else {
       iter++;
@@ -94,11 +97,57 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
 
   if (has_false_term) {
     add_callback_to_replace_with_bool(and_term, "false");
-  } else if (not ( or_terms.empty() )) { // convert to DNF
-    Or_ptr lor_term = or_terms.back(); or_terms.pop_back();
-    while (not (or_terms.empty())) {
-// TODO put algorithm here consider merging ands after algorihtm as in else branch, put a general function for that
+  } else if (not ( or_term_lists.empty() )) { // convert to DNF
+    std::vector<TermList> cartesian = {{}};
+    for (auto& term_list_1 : or_term_lists) {
+      std::vector<TermList> sub_product;
+        for (auto& term_list_2 : cartesian) {
+            for (auto& term_1 : term_list_1) {
+                TermList term_list_2_clone;
+                for (auto& term_2 : term_list_2) {
+                  term_list_2_clone.push_back(term_2->clone());
+                }
+                sub_product.push_back(term_list_2_clone);
+                sub_product.back().push_back(term_1->clone());
+            }
+        }
+        // do not allow memory leak
+        for (auto& term_list : cartesian) {
+          for (auto term : term_list) {
+            delete term;
+          }
+        }
+        for (auto& term : term_list_1) {
+          delete term; term = nullptr;
+        }
+        cartesian.clear();
+        cartesian.swap(sub_product);
     }
+
+    TermList_ptr or_term_list = new TermList();
+    for (auto& term_list : cartesian) {
+      for (auto term : *and_term->term_list) {
+        term_list.push_back(term->clone());
+      }
+
+      TermList_ptr and_term_list = new TermList();
+      for (auto term : term_list) { // Associativity
+        if (And_ptr sub_and_term = dynamic_cast<And_ptr>(term)) {
+          and_term_list->insert(and_term_list->end(), sub_and_term->term_list->begin(), sub_and_term->term_list->end());
+        } else {
+          and_term_list->push_back(term);
+        }
+      }
+
+      or_term_list->push_back(new And(and_term_list));
+    }
+
+    Or_ptr or_term = new Or(or_term_list);
+    callback = [or_term, and_term](Term_ptr& term) mutable {
+      term = or_term;
+      delete and_term;
+    };
+
   } else if (and_term->term_list->empty()) {
     add_callback_to_replace_with_bool(and_term, "true");
   } else if (and_term->term_list->size() == 1) {
