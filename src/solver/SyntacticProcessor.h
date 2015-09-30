@@ -24,15 +24,9 @@ public:
   void start();
   void end();
   void convertAssertsToAnd();
-  void fixOperationSyntax();
-  void preProcessNegations();
-  void convertToDNF();
+  void pushNegations();
 
 protected:
-  std::string escape_regex(std::string regex);
-  std::string regex_to_str(std::string regex);
-  void concat_to_left(SMT::TermConstant_ptr, SMT::TermConstant_ptr);
-
   SMT::Script_ptr root;
 
 private:

@@ -98,8 +98,8 @@ protected:
   void append_constant(SMT::TermConstant_ptr, SMT::TermConstant_ptr);
   // TODO check len transformation later when pres. arith. added.
   bool check_and_process_len_transformation(SMT::Term_ptr, SMT::Term_ptr&, SMT::Term_ptr&);
-  bool __check_and_process_len_transformation(std::string operation, SMT::Term_ptr&, SMT::Term_ptr&);
-  std::string syntactic_reverse_relation(std::string operation);
+  bool __check_and_process_len_transformation(SMT::Term::Type, SMT::Term_ptr&, SMT::Term_ptr&);
+  SMT::Term::Type syntactic_reverse_relation(SMT::Term::Type operation);
   SMT::Term_ptr generate_term_constant(std::string data, SMT::Primitive::Type type);
   SMT::Term_ptr generate_dummy_term();
   void add_callback_to_replace_with_bool(SMT::Term_ptr, std::string value);
