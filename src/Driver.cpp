@@ -82,8 +82,8 @@ void Driver::initializeSolver() {
   Solver::FormulaOptimizer formula_optimizer(script, symbol_table);
   formula_optimizer.start();
 
-//  	SMT::LengthConstraintReductor len_reductor;
-//  	len_reductor.start(script, symbol_table);
+//  SMT::LengthConstraintReductor len_reductor;
+//  len_reductor.start(script, symbol_table);
 
   Solver::ConstraintSorter constraint_sorter(script, symbol_table);
   constraint_sorter.start();
@@ -127,52 +127,55 @@ void Driver::reset() {
 
 void Driver::test() {
 
-  Theory::StringAutomaton_ptr any_string = Theory::StringAutomaton::makeAnyString();
-  Theory::StringAutomaton_ptr complement = nullptr;
+  Theory::StringAutomaton_ptr non_accepting_auto = Theory::StringAutomaton::makePhi();
+//  non_accepting_auto->inspectAuto(true);
+
+//  Theory::StringAutomaton_ptr any_string = Theory::StringAutomaton::makeAnyString();
+//  Theory::StringAutomaton_ptr complement = nullptr;
   //any_string->toDotAscii(1);
-  complement = any_string->complement();
+//  complement = any_string->complement();
   //complement->toDotAscii(1);
 
-  Theory::StringAutomaton_ptr a1 = Theory::StringAutomaton::makeString("Hi,");
+//  Theory::StringAutomaton_ptr a1 = Theory::StringAutomaton::makeString("Hi,");
   //make_string->complement()->toDotAscii();
 
-  Theory::StringAutomaton_ptr a2 = Theory::StringAutomaton::makeString("World");
+//  Theory::StringAutomaton_ptr a2 = Theory::StringAutomaton::makeString("World");
 
-  Theory::StringAutomaton_ptr a3 = Theory::StringAutomaton::makeString("Hello,World");
-  Theory::StringAutomaton_ptr a4 = Theory::StringAutomaton::makeString("Lucas");
-  Theory::StringAutomaton_ptr a5 = Theory::StringAutomaton::makeString("Hello,Lucas");
-  Theory::StringAutomaton_ptr a6 = Theory::StringAutomaton::makeString("Hello");
+//  Theory::StringAutomaton_ptr a3 = Theory::StringAutomaton::makeString("Hello,World");
+//  Theory::StringAutomaton_ptr a4 = Theory::StringAutomaton::makeString("Lucas");
+//  Theory::StringAutomaton_ptr a5 = Theory::StringAutomaton::makeString("Hello,Lucas");
+//  Theory::StringAutomaton_ptr a6 = Theory::StringAutomaton::makeString("Hello");
 
-  Theory::StringAutomaton_ptr char_range = Theory::StringAutomaton::makeCharRange('3', '3');
+//  Theory::StringAutomaton_ptr char_range = Theory::StringAutomaton::makeCharRange('3', '3');
   //char_range->toDotAscii(1);
 
-  Theory::StringAutomaton_ptr char_range_closure  = char_range->kleeneClosure();
+//  Theory::StringAutomaton_ptr char_range_closure  = char_range->kleeneClosure();
 
-  Theory::StringAutomaton_ptr dot_auto = Theory::StringAutomaton::makeAnyChar();
+//  Theory::StringAutomaton_ptr dot_auto = Theory::StringAutomaton::makeAnyChar();
   //dot_auto->toDotAscii(1);
 
-  Theory::StringAutomaton_ptr empty_string = Theory::StringAutomaton::makeEmptyString();
+//  Theory::StringAutomaton_ptr empty_string = Theory::StringAutomaton::makeEmptyString();
 
-  Theory::StringAutomaton_ptr result = a1->union_(any_string);
+//  Theory::StringAutomaton_ptr result = a1->union_(any_string);
   //result->toDotAscii();
 
-  Theory::StringAutomaton_ptr prefs = a1->prefixes();
+//  Theory::StringAutomaton_ptr prefs = a1->prefixes();
   //prefs->toDotAscii();
 
   //Theory::StringAutomaton_ptr length_auto = Theory::StringAutomaton::makeLengthRange(5,-1);
   //length_auto->toDotAscii(1);
 
-  Theory::StringAutomaton_ptr length_auto = Theory::StringAutomaton::makeLengthRange(0,4);
+//  Theory::StringAutomaton_ptr length_auto = Theory::StringAutomaton::makeLengthRange(0,4);
   //length_auto->toDotAscii();
 
   //Theory::StringAutomaton_ptr test_auto = a6->union_(a5->union_(a4->union_(a3->union_(a1->concatenate(char_range_closure)->concatenate(a2)))));
-  Theory::StringAutomaton_ptr test_auto = a5->union_(a4->union_(a3->union_(a1->concatenate(char_range)->concatenate(a2))));
+//  Theory::StringAutomaton_ptr test_auto = a5->union_(a4->union_(a3->union_(a1->concatenate(char_range)->concatenate(a2))));
 
 
   //Theory::StringAutomaton_ptr result_auto = test_auto->charAt(5);
-  Theory::StringAutomaton_ptr result_auto = test_auto->suffixesFromIndex(12);
+//  Theory::StringAutomaton_ptr result_auto = test_auto->suffixesFromIndex(12);
   //Theory::StringAutomaton_ptr result_auto = test_auto->prefixesUntilIndex(20);
-  result_auto->toDotAscii();
+//  result_auto->toDotAscii();
 
   //Theory::StringAutomaton_ptr regex_auto = Theory::StringAutomaton::makeRegexAuto("/#/");
   //regex_auto->toDotAscii();

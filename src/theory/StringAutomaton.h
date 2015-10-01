@@ -31,7 +31,6 @@ namespace Theory {
 
 class StringAutomaton;
 typedef StringAutomaton* StringAutomaton_ptr;
-typedef DFA* DFA_ptr;
 /**
  * TODO Try to refactor libstranger functions here.
  * Method specific todos are listed in .cpp file
@@ -63,8 +62,6 @@ public:
           int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
   static StringAutomaton_ptr makeRegexAuto(std::string regex, int num_of_variables =
           StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeLengthRange(int start, int end, int num_of_variables =
-          StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
   static StringAutomaton_ptr makeLengthEqual(int length, int num_of_variables =
             StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
   static StringAutomaton_ptr makeLengthLessThan(int length, int num_of_variables =
@@ -75,6 +72,8 @@ public:
                   StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
   static StringAutomaton_ptr makeLengthGreaterThanEqual(int length, int num_of_variables =
                     StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  static StringAutomaton_ptr makeLengthRange(int start, int end, int num_of_variables =
+            StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
 
   StringAutomaton_ptr complement();
   StringAutomaton_ptr union_(StringAutomaton_ptr other_auto);
@@ -109,6 +108,7 @@ public:
 
   StringAutomaton_ptr replace(StringAutomaton_ptr search_auto, StringAutomaton_ptr replace_auto);
 
+  // TODO after getting length if it is accepting single int, continue with constants
   DFA_ptr length();
   /**
    * TODO Pre image computations can be gudied by a range auto
@@ -128,8 +128,6 @@ public:
 
   StringAutomaton_ptr preReplace(StringAutomaton_ptr searchAuto, std::string replaceString, StringAutomaton_ptr rangeAuto = nullptr);
 
-  bool checkEquivalence(StringAutomaton_ptr other_auto);
-  bool isEmptyLanguage();
   bool hasEmptyString();
   bool isEmptyString();
   bool isAcceptingSingleString();
@@ -144,24 +142,14 @@ public:
 protected:
 
   static StringAutomaton_ptr makeRegexAuto(Util::RegularExpression_ptr regular_expression);
-  static std::vector<char> getReservedWord(char last_char, int length, bool extra_bit = false);
   static char* binaryFormat(unsigned long n, int bit_length);
   // TODO figure out better name
   static StringAutomaton_ptr dfaSharpStringWithExtraBit(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
       int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  inline bool isSinkState(int state_id);
-  inline bool isAcceptingState(int state_id);
-  int getSinkState();
-  bool isStartStateReachable();
 
   bool hasExceptionToValidStateFrom(int state, std::vector<char>& exception);
   int getNextStateFrom(int state, std::vector<char>& exception);
   std::vector<int> getAcceptingStates();
-
-  std::set<int>* getNextStates(int state);
-
-  void minimize();
-  void project(unsigned num_of_variables);
 
   GraphOld* getGraph();
   Graph_ptr toGraph();

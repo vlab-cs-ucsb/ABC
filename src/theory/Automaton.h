@@ -8,8 +8,16 @@
 #ifndef THEORY_AUTOMATON_H_
 #define THEORY_AUTOMATON_H_
 
-#include<iostream>
-#include<string>
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <fstream>
+#include <array>
+#include <vector>
+#include <map>
+#include <set>
+#include <stack>
+#include <queue>
 
 #include <glog/logging.h>
 //#include <mona/config.h>
@@ -42,8 +50,8 @@ public:
   Automaton(Automaton::Type type);
   Automaton(Automaton::Type type, DFA_ptr dfa, int num_of_variables);
   Automaton(const Automaton&);
-  virtual Automaton_ptr clone() const;
   virtual ~Automaton();
+  virtual Automaton_ptr clone() const = 0;
 
   virtual std::string str() const;
   virtual Automaton::Type getType() const;
@@ -57,11 +65,31 @@ public:
     static const std::string STRING;
   };
 
+  bool checkEquivalence(Automaton_ptr other_auto);
+  bool isEmptyLanguage();
+  bool isInitialStateAccepting();
+  bool isOnlyInitialStateAccepting();
+  bool isAcceptingSingleWord();
+
   friend std::ostream& operator<<(std::ostream& os, const Automaton& automaton);
 
 protected:
+  static DFA_ptr makePhi(int num_of_variables, int* variable_indices);
+
+
   static int* getIndices(int num_of_variables, int extra_num_of_variables = 0);
   static unsigned* getIndices(unsigned num_of_variables, unsigned extra_num_of_variables = 0);
+
+  static std::vector<char> getReservedWord(char last_char, int length, bool extra_bit = false);
+  void minimize();
+  void project(unsigned num_of_variables);
+
+  bool isSinkState(int state_id);
+  bool isAcceptingState(int state_id);
+  int getSinkState();
+  bool isStartStateReachable();
+  bool hasNextStateFrom(int state, int search);
+  std::set<int>* getNextStates(int state);
 
   const Automaton::Type type;
   DFA_ptr dfa;

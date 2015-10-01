@@ -201,8 +201,21 @@ Value::~Value() {
     if (Type::STRING_AUTOMATON == type and Type::STRING_AUTOMATON == other_value->type) {
       intersection_value = new Value(Type::STRING_AUTOMATON,
           string_automaton->intersect(other_value->string_automaton));
+    } else if (Type::INT_AUTOMATON == type and Type::INT_AUTOMATON == other_value->type) {
+      intersection_value = new Value(Type::INT_AUTOMATON,
+          int_automaton->intersect(other_value->int_automaton));
+    } else if (Type::INT_CONSTANT == type and Type::INT_CONSTANT == other_value->type) {
+      if (this->int_constant == other_value->int_constant) {
+        intersection_value = this->clone();
+      } else {
+        intersection_value = new Value(Type::INT_AUTOMATON, Theory::IntAutomaton::makePhi());
+      }
+    } else if (Type::INT_CONSTANT == type and Type::INT_AUTOMATON == other_value->type) {
+
+    } else if (Type::INT_AUTOMATON == type and Type::INT_CONSTANT == other_value->type) {
+
     } else {
-      LOG(FATAL) << "implement me";
+      LOG(FATAL) << "cannot intersect types (implement me): " << *this << " & " << *other_value;
     }
     return intersection_value;
   }

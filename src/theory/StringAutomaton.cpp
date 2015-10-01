@@ -14,7 +14,7 @@ const int StringAutomaton::VLOG_LEVEL = 8;
 
 int StringAutomaton::DEFAULT_NUM_OF_VARIABLES = 8;
 
-int* StringAutomaton::DEFAULT_VARIABLE_INDICES = StringAutomaton::getIndices(
+int* StringAutomaton::DEFAULT_VARIABLE_INDICES = Automaton::getIndices(
         StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
 unsigned* StringAutomaton::DEFAULT_UNSIGNED_VARIABLE_INDICES = Automaton::getIndices(
@@ -35,7 +35,6 @@ StringAutomaton::StringAutomaton(const StringAutomaton& other)
 }
 
 StringAutomaton::~StringAutomaton() {
-//  DVLOG(VLOG_LEVEL) << "delete " << " [" << this->id << "]";
 }
 
 StringAutomaton_ptr StringAutomaton::clone() const {
@@ -48,18 +47,14 @@ StringAutomaton_ptr StringAutomaton::clone() const {
  * Creates an automaton that accepts nothing
  */
 StringAutomaton_ptr StringAutomaton::makePhi(int num_of_variables, int* variable_indices) {
-  DFA_ptr non_value_string_dfa = nullptr;
-  StringAutomaton_ptr non_value_string = nullptr;
-  std::array<char, 1> statuses { '-' };
-  dfaSetup(1, num_of_variables, variable_indices);
-  dfaAllocExceptions(0);
-  dfaStoreState(0);
-  non_value_string_dfa = dfaBuild(&*statuses.begin());
-  non_value_string = new StringAutomaton(non_value_string_dfa, num_of_variables);
+  DFA_ptr non_accepting_string_dfa = nullptr;
+  StringAutomaton_ptr non_accepting_string_auto = nullptr;
+  non_accepting_string_dfa = Automaton::makePhi(num_of_variables, variable_indices);
+  non_accepting_string_auto = new StringAutomaton(non_accepting_string_dfa, num_of_variables);
 
-  DVLOG(VLOG_LEVEL) << non_value_string->id << " = makePhi()";
+  DVLOG(VLOG_LEVEL) << non_accepting_string_auto->id << " = makePhi()";
 
-  return non_value_string;
+  return non_accepting_string_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::makeEmptyString(int num_of_variables, int* variable_indices) {
@@ -131,8 +126,8 @@ StringAutomaton_ptr StringAutomaton::makeAnyString(int num_of_variables, int* va
   DFA_ptr any_string_dfa = nullptr;
   StringAutomaton_ptr any_string = nullptr;
   std::array<char, 2> statuses { '+', '-' };
-  std::vector<char> reserved_1 = StringAutomaton::getReservedWord('1', num_of_variables);
-  std::vector<char> reserved_2 = StringAutomaton::getReservedWord('0', num_of_variables);
+  std::vector<char> reserved_1 = Automaton::getReservedWord('1', num_of_variables);
+  std::vector<char> reserved_2 = Automaton::getReservedWord('0', num_of_variables);
   char* sharp1 = &*reserved_1.begin();
   char* sharp0 = &*reserved_2.begin();
 
@@ -209,8 +204,8 @@ StringAutomaton_ptr StringAutomaton::makeCharRange(char from, char to, int num_o
  */
 StringAutomaton_ptr StringAutomaton::makeAnyChar(int num_of_variables, int* variable_indices) {
   std::array<char, 3> statuses { '-', '+', '-' };
-  std::vector<char> reserved_1 = StringAutomaton::getReservedWord('1', num_of_variables);
-  std::vector<char> reserved_2 = StringAutomaton::getReservedWord('0', num_of_variables);
+  std::vector<char> reserved_1 = Automaton::getReservedWord('1', num_of_variables);
+  std::vector<char> reserved_2 = Automaton::getReservedWord('0', num_of_variables);
   char* sharp1 = &*reserved_1.begin();
   char* sharp0 = &*reserved_2.begin();
   DFA_ptr dot_dfa = nullptr;
@@ -351,9 +346,6 @@ StringAutomaton_ptr StringAutomaton::makeRegexAuto(Util::RegularExpression_ptr r
 
 StringAutomaton_ptr StringAutomaton::makeLengthEqual(int length, int num_of_variables, int* variable_indices){
   StringAutomaton_ptr length_auto = nullptr;
-  StringAutomaton_ptr anyChar_auto = nullptr;
-
-  anyChar_auto = StringAutomaton::makeAnyChar();
 
   if(length < 0){
     length_auto = StringAutomaton::makeAnyString();
@@ -362,15 +354,10 @@ StringAutomaton_ptr StringAutomaton::makeLengthEqual(int length, int num_of_vari
     length_auto = StringAutomaton::makeEmptyString();
   }
   else{
-//    length_auto = anyChar_auto->repeat(length,length);
-
     DFA_ptr length_dfa = dfaStringAutomatonL1toL2(length, length,
              StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
          length_auto = new StringAutomaton(length_dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
   }
-
-  delete anyChar_auto;
-  anyChar_auto = nullptr;
 
   DVLOG(VLOG_LEVEL) << length_auto->id << " = makeLength(" << length <<  ")";
 
@@ -379,9 +366,6 @@ StringAutomaton_ptr StringAutomaton::makeLengthEqual(int length, int num_of_vari
 
 StringAutomaton_ptr StringAutomaton::makeLengthLessThan(int length, int num_of_variables, int* variable_indices){
    StringAutomaton_ptr length_auto = nullptr;
-   StringAutomaton_ptr anyChar_auto = nullptr;
-
-   anyChar_auto = StringAutomaton::makeAnyChar();
 
    if(length < 0){
      length_auto = StringAutomaton::makeAnyString();
@@ -390,14 +374,10 @@ StringAutomaton_ptr StringAutomaton::makeLengthLessThan(int length, int num_of_v
      length_auto = StringAutomaton::makePhi();
    }
    else{
-//     length_auto = anyChar_auto->repeat(0,length-1);
      DFA_ptr length_dfa = dfaStringAutomatonL1toL2(0, length-1,
          StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
      length_auto = new StringAutomaton(length_dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
    }
-
-   delete anyChar_auto;
-   anyChar_auto = nullptr;
 
    DVLOG(VLOG_LEVEL) << length_auto->id << " = makeLengthLessThan(" << length <<  ")";
 
@@ -1143,7 +1123,7 @@ StringAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
   search_result_auto->minimize();
 
   // extract automaton
-  std::vector<char> marked_transition = StringAutomaton::getReservedWord('1', StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  std::vector<char> marked_transition = Automaton::getReservedWord('1', StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
   int sink_state = search_result_auto->getSinkState();
   int current_state;
   int state_id = 0;
@@ -1723,77 +1703,16 @@ StringAutomaton_ptr StringAutomaton::preReplace(StringAutomaton_ptr searchAuto, 
   return result_auto;
 }
 
-/**
- * TODO Needs complete refactoring, has a lot of room for improvements
- * especially in libstranger function calls
- */
-bool StringAutomaton::checkEquivalence(StringAutomaton_ptr other_auto) {
-  DFA *M[4];
-  int result, i;
-
-  M[0] = dfaProduct(this->dfa, other_auto->dfa, dfaIMPL);
-  M[1] = dfaProduct(other_auto->dfa, this->dfa, dfaIMPL);
-  M[2] = dfa_intersect(M[0], M[1]);
-  M[3] = dfa_negate(M[2], StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  result = check_emptiness(M[3], StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
-
-  for (i = 0; i < 4; i++) {
-    dfaFree(M[i]);
-    M[i] = nullptr;
-  }
-
-  return result;
-}
-
-/**
- * TODO implement this again independent of libstranger
- */
-bool StringAutomaton::isEmptyLanguage() {
-  bool result;
-  int i = check_emptiness(this->dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  result = (i == 1);
-  DVLOG(VLOG_LEVEL) << "[" << this->id << "]->isEmptyLanguage? " << std::boolalpha << result;
-  return result;
-}
-
 bool StringAutomaton::hasEmptyString() {
-  return ((this->dfa->f[this->dfa->s]) == 1) ? true : false;
+  return isInitialStateAccepting();
 }
 
-/**
- * TODO Figure out bdd details and find a better way to check that
- * without calling check_equivalence
- */
 bool StringAutomaton::isEmptyString() {
-  LOG(FATAL)<< "implement me";
-  return false;
+  return isOnlyInitialStateAccepting();
 }
 
 bool StringAutomaton::isAcceptingSingleString() {
-  int sink_state = getSinkState(),
-      curr_state = -1,
-      num_of_accepting_paths = 0;
-  std::stack<int> state_path;
-  std::set<int>* next_states = nullptr;
-
-  state_path.push(this->dfa->s);
-  while (not state_path.empty()) {
-    curr_state = state_path.top(); state_path.pop();
-    if (this->isAcceptingState(curr_state)) {
-      ++num_of_accepting_paths;
-    }
-    if (num_of_accepting_paths > 1) {
-      return false;
-    }
-    next_states = this->getNextStates(curr_state);
-    next_states->erase(sink_state);
-    for (int next_state : *next_states) {
-      state_path.push(next_state);
-    }
-    delete next_states; next_states = nullptr;
-  }
-
-  return (num_of_accepting_paths == 1);
+  return isAcceptingSingleWord();
 }
 
 std::string StringAutomaton::getString() {
@@ -2079,27 +1998,6 @@ int StringAutomaton::inspectAuto(bool print_sink) {
   return std::system(dot_cmd.c_str());
 }
 
-/**
- * That function replaces the getSharp1WithExtraBit and
- * getSharp0WithExtraBit.
- * @return binary representation of reserved word
- */
-std::vector<char> StringAutomaton::getReservedWord(char last_char, int length, bool extra_bit) {
-  std::vector<char> reserved_word;
-
-  int i;
-  for (i = 0; i < length - 1; i++) {
-    reserved_word.push_back('1');
-  }
-  if (extra_bit) {
-    reserved_word.push_back('1');
-  }
-  reserved_word.push_back(last_char);
-  reserved_word.push_back('\0');
-
-  return reserved_word;
-}
-
 char* StringAutomaton::binaryFormat(unsigned long number, int bit_length) {
   char* binary_str = nullptr;
   int index = bit_length;
@@ -2127,7 +2025,7 @@ StringAutomaton_ptr StringAutomaton::dfaSharpStringWithExtraBit(int num_of_varia
   DFA_ptr sharp_string_dfa = nullptr;
   StringAutomaton_ptr sharp_string_extra_bit = nullptr;
   std::array<char, 2> statuses { '-', '+' };
-  std::vector<char> reserved_1 = StringAutomaton::getReservedWord('1', num_of_variables, true);
+  std::vector<char> reserved_1 = Automaton::getReservedWord('1', num_of_variables, true);
   char* sharp1 = &*reserved_1.begin();
 
   dfaSetup(2, num_of_variables + 1, variable_indices);
@@ -2144,49 +2042,6 @@ StringAutomaton_ptr StringAutomaton::dfaSharpStringWithExtraBit(int num_of_varia
   DVLOG(VLOG_LEVEL) << sharp_string_extra_bit->id << " = dfaSharpStringWithExtraBit()";
 
   return sharp_string_extra_bit;
-}
-
-bool StringAutomaton::isSinkState(int state_id) {
-  return (bdd_is_leaf(this->dfa->bddm, this->dfa->q[state_id])
-      and bdd_leaf_value(this->dfa->bddm, this->dfa->q[state_id])
-      and this->dfa->f[state_id] == -1);
-}
-
-bool StringAutomaton::isAcceptingState(int state_id) {
-  return (this->dfa->f[state_id] == 1);
-}
-
-/**
- * @returns sink state number if exists, -1 otherwise
- */
-int StringAutomaton::getSinkState() {
-  for (int i = 0; i < this->dfa->ns; i++) {
-    if (isSinkState(i)) {
-      return i;
-    }
-  }
-  return -1;
-}
-
-/**
- * @returns true if a start state is reachable from an accepting state, false otherwise
- */
-bool StringAutomaton::isStartStateReachable() {
-  paths state_paths, pp;
-  for (int i = 0; i < this->dfa->ns; i++) {
-    if (isAcceptingState(i)) {
-      state_paths = pp = make_paths(this->dfa->bddm, this->dfa->q[i]);
-      while (pp) {
-        if (pp->to == (unsigned)  this->dfa->s) {
-          kill_paths(state_paths);
-          return true;
-        }
-        pp = pp->next;
-      }
-      kill_paths(state_paths);
-    }
-  }
-  return false;
 }
 
 /**
@@ -2246,43 +2101,6 @@ std::vector<int> StringAutomaton::getAcceptingStates() {
     }
   }
   return final_states;
-}
-
-/**
- * @return vector of states that are 1 walk away
- */
-std::set<int>* StringAutomaton::getNextStates(int state) {
-  unsigned p, l, r, index; // BDD traversal variables
-  std::set<int>* next_states = new std::set<int>();
-  std::stack<unsigned> nodes;
-
-  p = this->dfa->q[state];
-  nodes.push(p);
-  while (not nodes.empty()) {
-    p = nodes.top(); nodes.pop();
-    LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
-    if (index == BDD_LEAF_INDEX) {
-      next_states->insert(l);
-    } else {
-      nodes.push(l);
-      nodes.push(r);
-    }
-  }
-  return next_states;
-}
-
-void StringAutomaton::minimize() {
-  DFA_ptr tmp = this->dfa;
-  this->dfa = dfaMinimize(tmp);
-  delete tmp;
-  DVLOG(VLOG_LEVEL) << this->id << " = [" << this->id << "]->minimize()";
-}
-
-void StringAutomaton::project(unsigned index) {
-  DFA_ptr tmp = this->dfa;
-  this->dfa = dfaProject(tmp, index);
-  delete tmp;
-  DVLOG(VLOG_LEVEL) << this->id << " = [" << this->id << "]->project()";
 }
 
 GraphOld* StringAutomaton::getGraph() {

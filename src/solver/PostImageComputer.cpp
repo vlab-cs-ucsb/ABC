@@ -45,25 +45,7 @@ void PostImageComputer::visitScript(Script_ptr script) {
 }
 
 void PostImageComputer::visitCommand(Command_ptr command) {
-  switch (command->getType()) {
-  case Command::Type::ASSERT: {
-    visit_children_of(command);
-
-    Assert_ptr current_assert = dynamic_cast<Assert_ptr>(command);
-    Value_ptr result = getTermValue(current_assert->term);
-    symbol_table->updateAssertionValid(result->isSatisfiable());
-
-    if (symbol_table->isAssertionsStillValid()) {
-      update_variables();
-    }
-
-    clearTermValues();
-    break;
-  }
-  default:
-    LOG(FATAL)<< "'" << *command<< "' is not expected.";
-    break;
-  }
+  LOG(ERROR)<< "'" << *command<< "' is not expected.";
 }
 
 void PostImageComputer::visitAssert(Assert_ptr assert_command) {
