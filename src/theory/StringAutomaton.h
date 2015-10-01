@@ -144,8 +144,6 @@ public:
 protected:
 
   static StringAutomaton_ptr makeRegexAuto(Util::RegularExpression_ptr regular_expression);
-  static int* allocateAscIIIndexWithExtraBit(int length);
-  static int* getIndices(int num_of_variables);
   static std::vector<char> getReservedWord(char last_char, int length, bool extra_bit = false);
   static char* binaryFormat(unsigned long n, int bit_length);
   // TODO figure out better name
@@ -168,14 +166,12 @@ protected:
   GraphOld* getGraph();
   Graph_ptr toGraph();
 
-  DFA_ptr dfa;
-  int num_of_variables;
   static int DEFAULT_NUM_OF_VARIABLES;
   static int* DEFAULT_VARIABLE_INDICES;
   static unsigned* DEFAULT_UNSIGNED_VARIABLE_INDICES;
-  static int name_counter;
-private:
 
+private:
+  static int name_counter;
   static const int VLOG_LEVEL;
 };
 

@@ -126,7 +126,7 @@ void Driver::reset() {
 }
 
 void Driver::test() {
-  return;
+
   Theory::StringAutomaton_ptr any_string = Theory::StringAutomaton::makeAnyString();
   Theory::StringAutomaton_ptr complement = nullptr;
   //any_string->toDotAscii(1);

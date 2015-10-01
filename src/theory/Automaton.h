@@ -12,6 +12,17 @@
 #include<string>
 
 #include <glog/logging.h>
+//#include <mona/config.h>
+//#include <mona/mem.h>
+//#include <mona/bdd.h>
+//#include <mona/bdd_external.h>
+//#include <mona/bdd_dump.h>
+//#include <mona/dfa.h>
+#include <stranger.h>
+#include <stranger_lib_internal.h>
+#include "../utils/RegularExpression.h"
+
+
 #include "utils.h"
 
 namespace Vlab {
@@ -19,6 +30,7 @@ namespace Theory {
 
 class Automaton;
 typedef Automaton* Automaton_ptr;
+typedef DFA* DFA_ptr;
 
 class Automaton {
 public:
@@ -28,6 +40,7 @@ public:
   };
 
   Automaton(Automaton::Type type);
+  Automaton(Automaton::Type type, DFA_ptr dfa, int num_of_variables);
   Automaton(const Automaton&);
   virtual Automaton_ptr clone() const;
   virtual ~Automaton();
@@ -47,9 +60,13 @@ public:
   friend std::ostream& operator<<(std::ostream& os, const Automaton& automaton);
 
 protected:
-  static unsigned* get_unsigned_indices_main(int length);
+  static int* getIndices(int num_of_variables, int extra_num_of_variables = 0);
+  static unsigned* getIndices(unsigned num_of_variables, unsigned extra_num_of_variables = 0);
 
   const Automaton::Type type;
+  DFA_ptr dfa;
+  int num_of_variables;
+  int* variable_indices;
   unsigned long id;
   static unsigned long trace_id;
 private:

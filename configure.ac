@@ -31,8 +31,8 @@ AC_PROG_YACC
 #LT_INIT([disable-shared])
 LT_INIT
 
-AC_CHECK_LIB([monadfa], [dfaFree], [MONADFALIB=-lmonadfa], AC_MSG_ERROR(MONA DFA library not found))
 # this will define a variable variable. you can use it in automake.am $(MONADFALIB)
+AC_CHECK_LIB([monadfa], [dfaFree], [MONADFALIB=-lmonadfa], AC_MSG_ERROR(MONA DFA library not found))
 AC_SUBST([MONADFALIB])
 
 AC_CHECK_LIB([monabdd], [bdd_size], [MONABDDLIB=-lmonabdd], AC_MSG_ERROR(MONA BDD library not found))
@@ -43,6 +43,9 @@ AC_SUBST([MONAMEMLIB])
 
 AC_CHECK_LIB([m], [floor],[MLIB=-lm], AC_MSG_ERROR(c math library m not found))
 AC_SUBST([MLIB])
+
+# TODO remove dependencies that is not needed by cpp later on
+# TODO improve library check here
 
 # Check for headers
 

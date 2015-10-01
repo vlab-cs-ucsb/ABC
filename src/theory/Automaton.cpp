@@ -21,11 +21,17 @@ const std::string Automaton::Name::INTBOOl = "IntBoolAutomaton";
 const std::string Automaton::Name::STRING = "StringAutomaton";
 
 Automaton::Automaton(Automaton::Type type)
-        : type(type), id (Automaton::trace_id++) {
+        : type(type), dfa(nullptr), num_of_variables(0), variable_indices(nullptr), id (Automaton::trace_id++) {
+}
+
+Automaton::Automaton(Automaton::Type type, DFA_ptr dfa, int num_of_variables)
+        : type(type), dfa(dfa), num_of_variables(num_of_variables), id (Automaton::trace_id++) {
+  variable_indices = getIndices(num_of_variables);
 }
 
 Automaton::Automaton(const Automaton& other)
-        : type(other.type), id (Automaton::trace_id++) {
+        : type(other.type), dfa(dfaCopy(other.dfa)), num_of_variables(other.num_of_variables), id (Automaton::trace_id++) {
+  variable_indices = getIndices(num_of_variables);
 }
 
 Automaton_ptr Automaton::clone() const {
@@ -33,6 +39,9 @@ Automaton_ptr Automaton::clone() const {
 }
 
 Automaton::~Automaton() {
+  dfaFree(dfa);
+  dfa = nullptr;
+  delete variable_indices;
 }
 
 std::string Automaton::str() const {
@@ -61,12 +70,27 @@ std::ostream& operator<<(std::ostream& os, const Automaton& automaton) {
   return os << automaton.str();
 }
 
-unsigned *Automaton::get_unsigned_indices_main(int length) {
-  unsigned i;
-  unsigned* indices;
-  indices = new unsigned[length + 1];
-  for (i = 0; i <= (unsigned) length; i++)
+int* Automaton::getIndices(int num_of_variables, int extra_num_of_variables) {
+  int* indices = nullptr;
+  int size = num_of_variables + extra_num_of_variables;
+
+  indices = new int[size];
+  for (int i = 0; i < size; i++) {
     indices[i] = i;
+  }
+
+  return indices;
+}
+
+unsigned* Automaton::getIndices(unsigned num_of_variables, unsigned extra_num_of_variables) {
+  unsigned* indices = nullptr;
+  unsigned size = num_of_variables + extra_num_of_variables;
+
+  indices = new unsigned[size];
+  for (unsigned i = 0; i < size; i++) {
+    indices[i] = i;
+  }
+
   return indices;
 }
 

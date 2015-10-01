@@ -14,30 +14,28 @@ const int StringAutomaton::VLOG_LEVEL = 8;
 
 int StringAutomaton::DEFAULT_NUM_OF_VARIABLES = 8;
 
-int* StringAutomaton::DEFAULT_VARIABLE_INDICES = StringAutomaton::allocateAscIIIndexWithExtraBit(
+int* StringAutomaton::DEFAULT_VARIABLE_INDICES = StringAutomaton::getIndices(
         StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
-unsigned* StringAutomaton::DEFAULT_UNSIGNED_VARIABLE_INDICES = StringAutomaton::get_unsigned_indices_main(
-        StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+unsigned* StringAutomaton::DEFAULT_UNSIGNED_VARIABLE_INDICES = Automaton::getIndices(
+        (unsigned)StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
 int StringAutomaton::name_counter = 0;
 
 StringAutomaton::StringAutomaton(DFA_ptr dfa)
-        : Automaton(Automaton::Type::STRING), dfa (dfa), num_of_variables(StringAutomaton::DEFAULT_NUM_OF_VARIABLES) {
+        : Automaton(Automaton::Type::STRING, dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES) {
 }
 
 StringAutomaton::StringAutomaton(DFA_ptr dfa, int num_of_variables)
-        : Automaton(Automaton::Type::STRING), dfa(dfa), num_of_variables(num_of_variables) {
+        : Automaton(Automaton::Type::STRING, dfa, num_of_variables) {
 }
 
 StringAutomaton::StringAutomaton(const StringAutomaton& other)
-        : Automaton(Automaton::Type::STRING), dfa(dfaCopy(other.dfa)), num_of_variables(other.num_of_variables) {
+        : Automaton(other) {
 }
 
 StringAutomaton::~StringAutomaton() {
 //  DVLOG(VLOG_LEVEL) << "delete " << " [" << this->id << "]";
-  dfaFree(dfa);
-  dfa = nullptr;
 }
 
 StringAutomaton_ptr StringAutomaton::clone() const {
@@ -2079,27 +2077,6 @@ int StringAutomaton::inspectAuto(bool print_sink) {
   toDotAscii(print_sink, outfile);
   std::string dot_cmd("xdot " + file + " &");
   return std::system(dot_cmd.c_str());
-}
-
-int* StringAutomaton::allocateAscIIIndexWithExtraBit(int length) {
-  int* indices = new int[length + 1];
-  int i;
-  for (i = 0; i <= length; i++) {
-    indices[i] = i;
-  }
-  return indices;
-}
-
-int* StringAutomaton::getIndices(int num_of_variables) {
-  int* indices = nullptr;
-  int i = 0;
-
-  indices = new int[num_of_variables];
-  for (i = 0; i < num_of_variables; i++) {
-    indices[i] = i;
-  }
-
-  return indices;
 }
 
 /**
