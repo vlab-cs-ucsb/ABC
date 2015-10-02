@@ -10,6 +10,8 @@
 namespace Vlab {
 namespace Theory {
 
+const int IntAutomaton::INFINITE = -2;
+
 const int IntAutomaton::VLOG_LEVEL = 9;
 
 int IntAutomaton::DEFAULT_NUM_OF_VARIABLES = 8;
@@ -20,22 +22,22 @@ int* IntAutomaton::DEFAULT_VARIABLE_INDICES = Automaton::getIndices(
 unsigned* IntAutomaton::DEFAULT_UNSIGNED_VARIABLE_INDICES = Automaton::getIndices(
         (unsigned)IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
-IntAutomaton::IntAutomaton(DFA_ptr) :
+IntAutomaton::IntAutomaton(DFA_ptr dfa) :
         Automaton(Automaton::Type::INT, dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES),
         has_negative_1(false) {
 
 }
-IntAutomaton::IntAutomaton(DFA_ptr, int num_of_variables) :
+IntAutomaton::IntAutomaton(DFA_ptr dfa, int num_of_variables) :
         Automaton(Automaton::Type::INT, dfa, num_of_variables),
         has_negative_1 (false) {
 }
 
-IntAutomaton::IntAutomaton(DFA_ptr, bool has_negative_1) :
+IntAutomaton::IntAutomaton(DFA_ptr dfa, bool has_negative_1) :
         Automaton(Automaton::Type::INT, dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES),
         has_negative_1 (has_negative_1) {
 }
 
-IntAutomaton::IntAutomaton(DFA_ptr, bool has_negative_1, int num_of_variables) :
+IntAutomaton::IntAutomaton(DFA_ptr dfa, bool has_negative_1, int num_of_variables) :
         Automaton(Automaton::Type::INT, dfa, num_of_variables),
         has_negative_1 (has_negative_1) {
 
@@ -147,7 +149,7 @@ IntAutomaton_ptr IntAutomaton::makeIntLessThan(int value, int num_of_variables, 
      int_auto->has_negative_1 = true;
    }
    else{
-     int_dfa = dfaStringAutomatonL1toL2(0, value-1,
+     int_dfa = dfaStringAutomatonL1toL2(0, value - 1,
          IntAutomaton::DEFAULT_NUM_OF_VARIABLES, IntAutomaton::DEFAULT_VARIABLE_INDICES);
      int_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
    }
@@ -187,7 +189,9 @@ IntAutomaton_ptr IntAutomaton::makeIntGreaterThan(int value, int num_of_variable
     int_auto = IntAutomaton::makeAnyInt();
   }
   else{
-    int_auto = IntAutomaton::makeIntLessThanOrEqual(value)->complement();
+    IntAutomaton_ptr less_than_or_equal = IntAutomaton::makeIntLessThanOrEqual(value);
+    int_auto = less_than_or_equal->complement();
+    delete less_than_or_equal;
   }
 
   DVLOG(VLOG_LEVEL) << int_auto->id << " = makeIntGreaterThan(" << value <<  ")";
@@ -202,7 +206,9 @@ IntAutomaton_ptr IntAutomaton::makeIntGreaterThanOrEqual(int value, int num_of_v
     int_auto = IntAutomaton::makeAnyInt();
   }
   else{
-    int_auto = IntAutomaton::makeIntLessThan(value)->complement();
+    IntAutomaton_ptr less_auto = IntAutomaton::makeIntLessThan(value);
+    int_auto = less_auto->complement();
+    delete less_auto;
   }
 
   DVLOG(VLOG_LEVEL) << int_auto->id << " = makeIntGreaterThanEqual(" << value <<  ")";
@@ -211,18 +217,20 @@ IntAutomaton_ptr IntAutomaton::makeIntGreaterThanOrEqual(int value, int num_of_v
 }
 
 IntAutomaton_ptr IntAutomaton::makeIntRange(int start, int end, int num_of_variables, int* variable_indices){
-  IntAutomaton_ptr range_auto = nullptr, lessThan_auto = nullptr, greaterThanEqual_auto = nullptr;
+  DFA_ptr int_dfa = nullptr;
+  IntAutomaton_ptr range_auto = nullptr;
 
-  greaterThanEqual_auto = IntAutomaton::makeIntGreaterThanOrEqual(start);
-  lessThan_auto = IntAutomaton::makeIntLessThan(end);
-  range_auto = lessThan_auto->intersect(greaterThanEqual_auto);
-
-  delete greaterThanEqual_auto;
-  delete lessThan_auto;
+  int_dfa = dfaStringAutomatonL1toL2(start, end,
+           IntAutomaton::DEFAULT_NUM_OF_VARIABLES, IntAutomaton::DEFAULT_VARIABLE_INDICES);
+  range_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   DVLOG(VLOG_LEVEL) << range_auto->id << " = makeIntRange(" << start << "," << end <<  ")";
 
   return range_auto;
+}
+
+void IntAutomaton::setMinus1(bool has_minus_one) {
+  has_negative_1 = has_minus_one;
 }
 
 IntAutomaton_ptr IntAutomaton::complement() {
@@ -247,6 +255,19 @@ IntAutomaton_ptr IntAutomaton::complement() {
   DVLOG(VLOG_LEVEL) << complement_auto->id << " = [" << this->id << "]->makeComplement()";
 
   return complement_auto;
+}
+
+IntAutomaton_ptr IntAutomaton::union_(int value) {
+  IntAutomaton_ptr union_auto = nullptr, int_auto = nullptr;
+  if (value == -1) {
+    union_auto = this->clone();
+    union_auto->has_negative_1 = true;
+    DVLOG(VLOG_LEVEL) << union_auto->id << " = [" << this->id << "]->union(-1)";
+  } else {
+    int_auto = IntAutomaton::makeInt(value);
+    union_auto = this->union_(int_auto);
+  }
+  return union_auto;
 }
 
 /**
@@ -405,46 +426,207 @@ IntAutomaton_ptr IntAutomaton::substractFrom(int value) {
 }
 
 int IntAutomaton::getMaxAcceptedInt() {
+  if (this->isCyclic()) {
+    return IntAutomaton::INFINITE;
+  } else if (this->isAcceptingSingleInt()) {
+    return this->getAnAcceptingInt();
+  }
 
+  AdjacencyList adjacency_count_list = this->getAdjacencyCountList();
+  adjacency_count_list[this->getSinkState()] = NodeVector(0);
 
-  return 0;
+  const int n = adjacency_count_list.size();
+  int j, col;
+  int y;
+  int * u = new int[n];
+  int * v = new int[n];
+  int max_int = 0;
+  std::vector<int> final_states;
+
+  for(int j = 0; j < this->dfa->ns; j++) {
+    if (isAcceptingState(j)) {
+      final_states.push_back(j);
+    }
+  }
+
+  for(int j = 0; j < n; j++) {
+    v[j] = 0; u[j] = 0;
+  }
+
+  v[this->dfa->s] = 1;
+
+  for (int col = 0; col < n; col++) {
+    int c = 0;
+    for (int j = 0; j < n; j ++) {
+      u[j] = 0;
+    }
+    for (int ii = 0; ii < n; ii++) {
+      for(int jj = 0; jj < (int)adjacency_count_list[ii].size(); jj++) {
+          y = adjacency_count_list[ii][jj].first;
+          u[c] |= v[y];
+      }
+      c++;
+    }
+    for (int d = 0; d < (int)final_states.size(); d++) {
+      if (v[final_states[d]]) {
+        max_int = col;
+      }
+    }
+    for (int b = 0; b < n; b++) {
+      v[b] = u[b];
+    }
+  }
+  delete[] u;
+  delete[] v;
+  return max_int;
 }
 
 int IntAutomaton::getMinAcceptedInt() {
-  return 0;
+  if (has_negative_1) {
+    return -1;
+  } else if (this->isAcceptingSingleInt()) {
+    return this->getAnAcceptingInt();
+  }
+
+  AdjacencyList adjacency_count_list = this->getAdjacencyCountList();
+  adjacency_count_list[this->getSinkState()] = NodeVector(0);
+
+  const int n = adjacency_count_list.size();
+  int j, col;
+  int y;
+  int * u = new int[n];
+  int * v = new int[n];
+  int min_int = 0;
+  bool min_int_found = false;
+  std::vector<int> final_states;
+
+  for(int j = 0; j < this->dfa->ns; j++) {
+    if (isAcceptingState(j)) {
+      final_states.push_back(j);
+    }
+  }
+
+  for (int j = 0; j < n; j++) {
+    v[j] = 0; u[j] = 0;
+  }
+
+  v[this->dfa->s] = 1;
+
+  for (int col = 0; (col < n) and (not min_int_found); col++) {
+    int c = 0;
+    for(int j = 0; j < n; j ++) {
+      u[j] = 0;
+    }
+    for (int ii = 0; ii < n; ii++){
+      for(int jj = 0; jj < (int)adjacency_count_list[ii].size(); jj++){
+          y = adjacency_count_list[ii][jj].first;
+          u[c] |= v[y];
+      }
+      c++;
+    }
+    for (int d = 0; (not min_int_found) and (d < (int)final_states.size()); d++) {
+      if (v[final_states[d]]) {
+        min_int = col;
+        min_int_found = true;
+      }
+    }
+    for (int b = 0; b < n; b++) {
+      v[b] = u[b];
+    }
+  }
+  delete[] u;
+  delete[] v;
+  return min_int;
 }
 
 bool IntAutomaton::isGreaterThan(int value) {
-
-  return false;
+  if (this->isEmptyLanguage()) {
+    return false;
+  }
+  int max_int = this->getMaxAcceptedInt();
+  if (max_int == IntAutomaton::INFINITE) {
+    return true;
+  } else {
+    return (max_int > value);
+  }
 }
 
 bool IntAutomaton::isGreaterThan(IntAutomaton_ptr other_auto) {
-  return false;
+  if (this->isEmptyLanguage() or other_auto->isEmptyLanguage()) {
+    return false;
+  }
+  int left_max_int = this->getMaxAcceptedInt();
+  if (left_max_int == IntAutomaton::INFINITE) {
+    return true;
+  } else {
+    int right_min_int = other_auto->getMinAcceptedInt();
+    return (left_max_int > right_min_int);
+  }
 }
 
 bool IntAutomaton::isGreaterThanOrEqual(int value) {
-  return false;
+  if (this->isEmptyLanguage()) {
+    return false;
+  }
+  int max_int = this->getMaxAcceptedInt();
+  if (max_int == IntAutomaton::INFINITE) {
+    return true;
+  } else {
+    return (max_int >= value);
+  }
 }
 
 bool IntAutomaton::isGreaterThanOrEqual(IntAutomaton_ptr other_auto) {
-  return false;
+  if (this->isEmptyLanguage() or other_auto->isEmptyLanguage()) {
+    return false;
+  }
+  int left_max_int = this->getMaxAcceptedInt();
+  if (left_max_int == IntAutomaton::INFINITE) {
+    return true;
+  } else {
+    int right_min_int = other_auto->getMinAcceptedInt();
+    return (left_max_int >= right_min_int);
+  }
 }
 
 bool IntAutomaton::isLessThan(int value) {
-  return false;
+  if (this->isEmptyLanguage()) {
+    return false;
+  }
+  return (this->getMinAcceptedInt() < value);
 }
 
 bool IntAutomaton::isLessThan(IntAutomaton_ptr other_auto) {
-  return false;
+  if (this->isEmptyLanguage() or other_auto->isEmptyLanguage()) {
+    return false;
+  }
+  int right_max_int = other_auto->getMaxAcceptedInt();
+  if (right_max_int == IntAutomaton::INFINITE) {
+    return true;
+  } else {
+    int left_min_int = this->getMinAcceptedInt();
+    return (left_min_int < right_max_int);
+  }
 }
 
 bool IntAutomaton::isLessThanOrEqual(int value) {
-  return false;
+  if (this->isEmptyLanguage()) {
+    return false;
+  }
+  return (this->getMinAcceptedInt() <= value);
 }
 
 bool IntAutomaton::isLessThanOrEqual(IntAutomaton_ptr other_auto) {
-  return false;
+  if (this->isEmptyLanguage() or other_auto->isEmptyLanguage()) {
+    return false;
+  }
+  int right_max_int = other_auto->getMaxAcceptedInt();
+  if (right_max_int == IntAutomaton::INFINITE) {
+    return true;
+  } else {
+    int left_min_int = this->getMinAcceptedInt();
+    return (left_min_int <= right_max_int);
+  }
 }
 
 bool IntAutomaton::checkEquivalance(IntAutomaton_ptr other_auto) {

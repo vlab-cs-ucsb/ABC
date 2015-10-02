@@ -33,15 +33,8 @@ void PostImageComputer::end() {
 
 void PostImageComputer::visitScript(Script_ptr script) {
   symbol_table->push_scope(script);
- // TODO can be removed from here
-  for (auto command : *(script->command_list)) {
-    visit(command);
-    if (not symbol_table->isAssertionsStillValid()) {
-      break;
-    }
-  }
-
-  symbol_table->pop_scope(); // TODO we will need global scope, it is reachable via script pointer all the time
+  visit_children_of(script);
+  symbol_table->pop_scope(); // global scope, it is reachable via script pointer all the time
 }
 
 void PostImageComputer::visitCommand(Command_ptr command) {
@@ -51,10 +44,13 @@ void PostImageComputer::visitCommand(Command_ptr command) {
 void PostImageComputer::visitAssert(Assert_ptr assert_command) {
   visit_children_of(assert_command);
   Value_ptr result = getTermValue(assert_command->term);
-  symbol_table->updateAssertionValid(result->isSatisfiable());
+  symbol_table->updateSatisfiability(result->isSatisfiable());
 
-  if (symbol_table->isAssertionsStillValid()) {
-    update_variables();
+  if ((Term::Type::OR not_eq assert_command->term->getType()) and
+          (Term::Type::AND not_eq assert_command->term->getType())) {
+    if (symbol_table->isSatisfiable()) {
+      update_variables();
+    }
   }
 
   clearTermValues();
@@ -75,12 +71,61 @@ void PostImageComputer::visitForAll(ForAll_ptr for_all_term) {
 void PostImageComputer::visitLet(Let_ptr let_term) {
 }
 
+/**
+ * TODO Add a cache in case there are multiple ands
+ */
 void PostImageComputer::visitAnd(And_ptr and_term) {
-  LOG(FATAL)<< "not implemented yet";
+  DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
+
+  bool is_satisfiable = true;
+  Value_ptr result = nullptr, param = nullptr;
+  for (auto& term : *(and_term->term_list)) {
+    visit(term);
+    param = getTermValue(term);
+    is_satisfiable = is_satisfiable and param->isSatisfiable();
+    if (is_satisfiable) {
+      update_variables();
+    } else {
+      clearTermValues();
+      break;
+    }
+    clearTermValues();
+  }
+
+  result = new Value(Value::Type::BOOl_CONSTANT, is_satisfiable);
+
+  setTermValue(and_term, result);
 }
 
+/**
+ * union results for each variable
+ */
 void PostImageComputer::visitOr(Or_ptr or_term) {
-  LOG(FATAL)<< "not implemented yet";
+  DVLOG(VLOG_LEVEL) << "visit: " << *or_term;
+
+  bool is_satisfiable = false;
+  Value_ptr result = nullptr, param = nullptr;
+
+  for (auto& term : *(or_term->term_list)) {
+    symbol_table->push_scope(term);
+    visit(term);
+
+    param = getTermValue(term);
+
+    if (Term::Type::AND not_eq term->getType()) {
+      if (param->isSatisfiable()) {
+        update_variables();
+      }
+      clearTermValues();
+    }
+
+    is_satisfiable = is_satisfiable or param->isSatisfiable();
+    symbol_table->pop_scope();
+  }
+
+  result = new Value(Value::Type::BOOl_CONSTANT, is_satisfiable);
+
+  setTermValue(or_term, result);
 }
 
 void PostImageComputer::visitNot(Not_ptr not_term) {
@@ -332,7 +377,7 @@ void PostImageComputer::visitNotEq(NotEq_ptr not_eq_term) {
 }
 
 void PostImageComputer::visitGt(Gt_ptr gt_term) {
-  visit_children_of(gt_term);
+  __visit_children_of(gt_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *gt_term;
 
   Value_ptr result = nullptr, param_left = nullptr, param_right = nullptr;
@@ -368,7 +413,7 @@ void PostImageComputer::visitGt(Gt_ptr gt_term) {
 }
 
 void PostImageComputer::visitGe(Ge_ptr ge_term) {
-  visit_children_of(ge_term);
+  __visit_children_of(ge_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *ge_term;
 
   Value_ptr result = nullptr, param_left = nullptr, param_right = nullptr;
@@ -404,7 +449,7 @@ void PostImageComputer::visitGe(Ge_ptr ge_term) {
 }
 
 void PostImageComputer::visitLt(Lt_ptr lt_term) {
-  visit_children_of(lt_term);
+  __visit_children_of(lt_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *lt_term;
 
   Value_ptr result = nullptr, param_left = nullptr, param_right = nullptr;
@@ -440,7 +485,7 @@ void PostImageComputer::visitLt(Lt_ptr lt_term) {
 }
 
 void PostImageComputer::visitLe(Le_ptr le_term) {
-  visit_children_of(le_term);
+  __visit_children_of(le_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *le_term;
 
   Value_ptr result = nullptr, param_left = nullptr, param_right = nullptr;
@@ -512,12 +557,40 @@ void PostImageComputer::visitIn(In_ptr in_term) {
   setTermValue(in_term, result);
 }
 
+/**
+ * TODO check correctness
+ */
 void PostImageComputer::visitNotIn(NotIn_ptr not_in_term) {
+  __visit_children_of(not_in_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *not_in_term;
+
+  Value_ptr result = nullptr, param_left = getTermValue(not_in_term->left_term),
+      param_right = getTermValue(not_in_term->right_term);
+
+  if (param_right->getStringAutomaton()->isAcceptingSingleString()) {
+    result = param_left->difference(param_right);
+  } else {
+    result = param_left->clone();
+  }
+
+  setTermValue(not_in_term, result);
 }
 
 void PostImageComputer::visitLen(Len_ptr len_term) {
-  visit_children_of(len_term);
-  LOG(FATAL)<< "implement me";
+  __visit_children_of(len_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *len_term;
+
+  Value_ptr result = nullptr, param = getTermValue(len_term->term);
+
+  Theory::IntAutomaton_ptr int_auto = param->getStringAutomaton()->length();
+  if (int_auto->isAcceptingSingleInt()) {
+    result = new Value(Value::Type::INT_CONSTANT, int_auto->getAnAcceptingInt());
+  } else {
+    result = new Value(Value::Type::INT_AUTOMATON, int_auto);
+  }
+  delete int_auto; int_auto = nullptr;
+
+  setTermValue(len_term, result);
 }
 
 void PostImageComputer::visitContains(Contains_ptr contains_term) {
@@ -534,6 +607,22 @@ void PostImageComputer::visitContains(Contains_ptr contains_term) {
 }
 
 void PostImageComputer::visitNotContains(NotContains_ptr not_contains_term) {
+  __visit_children_of(not_contains_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *not_contains_term;
+
+  Value_ptr result = nullptr, param_subject = getTermValue(not_contains_term->subject_term),
+      param_search = getTermValue(not_contains_term->search_term);
+
+  if (param_search->getStringAutomaton()->isAcceptingSingleString()) {
+    Theory::StringAutomaton_ptr contains_auto = param_subject->getStringAutomaton()->contains(param_search->getStringAutomaton());
+    result = new Value(Value::Type::STRING_AUTOMATON,
+        param_subject->getStringAutomaton()->difference(contains_auto));
+    delete contains_auto; contains_auto = nullptr;
+  } else {
+    result = param_subject->clone();
+  }
+
+  setTermValue(not_contains_term, result);
 }
 
 void PostImageComputer::visitBegins(Begins_ptr begins_term) {
@@ -550,6 +639,22 @@ void PostImageComputer::visitBegins(Begins_ptr begins_term) {
 }
 
 void PostImageComputer::visitNotBegins(NotBegins_ptr not_begins_term) {
+  __visit_children_of(not_begins_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *not_begins_term;
+
+  Value_ptr result = nullptr, param_subject = getTermValue(not_begins_term->subject_term),
+      param_search = getTermValue(not_begins_term->search_term);
+
+  if (param_search->getStringAutomaton()->isAcceptingSingleString()) {
+    Theory::StringAutomaton_ptr begins_auto = param_subject->getStringAutomaton()->begins(param_search->getStringAutomaton());
+    result = new Value(Value::Type::STRING_AUTOMATON,
+        param_subject->getStringAutomaton()->difference(begins_auto));
+    delete begins_auto; begins_auto = nullptr;
+  } else {
+    result = param_subject->clone();
+  }
+
+  setTermValue(not_begins_term, result);
 }
 
 void PostImageComputer::visitEnds(Ends_ptr ends_term) {
@@ -566,6 +671,22 @@ void PostImageComputer::visitEnds(Ends_ptr ends_term) {
 }
 
 void PostImageComputer::visitNotEnds(NotEnds_ptr not_ends_term) {
+  __visit_children_of(not_ends_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *not_ends_term;
+
+  Value_ptr result = nullptr, param_subject = getTermValue(not_ends_term->subject_term),
+      param_search = getTermValue(not_ends_term->search_term);
+
+  if (param_search->getStringAutomaton()->isAcceptingSingleString()) {
+    Theory::StringAutomaton_ptr ends_auto = param_subject->getStringAutomaton()->ends(param_search->getStringAutomaton());
+    result = new Value(Value::Type::STRING_AUTOMATON,
+        param_subject->getStringAutomaton()->difference(ends_auto));
+    delete ends_auto; ends_auto = nullptr;
+  } else {
+    result = param_subject->clone();
+  }
+
+  setTermValue(not_ends_term, result);
 }
 
 void PostImageComputer::visitIndexOf(IndexOf_ptr index_of_term) {
@@ -686,7 +807,7 @@ void PostImageComputer::visitReplace(Replace_ptr replace_term) {
 }
 
 void PostImageComputer::visitCount(Count_ptr count_term) {
-  visit_children_of(count_term);
+  __visit_children_of(count_term);
   LOG(FATAL)<< "implement me";
 }
 

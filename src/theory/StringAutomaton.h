@@ -25,6 +25,7 @@
 #include "Graph.h"
 #include "DAGraph.h"
 #include "Automaton.h"
+#include "IntAutomaton.h"
 
 namespace Vlab {
 namespace Theory {
@@ -97,8 +98,8 @@ public:
   StringAutomaton_ptr charAt(int index);
   StringAutomaton_ptr substring(int start);
   StringAutomaton_ptr substring(int start, int end);
-  StringAutomaton_ptr indexOf(StringAutomaton_ptr search_auto);
-  StringAutomaton_ptr lastIndexOf(StringAutomaton_ptr search_auto);
+  IntAutomaton_ptr indexOf(StringAutomaton_ptr search_auto);
+  IntAutomaton_ptr lastIndexOf(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr contains(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr begins(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr ends(StringAutomaton_ptr search_auto);
@@ -108,8 +109,7 @@ public:
 
   StringAutomaton_ptr replace(StringAutomaton_ptr search_auto, StringAutomaton_ptr replace_auto);
 
-  // TODO after getting length if it is accepting single int, continue with constants
-  DFA_ptr length();
+  IntAutomaton_ptr length();
   /**
    * TODO Pre image computations can be gudied by a range auto
    * which is the set that a pre image computation can takes values from,
@@ -134,12 +134,6 @@ public:
   bool isEmptyString();
   bool isAcceptingSingleString();
   std::string getAnAcceptingString();
-
-  void toDotAscii(bool print_sink = false, std::ostream& out = std::cout);
-  // TODO merge toDot methods into one with options
-  void toDot();
-  void printBDD(std::ostream& out = std::cout);
-  int inspectAuto(bool print_sink = false);
 
 protected:
 

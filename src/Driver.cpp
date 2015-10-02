@@ -97,7 +97,7 @@ void Driver::solve() {
 }
 
 bool Driver::isSatisfiable() {
-  return symbol_table->isAssertionsStillValid();
+  return symbol_table->isSatisfiable();
 }
 
 
@@ -127,7 +127,11 @@ void Driver::reset() {
 
 void Driver::test() {
 
-  Theory::StringAutomaton_ptr non_accepting_auto = Theory::StringAutomaton::makePhi();
+  Theory::IntAutomaton_ptr int_auto = Theory::IntAutomaton::makeAnyInt();
+  Theory::StringAutomaton_ptr str_auto = Theory::StringAutomaton::makeString("baki");
+  int_auto = str_auto->length();
+  int_auto->inspectAuto();
+
 //  non_accepting_auto->inspectAuto(true);
 
 //  Theory::StringAutomaton_ptr any_string = Theory::StringAutomaton::makeAnyString();

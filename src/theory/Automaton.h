@@ -18,6 +18,7 @@
 #include <set>
 #include <stack>
 #include <queue>
+#include <cmath>
 
 #include <glog/logging.h>
 //#include <mona/config.h>
@@ -42,6 +43,10 @@ class Automaton;
 typedef Automaton* Automaton_ptr;
 typedef DFA* DFA_ptr;
 
+typedef std::pair<int ,int> Node;
+typedef std::vector<Node> NodeVector;
+typedef std::vector<NodeVector> AdjacencyList;
+
 class Automaton {
 public:
   enum class Type
@@ -57,6 +62,7 @@ public:
 
   virtual std::string str() const;
   virtual Automaton::Type getType() const;
+  unsigned long getId();
 
   class Name {
   public:
@@ -74,6 +80,12 @@ public:
   bool isCyclic();
 
   Graph_ptr toGraph();
+
+  void toDotAscii(bool print_sink = false, std::ostream& out = std::cout);
+  // TODO merge toDot methods into one with options
+  void toDot();
+  void printBDD(std::ostream& out = std::cout);
+  int inspectAuto(bool print_sink = false);
 
   friend std::ostream& operator<<(std::ostream& os, const Automaton& automaton);
 
@@ -97,6 +109,7 @@ protected:
   bool isStartStateReachable();
   bool hasNextStateFrom(int state, int search);
   std::set<int>* getNextStates(int state);
+  AdjacencyList getAdjacencyCountList();
 
   const Automaton::Type type;
   DFA_ptr dfa;
@@ -105,6 +118,7 @@ protected:
   unsigned long id;
   static unsigned long trace_id;
 private:
+  static int name_counter;
   static const int VLOG_LEVEL;
 };
 

@@ -109,28 +109,6 @@ bool Graph::isFinalNode(GraphNode_ptr node) {
   return (it != finalNodes.end());
 }
 
-bool Graph::isCyclic() {
-  int num_of_vertices = nodes.size();
-  bool *is_discovered = new bool[num_of_vertices];
-  bool *is_stack_member = new bool[num_of_vertices];
-
-  for (int i = 0; i < num_of_vertices; i++) {
-    is_discovered[i] = false;
-    is_stack_member[i] = false;
-  }
-
-  for (int i = 0; i < num_of_vertices; i++) {
-    if (__isCyclic(i, is_discovered, is_stack_member)) {
-      return true;
-    }
-  }
-
-  delete is_discovered;
-  delete is_stack_member;
-
-  return false;
-}
-
 void Graph::dfs(GraphNode_ptr start_node,
         std::function<bool(GraphNode_ptr node)> check_callback,
         std::function<void(GraphNode_ptr node, std::stack<GraphNode_ptr>&, std::map<GraphNode_ptr, bool>&)> cont_callback) {
@@ -213,6 +191,37 @@ int Graph::inspectGraph(bool print_sink) {
   toDot(print_sink, outfile);
   std::string dot_cmd("xdot " + file + " &");
   return std::system(dot_cmd.c_str());
+}
+
+bool Graph::isCyclic() {
+
+  int num_of_vertices = nodes.size();
+  bool *is_discovered = new bool[num_of_vertices];
+  bool *is_stack_member = new bool[num_of_vertices];
+  int sink_node = sinkNode->getID();
+
+  for (int i = 0; i < num_of_vertices; i++) {
+    is_discovered[i] = false;
+    is_stack_member[i] = false;
+  }
+
+  removeNode(sinkNode);
+
+  for (int i = 0; i < num_of_vertices; i++) {
+    if (i == sink_node) {
+      continue;
+    }
+    if (__isCyclic(i, is_discovered, is_stack_member)) {
+      delete[] is_discovered;
+      delete[] is_stack_member;
+      return true;
+    }
+  }
+
+  delete[] is_discovered;
+  delete[] is_stack_member;
+
+  return false;
 }
 
 bool Graph::__isCyclic(int u, bool *is_discovered, bool *is_stack_member) {

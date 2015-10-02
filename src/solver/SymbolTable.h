@@ -32,8 +32,8 @@ public:
   SymbolTable();
   virtual ~SymbolTable();
 
-  bool isAssertionsStillValid();
-  void updateAssertionValid(bool value);
+  bool isSatisfiable();
+  void updateSatisfiability(bool value);
 
   void addVariable(SMT::Variable_ptr);
   SMT::Variable_ptr getVariable(std::string name);

@@ -50,7 +50,9 @@ public:
   static IntAutomaton_ptr makeIntRange(int start, int end, int num_of_variables =
             IntAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
 
+  void setMinus1(bool has_minus_one);
   IntAutomaton_ptr complement();
+  IntAutomaton_ptr union_(int value);
   IntAutomaton_ptr union_(IntAutomaton_ptr other_auto);
   IntAutomaton_ptr intersect(int value);
   IntAutomaton_ptr intersect(IntAutomaton_ptr other_auto);
@@ -83,6 +85,7 @@ public:
   bool isAcceptingSingleInt();
   int getAnAcceptingInt();
 
+  static const int INFINITE;
 protected:
   IntAutomaton_ptr __plus(IntAutomaton_ptr other_auto);
   IntAutomaton_ptr concat(IntAutomaton_ptr other_auto);

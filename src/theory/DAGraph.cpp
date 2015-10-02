@@ -58,9 +58,9 @@ DAGraph::DAGraph(Graph_ptr graph) {
 
   }
 
-  delete disc;
-  delete low;
-  delete is_stack_member;
+  delete[] disc;
+  delete[] low;
+  delete[] is_stack_member;
   delete st;
 }
 

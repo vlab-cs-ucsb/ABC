@@ -15,14 +15,14 @@
 namespace Vlab {
 namespace Theory {
 
-class Node {
+class NodeOld {
 public:
-  Node(int id) : stateID (id), flag(false),
+  NodeOld(int id) : stateID (id), flag(false),
     nextStates (nullptr), prevStates(nullptr) {
 
   }
 
-  virtual ~Node() {
+  virtual ~NodeOld() {
     for (auto& entry : exceptions) {
       delete entry.second;
     }
@@ -88,7 +88,7 @@ private:
 class GraphOld {
 public:
   GraphOld() {
-    graph = new std::map<int, Node*>();
+    graph = new std::map<int, NodeOld*>();
   }
   ~GraphOld() {
     for (auto& el : *graph) {
@@ -97,23 +97,23 @@ public:
     delete graph;
   }
 
-  Node* getNode(int n) {
+  NodeOld* getNode(int n) {
     auto it = graph->find(n);
     return it->second;
   }
 
-  void addNode(Node* node) {
+  void addNode(NodeOld* node) {
     (*graph)[node->getID()] = node;
   }
 
-  std::map<int, Node*>* getNodeMap() {
+  std::map<int, NodeOld*>* getNodeMap() {
     return graph;
   }
 
   // TODO add function to find marked states
 
 private:
-  std::map<int, Node*>* graph;
+  std::map<int, NodeOld*>* graph;
 };
 
 } /* namespace Theory */

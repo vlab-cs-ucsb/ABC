@@ -33,12 +33,12 @@ SymbolTable::~SymbolTable() {
   }
 }
 
-bool SymbolTable::isAssertionsStillValid() {
+bool SymbolTable::isSatisfiable() {
   return global_assertion_result;
 }
 
-void SymbolTable::updateAssertionValid(bool value) {
-  global_assertion_result = global_assertion_result && value;
+void SymbolTable::updateSatisfiability(bool value) {
+  global_assertion_result = global_assertion_result and value;
 }
 
 void SymbolTable::addVariable(Variable_ptr variable) {
@@ -182,7 +182,8 @@ Value_ptr SymbolTable::getValue(SMT::Variable_ptr variable) {
     LOG(FATAL) << "implement me";
     break;
   case Variable::Type::INT:
-    LOG(FATAL) << "implement me";
+    result = new Value(Value::Type::INT_AUTOMATON, Theory::IntAutomaton::makeAnyInt());
+    DVLOG(VLOG_LEVEL) << "initialized variable as any integer: " << *variable;
     break;
   case Variable::Type::STRING:
     result = new Value(Value::Type::STRING_AUTOMATON, Theory::StringAutomaton::makeAnyString());

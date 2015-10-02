@@ -12,6 +12,8 @@ namespace Theory {
 
 const int StringAutomaton::VLOG_LEVEL = 8;
 
+int StringAutomaton::name_counter = 0;
+
 int StringAutomaton::DEFAULT_NUM_OF_VARIABLES = 8;
 
 int* StringAutomaton::DEFAULT_VARIABLE_INDICES = Automaton::getIndices(
@@ -19,8 +21,6 @@ int* StringAutomaton::DEFAULT_VARIABLE_INDICES = Automaton::getIndices(
 
 unsigned* StringAutomaton::DEFAULT_UNSIGNED_VARIABLE_INDICES = Automaton::getIndices(
         (unsigned)StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-
-int StringAutomaton::name_counter = 0;
 
 StringAutomaton::StringAutomaton(DFA_ptr dfa)
         : Automaton(Automaton::Type::STRING, dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES) {
@@ -1086,20 +1086,29 @@ StringAutomaton_ptr StringAutomaton::substring(int start, int end){
  * there are strings those do not contain search result should include
  * -1 as well.
  */
-StringAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
-
-  StringAutomaton_ptr contains_auto = nullptr, ends_auto = nullptr,
+IntAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
+  StringAutomaton_ptr contains_auto = nullptr, difference_auto = nullptr, ends_auto = nullptr,
       indexOf_auto = nullptr, search_result_auto = nullptr;
+  IntAutomaton_ptr length_auto = nullptr;
 
   DFA_ptr indexOf_dfa = nullptr, minimized_dfa = nullptr;
+  bool has_negative_1 = false;
 
   contains_auto = this->contains(search_auto);
   if (contains_auto->isEmptyLanguage()) {
     delete contains_auto;
-    // return -1
-    return nullptr;
+    length_auto = IntAutomaton::makeInt(-1);
+    DVLOG(VLOG_LEVEL) << length_auto->getId() << " = [" << this->id << "]->indexOf(" << search_auto->id  << ")";
+    return length_auto;
   }
-  std::map<int, Node*> nodes;
+
+  difference_auto = this->difference(contains_auto);
+  if (not difference_auto->isEmptyLanguage()) {
+    has_negative_1 = true;
+  }
+  delete difference_auto;
+
+  std::map<int, NodeOld*> nodes;
   std::map<int, int> state_id_map;
   std::map<int, int> reverse_state_id_map;
   paths state_paths = nullptr, pp = nullptr;
@@ -1129,7 +1138,7 @@ StringAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
   int state_id = 0;
   int* indices = StringAutomaton::DEFAULT_VARIABLE_INDICES;
   std::vector<char>* current_exception = nullptr;
-  Node* current_node = nullptr;
+  NodeOld* current_node = nullptr;
 
   state_work_list.push(search_result_auto->dfa->s);
   while (not state_work_list.empty()) {
@@ -1138,7 +1147,7 @@ StringAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
       continue;
     }
     processed.insert(current_state);
-    current_node = new Node(current_state);
+    current_node = new NodeOld(current_state);
     state_paths = pp = make_paths(search_result_auto->dfa->bddm, search_result_auto->dfa->q[current_state]);
 
     while (pp) {
@@ -1178,7 +1187,7 @@ StringAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
     if (state_id == sink_state) {
       state_id_map[state_id] = sink_state;
       reverse_state_id_map[sink_state] = state_id;
-      nodes[sink_state] = new Node(sink_state);
+      nodes[sink_state] = new NodeOld(sink_state);
       state_id++;
     }
 
@@ -1213,29 +1222,40 @@ StringAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
   }
   statuses.push_back('\0');
   indexOf_auto = new StringAutomaton(dfaBuild(&*(statuses.begin())), StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  // minimize?
+  length_auto = indexOf_auto->length();
+  length_auto->setMinus1(has_negative_1);
+  delete indexOf_auto;
 
-//  DFA_ptr binary_dfa = indexOf_auto->length();
-//  indexOf_auto->inspectAuto(true);
-  return indexOf_auto;
+  DVLOG(VLOG_LEVEL) << length_auto->getId() << " = [" << this->id << "]->indexOf(" << search_auto->id  << ")";
+
+  return length_auto;
 }
 
 /**
  * TODO include -1 in the result if it does not contain search
  * TODO fix the bug when search auto is not a singleton, see test case 09
  */
-StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto) {
-  StringAutomaton_ptr contains_auto = nullptr, ends_auto = nullptr,
+IntAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto) {
+  StringAutomaton_ptr contains_auto = nullptr, difference_auto = nullptr, ends_auto = nullptr,
       lastIndexOf_auto = nullptr, search_result_auto = nullptr;
-
+  IntAutomaton_ptr length_auto = nullptr;
   DFA_ptr lastIndexOf_dfa = nullptr, minimized_dfa = nullptr;
+  bool has_negative_1 = false;
 
   contains_auto = this->contains(search_auto);
   if (contains_auto->isEmptyLanguage()) {
     delete contains_auto;
-    // return  only -1
-    return nullptr;
+    length_auto = IntAutomaton::makeInt(-1);
+    DVLOG(VLOG_LEVEL) << length_auto->getId() << " = [" << this->id << "]->lastIndexOf(" << search_auto->id  << ")";
+    return length_auto;
   }
 
+  difference_auto = this->difference(contains_auto);
+  if (not difference_auto->isEmptyLanguage()) {
+    has_negative_1 = true;
+  }
+  delete difference_auto;
   // TODO check that if complement of contains auto has intersection with subject auto, if so -1 should be included in the results
 
   StringAutomaton_ptr contains_duplicate_auto = new StringAutomaton(dfa_replace_step1_duplicate(contains_auto->dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES));
@@ -1435,9 +1455,13 @@ StringAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto
   // END generate automaton
   lastIndexOf_auto->minimize(); // trims the automaton
 
-  DVLOG(VLOG_LEVEL) << lastIndexOf_auto->id << " = [" << this->id << "]->lastIndexOf(" << search_auto->id << ")";
+  length_auto = lastIndexOf_auto->length();
+  length_auto->setMinus1(has_negative_1);
+  delete lastIndexOf_auto;
 
-  return lastIndexOf_auto;
+  DVLOG(VLOG_LEVEL) << length_auto->getId() << " = [" << this->id << "]->lastIndexOf(" << search_auto->id << ")";
+
+  return length_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::contains(StringAutomaton_ptr search_auto) {
@@ -1535,14 +1559,30 @@ StringAutomaton_ptr StringAutomaton::replace(StringAutomaton_ptr search_auto, St
   return result_auto;
 }
 
-DFA_ptr StringAutomaton::length() {
-  DFA_ptr unary_dfa = nullptr, binary_dfa = nullptr;
-  unary_dfa = dfa_string_to_unaryDFA(this->dfa, this->num_of_variables, StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  LOG(FATAL) << "implement me";
-//  struct semilinear_type* coeff = getSemilinerSetCoefficients(unary_dfa);
-//  print_semilinear_coefficients(coeff);
-//  binary_dfa = dfa_semiliner_to_binaryDFA(coeff);
-  return binary_dfa;
+/**
+ * TODO get rid of libstranger calls
+ */
+IntAutomaton_ptr StringAutomaton::length() {
+  DFA_ptr unary_dfa = nullptr, length_dfa = nullptr;
+  IntAutomaton_ptr length_auto = nullptr;
+  StringAutomaton_ptr any_string_auto = nullptr;
+
+  if (this->isAcceptingSingleString()) {
+    std::string example = this->getAnAcceptingString();
+    length_auto = IntAutomaton::makeInt(example.length(), num_of_variables);
+  } else {
+    unary_dfa = dfa_string_to_unaryDFA(this->dfa, num_of_variables, variable_indices);
+    any_string_auto = StringAutomaton::makeAnyString();
+    length_dfa = dfa_restrict_by_unaryDFA(any_string_auto->dfa, unary_dfa, num_of_variables, variable_indices);
+    delete any_string_auto;
+    dfaFree(unary_dfa);
+
+    length_auto = new IntAutomaton(length_dfa, num_of_variables);
+  }
+
+  DVLOG(VLOG_LEVEL) << length_auto->getId() << " = [" << this->id << "]->length()";
+
+  return length_auto;
 }
 
 /**
@@ -1769,276 +1809,7 @@ std::string StringAutomaton::getAnAcceptingString() {
 //          sink_status);
 //}
 
-/**
- * TODO Refactor lib functions
- *  - find_sink
- *  - ....
- */
-void StringAutomaton::toDotAscii(bool print_sink, std::ostream& out) {
-  paths state_paths, pp;
-  trace_descr tp;
 
-  int i, j, k, l, size, maxexp, sink;
-  pCharPair *buffer;//array of charpairs references
-  char *character;
-  pCharPair **toTrans;//array for all states, each entry is an array of charpair references
-  int *toTransIndecies;
-  char** ranges;
-
-  print_sink = print_sink || (dfa->ns == 1 and dfa->f[0] == -1);
-  sink = find_sink(dfa);
-
-  out << "digraph MONA_DFA {\n"
-      " rankdir = LR;\n "
-      " center = true;\n"
-      " size = \"700.5,1000.5\";\n"
-      " edge [fontname = Courier];\n"
-      " node [height = .5, width = .5];\n"
-      " node [shape = doublecircle];";
-
-  for (i = 0; i < dfa->ns; i++) {
-    if (dfa->f[i] == 1) {
-      out << " " << i << ";";
-    }
-  }
-
-  out << "\n node [shape = circle];";
-
-  for (i = 0; i < dfa->ns; i++) {
-    if (dfa->f[i] == -1) {
-      if (i != sink || print_sink) {
-        out << " " << i << ";";
-      }
-    }
-  }
-
-  out << "\n node [shape = box];";
-
-  for (i = 0; i < dfa->ns; i++) {
-    if (dfa->f[i] == 0) {
-      out << " " << i << ";";
-    }
-  }
-
-  out << "\n init [shape = plaintext, label = \"\"];\n" <<
-      " init -> " << dfa->s << ";\n";
-
-  maxexp = 1 << StringAutomaton::DEFAULT_NUM_OF_VARIABLES;
-  //TODO convert into c++ style memory management
-  buffer = (pCharPair*) malloc(sizeof(pCharPair) * maxexp); //max no of chars from Si to Sj = 2^num_of_variables
-  character = (char*) malloc(( StringAutomaton::DEFAULT_NUM_OF_VARIABLES+1) * sizeof(char));
-  toTrans = (pCharPair**) malloc(sizeof(pCharPair*) * dfa->ns);//need this to gather all edges out to state Sj from Si
-  for (i = 0; i < dfa->ns; i++) {
-    toTrans[i] = (pCharPair*) malloc(maxexp * sizeof(pCharPair));
-  }
-  toTransIndecies = (int*) malloc(dfa->ns * sizeof(int));//for a state Si, how many edges out to each state Sj
-
-
-  for (i = 0; i < dfa->ns; i++) {
-    //get transitions out from state i
-    state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
-
-    //init buffer
-    for (j = 0; j < dfa->ns; j++) {
-      toTransIndecies[j] = 0;
-    }
-
-    for (j = 0; j < maxexp; j++) {
-      for (k = 0; k < dfa->ns; k++) {
-        toTrans[k][j] = 0;
-      }
-      buffer[j] = 0;
-    }
-
-    //gather transitions out from state i
-    //for each transition pp out from state i
-    while (pp) {
-      if (pp->to == (unsigned)sink && not print_sink){
-        pp = pp->next;
-        continue;
-      }
-      //get mona character on transition pp
-      for (j = 0; j < StringAutomaton::DEFAULT_NUM_OF_VARIABLES; j++) {
-        for (tp = pp->trace; tp && (tp->index != (unsigned)StringAutomaton::DEFAULT_VARIABLE_INDICES[j]); tp = tp->next);
-
-        if (tp) {
-          if (tp->value)
-            character[j] = '1';
-          else
-            character[j] = '0';
-        } else
-          character[j] = 'X';
-      }
-      character[j] = '\0';
-      if (StringAutomaton::DEFAULT_NUM_OF_VARIABLES == 8){
-        //break mona character into ranges of ascii chars (example: "0XXX000X" -> [\s-!], [0-1], [@-A], [P-Q])
-        size = 0;
-        getTransitionChars(character, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, buffer, &size);
-        //get current index
-        k = toTransIndecies[pp->to];
-        //print ranges
-        for (l = 0; l < size; l++) {
-          toTrans[pp->to][k++] = buffer[l];
-          buffer[l] = 0;//do not free just detach
-        }
-        toTransIndecies[pp->to] = k;
-      } else {
-//        k = toTransIndecies[pp->to];
-//        toTrans[pp->to][k] = (char*) malloc(sizeof(char) * (strlen(character) + 1));
-//        strcpy(toTrans[pp->to][k], character);
-//        toTransIndecies[pp->to] = k + 1;
-      }
-      pp = pp->next;
-    }
-
-    //print transitions out of state i
-    for (j = 0; j < dfa->ns; j++) {
-      size = toTransIndecies[j];
-      if (size == 0 || (sink == j && not print_sink)) {
-        continue;
-      }
-      ranges = mergeCharRanges(toTrans[j], &size);
-      //print edge from i to j
-      out << " " << i << " -> " << j << " [label=\"";
-      bool print_label = (j != sink || print_sink);
-      l = 0;//to help breaking into new line
-      //for each trans k on char/range from i to j
-      for (k = 0; k < size; k++) {
-        //print char/range
-        if (print_label) {
-          out << " " << ranges[k];
-        }
-        l += strlen(ranges[k]);
-        if (l > 18){
-          if (print_label) {
-            out << "\\n";
-          }
-          l = 0;
-        }
-        else if (k < (size - 1)) {
-          if (print_label) {
-            out << ",";
-          }
-        }
-        free(ranges[k]);
-      }//for
-      out << "\"];\n";
-      if (size > 0)
-        free(ranges);
-    }
-    //for each state free charRange
-    //merge with loop above for better performance
-    for (j = 0; j < dfa->ns; j++){
-      if (j == sink && not print_sink) {
-        continue;
-      }
-      size = toTransIndecies[j];
-      for (k = 0; k < size; k++) {
-        free(toTrans[j][k]);
-      }
-    }
-
-    kill_paths(state_paths);
-  }//end for each state
-
-  free(character);
-  free(buffer);
-  for (i = 0; i < dfa->ns; i++){
-    free(toTrans[i]);
-  }
-  free(toTrans);
-  free(toTransIndecies);
-
-  out << "}" << std::endl;
-}
-
-
-
-// TODO will be merge into one toDot function with above
-void StringAutomaton::toDot() {
-  dfaPrintGraphviz(this->dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_UNSIGNED_VARIABLE_INDICES);
-}
-
-void StringAutomaton::printBDD(std::ostream& out) {
-//  LOG(FATAL) << "implement me, fix headers";
-  Table *table = tableInit();
-  int sink = getSinkState();
-
-  /* remove all marks in a->bddm */
-  bdd_prepare_apply1(this->dfa->bddm);
-
-  /* build table of tuples (idx,lo,hi) */
-  for (int i = 0; i < this->dfa->ns; i++) {
-      __export(this->dfa->bddm, this->dfa->q[i], table);
-  }
-
-  /* renumber lo/hi pointers to new table ordering */
-  for (unsigned i = 0; i < table->noelems; i++) {
-      if (table->elms[i].idx != -1) {
-          table->elms[i].lo = bdd_mark(this->dfa->bddm, table->elms[i].lo) - 1;
-          table->elms[i].hi = bdd_mark(this->dfa->bddm, table->elms[i].hi) - 1;
-      }
-  }
-
-  out << "digraph MONA_DFA_BDD {\n"
-      "  center = true;\n"
-      "  size = \"100.5,70.5\"\n"
-//      "  orientation = landscape;\n"
-      "  node [shape=record];\n"
-      "   s1 [shape=record,label=\"";
-
-  for (int i = 0; i < this->dfa->ns; i++) {
-    out << "{" << this->dfa->f[i] << "|<" << i << "> " << i << "}";
-    if ( (unsigned)(i+1) < table->noelems) {
-      out << "|";
-    }
-  }
-  out << "\"];" << std::endl;
-
-  out << "  node [shape = circle];";
-  for (unsigned i = 0; i < table->noelems; i++) {
-    if (table->elms[i].idx != -1) {
-      out << " " << i << " [label=\"" << table->elms[i].idx << "\"];";
-    }
-  }
-
-  out << "\n  node [shape = box];";
-  for (unsigned i = 0; i < table->noelems; i++) {
-    if (table->elms[i].idx == -1) {
-      out << " " << i << " [label=\"" << table->elms[i].lo << "\"];";
-    }
-  }
-  out << std::endl;
-
-  for (int i = 0; i < this->dfa->ns; i++) {
-    out << " s1:" << i << " -> " << bdd_mark(this->dfa->bddm, this->dfa->q[i]) - 1 << " [style=bold];\n";
-  }
-
-  for (unsigned i = 0; i < table->noelems; i++) {
-      if (table->elms[i].idx != -1) {
-          int lo = table->elms[i].lo;
-          int hi = table->elms[i].hi;
-          out << " " << i << " -> " << lo << " [style=dashed];\n";
-          out << " " << i << " -> " << hi << " [style=filled];\n";
-      }
-  }
-  out << "}" << std::endl;
-  tableFree(table);
-}
-
-int StringAutomaton::inspectAuto(bool print_sink) {
-  std::stringstream file_name;
-  file_name << "./output/inspect_auto_" << name_counter++ << ".dot";
-  std::string file = file_name.str();
-  std::ofstream outfile(file.c_str());
-  if (!outfile.good()) {
-    std::cout << "cannot open file: " << file_name << std::endl;
-    exit(2);
-  }
-  toDotAscii(print_sink, outfile);
-  std::string dot_cmd("xdot " + file + " &");
-  return std::system(dot_cmd.c_str());
-}
 
 char* StringAutomaton::binaryFormat(unsigned long number, int bit_length) {
   char* binary_str = nullptr;
@@ -2148,14 +1919,14 @@ std::vector<int> StringAutomaton::getAcceptingStates() {
 GraphOld* StringAutomaton::getGraph() {
   int sink_state = this->getSinkState();
   GraphOld* graph = new GraphOld();
-  Node* node = nullptr;
+  NodeOld* node = nullptr;
   std::set<int>* states = nullptr;
 
   for (int s = 0; s < this->dfa->ns; s++) {
     if (s == sink_state) {
       continue;
     }
-    node = new Node(s);
+    node = new NodeOld(s);
     node->setPrevStates(new std::set<int>());
     graph->addNode(node);
   }
