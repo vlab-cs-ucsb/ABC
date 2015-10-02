@@ -29,6 +29,8 @@
 #include <stranger.h>
 #include <stranger_lib_internal.h>
 #include "../utils/RegularExpression.h"
+#include "Graph.h"
+#include "DAGraph.h"
 
 
 #include "utils.h"
@@ -69,13 +71,18 @@ public:
   bool isEmptyLanguage();
   bool isInitialStateAccepting();
   bool isOnlyInitialStateAccepting();
-  bool isAcceptingSingleWord();
+  bool isCyclic();
+
+  Graph_ptr toGraph();
 
   friend std::ostream& operator<<(std::ostream& os, const Automaton& automaton);
 
 protected:
   static DFA_ptr makePhi(int num_of_variables, int* variable_indices);
 
+  bool isAcceptingSingleWord();
+  // TODO refactor to work for general case
+  std::string getAnAcceptingWord();
 
   static int* getIndices(int num_of_variables, int extra_num_of_variables = 0);
   static unsigned* getIndices(unsigned num_of_variables, unsigned extra_num_of_variables = 0);

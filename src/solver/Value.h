@@ -65,6 +65,8 @@ public:
 
   Value_ptr union_(Value_ptr other_value) const;
   Value_ptr intersect(Value_ptr other_value) const;
+  Value_ptr complement() const;
+  Value_ptr difference(Value_ptr other_value) const;
 
   Value_ptr concat(Value_ptr other_value) const;
 

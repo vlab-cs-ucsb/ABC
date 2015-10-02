@@ -49,6 +49,8 @@ public:
   bool isSinkNode(GraphNode_ptr);
   bool isFinalNode(GraphNode_ptr);
 
+  bool isCyclic();
+
   void dfs(GraphNode_ptr start_node,
           std::function<bool(GraphNode_ptr node)> check_callback,
           std::function<void(GraphNode_ptr node, std::stack<GraphNode_ptr>&, std::map<GraphNode_ptr, bool>&)> cont_callback = nullptr);
@@ -57,6 +59,8 @@ public:
   int inspectGraph(bool print_sink = false);
 
 protected:
+
+  bool __isCyclic(int u, bool *is_discovered, bool *is_stack_member);
   GraphNode_ptr startNode;
   GraphNode_ptr sinkNode;
   GraphNodeSet finalNodes;

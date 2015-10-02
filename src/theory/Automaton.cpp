@@ -118,7 +118,55 @@ bool Automaton::isOnlyInitialStateAccepting() {
   return true;
 }
 
+bool Automaton::isCyclic() {
+  bool is_cyclic = false;
+  Graph_ptr graph = toGraph();
+  graph->removeNode(graph->getSinkNode());
+  is_cyclic = graph->isCyclic();
+  delete graph;
+  return is_cyclic;
+}
+
+/**
+ * @returns graph representation of automaton
+ */
+Graph_ptr Automaton::toGraph() {
+  Graph_ptr graph = new Graph();
+  std::set<int>* states = nullptr;
+  GraphNode_ptr node = nullptr, next_node = nullptr;
+  for (int s = 0; s < this->dfa->ns; s++) {
+    node = new GraphNode(s);
+    if (s == 0) {
+      graph->setStartNode(node);
+    }
+
+    if (this->isSinkState(s)) {
+      graph->setSinkNode(node);
+    } else if (this->isAcceptingState(s)) {
+      graph->addFinalNode(node);
+    } else {
+      graph->addNode(node);
+    }
+  }
+  node = nullptr;
+  for (auto& entry : graph->getNodeMap()) {
+    node = entry.second;
+    states = this->getNextStates(node->getID());
+    for (int id : *states) {
+      next_node = graph->getNode(id);
+      node->addNextNode(next_node);
+      next_node->addPrevNode(node);
+    }
+  }
+
+  return graph;
+}
+
+/**
+ * TODO bug here handle case "(a|b)(c|d)"
+ */
 bool Automaton::isAcceptingSingleWord() {
+  LOG(FATAL) << "fix bug here";
   int sink_state = getSinkState(),
       curr_state = -1,
       num_of_accepting_paths = 0;
@@ -143,6 +191,11 @@ bool Automaton::isAcceptingSingleWord() {
   }
 
   return (num_of_accepting_paths == 1);
+}
+
+std::string Automaton::getAnAcceptingWord() {
+  char* result = isSingleton(this->dfa, num_of_variables, variable_indices);
+  return std::string(result);
 }
 
 std::ostream& operator<<(std::ostream& os, const Automaton& automaton) {

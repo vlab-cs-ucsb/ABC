@@ -41,31 +41,54 @@ public:
             IntAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
   static IntAutomaton_ptr makeIntLessThan(int value, int num_of_variables =
             IntAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
-  static IntAutomaton_ptr makeIntLessThanEqual(int value, int num_of_variables =
+  static IntAutomaton_ptr makeIntLessThanOrEqual(int value, int num_of_variables =
             IntAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
   static IntAutomaton_ptr makeIntGreaterThan(int value, int num_of_variables =
             IntAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
-  static IntAutomaton_ptr makeIntGreaterThanEqual(int value, int num_of_variables =
+  static IntAutomaton_ptr makeIntGreaterThanOrEqual(int value, int num_of_variables =
             IntAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
   static IntAutomaton_ptr makeIntRange(int start, int end, int num_of_variables =
             IntAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
 
   IntAutomaton_ptr complement();
   IntAutomaton_ptr union_(IntAutomaton_ptr other_auto);
+  IntAutomaton_ptr intersect(int value);
   IntAutomaton_ptr intersect(IntAutomaton_ptr other_auto);
+  IntAutomaton_ptr difference(int value);
   IntAutomaton_ptr difference(IntAutomaton_ptr other_auto);
+  IntAutomaton_ptr uminus();
 
-  IntAutomaton_ptr add(IntAutomaton_ptr other_auto);
-  IntAutomaton_ptr concat(IntAutomaton_ptr other_auto);
-  IntAutomaton_ptr substract(IntAutomaton_ptr other_auto);
+  IntAutomaton_ptr plus(int value);
+  IntAutomaton_ptr plus(IntAutomaton_ptr other_auto);
+  IntAutomaton_ptr minus(int value);
+  IntAutomaton_ptr minus(IntAutomaton_ptr other_auto);
+  IntAutomaton_ptr substractFrom(int value);
+
+  int getMaxAcceptedInt();
+  int getMinAcceptedInt();
+
+  bool isGreaterThan(int value);
+  bool isGreaterThan(IntAutomaton_ptr other_auto);
+  bool isGreaterThanOrEqual(int value);
+  bool isGreaterThanOrEqual(IntAutomaton_ptr other_auto);
+  bool isLessThan(int value);
+  bool isLessThan(IntAutomaton_ptr other_auto);
+  bool isLessThanOrEqual(int value);
+  bool isLessThanOrEqual(IntAutomaton_ptr other_auto);
 
   bool checkEquivalance(IntAutomaton_ptr other_auto);
   bool isEmptyLanguage();
   bool hasZero();
   bool isZero();
   bool isAcceptingSingleInt();
+  int getAnAcceptingInt();
 
 protected:
+  IntAutomaton_ptr __plus(IntAutomaton_ptr other_auto);
+  IntAutomaton_ptr concat(IntAutomaton_ptr other_auto);
+  IntAutomaton_ptr __minus(IntAutomaton_ptr other_auto);
+
+
   bool has_negative_1;
 //  bool is_only_minus_1;
   static int DEFAULT_NUM_OF_VARIABLES;

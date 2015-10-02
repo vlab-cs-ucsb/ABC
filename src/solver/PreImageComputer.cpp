@@ -379,7 +379,7 @@ void PreImageComputer::visitReplace(Replace_ptr replace_term) {
   if (child_term == replace_term->replace_term) {
     Theory::StringAutomaton_ptr child_pre_auto = term_value->getStringAutomaton()
         ->preReplace(search_auto_value->getStringAutomaton(),
-            replace_auto_value->getStringAutomaton()->getString(),
+            replace_auto_value->getStringAutomaton()->getAnAcceptingString(),
             child_post_value->getStringAutomaton());
     child_value = new Value(Value::Type::STRING_AUTOMATON, child_pre_auto);
   } else {

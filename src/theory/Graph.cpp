@@ -109,6 +109,28 @@ bool Graph::isFinalNode(GraphNode_ptr node) {
   return (it != finalNodes.end());
 }
 
+bool Graph::isCyclic() {
+  int num_of_vertices = nodes.size();
+  bool *is_discovered = new bool[num_of_vertices];
+  bool *is_stack_member = new bool[num_of_vertices];
+
+  for (int i = 0; i < num_of_vertices; i++) {
+    is_discovered[i] = false;
+    is_stack_member[i] = false;
+  }
+
+  for (int i = 0; i < num_of_vertices; i++) {
+    if (__isCyclic(i, is_discovered, is_stack_member)) {
+      return true;
+    }
+  }
+
+  delete is_discovered;
+  delete is_stack_member;
+
+  return false;
+}
+
 void Graph::dfs(GraphNode_ptr start_node,
         std::function<bool(GraphNode_ptr node)> check_callback,
         std::function<void(GraphNode_ptr node, std::stack<GraphNode_ptr>&, std::map<GraphNode_ptr, bool>&)> cont_callback) {
@@ -191,6 +213,26 @@ int Graph::inspectGraph(bool print_sink) {
   toDot(print_sink, outfile);
   std::string dot_cmd("xdot " + file + " &");
   return std::system(dot_cmd.c_str());
+}
+
+bool Graph::__isCyclic(int u, bool *is_discovered, bool *is_stack_member) {
+  if (not is_discovered[u]) {
+    is_discovered[u] = true;
+    is_stack_member[u] = true;
+
+    GraphNode_ptr current_node = getNode(u);
+    for (GraphNode_ptr next_node : current_node->getNextNodes()) {
+      int v = next_node->getID();
+      if ((not is_discovered[v]) and __isCyclic(v, is_discovered, is_stack_member)) {
+        return true;
+      } else if (is_stack_member[v] == true) {
+        return true;
+      }
+    }
+  }
+
+  is_stack_member[u] = false;
+  return false;
 }
 
 } /* namespace Theory */

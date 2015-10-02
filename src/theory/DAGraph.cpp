@@ -35,7 +35,7 @@ DAGraph::DAGraph(Graph_ptr graph) {
   }
 
   for (int i = 0; i < num_of_vertices; i++) {
-    if (disc[i] == -1){
+    if (disc[i] == -1) {
       findSCCs(i, disc, low, st, is_stack_member, time);
     }
   }

@@ -157,7 +157,7 @@ IntAutomaton_ptr IntAutomaton::makeIntLessThan(int value, int num_of_variables, 
    return int_auto;
 }
 
-IntAutomaton_ptr IntAutomaton::makeIntLessThanEqual(int value, int num_of_variables, int* variable_indices){
+IntAutomaton_ptr IntAutomaton::makeIntLessThanOrEqual(int value, int num_of_variables, int* variable_indices){
   DFA_ptr int_dfa = nullptr;
   IntAutomaton_ptr int_auto = nullptr;
 
@@ -187,7 +187,7 @@ IntAutomaton_ptr IntAutomaton::makeIntGreaterThan(int value, int num_of_variable
     int_auto = IntAutomaton::makeAnyInt();
   }
   else{
-    int_auto = IntAutomaton::makeIntLessThanEqual(value)->complement();
+    int_auto = IntAutomaton::makeIntLessThanOrEqual(value)->complement();
   }
 
   DVLOG(VLOG_LEVEL) << int_auto->id << " = makeIntGreaterThan(" << value <<  ")";
@@ -195,7 +195,7 @@ IntAutomaton_ptr IntAutomaton::makeIntGreaterThan(int value, int num_of_variable
   return int_auto;
 }
 
-IntAutomaton_ptr IntAutomaton::makeIntGreaterThanEqual(int value, int num_of_variables, int* variable_indices){
+IntAutomaton_ptr IntAutomaton::makeIntGreaterThanOrEqual(int value, int num_of_variables, int* variable_indices){
   IntAutomaton_ptr int_auto = nullptr;
 
   if(value < -1){
@@ -213,7 +213,7 @@ IntAutomaton_ptr IntAutomaton::makeIntGreaterThanEqual(int value, int num_of_var
 IntAutomaton_ptr IntAutomaton::makeIntRange(int start, int end, int num_of_variables, int* variable_indices){
   IntAutomaton_ptr range_auto = nullptr, lessThan_auto = nullptr, greaterThanEqual_auto = nullptr;
 
-  greaterThanEqual_auto = IntAutomaton::makeIntGreaterThanEqual(start);
+  greaterThanEqual_auto = IntAutomaton::makeIntGreaterThanOrEqual(start);
   lessThan_auto = IntAutomaton::makeIntLessThan(end);
   range_auto = lessThan_auto->intersect(greaterThanEqual_auto);
 
@@ -269,6 +269,14 @@ IntAutomaton_ptr IntAutomaton::union_(IntAutomaton_ptr other_auto) {
   return union_auto;
 }
 
+IntAutomaton_ptr IntAutomaton::intersect(int value) {
+  IntAutomaton_ptr intersect_auto = nullptr, int_auto = nullptr;
+  int_auto = IntAutomaton::makeInt(value);
+  intersect_auto = this->intersect(int_auto);
+  delete int_auto;
+  return intersect_auto;
+}
+
 IntAutomaton_ptr IntAutomaton::intersect(IntAutomaton_ptr other_auto) {
   DFA_ptr intersect_dfa = nullptr, minimized_dfa = nullptr;
   IntAutomaton_ptr intersect_auto = nullptr;
@@ -286,6 +294,14 @@ IntAutomaton_ptr IntAutomaton::intersect(IntAutomaton_ptr other_auto) {
   return intersect_auto;
 }
 
+IntAutomaton_ptr IntAutomaton::difference(int value) {
+  IntAutomaton_ptr difference_auto = nullptr, int_auto = nullptr;
+  int_auto = IntAutomaton::makeInt(value);
+  difference_auto = this->difference(int_auto);
+  delete int_auto;
+  return difference_auto;
+}
+
 IntAutomaton_ptr IntAutomaton::difference(IntAutomaton_ptr other_auto) {
   IntAutomaton_ptr difference_auto = nullptr, complement_auto = nullptr;
 
@@ -298,7 +314,196 @@ IntAutomaton_ptr IntAutomaton::difference(IntAutomaton_ptr other_auto) {
   return difference_auto;
 }
 
-IntAutomaton_ptr IntAutomaton::add(IntAutomaton_ptr other_auto) {
+IntAutomaton_ptr IntAutomaton::uminus() {
+  IntAutomaton_ptr u_minus_auto = nullptr, tmp_auto_2 = nullptr, tmp_auto_1 = nullptr;
+  bool has_zero = hasZero();
+  bool is_singleton = isAcceptingSingleInt();
+  bool is = has_negative_1;
+
+  if (has_negative_1 and has_zero) {
+    u_minus_auto = IntAutomaton::makeIntRange(0,1);
+  } else if (has_negative_1) {
+    u_minus_auto = IntAutomaton::makeInt(1);
+  } else if (has_zero) {
+    u_minus_auto = IntAutomaton::makeInt(0);
+  }
+
+  tmp_auto_1 = IntAutomaton::makeIntGreaterThan(0);
+  tmp_auto_2 = this->intersect(tmp_auto_1);
+  delete tmp_auto_1;
+  if (not tmp_auto_2->isEmptyLanguage()) {
+    u_minus_auto->has_negative_1 = true;
+  }
+
+  DVLOG(VLOG_LEVEL) << u_minus_auto->id << " = [" << this->id << "]->uminus()";
+
+  return u_minus_auto;
+}
+
+IntAutomaton_ptr IntAutomaton::plus(int value) {
+  IntAutomaton_ptr plus_auto = nullptr, int_auto = nullptr;
+  int_auto = IntAutomaton::makeInt(value);
+  plus_auto = this->plus(int_auto);
+  delete int_auto;
+  return plus_auto;
+}
+
+/**
+ * TODO compare max and min values to decide if minus one is in final results
+ */
+IntAutomaton_ptr IntAutomaton::plus(IntAutomaton_ptr other_auto) {
+  IntAutomaton_ptr plus_auto = nullptr, left_auto = this, right_auto = other_auto;
+  if (has_negative_1) {
+    right_auto = other_auto->minus(1);
+  }
+
+  if (other_auto->has_negative_1) {
+    left_auto = this->minus(1);
+  }
+
+  plus_auto = left_auto->__plus(right_auto);
+  delete left_auto; delete right_auto;
+
+  DVLOG(VLOG_LEVEL) << plus_auto->id << " = [" << this->id << "]->plus(" << other_auto->id << ")";
+
+  return plus_auto;
+}
+
+
+IntAutomaton_ptr IntAutomaton::minus(int value) {
+  IntAutomaton_ptr minus_auto = nullptr, int_auto = nullptr;
+  int_auto = IntAutomaton::makeInt(value);
+  minus_auto = this->minus(int_auto);
+  delete int_auto;
+  return minus_auto;
+}
+
+/**
+ * TODO compare max and min values to decide if minus one is in final results
+ */
+IntAutomaton_ptr IntAutomaton::minus(IntAutomaton_ptr other_auto) {
+  IntAutomaton_ptr minus_auto = nullptr, left_auto = this, right_auto = other_auto;
+
+  if (other_auto->has_negative_1) {
+    left_auto = this->plus(1);
+  }
+
+  minus_auto = left_auto->__minus(right_auto);
+  delete left_auto; delete right_auto;
+
+  DVLOG(VLOG_LEVEL) << minus_auto->id << " = [" << this->id << "]->plus(" << other_auto->id << ")";
+
+  return minus_auto;
+}
+
+IntAutomaton_ptr IntAutomaton::substractFrom(int value) {
+  IntAutomaton_ptr minus_auto = nullptr, int_auto = nullptr;
+  int_auto = IntAutomaton::makeInt(value);
+  minus_auto = int_auto->minus(this);
+  delete int_auto;
+  return minus_auto;
+}
+
+int IntAutomaton::getMaxAcceptedInt() {
+
+
+  return 0;
+}
+
+int IntAutomaton::getMinAcceptedInt() {
+  return 0;
+}
+
+bool IntAutomaton::isGreaterThan(int value) {
+
+  return false;
+}
+
+bool IntAutomaton::isGreaterThan(IntAutomaton_ptr other_auto) {
+  return false;
+}
+
+bool IntAutomaton::isGreaterThanOrEqual(int value) {
+  return false;
+}
+
+bool IntAutomaton::isGreaterThanOrEqual(IntAutomaton_ptr other_auto) {
+  return false;
+}
+
+bool IntAutomaton::isLessThan(int value) {
+  return false;
+}
+
+bool IntAutomaton::isLessThan(IntAutomaton_ptr other_auto) {
+  return false;
+}
+
+bool IntAutomaton::isLessThanOrEqual(int value) {
+  return false;
+}
+
+bool IntAutomaton::isLessThanOrEqual(IntAutomaton_ptr other_auto) {
+  return false;
+}
+
+bool IntAutomaton::checkEquivalance(IntAutomaton_ptr other_auto) {
+  return (Automaton::checkEquivalence(other_auto) and (has_negative_1 == other_auto->has_negative_1));
+}
+
+bool IntAutomaton::isEmptyLanguage() {
+  if (has_negative_1) {
+    return false;
+  }
+  return Automaton::isEmptyLanguage();
+}
+
+bool IntAutomaton::hasZero() {
+  return Automaton::isInitialStateAccepting();
+}
+
+bool IntAutomaton::isZero() {
+  return (Automaton::isOnlyInitialStateAccepting() and (not has_negative_1));
+}
+
+bool IntAutomaton::isAcceptingSingleInt() {
+  int sink_state = getSinkState(),
+      curr_state = -1,
+      num_of_accepting_paths = 0;
+  std::stack<int> state_path;
+  std::set<int>* next_states = nullptr;
+
+  state_path.push(this->dfa->s);
+  while (not state_path.empty()) {
+    curr_state = state_path.top(); state_path.pop();
+    if (this->isAcceptingState(curr_state)) {
+      ++num_of_accepting_paths;
+    }
+    if (num_of_accepting_paths > 1) {
+      return false;
+    }
+    next_states = this->getNextStates(curr_state);
+    next_states->erase(sink_state);
+    for (int next_state : *next_states) {
+      state_path.push(next_state);
+    }
+    delete next_states; next_states = nullptr;
+  }
+
+  return ((num_of_accepting_paths == 1) not_eq has_negative_1);
+}
+
+int IntAutomaton::getAnAcceptingInt() {
+  if (has_negative_1) {
+    return -1;
+  }
+
+  std::string example = Automaton::getAnAcceptingWord();
+
+  return example.length();
+}
+
+IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
   DFA_ptr concat_dfa = nullptr;
   IntAutomaton_ptr concat_auto = nullptr;
 
@@ -621,32 +826,17 @@ IntAutomaton_ptr IntAutomaton::concat(IntAutomaton_ptr other_auto) {
   return concat_auto;
 }
 
-IntAutomaton_ptr IntAutomaton::substract(IntAutomaton_ptr other_auto) {
-  LOG(FATAL) << "Implement me";
-  return nullptr;
-}
+IntAutomaton_ptr IntAutomaton::__minus(IntAutomaton_ptr other_auto) {
+  DFA_ptr result_dfa = nullptr;
+  IntAutomaton_ptr result_auto = nullptr;
 
-bool IntAutomaton::checkEquivalance(IntAutomaton_ptr other_auto) {
-  return (Automaton::checkEquivalence(other_auto) and (has_negative_1 == other_auto->has_negative_1));
-}
+  result_dfa = dfa_pre_concat(this->dfa, other_auto->dfa, 1, num_of_variables, variable_indices);
 
-bool IntAutomaton::isEmptyLanguage() {
-  if (has_negative_1) {
-    return false;
-  }
-  return Automaton::isEmptyLanguage();
-}
+  result_auto = new IntAutomaton(result_dfa, num_of_variables);
 
-bool IntAutomaton::hasZero() {
-  return Automaton::isInitialStateAccepting();
-}
+  DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->preLeftConcat(" << other_auto->id << ")";
 
-bool IntAutomaton::isZero() {
-  return (Automaton::isOnlyInitialStateAccepting() and (not has_negative_1));
-}
-
-bool IntAutomaton::isAcceptingSingleInt() {
-  return (Automaton::isAcceptingSingleWord() not_eq has_negative_1);
+  return result_auto;
 }
 
 

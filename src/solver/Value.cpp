@@ -211,13 +211,77 @@ Value::~Value() {
         intersection_value = new Value(Type::INT_AUTOMATON, Theory::IntAutomaton::makePhi());
       }
     } else if (Type::INT_CONSTANT == type and Type::INT_AUTOMATON == other_value->type) {
-
+      other_value->int_automaton->intersect(int_constant);
     } else if (Type::INT_AUTOMATON == type and Type::INT_CONSTANT == other_value->type) {
-
+      int_automaton->intersect(other_value->int_constant);
     } else {
       LOG(FATAL) << "cannot intersect types (implement me): " << *this << " & " << *other_value;
     }
     return intersection_value;
+  }
+
+  Value_ptr Value::complement() const {
+    Value_ptr complement_value = nullptr;
+    switch (type) {
+      case Type::STRING_AUTOMATON : {
+        complement_value = new Value(Type::STRING_AUTOMATON,
+                string_automaton->complement());
+        break;
+      }
+      case Type::INT_AUTOMATON : {
+        complement_value = new Value(Type::INT_AUTOMATON,
+                int_automaton->complement());
+        break;
+      }
+      case Type::INT_CONSTANT : {
+        Theory::IntAutomaton_ptr int_auto = Theory::IntAutomaton::makeInt(int_constant);
+        complement_value = new Value(Type::INT_AUTOMATON,
+                int_auto->complement());
+        delete int_auto;
+        break;
+      }
+      case Type::BOOl_CONSTANT : {
+        complement_value = new Value(Type::BOOl_CONSTANT,
+                not bool_constant);
+        break;
+      }
+      default:
+        LOG(FATAL) << "implement me" << *this;
+        break;
+    }
+    return complement_value;
+  }
+
+  Value_ptr Value::difference(Value_ptr other_value) const {
+    Value_ptr difference_value = nullptr;
+    if (Type::STRING_AUTOMATON == type and Type::STRING_AUTOMATON == other_value->type) {
+      difference_value = new Value(Type::STRING_AUTOMATON,
+          string_automaton->difference(other_value->string_automaton));
+    } else if (Type::INT_AUTOMATON == type and Type::INT_AUTOMATON == other_value->type) {
+      difference_value = new Value(Type::INT_AUTOMATON,
+          int_automaton->difference(other_value->int_automaton));
+    } else if (Type::INT_CONSTANT == type and Type::INT_CONSTANT == other_value->type) {
+      if (this->int_constant != other_value->int_constant) {
+        difference_value = this->clone();
+      } else {
+        difference_value = new Value(Type::INT_AUTOMATON, Theory::IntAutomaton::makePhi());
+      }
+    } else if (Type::INT_CONSTANT == type and Type::INT_AUTOMATON == other_value->type) {
+      Theory::IntAutomaton_ptr int_auto = Theory::IntAutomaton::makeInt(int_constant);
+      Theory::IntAutomaton_ptr intersect_auto = other_value->int_automaton->intersect(int_auto);
+      delete int_auto;
+      if (intersect_auto->isEmptyLanguage()) {
+        difference_value = this->clone();
+      } else {
+        difference_value = new Value(Type::INT_AUTOMATON, Theory::IntAutomaton::makePhi());
+      }
+      delete intersect_auto;
+    } else if (Type::INT_AUTOMATON == type and Type::INT_CONSTANT == other_value->type) {
+      int_automaton->difference(other_value->int_constant);
+    } else {
+      LOG(FATAL) << "cannot intersect types (implement me): " << *this << " & " << *other_value;
+    }
+    return difference_value;
   }
 
   Value_ptr Value::concat(Value_ptr other_value) const {

@@ -125,13 +125,15 @@ public:
   StringAutomaton_ptr preToUpperCase(StringAutomaton_ptr rangeAuto = nullptr);
   StringAutomaton_ptr preToLowerCase(StringAutomaton_ptr rangeAuto = nullptr);
   StringAutomaton_ptr preTrim(StringAutomaton_ptr rangeAuto = nullptr);
+  StringAutomaton_ptr preConcatLeft(StringAutomaton_ptr right_auto);
+  StringAutomaton_ptr preConcatRight(StringAutomaton_ptr left_auto);
 
   StringAutomaton_ptr preReplace(StringAutomaton_ptr searchAuto, std::string replaceString, StringAutomaton_ptr rangeAuto = nullptr);
 
   bool hasEmptyString();
   bool isEmptyString();
   bool isAcceptingSingleString();
-  std::string getString();
+  std::string getAnAcceptingString();
 
   void toDotAscii(bool print_sink = false, std::ostream& out = std::cout);
   // TODO merge toDot methods into one with options
@@ -152,7 +154,6 @@ protected:
   std::vector<int> getAcceptingStates();
 
   GraphOld* getGraph();
-  Graph_ptr toGraph();
 
   static int DEFAULT_NUM_OF_VARIABLES;
   static int* DEFAULT_VARIABLE_INDICES;

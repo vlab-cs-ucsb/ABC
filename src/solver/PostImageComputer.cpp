@@ -33,7 +33,7 @@ void PostImageComputer::end() {
 
 void PostImageComputer::visitScript(Script_ptr script) {
   symbol_table->push_scope(script);
-
+ // TODO can be removed from here
   for (auto command : *(script->command_list)) {
     visit(command);
     if (not symbol_table->isAssertionsStillValid()) {
@@ -91,13 +91,7 @@ void PostImageComputer::visitNot(Not_ptr not_term) {
 
   switch (param->getType()) {
   case Value::Type::BOOl_CONSTANT: {
-    result = new Value(Value::Type::BOOl_CONSTANT,
-        not param->getBoolConstant());
-    break;
-  }
-  case Value::Type::INT_CONSTANT: {
-    // return int automaton other than this constant
-    LOG(FATAL)<< "implement me";
+    result = param->complement();
     break;
   }
   case Value::Type::BOOL_AUTOMATON: {
@@ -107,9 +101,11 @@ void PostImageComputer::visitNot(Not_ptr not_term) {
     break;
   }
   case Value::Type::INT_AUTOMATON: {
-    // 1- if singleton do not
-    // 2- else over-approximate
-    LOG(FATAL) << "implement me";
+    if (param->getIntAutomaton()->isAcceptingSingleInt()) {
+      result = param->complement();
+    } else {
+      result = param->clone();
+    }
     break;
   }
   case Value::Type::INTBOOL_AUTOMATON: {
@@ -121,16 +117,14 @@ void PostImageComputer::visitNot(Not_ptr not_term) {
   case Value::Type::STRING_AUTOMATON: {
     // TODO multi-track automaton solves over-approximation problem in most cases
     if (param->getStringAutomaton()->isAcceptingSingleString()) {
-      result = new Value(Value::Type::STRING_AUTOMATON,
-              param->getStringAutomaton()->complement());
+      result = param->complement();
     } else {
-      result = new Value(Value::Type::STRING_AUTOMATON,
-              param->getStringAutomaton()->clone());
+      result = param->clone();
     }
     break;
   }
   default:
-  LOG(FATAL) << "not term child is not computed properly: " << *(not_term->term);
+    result = param->complement();
   break;
 }
 
@@ -145,13 +139,19 @@ void PostImageComputer::visitUMinus(UMinus_ptr u_minus_term) {
 
   switch (param->getType()) {
   case Value::Type::INT_CONSTANT: {
-    int data = -param->getIntConstant();
+    int data = (- param->getIntConstant());
     result = new Value(Value::Type::INT_CONSTANT, data);
     break;
   }
   case Value::Type::INT_AUTOMATON: {
-    // do minus operation on automaton
-    LOG(FATAL)<< "implement me";
+    if (param->getIntAutomaton()->isAcceptingSingleInt()) {
+      int value = (- param->getIntAutomaton()->getAnAcceptingInt());
+      result = new Value(Value::Type::INT_CONSTANT,
+              value);
+    } else {
+      result = new Value(Value::Type::INT_AUTOMATON,
+              param->getIntAutomaton()->uminus());
+    }
     break;
   }
   case Value::Type::INTBOOL_AUTOMATON: {
@@ -174,15 +174,45 @@ void PostImageComputer::visitMinus(Minus_ptr minus_term) {
   Value_ptr result = nullptr, param_left = getTermValue(minus_term->left_term),
       param_right = getTermValue(minus_term->right_term);
 
-  if (Value::Type::INT_CONSTANT == param_left->getType()
-      and Value::Type::INT_CONSTANT == param_right->getType()) {
-    result = new Value(Value::Type::INT_CONSTANT,
-        param_left->getIntConstant() - param_right->getIntConstant());
-  } else if (Value::Type::INT_AUTOMATON == param_left->getType()
-      and Value::Type::INT_AUTOMATON == param_right->getType()) {
-    LOG(FATAL)<< "implement me";
+  if (Value::Type::INT_CONSTANT == param_left->getType()) {
+    if (Value::Type::INT_CONSTANT == param_right->getType()) {
+      result = new Value(Value::Type::INT_CONSTANT,
+              param_left->getIntConstant() - param_right->getIntConstant());
+    } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
+      if (param_right->getIntAutomaton()->isAcceptingSingleInt()) {
+        result = new Value(Value::Type::INT_CONSTANT,
+                param_left->getIntConstant() - param_right->getIntAutomaton()->getAnAcceptingInt());
+      } else {
+        result = new Value(Value::Type::INT_AUTOMATON,
+                param_right->getIntAutomaton()->substractFrom(param_left->getIntConstant()));
+      }
+    } else {
+      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *minus_term;
+    }
+  } else if (Value::Type::INT_AUTOMATON == param_left->getType()) {
+    if (Value::Type::INT_CONSTANT == param_right->getType()) {
+      if (param_left->getIntAutomaton()->isAcceptingSingleInt()) {
+        result = new Value(Value::Type::INT_CONSTANT,
+                param_left->getIntAutomaton()->getAnAcceptingInt() - param_right->getIntConstant());
+      } else {
+        result = new Value(Value::Type::INT_AUTOMATON,
+                param_left->getIntAutomaton()->minus(param_right->getIntConstant()));
+      }
+    } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
+      if (param_left->getIntAutomaton()->isAcceptingSingleInt() and
+              param_right->getIntAutomaton()->isAcceptingSingleInt()) {
+        result = new Value(Value::Type::INT_CONSTANT,
+                (param_left->getIntAutomaton()->getAnAcceptingInt()
+                        - param_right->getIntAutomaton()->getAnAcceptingInt()));
+      } else {
+        result = new Value(Value::Type::INT_AUTOMATON,
+                param_left->getIntAutomaton()->minus(param_right->getIntAutomaton()));
+      }
+    } else {
+      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *minus_term;
+    }
   } else {
-    LOG(FATAL) << "implement me"; // handle cases in a better way
+    LOG(FATAL) << "Unexpected left parameter: " << *param_left << " in " << *minus_term;
   }
 
   setTermValue(minus_term, result);
@@ -195,15 +225,45 @@ void PostImageComputer::visitPlus(Plus_ptr plus_term) {
   Value_ptr result = nullptr, param_left = getTermValue(plus_term->left_term),
       param_right = getTermValue(plus_term->right_term);
 
-  if (Value::Type::INT_CONSTANT == param_left->getType()
-      and Value::Type::INT_CONSTANT == param_right->getType()) {
-    result = new Value(Value::Type::INT_CONSTANT,
-        param_left->getIntConstant() + param_right->getIntConstant());
-  } else if (Value::Type::INT_AUTOMATON == param_left->getType()
-      and Value::Type::INT_AUTOMATON == param_right->getType()) {
-    LOG(FATAL)<< "implement me";
+  if (Value::Type::INT_CONSTANT == param_left->getType()) {
+    if (Value::Type::INT_CONSTANT == param_right->getType()) {
+      result = new Value(Value::Type::INT_CONSTANT,
+              param_left->getIntConstant() + param_right->getIntConstant());
+    } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
+      if (param_right->getIntAutomaton()->isAcceptingSingleInt()) {
+        result = new Value(Value::Type::INT_CONSTANT,
+                param_left->getIntConstant() + param_right->getIntAutomaton()->getAnAcceptingInt());
+      } else {
+        result = new Value(Value::Type::INT_AUTOMATON,
+                param_right->getIntAutomaton()->plus(param_left->getIntConstant()));
+      }
+    } else {
+      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *plus_term;
+    }
+  } else if (Value::Type::INT_AUTOMATON == param_left->getType()) {
+    if (Value::Type::INT_CONSTANT == param_right->getType()) {
+      if (param_left->getIntAutomaton()->isAcceptingSingleInt()) {
+        result = new Value(Value::Type::INT_CONSTANT,
+                param_left->getIntAutomaton()->getAnAcceptingInt() + param_right->getIntConstant());
+      } else {
+        result = new Value(Value::Type::INT_AUTOMATON,
+                param_left->getIntAutomaton()->plus(param_right->getIntConstant()));
+      }
+    } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
+      if (param_left->getIntAutomaton()->isAcceptingSingleInt() and
+              param_right->getIntAutomaton()->isAcceptingSingleInt()) {
+        result = new Value(Value::Type::INT_CONSTANT,
+                (param_left->getIntAutomaton()->getAnAcceptingInt()
+                        + param_right->getIntAutomaton()->getAnAcceptingInt()));
+      } else {
+        result = new Value(Value::Type::INT_AUTOMATON,
+                param_left->getIntAutomaton()->plus(param_right->getIntAutomaton()));
+      }
+    } else {
+      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *plus_term;
+    }
   } else {
-    LOG(FATAL) << "implement me"; // handle cases in a better way
+    LOG(FATAL) << "Unexpected left parameter: " << *param_left << " in " << *plus_term;
   }
 
   setTermValue(plus_term, result);
@@ -218,53 +278,201 @@ void PostImageComputer::visitEq(Eq_ptr eq_term) {
   param_left = getTermValue(eq_term->left_term);
   param_right = getTermValue(eq_term->right_term);
 
-  // TODO cases here does not cover all possibilities, improve code later
-  switch (param_left->getType()) {
-  case Value::Type::BOOl_CONSTANT: {
+  if (Value::Type::BOOl_CONSTANT == param_left->getType() and
+          Value::Type::BOOl_CONSTANT == param_right->getType()) {
     result = new Value(Value::Type::BOOl_CONSTANT,
-        param_left->getBoolConstant() == param_right->getBoolConstant());
-    break;
-  }
-  case Value::Type::INT_CONSTANT: {
+            param_left->getBoolConstant() == param_right->getBoolConstant());
+  } else if (Value::Type::INT_CONSTANT == param_left->getType() and
+          Value::Type::INT_CONSTANT == param_right->getType()) {
     result = new Value(Value::Type::BOOl_CONSTANT,
-        param_left->getIntConstant() == param_right->getIntConstant());
-    break;
-  }
-  case Value::Type::BOOL_AUTOMATON:
-  case Value::Type::INT_AUTOMATON:
-  case Value::Type::STRING_AUTOMATON: {
+            param_left->getIntConstant() == param_right->getIntConstant());
+  } else {
     result = param_left->intersect(param_right);
-    break;
-  }
-  default:
-    LOG(FATAL)<< "eq term child is not computed properly";
-    break;
   }
 
   setTermValue(eq_term, result);
 }
 
 void PostImageComputer::visitNotEq(NotEq_ptr not_eq_term) {
+  __visit_children_of(not_eq_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *not_eq_term;
+
+  Value_ptr result = nullptr, param_left = nullptr, param_right = nullptr;
+
+  param_left = getTermValue(not_eq_term->left_term);
+  param_right = getTermValue(not_eq_term->right_term);
+
+  if (Value::Type::BOOl_CONSTANT == param_left->getType() and
+          Value::Type::BOOl_CONSTANT == param_right->getType()) {
+    result = new Value(Value::Type::BOOl_CONSTANT,
+            param_left->getBoolConstant() not_eq param_right->getBoolConstant());
+  } else if (Value::Type::INT_CONSTANT == param_left->getType() and
+          Value::Type::INT_CONSTANT == param_right->getType()) {
+    result = new Value(Value::Type::BOOl_CONSTANT,
+            param_left->getIntConstant() not_eq param_right->getIntConstant());
+  } else if (Value::Type::INT_AUTOMATON == param_left->getType() and
+          Value::Type::INT_AUTOMATON == param_right->getType()) {
+    if (param_right->getIntAutomaton()->isAcceptingSingleInt()) {
+      result = param_left->difference(param_right);
+    } else {
+      result = param_left->clone();
+    }
+  } else if (Value::Type::STRING_AUTOMATON == param_left->getType() and
+          Value::Type::STRING_AUTOMATON == param_right->getType()) {
+    if (param_right->getStringAutomaton()->isAcceptingSingleString()) {
+      result = param_left->difference(param_right);
+    } else {
+      result = param_left->clone();
+    }
+  } else {
+
+  }
+
+  setTermValue(not_eq_term, result);
 }
 
 void PostImageComputer::visitGt(Gt_ptr gt_term) {
   visit_children_of(gt_term);
-  LOG(FATAL)<< "implement me";
+  DVLOG(VLOG_LEVEL) << "visit: " << *gt_term;
+
+  Value_ptr result = nullptr, param_left = nullptr, param_right = nullptr;
+
+  param_left = getTermValue(gt_term->left_term);
+  param_right = getTermValue(gt_term->right_term);
+
+  if (Value::Type::INT_CONSTANT == param_left->getType()) {
+    if (Value::Type::INT_CONSTANT == param_right->getType()) {
+      result = new Value(Value::Type::BOOl_CONSTANT,
+              (param_left->getIntConstant() > param_right->getIntConstant()));
+    } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
+        result = new Value(Value::Type::BOOl_CONSTANT,
+                param_right->getIntAutomaton()->isLessThan(param_left->getIntConstant()));
+    } else {
+      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *gt_term;
+    }
+  } else if (Value::Type::INT_AUTOMATON == param_left->getType()) {
+    if (Value::Type::INT_CONSTANT == param_right->getType()) {
+      result = new Value(Value::Type::BOOl_CONSTANT,
+              param_left->getIntAutomaton()->isGreaterThan(param_right->getIntConstant()));
+    } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
+      result = new Value(Value::Type::BOOl_CONSTANT,
+              param_right->getIntAutomaton()->isGreaterThan(param_left->getIntAutomaton()));
+    } else {
+      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *gt_term;
+    }
+  } else {
+    LOG(FATAL) << "Unexpected left parameter: " << *param_left << " in " << *gt_term;
+  }
+
+  setTermValue(gt_term, result);
 }
 
 void PostImageComputer::visitGe(Ge_ptr ge_term) {
   visit_children_of(ge_term);
-  LOG(FATAL)<< "implement me";
+  DVLOG(VLOG_LEVEL) << "visit: " << *ge_term;
+
+  Value_ptr result = nullptr, param_left = nullptr, param_right = nullptr;
+
+  param_left = getTermValue(ge_term->left_term);
+  param_right = getTermValue(ge_term->right_term);
+
+  if (Value::Type::INT_CONSTANT == param_left->getType()) {
+    if (Value::Type::INT_CONSTANT == param_right->getType()) {
+      result = new Value(Value::Type::BOOl_CONSTANT,
+              (param_left->getIntConstant() > param_right->getIntConstant()));
+    } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
+        result = new Value(Value::Type::BOOl_CONSTANT,
+                param_right->getIntAutomaton()->isLessThanOrEqual(param_left->getIntConstant()));
+    } else {
+      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *ge_term;
+    }
+  } else if (Value::Type::INT_AUTOMATON == param_left->getType()) {
+    if (Value::Type::INT_CONSTANT == param_right->getType()) {
+      result = new Value(Value::Type::BOOl_CONSTANT,
+              param_left->getIntAutomaton()->isGreaterThanOrEqual(param_right->getIntConstant()));
+    } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
+      result = new Value(Value::Type::BOOl_CONSTANT,
+              param_right->getIntAutomaton()->isGreaterThanOrEqual(param_left->getIntAutomaton()));
+    } else {
+      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *ge_term;
+    }
+  } else {
+    LOG(FATAL) << "Unexpected left parameter: " << *param_left << " in " << *ge_term;
+  }
+
+  setTermValue(ge_term, result);
 }
 
 void PostImageComputer::visitLt(Lt_ptr lt_term) {
   visit_children_of(lt_term);
-  LOG(FATAL)<< "implement me";
+  DVLOG(VLOG_LEVEL) << "visit: " << *lt_term;
+
+  Value_ptr result = nullptr, param_left = nullptr, param_right = nullptr;
+
+  param_left = getTermValue(lt_term->left_term);
+  param_right = getTermValue(lt_term->right_term);
+
+  if (Value::Type::INT_CONSTANT == param_left->getType()) {
+    if (Value::Type::INT_CONSTANT == param_right->getType()) {
+      result = new Value(Value::Type::BOOl_CONSTANT,
+              (param_left->getIntConstant() > param_right->getIntConstant()));
+    } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
+        result = new Value(Value::Type::BOOl_CONSTANT,
+                param_right->getIntAutomaton()->isGreaterThan(param_left->getIntConstant()));
+    } else {
+      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *lt_term;
+    }
+  } else if (Value::Type::INT_AUTOMATON == param_left->getType()) {
+    if (Value::Type::INT_CONSTANT == param_right->getType()) {
+      result = new Value(Value::Type::BOOl_CONSTANT,
+              param_left->getIntAutomaton()->isLessThan(param_right->getIntConstant()));
+    } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
+      result = new Value(Value::Type::BOOl_CONSTANT,
+              param_right->getIntAutomaton()->isLessThan(param_left->getIntAutomaton()));
+    } else {
+      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *lt_term;
+    }
+  } else {
+    LOG(FATAL) << "Unexpected left parameter: " << *param_left << " in " << *lt_term;
+  }
+
+  setTermValue(lt_term, result);
 }
 
 void PostImageComputer::visitLe(Le_ptr le_term) {
   visit_children_of(le_term);
-  LOG(FATAL)<< "implement me";
+  DVLOG(VLOG_LEVEL) << "visit: " << *le_term;
+
+  Value_ptr result = nullptr, param_left = nullptr, param_right = nullptr;
+
+  param_left = getTermValue(le_term->left_term);
+  param_right = getTermValue(le_term->right_term);
+
+  if (Value::Type::INT_CONSTANT == param_left->getType()) {
+    if (Value::Type::INT_CONSTANT == param_right->getType()) {
+      result = new Value(Value::Type::BOOl_CONSTANT,
+              (param_left->getIntConstant() > param_right->getIntConstant()));
+    } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
+        result = new Value(Value::Type::BOOl_CONSTANT,
+                param_right->getIntAutomaton()->isGreaterThanOrEqual(param_left->getIntConstant()));
+    } else {
+      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *le_term;
+    }
+  } else if (Value::Type::INT_AUTOMATON == param_left->getType()) {
+    if (Value::Type::INT_CONSTANT == param_right->getType()) {
+      result = new Value(Value::Type::BOOl_CONSTANT,
+              param_left->getIntAutomaton()->isLessThanOrEqual(param_right->getIntConstant()));
+    } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
+      result = new Value(Value::Type::BOOl_CONSTANT,
+              param_right->getIntAutomaton()->isLessThanOrEqual(param_left->getIntAutomaton()));
+    } else {
+      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *le_term;
+    }
+  } else {
+    LOG(FATAL) << "Unexpected left parameter: " << *param_left << " in " << *le_term;
+  }
+
+  setTermValue(le_term, result);
 }
 
 void PostImageComputer::visitConcat(Concat_ptr concat_term) {

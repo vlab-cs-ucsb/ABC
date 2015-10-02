@@ -1682,6 +1682,49 @@ StringAutomaton_ptr StringAutomaton::preTrim(StringAutomaton_ptr rangeAuto) {
   return result_auto;
 }
 
+StringAutomaton_ptr StringAutomaton::preConcatLeft(StringAutomaton_ptr right_auto) {
+  DFA_ptr result_dfa = nullptr;
+  StringAutomaton_ptr result_auto = nullptr;
+
+  if (right_auto->isAcceptingSingleString()) {
+    std::string string_value = right_auto->getAnAcceptingString();
+
+    char* string_value_ptr = new char[string_value.length() + 1];
+    strncpy(string_value_ptr, string_value.c_str(), string_value.length() + 1);
+    result_dfa = dfa_pre_concat_const(this->dfa, string_value_ptr, 1, num_of_variables, variable_indices);
+    delete[] string_value_ptr;
+  } else {
+    result_dfa = dfa_pre_concat(this->dfa, right_auto->dfa, 1, num_of_variables, variable_indices);
+  }
+
+  result_auto = new StringAutomaton(result_dfa, num_of_variables);
+
+  DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->preLeftConcat(" << right_auto->id << ")";
+
+  return result_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::preConcatRight(StringAutomaton_ptr left_auto) {
+  DFA_ptr result_dfa = nullptr;
+  StringAutomaton_ptr result_auto = nullptr;
+
+  if (left_auto->isAcceptingSingleString()) {
+    std::string string_value = left_auto->getAnAcceptingString();
+    char* string_value_ptr = new char[string_value.length() + 1];
+    strncpy(string_value_ptr, string_value.c_str(), string_value.length() + 1);
+    result_dfa = dfa_pre_concat_const(this->dfa, string_value_ptr, 2, num_of_variables, variable_indices);
+    delete[] string_value_ptr;
+  } else {
+    result_dfa = dfa_pre_concat(this->dfa, left_auto->dfa, 2, num_of_variables, variable_indices);
+  }
+
+  result_auto = new StringAutomaton(result_dfa, num_of_variables);
+
+  DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->preLeftConcat(" << left_auto->id << ")";
+
+  return result_auto;
+}
+
 StringAutomaton_ptr StringAutomaton::preReplace(StringAutomaton_ptr searchAuto, std::string replaceString, StringAutomaton_ptr rangeAuto) {
   DFA_ptr result_dfa = nullptr;
   StringAutomaton_ptr result_auto = nullptr;
@@ -1715,9 +1758,8 @@ bool StringAutomaton::isAcceptingSingleString() {
   return isAcceptingSingleWord();
 }
 
-std::string StringAutomaton::getString() {
-  char* result = isSingleton(this->dfa,StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  return std::string(result);
+std::string StringAutomaton::getAnAcceptingString() {
+  return Automaton::getAnAcceptingWord();
 }
 
 //void StringAutomaton::toDotAscii(bool print_sink, std::ostream& out) {
@@ -2128,41 +2170,6 @@ GraphOld* StringAutomaton::getGraph() {
   }
 
    return graph;
-}
-
-/**
- * @returns graph representation of automaton
- */
-Graph_ptr StringAutomaton::toGraph() {
-  Graph_ptr graph = new Graph();
-  std::set<int>* states = nullptr;
-  GraphNode_ptr node = nullptr, next_node = nullptr;
-  for (int s = 0; s < this->dfa->ns; s++) {
-    node = new GraphNode(s);
-    if (s == 0) {
-      graph->setStartNode(node);
-    }
-
-    if (this->isSinkState(s)) {
-      graph->setSinkNode(node);
-    } else if (this->isAcceptingState(s)) {
-      graph->addFinalNode(node);
-    } else {
-      graph->addNode(node);
-    }
-  }
-  node = nullptr;
-  for (auto& entry : graph->getNodeMap()) {
-    node = entry.second;
-    states = this->getNextStates(node->getID());
-    for (int id : *states) {
-      next_node = graph->getNode(id);
-      node->addNextNode(next_node);
-      next_node->addPrevNode(node);
-    }
-  }
-
-  return graph;
 }
 
 } /* namespace Theory */
