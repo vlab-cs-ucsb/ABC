@@ -169,38 +169,65 @@ Graph_ptr Automaton::toGraph() {
 }
 
 /**
- * TODO bug here handle case "(a|b)(c|d)"
+ * Assumes automaton is minimized and there is a sink state
+ * @returns true if automaton is a singleton
  */
 bool Automaton::isAcceptingSingleWord() {
-  LOG(FATAL) << "fix bug here";
-  int sink_state = getSinkState(),
-      curr_state = -1,
-      num_of_accepting_paths = 0;
-  std::stack<int> state_path;
-  std::set<int>* next_states = nullptr;
+  unsigned p, l, r, index; // BDD traversal variables
+  std::map<unsigned, unsigned> next_states;
+  std::vector<unsigned> nodes;
+  std::vector<int> bit_stack;
+  unsigned sink_state = (unsigned)this->getSinkState();
+  bool is_accepting_single_word = true;
+  bool is_final_state = false;
+  int bit_counter = 0;
 
-  state_path.push(this->dfa->s);
-  while (not state_path.empty()) {
-    curr_state = state_path.top(); state_path.pop();
-    if (this->isAcceptingState(curr_state)) {
-      ++num_of_accepting_paths;
+  std::cout << "sink state: " << sink_state << std::endl;
+
+  for (int s = 0; s < this->dfa->ns; s++) {
+    is_final_state = isAcceptingState(s);
+    p = this->dfa->q[s];
+    nodes.push_back(p);
+    bit_stack.push_back(0);
+    while (not nodes.empty()) {
+      p = nodes.back(); nodes.pop_back();
+      bit_counter = bit_stack.back(); bit_stack.pop_back();
+      LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
+      if (index == BDD_LEAF_INDEX) {
+        if ( sink_state != l) {
+          next_states[l]++;
+          if ( bit_counter != num_of_variables  or (next_states[l] > 1) or (next_states.size() > 1) or is_final_state) {
+            is_accepting_single_word = false;
+            break;
+          }
+        }
+      } else {
+
+        bit_stack.push_back(bit_counter + 1);
+        nodes.push_back(l);
+        bit_stack.push_back(bit_counter + 1);
+        nodes.push_back(r);
+      }
     }
-    if (num_of_accepting_paths > 1) {
-      return false;
+
+    nodes.clear();
+    bit_stack.clear();
+    next_states.clear();
+    is_final_state = false;
+    p = l = r = index = -1;
+    if (not is_accepting_single_word) {
+      break;
     }
-    next_states = this->getNextStates(curr_state);
-    next_states->erase(sink_state);
-    for (int next_state : *next_states) {
-      state_path.push(next_state);
-    }
-    delete next_states; next_states = nullptr;
   }
 
-  return (num_of_accepting_paths == 1);
+  return is_accepting_single_word;
 }
 
 std::string Automaton::getAnAcceptingWord() {
   char* result = isSingleton(this->dfa, num_of_variables, variable_indices);
+  if (result == NULL) {
+    std::cout << "what the hack" << std::endl;
+  }
   return std::string(result);
 }
 

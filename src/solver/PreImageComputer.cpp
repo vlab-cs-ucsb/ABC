@@ -76,21 +76,67 @@ void PreImageComputer::visitLet(Let_ptr let_term) {
 }
 
 void PreImageComputer::visitAnd(And_ptr and_term) {
-  LOG(FATAL) << "implement me";
+  LOG(ERROR) << "Unexpected term: " << *and_term;
 }
 
 void PreImageComputer::visitOr(Or_ptr or_term) {
-  LOG(FATAL) << "implement me";
+  LOG(ERROR) << "Unexpected term: " << *or_term;
 }
 
 void PreImageComputer::visitNot(Not_ptr not_term) {
-  LOG(FATAL) << "implement me";
-  visit_children_of(not_term);
+  DVLOG(VLOG_LEVEL) << "pop: " << *not_term;
+  popTerm(not_term);
+  Term_ptr child_term = current_path.back();
+  Value_ptr child_value = getTermPreImage(child_term);
+  if (child_value not_eq nullptr) {
+    visit(child_term);
+    return;
+  }
+
+  Value_ptr term_value = getTermPreImage(not_term);
+  child_value = term_value->clone();
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
 }
 
 void PreImageComputer::visitUMinus(UMinus_ptr u_minus_term) {
-  LOG(FATAL) << "implement me";
-  visit_children_of(u_minus_term);
+  DVLOG(VLOG_LEVEL) << "pop: " << *u_minus_term;
+  popTerm(u_minus_term);
+  Term_ptr child_term = current_path.back();
+  Value_ptr child_value = getTermPreImage(child_term);
+  if (child_value not_eq nullptr) {
+    visit(child_term);
+    return;
+  }
+
+  Value_ptr term_value = getTermPreImage(u_minus_term);
+  switch (term_value->getType()) {
+  case Value::Type::INT_CONSTANT: {
+    int value = - term_value->getIntConstant();
+    child_value = new Value(Value::Type::INT_CONSTANT, value);
+    break;
+  }
+  case Value::Type::INT_AUTOMATON: {
+    if (term_value->getIntAutomaton()->isAcceptingSingleInt()) {
+      int value = (- term_value->getIntAutomaton()->getAnAcceptingInt());
+      child_value = new Value(Value::Type::INT_CONSTANT, value);
+    } else {
+      child_value = new Value(Value::Type::INT_AUTOMATON,
+              term_value->getIntAutomaton()->uminus());
+    }
+    break;
+  }
+  case Value::Type::INTBOOL_AUTOMATON: {
+    // do minus operation on automaton
+    LOG(FATAL) << "implement me";
+    break;
+  }
+  default:
+  break;
+  }
+
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
 }
 
 void PreImageComputer::visitMinus(Minus_ptr minus_term) {
@@ -483,9 +529,6 @@ bool PreImageComputer::setTermPreImage(SMT::Term_ptr term, Value_ptr value) {
   return result.second;
 }
 
-/**
- * TODO let this function check parent
- */
 void PreImageComputer::popTerm(SMT::Term_ptr term) {
   if (current_path.back() == term) {
     current_path.pop_back();

@@ -436,7 +436,6 @@ int IntAutomaton::getMaxAcceptedInt() {
   adjacency_count_list[this->getSinkState()] = NodeVector(0);
 
   const int n = adjacency_count_list.size();
-  int j, col;
   int y;
   int * u = new int[n];
   int * v = new int[n];

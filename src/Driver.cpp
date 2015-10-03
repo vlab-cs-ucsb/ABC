@@ -127,10 +127,26 @@ void Driver::reset() {
 
 void Driver::test() {
 
-  Theory::IntAutomaton_ptr int_auto = Theory::IntAutomaton::makeAnyInt();
-  Theory::StringAutomaton_ptr str_auto = Theory::StringAutomaton::makeString("baki");
-  int_auto = str_auto->length();
-  int_auto->inspectAuto();
+  Theory::IntAutomaton_ptr int_auto_1 = nullptr, int_auto_2 = nullptr;
+  Theory::IntAutomaton_ptr int_auto_3 = Theory::IntAutomaton::makeInt(4);
+  Theory::StringAutomaton_ptr str_auto_1 = Theory::StringAutomaton::makeString("baki");
+  Theory::StringAutomaton_ptr str_auto_2 = Theory::StringAutomaton::makeRegexAuto("(b|a)(k|i)");
+
+  int_auto_1 = str_auto_1->length();
+  int_auto_2 = str_auto_2->length();
+
+  std::cout << "str auto 1: " << str_auto_1->isAcceptingSingleString() << std::endl;
+  std::cout << "int auto 1: " << int_auto_1->isAcceptingSingleInt() << std::endl;
+  str_auto_1->inspectAuto();
+  int_auto_1->inspectAuto();
+  std::cout << "str auto 2: " << str_auto_2->isAcceptingSingleString() << std::endl;
+  std::cout << "int auto 2: " << int_auto_2->isAcceptingSingleInt() << std::endl;
+  str_auto_2->inspectAuto();
+  int_auto_2->inspectAuto();
+  std::cout << "int auto 3: " << int_auto_3->isAcceptingSingleInt() << std::endl;
+  int_auto_3->inspectAuto();
+
+
 
 //  non_accepting_auto->inspectAuto(true);
 

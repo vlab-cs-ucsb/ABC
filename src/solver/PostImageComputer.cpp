@@ -52,7 +52,6 @@ void PostImageComputer::visitAssert(Assert_ptr assert_command) {
       update_variables();
     }
   }
-
   clearTermValues();
 }
 
@@ -97,14 +96,12 @@ void PostImageComputer::visitAnd(And_ptr and_term) {
   setTermValue(and_term, result);
 }
 
-/**
- * union results for each variable
- */
 void PostImageComputer::visitOr(Or_ptr or_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *or_term;
 
   bool is_satisfiable = false;
   Value_ptr result = nullptr, param = nullptr;
+  std::map<Visitable_ptr, bool> is_scope_satisfiable;
 
   for (auto& term : *(or_term->term_list)) {
     symbol_table->push_scope(term);
@@ -118,14 +115,47 @@ void PostImageComputer::visitOr(Or_ptr or_term) {
       }
       clearTermValues();
     }
-
-    is_satisfiable = is_satisfiable or param->isSatisfiable();
+    is_scope_satisfiable[term] = param->isSatisfiable();
+    is_satisfiable = is_satisfiable or is_scope_satisfiable[term]; // if only doing satisfiability we can termina whenever it is true
     symbol_table->pop_scope();
   }
 
   result = new Value(Value::Type::BOOl_CONSTANT, is_satisfiable);
 
   setTermValue(or_term, result);
+
+  // update symbolic variablee
+  Variable_ptr symbolic_var = symbol_table->getSymbolicVariable();
+  Value_ptr symbolic_var_result = nullptr, tmp_result = nullptr;
+  for (auto& term : *(or_term->term_list)) {
+    symbol_table->push_scope(term);
+    if (symbolic_var_result) {
+      if (is_scope_satisfiable[term]) {
+        tmp_result = symbolic_var_result;
+        symbolic_var_result = symbol_table->getValue(symbolic_var)->union_(tmp_result);
+        delete tmp_result;
+      }
+    } else {
+      if (is_scope_satisfiable[term]) {
+        symbolic_var_result = symbol_table->getValue(symbolic_var)->clone();
+      } else {
+        switch (symbolic_var->getType()) {
+          case Variable::Type::BOOL:
+            symbolic_var_result = new Value(Value::Type::BOOl_CONSTANT, false);
+            break;
+          case Variable::Type::INT:
+            symbolic_var_result = new Value(Value::Type::INT_AUTOMATON, Theory::IntAutomaton::makePhi());
+            break;
+          case Variable::Type::STRING:
+            symbolic_var_result = new Value(Value::Type::STRING_AUTOMATON, Theory::StringAutomaton::makePhi());
+            break;
+          default:
+            break;
+        }
+      }
+    }
+    symbol_table->pop_scope();
+  }
 }
 
 void PostImageComputer::visitNot(Not_ptr not_term) {
