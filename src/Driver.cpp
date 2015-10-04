@@ -90,6 +90,7 @@ void Driver::initializeSolver() {
 }
 
 void Driver::solve() {
+  ast2dot("./output/test.dot");
   Solver::PostImageComputer post_image_computer(script, symbol_table);
   post_image_computer.start();
 
@@ -114,7 +115,7 @@ void Driver::printResult(std::ostream& out) {
   symbol_table->push_scope(script);
   SMT::Variable_ptr variable = symbol_table->getSymbolicVariable();
   Solver::Value_ptr result = symbol_table->getValue(variable);
-  result->getStringAutomaton()->toDotAscii(true, out);
+  result->getStringAutomaton()->toDotAscii(false, out);
 }
 
 void Driver::reset() {
@@ -126,25 +127,17 @@ void Driver::reset() {
 }
 
 void Driver::test() {
+  return;
+//  Theory::StringAutomaton_ptr str_auto_1 = Theory::StringAutomaton::makePhi();
+//  Theory::StringAutomaton_ptr str_auto_2 = Theory::StringAutomaton::makeRegexAuto("(b|a)(k|i)*");
+//  Theory::StringAutomaton_ptr str_auto_3 = nullptr;
 
-  Theory::IntAutomaton_ptr int_auto_1 = nullptr, int_auto_2 = nullptr;
-  Theory::IntAutomaton_ptr int_auto_3 = Theory::IntAutomaton::makeInt(4);
-  Theory::StringAutomaton_ptr str_auto_1 = Theory::StringAutomaton::makeString("baki");
-  Theory::StringAutomaton_ptr str_auto_2 = Theory::StringAutomaton::makeRegexAuto("(b|a)(k|i)");
+//  str_auto_3 = str_auto_1->concat(str_auto_2);
+//  str_auto_3->inspectAuto();
 
-  int_auto_1 = str_auto_1->length();
-  int_auto_2 = str_auto_2->length();
-
-  std::cout << "str auto 1: " << str_auto_1->isAcceptingSingleString() << std::endl;
-  std::cout << "int auto 1: " << int_auto_1->isAcceptingSingleInt() << std::endl;
-  str_auto_1->inspectAuto();
-  int_auto_1->inspectAuto();
-  std::cout << "str auto 2: " << str_auto_2->isAcceptingSingleString() << std::endl;
-  std::cout << "int auto 2: " << int_auto_2->isAcceptingSingleInt() << std::endl;
-  str_auto_2->inspectAuto();
-  int_auto_2->inspectAuto();
-  std::cout << "int auto 3: " << int_auto_3->isAcceptingSingleInt() << std::endl;
-  int_auto_3->inspectAuto();
+//  str_auto_3 = str_auto_2->concat(str_auto_1);
+//  std::cout << "concat ok" << std::endl;
+//  str_auto_3->inspectAuto();
 
 
 

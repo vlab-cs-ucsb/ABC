@@ -36,7 +36,6 @@ public:
   static BoolAutomaton_ptr makeFalse(int num_of_variables = BoolAutomaton::DEFAULT_NUM_OF_VARIABLES,
       int* variable_indices = BoolAutomaton::DEFAULT_VARIABLE_INDICES);
 
-
   void toDot();
 protected:
   DFA_ptr dfa;

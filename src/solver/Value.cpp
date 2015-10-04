@@ -211,9 +211,11 @@ Value::~Value() {
         intersection_value = new Value(Type::INT_AUTOMATON, Theory::IntAutomaton::makePhi());
       }
     } else if (Type::INT_CONSTANT == type and Type::INT_AUTOMATON == other_value->type) {
-      other_value->int_automaton->intersect(int_constant);
+      intersection_value = new Value(Value::Type::INT_AUTOMATON,
+              other_value->int_automaton->intersect(int_constant));
     } else if (Type::INT_AUTOMATON == type and Type::INT_CONSTANT == other_value->type) {
-      int_automaton->intersect(other_value->int_constant);
+      intersection_value = new Value(Value::Type::INT_AUTOMATON,
+              int_automaton->intersect(other_value->int_constant));
     } else {
       LOG(FATAL) << "cannot intersect types (implement me): " << *this << " & " << *other_value;
     }
@@ -279,7 +281,7 @@ Value::~Value() {
     } else if (Type::INT_AUTOMATON == type and Type::INT_CONSTANT == other_value->type) {
       int_automaton->difference(other_value->int_constant);
     } else {
-      LOG(FATAL) << "cannot intersect types (implement me): " << *this << " & " << *other_value;
+      LOG(FATAL) << "cannot difference types (implement me): " << *this << " & " << *other_value;
     }
     return difference_value;
   }
@@ -288,11 +290,101 @@ Value::~Value() {
     Value_ptr concat_value = nullptr;
     if (Type::STRING_AUTOMATON == type and type == other_value->type) {
       concat_value = new Value(Type::STRING_AUTOMATON,
-          string_automaton->concatenate(other_value->string_automaton));
+          string_automaton->concat(other_value->string_automaton));
     } else {
       LOG(FATAL) << "cannot concatenate values";
     }
     return concat_value;
+  }
+
+  Value_ptr Value::plus(Value_ptr other_value) const {
+    Value_ptr result = nullptr;
+    if (Value::Type::INT_CONSTANT == this->getType()) {
+      if (Value::Type::INT_CONSTANT == other_value->getType()) {
+        result = new Value(Value::Type::INT_CONSTANT,
+                this->getIntConstant() + other_value->getIntConstant());
+      } else if (Value::Type::INT_AUTOMATON == other_value->getType()) {
+        if (other_value->getIntAutomaton()->isAcceptingSingleInt()) {
+          result = new Value(Value::Type::INT_CONSTANT,
+                  this->getIntConstant() + other_value->getIntAutomaton()->getAnAcceptingInt());
+        } else {
+          result = new Value(Value::Type::INT_AUTOMATON,
+                  other_value->getIntAutomaton()->plus(this->getIntConstant()));
+        }
+      } else {
+        LOG(FATAL) << "Unexpected right parameter: " << *other_value;
+      }
+    } else if (Value::Type::INT_AUTOMATON == this->getType()) {
+      if (Value::Type::INT_CONSTANT == other_value->getType()) {
+        if (this->getIntAutomaton()->isAcceptingSingleInt()) {
+          result = new Value(Value::Type::INT_CONSTANT,
+                  this->getIntAutomaton()->getAnAcceptingInt() + other_value->getIntConstant());
+        } else {
+          result = new Value(Value::Type::INT_AUTOMATON,
+                  this->getIntAutomaton()->plus(other_value->getIntConstant()));
+        }
+      } else if (Value::Type::INT_AUTOMATON == other_value->getType()) {
+        if (this->getIntAutomaton()->isAcceptingSingleInt() and
+                other_value->getIntAutomaton()->isAcceptingSingleInt()) {
+          result = new Value(Value::Type::INT_CONSTANT,
+                  (this->getIntAutomaton()->getAnAcceptingInt()
+                          + other_value->getIntAutomaton()->getAnAcceptingInt()));
+        } else {
+          result = new Value(Value::Type::INT_AUTOMATON,
+                  this->getIntAutomaton()->plus(other_value->getIntAutomaton()));
+        }
+      } else {
+        LOG(FATAL) << "Unexpected right parameter: " << *other_value;
+      }
+    } else {
+      LOG(FATAL) << "Unexpected left parameter: " << *this;
+    }
+    return result;
+  }
+
+  Value_ptr Value::minus(Value_ptr other_value) const {
+    Value_ptr result = nullptr;
+    if (Value::Type::INT_CONSTANT == this->getType()) {
+      if (Value::Type::INT_CONSTANT == other_value->getType()) {
+        result = new Value(Value::Type::INT_CONSTANT,
+                this->getIntConstant() - other_value->getIntConstant());
+      } else if (Value::Type::INT_AUTOMATON == other_value->getType()) {
+        if (other_value->getIntAutomaton()->isAcceptingSingleInt()) {
+          result = new Value(Value::Type::INT_CONSTANT,
+                  this->getIntConstant() - other_value->getIntAutomaton()->getAnAcceptingInt());
+        } else {
+          result = new Value(Value::Type::INT_AUTOMATON,
+                  other_value->getIntAutomaton()->substractFrom(this->getIntConstant()));
+        }
+      } else {
+        LOG(FATAL) << "Unexpected right parameter: " << *other_value;
+      }
+    } else if (Value::Type::INT_AUTOMATON == this->getType()) {
+      if (Value::Type::INT_CONSTANT == other_value->getType()) {
+        if (this->getIntAutomaton()->isAcceptingSingleInt()) {
+          result = new Value(Value::Type::INT_CONSTANT,
+                  this->getIntAutomaton()->getAnAcceptingInt() - other_value->getIntConstant());
+        } else {
+          result = new Value(Value::Type::INT_AUTOMATON,
+                  this->getIntAutomaton()->minus(other_value->getIntConstant()));
+        }
+      } else if (Value::Type::INT_AUTOMATON == other_value->getType()) {
+        if (this->getIntAutomaton()->isAcceptingSingleInt() and
+                other_value->getIntAutomaton()->isAcceptingSingleInt()) {
+          result = new Value(Value::Type::INT_CONSTANT,
+                  (this->getIntAutomaton()->getAnAcceptingInt()
+                          - other_value->getIntAutomaton()->getAnAcceptingInt()));
+        } else {
+          result = new Value(Value::Type::INT_AUTOMATON,
+                  this->getIntAutomaton()->minus(other_value->getIntAutomaton()));
+        }
+      } else {
+        LOG(FATAL) << "Unexpected right parameter: " << *other_value;
+      }
+    } else {
+      LOG(FATAL) << "Unexpected left parameter: " << *this;
+    }
+    return result;
   }
 
   bool Value::isSatisfiable() {
@@ -310,7 +402,7 @@ Value::~Value() {
       LOG(FATAL) << "implement me";
       break;
     case Type::INT_AUTOMATON:
-      LOG(FATAL) << "implement me";
+      is_satisfiable = not int_automaton->isEmptyLanguage();
       break;
     case Type::INTBOOL_AUTOMATON:
       LOG(FATAL) << "implement me";
@@ -323,6 +415,34 @@ Value::~Value() {
       break;
     }
     return is_satisfiable;
+  }
+
+  bool Value::isSingleValue() {
+    bool is_single_value = false;
+    switch (type) {
+    case Type::NONE:
+      break;
+    case Type::BOOl_CONSTANT:
+    case Type::INT_CONSTANT:
+      is_single_value = true;
+      break;
+    case Type::BOOL_AUTOMATON:
+      LOG(FATAL) << "implement me";
+      break;
+    case Type::INT_AUTOMATON:
+      is_single_value = int_automaton->isAcceptingSingleInt();
+      break;
+    case Type::INTBOOL_AUTOMATON:
+      LOG(FATAL) << "implement me";
+      break;
+    case Type::STRING_AUTOMATON:
+      is_single_value = string_automaton->isAcceptingSingleString();
+      break;
+    default:
+      LOG(FATAL) << "value type is not supported";
+      break;
+    }
+    return is_single_value;
   }
 
   std::ostream& operator<<(std::ostream& os, const Value& value) {

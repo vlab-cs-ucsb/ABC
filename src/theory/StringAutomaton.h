@@ -110,18 +110,24 @@ public:
   StringAutomaton_ptr replace(StringAutomaton_ptr search_auto, StringAutomaton_ptr replace_auto);
 
   IntAutomaton_ptr length();
+  StringAutomaton_ptr restrictLengthTo(int length);
+  StringAutomaton_ptr restrictLengthTo(IntAutomaton_ptr length_auto);
+  StringAutomaton_ptr restrictIndexOfTo(int index, StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr restrictIndexOfTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr restrictLastIndexOfTo(int index, StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr restrictLastIndexOfTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto);
+
+  StringAutomaton_ptr restrictFromIndexToEndTo(int index, StringAutomaton_ptr sub_string_auto);
+  StringAutomaton_ptr restrictFromIndexToEndTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr sub_string_auto);
+  StringAutomaton_ptr restrictAtIndexTo(int index, StringAutomaton_ptr sub_string_auto);
+  StringAutomaton_ptr restrictAtIndexTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr sub_string_auto);
+
   /**
    * TODO Pre image computations can be gudied by a range auto
    * which is the set that a pre image computation can takes values from,
    * it corresponds to post image value of the operation
    */
 
-  StringAutomaton_ptr preCharAt(int index, StringAutomaton_ptr rangeAuto = nullptr);
-  StringAutomaton_ptr preSubstring(int start, StringAutomaton_ptr rangeAuto = nullptr);
-  StringAutomaton_ptr preSubstring(int start, int end, StringAutomaton_ptr rangeAuto = nullptr);
-  StringAutomaton_ptr preContains();
-  StringAutomaton_ptr preBegins();
-  StringAutomaton_ptr preEnds();
   StringAutomaton_ptr preToUpperCase(StringAutomaton_ptr rangeAuto = nullptr);
   StringAutomaton_ptr preToLowerCase(StringAutomaton_ptr rangeAuto = nullptr);
   StringAutomaton_ptr preTrim(StringAutomaton_ptr rangeAuto = nullptr);

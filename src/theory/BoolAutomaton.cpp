@@ -12,7 +12,7 @@ namespace Theory {
 
 const int BoolAutomaton::VLOG_LEVEL = 9;
 
-int BoolAutomaton::DEFAULT_NUM_OF_VARIABLES = 1;
+int BoolAutomaton::DEFAULT_NUM_OF_VARIABLES = 2;
 
 int* BoolAutomaton::DEFAULT_VARIABLE_INDICES = nullptr; // TODO remove or fix that
 

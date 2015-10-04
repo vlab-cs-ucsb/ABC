@@ -249,46 +249,7 @@ void PostImageComputer::visitMinus(Minus_ptr minus_term) {
   Value_ptr result = nullptr, param_left = getTermValue(minus_term->left_term),
       param_right = getTermValue(minus_term->right_term);
 
-  if (Value::Type::INT_CONSTANT == param_left->getType()) {
-    if (Value::Type::INT_CONSTANT == param_right->getType()) {
-      result = new Value(Value::Type::INT_CONSTANT,
-              param_left->getIntConstant() - param_right->getIntConstant());
-    } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
-      if (param_right->getIntAutomaton()->isAcceptingSingleInt()) {
-        result = new Value(Value::Type::INT_CONSTANT,
-                param_left->getIntConstant() - param_right->getIntAutomaton()->getAnAcceptingInt());
-      } else {
-        result = new Value(Value::Type::INT_AUTOMATON,
-                param_right->getIntAutomaton()->substractFrom(param_left->getIntConstant()));
-      }
-    } else {
-      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *minus_term;
-    }
-  } else if (Value::Type::INT_AUTOMATON == param_left->getType()) {
-    if (Value::Type::INT_CONSTANT == param_right->getType()) {
-      if (param_left->getIntAutomaton()->isAcceptingSingleInt()) {
-        result = new Value(Value::Type::INT_CONSTANT,
-                param_left->getIntAutomaton()->getAnAcceptingInt() - param_right->getIntConstant());
-      } else {
-        result = new Value(Value::Type::INT_AUTOMATON,
-                param_left->getIntAutomaton()->minus(param_right->getIntConstant()));
-      }
-    } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
-      if (param_left->getIntAutomaton()->isAcceptingSingleInt() and
-              param_right->getIntAutomaton()->isAcceptingSingleInt()) {
-        result = new Value(Value::Type::INT_CONSTANT,
-                (param_left->getIntAutomaton()->getAnAcceptingInt()
-                        - param_right->getIntAutomaton()->getAnAcceptingInt()));
-      } else {
-        result = new Value(Value::Type::INT_AUTOMATON,
-                param_left->getIntAutomaton()->minus(param_right->getIntAutomaton()));
-      }
-    } else {
-      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *minus_term;
-    }
-  } else {
-    LOG(FATAL) << "Unexpected left parameter: " << *param_left << " in " << *minus_term;
-  }
+  result = param_left->minus(param_right);
 
   setTermValue(minus_term, result);
 }
@@ -300,46 +261,7 @@ void PostImageComputer::visitPlus(Plus_ptr plus_term) {
   Value_ptr result = nullptr, param_left = getTermValue(plus_term->left_term),
       param_right = getTermValue(plus_term->right_term);
 
-  if (Value::Type::INT_CONSTANT == param_left->getType()) {
-    if (Value::Type::INT_CONSTANT == param_right->getType()) {
-      result = new Value(Value::Type::INT_CONSTANT,
-              param_left->getIntConstant() + param_right->getIntConstant());
-    } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
-      if (param_right->getIntAutomaton()->isAcceptingSingleInt()) {
-        result = new Value(Value::Type::INT_CONSTANT,
-                param_left->getIntConstant() + param_right->getIntAutomaton()->getAnAcceptingInt());
-      } else {
-        result = new Value(Value::Type::INT_AUTOMATON,
-                param_right->getIntAutomaton()->plus(param_left->getIntConstant()));
-      }
-    } else {
-      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *plus_term;
-    }
-  } else if (Value::Type::INT_AUTOMATON == param_left->getType()) {
-    if (Value::Type::INT_CONSTANT == param_right->getType()) {
-      if (param_left->getIntAutomaton()->isAcceptingSingleInt()) {
-        result = new Value(Value::Type::INT_CONSTANT,
-                param_left->getIntAutomaton()->getAnAcceptingInt() + param_right->getIntConstant());
-      } else {
-        result = new Value(Value::Type::INT_AUTOMATON,
-                param_left->getIntAutomaton()->plus(param_right->getIntConstant()));
-      }
-    } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
-      if (param_left->getIntAutomaton()->isAcceptingSingleInt() and
-              param_right->getIntAutomaton()->isAcceptingSingleInt()) {
-        result = new Value(Value::Type::INT_CONSTANT,
-                (param_left->getIntAutomaton()->getAnAcceptingInt()
-                        + param_right->getIntAutomaton()->getAnAcceptingInt()));
-      } else {
-        result = new Value(Value::Type::INT_AUTOMATON,
-                param_left->getIntAutomaton()->plus(param_right->getIntAutomaton()));
-      }
-    } else {
-      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *plus_term;
-    }
-  } else {
-    LOG(FATAL) << "Unexpected left parameter: " << *param_left << " in " << *plus_term;
-  }
+  result = param_left->plus(param_right);
 
   setTermValue(plus_term, result);
 }
@@ -372,10 +294,12 @@ void PostImageComputer::visitNotEq(NotEq_ptr not_eq_term) {
   __visit_children_of(not_eq_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *not_eq_term;
 
-  Value_ptr result = nullptr, param_left = nullptr, param_right = nullptr;
+  Value_ptr result = nullptr, param_left = nullptr,
+          param_right = nullptr, intersection = nullptr;
 
   param_left = getTermValue(not_eq_term->left_term);
   param_right = getTermValue(not_eq_term->right_term);
+
 
   if (Value::Type::BOOl_CONSTANT == param_left->getType() and
           Value::Type::BOOl_CONSTANT == param_right->getType()) {
@@ -385,22 +309,14 @@ void PostImageComputer::visitNotEq(NotEq_ptr not_eq_term) {
           Value::Type::INT_CONSTANT == param_right->getType()) {
     result = new Value(Value::Type::BOOl_CONSTANT,
             param_left->getIntConstant() not_eq param_right->getIntConstant());
-  } else if (Value::Type::INT_AUTOMATON == param_left->getType() and
-          Value::Type::INT_AUTOMATON == param_right->getType()) {
-    if (param_right->getIntAutomaton()->isAcceptingSingleInt()) {
-      result = param_left->difference(param_right);
-    } else {
-      result = param_left->clone();
-    }
-  } else if (Value::Type::STRING_AUTOMATON == param_left->getType() and
-          Value::Type::STRING_AUTOMATON == param_right->getType()) {
-    if (param_right->getStringAutomaton()->isAcceptingSingleString()) {
-      result = param_left->difference(param_right);
-    } else {
-      result = param_left->clone();
-    }
   } else {
-
+    intersection = param_left->intersect(param_right);
+    if (not intersection->isSatisfiable()) {
+      result = new Value(Value::Type::BOOl_CONSTANT, true);
+      delete intersection;
+    } else {
+      result = intersection;
+    }
   }
 
   setTermValue(not_eq_term, result);
@@ -588,8 +504,12 @@ void PostImageComputer::visitIn(In_ptr in_term) {
 }
 
 /**
- * TODO check correctness
+ * TODO check all boolean string functions right hand side
+ * if there is no variable involved we can do precise calculation
+ * otherwise discuss?? if it is problem
  */
+
+
 void PostImageComputer::visitNotIn(NotIn_ptr not_in_term) {
   __visit_children_of(not_in_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *not_in_term;
@@ -597,10 +517,11 @@ void PostImageComputer::visitNotIn(NotIn_ptr not_in_term) {
   Value_ptr result = nullptr, param_left = getTermValue(not_in_term->left_term),
       param_right = getTermValue(not_in_term->right_term);
 
-  if (param_right->getStringAutomaton()->isAcceptingSingleString()) {
+  if (Value::Type::STRING_AUTOMATON == param_left->getType()
+      and Value::Type::STRING_AUTOMATON == param_right->getType()) {
     result = param_left->difference(param_right);
   } else {
-    result = param_left->clone();
+    LOG(FATAL) << "unexpected parameter(s) of '" << *not_in_term << "' term"; // handle cases in a better way
   }
 
   setTermValue(not_in_term, result);
@@ -613,12 +534,13 @@ void PostImageComputer::visitLen(Len_ptr len_term) {
   Value_ptr result = nullptr, param = getTermValue(len_term->term);
 
   Theory::IntAutomaton_ptr int_auto = param->getStringAutomaton()->length();
+
   if (int_auto->isAcceptingSingleInt()) {
     result = new Value(Value::Type::INT_CONSTANT, int_auto->getAnAcceptingInt());
+    delete int_auto; int_auto = nullptr;
   } else {
     result = new Value(Value::Type::INT_AUTOMATON, int_auto);
   }
-  delete int_auto; int_auto = nullptr;
 
   setTermValue(len_term, result);
 }
@@ -643,14 +565,10 @@ void PostImageComputer::visitNotContains(NotContains_ptr not_contains_term) {
   Value_ptr result = nullptr, param_subject = getTermValue(not_contains_term->subject_term),
       param_search = getTermValue(not_contains_term->search_term);
 
-  if (param_search->getStringAutomaton()->isAcceptingSingleString()) {
-    Theory::StringAutomaton_ptr contains_auto = param_subject->getStringAutomaton()->contains(param_search->getStringAutomaton());
-    result = new Value(Value::Type::STRING_AUTOMATON,
-        param_subject->getStringAutomaton()->difference(contains_auto));
-    delete contains_auto; contains_auto = nullptr;
-  } else {
-    result = param_subject->clone();
-  }
+  Theory::StringAutomaton_ptr contains_auto = param_subject->getStringAutomaton()->contains(param_search->getStringAutomaton());
+  result = new Value(Value::Type::STRING_AUTOMATON,
+      param_subject->getStringAutomaton()->difference(contains_auto));
+  delete contains_auto; contains_auto = nullptr;
 
   setTermValue(not_contains_term, result);
 }
@@ -675,14 +593,10 @@ void PostImageComputer::visitNotBegins(NotBegins_ptr not_begins_term) {
   Value_ptr result = nullptr, param_subject = getTermValue(not_begins_term->subject_term),
       param_search = getTermValue(not_begins_term->search_term);
 
-  if (param_search->getStringAutomaton()->isAcceptingSingleString()) {
-    Theory::StringAutomaton_ptr begins_auto = param_subject->getStringAutomaton()->begins(param_search->getStringAutomaton());
-    result = new Value(Value::Type::STRING_AUTOMATON,
-        param_subject->getStringAutomaton()->difference(begins_auto));
-    delete begins_auto; begins_auto = nullptr;
-  } else {
-    result = param_subject->clone();
-  }
+  Theory::StringAutomaton_ptr begins_auto = param_subject->getStringAutomaton()->begins(param_search->getStringAutomaton());
+  result = new Value(Value::Type::STRING_AUTOMATON,
+      param_subject->getStringAutomaton()->difference(begins_auto));
+  delete begins_auto; begins_auto = nullptr;
 
   setTermValue(not_begins_term, result);
 }
@@ -707,14 +621,10 @@ void PostImageComputer::visitNotEnds(NotEnds_ptr not_ends_term) {
   Value_ptr result = nullptr, param_subject = getTermValue(not_ends_term->subject_term),
       param_search = getTermValue(not_ends_term->search_term);
 
-  if (param_search->getStringAutomaton()->isAcceptingSingleString()) {
-    Theory::StringAutomaton_ptr ends_auto = param_subject->getStringAutomaton()->ends(param_search->getStringAutomaton());
-    result = new Value(Value::Type::STRING_AUTOMATON,
-        param_subject->getStringAutomaton()->difference(ends_auto));
-    delete ends_auto; ends_auto = nullptr;
-  } else {
-    result = param_subject->clone();
-  }
+  Theory::StringAutomaton_ptr ends_auto = param_subject->getStringAutomaton()->ends(param_search->getStringAutomaton());
+  result = new Value(Value::Type::STRING_AUTOMATON,
+      param_subject->getStringAutomaton()->difference(ends_auto));
+  delete ends_auto; ends_auto = nullptr;
 
   setTermValue(not_ends_term, result);
 }
@@ -727,11 +637,15 @@ void PostImageComputer::visitIndexOf(IndexOf_ptr index_of_term) {
   Value_ptr result = nullptr, param_left = getTermValue(index_of_term->subject_term),
       param_right = getTermValue(index_of_term->search_term);
 
-  result = new Value(Value::Type::INT_AUTOMATON,
-          param_left->getStringAutomaton()->indexOf(param_right->getStringAutomaton()));
+  Theory::IntAutomaton_ptr index_of_auto = param_left->getStringAutomaton()->indexOf(param_right->getStringAutomaton());
+  if (index_of_auto->isAcceptingSingleInt()) {
+    result = new Value(Value::Type::INT_CONSTANT, index_of_auto->getAnAcceptingInt());
+    delete index_of_auto; index_of_auto = nullptr;
+  } else {
+    result = new Value(Value::Type::INT_AUTOMATON, index_of_auto);
+  }
 
   setTermValue(index_of_term, result);
-  LOG(FATAL)<< "implement me";
 }
 
 void PostImageComputer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
@@ -741,11 +655,15 @@ void PostImageComputer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term
   Value_ptr result = nullptr, param_left = getTermValue(last_index_of_term->subject_term),
         param_right = getTermValue(last_index_of_term->search_term);
 
-  result = new Value(Value::Type::INT_AUTOMATON,
-          param_left->getStringAutomaton()->lastIndexOf(param_right->getStringAutomaton()));
+  Theory::IntAutomaton_ptr last_index_of_auto = param_left->getStringAutomaton()->lastIndexOf(param_right->getStringAutomaton());
+  if (last_index_of_auto->isAcceptingSingleInt()) {
+    result = new Value(Value::Type::INT_CONSTANT, last_index_of_auto->getAnAcceptingInt());
+    delete last_index_of_auto; last_index_of_auto = nullptr;
+  } else {
+    result = new Value(Value::Type::INT_AUTOMATON, last_index_of_auto);
+  }
 
   setTermValue(last_index_of_term, result);
-  LOG(FATAL)<< "implement me";
 }
 
 void PostImageComputer::visitCharAt(SMT::CharAt_ptr char_at_term) {
@@ -981,6 +899,7 @@ void PostImageComputer::update_variables() {
 
   PreImageComputer pre_image_computer(symbol_table, variable_path_table, post_images);
   pre_image_computer.start();
+
   variable_path_table.clear();
 }
 

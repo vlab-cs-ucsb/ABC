@@ -51,6 +51,7 @@ public:
             IntAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
 
   void setMinus1(bool has_minus_one);
+  bool hasNegative1();
   IntAutomaton_ptr complement();
   IntAutomaton_ptr union_(int value);
   IntAutomaton_ptr union_(IntAutomaton_ptr other_auto);
@@ -77,6 +78,16 @@ public:
   bool isLessThan(IntAutomaton_ptr other_auto);
   bool isLessThanOrEqual(int value);
   bool isLessThanOrEqual(IntAutomaton_ptr other_auto);
+
+  IntAutomaton_ptr restrictTo(IntAutomaton_ptr other_value);
+  IntAutomaton_ptr restrictGreaterThanTo(int value);
+  IntAutomaton_ptr restrictGreaterThanTo(IntAutomaton_ptr other_auto);
+  IntAutomaton_ptr restrictGreaterThanOrEqualTo(int value);
+  IntAutomaton_ptr restrictGreaterThanOrEqualTo(IntAutomaton_ptr other_auto);
+  IntAutomaton_ptr restrictLessThanTo(int value);
+  IntAutomaton_ptr restrictLessThanTo(IntAutomaton_ptr other_auto);
+  IntAutomaton_ptr restrictLessThanOrEqualTo(int value);
+  IntAutomaton_ptr restrictLessThanOrEqualTo(IntAutomaton_ptr other_auto);
 
   bool checkEquivalance(IntAutomaton_ptr other_auto);
   bool isEmptyLanguage();

@@ -856,7 +856,7 @@ void SyntacticOptimizer::visitToRegex(ToRegex_ptr to_regex_term) {
     TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(to_regex_term->term);
     if (Primitive::Type::STRING == term_constant->getValueType()) {
       DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *to_regex_term << "'";
-      std::string regex_template = "/%s/";
+      std::string regex_template = "%s";
       std::string escaped_regex = escape_regex(term_constant->getValue());
       regex_template.replace(regex_template.find_first_of("%s"), 2, escaped_regex);
       Primitive_ptr regex_primitive = new Primitive(regex_template, Primitive::Type::REGEX);
@@ -1000,7 +1000,7 @@ bool SyntacticOptimizer::__check_and_process_len_transformation(Term::Type opera
       TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(right_term);
       if (term_constant->getValueType() == Primitive::Type::NUMERAL) {
         int value = std::stoi(term_constant->getValue());
-        std::string regex_template = "/.{%s,%s}/";
+        std::string regex_template = ".{%s,%s}";
         std::string l_value = "";
         std::string r_value = "";
         switch (operation) {

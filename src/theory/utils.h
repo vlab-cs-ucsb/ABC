@@ -23,8 +23,9 @@ public:
   }
 
   virtual ~NodeOld() {
-    for (auto& entry : exceptions) {
-      delete entry.second;
+    for (auto entry : exceptions) {
+      entry.first->clear();
+      delete entry.first;
     }
     delete nextStates;
     delete prevStates;
@@ -48,23 +49,25 @@ public:
     this->prevStates = prevs;
   }
 
-  std::vector<char>* getExceptionToState(int id) {
-    auto entry = exceptions.find(id);
-    if (entry == exceptions.end()) {
-      return nullptr;
+  std::set<std::vector<char>*> getExceptionsToState(int id) {
+    std::set<std::vector<char>*> exceptions_to_state;
+    for (auto entry : exceptions) {
+      if (entry.second == id) {
+        exceptions_to_state.insert(entry.first);
+      }
     }
-    return entry->second;
+    return exceptions_to_state;
   }
 
-  void addExceptionToState(int id, std::vector<char>* exception) {
-    exceptions[id] = exception;
+  void addExceptionToState(std::vector<char>* exception, int id) {
+    exceptions[exception] = id;
   }
 
   int getNumberOfExceptions() {
     return exceptions.size();
   }
 
-  std::map<int, std::vector<char>*>& getExceptions() {
+  std::map<std::vector<char>*, int>& getExceptions() {
     return exceptions;
   }
 
@@ -79,7 +82,7 @@ public:
 private:
   int stateID;
   bool flag;
-  std::map<int, std::vector<char>*> exceptions;
+  std::map<std::vector<char>*, int> exceptions;
   std::set<int>* nextStates;
   std::set<int>* prevStates;
 

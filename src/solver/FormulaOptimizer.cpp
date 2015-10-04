@@ -23,11 +23,9 @@ FormulaOptimizer::~FormulaOptimizer() {
 }
 
 void FormulaOptimizer::start() {
-
   push_scope(root);
   visitScript(root);
   pop_scope();
-
   end();
 }
 
@@ -85,7 +83,9 @@ void FormulaOptimizer::push_scope(Visitable_ptr key) {
 Visitable_ptr FormulaOptimizer::pop_scope() {
   Visitable_ptr scope = scope_stack.back();
   auto it = check_table.find(scope);
-  check_table.erase(it);
+  if (it != check_table.end()) {
+    it = check_table.erase(it);
+  }
   scope_stack.pop_back();
   return scope;
 }

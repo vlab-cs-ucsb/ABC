@@ -1,8 +1,8 @@
 (set-logic QF_S)
 
-(declare-fun var_abc () String)
+(declare-fun var_abc () Int)
 
-(assert (= (lastIndexOf var_abc "a") 2))
+(assert (= var_abc (lastIndexOf /(abcb|debfbg)/ "b")))
 
 (check-sat)
 

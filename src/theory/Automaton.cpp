@@ -28,17 +28,19 @@ Automaton::Automaton(Automaton::Type type)
 
 Automaton::Automaton(Automaton::Type type, DFA_ptr dfa, int num_of_variables)
         : type(type), dfa(dfa), num_of_variables(num_of_variables), id (Automaton::trace_id++) {
-  variable_indices = getIndices(num_of_variables);
+  variable_indices = getIndices(num_of_variables, 1); // make indices one more to be safe
 }
 
 Automaton::Automaton(const Automaton& other)
         : type(other.type), dfa(dfaCopy(other.dfa)), num_of_variables(other.num_of_variables), id (Automaton::trace_id++) {
-  variable_indices = getIndices(num_of_variables);
+  variable_indices = getIndices(num_of_variables, 1); // make indices one more to be safe
 }
 
 Automaton::~Automaton() {
-  dfaFree(dfa);
-  dfa = nullptr;
+  if (dfa) {
+    dfaFree(dfa);
+    dfa = nullptr;
+  }
   delete variable_indices;
   //  DVLOG(VLOG_LEVEL) << "delete " << " [" << this->id << "]";
 }
@@ -71,6 +73,10 @@ Automaton::Type Automaton::getType() const {
 
 unsigned long Automaton::getId() {
   return id;
+}
+
+DFA_ptr Automaton::getDFA() {
+  return dfa;
 }
 
 /**
@@ -117,7 +123,7 @@ bool Automaton::isOnlyInitialStateAccepting() {
   for (int s = 0; s < this->dfa->ns; s++) {
     if (s != this->dfa->s and isAcceptingState(s)) {
       return false;
-    } else if (hasNextStateFrom(s, this->dfa->s)) {
+    } else if (hasNextState(s, this->dfa->s)) {
       return false;
     }
   }
@@ -182,8 +188,6 @@ bool Automaton::isAcceptingSingleWord() {
   bool is_final_state = false;
   int bit_counter = 0;
 
-  std::cout << "sink state: " << sink_state << std::endl;
-
   for (int s = 0; s < this->dfa->ns; s++) {
     is_final_state = isAcceptingState(s);
     p = this->dfa->q[s];
@@ -225,9 +229,6 @@ bool Automaton::isAcceptingSingleWord() {
 
 std::string Automaton::getAnAcceptingWord() {
   char* result = isSingleton(this->dfa, num_of_variables, variable_indices);
-  if (result == NULL) {
-    std::cout << "what the hack" << std::endl;
-  }
   return std::string(result);
 }
 
@@ -293,14 +294,14 @@ std::vector<char> Automaton::getReservedWord(char last_char, int length, bool ex
 void Automaton::minimize() {
   DFA_ptr tmp = this->dfa;
   this->dfa = dfaMinimize(tmp);
-  delete tmp;
+  dfaFree(tmp);
   DVLOG(VLOG_LEVEL) << this->id << " = [" << this->id << "]->minimize()";
 }
 
 void Automaton::project(unsigned index) {
   DFA_ptr tmp = this->dfa;
   this->dfa = dfaProject(tmp, index);
-  delete tmp;
+  dfaFree(tmp);
   this->num_of_variables = index;
   delete this->variable_indices;
   this->variable_indices = getIndices(num_of_variables);
@@ -309,7 +310,7 @@ void Automaton::project(unsigned index) {
 
 bool Automaton::isSinkState(int state_id) {
   return (bdd_is_leaf(this->dfa->bddm, this->dfa->q[state_id])
-      and bdd_leaf_value(this->dfa->bddm, this->dfa->q[state_id])
+      and (bdd_leaf_value(this->dfa->bddm, this->dfa->q[state_id]) == (unsigned)state_id)
       and this->dfa->f[state_id] == -1);
 }
 
@@ -326,13 +327,24 @@ int Automaton::getSinkState() {
       return i;
     }
   }
+
   return -1;
 }
+
+bool Automaton::hasIncomingTransition(int state) {
+  for (int i = 0; i < this->dfa->ns; i++) {
+    if (hasNextState(i, state)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 
 /**
  * @returns true if a start state is reachable from an accepting state, false otherwise
  */
-bool Automaton::isStartStateReachable() {
+bool Automaton::isStartStateReachableFromAnAcceptingState() {
   paths state_paths, pp;
   for (int i = 0; i < this->dfa->ns; i++) {
     if (isAcceptingState(i)) {
@@ -350,7 +362,7 @@ bool Automaton::isStartStateReachable() {
   return false;
 }
 
-bool Automaton::hasNextStateFrom(int state, int search) {
+bool Automaton::hasNextState(int state, int search) {
   unsigned p, l, r, index; // BDD traversal variables
   std::stack<unsigned> nodes;
 

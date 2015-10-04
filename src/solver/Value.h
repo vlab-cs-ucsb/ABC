@@ -69,8 +69,11 @@ public:
   Value_ptr difference(Value_ptr other_value) const;
 
   Value_ptr concat(Value_ptr other_value) const;
+  Value_ptr plus(Value_ptr other_value) const;
+  Value_ptr minus(Value_ptr other_value) const;
 
   bool isSatisfiable();
+  bool isSingleValue();
 
   class Name {
   public:

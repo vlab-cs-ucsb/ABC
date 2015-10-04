@@ -179,7 +179,7 @@ Value_ptr SymbolTable::getValue(SMT::Variable_ptr variable) {
 
   switch (variable->getType()) {
   case Variable::Type::BOOL:
-    LOG(FATAL) << "implement me";
+    LOG(FATAL) << "bool variables are not supported explicitly yet: " << *variable;
     break;
   case Variable::Type::INT:
     result = new Value(Value::Type::INT_AUTOMATON, Theory::IntAutomaton::makeAnyInt());

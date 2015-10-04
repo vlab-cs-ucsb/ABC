@@ -63,6 +63,7 @@ public:
   virtual std::string str() const;
   virtual Automaton::Type getType() const;
   unsigned long getId();
+  DFA_ptr getDFA();
 
   class Name {
   public:
@@ -106,8 +107,9 @@ protected:
   bool isSinkState(int state_id);
   bool isAcceptingState(int state_id);
   int getSinkState();
-  bool isStartStateReachable();
-  bool hasNextStateFrom(int state, int search);
+  bool hasIncomingTransition(int state);
+  bool isStartStateReachableFromAnAcceptingState();
+  bool hasNextState(int state, int search);
   std::set<int>* getNextStates(int state);
   AdjacencyList getAdjacencyCountList();
 
