@@ -2,7 +2,7 @@
 
 (declare-fun var_abc () String)
 
-(assert (= (lastIndexOf var_abc "a") 2))
+(assert (= (lastIndexOf var_abc "b") (len /(12|1234567)/) ))
 
 (check-sat)
 

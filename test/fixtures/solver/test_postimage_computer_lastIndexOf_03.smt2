@@ -2,7 +2,7 @@
 
 (declare-fun var_abc () String)
 
-(assert (= (lastIndexOf var_abc "baki") 2))
+(assert (= (lastIndexOf var_abc "ba") 2))
 
 (check-sat)
 

@@ -100,6 +100,7 @@ public:
   StringAutomaton_ptr substring(int start, int end);
   IntAutomaton_ptr indexOf(StringAutomaton_ptr search_auto);
   IntAutomaton_ptr lastIndexOf(StringAutomaton_ptr search_auto);
+  IntAutomaton_ptr backup_lastIndexOf(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr contains(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr begins(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr ends(StringAutomaton_ptr search_auto);
