@@ -497,12 +497,11 @@ int IntAutomaton::getMaxAcceptedInt() {
   return max_int;
 }
 
-// TODO resume the call after fixing getAnAcceptingInt
 int IntAutomaton::getMinAcceptedInt() {
   if (has_negative_1) {
     return -1;
   } else if (this->isAcceptingSingleInt()) {
-//    return this->getAnAcceptingInt();
+    return this->getAnAcceptingInt();
   }
 
   AdjacencyList adjacency_count_list = this->getAdjacencyCountList();
@@ -780,14 +779,36 @@ bool IntAutomaton::isAcceptingSingleInt() {
  * TODO update getAnAcceptingWord to generate string in all case except bottom
  */
 int IntAutomaton::getAnAcceptingInt() {
+  int sink_state = getSinkState(),
+      curr_state = -1,
+      num_of_accepting_paths = 0;
+  std::stack<int> state_path;
+  std::stack<int> path_length_stack;
+  int path_length = 0;
+  std::set<int>* next_states = nullptr;
+
+  state_path.push(this->dfa->s);
+  path_length_stack.push(0);
+  while (not state_path.empty()) {
+    curr_state = state_path.top(); state_path.pop();
+    path_length = path_length_stack.top(); path_length_stack.pop();
+    if (this->isAcceptingState(curr_state)) {
+      return path_length;
+    }
+    next_states = this->getNextStates(curr_state);
+    next_states->erase(sink_state);
+    for (int next_state : *next_states) {
+      state_path.push(next_state);
+      path_length_stack.push(path_length + 1);
+    }
+    delete next_states; next_states = nullptr;
+  }
+
   if (has_negative_1) {
     return -1;
   }
 
-//  std::string example = Automaton::getAnAcceptingWord();
-  int value = getMinAcceptedInt();
-
-  return value;
+  return -2; // not accepting
 }
 
 /**
