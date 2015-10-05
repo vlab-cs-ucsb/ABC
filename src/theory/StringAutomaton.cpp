@@ -2020,8 +2020,35 @@ bool StringAutomaton::isAcceptingSingleString() {
 }
 
 std::string StringAutomaton::getAnAcceptingString() {
-  return Automaton::getAnAcceptingWord();
+  std::stringstream ss;
+
+  std::vector<bool>* example = getAnAcceptingWord();
+  unsigned char c = 0;
+  unsigned bit_range = num_of_variables - 1;
+  unsigned read_count = 0;
+
+  for (auto bit: *example) {
+    if (bit) {
+      c |= 1;
+    }
+    else {
+      c |= 0;
+    }
+
+    if (read_count < (bit_range)) {
+      c <<= 1;
+    }
+    if (read_count == bit_range) {
+      ss << c;
+      c = 0;
+      read_count = 0;
+    } else {
+      read_count++;
+    }
+  }
+  return ss.str();
 }
+
 
 char* StringAutomaton::binaryFormat(unsigned long number, int bit_length) {
   char* binary_str = nullptr;

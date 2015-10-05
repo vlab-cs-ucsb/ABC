@@ -227,9 +227,71 @@ bool Automaton::isAcceptingSingleWord() {
   return is_accepting_single_word;
 }
 
-std::string Automaton::getAnAcceptingWord() {
-  char* result = isSingleton(this->dfa, num_of_variables, variable_indices);
-  return std::string(result);
+std::vector<bool>* Automaton::getAnAcceptingWord() {
+  int sink_state = getSinkState(),
+      curr_state = this->dfa->s;
+  // bits are represented as bool
+  std::vector<bool>* bit_vector = new std::vector<bool>();
+  std::vector<bool> visited(this->dfa->ns);
+  std::vector < std::vector<bool> > transition_stack;
+
+  for (int i = 0; (unsigned)i < visited.size(); i++) {
+    if (i == sink_state) {
+      visited[i] = true;
+    } else {
+      visited[i] = false;
+    }
+  }
+
+  // BDD dfs for next state
+  while (not visited[curr_state]) {
+    if (this->isAcceptingState(curr_state)) {
+      return bit_vector;
+    }
+
+    visited[curr_state] = true; // avoid cycles
+
+    unsigned p, l, r, index; // BDD traversal variables
+    std::vector<unsigned> nodes;
+
+    p = this->dfa->q[curr_state];
+    nodes.push_back(p);
+    transition_stack.push_back(std::vector<bool>());
+    while (not nodes.empty()) {
+      p = nodes.back(); nodes.pop_back();
+      std::vector<bool> curr_transition = transition_stack.back(); transition_stack.pop_back();
+      LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
+      if (index == BDD_LEAF_INDEX) {
+        if (visited[l]) {
+          // avoid cycles
+        } else {
+          curr_state = l;
+          bit_vector->insert(bit_vector->end(), curr_transition.begin(), curr_transition.end());
+          break;
+        }
+      } else {
+        while (curr_transition.size() < index) {
+          curr_transition.push_back(1); // add 1 for don't cares
+        }
+        std::vector<bool> left = curr_transition;
+        left.push_back(0);
+        transition_stack.push_back(left);
+        nodes.push_back(l);
+        std::vector<bool> right = curr_transition;
+        right.push_back(1);
+        transition_stack.push_back(right);
+        nodes.push_back(r);
+      }
+    }
+    nodes.clear();
+    transition_stack.clear();
+  }
+
+  return nullptr;
+}
+
+char* Automaton::getAnExample(bool accepting) {
+  return dfaMakeExample(this->dfa, 1, num_of_variables, getIndices((unsigned)num_of_variables));
 }
 
 std::ostream& operator<<(std::ostream& os, const Automaton& automaton) {

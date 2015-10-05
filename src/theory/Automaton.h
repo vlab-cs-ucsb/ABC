@@ -89,13 +89,13 @@ public:
   int inspectAuto(bool print_sink = false);
 
   friend std::ostream& operator<<(std::ostream& os, const Automaton& automaton);
-
 protected:
   static DFA_ptr makePhi(int num_of_variables, int* variable_indices);
 
   bool isAcceptingSingleWord();
-  // TODO refactor to work for general case
-  std::string getAnAcceptingWord();
+  // TODO update it to work for non-accepting inputs
+  std::vector<bool>* getAnAcceptingWord();
+
 
   static int* getIndices(int num_of_variables, int extra_num_of_variables = 0);
   static unsigned* getIndices(unsigned num_of_variables, unsigned extra_num_of_variables = 0);
@@ -120,6 +120,7 @@ protected:
   unsigned long id;
   static unsigned long trace_id;
 private:
+  char* getAnExample(bool accepting=true); // MONA version
   static int name_counter;
   static const int VLOG_LEVEL;
 };

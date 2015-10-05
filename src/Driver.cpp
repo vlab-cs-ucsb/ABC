@@ -127,14 +127,22 @@ void Driver::reset() {
 }
 
 void Driver::test() {
-return;
-//    Theory::IntAutomaton_ptr int_auto_1 = Theory::IntAutomaton::makeInt(10000);
+//return;
+//    Theory::IntAutomaton_ptr int_auto_1 = Theory::IntAutomaton::makeInt(78);
 //    std::cout << "int: " << int_auto_1->getAnAcceptingInt() << std::endl;
 //    delete int_auto_1;
 
 //  Theory::StringAutomaton_ptr str_auto_1 = Theory::StringAutomaton::makePhi();
-//  Theory::StringAutomaton_ptr str_auto_2 = Theory::StringAutomaton::makeRegexAuto("(b|a)(k|i)*");
+//  Theory::StringAutomaton_ptr str_auto_2 = Theory::StringAutomaton::makeRegexAuto("a(b|a)(k|i)*");
 //  Theory::StringAutomaton_ptr str_auto_3 = nullptr;
+
+//  str_auto_2->inspectAuto();
+//
+//  std::cout << "example: " << str_auto_2->getAnAcceptingString() << std::endl;
+//
+//  int_auto_1 = str_auto_2->length();
+//  std::cout << "int: " << int_auto_1->getAnAcceptingInt() << std::endl;
+//  delete int_auto_1;
 
 //  str_auto_3 = str_auto_1->concat(str_auto_2);
 //  str_auto_3->inspectAuto();
