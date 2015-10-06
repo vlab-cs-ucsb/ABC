@@ -127,7 +127,7 @@ void Driver::reset() {
 }
 
 void Driver::test() {
-//return;
+return;
 //    Theory::IntAutomaton_ptr int_auto_1 = Theory::IntAutomaton::makeInt(78);
 //    std::cout << "int: " << int_auto_1->getAnAcceptingInt() << std::endl;
 //    delete int_auto_1;
