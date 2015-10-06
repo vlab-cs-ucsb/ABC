@@ -792,6 +792,7 @@ void PreImageComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
               child_post_value->getStringAutomaton()
               ->restrictFromIndexToEndTo(start_index_value->getIntAutomaton(), term_value->getStringAutomaton()));
     }
+
   } else {
     if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
       child_value = new Value(Value::Type::STRING_AUTOMATON,
@@ -804,7 +805,6 @@ void PreImageComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
     }
   }
 
-  child_value = new Value(Value::Type::STRING_AUTOMATON, child_pre_auto);
   setTermPreImage(child_term, child_value);
   visit(child_term);
 }
@@ -914,6 +914,33 @@ void PreImageComputer::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 
 void PreImageComputer::visitUnknownTerm(Unknown_ptr unknown_term) {
+  DVLOG(VLOG_LEVEL) << "pop: " << *unknown_term;
+  QualIdentifier_ptr qi_term = dynamic_cast<QualIdentifier_ptr>(unknown_term->term);
+  LOG(WARNING) << "operation is not known, over-approximate params of operation: '" << qi_term->getVarName() << "'";
+  popTerm(unknown_term);
+  Term_ptr child_term = current_path.back();
+  Value_ptr child_value = getTermPreImage(child_term);
+  if (child_value not_eq nullptr) {
+    visit(child_term);
+    return;
+  }
+
+  Value_ptr child_post_value = getTermPostImage(child_term);
+  switch (child_post_value->getType()) {
+    case Value::Type::STRING_AUTOMATON:
+      child_value = new Value(Value::Type::STRING_AUTOMATON, Theory::StringAutomaton::makeAnyString());
+      break;
+    case Value::Type::INT_CONSTANT:
+    case Value::Type::INT_AUTOMATON:
+      child_value = new Value(Value::Type::INT_AUTOMATON, Theory::IntAutomaton::makeAnyInt());
+      break;
+    default:
+      child_value = child_post_value->clone();
+      break;
+  }
+
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
 }
 
 void PreImageComputer::visitAsQualIdentifier(AsQualIdentifier_ptr as_qid_term) {
@@ -925,6 +952,7 @@ void PreImageComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 
   Value_ptr term_pre_value = getTermPreImage(qi_term);
   Value_ptr variable_old_value = symbol_table->getValue(qi_term->getVarName());
+
   Value_ptr variable_new_value = variable_old_value->intersect(term_pre_value);
 
   symbol_table->setValue(qi_term->getVarName(), variable_new_value);

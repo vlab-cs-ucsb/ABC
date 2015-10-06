@@ -302,10 +302,11 @@ void Ast2Dot::visitVariable(Variable_ptr variable) {
   draw_terminal(variable->str());
 }
 
-void Ast2Dot::inspectAST(Visitable_ptr node) {
-  std::stringstream file_name;
-  file_name << "./output/ast_" << name_counter++ << ".dot";
-  std::ofstream outfile(file_name.str().c_str());
+int Ast2Dot::inspectAST(Visitable_ptr node) {
+  std::stringstream file_name_ss;
+  file_name_ss << "./output/ast_" << name_counter++ << ".dot";
+  std::string file_name = file_name_ss.str();
+  std::ofstream outfile(file_name.c_str());
   if (!outfile.good()) {
     std::cout << "cannot open file: " << file_name << std::endl;
     exit(2);
@@ -313,6 +314,9 @@ void Ast2Dot::inspectAST(Visitable_ptr node) {
   m_out = &outfile;
   start(node);
   outfile.close();
+
+  std::string dot_cmd("xdot " + file_name + " &");
+  return std::system(dot_cmd.c_str());
 }
 
 } /* namespace Solver */

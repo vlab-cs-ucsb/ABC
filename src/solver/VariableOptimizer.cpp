@@ -40,7 +40,6 @@ void VariableOptimizer::start() {
   visitScript(root);
   symbol_table->pop_scope();
   end();
-
   DVLOG(VLOG_LEVEL) << "Bool variable reduction";
   existential_elimination_phase = false;
 
@@ -68,9 +67,6 @@ void VariableOptimizer::start() {
   visitScript(root);
   symbol_table->pop_scope();
   end();
-
-//	Ast2Dot ast2dot(&std::cout);
-//	ast2dot.start(root);
 }
 
 void VariableOptimizer::end() {
@@ -89,6 +85,8 @@ void VariableOptimizer::end() {
 
   eq_constraint_count.clear();
   symbol_table->reset_substitution_rules();
+//  Ast2Dot dot(&std::cout);
+//  dot.inspectAST(root);
 }
 
 void VariableOptimizer::setCallbacks() {
@@ -131,20 +129,11 @@ void VariableOptimizer::visitEq(Eq_ptr eq_term) {
 //			std::cout << *right_var << ": " << symbol_table -> get_local_count(right_var->getName()) << ", " << symbol_table -> get_total_count(right_var->getName()) << std::endl;
 
       if (left_var->getType() == target_type) {
-        int left_var_total_count = symbol_table->get_total_count(left_var);
         int left_var_local_count = symbol_table->get_local_count(left_var);
-        int right_var_total_count = symbol_table->get_total_count(right_var);
         int right_var_local_count = symbol_table->get_local_count(right_var);
-
-        if (left_var_total_count == left_var_local_count and right_var_total_count == right_var_local_count) {
-          if (left_var_total_count <= right_var_total_count) {
-            add_variable_substitution_rule(left_var, right_var, eq_term->right_term);
-          } else {
-            add_variable_substitution_rule(right_var, left_var, eq_term->left_term);
-          }
-        } else if (left_var_total_count == left_var_local_count) {
+        if (left_var_local_count <= right_var_local_count) {
           add_variable_substitution_rule(left_var, right_var, eq_term->right_term);
-        } else if (right_var_total_count == right_var_local_count) {
+        } else {
           add_variable_substitution_rule(right_var, left_var, eq_term->left_term);
         }
       }
@@ -152,7 +141,7 @@ void VariableOptimizer::visitEq(Eq_ptr eq_term) {
   }
   /**
    * We can eliminate boolean variables that are used for asserting some other constraints
-   * Following are the conditions to do reduction
+   * Following are the conditions to do reduction. Reduction rules are applied in add_variable_substitution_rule function
    * 1 - Variable may appear in only at most one constraint with other theories
    * 2 - Variable may appear in other places with some other boolean variables
    */
@@ -171,13 +160,10 @@ void VariableOptimizer::visitEq(Eq_ptr eq_term) {
                 (Term::Type::QUALIDENTIFIER == eq_term->left_term->getType()) ?
                         eq_term->right_term : eq_term->left_term;
 
-//				std::cout << "rule add = " << *target_variable << " " << *target_term << std::endl;
-        int target_var_total_count = symbol_table->get_total_count(target_variable);
-        int target_var_local_count = symbol_table->get_local_count(target_variable);
+//       std::cout << "rule add = " << *target_variable << " " << *target_term << std::endl;
 
-        if (target_var_total_count == target_var_local_count) {
-          add_variable_substitution_rule(target_variable, target_term);
-        }
+        add_variable_substitution_rule(target_variable, target_term);
+
       }
     }
   }
@@ -214,6 +200,9 @@ void VariableOptimizer::add_variable_substitution_rule(Variable_ptr subject_var,
   }
 }
 
+/**
+ * Adds substitution rule if it is only in one equality
+ */
 void VariableOptimizer::add_variable_substitution_rule(Variable_ptr subject_var, Term_ptr target_term) {
   if (subject_var->isSymbolic()) {
     return;

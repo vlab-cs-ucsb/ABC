@@ -19,7 +19,6 @@ ConstraintSorter::ConstraintSorter(Script_ptr script, SymbolTable_ptr symbol_tab
 }
 
 ConstraintSorter::~ConstraintSorter() {
-  std::cout << " and now here" << std::endl;
 }
 
 void ConstraintSorter::start() {
@@ -34,16 +33,16 @@ void ConstraintSorter::start() {
 }
 
 void ConstraintSorter::end() {
-  if (VLOG_IS_ON(VLOG_LEVEL)) {
-    DVLOG(VLOG_LEVEL) << "global dependency info: " << root;
-    for (auto& node : dependency_node_list) {
-      DVLOG(VLOG_LEVEL) << node->str();
-    }
-
-    for (auto& node : variable_nodes) {
-      DVLOG(VLOG_LEVEL) << node.second->str();
-    }
-  }
+//  if (VLOG_IS_ON(VLOG_LEVEL)) {
+//    DVLOG(VLOG_LEVEL) << "global dependency info: " << root;
+//    for (auto& node : dependency_node_list) {
+//      DVLOG(VLOG_LEVEL) << node->str();
+//    }
+//
+//    for (auto& node : variable_nodes) {
+//      DVLOG(VLOG_LEVEL) << node.second->str();
+//    }
+//  }
 }
 
 void ConstraintSorter::visitScript(Script_ptr script) {
@@ -82,7 +81,6 @@ void ConstraintSorter::visitLet(Let_ptr let_term) {
 }
 
 void ConstraintSorter::visitAnd(And_ptr and_term) {
-
   std::vector<TermNode_ptr> local_dependency_node_list;
   for (auto& term : *(and_term->term_list)) {
     term_node = nullptr;
@@ -93,29 +91,27 @@ void ConstraintSorter::visitAnd(And_ptr and_term) {
       term_node->setNode(term);
     }
     term_node->addMeToChildVariableNodes();
+    term_node->updateSymbolicVariableInfo();
     local_dependency_node_list.push_back(term_node);
   }
-  std::cout << "local node list" << local_dependency_node_list.size() << std::endl;
+  term_node = nullptr;
+
   sort_terms(local_dependency_node_list);
-//	if (VLOG_IS_ON(VLOG_LEVEL)) {
-//		for (auto& node : local_dependency_node_list) {
-//			DVLOG(VLOG_LEVEL) << node->str();
-//		}
-//
-//		for (auto& node : variable_nodes) {
-//			DVLOG(VLOG_LEVEL) << node.second->str();
-//		}
-//	}
 
-// figure out what will be the next commands in dependency node
+  if (VLOG_IS_ON(VLOG_LEVEL)) {
+    for (auto& node : local_dependency_node_list) {
+      DVLOG(VLOG_LEVEL) << node->str();
+    }
 
-// do topological sort
+    for (auto& node : variable_nodes) {
+      DVLOG(VLOG_LEVEL) << node.second->str();
+    }
+  }
 
   and_term->term_list->clear();
   for (auto& term_node : local_dependency_node_list) {
     and_term->term_list->push_back(term_node->getNode());
   }
-
 }
 
 void ConstraintSorter::visitOr(Or_ptr or_term) {
@@ -226,7 +222,7 @@ void ConstraintSorter::visitConcat(Concat_ptr concat_term) {
       result_node = term_node;
       result_node->shiftToRight();
     } else if (term_node != nullptr) {
-      result_node->addNodes(term_node->getAllNodes(), false);
+      result_node->addVariableNodes(term_node->getAllNodes(), false);
     }
   }
   term_node = result_node;
@@ -395,6 +391,18 @@ void ConstraintSorter::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 
 void ConstraintSorter::visitUnknownTerm(Unknown_ptr unknown_term) {
+  TermNode_ptr result_node = nullptr;
+  for (auto& term : *(unknown_term->term_list)) {
+    term_node = nullptr;
+    visit(term);
+    if (result_node == nullptr and term_node != nullptr) {
+      result_node = term_node;
+      result_node->shiftToRight();
+    } else if (term_node != nullptr) {
+      result_node->addVariableNodes(term_node->getAllNodes(), false);
+    }
+  }
+  term_node = result_node;
 }
 
 void ConstraintSorter::visitAsQualIdentifier(AsQualIdentifier_ptr as_qid_term) {
@@ -405,7 +413,7 @@ void ConstraintSorter::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   VariableNode_ptr variable_node = get_variable_node(variable);
 
   term_node = new TermNode();
-  term_node->addNode(variable_node, false);
+  term_node->addVariableNode(variable_node, false);
 }
 
 void ConstraintSorter::visitTermConstant(TermConstant_ptr term_constant) {
@@ -459,7 +467,7 @@ ConstraintSorter::TermNode_ptr ConstraintSorter::process_child_nodes(TermNode_pt
   TermNode_ptr result_node = nullptr;
   if (left_node != nullptr and right_node != nullptr) {
     right_node->shiftToRight();
-    right_node->addNodes(left_node->getAllNodes(), true);
+    right_node->addVariableNodes(left_node->getAllNodes(), true);
     delete left_node;
     result_node = right_node;
   } else if (left_node != nullptr) {
@@ -472,29 +480,59 @@ ConstraintSorter::TermNode_ptr ConstraintSorter::process_child_nodes(TermNode_pt
   return result_node;
 }
 
-void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_list) {
-  std::cout << "begin sort" << std::endl;
-  std::sort(term_list.begin(), term_list.end(),
+void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
+  std::vector<TermNode_ptr> sorted_term_node_list;
+
+  for (auto it = term_node_list.begin(); it != term_node_list.end(); ) {
+    if ((*it)->numOfTotalVars() == 0) {
+      sorted_term_node_list.push_back((*it));
+      it = term_node_list.erase(it);
+    } else {
+      it++;
+    }
+  }
+
+  std::sort(term_node_list.begin(), term_node_list.end(),
           [](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
-            std::cout << "compare: " << left_node << " vs " << right_node << std::endl;
-            if (left_node->numOfTotalVars() == 0) {return true;}
-            if (left_node->numOfLeftVars() < right_node->numOfLeftVars()) {return true;}
-            if (left_node->numOfLeftVars() < right_node->numOfTotalVars()) {return true;}
-            return false;
+            return (left_node->numOfTotalVars() < right_node->numOfTotalVars());
           });
 
-  auto begin = std::find_if(term_list.begin(), term_list.end(), [](TermNode_ptr node) -> bool {
-    return node->numOfTotalVars() == 1;
-  });
+  for (auto it = term_node_list.begin(); it != term_node_list.end(); ) {
+    if (not (*it)->hasSymbolicVar()) {
+      sorted_term_node_list.push_back((*it));
+      it = term_node_list.erase(it);
+    } else {
+      it++;
+    }
+  }
 
-  auto end = std::find_if(begin, term_list.end(), [](TermNode_ptr node) -> bool {
-    return node->numOfTotalVars() == 2;
-  });
+  term_node_list.insert(term_node_list.begin(), sorted_term_node_list.begin(), sorted_term_node_list.end());
 
-  std::sort(begin, end, [](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
-    if (left_node->numOfLeftVars() < right_node->numOfRightVars()) {return false;}
-    return true;
-  });
+/**
+ * TODO Apply better heuristic to break dependency cycles
+ * while term node list is not empty do that again and again
+ */
+//  int num_of_variable_counter = 1;
+//  while (not term_node_list.empty()) {
+//
+//    std::queue<TermNode_ptr> work_list;
+//    for (auto it = term_node_list.begin(); it != term_node_list.end(); ) {
+//      if ((*it)->numOfTotalVars() == num_of_variable_counter) {
+//        work_list.push(*it);
+//        it = term_node_list.erase(it);
+//      } else {
+//        it++;
+//      }
+//
+//      while (not work_list.empty()) {
+//        TermNode_ptr curr_term_node = work_list.front(); work_list.pop();
+//
+//      }
+//    }
+//
+//
+//    num_of_variable_counter++;
+//  }
 
   DVLOG(VLOG_LEVEL) << "node list sorted";
 }
@@ -535,11 +573,11 @@ Term_ptr ConstraintSorter::TermNode::getNode() {
   return _node;
 }
 
-void ConstraintSorter::TermNode::addNode(ConstraintSorter::VariableNode_ptr variable, bool is_left_side) {
+void ConstraintSorter::TermNode::addVariableNode(ConstraintSorter::VariableNode_ptr variable, bool is_left_side) {
   is_left_side ? _left_child_node_list.push_back(variable) : _right_child_node_list.push_back(variable);
 }
 
-void ConstraintSorter::TermNode::addNodes(std::vector<VariableNode_ptr>& var_node_list, bool is_left_side) {
+void ConstraintSorter::TermNode::addVariableNodes(std::vector<VariableNode_ptr>& var_node_list, bool is_left_side) {
   is_left_side ?
           merge_vectors(_left_child_node_list, var_node_list) : merge_vectors(_right_child_node_list, var_node_list);
 }
@@ -573,10 +611,10 @@ void ConstraintSorter::TermNode::shiftToRight() {
 
 void ConstraintSorter::TermNode::addMeToChildVariableNodes() {
   for (auto& left_node : _left_child_node_list) {
-    left_node->addNode(this, true);
+    left_node->addTermNode(this, true);
   }
   for (auto& right_node : _right_child_node_list) {
-    right_node->addNode(this, false);
+    right_node->addTermNode(this, false);
   }
 }
 
@@ -592,7 +630,7 @@ int ConstraintSorter::TermNode::numOfRightVars() {
   return _right_child_node_list.size();
 }
 
-void ConstraintSorter::TermNode::checkForSymbolicVariables() {
+void ConstraintSorter::TermNode::updateSymbolicVariableInfo() {
   for (auto& left_node : _left_child_node_list) {
     if (left_node->getVariable()->isSymbolic()) {
       _has_symbolic_var_on_left = true;
@@ -652,7 +690,7 @@ Variable_ptr ConstraintSorter::VariableNode::getVariable() {
   return variable;
 }
 
-void ConstraintSorter::VariableNode::addNode(ConstraintSorter::TermNode_ptr node, bool is_left_side) {
+void ConstraintSorter::VariableNode::addTermNode(ConstraintSorter::TermNode_ptr node, bool is_left_side) {
   all_var_appearance_list.push_back(node);
   is_left_side ? left_side_var_appearance_list.push_back(node) : right_side_var_appearance_list.push_back(node);
 }

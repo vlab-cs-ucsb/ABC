@@ -64,6 +64,9 @@ void Initializer::visitCommand(Command_ptr command) {
     primitives.pop();
     Sort_ptr sort = sorts.top();
     sorts.pop();
+    if (sort->var_type == nullptr) {
+      LOG(FATAL) << "Type is not supported: " << primitive->getData() << "<" << sort->identifier->getName() << ">";
+    }
     Variable_ptr variable = new Variable(primitive, sort->var_type->getType());
     symbol_table->addVariable(variable);
 

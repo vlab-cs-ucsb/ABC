@@ -91,7 +91,7 @@ public:
   void visitPrimitive(SMT::Primitive_ptr);
   void visitVariable(SMT::Variable_ptr);
 
-  void inspectAST(SMT::Visitable_ptr node);
+  int inspectAST(SMT::Visitable_ptr node);
 
 private:
   std::ostream* m_out; //file for writting output

@@ -769,6 +769,18 @@ void PostImageComputer::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 
 void PostImageComputer::visitUnknownTerm(Unknown_ptr unknown_term) {
+  DVLOG(VLOG_LEVEL) << "visit: " << *unknown_term;
+  LOG(WARNING) << "operation is not known, over-approximate params: " << *(unknown_term->term);
+
+  Value_ptr result = nullptr;
+  path_trace.push_back(unknown_term);
+  for (auto& term_ptr : *(unknown_term->term_list)) {
+    visit(term_ptr);
+  }
+  path_trace.pop_back();
+  result = new Value(Value::Type::STRING_AUTOMATON, Theory::StringAutomaton::makeAnyString());
+
+  setTermValue(unknown_term, result);
 }
 
 void PostImageComputer::visitAsQualIdentifier(

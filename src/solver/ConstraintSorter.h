@@ -11,6 +11,8 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <queue>
+#include <stack>
 #include <map>
 #include <algorithm>
 
@@ -112,8 +114,8 @@ protected:
 
     void setNode(SMT::Term_ptr node);
     SMT::Term_ptr getNode();
-    void addNode(VariableNode_ptr variable, bool is_left_side);
-    void addNodes(std::vector<VariableNode_ptr>&, bool is_left_side);
+    void addVariableNode(VariableNode_ptr variable, bool is_left_side);
+    void addVariableNodes(std::vector<VariableNode_ptr>&, bool is_left_side);
     std::vector<VariableNode_ptr>& getLeftNodes();
     std::vector<VariableNode_ptr>& getRightNodes();
     std::vector<VariableNode_ptr>& getAllNodes();
@@ -123,7 +125,7 @@ protected:
     int numOfTotalVars();
     int numOfLeftVars();
     int numOfRightVars();
-    void checkForSymbolicVariables();
+    void updateSymbolicVariableInfo();
     bool hasSymbolicVarOnLeft();
     bool hasSymbolicVarOnRight();
     bool hasSymbolicVar();
@@ -146,7 +148,7 @@ protected:
     std::string str();
 
     SMT::Variable_ptr getVariable();
-    void addNode(TermNode_ptr node, bool is_left_side);
+    void addTermNode(TermNode_ptr node, bool is_left_side);
   protected:
     SMT::Variable_ptr variable;
     std::vector<TermNode_ptr> all_var_appearance_list;

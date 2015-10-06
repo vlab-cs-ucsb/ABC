@@ -27,6 +27,7 @@ public:
   void setCallbacks();
   void visitOr(SMT::Or_ptr);
   void visitQualIdentifier(SMT::QualIdentifier_ptr);
+  void visitUnknownTerm(SMT::Unknown_ptr);
 protected:
   SymbolTable_ptr symbol_table;
 

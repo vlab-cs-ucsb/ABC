@@ -90,7 +90,6 @@ void Driver::initializeSolver() {
 }
 
 void Driver::solve() {
-  ast2dot("./output/test.dot");
   Solver::PostImageComputer post_image_computer(script, symbol_table);
   post_image_computer.start();
 

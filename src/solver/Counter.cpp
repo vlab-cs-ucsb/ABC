@@ -73,6 +73,12 @@ void Counter::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   symbol_table->increment_count(symbol_table->getVariable(qi_term->getVarName()));
 }
 
+void Counter::visitUnknownTerm(SMT::Unknown_ptr unknown_term) {
+  for(auto& term : *unknown_term->term_list) {
+    visit(term);
+  }
+}
+
 } /* namespace Solver */
 } /* namespace Vlab */
 
