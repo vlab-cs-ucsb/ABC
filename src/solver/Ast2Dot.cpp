@@ -12,6 +12,8 @@ namespace Solver {
 
 using namespace SMT;
 
+int Ast2Dot::name_counter = 0;
+
 Ast2Dot::Ast2Dot(std::ostream* out)
         : m_out(out), count(0) {
 }
@@ -298,6 +300,19 @@ void Ast2Dot::visitPrimitive(Primitive_ptr primitive) {
 
 void Ast2Dot::visitVariable(Variable_ptr variable) {
   draw_terminal(variable->str());
+}
+
+void Ast2Dot::inspectAST(Visitable_ptr node) {
+  std::stringstream file_name;
+  file_name << "./output/ast_" << name_counter++ << ".dot";
+  std::ofstream outfile(file_name.str().c_str());
+  if (!outfile.good()) {
+    std::cout << "cannot open file: " << file_name << std::endl;
+    exit(2);
+  }
+  m_out = &outfile;
+  start(node);
+  outfile.close();
 }
 
 } /* namespace Solver */

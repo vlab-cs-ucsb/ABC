@@ -10,6 +10,8 @@
 
 #include <iostream>
 #include <stack>
+#include <fstream>
+#include <sstream>
 
 #include <glog/logging.h>
 #include "smt/ast.h"
@@ -19,7 +21,7 @@ namespace Solver {
 
 class Ast2Dot: public SMT::Visitor {
 public:
-  Ast2Dot(std::ostream* out);
+  Ast2Dot(std::ostream* out = &std::cout);
 
   ~Ast2Dot();
 
@@ -89,10 +91,13 @@ public:
   void visitPrimitive(SMT::Primitive_ptr);
   void visitVariable(SMT::Variable_ptr);
 
+  void inspectAST(SMT::Visitable_ptr node);
+
 private:
   std::ostream* m_out; //file for writting output
   u_int64_t count; //used to give each node a uniq id
   std::stack<u_int64_t> s; //stack for tracking parent/child pairs
+  static int name_counter;
 
 };
 

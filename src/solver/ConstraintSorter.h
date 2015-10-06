@@ -88,50 +88,50 @@ public:
   void visitVariable(SMT::Variable_ptr);
 protected:
   class VariableNode;
-  class VisitableNode;
+  class TermNode;
   typedef VariableNode* VariableNode_ptr;
-  typedef VisitableNode* VisitableNode_ptr;
+  typedef TermNode* TermNode_ptr;
 
   VariableNode_ptr get_variable_node(SMT::Variable_ptr);
-  VisitableNode_ptr process_child_nodes(VisitableNode_ptr, VisitableNode_ptr);
-  void sort_visitable_nodes(std::vector<VisitableNode_ptr>& visitable_node_list);
+  TermNode_ptr process_child_nodes(TermNode_ptr, TermNode_ptr);
+  void sort_terms(std::vector<TermNode_ptr>& term_list);
 
   SMT::Script_ptr root;
   SymbolTable_ptr symbol_table;
-  VisitableNode_ptr visitable_node;
+  TermNode_ptr term_node;
 
-  std::vector<VisitableNode_ptr> dependency_node_list;
+  std::vector<TermNode_ptr> dependency_node_list;
   std::map<SMT::Variable_ptr, VariableNode_ptr> variable_nodes;
 
-  class VisitableNode {
+  class TermNode {
   public:
-    VisitableNode();
-    VisitableNode(SMT::Visitable_ptr node);
-    ~VisitableNode();
+    TermNode();
+    TermNode(SMT::Term_ptr node);
+    ~TermNode();
     std::string str();
 
-    void set_node(SMT::Visitable_ptr node);
-    SMT::Visitable_ptr get_node();
-    void add_node(VariableNode_ptr variable, bool is_left_side);
-    void add_nodes(std::vector<VariableNode_ptr>&, bool is_left_side);
-    std::vector<VariableNode_ptr>& get_left_nodes();
-    std::vector<VariableNode_ptr>& get_right_nodes();
-    std::vector<VariableNode_ptr>& get_all_nodes();
-    void shift_to_left();
-    void shift_to_right();
-    void add_me_to_child_variable_nodes();
-    int num_of_total_vars();
-    int num_of_left_vars();
-    int num_of_right_vars();
-    void check_for_symbolic_variables();
-    bool has_symbolic_var_on_left();
-    bool has_symbolic_var_on_right();
-    bool has_symbolic_var();
+    void setNode(SMT::Term_ptr node);
+    SMT::Term_ptr getNode();
+    void addNode(VariableNode_ptr variable, bool is_left_side);
+    void addNodes(std::vector<VariableNode_ptr>&, bool is_left_side);
+    std::vector<VariableNode_ptr>& getLeftNodes();
+    std::vector<VariableNode_ptr>& getRightNodes();
+    std::vector<VariableNode_ptr>& getAllNodes();
+    void shiftToLeft();
+    void shiftToRight();
+    void addMeToChildVariableNodes();
+    int numOfTotalVars();
+    int numOfLeftVars();
+    int numOfRightVars();
+    void checkForSymbolicVariables();
+    bool hasSymbolicVarOnLeft();
+    bool hasSymbolicVarOnRight();
+    bool hasSymbolicVar();
   protected:
-    SMT::Visitable_ptr _node;
+    SMT::Term_ptr _node;
     bool _has_symbolic_var_on_left;
     bool _has_symbolic_var_on_right;
-    std::vector<SMT::Visitable_ptr> _next_node_list;
+    std::vector<SMT::Term_ptr> _next_node_list;
     std::vector<VariableNode_ptr> _all_child_node_list;
     std::vector<VariableNode_ptr> _left_child_node_list;
     std::vector<VariableNode_ptr> _right_child_node_list;
@@ -145,13 +145,13 @@ protected:
     ~VariableNode();
     std::string str();
 
-    SMT::Variable_ptr get_variable();
-    void add_node(VisitableNode_ptr node, bool is_left_side);
+    SMT::Variable_ptr getVariable();
+    void addNode(TermNode_ptr node, bool is_left_side);
   protected:
     SMT::Variable_ptr variable;
-    std::vector<VisitableNode_ptr> all_var_appearance_list;
-    std::vector<VisitableNode_ptr> left_side_var_appearance_list;
-    std::vector<VisitableNode_ptr> right_side_var_appearance_list;
+    std::vector<TermNode_ptr> all_var_appearance_list;
+    std::vector<TermNode_ptr> left_side_var_appearance_list;
+    std::vector<TermNode_ptr> right_side_var_appearance_list;
   };
 
 private:
