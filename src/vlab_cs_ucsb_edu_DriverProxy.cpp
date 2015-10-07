@@ -5,6 +5,10 @@
  *      Author: baki
  */
 
+#include <map>
+#include <string>
+#include <iostream>
+
 #include "vlab_cs_ucsb_edu_DriverProxy.h"
 #include "Driver.h"
 
@@ -83,6 +87,30 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_printResultAutomaton__L
   std::string file_path = file_path_str;
   abc_driver->printResult(file_path);
   env->ReleaseStringUTFChars(filePath, file_path_str);
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    getSatisfyingExamples
+ * Signature: ()Ljava/util/Map;
+ */
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getSatisfyingExamples (JNIEnv *env, jobject obj) {
+  Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
+  jclass hashMapClass = env->FindClass("java/util/HashMap");
+  jmethodID hashMapCtor = env->GetMethodID(hashMapClass, "<init>", "()V");
+  jobject map = env->NewObject(hashMapClass, hashMapCtor);
+
+  std::map<std::string, std::string> results = abc_driver->getSatisfyingExamples();
+
+  jmethodID hasMapPut = env->GetMethodID(hashMapClass, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+
+  for (auto var_entry : results) {
+    jstring var_name = env->NewStringUTF(var_entry.first.c_str());
+    jstring var_value = env->NewStringUTF(var_entry.second.c_str());
+    env->CallObjectMethod(map, hasMapPut, var_name, var_value);
+  }
+
+  return map;
 }
 
 /*

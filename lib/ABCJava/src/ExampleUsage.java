@@ -1,3 +1,6 @@
+import java.util.Map;
+import java.util.Map.Entry;
+
 import vlab.cs.ucsb.edu.DriverProxy;
 
 public class ExampleUsage {
@@ -15,6 +18,11 @@ public class ExampleUsage {
     if (result) {
       System.out.println("Satisfiable");
       abcDriver.printResultAutomaton();
+      
+      Map<String, String> results = abcDriver.getSatisfyingExamples();
+      for (Entry<String, String> var_result : results.entrySet()) {
+        System.out.println(var_result.getKey() + " : \"" + var_result.getValue() + "\"");
+      }
     } else {
       System.out.println("Unsatisfiable");
     }

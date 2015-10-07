@@ -74,6 +74,7 @@ public:
 
   bool isSatisfiable();
   bool isSingleValue();
+  std::string getASatisfyingExample();
 
   class Name {
   public:

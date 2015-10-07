@@ -10,7 +10,7 @@
 namespace Vlab {
 
 //const Log::Level Driver::TAG = Log::DRIVER;
-//PerfInfo* Driver::perfInfo;
+bool Driver::IS_LOGGING_INITIALIZED = false;
 
 Driver::Driver()
         : script(nullptr), symbol_table(nullptr) {
@@ -24,9 +24,12 @@ Driver::~Driver() {
 // TODO parameterize flags later on
 void Driver::initializeABC() {
 //  FLAGS_log_dir = log_root;
-  FLAGS_v = 19;
-  FLAGS_logtostderr = 1;
-  google::InitGoogleLogging("ABC.Java.Driver");
+  if (!IS_LOGGING_INITIALIZED) {
+    FLAGS_v = 19;
+    FLAGS_logtostderr = 1;
+    google::InitGoogleLogging("ABC.Java.Driver");
+    IS_LOGGING_INITIALIZED = true;
+  }
 }
 
 void Driver::error(const std::string& m) {
@@ -115,6 +118,15 @@ void Driver::printResult(std::ostream& out) {
   SMT::Variable_ptr variable = symbol_table->getSymbolicVariable();
   Solver::Value_ptr result = symbol_table->getValue(variable);
   result->getStringAutomaton()->toDotAscii(false, out);
+}
+
+std::map<std::string, std::string> Driver::getSatisfyingExamples() {
+  std::map<std::string, std::string> results;
+  symbol_table->unionValuesOfVariables(script);
+  for(auto variable_entry : symbol_table->getValuesAtScope(script)) {
+    results[variable_entry.first->getName()] = variable_entry.second->getASatisfyingExample();
+  }
+  return results;
 }
 
 void Driver::reset() {

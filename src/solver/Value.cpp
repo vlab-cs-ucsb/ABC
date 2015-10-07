@@ -445,6 +445,41 @@ Value::~Value() {
     return is_single_value;
   }
 
+  std::string Value::getASatisfyingExample() {
+    std::stringstream ss;
+    switch (type) {
+    case Type::NONE:
+      break;
+    case Type::BOOl_CONSTANT:
+      if (bool_constant) {
+        ss << "true";
+      } else {
+        ss << "false";
+      }
+      break;
+    case Type::INT_CONSTANT:
+      ss << int_constant;
+      break;
+    case Type::BOOL_AUTOMATON:
+      LOG(ERROR) << "bool automaton not supported";
+      break;
+    case Type::INT_AUTOMATON:
+      ss << int_automaton->getAnAcceptingInt();
+      break;
+    case Type::INTBOOL_AUTOMATON:
+      LOG(ERROR) << "implement me";
+      break;
+    case Type::STRING_AUTOMATON:
+      ss << string_automaton->getAnAcceptingString();
+      break;
+    default:
+      LOG(ERROR) << "value type is not supported";
+      break;
+    }
+
+    return ss.str();
+  }
+
   std::ostream& operator<<(std::ostream& os, const Value& value) {
     return os << value.str();
   }

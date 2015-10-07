@@ -46,6 +46,7 @@ public:
   bool isSatisfiable();
   void printResult(std::ostream& out);
   void printResult(std::string file_name);
+  std::map<std::string, std::string> getSatisfyingExamples();
   void reset();
 //	void solveAst();
 
@@ -58,8 +59,8 @@ public:
   int trace_scanning = 0;
   std::string file;
 
-//	static const Log::Level TAG;
-//	static PerfInfo* perfInfo;
+private:
+  static bool IS_LOGGING_INITIALIZED;
 
 };
 

@@ -41,6 +41,14 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_printResultAutomaton__L
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    getSatisfyingExamples
+ * Signature: ()Ljava/util/Map;
+ */
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getSatisfyingExamples
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    reset
  * Signature: ()V
  */

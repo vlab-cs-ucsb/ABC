@@ -1,5 +1,7 @@
 package vlab.cs.ucsb.edu;
 
+import java.util.Map;
+
 /**
  * ABC Java Interface
  * 
@@ -27,6 +29,7 @@ public class DriverProxy {
   public native boolean isSatisfiable(String constraint);
   public native void printResultAutomaton();
   public native void printResultAutomaton(String filePath);
+  public native Map<String, String> getSatisfyingExamples();
   public native void reset();
   public native void dispose();
 }

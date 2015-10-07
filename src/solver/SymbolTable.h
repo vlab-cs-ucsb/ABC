@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <map>
+#include <set>
 #include <algorithm>
 
 #include <glog/logging.h>
@@ -34,6 +35,8 @@ public:
 
   bool isSatisfiable();
   void updateSatisfiability(bool value);
+  void setScopeSatisfiability(bool value);
+  void unionValuesOfVariables(SMT::Script_ptr script);
 
   void addVariable(SMT::Variable_ptr);
   SMT::Variable_ptr getVariable(std::string name);
@@ -46,6 +49,7 @@ public:
 
   void push_scope(SMT::Visitable_ptr);
   SMT::Visitable_ptr pop_scope();
+
 
   /*
    * Variable count functions, used for reduction and optimization
@@ -65,6 +69,7 @@ public:
 
   Value_ptr getValue(std::string var_name);
   Value_ptr getValue(SMT::Variable_ptr variable);
+  VariableValueMap& getValuesAtScope(SMT::Visitable_ptr scope);
   bool setValue(std::string var_name, Value_ptr value);
   bool setValue(SMT::Variable_ptr variable, Value_ptr value);
 
@@ -80,9 +85,15 @@ private:
 
   /**
    * There is a global scope
-   * A new scope is generated when there is a disjuction of conjuctions
+   * A new scope is generated when there is a disjuction
    */
   std::vector<SMT::Visitable_ptr> scope_stack;
+  std::set<SMT::Visitable_ptr> scopes;
+
+  /**
+   * For each scope keep satisfiability result
+   */
+  std::map<SMT::Visitable_ptr, bool> is_scope_satisfiable;
 
   /**
    * Number of usages of variables

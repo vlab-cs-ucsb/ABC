@@ -41,6 +41,39 @@ void SymbolTable::updateSatisfiability(bool value) {
   global_assertion_result = global_assertion_result and value;
 }
 
+void SymbolTable::setScopeSatisfiability(bool value) {
+  is_scope_satisfiable[scope_stack.back()] = value;
+}
+
+/**
+ * Unions values of variables if there is disjunction
+ */
+void SymbolTable::unionValuesOfVariables(Script_ptr script) {
+  if (scopes.size() < 2) {
+    return;
+  }
+  push_scope(script);
+  for (auto variable_entry : variables) {
+    Value_ptr value = nullptr;
+    for (auto scope : scopes) {
+      if (is_scope_satisfiable[scope]) {
+        auto scope_var_value = variable_value_table[scope].find(variable_entry.second);
+        if (scope_var_value != variable_value_table[scope].end()) {
+          if (value) {
+            Value_ptr tmp = value;
+            value = tmp->union_(scope_var_value->second);
+            delete tmp;
+          } else {
+            value = scope_var_value->second->clone();
+          }
+        }
+      }
+    }
+    setValue(variable_entry.second, value);
+  }
+  pop_scope();
+}
+
 void SymbolTable::addVariable(Variable_ptr variable) {
   auto result = variables.insert(std::make_pair(variable->getName(), variable));
   if (not result.second) {
@@ -86,6 +119,7 @@ int SymbolTable::getBound() {
 
 void SymbolTable::push_scope(Visitable_ptr key) {
   scope_stack.push_back(key);
+  scopes.insert(key);
 }
 
 Visitable_ptr SymbolTable::pop_scope() {
@@ -195,6 +229,10 @@ Value_ptr SymbolTable::getValue(SMT::Variable_ptr variable) {
   }
   setValue(variable, result);
   return result;
+}
+
+VariableValueMap& SymbolTable::getValuesAtScope(SMT::Visitable_ptr scope) {
+  return variable_value_table[scope];
 }
 
 bool SymbolTable::setValue(std::string var_name, Value_ptr value) {
