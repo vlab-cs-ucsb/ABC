@@ -1,0 +1,30 @@
+diff --git a/BDD/bdd_external.h b/BDD/bdd_external.h
+index 8cb60a5..b8f972e 100644
+--- a/BDD/bdd_external.h
++++ b/BDD/bdd_external.h
+@@ -21,6 +21,10 @@
+ #ifndef __BDD_EXTERNAL_H
+ #define __BDD_EXTERNAL_H
+ 
++#ifdef __cplusplus
++#define export _export
++#endif
++
+ #include "bdd.h"
+ 
+ typedef struct _BddNode {
+diff --git a/DFA/makebasic.c b/DFA/makebasic.c
+index ec2f578..394f7ec 100644
+--- a/DFA/makebasic.c
++++ b/DFA/makebasic.c
+@@ -24,8 +24,8 @@
+ #include "dfa.h"
+ #include "../BDD/bdd_internal.h"
+ 
+-#define MAX_EXCEPTION 50
+-#define MAX_VARIABLES 10
++#define MAX_EXCEPTION 2048
++#define MAX_VARIABLES 11
+ /* #warning INTERNAL LIMITS */
+ 
+ struct path_descr {

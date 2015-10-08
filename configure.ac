@@ -7,8 +7,8 @@ AC_CONFIG_LIBOBJ_DIR([lib])
 AM_MAINTAINER_MODE([enable])
 
 # lib building
-#AC_ENABLE_SHARED
-#AC_DISABLE_STATIC
+AC_ENABLE_SHARED
+AC_DISABLE_STATIC
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
@@ -32,17 +32,23 @@ AC_PROG_YACC
 LT_INIT
 
 # this will define a variable variable. you can use it in automake.am $(MONADFALIB)
-AC_CHECK_LIB([monadfa], [dfaFree], [MONADFALIB=-lmonadfa], AC_MSG_ERROR(MONA DFA library not found))
-AC_SUBST([MONADFALIB])
+AC_HAVE_LIBRARY([glog], [LIBGLOG=-lglog], AC_MSG_ERROR(Glog logging library not found))
+AC_SUBST([LIBGLOG])
 
-AC_CHECK_LIB([monabdd], [bdd_size], [MONABDDLIB=-lmonabdd], AC_MSG_ERROR(MONA BDD library not found))
-AC_SUBST([MONABDDLIB])
+AC_CHECK_LIB([monadfa], [dfaFree], [LIBMONADFA=-lmonadfa], AC_MSG_ERROR(MONA DFA library not found))
+AC_SUBST([LIBMONADFA])
 
-AC_CHECK_LIB([monamem], [mem_alloc], [MONAMEMLIB=-lmonamem], AC_MSG_ERROR(MONA MEM library not found))
-AC_SUBST([MONAMEMLIB])
+AC_CHECK_LIB([monabdd], [bdd_size], [LIBMONABDD=-lmonabdd], AC_MSG_ERROR(MONA BDD library not found))
+AC_SUBST([LIBMONABDD])
 
-AC_CHECK_LIB([m], [floor],[MLIB=-lm], AC_MSG_ERROR(c math library m not found))
-AC_SUBST([MLIB])
+AC_CHECK_LIB([monamem], [mem_alloc], [LIBMONAMEM=-lmonamem], AC_MSG_ERROR(MONA MEM library not found))
+AC_SUBST([LIBMONAMEM])
+
+AC_CHECK_LIB([m], [floor],[LIBM=-lm], AC_MSG_ERROR(c math library m not found))
+AC_SUBST([LIBM])
+
+AC_HAVE_LIBRARY([stranger], [LIBSTRANGER=-lstranger], AC_MSG_ERROR(LibStranger string analysis library not found))
+AC_SUBST([LIBSTRANGER])
 
 # TODO remove dependencies that is not needed by cpp later on
 # TODO improve library check here
@@ -57,11 +63,22 @@ AC_FUNC_MEMCMP
 AC_FUNC_MMAP
 AC_CHECK_FUNCS(memset localeconv,,FUNCTION_MISSING)
 
+# Check for environment variables
+AC_MSG_CHECKING([for JAVA_HOME environment variable])
+AC_SUBST([JAVA_HOME])
+AM_CONDITIONAL([JAVA_HOME_SET], [test ! -z "$JAVA_HOME"])
+if test ! -z "$JAVA_HOME"; then
+    AC_MSG_RESULT([yes])
+else
+    AC_MSG_RESULT([no, JNI interface will not be loaded. Please set JAVA_HOME path to install JNI support and to make ABC available for JAVA programs.])
+fi
+
+
 # set global compiler options
 
 # Create Makefile files
 AC_CONFIG_FILES([Makefile src/Makefile src/parser/Makefile src/theory/Makefile])
 #AC_CONFIG_SUBDIRS([external/glog external/googletest])
-AC_CONFIG_SUBDIRS([external/glog external/LibStranger])
+#AC_CONFIG_SUBDIRS([external/glog external/LibStranger])
 AC_OUTPUT
 

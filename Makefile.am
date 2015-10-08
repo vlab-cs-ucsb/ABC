@@ -1,8 +1,5 @@
-ACLOCAL_AMFLAGS = -I m4
-SUBDIRS= \
-	external/glog \
-	external/LibStranger \
-	src
+ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS} -I m4
+SUBDIRS = src
 EXTRA_DIST = autogen.sh
 
 test-local:

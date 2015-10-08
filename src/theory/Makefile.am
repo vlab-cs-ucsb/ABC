@@ -1,17 +1,11 @@
 AM_YFLAGS = -d
 
 AM_CXXFLAGS = \
-	-I$(top_srcdir)/external/glog/src \
-	-I$(top_srcdir)/external/LibStranger/src \
 	-I$(srcdir)/utils \
 	-I$(srcdir)/theory 
 
 AM_LDFLAGS = \
-	-L$(top_srcdir)/external/glog \
-	-L$(top_srcdir)/external/LibStranger/ \
-	-lglog \
-	$(MONADFALIB) $(MONABDDLIB) $(MONAMEMLIB) $(MLIB) \
-	-lstranger
+	$(LIBGLOG) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) $(LIBSTRANGER)
 
 noinst_LTLIBRARIES = libabcautomaton.la
 libabcautomaton_la_SOURCES = \
@@ -40,9 +34,7 @@ libabcautomaton_la_SOURCES = \
 libabcautomaton_la_LDFLAGS = -version-info 0:1:0
 	
 libabcautomaton_la_LIBADD = \
-	$(top_srcdir)/external/glog/libglog.la \
-	$(MONADFALIB) $(MONABDDLIB) $(MONAMEMLIB) $(MLIB) \
-	$(top_srcdir)/external/LibStranger/libstranger.la
+	$(LIBGLOG) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) $(LIBSTRANGER)
 	
 test-local: 
 	@echo parser, $(srcdir), $(top_srcdir)	

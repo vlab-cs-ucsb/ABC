@@ -27,8 +27,8 @@
 //#include <mona/bdd_external.h>
 //#include <mona/bdd_dump.h>
 //#include <mona/dfa.h>
-#include <stranger.h>
-#include <stranger_lib_internal.h>
+#include <stranger/stranger.h>
+#include <stranger/stranger_lib_internal.h>
 #include "../utils/RegularExpression.h"
 #include "Graph.h"
 #include "DAGraph.h"

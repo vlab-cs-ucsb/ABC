@@ -19,6 +19,7 @@ Driver::Driver()
 Driver::~Driver() {
   delete symbol_table;
   delete script;
+  google::ShutdownGoogleLogging();
 }
 
 // TODO parameterize flags later on

@@ -19,8 +19,6 @@
 #include <queue>
 
 #include <glog/logging.h>
-#include <stranger.h>
-#include <stranger_lib_internal.h>
 #include "../utils/RegularExpression.h"
 #include "Graph.h"
 #include "DAGraph.h"

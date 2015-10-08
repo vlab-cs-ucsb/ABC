@@ -11,8 +11,8 @@
 #include <array>
 
 #include <glog/logging.h>
-#include <stranger.h>
-#include <stranger_lib_internal.h>
+#include <stranger/stranger.h>
+#include <stranger/stranger_lib_internal.h>
 #include "Automaton.h"
 
 namespace Vlab {

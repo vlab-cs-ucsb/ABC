@@ -131,7 +131,7 @@ Usage
   (More documentation on ABC input language and format will be provided, please see *__&lt;abc-source-folder&gt;/test/fixtures__* folder for examples)
   
 ####JAVA
-  You have to compile *__ABC__* with your *__JAVA_HOME__* path is set to a valid java path. 
+  You have to compile *__ABC__* with your *__JAVA_HOME__* path is set to a valid java path. Once you set your *__JAVA_HOME__* path, you need to install/re-install *__ABC__* on your system. 
 
   You can use *__&lt;abc-source-folder&gt;/lib/ABCJava__* as an example Java program that calls __abc__.
 
