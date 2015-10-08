@@ -37,12 +37,12 @@ void setHandle(JNIEnv *env, jobject obj, T *t)
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    initABC
- * Signature: ()V
+ * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_initABC (JNIEnv *env, jobject obj) {
+JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_initABC (JNIEnv *env, jobject obj, jint log_flag) {
 
   Vlab::Driver *abc_driver = new Vlab::Driver();
-  abc_driver->initializeABC();
+  abc_driver->initializeABC((int)log_flag);
   setHandle(env, obj, abc_driver);
 }
 

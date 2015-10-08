@@ -33,7 +33,7 @@ public:
   Driver();
   ~Driver();
 
-  void initializeABC();
+  void initializeABC(int log_level);
   // Error handling.
   void error(const Vlab::SMT::location& l, const std::string& m);
   void error(const std::string& m);
@@ -44,8 +44,9 @@ public:
   void initializeSolver();
   void solve();
   bool isSatisfiable();
-  void printResult(std::ostream& out);
-  void printResult(std::string file_name);
+  void printResult(Solver::Value_ptr value, std::ostream& out);
+  void printResult(Solver::Value_ptr value, std::string file_name);
+  std::map<SMT::Variable_ptr, Solver::Value_ptr> getSatisfyingVariables();
   std::map<std::string, std::string> getSatisfyingExamples();
   void reset();
 //	void solveAst();

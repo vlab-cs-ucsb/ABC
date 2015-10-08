@@ -19,6 +19,7 @@
 #include <stack>
 #include <queue>
 #include <cmath>
+#include <functional>
 
 #include <glog/logging.h>
 //#include <mona/config.h>
@@ -94,7 +95,7 @@ protected:
 
   bool isAcceptingSingleWord();
   // TODO update it to work for non-accepting inputs
-  std::vector<bool>* getAnAcceptingWord();
+  std::vector<bool>* getAnAcceptingWord(std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
 
 
   static int* getIndices(int num_of_variables, int extra_num_of_variables = 0);

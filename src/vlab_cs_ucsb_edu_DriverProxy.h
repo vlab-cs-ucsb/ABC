@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    initABC
- * Signature: ()V
+ * Signature: (I)V
  */
 JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_initABC
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jint);
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy

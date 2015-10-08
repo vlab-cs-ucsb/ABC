@@ -227,7 +227,11 @@ bool Automaton::isAcceptingSingleWord() {
   return is_accepting_single_word;
 }
 
-std::vector<bool>* Automaton::getAnAcceptingWord() {
+/**
+ * By default it explores low bdd end first, if a heuristic function is set and if it returns true,
+ * it explores high end first
+ */
+std::vector<bool>* Automaton::getAnAcceptingWord(std::function<bool(unsigned& index)> next_node_heuristic) {
   int sink_state = getSinkState(),
       curr_state = this->dfa->s;
   // bits are represented as bool
@@ -265,23 +269,48 @@ std::vector<bool>* Automaton::getAnAcceptingWord() {
         if (visited[l]) {
           // avoid cycles
         } else {
+
           curr_state = l;
+
+          while (curr_transition.size() < (unsigned)num_of_variables) {
+            unsigned i = curr_transition.size();
+            if (next_node_heuristic and next_node_heuristic(i)) {
+              curr_transition.push_back(1); // add 1 for don't cares
+            } else {
+              curr_transition.push_back(0); // add 0 for don't cares
+            }
+          }
           bit_vector->insert(bit_vector->end(), curr_transition.begin(), curr_transition.end());
           break;
         }
       } else {
+
         while (curr_transition.size() < index) {
-          curr_transition.push_back(1); // add 1 for don't cares
+          unsigned i = curr_transition.size();
+          if (next_node_heuristic and next_node_heuristic(i)) {
+            curr_transition.push_back(1); // add 1 for don't cares
+          } else {
+            curr_transition.push_back(0); // add 0 for don't cares
+          }
         }
+
         std::vector<bool> left = curr_transition;
         left.push_back(0);
-        transition_stack.push_back(left);
-        nodes.push_back(l);
         std::vector<bool> right = curr_transition;
         right.push_back(1);
-        transition_stack.push_back(right);
-        nodes.push_back(r);
+        if (next_node_heuristic and next_node_heuristic(index)) {
+          transition_stack.push_back(left);
+          nodes.push_back(l);
+          transition_stack.push_back(right);
+          nodes.push_back(r);
+        } else {
+          transition_stack.push_back(right);
+          nodes.push_back(r);
+          transition_stack.push_back(left);
+          nodes.push_back(l);
+        }
       }
+
     }
     nodes.clear();
     transition_stack.clear();

@@ -23,10 +23,10 @@ Driver::~Driver() {
 }
 
 // TODO parameterize flags later on
-void Driver::initializeABC() {
+void Driver::initializeABC(int log_level) {
 //  FLAGS_log_dir = log_root;
   if (!IS_LOGGING_INITIALIZED) {
-    FLAGS_v = 19;
+    FLAGS_v = log_level;
     FLAGS_logtostderr = 1;
     google::InitGoogleLogging("ABC.Java.Driver");
     IS_LOGGING_INITIALIZED = true;
@@ -105,26 +105,36 @@ bool Driver::isSatisfiable() {
 }
 
 
-void Driver::printResult(std::string file_name) {
+void Driver::printResult(Solver::Value_ptr value, std::string file_name) {
   std::ofstream outfile(file_name.c_str());
   if (!outfile.good()) {
     std::cout << "cannot open file: " << file_name << std::endl;
     exit(2);
   }
-  printResult(outfile);
+  printResult(value, outfile);
 }
 
-void Driver::printResult(std::ostream& out) {
-  symbol_table->push_scope(script);
-  SMT::Variable_ptr variable = symbol_table->getSymbolicVariable();
-  Solver::Value_ptr result = symbol_table->getValue(variable);
-  result->getStringAutomaton()->toDotAscii(false, out);
+void Driver::printResult(Solver::Value_ptr value, std::ostream& out) {
+  switch (value->getType()) {
+    case Solver::Value::Type::STRING_AUTOMATON:
+      value->getStringAutomaton()->toDotAscii(false, out);
+      break;
+    case Solver::Value::Type::INT_AUTOMATON:
+      value->getIntAutomaton()->toDotAscii(false, out);
+      break;
+    default:
+      break;
+  }
+}
+
+std::map<SMT::Variable_ptr, Solver::Value_ptr> Driver::getSatisfyingVariables() {
+  symbol_table->unionValuesOfVariables(script);
+  return symbol_table->getValuesAtScope(script);
 }
 
 std::map<std::string, std::string> Driver::getSatisfyingExamples() {
   std::map<std::string, std::string> results;
-  symbol_table->unionValuesOfVariables(script);
-  for(auto variable_entry : symbol_table->getValuesAtScope(script)) {
+  for(auto& variable_entry : getSatisfyingVariables()) {
     results[variable_entry.first->getName()] = variable_entry.second->getASatisfyingExample();
   }
   return results;
@@ -145,7 +155,9 @@ return;
 //    delete int_auto_1;
 
 //  Theory::StringAutomaton_ptr str_auto_1 = Theory::StringAutomaton::makePhi();
-//  Theory::StringAutomaton_ptr str_auto_2 = Theory::StringAutomaton::makeRegexAuto("a(b|a)(k|i)*");
+//  Theory::StringAutomaton_ptr str_auto_2 = Theory::StringAutomaton::makeLengthLessThan(2);
+//  str_auto_2->inspectAuto();
+//  std::cout << "example: \"" << str_auto_2->getAnAcceptingString() << "\"" << std::endl;
 //  Theory::StringAutomaton_ptr str_auto_3 = nullptr;
 
 //  str_auto_2->inspectAuto();

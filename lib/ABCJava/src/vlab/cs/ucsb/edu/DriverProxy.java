@@ -22,10 +22,10 @@ public class DriverProxy {
   }
   
   public DriverProxy() {
-    initABC();
+    initABC(0);
   }
   
-  private native void initABC();
+  private native void initABC(int logFlag);
   public native boolean isSatisfiable(String constraint);
   public native void printResultAutomaton();
   public native void printResultAutomaton(String filePath);

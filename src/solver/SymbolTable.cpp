@@ -51,7 +51,10 @@ void SymbolTable::setScopeSatisfiability(bool value) {
 void SymbolTable::unionValuesOfVariables(Script_ptr script) {
   if (scopes.size() < 2) {
     return;
+  } else if (variable_value_table[script].size() > 0) {
+    return;
   }
+
   push_scope(script);
   for (auto variable_entry : variables) {
     Value_ptr value = nullptr;

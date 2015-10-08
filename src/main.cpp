@@ -76,21 +76,46 @@ int main(const int argc, const char **argv) {
   driver.parse(in);
   if (VLOG_IS_ON(32)) {
     driver.ast2dot(&std::cout);
+    driver.ast2dot(output_root + "/parser_out.dot");
   }
-  driver.ast2dot(output_root + "/parser_out.dot");
 
   driver.initializeSolver();
 
-  driver.ast2dot(output_root + "/optimized.dot");
+  if (VLOG_IS_ON(32)) {
+    driver.ast2dot(output_root + "/optimized.dot");
+  }
 
   driver.solve();
 
-  driver.printResult(output_root + "/result.dot");
+  if (driver.isSatisfiable()) {
+    LOG(INFO) << "satisfiable !";
+    if (VLOG_IS_ON(30)) {
+      int index = 0;
+      for(auto& variable_entry : driver.getSatisfyingVariables()) {
+        LOG(INFO) << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"";
+        switch (variable_entry.second->getType()) {
+          case Vlab::Solver::Value::Type::INT_AUTOMATON:
+          case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
+            std::stringstream ss;
+            ss << output_root << "/result_" << index << ".dot";
+            std::string out_file = ss.str();
+            driver.printResult(variable_entry.second, out_file);
+            std::string dot_cmd("xdot " + out_file + " &");
+            int r = std::system(dot_cmd.c_str());
+            LOG(INFO) << "result rendered? " << r << " : " << dot_cmd;
+            break;
+          }
+          default:
+            break;
+        }
+      }
+    }
+  } else {
+    LOG(INFO) << "not satisfiable !";
+  }
 
-  std::string dot_cmd("xdot " + output_root + "/result.dot &");
-  int r = std::system(dot_cmd.c_str());
-  LOG(INFO) << "result rendered? " << r << " : " << dot_cmd;
   LOG(INFO) << "done.";
+
   return 0;
 }
 

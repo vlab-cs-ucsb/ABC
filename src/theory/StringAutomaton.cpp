@@ -2022,7 +2022,18 @@ bool StringAutomaton::isAcceptingSingleString() {
 std::string StringAutomaton::getAnAcceptingString() {
   std::stringstream ss;
 
-  std::vector<bool>* example = getAnAcceptingWord();
+  auto readable_ascii_heuristic = [](unsigned& index) -> bool {
+    switch (index) {
+      case 1:
+      case 2:
+      case 6:
+        return true;
+      default:
+        return false;
+    }
+  };
+
+  std::vector<bool>* example = getAnAcceptingWord(readable_ascii_heuristic);
   unsigned char c = 0;
   unsigned bit_range = num_of_variables - 1;
   unsigned read_count = 0;

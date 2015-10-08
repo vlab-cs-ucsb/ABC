@@ -47,6 +47,7 @@ libabc_la_SOURCES = \
 	Driver.cpp \
 	Driver.h
 
+
 if JAVA_HOME_SET
 	libabc_la_SOURCES += \
 		vlab_cs_ucsb_edu_DriverProxy.cpp \
@@ -62,7 +63,6 @@ libabc_la_LIBADD = \
 
 libabc_ladir = $(includedir)/abc
 libabc_la_HEADERS = Driver.h
-
 if JAVA_HOME_SET
 	libabc_la_HEADERS += vlab_cs_ucsb_edu_DriverProxy.h
 endif
@@ -76,4 +76,4 @@ abc_LDADD = \
 	-labc
 
 test-local:
-	@echo src, $(srcdir), $(top_srcdir)	
+	@echo src, $(srcdir), $(top_srcdir)

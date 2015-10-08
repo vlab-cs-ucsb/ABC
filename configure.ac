@@ -64,15 +64,12 @@ AC_FUNC_MMAP
 AC_CHECK_FUNCS(memset localeconv,,FUNCTION_MISSING)
 
 # Check for environment variables
-AC_MSG_CHECKING([for JAVA_HOME environment variable])
+AC_MSG_CHECKING([if JAVA_HOME environment variable is set])
 AC_SUBST([JAVA_HOME])
 AM_CONDITIONAL([JAVA_HOME_SET], [test ! -z "$JAVA_HOME"])
-if test ! -z "$JAVA_HOME"; then
-    AC_MSG_RESULT([yes])
-else
-    AC_MSG_RESULT([no, JNI interface will not be loaded. Please set JAVA_HOME path to install JNI support and to make ABC available for JAVA programs.])
-fi
-
+AM_COND_IF([JAVA_HOME_SET], 
+          [AC_MSG_RESULT([yes])], 
+          [AC_MSG_RESULT([no, JNI interface will not be loaded. Please set JAVA_HOME path to install JNI support and to make ABC available for JAVA programs.])])
 
 # set global compiler options
 
