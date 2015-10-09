@@ -72,8 +72,22 @@ JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable (JNIE
  */
 JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_printResultAutomaton__ (JNIEnv *env, jobject obj) {
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
-  abc_driver->printResult(std::cout);
-  std::cout.flush();
+  if (abc_driver->isSatisfiable()) {
+    int index = 0;
+    for(auto& variable_entry : abc_driver->getSatisfyingVariables()) {
+      std::cout << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"" << std::endl;
+      switch (variable_entry.second->getType()) {
+        case Vlab::Solver::Value::Type::INT_AUTOMATON:
+        case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
+          abc_driver->printResult(variable_entry.second, std::cout);
+          break;
+        }
+        default:
+          break;
+      }
+    }
+    std::cout.flush();
+  }
 }
 
 /*
@@ -85,7 +99,29 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_printResultAutomaton__L
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
   const char* file_path_str = env->GetStringUTFChars(filePath, JNI_FALSE);
   std::string file_path = file_path_str;
-  abc_driver->printResult(file_path);
+
+  if (abc_driver->isSatisfiable()) {
+    int index = 0;
+    for(auto& variable_entry : abc_driver->getSatisfyingVariables()) {
+      std::cout << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"" << std::endl;
+      switch (variable_entry.second->getType()) {
+        case Vlab::Solver::Value::Type::INT_AUTOMATON:
+        case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
+          std::stringstream ss;
+          ss << file_path << "_" << index << ".dot";
+          std::string out_file = ss.str();
+          abc_driver->printResult(variable_entry.second, out_file);
+          std::string dot_cmd("xdot " + out_file + " &");
+          int r = std::system(dot_cmd.c_str());
+          std::cout << "result rendered? " << r << " : " << dot_cmd;
+          break;
+        }
+        default:
+          break;
+      }
+    }
+    std::cout.flush();
+  }
   env->ReleaseStringUTFChars(filePath, file_path_str);
 }
 

@@ -25,6 +25,10 @@ public class DriverProxy {
     initABC(0);
   }
   
+  public DriverProxy(int logFlag) {
+    initABC(logFlag);
+  }
+  
   private native void initABC(int logFlag);
   public native boolean isSatisfiable(String constraint);
   public native void printResultAutomaton();

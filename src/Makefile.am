@@ -3,10 +3,10 @@ AM_CXXFLAGS = \
 	-I$(srcdir)/parser \
 	-I$(srcdir)/theory
 
-if JAVA_HOME_SET
-	AM_CXXFLAGS += \
-		-I$(JAVA_HOME)/include \
-		-I$(JAVA_HOME)/include/linux
+if JAVA_HOME_VALID
+AM_CXXFLAGS += -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
+ABC_JNI_SORUCE_FILES = vlab_cs_ucsb_edu_DriverProxy.cpp vlab_cs_ucsb_edu_DriverProxy.h
+ABC_JNI_HEADER_FILES = vlab_cs_ucsb_edu_DriverProxy.h
 endif
 
 AM_LDFLAGS = \
@@ -45,14 +45,7 @@ libabc_la_SOURCES = \
   ./solver/PostImageComputer.cpp \
 	./solver/PostImageComputer.h \
 	Driver.cpp \
-	Driver.h
-
-
-if JAVA_HOME_SET
-	libabc_la_SOURCES += \
-		vlab_cs_ucsb_edu_DriverProxy.cpp \
-		vlab_cs_ucsb_edu_DriverProxy.h
-endif
+	Driver.h $(ABC_JNI_SORUCE_FILES)
 
 libabc_la_LDFLAGS = -version-info 0:1:0
 
@@ -62,10 +55,7 @@ libabc_la_LIBADD = \
 	./theory/libabcautomaton.la
 
 libabc_ladir = $(includedir)/abc
-libabc_la_HEADERS = Driver.h
-if JAVA_HOME_SET
-	libabc_la_HEADERS += vlab_cs_ucsb_edu_DriverProxy.h
-endif
+libabc_la_HEADERS = Driver.h $(ABC_JNI_HEADER_FILES)
 
 bin_PROGRAMS = abc
 abc_SOURCES = \
