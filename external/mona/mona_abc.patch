@@ -13,6 +13,16 @@ index 8cb60a5..b8f972e 100644
  #include "bdd.h"
  
  typedef struct _BddNode {
+diff --git a/BDD/makefile.am b/BDD/makefile.am
+index 3acf219..f73a77d 100644
+--- a/BDD/makefile.am
++++ b/BDD/makefile.am
+@@ -6,4 +6,4 @@ libmonabdd_la_SOURCES = bdd.c bdd_cache.c bdd_double.c bdd_dump.c bdd_dump.h \
+ libmonabdd_la_LDFLAGS = -version-info 1:4
+ libmonabdd_la_LIBADD = ../Mem/libmonamem.la
+ monadir = $(includedir)/mona
+-mona_HEADERS = bdd.h
++mona_HEADERS = bdd.h bdd_external.h bdd_dump.h
 diff --git a/DFA/makebasic.c b/DFA/makebasic.c
 index ec2f578..394f7ec 100644
 --- a/DFA/makebasic.c

@@ -24,7 +24,6 @@ Driver::~Driver() {
 //  }
 }
 
-// TODO parameterize flags later on
 void Driver::initializeABC(int log_level) {
 //  FLAGS_log_dir = log_root;
   if (!IS_LOGGING_INITIALIZED) {

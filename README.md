@@ -7,7 +7,7 @@ Setup
 ABC is a C++ executable and a C++ shared library with JNI interfaces. You can 
 use it as a static or dynamic lib or you can run it from command line. This guide is prepared with the test being done on an Ubuntu 14.04 machine. 
 
-####System Dependencies
+###System Dependencies
   - C++ compiler with C++11 support. ABC compilation is tested with g++ 4.8.4 on Ubuntu 14.04.
   - [Git](https://git-scm.com/)
 
@@ -18,8 +18,23 @@ use it as a static or dynamic lib or you can run it from command line. This guid
   - Lex and Yacc. ABC is tested with [Flex 2.5.35](https://www.gnu.org/software/flex/flex.html) and [Bison 3.0.2](https://www.gnu.org/software/bison/).
 
     ``$ sudo apt-get install flex bison``
+  - Python (optional). A short installation script is written in pyhton.
+    
+    ``$ sudo apt-get install python``
 
 
+###Easy(Automated) Installation
+  - [ABC](https://vlab.cs.ucsb.edu/ABC/). Clones ABC source and runs an installation script. It automatically tries to install [Glog](https://github.com/google/glog), [Mona](http://www.brics.dk/mona/), and [LibStranger](https://github.com/vlab-cs-ucsb/LibStranger). After installing dependencies, it installs ABC. If script does not work please try step-by-step guide or contact us.
+  
+  ```
+  $ cd <your home directory or a preferred directory>
+  $ git clone ssh://git@phab-isstac.isis.vanderbilt.edu/diffusion/ABC/abc.git
+  $ cd abc/lib
+  $ ./abc-installer.sh
+  ```
+  
+
+###Step-by-Step(Semi-automated) Installation
 ####Project Dependencies
   - [Glog](https://github.com/google/glog) logging library for C++. It is an autotools project. Please follow the instructions in their website if the below shortcut doesn't work for you. (The latest version of the glog may not compile because of this [issue](https://github.com/google/glog/issues/52). Below commands checkouts a working version for Ubuntu 14.04 that is known to be working)
 
@@ -46,10 +61,9 @@ use it as a static or dynamic lib or you can run it from command line. This guid
     $ make all
     $ sudo make install
     $ sudo ldconfig
-    $ sudo cp BDD/bdd_external.h /usr/local/include/mona
-    $ sudo cp BDD/bdd_dump.h /usr/local/include/mona
+
   ```
-  **(!)** Third command above cannot be executed without downloading ABC sources. You can run the mona installation after you downloaded ABC. The patch requires small modifications in two files. Those changes are necessary for ABC to compile and run. You can download ABC by following the commands in the corresponding section and come back here again. Instead of running that command you can manually modify the following files:
+  **(!)** Third command above cannot be executed without downloading ABC sources. You can run the mona installation after you downloaded ABC. The patch requires small modifications in three files. Those changes are necessary for ABC to compile and run. You can download ABC by following the commands in the corresponding section and come back here again. Instead of running that command you can manually modify the following files:
 
   1- *__MONA/DFA/makebasic.c__* as follows:
   ```c
@@ -71,6 +85,11 @@ use it as a static or dynamic lib or you can run it from command line. This guid
   \#include "bdd.h"          /* LINE 24                       */
   ```
   
+  3- *__MONA/BDD/makefile.am__* as follows:
+  ```c
+  mona_HEADERS = bdd.h       /* LINE 9  change this line to: mona_HEADERS = bdd.h bdd_external.h bdd_dump.h  */
+  ```
+  
   If you choose to modify files manually, please go back and complete MONA compilation and installation. 
   
   You should have mona libraries installed at */usr/local/lib* and headers installed at */usr/local/include/mona/* after running above commands. 
@@ -87,14 +106,13 @@ use it as a static or dynamic lib or you can run it from command line. This guid
   $ make all
   $ sudo make install
   $ sudo ldconfig
-  $ sudo cp src/stranger_lib_internal.h /usr/local/include/stranger/
   ```
   
   You should have LibStranger libraries installed at */usr/local/lib* and headers installed at */usr/local/include/stranger/* after running above commands.
   
 ####ABC Installation
 
-  - [ABC](https://vlab.cs.ucsb.edu/ABC/)
+  - [ABC](https://vlab.cs.ucsb.edu/ABC/).
 
   ```
     $ cd <your home directory or a preferred directory>
