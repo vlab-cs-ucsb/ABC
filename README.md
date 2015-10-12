@@ -7,7 +7,19 @@ Setup
 ABC is a C++ executable and a C++ shared library with JNI interfaces. You can 
 use it as a static or dynamic lib or you can run it from command line. This guide is prepared with the test being done on an Ubuntu 14.04 machine. 
 
-###System Dependencies
+###Easy(Automated) Setup
+  - [ABC](https://vlab.cs.ucsb.edu/ABC/). Clone ABC source and run build script. It automatically tries to install required system packages and dependent projects; [Glog](https://github.com/google/glog), [Mona](http://www.brics.dk/mona/), and [LibStranger](https://github.com/vlab-cs-ucsb/LibStranger). After installing dependencies, it installs ABC. If script does not work please try step-by-step guide or contact us. (That script is tested with Linux machines. You can still use build script in other posix systems if you resolve system dependencies manually.)
+  
+  ```
+  $ cd <your home directory or a preferred directory>
+  $ git clone ssh://git@phab-isstac.isis.vanderbilt.edu/diffusion/ABC/abc.git ABC
+  $ cd ABC/build
+  $ ./install-build-deps.py
+  ```
+
+###Step-by-Step(Semi-automated) Setup
+
+####System Dependencies
   - C++ compiler with C++11 support. ABC compilation is tested with g++ 4.8.4 on Ubuntu 14.04.
   - [Git](https://git-scm.com/)
 
@@ -22,19 +34,6 @@ use it as a static or dynamic lib or you can run it from command line. This guid
     
     ``$ sudo apt-get install python``
 
-
-###Easy(Automated) Installation
-  - [ABC](https://vlab.cs.ucsb.edu/ABC/). Clones ABC source and runs an installation script. It automatically tries to install [Glog](https://github.com/google/glog), [Mona](http://www.brics.dk/mona/), and [LibStranger](https://github.com/vlab-cs-ucsb/LibStranger). After installing dependencies, it installs ABC. If script does not work please try step-by-step guide or contact us.
-  
-  ```
-  $ cd <your home directory or a preferred directory>
-  $ git clone ssh://git@phab-isstac.isis.vanderbilt.edu/diffusion/ABC/abc.git
-  $ cd abc/lib
-  $ ./abc-installer.sh
-  ```
-  
-
-###Step-by-Step(Semi-automated) Installation
 ####Project Dependencies
   - [Glog](https://github.com/google/glog) logging library for C++. It is an autotools project. Please follow the instructions in their website if the below shortcut doesn't work for you. (The latest version of the glog may not compile because of this [issue](https://github.com/google/glog/issues/52). Below commands checkouts a working version for Ubuntu 14.04 that is known to be working)
 
@@ -156,4 +155,8 @@ Usage
   You can use *__&lt;abc-source-folder&gt;/lib/ABCJava__* as an example Java program that calls __abc__.
 
   In your Java project all you have to do is to include the contents of *__&lt;abc-source-folder&gt;/lib/ABCJava/src/__*. *vlab.cs.ucsb.edu.DriverProxy.java* class is the class that makes abc calls.
+  
+ABC Language Specification
+==========================
 
+to be prepared...
