@@ -1,6 +1,0 @@
-[submodule "external/glog"]
-	path = external/glog
-	url = https://github.com/google/glog.git
-[submodule "external/LibStranger"]
-	path = external/LibStranger
-	url = https://github.com/vlab-cs-ucsb/LibStranger.git
