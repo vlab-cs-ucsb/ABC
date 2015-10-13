@@ -235,7 +235,22 @@ void OptimizationRuleRunner::visitCharAt(SMT::CharAt_ptr char_at_term) {
 void OptimizationRuleRunner::visitSubString(SMT::SubString_ptr sub_string_term) {
   check_and_substitute_var(sub_string_term->subject_term);
   check_and_substitute_var(sub_string_term->start_index_term);
+  if (sub_string_term->end_index_term) {
+    check_and_substitute_var(sub_string_term->end_index_term);
+  }
   visit_children_of(sub_string_term);
+}
+
+void OptimizationRuleRunner::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_string_first_of_term) {
+  check_and_substitute_var(sub_string_first_of_term->subject_term);
+  check_and_substitute_var(sub_string_first_of_term->start_index_term);
+  visit_children_of(sub_string_first_of_term);
+}
+
+void OptimizationRuleRunner::visitSubStringLastOf(SMT::SubStringLastOf_ptr sub_string_last_of_term) {
+  check_and_substitute_var(sub_string_last_of_term->subject_term);
+  check_and_substitute_var(sub_string_last_of_term->start_index_term);
+  visit_children_of(sub_string_last_of_term);
 }
 
 void OptimizationRuleRunner::visitToUpper(SMT::ToUpper_ptr to_upper_term) {

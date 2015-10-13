@@ -24,7 +24,7 @@ index 3acf219..f73a77d 100644
 -mona_HEADERS = bdd.h
 +mona_HEADERS = bdd.h bdd_external.h bdd_dump.h
 diff --git a/DFA/makebasic.c b/DFA/makebasic.c
-index ec2f578..394f7ec 100644
+index ec2f578..df76f74 100644
 --- a/DFA/makebasic.c
 +++ b/DFA/makebasic.c
 @@ -24,8 +24,8 @@
@@ -33,8 +33,8 @@ index ec2f578..394f7ec 100644
  
 -#define MAX_EXCEPTION 50
 -#define MAX_VARIABLES 10
-+#define MAX_EXCEPTION 2048
-+#define MAX_VARIABLES 11
++#define MAX_EXCEPTION 4096
++#define MAX_VARIABLES 30
  /* #warning INTERNAL LIMITS */
  
  struct path_descr {

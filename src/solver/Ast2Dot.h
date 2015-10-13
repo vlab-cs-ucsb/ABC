@@ -12,6 +12,7 @@
 #include <stack>
 #include <fstream>
 #include <sstream>
+#include <string>
 
 #include <glog/logging.h>
 #include "smt/ast.h"
@@ -22,7 +23,6 @@ namespace Solver {
 class Ast2Dot: public SMT::Visitor {
 public:
   Ast2Dot(std::ostream* out = &std::cout);
-
   ~Ast2Dot();
 
   void add_edge(u_int64_t p, u_int64_t c);
@@ -67,6 +67,8 @@ public:
   void visitLastIndexOf(SMT::LastIndexOf_ptr);
   void visitCharAt(SMT::CharAt_ptr);
   void visitSubString(SMT::SubString_ptr);
+  void visitSubStringFirstOf(SMT::SubStringFirstOf_ptr);
+  void visitSubStringLastOf(SMT::SubStringLastOf_ptr);
   void visitToUpper(SMT::ToUpper_ptr);
   void visitToLower(SMT::ToLower_ptr);
   void visitTrim(SMT::Trim_ptr);
@@ -92,6 +94,8 @@ public:
   void visitVariable(SMT::Variable_ptr);
 
   int inspectAST(SMT::Visitable_ptr node);
+  std::string toString(SMT::Visitable_ptr node);
+  static bool isEquivalent(SMT::Visitable_ptr x, SMT::Visitable_ptr y);
 
 private:
   std::ostream* m_out; //file for writting output

@@ -627,13 +627,13 @@ void PostImageComputer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term
         param_right = getTermValue(last_index_of_term->search_term);
 
   Theory::IntAutomaton_ptr last_index_of_auto = param_left->getStringAutomaton()->lastIndexOf(param_right->getStringAutomaton());
+
   if (last_index_of_auto->isAcceptingSingleInt()) {
     result = new Value(Value::Type::INT_CONSTANT, last_index_of_auto->getAnAcceptingInt());
     delete last_index_of_auto; last_index_of_auto = nullptr;
   } else {
     result = new Value(Value::Type::INT_AUTOMATON, last_index_of_auto);
   }
-
   setTermValue(last_index_of_term, result);
 }
 
@@ -657,19 +657,55 @@ void PostImageComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
   Value_ptr result = nullptr, param_subject = getTermValue(sub_string_term->subject_term),
       param_start_index = getTermValue(sub_string_term->start_index_term);
 
-  if (sub_string_term->end_index_term == nullptr) {
-    param_subject->getStringAutomaton();
-    result = new Value(Value::Type::STRING_AUTOMATON,
-        param_subject->getStringAutomaton()->substring(param_start_index->getIntConstant()));
+  if (Value::Type::INT_CONSTANT == param_start_index->getType()) {
+    if (sub_string_term->end_index_term == nullptr) {
+      result = new Value(Value::Type::STRING_AUTOMATON,
+          param_subject->getStringAutomaton()->subString(param_start_index->getIntConstant()));
+    } else {
+      Value_ptr param_end_index = getTermValue(sub_string_term->end_index_term);
+      if (Value::Type::INT_CONSTANT == param_end_index->getType()) {
+        result = new Value(Value::Type::STRING_AUTOMATON,
+                param_subject->getStringAutomaton()->subString(
+                    param_start_index->getIntConstant(),
+                    param_end_index->getIntConstant()));
+      } else {
+        LOG(FATAL)<< "end index of a subString operation must be an integer constant";
+      }
+    }
   } else {
-    Value_ptr param_end_index = getTermValue(sub_string_term->end_index_term);
-    result = new Value(Value::Type::STRING_AUTOMATON,
-            param_subject->getStringAutomaton()->substring(
-                param_start_index->getIntConstant(),
-                param_end_index->getIntConstant()));
+    LOG(FATAL)<< "start index of a subString operation must be an integer constant";
   }
 
   setTermValue(sub_string_term, result);
+}
+
+void PostImageComputer::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_string_first_of_term) {
+  __visit_children_of(sub_string_first_of_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *sub_string_first_of_term;
+
+  Value_ptr result = nullptr, param_subject = getTermValue(sub_string_first_of_term->subject_term),
+      param_start_index = getTermValue(sub_string_first_of_term->start_index_term);
+
+  LOG(FATAL)<< "implement me";
+
+  result = new Value(Value::Type::STRING_AUTOMATON,
+      param_subject->getStringAutomaton()->subString(param_start_index->getIntConstant()));
+
+
+  setTermValue(sub_string_first_of_term, result);
+}
+
+void PostImageComputer::visitSubStringLastOf(SMT::SubStringLastOf_ptr sub_string_last_of_term) {
+  __visit_children_of(sub_string_last_of_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *sub_string_last_of_term;
+
+  Value_ptr result = nullptr, param_subject = getTermValue(sub_string_last_of_term->subject_term),
+      param_start_index = getTermValue(sub_string_last_of_term->start_index_term);
+
+  result = new Value(Value::Type::STRING_AUTOMATON,
+      param_subject->getStringAutomaton()->subStringLastOf(param_start_index->getStringAutomaton()));
+
+  setTermValue(sub_string_last_of_term, result);
 }
 
 void PostImageComputer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {

@@ -12,7 +12,7 @@ use it as a static or dynamic lib or you can run it from command line. This guid
   
   ```
   $ cd <your home directory or a preferred directory>
-  $ git clone ssh://git@phab-isstac.isis.vanderbilt.edu/diffusion/ABC/abc.git ABC
+  $ git clone --recursive ssh://git@phab-isstac.isis.vanderbilt.edu/diffusion/ABC/abc.git ABC
   $ cd ABC/build
   $ ./install-build-deps.py
   ```
@@ -67,8 +67,8 @@ use it as a static or dynamic lib or you can run it from command line. This guid
   1- *__MONA/DFA/makebasic.c__* as follows:
   ```c
   // DFA/makebasic.c
-  #define MAX_EXCEPTION 50   /* LINE 27: change this to 2048. */
-  #define MAX_VARIABLES 10   /* LINE 28: change this to 11    */
+  #define MAX_EXCEPTION 50   /* LINE 27: change this to 4096. */
+  #define MAX_VARIABLES 10   /* LINE 28: change this to 30    */
 ```
   You can set above declarations to larger values whenever you need and reinstall mona. (In case you get an *invariant violation error* message in makefile.c by MONA)
 
@@ -99,7 +99,6 @@ use it as a static or dynamic lib or you can run it from command line. This guid
   $ cd <your home directory or a preferred directory>
   $ git clone https://github.com/vlab-cs-ucsb/LibStranger.git
   $ cd LibStranger
-  $ chmod u+x autogen.sh
   $ ./autogen.sh
   $ ./configure
   $ make all
@@ -115,8 +114,8 @@ use it as a static or dynamic lib or you can run it from command line. This guid
 
   ```
     $ cd <your home directory or a preferred directory>
-    $ git clone ssh://git@phab-isstac.isis.vanderbilt.edu/diffusion/ABC/abc.git
-    $ cd abc
+    $ git clone --recursive ssh://git@phab-isstac.isis.vanderbilt.edu/diffusion/ABC/abc.git ABC
+    $ cd ABC
     $ ./autogen.sh
     $ ./configure
     $ make all

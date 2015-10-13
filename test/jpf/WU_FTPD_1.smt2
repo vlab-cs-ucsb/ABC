@@ -3,6 +3,7 @@
 
 (declare-fun cmd_1 () String)
 
-(assert ( =  (indexOf cmd_1 32) -1))
+(assert (=  (indexOf cmd_1 32) (- 1)))
+
 (check-sat)
 

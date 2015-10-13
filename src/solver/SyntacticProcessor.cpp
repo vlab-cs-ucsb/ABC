@@ -132,5 +132,58 @@ void SyntacticProcessor::visitNot(Not_ptr not_term) {
   }
 }
 
+/**
+ * Check if second parameter is a decimal representation of an ASCII char and convert it into string
+ * TODO that should be supported during automaton construction
+ */
+void SyntacticProcessor::visitIndexOf(IndexOf_ptr index_of_term) {
+  if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(index_of_term->search_term)) {
+    switch (term_constant->getValueType()) {
+      case Primitive::Type::BINARY:
+        LOG(FATAL)<< "Implement me";
+        break;
+      case Primitive::Type::HEXADECIMAL:
+        LOG(FATAL)<< "Implement me";
+        break;
+      case Primitive::Type::NUMERAL: {
+        int value = std::stoi(term_constant->getValue());
+        std::stringstream ss;
+        ss << (unsigned char)value;
+        term_constant->primitive->setData(ss.str());
+        term_constant->primitive->setType(Primitive::Type::STRING);
+        break;
+      }
+      default:
+        break;
+    }
+  }
+  visit(index_of_term->subject_term);
+}
+
+void SyntacticProcessor::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
+  if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(last_index_of_term->search_term)) {
+    switch (term_constant->getValueType()) {
+      case Primitive::Type::BINARY:
+        LOG(FATAL)<< "Implement me";
+        break;
+      case Primitive::Type::HEXADECIMAL:
+        LOG(FATAL)<< "Implement me";
+        break;
+      case Primitive::Type::NUMERAL: {
+        int value = std::stoi(term_constant->getValue());
+        std::stringstream ss;
+        ss << (unsigned char)value;
+        term_constant->primitive->setData(ss.str());
+        term_constant->primitive->setType(Primitive::Type::STRING);
+        break;
+      }
+      default:
+        break;
+    }
+  }
+  visit(last_index_of_term->subject_term);
+}
+
+
 } /* namespace Solver */
 } /* namespace Vlab */

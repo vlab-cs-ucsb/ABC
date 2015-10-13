@@ -1,0 +1,1 @@
+SUBDIRS=googletest/googletest googletest/googlemock

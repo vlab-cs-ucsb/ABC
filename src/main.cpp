@@ -74,14 +74,13 @@ int main(const int argc, const char **argv) {
   Vlab::Driver driver;
   driver.test();
   driver.parse(in);
-  if (VLOG_IS_ON(32)) {
-    driver.ast2dot(&std::cout);
+  if (VLOG_IS_ON(30)) {
     driver.ast2dot(output_root + "/parser_out.dot");
   }
 
   driver.initializeSolver();
 
-  if (VLOG_IS_ON(32)) {
+  if (VLOG_IS_ON(30)) {
     driver.ast2dot(output_root + "/optimized.dot");
   }
 

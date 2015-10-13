@@ -83,6 +83,8 @@
   LASTINDEXOF          "lastIndexOf"
   CHARAT               "charAt"
   SUBSTRING            "subString"
+  SUBSTRINGFIRSTOF     "subStringFirstOf"
+  SUBSTRINGLASTOF      "subStringLastOf"
   TOUPPER              "toUpper"
   TOLOWER              "toLower"
   TRIM                 "trim"
@@ -123,14 +125,14 @@
 ;
 
 %token <std::string>  BOOL         "bool"
-%token <std::string>	BINARY       "binary"
+%token <std::string>  BINARY       "binary"
 %token <std::string>  DECIMAL      "decimal"
-%token <std::string>	HEXADECIMAL  "hexadecimal"
+%token <std::string>  HEXADECIMAL  "hexadecimal"
 %token <std::string>  KEYWORD      "keyword"
-%token <std::string>	NUMERAL      "number"		
+%token <std::string>  NUMERAL      "number"
 %token <std::string>  STRING       "string"
 %token <std::string>  REGEX        "regex"
-%token <std::string>	SYMBOL       "symbol"
+%token <std::string>  SYMBOL       "symbol"
 
 %type <CommandList_ptr> command_list
 %type <Command_ptr> command
@@ -258,6 +260,8 @@ term                  :
                       | "(" "charAt" term term ")"                                        { $$ = new CharAt($3, $4); }
                       | "(" "subString" term term term ")"                                { $$ = new SubString($3, $4, $5); }
                       | "(" "subString" term term ")"                                     { $$ = new SubString($3, $4); }
+                      | "(" "subStringFirstOf" term term ")"                              { $$ = new SubStringFirstOf($3, $4); }
+                      | "(" "subStringLastOf" term term ")"                               { $$ = new SubStringLastOf($3, $4); }
                       | "(" "toUpper" term ")"                                            { $$ = new ToUpper($3); }
                       | "(" "toLower" term ")"                                            { $$ = new ToLower($3); }
                       | "(" "trim" term term ")"                                          { $$ = new Trim($3); }

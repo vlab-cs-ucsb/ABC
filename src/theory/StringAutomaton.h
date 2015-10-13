@@ -94,8 +94,10 @@ public:
   StringAutomaton_ptr prefixesAtIndex(int index);
 
   StringAutomaton_ptr charAt(int index);
-  StringAutomaton_ptr substring(int start);
-  StringAutomaton_ptr substring(int start, int end);
+  StringAutomaton_ptr subString(int start);
+  StringAutomaton_ptr subString(int start, int end);
+  StringAutomaton_ptr subStringLastOf(StringAutomaton_ptr search_auto);
+
   IntAutomaton_ptr indexOf(StringAutomaton_ptr search_auto);
   IntAutomaton_ptr lastIndexOf(StringAutomaton_ptr search_auto);
   IntAutomaton_ptr backup_lastIndexOf(StringAutomaton_ptr search_auto);
@@ -115,6 +117,7 @@ public:
   StringAutomaton_ptr restrictIndexOfTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto);
   StringAutomaton_ptr restrictLastIndexOfTo(int index, StringAutomaton_ptr search_auto);
   StringAutomaton_ptr restrictLastIndexOfTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr restrictLastOccuranceOf(StringAutomaton_ptr search_auto);
 
   StringAutomaton_ptr restrictFromIndexToEndTo(int index, StringAutomaton_ptr sub_string_auto);
   StringAutomaton_ptr restrictFromIndexToEndTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr sub_string_auto);

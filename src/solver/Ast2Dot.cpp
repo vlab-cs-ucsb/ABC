@@ -230,6 +230,14 @@ void Ast2Dot::visitSubString(SMT::SubString_ptr sub_string_term) {
   visitTerm(sub_string_term);
 }
 
+void Ast2Dot::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_string_first_of_term) {
+  visitTerm(sub_string_first_of_term);
+}
+
+void Ast2Dot::visitSubStringLastOf(SMT::SubStringLastOf_ptr sub_string_last_of_term) {
+  visitTerm(sub_string_last_of_term);
+}
+
 void Ast2Dot::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
   visitTerm(to_upper_term);
 }
@@ -317,6 +325,22 @@ int Ast2Dot::inspectAST(Visitable_ptr node) {
 
   std::string dot_cmd("xdot " + file_name + " &");
   return std::system(dot_cmd.c_str());
+}
+
+bool Ast2Dot::isEquivalent(SMT::Visitable_ptr x, SMT::Visitable_ptr y) {
+  if (x == y) {
+    return true;
+  }
+  Ast2Dot toDot;
+
+  return (toDot.toString(x) == toDot.toString(y));
+}
+
+std::string Ast2Dot::toString(SMT::Visitable_ptr node) {
+  std::stringstream ss;
+  m_out = &ss;
+  start(node);
+  return ss.str();
 }
 
 } /* namespace Solver */

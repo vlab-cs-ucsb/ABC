@@ -26,6 +26,8 @@ public:
   void setCallbacks();
   void convertAssertsToAnd();
   void visitNot(SMT::Not_ptr);
+  void visitIndexOf(SMT::IndexOf_ptr);
+  void visitLastIndexOf(SMT::LastIndexOf_ptr);
 
 private:
   static const int VLOG_LEVEL;

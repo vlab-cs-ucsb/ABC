@@ -333,6 +333,38 @@ void ConstraintSorter::visitSubString(SMT::SubString_ptr sub_string_term) {
   term_node = nullptr;
   visit(sub_string_term->start_index_term);
   TermNode_ptr right_node = term_node;
+  if (sub_string_term->end_index_term) {
+    term_node = nullptr;
+    visit(sub_string_term->end_index_term);
+    TermNode_ptr right_node_1 = right_node;
+    TermNode_ptr right_node_2 = term_node;
+    right_node = process_child_nodes(right_node_1, right_node_2);
+    if (right_node != nullptr) {
+      right_node->shiftToRight();
+    }
+  }
+
+  term_node = process_child_nodes(left_node, right_node);
+}
+
+void ConstraintSorter::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_string_first_of_term) {
+  term_node = nullptr;
+  visit(sub_string_first_of_term->subject_term);
+  TermNode_ptr left_node = term_node;
+  term_node = nullptr;
+  visit(sub_string_first_of_term->start_index_term);
+  TermNode_ptr right_node = term_node;
+
+  term_node = process_child_nodes(left_node, right_node);
+}
+
+void ConstraintSorter::visitSubStringLastOf(SMT::SubStringLastOf_ptr sub_string_last_of_term) {
+  term_node = nullptr;
+  visit(sub_string_last_of_term->subject_term);
+  TermNode_ptr left_node = term_node;
+  term_node = nullptr;
+  visit(sub_string_last_of_term->start_index_term);
+  TermNode_ptr right_node = term_node;
 
   term_node = process_child_nodes(left_node, right_node);
 }

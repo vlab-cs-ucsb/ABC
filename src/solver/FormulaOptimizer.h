@@ -44,8 +44,6 @@ protected:
   void add_terms_to_check_list(SMT::TermList_ptr);
   bool check_term(SMT::Term_ptr);
   void visit_and_callback(SMT::Term_ptr&);
-  bool is_equivalent(SMT::Term_ptr, SMT::Term_ptr);
-  std::string to_string(SMT::Visitable_ptr);
 
   SymbolTable_ptr symbol_table;
 

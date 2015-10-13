@@ -155,9 +155,10 @@ return;
 //    std::cout << "int: " << int_auto_1->getAnAcceptingInt() << std::endl;
 //    delete int_auto_1;
 
-//  Theory::StringAutomaton_ptr str_auto_1 = Theory::StringAutomaton::makePhi();
-//  Theory::StringAutomaton_ptr str_auto_2 = Theory::StringAutomaton::makeLengthLessThan(2);
-//  str_auto_2->inspectAuto();
+//  Theory::StringAutomaton_ptr str_auto_1 = Theory::StringAutomaton::makeAnyString();
+//  Theory::StringAutomaton_ptr str_auto_2 = Theory::StringAutomaton::makeString("b");
+//  Theory::StringAutomaton_ptr result = str_auto_1->subStringLastOf(str_auto_2);
+//  result->inspectAuto();
 //  std::cout << "example: \"" << str_auto_2->getAnAcceptingString() << "\"" << std::endl;
 //  Theory::StringAutomaton_ptr str_auto_3 = nullptr;
 

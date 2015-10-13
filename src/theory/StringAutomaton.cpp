@@ -1079,22 +1079,123 @@ StringAutomaton_ptr StringAutomaton::prefixesAtIndex(int index){
 }
 
 StringAutomaton_ptr StringAutomaton::charAt(int index){
-  return this->substring(index,index);
+  return this->subString(index,index);
 }
 
-StringAutomaton_ptr StringAutomaton::substring(int start){
+StringAutomaton_ptr StringAutomaton::subString(int start){
   StringAutomaton_ptr substring_auto = nullptr;
   substring_auto = this->suffixesFromIndex(start);
-  DVLOG(VLOG_LEVEL) << substring_auto->id << " = [" << this->id << "]->substring(" << start << ")";
+  DVLOG(VLOG_LEVEL) << substring_auto->id << " = [" << this->id << "]->subString(" << start << ")";
   return substring_auto;
 }
 
-StringAutomaton_ptr StringAutomaton::substring(int start, int end){
+StringAutomaton_ptr StringAutomaton::subString(int start, int end){
   StringAutomaton_ptr substring_auto = nullptr, suffixes_auto = nullptr;
   suffixes_auto = this->suffixesFromIndex(start);
   substring_auto = suffixes_auto->prefixesAtIndex(end - start);
   delete suffixes_auto;
-  DVLOG(VLOG_LEVEL) << substring_auto->id << " = [" << this->id << "]->substring(" << start << "," << end << ")";
+  DVLOG(VLOG_LEVEL) << substring_auto->id << " = [" << this->id << "]->subString(" << start << "," << end << ")";
+  return substring_auto;
+}
+
+/**
+ * A specialized substring operation that works with char or string search
+ */
+StringAutomaton_ptr StringAutomaton::subStringLastOf(StringAutomaton_ptr search_auto) {
+  StringAutomaton_ptr substring_auto = nullptr, contains_auto = nullptr,
+          lastIndexOf_auto = nullptr, search_result_auto = nullptr,
+          right_auto = nullptr;
+  DFA_ptr lastIndexOf_dfa = nullptr, minimized_dfa = nullptr;
+
+  contains_auto = this->contains(search_auto);
+  if (contains_auto->isEmptyLanguage()) {
+    delete contains_auto; contains_auto = nullptr;
+    substring_auto = StringAutomaton::makePhi();
+    DVLOG(VLOG_LEVEL) << substring_auto->id << " = [" << this->id << "]->subStringFromLastIndexOf(" << search_auto->id  << ")";
+    return substring_auto;
+  }
+
+  int* tmp_indices_with_extra_bit = getIndices(num_of_variables, 1);
+  StringAutomaton_ptr contains_duplicate_auto = new StringAutomaton(dfa_replace_step1_duplicate(contains_auto->dfa, num_of_variables, tmp_indices_with_extra_bit), num_of_variables + 1 );
+  StringAutomaton_ptr search_complement_auto = new StringAutomaton(dfa_replace_step2_match_compliment(search_auto->dfa, num_of_variables, tmp_indices_with_extra_bit), num_of_variables + 1);
+  StringAutomaton_ptr tmp_auto = contains_duplicate_auto->intersect(search_complement_auto);
+  delete[] tmp_indices_with_extra_bit;
+
+  delete contains_duplicate_auto; contains_duplicate_auto = nullptr;
+  delete search_complement_auto; search_complement_auto = nullptr;
+  StringAutomaton_ptr sharp_auto = StringAutomaton::dfaSharpStringWithExtraBit();
+  search_result_auto = sharp_auto->intersect(tmp_auto);
+  delete tmp_auto; tmp_auto = nullptr;
+  delete sharp_auto; sharp_auto = nullptr;
+
+  Graph_ptr graph = search_result_auto->toGraph();
+  // Mark start states and end states of matches
+  std::vector<char> flag_1_exception = {'1', '1', '1', '1', '1', '1', '1', '1', '1'}; // 255 with extra bit '1'
+  std::vector<char> flag_2_exception = {'1', '1', '1', '1', '1', '1', '1', '1', '0'}; // 255 with extra bit '0'
+  GraphNode_ptr node = nullptr;
+  int sink_state = search_result_auto->getSinkState();
+  int next_state = -1;
+  for (int s = 0; s < search_result_auto->dfa->ns; s++) {
+    node = graph->getNode(s);
+    if (sink_state != (next_state = search_result_auto->getNextStateFrom(s, flag_1_exception))) {
+      node->addEdgeFlag(1, graph->getNode(next_state)); // flag 1 is to mark for beginning of a match
+    } else if ( sink_state != (next_state = search_result_auto->getNextStateFrom(s, flag_2_exception)) ) {
+      node->addEdgeFlag(1, graph->getNode(next_state)); // flag 2 is to mark for beginning of a match
+    }
+  }
+
+  // BEGIN find new start states using reverse DFS traversal
+  for (auto final_node : graph->getFinalNodes()) {
+    std::stack<GraphNode_ptr> node_stack;
+    std::map<GraphNode_ptr, bool> is_visited; // by default bool is initialized as false
+    GraphNode_ptr curr_node = nullptr;
+    node_stack.push(final_node);
+    while (not node_stack.empty()) {
+      curr_node = node_stack.top(); node_stack.pop();
+      is_visited[curr_node] = true;
+      for (auto& prev_node : curr_node->getPrevNodes()) {
+        if (prev_node->hasEdgeFlag(1, curr_node)) { // a match state found
+          prev_node->removeEdgeFlag(1, curr_node);
+          prev_node->addEdgeFlag(3, curr_node); // 3 is for new final state
+        } else {
+          if (is_visited.find(prev_node) == is_visited.end()) {
+            node_stack.push(prev_node);
+          }
+        }
+      }
+    }
+  }
+
+  // END find new final states using reverse DFS traversal
+  graph->resetFinalNodesToFlag(3);
+
+  // BEGIN generate automaton
+  int* indices = getIndices(StringAutomaton::DEFAULT_NUM_OF_VARIABLES, 1);
+  for (int s = 0; s < search_result_auto->dfa->ns; s++) {
+    GraphNode_ptr node = graph->getNode(s);
+    if (graph->isFinalNode(node)) {
+      search_result_auto->dfa->f[s] = 1;
+    } else {
+      search_result_auto->dfa->f[s] = -1;
+    }
+  }
+
+  search_result_auto->minimize();
+  DFA_ptr result_dfa = dfa_replace_step3_general_replace(search_result_auto->dfa, search_auto->dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, indices);
+  delete[] indices;
+  delete search_result_auto;
+  lastIndexOf_auto = new StringAutomaton(result_dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  lastIndexOf_auto->project((unsigned)StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  // END generate automaton
+
+  // Get substring automaton using preConcatRight
+  right_auto = contains_auto->preConcatRight(lastIndexOf_auto);
+  delete lastIndexOf_auto; lastIndexOf_auto = nullptr;
+  delete contains_auto; contains_auto = nullptr;
+  substring_auto = right_auto->restrictLastOccuranceOf(search_auto);
+  delete right_auto; right_auto = nullptr;
+
+  DVLOG(VLOG_LEVEL) << substring_auto->id << " = [" << this->id << "]->subStringFromLastIndexOf(" << search_auto->id << ")";
   return substring_auto;
 }
 
@@ -1107,7 +1208,7 @@ StringAutomaton_ptr StringAutomaton::substring(int start, int end){
  * -1 as well.
  */
 IntAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
-  StringAutomaton_ptr contains_auto = nullptr, difference_auto = nullptr, ends_auto = nullptr,
+  StringAutomaton_ptr contains_auto = nullptr, difference_auto = nullptr,
       indexOf_auto = nullptr, search_result_auto = nullptr;
   IntAutomaton_ptr length_auto = nullptr;
 
@@ -1263,10 +1364,10 @@ IntAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
 
 /**
  *
- * TODO fix the bug when search auto is not a singleton, see test case 09
+ * TODO Add support when search auto is not a singleton, see test case 09
  */
 IntAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto) {
-  StringAutomaton_ptr contains_auto = nullptr, difference_auto = nullptr, ends_auto = nullptr,
+  StringAutomaton_ptr contains_auto = nullptr, difference_auto = nullptr,
       lastIndexOf_auto = nullptr, search_result_auto = nullptr;
   IntAutomaton_ptr length_auto = nullptr;
   DFA_ptr lastIndexOf_dfa = nullptr, minimized_dfa = nullptr;
@@ -1312,7 +1413,7 @@ IntAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto) {
     if (sink_state != (next_state = search_result_auto->getNextStateFrom(s, flag_1_exception))) {
       node->addEdgeFlag(1, graph->getNode(next_state)); // flag 1 is to mark for beginning of a match
     } else if ( sink_state != (next_state = search_result_auto->getNextStateFrom(s, flag_2_exception)) ) {
-      node->addEdgeFlag(1, graph->getNode(next_state)); // flag 2 is to mark for end of a match
+      node->addEdgeFlag(1, graph->getNode(next_state)); // flag 2 is to mark for beginning of a match
     }
   }
 
@@ -1769,23 +1870,39 @@ StringAutomaton_ptr StringAutomaton::restrictIndexOfTo(int index, StringAutomato
 
 StringAutomaton_ptr StringAutomaton::restrictIndexOfTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto) {
   StringAutomaton_ptr restricted_auto = nullptr, contains_auto = nullptr,
-          not_contains_auto = nullptr, tmp_auto_1 = nullptr, tmp_auto_2;
+          not_contains_length_auto = nullptr, not_contains_subject_auto = nullptr,
+          tmp_auto_1 = nullptr, tmp_auto_2 = nullptr;
+
+  bool has_negative_1 = index_auto->hasNegative1();
+
   StringAutomaton_ptr length_string_auto = new StringAutomaton(index_auto->getDFA());
   StringAutomaton_ptr any_string = StringAutomaton::makeAnyString();
 
   contains_auto = any_string->contains(search_auto);
-  not_contains_auto = length_string_auto->difference(contains_auto);
+  if (index_auto->hasNegative1()) {
+    not_contains_subject_auto = this->difference(contains_auto);
+  }
+
+  not_contains_length_auto = length_string_auto->difference(contains_auto);
   delete contains_auto; contains_auto = nullptr;
   length_string_auto->dfa = nullptr;
   delete length_string_auto; length_string_auto = nullptr;
 
-  tmp_auto_1 = not_contains_auto->concat(search_auto);
+  tmp_auto_1 = not_contains_length_auto->concat(search_auto);
   tmp_auto_2 = tmp_auto_1->concat(any_string);
+  delete not_contains_length_auto; not_contains_length_auto = nullptr;
   delete tmp_auto_1; tmp_auto_1 = nullptr;
   delete any_string; any_string = nullptr;
 
   restricted_auto = this->intersect(tmp_auto_2);
   delete tmp_auto_2; tmp_auto_2 = nullptr;
+
+  if (not_contains_subject_auto not_eq nullptr) {
+    tmp_auto_1 = restricted_auto;
+    restricted_auto = tmp_auto_1->union_(not_contains_subject_auto);
+    delete tmp_auto_1; tmp_auto_1 = nullptr;
+    delete not_contains_subject_auto; not_contains_subject_auto = nullptr;
+  }
 
   DVLOG(VLOG_LEVEL) << restricted_auto->id << " = [" << this->id << "]->restrictIndexOfTo(" << index_auto->getId() << ", " << search_auto->id << ")";
 
@@ -1803,11 +1920,15 @@ StringAutomaton_ptr StringAutomaton::restrictLastIndexOfTo(int index, StringAuto
 
 StringAutomaton_ptr StringAutomaton::restrictLastIndexOfTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto) {
   StringAutomaton_ptr restricted_auto = nullptr, contains_auto = nullptr,
-          not_contains_auto = nullptr, tmp_auto_1 = nullptr, tmp_auto_2;
+          not_contains_auto = nullptr, not_contains_subject_auto = nullptr,
+          tmp_auto_1 = nullptr, tmp_auto_2 = nullptr;
   StringAutomaton_ptr length_string_auto = new StringAutomaton(index_auto->getDFA());
   StringAutomaton_ptr any_string = StringAutomaton::makeAnyString();
 
   contains_auto = any_string->contains(search_auto);
+  if (index_auto->hasNegative1()) {
+    not_contains_subject_auto = this->difference(contains_auto);
+  }
   not_contains_auto = any_string->difference(contains_auto);
 
   delete contains_auto; contains_auto = nullptr;
@@ -1818,11 +1939,48 @@ StringAutomaton_ptr StringAutomaton::restrictLastIndexOfTo(IntAutomaton_ptr inde
   length_string_auto->dfa = nullptr;
   delete length_string_auto; length_string_auto = nullptr;
   delete tmp_auto_1; tmp_auto_1 = nullptr;
+  delete not_contains_auto; not_contains_auto = nullptr;
 
   restricted_auto = this->intersect(tmp_auto_2);
   delete tmp_auto_2; tmp_auto_2 = nullptr;
 
+  if (not_contains_subject_auto not_eq nullptr) {
+    tmp_auto_1 = restricted_auto;
+    restricted_auto = tmp_auto_1->union_(not_contains_subject_auto);
+    delete tmp_auto_1; tmp_auto_1 = nullptr;
+    delete not_contains_subject_auto; not_contains_subject_auto = nullptr;
+  }
+
   DVLOG(VLOG_LEVEL) << restricted_auto->id << " = [" << this->id << "]->restrictLastIndexOfTo(" << index_auto->getId() << ", " << search_auto->id << ")";
+
+  return restricted_auto;
+}
+
+/**
+ * Given search auto s, finds intersection with
+ * s . (Sigma - s)*
+ *
+ */
+StringAutomaton_ptr StringAutomaton::restrictLastOccuranceOf(StringAutomaton_ptr search_auto) {
+  StringAutomaton_ptr restricted_auto = nullptr, contains_auto = nullptr,
+          not_contains_auto = nullptr, tmp_auto_1 = nullptr;
+  StringAutomaton_ptr any_string = StringAutomaton::makeAnyString();
+
+  contains_auto = any_string->contains(search_auto);
+  not_contains_auto = any_string->difference(contains_auto);
+
+  delete contains_auto; contains_auto = nullptr;
+  delete any_string; any_string = nullptr;
+
+
+  tmp_auto_1 = search_auto->concat(not_contains_auto);
+  delete not_contains_auto; not_contains_auto = nullptr;
+  delete any_string; any_string = nullptr;
+
+  restricted_auto = this->intersect(tmp_auto_1);
+  delete tmp_auto_1; tmp_auto_1 = nullptr;
+
+  DVLOG(VLOG_LEVEL) << restricted_auto->id << " = [" << this->id << "]->restrictLastOccuranceTo(" << search_auto->id << ")";
 
   return restricted_auto;
 }
@@ -1965,6 +2123,9 @@ StringAutomaton_ptr StringAutomaton::preConcatLeft(StringAutomaton_ptr right_aut
   return result_auto;
 }
 
+/**
+ * Fix preconcat issue for rectangle start state representation in to dot
+ */
 StringAutomaton_ptr StringAutomaton::preConcatRight(StringAutomaton_ptr left_auto) {
   DFA_ptr result_dfa = nullptr;
   StringAutomaton_ptr result_auto = nullptr;
@@ -1981,7 +2142,7 @@ StringAutomaton_ptr StringAutomaton::preConcatRight(StringAutomaton_ptr left_aut
 
   result_auto = new StringAutomaton(result_dfa, num_of_variables);
 
-  DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->preLeftConcat(" << left_auto->id << ")";
+  DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->preConcatRight(" << left_auto->id << ")";
 
   return result_auto;
 }

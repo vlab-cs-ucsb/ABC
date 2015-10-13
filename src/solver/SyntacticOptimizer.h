@@ -66,6 +66,8 @@ public:
   void visitLastIndexOf(SMT::LastIndexOf_ptr);
   void visitCharAt(SMT::CharAt_ptr);
   void visitSubString(SMT::SubString_ptr);
+  void visitSubStringFirstOf(SMT::SubStringFirstOf_ptr);
+  void visitSubStringLastOf(SMT::SubStringLastOf_ptr);
   void visitToUpper(SMT::ToUpper_ptr);
   void visitToLower(SMT::ToLower_ptr);
   void visitTrim(SMT::Trim_ptr);
@@ -91,8 +93,6 @@ public:
   void visitVariable(SMT::Variable_ptr);
 protected:
   void visit_and_callback(SMT::Term_ptr&);
-  bool is_equivalent(SMT::Term_ptr, SMT::Term_ptr);
-  std::string to_string(SMT::Visitable_ptr);
   std::string escape_regex(std::string regex);
   std::string regex_to_str(std::string regex);
   void append_constant(SMT::TermConstant_ptr, SMT::TermConstant_ptr);
@@ -100,10 +100,14 @@ protected:
   bool check_and_process_len_transformation(SMT::Term_ptr, SMT::Term_ptr&, SMT::Term_ptr&);
   bool __check_and_process_len_transformation(SMT::Term::Type, SMT::Term_ptr&, SMT::Term_ptr&);
   SMT::Term::Type syntactic_reverse_relation(SMT::Term::Type operation);
+  bool check_and_process_for_notContains_transformation(SMT::Term_ptr&, SMT::Term_ptr&, int compare_value);
+  SMT::Term::Type check_and_process_subString(SMT::Term_ptr subject_term, SMT::Term_ptr &index_term);
   SMT::Term_ptr generate_term_constant(std::string data, SMT::Primitive::Type type);
   SMT::Term_ptr generate_dummy_term();
   void add_callback_to_replace_with_bool(SMT::Term_ptr, std::string value);
   bool check_bool_constant_value(SMT::Term_ptr, std::string value);
+
+
 
   SMT::Script_ptr root;
   SymbolTable_ptr symbol_table;

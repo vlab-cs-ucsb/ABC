@@ -102,12 +102,12 @@ bool FormulaOptimizer::check_term(Term_ptr term) {
     for (auto& other_term : check_table[scope]) {
       if (term->getType() == Term::Type::NOT and other_term->getType() != Term::Type::NOT) {
         Not_ptr not_term = dynamic_cast<Not_ptr>(term);
-        if (is_equivalent(not_term->term, other_term)) {
+        if (Ast2Dot::isEquivalent(not_term->term, other_term)) {
           return true;
         }
       } else if (term->getType() != Term::Type::NOT and other_term->getType() == Term::Type::NOT) {
         Not_ptr not_term = dynamic_cast<Not_ptr>(other_term);
-        if (is_equivalent(not_term->term, term)) {
+        if (Ast2Dot::isEquivalent(not_term->term, term)) {
           return true;
         }
       }
@@ -122,20 +122,6 @@ void FormulaOptimizer::visit_and_callback(Term_ptr& term) {
     callback(term);
     callback = nullptr;
   }
-}
-
-bool FormulaOptimizer::is_equivalent(Term_ptr x, Term_ptr y) {
-  if (x == y) {
-    return true;
-  }
-  return (to_string(x) == to_string(y));
-}
-
-std::string FormulaOptimizer::to_string(Visitable_ptr visitable) {
-  std::stringstream ss;
-  Ast2Dot ast2dot(&ss);
-  ast2dot.start(visitable);
-  return ss.str();
 }
 
 } /* namespace Solver */

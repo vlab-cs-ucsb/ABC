@@ -478,13 +478,22 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
   visit_and_callback(eq_term->left_term);
   visit_and_callback(eq_term->right_term);
 
-  if (is_equivalent(eq_term->left_term, eq_term->right_term)) {
+  if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
     add_callback_to_replace_with_bool(eq_term, "true");
   } else if (check_and_process_len_transformation(eq_term, eq_term->left_term, eq_term->right_term)) {
     DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *eq_term << "'";
-    if (is_equivalent(eq_term->left_term, eq_term->right_term)) {
+    if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
       add_callback_to_replace_with_bool(eq_term, "true");
     }
+  } else if (check_and_process_for_notContains_transformation(eq_term->left_term, eq_term->right_term, -1) or
+          check_and_process_for_notContains_transformation(eq_term->right_term, eq_term->left_term, -1)) {
+    DVLOG(VLOG_LEVEL) << "Applying notContains transformation: '" << *eq_term << "'";
+    callback = [eq_term](Term_ptr& term) mutable {
+      term = new NotContains(eq_term->left_term, eq_term->right_term);
+      eq_term->left_term = nullptr;
+      eq_term->right_term = nullptr;
+      delete eq_term;
+    };
   }
 }
 
@@ -492,11 +501,11 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
   visit_and_callback(not_eq_term->left_term);
   visit_and_callback(not_eq_term->right_term);
 
-  if (is_equivalent(not_eq_term->left_term, not_eq_term->right_term)) {
+  if (Ast2Dot::isEquivalent(not_eq_term->left_term, not_eq_term->right_term)) {
     add_callback_to_replace_with_bool(not_eq_term, "false");
   } else if (check_and_process_len_transformation(not_eq_term, not_eq_term->left_term, not_eq_term->right_term)) {
     DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *not_eq_term << "'";
-    if (is_equivalent(not_eq_term->left_term, not_eq_term->right_term)) {
+    if (Ast2Dot::isEquivalent(not_eq_term->left_term, not_eq_term->right_term)) {
       add_callback_to_replace_with_bool(not_eq_term, "false");
     }
   }
@@ -506,11 +515,11 @@ void SyntacticOptimizer::visitGt(Gt_ptr gt_term) {
   visit_and_callback(gt_term->left_term);
   visit_and_callback(gt_term->right_term);
 
-  if (is_equivalent(gt_term->left_term, gt_term->right_term)) {
+  if (Ast2Dot::isEquivalent(gt_term->left_term, gt_term->right_term)) {
     add_callback_to_replace_with_bool(gt_term, "false");
   } else if (check_and_process_len_transformation(gt_term, gt_term->left_term, gt_term->right_term)) {
     DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *gt_term << "'";
-    if (is_equivalent(gt_term->left_term, gt_term->right_term)) {
+    if (Ast2Dot::isEquivalent(gt_term->left_term, gt_term->right_term)) {
       add_callback_to_replace_with_bool(gt_term, "false");
     } else {
       callback = [gt_term](Term_ptr& term) mutable {
@@ -527,11 +536,11 @@ void SyntacticOptimizer::visitGe(Ge_ptr ge_term) {
   visit_and_callback(ge_term->left_term);
   visit_and_callback(ge_term->right_term);
 
-  if (is_equivalent(ge_term->left_term, ge_term->right_term)) {
+  if (Ast2Dot::isEquivalent(ge_term->left_term, ge_term->right_term)) {
     add_callback_to_replace_with_bool(ge_term, "true");
   } else if (check_and_process_len_transformation(ge_term, ge_term->left_term, ge_term->right_term)) {
     DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *ge_term << "'";
-    if (is_equivalent(ge_term->left_term, ge_term->right_term)) {
+    if (Ast2Dot::isEquivalent(ge_term->left_term, ge_term->right_term)) {
       add_callback_to_replace_with_bool(ge_term, "true");
     } else {
       callback = [ge_term](Term_ptr& term) mutable {
@@ -548,11 +557,11 @@ void SyntacticOptimizer::visitLt(Lt_ptr lt_term) {
   visit_and_callback(lt_term->left_term);
   visit_and_callback(lt_term->right_term);
 
-  if (is_equivalent(lt_term->left_term, lt_term->right_term)) {
+  if (Ast2Dot::isEquivalent(lt_term->left_term, lt_term->right_term)) {
     add_callback_to_replace_with_bool(lt_term, "false");
   } else if (check_and_process_len_transformation(lt_term, lt_term->left_term, lt_term->right_term)) {
     DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *lt_term << "'";
-    if (is_equivalent(lt_term->left_term, lt_term->right_term)) {
+    if (Ast2Dot::isEquivalent(lt_term->left_term, lt_term->right_term)) {
       add_callback_to_replace_with_bool(lt_term, "false");
     } else {
       callback = [lt_term](Term_ptr& term) mutable {
@@ -562,6 +571,15 @@ void SyntacticOptimizer::visitLt(Lt_ptr lt_term) {
         delete lt_term;
       };
     }
+  } else if (check_and_process_for_notContains_transformation(lt_term->left_term, lt_term->right_term, 0) or
+          check_and_process_for_notContains_transformation(lt_term->right_term, lt_term->left_term, 0)) {
+    DVLOG(VLOG_LEVEL) << "Applying notContains transformation: '" << *lt_term << "'";
+    callback = [lt_term](Term_ptr& term) mutable {
+      term = new NotContains(lt_term->left_term, lt_term->right_term);
+      lt_term->left_term = nullptr;
+      lt_term->right_term = nullptr;
+      delete lt_term;
+    };
   }
 }
 
@@ -569,11 +587,11 @@ void SyntacticOptimizer::visitLe(Le_ptr le_term) {
   visit_and_callback(le_term->left_term);
   visit_and_callback(le_term->right_term);
 
-  if (is_equivalent(le_term->left_term, le_term->right_term)) {
+  if (Ast2Dot::isEquivalent(le_term->left_term, le_term->right_term)) {
     add_callback_to_replace_with_bool(le_term, "true");
   } else if (check_and_process_len_transformation(le_term, le_term->left_term, le_term->right_term)) {
     DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *le_term << "'";
-    if (is_equivalent(le_term->left_term, le_term->right_term)) {
+    if (Ast2Dot::isEquivalent(le_term->left_term, le_term->right_term)) {
       add_callback_to_replace_with_bool(le_term, "true");
     } else {
       callback = [le_term](Term_ptr& term) mutable {
@@ -583,6 +601,15 @@ void SyntacticOptimizer::visitLe(Le_ptr le_term) {
         delete le_term;
       };
     }
+  } else if (check_and_process_for_notContains_transformation(le_term->left_term, le_term->right_term, -1) or
+          check_and_process_for_notContains_transformation(le_term->right_term, le_term->left_term, -1)) {
+    DVLOG(VLOG_LEVEL) << "Applying notContains transformation: '" << *le_term << "'";
+    callback = [le_term](Term_ptr& term) mutable {
+      term = new NotContains(le_term->left_term, le_term->right_term);
+      le_term->left_term = nullptr;
+      le_term->right_term = nullptr;
+      delete le_term;
+    };
   }
 }
 
@@ -632,7 +659,7 @@ void SyntacticOptimizer::visitIn(In_ptr in_term) {
   visit_and_callback(in_term->left_term);
   visit_and_callback(in_term->right_term);
 
-  if (is_equivalent(in_term->left_term, in_term->right_term)) {
+  if (Ast2Dot::isEquivalent(in_term->left_term, in_term->right_term)) {
     callback = [in_term](Term_ptr& term) mutable {
       term = in_term->left_term;
       in_term->left_term = nullptr;
@@ -645,7 +672,7 @@ void SyntacticOptimizer::visitNotIn(NotIn_ptr not_in_term) {
   visit_and_callback(not_in_term->left_term);
   visit_and_callback(not_in_term->right_term);
 
-  if (is_equivalent(not_in_term->left_term, not_in_term->right_term)) {
+  if (Ast2Dot::isEquivalent(not_in_term->left_term, not_in_term->right_term)) {
     callback = [this, not_in_term](Term_ptr& term) mutable {
       term = generate_term_constant("/#/", Primitive::Type::REGEX);
       delete not_in_term;
@@ -661,7 +688,7 @@ void SyntacticOptimizer::visitContains(Contains_ptr contains_term) {
   visit_and_callback(contains_term->subject_term);
   visit_and_callback(contains_term->search_term);
 
-  if (is_equivalent(contains_term->subject_term, contains_term->search_term)) {
+  if (Ast2Dot::isEquivalent(contains_term->subject_term, contains_term->search_term)) {
     callback = [contains_term](Term_ptr& term) mutable {
       term = contains_term->subject_term;
       contains_term->subject_term = nullptr;
@@ -674,7 +701,7 @@ void SyntacticOptimizer::visitNotContains(NotContains_ptr not_contains_term) {
   visit_and_callback(not_contains_term->subject_term);
   visit_and_callback(not_contains_term->search_term);
 
-  if (is_equivalent(not_contains_term->subject_term, not_contains_term->search_term)) {
+  if (Ast2Dot::isEquivalent(not_contains_term->subject_term, not_contains_term->search_term)) {
     callback = [this, not_contains_term](Term_ptr& term) mutable {
       term = generate_term_constant("/#/", Primitive::Type::REGEX);
       delete not_contains_term;
@@ -686,7 +713,7 @@ void SyntacticOptimizer::visitBegins(Begins_ptr begins_term) {
   visit_and_callback(begins_term->subject_term);
   visit_and_callback(begins_term->search_term);
 
-  if (is_equivalent(begins_term->subject_term, begins_term->search_term)) {
+  if (Ast2Dot::isEquivalent(begins_term->subject_term, begins_term->search_term)) {
     callback = [begins_term](Term_ptr& term) mutable {
       term = begins_term->subject_term;
       begins_term->subject_term = nullptr;
@@ -699,7 +726,7 @@ void SyntacticOptimizer::visitNotBegins(NotBegins_ptr not_begins_term) {
   visit_and_callback(not_begins_term->subject_term);
   visit_and_callback(not_begins_term->search_term);
 
-  if (is_equivalent(not_begins_term->subject_term, not_begins_term->search_term)) {
+  if (Ast2Dot::isEquivalent(not_begins_term->subject_term, not_begins_term->search_term)) {
     callback = [this, not_begins_term](Term_ptr& term) mutable {
       term = generate_term_constant("/#/", Primitive::Type::REGEX);
       delete not_begins_term;
@@ -711,7 +738,7 @@ void SyntacticOptimizer::visitEnds(Ends_ptr ends_term) {
   visit_and_callback(ends_term->subject_term);
   visit_and_callback(ends_term->search_term);
 
-  if (is_equivalent(ends_term->subject_term, ends_term->search_term)) {
+  if (Ast2Dot::isEquivalent(ends_term->subject_term, ends_term->search_term)) {
     callback = [ends_term](Term_ptr& term) mutable {
       term = ends_term->subject_term;
       ends_term->subject_term = nullptr;
@@ -724,9 +751,9 @@ void SyntacticOptimizer::visitNotEnds(NotEnds_ptr not_ends_term) {
   visit_and_callback(not_ends_term->subject_term);
   visit_and_callback(not_ends_term->search_term);
 
-  if (is_equivalent(not_ends_term->subject_term, not_ends_term->search_term)) {
+  if (Ast2Dot::isEquivalent(not_ends_term->subject_term, not_ends_term->search_term)) {
     callback = [this, not_ends_term](Term_ptr& term) mutable {
-      term = generate_term_constant("/#/", Primitive::Type::REGEX);;
+      term = generate_term_constant("/#/", Primitive::Type::REGEX);
       delete not_ends_term;
     };
   }
@@ -750,6 +777,43 @@ void SyntacticOptimizer::visitCharAt(SMT::CharAt_ptr char_at_term) {
 void SyntacticOptimizer::visitSubString(SMT::SubString_ptr sub_string_term) {
   visit_and_callback(sub_string_term->subject_term);
   visit_and_callback(sub_string_term->start_index_term);
+  if (sub_string_term->end_index_term) {
+    visit_and_callback(sub_string_term->end_index_term);
+  }
+
+  Term::Type result = check_and_process_subString(sub_string_term->subject_term, sub_string_term->start_index_term);
+  if (Term::Type::INDEXOF == result or Term::Type::LASTINDEXOF == result) {
+    callback = [result, sub_string_term](Term_ptr& term) mutable {
+      switch (result) {
+        case Term::Type::INDEXOF:
+          term = new SubStringFirstOf(sub_string_term->subject_term, sub_string_term->start_index_term);
+          break;
+        case Term::Type::LASTINDEXOF:
+          term = new SubStringLastOf(sub_string_term->subject_term, sub_string_term->start_index_term);
+          break;
+        default:
+          break;
+      }
+      sub_string_term->subject_term = nullptr;
+      sub_string_term->start_index_term = nullptr;
+      delete sub_string_term; sub_string_term = nullptr;
+    };
+  }
+
+  if (sub_string_term->end_index_term) {
+    LOG(WARNING)<< "optimization check skipped, please contact us";
+    LOG(FATAL)<< "handle substring optimization case";
+  }
+}
+
+void SyntacticOptimizer::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_string_first_of_term) {
+  visit_and_callback(sub_string_first_of_term->subject_term);
+  visit_and_callback(sub_string_first_of_term->start_index_term);
+}
+
+void SyntacticOptimizer::visitSubStringLastOf(SMT::SubStringLastOf_ptr sub_string_last_of_term) {
+  visit_and_callback(sub_string_last_of_term->subject_term);
+  visit_and_callback(sub_string_last_of_term->start_index_term);
 }
 
 void SyntacticOptimizer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
@@ -769,7 +833,7 @@ void SyntacticOptimizer::visitReplace(Replace_ptr replace_term) {
   visit_and_callback(replace_term->search_term);
   visit_and_callback(replace_term->replace_term);
 
-  if (is_equivalent(replace_term->search_term, replace_term->replace_term)) {
+  if (Ast2Dot::isEquivalent(replace_term->search_term, replace_term->replace_term)) {
     callback = [replace_term](Term_ptr& term) mutable {
       term = replace_term->subject_term;
       replace_term->subject_term = nullptr;
@@ -925,20 +989,6 @@ void SyntacticOptimizer::visit_and_callback(Term_ptr& term) {
   }
 }
 
-bool SyntacticOptimizer::is_equivalent(Term_ptr x, Term_ptr y) {
-  if (x == y) {
-    return true;
-  }
-  return (to_string(x) == to_string(y));
-}
-
-std::string SyntacticOptimizer::to_string(Visitable_ptr visitable) {
-  std::stringstream ss;
-  Ast2Dot ast2dot(&ss);
-  ast2dot.start(visitable);
-  return ss.str();
-}
-
 std::string SyntacticOptimizer::escape_regex(std::string regex) {
   std::stringstream ss;
   for (auto ch : regex) {
@@ -1062,6 +1112,79 @@ SMT::Term::Type SyntacticOptimizer::syntactic_reverse_relation(SMT::Term::Type o
     default:
       return operation;
   }
+}
+
+/**
+ * Checks if we can convert indexOf and lastIndexOf operations to contains operation
+ * when they are used to check if a string does not contain other one
+ */
+bool SyntacticOptimizer::check_and_process_for_notContains_transformation(SMT::Term_ptr& left_term, SMT::Term_ptr& right_term, int compare_value) {
+  TermConstant_ptr expected_constant_term = nullptr;
+  if (compare_value < 0 and Term::Type::UMINUS == right_term->getType()) {
+    UMinus_ptr u_minus_term = dynamic_cast<UMinus_ptr>(right_term);
+    if (Term::Type::TERMCONSTANT == u_minus_term->term->getType()) {
+      expected_constant_term = dynamic_cast<TermConstant_ptr>(u_minus_term->term);
+      compare_value = -compare_value;
+    }
+  } else if (Term::Type::TERMCONSTANT == right_term->getType()) {
+    expected_constant_term = dynamic_cast<TermConstant_ptr>(right_term);
+  }
+
+  if (expected_constant_term == nullptr) {
+    return false;
+  } else if (compare_value != std::stoi(expected_constant_term->getValue())) {
+    return false;
+  }
+
+  if (IndexOf_ptr index_of_term = dynamic_cast<IndexOf_ptr>(left_term)) {
+    Term_ptr tmp_term = right_term;
+    right_term = index_of_term->search_term;
+    left_term = index_of_term->subject_term;
+    index_of_term->subject_term = nullptr;
+    index_of_term->search_term = nullptr;
+    delete index_of_term;
+    delete tmp_term;
+    return true;
+  } else if (LastIndexOf_ptr last_index_of_term = dynamic_cast<LastIndexOf_ptr>(left_term)) {
+    Term_ptr tmp_term = right_term;
+    right_term = last_index_of_term->search_term;
+    left_term = last_index_of_term->subject_term;
+    last_index_of_term->subject_term = nullptr;
+    last_index_of_term->search_term = nullptr;
+    delete last_index_of_term;
+    delete tmp_term;
+    return true;
+  }
+
+  return false;
+}
+
+Term::Type SyntacticOptimizer::check_and_process_subString(Term_ptr subject_term, Term_ptr &index_term) {
+  switch (index_term->getType()) {
+    case Term::Type::INDEXOF: {
+      IndexOf_ptr index_of_term = dynamic_cast<IndexOf_ptr>(index_term);
+      if (Ast2Dot::isEquivalent(subject_term, index_of_term->subject_term)) {
+        index_term = index_of_term->search_term;
+        index_of_term->search_term = nullptr;
+        delete index_of_term;
+        return Term::Type::INDEXOF;
+      }
+      break;
+    }
+    case Term::Type::LASTINDEXOF: {
+      LastIndexOf_ptr last_index_of_term = dynamic_cast<LastIndexOf_ptr>(index_term);
+      if (Ast2Dot::isEquivalent(subject_term, last_index_of_term->subject_term)) {
+        index_term = last_index_of_term->search_term;
+        last_index_of_term->search_term = nullptr;
+        delete last_index_of_term;
+        return Term::Type::LASTINDEXOF;
+      }
+      break;
+    }
+    default:
+      break;
+  }
+  return Term::Type::NONE;
 }
 
 Term_ptr SyntacticOptimizer::generate_term_constant(std::string data, Primitive::Type type) {

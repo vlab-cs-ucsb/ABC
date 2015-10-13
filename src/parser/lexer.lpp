@@ -82,6 +82,8 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "lastIndexOf"       { return Parser::make_LASTINDEXOF     (loc);  }
 "charAt"            { return Parser::make_CHARAT          (loc);  }
 "subString"         { return Parser::make_SUBSTRING       (loc);  }
+"subStringFirstOf"  { return Parser::make_SUBSTRINGFIRSTOF(loc);  }
+"subStringLastOf"   { return Parser::make_SUBSTRINGLASTOF (loc);  }
 "toUpper"           { return Parser::make_TOUPPER         (loc);  }
 "toLower"           { return Parser::make_TOLOWER         (loc);  }
 "trim"              { return Parser::make_TRIM            (loc);  }

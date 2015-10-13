@@ -665,7 +665,7 @@ void PreImageComputer::visitIndexOf(IndexOf_ptr index_of_term) {
   Term_ptr child_term = current_path.back();
 
   if (child_term == index_of_term->search_term) {
-    return; // notEnds operation does not have any restriction on right hand side
+    return; // indexOf operation does not have any restriction on right hand side
   }
 
   Value_ptr child_value = getTermPreImage(child_term);
@@ -698,7 +698,7 @@ void PreImageComputer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term)
   Term_ptr child_term = current_path.back();
 
   if (child_term == last_index_of_term->search_term) {
-    return; // notEnds operation does not have any restriction on right hand side
+    return; // lastIndexOf operation does not have any restriction on right hand side
   }
 
   Value_ptr child_value = getTermPreImage(child_term);
@@ -761,6 +761,9 @@ void PreImageComputer::visitCharAt(SMT::CharAt_ptr char_at_term) {
   visit(child_term);
 }
 
+/**
+ * TODO check if we can do preimage with endswith ??
+ */
 void PreImageComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *sub_string_term;
   popTerm(sub_string_term);
@@ -793,7 +796,7 @@ void PreImageComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
               ->restrictFromIndexToEndTo(start_index_value->getIntAutomaton(), term_value->getStringAutomaton()));
     }
 
-  } else {
+  } else { //term_value already contains end index
     if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
       child_value = new Value(Value::Type::STRING_AUTOMATON,
               child_post_value->getStringAutomaton()
@@ -804,6 +807,61 @@ void PreImageComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
               ->restrictAtIndexTo(start_index_value->getIntAutomaton(), term_value->getStringAutomaton()));
     }
   }
+
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
+}
+
+void PreImageComputer::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_string_first_of_term) {
+  DVLOG(VLOG_LEVEL) << "pop: " << *sub_string_first_of_term;
+  popTerm(sub_string_first_of_term);
+  Term_ptr child_term = current_path.back();
+
+  if (child_term == sub_string_first_of_term->start_index_term) {
+    return; // visitSubStringFirstOf operation does not have any restriction on indexes
+  }
+
+  Value_ptr child_value = getTermPreImage(child_term);
+  if (child_value not_eq nullptr) {
+    visit(child_term);
+    return;
+  }
+
+  Theory::StringAutomaton_ptr child_pre_auto = nullptr;
+  Value_ptr term_value = getTermPreImage(sub_string_first_of_term);
+  Value_ptr child_post_value = getTermPostImage(child_term);
+
+  child_value = new Value(Value::Type::STRING_AUTOMATON,
+          child_post_value->getStringAutomaton()
+          ->ends(term_value->getStringAutomaton()));
+
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
+}
+
+void PreImageComputer::visitSubStringLastOf(SMT::SubStringLastOf_ptr sub_string_last_of_term) {
+  DVLOG(VLOG_LEVEL) << "pop: " << *sub_string_last_of_term;
+  popTerm(sub_string_last_of_term);
+  Term_ptr child_term = current_path.back();
+
+  if (child_term == sub_string_last_of_term->start_index_term) {
+    return; // visitSubStringLastOf operation does not have any restriction on indexes
+  }
+
+  Value_ptr child_value = getTermPreImage(child_term);
+  if (child_value not_eq nullptr) {
+    visit(child_term);
+    return;
+  }
+
+  Theory::StringAutomaton_ptr child_pre_auto = nullptr;
+  Value_ptr term_value = getTermPreImage(sub_string_last_of_term);
+  Value_ptr child_post_value = getTermPostImage(child_term);
+  Value_ptr start_index_value = getTermPostImage(sub_string_last_of_term->start_index_term);
+
+  child_value = new Value(Value::Type::STRING_AUTOMATON,
+          child_post_value->getStringAutomaton()
+          ->ends(term_value->getStringAutomaton()));
 
   setTermPreImage(child_term, child_value);
   visit(child_term);
