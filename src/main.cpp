@@ -3,8 +3,8 @@
  Name        : main.cpp
  Author      : baki
  Version     :
- Copyright   : Copyright text goes here
- Description : Hello World in C++,
+ Copyright   : Copyright 2015 The ABC Authors. All rights reserved. Use of this source code is governed license that can be found in the COPYING file.
+ Description : An example usage of ABC string constraint solver and model counter
  ============================================================================
  */
 
@@ -66,7 +66,7 @@ int main(const int argc, const char **argv) {
   /* log test end */
 
   if (not in->good()) {
-    LOG(FATAL) << "Cannot find input";
+    LOG(FATAL)<< "Cannot find input";
   }
 
   int bound = std::stoi(bound_string);
@@ -88,7 +88,7 @@ int main(const int argc, const char **argv) {
   driver.solve();
 
   if (driver.isSatisfiable()) {
-    LOG(INFO) << "satisfiable !";
+    LOG(INFO)<< "satisfiable !";
     if (VLOG_IS_ON(30)) {
       int index = 0;
       for(auto& variable_entry : driver.getSatisfyingVariables()) {
@@ -106,7 +106,7 @@ int main(const int argc, const char **argv) {
             break;
           }
           default:
-            break;
+          break;
         }
       }
     }
@@ -114,7 +114,7 @@ int main(const int argc, const char **argv) {
     LOG(INFO) << "not satisfiable !";
   }
 
-  LOG(INFO) << "done.";
+  LOG(INFO)<< "done.";
 
   return 0;
 }

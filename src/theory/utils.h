@@ -17,8 +17,8 @@ namespace Theory {
 
 class NodeOld {
 public:
-  NodeOld(int id) : stateID (id), flag(false),
-    nextStates (nullptr), prevStates(nullptr) {
+  NodeOld(int id)
+          : stateID(id), flag(false), nextStates(nullptr), prevStates(nullptr) {
 
   }
 
@@ -31,7 +31,9 @@ public:
     delete prevStates;
   }
 
-  int getID() { return stateID; }
+  int getID() {
+    return stateID;
+  }
 
   void addNextState(int state) {
     nextStates->insert(state);
