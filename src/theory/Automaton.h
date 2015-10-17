@@ -52,7 +52,7 @@ class Automaton {
 public:
   enum class Type
     : int {
-      NONE = 0, BOOL, INT, INTBOOl, STRING
+      NONE = 0, BOOL, INT, INTBOOl, STRING, BINARYINT
   };
 
   Automaton(Automaton::Type type);
@@ -73,6 +73,7 @@ public:
     static const std::string INT;
     static const std::string INTBOOl;
     static const std::string STRING;
+    static const std::string BINARYINT;
   };
 
   bool checkEquivalence(Automaton_ptr other_auto);

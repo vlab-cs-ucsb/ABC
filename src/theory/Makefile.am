@@ -29,7 +29,11 @@ libabcautomaton_la_SOURCES = \
 	IntBoolAutomaton.cpp \
 	IntBoolAutomaton.h \
 	StringAutomaton.cpp \
-	StringAutomaton.h
+	StringAutomaton.h \
+	BinaryAutomaton.cpp \
+	BinaryAutomaton.h \
+	BinaryIntAutomaton.cpp \
+	BinaryIntAutomaton.h
 
 libabcautomaton_la_LDFLAGS = -version-info 0:1:0
 	

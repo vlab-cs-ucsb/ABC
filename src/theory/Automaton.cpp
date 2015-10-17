@@ -21,6 +21,7 @@ const std::string Automaton::Name::BOOL = "BoolAutomaton";
 const std::string Automaton::Name::INT = "IntAutomaton";
 const std::string Automaton::Name::INTBOOl = "IntBoolAutomaton";
 const std::string Automaton::Name::STRING = "StringAutomaton";
+const std::string Automaton::Name::BINARYINT = "BinaryIntAutomaton";
 
 Automaton::Automaton(Automaton::Type type)
         : type(type), dfa(nullptr), num_of_variables(0), variable_indices(nullptr), id (Automaton::trace_id++) {
@@ -61,6 +62,8 @@ std::string Automaton::str() const {
     return Automaton::Name::INTBOOl;
   case Automaton::Type::STRING:
     return Automaton::Name::STRING;
+  case Automaton::Type::BINARYINT:
+    return Automaton::Name::BINARYINT;
   default:
     LOG(FATAL)<< "Unknown automaton type!";
     return "";
