@@ -9,6 +9,7 @@ import re
 
 ROOT_PATH = os.path.abspath(os.path.join(os.getcwd(), os.pardir) )
 TMP_PATH = os.path.abspath(os.path.join(ROOT_PATH, 'tmp-installer-dir'))
+LIB_PATH = os.path.abspath(os.path.join(ROOT_PATH, 'lib'))
 ABC_PATH = ROOT_PATH
 
 #TODO add package installation considering current os system
@@ -18,6 +19,7 @@ _packages_dev = (
   'build-essential',
   'autoconf',
   'automake',
+  'autoheader'
   'libtool',
   'intltool',
   'flex',
@@ -26,31 +28,46 @@ _packages_dev = (
 
 _project_dep = (
  {
-     'name': 'glog',
-     'url': 'https://github.com/google/glog.git',
+     'name'     : 'glog',
+     'url'      : 'https://github.com/google/glog.git',
      'checkout' : 'tags/v0.3.3',     
-     'patch' : False,
-     'path' : os.path.abspath(os.path.join(TMP_PATH, 'glog')),
-     'autogen' : False,
-     'autotools' : True
+     'patch'    : False,
+     'path'     : os.path.abspath(os.path.join(TMP_PATH, 'glog')),
+     'autogen'  : False,
+     'autotools': True,
+     'install'  : True
  },
  {
-     'name': 'MONA',
-     'url': 'https://github.com/cs-au-dk/MONA.git',
+     'name'     : 'MONA',
+     'url'      : 'https://github.com/cs-au-dk/MONA.git',
      'checkout' : '2f382f2111d54de594a5f6187f0a8449d4dd4b34',     
-     'patch' : os.path.abspath(os.path.join(ABC_PATH, 'external', 'mona', 'mona_abc.patch')),
-     'path' : os.path.abspath(os.path.join(TMP_PATH, 'MONA')),
-     'autogen' : False,
-     'autotools' : True
+     'patch'    : os.path.abspath(os.path.join(ABC_PATH, 'external', 'mona', 'mona_abc.patch')),
+     'path'     : os.path.abspath(os.path.join(TMP_PATH, 'MONA')),
+     'autogen'  : False,
+     'autotools': True,
+     'install'  : True
  },
  {
-     'name': 'LibStranger',
-     'url': 'https://github.com/vlab-cs-ucsb/LibStranger.git',
+     'name'     : 'LibStranger',
+     'url'      : 'https://github.com/vlab-cs-ucsb/LibStranger.git',
      'checkout' : False,     
-     'patch' : False,
-     'path' : os.path.abspath(os.path.join(TMP_PATH, 'LibStranger')),
-     'autogen' : True,
-     'autotools' : True
+     'patch'    : False,
+     'path'     : os.path.abspath(os.path.join(TMP_PATH, 'LibStranger')),
+     'autogen'  : True,
+     'autotools': True,
+     'install'  : True
+ },
+ {
+     'name'     : 'googletest',
+     'submodule': True,
+     'url'      : False,
+     'checkout' : False,
+     'patch'    : False,
+     'path'     : os.path.abspath(os.path.join(LIB_PATH, 'googletest', 'googletest')),
+     'commands' : ['libtoolize', 'aclocal', 'autoheader', 'automake --gnu --add-missing', 'autoreconf -ivf'],     
+     'autogen'  : False,
+     'autotools': True,
+     'install'  : False
  }
 )
 
@@ -114,6 +131,12 @@ def gitcheckout(target, cwd):
     cmd = "git checkout {} .".format(target)
     return runcmd(cmd, cwd)
     
+def gitsubmoduleinit(cwd):
+    cmd = 'git submodule init'
+    runcmd(cmd, cwd)
+    cmd = 'git submodule update'
+    return runcmd(cmd, cwd)
+    
 def gitapply(patch, cwd):
     cmd = "git apply {}".format(patch)
     return runcmd(cmd,cwd)
@@ -122,15 +145,26 @@ def autogen(cwd):
     cmd = './autogen.sh'
     return runcmd(cmd, cwd)
     
-def autotools(cwd):
+def autotools(cwd, install=True):
     cmd = './configure'
     runcmd(cmd,cwd)
     cmd = 'make all'
     runcmd(cmd,cwd)
-    cmd = 'sudo make install'
-    runcmd(cmd,cwd)
-    cmd = 'sudo ldconfig'    
-    return runcmd(cmd, cwd)
+    if (install):
+        cmd = 'sudo make install'
+        runcmd(cmd,cwd)
+        cmd = 'sudo ldconfig'
+        runcmd(cmd, cwd)
+    return
+
+def invoke(func, args):
+    return func(*args)
+    
+def invoke_commands(commands, cwd):
+    for cmd in commands:
+        runcmd(cmd, cwd)
+    return
+    
 
 def install_build_pkgs(pkglist):
     for pkg in pkglist:
@@ -147,13 +181,16 @@ def install_build_pkgs(pkglist):
             
             
 def install_dep_projets(prjlist):
+    global ABC_PATH
     for prj in prjlist:
         print "Installing {}...".format(prj['name'])
-        gitclone(prj['url'], prj['path'])
+        if prj['url']: gitclone(prj['url'], prj['path'])
         if prj['checkout']: gitcheckout(prj['checkout'], prj['path'])
+        if prj['submodule']: gitsubmoduleinit(ABC_PATH)        
         if prj['patch']: gitapply(prj['patch'], prj['path'])
+        if prj['commands']: invoke_commands(prj['commands'], prj['path'])       
         if prj['autogen']: autogen(prj['path'])
-        if prj['autotools']: autotools(prj['path'])
+        if prj['autotools']: autotools(prj['path'], prj['install'])
         
 def build_abc():
     global ABC_PATH

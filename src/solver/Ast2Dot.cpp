@@ -150,6 +150,10 @@ void Ast2Dot::visitPlus(Plus_ptr plus_term) {
   visitTerm(plus_term);
 }
 
+void Ast2Dot::visitTimes(Times_ptr times_term) {
+  visitTerm(times_term);
+}
+
 void Ast2Dot::visitEq(Eq_ptr eq_term) {
   visitTerm(eq_term);
 }

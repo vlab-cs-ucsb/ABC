@@ -24,16 +24,16 @@ const std::string Automaton::Name::STRING = "StringAutomaton";
 const std::string Automaton::Name::BINARYINT = "BinaryIntAutomaton";
 
 Automaton::Automaton(Automaton::Type type)
-        : type(type), dfa(nullptr), num_of_variables(0), variable_indices(nullptr), id (Automaton::trace_id++) {
+        : type(type), dfa(nullptr), num_of_variables(0), variable_indices(nullptr), id(Automaton::trace_id++) {
 }
 
 Automaton::Automaton(Automaton::Type type, DFA_ptr dfa, int num_of_variables)
-        : type(type), dfa(dfa), num_of_variables(num_of_variables), id (Automaton::trace_id++) {
+        : type(type), dfa(dfa), num_of_variables(num_of_variables), id(Automaton::trace_id++) {
   variable_indices = getIndices(num_of_variables, 1); // make indices one more to be safe
 }
 
 Automaton::Automaton(const Automaton& other)
-        : type(other.type), dfa(dfaCopy(other.dfa)), num_of_variables(other.num_of_variables), id (Automaton::trace_id++) {
+        : type(other.type), dfa(dfaCopy(other.dfa)), num_of_variables(other.num_of_variables), id(Automaton::trace_id++) {
   variable_indices = getIndices(num_of_variables, 1); // make indices one more to be safe
 }
 
@@ -93,12 +93,16 @@ bool Automaton::checkEquivalence(Automaton_ptr other_auto) {
   M[0] = dfaProduct(this->dfa, other_auto->dfa, dfaIMPL);
   M[1] = dfaProduct(other_auto->dfa, this->dfa, dfaIMPL);
   M[2] = dfa_intersect(M[0], M[1]);
-  dfaFree(M[0]); M[0] = nullptr;
-  dfaFree(M[1]); M[1] = nullptr;
+  dfaFree(M[0]);
+  M[0] = nullptr;
+  dfaFree(M[1]);
+  M[1] = nullptr;
   M[3] = dfa_negate(M[2], num_of_variables, variable_indices);
   result = check_emptiness(M[3], num_of_variables, variable_indices);
-  dfaFree(M[2]); M[2] = nullptr;
-  dfaFree(M[3]); M[3] = nullptr;
+  dfaFree(M[2]);
+  M[2] = nullptr;
+  dfaFree(M[3]);
+  M[3] = nullptr;
 
   return result;
 }
@@ -186,7 +190,7 @@ bool Automaton::isAcceptingSingleWord() {
   std::map<unsigned, unsigned> next_states;
   std::vector<unsigned> nodes;
   std::vector<int> bit_stack;
-  unsigned sink_state = (unsigned)this->getSinkState();
+  unsigned sink_state = (unsigned) this->getSinkState();
   bool is_accepting_single_word = true;
   bool is_final_state = false;
   int bit_counter = 0;
@@ -197,13 +201,15 @@ bool Automaton::isAcceptingSingleWord() {
     nodes.push_back(p);
     bit_stack.push_back(0);
     while (not nodes.empty()) {
-      p = nodes.back(); nodes.pop_back();
-      bit_counter = bit_stack.back(); bit_stack.pop_back();
+      p = nodes.back();
+      nodes.pop_back();
+      bit_counter = bit_stack.back();
+      bit_stack.pop_back();
       LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
       if (index == BDD_LEAF_INDEX) {
-        if ( sink_state != l) {
+        if (sink_state != l) {
           next_states[l]++;
-          if ( bit_counter != num_of_variables  or (next_states[l] > 1) or (next_states.size() > 1) or is_final_state) {
+          if (bit_counter != num_of_variables or (next_states[l] > 1) or (next_states.size() > 1) or is_final_state) {
             is_accepting_single_word = false;
             break;
           }
@@ -235,14 +241,13 @@ bool Automaton::isAcceptingSingleWord() {
  * it explores high end first
  */
 std::vector<bool>* Automaton::getAnAcceptingWord(std::function<bool(unsigned& index)> next_node_heuristic) {
-  int sink_state = getSinkState(),
-      curr_state = this->dfa->s;
+  int sink_state = getSinkState(), curr_state = this->dfa->s;
   // bits are represented as bool
   std::vector<bool>* bit_vector = new std::vector<bool>();
   std::vector<bool> visited(this->dfa->ns);
-  std::vector < std::vector<bool> > transition_stack;
+  std::vector<std::vector<bool> > transition_stack;
 
-  for (int i = 0; (unsigned)i < visited.size(); i++) {
+  for (int i = 0; (unsigned) i < visited.size(); i++) {
     if (i == sink_state) {
       visited[i] = true;
     } else {
@@ -265,8 +270,10 @@ std::vector<bool>* Automaton::getAnAcceptingWord(std::function<bool(unsigned& in
     nodes.push_back(p);
     transition_stack.push_back(std::vector<bool>());
     while (not nodes.empty()) {
-      p = nodes.back(); nodes.pop_back();
-      std::vector<bool> curr_transition = transition_stack.back(); transition_stack.pop_back();
+      p = nodes.back();
+      nodes.pop_back();
+      std::vector<bool> curr_transition = transition_stack.back();
+      transition_stack.pop_back();
       LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
       if (index == BDD_LEAF_INDEX) {
         if (visited[l]) {
@@ -275,7 +282,7 @@ std::vector<bool>* Automaton::getAnAcceptingWord(std::function<bool(unsigned& in
 
           curr_state = l;
 
-          while (curr_transition.size() < (unsigned)num_of_variables) {
+          while (curr_transition.size() < (unsigned) num_of_variables) {
             unsigned i = curr_transition.size();
             if (next_node_heuristic and next_node_heuristic(i)) {
               curr_transition.push_back(1); // add 1 for don't cares
@@ -323,7 +330,7 @@ std::vector<bool>* Automaton::getAnAcceptingWord(std::function<bool(unsigned& in
 }
 
 char* Automaton::getAnExample(bool accepting) {
-  return dfaMakeExample(this->dfa, 1, num_of_variables, getIndices((unsigned)num_of_variables));
+  return dfaMakeExample(this->dfa, 1, num_of_variables, getIndices((unsigned) num_of_variables));
 }
 
 std::ostream& operator<<(std::ostream& os, const Automaton& automaton) {
@@ -362,6 +369,32 @@ unsigned* Automaton::getIndices(unsigned num_of_variables, unsigned extra_num_of
   }
 
   return indices;
+}
+
+/**
+ * Implementation for LibStranger's bintostr function
+ */
+char* Automaton::binaryFormat(unsigned long number, int bit_length) {
+  char* binary_str = nullptr;
+  int index = bit_length;
+  unsigned long subject = number;
+
+  // no extra bit
+  binary_str = new char[bit_length + 1];
+  binary_str[bit_length] = '\0';
+
+  for (index--; index >= 0; index--) {
+    if (subject & 1) {
+      binary_str[index] = '1';
+    } else {
+      binary_str[index] = '0';
+    }
+    if (subject > 0) {
+      subject >>= 1;
+    }
+  }
+
+  return binary_str;
 }
 
 /**
@@ -404,8 +437,8 @@ void Automaton::project(unsigned index) {
 
 bool Automaton::isSinkState(int state_id) {
   return (bdd_is_leaf(this->dfa->bddm, this->dfa->q[state_id])
-      and (bdd_leaf_value(this->dfa->bddm, this->dfa->q[state_id]) == (unsigned)state_id)
-      and this->dfa->f[state_id] == -1);
+          and (bdd_leaf_value(this->dfa->bddm, this->dfa->q[state_id]) == (unsigned) state_id)
+          and this->dfa->f[state_id] == -1);
 }
 
 bool Automaton::isAcceptingState(int state_id) {
@@ -434,7 +467,6 @@ bool Automaton::hasIncomingTransition(int state) {
   return false;
 }
 
-
 /**
  * @returns true if a start state is reachable from an accepting state, false otherwise
  */
@@ -444,7 +476,7 @@ bool Automaton::isStartStateReachableFromAnAcceptingState() {
     if (isAcceptingState(i)) {
       state_paths = pp = make_paths(this->dfa->bddm, this->dfa->q[i]);
       while (pp) {
-        if (pp->to == (unsigned)  this->dfa->s) {
+        if (pp->to == (unsigned) this->dfa->s) {
           kill_paths(state_paths);
           return true;
         }
@@ -463,10 +495,11 @@ bool Automaton::hasNextState(int state, int search) {
   p = this->dfa->q[state];
   nodes.push(p);
   while (not nodes.empty()) {
-    p = nodes.top(); nodes.pop();
+    p = nodes.top();
+    nodes.pop();
     LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
     if (index == BDD_LEAF_INDEX) {
-      if (l == (unsigned)search) {
+      if (l == (unsigned) search) {
         return true;
       }
     } else {
@@ -487,7 +520,8 @@ std::set<int>* Automaton::getNextStates(int state) {
   p = this->dfa->q[state];
   nodes.push(p);
   while (not nodes.empty()) {
-    p = nodes.top(); nodes.pop();
+    p = nodes.top();
+    nodes.pop();
     LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
     if (index == BDD_LEAF_INDEX) {
       next_states->insert(l);
@@ -509,17 +543,17 @@ AdjacencyList Automaton::getAdjacencyCountList() {
   std::vector<int> transition_count(dfa->ns, 0);
   std::vector<int> reachable_states(dfa->ns, 0);
 
-    // process each state and run a dfs
+  // process each state and run a dfs
   for (int i = 0; i < this->dfa->ns; i++) {
 
     // keep a list of reachable states for optimization purposes
-    for(int j = 0; j < leaf_count; j++) {
+    for (int j = 0; j < leaf_count; j++) {
       reachable_states[j] = 0;
     }
 
     leaf_count = 0;
-    for(int j = 0; j < this->dfa->ns; j++){
-      transition_count[j]=0;
+    for (int j = 0; j < this->dfa->ns; j++) {
+      transition_count[j] = 0;
     }
 
     LOAD_lri(&dfa->bddm->node_table[i], l, r, index);
@@ -529,19 +563,18 @@ AdjacencyList Automaton::getAdjacencyCountList() {
 
     node_stack.push(current_node);
 
-    while(!node_stack.empty()) {
+    while (!node_stack.empty()) {
       top = node_stack.top();
       node_stack.pop();
       LOAD_lri(&this->dfa->bddm->node_table[top.first], l, r, index);
-      if(index == BDD_LEAF_INDEX) {
-        num_of_transitions = std::pow(2, (num_of_variables-top.second));
-        if(!transition_count[l]) {
+      if (index == BDD_LEAF_INDEX) {
+        num_of_transitions = std::pow(2, (num_of_variables - top.second));
+        if (!transition_count[l]) {
           reachable_states[leaf_count] = l;
           leaf_count++;
         }
         transition_count[l] += num_of_transitions;
-      }
-      else {
+      } else {
         lo_node.first = l;
         lo_node.second = top.second + 1;
         hi_node.first = r;
@@ -551,7 +584,7 @@ AdjacencyList Automaton::getAdjacencyCountList() {
       }
     }
 
-    for(int j = 0; j < leaf_count; j++){
+    for (int j = 0; j < leaf_count; j++) {
       entry.first = i;
       entry.second = transition_count[reachable_states[j]];
       adjacency_count_list[reachable_states[j]].push_back(entry);
@@ -571,9 +604,9 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
   trace_descr tp;
 
   int i, j, k, l, size, maxexp, sink;
-  pCharPair *buffer;//array of charpairs references
+  pCharPair *buffer; //array of charpairs references
   char *character;
-  pCharPair **toTrans;//array for all states, each entry is an array of charpair references
+  pCharPair **toTrans; //array for all states, each entry is an array of charpair references
   int *toTransIndecies;
   char** ranges;
 
@@ -581,12 +614,12 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
   sink = find_sink(dfa);
 
   out << "digraph MONA_DFA {\n"
-      " rankdir = LR;\n "
-      " center = true;\n"
-      " size = \"700.5,1000.5\";\n"
-      " edge [fontname = Courier];\n"
-      " node [height = .5, width = .5];\n"
-      " node [shape = doublecircle];";
+          " rankdir = LR;\n "
+          " center = true;\n"
+          " size = \"700.5,1000.5\";\n"
+          " edge [fontname = Courier];\n"
+          " node [height = .5, width = .5];\n"
+          " node [shape = doublecircle];";
 
   for (i = 0; i < dfa->ns; i++) {
     if (dfa->f[i] == 1) {
@@ -612,19 +645,17 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
     }
   }
 
-  out << "\n init [shape = plaintext, label = \"\"];\n" <<
-      " init -> " << dfa->s << ";\n";
+  out << "\n init [shape = plaintext, label = \"\"];\n" << " init -> " << dfa->s << ";\n";
 
   maxexp = 1 << num_of_variables;
   //TODO convert into c++ style memory management
   buffer = (pCharPair*) malloc(sizeof(pCharPair) * maxexp); //max no of chars from Si to Sj = 2^num_of_variables
-  character = (char*) malloc(( num_of_variables+1) * sizeof(char));
-  toTrans = (pCharPair**) malloc(sizeof(pCharPair*) * dfa->ns);//need this to gather all edges out to state Sj from Si
+  character = (char*) malloc((num_of_variables + 1) * sizeof(char));
+  toTrans = (pCharPair**) malloc(sizeof(pCharPair*) * dfa->ns); //need this to gather all edges out to state Sj from Si
   for (i = 0; i < dfa->ns; i++) {
     toTrans[i] = (pCharPair*) malloc(maxexp * sizeof(pCharPair));
   }
-  toTransIndecies = (int*) malloc(dfa->ns * sizeof(int));//for a state Si, how many edges out to each state Sj
-
+  toTransIndecies = (int*) malloc(dfa->ns * sizeof(int)); //for a state Si, how many edges out to each state Sj
 
   for (i = 0; i < dfa->ns; i++) {
     //get transitions out from state i
@@ -645,13 +676,14 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
     //gather transitions out from state i
     //for each transition pp out from state i
     while (pp) {
-      if (pp->to == (unsigned)sink && not print_sink){
+      if (pp->to == (unsigned) sink && not print_sink) {
         pp = pp->next;
         continue;
       }
       //get mona character on transition pp
       for (j = 0; j < num_of_variables; j++) {
-        for (tp = pp->trace; tp && (tp->index != (unsigned)variable_indices[j]); tp = tp->next);
+        for (tp = pp->trace; tp && (tp->index != (unsigned) variable_indices[j]); tp = tp->next)
+          ;
 
         if (tp) {
           if (tp->value)
@@ -662,7 +694,7 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
           character[j] = 'X';
       }
       character[j] = '\0';
-      if (num_of_variables == 8){
+      if (num_of_variables == 8) {
         //break mona character into ranges of ascii chars (example: "0XXX000X" -> [\s-!], [0-1], [@-A], [P-Q])
         size = 0;
         getTransitionChars(character, num_of_variables, buffer, &size);
@@ -671,7 +703,7 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
         //print ranges
         for (l = 0; l < size; l++) {
           toTrans[pp->to][k++] = buffer[l];
-          buffer[l] = 0;//do not free just detach
+          buffer[l] = 0;    //do not free just detach
         }
         toTransIndecies[pp->to] = k;
       } else {
@@ -693,7 +725,7 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
       //print edge from i to j
       out << " " << i << " -> " << j << " [label=\"";
       bool print_label = (j != sink || print_sink);
-      l = 0;//to help breaking into new line
+      l = 0;    //to help breaking into new line
       //for each trans k on char/range from i to j
       for (k = 0; k < size; k++) {
         //print char/range
@@ -701,26 +733,25 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
           out << " " << ranges[k];
         }
         l += strlen(ranges[k]);
-        if (l > 18){
+        if (l > 18) {
           if (print_label) {
             out << "\\n";
           }
           l = 0;
-        }
-        else if (k < (size - 1)) {
+        } else if (k < (size - 1)) {
           if (print_label) {
             out << ",";
           }
         }
         free(ranges[k]);
-      }//for
+      }      //for
       out << "\"];\n";
       if (size > 0)
         free(ranges);
     }
     //for each state free charRange
     //merge with loop above for better performance
-    for (j = 0; j < dfa->ns; j++){
+    for (j = 0; j < dfa->ns; j++) {
       if (j == sink && not print_sink) {
         continue;
       }
@@ -731,11 +762,11 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
     }
 
     kill_paths(state_paths);
-  }//end for each state
+  }    //end for each state
 
   free(character);
   free(buffer);
-  for (i = 0; i < dfa->ns; i++){
+  for (i = 0; i < dfa->ns; i++) {
     free(toTrans[i]);
   }
   free(toTrans);
@@ -744,15 +775,114 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
   out << "}" << std::endl;
 }
 
-
-
 // TODO will be merge into one toDot function with above
-void Automaton::toDot() {
-  dfaPrintGraphviz(this->dfa, num_of_variables, getIndices((unsigned)num_of_variables));
+void Automaton::toDot(std::ostream& out) {
+  paths state_paths, pp;
+  trace_descr tp;
+  int i, j, k, l;
+  char **buffer;
+  int *used, *allocated;
+  unsigned* offsets = getIndices((unsigned) num_of_variables);
+  int no_free_vars = num_of_variables;
+  DFA_ptr a = this->dfa;
+
+  out << "digraph MONA_DFA {\n"
+          " rankdir = LR;\n"
+          " center = true;\n"
+          " size = \"7.5,10.5\";\n"
+          " edge [fontname = Courier];\n"
+          " node [height = .5, width = .5];\n"
+          " node [shape = doublecircle];";
+  for (i = 0; i < a->ns; i++) {
+    if (a->f[i] == 1) {
+      out << " " << i << ";";
+    }
+  }
+  out << "\n node [shape = circle];";
+  for (i = 0; i < a->ns; i++) {
+    if (a->f[i] == -1) {
+      out << " " << i << ";";
+    }
+  }
+  out << "\n node [shape = box];";
+  for (i = 0; i < a->ns; i++) {
+    if (a->f[i] == 0) {
+      out << " " << i << ";";
+    }
+  }
+  out << "\n init [shape = plaintext, label = \"\"];\n"
+          " init -> " << a->s << ";\n";
+
+  buffer = (char **) mem_alloc(sizeof(char *) * a->ns);
+  used = (int *) mem_alloc(sizeof(int) * a->ns);
+  allocated = (int *) mem_alloc(sizeof(int) * a->ns);
+
+  for (i = 0; i < a->ns; i++) {
+    state_paths = pp = make_paths(a->bddm, a->q[i]);
+
+    for (j = 0; j < a->ns; j++) {
+      buffer[j] = 0;
+      used[j] = allocated[j] = 0;
+    }
+
+    while (pp) {
+      if (used[pp->to] >= allocated[pp->to]) {
+        allocated[pp->to] = allocated[pp->to] * 2 + 2;
+        buffer[pp->to] = (char *) mem_resize(buffer[pp->to], sizeof(char) * allocated[pp->to] * no_free_vars);
+      }
+
+      for (j = 0; j < no_free_vars; j++) {
+        char c;
+        for (tp = pp->trace; tp && (tp->index != offsets[j]); tp = tp->next)
+          ;
+
+        if (tp) {
+          if (tp->value) {
+            c = '1';
+          } else {
+            c = '0';
+          }
+        } else {
+          c = 'X';
+        }
+
+        buffer[pp->to][no_free_vars * used[pp->to] + j] = c;
+      }
+      used[pp->to]++;
+      pp = pp->next;
+    }
+
+    for (j = 0; j < a->ns; j++) {
+      if (buffer[j]) {
+        out << " " << i << " -> " << j << " [label=\"";
+        for (k = 0; k < no_free_vars; k++) {
+          for (l = 0; l < used[j]; l++) {
+            out << buffer[j][no_free_vars * l + k];
+            if (l + 1 < used[j]) {
+              if (k + 1 == no_free_vars)
+                out << ',';
+              else
+                out << ' ';
+            }
+          }
+          if (k + 1 < no_free_vars)
+            out << "\\n";
+        }
+        out << "\"];\n";
+        mem_free(buffer[j]);
+      }
+    }
+    kill_paths(state_paths);
+  }
+
+  mem_free(allocated);
+  mem_free(used);
+  mem_free(buffer);
+
+  out << "}" << std::endl;
 }
 
 void Automaton::printBDD(std::ostream& out) {
-//  LOG(FATAL) << "implement me, fix headers";
   Table *table = tableInit();
   int sink = getSinkState();
 
@@ -761,27 +891,27 @@ void Automaton::printBDD(std::ostream& out) {
 
   /* build table of tuples (idx,lo,hi) */
   for (int i = 0; i < this->dfa->ns; i++) {
-      __export(this->dfa->bddm, this->dfa->q[i], table);
+    __export(this->dfa->bddm, this->dfa->q[i], table);
   }
 
   /* renumber lo/hi pointers to new table ordering */
   for (unsigned i = 0; i < table->noelems; i++) {
-      if (table->elms[i].idx != -1) {
-          table->elms[i].lo = bdd_mark(this->dfa->bddm, table->elms[i].lo) - 1;
-          table->elms[i].hi = bdd_mark(this->dfa->bddm, table->elms[i].hi) - 1;
-      }
+    if (table->elms[i].idx != -1) {
+      table->elms[i].lo = bdd_mark(this->dfa->bddm, table->elms[i].lo) - 1;
+      table->elms[i].hi = bdd_mark(this->dfa->bddm, table->elms[i].hi) - 1;
+    }
   }
 
   out << "digraph MONA_DFA_BDD {\n"
-      "  center = true;\n"
-      "  size = \"100.5,70.5\"\n"
+          "  center = true;\n"
+          "  size = \"100.5,70.5\"\n"
 //      "  orientation = landscape;\n"
-      "  node [shape=record];\n"
-      "   s1 [shape=record,label=\"";
+          "  node [shape=record];\n"
+          "   s1 [shape=record,label=\"";
 
   for (int i = 0; i < this->dfa->ns; i++) {
     out << "{" << this->dfa->f[i] << "|<" << i << "> " << i << "}";
-    if ( (unsigned)(i+1) < table->noelems) {
+    if ((unsigned) (i + 1) < table->noelems) {
       out << "|";
     }
   }
@@ -807,12 +937,12 @@ void Automaton::printBDD(std::ostream& out) {
   }
 
   for (unsigned i = 0; i < table->noelems; i++) {
-      if (table->elms[i].idx != -1) {
-          int lo = table->elms[i].lo;
-          int hi = table->elms[i].hi;
-          out << " " << i << " -> " << lo << " [style=dashed];\n";
-          out << " " << i << " -> " << hi << " [style=filled];\n";
-      }
+    if (table->elms[i].idx != -1) {
+      int lo = table->elms[i].lo;
+      int hi = table->elms[i].hi;
+      out << " " << i << " -> " << lo << " [style=dashed];\n";
+      out << " " << i << " -> " << hi << " [style=filled];\n";
+    }
   }
   out << "}" << std::endl;
   tableFree(table);
@@ -827,7 +957,25 @@ int Automaton::inspectAuto(bool print_sink) {
     std::cout << "cannot open file: " << file_name << std::endl;
     exit(2);
   }
-  toDotAscii(print_sink, outfile);
+  if (Automaton::Type::INT == type or Automaton::Type::STRING == type) {
+    toDotAscii(print_sink, outfile);
+  } else {
+    toDot(outfile);
+  }
+  std::string dot_cmd("xdot " + file + " &");
+  return std::system(dot_cmd.c_str());
+}
+
+int Automaton::inspectBDD() {
+  std::stringstream file_name;
+  file_name << "./output/inspect_BDD_" << name_counter++ << ".dot";
+  std::string file = file_name.str();
+  std::ofstream outfile(file.c_str());
+  if (!outfile.good()) {
+    std::cout << "cannot open file: " << file_name << std::endl;
+    exit(2);
+  }
+  printBDD(outfile);
   std::string dot_cmd("xdot " + file + " &");
   return std::system(dot_cmd.c_str());
 }

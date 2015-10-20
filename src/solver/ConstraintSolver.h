@@ -1,27 +1,34 @@
 /*
- * PreImageComputer.h
+ * ConstraintSolver.h
  *
  *  Created on: Jun 24, 2015
  *      Author: baki
  */
 
-#ifndef SOLVER_PREIMAGECOMPUTER_H_
-#define SOLVER_PREIMAGECOMPUTER_H_
+#ifndef SOLVER_CONSTRAINTSOLVER_H_
+#define SOLVER_CONSTRAINTSOLVER_H_
+
+#include <string>
+#include <sstream>
 
 #include <glog/logging.h>
+
+#include "theory/ArithmeticFormula.h"
+#include "theory/BinaryIntAutomaton.h"
+#include "ArithmeticFormulaGenerator.h"
 #include "smt/ast.h"
 #include "SymbolTable.h"
-#include "Value.h"
+#include "VariableValueComputer.h"
 
 namespace Vlab {
 namespace Solver {
 
-class PreImageComputer: public SMT::Visitor {
+class ConstraintSolver: public SMT::Visitor {
   typedef std::map<SMT::Term_ptr, Value_ptr> TermValueMap;
   typedef std::map<SMT::Variable_ptr, std::vector<SMT::Term_ptr>> VariablePathTable;
 public:
-  PreImageComputer(SymbolTable_ptr, VariablePathTable& variable_path_table, const TermValueMap& post_images );
-  virtual ~PreImageComputer();
+  ConstraintSolver(SMT::Script_ptr, SymbolTable_ptr);
+  virtual ~ConstraintSolver();
 
   void start();
   void end();
@@ -40,6 +47,7 @@ public:
   void visitUMinus(SMT::UMinus_ptr);
   void visitMinus(SMT::Minus_ptr);
   void visitPlus(SMT::Plus_ptr);
+  void visitTimes(SMT::Times_ptr);
   void visitEq(SMT::Eq_ptr);
   void visitNotEq(SMT::NotEq_ptr);
   void visitGt(SMT::Gt_ptr);
@@ -85,24 +93,29 @@ public:
   void visitIdentifier(SMT::Identifier_ptr);
   void visitPrimitive(SMT::Primitive_ptr);
   void visitVariable(SMT::Variable_ptr);
+
 protected:
-  Value_ptr getTermPostImage(SMT::Term_ptr term);
-  Value_ptr getTermPreImage(SMT::Term_ptr term);
-  bool setTermPreImage(SMT::Term_ptr term, Value_ptr value);
-  void popTerm(SMT::Term_ptr);
+  Value_ptr getTermValue(SMT::Term_ptr term);
+  bool setTermValue(SMT::Term_ptr term, Value_ptr value);
+  void clearTermValues();
+  void setVariablePath(SMT::QualIdentifier_ptr qi_term);
+  void update_variables();
 
+  SMT::Script_ptr root;
   SymbolTable_ptr symbol_table;
-  VariablePathTable& variable_path_table;
-  const TermValueMap& post_images;
-  TermValueMap pre_images;
-  std::vector<SMT::Term_ptr> current_path;
+  ArithmeticFormulaGenerator arithmetic_formula_generator;
 
+  TermValueMap post_images;
+
+  std::vector<SMT::Term_ptr> path_trace;
+  VariablePathTable variable_path_table;
 
 private:
+  void __visit_children_of(SMT::Term_ptr term);
   static const int VLOG_LEVEL;
 };
 
 } /* namespace Solver */
 } /* namespace Vlab */
 
-#endif /* SOLVER_PREIMAGECOMPUTER_H_ */
+#endif /* SOLVER_CONSTRAINTSOLVER_H_ */

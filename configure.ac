@@ -2,6 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
 AC_INIT([ABC],[1.0],[vlab@cs.ucsb.edu])
+
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_LIBOBJ_DIR([lib])
 AM_MAINTAINER_MODE([enable])
@@ -50,6 +51,25 @@ AC_SUBST([LIBM])
 AC_HAVE_LIBRARY([stranger], [LIBSTRANGER=-lstranger], AC_MSG_ERROR(LibStranger string analysis library not found))
 AC_SUBST([LIBSTRANGER])
 
+# Define gtest variables 
+GTEST_VERSION="1.7.0"
+if test "x$have_pthread" = "xyes"; then
+  GTEST_CPPFLAGS="-DGTEST_HAS_PTHREAD=1"
+  GTEST_CXXFLAGS="$PTHREAD_CFLAGS"
+  GTEST_LDFLAGS=
+  GTEST_LIBS="$PTHREAD_LIBS"
+else
+  GTEST_CPPFLAGS="-DGTEST_HAS_PTHREAD=0"
+  GTEST_CXXFLAGS=
+  GTEST_LDFLAGS=
+  GTEST_LIBS=
+fi
+AC_SUBST([GTEST_VERSION])
+AC_SUBST([GTEST_CPPFLAGS])
+AC_SUBST([GTEST_CXXFLAGS])
+AC_SUBST([GTEST_LDFLAGS])
+AC_SUBST([GTEST_LIBS])
+
 # TODO remove dependencies that is not needed by cpp later on
 # TODO improve library check here
 
@@ -74,8 +94,8 @@ AM_COND_IF([JAVA_HOME_VALID],
 # set global compiler options
 
 # Create Makefile files
-AC_CONFIG_FILES([Makefile lib/Makefile src/Makefile src/parser/Makefile src/theory/Makefile])
-AC_CONFIG_SUBDIRS([lib/googletest/googletest lib/googletest/googlemock])
+AC_CONFIG_FILES([Makefile src/Makefile src/parser/Makefile src/theory/Makefile test/Makefile])
+#AC_CONFIG_SUBDIRS([lib/googletest/googletest lib/googletest/googlemock])
 #AC_CONFIG_SUBDIRS([external/glog external/LibStranger])
 AC_OUTPUT
 

@@ -1,5 +1,6 @@
 AM_YFLAGS = -d
-AM_CXXFLAGS = -I$(srcdir)/parser 
+
+AM_CXXFLAGS = -I$(top_srcdir)/src
 AM_LDFLAGS = $(LIBGLOG)
 noinst_LTLIBRARIES = libabcparser.la
 libabcparser_la_SOURCES = \

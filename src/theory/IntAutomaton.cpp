@@ -273,9 +273,6 @@ IntAutomaton_ptr IntAutomaton::union_(int value) {
   return union_auto;
 }
 
-/**
- * TODO Figure out why empty check is necessary
- */
 IntAutomaton_ptr IntAutomaton::union_(IntAutomaton_ptr other_auto) {
   DFA_ptr union_dfa = nullptr, minimized_dfa = nullptr;
   IntAutomaton_ptr union_auto = nullptr;
@@ -400,6 +397,36 @@ IntAutomaton_ptr IntAutomaton::plus(IntAutomaton_ptr other_auto) {
   DVLOG(VLOG_LEVEL) << plus_auto->id << " = [" << this->id << "]->plus(" << other_auto->id << ")";
 
   return plus_auto;
+}
+
+IntAutomaton_ptr IntAutomaton::times(int value) {
+  IntAutomaton_ptr times_auto = nullptr, tmp_auto = nullptr;
+  if (value == 0) {
+    times_auto = IntAutomaton::makeZero();
+  } else if (value == 1) {
+    times_auto = this->clone();
+  } else if (value == -1) {
+    times_auto = this->uminus();
+  } else {
+    int bound = (value > 0) ? value : -value;
+    times_auto = this->clone();
+
+    for (int i = 1; i < value; i++) {
+      tmp_auto = times_auto;
+      times_auto = tmp_auto->plus(this);
+      delete tmp_auto; tmp_auto = nullptr;
+    }
+
+    if (value < 0) {
+      tmp_auto = times_auto;
+      times_auto = tmp_auto->uminus();
+      delete tmp_auto;
+    }
+  }
+
+  DVLOG(VLOG_LEVEL) << times_auto->id << " = [" << this->id << "]->times(" << value << ")";
+
+  return times_auto;
 }
 
 

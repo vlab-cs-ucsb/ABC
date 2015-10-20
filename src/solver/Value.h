@@ -12,10 +12,10 @@
 #include <sstream>
 
 #include <glog/logging.h>
-#include "BoolAutomaton.h"
-#include "IntAutomaton.h"
-#include "IntBoolAutomaton.h"
-#include "StringAutomaton.h"
+#include "theory/BoolAutomaton.h"
+#include "theory/IntAutomaton.h"
+#include "theory/IntBoolAutomaton.h"
+#include "theory/StringAutomaton.h"
 
 namespace Vlab {
 namespace Solver {
@@ -70,6 +70,7 @@ public:
 
   Value_ptr concat(Value_ptr other_value) const;
   Value_ptr plus(Value_ptr other_value) const;
+  Value_ptr times(Value_ptr other_value) const;
   Value_ptr minus(Value_ptr other_value) const;
 
   bool isSatisfiable();

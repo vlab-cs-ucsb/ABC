@@ -1,8 +1,7 @@
 AM_YFLAGS = -d
 
 AM_CXXFLAGS = \
-	-I$(srcdir)/utils \
-	-I$(srcdir)/theory 
+	-I$(top_srcdir)/src 
 
 AM_LDFLAGS = \
 	$(LIBGLOG) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) $(LIBSTRANGER)
@@ -20,18 +19,18 @@ libabcautomaton_la_SOURCES = \
 	DAGraphNode.h \
 	DAGraph.cpp \
 	DAGraph.h \
+	ArithmeticFormula.cpp \
+	ArithmeticFormula.h \
 	Automaton.cpp \
 	Automaton.h \
 	BoolAutomaton.cpp \
-	BoolAutomaotn.h \
+	BoolAutomaton.h \
 	IntAutomaton.cpp \
 	IntAutomaton.h \
 	IntBoolAutomaton.cpp \
 	IntBoolAutomaton.h \
 	StringAutomaton.cpp \
 	StringAutomaton.h \
-	BinaryAutomaton.cpp \
-	BinaryAutomaton.h \
 	BinaryIntAutomaton.cpp \
 	BinaryIntAutomaton.h
 

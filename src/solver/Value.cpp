@@ -342,6 +342,56 @@ Value::~Value() {
     return result;
   }
 
+  Value_ptr Value::times(Value_ptr other_value) const {
+    Value_ptr result = nullptr;
+    if (Value::Type::INT_CONSTANT == this->getType()) {
+      if (Value::Type::INT_CONSTANT == other_value->getType()) {
+        result = new Value(Value::Type::INT_CONSTANT,
+                this->getIntConstant() * other_value->getIntConstant());
+      } else if (Value::Type::INT_AUTOMATON == other_value->getType()) {
+        if (other_value->getIntAutomaton()->isAcceptingSingleInt()) {
+          result = new Value(Value::Type::INT_CONSTANT,
+                  this->getIntConstant() * other_value->getIntAutomaton()->getAnAcceptingInt());
+        } else {
+          result = new Value(Value::Type::INT_AUTOMATON,
+                  other_value->getIntAutomaton()->times(this->getIntConstant()));
+        }
+      } else {
+        LOG(FATAL) << "Unexpected right parameter: " << *other_value;
+      }
+    } else if (Value::Type::INT_AUTOMATON == this->getType()) {
+      if (Value::Type::INT_CONSTANT == other_value->getType()) {
+        if (this->getIntAutomaton()->isAcceptingSingleInt()) {
+          result = new Value(Value::Type::INT_CONSTANT,
+                  this->getIntAutomaton()->getAnAcceptingInt() * other_value->getIntConstant());
+        } else {
+          result = new Value(Value::Type::INT_AUTOMATON,
+                  this->getIntAutomaton()->times(other_value->getIntConstant()));
+        }
+      } else if (Value::Type::INT_AUTOMATON == other_value->getType()) {
+        if (this->getIntAutomaton()->isAcceptingSingleInt() and
+                other_value->getIntAutomaton()->isAcceptingSingleInt()) {
+          result = new Value(Value::Type::INT_CONSTANT,
+                  (this->getIntAutomaton()->getAnAcceptingInt()
+                          * other_value->getIntAutomaton()->getAnAcceptingInt()));
+        } else if(this->getIntAutomaton()->isAcceptingSingleInt()) {
+          result = new Value(Value::Type::INT_AUTOMATON,
+                  other_value->getIntAutomaton()->times(this->getIntConstant()));
+        } else if(other_value->getIntAutomaton()->isAcceptingSingleInt()) {
+          result = new Value(Value::Type::INT_AUTOMATON,
+                  this->getIntAutomaton()->times(other_value->getIntConstant()));
+        } else {
+          LOG(FATAL)<< "Multiplication is supported only for Linear Integer Arithmetic where all parameters must be constants except one.";
+        }
+      } else {
+        LOG(FATAL) << "Unexpected right parameter: " << *other_value;
+      }
+    } else {
+      LOG(FATAL) << "Unexpected left parameter: " << *this;
+    }
+    return result;
+  }
+
   Value_ptr Value::minus(Value_ptr other_value) const {
     Value_ptr result = nullptr;
     if (Value::Type::INT_CONSTANT == this->getType()) {

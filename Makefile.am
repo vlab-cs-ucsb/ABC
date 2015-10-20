@@ -1,5 +1,5 @@
 ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS} -I m4
-SUBDIRS = lib src
+SUBDIRS = src test
 EXTRA_DIST = autogen.sh build/install-build-deps.py
 
 test-local:

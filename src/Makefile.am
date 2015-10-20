@@ -1,7 +1,6 @@
 SUBDIRS = parser theory
 AM_CXXFLAGS = \
-	-I$(srcdir)/parser \
-	-I$(srcdir)/theory
+	-I$(top_srcdir)/src
 
 if JAVA_HOME_VALID
 AM_CXXFLAGS += -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
@@ -27,7 +26,7 @@ libabc_la_SOURCES = \
   ./solver/Initializer.cpp \
   ./solver/Initializer.h \
   ./solver/SyntacticProcessor.cpp \
-  ./solver/SyntaxProcessor.h \
+  ./solver/SyntacticProcessor.h \
   ./solver/SyntacticOptimizer.cpp \
   ./solver/SyntacticOptimizer.h \
   ./solver/Counter.cpp \
@@ -40,10 +39,12 @@ libabc_la_SOURCES = \
   ./solver/FormulaOptimizer.h \
   ./solver/ConstraintSorter.cpp \
   ./solver/ConstraintSorter.h \
-  ./solver/PreImageComputer.cpp \
-  ./solver/PreImageComputer.h \
-  ./solver/PostImageComputer.cpp \
-	./solver/PostImageComputer.h \
+  ./solver/VariableValueComputer.cpp \
+  ./solver/VariableValueComputer.h \
+  ./solver/ArithmeticFormulaGenerator.cpp \
+  ./solver/ArithmeticFormulaGenerator.h \
+  ./solver/ConstraintSolver.cpp \
+	./solver/ConstraintSolver.h \
 	Driver.cpp \
 	Driver.h $(ABC_JNI_SORUCE_FILES)
 

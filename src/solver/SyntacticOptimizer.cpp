@@ -427,7 +427,10 @@ void SyntacticOptimizer::visitMinus(Minus_ptr minus_term) {
     DVLOG(VLOG_LEVEL) << "Transforming operation: (- l (- r) to (+ l r)";
     callback = [minus_term](Term_ptr& term) mutable {
       UMinus_ptr child_u_minus = dynamic_cast<UMinus_ptr>(minus_term->right_term);
-      term = new Plus(minus_term->left_term, child_u_minus->term);
+      TermList_ptr term_list = new TermList();
+      term_list->push_back(minus_term->left_term);
+      term_list->push_back(child_u_minus->term);
+      term = new Plus(term_list);
       minus_term->left_term = nullptr;
       child_u_minus->term = nullptr;
       delete minus_term;
@@ -436,41 +439,127 @@ void SyntacticOptimizer::visitMinus(Minus_ptr minus_term) {
 }
 
 void SyntacticOptimizer::visitPlus(Plus_ptr plus_term) {
-  visit_and_callback(plus_term->left_term);
-  visit_and_callback(plus_term->right_term);
+  for (auto& term_ptr : *(plus_term->term_list)) {
+    visit_and_callback(term_ptr);
+  }
 
-  if (Term::Type::TERMCONSTANT == plus_term->left_term->getType()
-          and Term::Type::TERMCONSTANT == plus_term->right_term->getType()) {
-    DVLOG(VLOG_LEVEL) << "Transforming operation: (+ lc rc) to lc+rc";
-    callback = [this, plus_term](Term_ptr& term) mutable {
-      TermConstant_ptr left_constant = dynamic_cast<TermConstant_ptr>(plus_term->left_term);
-      TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(plus_term->right_term);
-      int left_value = std::stoi(left_constant->getValue());
-      int right_value = std::stoi(right_constant->getValue());
-      int result = left_value + right_value;
-      term = this->generate_term_constant(std::to_string(result),Primitive::Type::NUMERAL);
+  DVLOG(VLOG_LEVEL) << "Optimize operation: '" << *plus_term << "'";
+
+  int constant_value = 0;
+  int pos = 0;
+  for (auto iter = plus_term->term_list->begin(); iter != plus_term->term_list->end();) {
+    if (Term::Type::PLUS == (*iter)->getType()) {
+      Plus_ptr sub_plus_term = dynamic_cast<Plus_ptr>(*iter);
+      plus_term->term_list->erase(iter);
+      plus_term->term_list->insert(iter, sub_plus_term->term_list->begin(), sub_plus_term->term_list->end());
+      sub_plus_term->term_list->clear();
+      delete sub_plus_term;
+      iter = plus_term->term_list->begin() + pos; // insertion invalidates iter, reset it
+      continue;
+    } else if(Term::Type::TERMCONSTANT == (*iter)->getType()) {
+      TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter);
+      std::string value = term_constant->getValue();
+      constant_value += std::stoi(value);
+      delete term_constant; // deallocate
+      plus_term->term_list->erase(iter);
+      continue;
+    } else if (Term::Type::UMINUS == (*iter)->getType()) {
+      UMinus_ptr u_minus = dynamic_cast<UMinus_ptr>(*iter);
+      if (Term::Type::TERMCONSTANT == u_minus->term->getType()) {
+        TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(u_minus->term);
+        std::string value = term_constant->getValue();
+        constant_value -= std::stoi(value);
+        delete u_minus; // deallocate
+        plus_term->term_list->erase(iter);
+        continue;
+      }
+    }
+    iter++; pos++;
+  }
+
+  if (constant_value != 0) {
+    if (constant_value > 0) {
+      plus_term->term_list->insert(plus_term->term_list->begin(), generate_term_constant(std::to_string(constant_value), Primitive::Type::NUMERAL));
+    } else {
+      UMinus_ptr u_minus = new UMinus(generate_term_constant(std::to_string(-constant_value), Primitive::Type::NUMERAL));
+      plus_term->term_list->insert(plus_term->term_list->begin(), u_minus);
+    }
+  } else if (plus_term->term_list->size() == 0) { // constant is the only term, add it to result
+    plus_term->term_list->push_back(generate_term_constant(std::to_string(constant_value), Primitive::Type::NUMERAL));
+  } // else constant value is zero, do not need to add it
+
+  if (plus_term->term_list->size() == 1) {
+    callback = [plus_term] (Term_ptr& term) mutable {
+      term = plus_term->term_list->front();
+      plus_term->term_list->clear();
       delete plus_term;
     };
-  } else if (Term::Type::TERMCONSTANT == plus_term->right_term->getType()) {
-    TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(plus_term->right_term);
-    if (term_constant->getValue() == "0") {
-      DVLOG(VLOG_LEVEL) << "Transforming operation: (+ l 0) to l";
-      callback = [plus_term](Term_ptr& term) mutable {
-        term = plus_term->left_term;
-        plus_term->left_term = nullptr;
-        delete plus_term;
-      };
+  }
+}
+
+void SyntacticOptimizer::visitTimes(Times_ptr times_term) {
+  for (auto& term_ptr : *(times_term->term_list)) {
+    visit_and_callback(term_ptr);
+  }
+
+  DVLOG(VLOG_LEVEL) << "Optimize operation: '" << *times_term << "'";
+
+  int constant_value = 1;
+  int pos = 0;
+  for (auto iter = times_term->term_list->begin(); iter != times_term->term_list->end();) {
+    if (Term::Type::TIMES == (*iter)->getType()) {
+      Plus_ptr sub_plus_term = dynamic_cast<Plus_ptr>(*iter);
+      times_term->term_list->erase(iter);
+      times_term->term_list->insert(iter, sub_plus_term->term_list->begin(), sub_plus_term->term_list->end());
+      sub_plus_term->term_list->clear();
+      delete sub_plus_term;
+      iter = times_term->term_list->begin() + pos; // insertion invalidates iter, reset it
+      continue;
+    } else if(Term::Type::TERMCONSTANT == (*iter)->getType()) {
+      TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter);
+      std::string value = term_constant->getValue();
+      constant_value *= std::stoi(value);
+      delete term_constant; // deallocate
+      times_term->term_list->erase(iter);
+      continue;
+    } else if (Term::Type::UMINUS == (*iter)->getType()) {
+      UMinus_ptr u_minus = dynamic_cast<UMinus_ptr>(*iter);
+      if (Term::Type::TERMCONSTANT == u_minus->term->getType()) {
+        TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(u_minus->term);
+        std::string value = term_constant->getValue();
+        constant_value *= -std::stoi(value);
+        delete u_minus; // deallocate
+        times_term->term_list->erase(iter);
+        continue;
+      }
     }
-  } else if (Term::Type::TERMCONSTANT == plus_term->left_term->getType()) {
-    TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(plus_term->left_term);
-    if (term_constant->getValue() == "0") {
-      DVLOG(VLOG_LEVEL) << "Transforming operation: (+ 0 r) to r";
-      callback = [plus_term](Term_ptr& term) mutable {
-        term = plus_term->right_term;
-        plus_term->right_term = nullptr;
-        delete plus_term;
-      };
+    iter++; pos++;
+    if (constant_value == 0) {
+      break;
     }
+  }
+
+
+  if (constant_value != 1 and constant_value != 0) {
+    if (constant_value > 0) {
+      times_term->term_list->insert(times_term->term_list->begin(), generate_term_constant(std::to_string(constant_value), Primitive::Type::NUMERAL));
+    } else {
+      UMinus_ptr u_minus = new UMinus(generate_term_constant(std::to_string(-constant_value), Primitive::Type::NUMERAL));
+      times_term->term_list->insert(times_term->term_list->begin(), u_minus);
+    }
+  } else if (times_term->term_list->size() == 0) { // constant is the only term, add it to result
+    times_term->term_list->push_back(generate_term_constant(std::to_string(constant_value), Primitive::Type::NUMERAL));
+  } else if (constant_value == 0) { // make it zero
+    times_term->term_list->clear();
+    times_term->term_list->push_back(generate_term_constant("0", Primitive::Type::NUMERAL));
+  } // else constant value is 1, do not need to add it
+
+  if (times_term->term_list->size() == 1) {
+    callback = [times_term] (Term_ptr& term) mutable {
+      term = times_term->term_list->front();
+      times_term->term_list->clear();
+      delete times_term;
+    };
   }
 }
 
@@ -618,7 +707,7 @@ void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {
     visit_and_callback(term_ptr);
   }
 
-  DVLOG(VLOG_LEVEL) << "Optimize operation: '" << *concat_term;
+  DVLOG(VLOG_LEVEL) << "Optimize operation: '" << *concat_term << "'";
   TermConstant_ptr initial_term_constant = nullptr;
   int pos = 0;
   for (auto iter = concat_term->term_list->begin(); iter != concat_term->term_list->end();) {

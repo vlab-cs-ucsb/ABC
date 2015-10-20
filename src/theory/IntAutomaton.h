@@ -63,6 +63,7 @@ public:
 
   IntAutomaton_ptr plus(int value);
   IntAutomaton_ptr plus(IntAutomaton_ptr other_auto);
+  IntAutomaton_ptr times(int value);
   IntAutomaton_ptr minus(int value);
   IntAutomaton_ptr minus(IntAutomaton_ptr other_auto);
   IntAutomaton_ptr substractFrom(int value);

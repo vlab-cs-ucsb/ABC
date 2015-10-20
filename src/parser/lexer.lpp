@@ -62,6 +62,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "not"               { return Parser::make_NOT             (loc);  }
 "-"                 { return Parser::make_MINUS           (loc);  }
 "+"                 { return Parser::make_PLUS            (loc);  }
+"*"                 { return Parser::make_STAR            (loc);  }
 "="                 { return Parser::make_EQ              (loc);  }
 "!="                { return Parser::make_NOTEQ           (loc);  }
 ">"                 { return Parser::make_GT              (loc);  }

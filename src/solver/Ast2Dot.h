@@ -47,6 +47,7 @@ public:
   void visitUMinus(SMT::UMinus_ptr);
   void visitMinus(SMT::Minus_ptr);
   void visitPlus(SMT::Plus_ptr);
+  void visitTimes(SMT::Times_ptr);
   void visitEq(SMT::Eq_ptr);
   void visitNotEq(SMT::NotEq_ptr);
   void visitGt(SMT::Gt_ptr);

@@ -2221,30 +2221,6 @@ std::string StringAutomaton::getAnAcceptingString() {
   return ss.str();
 }
 
-
-char* StringAutomaton::binaryFormat(unsigned long number, int bit_length) {
-  char* binary_str = nullptr;
-  int index = bit_length;
-  unsigned long subject = number;
-
-  // no extra bit
-  binary_str = new char[bit_length + 1];
-  binary_str[bit_length] = '\0';
-
-  for (index--; index >= 0; index--) {
-    if (subject & 1) {
-      binary_str[index] = '1';
-    } else {
-      binary_str[index] = '0';
-    }
-    if (subject > 0) {
-      subject >>= 1;
-    }
-  }
-
-  return binary_str;
-}
-
 StringAutomaton_ptr StringAutomaton::dfaSharpStringWithExtraBit(int num_of_variables, int* variable_indices) {
   DFA_ptr sharp_string_dfa = nullptr;
   StringAutomaton_ptr sharp_string_extra_bit = nullptr;

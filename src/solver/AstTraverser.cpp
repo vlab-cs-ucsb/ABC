@@ -191,12 +191,25 @@ void AstTraverser::visitMinus(SMT::Minus_ptr minus_term) {
 
 void AstTraverser::visitPlus(SMT::Plus_ptr plus_term) {
   if (term_pre_callback and term_pre_callback(plus_term)) {
-    visit(plus_term->left_term);
-    visit(plus_term->right_term);
+    for (auto& term : *plus_term->term_list) {
+      visit(term);
+    }
   }
 
   if (term_post_callback) {
     term_post_callback(plus_term);
+  }
+}
+
+void AstTraverser::visitTimes(SMT::Times_ptr times_term) {
+  if (term_pre_callback and term_pre_callback(times_term)) {
+    for (auto& term : *times_term->term_list) {
+      visit(term);
+    }
+  }
+
+  if (term_post_callback) {
+    term_post_callback(times_term);
   }
 }
 

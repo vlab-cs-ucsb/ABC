@@ -30,7 +30,7 @@
 //#include <mona/dfa.h>
 #include <stranger/stranger.h>
 #include <stranger/stranger_lib_internal.h>
-#include "../utils/RegularExpression.h"
+#include "utils/RegularExpression.h"
 #include "Graph.h"
 #include "DAGraph.h"
 
@@ -86,9 +86,10 @@ public:
 
   void toDotAscii(bool print_sink = false, std::ostream& out = std::cout);
   // TODO merge toDot methods into one with options
-  void toDot();
+  void toDot(std::ostream& out = std::cout);
   void printBDD(std::ostream& out = std::cout);
   int inspectAuto(bool print_sink = false);
+  int inspectBDD();
 
   friend std::ostream& operator<<(std::ostream& os, const Automaton& automaton);
 protected:
@@ -101,7 +102,7 @@ protected:
 
   static int* getIndices(int num_of_variables, int extra_num_of_variables = 0);
   static unsigned* getIndices(unsigned num_of_variables, unsigned extra_num_of_variables = 0);
-
+  static char* binaryFormat(unsigned long n, int bit_length);
   static std::vector<char> getReservedWord(char last_char, int length, bool extra_bit = false);
   void minimize();
   void project(unsigned num_of_variables);

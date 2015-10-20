@@ -14,7 +14,7 @@
 #include <string>
 #include <cstdlib>
 
-#include "../smt/ast.h"
+#include "smt/ast.h"
   namespace Vlab  {
     namespace SMT {
       class Scanner;
@@ -63,6 +63,7 @@
   NOT                  "not"
   MINUS                "-"
   PLUS                 "+"
+  STAR                 "*"
   EQ                   "="
   NOTEQ                "!="
   GT                   ">"
@@ -238,7 +239,8 @@ term                  :
                       | "(" "not" term ")"                                                { $$ = new Not($3); }
                       | "(" "-" term ")"                                                  { $$ = new UMinus($3); }
                       | "(" "-" term term ")"                                             { $$ = new Minus($3, $4); }
-                      | "(" "+" term term ")"                                             { $$ = new Plus($3, $4); }
+                      | "(" "+" term_list_ ")"                                            { $$ = new Plus($3); }
+                      | "(" "*" term_list_ ")"                                            { $$ = new Times($3); }
                       | "(" "=" term term ")"                                             { $$ = new Eq($3, $4); }
                       | "(" "!=" term term ")"                                            { $$ = new NotEq($3, $4); }
                       | "(" ">" term term ")"                                             { $$ = new Gt($3, $4); }
@@ -278,26 +280,26 @@ term                  :
                       | qual_identifier                                                   { $$ = $1; }
                       | term_constant                                                     { $$ = $1; }
                       ;
-                      
+
 sorted_var_list       :
                         sorted_var_list_                                                  { $$ = $1; }
                       | /* empty */                                                       { $$ = new SortedVarList(); }
                       ;
-                                            
+
 sorted_var_list_      :
                         sorted_var_list_ sorted_var                                       { $1 -> push_back($2); $$ = $1; }
                       | sorted_var                                                        { $$ = new SortedVarList(); $$ -> push_back($1); }
                       ;
-                      
+
 sorted_var            :
                         "(" SYMBOL sort ")"                                               { $$ = new SortedVar(new Primitive($2, Primitive::Type::SYMBOL), $3); }
                       ;
-                      
+
 var_binding_list_     :
                         var_binding_list_ var_binding                                     { $1 -> push_back($2); $$ = $1; }
                       | var_binding                                                       { $$ = new VarBindingList(); $$ -> push_back($1); }
                       ;
-                      
+
 var_binding           :
                         "(" SYMBOL  term ")"                                               { $$ = new VarBinding(new Primitive($2, Primitive::Type::SYMBOL), $3); }
                       ;
@@ -306,7 +308,7 @@ qual_identifier       :
                         "(" "as" identifier sort ")"                                      { $$ = new AsQualIdentifier($3, $4); }
                       | identifier                                                        { $$ = new QualIdentifier($1); }
                       ;
-                      
+
 term_constant         :
                         spec_constant                                                     { $$ = new TermConstant($1); }  
                       ;
@@ -321,7 +323,7 @@ attribute             :
                         KEYWORD attribute_value                                           { $$ = new Attribute(); }
                       | KEYWORD                                                           { $$ = new Attribute(); }
                       ;
-                      
+
 attribute_value       :
                         "(" s_expr_list ")"
                       | SYMBOL              { std::cout << $1 << std::endl; }
@@ -339,26 +341,25 @@ sort_list_            :
                         sort_list_ sort                                                   { $1->push_back($2); $$ = $1; }
                       | sort                                                              { $$ = new SortList(); $$->push_back($1); }
                       ; 
-                      
+
 sort                  :
                         "(" identifier sort_list_ ")"                                     { $$ = new Sort($2, $3); }
                       | identifier                                                        { $$ = new Sort($1); }
                       | t_variable                                                          { $$ = new Sort($1); } 
                       ;
-                      
+
 t_variable              :
                         TBOOL                                                             { $$ = new TBool(); }
                       | TINT                                                              { $$ = new TInt(); }
                       | TSTRING                                                           { $$ = new TString(); }
                       ;
-                                        
 
 /* Identifiers */
 identifier            :
                         "(" "_" SYMBOL numeral_list_ ")"                                  { $$ = new Identifier(new Primitive("_", Primitive::Type::SYMBOL), new Primitive($3, Primitive::Type::SYMBOL), $4); }
                       | SYMBOL                                                            { $$ = new Identifier(new Primitive($1, Primitive::Type::SYMBOL)); } 
                       ;
-                      
+
 numeral_list_         :
                         numeral_list_ NUMERAL                                             { $1 -> push_back(new Primitive($2, Primitive::Type::SYMBOL)); $$ = $1; }
                       | NUMERAL                                                           { $$ = new NumeralList(); $$ -> push_back(new Primitive($1, Primitive::Type::SYMBOL)); }
@@ -374,7 +375,7 @@ s_expr_list_          :
                         s_expr_list_ s_expr {  }
                       | s_expr              {  }
                       ;
-                      
+
 s_expr                :
                         "(" s_expr_list ")" {  }
                       | KEYWORD             {  }

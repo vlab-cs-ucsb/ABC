@@ -16,15 +16,16 @@
 #include <glog/logging.h>
 #include "solver/Ast2Dot.h"
 //#include "Statistics.h"
+#include "parser/Scanner.h"
+#include "parser/parser.hpp"
+#include "solver/ConstraintSolver.h"
 #include "solver/SymbolTable.h"
 #include "solver/Initializer.h"
 #include "solver/SyntacticOptimizer.h"
 #include "solver/VariableOptimizer.h"
 #include "solver/FormulaOptimizer.h"
 #include "solver/ConstraintSorter.h"
-#include "solver/PostImageComputer.h"
 #include "solver/SyntacticProcessor.h"
-#include "Scanner.h"
 
 namespace Vlab {
 

@@ -1,33 +1,34 @@
 /*
- * ConstraintSorter.h
+ * ArithmeticFormulaGenerator.h
  *
- *  Created on: May 18, 2015
+ *  Created on: Oct 19, 2015
  *      Author: baki
+ *   Copyright: Copyright 2015 The ABC Authors. All rights reserved. 
+ *              Use of this source code is governed license that can
+ *              be found in the COPYING file.
  */
 
-#ifndef SOLVER_CONSTRAINTSORTER_H_
-#define SOLVER_CONSTRAINTSORTER_H_
+#ifndef SOLVER_ARITHMETICFORMULAGENERATOR_H_
+#define SOLVER_ARITHMETICFORMULAGENERATOR_H_
 
-#include <iostream>
-#include <sstream>
 #include <vector>
-#include <queue>
-#include <stack>
 #include <map>
-#include <algorithm>
+#include <sstream>
 
 #include <glog/logging.h>
 #include "smt/ast.h"
 #include "SymbolTable.h"
-#include "Counter.h"
+#include "theory/ArithmeticFormula.h"
+#include "Ast2Dot.h"
 
 namespace Vlab {
 namespace Solver {
-// TODO fix sorting algorithm based on latest updates
-class ConstraintSorter: public SMT::Visitor {
+
+class ArithmeticFormulaGenerator: public SMT::Visitor {
 public:
-  ConstraintSorter(SMT::Script_ptr, SymbolTable_ptr);
-  virtual ~ConstraintSorter();
+  ArithmeticFormulaGenerator(SMT::Script_ptr, SymbolTable_ptr);
+  virtual ~ArithmeticFormulaGenerator();
+
   void start();
   void end();
 
@@ -91,73 +92,19 @@ public:
   void visitIdentifier(SMT::Identifier_ptr);
   void visitPrimitive(SMT::Primitive_ptr);
   void visitVariable(SMT::Variable_ptr);
-protected:
-  class VariableNode;
-  class TermNode;
-  typedef VariableNode* VariableNode_ptr;
-  typedef TermNode* TermNode_ptr;
 
-  VariableNode_ptr get_variable_node(SMT::Variable_ptr);
-  TermNode_ptr process_child_nodes(TermNode_ptr, TermNode_ptr);
-  void sort_terms(std::vector<TermNode_ptr>& term_list);
+  Theory::ArithmeticFormula_ptr getTermFormula(SMT::Term_ptr term);
+  void clearTermFormulas();
+protected:
+  bool setTermFormula(SMT::Term_ptr term, Theory::ArithmeticFormula_ptr formula);
+  void deleteTermFormula(SMT::Term_ptr);
+  void addArithmeticVariable(std::string name);
 
   SMT::Script_ptr root;
   SymbolTable_ptr symbol_table;
-  TermNode_ptr term_node;
-
-  std::vector<TermNode_ptr> dependency_node_list;
-  std::map<SMT::Variable_ptr, VariableNode_ptr> variable_nodes;
-
-  class TermNode {
-  public:
-    TermNode();
-    TermNode(SMT::Term_ptr node);
-    ~TermNode();
-    std::string str();
-
-    void setNode(SMT::Term_ptr node);
-    SMT::Term_ptr getNode();
-    void addVariableNode(VariableNode_ptr variable, bool is_left_side);
-    void addVariableNodes(std::vector<VariableNode_ptr>&, bool is_left_side);
-    std::vector<VariableNode_ptr>& getLeftNodes();
-    std::vector<VariableNode_ptr>& getRightNodes();
-    std::vector<VariableNode_ptr>& getAllNodes();
-    void shiftToLeft();
-    void shiftToRight();
-    void addMeToChildVariableNodes();
-    int numOfTotalVars();
-    int numOfLeftVars();
-    int numOfRightVars();
-    void updateSymbolicVariableInfo();
-    bool hasSymbolicVarOnLeft();
-    bool hasSymbolicVarOnRight();
-    bool hasSymbolicVar();
-  protected:
-    SMT::Term_ptr _node;
-    bool _has_symbolic_var_on_left;
-    bool _has_symbolic_var_on_right;
-    std::vector<SMT::Term_ptr> _next_node_list;
-    std::vector<VariableNode_ptr> _all_child_node_list;
-    std::vector<VariableNode_ptr> _left_child_node_list;
-    std::vector<VariableNode_ptr> _right_child_node_list;
-  private:
-    void merge_vectors(std::vector<VariableNode_ptr>&, std::vector<VariableNode_ptr>&);
-  };
-
-  class VariableNode {
-  public:
-    VariableNode(SMT::Variable_ptr variable);
-    ~VariableNode();
-    std::string str();
-
-    SMT::Variable_ptr getVariable();
-    void addTermNode(TermNode_ptr node, bool is_left_side);
-  protected:
-    SMT::Variable_ptr variable;
-    std::vector<TermNode_ptr> all_var_appearance_list;
-    std::vector<TermNode_ptr> left_side_var_appearance_list;
-    std::vector<TermNode_ptr> right_side_var_appearance_list;
-  };
+  std::map<std::string, int> coeff_index_map;
+  std::vector<int> coefficients;
+  std::map<SMT::Term_ptr, Theory::ArithmeticFormula_ptr> formulas;
 
 private:
   static const int VLOG_LEVEL;
@@ -166,4 +113,4 @@ private:
 } /* namespace Solver */
 } /* namespace Vlab */
 
-#endif /* SOLVER_CONSTRAINTSORTER_H_ */
+#endif /* SOLVER_ARITHMETICFORMULAGENERATOR_H_ */

@@ -272,6 +272,7 @@ const std::string Term::Name::NOT = "not";
 const std::string Term::Name::UMINUS = "uminus";
 const std::string Term::Name::MINUS = "-";
 const std::string Term::Name::PLUS = "+";
+const std::string Term::Name::TIMES = "*";
 const std::string Term::Name::EQ = "=";
 const std::string Term::Name::NOTEQ = "!=";
 const std::string Term::Name::GT = ">";
@@ -349,6 +350,8 @@ std::string Term::str() const {
     return Term::Name::MINUS;
   case Term::Type::PLUS:
     return Term::Name::PLUS;
+  case Term::Type::TIMES:
+    return Term::Name::TIMES;
   case Term::Type::EQ:
     return Term::Name::EQ;
   case Term::Type::NOTEQ:
@@ -686,28 +689,54 @@ void Minus::visit_children(Visitor_ptr v) {
   v->visit(right_term);
 }
 
-Plus::Plus(Term_ptr left_term, Term_ptr right_term)
-        : Term(Term::Type::PLUS), left_term(left_term), right_term(right_term) {
+Plus::Plus(TermList_ptr term_list)
+        : Term(Term::Type::PLUS), term_list(term_list) {
 }
 Plus::Plus(const Plus& other)
         : Term(other.type) {
-  left_term = other.left_term->clone();
-  right_term = other.right_term->clone();
+  term_list = new TermList();
+  for (auto& term : *(other.term_list)) {
+    term_list->push_back(term->clone());
+  }
 }
 Plus_ptr Plus::clone() const {
   return new Plus(*this);
 }
 Plus::~Plus() {
-  delete left_term;
-  delete right_term;
+  deallocate_list(term_list);
+  delete term_list;
 }
 
 void Plus::accept(Visitor_ptr v) {
   v->visitPlus(this);
 }
 void Plus::visit_children(Visitor_ptr v) {
-  v->visit(left_term);
-  v->visit(right_term);
+  v->visit_list(term_list);
+}
+
+Times::Times(TermList_ptr term_list)
+        : Term(Term::Type::TIMES), term_list(term_list) {
+}
+Times::Times(const Times& other)
+        : Term(other.type) {
+  term_list = new TermList();
+  for (auto& term : *(other.term_list)) {
+    term_list->push_back(term->clone());
+  }
+}
+Times_ptr Times::clone() const {
+  return new Times(*this);
+}
+Times::~Times() {
+  deallocate_list(term_list);
+  delete term_list;
+}
+
+void Times::accept(Visitor_ptr v) {
+  v->visitTimes(this);
+}
+void Times::visit_children(Visitor_ptr v) {
+  v->visit_list(term_list);
 }
 
 Eq::Eq(Term_ptr left_term, Term_ptr right_term)

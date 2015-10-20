@@ -19,7 +19,7 @@
 #include <queue>
 
 #include <glog/logging.h>
-#include "../utils/RegularExpression.h"
+#include "utils/RegularExpression.h"
 #include "Graph.h"
 #include "DAGraph.h"
 #include "Automaton.h"
@@ -146,7 +146,7 @@ public:
 protected:
 
   static StringAutomaton_ptr makeRegexAuto(Util::RegularExpression_ptr regular_expression);
-  static char* binaryFormat(unsigned long n, int bit_length);
+
   // TODO figure out better name
   static StringAutomaton_ptr dfaSharpStringWithExtraBit(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
       int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);

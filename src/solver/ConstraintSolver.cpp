@@ -1,47 +1,48 @@
 /*
- * PostImageComputer.cpp
+ * ConstraintSolver.cpp
  *
  *  Created on: Jun 24, 2015
  *      Author: baki
  */
 
-#include "PostImageComputer.h"
+#include "ConstraintSolver.h"
 
 namespace Vlab {
 namespace Solver {
 
 using namespace SMT;
+using namespace Theory;
 
-const int PostImageComputer::VLOG_LEVEL = 11;
+const int ConstraintSolver::VLOG_LEVEL = 11;
 
-PostImageComputer::PostImageComputer(Script_ptr script,
+ConstraintSolver::ConstraintSolver(Script_ptr script,
     SymbolTable_ptr symbol_table) :
-    root(script), symbol_table(symbol_table) {
+    root(script), symbol_table(symbol_table), arithmetic_formula_generator(script, symbol_table) {
 }
 
-PostImageComputer::~PostImageComputer() {
+ConstraintSolver::~ConstraintSolver() {
 }
 
-void PostImageComputer::start() {
+void ConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "start";
   visit(root);
   end();
 }
 
-void PostImageComputer::end() {
+void ConstraintSolver::end() {
 }
 
-void PostImageComputer::visitScript(Script_ptr script) {
+void ConstraintSolver::visitScript(Script_ptr script) {
   symbol_table->push_scope(script);
   visit_children_of(script);
   symbol_table->pop_scope(); // global scope, it is reachable via script pointer all the time
 }
 
-void PostImageComputer::visitCommand(Command_ptr command) {
+void ConstraintSolver::visitCommand(Command_ptr command) {
   LOG(ERROR)<< "'" << *command<< "' is not expected.";
 }
 
-void PostImageComputer::visitAssert(Assert_ptr assert_command) {
+void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
   visit_children_of(assert_command);
   Value_ptr result = getTermValue(assert_command->term);
   bool is_satisfiable = result->isSatisfiable();
@@ -56,25 +57,25 @@ void PostImageComputer::visitAssert(Assert_ptr assert_command) {
   clearTermValues();
 }
 
-void PostImageComputer::visitTerm(Term_ptr term) {
+void ConstraintSolver::visitTerm(Term_ptr term) {
 }
 
-void PostImageComputer::visitExclamation(Exclamation_ptr exclamation_term) {
+void ConstraintSolver::visitExclamation(Exclamation_ptr exclamation_term) {
 }
 
-void PostImageComputer::visitExists(Exists_ptr exists_term) {
+void ConstraintSolver::visitExists(Exists_ptr exists_term) {
 }
 
-void PostImageComputer::visitForAll(ForAll_ptr for_all_term) {
+void ConstraintSolver::visitForAll(ForAll_ptr for_all_term) {
 }
 
-void PostImageComputer::visitLet(Let_ptr let_term) {
+void ConstraintSolver::visitLet(Let_ptr let_term) {
 }
 
 /**
  * TODO Add a cache in case there are multiple ands
  */
-void PostImageComputer::visitAnd(And_ptr and_term) {
+void ConstraintSolver::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
 
   bool is_satisfiable = true;
@@ -97,7 +98,7 @@ void PostImageComputer::visitAnd(And_ptr and_term) {
   setTermValue(and_term, result);
 }
 
-void PostImageComputer::visitOr(Or_ptr or_term) {
+void ConstraintSolver::visitOr(Or_ptr or_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *or_term;
 
   bool is_satisfiable = false;
@@ -129,7 +130,15 @@ void PostImageComputer::visitOr(Or_ptr or_term) {
   setTermValue(or_term, result);
 }
 
-void PostImageComputer::visitNot(Not_ptr not_term) {
+void ConstraintSolver::visitNot(Not_ptr not_term) {
+  arithmetic_formula_generator.visitNot(not_term);
+  ArithmeticFormula_ptr formula = arithmetic_formula_generator.getTermFormula(not_term);
+  if (formula != nullptr) {
+    DVLOG(VLOG_LEVEL) << "Linear Arithmetic Equation: " << *formula;
+    LOG(FATAL) << "End of arithmetic solver";
+    arithmetic_formula_generator.clearTermFormulas();
+  }
+
   __visit_children_of(not_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *not_term;
 
@@ -177,7 +186,7 @@ void PostImageComputer::visitNot(Not_ptr not_term) {
   setTermValue(not_term, result);
 }
 
-void PostImageComputer::visitUMinus(UMinus_ptr u_minus_term) {
+void ConstraintSolver::visitUMinus(UMinus_ptr u_minus_term) {
   __visit_children_of(u_minus_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *u_minus_term;
 
@@ -213,7 +222,7 @@ void PostImageComputer::visitUMinus(UMinus_ptr u_minus_term) {
   setTermValue(u_minus_term, result);
 }
 
-void PostImageComputer::visitMinus(Minus_ptr minus_term) {
+void ConstraintSolver::visitMinus(Minus_ptr minus_term) {
   __visit_children_of(minus_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *minus_term;
 
@@ -225,19 +234,61 @@ void PostImageComputer::visitMinus(Minus_ptr minus_term) {
   setTermValue(minus_term, result);
 }
 
-void PostImageComputer::visitPlus(Plus_ptr plus_term) {
-  __visit_children_of(plus_term);
-  DVLOG(VLOG_LEVEL) << "visit: " << *plus_term;
+void ConstraintSolver::visitPlus(Plus_ptr plus_term) {
+  DVLOG(VLOG_LEVEL) << "visit: " << *plus_term << " ...";
 
-  Value_ptr result = nullptr, param_left = getTermValue(plus_term->left_term),
-      param_right = getTermValue(plus_term->right_term);
-
-  result = param_left->plus(param_right);
-
+  Value_ptr result = nullptr, plus_value = nullptr, param = nullptr;
+  path_trace.push_back(plus_term);
+  for (auto& term_ptr : *(plus_term->term_list)) {
+    visit(term_ptr);
+    param = getTermValue(term_ptr);
+    if (result == nullptr) {
+      result = param->clone();
+    } else {
+      plus_value = result->plus(param);
+      delete result;
+      result = plus_value;
+    }
+  }
+  path_trace.pop_back();
   setTermValue(plus_term, result);
 }
 
-void PostImageComputer::visitEq(Eq_ptr eq_term) {
+void ConstraintSolver::visitTimes(Times_ptr times_term) {
+  DVLOG(VLOG_LEVEL) << "visit: " << *times_term << " ...";
+
+  Value_ptr result = nullptr, times_value = nullptr, param = nullptr;
+  path_trace.push_back(times_term);
+  for (auto& term_ptr : *(times_term->term_list)) {
+    visit(term_ptr);
+    param = getTermValue(term_ptr);
+    if (result == nullptr) {
+      result = param->clone();
+    } else {
+      times_value = result->times(param);
+      delete result;
+      result = times_value;
+    }
+  }
+  path_trace.pop_back();
+  setTermValue(times_term, result);
+}
+
+void ConstraintSolver::visitEq(Eq_ptr eq_term) {
+
+  arithmetic_formula_generator.visitEq(eq_term);
+  ArithmeticFormula_ptr formula = arithmetic_formula_generator.getTermFormula(eq_term);
+  if (formula != nullptr) {
+    DVLOG(VLOG_LEVEL) << "Linear Arithmetic Equation: " << *formula;
+
+    BinaryIntAutomaton_ptr binary_int_auto = BinaryIntAutomaton::makeAutomaton(formula);
+    binary_int_auto->inspectBDD();
+    binary_int_auto->inspectAuto();
+
+    LOG(FATAL) << "End of arithmetic solver";
+    arithmetic_formula_generator.clearTermFormulas();
+  }
+
   __visit_children_of(eq_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *eq_term;
 
@@ -261,7 +312,20 @@ void PostImageComputer::visitEq(Eq_ptr eq_term) {
   setTermValue(eq_term, result);
 }
 
-void PostImageComputer::visitNotEq(NotEq_ptr not_eq_term) {
+void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
+  arithmetic_formula_generator.visitNotEq(not_eq_term);
+  ArithmeticFormula_ptr formula = arithmetic_formula_generator.getTermFormula(not_eq_term);
+  if (formula != nullptr) {
+    DVLOG(VLOG_LEVEL) << "Linear arithmetic equation: " << *formula;
+
+    BinaryIntAutomaton_ptr binary_int_auto = BinaryIntAutomaton::makeAutomaton(formula);
+    binary_int_auto->inspectBDD();
+    binary_int_auto->inspectAuto();
+
+    LOG(FATAL) << "End of arithmetic solver";
+    arithmetic_formula_generator.clearTermFormulas();
+  }
+
   __visit_children_of(not_eq_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *not_eq_term;
 
@@ -293,7 +357,20 @@ void PostImageComputer::visitNotEq(NotEq_ptr not_eq_term) {
   setTermValue(not_eq_term, result);
 }
 
-void PostImageComputer::visitGt(Gt_ptr gt_term) {
+void ConstraintSolver::visitGt(Gt_ptr gt_term) {
+  arithmetic_formula_generator.visitGt(gt_term);
+  ArithmeticFormula_ptr formula = arithmetic_formula_generator.getTermFormula(gt_term);
+  if (formula != nullptr) {
+    DVLOG(VLOG_LEVEL) << "Linear arithmetic equation: " << *formula;
+
+    BinaryIntAutomaton_ptr binary_int_auto = BinaryIntAutomaton::makeAutomaton(formula);
+    binary_int_auto->inspectBDD();
+    binary_int_auto->inspectAuto();
+
+    LOG(FATAL) << "End of arithmetic solver";
+    arithmetic_formula_generator.clearTermFormulas();
+  }
+
   __visit_children_of(gt_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *gt_term;
 
@@ -329,7 +406,20 @@ void PostImageComputer::visitGt(Gt_ptr gt_term) {
   setTermValue(gt_term, result);
 }
 
-void PostImageComputer::visitGe(Ge_ptr ge_term) {
+void ConstraintSolver::visitGe(Ge_ptr ge_term) {
+  arithmetic_formula_generator.visitGe(ge_term);
+  ArithmeticFormula_ptr formula = arithmetic_formula_generator.getTermFormula(ge_term);
+  if (formula != nullptr) {
+    DVLOG(VLOG_LEVEL) << "Linear arithmetic equation: " << *formula;
+
+    BinaryIntAutomaton_ptr binary_int_auto = BinaryIntAutomaton::makeAutomaton(formula);
+    binary_int_auto->inspectBDD();
+    binary_int_auto->inspectAuto();
+
+    LOG(FATAL) << "End of arithmetic solver";
+    arithmetic_formula_generator.clearTermFormulas();
+  }
+
   __visit_children_of(ge_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *ge_term;
 
@@ -365,7 +455,19 @@ void PostImageComputer::visitGe(Ge_ptr ge_term) {
   setTermValue(ge_term, result);
 }
 
-void PostImageComputer::visitLt(Lt_ptr lt_term) {
+void ConstraintSolver::visitLt(Lt_ptr lt_term) {
+  arithmetic_formula_generator.visitLt(lt_term);
+  ArithmeticFormula_ptr formula = arithmetic_formula_generator.getTermFormula(lt_term);
+  if (formula != nullptr) {
+    DVLOG(VLOG_LEVEL) << "Linear arithmetic equation: " << *formula;
+
+    BinaryIntAutomaton_ptr binary_int_auto = BinaryIntAutomaton::makeAutomaton(formula);
+    binary_int_auto->inspectBDD();
+    binary_int_auto->inspectAuto();
+
+    LOG(FATAL) << "End of arithmetic solver";
+    arithmetic_formula_generator.clearTermFormulas();
+  }
   __visit_children_of(lt_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *lt_term;
 
@@ -401,7 +503,19 @@ void PostImageComputer::visitLt(Lt_ptr lt_term) {
   setTermValue(lt_term, result);
 }
 
-void PostImageComputer::visitLe(Le_ptr le_term) {
+void ConstraintSolver::visitLe(Le_ptr le_term) {
+  arithmetic_formula_generator.visitLe(le_term);
+  ArithmeticFormula_ptr formula = arithmetic_formula_generator.getTermFormula(le_term);
+  if (formula != nullptr) {
+    DVLOG(VLOG_LEVEL) << "Linear arithmetic equation: " << *formula;
+
+    BinaryIntAutomaton_ptr binary_int_auto = BinaryIntAutomaton::makeAutomaton(formula);
+    binary_int_auto->inspectBDD();
+    binary_int_auto->inspectAuto();
+
+    LOG(FATAL) << "End of arithmetic solver";
+    arithmetic_formula_generator.clearTermFormulas();
+  }
   __visit_children_of(le_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *le_term;
 
@@ -437,7 +551,7 @@ void PostImageComputer::visitLe(Le_ptr le_term) {
   setTermValue(le_term, result);
 }
 
-void PostImageComputer::visitConcat(Concat_ptr concat_term) {
+void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *concat_term << " ...";
 
   Value_ptr result = nullptr, concat_value = nullptr, param = nullptr;
@@ -457,7 +571,7 @@ void PostImageComputer::visitConcat(Concat_ptr concat_term) {
   setTermValue(concat_term, result);
 }
 
-void PostImageComputer::visitIn(In_ptr in_term) {
+void ConstraintSolver::visitIn(In_ptr in_term) {
   __visit_children_of(in_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *in_term;
 
@@ -481,7 +595,7 @@ void PostImageComputer::visitIn(In_ptr in_term) {
  */
 
 
-void PostImageComputer::visitNotIn(NotIn_ptr not_in_term) {
+void ConstraintSolver::visitNotIn(NotIn_ptr not_in_term) {
   __visit_children_of(not_in_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *not_in_term;
 
@@ -498,7 +612,7 @@ void PostImageComputer::visitNotIn(NotIn_ptr not_in_term) {
   setTermValue(not_in_term, result);
 }
 
-void PostImageComputer::visitLen(Len_ptr len_term) {
+void ConstraintSolver::visitLen(Len_ptr len_term) {
   __visit_children_of(len_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *len_term;
 
@@ -516,7 +630,7 @@ void PostImageComputer::visitLen(Len_ptr len_term) {
   setTermValue(len_term, result);
 }
 
-void PostImageComputer::visitContains(Contains_ptr contains_term) {
+void ConstraintSolver::visitContains(Contains_ptr contains_term) {
   __visit_children_of(contains_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *contains_term;
 
@@ -529,7 +643,7 @@ void PostImageComputer::visitContains(Contains_ptr contains_term) {
   setTermValue(contains_term, result);
 }
 
-void PostImageComputer::visitNotContains(NotContains_ptr not_contains_term) {
+void ConstraintSolver::visitNotContains(NotContains_ptr not_contains_term) {
   __visit_children_of(not_contains_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *not_contains_term;
 
@@ -544,7 +658,7 @@ void PostImageComputer::visitNotContains(NotContains_ptr not_contains_term) {
   setTermValue(not_contains_term, result);
 }
 
-void PostImageComputer::visitBegins(Begins_ptr begins_term) {
+void ConstraintSolver::visitBegins(Begins_ptr begins_term) {
   __visit_children_of(begins_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *begins_term;
 
@@ -557,7 +671,7 @@ void PostImageComputer::visitBegins(Begins_ptr begins_term) {
   setTermValue(begins_term, result);
 }
 
-void PostImageComputer::visitNotBegins(NotBegins_ptr not_begins_term) {
+void ConstraintSolver::visitNotBegins(NotBegins_ptr not_begins_term) {
   __visit_children_of(not_begins_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *not_begins_term;
 
@@ -572,7 +686,7 @@ void PostImageComputer::visitNotBegins(NotBegins_ptr not_begins_term) {
   setTermValue(not_begins_term, result);
 }
 
-void PostImageComputer::visitEnds(Ends_ptr ends_term) {
+void ConstraintSolver::visitEnds(Ends_ptr ends_term) {
   __visit_children_of(ends_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *ends_term;
 
@@ -585,7 +699,7 @@ void PostImageComputer::visitEnds(Ends_ptr ends_term) {
   setTermValue(ends_term, result);
 }
 
-void PostImageComputer::visitNotEnds(NotEnds_ptr not_ends_term) {
+void ConstraintSolver::visitNotEnds(NotEnds_ptr not_ends_term) {
   __visit_children_of(not_ends_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *not_ends_term;
 
@@ -600,7 +714,7 @@ void PostImageComputer::visitNotEnds(NotEnds_ptr not_ends_term) {
   setTermValue(not_ends_term, result);
 }
 
-void PostImageComputer::visitIndexOf(IndexOf_ptr index_of_term) {
+void ConstraintSolver::visitIndexOf(IndexOf_ptr index_of_term) {
   __visit_children_of(index_of_term);
 
   DVLOG(VLOG_LEVEL) << "visit: " << *index_of_term;
@@ -619,7 +733,7 @@ void PostImageComputer::visitIndexOf(IndexOf_ptr index_of_term) {
   setTermValue(index_of_term, result);
 }
 
-void PostImageComputer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
+void ConstraintSolver::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
   __visit_children_of(last_index_of_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *last_index_of_term;
 
@@ -637,7 +751,7 @@ void PostImageComputer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term
   setTermValue(last_index_of_term, result);
 }
 
-void PostImageComputer::visitCharAt(SMT::CharAt_ptr char_at_term) {
+void ConstraintSolver::visitCharAt(SMT::CharAt_ptr char_at_term) {
   __visit_children_of(char_at_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *char_at_term;
 
@@ -650,7 +764,7 @@ void PostImageComputer::visitCharAt(SMT::CharAt_ptr char_at_term) {
   setTermValue(char_at_term, result);
 }
 
-void PostImageComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
+void ConstraintSolver::visitSubString(SMT::SubString_ptr sub_string_term) {
   __visit_children_of(sub_string_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *sub_string_term;
 
@@ -679,7 +793,7 @@ void PostImageComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
   setTermValue(sub_string_term, result);
 }
 
-void PostImageComputer::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_string_first_of_term) {
+void ConstraintSolver::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_string_first_of_term) {
   __visit_children_of(sub_string_first_of_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *sub_string_first_of_term;
 
@@ -695,7 +809,7 @@ void PostImageComputer::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_stri
   setTermValue(sub_string_first_of_term, result);
 }
 
-void PostImageComputer::visitSubStringLastOf(SMT::SubStringLastOf_ptr sub_string_last_of_term) {
+void ConstraintSolver::visitSubStringLastOf(SMT::SubStringLastOf_ptr sub_string_last_of_term) {
   __visit_children_of(sub_string_last_of_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *sub_string_last_of_term;
 
@@ -708,7 +822,7 @@ void PostImageComputer::visitSubStringLastOf(SMT::SubStringLastOf_ptr sub_string
   setTermValue(sub_string_last_of_term, result);
 }
 
-void PostImageComputer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
+void ConstraintSolver::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
   __visit_children_of(to_upper_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *to_upper_term;
 
@@ -720,7 +834,7 @@ void PostImageComputer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
   setTermValue(to_upper_term, result);
 }
 
-void PostImageComputer::visitToLower(SMT::ToLower_ptr to_lower_term) {
+void ConstraintSolver::visitToLower(SMT::ToLower_ptr to_lower_term) {
   __visit_children_of(to_lower_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *to_lower_term;
 
@@ -732,7 +846,7 @@ void PostImageComputer::visitToLower(SMT::ToLower_ptr to_lower_term) {
   setTermValue(to_lower_term, result);
 }
 
-void PostImageComputer::visitTrim(SMT::Trim_ptr trim_term) {
+void ConstraintSolver::visitTrim(SMT::Trim_ptr trim_term) {
   __visit_children_of(trim_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *trim_term;
 
@@ -745,7 +859,7 @@ void PostImageComputer::visitTrim(SMT::Trim_ptr trim_term) {
 
 }
 
-void PostImageComputer::visitReplace(Replace_ptr replace_term) {
+void ConstraintSolver::visitReplace(Replace_ptr replace_term) {
   __visit_children_of(replace_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *replace_term;
 
@@ -761,21 +875,21 @@ void PostImageComputer::visitReplace(Replace_ptr replace_term) {
   setTermValue(replace_term, result);
 }
 
-void PostImageComputer::visitCount(Count_ptr count_term) {
+void ConstraintSolver::visitCount(Count_ptr count_term) {
   __visit_children_of(count_term);
   LOG(FATAL)<< "implement me";
 }
 
-void PostImageComputer::visitIte(Ite_ptr ite_term) {
+void ConstraintSolver::visitIte(Ite_ptr ite_term) {
 }
 
-void PostImageComputer::visitReConcat(ReConcat_ptr re_concat_term) {
+void ConstraintSolver::visitReConcat(ReConcat_ptr re_concat_term) {
 }
 
-void PostImageComputer::visitToRegex(ToRegex_ptr to_regex_term) {
+void ConstraintSolver::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 
-void PostImageComputer::visitUnknownTerm(Unknown_ptr unknown_term) {
+void ConstraintSolver::visitUnknownTerm(Unknown_ptr unknown_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *unknown_term;
   LOG(WARNING) << "operation is not known, over-approximate params: " << *(unknown_term->term);
 
@@ -790,11 +904,11 @@ void PostImageComputer::visitUnknownTerm(Unknown_ptr unknown_term) {
   setTermValue(unknown_term, result);
 }
 
-void PostImageComputer::visitAsQualIdentifier(
+void ConstraintSolver::visitAsQualIdentifier(
     AsQualIdentifier_ptr as_qid_term) {
 }
 
-void PostImageComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
+void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *qi_term;
 
   Variable_ptr variable = symbol_table->getVariable(qi_term->getVarName());
@@ -806,17 +920,18 @@ void PostImageComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   setVariablePath(qi_term);
 }
 
-void PostImageComputer::visitTermConstant(TermConstant_ptr term_constant) {
+void ConstraintSolver::visitTermConstant(TermConstant_ptr term_constant) {
   DVLOG(VLOG_LEVEL) << "visit: " << *term_constant;
 
   Value_ptr result = nullptr;
 
   switch (term_constant->getValueType()) {
-  case SMT::Primitive::Type::BOOL:
+  case SMT::Primitive::Type::BOOL: {
     bool b;
     std::istringstream(term_constant->getValue()) >> std::boolalpha >> b;
     result = new Value(Value::Type::BOOl_CONSTANT, b);
     break;
+  }
   case SMT::Primitive::Type::BINARY:
     LOG(FATAL)<< "implement me";
     break;
@@ -847,40 +962,40 @@ void PostImageComputer::visitTermConstant(TermConstant_ptr term_constant) {
   setTermValue(term_constant, result);
 }
 
-void PostImageComputer::visitIdentifier(Identifier_ptr identifier) {
+void ConstraintSolver::visitIdentifier(Identifier_ptr identifier) {
 }
 
-void PostImageComputer::visitPrimitive(Primitive_ptr primitive) {
+void ConstraintSolver::visitPrimitive(Primitive_ptr primitive) {
 }
 
-void PostImageComputer::visitTVariable(TVariable_ptr t_variable) {
+void ConstraintSolver::visitTVariable(TVariable_ptr t_variable) {
 }
 
-void PostImageComputer::visitTBool(TBool_ptr t_bool) {
+void ConstraintSolver::visitTBool(TBool_ptr t_bool) {
 }
 
-void PostImageComputer::visitTInt(TInt_ptr t_int) {
+void ConstraintSolver::visitTInt(TInt_ptr t_int) {
 }
 
-void PostImageComputer::visitTString(TString_ptr t_string) {
+void ConstraintSolver::visitTString(TString_ptr t_string) {
 }
 
-void PostImageComputer::visitVariable(Variable_ptr variable) {
+void ConstraintSolver::visitVariable(Variable_ptr variable) {
 }
 
-void PostImageComputer::visitSort(Sort_ptr sort) {
+void ConstraintSolver::visitSort(Sort_ptr sort) {
 }
 
-void PostImageComputer::visitAttribute(Attribute_ptr attribute) {
+void ConstraintSolver::visitAttribute(Attribute_ptr attribute) {
 }
 
-void PostImageComputer::visitSortedVar(SortedVar_ptr sorted_var) {
+void ConstraintSolver::visitSortedVar(SortedVar_ptr sorted_var) {
 }
 
-void PostImageComputer::visitVarBinding(VarBinding_ptr var_binding) {
+void ConstraintSolver::visitVarBinding(VarBinding_ptr var_binding) {
 }
 
-Value_ptr PostImageComputer::getTermValue(SMT::Term_ptr term) {
+Value_ptr ConstraintSolver::getTermValue(SMT::Term_ptr term) {
   auto iter = post_images.find(term);
   if (iter == post_images.end()) {
     LOG(FATAL)<< "value is not computed for term: " << *term;
@@ -888,7 +1003,7 @@ Value_ptr PostImageComputer::getTermValue(SMT::Term_ptr term) {
   return iter->second;
 }
 
-bool PostImageComputer::setTermValue(SMT::Term_ptr term, Value_ptr value) {
+bool ConstraintSolver::setTermValue(SMT::Term_ptr term, Value_ptr value) {
   auto result = post_images.insert(std::make_pair(term, value));
   if (result.second == false) {
     LOG(FATAL)<< "value is already computed for term: " << *term;
@@ -896,7 +1011,7 @@ bool PostImageComputer::setTermValue(SMT::Term_ptr term, Value_ptr value) {
   return result.second;
 }
 
-void PostImageComputer::clearTermValues() {
+void ConstraintSolver::clearTermValues() {
   for (auto& entry : post_images) {
     delete entry.second;
   }
@@ -904,27 +1019,27 @@ void PostImageComputer::clearTermValues() {
   post_images.clear();
 }
 
-void PostImageComputer::setVariablePath(SMT::QualIdentifier_ptr qi_term) {
+void ConstraintSolver::setVariablePath(SMT::QualIdentifier_ptr qi_term) {
   Variable_ptr variable = symbol_table->getVariable(qi_term->getVarName());
   auto iter = variable_path_table[variable].begin();
   iter = variable_path_table[variable].insert(iter, qi_term);
   variable_path_table[variable].insert(iter + 1, path_trace.rbegin(), path_trace.rend());
 }
 
-void PostImageComputer::update_variables() {
+void ConstraintSolver::update_variables() {
   if (variable_path_table.size() == 0) {
     return;
   }
 
-  PreImageComputer pre_image_computer(symbol_table, variable_path_table, post_images);
-  pre_image_computer.start();
+  VariableValueComputer value_updater(symbol_table, variable_path_table, post_images);
+  value_updater.start();
 
   variable_path_table.clear();
 }
 
-void PostImageComputer::__visit_children_of(SMT::Term_ptr term) {
+void ConstraintSolver::__visit_children_of(SMT::Term_ptr term) {
   path_trace.push_back(term);
-  visit_children_of(term);
+  Visitor::visit_children_of(term);
   path_trace.pop_back();
 }
 

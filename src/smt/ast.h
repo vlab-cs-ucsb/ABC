@@ -205,6 +205,7 @@ public:
     UMINUS,
     MINUS,
     PLUS,
+    TIMES,
     EQ,
     NOTEQ,
     GT,
@@ -267,6 +268,7 @@ public:
     static const std::string UMINUS;
     static const std::string MINUS;
     static const std::string PLUS;
+    static const std::string TIMES;
     static const std::string EQ;
     static const std::string NOTEQ;
     static const std::string GT;
@@ -434,7 +436,7 @@ public:
 
 class Plus: public Term {
 public:
-  Plus(Term_ptr, Term_ptr);
+  Plus(TermList_ptr);
   Plus(const Plus&);
   virtual Plus_ptr clone() const;
   virtual ~Plus();
@@ -442,8 +444,20 @@ public:
   virtual void accept(Visitor_ptr);
   virtual void visit_children(Visitor_ptr);
 
-  Term_ptr left_term;
-  Term_ptr right_term;
+  TermList_ptr term_list;
+};
+
+class Times: public Term {
+public:
+  Times(TermList_ptr);
+  Times(const Times&);
+  virtual Times_ptr clone() const;
+  virtual ~Times();
+
+  virtual void accept(Visitor_ptr);
+  virtual void visit_children(Visitor_ptr);
+
+  TermList_ptr term_list;
 };
 
 class Eq: public Term {

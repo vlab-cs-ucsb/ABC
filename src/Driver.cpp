@@ -95,7 +95,7 @@ void Driver::initializeSolver() {
 }
 
 void Driver::solve() {
-  Solver::PostImageComputer post_image_computer(script, symbol_table);
+  Solver::ConstraintSolver post_image_computer(script, symbol_table);
   post_image_computer.start();
 
   // TODO iterate to handle over-approximation

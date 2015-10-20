@@ -1,25 +1,25 @@
 /*
- * PreImageComputer.cpp
+ * VariableValueComputer.cpp
  *
  *  Created on: Jun 24, 2015
  *      Author: baki
  */
 
-#include "PreImageComputer.h"
+#include "VariableValueComputer.h"
 
 namespace Vlab {
 namespace Solver {
 
 using namespace SMT;
 
-const int PreImageComputer::VLOG_LEVEL = 12;
+const int VariableValueComputer::VLOG_LEVEL = 12;
 // TODO intersect with result post
-PreImageComputer::PreImageComputer(SymbolTable_ptr symbol_table, VariablePathTable& variable_path_table, const TermValueMap& post_images)
+VariableValueComputer::VariableValueComputer(SymbolTable_ptr symbol_table, VariablePathTable& variable_path_table, const TermValueMap& post_images)
         : symbol_table(symbol_table), variable_path_table (variable_path_table),
           post_images (post_images) {
 }
 
-PreImageComputer::~PreImageComputer() {
+VariableValueComputer::~VariableValueComputer() {
   for (auto entry : pre_images) {
     delete entry.second;
   }
@@ -27,7 +27,7 @@ PreImageComputer::~PreImageComputer() {
   pre_images.clear();
 }
 
-void PreImageComputer::start() {
+void VariableValueComputer::start() {
   Value_ptr initial_value = nullptr;
   Term_ptr root_term = nullptr;
   DVLOG(VLOG_LEVEL) << "Pre image computation start";
@@ -48,42 +48,42 @@ void PreImageComputer::start() {
   end();
 }
 
-void PreImageComputer::end() {
+void VariableValueComputer::end() {
 }
 
-void PreImageComputer::visitScript(Script_ptr script) {
+void VariableValueComputer::visitScript(Script_ptr script) {
 }
 
-void PreImageComputer::visitCommand(Command_ptr command) {
+void VariableValueComputer::visitCommand(Command_ptr command) {
 }
 
-void PreImageComputer::visitAssert(Assert_ptr assert_command) {
+void VariableValueComputer::visitAssert(Assert_ptr assert_command) {
 }
 
-void PreImageComputer::visitTerm(Term_ptr term) {
+void VariableValueComputer::visitTerm(Term_ptr term) {
 }
 
-void PreImageComputer::visitExclamation(Exclamation_ptr exclamation_term) {
+void VariableValueComputer::visitExclamation(Exclamation_ptr exclamation_term) {
 }
 
-void PreImageComputer::visitExists(Exists_ptr exists_term) {
+void VariableValueComputer::visitExists(Exists_ptr exists_term) {
 }
 
-void PreImageComputer::visitForAll(ForAll_ptr for_all_term) {
+void VariableValueComputer::visitForAll(ForAll_ptr for_all_term) {
 }
 
-void PreImageComputer::visitLet(Let_ptr let_term) {
+void VariableValueComputer::visitLet(Let_ptr let_term) {
 }
 
-void PreImageComputer::visitAnd(And_ptr and_term) {
+void VariableValueComputer::visitAnd(And_ptr and_term) {
   LOG(ERROR) << "Unexpected term: " << *and_term;
 }
 
-void PreImageComputer::visitOr(Or_ptr or_term) {
+void VariableValueComputer::visitOr(Or_ptr or_term) {
   LOG(ERROR) << "Unexpected term: " << *or_term;
 }
 
-void PreImageComputer::visitNot(Not_ptr not_term) {
+void VariableValueComputer::visitNot(Not_ptr not_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *not_term;
   popTerm(not_term);
   Term_ptr child_term = current_path.back();
@@ -99,7 +99,7 @@ void PreImageComputer::visitNot(Not_ptr not_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitUMinus(UMinus_ptr u_minus_term) {
+void VariableValueComputer::visitUMinus(UMinus_ptr u_minus_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *u_minus_term;
   popTerm(u_minus_term);
   Term_ptr child_term = current_path.back();
@@ -139,7 +139,7 @@ void PreImageComputer::visitUMinus(UMinus_ptr u_minus_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitMinus(Minus_ptr minus_term) {
+void VariableValueComputer::visitMinus(Minus_ptr minus_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *minus_term;
   popTerm(minus_term);
   Term_ptr child_term = current_path.back();
@@ -169,13 +169,14 @@ void PreImageComputer::visitMinus(Minus_ptr minus_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitPlus(Plus_ptr plus_term) {
+/**
+ * TODO may need to intersect with post image values after
+ */
+void VariableValueComputer::visitPlus(Plus_ptr plus_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *plus_term;
   popTerm(plus_term);
   Term_ptr child_term = current_path.back();
   Value_ptr child_value = getTermPreImage(child_term);
-  Value_ptr result = nullptr;
-
   if (child_value not_eq nullptr) {
     visit(child_term);
     return;
@@ -184,23 +185,138 @@ void PreImageComputer::visitPlus(Plus_ptr plus_term) {
   Value_ptr term_value = getTermPreImage(plus_term);
   Value_ptr child_post_value = getTermPostImage(child_term);
 
-  if (child_term == plus_term->left_term) {
-    Value_ptr right_child = getTermPostImage(plus_term->right_term);
-    result = term_value->minus(right_child);
+  // Figure out position of the variable in plus list
+  Value_ptr left_of_child = nullptr;
+  Value_ptr right_of_child = nullptr;
+  Value_ptr current_value = nullptr;
+  for (auto& term_ptr : *(plus_term->term_list)) {
+    if (child_term == term_ptr) {
+      left_of_child = current_value;
+      current_value = nullptr;
+    } else {
+      Value_ptr post_value = getTermPostImage(term_ptr);
+      if (current_value == nullptr) {
+        current_value = post_value->clone();
+      } else {
+        Value_ptr tmp = current_value;
+        current_value = current_value->plus(post_value);
+        delete tmp;
+      }
+    }
+  }
+  right_of_child = current_value;
+  // do the preplus operations
+  Value_ptr tmp_parent = term_value;
+  Value_ptr child_result = nullptr;
 
-  } else {
-    Value_ptr left_child = getTermPostImage(plus_term->left_term);
-    result = term_value->minus(left_child);
+  if (left_of_child != nullptr) {
+    child_result = tmp_parent->minus(left_of_child);
+    tmp_parent = child_result;
   }
 
-  child_value = child_post_value->intersect(result);
-  delete result; result = nullptr;
+  if (right_of_child != nullptr) {
+    if (left_of_child != nullptr) { // // that means our variable is in between some other variables, make the pre plus precise (this can be avoided if preconcat used in minus works perfect)
+      Value_ptr tmp_2 = child_post_value->plus(right_of_child);
+      Value_ptr tmp_3 = tmp_parent;
+      tmp_parent = tmp_3->intersect(tmp_2);
+      child_result = tmp_parent;
+      delete tmp_2; tmp_2 = nullptr;
+      delete tmp_3; tmp_3 = nullptr;
+    }
+    Value_ptr tmp = child_result;
+    child_result = tmp_parent->minus(right_of_child);
+    delete tmp; tmp = nullptr;
+  }
+
+  delete left_of_child; left_of_child = nullptr;
+  delete right_of_child; right_of_child = nullptr;
+
+  child_value = child_post_value->intersect(child_result);
+  delete child_result; child_result = nullptr;
 
   setTermPreImage(child_term, child_value);
   visit(child_term);
 }
 
-void PreImageComputer::visitEq(Eq_ptr eq_term) {
+void VariableValueComputer::visitTimes(Times_ptr times_term) {
+  LOG(FATAL)<< "Implement me with binary integer automaton";
+  DVLOG(VLOG_LEVEL) << "pop: " << *times_term;
+  popTerm(times_term);
+  Term_ptr child_term = current_path.back();
+  Value_ptr child_value = getTermPreImage(child_term);
+  if (child_value not_eq nullptr) {
+    visit(child_term);
+    return;
+  }
+
+  Value_ptr term_value = getTermPreImage(times_term);
+  Value_ptr child_post_value = getTermPostImage(child_term);
+
+  // Figure out position of the variable in times list
+  Value_ptr left_of_child = nullptr;
+  Value_ptr right_of_child = nullptr;
+  Value_ptr current_value = nullptr;
+  for (auto& term_ptr : *(times_term->term_list)) {
+    if (child_term == term_ptr) {
+      left_of_child = current_value;
+      current_value = nullptr;
+    } else {
+      Value_ptr post_value = getTermPostImage(term_ptr);
+      if (current_value == nullptr) {
+        current_value = post_value->clone();
+      } else {
+        Value_ptr tmp = current_value;
+        current_value = current_value->times(post_value);
+        delete tmp;
+      }
+    }
+  }
+  right_of_child = current_value;
+  // do the pretimes operations
+  Value_ptr tmp_parent = term_value->clone();
+  Value_ptr child_result = nullptr;
+  Value_ptr multiplicator = nullptr;
+
+  if (left_of_child != nullptr and right_of_child != nullptr) {
+    multiplicator = left_of_child->times(right_of_child);
+  } else if (left_of_child != nullptr) {
+    multiplicator = left_of_child;
+  } else {
+    multiplicator = right_of_child;
+  }
+
+  int value = 0;
+  if (Value::Type::INT_CONSTANT == multiplicator->getType()) {
+    value = multiplicator->getIntConstant();
+
+  } else if (Value::Type::INT_AUTOMATON == multiplicator->getType()) {
+    if (multiplicator->getIntAutomaton()->isAcceptingSingleInt()) {
+      value = multiplicator->getIntAutomaton()->getAnAcceptingInt();
+    }else {
+      LOG(FATAL)<< "Linear Integer Arithmetic does not support multiplication of multiple variables";
+    }
+  }
+
+  int bound = (value > 0) ? value : -value;
+  if (value < 0) {
+  // TODO baki here handle case
+  }
+  for (int i = value; i > 1; i--) {
+    Value_ptr tmp_1 = tmp_parent;
+    child_result = tmp_1->minus(child_post_value);
+    tmp_parent = child_result;
+    delete tmp_1; tmp_1 = nullptr;
+  }
+
+  delete left_of_child; left_of_child = nullptr;
+  delete right_of_child; right_of_child = nullptr;
+
+  child_value = child_post_value->intersect(child_result);
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
+}
+
+void VariableValueComputer::visitEq(Eq_ptr eq_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *eq_term;
   popTerm(eq_term);
   Term_ptr child_term = current_path.back();
@@ -223,7 +339,7 @@ void PreImageComputer::visitEq(Eq_ptr eq_term) {
 }
 
 
-void PreImageComputer::visitNotEq(NotEq_ptr not_eq_term) {
+void VariableValueComputer::visitNotEq(NotEq_ptr not_eq_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *not_eq_term;
   popTerm(not_eq_term);
   Term_ptr child_term = current_path.back();
@@ -250,7 +366,7 @@ void PreImageComputer::visitNotEq(NotEq_ptr not_eq_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitGt(Gt_ptr gt_term) {
+void VariableValueComputer::visitGt(Gt_ptr gt_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *gt_term;
   popTerm(gt_term);
   Term_ptr child_term = current_path.back();
@@ -290,7 +406,7 @@ void PreImageComputer::visitGt(Gt_ptr gt_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitGe(Ge_ptr ge_term) {
+void VariableValueComputer::visitGe(Ge_ptr ge_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *ge_term;
   popTerm(ge_term);
   Term_ptr child_term = current_path.back();
@@ -330,7 +446,7 @@ void PreImageComputer::visitGe(Ge_ptr ge_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitLt(Lt_ptr lt_term) {
+void VariableValueComputer::visitLt(Lt_ptr lt_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *lt_term;
   popTerm(lt_term);
   Term_ptr child_term = current_path.back();
@@ -370,7 +486,7 @@ void PreImageComputer::visitLt(Lt_ptr lt_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitLe(Le_ptr le_term) {
+void VariableValueComputer::visitLe(Le_ptr le_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *le_term;
   popTerm(le_term);
   Term_ptr child_term = current_path.back();
@@ -411,7 +527,7 @@ void PreImageComputer::visitLe(Le_ptr le_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitConcat(Concat_ptr concat_term) {
+void VariableValueComputer::visitConcat(Concat_ptr concat_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *concat_term;
   popTerm(concat_term);
   Term_ptr child_term = current_path.back();
@@ -422,6 +538,7 @@ void PreImageComputer::visitConcat(Concat_ptr concat_term) {
   }
 
   Value_ptr term_value = getTermPreImage(concat_term);
+  Value_ptr child_post_value = getTermPostImage(child_term);
 
   // Figure out position of the variable in concat list
   Theory::StringAutomaton_ptr left_of_child = nullptr;
@@ -453,6 +570,14 @@ void PreImageComputer::visitConcat(Concat_ptr concat_term) {
   }
 
   if (right_of_child != nullptr) {
+    if (left_of_child != nullptr) { // that means our variable is in between some other variables, make the preconcat precise (this can be avoided if preconcat works perfect)
+      Theory::StringAutomaton_ptr tmp_2 = child_post_value->getStringAutomaton()->concat(right_of_child);
+      Theory::StringAutomaton_ptr tmp_3 = tmp_parent_auto;
+      tmp_parent_auto = tmp_3->intersect(tmp_2);
+      child_result_auto = tmp_parent_auto;
+      delete tmp_2; tmp_2 = nullptr;
+      delete tmp_3; tmp_3 = nullptr;
+    }
     Theory::StringAutomaton_ptr  tmp = child_result_auto;
     child_result_auto = tmp_parent_auto->preConcatLeft(right_of_child);
     delete tmp; tmp = nullptr;
@@ -461,12 +586,14 @@ void PreImageComputer::visitConcat(Concat_ptr concat_term) {
   delete left_of_child; left_of_child = nullptr;
   delete right_of_child; right_of_child = nullptr;
 
-  child_value = new Value(Value::Type::STRING_AUTOMATON, child_result_auto);
+  child_value = new Value(Value::Type::STRING_AUTOMATON, child_post_value->getStringAutomaton()->intersect(child_result_auto));
+  delete child_result_auto; child_result_auto = nullptr;
+
   setTermPreImage(child_term, child_value);
   visit(child_term);
 }
 
-void PreImageComputer::visitIn(In_ptr in_term) {
+void VariableValueComputer::visitIn(In_ptr in_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *in_term;
   popTerm(in_term);
   Term_ptr child_term = current_path.back();
@@ -487,7 +614,7 @@ void PreImageComputer::visitIn(In_ptr in_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitNotIn(NotIn_ptr not_in_term) {
+void VariableValueComputer::visitNotIn(NotIn_ptr not_in_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *not_in_term;
   popTerm(not_in_term);
   Term_ptr child_term = current_path.back();
@@ -508,7 +635,7 @@ void PreImageComputer::visitNotIn(NotIn_ptr not_in_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitLen(Len_ptr len_term) {
+void VariableValueComputer::visitLen(Len_ptr len_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *len_term;
   popTerm(len_term);
   Term_ptr child_term = current_path.back();
@@ -533,7 +660,7 @@ void PreImageComputer::visitLen(Len_ptr len_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitContains(Contains_ptr contains_term) {
+void VariableValueComputer::visitContains(Contains_ptr contains_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *contains_term;
   popTerm(contains_term);
   Term_ptr child_term = current_path.back();
@@ -554,7 +681,7 @@ void PreImageComputer::visitContains(Contains_ptr contains_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitNotContains(NotContains_ptr not_contains_term) {
+void VariableValueComputer::visitNotContains(NotContains_ptr not_contains_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *not_contains_term;
   popTerm(not_contains_term);
   Term_ptr child_term = current_path.back();
@@ -575,7 +702,7 @@ void PreImageComputer::visitNotContains(NotContains_ptr not_contains_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitBegins(Begins_ptr begins_term) {
+void VariableValueComputer::visitBegins(Begins_ptr begins_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *begins_term;
   popTerm(begins_term);
   Term_ptr child_term = current_path.back();
@@ -596,7 +723,7 @@ void PreImageComputer::visitBegins(Begins_ptr begins_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitNotBegins(NotBegins_ptr not_begins_term) {
+void VariableValueComputer::visitNotBegins(NotBegins_ptr not_begins_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *not_begins_term;
   popTerm(not_begins_term);
   Term_ptr child_term = current_path.back();
@@ -617,7 +744,7 @@ void PreImageComputer::visitNotBegins(NotBegins_ptr not_begins_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitEnds(Ends_ptr ends_term) {
+void VariableValueComputer::visitEnds(Ends_ptr ends_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *ends_term;
   popTerm(ends_term);
   Term_ptr child_term = current_path.back();
@@ -638,7 +765,7 @@ void PreImageComputer::visitEnds(Ends_ptr ends_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitNotEnds(NotEnds_ptr not_ends_term) {
+void VariableValueComputer::visitNotEnds(NotEnds_ptr not_ends_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *not_ends_term;
   popTerm(not_ends_term);
   Term_ptr child_term = current_path.back();
@@ -659,7 +786,7 @@ void PreImageComputer::visitNotEnds(NotEnds_ptr not_ends_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitIndexOf(IndexOf_ptr index_of_term) {
+void VariableValueComputer::visitIndexOf(IndexOf_ptr index_of_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *index_of_term;
   popTerm(index_of_term);
   Term_ptr child_term = current_path.back();
@@ -692,7 +819,7 @@ void PreImageComputer::visitIndexOf(IndexOf_ptr index_of_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
+void VariableValueComputer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *last_index_of_term;
   popTerm(last_index_of_term);
   Term_ptr child_term = current_path.back();
@@ -729,7 +856,7 @@ void PreImageComputer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term)
 /**
  *
  */
-void PreImageComputer::visitCharAt(SMT::CharAt_ptr char_at_term) {
+void VariableValueComputer::visitCharAt(SMT::CharAt_ptr char_at_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *char_at_term;
   popTerm(char_at_term);
   Term_ptr child_term = current_path.back();
@@ -764,7 +891,7 @@ void PreImageComputer::visitCharAt(SMT::CharAt_ptr char_at_term) {
 /**
  * TODO check if we can do preimage with endswith ??
  */
-void PreImageComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
+void VariableValueComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *sub_string_term;
   popTerm(sub_string_term);
   Term_ptr child_term = current_path.back();
@@ -812,7 +939,7 @@ void PreImageComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_string_first_of_term) {
+void VariableValueComputer::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_string_first_of_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *sub_string_first_of_term;
   popTerm(sub_string_first_of_term);
   Term_ptr child_term = current_path.back();
@@ -839,7 +966,7 @@ void PreImageComputer::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_strin
   visit(child_term);
 }
 
-void PreImageComputer::visitSubStringLastOf(SMT::SubStringLastOf_ptr sub_string_last_of_term) {
+void VariableValueComputer::visitSubStringLastOf(SMT::SubStringLastOf_ptr sub_string_last_of_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *sub_string_last_of_term;
   popTerm(sub_string_last_of_term);
   Term_ptr child_term = current_path.back();
@@ -871,7 +998,7 @@ void PreImageComputer::visitSubStringLastOf(SMT::SubStringLastOf_ptr sub_string_
  * TODO improve pre image computation
  *
  */
-void PreImageComputer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
+void VariableValueComputer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *to_upper_term;
   popTerm(to_upper_term);
   Term_ptr child_term = current_path.back();
@@ -890,7 +1017,7 @@ void PreImageComputer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitToLower(SMT::ToLower_ptr to_lower_term) {
+void VariableValueComputer::visitToLower(SMT::ToLower_ptr to_lower_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *to_lower_term;
   popTerm(to_lower_term);
   Term_ptr child_term = current_path.back();
@@ -909,7 +1036,7 @@ void PreImageComputer::visitToLower(SMT::ToLower_ptr to_lower_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitTrim(SMT::Trim_ptr trim_term) {
+void VariableValueComputer::visitTrim(SMT::Trim_ptr trim_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *trim_term;
   popTerm(trim_term);
   Term_ptr child_term = current_path.back();
@@ -928,7 +1055,7 @@ void PreImageComputer::visitTrim(SMT::Trim_ptr trim_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitReplace(Replace_ptr replace_term) {
+void VariableValueComputer::visitReplace(Replace_ptr replace_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *replace_term;
   popTerm(replace_term);
   Term_ptr child_term = current_path.back();
@@ -957,21 +1084,21 @@ void PreImageComputer::visitReplace(Replace_ptr replace_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitCount(Count_ptr count_term) {
+void VariableValueComputer::visitCount(Count_ptr count_term) {
   LOG(FATAL) << "implement me";
   visit_children_of(count_term);
 }
 
-void PreImageComputer::visitIte(Ite_ptr ite_term) {
+void VariableValueComputer::visitIte(Ite_ptr ite_term) {
 }
 
-void PreImageComputer::visitReConcat(ReConcat_ptr re_concat_term) {
+void VariableValueComputer::visitReConcat(ReConcat_ptr re_concat_term) {
 }
 
-void PreImageComputer::visitToRegex(ToRegex_ptr to_regex_term) {
+void VariableValueComputer::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 
-void PreImageComputer::visitUnknownTerm(Unknown_ptr unknown_term) {
+void VariableValueComputer::visitUnknownTerm(Unknown_ptr unknown_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *unknown_term;
   QualIdentifier_ptr qi_term = dynamic_cast<QualIdentifier_ptr>(unknown_term->term);
   LOG(WARNING) << "operation is not known, over-approximate params of operation: '" << qi_term->getVarName() << "'";
@@ -1001,10 +1128,10 @@ void PreImageComputer::visitUnknownTerm(Unknown_ptr unknown_term) {
   visit(child_term);
 }
 
-void PreImageComputer::visitAsQualIdentifier(AsQualIdentifier_ptr as_qid_term) {
+void VariableValueComputer::visitAsQualIdentifier(AsQualIdentifier_ptr as_qid_term) {
 }
 
-void PreImageComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
+void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *qi_term;
   popTerm(qi_term);
 
@@ -1017,43 +1144,43 @@ void PreImageComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   delete variable_old_value; variable_old_value = nullptr;
 }
 
-void PreImageComputer::visitTermConstant(TermConstant_ptr term_constant) {
+void VariableValueComputer::visitTermConstant(TermConstant_ptr term_constant) {
 }
 
-void PreImageComputer::visitIdentifier(Identifier_ptr identifier) {
+void VariableValueComputer::visitIdentifier(Identifier_ptr identifier) {
 }
 
-void PreImageComputer::visitPrimitive(Primitive_ptr primitive) {
+void VariableValueComputer::visitPrimitive(Primitive_ptr primitive) {
 }
 
-void PreImageComputer::visitTVariable(TVariable_ptr t_variable) {
+void VariableValueComputer::visitTVariable(TVariable_ptr t_variable) {
 }
 
-void PreImageComputer::visitTBool(TBool_ptr t_bool) {
+void VariableValueComputer::visitTBool(TBool_ptr t_bool) {
 }
 
-void PreImageComputer::visitTInt(TInt_ptr t_int) {
+void VariableValueComputer::visitTInt(TInt_ptr t_int) {
 }
 
-void PreImageComputer::visitTString(TString_ptr t_string) {
+void VariableValueComputer::visitTString(TString_ptr t_string) {
 }
 
-void PreImageComputer::visitVariable(Variable_ptr variable) {
+void VariableValueComputer::visitVariable(Variable_ptr variable) {
 }
 
-void PreImageComputer::visitSort(Sort_ptr sort) {
+void VariableValueComputer::visitSort(Sort_ptr sort) {
 }
 
-void PreImageComputer::visitAttribute(Attribute_ptr attribute) {
+void VariableValueComputer::visitAttribute(Attribute_ptr attribute) {
 }
 
-void PreImageComputer::visitSortedVar(SortedVar_ptr sorted_var) {
+void VariableValueComputer::visitSortedVar(SortedVar_ptr sorted_var) {
 }
 
-void PreImageComputer::visitVarBinding(VarBinding_ptr var_binding) {
+void VariableValueComputer::visitVarBinding(VarBinding_ptr var_binding) {
 }
 
-Value_ptr PreImageComputer::getTermPostImage(SMT::Term_ptr term) {
+Value_ptr VariableValueComputer::getTermPostImage(SMT::Term_ptr term) {
   auto iter = post_images.find(term);
   if (iter == post_images.end()) {
     LOG(FATAL)<< "post image value is not computed for term: " << *term;
@@ -1061,7 +1188,7 @@ Value_ptr PreImageComputer::getTermPostImage(SMT::Term_ptr term) {
   return iter->second;
 }
 
-Value_ptr PreImageComputer::getTermPreImage(SMT::Term_ptr term) {
+Value_ptr VariableValueComputer::getTermPreImage(SMT::Term_ptr term) {
   auto iter = pre_images.find(term);
   if (iter == pre_images.end()) {
     return nullptr;
@@ -1069,7 +1196,7 @@ Value_ptr PreImageComputer::getTermPreImage(SMT::Term_ptr term) {
   return iter->second;
 }
 
-bool PreImageComputer::setTermPreImage(SMT::Term_ptr term, Value_ptr value) {
+bool VariableValueComputer::setTermPreImage(SMT::Term_ptr term, Value_ptr value) {
   auto result = pre_images.insert(std::make_pair(term, value));
   if (result.second == false) {
     LOG(FATAL)<< "value is already computed for term: " << *term;
@@ -1077,7 +1204,7 @@ bool PreImageComputer::setTermPreImage(SMT::Term_ptr term, Value_ptr value) {
   return result.second;
 }
 
-void PreImageComputer::popTerm(SMT::Term_ptr term) {
+void VariableValueComputer::popTerm(SMT::Term_ptr term) {
   if (current_path.back() == term) {
     current_path.pop_back();
   } else {

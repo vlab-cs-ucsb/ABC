@@ -112,9 +112,17 @@ void OptimizationRuleRunner::visitMinus(Minus_ptr minus_term) {
 }
 
 void OptimizationRuleRunner::visitPlus(Plus_ptr plus_term) {
-  check_and_substitute_var(plus_term->left_term);
-  check_and_substitute_var(plus_term->right_term);
-  visit_children_of(plus_term);
+  for (auto& term_ptr : *(plus_term->term_list)) {
+    check_and_substitute_var(term_ptr);
+    visit(term_ptr);
+  }
+}
+
+void OptimizationRuleRunner::visitTimes(Times_ptr times_term) {
+  for (auto& term_ptr : *(times_term->term_list)) {
+    check_and_substitute_var(term_ptr);
+    visit(term_ptr);
+  }
 }
 
 void OptimizationRuleRunner::visitEq(Eq_ptr eq_term) {
