@@ -20,6 +20,8 @@ const std::string ArithmeticFormula::Name::GT = ">";
 const std::string ArithmeticFormula::Name::GE = ">=";
 const std::string ArithmeticFormula::Name::LT = "<";
 const std::string ArithmeticFormula::Name::LE = "<=";
+const std::string ArithmeticFormula::Name::INTERSECT = "&";
+const std::string ArithmeticFormula::Name::UNION = "|";
 
 ArithmeticFormula::ArithmeticFormula() :
       type(Type::NONE), constant(0) {
@@ -62,12 +64,14 @@ std::string ArithmeticFormula::str() const {
       }
       ss << variable_names[i];
     } else if (coefficients[i] < 0) {
-      ss << " -";
       if (i > 0) {
-        ss << " ";
+        ss << " - ";
+      } else {
+        ss << "-";
       }
-      if (coefficients[i] > 1) {
-        ss << std::abs(coefficients[i]);
+      int abs_value = std::abs(coefficients[i]);
+      if (abs_value > 1) {
+        ss << abs_value;
       }
       ss << variable_names[i];
     }
@@ -77,6 +81,14 @@ std::string ArithmeticFormula::str() const {
     ss << " + " << constant;
   } else if (constant < 0) {
     ss << " - " << std::abs(constant);
+  }
+
+  if (type == Type::INTERSECT or type == Type::UNION) {
+    std::string separator = "";
+    for (auto& pair : coeff_index_map) {
+      ss << separator << pair.first;
+      separator = ", ";
+    }
   }
 
   ss << " ";
@@ -100,11 +112,19 @@ std::string ArithmeticFormula::str() const {
     case Type::LE:
       ss << Name::LE;
       break;
+    case Type::INTERSECT:
+      ss << Name::INTERSECT;
+      break;
+    case Type::UNION:
+      ss << Name::UNION;
+      break;
     default:
       break;
   }
+  if (type != Type::INTERSECT and type != Type::UNION) {
+    ss << " " << 0;
+  }
 
-  ss << " " << 0;
 
   return ss.str();
 }
@@ -117,8 +137,16 @@ ArithmeticFormula::Type ArithmeticFormula::getType() const {
   return type;
 }
 
+int ArithmeticFormula::getNumberOfVariables() const {
+  return coeff_index_map.size();
+}
+
 std::vector<int>& ArithmeticFormula::getCoefficients() {
   return coefficients;
+}
+
+std::map<std::string, int>& ArithmeticFormula::getCoefficientIndexMap() {
+  return coeff_index_map;
 }
 
 int ArithmeticFormula::getVariableCoefficient(std::string variable_name) {
@@ -130,7 +158,13 @@ int ArithmeticFormula::getVariableCoefficient(std::string variable_name) {
 }
 
 void ArithmeticFormula::setVariableCoefficient(std::string variable_name, int coeff) {
-  coefficients[coeff_index_map[variable_name]] = coeff;
+  auto it = coeff_index_map.find(variable_name);
+  if (it == coeff_index_map.end()) {
+    coefficients.push_back(coeff);
+    coeff_index_map[variable_name] = coefficients.size() - 1;
+  } else {
+    coefficients[coeff_index_map[variable_name]] = coeff;
+  }
 }
 
 int ArithmeticFormula::getConstant() {
@@ -188,6 +222,12 @@ void ArithmeticFormula::mergeCoefficients(ArithmeticFormula_ptr other_formula) {
   coefficients = merged_coefficients;
 }
 
+void ArithmeticFormula::resetCoefficients(int value) {
+  for (auto& c : coefficients) {
+    c = value;
+  }
+}
+
 ArithmeticFormula_ptr ArithmeticFormula::substract(ArithmeticFormula_ptr other_formula) {
   ArithmeticFormula_ptr result = new ArithmeticFormula(*this);
   if (not result->isVariableOrderingSame(other_formula)) {
@@ -200,11 +240,11 @@ ArithmeticFormula_ptr ArithmeticFormula::substract(ArithmeticFormula_ptr other_f
       result->coefficients[it->second] = result->coefficients[it->second] - other_formula->coefficients[pair.second];
     }
   }
-  result->constant = constant - other_formula->constant;
+  result->constant = result->constant - other_formula->constant;
   return result;
 }
 
-ArithmeticFormula_ptr ArithmeticFormula::negate() {
+ArithmeticFormula_ptr ArithmeticFormula::negateOperation() {
   ArithmeticFormula_ptr result = new ArithmeticFormula(*this);
   switch (type) {
     case Type::EQ:
@@ -258,23 +298,21 @@ ArithmeticFormula_ptr ArithmeticFormula::add(ArithmeticFormula_ptr other_formula
 }
 
 /**
- * @returns false if formula is not satisfiable during optimization
+ * @returns false if formula is not satisfiable and catched by simplification
  */
-bool ArithmeticFormula::optimize() {
-  int gcd_value = 1;
-
+bool ArithmeticFormula::simplify() {
   if (coefficients.size() == 0) {
-    return true; // no optimization required
+    return true;
   }
 
-  gcd_value = coefficients[0];
+  int gcd_value = coefficients[0];
 
   for (int c : coefficients) {
     gcd_value = gcd(gcd_value, c);
   }
 
-  for (int& c : coefficients) {
-    c = c / gcd_value;
+  if (gcd_value == 0) {
+    return true;
   }
 
   switch (type) {
@@ -287,18 +325,20 @@ bool ArithmeticFormula::optimize() {
       break;
     }
     case Type::LT: {
-      constant = constant + gcd_value - 1;
       if (constant >= 0) {
         constant = constant / gcd_value;
       } else {
-        constant = (constant + 1) / gcd_value - 1;
+        constant = std::floor((double)constant/gcd_value);
       }
       break;
     }
-    default: {
-
+    default:
+      LOG(FATAL)<< "Simplification is only done after converting into '=' or '<' equation";
       break;
-    }
+  }
+
+  for (int& c : coefficients) {
+    c = c / gcd_value;
   }
 
   return true;
@@ -320,16 +360,16 @@ std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula) {
 }
 
 int ArithmeticFormula::gcd(int x , int y) {
+  if (x == 0) {
+    return std::abs(y);
+  }
   int c;
   while (y != 0) {
     c = x % y;
     x = y;
     y = c;
   }
-  if (x > 0)
-    return x;
-  else
-    return -x;
+  return std::abs(x);
 }
 
 

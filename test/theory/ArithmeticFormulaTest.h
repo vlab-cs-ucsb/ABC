@@ -8,17 +8,19 @@
  *              be found in the COPYING file.
  */
 
-#ifndef SOLVER_ARITHMETICFORMULATEST_H_
-#define SOLVER_ARITHMETICFORMULATEST_H_
+#ifndef THEORY_ARITHMETICFORMULATEST_H_
+#define THEORY_ARITHMETICFORMULATEST_H_
 
 #include <vector>
 
 #include "gtest/gtest.h"
+#include "gmock/gmock.h"
 #include "theory/ArithmeticFormula.h"
 
 namespace Vlab {
+namespace Theory {
 namespace Test {
-namespace Solver {
+
 
 class ArithmeticFormulaTest : public ::testing::Test {
 protected:
@@ -29,8 +31,9 @@ protected:
   std::vector<int> coefficients;
 };
 
-} /* namespace Solver */
 } /* namespace Test */
+} /* namespace Theory */
 } /* namespace Vlab */
 
-#endif /* SOLVER_ARITHMETICFORMULATEST_H_ */
+
+#endif /* THEORY_ARITHMETICFORMULATEST_H_ */

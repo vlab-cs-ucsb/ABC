@@ -28,7 +28,10 @@ ArithmeticFormulaGenerator::ArithmeticFormulaGenerator( Script_ptr script, Symbo
 }
 
 ArithmeticFormulaGenerator::~ArithmeticFormulaGenerator() {
-
+  for (auto& pair : formulas) {
+    delete pair.second;
+    pair.second = nullptr;
+  }
 }
 
 void ArithmeticFormulaGenerator::start() {
@@ -49,6 +52,7 @@ void ArithmeticFormulaGenerator::visitCommand(Command_ptr command) {
 }
 
 void ArithmeticFormulaGenerator::visitAssert(Assert_ptr assert_command) {
+  visit_children_of(assert_command);
 }
 
 void ArithmeticFormulaGenerator::visitTerm(Term_ptr term) {
@@ -87,6 +91,7 @@ void ArithmeticFormulaGenerator::visitAnd(And_ptr and_term) {
     }
   }
 
+  and_formula->setType(ArithmeticFormula::Type::INTERSECT);
   setTermFormula(and_term, and_formula);
 }
 
@@ -120,7 +125,7 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
       }
     }
   }
-
+  or_formula->setType(ArithmeticFormula::Type::UNION);
   setTermFormula(or_term, or_formula);
 }
 
@@ -132,11 +137,22 @@ void ArithmeticFormulaGenerator::visitNot(Not_ptr not_term) {
   child_formula = getTermFormula(not_term->term);
 
   if (child_formula != nullptr) {
-    formula = child_formula->negate();
+    formula = child_formula->negateOperation();
     deleteTermFormula(not_term->term);
   }
 
   setTermFormula(not_term, formula);
+
+  if (string_terms.size() > 0) {
+    string_terms_map[not_term] = string_terms;
+    string_terms.clear();
+  } else {
+    auto it = string_terms_map.find(not_term->term);
+    if (it != string_terms_map.end()) {
+      string_terms_map[not_term] = it->second;
+      string_terms_map.erase(it);
+    }
+  }
 }
 
 void ArithmeticFormulaGenerator::visitUMinus(UMinus_ptr u_minus_term) {
@@ -230,6 +246,11 @@ void ArithmeticFormulaGenerator::visitEq(Eq_ptr eq_term) {
   }
 
   setTermFormula(eq_term, formula);
+
+  if (string_terms.size() > 0) {
+    string_terms_map[eq_term] = string_terms;
+    string_terms.clear();
+  }
 }
 
 
@@ -249,6 +270,11 @@ void ArithmeticFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
   }
 
   setTermFormula(not_eq_term, formula);
+
+  if (string_terms.size() > 0) {
+    string_terms_map[not_eq_term] = string_terms;
+    string_terms.clear();
+  }
 }
 
 void ArithmeticFormulaGenerator::visitGt(Gt_ptr gt_term) {
@@ -265,6 +291,11 @@ void ArithmeticFormulaGenerator::visitGt(Gt_ptr gt_term) {
   deleteTermFormula(gt_term->right_term);
 
   setTermFormula(gt_term, formula);
+
+  if (string_terms.size() > 0) {
+    string_terms_map[gt_term] = string_terms;
+    string_terms.clear();
+  }
 }
 
 void ArithmeticFormulaGenerator::visitGe(Ge_ptr ge_term) {
@@ -281,6 +312,11 @@ void ArithmeticFormulaGenerator::visitGe(Ge_ptr ge_term) {
   deleteTermFormula(ge_term->right_term);
 
   setTermFormula(ge_term, formula);
+
+  if (string_terms.size() > 0) {
+    string_terms_map[ge_term] = string_terms;
+    string_terms.clear();
+  }
 }
 
 void ArithmeticFormulaGenerator::visitLt(Lt_ptr lt_term) {
@@ -297,6 +333,11 @@ void ArithmeticFormulaGenerator::visitLt(Lt_ptr lt_term) {
   deleteTermFormula(lt_term->right_term);
 
   setTermFormula(lt_term, formula);
+
+  if (string_terms.size() > 0) {
+    string_terms_map[lt_term] = string_terms;
+    string_terms.clear();
+  }
 }
 
 void ArithmeticFormulaGenerator::visitLe(Le_ptr le_term) {
@@ -313,6 +354,11 @@ void ArithmeticFormulaGenerator::visitLe(Le_ptr le_term) {
   deleteTermFormula(le_term->right_term);
 
   setTermFormula(le_term, formula);
+
+  if (string_terms.size() > 0) {
+    string_terms_map[le_term] = string_terms;
+    string_terms.clear();
+  }
 }
 
 void ArithmeticFormulaGenerator::visitConcat(Concat_ptr concat_term) {
@@ -343,6 +389,8 @@ void ArithmeticFormulaGenerator::visitLen(Len_ptr len_term) {
   formula->setVariableCoefficient(name, 1);
 
   setTermFormula(len_term, formula);
+
+  string_terms.push_back(len_term);
 }
 
 void ArithmeticFormulaGenerator::visitContains(Contains_ptr contains_term) {
@@ -378,9 +426,11 @@ void ArithmeticFormulaGenerator::visitIndexOf(IndexOf_ptr index_of_term) {
   formula->setVariableCoefficient(name, 1);
 
   setTermFormula(index_of_term, formula);
+
+  string_terms.push_back(index_of_term);
 }
 
-void ArithmeticFormulaGenerator::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
+void ArithmeticFormulaGenerator::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *last_index_of_term;
 
   ArithmeticFormula_ptr formula = nullptr;
@@ -395,27 +445,29 @@ void ArithmeticFormulaGenerator::visitLastIndexOf(SMT::LastIndexOf_ptr last_inde
   formula->setVariableCoefficient(name, 1);
 
   setTermFormula(last_index_of_term, formula);
+
+  string_terms.push_back(last_index_of_term);
 }
 
-void ArithmeticFormulaGenerator::visitCharAt(SMT::CharAt_ptr char_at_term) {
+void ArithmeticFormulaGenerator::visitCharAt(CharAt_ptr char_at_term) {
 }
 
-void ArithmeticFormulaGenerator::visitSubString(SMT::SubString_ptr sub_string_term) {
+void ArithmeticFormulaGenerator::visitSubString(SubString_ptr sub_string_term) {
 }
 
-void ArithmeticFormulaGenerator::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_string_first_of_term) {
+void ArithmeticFormulaGenerator::visitSubStringFirstOf(SubStringFirstOf_ptr sub_string_first_of_term) {
 }
 
-void ArithmeticFormulaGenerator::visitSubStringLastOf(SMT::SubStringLastOf_ptr sub_string_last_of_term) {
+void ArithmeticFormulaGenerator::visitSubStringLastOf(SubStringLastOf_ptr sub_string_last_of_term) {
 }
 
-void ArithmeticFormulaGenerator::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
+void ArithmeticFormulaGenerator::visitToUpper(ToUpper_ptr to_upper_term) {
 }
 
-void ArithmeticFormulaGenerator::visitToLower(SMT::ToLower_ptr to_lower_term) {
+void ArithmeticFormulaGenerator::visitToLower(ToLower_ptr to_lower_term) {
 }
 
-void ArithmeticFormulaGenerator::visitTrim(SMT::Trim_ptr trim_term) {
+void ArithmeticFormulaGenerator::visitTrim(Trim_ptr trim_term) {
 }
 
 void ArithmeticFormulaGenerator::visitReplace(Replace_ptr replace_term) {
@@ -461,7 +513,7 @@ void ArithmeticFormulaGenerator::visitTermConstant(TermConstant_ptr term_constan
   ArithmeticFormula_ptr formula = nullptr;
 
   switch (term_constant->getValueType()) {
-    case SMT::Primitive::Type::NUMERAL: {
+    case Primitive::Type::NUMERAL: {
       int constant = std::stoi(term_constant->getValue());
       formula = new ArithmeticFormula(coeff_index_map, coefficients);
       formula->setConstant(constant);
@@ -507,12 +559,24 @@ void ArithmeticFormulaGenerator::visitSortedVar(SortedVar_ptr sorted_var) {
 void ArithmeticFormulaGenerator::visitVarBinding(VarBinding_ptr var_binding) {
 }
 
-ArithmeticFormula_ptr ArithmeticFormulaGenerator::getTermFormula(SMT::Term_ptr term) {
+ArithmeticFormula_ptr ArithmeticFormulaGenerator::getTermFormula(Term_ptr term) {
   auto iter = formulas.find(term);
   if (iter == formulas.end()) {
     return nullptr;
   }
   return iter->second;
+}
+
+bool ArithmeticFormulaGenerator::hasStringTerms(Term_ptr term) {
+  return (string_terms_map.find(term) != string_terms_map.end());
+}
+
+std::map<SMT::Term_ptr, SMT::TermList> ArithmeticFormulaGenerator::getStringTermsMap() {
+  return string_terms_map;
+}
+
+TermList& ArithmeticFormulaGenerator::getStringTermsIn(Term_ptr term) {
+  return string_terms_map[term];
 }
 
 void ArithmeticFormulaGenerator::clearTermFormulas() {
@@ -522,7 +586,7 @@ void ArithmeticFormulaGenerator::clearTermFormulas() {
   formulas.clear();
 }
 
-bool ArithmeticFormulaGenerator::setTermFormula(SMT::Term_ptr term, ArithmeticFormula_ptr formula) {
+bool ArithmeticFormulaGenerator::setTermFormula(Term_ptr term, ArithmeticFormula_ptr formula) {
   auto result = formulas.insert(std::make_pair(term, formula));
   if (result.second == false) {
     LOG(FATAL)<< "formula is already computed for term: " << *term;
@@ -530,7 +594,7 @@ bool ArithmeticFormulaGenerator::setTermFormula(SMT::Term_ptr term, ArithmeticFo
   return result.second;
 }
 
-void ArithmeticFormulaGenerator::deleteTermFormula(SMT::Term_ptr term) {
+void ArithmeticFormulaGenerator::deleteTermFormula(Term_ptr term) {
   auto formula = getTermFormula(term);
   if (formula != nullptr) {
     delete formula;

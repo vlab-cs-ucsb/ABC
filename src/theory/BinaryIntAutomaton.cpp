@@ -25,8 +25,10 @@ BinaryIntAutomaton::BinaryIntAutomaton(DFA_ptr dfa, int num_of_variables) :
 }
 
 BinaryIntAutomaton::BinaryIntAutomaton(const BinaryIntAutomaton& other) :
-     Automaton(other), formula (other.formula->clone()) {
-
+     Automaton(other) {
+  if (other.formula) {
+    formula = other.formula->clone();
+  }
 }
 
 BinaryIntAutomaton::~BinaryIntAutomaton() {
@@ -37,6 +39,22 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::clone() const {
   BinaryIntAutomaton_ptr cloned_auto = new BinaryIntAutomaton(*this);
   DVLOG(VLOG_LEVEL) << cloned_auto->id << " = [" << this->id << "]->clone()";
   return cloned_auto;
+}
+
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makePhi(ArithmeticFormula_ptr formula) {
+  DFA_ptr non_accepting_dfa = nullptr;
+  BinaryIntAutomaton_ptr non_accepting_binary_auto = nullptr;
+  int num_variables = formula->getNumberOfVariables();
+  int* indices = Automaton::getIndices(num_variables);
+
+  non_accepting_dfa = Automaton::makePhi(num_variables, indices);
+  delete[] indices; indices = nullptr;
+  non_accepting_binary_auto = new BinaryIntAutomaton(non_accepting_dfa, num_variables);
+  non_accepting_binary_auto->setFormula(formula);
+
+  DVLOG(VLOG_LEVEL) << non_accepting_binary_auto->id << " = makePhi(" << *formula << ")";
+
+  return non_accepting_binary_auto;
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(ArithmeticFormula_ptr formula) {
@@ -52,9 +70,11 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(ArithmeticFormula_ptr f
       break;
     }
     case ArithmeticFormula::Type::GT: {
+      result_auto = BinaryIntAutomaton::makeGreaterThan(formula);
       break;
     }
     case ArithmeticFormula::Type::GE: {
+      result_auto = BinaryIntAutomaton::makeGreaterThanOrEqual(formula);
       break;
     }
     case ArithmeticFormula::Type::LT: {
@@ -62,13 +82,23 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(ArithmeticFormula_ptr f
       break;
     }
     case ArithmeticFormula::Type::LE: {
+      result_auto = BinaryIntAutomaton::makeLessThanOrEqual(formula);
       break;
     }
     default:
+      LOG(FATAL)<< "Equation type is not specified, please set type for input formula: " << *formula;
       break;
   }
 
   return result_auto;
+}
+
+ArithmeticFormula_ptr BinaryIntAutomaton::getFormula() {
+  return formula;
+}
+
+void BinaryIntAutomaton::setFormula(ArithmeticFormula_ptr formula) {
+  this->formula = formula;
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::complement() {
@@ -78,16 +108,17 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::complement() {
   dfaNegation(complement_dfa);
 
   complement_auto = new BinaryIntAutomaton(complement_dfa, num_of_variables);
-  complement_auto->setFormula(this->formula->negate());
+
+  complement_auto->setFormula(this->formula->negateOperation());
 
   DVLOG(VLOG_LEVEL) << complement_auto->id << " = [" << this->id << "]->complement()";
-
   return complement_auto;
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::intersect(BinaryIntAutomaton_ptr other_auto) {
   DFA_ptr intersect_dfa = nullptr, minimized_dfa = nullptr;
   BinaryIntAutomaton_ptr intersect_auto = nullptr;
+  ArithmeticFormula_ptr intersect_formula = nullptr;
 
   if (not formula->isVariableOrderingSame(other_auto->formula)) {
     LOG(FATAL)<< "You cannot intersect binary automata with different variable orderings";
@@ -99,6 +130,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::intersect(BinaryIntAutomaton_ptr othe
   intersect_dfa = nullptr;
 
   intersect_auto = new BinaryIntAutomaton(minimized_dfa, num_of_variables);
+  intersect_formula = this->formula->clone();
+  intersect_formula->resetCoefficients();
+  intersect_formula->setType(ArithmeticFormula::Type::INTERSECT);
+  intersect_auto->setFormula(intersect_formula);
 
   DVLOG(VLOG_LEVEL) << intersect_auto->id << " = [" << this->id << "]->intersect(" << other_auto->id << ")";
 
@@ -108,6 +143,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::intersect(BinaryIntAutomaton_ptr othe
 BinaryIntAutomaton_ptr BinaryIntAutomaton::union_(BinaryIntAutomaton_ptr other_auto) {
   DFA_ptr union_dfa = nullptr, minimized_dfa = nullptr;
   BinaryIntAutomaton_ptr union_auto = nullptr;
+  ArithmeticFormula_ptr union_formula = nullptr;
 
   if (not formula->isVariableOrderingSame(other_auto->formula)) {
     LOG(FATAL)<< "You cannot union binary automata with different variable orderings";
@@ -119,24 +155,36 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::union_(BinaryIntAutomaton_ptr other_a
   union_dfa = nullptr;
 
   union_auto = new BinaryIntAutomaton(minimized_dfa, num_of_variables);
+  union_formula = this->formula->clone();
+  union_formula->resetCoefficients();
+  union_formula->setType(ArithmeticFormula::Type::UNION);
+  union_auto->setFormula(union_formula);
 
   DVLOG(VLOG_LEVEL) << union_auto->id << " = [" << this->id << "]->union(" << other_auto->id << ")";
 
   return union_auto;
 }
 
-void BinaryIntAutomaton::setFormula(ArithmeticFormula_ptr formula) {
-  this->formula = formula;
+BinaryIntAutomaton_ptr BinaryIntAutomaton::difference(BinaryIntAutomaton_ptr other_auto) {
+  BinaryIntAutomaton_ptr difference_auto = nullptr, complement_auto = nullptr;
+
+  complement_auto = other_auto->complement();
+  difference_auto = this->intersect(complement_auto);
+
+  delete complement_auto; complement_auto = nullptr;
+
+  DVLOG(VLOG_LEVEL) << difference_auto->id << " = [" << this->id << "]->difference(" << other_auto->id << ")";
+
+  return difference_auto;
 }
+
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeEquality(ArithmeticFormula_ptr formula) {
   BinaryIntAutomaton_ptr equality_auto = nullptr;
   DFA_ptr equality_dfa = nullptr, tmp_dfa = nullptr;
 
-  if ( not formula->optimize() ) {
-    equality_dfa = dfaFalse();
-    equality_auto = new BinaryIntAutomaton(equality_dfa, 0);
-    equality_auto->setFormula(formula);
+  if ( not formula->simplify() ) {
+    equality_auto = BinaryIntAutomaton::makePhi(formula);
     DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeEquality(" << *formula << ")";
     return equality_auto;
   }
@@ -261,12 +309,12 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeEquality(ArithmeticFormula_ptr fo
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNotEquality(ArithmeticFormula_ptr formula) {
   BinaryIntAutomaton_ptr not_equal_auto = nullptr, tmp_auto = nullptr;
 
+  formula->setType(ArithmeticFormula::Type::EQ);
   tmp_auto = BinaryIntAutomaton::makeEquality(formula);
   not_equal_auto = tmp_auto->complement();
   delete tmp_auto; tmp_auto = nullptr;
 
-  DVLOG(VLOG_LEVEL) << not_equal_auto->id << " = makeNotEquality(" << *formula << ")";
-
+  DVLOG(VLOG_LEVEL) << not_equal_auto->id << " = makeNotEquality(" << *not_equal_auto->getFormula() << ")";
   return not_equal_auto;
 }
 
@@ -274,9 +322,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThan(ArithmeticFormula_ptr fo
   BinaryIntAutomaton_ptr less_than_auto = nullptr;
   DFA_ptr less_than_dfa = nullptr, tmp_dfa = nullptr;
 
-  formula->optimize();
-
-  std::cout << "optimized: " << *formula << std::endl;
+  formula->simplify();
 
   int min = 0, max = 0, num_of_states, next_index, next_label, result, target;
   int write1, label1, label2;

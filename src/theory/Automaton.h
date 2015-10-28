@@ -65,6 +65,7 @@ public:
   virtual Automaton::Type getType() const;
   unsigned long getId();
   DFA_ptr getDFA();
+  int getNumberOfVariables();
 
   class Name {
   public:
@@ -87,7 +88,7 @@ public:
   void toDotAscii(bool print_sink = false, std::ostream& out = std::cout);
   // TODO merge toDot methods into one with options
   void toDot(std::ostream& out = std::cout);
-  void printBDD(std::ostream& out = std::cout);
+  void toBDD(std::ostream& out = std::cout);
   int inspectAuto(bool print_sink = false);
   int inspectBDD();
 

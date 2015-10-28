@@ -10,15 +10,17 @@
 
 #include <string>
 #include <sstream>
+#include <map>
 
 #include <glog/logging.h>
 
 #include "theory/ArithmeticFormula.h"
 #include "theory/BinaryIntAutomaton.h"
-#include "ArithmeticFormulaGenerator.h"
 #include "smt/ast.h"
 #include "SymbolTable.h"
+#include "Value.h"
 #include "VariableValueComputer.h"
+#include "ArithmeticConstraintSolver.h"
 
 namespace Vlab {
 namespace Solver {
@@ -100,18 +102,22 @@ protected:
   void clearTermValues();
   void setVariablePath(SMT::QualIdentifier_ptr qi_term);
   void update_variables();
-
+  void visit_children_of(SMT::Term_ptr term);
+  bool check_and_visit(SMT::Term_ptr term);
   SMT::Script_ptr root;
   SymbolTable_ptr symbol_table;
-  ArithmeticFormulaGenerator arithmetic_formula_generator;
 
-  TermValueMap post_images;
+  ArithmeticConstraintSolver arithmetic_constraint_solver;
+  std::map<SMT::Term_ptr, SMT::Term_ptr> term_value_index;
+  TermValueMap arith_term_values;
+  std::map<SMT::Term_ptr, SMT::TermList> string_terms_map;
+
+  TermValueMap term_values;
 
   std::vector<SMT::Term_ptr> path_trace;
   VariablePathTable variable_path_table;
 
 private:
-  void __visit_children_of(SMT::Term_ptr term);
   static const int VLOG_LEVEL;
 };
 

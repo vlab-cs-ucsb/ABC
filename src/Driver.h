@@ -46,7 +46,7 @@ public:
   void solve();
   bool isSatisfiable();
   void printResult(Solver::Value_ptr value, std::ostream& out);
-  void printResult(Solver::Value_ptr value, std::string file_name);
+  void inspectResult(Solver::Value_ptr value, std::string file_name);
   std::map<SMT::Variable_ptr, Solver::Value_ptr> getSatisfyingVariables();
   std::map<std::string, std::string> getSatisfyingExamples();
   void reset();

@@ -1,11 +1,9 @@
-(declare-fun haystack_1 () String)
-(assert (= (subString haystack_1 3 10) "<script" ))
-(assert (= (subString haystack_1 2 9) "<script" ))
-(assert (= (subString haystack_1 1 8) "<script" ))
-(assert (= (subString haystack_1 0 7) "<script" ))
-(assert ( >=  11 ( +  (len haystack_1) 1)))
-(assert ( <  10 ( +  (len haystack_1) 1)))
-(assert ( <  9 ( +  (len haystack_1) 1)))
-(assert ( <  8 ( +  (len haystack_1) 1)))
-(assert ( <  7 ( +  (len haystack_1) 1)))
+(set-logic QF_S)
+
+(declare-fun x () Int)
+(declare-fun y () Int)
+(declare-fun z () Int)
+
+(assert (= (+ x (* 2 y) (* 3 z) 7) 0))
+
 (check-sat)

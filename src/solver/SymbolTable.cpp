@@ -219,11 +219,11 @@ Value_ptr SymbolTable::getValue(SMT::Variable_ptr variable) {
     LOG(FATAL) << "bool variables are not supported explicitly yet: " << *variable;
     break;
   case Variable::Type::INT:
-    result = new Value(Value::Type::INT_AUTOMATON, Theory::IntAutomaton::makeAnyInt());
+    result = new Value(Theory::IntAutomaton::makeAnyInt());
     DVLOG(VLOG_LEVEL) << "initialized variable as any integer: " << *variable;
     break;
   case Variable::Type::STRING:
-    result = new Value(Value::Type::STRING_AUTOMATON, Theory::StringAutomaton::makeAnyString());
+    result = new Value(Theory::StringAutomaton::makeAnyString());
     DVLOG(VLOG_LEVEL) << "initialized variable as any string: " << *variable;
     break;
   default:

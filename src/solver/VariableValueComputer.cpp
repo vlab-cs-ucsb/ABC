@@ -113,16 +113,15 @@ void VariableValueComputer::visitUMinus(UMinus_ptr u_minus_term) {
   switch (term_value->getType()) {
   case Value::Type::INT_CONSTANT: {
     int value = - term_value->getIntConstant();
-    child_value = new Value(Value::Type::INT_CONSTANT, value);
+    child_value = new Value(value);
     break;
   }
   case Value::Type::INT_AUTOMATON: {
     if (term_value->getIntAutomaton()->isAcceptingSingleInt()) {
       int value = (- term_value->getIntAutomaton()->getAnAcceptingInt());
-      child_value = new Value(Value::Type::INT_CONSTANT, value);
+      child_value = new Value(value);
     } else {
-      child_value = new Value(Value::Type::INT_AUTOMATON,
-              term_value->getIntAutomaton()->uminus());
+      child_value = new Value(term_value->getIntAutomaton()->uminus());
     }
     break;
   }
@@ -384,20 +383,16 @@ void VariableValueComputer::visitGt(Gt_ptr gt_term) {
     if (child_term == gt_term->left_term) {
       Value_ptr param_right = getTermPostImage(gt_term->right_term);
       if (Value::Type::INT_CONSTANT == param_right->getType()) {
-        child_value = new Value(Value::Type::INT_AUTOMATON,
-                child_post_value->getIntAutomaton()->restrictGreaterThanTo(param_right->getIntConstant()));
+        child_value = new Value(child_post_value->getIntAutomaton()->restrictGreaterThanTo(param_right->getIntConstant()));
       } else {
-        child_value = new Value(Value::Type::INT_AUTOMATON,
-                child_post_value->getIntAutomaton()->restrictGreaterThanTo(param_right->getIntAutomaton()));
+        child_value = new Value(child_post_value->getIntAutomaton()->restrictGreaterThanTo(param_right->getIntAutomaton()));
       }
     } else {
       Value_ptr param_left = getTermPostImage(gt_term->left_term);
       if (Value::Type::INT_CONSTANT == param_left->getType()) {
-        child_value = new Value(Value::Type::INT_AUTOMATON,
-                child_post_value->getIntAutomaton()->restrictLessThanTo(param_left->getIntConstant()));
+        child_value = new Value(child_post_value->getIntAutomaton()->restrictLessThanTo(param_left->getIntConstant()));
       } else {
-        child_value = new Value(Value::Type::INT_AUTOMATON,
-                child_post_value->getIntAutomaton()->restrictLessThanTo(param_left->getIntAutomaton()));
+        child_value = new Value(child_post_value->getIntAutomaton()->restrictLessThanTo(param_left->getIntAutomaton()));
       }
     }
   }
@@ -424,20 +419,16 @@ void VariableValueComputer::visitGe(Ge_ptr ge_term) {
     if (child_term == ge_term->left_term) {
       Value_ptr param_right = getTermPostImage(ge_term->right_term);
       if (Value::Type::INT_CONSTANT == param_right->getType()) {
-        child_value = new Value(Value::Type::INT_AUTOMATON,
-                child_post_value->getIntAutomaton()->restrictGreaterThanOrEqualTo(param_right->getIntConstant()));
+        child_value = new Value(child_post_value->getIntAutomaton()->restrictGreaterThanOrEqualTo(param_right->getIntConstant()));
       } else {
-        child_value = new Value(Value::Type::INT_AUTOMATON,
-                child_post_value->getIntAutomaton()->restrictGreaterThanOrEqualTo(param_right->getIntAutomaton()));
+        child_value = new Value(child_post_value->getIntAutomaton()->restrictGreaterThanOrEqualTo(param_right->getIntAutomaton()));
       }
     } else {
       Value_ptr param_left = getTermPostImage(ge_term->left_term);
       if (Value::Type::INT_CONSTANT == param_left->getType()) {
-        child_value = new Value(Value::Type::INT_AUTOMATON,
-                child_post_value->getIntAutomaton()->restrictLessThanOrEqualTo(param_left->getIntConstant()));
+        child_value = new Value(child_post_value->getIntAutomaton()->restrictLessThanOrEqualTo(param_left->getIntConstant()));
       } else {
-        child_value = new Value(Value::Type::INT_AUTOMATON,
-                child_post_value->getIntAutomaton()->restrictLessThanOrEqualTo(param_left->getIntAutomaton()));
+        child_value = new Value(child_post_value->getIntAutomaton()->restrictLessThanOrEqualTo(param_left->getIntAutomaton()));
       }
     }
   }
@@ -464,20 +455,16 @@ void VariableValueComputer::visitLt(Lt_ptr lt_term) {
     if (child_term == lt_term->left_term) {
       Value_ptr param_right = getTermPostImage(lt_term->right_term);
       if (Value::Type::INT_CONSTANT == param_right->getType()) {
-        child_value = new Value(Value::Type::INT_AUTOMATON,
-                child_post_value->getIntAutomaton()->restrictLessThanTo(param_right->getIntConstant()));
+        child_value = new Value(child_post_value->getIntAutomaton()->restrictLessThanTo(param_right->getIntConstant()));
       } else {
-        child_value = new Value(Value::Type::INT_AUTOMATON,
-                child_post_value->getIntAutomaton()->restrictLessThanTo(param_right->getIntAutomaton()));
+        child_value = new Value(child_post_value->getIntAutomaton()->restrictLessThanTo(param_right->getIntAutomaton()));
       }
     } else {
       Value_ptr param_left = getTermPostImage(lt_term->left_term);
       if (Value::Type::INT_CONSTANT == param_left->getType()) {
-        child_value = new Value(Value::Type::INT_AUTOMATON,
-                child_post_value->getIntAutomaton()->restrictGreaterThanTo(param_left->getIntConstant()));
+        child_value = new Value(child_post_value->getIntAutomaton()->restrictGreaterThanTo(param_left->getIntConstant()));
       } else {
-        child_value = new Value(Value::Type::INT_AUTOMATON,
-                child_post_value->getIntAutomaton()->restrictGreaterThanTo(param_left->getIntAutomaton()));
+        child_value = new Value(child_post_value->getIntAutomaton()->restrictGreaterThanTo(param_left->getIntAutomaton()));
       }
     }
   }
@@ -505,20 +492,16 @@ void VariableValueComputer::visitLe(Le_ptr le_term) {
     if (child_term == le_term->left_term) {
       Value_ptr param_right = getTermPostImage(le_term->right_term);
       if (Value::Type::INT_CONSTANT == param_right->getType()) {
-        child_value = new Value(Value::Type::INT_AUTOMATON,
-                child_post_value->getIntAutomaton()->restrictLessThanOrEqualTo(param_right->getIntConstant()));
+        child_value = new Value(child_post_value->getIntAutomaton()->restrictLessThanOrEqualTo(param_right->getIntConstant()));
       } else {
-        child_value = new Value(Value::Type::INT_AUTOMATON,
-                child_post_value->getIntAutomaton()->restrictLessThanOrEqualTo(param_right->getIntAutomaton()));
+        child_value = new Value(child_post_value->getIntAutomaton()->restrictLessThanOrEqualTo(param_right->getIntAutomaton()));
       }
     } else {
       Value_ptr param_left = getTermPostImage(le_term->left_term);
       if (Value::Type::INT_CONSTANT == param_left->getType()) {
-        child_value = new Value(Value::Type::INT_AUTOMATON,
-                child_post_value->getIntAutomaton()->restrictGreaterThanOrEqualTo(param_left->getIntConstant()));
+        child_value = new Value(child_post_value->getIntAutomaton()->restrictGreaterThanOrEqualTo(param_left->getIntConstant()));
       } else {
-        child_value = new Value(Value::Type::INT_AUTOMATON,
-                child_post_value->getIntAutomaton()->restrictGreaterThanOrEqualTo(param_left->getIntAutomaton()));
+        child_value = new Value(child_post_value->getIntAutomaton()->restrictGreaterThanOrEqualTo(param_left->getIntAutomaton()));
       }
     }
   }
@@ -586,7 +569,7 @@ void VariableValueComputer::visitConcat(Concat_ptr concat_term) {
   delete left_of_child; left_of_child = nullptr;
   delete right_of_child; right_of_child = nullptr;
 
-  child_value = new Value(Value::Type::STRING_AUTOMATON, child_post_value->getStringAutomaton()->intersect(child_result_auto));
+  child_value = new Value(child_post_value->getStringAutomaton()->intersect(child_result_auto));
   delete child_result_auto; child_result_auto = nullptr;
 
   setTermPreImage(child_term, child_value);
@@ -649,11 +632,9 @@ void VariableValueComputer::visitLen(Len_ptr len_term) {
   Value_ptr child_post_value = getTermPostImage(child_term);
 
   if (Value::Type::INT_CONSTANT == term_value->getType()) {
-    child_value = new Value(Value::Type::STRING_AUTOMATON,
-            child_post_value->getStringAutomaton()->restrictLengthTo(term_value->getIntConstant()));
+    child_value = new Value(child_post_value->getStringAutomaton()->restrictLengthTo(term_value->getIntConstant()));
   } else {
-    child_value = new Value(Value::Type::STRING_AUTOMATON,
-            child_post_value->getStringAutomaton()->restrictLengthTo(term_value->getIntAutomaton()));
+    child_value = new Value(child_post_value->getStringAutomaton()->restrictLengthTo(term_value->getIntAutomaton()));
   }
 
   setTermPreImage(child_term, child_value);
@@ -806,12 +787,10 @@ void VariableValueComputer::visitIndexOf(IndexOf_ptr index_of_term) {
   Value_ptr param_search = getTermPostImage(index_of_term->search_term);
 
   if (Value::Type::INT_CONSTANT == term_value->getType()) {
-    child_value = new Value(Value::Type::STRING_AUTOMATON,
-            child_post_value->getStringAutomaton()
+    child_value = new Value(child_post_value->getStringAutomaton()
             ->restrictIndexOfTo(term_value->getIntConstant(), param_search->getStringAutomaton()));
   } else {
-    child_value = new Value(Value::Type::STRING_AUTOMATON,
-                child_post_value->getStringAutomaton()
+    child_value = new Value(child_post_value->getStringAutomaton()
                 ->restrictIndexOfTo(term_value->getIntAutomaton(), param_search->getStringAutomaton()));
   }
 
@@ -839,13 +818,11 @@ void VariableValueComputer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_
   Value_ptr param_search = getTermPostImage(last_index_of_term->search_term);
 
   if (Value::Type::INT_CONSTANT == term_value->getType()) {
-    child_value = new Value(Value::Type::STRING_AUTOMATON,
-            child_post_value->getStringAutomaton()
+    child_value = new Value(child_post_value->getStringAutomaton()
             ->restrictLastIndexOfTo(term_value->getIntConstant(), param_search->getStringAutomaton()));
 
   } else {
-    child_value = new Value(Value::Type::STRING_AUTOMATON,
-                child_post_value->getStringAutomaton()
+    child_value = new Value(child_post_value->getStringAutomaton()
                 ->restrictLastIndexOfTo(term_value->getIntAutomaton(), param_search->getStringAutomaton()));
   }
 
@@ -875,12 +852,10 @@ void VariableValueComputer::visitCharAt(SMT::CharAt_ptr char_at_term) {
   Value_ptr child_post_value = getTermPostImage(child_term);
   Value_ptr index_value = getTermPostImage(char_at_term->index_term);
   if (Value::Type::INT_CONSTANT == index_value->getType()) {
-    child_value = new Value(Value::Type::STRING_AUTOMATON,
-            child_post_value->getStringAutomaton()
+    child_value = new Value(child_post_value->getStringAutomaton()
             ->restrictAtIndexTo(index_value->getIntConstant(), term_value->getStringAutomaton()));
   } else {
-    child_value = new Value(Value::Type::STRING_AUTOMATON,
-            child_post_value->getStringAutomaton()
+    child_value = new Value(child_post_value->getStringAutomaton()
             ->restrictAtIndexTo(index_value->getIntAutomaton(), term_value->getStringAutomaton()));
   }
 
@@ -914,23 +889,19 @@ void VariableValueComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
 
   if (sub_string_term->end_index_term == nullptr) {
     if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
-      child_value = new Value(Value::Type::STRING_AUTOMATON,
-              child_post_value->getStringAutomaton()
+      child_value = new Value(child_post_value->getStringAutomaton()
               ->restrictFromIndexToEndTo(start_index_value->getIntConstant(), term_value->getStringAutomaton()));
     } else {
-      child_value = new Value(Value::Type::STRING_AUTOMATON,
-              child_post_value->getStringAutomaton()
+      child_value = new Value(child_post_value->getStringAutomaton()
               ->restrictFromIndexToEndTo(start_index_value->getIntAutomaton(), term_value->getStringAutomaton()));
     }
 
   } else { //term_value already contains end index
     if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
-      child_value = new Value(Value::Type::STRING_AUTOMATON,
-              child_post_value->getStringAutomaton()
+      child_value = new Value(child_post_value->getStringAutomaton()
               ->restrictAtIndexTo(start_index_value->getIntConstant(), term_value->getStringAutomaton()));
     } else {
-      child_value = new Value(Value::Type::STRING_AUTOMATON,
-              child_post_value->getStringAutomaton()
+      child_value = new Value(child_post_value->getStringAutomaton()
               ->restrictAtIndexTo(start_index_value->getIntAutomaton(), term_value->getStringAutomaton()));
     }
   }
@@ -958,8 +929,7 @@ void VariableValueComputer::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_
   Value_ptr term_value = getTermPreImage(sub_string_first_of_term);
   Value_ptr child_post_value = getTermPostImage(child_term);
 
-  child_value = new Value(Value::Type::STRING_AUTOMATON,
-          child_post_value->getStringAutomaton()
+  child_value = new Value(child_post_value->getStringAutomaton()
           ->ends(term_value->getStringAutomaton()));
 
   setTermPreImage(child_term, child_value);
@@ -986,8 +956,7 @@ void VariableValueComputer::visitSubStringLastOf(SMT::SubStringLastOf_ptr sub_st
   Value_ptr child_post_value = getTermPostImage(child_term);
   Value_ptr start_index_value = getTermPostImage(sub_string_last_of_term->start_index_term);
 
-  child_value = new Value(Value::Type::STRING_AUTOMATON,
-          child_post_value->getStringAutomaton()
+  child_value = new Value(child_post_value->getStringAutomaton()
           ->ends(term_value->getStringAutomaton()));
 
   setTermPreImage(child_term, child_value);
@@ -1012,7 +981,7 @@ void VariableValueComputer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
   Value_ptr child_post_value = getTermPostImage(child_term);
   Theory::StringAutomaton_ptr child_pre_auto = term_value->getStringAutomaton()
       ->preToUpperCase(child_post_value->getStringAutomaton());
-  child_value = new Value(Value::Type::STRING_AUTOMATON, child_pre_auto);
+  child_value = new Value(child_pre_auto);
   setTermPreImage(child_term, child_value);
   visit(child_term);
 }
@@ -1031,7 +1000,7 @@ void VariableValueComputer::visitToLower(SMT::ToLower_ptr to_lower_term) {
   Value_ptr child_post_value = getTermPostImage(child_term);
   Theory::StringAutomaton_ptr child_pre_auto = term_value->getStringAutomaton()
       ->preToLowerCase(child_post_value->getStringAutomaton());
-  child_value = new Value(Value::Type::STRING_AUTOMATON, child_pre_auto);
+  child_value = new Value(child_pre_auto);
   setTermPreImage(child_term, child_value);
   visit(child_term);
 }
@@ -1050,7 +1019,7 @@ void VariableValueComputer::visitTrim(SMT::Trim_ptr trim_term) {
   Value_ptr child_post_value = getTermPostImage(child_term);
   Theory::StringAutomaton_ptr child_pre_auto = term_value->getStringAutomaton()
       ->preTrim(child_post_value->getStringAutomaton());
-  child_value = new Value(Value::Type::STRING_AUTOMATON, child_pre_auto);
+  child_value = new Value(child_pre_auto);
   setTermPreImage(child_term, child_value);
   visit(child_term);
 }
@@ -1075,7 +1044,7 @@ void VariableValueComputer::visitReplace(Replace_ptr replace_term) {
         ->preReplace(search_auto_value->getStringAutomaton(),
             replace_auto_value->getStringAutomaton()->getAnAcceptingString(),
             child_post_value->getStringAutomaton());
-    child_value = new Value(Value::Type::STRING_AUTOMATON, child_pre_auto);
+    child_value = new Value(child_pre_auto);
   } else {
     child_value = child_post_value->clone();
   }
@@ -1113,11 +1082,11 @@ void VariableValueComputer::visitUnknownTerm(Unknown_ptr unknown_term) {
   Value_ptr child_post_value = getTermPostImage(child_term);
   switch (child_post_value->getType()) {
     case Value::Type::STRING_AUTOMATON:
-      child_value = new Value(Value::Type::STRING_AUTOMATON, Theory::StringAutomaton::makeAnyString());
+      child_value = new Value(Theory::StringAutomaton::makeAnyString());
       break;
     case Value::Type::INT_CONSTANT:
     case Value::Type::INT_AUTOMATON:
-      child_value = new Value(Value::Type::INT_AUTOMATON, Theory::IntAutomaton::makeAnyInt());
+      child_value = new Value(Theory::IntAutomaton::makeAnyInt());
       break;
     default:
       child_value = child_post_value->clone();

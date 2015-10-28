@@ -43,6 +43,8 @@ libabc_la_SOURCES = \
   ./solver/VariableValueComputer.h \
   ./solver/ArithmeticFormulaGenerator.cpp \
   ./solver/ArithmeticFormulaGenerator.h \
+  ./solver/ArithmeticConstraintSolver.cpp \
+  ./solver/ArithmeticConstraintSolver.h \
   ./solver/ConstraintSolver.cpp \
 	./solver/ConstraintSolver.h \
 	Driver.cpp \

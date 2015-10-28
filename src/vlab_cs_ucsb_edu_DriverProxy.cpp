@@ -110,10 +110,7 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_printResultAutomaton__L
           std::stringstream ss;
           ss << file_path << "_" << index << ".dot";
           std::string out_file = ss.str();
-          abc_driver->printResult(variable_entry.second, out_file);
-          std::string dot_cmd("xdot " + out_file + " &");
-          int r = std::system(dot_cmd.c_str());
-          std::cout << "result rendered? " << r << " : " << dot_cmd;
+          abc_driver->inspectResult(variable_entry.second, out_file);
           break;
         }
         default:

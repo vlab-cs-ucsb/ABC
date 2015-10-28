@@ -330,6 +330,8 @@ IntAutomaton_ptr IntAutomaton::difference(IntAutomaton_ptr other_auto) {
   difference_auto = this->intersect(complement_auto);
   // negative one handled in complement and intersect
 
+  delete complement_auto; complement_auto = nullptr;
+
   DVLOG(VLOG_LEVEL) << difference_auto->id << " = [" << this->id << "]->difference(" << other_auto->id << ")";
 
   return difference_auto;

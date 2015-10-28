@@ -32,12 +32,16 @@ public:
 
   virtual BinaryIntAutomaton_ptr clone() const;
 
+  static BinaryIntAutomaton_ptr makePhi(ArithmeticFormula_ptr formula);
   static BinaryIntAutomaton_ptr makeAutomaton(ArithmeticFormula_ptr);
 
+  ArithmeticFormula_ptr getFormula();
+  void setFormula(ArithmeticFormula_ptr formula);
   BinaryIntAutomaton_ptr complement();
   BinaryIntAutomaton_ptr intersect(BinaryIntAutomaton_ptr);
   BinaryIntAutomaton_ptr union_(BinaryIntAutomaton_ptr);
-  void setFormula(ArithmeticFormula_ptr formula);
+  BinaryIntAutomaton_ptr difference(BinaryIntAutomaton_ptr);
+
 
 protected:
   BinaryIntAutomaton(ArithmeticFormula_ptr formula);

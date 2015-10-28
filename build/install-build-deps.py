@@ -58,13 +58,13 @@ _project_dep = (
      'install'  : True
  },
  {
-     'name'     : 'googletest',
+     'name'     : 'googlemock',
      'submodule': True,
      'url'      : False,
      'checkout' : False,
      'patch'    : False,
-     'path'     : os.path.abspath(os.path.join(LIB_PATH, 'googletest', 'googletest')),
-     'commands' : ['libtoolize', 'aclocal', 'autoheader', 'automake --gnu --add-missing', 'autoreconf -ivf'],     
+     'path'     : os.path.abspath(os.path.join(LIB_PATH, 'googletest', 'googlemock')),
+     'commands' : ['autoreconf -fvi'],     
      'autogen'  : False,
      'autotools': True,
      'install'  : False

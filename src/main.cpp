@@ -98,10 +98,7 @@ int main(const int argc, const char **argv) {
             std::stringstream ss;
             ss << output_root << "/result_" << index << ".dot";
             std::string out_file = ss.str();
-            driver.printResult(variable_entry.second, out_file);
-            std::string dot_cmd("xdot " + out_file + " &");
-            int r = std::system(dot_cmd.c_str());
-            LOG(INFO) << "result rendered? " << r << " : " << dot_cmd;
+            driver.inspectResult(variable_entry.second, out_file);
             break;
           }
           default:

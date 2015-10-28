@@ -82,6 +82,10 @@ DFA_ptr Automaton::getDFA() {
   return dfa;
 }
 
+int Automaton::getNumberOfVariables() {
+  return num_of_variables;
+}
+
 /**
  * TODO Needs complete refactoring, has a lot of room for improvements
  * especially in libstranger function calls
@@ -138,7 +142,6 @@ bool Automaton::isOnlyInitialStateAccepting() {
 }
 
 bool Automaton::isCyclic() {
-
   bool is_cyclic = false;
   Graph_ptr graph = toGraph();
   is_cyclic = graph->isCyclic();
@@ -882,7 +885,7 @@ void Automaton::toDot(std::ostream& out) {
   out << "}" << std::endl;
 }
 
-void Automaton::printBDD(std::ostream& out) {
+void Automaton::toBDD(std::ostream& out) {
   Table *table = tableInit();
   int sink = getSinkState();
 
@@ -975,7 +978,7 @@ int Automaton::inspectBDD() {
     std::cout << "cannot open file: " << file_name << std::endl;
     exit(2);
   }
-  printBDD(outfile);
+  toBDD(outfile);
   std::string dot_cmd("xdot " + file + " &");
   return std::system(dot_cmd.c_str());
 }

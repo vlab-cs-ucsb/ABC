@@ -26,7 +26,7 @@ class ArithmeticFormula {
 public:
   enum class Type :
           int {
-            NONE = 0, EQ, NOTEQ, GT, GE, LT, LE
+            NONE = 0, EQ, NOTEQ, GT, GE, LT, LE, INTERSECT, UNION
           };
   ArithmeticFormula();
   ArithmeticFormula(std::map<std::string, int>& coeff_map, std::vector<int>& coeffs);
@@ -38,7 +38,9 @@ public:
   std::string str() const;
   void setType(Type type);
   ArithmeticFormula::Type getType() const;
+  int getNumberOfVariables() const;
   std::vector<int>& getCoefficients();
+  std::map<std::string, int>& getCoefficientIndexMap();
   int getVariableCoefficient(std::string);
   void setVariableCoefficient(std::string, int coeff);
   int getConstant();
@@ -46,13 +48,14 @@ public:
   bool isConstant();
   bool isVariableOrderingSame(ArithmeticFormula_ptr other_formula);
   void mergeCoefficients(ArithmeticFormula_ptr other_formula);
+  void resetCoefficients(int value = 0);
 
   ArithmeticFormula_ptr substract(ArithmeticFormula_ptr);
-  ArithmeticFormula_ptr negate();
+  ArithmeticFormula_ptr negateOperation();
   ArithmeticFormula_ptr multiply(int value);
   ArithmeticFormula_ptr add(ArithmeticFormula_ptr);
 
-  bool optimize();
+  bool simplify();
   int countOnes(unsigned long n);
 
   class Name {
@@ -64,6 +67,8 @@ public:
     static const std::string GE;
     static const std::string LT;
     static const std::string LE;
+    static const std::string INTERSECT;
+    static const std::string UNION;
   };
 
   friend std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula);

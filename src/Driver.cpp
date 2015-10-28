@@ -95,8 +95,8 @@ void Driver::initializeSolver() {
 }
 
 void Driver::solve() {
-  Solver::ConstraintSolver post_image_computer(script, symbol_table);
-  post_image_computer.start();
+  Solver::ConstraintSolver constraint_solver(script, symbol_table);
+  constraint_solver.start();
 
   // TODO iterate to handle over-approximation
 }
@@ -106,13 +106,30 @@ bool Driver::isSatisfiable() {
 }
 
 
-void Driver::printResult(Solver::Value_ptr value, std::string file_name) {
+void Driver::inspectResult(Solver::Value_ptr value, std::string file_name) {
   std::ofstream outfile(file_name.c_str());
   if (!outfile.good()) {
     std::cout << "cannot open file: " << file_name << std::endl;
     exit(2);
   }
   printResult(value, outfile);
+
+  std::string dot_cmd("xdot " + file_name + " &");
+  int r = std::system(dot_cmd.c_str());
+
+  if (Solver::Value::Type::BINARYINT_AUTOMATON == value->getType()) {
+    file_name += "bdd";
+    std::ofstream outfile(file_name.c_str());
+    if (!outfile.good()) {
+      std::cout << "cannot open file: " << file_name << std::endl;
+      exit(2);
+    }
+    value->getBinaryIntAutomaton()->toBDD(outfile);
+    std::string dot_cmd("xdot " + file_name + " &");
+    int r = std::system(dot_cmd.c_str());
+  }
+
+  LOG(INFO) << "result rendered? " << r << " : " << dot_cmd;
 }
 
 void Driver::printResult(Solver::Value_ptr value, std::ostream& out) {
@@ -122,6 +139,9 @@ void Driver::printResult(Solver::Value_ptr value, std::ostream& out) {
       break;
     case Solver::Value::Type::INT_AUTOMATON:
       value->getIntAutomaton()->toDotAscii(false, out);
+      break;
+    case Solver::Value::Type::BINARYINT_AUTOMATON:
+      value->getBinaryIntAutomaton()->toDot(out);
       break;
     default:
       break;

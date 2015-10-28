@@ -94,6 +94,9 @@ public:
   void visitVariable(SMT::Variable_ptr);
 
   Theory::ArithmeticFormula_ptr getTermFormula(SMT::Term_ptr term);
+  bool hasStringTerms(SMT::Term_ptr term);
+  std::map<SMT::Term_ptr, SMT::TermList> getStringTermsMap();
+  SMT::TermList& getStringTermsIn(SMT::Term_ptr term);
   void clearTermFormulas();
 protected:
   bool setTermFormula(SMT::Term_ptr term, Theory::ArithmeticFormula_ptr formula);
@@ -105,6 +108,8 @@ protected:
   std::map<std::string, int> coeff_index_map;
   std::vector<int> coefficients;
   std::map<SMT::Term_ptr, Theory::ArithmeticFormula_ptr> formulas;
+  SMT::TermList string_terms;
+  std::map<SMT::Term_ptr, SMT::TermList> string_terms_map;
 
 private:
   static const int VLOG_LEVEL;
