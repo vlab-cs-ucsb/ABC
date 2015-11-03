@@ -40,17 +40,10 @@ public:
   void visitAssert(SMT::Assert_ptr);
   void visitAnd(SMT::And_ptr);
   void visitOr(SMT::Or_ptr);
-  void processOr(SMT::Or_ptr);
-  //  void visitNot(SMT::Not_ptr);
-//  void visitEq(SMT::Eq_ptr);
-//  void visitNotEq(SMT::NotEq_ptr);
-//  void visitGt(SMT::Gt_ptr);
-//  void visitGe(SMT::Ge_ptr);
-//  void visitLt(SMT::Lt_ptr);
-//  void visitLe(SMT::Le_ptr);
 
   Value_ptr getTermValue(SMT::Term_ptr term);
   bool setTermValue(SMT::Term_ptr term, Value_ptr value);
+  void clearTermValue(SMT::Term_ptr term);
   void clearTermValues();
   bool hasStringTerms(SMT::Term_ptr term);
   SMT::TermList& getStringTermsIn(SMT::Term_ptr term);

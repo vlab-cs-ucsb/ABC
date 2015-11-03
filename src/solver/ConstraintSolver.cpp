@@ -37,7 +37,6 @@ ConstraintSolver::~ConstraintSolver() {
 void ConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "start";
   arithmetic_constraint_solver.start();
-  arithmetic_constraint_solver.assign(term_value_index, arith_term_values, string_terms_map);
   visit(root);
   end();
 }
@@ -56,7 +55,7 @@ void ConstraintSolver::visitCommand(Command_ptr command) {
 }
 
 void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
-
+  DVLOG(VLOG_LEVEL) << "visit: " << *assert_command;
   check_and_visit(assert_command->term);
 
   Value_ptr result = getTermValue(assert_command->term);
@@ -68,6 +67,9 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
     if (is_satisfiable) {
       update_variables();
+      if (Value::Type::BINARYINT_AUTOMATON == result->getType()) {
+        symbol_table->setValue(SymbolTable::ARITHMETIC, result);
+      }
     }
   }
   clearTermValues();
@@ -93,15 +95,17 @@ void ConstraintSolver::visitLet(Let_ptr let_term) {
  */
 void ConstraintSolver::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
-
   bool is_satisfiable = true;
   Value_ptr result = nullptr, param = nullptr;
   for (auto& term : *(and_term->term_list)) {
-    visit(term);
+    check_and_visit(term);
     param = getTermValue(term);
     is_satisfiable = is_satisfiable and param->isSatisfiable();
     if (is_satisfiable) {
       update_variables();
+      if (Value::Type::BINARYINT_AUTOMATON == param->getType()) {
+        symbol_table->setValue(SymbolTable::ARITHMETIC, param);
+      }
     } else {
       clearTermValues();
       break;
@@ -122,13 +126,16 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
 
   for (auto& term : *(or_term->term_list)) {
     symbol_table->push_scope(term);
-    visit(term);
+    check_and_visit(term);
 
     param = getTermValue(term);
 
     if (Term::Type::AND not_eq term->getType()) {
       if (param->isSatisfiable()) {
         update_variables();
+        if (Value::Type::BINARYINT_AUTOMATON == param->getType()) {
+          symbol_table->setValue(SymbolTable::ARITHMETIC, param);
+        }
       }
       clearTermValues();
     }
@@ -136,7 +143,7 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
     symbol_table->setScopeSatisfiability(is_scope_satisfiable);
     is_satisfiable = is_satisfiable or is_scope_satisfiable;
     symbol_table->pop_scope();
-    if (is_satisfiable) { // for model counting we need to continue to calculate each term in disjunction
+    if (is_satisfiable) { //TODO for model counting we need to continue to calculate each term in disjunction
       break;
     }
   }
@@ -1055,23 +1062,27 @@ void ConstraintSolver::visit_children_of(Term_ptr term) {
 }
 
 bool ConstraintSolver::check_and_visit(Term_ptr term) {
+  if ((Term::Type::OR not_eq term->getType()) and
+            (Term::Type::AND not_eq term->getType())) {
 
-  Value_ptr result = getTermValue(term);
-  if (result != nullptr) {
-    DVLOG(VLOG_LEVEL) << "Linear Arithmetic Constraint";
-    if (arithmetic_constraint_solver.hasStringTerms(term)) {
-      Value_ptr string_term_result = nullptr;
-      for (auto& string_term : arithmetic_constraint_solver.getStringTermsIn(term)) {
-        visit(string_term);
-        string_term_result = getTermValue(string_term);
-        // TODO update arithmetic automaton here based on the string expr value, this is a cyclic dependency, need to resolve where to handle cycles
-//        arithmetic_constraint_solver.updateArithmeticAuto(result, string_term_result, string_term); // TODO implement update interface
-        if (not result->isSatisfiable()) {
-          break;
+    Value_ptr result = getTermValue(term);
+    if (result != nullptr) {
+      DVLOG(VLOG_LEVEL) << "Linear Arithmetic Constraint";
+      if (arithmetic_constraint_solver.hasStringTerms(term)) {
+        Value_ptr string_term_result = nullptr;
+        for (auto& string_term : arithmetic_constraint_solver.getStringTermsIn(term)) {
+          visit(string_term);
+          string_term_result = getTermValue(string_term);
+          // TODO update arithmetic automaton here based on the string expr value, this is a cyclic dependency, need to resolve where to handle cycles
+  //        arithmetic_constraint_solver.updateArithmeticAuto(result, string_term_result, string_term); // TODO implement update interface
+          if (not result->isSatisfiable()) {
+            break;
+          }
+          // TODO update post value of the string automaton here and put it to term values
         }
       }
+      return false;
     }
-    return false;
   }
 
   visit(term);

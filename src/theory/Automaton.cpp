@@ -42,7 +42,8 @@ Automaton::~Automaton() {
     dfaFree(dfa);
     dfa = nullptr;
   }
-  delete variable_indices;
+  delete[] variable_indices;
+  variable_indices = nullptr;
   //  DVLOG(VLOG_LEVEL) << "delete " << " [" << this->id << "]";
 }
 

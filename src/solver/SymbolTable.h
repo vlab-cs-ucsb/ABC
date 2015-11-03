@@ -73,7 +73,7 @@ public:
   bool setValue(std::string var_name, Value_ptr value);
   bool setValue(SMT::Variable_ptr variable, Value_ptr value);
 
-
+  static const std::string ARITHMETIC;
 private:
   bool global_assertion_result;
   int bound;

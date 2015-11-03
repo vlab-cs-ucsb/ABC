@@ -13,19 +13,21 @@ namespace Solver {
 using namespace SMT;
 
 const int SymbolTable::VLOG_LEVEL = 10;
+const std::string SymbolTable::ARITHMETIC = "__VLAB_CS_ARITHMETIC__";
 
 SymbolTable::SymbolTable()
         : global_assertion_result(true), bound(50) {
+  addVariable(new Variable(ARITHMETIC, Variable::Type::INT));
 }
+
 SymbolTable::~SymbolTable() {
-
   reset_substitution_rules();
-
   for (auto& map_pair : variable_value_table) {
     for (auto& value_pair : map_pair.second) {
       delete value_pair.second;
     }
   }
+
   variable_value_table.clear();
 
   for (auto& entry : variables) {

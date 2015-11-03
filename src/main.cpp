@@ -94,7 +94,8 @@ int main(const int argc, const char **argv) {
         LOG(INFO) << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"";
         switch (variable_entry.second->getType()) {
           case Vlab::Solver::Value::Type::INT_AUTOMATON:
-          case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
+          case Vlab::Solver::Value::Type::STRING_AUTOMATON:
+          case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
             std::stringstream ss;
             ss << output_root << "/result_" << index << ".dot";
             std::string out_file = ss.str();
@@ -111,7 +112,6 @@ int main(const int argc, const char **argv) {
   }
 
   LOG(INFO)<< "done.";
-
   return 0;
 }
 

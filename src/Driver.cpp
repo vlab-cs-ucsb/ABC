@@ -35,7 +35,7 @@ void Driver::initializeABC(int log_level) {
 }
 
 void Driver::error(const std::string& m) {
-  std::cerr << m << std::endl;
+  LOG(ERROR) << m;
 }
 
 int Driver::parse(std::istream* in) {
@@ -44,7 +44,7 @@ int Driver::parse(std::istream* in) {
   SMT::Parser parser(script, scanner);
   //	parser.set_debug_level (trace_parsing);
   int res = parser.parse();
-  CHECK_EQ(0, res);
+  CHECK_EQ(0, res)<< "Syntax error";
   return res;
 }
 

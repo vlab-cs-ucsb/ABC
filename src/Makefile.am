@@ -1,6 +1,7 @@
 SUBDIRS = parser theory
 AM_CXXFLAGS = \
-	-I$(top_srcdir)/src
+	-I$(top_srcdir)/src \
+	-g
 
 if JAVA_HOME_VALID
 AM_CXXFLAGS += -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux

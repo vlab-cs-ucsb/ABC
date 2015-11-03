@@ -519,7 +519,8 @@ Value::~Value() {
       LOG(ERROR) << "implement me";
       break;
     case Type::BINARYINT_AUTOMATON:
-      LOG(FATAL) << "implemen me";
+      LOG(ERROR) << "implement me";
+      ss << "------";
       break;
     case Type::STRING_AUTOMATON:
       ss << string_automaton->getAnAcceptingString();

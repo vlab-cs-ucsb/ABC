@@ -108,9 +108,6 @@ protected:
   SymbolTable_ptr symbol_table;
 
   ArithmeticConstraintSolver arithmetic_constraint_solver;
-  std::map<SMT::Term_ptr, SMT::Term_ptr> term_value_index;
-  TermValueMap arith_term_values;
-  std::map<SMT::Term_ptr, SMT::TermList> string_terms_map;
 
   TermValueMap term_values;
 
