@@ -21,10 +21,16 @@ libabcautomaton_la_SOURCES = \
 	DAGraph.h \
 	ArithmeticFormula.cpp \
 	ArithmeticFormula.h \
+	BinaryState.cpp \
+	BinaryState.h \
+	SemilinearSet.cpp \
+	SemilinearSet.h \
 	Automaton.cpp \
 	Automaton.h \
 	BoolAutomaton.cpp \
 	BoolAutomaton.h \
+	UnaryAutomaton.cpp \
+	UnaryAutomaton.h \
 	IntAutomaton.cpp \
 	IntAutomaton.h \
 	IntBoolAutomaton.cpp \

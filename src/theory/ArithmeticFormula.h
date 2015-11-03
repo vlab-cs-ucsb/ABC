@@ -41,6 +41,7 @@ public:
   int getNumberOfVariables() const;
   std::vector<int>& getCoefficients();
   std::map<std::string, int>& getCoefficientIndexMap();
+  int getVariableIndex(std::string);
   int getVariableCoefficient(std::string);
   void setVariableCoefficient(std::string, int coeff);
   int getConstant();

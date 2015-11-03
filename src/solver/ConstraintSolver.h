@@ -14,9 +14,13 @@
 
 #include <glog/logging.h>
 
+#include "smt/ast.h"
+#include "theory/UnaryAutomaton.h"
+#include "theory/IntAutomaton.h"
 #include "theory/ArithmeticFormula.h"
 #include "theory/BinaryIntAutomaton.h"
-#include "smt/ast.h"
+#include "theory/StringAutomaton.h"
+#include "Ast2Dot.h"
 #include "SymbolTable.h"
 #include "Value.h"
 #include "VariableValueComputer.h"
@@ -99,11 +103,13 @@ public:
 protected:
   Value_ptr getTermValue(SMT::Term_ptr term);
   bool setTermValue(SMT::Term_ptr term, Value_ptr value);
+  void clearTermValue(SMT::Term_ptr term);
   void clearTermValues();
   void setVariablePath(SMT::QualIdentifier_ptr qi_term);
   void update_variables();
   void visit_children_of(SMT::Term_ptr term);
   bool check_and_visit(SMT::Term_ptr term);
+
   SMT::Script_ptr root;
   SymbolTable_ptr symbol_table;
 

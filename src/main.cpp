@@ -66,7 +66,7 @@ int main(const int argc, const char **argv) {
   /* log test end */
 
   if (not in->good()) {
-    LOG(FATAL)<< "Cannot find input";
+    LOG(FATAL)<< "Cannot find input: ";
   }
 
   int bound = std::stoi(bound_string);
@@ -89,7 +89,7 @@ int main(const int argc, const char **argv) {
   if (driver.isSatisfiable()) {
     LOG(INFO)<< "satisfiable !";
     if (VLOG_IS_ON(30)) {
-      int index = 0;
+      unsigned index = 0;
       for(auto& variable_entry : driver.getSatisfyingVariables()) {
         LOG(INFO) << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"";
         switch (variable_entry.second->getType()) {
@@ -97,7 +97,7 @@ int main(const int argc, const char **argv) {
           case Vlab::Solver::Value::Type::STRING_AUTOMATON:
           case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
             std::stringstream ss;
-            ss << output_root << "/result_" << index << ".dot";
+            ss << output_root << "/result_" << index++ << ".dot";
             std::string out_file = ss.str();
             driver.inspectResult(variable_entry.second, out_file);
             break;

@@ -33,6 +33,7 @@
 #include "utils/RegularExpression.h"
 #include "Graph.h"
 #include "DAGraph.h"
+#include "SemilinearSet.h"
 
 
 #include "utils.h"
@@ -52,7 +53,7 @@ class Automaton {
 public:
   enum class Type
     : int {
-      NONE = 0, BOOL, INT, INTBOOl, STRING, BINARYINT
+      NONE = 0, BOOL, UNARY, INT, INTBOOl, BINARYINT, STRING
   };
 
   Automaton(Automaton::Type type);
@@ -66,11 +67,13 @@ public:
   unsigned long getId();
   DFA_ptr getDFA();
   int getNumberOfVariables();
+  int* getVariableIndices();
 
   class Name {
   public:
     static const std::string NONE;
     static const std::string BOOL;
+    static const std::string UNARY;
     static const std::string INT;
     static const std::string INTBOOl;
     static const std::string STRING;
@@ -106,14 +109,16 @@ protected:
   static char* binaryFormat(unsigned long n, int bit_length);
   static std::vector<char> getReservedWord(char last_char, int length, bool extra_bit = false);
   void minimize();
-  void project(unsigned num_of_variables);
+  void project(unsigned index);
 
+  bool isStartState(int state_id);
   bool isSinkState(int state_id);
   bool isAcceptingState(int state_id);
   int getSinkState();
   bool hasIncomingTransition(int state);
   bool isStartStateReachableFromAnAcceptingState();
   bool hasNextState(int state, int search);
+  int getNextState(int state, std::vector<char>& exception);
   std::set<int>* getNextStates(int state);
   AdjacencyList getAdjacencyCountList();
 

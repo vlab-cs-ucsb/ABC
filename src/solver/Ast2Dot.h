@@ -95,7 +95,7 @@ public:
   void visitVariable(SMT::Variable_ptr);
 
   int inspectAST(SMT::Visitable_ptr node);
-  std::string toString(SMT::Visitable_ptr node);
+  static std::string toString(SMT::Visitable_ptr node);
   static bool isEquivalent(SMT::Visitable_ptr x, SMT::Visitable_ptr y);
 
 private:

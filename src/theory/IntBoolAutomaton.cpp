@@ -13,11 +13,11 @@ namespace Theory {
 const int IntBoolAutomaton::VLOG_LEVEL = 9;
 
 IntBoolAutomaton::IntBoolAutomaton()
-        : Automaton(Automaton::Type::STRING) {
+        : Automaton(Automaton::Type::INTBOOl) {
 }
 
 IntBoolAutomaton::IntBoolAutomaton(const IntBoolAutomaton& other)
-        : Automaton(Automaton::Type::STRING) {
+        : Automaton(Automaton::Type::INTBOOl) {
 }
 
 IntBoolAutomaton_ptr IntBoolAutomaton::clone() const {

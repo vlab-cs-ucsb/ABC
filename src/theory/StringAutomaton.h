@@ -110,6 +110,7 @@ public:
 
   StringAutomaton_ptr replace(StringAutomaton_ptr search_auto, StringAutomaton_ptr replace_auto);
 
+  DFA_ptr unaryLength();
   IntAutomaton_ptr length();
   StringAutomaton_ptr restrictLengthTo(int length);
   StringAutomaton_ptr restrictLengthTo(IntAutomaton_ptr length_auto);
@@ -152,7 +153,6 @@ protected:
       int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
 
   bool hasExceptionToValidStateFrom(int state, std::vector<char>& exception);
-  int getNextStateFrom(int state, std::vector<char>& exception);
   std::vector<int> getAcceptingStates();
 
   GraphOld* getGraph();

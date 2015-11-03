@@ -162,6 +162,22 @@ bool ArithmeticConstraintSolver::setTermValue(Term_ptr term, Value_ptr value) {
   return result.second;
 }
 
+bool ArithmeticConstraintSolver::updateTermValue(SMT::Term_ptr term, Value_ptr value) {
+  Term_ptr key = term;
+  auto it1 = term_value_index.find(term);
+  if (it1 != term_value_index.end()) {
+    key = it1->second;
+  }
+
+  auto it2 = term_values.find(key);
+  if (it2 != term_values.end()) {
+    it2->second = value;
+    return true;
+  }
+
+  return false;
+}
+
 void ArithmeticConstraintSolver::clearTermValues() {
   for (auto& entry : term_values) {
     delete entry.second;

@@ -378,11 +378,8 @@ void ArithmeticFormulaGenerator::visitLen(Len_ptr len_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *len_term;
 
   ArithmeticFormula_ptr formula = nullptr;
-  std::stringstream ss;
-  Ast2Dot toDot(&ss);
-  toDot.start(len_term);
 
-  std::string name = ss.str();
+  std::string name = Ast2Dot::toString(len_term);
 
   addArithmeticVariable(name);
   formula = new ArithmeticFormula(coeff_index_map, coefficients);
@@ -415,11 +412,8 @@ void ArithmeticFormulaGenerator::visitIndexOf(IndexOf_ptr index_of_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *index_of_term;
 
   ArithmeticFormula_ptr formula = nullptr;
-  std::stringstream ss;
-  Ast2Dot toDot(&ss);
-  toDot.start(index_of_term);
 
-  std::string name = ss.str();
+  std::string name = Ast2Dot::toString(index_of_term);
 
   addArithmeticVariable(name);
   formula = new ArithmeticFormula(coeff_index_map, coefficients);
@@ -434,11 +428,8 @@ void ArithmeticFormulaGenerator::visitLastIndexOf(LastIndexOf_ptr last_index_of_
   DVLOG(VLOG_LEVEL) << "visit: " << *last_index_of_term;
 
   ArithmeticFormula_ptr formula = nullptr;
-  std::stringstream ss;
-  Ast2Dot toDot(&ss);
-  toDot.start(last_index_of_term);
 
-  std::string name = ss.str();
+  std::string name = Ast2Dot::toString(last_index_of_term);
 
   addArithmeticVariable(name);
   formula = new ArithmeticFormula(coeff_index_map, coefficients);

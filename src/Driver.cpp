@@ -19,9 +19,6 @@ Driver::Driver()
 Driver::~Driver() {
   delete symbol_table;
   delete script;
-//  if (IS_LOGGING_INITIALIZED) {
-//    google::ShutdownGoogleLogging();
-//  }
 }
 
 void Driver::initializeABC(int log_level) {

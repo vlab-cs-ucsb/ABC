@@ -43,6 +43,7 @@ public:
 
   Value_ptr getTermValue(SMT::Term_ptr term);
   bool setTermValue(SMT::Term_ptr term, Value_ptr value);
+  bool updateTermValue(SMT::Term_ptr term, Value_ptr value);
   void clearTermValue(SMT::Term_ptr term);
   void clearTermValues();
   bool hasStringTerms(SMT::Term_ptr term);

@@ -1137,9 +1137,9 @@ StringAutomaton_ptr StringAutomaton::subStringLastOf(StringAutomaton_ptr search_
   int next_state = -1;
   for (int s = 0; s < search_result_auto->dfa->ns; s++) {
     node = graph->getNode(s);
-    if (sink_state != (next_state = search_result_auto->getNextStateFrom(s, flag_1_exception))) {
+    if (sink_state != (next_state = search_result_auto->getNextState(s, flag_1_exception))) {
       node->addEdgeFlag(1, graph->getNode(next_state)); // flag 1 is to mark for beginning of a match
-    } else if ( sink_state != (next_state = search_result_auto->getNextStateFrom(s, flag_2_exception)) ) {
+    } else if ( sink_state != (next_state = search_result_auto->getNextState(s, flag_2_exception)) ) {
       node->addEdgeFlag(1, graph->getNode(next_state)); // flag 2 is to mark for beginning of a match
     }
   }
@@ -1410,9 +1410,9 @@ IntAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto) {
   int next_state = -1;
   for (int s = 0; s < search_result_auto->dfa->ns; s++) {
     node = graph->getNode(s);
-    if (sink_state != (next_state = search_result_auto->getNextStateFrom(s, flag_1_exception))) {
+    if (sink_state != (next_state = search_result_auto->getNextState(s, flag_1_exception))) {
       node->addEdgeFlag(1, graph->getNode(next_state)); // flag 1 is to mark for beginning of a match
-    } else if ( sink_state != (next_state = search_result_auto->getNextStateFrom(s, flag_2_exception)) ) {
+    } else if ( sink_state != (next_state = search_result_auto->getNextState(s, flag_2_exception)) ) {
       node->addEdgeFlag(1, graph->getNode(next_state)); // flag 2 is to mark for beginning of a match
     }
   }
@@ -1519,9 +1519,9 @@ IntAutomaton_ptr StringAutomaton::backup_lastIndexOf(StringAutomaton_ptr search_
   int next_state = -1;
   for (int s = 0; s < search_result_auto->dfa->ns; s++) {
     node = graph->getNode(s);
-    if (sink_state != (next_state = search_result_auto->getNextStateFrom(s, flag_1_exception))) {
+    if (sink_state != (next_state = search_result_auto->getNextState(s, flag_1_exception))) {
       node->addEdgeFlag(1, graph->getNode(next_state)); // flag 1 is to mark for beginning of a match
-    } else if ( sink_state != (next_state = search_result_auto->getNextStateFrom(s, flag_2_exception)) ) {
+    } else if ( sink_state != (next_state = search_result_auto->getNextState(s, flag_2_exception)) ) {
       node->addEdgeFlag(2, graph->getNode(next_state)); // flag 2 is to mark for end of a match
     }
   }
@@ -1808,6 +1808,17 @@ StringAutomaton_ptr StringAutomaton::replace(StringAutomaton_ptr search_auto, St
   return result_auto;
 }
 
+
+DFA_ptr StringAutomaton::unaryLength() {
+  DFA_ptr unary_dfa = nullptr;
+
+  unary_dfa = dfa_string_to_unaryDFA(this->dfa, num_of_variables, variable_indices);
+
+  DVLOG(VLOG_LEVEL) << "?" << " = [" << this->id << "]->unaryLength()";
+
+  return unary_dfa;
+}
+
 /**
  * TODO get rid of libstranger calls
  */
@@ -1833,6 +1844,8 @@ IntAutomaton_ptr StringAutomaton::length() {
 
   return length_auto;
 }
+
+
 
 StringAutomaton_ptr StringAutomaton::restrictLengthTo(int length) {
   StringAutomaton_ptr restricted_auto = nullptr;
@@ -2250,45 +2263,7 @@ StringAutomaton_ptr StringAutomaton::dfaSharpStringWithExtraBit(int num_of_varia
  */
 bool StringAutomaton::hasExceptionToValidStateFrom(int state, std::vector<char>& exception) {
   int sink_state = this->getSinkState();
-  return (sink_state != this->getNextStateFrom(state, exception));
-}
-
-/**
- * @returns the next state if there is a transition with given exception
- */
-int StringAutomaton::getNextStateFrom(int state, std::vector<char>& exception) {
-
-  int next_state = -1; // only for initialization
-  unsigned p, l, r, index = 0; // BDD traversal variables
-
-  CHECK_EQ(num_of_variables, exception.size());
-
-  p = this->dfa->q[state];
-
-  for (int i = 0; i < num_of_variables; i++) {
-    LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
-    if (index == BDD_LEAF_INDEX) {
-      next_state = l;
-      break;
-    } else {
-      if (exception[i] == '0') {
-        p = l;
-      } else if (exception[i] == '1') {
-        p = r;
-      }
-    }
-  }
-
-  if (index != BDD_LEAF_INDEX) {
-    LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
-    if (index == BDD_LEAF_INDEX) {
-      next_state = l;
-    } else {
-      LOG(FATAL) << "Please check this algorithm, something wrong with bdd traversal";
-    }
-  }
-
-  return next_state;
+  return (sink_state != this->getNextState(state, exception));
 }
 
 /**

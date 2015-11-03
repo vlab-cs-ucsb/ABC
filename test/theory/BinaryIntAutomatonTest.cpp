@@ -243,6 +243,33 @@ TEST_F(BinaryIntAutomatonTest, Difference) {
   delete auto_3;
 }
 
+TEST_F(BinaryIntAutomatonTest, GetBinaryAutomatonFor) {
+  std::stringstream ss;
+  std::string expected;
+
+  BinaryIntAutomaton_ptr auto_1 = nullptr;
+  BinaryIntAutomaton_ptr auto_2 = nullptr;
+
+  ArithmeticFormula formula_0;
+  formula_0.setVariableCoefficient("x", 1);
+  formula_0.setVariableCoefficient("y", -2);
+  formula_0.setConstant(0);
+  formula_0.setType(ArithmeticFormula::Type::EQ);
+
+  auto_1 = BinaryIntAutomaton::makeAutomaton(formula_0.clone());
+  auto_2 = auto_1->getBinaryAutomatonFor("x");
+
+  EXPECT_EQ(2, auto_1->getNumberOfVariables());
+  EXPECT_EQ(1, auto_2->getNumberOfVariables());
+
+  auto_2->toDot(ss);
+  expected = Vlab::Test::FileHelper::getExpectation("theory", "BinaryIntAutomaton", "getBinaryAutomatonFor_01.dot");
+  EXPECT_THAT(ss.str(), StrEq(expected));
+
+  delete auto_1;
+  delete auto_2;
+}
+
 TEST_F(BinaryIntAutomatonTest, MakeEquality) {
   std::stringstream ss;
   std::string expected;

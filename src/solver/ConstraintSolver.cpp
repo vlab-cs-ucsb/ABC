@@ -67,9 +67,6 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
     if (is_satisfiable) {
       update_variables();
-      if (Value::Type::BINARYINT_AUTOMATON == result->getType()) {
-        symbol_table->setValue(SymbolTable::ARITHMETIC, result);
-      }
     }
   }
   clearTermValues();
@@ -103,9 +100,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     is_satisfiable = is_satisfiable and param->isSatisfiable();
     if (is_satisfiable) {
       update_variables();
-      if (Value::Type::BINARYINT_AUTOMATON == param->getType()) {
-        symbol_table->setValue(SymbolTable::ARITHMETIC, param);
-      }
     } else {
       clearTermValues();
       break;
@@ -133,9 +127,6 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
     if (Term::Type::AND not_eq term->getType()) {
       if (param->isSatisfiable()) {
         update_variables();
-        if (Value::Type::BINARYINT_AUTOMATON == param->getType()) {
-          symbol_table->setValue(SymbolTable::ARITHMETIC, param);
-        }
       }
       clearTermValues();
     }
@@ -144,6 +135,7 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
     is_satisfiable = is_satisfiable or is_scope_satisfiable;
     symbol_table->pop_scope();
     if (is_satisfiable) { //TODO for model counting we need to continue to calculate each term in disjunction
+      LOG(INFO)<< "TODO: CONTINUE CALCULATION FOR MODEL COUNTING, PARAMETIRIZED THAT";
       break;
     }
   }
@@ -165,7 +157,7 @@ void ConstraintSolver::visitNot(Not_ptr not_term) {
         visit(term);
         path_trace.pop_back();
 
-        // TODO save that path trace to update variables in airhtmetic automaton
+        // TODO save that path trace to update variables in arithmetic automaton
       }
     }
     return;
@@ -1029,6 +1021,14 @@ bool ConstraintSolver::setTermValue(Term_ptr term, Value_ptr value) {
   return result.second;
 }
 
+void ConstraintSolver::clearTermValue(SMT::Term_ptr term) {
+  auto pair = term_values.find(term);
+  if (pair != term_values.end()) {
+    delete pair->second;
+    term_values.erase(pair);
+  }
+}
+
 void ConstraintSolver::clearTermValues() {
   for (auto& entry : term_values) {
     delete entry.second;
@@ -1068,19 +1068,70 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
     Value_ptr result = getTermValue(term);
     if (result != nullptr) {
       DVLOG(VLOG_LEVEL) << "Linear Arithmetic Constraint";
-      if (arithmetic_constraint_solver.hasStringTerms(term)) {
+      if (arithmetic_constraint_solver.hasStringTerms(term) and result->isSatisfiable()) {
         Value_ptr string_term_result = nullptr;
+        UnaryAutomaton_ptr string_term_unary_auto = nullptr;
+        BinaryIntAutomaton_ptr string_term_binary_auto = nullptr,
+                updated_arith_auto = nullptr;
+        IntAutomaton_ptr updated_int_auto = nullptr;
+
         for (auto& string_term : arithmetic_constraint_solver.getStringTermsIn(term)) {
           visit(string_term);
           string_term_result = getTermValue(string_term);
-          // TODO update arithmetic automaton here based on the string expr value, this is a cyclic dependency, need to resolve where to handle cycles
-  //        arithmetic_constraint_solver.updateArithmeticAuto(result, string_term_result, string_term); // TODO implement update interface
+          std::string string_term_var_name = Ast2Dot::toString(string_term);
+          bool has_minus_one = string_term_result->getIntAutomaton()->hasNegative1();
+
+//          result->getBinaryIntAutomaton()->inspectAuto();
+
+          // 1- update arithmetic automaton
+
+          string_term_unary_auto = UnaryAutomaton::makeAutomaton(string_term_result->getIntAutomaton());
+//          string_term_unary_auto->inspectAuto();
+//          tmp_unary_auto->inspectBDD();
+
+          string_term_binary_auto = string_term_unary_auto->
+                  toBinaryIntAutomaton(string_term_var_name,
+                          result->getBinaryIntAutomaton()->getFormula()->clone(),
+                          has_minus_one);
+          delete string_term_unary_auto; string_term_unary_auto = nullptr;
+////          string_term_binary_auto->inspectAuto();
+          updated_arith_auto = result->getBinaryIntAutomaton()->intersect(string_term_binary_auto);
+          delete string_term_binary_auto; string_term_binary_auto = nullptr;
+          delete result; result = nullptr;
+//
+          result = new Value(updated_arith_auto);
           if (not result->isSatisfiable()) {
             break;
           }
-          // TODO update post value of the string automaton here and put it to term values
+
+          // 2- update string term result
+          string_term_binary_auto = updated_arith_auto->getBinaryAutomatonFor(string_term_var_name);
+          if (has_minus_one) {
+            has_minus_one = string_term_binary_auto->hasNegative1();
+            BinaryIntAutomaton_ptr positive_values_auto = string_term_binary_auto->getPositiveValuesFor(string_term_var_name);
+            delete string_term_binary_auto;
+            string_term_binary_auto = positive_values_auto;
+            delete positive_values_auto; positive_values_auto = nullptr;
+          }
+
+          string_term_unary_auto = UnaryAutomaton::makeAutomaton(string_term_binary_auto);
+
+          delete string_term_binary_auto; string_term_binary_auto = nullptr;
+          updated_int_auto = string_term_unary_auto->toIntAutomaton(has_minus_one);
+          updated_int_auto->inspectAuto();
+
+          clearTermValue(string_term);
+          string_term_result = new Value(updated_int_auto);
+          setTermValue(string_term, string_term_result);
+
+          // 3 - update variables involved in string term
+          update_variables();
+//          LOG(FATAL)<< "still working on this";
         }
+        arithmetic_constraint_solver.updateTermValue(term, result);
       }
+
+      symbol_table->setValue(SymbolTable::ARITHMETIC, result);
       return false;
     }
   }

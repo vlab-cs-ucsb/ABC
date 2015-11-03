@@ -1,0 +1,15 @@
+(set-logic QF_S)
+
+(declare-fun x () Int)
+(declare-fun str () String)
+
+(assert (= x 1))
+(assert (< (+ x (len str)) 30))
+;(assert (= str /ab|cde*/))
+;(assert (= str /ab|c(de)+/))
+;(assert (= str /(baaab)+ab/))
+;(assert (= str /aaaaaaaa(aaa)*|aaaaaaaa(aaaa)*/))
+;(assert (= str /(aa)|(bbb)+/))
+(assert (= str /(aaaaa)*|b(aaaa)*/))
+;(assert (= str /a|aa|a{3,3}|a{5,}/))
+(check-sat)

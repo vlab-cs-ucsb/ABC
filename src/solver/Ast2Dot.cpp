@@ -335,15 +335,14 @@ bool Ast2Dot::isEquivalent(SMT::Visitable_ptr x, SMT::Visitable_ptr y) {
   if (x == y) {
     return true;
   }
-  Ast2Dot toDot;
 
-  return (toDot.toString(x) == toDot.toString(y));
+  return (Ast2Dot::toString(x) == Ast2Dot::toString(y));
 }
 
 std::string Ast2Dot::toString(SMT::Visitable_ptr node) {
   std::stringstream ss;
-  m_out = &ss;
-  start(node);
+  Ast2Dot toDot(&ss);
+  toDot.start(node);
   return ss.str();
 }
 

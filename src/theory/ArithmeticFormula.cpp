@@ -50,8 +50,20 @@ ArithmeticFormula_ptr ArithmeticFormula::clone() const {
 std::string ArithmeticFormula::str() const {
   std::stringstream ss;
   std::vector<std::string> variable_names(coefficients.size());
+
+  auto char_remover = []( char ch ) {
+    return std::isspace<char>( ch, std::locale::classic() ) or ch == '"' or ch == ';';
+  };
+
   for (auto& pair : coeff_index_map) {
-    variable_names[pair.second] = pair.first;
+    std::string name = pair.first;
+    if (pair.first.find("len") != std::string::npos) {
+      name = "len_term";
+    } else if (pair.first.find("lastIndexOf") != std::string::npos or
+            pair.first.find("indexOf") != std::string::npos) {
+      name = "index_term";
+    }
+    variable_names[pair.second] = name;
   }
 
   for (unsigned i = 0; i < coefficients.size(); i++) {
@@ -147,6 +159,15 @@ std::vector<int>& ArithmeticFormula::getCoefficients() {
 
 std::map<std::string, int>& ArithmeticFormula::getCoefficientIndexMap() {
   return coeff_index_map;
+}
+
+int ArithmeticFormula::getVariableIndex(std::string variable_name) {
+  auto it = coeff_index_map.find(variable_name);
+  if (it != coeff_index_map.end()) {
+    return it->second;
+  }
+  LOG(FATAL)<< "Variable '" << variable_name << "' is not in formula: " << *this;
+  return -1;
 }
 
 int ArithmeticFormula::getVariableCoefficient(std::string variable_name) {

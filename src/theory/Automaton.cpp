@@ -18,6 +18,7 @@ unsigned long Automaton::trace_id = 0;
 
 const std::string Automaton::Name::NONE = "none";
 const std::string Automaton::Name::BOOL = "BoolAutomaton";
+const std::string Automaton::Name::UNARY = "UnaryAutomaton";
 const std::string Automaton::Name::INT = "IntAutomaton";
 const std::string Automaton::Name::INTBOOl = "IntBoolAutomaton";
 const std::string Automaton::Name::STRING = "StringAutomaton";
@@ -57,6 +58,8 @@ std::string Automaton::str() const {
     return Automaton::Name::NONE;
   case Automaton::Type::BOOL:
     return Automaton::Name::BOOL;
+  case Automaton::Type::UNARY:
+    return Automaton::Name::UNARY;
   case Automaton::Type::INT:
     return Automaton::Name::INT;
   case Automaton::Type::INTBOOl:
@@ -85,6 +88,10 @@ DFA_ptr Automaton::getDFA() {
 
 int Automaton::getNumberOfVariables() {
   return num_of_variables;
+}
+
+int* Automaton::getVariableIndices() {
+  return variable_indices;
 }
 
 /**
@@ -124,7 +131,7 @@ bool Automaton::isEmptyLanguage() {
 }
 
 bool Automaton::isInitialStateAccepting() {
-  return ((this->dfa->f[this->dfa->s]) == 1) ? true : false;
+  return (this->dfa->f[this->dfa->s] == 1);
 }
 
 bool Automaton::isOnlyInitialStateAccepting() {
@@ -433,10 +440,14 @@ void Automaton::project(unsigned index) {
   DFA_ptr tmp = this->dfa;
   this->dfa = dfaProject(tmp, index);
   dfaFree(tmp);
-  this->num_of_variables = index;
+  this->num_of_variables = this->num_of_variables - 1;
   delete this->variable_indices;
   this->variable_indices = getIndices(num_of_variables);
-  DVLOG(VLOG_LEVEL) << this->id << " = [" << this->id << "]->project()";
+  DVLOG(VLOG_LEVEL) << this->id << " = [" << this->id << "]->project(" << index << ")";
+}
+
+bool Automaton::isStartState(int state_id) {
+  return (this->dfa->s == state_id);
 }
 
 bool Automaton::isSinkState(int state_id) {
@@ -513,6 +524,44 @@ bool Automaton::hasNextState(int state, int search) {
   }
   return false;
 }
+
+/**
+ * @return next state from the state by taking transition path (1 step away)
+ */
+int Automaton::getNextState(int state, std::vector<char>& exception) {
+  int next_state = -1; // only for initialization
+   unsigned p, l, r, index = 0; // BDD traversal variables
+
+   CHECK_EQ(num_of_variables, exception.size());
+
+   p = this->dfa->q[state];
+
+   for (int i = 0; i < num_of_variables; i++) {
+     LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
+     if (index == BDD_LEAF_INDEX) {
+       next_state = l;
+       break;
+     } else {
+       if (exception[i] == '0') {
+         p = l;
+       } else if (exception[i] == '1') {
+         p = r;
+       }
+     }
+   }
+
+   if (index != BDD_LEAF_INDEX) {
+     LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
+     if (index == BDD_LEAF_INDEX) {
+       next_state = l;
+     } else {
+       LOG(FATAL) << "Please check this algorithm, something wrong with bdd traversal";
+     }
+   }
+
+   return next_state;
+}
+
 /**
  * @return vector of states that are 1 walk away
  */
@@ -779,7 +828,6 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
   out << "}" << std::endl;
 }
 
-// TODO will be merge into one toDot function with above
 void Automaton::toDot(std::ostream& out) {
   paths state_paths, pp;
   trace_descr tp;
@@ -882,13 +930,13 @@ void Automaton::toDot(std::ostream& out) {
   mem_free(allocated);
   mem_free(used);
   mem_free(buffer);
+  delete[] offsets;
 
   out << "}" << std::endl;
 }
 
 void Automaton::toBDD(std::ostream& out) {
   Table *table = tableInit();
-  int sink = getSinkState();
 
   /* remove all marks in a->bddm */
   bdd_prepare_apply1(this->dfa->bddm);

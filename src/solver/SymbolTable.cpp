@@ -27,7 +27,6 @@ SymbolTable::~SymbolTable() {
       delete value_pair.second;
     }
   }
-
   variable_value_table.clear();
 
   for (auto& entry : variables) {

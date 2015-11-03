@@ -476,7 +476,6 @@ void SyntacticOptimizer::visitPlus(Plus_ptr plus_term) {
     }
     iter++; pos++;
   }
-
   if (constant_value != 0) {
     if (constant_value > 0) {
       plus_term->term_list->insert(plus_term->term_list->begin(), generate_term_constant(std::to_string(constant_value), Primitive::Type::NUMERAL));
@@ -1219,7 +1218,8 @@ bool SyntacticOptimizer::check_and_process_for_notContains_transformation(SMT::T
     expected_constant_term = dynamic_cast<TermConstant_ptr>(right_term);
   }
 
-  if (expected_constant_term == nullptr) {
+  if (expected_constant_term == nullptr or
+          Primitive::Type::NUMERAL != expected_constant_term->getValueType()) {
     return false;
   } else if (compare_value != std::stoi(expected_constant_term->getValue())) {
     return false;
