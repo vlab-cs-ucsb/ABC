@@ -7,17 +7,6 @@
 
 #include "ConstraintSolver.h"
 
-#include <cstdbool>
-#include <iostream>
-#include <iterator>
-#include <utility>
-#include <vector>
-
-#include "../smt/typedefs.h"
-#include "../smt/Visitor.h"
-#include "../theory/IntAutomaton.h"
-#include "../theory/StringAutomaton.h"
-
 namespace Vlab {
 namespace Solver {
 
@@ -1084,25 +1073,28 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
 //          result->getBinaryIntAutomaton()->inspectAuto();
 
           // 1- update arithmetic automaton
+          string_term_unary_auto = string_term_result->getIntAutomaton()->toUnaryAutomaton();
 
-          string_term_unary_auto = UnaryAutomaton::makeAutomaton(string_term_result->getIntAutomaton());
-//          string_term_unary_auto->inspectAuto();
-//          tmp_unary_auto->inspectBDD();
+//          string_term_unary_auto->inspectAuto(false);
 
           string_term_binary_auto = string_term_unary_auto->
                   toBinaryIntAutomaton(string_term_var_name,
                           result->getBinaryIntAutomaton()->getFormula()->clone(),
                           has_minus_one);
           delete string_term_unary_auto; string_term_unary_auto = nullptr;
-////          string_term_binary_auto->inspectAuto();
+
+//          string_term_binary_auto->inspectAuto();
+
           updated_arith_auto = result->getBinaryIntAutomaton()->intersect(string_term_binary_auto);
           delete string_term_binary_auto; string_term_binary_auto = nullptr;
           delete result; result = nullptr;
-//
+
           result = new Value(updated_arith_auto);
           if (not result->isSatisfiable()) {
             break;
           }
+
+//          updated_arith_auto->inspectAuto();
 
           // 2- update string term result
           string_term_binary_auto = updated_arith_auto->getBinaryAutomatonFor(string_term_var_name);
@@ -1114,11 +1106,10 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
             delete positive_values_auto; positive_values_auto = nullptr;
           }
 
-          string_term_unary_auto = UnaryAutomaton::makeAutomaton(string_term_binary_auto);
+          string_term_unary_auto = string_term_binary_auto->toUnaryAutomaton();
 
           delete string_term_binary_auto; string_term_binary_auto = nullptr;
-          updated_int_auto = string_term_unary_auto->toIntAutomaton(has_minus_one);
-          updated_int_auto->inspectAuto();
+          updated_int_auto = string_term_unary_auto->toIntAutomaton(string_term_result->getIntAutomaton()->getNumberOfVariables(), has_minus_one);
 
           clearTermValue(string_term);
           string_term_result = new Value(updated_int_auto);
@@ -1126,7 +1117,7 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
 
           // 3 - update variables involved in string term
           update_variables();
-//          LOG(FATAL)<< "still working on this";
+          LOG(FATAL)<< "still working on this";
         }
         arithmetic_constraint_solver.updateTermValue(term, result);
       }

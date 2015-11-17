@@ -11,6 +11,12 @@
 #include <string>
 #include <sstream>
 #include <map>
+#include <cstdlib>
+#include <cstdbool>
+#include <iostream>
+#include <iterator>
+#include <utility>
+#include <vector>
 
 #include <glog/logging.h>
 

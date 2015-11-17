@@ -17,7 +17,10 @@
 #include <vector>
 #include <array>
 
+#include "utils/Math.h"
+#include "utils/List.h"
 #include "Automaton.h"
+#include "UnaryAutomaton.h"
 #include "ArithmeticFormula.h"
 #include "SemilinearSet.h"
 #include "BinaryState.h"
@@ -41,11 +44,8 @@ public:
   static BinaryIntAutomaton_ptr makePhi(ArithmeticFormula_ptr);
   static BinaryIntAutomaton_ptr makeAutomaton(ArithmeticFormula_ptr);
 
-  /**
-   * Works only for positive constants, and the result does not containt leading zeros
-   * Extend it if necessary
-   */
-  static BinaryIntAutomaton_ptr makeAutomaton(std::vector<int>&constants, std::string var_name);
+  static BinaryIntAutomaton_ptr makeAutomaton(SemilinearSet_ptr semilinear_set, std::string var_name,
+          ArithmeticFormula_ptr formula, bool add_leading_zeros = false);
 
 
   ArithmeticFormula_ptr getFormula();
@@ -60,7 +60,9 @@ public:
   BinaryIntAutomaton_ptr getPositiveValuesFor(std::string var_name);
   BinaryIntAutomaton_ptr getNegativeValuesFor(std::string var_name);
   BinaryIntAutomaton_ptr trimLeadingZeros();
+  BinaryIntAutomaton_ptr addLeadingZeros();
   SemilinearSet_ptr getSemilinearSet();
+  UnaryAutomaton_ptr toUnaryAutomaton();
 
 protected:
   BinaryIntAutomaton(ArithmeticFormula_ptr formula);
@@ -72,10 +74,24 @@ protected:
   static BinaryIntAutomaton_ptr makeGreaterThan(ArithmeticFormula_ptr);
   static BinaryIntAutomaton_ptr makeGreaterThanOrEqual(ArithmeticFormula_ptr);
   static BinaryIntAutomaton_ptr makeTrimHelperAuto();
-  static void add_binary_state(std::vector<BinaryState_ptr>& binary_states, std::vector<int>& constants, bool add_leading_zeros = false);
+  static void compute_binary_states(std::vector<BinaryState_ptr>& binary_states,
+          SemilinearSet_ptr semilinear_set);
+  static void add_binary_state(std::vector<BinaryState_ptr>& binary_states,
+          std::vector<int>& constants);
+  static int add_binary_state(std::vector<BinaryState_ptr>& binary_states,
+          int C, int R, BinaryState::Type t, int v, int b);
+  static bool is_accepting_binary_state(BinaryState_ptr binary_state, SemilinearSet_ptr semilinear_set);
 
-  std::vector<int> getBaseConstants(bool only_non_periodic_constants = false);
-  void getBaseConstants(int state, bool *is_stack_member, std::vector<bool>& path, std::vector<int>& constants, bool only_non_periodic_constants = false);
+  bool getCycleStatus(std::map<int, bool>& cycle_status);
+  void getCycleStatus(int state, std::map<int, int>& disc, std::map<int, int>& low, std::vector<int>& st,
+            std::map<int, bool>& is_stack_member, std::map<int, bool>& cycle_status, int& time);
+  bool getConstants(std::vector<int>& constants);
+  bool getConstants(int state, std::map<int, int>& disc, std::map<int, int>& low, std::vector<int>& st,
+          std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::vector<int>& constants, int& time);
+  void getConstants(std::map<int, bool>& cycle_status, std::vector<int>& constants);
+  void getConstants(int state, std::map<int, bool>& cycle_status, std::vector<bool>& path, std::vector<int>& constants);
+  void getBaseConstants(std::vector<int>& constants);
+  void getBaseConstants(int state, bool *is_stack_member, std::vector<bool>& path, std::vector<int>& constants);
 
   struct StateIndices {
     // r suffixes are for the rejecting clone

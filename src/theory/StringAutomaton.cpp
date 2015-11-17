@@ -868,7 +868,8 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
   tmp_dfa = dfaProject(concat_dfa, (unsigned) var);
   delete concat_dfa;
   concat_dfa = dfaMinimize(tmp_dfa);
-  delete tmp_dfa;
+  delete tmp_dfa; tmp_dfa = nullptr;
+  delete[] statuses; statuses = nullptr;
 
   concat_auto = new StringAutomaton(concat_dfa, num_of_variables);
 
@@ -1819,25 +1820,111 @@ DFA_ptr StringAutomaton::unaryLength() {
   return unary_dfa;
 }
 
-/**
- * TODO get rid of libstranger calls
- */
+UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
+  UnaryAutomaton_ptr unary_auto = nullptr;
+  DFA_ptr unary_dfa = nullptr, tmp_dfa = nullptr;
+
+  int sink_state = this->getSinkState(),
+          number_of_variables = this->getNumberOfVariables() + 1, // one extra bit
+          state_key = 0;
+  int* indices = getIndices(number_of_variables);
+  std::vector<char> statuses;
+  std::map<int, std::vector<char>*> exceptions;
+  std::map<int, int> state_map;
+
+  paths state_paths = nullptr, pp = nullptr;
+  trace_descr tp = nullptr;
+
+
+  dfaSetup(dfa->ns, number_of_variables, indices);
+
+  for (int i = 0; i < dfa->ns; i++) {
+
+    state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
+    state_key = 0;
+
+    while (pp) {
+      if (pp->to != (unsigned)sink_state) {
+        state_map[state_key] = pp->to;
+        exceptions[state_key] = new std::vector<char>();
+        for (int j = 0; j < number_of_variables - 1; j++) {
+          //the following for loop can be avoided if the indices are in order
+          for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp= tp->next);
+
+          if (tp) {
+            if (tp->value){
+              exceptions[state_key]->push_back('1');
+            } else{
+              exceptions[state_key]->push_back('0');
+            }
+          } else {
+            exceptions[state_key]->push_back('X');
+          }
+        }
+
+        exceptions[state_key]->push_back('1');
+        exceptions[state_key]->push_back('\0');
+        state_key++;
+      }
+
+      tp = nullptr;
+      pp = pp->next;
+    }
+
+    dfaAllocExceptions(state_key);
+    for (state_key--; state_key >= 0; state_key--) {
+      dfaStoreException(state_map[state_key], &*exceptions[state_key]->begin());
+      delete exceptions[state_key];
+    }
+    dfaStoreState(sink_state);
+    exceptions.clear();
+
+    if (dfa->f[i] == 1) {
+      statuses.push_back('+');
+    } else if (dfa->f[i] == -1) {
+      statuses.push_back('-');
+    } else {
+      statuses.push_back('0');
+    }
+
+    kill_paths(state_paths);
+    state_paths = pp = nullptr;
+  }
+
+  statuses.push_back('\0');
+  unary_dfa = dfaBuild(&*statuses.begin());
+  delete[] indices; indices = nullptr;
+
+  for (int i = 0; i < number_of_variables - 1; i++) { // test to project away all bits
+    tmp_dfa = unary_dfa;
+    unary_dfa = dfaProject(tmp_dfa,  (unsigned)i);
+    dfaFree(tmp_dfa);
+    tmp_dfa = unary_dfa;
+    unary_dfa = dfaMinimize(tmp_dfa);
+    dfaFree(tmp_dfa);
+  }
+
+  int* indices_map = getIndices(number_of_variables);
+  indices_map[number_of_variables - 1] = 0;
+  dfaReplaceIndices(unary_dfa, indices_map);
+  delete[] indices_map;
+
+  unary_auto = new UnaryAutomaton(unary_dfa);
+  DVLOG(VLOG_LEVEL) << unary_auto->getId() << " = [" << this->id << "]->toUnaryAutomaton()";
+  return unary_auto;
+}
+
 IntAutomaton_ptr StringAutomaton::length() {
-  DFA_ptr unary_dfa = nullptr, length_dfa = nullptr;
+  UnaryAutomaton_ptr unary_auto = nullptr;
   IntAutomaton_ptr length_auto = nullptr;
-  StringAutomaton_ptr any_string_auto = nullptr;
 
   if (this->isAcceptingSingleString()) {
     std::string example = this->getAnAcceptingString();
     length_auto = IntAutomaton::makeInt(example.length(), num_of_variables);
   } else {
-    unary_dfa = dfa_string_to_unaryDFA(this->dfa, num_of_variables, variable_indices);
-    any_string_auto = StringAutomaton::makeAnyString();
-    length_dfa = dfa_restrict_by_unaryDFA(any_string_auto->dfa, unary_dfa, num_of_variables, variable_indices);
-    delete any_string_auto;
-    dfaFree(unary_dfa);
-
-    length_auto = new IntAutomaton(length_dfa, num_of_variables);
+    unary_auto = this->toUnaryAutomaton();
+    length_auto = unary_auto->toIntAutomaton(num_of_variables);
+    delete unary_auto; unary_auto = nullptr;
   }
 
   DVLOG(VLOG_LEVEL) << length_auto->getId() << " = [" << this->id << "]->length()";

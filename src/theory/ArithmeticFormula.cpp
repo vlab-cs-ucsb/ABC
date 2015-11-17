@@ -65,18 +65,19 @@ std::string ArithmeticFormula::str() const {
     }
     variable_names[pair.second] = name;
   }
-
+  bool print_sign = false;
   for (unsigned i = 0; i < coefficients.size(); i++) {
     if (coefficients[i] > 0) {
-      if (i > 0) {
+      if (i > 0 and print_sign) {
         ss << " + ";
       }
       if (coefficients[i] > 1) {
         ss << coefficients[i];
       }
       ss << variable_names[i];
+      print_sign = true;
     } else if (coefficients[i] < 0) {
-      if (i > 0) {
+      if (i > 0 and print_sign) {
         ss << " - ";
       } else {
         ss << "-";
@@ -86,6 +87,7 @@ std::string ArithmeticFormula::str() const {
         ss << abs_value;
       }
       ss << variable_names[i];
+      print_sign = true;
     }
   }
 

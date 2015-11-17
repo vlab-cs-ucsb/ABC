@@ -28,6 +28,29 @@ BinaryState::~BinaryState() {
 
 }
 
+std::string BinaryState::str() const {
+  std::stringstream ss;
+
+  switch (type) {
+    case Type::VAL:
+      ss << "VAL: ";
+      break;
+    case Type::REMT:
+      ss << "REMT: ";
+      break;
+    case Type::REMF:
+      ss << "REMF: ";
+      break;
+    default:
+      ss << "NONE: ";
+      break;
+  }
+
+  ss << "V(" << V << "), B(" << B << "), 0 -> " << d0 << " 1 -> " << d1;
+
+  return ss.str();
+}
+
 BinaryState::Type BinaryState::getType() {
   return type;
 }
@@ -71,6 +94,7 @@ void BinaryState::setd0d1(int d0, int d1) {
   this->d1 = d1;
 }
 
+
 bool BinaryState::isEqualTo(Type t, int v, int b) {
   return (this->V == v and this->B == b and this->type == t);
 }
@@ -79,8 +103,8 @@ bool BinaryState::isEqualTo(int v, int b) {
   return (this->V == v and this->B == b);
 }
 
-bool BinaryState::isLeadingZeroState() {
-  return (this->V < -1 and this->B == -1 and this->type == Type::VAL);
+std::ostream& operator<<(std::ostream& os, const BinaryState& binary_state) {
+  return os << binary_state.str();
 }
 
 } /* namespace Theory */

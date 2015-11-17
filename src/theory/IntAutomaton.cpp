@@ -840,6 +840,46 @@ int IntAutomaton::getAnAcceptingInt() {
   return -2; // not accepting
 }
 
+UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
+  UnaryAutomaton_ptr unary_auto = nullptr;
+  DFA_ptr unary_dfa = nullptr;
+  int number_of_variables = 1;
+  int* indices = getIndices(number_of_variables);
+  const int number_of_states = this->dfa->ns;
+  int to_state, sink_state = getSinkState();
+  std::vector<char> unary_exception = {'1'};
+  char* statuses = new char[number_of_states + 1];
+  std::vector<char> exception = {'0', '0', '0', '0', '0', '0', '0', '0'};
+
+  dfaSetup(number_of_states, number_of_variables, indices);
+
+  for (int s = 0; s < this->dfa->ns; s++) {
+    to_state = getNextState(s, exception);
+    dfaAllocExceptions(1);
+    dfaStoreException(to_state, &*unary_exception.begin());
+
+    dfaStoreState(sink_state);
+
+    if (isAcceptingState(s)) {
+      statuses[s] = '+';
+    } else {
+      statuses[s] = '-';
+    }
+  }
+  statuses[number_of_states] = '\0';
+  dfaAllocExceptions(0);
+  dfaStoreState(sink_state);
+
+  unary_dfa = dfaBuild(statuses);
+
+  delete[] indices; indices = nullptr;
+  delete[] statuses;
+
+  unary_auto = new UnaryAutomaton(unary_dfa);
+  DVLOG(VLOG_LEVEL) << unary_auto->getId() << " = [" << this->id << "]->toUnaryAutomaton()";
+  return unary_auto;
+}
+
 /**
  * Should be same as string concat
  */

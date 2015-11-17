@@ -8,6 +8,9 @@
 #ifndef SRC_THEORY_BINARYSTATE_H_
 #define SRC_THEORY_BINARYSTATE_H_
 
+#include <sstream>
+#include <ostream>
+
 namespace Vlab {
 namespace Theory {
 
@@ -21,6 +24,8 @@ public:
   BinaryState(Type t, int v, int b);
   BinaryState(int v, int b);
   virtual ~BinaryState();
+
+  std::string str() const;
 
   Type getType();
   void setType(Type t);
@@ -36,7 +41,8 @@ public:
 
   bool isEqualTo(Type t, int v, int b);
   bool isEqualTo(int v, int b);
-  bool isLeadingZeroState();
+
+  friend std::ostream& operator<<(std::ostream& os, const BinaryState& binary_state);
 protected:
   Type type;
   int V;

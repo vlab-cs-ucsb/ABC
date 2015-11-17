@@ -150,11 +150,61 @@ bool Automaton::isOnlyInitialStateAccepting() {
 }
 
 bool Automaton::isCyclic() {
-  bool is_cyclic = false;
-  Graph_ptr graph = toGraph();
-  is_cyclic = graph->isCyclic();
-  delete graph;
-  return is_cyclic;
+  bool result = false;
+  std::map<int, bool> is_discovered;
+  std::map<int, bool> is_stack_member;
+  int sink_state = getSinkState();
+  is_discovered[sink_state] = true; // avoid sink state
+
+  result = isCyclic(this->dfa->ns, is_discovered, is_stack_member);
+  DVLOG(VLOG_LEVEL) << "[" << this->id << "]->isCyclic() ? " << result;
+  return result;
+}
+
+bool Automaton::isInCycle(int state) {
+  std::map<int, bool> is_stack_member;
+  return isStateReachableFrom(state, state, is_stack_member);
+}
+
+bool Automaton::isStateReachableFrom(int search_state, int from_state) {
+  std::map<int, bool> is_stack_member;
+  return isStateReachableFrom(search_state, from_state, is_stack_member);
+}
+
+bool Automaton::isCyclic(int state, std::map<int, bool>& is_discovered, std::map<int, bool>& is_stack_member) {
+  if (not is_discovered[state]) {
+    is_discovered[state] = true;
+    is_stack_member[state] = true;
+    std::set<int>* next_states = getNextStates(state);
+    for (auto next_state : *next_states) {
+      if ((not is_discovered[next_state]) and isCyclic(next_state, is_discovered, is_stack_member)) {
+        return true;
+      } else if (is_stack_member[next_state]) {
+        return true;
+      }
+    }
+    delete next_states;
+  }
+  is_stack_member[state] = false;
+  return false;
+}
+
+bool Automaton::isStateReachableFrom(int search_state, int from_state, std::map<int, bool>& is_stack_member) {
+  is_stack_member[from_state] = true;
+
+  std::set<int>* next_states = getNextStates(from_state);
+  for (auto next_state : *next_states) {
+    if ((not is_stack_member[next_state]) and (not isSinkState(next_state)) and
+            isStateReachableFrom(search_state, next_state, is_stack_member)) {
+      return true;
+    } else if (next_state == search_state) {
+      return true;
+    }
+  }
+  delete next_states;
+
+  is_stack_member[from_state] = false;
+  return false;
 }
 
 /**
@@ -828,7 +878,7 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
   out << "}" << std::endl;
 }
 
-void Automaton::toDot(std::ostream& out) {
+void Automaton::toDot(std::ostream& out, bool print_sink) {
   paths state_paths, pp;
   trace_descr tp;
   int i, j, k, l;
@@ -837,6 +887,10 @@ void Automaton::toDot(std::ostream& out) {
   unsigned* offsets = getIndices((unsigned) num_of_variables);
   int no_free_vars = num_of_variables;
   DFA_ptr a = this->dfa;
+  int sink = getSinkState();
+
+  print_sink = print_sink || (dfa->ns == 1 and dfa->f[0] == -1);
+
 
   out << "digraph MONA_DFA {\n"
           " rankdir = LR;\n"
@@ -853,7 +907,9 @@ void Automaton::toDot(std::ostream& out) {
   out << "\n node [shape = circle];";
   for (i = 0; i < a->ns; i++) {
     if (a->f[i] == -1) {
-      out << " " << i << ";";
+      if (i != sink || print_sink) {
+        out << " " << i << ";";
+      }
     }
   }
   out << "\n node [shape = box];";
@@ -870,14 +926,24 @@ void Automaton::toDot(std::ostream& out) {
   allocated = (int *) mem_alloc(sizeof(int) * a->ns);
 
   for (i = 0; i < a->ns; i++) {
+    if (i == sink && not print_sink) {
+      continue;
+    }
     state_paths = pp = make_paths(a->bddm, a->q[i]);
 
     for (j = 0; j < a->ns; j++) {
+      if (i == sink && not print_sink) {
+        continue;
+      }
       buffer[j] = 0;
       used[j] = allocated[j] = 0;
     }
 
     while (pp) {
+      if (pp->to == (unsigned) sink && not print_sink) {
+        pp = pp->next;
+        continue;
+      }
       if (used[pp->to] >= allocated[pp->to]) {
         allocated[pp->to] = allocated[pp->to] * 2 + 2;
         buffer[pp->to] = (char *) mem_resize(buffer[pp->to], sizeof(char) * allocated[pp->to] * no_free_vars);
@@ -905,6 +971,9 @@ void Automaton::toDot(std::ostream& out) {
     }
 
     for (j = 0; j < a->ns; j++) {
+      if (j == sink && not print_sink) {
+        continue;
+      }
       if (buffer[j]) {
         out << " " << i << " -> " << j << " [label=\"";
         for (k = 0; k < no_free_vars; k++) {
@@ -1012,7 +1081,7 @@ int Automaton::inspectAuto(bool print_sink) {
   if (Automaton::Type::INT == type or Automaton::Type::STRING == type) {
     toDotAscii(print_sink, outfile);
   } else {
-    toDot(outfile);
+    toDot(outfile, print_sink);
   }
   std::string dot_cmd("xdot " + file + " &");
   return std::system(dot_cmd.c_str());

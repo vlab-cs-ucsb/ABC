@@ -9,6 +9,7 @@
 #define THEORY_INTAUTOMATON_H_
 
 #include "Automaton.h"
+#include "UnaryAutomaton.h"
 
 namespace Vlab {
 namespace Theory {
@@ -97,7 +98,10 @@ public:
   bool isAcceptingSingleInt();
   int getAnAcceptingInt();
 
+  UnaryAutomaton_ptr toUnaryAutomaton();
+
   static const int INFINITE;
+  static int DEFAULT_NUM_OF_VARIABLES;
 protected:
   IntAutomaton_ptr __plus(IntAutomaton_ptr other_auto);
   IntAutomaton_ptr concat(IntAutomaton_ptr other_auto);
@@ -106,7 +110,7 @@ protected:
 
   bool has_negative_1;
 //  bool is_only_minus_1;
-  static int DEFAULT_NUM_OF_VARIABLES;
+//  static int DEFAULT_NUM_OF_VARIABLES;
   static int* DEFAULT_VARIABLE_INDICES;
   static unsigned* DEFAULT_UNSIGNED_VARIABLE_INDICES;
 private:

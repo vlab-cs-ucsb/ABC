@@ -15,39 +15,38 @@
 #include <map>
 
 #include "Automaton.h"
-#include "IntAutomaton.h"
-#include "BinaryIntAutomaton.h"
 #include "SemilinearSet.h"
 #include "BinaryState.h"
+#include "ArithmeticFormula.h"
 
 namespace Vlab {
 namespace Theory {
-class UnaryAutomaton;
 
+class UnaryAutomaton;
 typedef UnaryAutomaton* UnaryAutomaton_ptr;
+
+class IntAutomaton;
+typedef IntAutomaton* IntAutomaton_ptr;
+
+class BinaryIntAutomaton;
+typedef BinaryIntAutomaton* BinaryIntAutomaton_ptr;
 
 class UnaryAutomaton: public Automaton {
 public:
+  UnaryAutomaton(DFA_ptr);
   UnaryAutomaton(const UnaryAutomaton&);
   virtual ~UnaryAutomaton();
 
   virtual UnaryAutomaton_ptr clone() const;
 
-  static UnaryAutomaton_ptr makeAutomaton(IntAutomaton_ptr);
-  static UnaryAutomaton_ptr makeAutomaton(BinaryIntAutomaton_ptr);
+  static UnaryAutomaton_ptr makePhi();
+  static UnaryAutomaton_ptr makeAutomaton(SemilinearSet_ptr semilinear_set);
 
   SemilinearSet_ptr getSemilinearSet();
-  IntAutomaton_ptr toIntAutomaton(bool add_minus_one = false);
+  IntAutomaton_ptr toIntAutomaton(int number_of_variables, bool add_minus_one = false);
   BinaryIntAutomaton_ptr toBinaryIntAutomaton(std::string var_name, ArithmeticFormula_ptr formula, bool add_minus_one = false);
 
 protected:
-  UnaryAutomaton(DFA_ptr);
-  BinaryIntAutomaton_ptr toBinaryIntAutomaton(int var_index = 0, int number_of_variables = 1);
-
-  void compute_binary_states(std::vector<BinaryState_ptr>& binary_states, SemilinearSet_ptr semilinear_set);
-  void add_binary_state(std::vector<BinaryState_ptr>& binary_states, std::vector<int>& constants);
-  int add_binary_state(std::vector<BinaryState_ptr>& binary_states, int C, int R, BinaryState::Type t, int v, int b);
-  char get_binary_status(BinaryState_ptr binary_state, SemilinearSet_ptr semilinear_set);
 
 private:
   static const int VLOG_LEVEL;

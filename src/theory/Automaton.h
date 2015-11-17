@@ -85,12 +85,14 @@ public:
   bool isInitialStateAccepting();
   bool isOnlyInitialStateAccepting();
   bool isCyclic();
+  bool isInCycle(int state);
+  bool isStateReachableFrom(int search_state, int from_state);
 
   Graph_ptr toGraph();
 
   void toDotAscii(bool print_sink = false, std::ostream& out = std::cout);
   // TODO merge toDot methods into one with options
-  void toDot(std::ostream& out = std::cout);
+  void toDot(std::ostream& out = std::cout, bool print_sink = false);
   void toBDD(std::ostream& out = std::cout);
   int inspectAuto(bool print_sink = false);
   int inspectBDD();
@@ -121,6 +123,9 @@ protected:
   int getNextState(int state, std::vector<char>& exception);
   std::set<int>* getNextStates(int state);
   AdjacencyList getAdjacencyCountList();
+
+  bool isCyclic(int state, std::map<int, bool>& is_discovered, std::map<int, bool>& is_stack_member);
+  bool isStateReachableFrom(int search_state, int from_state, std::map<int, bool>& is_stack_member);
 
   const Automaton::Type type;
   DFA_ptr dfa;

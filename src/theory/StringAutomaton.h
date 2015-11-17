@@ -24,6 +24,7 @@
 #include "DAGraph.h"
 #include "Automaton.h"
 #include "IntAutomaton.h"
+#include "UnaryAutomaton.h"
 
 namespace Vlab {
 namespace Theory {
@@ -111,6 +112,7 @@ public:
   StringAutomaton_ptr replace(StringAutomaton_ptr search_auto, StringAutomaton_ptr replace_auto);
 
   DFA_ptr unaryLength();
+  UnaryAutomaton_ptr toUnaryAutomaton();
   IntAutomaton_ptr length();
   StringAutomaton_ptr restrictLengthTo(int length);
   StringAutomaton_ptr restrictLengthTo(IntAutomaton_ptr length_auto);

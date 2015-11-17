@@ -10,6 +10,10 @@ noinst_LTLIBRARIES = libabcautomaton.la
 libabcautomaton_la_SOURCES = \
 	../utils/RegularExpression.cpp \
 	../utils/RegularExpression.h \
+	../utils/Math.cpp \
+	../utils/Math.h \
+	../utils/List.cpp \
+	../utils/List.h \
 	utils.h \
 	GraphNode.cpp \
 	GraphNode.h \

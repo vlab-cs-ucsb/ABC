@@ -11,12 +11,19 @@
 #ifndef THEORY_SEMILINEARSET_H_
 #define THEORY_SEMILINEARSET_H_
 
+#include <iostream>
 #include <ostream>
 #include <sstream>
 #include <vector>
 
+#include "utils/List.h"
+#include "utils/Math.h"
+
 namespace Vlab {
 namespace Theory {
+
+class SemilinearSet;
+typedef SemilinearSet* SemilinearSet_ptr;
 
 class SemilinearSet {
 public:
@@ -30,11 +37,18 @@ public:
   int getPeriod();
   void setPeriod(int value);
   std::vector<int>& getConstants();
+  void setConstants(std::vector<int>& constants);
   std::vector<int>& getPeriodicConstants();
+  void setPeriodicConstants(std::vector<int>& periodic_constants);
   void addConstant(int value);
   void addPeriodicConstant(int value);
   int getNumberOfConstants();
   int getNumberOfPeriodicConstants();
+  SemilinearSet_ptr merge(SemilinearSet_ptr other);
+  bool isEmptySet();
+  bool hasOnlyConstants();
+  bool hasConstants();
+  void clear();
 
   friend std::ostream& operator<<(std::ostream& os, const SemilinearSet& semilinear_set);
 protected:
@@ -44,8 +58,6 @@ protected:
   std::vector<int> constants;
   std::vector<int> periodic_constants;
 };
-
-typedef SemilinearSet* SemilinearSet_ptr;
 
 } /* namespace Theory */
 } /* namespace Vlab */
