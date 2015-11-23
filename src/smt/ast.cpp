@@ -1139,13 +1139,23 @@ void NotEnds::visit_children(Visitor_ptr v) {
 }
 
 IndexOf::IndexOf(Term_ptr subject_term, Term_ptr search_term)
-        : Term(Term::Type::INDEXOF), subject_term(subject_term), search_term(search_term) {
+        : Term(Term::Type::INDEXOF), subject_term(subject_term), search_term(search_term),
+          from_index(nullptr), mode (Mode::NONE) {
+}
+
+IndexOf::IndexOf(Term_ptr subject_term, Term_ptr search_term, Term_ptr from_index, Mode mode)
+: Term(Term::Type::INDEXOF), subject_term(subject_term), search_term(search_term),
+  from_index(from_index), mode (mode) {
 }
 
 IndexOf::IndexOf(const IndexOf& other)
         : Term(other.type) {
   subject_term = other.subject_term->clone();
   search_term = other.search_term->clone();
+  if (from_index) {
+    from_index = other.from_index->clone();
+  }
+  mode = other.mode;
 }
 
 IndexOf_ptr IndexOf::clone() const {
@@ -1155,6 +1165,7 @@ IndexOf_ptr IndexOf::clone() const {
 IndexOf::~IndexOf() {
   delete subject_term;
   delete search_term;
+  delete from_index;
 }
 
 void IndexOf::accept(Visitor_ptr v) {
@@ -1164,16 +1175,27 @@ void IndexOf::accept(Visitor_ptr v) {
 void IndexOf::visit_children(Visitor_ptr v) {
   v->visit(subject_term);
   v->visit(search_term);
+  v->visit(from_index);
 }
 
 LastIndexOf::LastIndexOf(Term_ptr subject_term, Term_ptr search_term)
-        : Term(Term::Type::LASTINDEXOF), subject_term(subject_term), search_term(search_term) {
+        : Term(Term::Type::LASTINDEXOF), subject_term(subject_term), search_term(search_term),
+          from_index(nullptr), mode(Mode::NONE) {
+}
+
+LastIndexOf::LastIndexOf(Term_ptr subject_term, Term_ptr search_term, Term_ptr from_index, Mode mode)
+        : Term(Term::Type::LASTINDEXOF), subject_term(subject_term), search_term(search_term),
+          from_index(from_index), mode (mode) {
 }
 
 LastIndexOf::LastIndexOf(const LastIndexOf& other)
         : Term(other.type) {
   subject_term = other.subject_term->clone();
   search_term = other.search_term->clone();
+  if (from_index) {
+    from_index = other.from_index->clone();
+  }
+  mode = other.mode;
 }
 
 LastIndexOf_ptr LastIndexOf::clone() const {
@@ -1183,6 +1205,7 @@ LastIndexOf_ptr LastIndexOf::clone() const {
 LastIndexOf::~LastIndexOf() {
   delete subject_term;
   delete search_term;
+  delete from_index;
 }
 
 void LastIndexOf::accept(Visitor_ptr v) {
@@ -1192,6 +1215,7 @@ void LastIndexOf::accept(Visitor_ptr v) {
 void LastIndexOf::visit_children(Visitor_ptr v) {
   v->visit(subject_term);
   v->visit(search_term);
+  v->visit(from_index);
 }
 
 CharAt::CharAt(Term_ptr subject_term, Term_ptr index_term)

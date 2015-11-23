@@ -73,7 +73,7 @@ protected:
   static BinaryIntAutomaton_ptr makeLessThanOrEqual(ArithmeticFormula_ptr);
   static BinaryIntAutomaton_ptr makeGreaterThan(ArithmeticFormula_ptr);
   static BinaryIntAutomaton_ptr makeGreaterThanOrEqual(ArithmeticFormula_ptr);
-  static BinaryIntAutomaton_ptr makeTrimHelperAuto();
+  static BinaryIntAutomaton_ptr makeTrimHelperAuto(int var_index, int number_of_variables);
   static void compute_binary_states(std::vector<BinaryState_ptr>& binary_states,
           SemilinearSet_ptr semilinear_set);
   static void add_binary_state(std::vector<BinaryState_ptr>& binary_states,
@@ -85,13 +85,15 @@ protected:
   bool getCycleStatus(std::map<int, bool>& cycle_status);
   void getCycleStatus(int state, std::map<int, int>& disc, std::map<int, int>& low, std::vector<int>& st,
             std::map<int, bool>& is_stack_member, std::map<int, bool>& cycle_status, int& time);
-  bool getConstants(std::vector<int>& constants);
-  bool getConstants(int state, std::map<int, int>& disc, std::map<int, int>& low, std::vector<int>& st,
-          std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::vector<int>& constants, int& time);
+//  bool getConstants(std::vector<int>& constants);
+//  bool getConstants(int state, std::map<int, int>& disc, std::map<int, int>& low, std::vector<int>& st,
+//          std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::vector<int>& constants, int& time);
   void getConstants(std::map<int, bool>& cycle_status, std::vector<int>& constants);
   void getConstants(int state, std::map<int, bool>& cycle_status, std::vector<bool>& path, std::vector<int>& constants);
-  void getBaseConstants(std::vector<int>& constants);
-  void getBaseConstants(int state, bool *is_stack_member, std::vector<bool>& path, std::vector<int>& constants);
+  void getBaseConstants(std::vector<int>& constants, unsigned max_number_of_bit_limit = 15);
+  void getBaseConstants(int state, unsigned char *is_visited, std::vector<bool>& path, std::vector<int>& constants, unsigned max_number_of_bit_limit);
+  //  void getBaseConstants2(std::vector<int>& constants);
+  //  void getBaseConstants(int state, bool *is_stack_member, std::vector<bool>& path, std::vector<int>& constants);
 
   struct StateIndices {
     // r suffixes are for the rejecting clone

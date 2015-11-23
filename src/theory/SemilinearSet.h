@@ -28,8 +28,10 @@ typedef SemilinearSet* SemilinearSet_ptr;
 class SemilinearSet {
 public:
   SemilinearSet();
+  SemilinearSet(SemilinearSet& other);
   virtual ~SemilinearSet();
 
+  SemilinearSet_ptr clone();
   std::string str() const;
 
   int getCycleHead();

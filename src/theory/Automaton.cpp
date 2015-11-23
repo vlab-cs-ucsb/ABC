@@ -120,12 +120,11 @@ bool Automaton::checkEquivalence(Automaton_ptr other_auto) {
 }
 
 /**
- * TODO implement this again independent of libstranger
+ * Works for minimized automaton,
+ * (For a non-minimized automaton need to check reachability of an accepting state)
  */
 bool Automaton::isEmptyLanguage() {
-  bool result;
-  int i = check_emptiness(this->dfa, num_of_variables, variable_indices);
-  result = (i == 1);
+  bool result = (dfa->ns == 1 && dfa->f[dfa->s] == -1)? true : false;
   DVLOG(VLOG_LEVEL) << "[" << this->id << "]->isEmptyLanguage? " << std::boolalpha << result;
   return result;
 }

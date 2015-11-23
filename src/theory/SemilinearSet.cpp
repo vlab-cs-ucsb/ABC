@@ -17,7 +17,16 @@ SemilinearSet::SemilinearSet() :
       C(0), R(0) {
 }
 
+SemilinearSet::SemilinearSet(SemilinearSet& other) :
+      C(other.C), R(other.R), constants(other.constants), periodic_constants(other.periodic_constants) {
+
+}
+
 SemilinearSet::~SemilinearSet() {
+}
+
+SemilinearSet_ptr SemilinearSet::clone() {
+  return new SemilinearSet(*this);
 }
 
 std::string SemilinearSet::str() const {
@@ -92,22 +101,37 @@ int SemilinearSet::getNumberOfPeriodicConstants() {
 
 // TODO fix me
 SemilinearSet_ptr SemilinearSet::merge(SemilinearSet_ptr other) {
-  SemilinearSet_ptr result = new SemilinearSet();
+  SemilinearSet_ptr result = nullptr;
+  if (this->isEmptySet()) {
+    return other->clone();
+  } else if (other->isEmptySet()) {
+    return this->clone();
+  }
+
+  result = new SemilinearSet();
+
   result->constants = constants;
   result->constants.insert(result->constants.end(), other->constants.begin(), other->constants.end());
   Util::List::sort_and_remove_duplicate(result->constants);
   int cycle_head = 0;
-  if (not result->constants.empty()) {
-    cycle_head = result->constants.back();
-    if (cycle_head > 0) { // if the constants is not zero we need one more state
-      cycle_head = cycle_head + 1;
-    }
-  }
-  cycle_head = std::max({cycle_head, this->getCycleHead(), other->getCycleHead()});
-  result->setCycleHead(cycle_head);
-
   int p1 = this->R;
   int p2 = other->R;
+  int lcm_value = Util::Math::lcm(p1, p2);
+
+  if (not result->constants.empty()) {
+    cycle_head = result->constants.back() + 1;
+    int max_head = std::max(this->getCycleHead(), other->getCycleHead());
+    if (max_head > lcm_value) {
+      cycle_head = std::max(cycle_head, max_head);
+    }
+  } else {
+    cycle_head = std::max(this->getCycleHead(), other->getCycleHead());
+    if (cycle_head < lcm_value) {
+      cycle_head = 0;
+    }
+  }
+
+  result->setCycleHead(cycle_head);
 
   int period;
   if (p1 == 0) {
@@ -117,7 +141,7 @@ SemilinearSet_ptr SemilinearSet::merge(SemilinearSet_ptr other) {
     result->periodic_constants = this->periodic_constants;
     result->R = this->R;
   } else {
-    result->R = Util::Math::lcm(p1, p2);
+    result->R = lcm_value;
 
     auto compute_periods = [result](SemilinearSet_ptr other) {
       int period = result->getPeriod();

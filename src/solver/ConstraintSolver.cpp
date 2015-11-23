@@ -1117,7 +1117,6 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
 
           // 3 - update variables involved in string term
           update_variables();
-          LOG(FATAL)<< "still working on this";
         }
         arithmetic_constraint_solver.updateTermValue(term, result);
       }

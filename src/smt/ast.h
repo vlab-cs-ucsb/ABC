@@ -684,7 +684,14 @@ public:
 
 class IndexOf: public Term {
 public:
+  enum class Mode : int {
+    NONE = 0, // from index is nullptr,
+            FROMINDEX,          // start index is a numeral
+            FROMFIRSTOF,        // start index is string term to find first occurance
+            FROMLASTOF,         // start index is string term to find last occurance
+  };
   IndexOf(Term_ptr, Term_ptr);
+  IndexOf(Term_ptr, Term_ptr, Term_ptr, Mode mode = Mode::FROMINDEX);
   IndexOf(const IndexOf&);
   virtual IndexOf_ptr clone() const;
   virtual ~IndexOf();
@@ -694,11 +701,20 @@ public:
 
   Term_ptr subject_term;
   Term_ptr search_term;
+  Term_ptr from_index;
+  Mode mode;
 };
 
 class LastIndexOf: public Term {
 public:
+  enum class Mode : int {
+    NONE = 0, // from index is nullptr,
+            FROMINDEX,          // start index is a numeral
+            FROMFIRSTOF,        // start index is string term to find first occurance
+            FROMLASTOF,         // start index is string term to find last occurance
+  };
   LastIndexOf(Term_ptr, Term_ptr);
+  LastIndexOf(Term_ptr, Term_ptr, Term_ptr, Mode mode = Mode::FROMINDEX);
   LastIndexOf(const LastIndexOf&);
   virtual LastIndexOf_ptr clone() const;
   virtual ~LastIndexOf();
@@ -708,6 +724,8 @@ public:
 
   Term_ptr subject_term;
   Term_ptr search_term;
+  Term_ptr from_index;
+  Mode mode;
 };
 
 class CharAt: public Term {
@@ -726,6 +744,22 @@ public:
 
 class SubString: public Term {
 public:
+  enum class Mode : int {
+    NONE = 0,                     // end index is nullptr,
+            FROMINDEX,            // start index is a numeral
+            FROMFIRSTOF,          // start index is string term to find first occurance
+            FROMLASTOF,           // start index is string term to find last occurance
+            FROMINDEXTOINDEX,     // start index is numeral, end index is numeral
+            FROMINDEXTOFIRSTOF,   // start index is numeral, end index is string term to find first occurance
+            FROMINDEXTOLASTOF,    // start index is numeral, end index is string term to find last occurance
+            FROMFIRSTOFTOINDEX,   // start index is string term, end index is numeral
+            FROMFIRSTOFTOFIRSTOF, // start index is string term, end index is string term
+            FROMFIRSTOFTOLASTOF,  // start index is string term, end index is string term
+            FROMLASTOFTOINDEX,    // start index is string term, end index is numeral
+            FROMLASTOFTOFIRSTOF,  // start index is string term, end index is string term
+            FROMLASTOFTOLASTOF    // start index is string term, end index is string term
+
+  };
   SubString(Term_ptr, Term_ptr);
   SubString(Term_ptr, Term_ptr, Term_ptr);
   SubString(const SubString&);

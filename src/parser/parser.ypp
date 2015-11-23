@@ -258,10 +258,12 @@ term                  :
                       | "(" "ends" term term ")"                                          { $$ = new Ends($3, $4); }
                       | "(" "notEnds" term term ")"                                       { $$ = new NotEnds($3, $4); }
                       | "(" "indexOf" term term ")"                                       { $$ = new IndexOf($3, $4); }
+                      | "(" "indexOf" term term term ")"                                  { $$ = new IndexOf($3, $4, $5); }
                       | "(" "lastIndexOf" term term ")"                                   { $$ = new LastIndexOf($3, $4); }
+                      | "(" "lastIndexOf" term term term ")"                              { $$ = new LastIndexOf($3, $4, $5); } 
                       | "(" "charAt" term term ")"                                        { $$ = new CharAt($3, $4); }
-                      | "(" "subString" term term term ")"                                { $$ = new SubString($3, $4, $5); }
                       | "(" "subString" term term ")"                                     { $$ = new SubString($3, $4); }
+                      | "(" "subString" term term term ")"                                { $$ = new SubString($3, $4, $5); }
                       | "(" "subStringFirstOf" term term ")"                              { $$ = new SubStringFirstOf($3, $4); }
                       | "(" "subStringLastOf" term term ")"                               { $$ = new SubStringLastOf($3, $4); }
                       | "(" "toUpper" term ")"                                            { $$ = new ToUpper($3); }
