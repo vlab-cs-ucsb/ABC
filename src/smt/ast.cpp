@@ -1140,7 +1140,7 @@ void NotEnds::visit_children(Visitor_ptr v) {
 
 IndexOf::IndexOf(Term_ptr subject_term, Term_ptr search_term)
         : Term(Term::Type::INDEXOF), subject_term(subject_term), search_term(search_term),
-          from_index(nullptr), mode (Mode::NONE) {
+          from_index(nullptr), mode (Mode::DEFAULT) {
 }
 
 IndexOf::IndexOf(Term_ptr subject_term, Term_ptr search_term, Term_ptr from_index, Mode mode)
@@ -1178,9 +1178,17 @@ void IndexOf::visit_children(Visitor_ptr v) {
   v->visit(from_index);
 }
 
+IndexOf::Mode IndexOf::getMode() {
+  return mode;
+}
+
+void IndexOf::setMode(Mode mode) {
+  this->mode = mode;
+}
+
 LastIndexOf::LastIndexOf(Term_ptr subject_term, Term_ptr search_term)
         : Term(Term::Type::LASTINDEXOF), subject_term(subject_term), search_term(search_term),
-          from_index(nullptr), mode(Mode::NONE) {
+          from_index(nullptr), mode(Mode::DEFAULT) {
 }
 
 LastIndexOf::LastIndexOf(Term_ptr subject_term, Term_ptr search_term, Term_ptr from_index, Mode mode)
@@ -1218,6 +1226,14 @@ void LastIndexOf::visit_children(Visitor_ptr v) {
   v->visit(from_index);
 }
 
+LastIndexOf::Mode LastIndexOf::getMode() {
+  return mode;
+}
+
+void LastIndexOf::setMode(Mode mode) {
+  this->mode = mode;
+}
+
 CharAt::CharAt(Term_ptr subject_term, Term_ptr index_term)
         : Term(Term::Type::CHARAT), subject_term(subject_term), index_term(index_term) {
 }
@@ -1246,14 +1262,14 @@ void CharAt::visit_children(Visitor_ptr v) {
   v->visit(index_term);
 }
 
-SubString::SubString(Term_ptr subject_term, Term_ptr start_index_term)
+SubString::SubString(Term_ptr subject_term, Term_ptr start_index_term, Mode mode)
         : Term(Term::Type::SUBSTRING), subject_term (subject_term),
-          start_index_term (start_index_term), end_index_term (nullptr) {
+          start_index_term (start_index_term), end_index_term (nullptr), mode (mode) {
 }
 
-SubString::SubString(Term_ptr subject_term, Term_ptr start_index_term, Term_ptr end_index_term)
+SubString::SubString(Term_ptr subject_term, Term_ptr start_index_term, Term_ptr end_index_term, Mode mode)
         : Term(Term::Type::SUBSTRING), subject_term (subject_term),
-          start_index_term (start_index_term), end_index_term (end_index_term) {
+          start_index_term (start_index_term), end_index_term (end_index_term), mode (mode) {
 }
 
 SubString::SubString(const SubString& other)
@@ -1263,6 +1279,7 @@ SubString::SubString(const SubString& other)
   if (end_index_term not_eq nullptr) {
     end_index_term = other.end_index_term->clone();
   }
+  mode = other.mode;
 }
 
 SubString_ptr SubString::clone() const {
@@ -1283,6 +1300,14 @@ void SubString::visit_children(Visitor_ptr v) {
   v->visit(subject_term);
   v->visit(start_index_term);
   v->visit(end_index_term);
+}
+
+SubString::Mode SubString::getMode() {
+  return mode;
+}
+
+void SubString::setMode(Mode mode) {
+  this->mode = mode;
 }
 
 SubStringFirstOf::SubStringFirstOf(Term_ptr subject_term, Term_ptr start_index_term)

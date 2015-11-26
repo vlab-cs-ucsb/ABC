@@ -225,12 +225,18 @@ void OptimizationRuleRunner::visitNotEnds(NotEnds_ptr not_ends_term) {
 void OptimizationRuleRunner::visitIndexOf(IndexOf_ptr index_of_term) {
   check_and_substitute_var(index_of_term->subject_term);
   check_and_substitute_var(index_of_term->search_term);
+  if (index_of_term->from_index) {
+    check_and_substitute_var(index_of_term->from_index);
+  }
   visit_children_of(index_of_term);
 }
 
 void OptimizationRuleRunner::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
   check_and_substitute_var(last_index_of_term->subject_term);
   check_and_substitute_var(last_index_of_term->search_term);
+  if (last_index_of_term->from_index) {
+    check_and_substitute_var(last_index_of_term->from_index);
+  }
   visit_children_of(last_index_of_term);
 }
 

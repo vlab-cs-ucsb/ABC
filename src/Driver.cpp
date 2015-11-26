@@ -50,6 +50,7 @@ void Driver::ast2dot(std::ostream* out) {
   Solver::Ast2Dot ast2dot(out);
   ast2dot.start(script);
 }
+
 void Driver::ast2dot(std::string file_name) {
   std::ofstream outfile(file_name.c_str());
   if (!outfile.good()) {
@@ -59,12 +60,6 @@ void Driver::ast2dot(std::string file_name) {
   ast2dot(&outfile);
   outfile.close();
 }
-
-//void Driver::collectStatistics() {
-//	SMT::Statistics::perfInfo = perfInfo;
-//	SMT::Statistics statistics;
-//	statistics.start(script, symbol_table);
-//}
 
 void Driver::initializeSolver() {
 
@@ -83,9 +78,6 @@ void Driver::initializeSolver() {
 
   Solver::FormulaOptimizer formula_optimizer(script, symbol_table);
   formula_optimizer.start();
-
-//  SMT::LengthConstraintReductor len_reductor;
-//  len_reductor.start(script, symbol_table);
 
   Solver::ConstraintSorter constraint_sorter(script, symbol_table);
   constraint_sorter.start();

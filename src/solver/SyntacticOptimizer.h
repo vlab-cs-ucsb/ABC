@@ -102,7 +102,8 @@ protected:
   bool __check_and_process_len_transformation(SMT::Term::Type, SMT::Term_ptr&, SMT::Term_ptr&);
   SMT::Term::Type syntactic_reverse_relation(SMT::Term::Type operation);
   bool check_and_process_for_notContains_transformation(SMT::Term_ptr&, SMT::Term_ptr&, int compare_value);
-  SMT::Term::Type check_and_process_subString(SMT::Term_ptr subject_term, SMT::Term_ptr &index_term);
+  SMT::SubString::Mode check_and_process_subString(SMT::Term_ptr subject_term, SMT::Term_ptr &index_term);
+  SMT::SubString::Mode check_and_process_subString(SMT::Term_ptr subject_term, SMT::Term_ptr &start_index_term, SMT::Term_ptr &end_index_term );
   SMT::Term_ptr generate_term_constant(std::string data, SMT::Primitive::Type type);
   SMT::Term_ptr generate_dummy_term();
   void add_callback_to_replace_with_bool(SMT::Term_ptr, std::string value);

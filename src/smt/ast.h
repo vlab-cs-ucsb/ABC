@@ -685,10 +685,10 @@ public:
 class IndexOf: public Term {
 public:
   enum class Mode : int {
-    NONE = 0, // from index is nullptr,
-            FROMINDEX,          // start index is a numeral
-            FROMFIRSTOF,        // start index is string term to find first occurance
-            FROMLASTOF,         // start index is string term to find last occurance
+    DEFAULT = 0, // from index is nullptr,
+            FROMINDEX,          // from index is a numeral
+            FROMFIRSTOF,        // from index is string term to find first occurance
+            FROMLASTOF,         // from index is string term to find last occurance
   };
   IndexOf(Term_ptr, Term_ptr);
   IndexOf(Term_ptr, Term_ptr, Term_ptr, Mode mode = Mode::FROMINDEX);
@@ -699,6 +699,9 @@ public:
   virtual void accept(Visitor_ptr);
   virtual void visit_children(Visitor_ptr);
 
+  Mode getMode();
+  void setMode(Mode mode);
+
   Term_ptr subject_term;
   Term_ptr search_term;
   Term_ptr from_index;
@@ -708,10 +711,10 @@ public:
 class LastIndexOf: public Term {
 public:
   enum class Mode : int {
-    NONE = 0, // from index is nullptr,
-            FROMINDEX,          // start index is a numeral
-            FROMFIRSTOF,        // start index is string term to find first occurance
-            FROMLASTOF,         // start index is string term to find last occurance
+    DEFAULT = 0, // from index is nullptr,
+            FROMINDEX,          // from index is a numeral
+            FROMFIRSTOF,        // from index is string term to find first occurance
+            FROMLASTOF,         // from index is string term to find last occurance
   };
   LastIndexOf(Term_ptr, Term_ptr);
   LastIndexOf(Term_ptr, Term_ptr, Term_ptr, Mode mode = Mode::FROMINDEX);
@@ -721,6 +724,9 @@ public:
 
   virtual void accept(Visitor_ptr);
   virtual void visit_children(Visitor_ptr);
+
+  Mode getMode();
+  void setMode(Mode mode);
 
   Term_ptr subject_term;
   Term_ptr search_term;
@@ -745,7 +751,6 @@ public:
 class SubString: public Term {
 public:
   enum class Mode : int {
-    NONE = 0,                     // end index is nullptr,
             FROMINDEX,            // start index is a numeral
             FROMFIRSTOF,          // start index is string term to find first occurance
             FROMLASTOF,           // start index is string term to find last occurance
@@ -760,8 +765,8 @@ public:
             FROMLASTOFTOLASTOF    // start index is string term, end index is string term
 
   };
-  SubString(Term_ptr, Term_ptr);
-  SubString(Term_ptr, Term_ptr, Term_ptr);
+  SubString(Term_ptr, Term_ptr, Mode mode = Mode::FROMINDEX);
+  SubString(Term_ptr, Term_ptr, Term_ptr, Mode mode = Mode::FROMINDEXTOINDEX);
   SubString(const SubString&);
   virtual SubString_ptr clone() const;
   virtual ~SubString();
@@ -769,9 +774,13 @@ public:
   virtual void accept(Visitor_ptr);
   virtual void visit_children(Visitor_ptr);
 
+  Mode getMode();
+  void setMode(Mode mode);
+
   Term_ptr subject_term;
   Term_ptr start_index_term;
   Term_ptr end_index_term;
+  Mode mode;
 };
 
 class SubStringFirstOf: public Term {

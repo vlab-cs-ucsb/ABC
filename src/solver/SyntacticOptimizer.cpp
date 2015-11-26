@@ -111,7 +111,7 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
                 sub_product.back().push_back(term_1->clone());
             }
         }
-        // do not allow memory leak
+        // avoid memory leak
         for (auto& term_list : cartesian) {
           for (auto term : term_list) {
             delete term;
@@ -850,11 +850,17 @@ void SyntacticOptimizer::visitNotEnds(NotEnds_ptr not_ends_term) {
 void SyntacticOptimizer::visitIndexOf(IndexOf_ptr index_of_term) {
   visit_and_callback(index_of_term->subject_term);
   visit_and_callback(index_of_term->search_term);
+  if (index_of_term->from_index) {
+    visit_and_callback(index_of_term->from_index);
+  }
 }
 
 void SyntacticOptimizer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
   visit_and_callback(last_index_of_term->subject_term);
   visit_and_callback(last_index_of_term->search_term);
+  if (last_index_of_term->from_index) {
+    visit_and_callback(last_index_of_term->from_index);
+  }
 }
 
 void SyntacticOptimizer::visitCharAt(SMT::CharAt_ptr char_at_term) {
@@ -869,29 +875,14 @@ void SyntacticOptimizer::visitSubString(SMT::SubString_ptr sub_string_term) {
     visit_and_callback(sub_string_term->end_index_term);
   }
 
-  Term::Type result = check_and_process_subString(sub_string_term->subject_term, sub_string_term->start_index_term);
-  if (Term::Type::INDEXOF == result or Term::Type::LASTINDEXOF == result) {
-    callback = [result, sub_string_term](Term_ptr& term) mutable {
-      switch (result) {
-        case Term::Type::INDEXOF:
-          term = new SubStringFirstOf(sub_string_term->subject_term, sub_string_term->start_index_term);
-          break;
-        case Term::Type::LASTINDEXOF:
-          term = new SubStringLastOf(sub_string_term->subject_term, sub_string_term->start_index_term);
-          break;
-        default:
-          break;
-      }
-      sub_string_term->subject_term = nullptr;
-      sub_string_term->start_index_term = nullptr;
-      delete sub_string_term; sub_string_term = nullptr;
-    };
+  SubString::Mode result;
+  if (sub_string_term->end_index_term) {
+    result = check_and_process_subString(sub_string_term->subject_term, sub_string_term->start_index_term, sub_string_term->end_index_term);
+  } else {
+    result = check_and_process_subString(sub_string_term->subject_term, sub_string_term->start_index_term);
   }
 
-  if (sub_string_term->end_index_term) {
-    LOG(WARNING)<< "optimization check skipped, please contact us";
-    LOG(FATAL)<< "handle substring optimization case";
-  }
+  sub_string_term->setMode(result);
 }
 
 void SyntacticOptimizer::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_string_first_of_term) {
@@ -1226,29 +1217,35 @@ bool SyntacticOptimizer::check_and_process_for_notContains_transformation(SMT::T
   }
 
   if (IndexOf_ptr index_of_term = dynamic_cast<IndexOf_ptr>(left_term)) {
-    Term_ptr tmp_term = right_term;
-    right_term = index_of_term->search_term;
-    left_term = index_of_term->subject_term;
-    index_of_term->subject_term = nullptr;
-    index_of_term->search_term = nullptr;
-    delete index_of_term;
-    delete tmp_term;
-    return true;
+    if (IndexOf::Mode::DEFAULT == index_of_term->getMode()) {
+      Term_ptr tmp_term = right_term;
+      right_term = index_of_term->search_term;
+      left_term = index_of_term->subject_term;
+      index_of_term->subject_term = nullptr;
+      index_of_term->search_term = nullptr;
+      delete index_of_term;
+      delete tmp_term;
+      return true;
+    }
   } else if (LastIndexOf_ptr last_index_of_term = dynamic_cast<LastIndexOf_ptr>(left_term)) {
-    Term_ptr tmp_term = right_term;
-    right_term = last_index_of_term->search_term;
-    left_term = last_index_of_term->subject_term;
-    last_index_of_term->subject_term = nullptr;
-    last_index_of_term->search_term = nullptr;
-    delete last_index_of_term;
-    delete tmp_term;
-    return true;
+    if (LastIndexOf::Mode::DEFAULT == last_index_of_term->getMode()) {
+      Term_ptr tmp_term = right_term;
+      right_term = last_index_of_term->search_term;
+      left_term = last_index_of_term->subject_term;
+      last_index_of_term->subject_term = nullptr;
+      last_index_of_term->search_term = nullptr;
+      delete last_index_of_term;
+      delete tmp_term;
+      return true;
+    }
   }
 
   return false;
 }
-
-Term::Type SyntacticOptimizer::check_and_process_subString(Term_ptr subject_term, Term_ptr &index_term) {
+/**
+ * Checks only immediate children, may need to implement more sophisticated analysis for such optimizations
+ */
+SubString::Mode SyntacticOptimizer::check_and_process_subString(Term_ptr subject_term, Term_ptr &index_term) {
   switch (index_term->getType()) {
     case Term::Type::INDEXOF: {
       IndexOf_ptr index_of_term = dynamic_cast<IndexOf_ptr>(index_term);
@@ -1256,7 +1253,7 @@ Term::Type SyntacticOptimizer::check_and_process_subString(Term_ptr subject_term
         index_term = index_of_term->search_term;
         index_of_term->search_term = nullptr;
         delete index_of_term;
-        return Term::Type::INDEXOF;
+        return SubString::Mode::FROMFIRSTOF;
       }
       break;
     }
@@ -1266,14 +1263,41 @@ Term::Type SyntacticOptimizer::check_and_process_subString(Term_ptr subject_term
         index_term = last_index_of_term->search_term;
         last_index_of_term->search_term = nullptr;
         delete last_index_of_term;
-        return Term::Type::LASTINDEXOF;
+        return SubString::Mode::FROMLASTOF;
       }
       break;
     }
     default:
       break;
   }
-  return Term::Type::NONE;
+  return SubString::Mode::FROMINDEX;
+}
+
+SubString::Mode SyntacticOptimizer::check_and_process_subString(Term_ptr subject_term, Term_ptr &start_index_term, Term_ptr &end_index_term ) {
+  SubString::Mode start_index_mode = check_and_process_subString(subject_term, start_index_term);
+  SubString::Mode end_index_mode = check_and_process_subString(subject_term, end_index_term);
+
+  if (SubString::Mode::FROMINDEX == start_index_mode and SubString::Mode::FROMINDEX == end_index_mode) {
+    return SubString::Mode::FROMINDEXTOINDEX;
+  } else if (SubString::Mode::FROMINDEX == start_index_mode and SubString::Mode::FROMFIRSTOF == end_index_mode) {
+    return SubString::Mode::FROMINDEXTOFIRSTOF;
+  } else if (SubString::Mode::FROMINDEX == start_index_mode and SubString::Mode::FROMLASTOF == end_index_mode) {
+    return SubString::Mode::FROMINDEXTOLASTOF;
+  } else if (SubString::Mode::FROMFIRSTOF == start_index_mode and SubString::Mode::FROMINDEX == end_index_mode) {
+    return SubString::Mode::FROMFIRSTOFTOINDEX;
+  } else if (SubString::Mode::FROMFIRSTOF == start_index_mode and SubString::Mode::FROMFIRSTOF == end_index_mode) {
+    return SubString::Mode::FROMFIRSTOFTOFIRSTOF;
+  } else if (SubString::Mode::FROMFIRSTOF == start_index_mode and SubString::Mode::FROMLASTOF == end_index_mode) {
+    return SubString::Mode::FROMFIRSTOFTOLASTOF;
+  } else if (SubString::Mode::FROMLASTOF == start_index_mode and SubString::Mode::FROMINDEX == end_index_mode) {
+    return SubString::Mode::FROMLASTOFTOINDEX;
+  } else if (SubString::Mode::FROMLASTOF == start_index_mode and SubString::Mode::FROMFIRSTOF == end_index_mode) {
+    return SubString::Mode::FROMLASTOFTOFIRSTOF;
+  } else if (SubString::Mode::FROMLASTOF == start_index_mode and SubString::Mode::FROMLASTOF == end_index_mode) {
+    return SubString::Mode::FROMLASTOFTOLASTOF;
+  }
+
+  return SubString::Mode::FROMINDEXTOINDEX;
 }
 
 Term_ptr SyntacticOptimizer::generate_term_constant(std::string data, Primitive::Type type) {

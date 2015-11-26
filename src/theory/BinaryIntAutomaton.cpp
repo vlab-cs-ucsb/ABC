@@ -264,7 +264,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(SemilinearSet_ptr semil
     delete tmp_auto; tmp_auto = nullptr;
   }
 
-  DVLOG(VLOG_LEVEL)  << binary_auto->getId() << " = BinaryIntAutomaton::makeAutomaton(<semilinear_set>, " << var_name << ", " << *formula << std::boolalpha << add_leading_zeros << ")";
+  DVLOG(VLOG_LEVEL)  << binary_auto->getId() << " = BinaryIntAutomaton::makeAutomaton(<semilinear_set>, " << var_name << ", " << *formula << ", " << std::boolalpha << add_leading_zeros << ")";
 
   return binary_auto;
 }

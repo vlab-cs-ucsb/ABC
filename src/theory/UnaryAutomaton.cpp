@@ -262,7 +262,7 @@ BinaryIntAutomaton_ptr UnaryAutomaton::toBinaryIntAutomaton(std::string var_name
     delete minus_one_auto; minus_one_auto = nullptr;
   }
 
-  DVLOG(VLOG_LEVEL)  << binary_auto->getId() << " = [" << this->id << "]->toBinaryIntAutomaton(" << var_name << ", " << *formula << ", " << add_minus_one << ")";
+  DVLOG(VLOG_LEVEL)  << binary_auto->getId() << " = [" << this->id << "]->toBinaryIntAutomaton(" << var_name << ", " << *binary_auto->getFormula() << ", " << add_minus_one << ")";
 
   return binary_auto;
 }

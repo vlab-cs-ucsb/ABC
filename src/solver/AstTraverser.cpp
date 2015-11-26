@@ -393,6 +393,9 @@ void AstTraverser::visitIndexOf(SMT::IndexOf_ptr index_of_term) {
   if (term_pre_callback and term_pre_callback(index_of_term)) {
     visit(index_of_term->subject_term);
     visit(index_of_term->search_term);
+    if (index_of_term->from_index) {
+      visit(index_of_term->from_index);
+    }
   }
 
   if (term_post_callback) {
@@ -404,6 +407,9 @@ void AstTraverser::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
   if (term_pre_callback and term_pre_callback(last_index_of_term)) {
     visit(last_index_of_term->subject_term);
     visit(last_index_of_term->search_term);
+    if (last_index_of_term->from_index) {
+      visit(last_index_of_term->from_index);
+    }
   }
 
   if (term_post_callback) {

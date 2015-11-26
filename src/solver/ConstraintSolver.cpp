@@ -25,7 +25,8 @@ ConstraintSolver::~ConstraintSolver() {
 
 void ConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "start";
-  arithmetic_constraint_solver.start();
+  // Temporarily disable binary int automaton
+//  arithmetic_constraint_solver.start();
   visit(root);
   end();
 }
