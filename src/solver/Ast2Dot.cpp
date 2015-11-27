@@ -234,14 +234,6 @@ void Ast2Dot::visitSubString(SMT::SubString_ptr sub_string_term) {
   visitTerm(sub_string_term);
 }
 
-void Ast2Dot::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_string_first_of_term) {
-  visitTerm(sub_string_first_of_term);
-}
-
-void Ast2Dot::visitSubStringLastOf(SMT::SubStringLastOf_ptr sub_string_last_of_term) {
-  visitTerm(sub_string_last_of_term);
-}
-
 void Ast2Dot::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
   visitTerm(to_upper_term);
 }

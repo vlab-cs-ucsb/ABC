@@ -293,8 +293,6 @@ const std::string Term::Name::INDEXOF = "indexOf";
 const std::string Term::Name::LASTINDEXOF= "lastIndexOf";
 const std::string Term::Name::CHARAT = "charAt";
 const std::string Term::Name::SUBSTRING = "subString";
-const std::string Term::Name::SUBSTRINGFIRSTOF = "subStringFirstOf";
-const std::string Term::Name::SUBSTRINGLASTOF = "subStringLastOf";
 const std::string Term::Name::TOUPPER = "toUpper";
 const std::string Term::Name::TOLOWER = "toLower";
 const std::string Term::Name::TRIM = "trim";
@@ -392,10 +390,6 @@ std::string Term::str() const {
     return Term::Name::CHARAT;
   case Term::Type::SUBSTRING:
     return Term::Name::SUBSTRING;
-  case Term::Type::SUBSTRINGFIRSTOF:
-    return Term::Name::SUBSTRINGFIRSTOF;
-  case Term::Type::SUBSTRINGLASTOF:
-    return Term::Name::SUBSTRINGLASTOF;
   case Term::Type::TOUPPER:
     return Term::Name::TOUPPER;
   case Term::Type::TOLOWER:
@@ -1308,64 +1302,6 @@ SubString::Mode SubString::getMode() {
 
 void SubString::setMode(Mode mode) {
   this->mode = mode;
-}
-
-SubStringFirstOf::SubStringFirstOf(Term_ptr subject_term, Term_ptr start_index_term)
-        : Term(Term::Type::SUBSTRINGFIRSTOF), subject_term (subject_term),
-          start_index_term (start_index_term) {
-}
-
-SubStringFirstOf::SubStringFirstOf(const SubStringFirstOf& other)
-        : Term(other.type) {
-  subject_term = other.subject_term->clone();
-  start_index_term = other.start_index_term->clone();
-}
-
-SubStringFirstOf_ptr SubStringFirstOf::clone() const {
-  return new SubStringFirstOf(*this);
-}
-
-SubStringFirstOf::~SubStringFirstOf() {
-  delete subject_term;
-  delete start_index_term;
-}
-
-void SubStringFirstOf::accept(Visitor_ptr v) {
-  v->visitSubStringFirstOf(this);
-}
-
-void SubStringFirstOf::visit_children(Visitor_ptr v) {
-  v->visit(subject_term);
-  v->visit(start_index_term);
-}
-
-SubStringLastOf::SubStringLastOf(Term_ptr subject_term, Term_ptr start_index_term)
-        : Term(Term::Type::SUBSTRINGLASTOF), subject_term (subject_term),
-          start_index_term (start_index_term) {
-}
-
-SubStringLastOf::SubStringLastOf(const SubStringLastOf& other)
-        : Term(other.type) {
-  subject_term = other.subject_term->clone();
-  start_index_term = other.start_index_term->clone();
-}
-
-SubStringLastOf_ptr SubStringLastOf::clone() const {
-  return new SubStringLastOf(*this);
-}
-
-SubStringLastOf::~SubStringLastOf() {
-  delete subject_term;
-  delete start_index_term;
-}
-
-void SubStringLastOf::accept(Visitor_ptr v) {
-  v->visitSubStringLastOf(this);
-}
-
-void SubStringLastOf::visit_children(Visitor_ptr v) {
-  v->visit(subject_term);
-  v->visit(start_index_term);
 }
 
 ToUpper::ToUpper(Term_ptr subject_term)

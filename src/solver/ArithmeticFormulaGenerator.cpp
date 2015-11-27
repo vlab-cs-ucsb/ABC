@@ -446,12 +446,6 @@ void ArithmeticFormulaGenerator::visitCharAt(CharAt_ptr char_at_term) {
 void ArithmeticFormulaGenerator::visitSubString(SubString_ptr sub_string_term) {
 }
 
-void ArithmeticFormulaGenerator::visitSubStringFirstOf(SubStringFirstOf_ptr sub_string_first_of_term) {
-}
-
-void ArithmeticFormulaGenerator::visitSubStringLastOf(SubStringLastOf_ptr sub_string_last_of_term) {
-}
-
 void ArithmeticFormulaGenerator::visitToUpper(ToUpper_ptr to_upper_term) {
 }
 

@@ -226,8 +226,6 @@ public:
     LASTINDEXOF,
     CHARAT,
     SUBSTRING,
-    SUBSTRINGFIRSTOF,
-    SUBSTRINGLASTOF,
     TOUPPER,
     TOLOWER,
     TRIM,
@@ -289,8 +287,6 @@ public:
     static const std::string LASTINDEXOF;
     static const std::string CHARAT;
     static const std::string SUBSTRING;
-    static const std::string SUBSTRINGFIRSTOF;
-    static const std::string SUBSTRINGLASTOF;
     static const std::string TOUPPER;
     static const std::string TOLOWER;
     static const std::string TRIM;
@@ -751,6 +747,7 @@ public:
 class SubString: public Term {
 public:
   enum class Mode : int {
+            NONE = 0,             // used only to check for optimizations
             FROMINDEX,            // start index is a numeral
             FROMFIRSTOF,          // start index is string term to find first occurance
             FROMLASTOF,           // start index is string term to find last occurance
@@ -781,38 +778,6 @@ public:
   Term_ptr start_index_term;
   Term_ptr end_index_term;
   Mode mode;
-};
-
-class SubStringFirstOf: public Term {
-public:
-  SubStringFirstOf(Term_ptr, Term_ptr);
-//  SubStringFirstOf(Term_ptr, Term_ptr, Term_ptr);
-  SubStringFirstOf(const SubStringFirstOf&);
-  virtual SubStringFirstOf_ptr clone() const;
-  virtual ~SubStringFirstOf();
-
-  virtual void accept(Visitor_ptr);
-  virtual void visit_children(Visitor_ptr);
-
-  Term_ptr subject_term;
-  Term_ptr start_index_term;
-//  Term_ptr end_index_term;
-};
-
-class SubStringLastOf: public Term {
-public:
-  SubStringLastOf(Term_ptr, Term_ptr);
-//  SubStringLastOf(Term_ptr, Term_ptr, Term_ptr);
-  SubStringLastOf(const SubStringLastOf&);
-  virtual SubStringLastOf_ptr clone() const;
-  virtual ~SubStringLastOf();
-
-  virtual void accept(Visitor_ptr);
-  virtual void visit_children(Visitor_ptr);
-
-  Term_ptr subject_term;
-  Term_ptr start_index_term;
-//  Term_ptr end_index_term;
 };
 
 class ToUpper: public Term {

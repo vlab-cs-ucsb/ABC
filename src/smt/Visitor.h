@@ -56,8 +56,6 @@ public:
   virtual void visitLastIndexOf(LastIndexOf_ptr) = 0;
   virtual void visitCharAt(CharAt_ptr) = 0;
   virtual void visitSubString(SubString_ptr) = 0;
-  virtual void visitSubStringFirstOf(SubStringFirstOf_ptr) = 0;
-  virtual void visitSubStringLastOf(SubStringLastOf_ptr) = 0;
   virtual void visitToUpper(ToUpper_ptr) = 0;
   virtual void visitToLower(ToLower_ptr) = 0;
   virtual void visitTrim(Trim_ptr) = 0;

@@ -442,28 +442,6 @@ void AstTraverser::visitSubString(SMT::SubString_ptr sub_string_term) {
   }
 }
 
-void AstTraverser::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_string_first_of_term) {
-  if (term_pre_callback and term_pre_callback(sub_string_first_of_term)) {
-    visit(sub_string_first_of_term->subject_term);
-    visit(sub_string_first_of_term->start_index_term);
-  }
-
-  if (term_post_callback) {
-    term_post_callback(sub_string_first_of_term);
-  }
-}
-
-void AstTraverser::visitSubStringLastOf(SMT::SubStringLastOf_ptr sub_string_last_of_term) {
-  if (term_pre_callback and term_pre_callback(sub_string_last_of_term)) {
-    visit(sub_string_last_of_term->subject_term);
-    visit(sub_string_last_of_term->start_index_term);
-  }
-
-  if (term_post_callback) {
-    term_post_callback(sub_string_last_of_term);
-  }
-}
-
 void AstTraverser::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
   if (term_pre_callback and term_pre_callback(to_upper_term)) {
     visit(to_upper_term->subject_term);

@@ -886,78 +886,76 @@ void VariableValueComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
   Value_ptr term_value = getTermPreImage(sub_string_term);
   Value_ptr child_post_value = getTermPostImage(child_term);
   Value_ptr start_index_value = getTermPostImage(sub_string_term->start_index_term);
+  Value_ptr end_index_value = nullptr;
 
-  if (sub_string_term->end_index_term == nullptr) {
-    if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
-      child_value = new Value(child_post_value->getStringAutomaton()
-              ->restrictFromIndexToEndTo(start_index_value->getIntConstant(), term_value->getStringAutomaton()));
-    } else {
-      child_value = new Value(child_post_value->getStringAutomaton()
-              ->restrictFromIndexToEndTo(start_index_value->getIntAutomaton(), term_value->getStringAutomaton()));
+  switch (sub_string_term->getMode()) {
+    case SubString::Mode::FROMINDEX: {
+      if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
+        child_value = new Value(child_post_value->getStringAutomaton()
+                ->restrictFromIndexToEndTo(start_index_value->getIntConstant(), term_value->getStringAutomaton()));
+      } else {
+        child_value = new Value(child_post_value->getStringAutomaton()
+                ->restrictFromIndexToEndTo(start_index_value->getIntAutomaton(), term_value->getStringAutomaton()));
+      }
+      break;
     }
-
-  } else { //term_value already contains end index
-    if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
-      child_value = new Value(child_post_value->getStringAutomaton()
-              ->restrictAtIndexTo(start_index_value->getIntConstant(), term_value->getStringAutomaton()));
-    } else {
-      child_value = new Value(child_post_value->getStringAutomaton()
-              ->restrictAtIndexTo(start_index_value->getIntAutomaton(), term_value->getStringAutomaton()));
+    case SubString::Mode::FROMFIRSTOF: {
+      LOG(FATAL)<< "implement me";
+      break;
     }
+    case SubString::Mode::FROMLASTOF: {
+      child_value = new Value(child_post_value->getStringAutomaton()
+              ->ends(term_value->getStringAutomaton()));
+      break;
+    }
+    case SubString::Mode::FROMINDEXTOINDEX: {
+//      end_index_value = getTermPostImage(sub_string_term->end_index_term);
+      //term_value already contains end index
+      if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
+        child_value = new Value(child_post_value->getStringAutomaton()
+                ->restrictAtIndexTo(start_index_value->getIntConstant(), term_value->getStringAutomaton()));
+      } else {
+        child_value = new Value(child_post_value->getStringAutomaton()
+                ->restrictAtIndexTo(start_index_value->getIntAutomaton(), term_value->getStringAutomaton()));
+      }
+      break;
+    }
+    case SubString::Mode::FROMINDEXTOFIRSTOF: {
+      LOG(FATAL)<< "implement me";
+      break;
+    }
+    case SubString::Mode::FROMINDEXTOLASTOF: {
+      LOG(FATAL)<< "implement me";
+      break;
+    }
+    case SubString::Mode::FROMFIRSTOFTOINDEX: {
+      LOG(FATAL)<< "implement me";
+      break;
+    }
+    case SubString::Mode::FROMFIRSTOFTOFIRSTOF: {
+      LOG(FATAL)<< "implement me";
+      break;
+    }
+    case SubString::Mode::FROMFIRSTOFTOLASTOF: {
+      LOG(FATAL)<< "implement me";
+      break;
+    }
+    case SubString::Mode::FROMLASTOFTOINDEX: {
+      LOG(FATAL)<< "implement me";
+      break;
+    }
+    case SubString::Mode::FROMLASTOFTOFIRSTOF: {
+      LOG(FATAL)<< "implement me";
+      break;
+    }
+    case SubString::Mode::FROMLASTOFTOLASTOF: {
+      LOG(FATAL)<< "implement me";
+      break;
+    }
+    default:
+      LOG(FATAL)<< "Undefined subString semantic";
+      break;
   }
-
-  setTermPreImage(child_term, child_value);
-  visit(child_term);
-}
-
-void VariableValueComputer::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_string_first_of_term) {
-  DVLOG(VLOG_LEVEL) << "pop: " << *sub_string_first_of_term;
-  popTerm(sub_string_first_of_term);
-  Term_ptr child_term = current_path.back();
-
-  if (child_term == sub_string_first_of_term->start_index_term) {
-    return; // visitSubStringFirstOf operation does not have any restriction on indexes
-  }
-
-  Value_ptr child_value = getTermPreImage(child_term);
-  if (child_value not_eq nullptr) {
-    visit(child_term);
-    return;
-  }
-
-  Theory::StringAutomaton_ptr child_pre_auto = nullptr;
-  Value_ptr term_value = getTermPreImage(sub_string_first_of_term);
-  Value_ptr child_post_value = getTermPostImage(child_term);
-
-  child_value = new Value(child_post_value->getStringAutomaton()
-          ->ends(term_value->getStringAutomaton()));
-
-  setTermPreImage(child_term, child_value);
-  visit(child_term);
-}
-
-void VariableValueComputer::visitSubStringLastOf(SMT::SubStringLastOf_ptr sub_string_last_of_term) {
-  DVLOG(VLOG_LEVEL) << "pop: " << *sub_string_last_of_term;
-  popTerm(sub_string_last_of_term);
-  Term_ptr child_term = current_path.back();
-
-  if (child_term == sub_string_last_of_term->start_index_term) {
-    return; // visitSubStringLastOf operation does not have any restriction on indexes
-  }
-
-  Value_ptr child_value = getTermPreImage(child_term);
-  if (child_value not_eq nullptr) {
-    visit(child_term);
-    return;
-  }
-
-  Theory::StringAutomaton_ptr child_pre_auto = nullptr;
-  Value_ptr term_value = getTermPreImage(sub_string_last_of_term);
-  Value_ptr child_post_value = getTermPostImage(child_term);
-  Value_ptr start_index_value = getTermPostImage(sub_string_last_of_term->start_index_term);
-
-  child_value = new Value(child_post_value->getStringAutomaton()
-          ->ends(term_value->getStringAutomaton()));
 
   setTermPreImage(child_term, child_value);
   visit(child_term);

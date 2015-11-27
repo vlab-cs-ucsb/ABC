@@ -768,55 +768,74 @@ void ConstraintSolver::visitCharAt(CharAt_ptr char_at_term) {
 void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
   visit_children_of(sub_string_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *sub_string_term;
-
   Value_ptr result = nullptr, param_subject = getTermValue(sub_string_term->subject_term),
-      param_start_index = getTermValue(sub_string_term->start_index_term);
+      param_start_index = getTermValue(sub_string_term->start_index_term),
+      param_end_index = nullptr;
 
-  if (Value::Type::INT_CONSTANT == param_start_index->getType()) {
-    if (sub_string_term->end_index_term == nullptr) {
+  switch (sub_string_term->getMode()) {
+    case SubString::Mode::FROMINDEX: {
+//      CHECK_EQ(Value::Type::INT_CONSTANT, param_start_index->getType())
+//              << "start index of a subString is expected to be an integer constant";
       result = new Value(param_subject->getStringAutomaton()->subString(param_start_index->getIntConstant()));
-    } else {
-      Value_ptr param_end_index = getTermValue(sub_string_term->end_index_term);
-      if (Value::Type::INT_CONSTANT == param_end_index->getType()) {
-        result = new Value(param_subject->getStringAutomaton()->subString(
-                    param_start_index->getIntConstant(),
-                    param_end_index->getIntConstant()));
-      } else {
-        LOG(FATAL)<< "end index of a subString operation must be an integer constant";
-      }
+      break;
     }
-  } else {
-    LOG(FATAL)<< "start index of a subString operation must be an integer constant";
+    case SubString::Mode::FROMFIRSTOF: {
+      LOG(FATAL)<< "implement me";
+      break;
+    }
+    case SubString::Mode::FROMLASTOF: {
+      result = new Value(param_subject->getStringAutomaton()->subStringLastOf(param_start_index->getStringAutomaton()));
+      break;
+    }
+    case SubString::Mode::FROMINDEXTOINDEX: {
+      param_end_index = getTermValue(sub_string_term->end_index_term);
+//      CHECK_EQ(Value::Type::INT_CONSTANT, param_start_index->getType())
+//                    << "start index of a subString is expected to be an integer constant";
+//      CHECK_EQ(Value::Type::INT_CONSTANT, param_end_index->getType())
+//                    << "start index of a subString is expected to be an integer constant";
+      result = new Value(param_subject->getStringAutomaton()->subString(
+                  param_start_index->getIntConstant(),
+                  param_end_index->getIntConstant()));
+      break;
+    }
+    case SubString::Mode::FROMINDEXTOFIRSTOF: {
+      LOG(FATAL)<< "implement me";
+      break;
+    }
+    case SubString::Mode::FROMINDEXTOLASTOF: {
+      LOG(FATAL)<< "implement me";
+      break;
+    }
+    case SubString::Mode::FROMFIRSTOFTOINDEX: {
+      LOG(FATAL)<< "implement me";
+      break;
+    }
+    case SubString::Mode::FROMFIRSTOFTOFIRSTOF: {
+      LOG(FATAL)<< "implement me";
+      break;
+    }
+    case SubString::Mode::FROMFIRSTOFTOLASTOF: {
+      LOG(FATAL)<< "implement me";
+      break;
+    }
+    case SubString::Mode::FROMLASTOFTOINDEX: {
+      LOG(FATAL)<< "implement me";
+      break;
+    }
+    case SubString::Mode::FROMLASTOFTOFIRSTOF: {
+      LOG(FATAL)<< "implement me";
+      break;
+    }
+    case SubString::Mode::FROMLASTOFTOLASTOF: {
+      LOG(FATAL)<< "implement me";
+      break;
+    }
+    default:
+      LOG(FATAL)<< "Undefined subString semantic";
+      break;
   }
 
   setTermValue(sub_string_term, result);
-}
-
-void ConstraintSolver::visitSubStringFirstOf(SubStringFirstOf_ptr sub_string_first_of_term) {
-  visit_children_of(sub_string_first_of_term);
-  DVLOG(VLOG_LEVEL) << "visit: " << *sub_string_first_of_term;
-
-  Value_ptr result = nullptr, param_subject = getTermValue(sub_string_first_of_term->subject_term),
-      param_start_index = getTermValue(sub_string_first_of_term->start_index_term);
-
-  LOG(FATAL)<< "implement me";
-
-  result = new Value(param_subject->getStringAutomaton()->subString(param_start_index->getIntConstant()));
-
-
-  setTermValue(sub_string_first_of_term, result);
-}
-
-void ConstraintSolver::visitSubStringLastOf(SubStringLastOf_ptr sub_string_last_of_term) {
-  visit_children_of(sub_string_last_of_term);
-  DVLOG(VLOG_LEVEL) << "visit: " << *sub_string_last_of_term;
-
-  Value_ptr result = nullptr, param_subject = getTermValue(sub_string_last_of_term->subject_term),
-      param_start_index = getTermValue(sub_string_last_of_term->start_index_term);
-
-  result = new Value(param_subject->getStringAutomaton()->subStringLastOf(param_start_index->getStringAutomaton()));
-
-  setTermValue(sub_string_last_of_term, result);
 }
 
 void ConstraintSolver::visitToUpper(ToUpper_ptr to_upper_term) {

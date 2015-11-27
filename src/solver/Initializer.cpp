@@ -216,12 +216,6 @@ void Initializer::visitCharAt(SMT::CharAt_ptr char_at_term) {
 void Initializer::visitSubString(SMT::SubString_ptr sub_string_term) {
 }
 
-void Initializer::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_string_first_of_term) {
-}
-
-void Initializer::visitSubStringLastOf(SMT::SubStringLastOf_ptr sub_string_last_of_term) {
-}
-
 void Initializer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
 }
 

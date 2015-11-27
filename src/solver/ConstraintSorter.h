@@ -66,8 +66,6 @@ public:
   void visitLastIndexOf(SMT::LastIndexOf_ptr);
   void visitCharAt(SMT::CharAt_ptr);
   void visitSubString(SMT::SubString_ptr);
-  void visitSubStringFirstOf(SMT::SubStringFirstOf_ptr);
-  void visitSubStringLastOf(SMT::SubStringLastOf_ptr);
   void visitToUpper(SMT::ToUpper_ptr);
   void visitToLower(SMT::ToLower_ptr);
   void visitTrim(SMT::Trim_ptr);

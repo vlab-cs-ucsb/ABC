@@ -882,17 +882,9 @@ void SyntacticOptimizer::visitSubString(SMT::SubString_ptr sub_string_term) {
     result = check_and_process_subString(sub_string_term->subject_term, sub_string_term->start_index_term);
   }
 
-  sub_string_term->setMode(result);
-}
-
-void SyntacticOptimizer::visitSubStringFirstOf(SMT::SubStringFirstOf_ptr sub_string_first_of_term) {
-  visit_and_callback(sub_string_first_of_term->subject_term);
-  visit_and_callback(sub_string_first_of_term->start_index_term);
-}
-
-void SyntacticOptimizer::visitSubStringLastOf(SMT::SubStringLastOf_ptr sub_string_last_of_term) {
-  visit_and_callback(sub_string_last_of_term->subject_term);
-  visit_and_callback(sub_string_last_of_term->start_index_term);
+  if (SubString::Mode::NONE != result) {
+    sub_string_term->setMode(result);
+  }
 }
 
 void SyntacticOptimizer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
@@ -1270,7 +1262,7 @@ SubString::Mode SyntacticOptimizer::check_and_process_subString(Term_ptr subject
     default:
       break;
   }
-  return SubString::Mode::FROMINDEX;
+  return SubString::Mode::NONE; // do not change anything
 }
 
 SubString::Mode SyntacticOptimizer::check_and_process_subString(Term_ptr subject_term, Term_ptr &start_index_term, Term_ptr &end_index_term ) {
@@ -1297,7 +1289,7 @@ SubString::Mode SyntacticOptimizer::check_and_process_subString(Term_ptr subject
     return SubString::Mode::FROMLASTOFTOLASTOF;
   }
 
-  return SubString::Mode::FROMINDEXTOINDEX;
+  return SubString::Mode::NONE; // do not change anything
 }
 
 Term_ptr SyntacticOptimizer::generate_term_constant(std::string data, Primitive::Type type) {
