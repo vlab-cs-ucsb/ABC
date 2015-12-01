@@ -304,19 +304,14 @@ std::vector<bool>* Automaton::getAnAcceptingWord(std::function<bool(unsigned& in
   int sink_state = getSinkState(), curr_state = this->dfa->s;
   // bits are represented as bool
   std::vector<bool>* bit_vector = new std::vector<bool>();
-  std::vector<bool> visited(this->dfa->ns);
+  std::map<int, bool> visited;
   std::vector<std::vector<bool> > transition_stack;
 
-  for (int i = 0; (unsigned) i < visited.size(); i++) {
-    if (i == sink_state) {
-      visited[i] = true;
-    } else {
-      visited[i] = false;
-    }
-  }
-
+  visited[sink_state] = true;
+  std::cout << "visiting: ";
   // BDD dfs for next state
   while (not visited[curr_state]) {
+    std::cout << curr_state << " ";
     if (this->isAcceptingState(curr_state)) {
       return bit_vector;
     }
@@ -380,8 +375,8 @@ std::vector<bool>* Automaton::getAnAcceptingWord(std::function<bool(unsigned& in
           nodes.push_back(l);
         }
       }
-
     }
+
     nodes.clear();
     transition_stack.clear();
   }
@@ -458,8 +453,9 @@ char* Automaton::binaryFormat(unsigned long number, int bit_length) {
 }
 
 /**
- * That function replaces the getSharp1WithExtraBit and
- * getSharp0WithExtraBit.
+ * That function replaces the getSharp1WithExtraBit 111111111 and
+ * getSharp0WithExtraBit 111111110. (getSharp0WithExtraBit is not
+ * the same as in LibStranger 111111100)
  * @return binary representation of reserved word
  */
 std::vector<char> Automaton::getReservedWord(char last_char, int length, bool extra_bit) {
@@ -489,7 +485,21 @@ void Automaton::project(unsigned index) {
   DFA_ptr tmp = this->dfa;
   this->dfa = dfaProject(tmp, index);
   dfaFree(tmp);
+
+  if (index < (unsigned)(this->num_of_variables - 1)) {
+    int* indices_map = new int[this->num_of_variables];
+    for (int i = 0, j = 0; i < this->num_of_variables; i++) {
+      if ((unsigned)i != index) {
+        indices_map[i] = j;
+        j++;
+      }
+    }
+    dfaReplaceIndices(this->dfa, indices_map);
+    delete[] indices_map;
+  }
+
   this->num_of_variables = this->num_of_variables - 1;
+
   delete this->variable_indices;
   this->variable_indices = getIndices(num_of_variables);
   DVLOG(VLOG_LEVEL) << this->id << " = [" << this->id << "]->project(" << index << ")";
@@ -890,7 +900,6 @@ void Automaton::toDot(std::ostream& out, bool print_sink) {
 
   print_sink = print_sink || (dfa->ns == 1 and dfa->f[0] == -1);
 
-
   out << "digraph MONA_DFA {\n"
           " rankdir = LR;\n"
           " center = true;\n"
@@ -1068,7 +1077,7 @@ void Automaton::toBDD(std::ostream& out) {
   tableFree(table);
 }
 
-int Automaton::inspectAuto(bool print_sink) {
+int Automaton::inspectAuto(bool print_sink, bool force_mona_format) {
   std::stringstream file_name;
   file_name << "./output/inspect_auto_" << name_counter++ << ".dot";
   std::string file = file_name.str();
@@ -1078,7 +1087,11 @@ int Automaton::inspectAuto(bool print_sink) {
     exit(2);
   }
   if (Automaton::Type::INT == type or Automaton::Type::STRING == type) {
-    toDotAscii(print_sink, outfile);
+    if (force_mona_format) {
+      toDot(outfile, print_sink);
+    } else {
+      toDotAscii(print_sink, outfile);
+    }
   } else {
     toDot(outfile, print_sink);
   }

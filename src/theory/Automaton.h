@@ -35,9 +35,6 @@
 #include "DAGraph.h"
 #include "SemilinearSet.h"
 
-
-#include "utils.h"
-
 namespace Vlab {
 namespace Theory {
 
@@ -94,7 +91,7 @@ public:
   // TODO merge toDot methods into one with options
   void toDot(std::ostream& out = std::cout, bool print_sink = false);
   void toBDD(std::ostream& out = std::cout);
-  int inspectAuto(bool print_sink = false);
+  int inspectAuto(bool print_sink = false, bool force_mona_format = false);
   int inspectBDD();
 
   friend std::ostream& operator<<(std::ostream& os, const Automaton& automaton);

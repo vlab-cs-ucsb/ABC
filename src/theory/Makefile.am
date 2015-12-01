@@ -14,7 +14,6 @@ libabcautomaton_la_SOURCES = \
 	../utils/Math.h \
 	../utils/List.cpp \
 	../utils/List.h \
-	utils.h \
 	GraphNode.cpp \
 	GraphNode.h \
 	Graph.cpp \

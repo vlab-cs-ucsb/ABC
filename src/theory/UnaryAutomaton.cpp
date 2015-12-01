@@ -105,7 +105,7 @@ UnaryAutomaton_ptr UnaryAutomaton::makeAutomaton(SemilinearSet_ptr semilinear_se
   if (not has_only_constants) {
     tmp_dfa = unary_dfa;
     unary_dfa = dfaMinimize(tmp_dfa);
-    delete tmp_dfa; tmp_dfa = nullptr;
+    dfaFree(tmp_dfa); tmp_dfa = nullptr;
   }
 
   unary_auto = new UnaryAutomaton(unary_dfa);

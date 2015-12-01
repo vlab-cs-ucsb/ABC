@@ -243,13 +243,13 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(SemilinearSet_ptr semil
   if (add_leading_zeros) {
     tmp_dfa = binary_dfa;
     binary_dfa = dfaProject(binary_dfa, (unsigned) (lz_index));
-    delete tmp_dfa; tmp_dfa = nullptr;
+    dfaFree(tmp_dfa); tmp_dfa = nullptr;
     number_of_variables = number_of_variables - 1;
   }
 
   binary_auto = new BinaryIntAutomaton(dfaMinimize(binary_dfa), number_of_variables);
   binary_auto->setFormula(formula);
-  delete binary_dfa; binary_dfa = nullptr;
+  dfaFree(binary_dfa); binary_dfa = nullptr;
 
   // binary state computation for semilinear sets may have leading zeros, remove them
   if ((not add_leading_zeros) and (not semilinear_set->hasOnlyConstants())) {

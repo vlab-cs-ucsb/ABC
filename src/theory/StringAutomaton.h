@@ -17,6 +17,7 @@
 #include <set>
 #include <stack>
 #include <queue>
+#include <cmath>
 
 #include <glog/logging.h>
 #include "utils/RegularExpression.h"
@@ -98,10 +99,10 @@ public:
   StringAutomaton_ptr subString(int start);
   StringAutomaton_ptr subString(int start, int end);
   StringAutomaton_ptr subStringLastOf(StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr subStringFirstOf(StringAutomaton_ptr search_auto);
 
   IntAutomaton_ptr indexOf(StringAutomaton_ptr search_auto);
   IntAutomaton_ptr lastIndexOf(StringAutomaton_ptr search_auto);
-  IntAutomaton_ptr backup_lastIndexOf(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr contains(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr begins(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr ends(StringAutomaton_ptr search_auto);
@@ -157,7 +158,10 @@ protected:
   bool hasExceptionToValidStateFrom(int state, std::vector<char>& exception);
   std::vector<int> getAcceptingStates();
 
-  GraphOld* getGraph();
+  StringAutomaton_ptr getDuplicateStateAutomaton(bool use_extra_bit = false);
+  StringAutomaton_ptr toQueryAutomaton(bool use_extra_bit = false);
+  StringAutomaton_ptr search(StringAutomaton_ptr search_auto, bool use_extra_bit = false);
+  StringAutomaton_ptr removeReservedWords();
 
   static int DEFAULT_NUM_OF_VARIABLES;
   static int* DEFAULT_VARIABLE_INDICES;

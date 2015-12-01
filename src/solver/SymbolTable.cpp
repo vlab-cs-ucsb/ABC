@@ -14,6 +14,7 @@ using namespace SMT;
 
 const int SymbolTable::VLOG_LEVEL = 10;
 const std::string SymbolTable::ARITHMETIC = "__VLAB_CS_ARITHMETIC__";
+const std::string SymbolTable::LOCAL_VAR_PREFIX = "__VLAB_CS_L_";
 
 SymbolTable::SymbolTable()
         : global_assertion_result(true), bound(50) {

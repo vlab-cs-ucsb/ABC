@@ -29,6 +29,9 @@ public:
   void visitIndexOf(SMT::IndexOf_ptr);
   void visitLastIndexOf(SMT::LastIndexOf_ptr);
 
+protected:
+  void check_and_convert_numeral_to_char(SMT::TermConstant_ptr);
+
 private:
   static const int VLOG_LEVEL;
 };

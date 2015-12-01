@@ -12,6 +12,7 @@ namespace Solver {
 
 using namespace SMT;
 
+unsigned SyntacticOptimizer::name_counter = 0;
 const int SyntacticOptimizer::VLOG_LEVEL = 18;
 
 SyntacticOptimizer::SyntacticOptimizer(Script_ptr script, SymbolTable_ptr symbol_table)
@@ -573,8 +574,8 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
     if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
       add_callback_to_replace_with_bool(eq_term, "true");
     }
-  } else if (check_and_process_for_notContains_transformation(eq_term->left_term, eq_term->right_term, -1) or
-          check_and_process_for_notContains_transformation(eq_term->right_term, eq_term->left_term, -1)) {
+  } else if (check_and_process_for_contains_transformation(eq_term->left_term, eq_term->right_term, -1) or
+          check_and_process_for_contains_transformation(eq_term->right_term, eq_term->left_term, -1)) {
     DVLOG(VLOG_LEVEL) << "Applying notContains transformation: '" << *eq_term << "'";
     callback = [eq_term](Term_ptr& term) mutable {
       term = new NotContains(eq_term->left_term, eq_term->right_term);
@@ -596,6 +597,15 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
     if (Ast2Dot::isEquivalent(not_eq_term->left_term, not_eq_term->right_term)) {
       add_callback_to_replace_with_bool(not_eq_term, "false");
     }
+  } else if (check_and_process_for_contains_transformation(not_eq_term->left_term, not_eq_term->right_term, -1) or
+          check_and_process_for_contains_transformation(not_eq_term->right_term, not_eq_term->left_term, -1)) {
+    DVLOG(VLOG_LEVEL) << "Applying Contains transformation: '" << *not_eq_term << "'";
+    callback = [not_eq_term](Term_ptr& term) mutable {
+      term = new Contains(not_eq_term->left_term, not_eq_term->right_term);
+      not_eq_term->left_term = nullptr;
+      not_eq_term->right_term = nullptr;
+      delete not_eq_term;
+    };
   }
 }
 
@@ -659,8 +669,8 @@ void SyntacticOptimizer::visitLt(Lt_ptr lt_term) {
         delete lt_term;
       };
     }
-  } else if (check_and_process_for_notContains_transformation(lt_term->left_term, lt_term->right_term, 0) or
-          check_and_process_for_notContains_transformation(lt_term->right_term, lt_term->left_term, 0)) {
+  } else if (check_and_process_for_contains_transformation(lt_term->left_term, lt_term->right_term, 0) or
+          check_and_process_for_contains_transformation(lt_term->right_term, lt_term->left_term, 0)) {
     DVLOG(VLOG_LEVEL) << "Applying notContains transformation: '" << *lt_term << "'";
     callback = [lt_term](Term_ptr& term) mutable {
       term = new NotContains(lt_term->left_term, lt_term->right_term);
@@ -689,8 +699,8 @@ void SyntacticOptimizer::visitLe(Le_ptr le_term) {
         delete le_term;
       };
     }
-  } else if (check_and_process_for_notContains_transformation(le_term->left_term, le_term->right_term, -1) or
-          check_and_process_for_notContains_transformation(le_term->right_term, le_term->left_term, -1)) {
+  } else if (check_and_process_for_contains_transformation(le_term->left_term, le_term->right_term, -1) or
+          check_and_process_for_contains_transformation(le_term->right_term, le_term->left_term, -1)) {
     DVLOG(VLOG_LEVEL) << "Applying notContains transformation: '" << *le_term << "'";
     callback = [le_term](Term_ptr& term) mutable {
       term = new NotContains(le_term->left_term, le_term->right_term);
@@ -852,50 +862,62 @@ void SyntacticOptimizer::visitIndexOf(IndexOf_ptr index_of_term) {
   visit_and_callback(index_of_term->search_term);
   if (index_of_term->from_index) {
     visit_and_callback(index_of_term->from_index);
+    IndexOf::Mode mode;
+    int mode_value = check_and_process_index_operation(index_of_term->subject_term, index_of_term->from_index);
+    mode = static_cast<IndexOf::Mode>(mode_value);
+    if (IndexOf::Mode::NONE != mode) {
+      index_of_term->setMode(mode);
+    }
   }
 }
 
-void SyntacticOptimizer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
+void SyntacticOptimizer::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
   visit_and_callback(last_index_of_term->subject_term);
   visit_and_callback(last_index_of_term->search_term);
   if (last_index_of_term->from_index) {
     visit_and_callback(last_index_of_term->from_index);
+    LastIndexOf::Mode mode;
+    int mode_value = check_and_process_index_operation(last_index_of_term->subject_term, last_index_of_term->from_index);
+    mode = static_cast<LastIndexOf::Mode>(mode_value);
+    if (LastIndexOf::Mode::NONE != mode) {
+      last_index_of_term->setMode(mode);
+    }
   }
 }
 
-void SyntacticOptimizer::visitCharAt(SMT::CharAt_ptr char_at_term) {
+void SyntacticOptimizer::visitCharAt(CharAt_ptr char_at_term) {
   visit_and_callback(char_at_term->subject_term);
   visit_and_callback(char_at_term->index_term);
 }
 
-void SyntacticOptimizer::visitSubString(SMT::SubString_ptr sub_string_term) {
+void SyntacticOptimizer::visitSubString(SubString_ptr sub_string_term) {
   visit_and_callback(sub_string_term->subject_term);
   visit_and_callback(sub_string_term->start_index_term);
   if (sub_string_term->end_index_term) {
     visit_and_callback(sub_string_term->end_index_term);
   }
 
-  SubString::Mode result;
+  SubString::Mode mode;
   if (sub_string_term->end_index_term) {
-    result = check_and_process_subString(sub_string_term->subject_term, sub_string_term->start_index_term, sub_string_term->end_index_term);
+    mode = check_and_process_subString(sub_string_term, sub_string_term->start_index_term, sub_string_term->end_index_term);
   } else {
-    result = check_and_process_subString(sub_string_term->subject_term, sub_string_term->start_index_term);
+    mode = check_and_process_subString(sub_string_term, sub_string_term->start_index_term);
   }
 
-  if (SubString::Mode::NONE != result) {
-    sub_string_term->setMode(result);
+  if (SubString::Mode::NONE != mode) {
+    sub_string_term->setMode(mode);
   }
 }
 
-void SyntacticOptimizer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
+void SyntacticOptimizer::visitToUpper(ToUpper_ptr to_upper_term) {
   visit_and_callback(to_upper_term->subject_term);
 }
 
-void SyntacticOptimizer::visitToLower(SMT::ToLower_ptr to_lower_term) {
+void SyntacticOptimizer::visitToLower(ToLower_ptr to_lower_term) {
   visit_and_callback(to_lower_term->subject_term);
 }
 
-void SyntacticOptimizer::visitTrim(SMT::Trim_ptr trim_term) {
+void SyntacticOptimizer::visitTrim(Trim_ptr trim_term) {
   visit_and_callback(trim_term->subject_term);
 }
 
@@ -1170,7 +1192,7 @@ bool SyntacticOptimizer::__check_and_process_len_transformation(Term::Type opera
   return false;
 }
 
-SMT::Term::Type SyntacticOptimizer::syntactic_reverse_relation(SMT::Term::Type operation) {
+Term::Type SyntacticOptimizer::syntactic_reverse_relation(Term::Type operation) {
   switch (operation) {
     case Term::Type::LT:
       return Term::Type::GT;
@@ -1189,7 +1211,7 @@ SMT::Term::Type SyntacticOptimizer::syntactic_reverse_relation(SMT::Term::Type o
  * Checks if we can convert indexOf and lastIndexOf operations to contains operation
  * when they are used to check if a string does not contain other one
  */
-bool SyntacticOptimizer::check_and_process_for_notContains_transformation(SMT::Term_ptr& left_term, SMT::Term_ptr& right_term, int compare_value) {
+bool SyntacticOptimizer::check_and_process_for_contains_transformation(Term_ptr& left_term, Term_ptr& right_term, int compare_value) {
   TermConstant_ptr expected_constant_term = nullptr;
   if (compare_value < 0 and Term::Type::UMINUS == right_term->getType()) {
     UMinus_ptr u_minus_term = dynamic_cast<UMinus_ptr>(right_term);
@@ -1234,14 +1256,15 @@ bool SyntacticOptimizer::check_and_process_for_notContains_transformation(SMT::T
 
   return false;
 }
+
 /**
  * Checks only immediate children, may need to implement more sophisticated analysis for such optimizations
  */
-SubString::Mode SyntacticOptimizer::check_and_process_subString(Term_ptr subject_term, Term_ptr &index_term) {
+SMT::SubString::Mode SyntacticOptimizer::check_and_process_subString(SubString_ptr sub_string_term, Term_ptr &index_term) {
   switch (index_term->getType()) {
     case Term::Type::INDEXOF: {
       IndexOf_ptr index_of_term = dynamic_cast<IndexOf_ptr>(index_term);
-      if (Ast2Dot::isEquivalent(subject_term, index_of_term->subject_term)) {
+      if (Ast2Dot::isEquivalent(sub_string_term->subject_term, index_of_term->subject_term)) {
         index_term = index_of_term->search_term;
         index_of_term->search_term = nullptr;
         delete index_of_term;
@@ -1251,12 +1274,58 @@ SubString::Mode SyntacticOptimizer::check_and_process_subString(Term_ptr subject
     }
     case Term::Type::LASTINDEXOF: {
       LastIndexOf_ptr last_index_of_term = dynamic_cast<LastIndexOf_ptr>(index_term);
-      if (Ast2Dot::isEquivalent(subject_term, last_index_of_term->subject_term)) {
-        index_term = last_index_of_term->search_term;
-        last_index_of_term->search_term = nullptr;
-        delete last_index_of_term;
+      if (Ast2Dot::isEquivalent(sub_string_term->subject_term, last_index_of_term->subject_term)) {
+        switch (last_index_of_term->getMode()) {
+          case LastIndexOf::Mode::DEFAULT: {
+            index_term = last_index_of_term->search_term;
+            last_index_of_term->search_term = nullptr;
+            delete last_index_of_term;
+            break;
+          }
+          case LastIndexOf::Mode::FROMINDEX: {
+            break;
+          }
+          case LastIndexOf::Mode::FROMFIRSTOF: {
+            // add callback for let construct
+            callback = [this, sub_string_term, last_index_of_term, &index_term](Term_ptr& term) mutable {
+              // Generate string binding for local substring
+              Variable_ptr string_var = generate_local_var(Variable::Type::STRING);
+              SubString_ptr str_bind_term = new SubString(sub_string_term->subject_term->clone(), last_index_of_term->from_index->clone());
+              str_bind_term->setMode(SubString::Mode::FROMFIRSTOF);
+              VarBinding_ptr str_binding = new VarBinding(new Primitive(string_var->getName(), Primitive::Type::SYMBOL), str_bind_term);
+
+              // Generate int binding to check if local substring is persisted
+              Variable_ptr index_var  = generate_local_var(Variable::Type::INT);
+              QualIdentifier_ptr binded_str_var_identifier = generate_qual_identifier(string_var->getName());
+              LastIndexOf_ptr index_bind_term = new LastIndexOf(binded_str_var_identifier, last_index_of_term->search_term->clone());
+              VarBinding_ptr index_binding = new VarBinding(new Primitive(index_var->getName(), Primitive::Type::SYMBOL), index_bind_term);
+
+              VarBindingList_ptr var_bindings = new VarBindingList();
+              var_bindings->push_back(str_binding);
+              var_bindings->push_back(index_binding);
+
+              // modify substring
+              delete sub_string_term->subject_term;
+              sub_string_term->subject_term = binded_str_var_identifier->clone();
+              index_term = last_index_of_term->search_term;
+              last_index_of_term->search_term = nullptr;
+              delete last_index_of_term;
+              sub_string_term->setMode(SubString::Mode::FROMLASTOF); // to be safe
+
+              // generate let
+              Let_ptr let_term = new Let(var_bindings, sub_string_term);
+              term = let_term;
+            };
+            break;
+          }
+          case LastIndexOf::Mode::FROMLASTOF: {
+            break;
+          }
+          default:
+            break;
+        }
         return SubString::Mode::FROMLASTOF;
-      }
+      } // end LastIndexOf case
       break;
     }
     default:
@@ -1265,9 +1334,13 @@ SubString::Mode SyntacticOptimizer::check_and_process_subString(Term_ptr subject
   return SubString::Mode::NONE; // do not change anything
 }
 
-SubString::Mode SyntacticOptimizer::check_and_process_subString(Term_ptr subject_term, Term_ptr &start_index_term, Term_ptr &end_index_term ) {
-  SubString::Mode start_index_mode = check_and_process_subString(subject_term, start_index_term);
-  SubString::Mode end_index_mode = check_and_process_subString(subject_term, end_index_term);
+SubString::Mode SyntacticOptimizer::check_and_process_subString(SubString_ptr sub_string_term, Term_ptr &start_index_term, Term_ptr &end_index_term ) {
+  SubString::Mode start_index_mode = check_and_process_subString(sub_string_term, start_index_term);
+  if (callback) {
+    // first let the callback called in a new callback and visit the substring again for end index
+    LOG(FATAL) << "case not handled, fix me";
+  }
+  SubString::Mode end_index_mode = check_and_process_subString(sub_string_term, end_index_term);
 
   if (SubString::Mode::FROMINDEX == start_index_mode and SubString::Mode::FROMINDEX == end_index_mode) {
     return SubString::Mode::FROMINDEXTOINDEX;
@@ -1290,6 +1363,57 @@ SubString::Mode SyntacticOptimizer::check_and_process_subString(Term_ptr subject
   }
 
   return SubString::Mode::NONE; // do not change anything
+}
+
+int SyntacticOptimizer::check_and_process_index_operation(SMT::Term_ptr subject_term, SMT::Term_ptr &index_term) {
+  switch (index_term->getType()) {
+    case Term::Type::INDEXOF: {
+      IndexOf_ptr index_of_term = dynamic_cast<IndexOf_ptr>(index_term);
+      if (Ast2Dot::isEquivalent(subject_term, index_of_term->subject_term)) {
+        switch (index_of_term->getMode()) {
+          case IndexOf::Mode::DEFAULT: {
+            index_term = index_of_term->search_term;
+            index_of_term->search_term = nullptr;
+            delete index_of_term;
+            return static_cast<int>(IndexOf::Mode::FROMFIRSTOF);
+            break;
+          }
+          default:
+            // add let bindings for other modes of indexof operation to make it work with default mode
+            LOG(FATAL)<< "implement cases where index_term is optimized index operation";
+            break;
+        }
+      } else {
+        DVLOG(VLOG_LEVEL)<< "index operation optimization fails, please extend implementation";
+      }
+      break;
+    }
+    case Term::Type::LASTINDEXOF: {
+      LastIndexOf_ptr last_index_of_term = dynamic_cast<LastIndexOf_ptr>(index_term);
+      if (Ast2Dot::isEquivalent(subject_term, last_index_of_term->subject_term)) {
+        switch (last_index_of_term->getMode()) {
+          case LastIndexOf::Mode::DEFAULT: {
+            index_term = last_index_of_term->search_term;
+            last_index_of_term->search_term = nullptr;
+            delete last_index_of_term;
+            return static_cast<int>(LastIndexOf::Mode::FROMLASTOF);
+            break;
+          }
+          default:
+            // add let bindings for other modes of lastIndexof operation to make it work with default mode
+            LOG(FATAL)<< "implement cases where index_term is optimized index operation";
+            break;
+        }
+      } else {
+        DVLOG(VLOG_LEVEL)<< "index operation optimization fails, please extend implementation";
+      }
+      break;
+    }
+    default:
+      break;
+  }
+
+  return 0; // do not change anything
 }
 
 Term_ptr SyntacticOptimizer::generate_term_constant(std::string data, Primitive::Type type) {
@@ -1332,6 +1456,19 @@ bool SyntacticOptimizer::check_bool_constant_value(Term_ptr term, std::string va
   }
 
   return false;
+}
+
+Variable_ptr SyntacticOptimizer::generate_local_var(Variable::Type type) {
+  Variable_ptr variable = nullptr;
+  std::stringstream local_var_name;
+  local_var_name << SymbolTable::LOCAL_VAR_PREFIX << name_counter++;
+  variable = new Variable(local_var_name.str(), type);
+  symbol_table->addVariable(variable);
+  return variable;
+}
+
+QualIdentifier_ptr SyntacticOptimizer::generate_qual_identifier(std::string var_name) {
+  return new QualIdentifier(new Identifier(new Primitive(var_name, Primitive::Type::SYMBOL)));
 }
 
 } /* namespace Solver */

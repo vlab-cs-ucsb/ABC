@@ -681,7 +681,8 @@ public:
 class IndexOf: public Term {
 public:
   enum class Mode : int {
-    DEFAULT = 0, // from index is nullptr,
+            NONE = 0,
+            DEFAULT, // from index is nullptr,
             FROMINDEX,          // from index is a numeral
             FROMFIRSTOF,        // from index is string term to find first occurance
             FROMLASTOF,         // from index is string term to find last occurance
@@ -707,7 +708,8 @@ public:
 class LastIndexOf: public Term {
 public:
   enum class Mode : int {
-    DEFAULT = 0, // from index is nullptr,
+            NONE = 0,
+            DEFAULT,            // from index is nullptr,
             FROMINDEX,          // from index is a numeral
             FROMFIRSTOF,        // from index is string term to find first occurance
             FROMLASTOF,         // from index is string term to find last occurance

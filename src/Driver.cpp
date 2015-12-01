@@ -164,7 +164,10 @@ return;
 //    std::cout << "int: " << int_auto_1->getAnAcceptingInt() << std::endl;
 //    delete int_auto_1;
 
-//  Theory::StringAutomaton_ptr str_auto_1 = Theory::StringAutomaton::makeAnyString();
+//  Theory::StringAutomaton_ptr str_auto_1 = Theory::StringAutomaton::makeRegexAuto("a*");
+//  str_auto_1->inspectAuto();
+//  std::ofstream outfile("./output/testcase.dot");
+//  str_auto_1->toDot(outfile, false);
 //  Theory::StringAutomaton_ptr str_auto_2 = Theory::StringAutomaton::makeString("b");
 //  Theory::StringAutomaton_ptr result = str_auto_1->subStringLastOf(str_auto_2);
 //  result->inspectAuto();

@@ -1161,9 +1161,9 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
 
   concat_dfa = dfaBuild(statuses);
   tmp_dfa = dfaProject(concat_dfa, (unsigned) var);
-  delete concat_dfa;
+  dfaFree(concat_dfa);
   concat_dfa = dfaMinimize(tmp_dfa);
-  delete tmp_dfa;
+  dfaFree(tmp_dfa); tmp_dfa = nullptr;
 
   concat_auto = new IntAutomaton(concat_dfa, num_of_variables);
 
@@ -1447,9 +1447,9 @@ IntAutomaton_ptr IntAutomaton::concat(IntAutomaton_ptr other_auto) {
 
   concat_dfa = dfaBuild(statuses);
   tmp_dfa = dfaProject(concat_dfa, (unsigned) var);
-  delete concat_dfa;
+  dfaFree(concat_dfa);
   concat_dfa = dfaMinimize(tmp_dfa);
-  delete tmp_dfa;
+  dfaFree(tmp_dfa); tmp_dfa = nullptr;
 
   concat_auto = new IntAutomaton(concat_dfa, num_of_variables);
 

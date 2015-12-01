@@ -78,6 +78,22 @@ void ConstraintSorter::visitForAll(ForAll_ptr for_all_term) {
 }
 
 void ConstraintSorter::visitLet(Let_ptr let_term) {
+  TermNode_ptr binding_node = nullptr;
+  for (auto& term : *(let_term->var_binding_list)) {
+    term_node = nullptr;
+    visit(term);
+    if (binding_node == nullptr and term_node != nullptr) {
+      binding_node = term_node;
+      binding_node->shiftToRight();
+    } else if (term_node != nullptr) {
+      binding_node->addVariableNodes(term_node->getAllNodes(), false);
+    }
+  }
+  term_node = nullptr;
+  visit(let_term->term);
+  TermNode_ptr right_node = term_node;
+
+  term_node = process_child_nodes(binding_node, right_node);
 }
 
 void ConstraintSorter::visitAnd(And_ptr and_term) {
@@ -497,11 +513,14 @@ void ConstraintSorter::visitAsQualIdentifier(AsQualIdentifier_ptr as_qid_term) {
 }
 
 void ConstraintSorter::visitQualIdentifier(QualIdentifier_ptr qi_term) {
-  Variable_ptr variable = symbol_table->getVariable(qi_term->getVarName());
-  VariableNode_ptr variable_node = get_variable_node(variable);
+  std::string var_name = qi_term->getVarName();
+  if (var_name.find(SymbolTable::LOCAL_VAR_PREFIX) == std::string::npos) {
+    Variable_ptr variable = symbol_table->getVariable(var_name);
+    VariableNode_ptr variable_node = get_variable_node(variable);
 
-  term_node = new TermNode();
-  term_node->addVariableNode(variable_node, false);
+    term_node = new TermNode();
+    term_node->addVariableNode(variable_node, false);
+  }
 }
 
 void ConstraintSorter::visitTermConstant(TermConstant_ptr term_constant) {
@@ -538,6 +557,8 @@ void ConstraintSorter::visitSortedVar(SortedVar_ptr sorted_var) {
 }
 
 void ConstraintSorter::visitVarBinding(VarBinding_ptr var_binding) {
+  term_node = nullptr;
+  visit_children_of(var_binding);
 }
 
 ConstraintSorter::VariableNode_ptr ConstraintSorter::get_variable_node(Variable_ptr variable) {

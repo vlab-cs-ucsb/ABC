@@ -99,13 +99,16 @@ protected:
   bool check_and_process_len_transformation(SMT::Term_ptr, SMT::Term_ptr&, SMT::Term_ptr&);
   bool __check_and_process_len_transformation(SMT::Term::Type, SMT::Term_ptr&, SMT::Term_ptr&);
   SMT::Term::Type syntactic_reverse_relation(SMT::Term::Type operation);
-  bool check_and_process_for_notContains_transformation(SMT::Term_ptr&, SMT::Term_ptr&, int compare_value);
-  SMT::SubString::Mode check_and_process_subString(SMT::Term_ptr subject_term, SMT::Term_ptr &index_term);
-  SMT::SubString::Mode check_and_process_subString(SMT::Term_ptr subject_term, SMT::Term_ptr &start_index_term, SMT::Term_ptr &end_index_term );
+  bool check_and_process_for_contains_transformation(SMT::Term_ptr&, SMT::Term_ptr&, int compare_value);
+  SMT::SubString::Mode check_and_process_subString(SMT::SubString_ptr sub_string_term, SMT::Term_ptr &index_term);
+  SMT::SubString::Mode check_and_process_subString(SMT::SubString_ptr sub_string_term, SMT::Term_ptr &start_index_term, SMT::Term_ptr &end_index_term );
+  int check_and_process_index_operation(SMT::Term_ptr subject_term, SMT::Term_ptr &index_term);
   SMT::Term_ptr generate_term_constant(std::string data, SMT::Primitive::Type type);
   SMT::Term_ptr generate_dummy_term();
   void add_callback_to_replace_with_bool(SMT::Term_ptr, std::string value);
   bool check_bool_constant_value(SMT::Term_ptr, std::string value);
+  inline SMT::Variable_ptr generate_local_var(SMT::Variable::Type type);
+  inline SMT::QualIdentifier_ptr generate_qual_identifier(std::string var_name);
 
 
 
@@ -113,6 +116,7 @@ protected:
   SymbolTable_ptr symbol_table;
   SMT::Assert_ptr current_assert;
   std::function<void(SMT::Term_ptr&)> callback;
+  static unsigned name_counter;
 private:
   static const int VLOG_LEVEL;
 };

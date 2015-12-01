@@ -75,6 +75,34 @@ void ConstraintSolver::visitForAll(ForAll_ptr for_all_term) {
 }
 
 void ConstraintSolver::visitLet(Let_ptr let_term) {
+  DVLOG(VLOG_LEVEL) << "visit: " << *let_term;
+
+  Value_ptr result = nullptr, param = nullptr;
+  symbol_table->push_scope(let_term);
+
+  for (auto& var_binding : *(let_term->var_binding_list)) {
+    check_and_visit(var_binding->term);
+    param = getTermValue(var_binding->term);
+    symbol_table->setValue(var_binding->symbol->getData(), param->clone());
+
+    // TEST: inspect params
+//    if (param->getType() == Value::Type::STRING_AUTOMATON) {
+//      param->getStringAutomaton()->inspectAuto();
+//    } else {
+//      param->getIntAutomaton()->inspectAuto();
+//    }
+  }
+
+  check_and_visit(let_term->term);
+  param = getTermValue(let_term->term);
+
+  symbol_table->pop_scope();
+
+  result = param->clone();
+
+  setTermValue(let_term, result);
+
+  LOG(FATAL) << "I am here" << std::endl;
 }
 
 /**
@@ -780,7 +808,7 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
       break;
     }
     case SubString::Mode::FROMFIRSTOF: {
-      LOG(FATAL)<< "implement me";
+      result = new Value(param_subject->getStringAutomaton()->subStringFirstOf(param_start_index->getStringAutomaton()));
       break;
     }
     case SubString::Mode::FROMLASTOF: {
