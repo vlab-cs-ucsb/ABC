@@ -906,19 +906,14 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
     delete_other_auto = true;
   }
 
-
-
   int var = num_of_variables;
   int* indices = variable_indices;
   int tmp_num_of_variables,
       state_id_shift_amount,
       expected_num_of_states,
-      num_of_exceptions_to_add = 0,
       sink_state_left_auto,
       sink_state_right_auto,
-      state_key_left_auto = 0,
-      state_key_right_auto = 0,
-      state_key_fix = 0,
+      to_state = 0,
       loc,
       i = 0,
       j = 0;
@@ -927,12 +922,10 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
   paths state_paths = nullptr, pp = nullptr;
   trace_descr tp = nullptr;
 
-  std::map<int, std::vector<char>*> exceptions_left_auto;
-  std::map<int, std::vector<char>*> exceptions_right_auto;
-  std::map<int, std::vector<char>*> exceptions_fix;
-  std::map<int, int> state_map_right_auto;
-  std::map<int, int> state_map_left_auto;
-  std::map<int, int> state_map_fix;
+  std::map<std::vector<char>*, int> exceptions_left_auto;
+  std::map<std::vector<char>*, int> exceptions_right_auto;
+  std::map<std::vector<char>*, int> exceptions_fix;
+  std::vector<char>* current_exception = nullptr;
   char* statuses = nullptr;
 
   // variable initializations
@@ -951,57 +944,48 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
     expected_num_of_states = expected_num_of_states  - 1; // if start state is reachable from an accepting state, it will be merge with accepting states of left hand side
   }
 
-  statuses = new char[expected_num_of_states];
+  statuses = new char[expected_num_of_states + 1];
+  int* concat_indices = getIndices(tmp_num_of_variables);
 
-//  std::cout << "sink 1: " << sink_state_left_auto << std::endl;
-//  std::cout << "sink 2: " << sink_state_right_auto << std::endl;
-//  std::cout << "left ns: " << this->dfa->ns << std::endl;
-//  std::cout << "right ns: " << other_auto->dfa->ns << std::endl;
-//  std::cout << "right initflag: " << is_start_state_reachable << std::endl;
-//  std::cout << "new ns: " << expected_num_of_states << std::endl;
-//
-//  std::cout << "shift: " << state_id_shift_amount << std::endl;
-//  std::cout << "right start state: " << other_auto->dfa->s << std::endl;
-
-  dfaSetup(expected_num_of_states, tmp_num_of_variables, getIndices(tmp_num_of_variables)); //sink states are merged
+  dfaSetup(expected_num_of_states, tmp_num_of_variables, concat_indices); //sink states are merged
   state_paths = pp = make_paths(other_auto->dfa->bddm, other_auto->dfa->q[other_auto->dfa->s]);
   while (pp) {
     if ( pp->to != (unsigned)sink_state_right_auto ) {
-      state_map_right_auto[state_key_right_auto] = pp->to + state_id_shift_amount;
+      to_state = pp->to + state_id_shift_amount;
       // if there is a self loop keep it
       if ( pp->to == (unsigned)other_auto->dfa->s ) {
-        state_map_right_auto[state_key_right_auto] -= 2;
+        to_state -= 2;
       } else {
         if ( sink_state_right_auto >= 0 && pp->to > (unsigned)sink_state_right_auto ) {
-          state_map_right_auto[state_key_right_auto]--; //to new state, sink state will be eliminated and hence need -1
+          to_state--; //to new state, sink state will be eliminated and hence need -1
         }
         if ((not is_start_state_reachable) && pp->to > (unsigned)other_auto->dfa->s) {
-          state_map_right_auto[state_key_right_auto]--; // to new state, init state will be eliminated if init is not reachable
+          to_state--; // to new state, init state will be eliminated if init is not reachable
         }
       }
 
-      exceptions_right_auto[state_key_right_auto] = new std::vector<char>();
+      current_exception = new std::vector<char>();
       for (j = 0; j < other_auto->num_of_variables; j++) {
         //the following for loop can be avoided if the indices are in order
         for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
         if (tp) {
           if (tp->value) {
-            exceptions_right_auto[state_key_right_auto]->push_back('1');
+            current_exception->push_back('1');
           }
           else {
-            exceptions_right_auto[state_key_right_auto]->push_back('0');
+            current_exception->push_back('0');
           }
         }
         else {
-          exceptions_right_auto[state_key_right_auto]->push_back('X');
+          current_exception->push_back('X');
         }
       }
 
-      exceptions_right_auto[state_key_right_auto]->push_back('1'); // new path
-      exceptions_right_auto[state_key_right_auto]->push_back('\0');
-      state_key_right_auto++;
+      current_exception->push_back('1'); // new path
+      current_exception->push_back('\0');
+      exceptions_right_auto[current_exception] = to_state;
     }
-
+    current_exception = nullptr;
     tp = nullptr;
     pp = pp->next;
   }
@@ -1009,48 +993,49 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
   kill_paths(state_paths);
   state_paths = pp = nullptr;
 
-  num_of_exceptions_to_add = state_key_right_auto; //num_of_exceptions_to_add is the number of new paths
   for (i = 0; i < this->dfa->ns; i++) {
     state_paths = pp = make_paths(this->dfa->bddm, this->dfa->q[i]);
-    state_key_left_auto = 0;
     while (pp) {
       if (pp->to == (unsigned)sink_state_left_auto) {
         pp = pp->next;
         continue;
       }
-
-      state_map_left_auto[state_key_left_auto] = pp->to;
-      exceptions_left_auto[state_key_left_auto] = new std::vector<char>();
+      to_state = pp->to;
+      current_exception = new std::vector<char>();
       for (j = 0; j < this->num_of_variables; j++) {
         for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
         if (tp) {
           if (tp->value) {
-            exceptions_left_auto[state_key_left_auto]->push_back('1');
+            current_exception->push_back('1');
           } else {
-            exceptions_left_auto[state_key_left_auto]->push_back('0');
+            current_exception->push_back('0');
           }
         } else {
-          exceptions_left_auto[state_key_left_auto]->push_back('X');
+          current_exception->push_back('X');
         }
       }
 
-      exceptions_left_auto[state_key_left_auto]->push_back('0'); // add extra bit, '0' is used for the exceptions coming from left auto
-      exceptions_left_auto[state_key_left_auto]->push_back('\0');
-
-      state_key_left_auto++;
+      current_exception->push_back('0'); // add extra bit, '0' is used for the exceptions coming from left auto
+      current_exception->push_back('\0');
+      exceptions_left_auto[current_exception] = to_state;
       tp = nullptr;
       pp = pp->next;
     }
-
+    current_exception = nullptr;
     // generate concat automaton
-    int num_of_exceptions_left_auto = state_key_left_auto;
     if (this->isAcceptingState(i)) {
-      dfaAllocExceptions(num_of_exceptions_left_auto + num_of_exceptions_to_add);
-      for (int state_key = 0; state_key < num_of_exceptions_left_auto; state_key++) {
-        dfaStoreException(state_map_left_auto[state_key], &*(exceptions_left_auto[state_key]->begin()));
+      dfaAllocExceptions(exceptions_left_auto.size() + exceptions_right_auto.size());
+      for (auto it = exceptions_left_auto.begin(); it != exceptions_left_auto.end();) {
+        dfaStoreException(it->second, &*it->first->begin());
+        current_exception = it->first;
+        it = exceptions_left_auto.erase(it);
+        delete current_exception;
       }
-      for (int state_key = 0; state_key < num_of_exceptions_to_add; state_key++) {
-        dfaStoreException(state_map_right_auto[state_key], &*(exceptions_right_auto[state_key]->begin()));
+      for (auto it = exceptions_right_auto.begin(); it != exceptions_right_auto.end();) {
+        dfaStoreException(it->second, &*it->first->begin());
+        current_exception = it->first;
+        it = exceptions_right_auto.erase(it);
+        delete current_exception;
       }
 
       dfaStoreState(sink_state_left_auto);
@@ -1061,73 +1046,68 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
         statuses[i]='-';
       }
     } else {
-      dfaAllocExceptions(num_of_exceptions_left_auto);
-      for (int state_key = 0; state_key < num_of_exceptions_left_auto; state_key++) {
-        dfaStoreException(state_map_left_auto[state_key], &*exceptions_left_auto[state_key]->begin());
+      dfaAllocExceptions(exceptions_left_auto.size());
+      for (auto it = exceptions_left_auto.begin(); it != exceptions_left_auto.end();) {
+        dfaStoreException(it->second, &*it->first->begin());
+        current_exception = it->first;
+        it = exceptions_left_auto.erase(it);
+        delete current_exception;
       }
       dfaStoreState(sink_state_left_auto);
       statuses[i] = '-';
     }
+    current_exception = nullptr;
     kill_paths(state_paths);
     state_paths = pp = nullptr;
   }
-
-  // clear maps
-  for (auto& entry : exceptions_left_auto) {
-    entry.second->clear();
-    delete entry.second;
-  }
-  for (auto& entry : exceptions_right_auto) {
-    entry.second->clear();
-    delete entry.second;
-  }
-  state_map_left_auto.clear();
-  state_map_right_auto.clear();
 
   //  initflag is 1 iff init is reached by some state. In this case,
   for (i = 0; i < other_auto->dfa->ns; i++) {
     if ( i != sink_state_right_auto ) {
       if ( i != other_auto->dfa->s || is_start_state_reachable) {
         state_paths = pp = make_paths(other_auto->dfa->bddm, other_auto->dfa->q[i]);
-        state_key_fix = 0;
         while (pp) {
           if ( pp->to != (unsigned)sink_state_right_auto) {
-            state_map_fix[state_key_fix] = pp->to + state_id_shift_amount;
+            to_state = pp->to + state_id_shift_amount;
 
             if ( sink_state_right_auto >= 0 && pp->to > (unsigned)sink_state_right_auto) {
-              state_map_fix[state_key_fix]--; //to new state, sink state will be eliminated and hence need -1
+              to_state--; //to new state, sink state will be eliminated and hence need -1
             }
 
             if ( (not is_start_state_reachable) && pp->to > (unsigned)other_auto->dfa->s) {
-              state_map_fix[state_key_fix]--; // to new state, init state will be eliminated if init is not reachable
+              to_state--; // to new state, init state will be eliminated if init is not reachable
             }
 
-            exceptions_fix[state_key_fix] = new std::vector<char>();
+            current_exception = new std::vector<char>();
             for (j = 0; j < var; j++) {
               for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp =tp->next);
               if (tp) {
                 if (tp->value){
-                  exceptions_fix[state_key_fix]->push_back('1');
+                  current_exception->push_back('1');
                 }
                 else {
-                  exceptions_fix[state_key_fix]->push_back('0');
+                  current_exception->push_back('0');
                 }
               }
               else {
-                exceptions_fix[state_key_fix]->push_back('X');
+                current_exception->push_back('X');
               }
             }
-            exceptions_fix[state_key_fix]->push_back('0'); // old value
-            exceptions_fix[state_key_fix]->push_back('\0');
-            state_key_fix++;
+            current_exception->push_back('0'); // old value
+            current_exception->push_back('\0');
+            exceptions_fix[current_exception] = to_state;
             tp = nullptr;
+            current_exception = nullptr;
           }
           pp = pp->next;
         }
 
-        dfaAllocExceptions(state_key_fix);
-        for (int state_key = 0; state_key < state_key_fix; state_key++) {
-          dfaStoreException(state_map_fix[state_key], &*(exceptions_fix[state_key]->begin()));
+        dfaAllocExceptions(exceptions_fix.size());
+        for (auto it = exceptions_fix.begin(); it != exceptions_fix.end();) {
+          dfaStoreException(it->second, &*it->first->begin());
+          current_exception = it->first;
+          it = exceptions_fix.erase(it);
+          delete current_exception;
         }
 
         dfaStoreState(sink_state_left_auto);
@@ -1152,14 +1132,11 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
     }
   }
 
-//  statuses[expected_num_of_states]='\0';
-  for (auto& entry : exceptions_fix) {
-    entry.second->clear();
-    delete entry.second;
-  }
-  state_map_fix.clear();
+  statuses[expected_num_of_states]='\0';
 
   concat_dfa = dfaBuild(statuses);
+  delete[] statuses; statuses = nullptr;
+  delete[] concat_indices; concat_indices = nullptr;
   tmp_dfa = dfaProject(concat_dfa, (unsigned) var);
   dfaFree(concat_dfa);
   concat_dfa = dfaMinimize(tmp_dfa);
@@ -1177,283 +1154,6 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
   }
 
   DVLOG(VLOG_LEVEL) << concat_auto->id << " = [" << this->id << "]->__plus(" << other_auto->id << ")";
-
-  return concat_auto;
-}
-
-/**
- * Re-implementation of  'dfa_concat_extrabit' in LibStranger
- */
-IntAutomaton_ptr IntAutomaton::concat(IntAutomaton_ptr other_auto) {
-  DFA_ptr concat_dfa = nullptr, tmp_dfa = nullptr;
-  IntAutomaton_ptr concat_auto = nullptr;
-  int var = IntAutomaton::DEFAULT_NUM_OF_VARIABLES;
-  int* indices = IntAutomaton::DEFAULT_VARIABLE_INDICES;
-  int tmp_num_of_variables,
-      state_id_shift_amount,
-      expected_num_of_states,
-      num_of_exceptions_to_add = 0,
-      sink_state_left_auto,
-      sink_state_right_auto,
-      state_key_left_auto = 0,
-      state_key_right_auto = 0,
-      state_key_fix = 0,
-      loc,
-      i = 0,
-      j = 0;
-
-  long max_exceptions;
-  bool is_start_state_reachable;
-  paths state_paths = nullptr, pp = nullptr;
-  trace_descr tp = nullptr;
-
-  std::map<int, std::vector<char>*> exceptions_left_auto;
-  std::map<int, std::vector<char>*> exceptions_right_auto;
-  std::map<int, std::vector<char>*> exceptions_fix;
-  std::map<int, int> state_map_right_auto;
-  std::map<int, int> state_map_left_auto;
-  std::map<int, int> state_map_fix;
-  char* statuses = nullptr;
-
-  // variable initializations
-  sink_state_left_auto = this->getSinkState();
-  sink_state_right_auto = other_auto->getSinkState();
-
-  CHECK_GT(sink_state_left_auto, -1);
-  CHECK_GT(sink_state_right_auto, -1);
-
-  tmp_num_of_variables = this->num_of_variables + 1; // add one extra bit
-  state_id_shift_amount = this->dfa->ns;
-
-  max_exceptions = 1 << tmp_num_of_variables;
-  if (tmp_num_of_variables > 10) {
-    max_exceptions = 1 << 10; // saving for multi-track automaton
-  }
-
-  expected_num_of_states = this->dfa->ns + other_auto->dfa->ns - 1; // -1 is for to remove one of the sink states
-  is_start_state_reachable = other_auto->isStartStateReachableFromAnAcceptingState();
-  if (not is_start_state_reachable) {
-    expected_num_of_states = expected_num_of_states  - 1; // if start state is reachable from an accepting state, it will be merge with accepting states of left hand side
-  }
-
-  statuses = new char[expected_num_of_states];
-
-//  std::cout << "sink 1: " << sink_state_left_auto << std::endl;
-//  std::cout << "sink 2: " << sink_state_right_auto << std::endl;
-//  std::cout << "left ns: " << this->dfa->ns << std::endl;
-//  std::cout << "right ns: " << other_auto->dfa->ns << std::endl;
-//  std::cout << "right initflag: " << is_start_state_reachable << std::endl;
-//  std::cout << "new ns: " << expected_num_of_states << std::endl;
-//  std::cout << "max exeps: " << max_exceptions << std::endl << std::endl;
-//
-//  std::cout << "shift: " << state_id_shift_amount << std::endl;
-//  std::cout << "right start state: " << other_auto->dfa->s << std::endl;
-
-  dfaSetup(expected_num_of_states, tmp_num_of_variables, getIndices(tmp_num_of_variables)); //sink states are merged
-  state_paths = pp = make_paths(other_auto->dfa->bddm, other_auto->dfa->q[other_auto->dfa->s]);
-  while (pp) {
-    if ( pp->to != (unsigned)sink_state_right_auto ) {
-      state_map_right_auto[state_key_right_auto] = pp->to + state_id_shift_amount;
-      // if there is a self loop keep it
-      if ( pp->to == (unsigned)other_auto->dfa->s ) {
-        state_map_right_auto[state_key_right_auto] -= 2;
-      } else {
-        if ( sink_state_right_auto >= 0 && pp->to > (unsigned)sink_state_right_auto ) {
-          state_map_right_auto[state_key_right_auto]--; //to new state, sink state will be eliminated and hence need -1
-        }
-        if ((not is_start_state_reachable) && pp->to > (unsigned)other_auto->dfa->s) {
-          state_map_right_auto[state_key_right_auto]--; // to new state, init state will be eliminated if init is not reachable
-        }
-      }
-
-      exceptions_right_auto[state_key_right_auto] = new std::vector<char>();
-      for (j = 0; j < other_auto->num_of_variables; j++) {
-        //the following for loop can be avoided if the indices are in order
-        for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
-        if (tp) {
-          if (tp->value) {
-            exceptions_right_auto[state_key_right_auto]->push_back('1');
-          }
-          else {
-            exceptions_right_auto[state_key_right_auto]->push_back('0');
-          }
-        }
-        else {
-          exceptions_right_auto[state_key_right_auto]->push_back('X');
-        }
-      }
-
-      exceptions_right_auto[state_key_right_auto]->push_back('1'); // new path
-      exceptions_right_auto[state_key_right_auto]->push_back('\0');
-      state_key_right_auto++;
-    }
-
-    tp = nullptr;
-    pp = pp->next;
-  }
-
-  kill_paths(state_paths);
-  state_paths = pp = nullptr;
-
-  num_of_exceptions_to_add = state_key_right_auto; //num_of_exceptions_to_add is the number of new paths
-  for (i = 0; i < this->dfa->ns; i++) {
-    state_paths = pp = make_paths(this->dfa->bddm, this->dfa->q[i]);
-    state_key_left_auto = 0;
-    while (pp) {
-      if (pp->to == (unsigned)sink_state_left_auto) {
-        pp = pp->next;
-        continue;
-      }
-
-      state_map_left_auto[state_key_left_auto] = pp->to;
-      exceptions_left_auto[state_key_left_auto] = new std::vector<char>();
-      for (j = 0; j < this->num_of_variables; j++) {
-        for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
-        if (tp) {
-          if (tp->value) {
-            exceptions_left_auto[state_key_left_auto]->push_back('1');
-          } else {
-            exceptions_left_auto[state_key_left_auto]->push_back('0');
-          }
-        } else {
-          exceptions_left_auto[state_key_left_auto]->push_back('X');
-        }
-      }
-
-      exceptions_left_auto[state_key_left_auto]->push_back('0'); // add extra bit, '0' is used for the exceptions coming from left auto
-      exceptions_left_auto[state_key_left_auto]->push_back('\0');
-
-      state_key_left_auto++;
-      tp = nullptr;
-      pp = pp->next;
-    }
-
-    // generate concat automaton
-    int num_of_exceptions_left_auto = state_key_left_auto;
-    if (this->isAcceptingState(i)) {
-      dfaAllocExceptions(num_of_exceptions_left_auto + num_of_exceptions_to_add);
-      for (int state_key = 0; state_key < num_of_exceptions_left_auto; state_key++) {
-        dfaStoreException(state_map_left_auto[state_key], &*(exceptions_left_auto[state_key]->begin()));
-      }
-      for (int state_key = 0; state_key < num_of_exceptions_to_add; state_key++) {
-        dfaStoreException(state_map_right_auto[state_key], &*(exceptions_right_auto[state_key]->begin()));
-      }
-
-      dfaStoreState(sink_state_left_auto);
-      if (other_auto->isAcceptingState(0)) {
-        statuses[i]='+';
-      }
-      else {
-        statuses[i]='-';
-      }
-    } else {
-      dfaAllocExceptions(num_of_exceptions_left_auto);
-      for (int state_key = 0; state_key < num_of_exceptions_left_auto; state_key++) {
-        dfaStoreException(state_map_left_auto[state_key], &*exceptions_left_auto[state_key]->begin());
-      }
-      dfaStoreState(sink_state_left_auto);
-      statuses[i] = '-';
-    }
-    kill_paths(state_paths);
-    state_paths = pp = nullptr;
-  }
-
-  // clear maps
-  for (auto& entry : exceptions_left_auto) {
-    entry.second->clear();
-    delete entry.second;
-  }
-  for (auto& entry : exceptions_right_auto) {
-    entry.second->clear();
-    delete entry.second;
-  }
-  state_map_left_auto.clear();
-  state_map_right_auto.clear();
-
-  //  initflag is 1 iff init is reached by some state. In this case,
-  for (i = 0; i < other_auto->dfa->ns; i++) {
-    if ( i != sink_state_right_auto ) {
-      if ( i != other_auto->dfa->s || is_start_state_reachable) {
-        state_paths = pp = make_paths(other_auto->dfa->bddm, other_auto->dfa->q[i]);
-        state_key_fix = 0;
-        while (pp) {
-          if ( pp->to != (unsigned)sink_state_right_auto) {
-            state_map_fix[state_key_fix] = pp->to + state_id_shift_amount;
-
-            if ( sink_state_right_auto >= 0 && pp->to > (unsigned)sink_state_right_auto) {
-              state_map_fix[state_key_fix]--; //to new state, sink state will be eliminated and hence need -1
-            }
-
-            if ( (not is_start_state_reachable) && pp->to > (unsigned)other_auto->dfa->s) {
-              state_map_fix[state_key_fix]--; // to new state, init state will be eliminated if init is not reachable
-            }
-
-            exceptions_fix[state_key_fix] = new std::vector<char>();
-            for (j = 0; j < var; j++) {
-              for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp =tp->next);
-              if (tp) {
-                if (tp->value){
-                  exceptions_fix[state_key_fix]->push_back('1');
-                }
-                else {
-                  exceptions_fix[state_key_fix]->push_back('0');
-                }
-              }
-              else {
-                exceptions_fix[state_key_fix]->push_back('X');
-              }
-            }
-            exceptions_fix[state_key_fix]->push_back('0'); // old value
-            exceptions_fix[state_key_fix]->push_back('\0');
-            state_key_fix++;
-            tp = nullptr;
-          }
-          pp = pp->next;
-        }
-
-        dfaAllocExceptions(state_key_fix);
-        for (int state_key = 0; state_key < state_key_fix; state_key++) {
-          dfaStoreException(state_map_fix[state_key], &*(exceptions_fix[state_key]->begin()));
-        }
-
-        dfaStoreState(sink_state_left_auto);
-
-        loc = state_id_shift_amount + i;
-        if ( (not is_start_state_reachable) && i > other_auto->dfa->s) {
-          loc--;
-        }
-        if ( sink_state_right_auto >= 0 && i > sink_state_right_auto) {
-          loc--;
-        }
-
-        if ( other_auto->isAcceptingState(i)) {
-          statuses[loc]='+';
-        } else {
-          statuses[loc]='-';
-        }
-
-        kill_paths(state_paths);
-        state_paths = pp = nullptr;
-      }
-    }
-  }
-
-//  statuses[expected_num_of_states]='\0';
-  for (auto& entry : exceptions_fix) {
-    entry.second->clear();
-    delete entry.second;
-  }
-  state_map_fix.clear();
-
-  concat_dfa = dfaBuild(statuses);
-  tmp_dfa = dfaProject(concat_dfa, (unsigned) var);
-  dfaFree(concat_dfa);
-  concat_dfa = dfaMinimize(tmp_dfa);
-  dfaFree(tmp_dfa); tmp_dfa = nullptr;
-
-  concat_auto = new IntAutomaton(concat_dfa, num_of_variables);
-
-  DVLOG(VLOG_LEVEL) << concat_auto->id << " = [" << this->id << "]->concat(" << other_auto->id << ")";
 
   return concat_auto;
 }

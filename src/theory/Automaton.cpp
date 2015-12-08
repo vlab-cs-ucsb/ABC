@@ -452,6 +452,24 @@ char* Automaton::binaryFormat(unsigned long number, int bit_length) {
   return binary_str;
 }
 
+std::vector<char> Automaton::getBinaryFormat(unsigned number, int bit_length) {
+  int index = bit_length;
+  unsigned subject = number;
+  std::vector<char> binary_str;
+
+  for (index--; index >= 0; index--) {
+    if (subject & 1) {
+      binary_str.push_back('1');
+    } else {
+      binary_str.push_back('0');
+    }
+    if (subject > 0) {
+      subject >>= 1;
+    }
+  }
+  return binary_str;
+}
+
 /**
  * That function replaces the getSharp1WithExtraBit 111111111 and
  * getSharp0WithExtraBit 111111110. (getSharp0WithExtraBit is not

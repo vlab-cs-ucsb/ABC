@@ -471,13 +471,13 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::addLeadingZeros() {
 
   int number_of_variables = num_of_variables + 1,
           leading_zero_state = number_of_variables - 1,
-          state_key = 0;
+          to_state = 0;
   int* indices = getIndices(number_of_variables);
 
   std::vector<char> leading_zero_exception;
   std::vector<char> statuses;
-  std::map<int, std::vector<char>*> exceptions;
-  std::map<int, int> state_map;
+  std::map<std::vector<char>*, int> exceptions;
+  std::vector<char>* current_exception = nullptr;
 
   paths state_paths = nullptr, pp = nullptr;
   trace_descr tp = nullptr;

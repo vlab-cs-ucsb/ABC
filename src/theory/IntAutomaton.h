@@ -104,7 +104,6 @@ public:
   static int DEFAULT_NUM_OF_VARIABLES;
 protected:
   IntAutomaton_ptr __plus(IntAutomaton_ptr other_auto);
-  IntAutomaton_ptr concat(IntAutomaton_ptr other_auto);
   IntAutomaton_ptr __minus(IntAutomaton_ptr other_auto);
 
 
