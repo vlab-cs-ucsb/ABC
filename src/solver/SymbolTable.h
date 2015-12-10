@@ -37,6 +37,7 @@ public:
   void updateSatisfiability(bool value);
   void setScopeSatisfiability(bool value);
   void unionValuesOfVariables(SMT::Script_ptr script);
+  void clearLetScopes();
 
   void addVariable(SMT::Variable_ptr);
   SMT::Variable_ptr getVariable(std::string name);
@@ -72,9 +73,10 @@ public:
   VariableValueMap& getValuesAtScope(SMT::Visitable_ptr scope);
   bool setValue(std::string var_name, Value_ptr value);
   bool setValue(SMT::Variable_ptr variable, Value_ptr value);
+  bool updateValue(std::string var_name, Value_ptr value);
+  bool updateValue(SMT::Variable_ptr variable, Value_ptr value);
 
   static const std::string ARITHMETIC;
-  static const std::string LOCAL_VAR_PREFIX;
 private:
   bool global_assertion_result;
   int bound;

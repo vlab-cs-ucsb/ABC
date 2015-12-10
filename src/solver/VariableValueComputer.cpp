@@ -16,14 +16,13 @@ const int VariableValueComputer::VLOG_LEVEL = 12;
 // TODO intersect with result post
 VariableValueComputer::VariableValueComputer(SymbolTable_ptr symbol_table, VariablePathTable& variable_path_table, const TermValueMap& post_images)
         : symbol_table(symbol_table), variable_path_table (variable_path_table),
-          post_images (post_images) {
+          post_images (post_images), current_path (nullptr) {
 }
 
 VariableValueComputer::~VariableValueComputer() {
   for (auto entry : pre_images) {
     delete entry.second;
   }
-
   pre_images.clear();
 }
 
@@ -31,9 +30,12 @@ void VariableValueComputer::start() {
   Value_ptr initial_value = nullptr;
   Term_ptr root_term = nullptr;
   DVLOG(VLOG_LEVEL) << "Pre image computation start";
-  for (auto& path_entry : variable_path_table) {
-    current_path = path_entry.second;
-    root_term = current_path.back();
+
+  // update variables starting from right side of the ast tree of the term
+  // this is especially important for let terms
+  for (auto it = variable_path_table.rbegin(); it != variable_path_table.rend(); it++) {
+    current_path = &(*it);
+    root_term = current_path->back();
 
     initial_value = getTermPreImage(root_term);
     if (initial_value not_eq nullptr) {
@@ -49,6 +51,7 @@ void VariableValueComputer::start() {
 }
 
 void VariableValueComputer::end() {
+  current_path = nullptr;
 }
 
 void VariableValueComputer::visitScript(Script_ptr script) {
@@ -73,6 +76,50 @@ void VariableValueComputer::visitForAll(ForAll_ptr for_all_term) {
 }
 
 void VariableValueComputer::visitLet(Let_ptr let_term) {
+  DVLOG(VLOG_LEVEL) << "pop: " << *let_term;
+  popTerm(let_term);
+  Term_ptr child_term = current_path->back();
+  Value_ptr child_value = getTermPreImage(child_term);
+  if (child_value not_eq nullptr) {
+    symbol_table->push_scope(let_term);
+    visit(child_term);
+    symbol_table->pop_scope();
+    return;
+  }
+
+  Value_ptr term_value = getTermPreImage(let_term);
+  Value_ptr child_post_value = getTermPostImage(child_term);
+
+  Variable_ptr variable_to_update = symbol_table->getVariable( *(current_path->begin()) );
+  Value_ptr value_to_move_upper_scope = nullptr;
+
+  symbol_table->push_scope(let_term);
+
+  if (child_term == let_term->term) {
+    child_value = term_value->clone();
+  } else {
+    for (auto var_bind : *let_term->var_binding_list) {
+      if (child_term == var_bind->term) {
+        Value_ptr local_var_value = symbol_table->getValue(var_bind->symbol->getData());
+        child_value = local_var_value->clone();
+        break;
+      }
+    }
+  }
+
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
+
+  if (not variable_to_update->isLocalLetVar()) {
+    value_to_move_upper_scope = symbol_table->getValue(variable_to_update);
+  }
+
+  symbol_table->pop_scope();
+
+  if (value_to_move_upper_scope) {
+    symbol_table->updateValue(variable_to_update, value_to_move_upper_scope);
+  }
+
 }
 
 void VariableValueComputer::visitAnd(And_ptr and_term) {
@@ -86,7 +133,7 @@ void VariableValueComputer::visitOr(Or_ptr or_term) {
 void VariableValueComputer::visitNot(Not_ptr not_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *not_term;
   popTerm(not_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -102,7 +149,7 @@ void VariableValueComputer::visitNot(Not_ptr not_term) {
 void VariableValueComputer::visitUMinus(UMinus_ptr u_minus_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *u_minus_term;
   popTerm(u_minus_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -141,7 +188,7 @@ void VariableValueComputer::visitUMinus(UMinus_ptr u_minus_term) {
 void VariableValueComputer::visitMinus(Minus_ptr minus_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *minus_term;
   popTerm(minus_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
   Value_ptr result = nullptr;
 
@@ -174,7 +221,7 @@ void VariableValueComputer::visitMinus(Minus_ptr minus_term) {
 void VariableValueComputer::visitPlus(Plus_ptr plus_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *plus_term;
   popTerm(plus_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -241,7 +288,7 @@ void VariableValueComputer::visitTimes(Times_ptr times_term) {
   LOG(FATAL)<< "Implement me with binary integer automaton";
   DVLOG(VLOG_LEVEL) << "pop: " << *times_term;
   popTerm(times_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -318,7 +365,7 @@ void VariableValueComputer::visitTimes(Times_ptr times_term) {
 void VariableValueComputer::visitEq(Eq_ptr eq_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *eq_term;
   popTerm(eq_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -341,7 +388,7 @@ void VariableValueComputer::visitEq(Eq_ptr eq_term) {
 void VariableValueComputer::visitNotEq(NotEq_ptr not_eq_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *not_eq_term;
   popTerm(not_eq_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -368,7 +415,7 @@ void VariableValueComputer::visitNotEq(NotEq_ptr not_eq_term) {
 void VariableValueComputer::visitGt(Gt_ptr gt_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *gt_term;
   popTerm(gt_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -404,7 +451,7 @@ void VariableValueComputer::visitGt(Gt_ptr gt_term) {
 void VariableValueComputer::visitGe(Ge_ptr ge_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *ge_term;
   popTerm(ge_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -440,7 +487,7 @@ void VariableValueComputer::visitGe(Ge_ptr ge_term) {
 void VariableValueComputer::visitLt(Lt_ptr lt_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *lt_term;
   popTerm(lt_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -476,7 +523,7 @@ void VariableValueComputer::visitLt(Lt_ptr lt_term) {
 void VariableValueComputer::visitLe(Le_ptr le_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *le_term;
   popTerm(le_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -513,7 +560,7 @@ void VariableValueComputer::visitLe(Le_ptr le_term) {
 void VariableValueComputer::visitConcat(Concat_ptr concat_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *concat_term;
   popTerm(concat_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -579,7 +626,7 @@ void VariableValueComputer::visitConcat(Concat_ptr concat_term) {
 void VariableValueComputer::visitIn(In_ptr in_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *in_term;
   popTerm(in_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
 
   if (child_term == in_term->right_term) {
     return; // in operation does not have any restriction on right hand side
@@ -600,7 +647,7 @@ void VariableValueComputer::visitIn(In_ptr in_term) {
 void VariableValueComputer::visitNotIn(NotIn_ptr not_in_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *not_in_term;
   popTerm(not_in_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
 
   if (child_term == not_in_term->right_term) {
     return; // notIn operation does not have any restriction on right hand side
@@ -621,7 +668,7 @@ void VariableValueComputer::visitNotIn(NotIn_ptr not_in_term) {
 void VariableValueComputer::visitLen(Len_ptr len_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *len_term;
   popTerm(len_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -644,7 +691,7 @@ void VariableValueComputer::visitLen(Len_ptr len_term) {
 void VariableValueComputer::visitContains(Contains_ptr contains_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *contains_term;
   popTerm(contains_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
 
   if (child_term == contains_term->search_term) {
     return; // contains operation does not have any restriction on right hand side
@@ -665,7 +712,7 @@ void VariableValueComputer::visitContains(Contains_ptr contains_term) {
 void VariableValueComputer::visitNotContains(NotContains_ptr not_contains_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *not_contains_term;
   popTerm(not_contains_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
 
   if (child_term == not_contains_term->search_term) {
     return; // notContains operation does not have any restriction on right hand side
@@ -686,7 +733,7 @@ void VariableValueComputer::visitNotContains(NotContains_ptr not_contains_term) 
 void VariableValueComputer::visitBegins(Begins_ptr begins_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *begins_term;
   popTerm(begins_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
 
   if (child_term == begins_term->search_term) {
     return; // begins operation does not have any restriction on right hand side
@@ -707,7 +754,7 @@ void VariableValueComputer::visitBegins(Begins_ptr begins_term) {
 void VariableValueComputer::visitNotBegins(NotBegins_ptr not_begins_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *not_begins_term;
   popTerm(not_begins_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
 
   if (child_term == not_begins_term->search_term) {
     return; // notBegins operation does not have any restriction on right hand side
@@ -728,7 +775,7 @@ void VariableValueComputer::visitNotBegins(NotBegins_ptr not_begins_term) {
 void VariableValueComputer::visitEnds(Ends_ptr ends_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *ends_term;
   popTerm(ends_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
 
   if (child_term == ends_term->search_term) {
     return; // ends operation does not have any restriction on right hand side
@@ -749,7 +796,7 @@ void VariableValueComputer::visitEnds(Ends_ptr ends_term) {
 void VariableValueComputer::visitNotEnds(NotEnds_ptr not_ends_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *not_ends_term;
   popTerm(not_ends_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
 
   if (child_term == not_ends_term->search_term) {
     return; // notEnds operation does not have any restriction on right hand side
@@ -770,7 +817,7 @@ void VariableValueComputer::visitNotEnds(NotEnds_ptr not_ends_term) {
 void VariableValueComputer::visitIndexOf(IndexOf_ptr index_of_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *index_of_term;
   popTerm(index_of_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
 
   if (child_term == index_of_term->search_term) {
     return; // indexOf operation does not have any restriction on right hand side
@@ -801,7 +848,7 @@ void VariableValueComputer::visitIndexOf(IndexOf_ptr index_of_term) {
 void VariableValueComputer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *last_index_of_term;
   popTerm(last_index_of_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
 
   if (child_term == last_index_of_term->search_term) {
     return; // lastIndexOf operation does not have any restriction on right hand side
@@ -836,7 +883,7 @@ void VariableValueComputer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_
 void VariableValueComputer::visitCharAt(SMT::CharAt_ptr char_at_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *char_at_term;
   popTerm(char_at_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
 
   if (child_term == char_at_term->index_term) {
     return; // charAt operation does not have any restriction on right hand side
@@ -869,7 +916,7 @@ void VariableValueComputer::visitCharAt(SMT::CharAt_ptr char_at_term) {
 void VariableValueComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *sub_string_term;
   popTerm(sub_string_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
 
   if (child_term == sub_string_term->start_index_term or
           child_term == sub_string_term->end_index_term) {
@@ -900,7 +947,14 @@ void VariableValueComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
       break;
     }
     case SubString::Mode::FROMFIRSTOF: {
-      LOG(FATAL)<< "implement me";
+      Value_ptr index_value = getTermPostImage(sub_string_term->start_index_term);
+      Theory::StringAutomaton_ptr any_string_not_contains_search = index_value->getStringAutomaton()->getAnyStringNotContainsMe();
+      Theory::StringAutomaton_ptr general_pre_substring = any_string_not_contains_search->concat(term_value->getStringAutomaton());
+      delete any_string_not_contains_search; any_string_not_contains_search = nullptr;
+
+      child_value = new Value(child_post_value->getStringAutomaton()
+                    ->intersect(general_pre_substring));
+      delete general_pre_substring; general_pre_substring = nullptr;
       break;
     }
     case SubString::Mode::FROMLASTOF: {
@@ -968,7 +1022,7 @@ void VariableValueComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
 void VariableValueComputer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *to_upper_term;
   popTerm(to_upper_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -987,7 +1041,7 @@ void VariableValueComputer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
 void VariableValueComputer::visitToLower(SMT::ToLower_ptr to_lower_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *to_lower_term;
   popTerm(to_lower_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -1006,7 +1060,7 @@ void VariableValueComputer::visitToLower(SMT::ToLower_ptr to_lower_term) {
 void VariableValueComputer::visitTrim(SMT::Trim_ptr trim_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *trim_term;
   popTerm(trim_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -1025,7 +1079,7 @@ void VariableValueComputer::visitTrim(SMT::Trim_ptr trim_term) {
 void VariableValueComputer::visitReplace(Replace_ptr replace_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *replace_term;
   popTerm(replace_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -1070,7 +1124,7 @@ void VariableValueComputer::visitUnknownTerm(Unknown_ptr unknown_term) {
   QualIdentifier_ptr qi_term = dynamic_cast<QualIdentifier_ptr>(unknown_term->term);
   LOG(WARNING) << "operation is not known, over-approximate params of operation: '" << qi_term->getVarName() << "'";
   popTerm(unknown_term);
-  Term_ptr child_term = current_path.back();
+  Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -1099,16 +1153,11 @@ void VariableValueComputer::visitAsQualIdentifier(AsQualIdentifier_ptr as_qid_te
 }
 
 void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
-  DVLOG(VLOG_LEVEL) << "pop: " << *qi_term;
+  DVLOG(VLOG_LEVEL) << "pop: " << *qi_term << " = " << qi_term->getVarName();
   popTerm(qi_term);
 
   Value_ptr term_pre_value = getTermPreImage(qi_term);
-  Value_ptr variable_old_value = symbol_table->getValue(qi_term->getVarName());
-
-  Value_ptr variable_new_value = variable_old_value->intersect(term_pre_value);
-
-  symbol_table->setValue(qi_term->getVarName(), variable_new_value);
-  delete variable_old_value; variable_old_value = nullptr;
+  symbol_table->updateValue(qi_term->getVarName(), term_pre_value);
 }
 
 void VariableValueComputer::visitTermConstant(TermConstant_ptr term_constant) {
@@ -1172,10 +1221,10 @@ bool VariableValueComputer::setTermPreImage(SMT::Term_ptr term, Value_ptr value)
 }
 
 void VariableValueComputer::popTerm(SMT::Term_ptr term) {
-  if (current_path.back() == term) {
-    current_path.pop_back();
+  if (current_path->back() == term) {
+    current_path->pop_back();
   } else {
-    LOG(FATAL) << "expected '" << *term << "', but found '" << *current_path.back() << "'";
+    LOG(FATAL) << "expected '" << *term << "', but found '" << *current_path->back() << "'";
   }
 }
 

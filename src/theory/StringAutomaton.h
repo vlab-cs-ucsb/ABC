@@ -55,6 +55,8 @@ public:
           StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
   static StringAutomaton_ptr makeAnyString(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
           int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  static StringAutomaton_ptr makeAnyStringOtherThan(std::string str, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
+            int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
   static StringAutomaton_ptr makeChar(char c, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
           int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
   static StringAutomaton_ptr makeCharRange(char from, char to, int num_of_variables =
@@ -112,6 +114,8 @@ public:
 
   StringAutomaton_ptr replace(StringAutomaton_ptr search_auto, StringAutomaton_ptr replace_auto);
 
+  StringAutomaton_ptr getAnyStringNotContainsMe();
+
   DFA_ptr unaryLength();
   UnaryAutomaton_ptr toUnaryAutomaton();
   IntAutomaton_ptr length();
@@ -158,6 +162,8 @@ protected:
   bool hasExceptionToValidStateFrom(int state, std::vector<char>& exception);
   std::vector<int> getAcceptingStates();
 
+  StringAutomaton_ptr indexOfHelper(StringAutomaton_ptr search_auto, bool use_extra_bit = false);
+  StringAutomaton_ptr lastIndexOfHelper(StringAutomaton_ptr search_auto, bool use_extra_bit = false);
   StringAutomaton_ptr getDuplicateStateAutomaton(bool use_extra_bit = false);
   StringAutomaton_ptr toQueryAutomaton(bool use_extra_bit = false);
   StringAutomaton_ptr search(StringAutomaton_ptr search_auto, bool use_extra_bit = false);

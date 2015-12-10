@@ -1975,22 +1975,28 @@ void TString::accept(Visitor_ptr v) {
 void TString::visit_children(Visitor_ptr v) {
 }
 
+const std::string Variable::SYMBOLIC_VAR_PREFIX = "var_";
+const std::string Variable::LOCAL_VAR_PREFIX = "__VLAB_CS_L_";
+
 Variable::Variable(std::string name, Variable::Type type)
-        : TVariable(type), name(name), is_symbolic(name.find("var_") == 0) {
+        : TVariable(type), name(name), is_symbolic(name.find(SYMBOLIC_VAR_PREFIX) == 0),
+          is_local_let_var(name.find(LOCAL_VAR_PREFIX) == 0) {
 }
 Variable::Variable(Primitive_ptr primitive, Variable::Type type)
-        : TVariable(type), name(primitive->getData()), is_symbolic(name.find("var_") == 0) {
+        : TVariable(type), name(primitive->getData()), is_symbolic(name.find(SYMBOLIC_VAR_PREFIX) == 0),
+          is_local_let_var(name.find(LOCAL_VAR_PREFIX) == 0) {
 }
 Variable::Variable(std::string name, Variable::Type type, bool is_symbolic)
-        : TVariable(type), name(name), is_symbolic(is_symbolic) {
+        : TVariable(type), name(name), is_symbolic(is_symbolic),
+          is_local_let_var(name.find(LOCAL_VAR_PREFIX) == 0) {
 }
 Variable::Variable(Primitive_ptr primitive, Variable::Type type, bool is_symbolic)
-        : TVariable(type), name(primitive->getData()), is_symbolic(is_symbolic) {
+        : TVariable(type), name(primitive->getData()), is_symbolic(is_symbolic),
+          is_local_let_var(name.find(LOCAL_VAR_PREFIX) == 0) {
 }
 Variable::Variable(const Variable& other)
-        : TVariable(other.type) {
-  name = other.name;
-  is_symbolic = other.is_symbolic;
+        : TVariable(other.type), name (other.name), is_symbolic (other.is_symbolic),
+          is_local_let_var (other.is_local_let_var) {
 }
 
 Variable_ptr Variable::clone() const {
@@ -2021,6 +2027,14 @@ bool Variable::isSymbolic() const {
 
 void Variable::setSymbolic(bool is_symbolic) {
   this->is_symbolic = is_symbolic;
+}
+
+bool Variable::isLocalLetVar() const {
+  return is_local_let_var;
+}
+
+void Variable::setLocalLetVar(bool is_local_let_var) {
+  this->is_local_let_var = is_local_let_var;
 }
 
 void Variable::accept(Visitor_ptr v) {

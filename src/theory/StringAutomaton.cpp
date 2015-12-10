@@ -148,6 +148,18 @@ StringAutomaton_ptr StringAutomaton::makeAnyString(int num_of_variables, int* va
   return any_string;
 }
 
+StringAutomaton_ptr StringAutomaton::makeAnyStringOtherThan(std::string str, int num_of_variables, int* variable_indices) {
+  StringAutomaton_ptr not_contains_me_auto = nullptr, str_auto = nullptr;
+
+  str_auto = makeString(str);
+  not_contains_me_auto = str_auto->getAnyStringNotContainsMe();
+  delete str_auto; str_auto = nullptr;
+
+  DVLOG(VLOG_LEVEL) << not_contains_me_auto->id << " = StringAutomaton::makeAnyString(" << str << ")";
+
+  return not_contains_me_auto;
+}
+
 StringAutomaton_ptr StringAutomaton::makeChar(char c, int num_of_variables, int* variable_indices) {
   std::stringstream ss;
   ss << c;
@@ -1079,86 +1091,47 @@ StringAutomaton_ptr StringAutomaton::subString(int start, int end){
  */
 StringAutomaton_ptr StringAutomaton::subStringLastOf(StringAutomaton_ptr search_auto) {
   StringAutomaton_ptr substring_auto = nullptr, contains_auto = nullptr,
-          lastIndexOf_auto = nullptr, search_result_auto = nullptr,
-          right_auto = nullptr;
-  DFA_ptr lastIndexOf_dfa = nullptr, minimized_dfa = nullptr;
+          last_index_of_auto = nullptr, right_auto = nullptr,
+          search_param_auto = search_auto;
 
-  contains_auto = this->contains(search_auto);
+  bool search_has_empty_string = false;
+
+  if (search_param_auto->hasEmptyString()) {
+    StringAutomaton_ptr non_empty_string = makeLengthGreaterThan(0);
+    search_param_auto = search_param_auto->intersect(non_empty_string);
+    delete non_empty_string; non_empty_string = nullptr;
+    search_has_empty_string = true;
+  }
+
+  contains_auto = this->contains(search_param_auto);
   if (contains_auto->isEmptyLanguage()) {
     delete contains_auto; contains_auto = nullptr;
-    substring_auto = StringAutomaton::makePhi();
+    if (search_has_empty_string) {
+      substring_auto = StringAutomaton::makeEmptyString();
+      delete search_param_auto; search_param_auto = nullptr;
+    } else {
+      substring_auto = StringAutomaton::makePhi();
+    }
     DVLOG(VLOG_LEVEL) << substring_auto->id << " = [" << this->id << "]->subStringLastOf(" << search_auto->id  << ")";
     return substring_auto;
   }
 
-  search_result_auto = contains_auto->search(search_auto);
-
-  Graph_ptr graph = search_result_auto->toGraph();
-  // Mark start states and end states of matches
-  std::vector<char> flag_1_exception = {'1', '1', '1', '1', '1', '1', '1', '1', '1'}; // 255 with extra bit '1'
-  std::vector<char> flag_2_exception = {'1', '1', '1', '1', '1', '1', '1', '1', '0'}; // 255 with extra bit '0'
-  GraphNode_ptr node = nullptr;
-  int sink_state = search_result_auto->getSinkState();
-  int next_state = -1;
-  for (int s = 0; s < search_result_auto->dfa->ns; s++) {
-    node = graph->getNode(s);
-    if (sink_state != (next_state = search_result_auto->getNextState(s, flag_1_exception))) {
-      node->addEdgeFlag(1, graph->getNode(next_state)); // flag 1 is to mark for beginning of a match
-    } else if ( sink_state != (next_state = search_result_auto->getNextState(s, flag_2_exception)) ) {
-      node->addEdgeFlag(1, graph->getNode(next_state)); // flag 2 is to mark for beginning of a match
-    }
-  }
-
-  // BEGIN find new start states using reverse DFS traversal
-  for (auto final_node : graph->getFinalNodes()) {
-    std::stack<GraphNode_ptr> node_stack;
-    std::map<GraphNode_ptr, bool> is_visited; // by default bool is initialized as false
-    GraphNode_ptr curr_node = nullptr;
-    node_stack.push(final_node);
-    while (not node_stack.empty()) {
-      curr_node = node_stack.top(); node_stack.pop();
-      is_visited[curr_node] = true;
-      for (auto& prev_node : curr_node->getPrevNodes()) {
-        if (prev_node->hasEdgeFlag(1, curr_node)) { // a match state found
-          prev_node->removeEdgeFlag(1, curr_node);
-          prev_node->addEdgeFlag(3, curr_node); // 3 is for new final state
-        } else {
-          if (is_visited.find(prev_node) == is_visited.end()) {
-            node_stack.push(prev_node);
-          }
-        }
-      }
-    }
-  }
-
-  // END find new final states using reverse DFS traversal
-  graph->resetFinalNodesToFlag(3);
-
-  // BEGIN generate automaton
-  int* indices = getIndices(StringAutomaton::DEFAULT_NUM_OF_VARIABLES, 1);
-  for (int s = 0; s < search_result_auto->dfa->ns; s++) {
-    GraphNode_ptr node = graph->getNode(s);
-    if (graph->isFinalNode(node)) {
-      search_result_auto->dfa->f[s] = 1;
-    } else {
-      search_result_auto->dfa->f[s] = -1;
-    }
-  }
-
-  search_result_auto->minimize();
-  DFA_ptr result_dfa = dfa_replace_step3_general_replace(search_result_auto->dfa, search_auto->dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, indices);
-  delete[] indices;
-  delete search_result_auto;
-  lastIndexOf_auto = new StringAutomaton(result_dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-  lastIndexOf_auto->project((unsigned)StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-  // END generate automaton
+  last_index_of_auto = contains_auto->lastIndexOfHelper(search_param_auto);
 
   // Get substring automaton using preConcatRight
-  right_auto = contains_auto->preConcatRight(lastIndexOf_auto);
-  delete lastIndexOf_auto; lastIndexOf_auto = nullptr;
+  right_auto = contains_auto->preConcatRight(last_index_of_auto);
+  delete last_index_of_auto; last_index_of_auto = nullptr;
   delete contains_auto; contains_auto = nullptr;
-  substring_auto = right_auto->restrictLastOccuranceOf(search_auto);
+  substring_auto = right_auto->restrictLastOccuranceOf(search_param_auto);
   delete right_auto; right_auto = nullptr;
+
+  if (search_has_empty_string) {
+    StringAutomaton_ptr tmp_auto = substring_auto;
+    StringAutomaton_ptr empty_string = StringAutomaton::makeEmptyString();
+    substring_auto = tmp_auto->union_(empty_string);
+    delete tmp_auto; tmp_auto = nullptr;
+    delete empty_string; empty_string = nullptr;
+  }
 
   DVLOG(VLOG_LEVEL) << substring_auto->id << " = [" << this->id << "]->subStringLastOf(" << search_auto->id << ")";
   return substring_auto;
@@ -1169,63 +1142,50 @@ StringAutomaton_ptr StringAutomaton::subStringLastOf(StringAutomaton_ptr search_
  */
 StringAutomaton_ptr StringAutomaton::subStringFirstOf(StringAutomaton_ptr search_auto) {
   StringAutomaton_ptr substring_auto = nullptr, contains_auto = nullptr,
-          search_result_auto = nullptr;
+          index_of_auto = nullptr, right_auto = nullptr,
+          search_param_auto = search_auto;
 
-  contains_auto = this->contains(search_auto);
+  bool search_has_empty_string = false;
+
+  if (search_param_auto->hasEmptyString()) {
+    StringAutomaton_ptr non_empty_string = makeLengthGreaterThan(0);
+    search_param_auto = search_param_auto->intersect(non_empty_string);
+    delete non_empty_string; non_empty_string = nullptr;
+    search_has_empty_string = true;
+  }
+
+  contains_auto = this->contains(search_param_auto);
   if (contains_auto->isEmptyLanguage()) {
     delete contains_auto; contains_auto = nullptr;
-    substring_auto = StringAutomaton::makePhi();
+    if (search_has_empty_string) {
+      substring_auto = this->clone();
+      delete search_param_auto; search_param_auto = nullptr;
+    } else {
+      substring_auto = StringAutomaton::makePhi();
+    }
     DVLOG(VLOG_LEVEL) << substring_auto->id << " = [" << this->id << "]->subStringFirstOf(" << search_auto->id  << ")";
     return substring_auto;
   }
 
-  search_result_auto = contains_auto->search(search_auto);
-
-  search_result_auto->project((unsigned)(search_result_auto->num_of_variables - 1));
-  search_result_auto->minimize();
-
-  int sink_state = search_result_auto->getSinkState();
-
-  int current_state = -1;
-  int next_state = -1;
-  std::vector<char> flag = {'1', '1', '1', '1', '1', '1', '1', '1'}; // 255
-  std::set<int>* next_states = nullptr;
-  std::stack<int> state_work_list;
-  std::map<int, bool> visited;
-
-  for (int s = 0; s < search_result_auto->dfa->ns; s++) {
-    search_result_auto->dfa->f[s] = -1;
-  }
-  visited[sink_state] = true;
-  state_work_list.push(search_result_auto->dfa->s);
-  while (not state_work_list.empty()) {
-    current_state = state_work_list.top(); state_work_list.pop();
-    visited[current_state] = true;
-
-    next_states = search_result_auto->getNextStates(current_state);
-
-    if (sink_state != (next_state = search_result_auto->getNextState(current_state, flag))) {
-      search_result_auto->dfa->f[current_state] = 1; // mark final state for beginning of a match
-      next_states->erase(next_state);
-    }
-
-    for (auto n : *next_states) {
-      if (not visited[n]) {
-        state_work_list.push(n);
-      }
-    }
-
-    delete next_states; next_states = nullptr;
-  }
-
-  search_result_auto->minimize();
+  index_of_auto = contains_auto->indexOfHelper(search_param_auto);
 
   // Get substring automaton using preConcatRight
-  substring_auto = contains_auto->preConcatRight(search_result_auto);
-  delete search_result_auto; search_result_auto = nullptr;
+  right_auto = contains_auto->preConcatRight(index_of_auto);
+  delete index_of_auto; index_of_auto = nullptr;
   delete contains_auto; contains_auto = nullptr;
 
+  substring_auto = right_auto->begins(search_auto);
+
+  delete right_auto; right_auto = nullptr;
+
+  if (search_has_empty_string) {
+    StringAutomaton_ptr tmp_auto = substring_auto;
+    substring_auto = tmp_auto->union_(this);
+    delete tmp_auto; tmp_auto = nullptr;
+  }
+
   DVLOG(VLOG_LEVEL) << substring_auto->id << " = [" << this->id << "]->subStringFirstOf(" << search_auto->id << ")";
+
   return substring_auto;
 }
 
@@ -1235,16 +1195,31 @@ StringAutomaton_ptr StringAutomaton::subStringFirstOf(StringAutomaton_ptr search
  */
 IntAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
   StringAutomaton_ptr contains_auto = nullptr, difference_auto = nullptr,
-      search_result_auto = nullptr;
+      index_of_auto = nullptr, search_param_auto = search_auto;
   IntAutomaton_ptr length_auto = nullptr;
 
-  DFA_ptr indexOf_dfa = nullptr, minimized_dfa = nullptr;
   bool has_negative_1 = false;
+  bool search_has_empty_string = false;
 
-  contains_auto = this->contains(search_auto);
+  if (search_param_auto->hasEmptyString()) {
+    StringAutomaton_ptr non_empty_string = makeLengthGreaterThan(0);
+    search_param_auto = search_param_auto->intersect(non_empty_string);
+    delete non_empty_string; non_empty_string = nullptr;
+    search_has_empty_string = true;
+  }
+
+  contains_auto = this->contains(search_param_auto);
   if (contains_auto->isEmptyLanguage()) {
     delete contains_auto;
-    length_auto = IntAutomaton::makeInt(-1);
+    // if search has empty string indexOf also returns 0
+    if (search_has_empty_string) {
+      length_auto = IntAutomaton::makeZero();
+      length_auto->setMinus1(true);
+      delete search_param_auto; search_param_auto = nullptr; // search_param_auto auto is not the parameter search auto, it is updated, delete it
+    } else {
+      length_auto = IntAutomaton::makeInt(-1);
+    }
+
     DVLOG(VLOG_LEVEL) << length_auto->getId() << " = [" << this->id << "]->indexOf(" << search_auto->id  << ")";
     return length_auto;
   }
@@ -1255,47 +1230,22 @@ IntAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
   }
   delete difference_auto;
 
-  search_result_auto = contains_auto->search(search_auto);
+  index_of_auto = contains_auto->indexOfHelper(search_param_auto);
   delete contains_auto; contains_auto = nullptr;
 
-  int sink_state = search_result_auto->getSinkState();
-
-  int current_state = -1;
-  int next_state = -1;
-  std::vector<char> flag = {'1', '1', '1', '1', '1', '1', '1', '1'}; // 255
-  std::set<int>* next_states = nullptr;
-  std::stack<int> state_work_list;
-  std::map<int, bool> visited;
-
-  for (int s = 0; s < search_result_auto->dfa->ns; s++) {
-    search_result_auto->dfa->f[s] = -1;
-  }
-  visited[sink_state] = true;
-  state_work_list.push(search_result_auto->dfa->s);
-  while (not state_work_list.empty()) {
-    current_state = state_work_list.top(); state_work_list.pop();
-    visited[current_state] = true;
-
-    next_states = search_result_auto->getNextStates(current_state);
-
-    if (sink_state != (next_state = search_result_auto->getNextState(current_state, flag))) {
-      search_result_auto->dfa->f[current_state] = 1; // mark final state for beginning of a match
-      next_states->erase(next_state);
-    }
-
-    for (auto n : *next_states) {
-      if (not visited[n]) {
-        state_work_list.push(n);
-      }
-    }
-
-    delete next_states; next_states = nullptr;
-  }
-
-  search_result_auto->minimize();
-  length_auto = search_result_auto->length();
+  length_auto = index_of_auto->length();
   length_auto->setMinus1(has_negative_1);
-  delete search_result_auto; search_result_auto = nullptr;
+  delete index_of_auto; index_of_auto = nullptr;
+
+  // if search has empty string indexOf also returns 0
+  if (search_has_empty_string) {
+    if (not length_auto->hasZero()) {
+      IntAutomaton_ptr tmp = length_auto;
+      length_auto = tmp->union_(0);
+      delete tmp; tmp = nullptr;
+    }
+    delete search_param_auto; search_param_auto = nullptr; // search_param_auto auto is not the parameter search auto, it is updated, delete it
+  }
 
   DVLOG(VLOG_LEVEL) << length_auto->getId() << " = [" << this->id << "]->indexOf(" << search_auto->id  << ")";
   return length_auto;
@@ -1307,15 +1257,29 @@ IntAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
  */
 IntAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto) {
   StringAutomaton_ptr contains_auto = nullptr, difference_auto = nullptr,
-      lastIndexOf_auto = nullptr, search_result_auto = nullptr;
+      last_index_of_auto = nullptr, search_param_auto = search_auto;
   IntAutomaton_ptr length_auto = nullptr;
-  DFA_ptr lastIndexOf_dfa = nullptr, minimized_dfa = nullptr;
-  bool has_negative_1 = false;
 
-  contains_auto = this->contains(search_auto);
+  bool has_negative_1 = false;
+  bool search_has_empty_string = false;
+
+  if (search_param_auto->hasEmptyString()) {
+    StringAutomaton_ptr non_empty_string = makeLengthGreaterThan(0);
+    search_param_auto = search_param_auto->intersect(non_empty_string);
+    delete non_empty_string; non_empty_string = nullptr;
+    search_has_empty_string = true;
+  }
+
+  contains_auto = this->contains(search_param_auto);
   if (contains_auto->isEmptyLanguage()) {
     delete contains_auto;
-    length_auto = IntAutomaton::makeInt(-1);
+    if (search_has_empty_string) {
+      length_auto = this->length();
+      length_auto->setMinus1(true);
+      delete search_param_auto; search_param_auto = nullptr; // search_param_auto auto is not the parameter search auto, it is updated, delete it
+    } else {
+      length_auto = IntAutomaton::makeInt(-1);
+    }
     DVLOG(VLOG_LEVEL) << length_auto->getId() << " = [" << this->id << "]->lastIndexOf(" << search_auto->id  << ")";
     return length_auto;
   }
@@ -1326,77 +1290,22 @@ IntAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto) {
   }
   delete difference_auto;
 
-  search_result_auto = contains_auto->search(search_auto);
-  search_result_auto->inspectAuto();
+  last_index_of_auto = contains_auto->lastIndexOfHelper(search_param_auto);
   delete contains_auto; contains_auto = nullptr;
 
-  Graph_ptr graph = search_result_auto->toGraph();
-  // Mark start state of a match
-  std::vector<char> flag_1_exception = {'1', '1', '1', '1', '1', '1', '1', '1'}; // 255
-  GraphNode_ptr node = nullptr;
-  int sink_state = search_result_auto->getSinkState();
-  int next_state = -1;
-  for (int s = 0; s < search_result_auto->dfa->ns; s++) {
-    node = graph->getNode(s);
-    if (sink_state != (next_state = search_result_auto->getNextState(s, flag_1_exception))) {
-      node->addEdgeFlag(1, graph->getNode(next_state)); // flag 1 is to mark for beginning of a match
-    }
-  }
-
-  // BEGIN find new final states using reverse DFS traversal
-  for (auto final_node : graph->getFinalNodes()) {
-    std::stack<GraphNode_ptr> node_stack;
-    std::map<GraphNode_ptr, bool> is_visited; // by default bool is initialized as false
-    GraphNode_ptr curr_node = nullptr;
-    node_stack.push(final_node);
-    while (not node_stack.empty()) {
-      curr_node = node_stack.top(); node_stack.pop();
-      is_visited[curr_node] = true;
-      for (auto& prev_node : curr_node->getPrevNodes()) {
-        if (prev_node->hasEdgeFlag(1, curr_node)) { // a match state found
-          prev_node->removeEdgeFlag(1, curr_node);
-          prev_node->addEdgeFlag(3, curr_node); // 3 is for new final state
-        } else {
-          if (is_visited.find(prev_node) == is_visited.end()) {
-            node_stack.push(prev_node);
-          }
-        }
-      }
-    }
-  }
-
-  // END find new final states using reverse DFS traversal
-  graph->resetFinalNodesToFlag(3);
-
-  // BEGIN generate automaton
-  int* indices = getIndices(StringAutomaton::DEFAULT_NUM_OF_VARIABLES, 1);
-  for (int s = 0; s < search_result_auto->dfa->ns; s++) {
-    GraphNode_ptr node = graph->getNode(s);
-    if (graph->isFinalNode(node)) {
-      search_result_auto->dfa->f[s] = 1;
-    } else {
-      search_result_auto->dfa->f[s] = -1;
-    }
-  }
-
-  search_result_auto->minimize();
-
-  lastIndexOf_auto = search_result_auto->removeReservedWords();
-
-  LOG(FATAL) << "last index test";
-
-  DFA_ptr result_dfa = dfa_replace_step3_general_replace(search_result_auto->dfa, search_auto->dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, indices);
-  delete[] indices;
-  delete search_result_auto;
-  lastIndexOf_auto = new StringAutomaton(result_dfa, num_of_variables + 1);
-
-  lastIndexOf_auto->project((unsigned)(lastIndexOf_auto->num_of_variables - 1));
-  // END generate automaton
-  lastIndexOf_auto->minimize(); // trims the automaton
-
-  length_auto = lastIndexOf_auto->length();
+  length_auto = last_index_of_auto->length();
   length_auto->setMinus1(has_negative_1);
-  delete lastIndexOf_auto;
+  delete last_index_of_auto; last_index_of_auto = nullptr;
+
+  // if search has empty string lastIndexOf also returns all string lengths
+  if (search_has_empty_string) {
+    IntAutomaton_ptr string_lengths = this->length();
+    IntAutomaton_ptr tmp = length_auto;
+    length_auto = tmp->union_(string_lengths);
+    delete string_lengths; string_lengths = nullptr;
+    delete tmp; tmp = nullptr;
+    delete search_param_auto; search_param_auto = nullptr; // search_param_auto auto is not the parameter search auto, it is updated, delete it
+  }
 
   DVLOG(VLOG_LEVEL) << length_auto->getId() << " = [" << this->id << "]->lastIndexOf(" << search_auto->id << ")";
 
@@ -2055,6 +1964,142 @@ std::vector<int> StringAutomaton::getAcceptingStates() {
   return final_states;
 }
 
+StringAutomaton_ptr StringAutomaton::getAnyStringNotContainsMe() {
+  StringAutomaton_ptr not_contains_auto = nullptr, any_string_auto = nullptr,
+          contains_auto = nullptr, tmp_auto_1 = nullptr;
+
+  any_string_auto = StringAutomaton::makeAnyString();
+  tmp_auto_1 = any_string_auto->concat(this);
+  contains_auto = tmp_auto_1->concat(any_string_auto);
+  delete tmp_auto_1; tmp_auto_1 = nullptr;
+  delete any_string_auto; any_string_auto = nullptr;
+  not_contains_auto = contains_auto->complement();
+  delete contains_auto; contains_auto = nullptr;
+
+  DVLOG(VLOG_LEVEL) << not_contains_auto->id << " = [" << this->id << "]->getAnyStringNotContainsMe()";
+
+  return not_contains_auto;
+}
+
+/**
+ * @param search automaton is an automaton that does not accept empty string
+ * @this is an automaton that is known to be contains search automaton
+ */
+StringAutomaton_ptr StringAutomaton::indexOfHelper(StringAutomaton_ptr search_auto, bool use_extra_bit) {
+  StringAutomaton_ptr index_of_auto = nullptr;
+
+  index_of_auto = this->search(search_auto, use_extra_bit);
+  int sink_state = index_of_auto->getSinkState();
+
+  int current_state = -1;
+  int next_state = -1;
+  std::vector<char> flag = {'1', '1', '1', '1', '1', '1', '1', '1'}; // 255
+  std::set<int>* next_states = nullptr;
+  std::stack<int> state_work_list;
+  std::map<int, bool> visited;
+
+  for (int s = 0; s < index_of_auto->dfa->ns; s++) {
+    index_of_auto->dfa->f[s] = -1;
+  }
+  visited[sink_state] = true;
+  state_work_list.push(index_of_auto->dfa->s);
+  while (not state_work_list.empty()) {
+    current_state = state_work_list.top(); state_work_list.pop();
+    visited[current_state] = true;
+
+    next_states = index_of_auto->getNextStates(current_state);
+
+    if (sink_state != (next_state = index_of_auto->getNextState(current_state, flag))) {
+      index_of_auto->dfa->f[current_state] = 1; // mark final state for beginning of a match
+      next_states->erase(next_state);
+    }
+
+    for (auto n : *next_states) {
+      if (not visited[n]) {
+        state_work_list.push(n);
+      }
+    }
+
+    delete next_states; next_states = nullptr;
+  }
+
+  index_of_auto->minimize();
+
+  DVLOG(VLOG_LEVEL) << index_of_auto->id << " = [" << this->id << "]->indexOfHelper(" << search_auto->id  << ")";
+  return index_of_auto;
+}
+
+/**
+ * @param search automaton is an automaton that does not accept empty string
+ * @this is an automaton that is known to be contains search automaton
+ */
+StringAutomaton_ptr StringAutomaton::lastIndexOfHelper(StringAutomaton_ptr search_auto, bool use_extra_bit) {
+  StringAutomaton_ptr lastIndexOf_auto = nullptr, search_result_auto = nullptr;
+
+  DFA_ptr lastIndexOf_dfa = nullptr, minimized_dfa = nullptr;
+
+  search_result_auto = this->search(search_auto, use_extra_bit);
+
+  Graph_ptr graph = search_result_auto->toGraph();
+  // Mark start state of a match
+  std::vector<char> flag_1_exception = {'1', '1', '1', '1', '1', '1', '1', '1'}; // 255
+  GraphNode_ptr node = nullptr;
+  int sink_state = search_result_auto->getSinkState();
+  int next_state = -1;
+  for (int s = 0; s < search_result_auto->dfa->ns; s++) {
+    node = graph->getNode(s);
+    if (sink_state != (next_state = search_result_auto->getNextState(s, flag_1_exception))) {
+      node->addEdgeFlag(1, graph->getNode(next_state)); // flag 1 is to mark for beginning of a match
+    }
+  }
+
+  // BEGIN find new final states using reverse DFS traversal
+  for (auto final_node : graph->getFinalNodes()) {
+    std::stack<GraphNode_ptr> node_stack;
+    std::map<GraphNode_ptr, bool> is_visited; // by default bool is initialized as false
+    GraphNode_ptr curr_node = nullptr;
+    node_stack.push(final_node);
+    while (not node_stack.empty()) {
+      curr_node = node_stack.top(); node_stack.pop();
+      is_visited[curr_node] = true;
+      for (auto& prev_node : curr_node->getPrevNodes()) {
+        if (prev_node->hasEdgeFlag(1, curr_node)) { // a match state found
+          prev_node->removeEdgeFlag(1, curr_node);
+          prev_node->addEdgeFlag(3, curr_node); // 3 is for new final state
+        } else {
+          if (is_visited.find(prev_node) == is_visited.end()) {
+            node_stack.push(prev_node);
+          }
+        }
+      }
+    }
+  }
+
+  // END find new final states using reverse DFS traversal
+  graph->resetFinalNodesToFlag(3);
+
+  // BEGIN generate automaton
+  int* indices = getIndices(StringAutomaton::DEFAULT_NUM_OF_VARIABLES, 1);
+  for (int s = 0; s < search_result_auto->dfa->ns; s++) {
+    GraphNode_ptr node = graph->getNode(s);
+    if (graph->isFinalNode(node)) {
+      search_result_auto->dfa->f[s] = 1;
+    } else {
+      search_result_auto->dfa->f[s] = -1;
+    }
+  }
+
+  search_result_auto->minimize();
+
+  lastIndexOf_auto = search_result_auto->removeReservedWords();
+  delete[] indices;
+  delete search_result_auto;
+
+  DVLOG(VLOG_LEVEL) << lastIndexOf_auto->id << " = [" << this->id << "]->lastIndexOf(" << search_auto->id << ")";
+
+  return lastIndexOf_auto;
+}
+
 /**
  * Duplicates each state in the automaton using extra bit,
  * Special words 255, 254 used for the transitions between duplicated states
@@ -2224,9 +2269,8 @@ StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton(bool use_extra_b
  * Output M so that L(M)={w|w=x0#1\bar{x1}#2.., where \bar{x_i} \in L(M), x_i is \in the complement of L(S*MS*)} (usage with extrabit)
  * @param use_extra_bit decides on whether to use extra bit or not.
  */
-StringAutomaton_ptr StringAutomaton::toQueryAutomaton(bool use_extra_bit ) {
-  StringAutomaton_ptr query_auto = nullptr, any_string_auto = nullptr,
-            not_contains_auto = nullptr, contains_auto = nullptr,
+StringAutomaton_ptr StringAutomaton::toQueryAutomaton(bool use_extra_bit) {
+  StringAutomaton_ptr query_auto = nullptr, not_contains_auto = nullptr,
             empty_string_auto = nullptr, tmp_auto_1 = nullptr;
 
   DFA_ptr result_dfa = nullptr;
@@ -2256,13 +2300,7 @@ StringAutomaton_ptr StringAutomaton::toQueryAutomaton(bool use_extra_bit ) {
   std::vector<char>* current_exception = nullptr;
   char *statuses = nullptr;
 
-  any_string_auto = StringAutomaton::makeAnyString();
-  tmp_auto_1 = any_string_auto->concat(this);
-  contains_auto = tmp_auto_1->concat(any_string_auto);
-  delete tmp_auto_1; tmp_auto_1 = nullptr;
-  delete any_string_auto; any_string_auto = nullptr;
-  not_contains_auto = contains_auto->complement(); // TODO check if dfaNegation operation is enough
-  delete contains_auto; contains_auto = nullptr;
+  not_contains_auto = this->getAnyStringNotContainsMe();
 
   // TODO check union with empty works correct
   // union with empty string, so that initial state is accepting

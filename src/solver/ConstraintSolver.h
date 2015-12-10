@@ -37,7 +37,7 @@ namespace Solver {
 
 class ConstraintSolver: public SMT::Visitor {
   typedef std::map<SMT::Term_ptr, Value_ptr> TermValueMap;
-  typedef std::map<SMT::Variable_ptr, std::vector<SMT::Term_ptr>> VariablePathTable;
+  typedef std::vector<std::vector<SMT::Term_ptr>> VariablePathTable;
 public:
   ConstraintSolver(SMT::Script_ptr, SymbolTable_ptr);
   virtual ~ConstraintSolver();
@@ -108,7 +108,7 @@ protected:
   Value_ptr getTermValue(SMT::Term_ptr term);
   bool setTermValue(SMT::Term_ptr term, Value_ptr value);
   void clearTermValue(SMT::Term_ptr term);
-  void clearTermValues();
+  void clearTermValuesAndLocalLetVars();
   void setVariablePath(SMT::QualIdentifier_ptr qi_term);
   void update_variables();
   void visit_children_of(SMT::Term_ptr term);

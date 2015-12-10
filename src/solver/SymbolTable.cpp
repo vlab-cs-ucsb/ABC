@@ -14,7 +14,6 @@ using namespace SMT;
 
 const int SymbolTable::VLOG_LEVEL = 10;
 const std::string SymbolTable::ARITHMETIC = "__VLAB_CS_ARITHMETIC__";
-const std::string SymbolTable::LOCAL_VAR_PREFIX = "__VLAB_CS_L_";
 
 SymbolTable::SymbolTable()
         : global_assertion_result(true), bound(50) {
@@ -77,6 +76,24 @@ void SymbolTable::unionValuesOfVariables(Script_ptr script) {
     setValue(variable_entry.second, value);
   }
   pop_scope();
+}
+
+/**
+ * Removes let scope and all its data
+ */
+void SymbolTable::clearLetScopes() {
+  for (auto sit = scopes.begin(); sit != scopes.end(); ) {
+    if (dynamic_cast<Let_ptr>(*sit) not_eq nullptr) {
+      for (auto it = variable_value_table[*sit].begin(); it != variable_value_table[*sit].end(); ) {
+        delete it->second; it->second = nullptr;
+        it = variable_value_table[*sit].erase(it);
+      }
+      variable_value_table.erase(*sit);
+      sit = scopes.erase(sit);
+    } else {
+      sit++;
+    }
+  }
 }
 
 void SymbolTable::addVariable(Variable_ptr variable) {
@@ -245,9 +262,30 @@ return setValue(getVariable(var_name), value);
 }
 
 bool SymbolTable::setValue(SMT::Variable_ptr variable, Value_ptr value) {
-//  auto result = variable_value_table[scope_stack.back()].insert(std::make_pair(variable, value));
-//  return result.second;
   variable_value_table[scope_stack.back()][variable] = value;
+  return true;
+}
+
+/**
+ * Intersect old value of the variable with new value and sets the
+ * intersection as newest value.
+ */
+bool SymbolTable::updateValue(std::string var_name, Value_ptr value) {
+  return updateValue(getVariable(var_name), value);
+}
+
+/**
+ * Intersect old value of the variable with new value and sets the
+ * intersection as newest value.
+ * Deletes old value if it is read from same scope
+ */
+bool SymbolTable::updateValue(SMT::Variable_ptr variable, Value_ptr value) {
+  Value_ptr variable_old_value = getValue(variable);
+  Value_ptr variable_new_value = variable_old_value->intersect(value);
+  if (variable_value_table[scope_stack.back()][variable] == variable_old_value) {
+    delete variable_old_value; variable_old_value = nullptr;
+  }
+  setValue(variable, variable_new_value);
   return true;
 }
 

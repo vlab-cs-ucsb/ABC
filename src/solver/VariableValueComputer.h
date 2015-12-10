@@ -18,7 +18,7 @@ namespace Solver {
 
 class VariableValueComputer: public SMT::Visitor {
   typedef std::map<SMT::Term_ptr, Value_ptr> TermValueMap;
-  typedef std::map<SMT::Variable_ptr, std::vector<SMT::Term_ptr>> VariablePathTable;
+  typedef std::vector<std::vector<SMT::Term_ptr>> VariablePathTable;
 public:
   VariableValueComputer(SymbolTable_ptr, VariablePathTable& variable_path_table, const TermValueMap& post_images );
   virtual ~VariableValueComputer();
@@ -94,7 +94,7 @@ protected:
   VariablePathTable& variable_path_table;
   const TermValueMap& post_images;
   TermValueMap pre_images;
-  std::vector<SMT::Term_ptr> current_path;
+  std::vector<SMT::Term_ptr>* current_path;
 
 
 private:

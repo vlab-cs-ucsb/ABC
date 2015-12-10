@@ -141,7 +141,8 @@ void SyntacticProcessor::visitIndexOf(IndexOf_ptr index_of_term) {
     check_and_convert_numeral_to_char(term_constant);
   }
   visit(index_of_term->subject_term);
-  if (index_of_term->from_index) {
+  if (IndexOf::Mode::FROMFIRSTOF == index_of_term->getMode() or
+          IndexOf::Mode::FROMLASTOF == index_of_term->getMode()) {
     if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(index_of_term->from_index)) {
       check_and_convert_numeral_to_char(term_constant);
     }
@@ -154,7 +155,8 @@ void SyntacticProcessor::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
     check_and_convert_numeral_to_char(term_constant);
   }
   visit(last_index_of_term->subject_term);
-  if (last_index_of_term->from_index) {
+  if (LastIndexOf::Mode::FROMFIRSTOF == last_index_of_term->getMode() or
+          LastIndexOf::Mode::FROMLASTOF == last_index_of_term->getMode()) {
     if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(last_index_of_term->from_index)) {
       check_and_convert_numeral_to_char(term_constant);
     }

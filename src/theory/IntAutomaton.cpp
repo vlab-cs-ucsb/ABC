@@ -269,6 +269,7 @@ IntAutomaton_ptr IntAutomaton::union_(int value) {
   } else {
     int_auto = IntAutomaton::makeInt(value);
     union_auto = this->union_(int_auto);
+    delete int_auto; int_auto = nullptr;
   }
   return union_auto;
 }

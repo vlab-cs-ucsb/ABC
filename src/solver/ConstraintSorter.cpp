@@ -513,9 +513,8 @@ void ConstraintSorter::visitAsQualIdentifier(AsQualIdentifier_ptr as_qid_term) {
 }
 
 void ConstraintSorter::visitQualIdentifier(QualIdentifier_ptr qi_term) {
-  std::string var_name = qi_term->getVarName();
-  if (var_name.find(SymbolTable::LOCAL_VAR_PREFIX) == std::string::npos) {
-    Variable_ptr variable = symbol_table->getVariable(var_name);
+  Variable_ptr variable = symbol_table->getVariable(qi_term->getVarName());
+  if (not variable->isLocalLetVar()) {
     VariableNode_ptr variable_node = get_variable_node(variable);
 
     term_node = new TermNode();

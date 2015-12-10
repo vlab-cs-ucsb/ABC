@@ -297,6 +297,7 @@ bool Automaton::isAcceptingSingleWord() {
 }
 
 /**
+ * TODO fix me, not a backtracking algorithm, make it back tracked
  * By default it explores low bdd end first, if a heuristic function is set and if it returns true,
  * it explores high end first
  */
@@ -308,10 +309,9 @@ std::vector<bool>* Automaton::getAnAcceptingWord(std::function<bool(unsigned& in
   std::vector<std::vector<bool> > transition_stack;
 
   visited[sink_state] = true;
-  std::cout << "visiting: ";
+
   // BDD dfs for next state
   while (not visited[curr_state]) {
-    std::cout << curr_state << " ";
     if (this->isAcceptingState(curr_state)) {
       return bit_vector;
     }

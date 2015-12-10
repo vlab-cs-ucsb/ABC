@@ -863,7 +863,7 @@ void SyntacticOptimizer::visitIndexOf(IndexOf_ptr index_of_term) {
   if (index_of_term->from_index) {
     visit_and_callback(index_of_term->from_index);
     IndexOf::Mode mode;
-    int mode_value = check_and_process_index_operation(index_of_term->subject_term, index_of_term->from_index);
+    int mode_value = check_and_process_index_operation(index_of_term, index_of_term->subject_term, index_of_term->from_index);
     mode = static_cast<IndexOf::Mode>(mode_value);
     if (IndexOf::Mode::NONE != mode) {
       index_of_term->setMode(mode);
@@ -877,7 +877,7 @@ void SyntacticOptimizer::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
   if (last_index_of_term->from_index) {
     visit_and_callback(last_index_of_term->from_index);
     LastIndexOf::Mode mode;
-    int mode_value = check_and_process_index_operation(last_index_of_term->subject_term, last_index_of_term->from_index);
+    int mode_value = check_and_process_index_operation(last_index_of_term, last_index_of_term->subject_term, last_index_of_term->from_index);
     mode = static_cast<LastIndexOf::Mode>(mode_value);
     if (LastIndexOf::Mode::NONE != mode) {
       last_index_of_term->setMode(mode);
@@ -1260,18 +1260,49 @@ bool SyntacticOptimizer::check_and_process_for_contains_transformation(Term_ptr&
 /**
  * Checks only immediate children, may need to implement more sophisticated analysis for such optimizations
  */
-SMT::SubString::Mode SyntacticOptimizer::check_and_process_subString(SubString_ptr sub_string_term, Term_ptr &index_term) {
+SubString::Mode SyntacticOptimizer::check_and_process_subString(SubString_ptr sub_string_term, Term_ptr &index_term) {
   switch (index_term->getType()) {
     case Term::Type::INDEXOF: {
       IndexOf_ptr index_of_term = dynamic_cast<IndexOf_ptr>(index_term);
       if (Ast2Dot::isEquivalent(sub_string_term->subject_term, index_of_term->subject_term)) {
-        index_term = index_of_term->search_term;
-        index_of_term->search_term = nullptr;
-        delete index_of_term;
+        switch (index_of_term->getMode()) {
+          case IndexOf::Mode::DEFAULT: {
+            index_term = index_of_term->search_term;
+            index_of_term->search_term = nullptr;
+            delete index_of_term;
+            break;
+          }
+          case IndexOf::Mode::FROMINDEX: {
+            callback = [this, sub_string_term, index_of_term, &index_term](Term_ptr& term) mutable {
+              Let_ptr let_term = this->generateLetTermFor(sub_string_term, SubString::Mode::FROMINDEX, index_of_term, index_term);
+              term = let_term;
+            };
+            break;
+          }
+          case IndexOf::Mode::FROMFIRSTOF: {
+            // add callback for let construct
+            callback = [this, sub_string_term, index_of_term, &index_term](Term_ptr& term) mutable {
+              Let_ptr let_term = this->generateLetTermFor(sub_string_term, SubString::Mode::FROMFIRSTOF, index_of_term, index_term);
+              term = let_term;
+            };
+            break;
+          }
+          case IndexOf::Mode::FROMLASTOF: {
+            // add callback for let construct
+            callback = [this, sub_string_term, index_of_term, &index_term](Term_ptr& term) mutable {
+              // Generate string binding for local substring
+              Let_ptr let_term = this->generateLetTermFor(sub_string_term, SubString::Mode::FROMLASTOF, index_of_term, index_term);
+              term = let_term;
+            };
+            break;
+          }
+          default:
+            break;
+        }
         return SubString::Mode::FROMFIRSTOF;
       }
       break;
-    }
+    } // end of IndexOf case
     case Term::Type::LASTINDEXOF: {
       LastIndexOf_ptr last_index_of_term = dynamic_cast<LastIndexOf_ptr>(index_term);
       if (Ast2Dot::isEquivalent(sub_string_term->subject_term, last_index_of_term->subject_term)) {
@@ -1283,51 +1314,36 @@ SMT::SubString::Mode SyntacticOptimizer::check_and_process_subString(SubString_p
             break;
           }
           case LastIndexOf::Mode::FROMINDEX: {
+            callback = [this, sub_string_term, last_index_of_term, &index_term](Term_ptr& term) mutable {
+              Let_ptr let_term = this->generateLetTermFor(sub_string_term, SubString::Mode::FROMINDEX, last_index_of_term, index_term);
+              term = let_term;
+            };
             break;
           }
           case LastIndexOf::Mode::FROMFIRSTOF: {
             // add callback for let construct
             callback = [this, sub_string_term, last_index_of_term, &index_term](Term_ptr& term) mutable {
-              // Generate string binding for local substring
-              Variable_ptr string_var = generate_local_var(Variable::Type::STRING);
-              SubString_ptr str_bind_term = new SubString(sub_string_term->subject_term->clone(), last_index_of_term->from_index->clone());
-              str_bind_term->setMode(SubString::Mode::FROMFIRSTOF);
-              VarBinding_ptr str_binding = new VarBinding(new Primitive(string_var->getName(), Primitive::Type::SYMBOL), str_bind_term);
-
-              // Generate int binding to check if local substring is persisted
-              Variable_ptr index_var  = generate_local_var(Variable::Type::INT);
-              QualIdentifier_ptr binded_str_var_identifier = generate_qual_identifier(string_var->getName());
-              LastIndexOf_ptr index_bind_term = new LastIndexOf(binded_str_var_identifier, last_index_of_term->search_term->clone());
-              VarBinding_ptr index_binding = new VarBinding(new Primitive(index_var->getName(), Primitive::Type::SYMBOL), index_bind_term);
-
-              VarBindingList_ptr var_bindings = new VarBindingList();
-              var_bindings->push_back(str_binding);
-              var_bindings->push_back(index_binding);
-
-              // modify substring
-              delete sub_string_term->subject_term;
-              sub_string_term->subject_term = binded_str_var_identifier->clone();
-              index_term = last_index_of_term->search_term;
-              last_index_of_term->search_term = nullptr;
-              delete last_index_of_term;
-              sub_string_term->setMode(SubString::Mode::FROMLASTOF); // to be safe
-
-              // generate let
-              Let_ptr let_term = new Let(var_bindings, sub_string_term);
+              Let_ptr let_term = this->generateLetTermFor(sub_string_term, SubString::Mode::FROMFIRSTOF, last_index_of_term, index_term);
               term = let_term;
             };
             break;
           }
           case LastIndexOf::Mode::FROMLASTOF: {
+            // add callback for let construct
+            callback = [this, sub_string_term, last_index_of_term, &index_term](Term_ptr& term) mutable {
+              // Generate string binding for local substring
+              Let_ptr let_term = this->generateLetTermFor(sub_string_term, SubString::Mode::FROMLASTOF, last_index_of_term, index_term);
+              term = let_term;
+            };
             break;
           }
           default:
             break;
         }
         return SubString::Mode::FROMLASTOF;
-      } // end LastIndexOf case
+      }
       break;
-    }
+    } // end LastIndexOf case
     default:
       break;
   }
@@ -1338,6 +1354,7 @@ SubString::Mode SyntacticOptimizer::check_and_process_subString(SubString_ptr su
   SubString::Mode start_index_mode = check_and_process_subString(sub_string_term, start_index_term);
   if (callback) {
     // first let the callback called in a new callback and visit the substring again for end index
+    // decide on what to do when there is an end index
     LOG(FATAL) << "case not handled, fix me";
   }
   SubString::Mode end_index_mode = check_and_process_subString(sub_string_term, end_index_term);
@@ -1365,7 +1382,57 @@ SubString::Mode SyntacticOptimizer::check_and_process_subString(SubString_ptr su
   return SubString::Mode::NONE; // do not change anything
 }
 
-int SyntacticOptimizer::check_and_process_index_operation(SMT::Term_ptr subject_term, SMT::Term_ptr &index_term) {
+Let_ptr SyntacticOptimizer::generateLetTermFor(SubString_ptr sub_string_term, SubString::Mode local_substring_mode, LastIndexOf_ptr last_index_of_term, Term_ptr &index_term) {
+  Let_ptr let_term = nullptr;
+  // Generate string binding for local substring
+  Variable_ptr string_var = generate_local_var(Variable::Type::STRING);
+  SubString_ptr str_bind_term = new SubString(sub_string_term->subject_term->clone(), last_index_of_term->from_index->clone());
+  str_bind_term->setMode(local_substring_mode);
+  VarBinding_ptr str_binding = new VarBinding(new Primitive(string_var->getName(), Primitive::Type::SYMBOL), str_bind_term);
+  QualIdentifier_ptr binded_str_var_identifier = generate_qual_identifier(string_var->getName());
+
+  VarBindingList_ptr var_bindings = new VarBindingList();
+  var_bindings->push_back(str_binding);
+
+  // modify substring
+  delete sub_string_term->subject_term;
+  sub_string_term->subject_term = binded_str_var_identifier->clone();
+  index_term = last_index_of_term->search_term;
+  last_index_of_term->search_term = nullptr;
+  delete last_index_of_term;
+  sub_string_term->setMode(SubString::Mode::FROMLASTOF); // to be safe
+
+  // generate let
+  let_term = new Let(var_bindings, sub_string_term);
+  return let_term;
+}
+
+Let_ptr SyntacticOptimizer::generateLetTermFor(SubString_ptr sub_string_term, SubString::Mode local_substring_mode, IndexOf_ptr index_of_term, Term_ptr &index_term) {
+  Let_ptr let_term = nullptr;
+  // Generate string binding for local substring
+  Variable_ptr string_var = generate_local_var(Variable::Type::STRING);
+  SubString_ptr str_bind_term = new SubString(sub_string_term->subject_term->clone(), index_of_term->from_index->clone());
+  str_bind_term->setMode(local_substring_mode);
+  VarBinding_ptr str_binding = new VarBinding(new Primitive(string_var->getName(), Primitive::Type::SYMBOL), str_bind_term);
+  QualIdentifier_ptr binded_str_var_identifier = generate_qual_identifier(string_var->getName());
+
+  VarBindingList_ptr var_bindings = new VarBindingList();
+  var_bindings->push_back(str_binding);
+
+  // modify substring
+  delete sub_string_term->subject_term;
+  sub_string_term->subject_term = binded_str_var_identifier->clone();
+  index_term = index_of_term->search_term;
+  index_of_term->search_term = nullptr;
+  delete index_of_term;
+  sub_string_term->setMode(SubString::Mode::FROMFIRSTOF); // to be safe
+
+  // generate let
+  let_term = new Let(var_bindings, sub_string_term);
+  return let_term;
+}
+
+int SyntacticOptimizer::check_and_process_index_operation(Term_ptr curent_term, Term_ptr subject_term, Term_ptr &index_term) {
   switch (index_term->getType()) {
     case Term::Type::INDEXOF: {
       IndexOf_ptr index_of_term = dynamic_cast<IndexOf_ptr>(index_term);
@@ -1375,7 +1442,48 @@ int SyntacticOptimizer::check_and_process_index_operation(SMT::Term_ptr subject_
             index_term = index_of_term->search_term;
             index_of_term->search_term = nullptr;
             delete index_of_term;
-            return static_cast<int>(IndexOf::Mode::FROMFIRSTOF);
+            break;
+          }
+          case IndexOf::Mode::FROMINDEX: {
+            if (IndexOf_ptr current_cast_term = dynamic_cast<IndexOf_ptr>(curent_term)) {
+              callback = [this, current_cast_term, index_of_term, &index_term](Term_ptr& term) mutable {
+                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMINDEX, index_of_term, index_term);
+                term = let_term;
+              };
+            } else if (LastIndexOf_ptr current_cast_term = dynamic_cast<LastIndexOf_ptr>(curent_term)) {
+              callback = [this, current_cast_term, index_of_term, &index_term](Term_ptr& term) mutable {
+                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMINDEX, index_of_term, index_term);
+                term = let_term;
+              };
+            }
+            break;
+          }
+          case IndexOf::Mode::FROMFIRSTOF: {
+            if (IndexOf_ptr current_cast_term = dynamic_cast<IndexOf_ptr>(curent_term)) {
+              callback = [this, current_cast_term, index_of_term, &index_term](Term_ptr& term) mutable {
+                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMFIRSTOF, index_of_term, index_term);
+                term = let_term;
+              };
+            } else if (LastIndexOf_ptr current_cast_term = dynamic_cast<LastIndexOf_ptr>(curent_term)) {
+              callback = [this, current_cast_term, index_of_term, &index_term](Term_ptr& term) mutable {
+                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMFIRSTOF, index_of_term, index_term);
+                term = let_term;
+              };
+            }
+            break;
+          }
+          case IndexOf::Mode::FROMLASTOF: {
+            if (IndexOf_ptr current_cast_term = dynamic_cast<IndexOf_ptr>(curent_term)) {
+              callback = [this, current_cast_term, index_of_term, &index_term](Term_ptr& term) mutable {
+                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMLASTOF, index_of_term, index_term);
+                term = let_term;
+              };
+            } else if (LastIndexOf_ptr current_cast_term = dynamic_cast<LastIndexOf_ptr>(curent_term)) {
+              callback = [this, current_cast_term, index_of_term, &index_term](Term_ptr& term) mutable {
+                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMLASTOF, index_of_term, index_term);
+                term = let_term;
+              };
+            }
             break;
           }
           default:
@@ -1383,6 +1491,7 @@ int SyntacticOptimizer::check_and_process_index_operation(SMT::Term_ptr subject_
             LOG(FATAL)<< "implement cases where index_term is optimized index operation";
             break;
         }
+        return static_cast<int>(IndexOf::Mode::FROMFIRSTOF);
       } else {
         DVLOG(VLOG_LEVEL)<< "index operation optimization fails, please extend implementation";
       }
@@ -1396,7 +1505,48 @@ int SyntacticOptimizer::check_and_process_index_operation(SMT::Term_ptr subject_
             index_term = last_index_of_term->search_term;
             last_index_of_term->search_term = nullptr;
             delete last_index_of_term;
-            return static_cast<int>(LastIndexOf::Mode::FROMLASTOF);
+            break;
+          }
+          case LastIndexOf::Mode::FROMINDEX: {
+            if (IndexOf_ptr current_cast_term = dynamic_cast<IndexOf_ptr>(curent_term)) {
+              callback = [this, current_cast_term, last_index_of_term, &index_term](Term_ptr& term) mutable {
+                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMINDEX, last_index_of_term, index_term);
+                term = let_term;
+              };
+            } else if (LastIndexOf_ptr current_cast_term = dynamic_cast<LastIndexOf_ptr>(curent_term)) {
+              callback = [this, current_cast_term, last_index_of_term, &index_term](Term_ptr& term) mutable {
+                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMINDEX, last_index_of_term, index_term);
+                term = let_term;
+              };
+            }
+            break;
+          }
+          case LastIndexOf::Mode::FROMFIRSTOF: {
+            if (IndexOf_ptr current_cast_term = dynamic_cast<IndexOf_ptr>(curent_term)) {
+              callback = [this, current_cast_term, last_index_of_term, &index_term](Term_ptr& term) mutable {
+                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMFIRSTOF, last_index_of_term, index_term);
+                term = let_term;
+              };
+            } else if (LastIndexOf_ptr current_cast_term = dynamic_cast<LastIndexOf_ptr>(curent_term)) {
+              callback = [this, current_cast_term, last_index_of_term, &index_term](Term_ptr& term) mutable {
+                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMFIRSTOF, last_index_of_term, index_term);
+                term = let_term;
+              };
+            }
+            break;
+          }
+          case LastIndexOf::Mode::FROMLASTOF: {
+            if (IndexOf_ptr current_cast_term = dynamic_cast<IndexOf_ptr>(curent_term)) {
+              callback = [this, current_cast_term, last_index_of_term, &index_term](Term_ptr& term) mutable {
+                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMLASTOF, last_index_of_term, index_term);
+                term = let_term;
+              };
+            } else if (LastIndexOf_ptr current_cast_term = dynamic_cast<LastIndexOf_ptr>(curent_term)) {
+              callback = [this, current_cast_term, last_index_of_term, &index_term](Term_ptr& term) mutable {
+                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMLASTOF, last_index_of_term, index_term);
+                term = let_term;
+              };
+            }
             break;
           }
           default:
@@ -1404,6 +1554,7 @@ int SyntacticOptimizer::check_and_process_index_operation(SMT::Term_ptr subject_
             LOG(FATAL)<< "implement cases where index_term is optimized index operation";
             break;
         }
+        return static_cast<int>(LastIndexOf::Mode::FROMLASTOF);
       } else {
         DVLOG(VLOG_LEVEL)<< "index operation optimization fails, please extend implementation";
       }
@@ -1414,6 +1565,106 @@ int SyntacticOptimizer::check_and_process_index_operation(SMT::Term_ptr subject_
   }
 
   return 0; // do not change anything
+}
+
+Let_ptr SyntacticOptimizer::generateLetTermFor(IndexOf_ptr index_of_term, SubString::Mode local_substring_mode, IndexOf_ptr param_index_of_term, Term_ptr &index_term) {
+  Let_ptr let_term = nullptr;
+  // Generate string binding for local substring
+  Variable_ptr string_var = generate_local_var(Variable::Type::STRING);
+  SubString_ptr str_bind_term = new SubString(index_of_term->subject_term->clone(), param_index_of_term->from_index->clone());
+  str_bind_term->setMode(local_substring_mode);
+  VarBinding_ptr str_binding = new VarBinding(new Primitive(string_var->getName(), Primitive::Type::SYMBOL), str_bind_term);
+  QualIdentifier_ptr binded_str_var_identifier = generate_qual_identifier(string_var->getName());
+
+  VarBindingList_ptr var_bindings = new VarBindingList();
+  var_bindings->push_back(str_binding);
+
+  // modify substring
+  delete index_of_term->subject_term;
+  index_of_term->subject_term = binded_str_var_identifier->clone();
+  index_term = param_index_of_term->search_term;
+  param_index_of_term->search_term = nullptr;
+  delete param_index_of_term;
+  index_of_term->setMode(IndexOf::Mode::FROMFIRSTOF); // to be safe
+
+  // generate let
+  let_term = new Let(var_bindings, index_of_term);
+  return let_term;
+}
+
+Let_ptr SyntacticOptimizer::generateLetTermFor(IndexOf_ptr index_of_term, SubString::Mode local_substring_mode, LastIndexOf_ptr param_last_index_of_term, Term_ptr &index_term) {
+  Let_ptr let_term = nullptr;
+  // Generate string binding for local substring
+  Variable_ptr string_var = generate_local_var(Variable::Type::STRING);
+  SubString_ptr str_bind_term = new SubString(index_of_term->subject_term->clone(), param_last_index_of_term->from_index->clone());
+  str_bind_term->setMode(local_substring_mode);
+  VarBinding_ptr str_binding = new VarBinding(new Primitive(string_var->getName(), Primitive::Type::SYMBOL), str_bind_term);
+  QualIdentifier_ptr binded_str_var_identifier = generate_qual_identifier(string_var->getName());
+
+  VarBindingList_ptr var_bindings = new VarBindingList();
+  var_bindings->push_back(str_binding);
+
+  // modify substring
+  delete index_of_term->subject_term;
+  index_of_term->subject_term = binded_str_var_identifier->clone();
+  index_term = param_last_index_of_term->search_term;
+  param_last_index_of_term->search_term = nullptr;
+  delete param_last_index_of_term;
+  index_of_term->setMode(IndexOf::Mode::FROMLASTOF); // to be safe
+
+  // generate let
+  let_term = new Let(var_bindings, index_of_term);
+  return let_term;
+}
+
+Let_ptr SyntacticOptimizer::generateLetTermFor(LastIndexOf_ptr last_index_of_term, SubString::Mode local_substring_mode, IndexOf_ptr param_index_of_term, Term_ptr &index_term) {
+  Let_ptr let_term = nullptr;
+  // Generate string binding for local substring
+  Variable_ptr string_var = generate_local_var(Variable::Type::STRING);
+  SubString_ptr str_bind_term = new SubString(last_index_of_term->subject_term->clone(), param_index_of_term->from_index->clone());
+  str_bind_term->setMode(local_substring_mode);
+  VarBinding_ptr str_binding = new VarBinding(new Primitive(string_var->getName(), Primitive::Type::SYMBOL), str_bind_term);
+  QualIdentifier_ptr binded_str_var_identifier = generate_qual_identifier(string_var->getName());
+
+  VarBindingList_ptr var_bindings = new VarBindingList();
+  var_bindings->push_back(str_binding);
+
+  // modify substring
+  delete last_index_of_term->subject_term;
+  last_index_of_term->subject_term = binded_str_var_identifier->clone();
+  index_term = param_index_of_term->search_term;
+  param_index_of_term->search_term = nullptr;
+  delete param_index_of_term;
+  last_index_of_term->setMode(LastIndexOf::Mode::FROMFIRSTOF); // to be safe
+
+  // generate let
+  let_term = new Let(var_bindings, last_index_of_term);
+  return let_term;
+}
+
+Let_ptr SyntacticOptimizer::generateLetTermFor(LastIndexOf_ptr last_index_of_term, SubString::Mode local_substring_mode, LastIndexOf_ptr param_last_index_of_term, Term_ptr &index_term) {
+  Let_ptr let_term = nullptr;
+  // Generate string binding for local substring
+  Variable_ptr string_var = generate_local_var(Variable::Type::STRING);
+  SubString_ptr str_bind_term = new SubString(last_index_of_term->subject_term->clone(), param_last_index_of_term->from_index->clone());
+  str_bind_term->setMode(local_substring_mode);
+  VarBinding_ptr str_binding = new VarBinding(new Primitive(string_var->getName(), Primitive::Type::SYMBOL), str_bind_term);
+  QualIdentifier_ptr binded_str_var_identifier = generate_qual_identifier(string_var->getName());
+
+  VarBindingList_ptr var_bindings = new VarBindingList();
+  var_bindings->push_back(str_binding);
+
+  // modify substring
+  delete last_index_of_term->subject_term;
+  last_index_of_term->subject_term = binded_str_var_identifier->clone();
+  index_term = param_last_index_of_term->search_term;
+  param_last_index_of_term->search_term = nullptr;
+  delete param_last_index_of_term;
+  last_index_of_term->setMode(LastIndexOf::Mode::FROMLASTOF); // to be safe
+
+  // generate let
+  let_term = new Let(var_bindings, last_index_of_term);
+  return let_term;
 }
 
 Term_ptr SyntacticOptimizer::generate_term_constant(std::string data, Primitive::Type type) {
@@ -1461,7 +1712,7 @@ bool SyntacticOptimizer::check_bool_constant_value(Term_ptr term, std::string va
 Variable_ptr SyntacticOptimizer::generate_local_var(Variable::Type type) {
   Variable_ptr variable = nullptr;
   std::stringstream local_var_name;
-  local_var_name << SymbolTable::LOCAL_VAR_PREFIX << name_counter++;
+  local_var_name << Variable::LOCAL_VAR_PREFIX << name_counter++;
   variable = new Variable(local_var_name.str(), type);
   symbol_table->addVariable(variable);
   return variable;

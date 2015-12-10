@@ -59,7 +59,7 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
       update_variables();
     }
   }
-  clearTermValues();
+  clearTermValuesAndLocalLetVars();
 }
 
 void ConstraintSolver::visitTerm(Term_ptr term) {
@@ -81,7 +81,9 @@ void ConstraintSolver::visitLet(Let_ptr let_term) {
   symbol_table->push_scope(let_term);
 
   for (auto& var_binding : *(let_term->var_binding_list)) {
+    path_trace.push_back(let_term);
     check_and_visit(var_binding->term);
+    path_trace.pop_back();
     param = getTermValue(var_binding->term);
     symbol_table->setValue(var_binding->symbol->getData(), param->clone());
 
@@ -92,17 +94,18 @@ void ConstraintSolver::visitLet(Let_ptr let_term) {
 //      param->getIntAutomaton()->inspectAuto();
 //    }
   }
-
+  path_trace.push_back(let_term);
   check_and_visit(let_term->term);
+  path_trace.pop_back();
   param = getTermValue(let_term->term);
 
   symbol_table->pop_scope();
 
   result = param->clone();
-
   setTermValue(let_term, result);
+//  result->getStringAutomaton()->inspectAuto();
 
-  LOG(FATAL) << "I am here" << std::endl;
+//  LOG(FATAL) << "I am here" << std::endl;
 }
 
 /**
@@ -119,10 +122,10 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     if (is_satisfiable) {
       update_variables();
     } else {
-      clearTermValues();
+      clearTermValuesAndLocalLetVars();
       break;
     }
-    clearTermValues();
+    clearTermValuesAndLocalLetVars();
   }
 
   result = new Value(is_satisfiable);
@@ -146,7 +149,7 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
       if (param->isSatisfiable()) {
         update_variables();
       }
-      clearTermValues();
+      clearTermValuesAndLocalLetVars();
     }
     bool is_scope_satisfiable = param->isSatisfiable();
     symbol_table->setScopeSatisfiability(is_scope_satisfiable);
@@ -802,20 +805,24 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
 
   switch (sub_string_term->getMode()) {
     case SubString::Mode::FROMINDEX: {
+      DVLOG(VLOG_LEVEL) << "subString mode: FROMINDEX";
 //      CHECK_EQ(Value::Type::INT_CONSTANT, param_start_index->getType())
 //              << "start index of a subString is expected to be an integer constant";
       result = new Value(param_subject->getStringAutomaton()->subString(param_start_index->getIntConstant()));
       break;
     }
     case SubString::Mode::FROMFIRSTOF: {
+      DVLOG(VLOG_LEVEL) << "subString mode: FROMFIRSTOF";
       result = new Value(param_subject->getStringAutomaton()->subStringFirstOf(param_start_index->getStringAutomaton()));
       break;
     }
     case SubString::Mode::FROMLASTOF: {
+      DVLOG(VLOG_LEVEL) << "subString mode: FROMLASTOF";
       result = new Value(param_subject->getStringAutomaton()->subStringLastOf(param_start_index->getStringAutomaton()));
       break;
     }
     case SubString::Mode::FROMINDEXTOINDEX: {
+      DVLOG(VLOG_LEVEL) << "subString mode: FROMINDEXTOINDEX";
       param_end_index = getTermValue(sub_string_term->end_index_term);
 //      CHECK_EQ(Value::Type::INT_CONSTANT, param_start_index->getType())
 //                    << "start index of a subString is expected to be an integer constant";
@@ -827,34 +834,42 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
       break;
     }
     case SubString::Mode::FROMINDEXTOFIRSTOF: {
+      DVLOG(VLOG_LEVEL) << "subString mode: FROMINDEXTOFIRSTOF";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMINDEXTOLASTOF: {
+      DVLOG(VLOG_LEVEL) << "subString mode: FROMINDEXTOLASTOF";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMFIRSTOFTOINDEX: {
+      DVLOG(VLOG_LEVEL) << "subString mode: FROMFIRSTOFTOINDEX";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMFIRSTOFTOFIRSTOF: {
+      DVLOG(VLOG_LEVEL) << "subString mode: FROMFIRSTOFTOFIRSTOF";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMFIRSTOFTOLASTOF: {
+      DVLOG(VLOG_LEVEL) << "subString mode: FROMFIRSTOFTOFIRSTOF";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMLASTOFTOINDEX: {
+      DVLOG(VLOG_LEVEL) << "subString mode: FROMLASTOFTOINDEX";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMLASTOFTOFIRSTOF: {
+      DVLOG(VLOG_LEVEL) << "subString mode: FROMLASTOFTOFIRSTOF";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMLASTOFTOLASTOF: {
+      DVLOG(VLOG_LEVEL) << "subString mode: FROMLASTOFTOLASTOF";
       LOG(FATAL)<< "implement me";
       break;
     }
@@ -1066,19 +1081,20 @@ void ConstraintSolver::clearTermValue(SMT::Term_ptr term) {
   }
 }
 
-void ConstraintSolver::clearTermValues() {
+void ConstraintSolver::clearTermValuesAndLocalLetVars() {
   for (auto& entry : term_values) {
     delete entry.second;
   }
-
   term_values.clear();
+  symbol_table->clearLetScopes();
 }
 
 void ConstraintSolver::setVariablePath(QualIdentifier_ptr qi_term) {
-  Variable_ptr variable = symbol_table->getVariable(qi_term->getVarName());
-  auto iter = variable_path_table[variable].begin();
-  iter = variable_path_table[variable].insert(iter, qi_term);
-  variable_path_table[variable].insert(iter + 1, path_trace.rbegin(), path_trace.rend());
+  path_trace.push_back(qi_term);
+  variable_path_table.push_back(std::vector<Term_ptr>());
+  auto iter = variable_path_table.back().begin();
+  variable_path_table.back().insert(iter, path_trace.rbegin(), path_trace.rend());
+  path_trace.pop_back();
 }
 
 void ConstraintSolver::update_variables() {

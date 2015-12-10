@@ -102,7 +102,13 @@ protected:
   bool check_and_process_for_contains_transformation(SMT::Term_ptr&, SMT::Term_ptr&, int compare_value);
   SMT::SubString::Mode check_and_process_subString(SMT::SubString_ptr sub_string_term, SMT::Term_ptr &index_term);
   SMT::SubString::Mode check_and_process_subString(SMT::SubString_ptr sub_string_term, SMT::Term_ptr &start_index_term, SMT::Term_ptr &end_index_term );
-  int check_and_process_index_operation(SMT::Term_ptr subject_term, SMT::Term_ptr &index_term);
+  SMT::Let_ptr generateLetTermFor(SMT::SubString_ptr sub_string_term, SMT::SubString::Mode local_substring_mode, SMT::LastIndexOf_ptr last_index_of_term, SMT::Term_ptr &index_term);
+  SMT::Let_ptr generateLetTermFor(SMT::SubString_ptr sub_string_term, SMT::SubString::Mode local_substring_mode, SMT::IndexOf_ptr index_of_term, SMT::Term_ptr &index_term);
+  int check_and_process_index_operation(SMT::Term_ptr current_term, SMT::Term_ptr subject_term, SMT::Term_ptr &index_term);
+  SMT::Let_ptr generateLetTermFor(SMT::IndexOf_ptr index_of_term, SMT::SubString::Mode local_substring_mode, SMT::IndexOf_ptr param_index_of_term, SMT::Term_ptr &index_term);
+  SMT::Let_ptr generateLetTermFor(SMT::IndexOf_ptr index_of_term, SMT::SubString::Mode local_substring_mode, SMT::LastIndexOf_ptr param_last_index_of_term, SMT::Term_ptr &index_term);
+  SMT::Let_ptr generateLetTermFor(SMT::LastIndexOf_ptr index_of_term, SMT::SubString::Mode local_substring_mode, SMT::IndexOf_ptr param_index_of_term, SMT::Term_ptr &index_term);
+  SMT::Let_ptr generateLetTermFor(SMT::LastIndexOf_ptr index_of_term, SMT::SubString::Mode local_substring_mode, SMT::LastIndexOf_ptr param_last_index_of_term, SMT::Term_ptr &index_term);
   SMT::Term_ptr generate_term_constant(std::string data, SMT::Primitive::Type type);
   SMT::Term_ptr generate_dummy_term();
   void add_callback_to_replace_with_bool(SMT::Term_ptr, std::string value);
