@@ -296,92 +296,39 @@ bool Automaton::isAcceptingSingleWord() {
   return is_accepting_single_word;
 }
 
-/**
- * TODO fix me, not a backtracking algorithm, make it back tracked
- * By default it explores low bdd end first, if a heuristic function is set and if it returns true,
- * it explores high end first
- */
 std::vector<bool>* Automaton::getAnAcceptingWord(std::function<bool(unsigned& index)> next_node_heuristic) {
-  int sink_state = getSinkState(), curr_state = this->dfa->s;
-  // bits are represented as bool
+  int sink_state = getSinkState();
+  NextState start_state = std::make_pair(this->dfa->s, std::vector<bool>());
   std::vector<bool>* bit_vector = new std::vector<bool>();
-  std::map<int, bool> visited;
-  std::vector<std::vector<bool> > transition_stack;
+  std::map<int, bool> is_stack_member;
+  is_stack_member[sink_state] = true;
 
-  visited[sink_state] = true;
-
-  // BDD dfs for next state
-  while (not visited[curr_state]) {
-    if (this->isAcceptingState(curr_state)) {
-      return bit_vector;
-    }
-
-    visited[curr_state] = true; // avoid cycles
-
-    unsigned p, l, r, index; // BDD traversal variables
-    std::vector<unsigned> nodes;
-
-    p = this->dfa->q[curr_state];
-    nodes.push_back(p);
-    transition_stack.push_back(std::vector<bool>());
-    while (not nodes.empty()) {
-      p = nodes.back();
-      nodes.pop_back();
-      std::vector<bool> curr_transition = transition_stack.back();
-      transition_stack.pop_back();
-      LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
-      if (index == BDD_LEAF_INDEX) {
-        if (visited[l]) {
-          // avoid cycles
-        } else {
-
-          curr_state = l;
-
-          while (curr_transition.size() < (unsigned) num_of_variables) {
-            unsigned i = curr_transition.size();
-            if (next_node_heuristic and next_node_heuristic(i)) {
-              curr_transition.push_back(1); // add 1 for don't cares
-            } else {
-              curr_transition.push_back(0); // add 0 for don't cares
-            }
-          }
-          bit_vector->insert(bit_vector->end(), curr_transition.begin(), curr_transition.end());
-          break;
-        }
-      } else {
-
-        while (curr_transition.size() < index) {
-          unsigned i = curr_transition.size();
-          if (next_node_heuristic and next_node_heuristic(i)) {
-            curr_transition.push_back(1); // add 1 for don't cares
-          } else {
-            curr_transition.push_back(0); // add 0 for don't cares
-          }
-        }
-
-        std::vector<bool> left = curr_transition;
-        left.push_back(0);
-        std::vector<bool> right = curr_transition;
-        right.push_back(1);
-        if (next_node_heuristic and next_node_heuristic(index)) {
-          transition_stack.push_back(left);
-          nodes.push_back(l);
-          transition_stack.push_back(right);
-          nodes.push_back(r);
-        } else {
-          transition_stack.push_back(right);
-          nodes.push_back(r);
-          transition_stack.push_back(left);
-          nodes.push_back(l);
-        }
-      }
-    }
-
-    nodes.clear();
-    transition_stack.clear();
+  if (getAnAcceptingWord(start_state, is_stack_member, *bit_vector, next_node_heuristic)) {
+    return bit_vector;
   }
 
   return nullptr;
+}
+
+bool Automaton::getAnAcceptingWord(NextState& state, std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::function<bool(unsigned& index)> next_node_heuristic) {
+  is_stack_member[state.first] = true;
+  path.insert(path.end(), state.second.begin(), state.second.end());
+
+  if (this->isAcceptingState(state.first)) {
+    return true;
+  }
+
+  for (auto& next_state : getNextStatesOrdered(state.first, next_node_heuristic)) {
+    if (not is_stack_member[next_state.first]) {
+      if (getAnAcceptingWord(next_state, is_stack_member, path, next_node_heuristic)) {
+        return true;
+      }
+    }
+  }
+
+  path.erase(path.end() - state.second.size(), path.end());
+  is_stack_member[state.first] = false;
+  return false;
 }
 
 char* Automaton::getAnExample(bool accepting) {
@@ -660,6 +607,74 @@ std::set<int>* Automaton::getNextStates(int state) {
       nodes.push(r);
     }
   }
+  return next_states;
+}
+
+/**
+ * Returns next states with an example transition to it
+ */
+std::vector<NextState> Automaton::getNextStatesOrdered(int state, std::function<bool(unsigned& index)> next_node_heuristic) {
+  std::vector<NextState> next_states;
+  std::map<int, bool> visited;
+  std::vector<unsigned> nodes;
+  std::vector<std::vector<bool>> transition_stack;
+  std::vector<bool> current_transition;
+
+
+  unsigned p, l, r, index; // BDD traversal variables
+  p = this->dfa->q[state];
+  nodes.push_back(p);
+  transition_stack.push_back(std::vector<bool>());
+  while (not nodes.empty()) {
+    p = nodes.back();
+    nodes.pop_back();
+    current_transition = transition_stack.back();
+    transition_stack.pop_back();
+    LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
+    if (index == BDD_LEAF_INDEX) {
+      if (visited[l]) {
+        // avoid cycles
+      } else {
+        state = l;
+        while (current_transition.size() < (unsigned) num_of_variables) {
+          unsigned i = current_transition.size();
+          if (next_node_heuristic and next_node_heuristic(i)) {
+            current_transition.push_back(1); // add 1 for don't cares
+          } else {
+            current_transition.push_back(0); // add 0 for don't cares
+          }
+        }
+        next_states.push_back(std::make_pair(l, current_transition));
+      }
+    } else {
+
+      while (current_transition.size() < index) {
+        unsigned i = current_transition.size();
+        if (next_node_heuristic and next_node_heuristic(i)) {
+          current_transition.push_back(1); // add 1 for don't cares
+        } else {
+          current_transition.push_back(0); // add 0 for don't cares
+        }
+      }
+
+      std::vector<bool> left = current_transition;
+      left.push_back(0);
+      std::vector<bool> right = current_transition;
+      right.push_back(1);
+      if (next_node_heuristic and next_node_heuristic(index)) {
+        transition_stack.push_back(left);
+        nodes.push_back(l);
+        transition_stack.push_back(right);
+        nodes.push_back(r);
+      } else {
+        transition_stack.push_back(right);
+        nodes.push_back(r);
+        transition_stack.push_back(left);
+        nodes.push_back(l);
+      }
+    }
+  }
+
   return next_states;
 }
 

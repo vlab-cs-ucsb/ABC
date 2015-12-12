@@ -45,6 +45,7 @@ typedef DFA* DFA_ptr;
 typedef std::pair<int ,int> Node;
 typedef std::vector<Node> NodeVector;
 typedef std::vector<NodeVector> AdjacencyList;
+typedef std::pair<int, std::vector<bool>> NextState;
 
 class Automaton {
 public:
@@ -120,6 +121,8 @@ protected:
   bool hasNextState(int state, int search);
   int getNextState(int state, std::vector<char>& exception);
   std::set<int>* getNextStates(int state);
+  std::vector<NextState> getNextStatesOrdered(int state, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
+  bool getAnAcceptingWord(NextState& state, std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
   AdjacencyList getAdjacencyCountList();
 
   bool isCyclic(int state, std::map<int, bool>& is_discovered, std::map<int, bool>& is_stack_member);
