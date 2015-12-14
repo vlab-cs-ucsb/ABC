@@ -158,6 +158,14 @@ void Driver::reset() {
   LOG(INFO) << "Driver reseted.";
 }
 
+void Driver::setLIAOption(bool status) {
+  Option::Solver::LIA_ENGINE_ENABLED = status;
+}
+
+void Driver::setModelCountingOption(bool status) {
+  Option::Solver::MODEL_COUNTER_ENABLED = status;
+}
+
 void Driver::test() {
 return;
 //    Theory::IntAutomaton_ptr int_auto_1 = Theory::IntAutomaton::makeInt(78);

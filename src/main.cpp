@@ -72,6 +72,8 @@ int main(const int argc, const char **argv) {
   int bound = std::stoi(bound_string);
 
   Vlab::Driver driver;
+  driver.setLIAOption(true);
+  driver.setModelCountingOption(true);
   driver.test();
   driver.parse(in);
   if (VLOG_IS_ON(30)) {

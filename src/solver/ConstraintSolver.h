@@ -26,6 +26,7 @@
 #include "theory/ArithmeticFormula.h"
 #include "theory/BinaryIntAutomaton.h"
 #include "theory/StringAutomaton.h"
+#include "options/Solver.h"
 #include "Ast2Dot.h"
 #include "SymbolTable.h"
 #include "Value.h"

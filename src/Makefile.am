@@ -48,6 +48,8 @@ libabc_la_SOURCES = \
   ./solver/ArithmeticConstraintSolver.h \
   ./solver/ConstraintSolver.cpp \
 	./solver/ConstraintSolver.h \
+	./options/Solver.cpp \
+	./options/Solver.h \
 	Driver.cpp \
 	Driver.h $(ABC_JNI_SORUCE_FILES)
 

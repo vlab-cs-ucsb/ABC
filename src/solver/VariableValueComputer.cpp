@@ -285,7 +285,7 @@ void VariableValueComputer::visitPlus(Plus_ptr plus_term) {
 }
 
 void VariableValueComputer::visitTimes(Times_ptr times_term) {
-  LOG(FATAL)<< "Implement me with binary integer automaton";
+//  LOG(FATAL)<< "Implement me with binary integer automaton";
   DVLOG(VLOG_LEVEL) << "pop: " << *times_term;
   popTerm(times_term);
   Term_ptr child_term = current_path->back();

@@ -14,8 +14,8 @@
 #include <memory>
 
 #include <glog/logging.h>
+#include "options/Solver.h"
 #include "solver/Ast2Dot.h"
-//#include "Statistics.h"
 #include "parser/Scanner.h"
 #include "parser/parser.hpp"
 #include "solver/ConstraintSolver.h"
@@ -51,6 +51,9 @@ public:
   std::map<std::string, std::string> getSatisfyingExamples();
   void reset();
 //	void solveAst();
+
+  void setLIAOption(bool status);
+  void setModelCountingOption(bool status);
 
   void test();
 

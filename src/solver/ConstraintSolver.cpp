@@ -25,8 +25,9 @@ ConstraintSolver::~ConstraintSolver() {
 
 void ConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "start";
-  // Temporarily disable binary int automaton
-//  arithmetic_constraint_solver.start();
+  if (Option::Solver::LIA_ENGINE_ENABLED) {
+    arithmetic_constraint_solver.start();
+  }
   visit(root);
   end();
 }
@@ -155,8 +156,7 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
     symbol_table->setScopeSatisfiability(is_scope_satisfiable);
     is_satisfiable = is_satisfiable or is_scope_satisfiable;
     symbol_table->pop_scope();
-    if (is_satisfiable) { //TODO for model counting we need to continue to calculate each term in disjunction
-      LOG(INFO)<< "TODO: CONTINUE CALCULATION FOR MODEL COUNTING, PARAMETIRIZED THAT";
+    if (is_satisfiable and (not Option::Solver::MODEL_COUNTER_ENABLED)) {
       break;
     }
   }
