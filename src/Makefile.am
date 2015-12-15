@@ -1,7 +1,8 @@
-SUBDIRS = parser theory
+SUBDIRS = parser theory model_counter
 AM_CXXFLAGS = \
 	-I$(top_srcdir)/src \
 	-g
+
 
 if JAVA_HOME_VALID
 AM_CXXFLAGS += -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
@@ -58,7 +59,8 @@ libabc_la_LDFLAGS = -version-info 0:1:0
 libabc_la_LIBADD = \
 	$(LIBGLOG) \
 	./parser/libabcparser.la \
-	./theory/libabcautomaton.la
+	./theory/libabcautomaton.la \
+	./model_counter/libabcmodelcounter.la 
 
 libabc_ladir = $(includedir)/abc
 libabc_la_HEADERS = Driver.h $(ABC_JNI_HEADER_FILES)
