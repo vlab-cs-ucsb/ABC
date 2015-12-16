@@ -678,7 +678,7 @@ std::vector<NextState> Automaton::getNextStatesOrdered(int state, std::function<
   return next_states;
 }
 
-AdjacencyList Automaton::getAdjacencyCountList() {
+AdjacencyList Automaton::getAdjacencyCountList(bool count_reserved_words) {
   int num_of_transitions;
   int leaf_count = 0;
   unsigned l, r, index;
@@ -736,7 +736,169 @@ AdjacencyList Automaton::getAdjacencyCountList() {
     }
   }
 
+  if (count_reserved_words) {
+    addReservedWordsToCount(adjacency_count_list);
+  }
+
   return adjacency_count_list;
+}
+
+/**
+ * This is an unsound hack to count reserved words
+ * To have sound count with reserved words, get rid of reserved words
+ * by using extra-bit instead
+ */
+void Automaton::addReservedWordsToCount(AdjacencyList& adjaceny_count_list) {
+  unsigned node_size = adjaceny_count_list.size();
+  std::vector<int> max_transition_count(node_size);
+  std::vector<int> max_transition_id(node_size);
+  std::vector<int> max_transition_index(node_size);
+  int sink_state = getSinkState();
+
+  for (unsigned i = 0; i < node_size; i++) {
+    max_transition_count[i] = -1;
+  }
+
+  for (unsigned i = 0; i < node_size; i++) {
+    for (unsigned j = 0; j < adjaceny_count_list[i].size(); j++) {
+      if (adjaceny_count_list[i][j].second > max_transition_count[adjaceny_count_list[i][j].first]) {
+        max_transition_count[adjaceny_count_list[i][j].first] = adjaceny_count_list[i][j].second;
+        max_transition_id[adjaceny_count_list[i][j].first] = i;
+        max_transition_index[adjaceny_count_list[i][j].first] = j;
+      }
+    }
+  }
+
+  for (unsigned i = 0; i < node_size; i ++) {
+    if (sink_state > -1 and i != (unsigned)sink_state) {
+      adjaceny_count_list[max_transition_id[i]][max_transition_index[i]].second += 2;
+    }
+  }
+
+  adjaceny_count_list[sink_state] = std::vector<Node>(0);
+}
+
+void Automaton::generateMathScript(int bound, std::ostream& out) {
+  AdjacencyList adjaceny_count_list = getAdjacencyCountList(true);
+  unsigned node_size = adjaceny_count_list.size();
+  unsigned updated_node_size = node_size + 2;
+  adjaceny_count_list.resize(updated_node_size);
+
+  Node artificial;
+  artificial.first = node_size;
+  artificial.second = 1;
+
+  adjaceny_count_list[0].push_back(artificial);
+  adjaceny_count_list[node_size].push_back(artificial);
+
+  for (int i = 0; (unsigned)i < node_size; i++) {
+    if (isAcceptingState(i)) {
+      artificial.first = i;
+      artificial.second = 1;
+      adjaceny_count_list[node_size + 1].push_back(artificial);
+    }
+  }
+
+  int c = 0;
+  out << "A = SparseArray[ { {" << updated_node_size << ", " << updated_node_size << "} -> 0, ";
+  std::string row_seperator = "";
+  std::string col_seperator = "";
+  for (auto& transitions : adjaceny_count_list) {
+    out << row_seperator;
+    row_seperator = "";
+    col_seperator = "";
+    for(auto& node : transitions) {
+      out << col_seperator;
+      out << "{" << node.first + 1 << ", " << c + 1 << "} -> " << node.second;
+      col_seperator = ", ";
+      row_seperator = ", ";
+    }
+    c++;
+  }
+  out << "}];\n\n";
+  out << "X = ID - A t;\n\n";
+  out << "Xsubmatrix = X[[ {";
+  std::string seperator = "";
+  for(int i = 1; i < updated_node_size; i++) {
+    out << seperator << i;
+    seperator = ",";
+  }
+  out << "},{";
+  for(int i = 1; i < updated_node_size - 1; i++){
+    out << i << ",";
+  }
+
+  out << updated_node_size << "}";
+
+  out << "]];\n";
+
+  out << "b = CoefficientList[-Det[Xsubmatrix],t];\n";
+  out << "c = CoefficientList[Det[X],t];\n";
+  out << "maxLen = Max[Map[Length, {b,c}]]\n";
+  out << "bPadLen = Max[0, maxLen - Length[b]];\n";
+  out << "cPadLen = Max[0, maxLen - Length[c]];\n";
+  out << "b = ArrayPad[b, {0, bPadLen}];\n";
+  out << "c = ArrayPad[c, {0, cPadLen}];\n";
+  out << "p = -c[[ Range[2,maxLen] ]] / c[[1]];\n";
+  out << "a = Table[0,{maxLen}];\n";
+  out << "a[[1]] = b[[1]]/c[[1]];\n";
+  out << "For[ i = 2, i <= maxLen, i++, a[[i]] = (b[[i]] - Total[c[[2;;i]]*a[[i-1;;1;;-1]]]) / c[[1]] ];\n";
+  out << "numPaths = LinearRecurrence[p,a,{bound,bound}][[1]];\n";
+  out << "numPaths2 = LinearRecurrence[p,a,{bound-1,bound-1}][[1]];\n";
+  out << "Print[N[Log2[numPaths-numPaths2]]];";
+  out << std::endl;
+}
+
+/**
+ * Adds artificial source and final state
+ * Prepares for model counting
+ */
+void Automaton::preProcessAdjacencyList(AdjacencyList& adjaceny_count_list) {
+  unsigned node_size = adjaceny_count_list.size();
+  unsigned updated_node_size = node_size + 2;
+  std::map<int, bool> is_useful_state;
+  adjaceny_count_list.resize(updated_node_size);
+
+  Node artificial;
+  artificial.first = node_size;
+  artificial.second = 1;
+
+  adjaceny_count_list[this->dfa->s].push_back(artificial);
+  adjaceny_count_list[node_size].push_back(artificial);
+
+  for (int i = 0; (unsigned)i < node_size; i++) {
+    if (isAcceptingState(i)) {
+      artificial.first = i;
+      artificial.second = 1;
+      adjaceny_count_list[node_size + 1].push_back(artificial);
+    }
+  }
+
+  is_useful_state[node_size + 1] = true;
+
+  for ( unsigned i = 0; i < updated_node_size; i++) {
+    unsigned j = 0;
+    for (auto& adjacency : adjaceny_count_list) {
+      for (auto& node : adjacency) {
+        is_useful_state[node.first] |= is_useful_state[j];
+      }
+    }
+    j++;
+  }
+
+  AdjacencyList new_list(updated_node_size);
+  for (unsigned i = 0; i < updated_node_size; i++) {
+    if (is_useful_state[i]) {
+      for (unsigned j = 0; j < adjaceny_count_list[i].size(); j++) {
+        if (is_useful_state[adjaceny_count_list[i][j].first]) {
+          new_list[i].push_back(adjaceny_count_list[i][j]);
+        }
+      }
+    }
+  }
+
+  adjaceny_count_list.clear();
+  adjaceny_count_list = new_list;
 }
 
 /**

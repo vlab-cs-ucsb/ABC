@@ -42,7 +42,7 @@ class Automaton;
 typedef Automaton* Automaton_ptr;
 typedef DFA* DFA_ptr;
 
-typedef std::pair<int ,int> Node;
+typedef std::pair<int ,int> Node; // pair.first = node id, pair.second node data
 typedef std::vector<Node> NodeVector;
 typedef std::vector<NodeVector> AdjacencyList;
 typedef std::pair<int, std::vector<bool>> NextState;
@@ -123,7 +123,11 @@ protected:
   std::set<int>* getNextStates(int state);
   std::vector<NextState> getNextStatesOrdered(int state, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
   bool getAnAcceptingWord(NextState& state, std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
-  AdjacencyList getAdjacencyCountList();
+  AdjacencyList getAdjacencyCountList(bool count_reserved_words = true);
+  void addReservedWordsToCount(AdjacencyList& adjaceny_count_list);
+  void generateMathScript(int bound, std::ostream& out = std::cout);
+  void preProcessAdjacencyList(AdjacencyList& adjaceny_count_list);
+
 
   bool isCyclic(int state, std::map<int, bool>& is_discovered, std::map<int, bool>& is_stack_member);
   bool isStateReachableFrom(int search_state, int from_state, std::map<int, bool>& is_stack_member);
