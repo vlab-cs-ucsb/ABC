@@ -170,6 +170,22 @@ bool Automaton::isStateReachableFrom(int search_state, int from_state) {
   return isStateReachableFrom(search_state, from_state, is_stack_member);
 }
 
+std::string Automaton::count(int bound) {
+  std::stringstream cmd;
+  std::string result;
+
+  generateMathScript(bound, std::cout);
+
+//  cmd << "math -script " << in_file;
+  try {
+    result = Util::Cmd::run_cmd(cmd.str());
+  } catch (std::string& e) {
+    LOG(ERROR) << e;
+  }
+
+  return result;
+}
+
 bool Automaton::isCyclic(int state, std::map<int, bool>& is_discovered, std::map<int, bool>& is_stack_member) {
   if (not is_discovered[state]) {
     is_discovered[state] = true;
@@ -819,12 +835,12 @@ void Automaton::generateMathScript(int bound, std::ostream& out) {
   out << "X = ID - A t;\n\n";
   out << "Xsubmatrix = X[[ {";
   std::string seperator = "";
-  for(int i = 1; i < updated_node_size; i++) {
+  for(unsigned i = 1; i < updated_node_size; i++) {
     out << seperator << i;
     seperator = ",";
   }
   out << "},{";
-  for(int i = 1; i < updated_node_size - 1; i++){
+  for(unsigned i = 1; i < updated_node_size - 1; i++){
     out << i << ",";
   }
 

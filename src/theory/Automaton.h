@@ -31,6 +31,7 @@
 #include <stranger/stranger.h>
 #include <stranger/stranger_lib_internal.h>
 #include "utils/RegularExpression.h"
+#include "utils/Cmd.h"
 #include "Graph.h"
 #include "DAGraph.h"
 #include "SemilinearSet.h"
@@ -85,6 +86,7 @@ public:
   bool isCyclic();
   bool isInCycle(int state);
   bool isStateReachableFrom(int search_state, int from_state);
+  virtual std::string count(int bound);
 
   Graph_ptr toGraph();
 
