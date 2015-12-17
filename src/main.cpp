@@ -104,7 +104,7 @@ int main(const int argc, const char **argv) {
             ss << output_root << "/result_" << index++ << ".dot";
             std::string out_file = ss.str();
             driver.inspectResult(variable_entry.second, out_file);
-            LOG(INFO) << variable_entry.second->getStringAutomaton()->count(15);
+            LOG(INFO) << driver.count(variable_entry.first->getName(), 15);
 
             break;
           }

@@ -177,6 +177,7 @@ std::string Automaton::count(int bound, bool count_less_than_or_equal_to_bound) 
   std::ofstream out_file(tmp_math_file.c_str());
 
   generateMatrixScript(bound, out_file, count_less_than_or_equal_to_bound);
+//  generateGFScript(bound, out_file, count_less_than_or_equal_to_bound);
   cmd << "math -script " << tmp_math_file;
   try {
     DVLOG(VLOG_LEVEL) << "run_cmd(`" << cmd.str() << "`)";
@@ -708,7 +709,6 @@ AdjacencyList Automaton::getAdjacencyCountList(bool count_reserved_words) {
 
   // process each state and run a dfs
   for (int i = 0; i < this->dfa->ns; i++) {
-
     // keep a list of reachable states for optimization purposes
     for (int j = 0; j < leaf_count; j++) {
       reachable_states[j] = 0;
@@ -726,7 +726,7 @@ AdjacencyList Automaton::getAdjacencyCountList(bool count_reserved_words) {
 
     node_stack.push(current_node);
 
-    while (!node_stack.empty()) {
+    while (not node_stack.empty()) {
       top = node_stack.top();
       node_stack.pop();
       LOAD_lri(&this->dfa->bddm->node_table[top.first], l, r, index);

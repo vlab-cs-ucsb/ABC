@@ -1,7 +1,6 @@
 package vlab.cs.ucsb.edu;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.Map;
 
 /**
@@ -50,7 +49,7 @@ public class DriverProxy {
   }
 
   public BigDecimal count(String var_name, int bound, boolean countLessThanOrEqualToBound) {
-    String resultString = countVar(var_name, bound, countLessThanOrEqualToBound);
+    String resultString = countVar(var_name, bound, countLessThanOrEqualToBound).trim();
     BigDecimal result;
     
     try {

@@ -96,7 +96,9 @@ bool Driver::isSatisfiable() {
 
 std::string Driver::count(std::string var_name, int bound, bool count_less_than_or_equal_to_bound) {
   std::string result;
+  symbol_table->push_scope(script);
   Vlab::Solver::Value_ptr var_value = symbol_table->getValue(var_name);
+  symbol_table->pop_scope();
   switch (var_value->getType()) {
     case Vlab::Solver::Value::Type::STRING_AUTOMATON:
       result = var_value->getStringAutomaton()->count(bound, count_less_than_or_equal_to_bound);

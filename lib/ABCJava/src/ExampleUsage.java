@@ -10,7 +10,7 @@ public class ExampleUsage {
   public static void main(String[] args) {
     // TODO Auto-generated method stub
     DriverProxy abcDriver = new DriverProxy();
-    abcDriver.setOption(Option.OUTPUT_PATH, "abc");
+    abcDriver.setOption(Option.OUTPUT_PATH, "./");
     abcDriver.setOption(Option.MODEL_COUNTER_ENABLED, true);
     abcDriver.setOption(Option.LIA_ENGINE_ENABLED, true);
     
@@ -23,14 +23,18 @@ public class ExampleUsage {
     
     if (result) {
       System.out.println("Satisfiable");
-      BigDecimal count = abcDriver.count("var_abc", 10);
+      int bound = 15;
+      BigDecimal count = abcDriver.count("var_abc", bound);
       if (count != null) {
-        System.out.println(count.toString());
+        System.out.println("Number of solutions within bound: " + bound);
+        System.out.println("Log2: " + count.toString());
+        double approx = count.doubleValue();
+        System.out.println("Actual (approximated): " + Math.pow(2, approx));
       } else {
         System.out.println("An error occured during counting, please contact vlab@cs.ucsb.edu");
       }
       
-      abcDriver.printResultAutomaton();
+//      abcDriver.printResultAutomaton();
       
       Map<String, String> results = abcDriver.getSatisfyingExamples();
       for (Entry<String, String> var_result : results.entrySet()) {
