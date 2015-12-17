@@ -48,6 +48,31 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_initABC (JNIEnv *env, j
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    setOption
+ * Signature: (IZ)V
+ */
+JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_setOption__IZ (JNIEnv *env, jobject obj, jint option, jboolean value) {
+  Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
+  int opt = (int)option;
+  abc_driver->setOption(static_cast<Vlab::Option::Name>(opt), (bool)value);
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    setOption
+ * Signature: (ILjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_setOption__ILjava_lang_String_2 (JNIEnv *env, jobject obj, jint option, jstring value) {
+  Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
+  const char* string_value_str = env->GetStringUTFChars(value, JNI_FALSE);
+  std::string string_value = string_value_str;
+  int opt = (int)option;
+  abc_driver->setOption(static_cast<Vlab::Option::Name>(opt), string_value);
+  env->ReleaseStringUTFChars(value, string_value_str);
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    isSatisfiable
  * Signature: (Ljava/lang/String;)Z
  */
@@ -57,12 +82,28 @@ JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable (JNIE
   std::istringstream input_constraint;
   const char* constraint_str = env->GetStringUTFChars(constraint, JNI_FALSE);
   input_constraint.str(constraint_str);
+  abc_driver->reset();
   abc_driver->parse(&input_constraint);
   env->ReleaseStringUTFChars(constraint, constraint_str);
   abc_driver->initializeSolver();
   abc_driver->solve();
   bool result = abc_driver->isSatisfiable();
   return (jboolean)result;
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    countVar
+ * Signature: (Ljava/lang/String;IZ)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countVar (JNIEnv *env, jobject obj, jstring varName, jint bound, jboolean count_less_than_or_equal_bound) {
+  Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
+  const char* var_name_str = env->GetStringUTFChars(varName, JNI_FALSE);
+  std::string var_name = var_name_str;
+  std::string result = abc_driver->count(var_name, (int)bound, (bool)count_less_than_or_equal_bound);
+  jstring resultString = env->NewStringUTF(result.c_str());
+  env->ReleaseStringUTFChars(varName, var_name_str);
+  return resultString;
 }
 
 /*

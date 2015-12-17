@@ -30,6 +30,7 @@
 //#include <mona/dfa.h>
 #include <stranger/stranger.h>
 #include <stranger/stranger_lib_internal.h>
+#include "options/Theory.h"
 #include "utils/RegularExpression.h"
 #include "utils/Cmd.h"
 #include "Graph.h"
@@ -86,7 +87,7 @@ public:
   bool isCyclic();
   bool isInCycle(int state);
   bool isStateReachableFrom(int search_state, int from_state);
-  virtual std::string count(int bound);
+  virtual std::string count(int bound, bool count_less_than_or_equal_to_bound = true);
 
   Graph_ptr toGraph();
 
@@ -127,7 +128,8 @@ protected:
   bool getAnAcceptingWord(NextState& state, std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
   AdjacencyList getAdjacencyCountList(bool count_reserved_words = true);
   void addReservedWordsToCount(AdjacencyList& adjaceny_count_list);
-  void generateMathScript(int bound, std::ostream& out = std::cout);
+  void generateGFScript(int bound, std::ostream& out = std::cout, bool count_less_than_or_equal_to_bound = true);
+  void generateMatrixScript(int bound, std::ostream& out = std::cout, bool count_less_than_or_equal_to_bound = true);
   void preProcessAdjacencyList(AdjacencyList& adjaceny_count_list);
 
 

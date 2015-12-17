@@ -72,8 +72,10 @@ int main(const int argc, const char **argv) {
   int bound = std::stoi(bound_string);
 
   Vlab::Driver driver;
-  driver.setLIAOption(true);
-  driver.setModelCountingOption(true);
+  driver.setOption(Vlab::Option::Name::LIA_ENGINE_ENABLED, true);
+  driver.setOption(Vlab::Option::Name::MODEL_COUNTER_ENABLED, true);
+  driver.setOption(Vlab::Option::Name::OUTPUT_PATH, output_root);
+
   driver.test();
   driver.parse(in);
   if (VLOG_IS_ON(30)) {
@@ -102,6 +104,8 @@ int main(const int argc, const char **argv) {
             ss << output_root << "/result_" << index++ << ".dot";
             std::string out_file = ss.str();
             driver.inspectResult(variable_entry.second, out_file);
+            LOG(INFO) << variable_entry.second->getStringAutomaton()->count(15);
+
             break;
           }
           default:

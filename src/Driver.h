@@ -15,6 +15,7 @@
 
 #include <glog/logging.h>
 #include "options/Solver.h"
+#include "options/Theory.h"
 #include "solver/Ast2Dot.h"
 #include "parser/Scanner.h"
 #include "parser/parser.hpp"
@@ -45,6 +46,7 @@ public:
   void initializeSolver();
   void solve();
   bool isSatisfiable();
+  std::string count(std::string var_name, int bound, bool count_less_than_or_equal_to_bound = true);
   void printResult(Solver::Value_ptr value, std::ostream& out);
   void inspectResult(Solver::Value_ptr value, std::string file_name);
   std::map<SMT::Variable_ptr, Solver::Value_ptr> getSatisfyingVariables();
@@ -52,8 +54,8 @@ public:
   void reset();
 //	void solveAst();
 
-  void setLIAOption(bool status);
-  void setModelCountingOption(bool status);
+  void setOption(Option::Name option, bool value);
+  void setOption(Option::Name option, std::string value);
 
   void test();
 

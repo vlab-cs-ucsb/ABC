@@ -94,6 +94,20 @@ bool Driver::isSatisfiable() {
   return symbol_table->isSatisfiable();
 }
 
+std::string Driver::count(std::string var_name, int bound, bool count_less_than_or_equal_to_bound) {
+  std::string result;
+  Vlab::Solver::Value_ptr var_value = symbol_table->getValue(var_name);
+  switch (var_value->getType()) {
+    case Vlab::Solver::Value::Type::STRING_AUTOMATON:
+      result = var_value->getStringAutomaton()->count(bound, count_less_than_or_equal_to_bound);
+      break;
+    default:
+      break;
+  }
+
+  return result;
+}
+
 
 void Driver::inspectResult(Solver::Value_ptr value, std::string file_name) {
   std::ofstream outfile(file_name.c_str());
@@ -158,12 +172,30 @@ void Driver::reset() {
   LOG(INFO) << "Driver reseted.";
 }
 
-void Driver::setLIAOption(bool status) {
-  Option::Solver::LIA_ENGINE_ENABLED = status;
+void Driver::setOption(Option::Name option, bool value) {
+  switch (option) {
+    case Option::Name::LIA_ENGINE_ENABLED:
+      Option::Solver::LIA_ENGINE_ENABLED = value;
+      break;
+    case Option::Name::MODEL_COUNTER_ENABLED:
+      Option::Solver::MODEL_COUNTER_ENABLED = value;
+      break;
+    default:
+      LOG(ERROR) << "option not recognized: " << static_cast<int>(option) << " -> " << value;
+      break;
+  }
 }
 
-void Driver::setModelCountingOption(bool status) {
-  Option::Solver::MODEL_COUNTER_ENABLED = status;
+void Driver::setOption(Option::Name option, std::string value) {
+  switch (option) {
+    case Option::Name::OUTPUT_PATH:
+      Option::Solver::OUTPUT_PATH = value;
+      Option::Theory::TMP_PATH = value;
+      break;
+    default:
+      LOG(ERROR) << "option not recognized: " << static_cast<int>(option) << " -> " << value;
+      break;
+  }
 }
 
 void Driver::test() {

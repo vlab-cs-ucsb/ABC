@@ -1,5 +1,7 @@
 package vlab.cs.ucsb.edu;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Map;
 
 /**
@@ -14,6 +16,20 @@ import java.util.Map;
  * TODO check for JVM (JNI) thread issues
  */
 public class DriverProxy {
+  public enum Option {
+	  OUTPUT_PATH(0),
+	  MODEL_COUNTER_ENABLED(1),
+	  LIA_ENGINE_ENABLED(2);
+	  
+	  private final int value;
+	  private Option(int value) {
+		  this.value = value;
+	  }
+	  
+	  public int getValue() {
+		  return this.value;
+	  }
+  }
   
   private long driverPointer;
   
@@ -29,8 +45,35 @@ public class DriverProxy {
     initABC(logFlag);
   }
   
+  public BigDecimal count(String var_name, int bound) {
+	  return count(var_name, bound, true);
+  }
+
+  public BigDecimal count(String var_name, int bound, boolean countLessThanOrEqualToBound) {
+    String resultString = countVar(var_name, bound, countLessThanOrEqualToBound);
+    BigDecimal result;
+    
+    try {
+      result = new BigDecimal(resultString);
+    } catch (NumberFormatException e) {
+      result = null;
+    }
+    return result;
+  }
+  
+  public void setOption(Option option, boolean value) {
+    setOption(option.getValue(), value);
+  }
+  
+  public void setOption(Option option, String value) {
+    setOption(option.getValue(), value);
+  }
+  
   private native void initABC(int logFlag);
+  private native void setOption(int option, boolean value);
+  private native void setOption(int option, String value);
   public native boolean isSatisfiable(String constraint);
+  private native String countVar(String var_name, int bound, boolean countLessThanOrEqualToBound);
   public native void printResultAutomaton();
   public native void printResultAutomaton(String filePath);
   public native Map<String, String> getSatisfyingExamples();

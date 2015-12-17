@@ -1,21 +1,27 @@
 /*
- * Solver.cpp
+ * Theory.h
  *
- *  Created on: Dec 14, 2015
+ *  Created on: Dec 16, 2015
  *      Author: baki
  *   Copyright: Copyright 2015 The ABC Authors. All rights reserved. 
  *              Use of this source code is governed license that can
  *              be found in the COPYING file.
  */
 
-#include "Solver.h"
+#ifndef SRC_OPTIONS_THEORY_H_
+#define SRC_OPTIONS_THEORY_H_
+
+#include <string>
 
 namespace Vlab {
 namespace Option {
 
-std::string Solver::OUTPUT_PATH     = "./";
-bool Solver::MODEL_COUNTER_ENABLED  = false;
-bool Solver::LIA_ENGINE_ENABLED     = true;
+class Theory {
+public:
+  static std::string TMP_PATH;
+};
 
 } /* namespace Option */
 } /* namespace Vlab */
+
+#endif /* SRC_OPTIONS_THEORY_H_ */

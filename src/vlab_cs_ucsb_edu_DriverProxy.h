@@ -17,11 +17,35 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_initABC
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    setOption
+ * Signature: (IZ)V
+ */
+JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_setOption__IZ
+  (JNIEnv *, jobject, jint, jboolean);
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    setOption
+ * Signature: (ILjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_setOption__ILjava_lang_String_2
+  (JNIEnv *, jobject, jint, jstring);
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    isSatisfiable
  * Signature: (Ljava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable
   (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    countVar
+ * Signature: (Ljava/lang/String;IZ)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countVar
+  (JNIEnv *, jobject, jstring, jint, jboolean);
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy

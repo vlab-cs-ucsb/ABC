@@ -16,6 +16,8 @@ libabcautomaton_la_SOURCES = \
 	../utils/List.h \
 	../utils/Cmd.cpp \
 	../utils/Cmd.h \
+	../options/Theory.cpp \
+	../options/Theory.h \
 	GraphNode.cpp \
 	GraphNode.h \
 	Graph.cpp \

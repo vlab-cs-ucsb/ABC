@@ -170,14 +170,16 @@ bool Automaton::isStateReachableFrom(int search_state, int from_state) {
   return isStateReachableFrom(search_state, from_state, is_stack_member);
 }
 
-std::string Automaton::count(int bound) {
+std::string Automaton::count(int bound, bool count_less_than_or_equal_to_bound) {
   std::stringstream cmd;
   std::string result;
+  std::string tmp_math_file = Option::Theory::TMP_PATH + "/math_script.m";
+  std::ofstream out_file(tmp_math_file.c_str());
 
-  generateMathScript(bound, std::cout);
-
-//  cmd << "math -script " << in_file;
+  generateMatrixScript(bound, out_file, count_less_than_or_equal_to_bound);
+  cmd << "math -script " << tmp_math_file;
   try {
+    DVLOG(VLOG_LEVEL) << "run_cmd(`" << cmd.str() << "`)";
     result = Util::Cmd::run_cmd(cmd.str());
   } catch (std::string& e) {
     LOG(ERROR) << e;
@@ -756,6 +758,14 @@ AdjacencyList Automaton::getAdjacencyCountList(bool count_reserved_words) {
     addReservedWordsToCount(adjacency_count_list);
   }
 
+//  for (int i = 0; i < adjacency_count_list.size(); i++) {
+//    std::cout << i << " : ";
+//    for (int j = 0; j < adjacency_count_list[i].size(); j++) {
+//      std::cout << "{" << adjacency_count_list[i][j].first << ", " << adjacency_count_list[i][j].second << "} ";
+//    }
+//    std::cout << std::endl;
+//  }
+
   return adjacency_count_list;
 }
 
@@ -790,36 +800,41 @@ void Automaton::addReservedWordsToCount(AdjacencyList& adjaceny_count_list) {
       adjaceny_count_list[max_transition_id[i]][max_transition_index[i]].second += 2;
     }
   }
-
-  adjaceny_count_list[sink_state] = std::vector<Node>(0);
+  if (sink_state > -1) {
+    adjaceny_count_list[sink_state] = std::vector<Node>(0);
+  }
 }
 
-void Automaton::generateMathScript(int bound, std::ostream& out) {
-  AdjacencyList adjaceny_count_list = getAdjacencyCountList(true);
-  unsigned node_size = adjaceny_count_list.size();
-  unsigned updated_node_size = node_size + 2;
-  adjaceny_count_list.resize(updated_node_size);
+void Automaton::generateGFScript(int bound, std::ostream& out, bool count_less_than_or_equal_to_bound) {
+  AdjacencyList adjacency_count_list = getAdjacencyCountList(true);
+  unsigned node_size = adjacency_count_list.size();
+  unsigned updated_node_size = node_size + 1;
+  adjacency_count_list.resize(updated_node_size);
 
   Node artificial;
-  artificial.first = node_size;
-  artificial.second = 1;
 
-  adjaceny_count_list[0].push_back(artificial);
-  adjaceny_count_list[node_size].push_back(artificial);
+  // add a self-loop if we count up to bound (bound inclusive)
+  if (count_less_than_or_equal_to_bound) {
+    artificial.first = node_size;
+    artificial.second = 1;
+    adjacency_count_list[node_size].push_back(artificial);
+  }
 
   for (int i = 0; (unsigned)i < node_size; i++) {
     if (isAcceptingState(i)) {
       artificial.first = i;
       artificial.second = 1;
-      adjaceny_count_list[node_size + 1].push_back(artificial);
+      adjacency_count_list[node_size].push_back(artificial);
     }
   }
 
-  int c = 0;
-  out << "A = SparseArray[ { {" << updated_node_size << ", " << updated_node_size << "} -> 0, ";
+  out << "bound = " << bound + 2 << ";\n";
+  out << "ID = IdentityMatrix[" << updated_node_size << "];\n\n";
+  out << "A = SparseArray[ { ";
   std::string row_seperator = "";
   std::string col_seperator = "";
-  for (auto& transitions : adjaceny_count_list) {
+  int c = 0;
+  for (auto& transitions : adjacency_count_list) {
     out << row_seperator;
     row_seperator = "";
     col_seperator = "";
@@ -860,8 +875,54 @@ void Automaton::generateMathScript(int bound, std::ostream& out) {
   out << "a[[1]] = b[[1]]/c[[1]];\n";
   out << "For[ i = 2, i <= maxLen, i++, a[[i]] = (b[[i]] - Total[c[[2;;i]]*a[[i-1;;1;;-1]]]) / c[[1]] ];\n";
   out << "numPaths = LinearRecurrence[p,a,{bound,bound}][[1]];\n";
-  out << "numPaths2 = LinearRecurrence[p,a,{bound-1,bound-1}][[1]];\n";
-  out << "Print[N[Log2[numPaths-numPaths2]]];";
+  out << "Print[N[Log2[numPaths]]];";
+
+  out << std::endl;
+}
+
+void Automaton::generateMatrixScript(int bound, std::ostream& out, bool count_less_than_or_equal_to_bound) {
+  AdjacencyList adjacency_count_list = getAdjacencyCountList(true);
+  unsigned node_size = adjacency_count_list.size();
+  unsigned updated_node_size = node_size + 1;
+  adjacency_count_list.resize(updated_node_size);
+
+  Node artificial;
+
+  // add a self-loop if we count up to bound (bound inclusive)
+  if (count_less_than_or_equal_to_bound) {
+    artificial.first = node_size;
+    artificial.second = 1;
+    adjacency_count_list[node_size].push_back(artificial);
+  }
+
+  for (int i = 0; (unsigned)i < node_size; i++) {
+    if (isAcceptingState(i)) {
+      artificial.first = i;
+      artificial.second = 1;
+      adjacency_count_list[node_size].push_back(artificial);
+    }
+  }
+
+  out << "A = SparseArray[{";
+  std::string row_seperator = "";
+  std::string col_seperator = "";
+  int c = 0;
+  for (auto& transitions : adjacency_count_list) {
+    out << row_seperator;
+    row_seperator = "";
+    col_seperator = "";
+    for(auto& node : transitions) {
+      out << col_seperator;
+      out << "{" << node.first + 1 << ", " << c + 1 << "} -> " << node.second;
+      col_seperator = ", ";
+      row_seperator = ", ";
+    }
+    c++;
+  }
+  out << "}];\n";
+  // state indexes are off by one
+  out << "numPaths = MatrixPower[A, " << bound + 2 << "][[" << this->dfa->s + 1 << ", " << this->dfa->ns + 1 << "]];\n";
+  out << "Print[N[Log2[numPaths]]];";
   out << std::endl;
 }
 
