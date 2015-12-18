@@ -688,9 +688,13 @@ void ConstraintSolver::visitNotContains(NotContains_ptr not_contains_term) {
   Value_ptr result = nullptr, param_subject = getTermValue(not_contains_term->subject_term),
       param_search = getTermValue(not_contains_term->search_term);
 
-  Theory::StringAutomaton_ptr contains_auto = param_subject->getStringAutomaton()->contains(param_search->getStringAutomaton());
-  result = new Value(param_subject->getStringAutomaton()->difference(contains_auto));
-  delete contains_auto; contains_auto = nullptr;
+  if (param_search->isSingleValue()) {
+    Theory::StringAutomaton_ptr contains_auto = param_subject->getStringAutomaton()->contains(param_search->getStringAutomaton());
+    result = new Value(param_subject->getStringAutomaton()->difference(contains_auto));
+    delete contains_auto; contains_auto = nullptr;
+  } else {
+    result = param_subject->clone();
+  }
 
   setTermValue(not_contains_term, result);
 }
@@ -714,9 +718,13 @@ void ConstraintSolver::visitNotBegins(NotBegins_ptr not_begins_term) {
   Value_ptr result = nullptr, param_subject = getTermValue(not_begins_term->subject_term),
       param_search = getTermValue(not_begins_term->search_term);
 
-  Theory::StringAutomaton_ptr begins_auto = param_subject->getStringAutomaton()->begins(param_search->getStringAutomaton());
-  result = new Value(param_subject->getStringAutomaton()->difference(begins_auto));
-  delete begins_auto; begins_auto = nullptr;
+  if (param_search->isSingleValue()) {
+    Theory::StringAutomaton_ptr begins_auto = param_subject->getStringAutomaton()->begins(param_search->getStringAutomaton());
+    result = new Value(param_subject->getStringAutomaton()->difference(begins_auto));
+    delete begins_auto; begins_auto = nullptr;
+  } else {
+    result = param_subject->clone();
+  }
 
   setTermValue(not_begins_term, result);
 }
@@ -740,9 +748,13 @@ void ConstraintSolver::visitNotEnds(NotEnds_ptr not_ends_term) {
   Value_ptr result = nullptr, param_subject = getTermValue(not_ends_term->subject_term),
       param_search = getTermValue(not_ends_term->search_term);
 
-  Theory::StringAutomaton_ptr ends_auto = param_subject->getStringAutomaton()->ends(param_search->getStringAutomaton());
-  result = new Value(param_subject->getStringAutomaton()->difference(ends_auto));
-  delete ends_auto; ends_auto = nullptr;
+  if (param_search->isSingleValue()) {
+    Theory::StringAutomaton_ptr ends_auto = param_subject->getStringAutomaton()->ends(param_search->getStringAutomaton());
+    result = new Value(param_subject->getStringAutomaton()->difference(ends_auto));
+    delete ends_auto; ends_auto = nullptr;
+  } else {
+    result = param_subject->clone();
+  }
 
   setTermValue(not_ends_term, result);
 }
