@@ -51,6 +51,7 @@ public:
   ArithmeticFormula_ptr getFormula();
   void setFormula(ArithmeticFormula_ptr formula);
   bool hasNegative1();
+  int getBddVarIndex(std::string var_name);
   BinaryIntAutomaton_ptr complement();
   BinaryIntAutomaton_ptr intersect(BinaryIntAutomaton_ptr);
   BinaryIntAutomaton_ptr union_(BinaryIntAutomaton_ptr);
@@ -63,6 +64,8 @@ public:
   BinaryIntAutomaton_ptr addLeadingZeros();
   SemilinearSet_ptr getSemilinearSet();
   UnaryAutomaton_ptr toUnaryAutomaton();
+
+  std::map<std::string, int> getAnAcceptingIntForEachVar();
 
 protected:
   BinaryIntAutomaton(ArithmeticFormula_ptr formula);

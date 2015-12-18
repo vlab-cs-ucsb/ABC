@@ -95,17 +95,24 @@ int main(const int argc, const char **argv) {
     if (VLOG_IS_ON(30)) {
       unsigned index = 0;
       for(auto& variable_entry : driver.getSatisfyingVariables()) {
-        LOG(INFO) << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"";
+        std::stringstream ss;
+        ss << output_root << "/result_" << index++ << ".dot";
+        std::string out_file = ss.str();
+        driver.inspectResult(variable_entry.second, out_file);
         switch (variable_entry.second->getType()) {
-          case Vlab::Solver::Value::Type::INT_AUTOMATON:
-          case Vlab::Solver::Value::Type::STRING_AUTOMATON:
+          case Vlab::Solver::Value::Type::INT_AUTOMATON: {
+            LOG(INFO) << variable_entry.first->getName() << " : " << variable_entry.second->getASatisfyingExample();
+            break;
+          }
+          case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
+            LOG(INFO) << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"";
+            break;
+          }
           case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
-            std::stringstream ss;
-            ss << output_root << "/result_" << index++ << ".dot";
-            std::string out_file = ss.str();
-            driver.inspectResult(variable_entry.second, out_file);
-            LOG(INFO) << driver.count(variable_entry.first->getName(), 15);
-
+            std::map<std::string, int> values = variable_entry.second->getBinaryIntAutomaton()->getAnAcceptingIntForEachVar();
+            for (auto& entry : values) {
+              LOG(INFO) << entry.first << " : " << entry.second;
+            }
             break;
           }
           default:

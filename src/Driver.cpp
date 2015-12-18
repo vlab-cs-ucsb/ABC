@@ -122,18 +122,6 @@ void Driver::inspectResult(Solver::Value_ptr value, std::string file_name) {
   std::string dot_cmd("xdot " + file_name + " &");
   int r = std::system(dot_cmd.c_str());
 
-  if (Solver::Value::Type::BINARYINT_AUTOMATON == value->getType()) {
-    file_name += "bdd";
-    std::ofstream outfile(file_name.c_str());
-    if (!outfile.good()) {
-      std::cout << "cannot open file: " << file_name << std::endl;
-      exit(2);
-    }
-    value->getBinaryIntAutomaton()->toBDD(outfile);
-    std::string dot_cmd("xdot " + file_name + " &");
-    int r = std::system(dot_cmd.c_str());
-  }
-
   LOG(INFO) << "result rendered? " << r << " : " << dot_cmd;
 }
 
@@ -161,7 +149,14 @@ std::map<SMT::Variable_ptr, Solver::Value_ptr> Driver::getSatisfyingVariables() 
 std::map<std::string, std::string> Driver::getSatisfyingExamples() {
   std::map<std::string, std::string> results;
   for(auto& variable_entry : getSatisfyingVariables()) {
-    results[variable_entry.first->getName()] = variable_entry.second->getASatisfyingExample();
+    if (Solver::Value::Type::BINARYINT_AUTOMATON == variable_entry.second->getType()) {
+      std::map<std::string, int> values = variable_entry.second->getBinaryIntAutomaton()->getAnAcceptingIntForEachVar();
+      for (auto& entry : values) {
+        results[entry.first] = std::to_string(entry.second);
+      }
+    } else {
+      results[variable_entry.first->getName()] = variable_entry.second->getASatisfyingExample();
+    }
   }
   return results;
 }

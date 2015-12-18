@@ -293,6 +293,11 @@ bool BinaryIntAutomaton::hasNegative1() {
   return false;
 }
 
+// bdd vars are ordered in the reverse order of coefficients
+int BinaryIntAutomaton::getBddVarIndex(std::string var_name) {
+  return num_of_variables - formula->getVariableIndex(var_name) - 1;
+}
+
 BinaryIntAutomaton_ptr BinaryIntAutomaton::complement() {
   BinaryIntAutomaton_ptr complement_auto = nullptr;
   DFA_ptr complement_dfa = dfaCopy(this->dfa);
@@ -377,9 +382,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::getBinaryAutomatonFor(std::string var
   ArithmeticFormula_ptr single_var_formula = nullptr;
   DFA_ptr single_var_dfa = dfaCopy(this->dfa), tmp_dfa = nullptr;
   CHECK_EQ(num_of_variables, formula->getNumberOfVariables())<< "number of variables is not consistent with formula";
-  // bdd vars are ordered in the reverse order of coefficients
-  int bdd_var_index = num_of_variables - formula->getVariableIndex(var_name) - 1;
-
+  int bdd_var_index = getBddVarIndex(var_name);
   for (int i = num_of_variables - 1 ; i >= 0; i--) {
     if (i != bdd_var_index) {
       tmp_dfa = single_var_dfa;
@@ -683,6 +686,50 @@ UnaryAutomaton_ptr BinaryIntAutomaton::toUnaryAutomaton() {
   delete semilinear_set; semilinear_set = nullptr;
   DVLOG(VLOG_LEVEL) << unary_auto->getId() << " = [" << this->id << "]->toUnaryAutomaton()";
   return unary_auto;
+}
+
+std::map<std::string, int> BinaryIntAutomaton::getAnAcceptingIntForEachVar() {
+  std::map<std::string, int> var_values;
+  std::map<int, int> values;
+  std::vector<bool>* example = getAnAcceptingWord();
+
+  // Reads from most significant bits
+
+  // first read the sign bit
+  auto rit = example->rbegin();
+  for (int var_index = num_of_variables - 1; var_index >= num_of_variables; var_index--) {
+    if (*rit) {
+      values[var_index] = -1;
+    } else {
+      values[var_index] = 0;
+    }
+    rit++;
+  }
+
+  // read value bits
+  for (int var_index = num_of_variables - 1; rit != example->rend(); rit++) {
+    values[var_index] <<= 1;
+    values[var_index] |= (*rit);
+    var_index--;
+
+    if (var_index == -1) {
+      var_index = num_of_variables - 1;
+    }
+  }
+
+  int bdd_index;
+  std::string var_name;
+  for (auto& var_entry : formula->getCoefficientIndexMap()) {
+    var_name = var_entry.first;
+    bdd_index = getBddVarIndex(var_name);
+    if (var_name.length() > 10) {
+      var_name = var_name.substr(0, 10);
+    }
+
+    var_values[var_name] = values[bdd_index];
+  }
+
+  return var_values;
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeGraterThanOrEqualToZero(std::vector<int> indexes, int number_of_variables) {
