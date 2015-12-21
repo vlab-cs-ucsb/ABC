@@ -155,8 +155,8 @@ bool Automaton::isCyclic() {
   int sink_state = getSinkState();
   is_discovered[sink_state] = true; // avoid sink state
 
-  result = isCyclic(this->dfa->ns, is_discovered, is_stack_member);
-  DVLOG(VLOG_LEVEL) << "[" << this->id << "]->isCyclic() ? " << result;
+  result = isCyclic(this->dfa->s, is_discovered, is_stack_member);
+  DVLOG(VLOG_LEVEL) << "[" << this->id << "]->isCyclic() ? " << std::boolalpha << result;
   return result;
 }
 
