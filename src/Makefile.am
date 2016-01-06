@@ -5,7 +5,7 @@ AM_CXXFLAGS = \
 
 
 if JAVA_HOME_VALID
-AM_CXXFLAGS += -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
+AM_CXXFLAGS += -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux $(JAVA_HEADERS)
 ABC_JNI_SORUCE_FILES = vlab_cs_ucsb_edu_DriverProxy.cpp vlab_cs_ucsb_edu_DriverProxy.h
 ABC_JNI_HEADER_FILES = vlab_cs_ucsb_edu_DriverProxy.h
 endif

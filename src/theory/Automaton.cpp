@@ -1355,7 +1355,7 @@ int Automaton::inspectAuto(bool print_sink, bool force_mona_format) {
   std::string file = file_name.str();
   std::ofstream outfile(file.c_str());
   if (!outfile.good()) {
-    std::cout << "cannot open file: " << file_name << std::endl;
+    std::cout << "cannot open file: " << file << std::endl;
     exit(2);
   }
   if (Automaton::Type::INT == type or Automaton::Type::STRING == type) {
@@ -1377,7 +1377,7 @@ int Automaton::inspectBDD() {
   std::string file = file_name.str();
   std::ofstream outfile(file.c_str());
   if (!outfile.good()) {
-    std::cout << "cannot open file: " << file_name << std::endl;
+    std::cout << "cannot open file: " << file << std::endl;
     exit(2);
   }
   toBDD(outfile);

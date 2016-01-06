@@ -8,6 +8,7 @@
 #ifndef SRC_UTILS_LIST_H_
 #define SRC_UTILS_LIST_H_
 
+#include <vector>
 #include <algorithm>
 
 namespace Vlab {

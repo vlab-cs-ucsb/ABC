@@ -17,6 +17,26 @@ AC_CANONICAL_TARGET
 
 AM_INIT_AUTOMAKE([subdir-objects])
 
+case $host_os in
+  darwin* )
+        JAVA_HEADERS="-I/System/Library/Frameworks/JavaVM.framework/Headers"
+        ;;
+  linux*)
+        JAVA_HEADERS=
+        ;;
+   *BSD*)
+        JAVA_HEADERS=
+        ;;
+    *)
+        #Default Case
+        AC_MSG_ERROR([Your platform is not currently supported])
+        ;;
+esac
+
+AC_SUBST([JAVA_HEADERS])
+
+
+
 # Check for programs
 AC_LANG([C++])
 AC_PROG_CXX
