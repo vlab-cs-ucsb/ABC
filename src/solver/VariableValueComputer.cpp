@@ -7,19 +7,6 @@
 
 #include "VariableValueComputer.h"
 
-#include <cstdbool>
-#include <iostream>
-#include <iterator>
-#include <map>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include "../smt/typedefs.h"
-#include "../smt/Visitor.h"
-#include "../theory/IntAutomaton.h"
-#include "../theory/StringAutomaton.h"
-
 namespace Vlab {
 namespace Solver {
 
