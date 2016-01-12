@@ -748,10 +748,6 @@ void VariableValueComputer::visitBegins(Begins_ptr begins_term) {
   popTerm(begins_term);
   Term_ptr child_term = current_path->back();
 
-  if (child_term == begins_term->search_term) {
-    return; // begins operation does not have any restriction on right hand side
-  }
-
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -759,7 +755,16 @@ void VariableValueComputer::visitBegins(Begins_ptr begins_term) {
   }
 
   Value_ptr term_value = getTermPreImage(begins_term);
-  child_value = term_value->clone();
+
+  if (child_term == begins_term->subject_term) {
+    child_value = term_value->clone();
+  } else {
+    Value_ptr child_post_value = getTermPostImage(child_term);
+    Theory::StringAutomaton_ptr prefixes_auto = term_value->getStringAutomaton()->prefixes();
+    child_value = new Value(child_post_value->getStringAutomaton()->intersect(prefixes_auto));
+    delete prefixes_auto; prefixes_auto = nullptr;
+  }
+
   setTermPreImage(child_term, child_value);
   visit(child_term);
 }
@@ -790,10 +795,6 @@ void VariableValueComputer::visitEnds(Ends_ptr ends_term) {
   popTerm(ends_term);
   Term_ptr child_term = current_path->back();
 
-  if (child_term == ends_term->search_term) {
-    return; // ends operation does not have any restriction on right hand side
-  }
-
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -801,7 +802,16 @@ void VariableValueComputer::visitEnds(Ends_ptr ends_term) {
   }
 
   Value_ptr term_value = getTermPreImage(ends_term);
-  child_value = term_value->clone();
+
+  if (child_term == ends_term->subject_term) {
+    child_value = term_value->clone();
+  } else {
+    Value_ptr child_post_value = getTermPostImage(child_term);
+    Theory::StringAutomaton_ptr suffixes_auto = term_value->getStringAutomaton()->suffixes();
+    child_value = new Value(child_post_value->getStringAutomaton()->intersect(suffixes_auto));
+    delete suffixes_auto; suffixes_auto = nullptr;
+  }
+
   setTermPreImage(child_term, child_value);
   visit(child_term);
 }
