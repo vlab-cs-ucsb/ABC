@@ -96,6 +96,7 @@ public:
   StringAutomaton_ptr suffixesFromIndex(int start);
   StringAutomaton_ptr prefixesUntilIndex(int end);
   StringAutomaton_ptr prefixesAtIndex(int index);
+  StringAutomaton_ptr subStrings();
 
   StringAutomaton_ptr charAt(int index);
   StringAutomaton_ptr subString(int start);

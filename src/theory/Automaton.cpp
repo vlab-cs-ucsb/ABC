@@ -1349,6 +1349,28 @@ void Automaton::toBDD(std::ostream& out) {
   tableFree(table);
 }
 
+void Automaton::exportDfa(std::string file_name) {
+  char* file_name_ptr = &*file_name.begin();
+  // order 0 for boolean variables
+  // we dont care about variable names but they are used in
+  // MONA DFA file format with dfaExport()
+  char **names = new char*[this->num_of_variables];
+  char *orders = new char[this->num_of_variables];
+  std::string name = "a";
+  for (int i = 0; i < this->num_of_variables; i++) {
+    orders[i] = i;
+    names[0] = &*name.begin();
+  }
+
+  dfaExport(this->dfa, file_name_ptr, this->num_of_variables, names, orders);
+}
+
+DFA_ptr Automaton::importDFA(std::string file_name) {
+  char **names = new char*[this->num_of_variables];
+  int ** orders = new int*[this->num_of_variables];
+  return dfaImport(&*file_name.begin(), &names, orders);
+}
+
 int Automaton::inspectAuto(bool print_sink, bool force_mona_format) {
   std::stringstream file_name;
   file_name << "./output/inspect_auto_" << name_counter++ << ".dot";

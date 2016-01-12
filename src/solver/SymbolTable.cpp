@@ -283,9 +283,12 @@ bool SymbolTable::updateValue(SMT::Variable_ptr variable, Value_ptr value) {
   Value_ptr variable_old_value = getValue(variable);
   Value_ptr variable_new_value = variable_old_value->intersect(value);
   if (variable_value_table[scope_stack.back()][variable] == variable_old_value) {
+    setValue(variable, variable_new_value);
     delete variable_old_value; variable_old_value = nullptr;
+  } else {
+    setValue(variable, variable_new_value);
   }
-  setValue(variable, variable_new_value);
+
   return true;
 }
 

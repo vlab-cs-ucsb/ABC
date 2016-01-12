@@ -7,6 +7,19 @@
 
 #include "VariableValueComputer.h"
 
+#include <cstdbool>
+#include <iostream>
+#include <iterator>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "../smt/typedefs.h"
+#include "../smt/Visitor.h"
+#include "../theory/IntAutomaton.h"
+#include "../theory/StringAutomaton.h"
+
 namespace Vlab {
 namespace Solver {
 
@@ -29,7 +42,7 @@ VariableValueComputer::~VariableValueComputer() {
 void VariableValueComputer::start() {
   Value_ptr initial_value = nullptr;
   Term_ptr root_term = nullptr;
-  DVLOG(VLOG_LEVEL) << "Pre image computation start";
+  DVLOG(VLOG_LEVEL) << "Variable value computation start";
 
   // update variables starting from right side of the ast tree of the term
   // this is especially important for let terms
@@ -598,7 +611,6 @@ void VariableValueComputer::visitConcat(Concat_ptr concat_term) {
     child_result_auto = tmp_parent_auto->preConcatRight(left_of_child);
     tmp_parent_auto = child_result_auto;
   }
-
   if (right_of_child != nullptr) {
     if (left_of_child != nullptr) { // that means our variable is in between some other variables, make the preconcat precise (this can be avoided if preconcat works perfect)
       Theory::StringAutomaton_ptr tmp_2 = child_post_value->getStringAutomaton()->concat(right_of_child);
@@ -693,10 +705,6 @@ void VariableValueComputer::visitContains(Contains_ptr contains_term) {
   popTerm(contains_term);
   Term_ptr child_term = current_path->back();
 
-  if (child_term == contains_term->search_term) {
-    return; // contains operation does not have any restriction on right hand side
-  }
-
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -704,7 +712,16 @@ void VariableValueComputer::visitContains(Contains_ptr contains_term) {
   }
 
   Value_ptr term_value = getTermPreImage(contains_term);
-  child_value = term_value->clone();
+
+  if (child_term == contains_term->subject_term) {
+    child_value = term_value->clone();
+  } else {
+    Value_ptr child_post_value = getTermPostImage(child_term);
+    Theory::StringAutomaton_ptr sub_strings_auto = term_value->getStringAutomaton()->subStrings();
+    child_value = new Value(child_post_value->getStringAutomaton()->intersect(sub_strings_auto));
+    delete sub_strings_auto; sub_strings_auto = nullptr;
+  }
+
   setTermPreImage(child_term, child_value);
   visit(child_term);
 }
@@ -714,10 +731,6 @@ void VariableValueComputer::visitNotContains(NotContains_ptr not_contains_term) 
   popTerm(not_contains_term);
   Term_ptr child_term = current_path->back();
 
-  if (child_term == not_contains_term->search_term) {
-    return; // notContains operation does not have any restriction on right hand side
-  }
-
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -725,7 +738,20 @@ void VariableValueComputer::visitNotContains(NotContains_ptr not_contains_term) 
   }
 
   Value_ptr term_value = getTermPreImage(not_contains_term);
-  child_value = term_value->clone();
+
+  if (child_term == not_contains_term->subject_term) {
+    child_value = term_value->clone();
+  } else {
+    Value_ptr child_post_value = getTermPostImage(child_term);
+    if (term_value->isSingleValue()) {
+      Theory::StringAutomaton_ptr sub_strings_auto = term_value->getStringAutomaton()->subStrings();
+      child_value = new Value(child_post_value->getStringAutomaton()->difference(sub_strings_auto));
+      delete sub_strings_auto; sub_strings_auto = nullptr;
+    } else {
+      child_value = child_post_value->clone();
+    }
+  }
+
   setTermPreImage(child_term, child_value);
   visit(child_term);
 }

@@ -74,6 +74,7 @@ void SyntacticOptimizer::visitLet(Let_ptr let_term) {
 }
 
 void SyntacticOptimizer::visitAnd(And_ptr and_term) {
+  DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
   bool has_false_term = false;
   std::vector<TermList> or_term_lists;
   for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
@@ -99,6 +100,7 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
   if (has_false_term) {
     add_callback_to_replace_with_bool(and_term, "false");
   } else if (not ( or_term_lists.empty() )) { // convert to DNF
+
     std::vector<TermList> cartesian = {{}};
     for (auto& term_list_1 : or_term_lists) {
       std::vector<TermList> sub_product;
@@ -159,7 +161,7 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
       term = child_term;
     };
   } else {
-    DVLOG(VLOG_LEVEL) << "Optimize operation: '" << *and_term;
+    DVLOG(VLOG_LEVEL) << "Optimize operation: '" << *and_term << "'";
     TermConstant_ptr initial_term_constant = nullptr;
     int pos = 0;
     for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
@@ -199,7 +201,7 @@ void SyntacticOptimizer::visitOr(Or_ptr or_term) {
       term = child_term;
     };
   } else {
-    DVLOG(VLOG_LEVEL) << "Optimize operation: '" << *or_term;
+    DVLOG(VLOG_LEVEL) << "Optimize operation: '" << *or_term << "'";
     TermConstant_ptr initial_term_constant = nullptr;
     int pos = 0;
     for (auto iter = or_term->term_list->begin(); iter != or_term->term_list->end();) {
@@ -448,6 +450,7 @@ void SyntacticOptimizer::visitPlus(Plus_ptr plus_term) {
 
   int constant_value = 0;
   int pos = 0;
+
   for (auto iter = plus_term->term_list->begin(); iter != plus_term->term_list->end();) {
     if (Term::Type::PLUS == (*iter)->getType()) {
       Plus_ptr sub_plus_term = dynamic_cast<Plus_ptr>(*iter);
@@ -477,6 +480,7 @@ void SyntacticOptimizer::visitPlus(Plus_ptr plus_term) {
     }
     iter++; pos++;
   }
+
   if (constant_value != 0) {
     if (constant_value > 0) {
       plus_term->term_list->insert(plus_term->term_list->begin(), generate_term_constant(std::to_string(constant_value), Primitive::Type::NUMERAL));

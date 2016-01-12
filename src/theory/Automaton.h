@@ -95,6 +95,8 @@ public:
   // TODO merge toDot methods into one with options
   void toDot(std::ostream& out = std::cout, bool print_sink = false);
   void toBDD(std::ostream& out = std::cout);
+  void exportDfa(std::string file_name);
+  DFA_ptr importDFA(std::string file_name);
   int inspectAuto(bool print_sink = false, bool force_mona_format = false);
   int inspectBDD();
 

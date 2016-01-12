@@ -72,8 +72,8 @@ int main(const int argc, const char **argv) {
   int bound = std::stoi(bound_string);
 
   Vlab::Driver driver;
-  driver.setOption(Vlab::Option::Name::LIA_ENGINE_ENABLED, true);
-  driver.setOption(Vlab::Option::Name::MODEL_COUNTER_ENABLED, true);
+  driver.setOption(Vlab::Option::Name::LIA_ENGINE_ENABLED, false);
+  driver.setOption(Vlab::Option::Name::MODEL_COUNTER_ENABLED, false);
   driver.setOption(Vlab::Option::Name::OUTPUT_PATH, output_root);
 
   driver.test();
@@ -91,7 +91,7 @@ int main(const int argc, const char **argv) {
   driver.solve();
 
   if (driver.isSatisfiable()) {
-    LOG(INFO)<< "satisfiable !";
+    LOG(INFO)<< "SAT";
     if (VLOG_IS_ON(30)) {
       unsigned index = 0;
       for(auto& variable_entry : driver.getSatisfyingVariables()) {
@@ -121,7 +121,7 @@ int main(const int argc, const char **argv) {
       }
     }
   } else {
-    LOG(INFO) << "not satisfiable !";
+    LOG(INFO) << "UNSAT";
   }
 
   LOG(INFO)<< "done.";

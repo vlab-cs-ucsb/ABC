@@ -692,7 +692,19 @@ void ConstraintSolver::visitNotContains(NotContains_ptr not_contains_term) {
     Theory::StringAutomaton_ptr contains_auto = param_subject->getStringAutomaton()->contains(param_search->getStringAutomaton());
     result = new Value(param_subject->getStringAutomaton()->difference(contains_auto));
     delete contains_auto; contains_auto = nullptr;
+  } else if (param_subject->isSingleValue()) {
+    Theory::StringAutomaton_ptr sub_strings_auto = param_subject->getStringAutomaton()->subStrings();
+    Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->difference(sub_strings_auto);
+    delete sub_strings_auto; sub_strings_auto = nullptr;
+    if (difference_auto->isEmptyLanguage()) {
+      result = new Value(Theory::StringAutomaton::makePhi());
+    } else {
+      result = param_subject->clone();
+    }
+    delete difference_auto; difference_auto = nullptr;
   } else {
+    // TODO if param_subject is a suffix automaton (all the strings accepted is actually substrings of largest length string),
+    // there can be a more precise calculation instead of just cloning the subject
     result = param_subject->clone();
   }
 
@@ -1116,7 +1128,6 @@ void ConstraintSolver::update_variables() {
 
   VariableValueComputer value_updater(symbol_table, variable_path_table, term_values);
   value_updater.start();
-
   variable_path_table.clear();
 }
 
