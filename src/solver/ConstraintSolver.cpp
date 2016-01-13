@@ -734,6 +734,16 @@ void ConstraintSolver::visitNotBegins(NotBegins_ptr not_begins_term) {
     Theory::StringAutomaton_ptr begins_auto = param_subject->getStringAutomaton()->begins(param_search->getStringAutomaton());
     result = new Value(param_subject->getStringAutomaton()->difference(begins_auto));
     delete begins_auto; begins_auto = nullptr;
+  } else if (param_subject->isSingleValue()) {
+    Theory::StringAutomaton_ptr prefixes_auto = param_subject->getStringAutomaton()->prefixes();
+    Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->difference(prefixes_auto);
+    delete prefixes_auto; prefixes_auto = nullptr;
+    if (difference_auto->isEmptyLanguage()) {
+      result = new Value(Theory::StringAutomaton::makePhi());
+    } else {
+      result = param_subject->clone();
+    }
+    delete difference_auto; difference_auto = nullptr;
   } else {
     result = param_subject->clone();
   }
@@ -764,6 +774,16 @@ void ConstraintSolver::visitNotEnds(NotEnds_ptr not_ends_term) {
     Theory::StringAutomaton_ptr ends_auto = param_subject->getStringAutomaton()->ends(param_search->getStringAutomaton());
     result = new Value(param_subject->getStringAutomaton()->difference(ends_auto));
     delete ends_auto; ends_auto = nullptr;
+  } else if (param_subject->isSingleValue()) {
+    Theory::StringAutomaton_ptr suffixes_auto = param_subject->getStringAutomaton()->suffixes();
+    Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->difference(suffixes_auto);
+    delete suffixes_auto; suffixes_auto = nullptr;
+    if (difference_auto->isEmptyLanguage()) {
+      result = new Value(Theory::StringAutomaton::makePhi());
+    } else {
+      result = param_subject->clone();
+    }
+    delete difference_auto; difference_auto = nullptr;
   } else {
     result = param_subject->clone();
   }

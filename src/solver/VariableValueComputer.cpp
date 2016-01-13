@@ -774,10 +774,6 @@ void VariableValueComputer::visitNotBegins(NotBegins_ptr not_begins_term) {
   popTerm(not_begins_term);
   Term_ptr child_term = current_path->back();
 
-  if (child_term == not_begins_term->search_term) {
-    return; // notBegins operation does not have any restriction on right hand side
-  }
-
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -785,7 +781,20 @@ void VariableValueComputer::visitNotBegins(NotBegins_ptr not_begins_term) {
   }
 
   Value_ptr term_value = getTermPreImage(not_begins_term);
-  child_value = term_value->clone();
+
+  if (child_term == not_begins_term->subject_term) {
+    child_value = term_value->clone();
+  } else {
+    Value_ptr child_post_value = getTermPostImage(child_term);
+    if (term_value->isSingleValue()) {
+      Theory::StringAutomaton_ptr prefixes_auto = term_value->getStringAutomaton()->prefixes();
+      child_value = new Value(child_post_value->getStringAutomaton()->difference(prefixes_auto));
+      delete prefixes_auto; prefixes_auto = nullptr;
+    } else {
+      child_value = child_post_value->clone();
+    }
+  }
+
   setTermPreImage(child_term, child_value);
   visit(child_term);
 }
@@ -821,10 +830,6 @@ void VariableValueComputer::visitNotEnds(NotEnds_ptr not_ends_term) {
   popTerm(not_ends_term);
   Term_ptr child_term = current_path->back();
 
-  if (child_term == not_ends_term->search_term) {
-    return; // notEnds operation does not have any restriction on right hand side
-  }
-
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -832,7 +837,20 @@ void VariableValueComputer::visitNotEnds(NotEnds_ptr not_ends_term) {
   }
 
   Value_ptr term_value = getTermPreImage(not_ends_term);
-  child_value = term_value->clone();
+
+  if (child_term == not_ends_term->subject_term) {
+    child_value = term_value->clone();
+  } else {
+    Value_ptr child_post_value = getTermPostImage(child_term);
+    if (term_value->isSingleValue()) {
+      Theory::StringAutomaton_ptr suffixes_auto = term_value->getStringAutomaton()->suffixes();
+      child_value = new Value(child_post_value->getStringAutomaton()->difference(suffixes_auto));
+      delete suffixes_auto; suffixes_auto = nullptr;
+    } else {
+      child_value = child_post_value->clone();
+    }
+  }
+
   setTermPreImage(child_term, child_value);
   visit(child_term);
 }
