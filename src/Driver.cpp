@@ -96,6 +96,7 @@ bool Driver::isSatisfiable() {
 
 std::string Driver::count(std::string var_name, int bound, bool count_less_than_or_equal_to_bound) {
   std::string result;
+  symbol_table->unionValuesOfVariables(script);
   symbol_table->push_scope(script);
   Vlab::Solver::Value_ptr var_value = symbol_table->getValue(var_name);
   symbol_table->pop_scope();
@@ -103,11 +104,21 @@ std::string Driver::count(std::string var_name, int bound, bool count_less_than_
     case Vlab::Solver::Value::Type::STRING_AUTOMATON:
       result = var_value->getStringAutomaton()->count(bound, count_less_than_or_equal_to_bound);
       break;
+    case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON:
+      result = var_value->getBinaryIntAutomaton()->count(bound, count_less_than_or_equal_to_bound);
     default:
       break;
   }
 
   return result;
+}
+
+/**
+ * Binary Integer Automaton Count
+ */
+std::string Driver::count(int bound, bool count_less_than_or_equal_to_bound) {
+  std::string var_name(Solver::SymbolTable::ARITHMETIC);
+  return count(var_name, bound, count_less_than_or_equal_to_bound);
 }
 
 
@@ -188,6 +199,10 @@ void Driver::setOption(Option::Name option, std::string value) {
     case Option::Name::OUTPUT_PATH:
       Option::Solver::OUTPUT_PATH = value;
       Option::Theory::TMP_PATH = value;
+      break;
+    case Option::Name::SCRIPT_PATH:
+      Option::Solver::SCRIPT_PATH = value;
+      Option::Theory::SCRIPT_PATH = value;
       break;
     default:
       LOG(ERROR) << "option not recognized: " << static_cast<int>(option) << " -> " << value;

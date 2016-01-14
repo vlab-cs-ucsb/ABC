@@ -17,6 +17,7 @@
 #include <vector>
 #include <array>
 
+#include "options/Theory.h"
 #include "utils/Math.h"
 #include "utils/List.h"
 #include "Automaton.h"
@@ -66,6 +67,8 @@ public:
   UnaryAutomaton_ptr toUnaryAutomaton();
 
   std::map<std::string, int> getAnAcceptingIntForEachVar();
+
+  virtual std::string count(int bound, bool count_less_than_or_equal_to_bound = true);
 
 protected:
   BinaryIntAutomaton(ArithmeticFormula_ptr formula);

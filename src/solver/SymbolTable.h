@@ -76,7 +76,7 @@ public:
   bool updateValue(std::string var_name, Value_ptr value);
   bool updateValue(SMT::Variable_ptr variable, Value_ptr value);
 
-  static const std::string ARITHMETIC;
+  static const char ARITHMETIC[];
 private:
   bool global_assertion_result;
   int bound;

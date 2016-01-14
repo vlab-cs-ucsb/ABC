@@ -8,9 +8,10 @@ import vlab.cs.ucsb.edu.DriverProxy.Option;
 public class ExampleUsage {
 
   public static void main(String[] args) {
-    // TODO Auto-generated method stub
+
     DriverProxy abcDriver = new DriverProxy();
     abcDriver.setOption(Option.OUTPUT_PATH, "./");
+    abcDriver.setOption(Option.SCRIPT_PATH, "/home/baki/Projects/ABC/lib/mathematica");
     abcDriver.setOption(Option.MODEL_COUNTER_ENABLED, true);
     abcDriver.setOption(Option.LIA_ENGINE_ENABLED, true);
     
@@ -35,6 +36,32 @@ public class ExampleUsage {
       }
       
 //      abcDriver.printResultAutomaton();
+      
+      Map<String, String> results = abcDriver.getSatisfyingExamples();
+      for (Entry<String, String> var_result : results.entrySet()) {
+        System.out.println(var_result.getKey() + " : \"" + var_result.getValue() + "\"");
+      }
+    } else {
+      System.out.println("Unsatisfiable");
+    }
+    
+    constraint = "(declare-fun x () Int)\n"
+            + "(declare-fun y () Int)\n"
+            + "(assert (= x (* 2 y)))\n"
+            + "(assert (> x 0))\n"
+            + "(check-sat)"; 
+
+    result = abcDriver.isSatisfiable(constraint);
+    
+    if (result) {
+      System.out.println("Satisfiable");
+      int bound = 4;
+      BigDecimal count = abcDriver.count(bound);
+      if (count != null) {
+        System.out.println("Number of solutions within bound " + bound + " is " + count.toString());
+      } else {
+        System.out.println("An error occured during counting, please contact vlab@cs.ucsb.edu");
+      }
       
       Map<String, String> results = abcDriver.getSatisfyingExamples();
       for (Entry<String, String> var_result : results.entrySet()) {

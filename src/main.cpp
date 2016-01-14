@@ -72,9 +72,10 @@ int main(const int argc, const char **argv) {
   int bound = std::stoi(bound_string);
 
   Vlab::Driver driver;
-  driver.setOption(Vlab::Option::Name::LIA_ENGINE_ENABLED, false);
-  driver.setOption(Vlab::Option::Name::MODEL_COUNTER_ENABLED, false);
+  driver.setOption(Vlab::Option::Name::LIA_ENGINE_ENABLED, true);
+  driver.setOption(Vlab::Option::Name::MODEL_COUNTER_ENABLED, true);
   driver.setOption(Vlab::Option::Name::OUTPUT_PATH, output_root);
+  driver.setOption(Vlab::Option::Name::SCRIPT_PATH, std::string("./lib/mathematica"));
 
   driver.test();
   driver.parse(in);
@@ -113,6 +114,7 @@ int main(const int argc, const char **argv) {
             for (auto& entry : values) {
               LOG(INFO) << entry.first << " : " << entry.second;
             }
+//            LOG(INFO) << "count: " << variable_entry.second->getBinaryIntAutomaton()->count(3);
             break;
           }
           default:
@@ -127,6 +129,15 @@ int main(const int argc, const char **argv) {
   LOG(INFO)<< "done.";
   return 0;
 }
+
+//static const std::string get_env_value(const char name[]) {
+//  const char* env;
+//  env = getenv(name);
+//  if (env != NULL && env[0] != '\0') {
+//    return std::string(env);
+//  }
+//  return "";
+//}
 
 static const std::string get_default_output_dir() {
   const char* env;

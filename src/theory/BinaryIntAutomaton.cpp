@@ -732,6 +732,31 @@ std::map<std::string, int> BinaryIntAutomaton::getAnAcceptingIntForEachVar() {
   return var_values;
 }
 
+std::string BinaryIntAutomaton::count(int bound, bool count_less_than_or_equal_to_bound) {
+  std::stringstream cmd;
+  std::string result;
+  std::string tmp_result_file = Option::Theory::TMP_PATH + "/arith_result.dot";
+  std::string math_script_path = Option::Theory::SCRIPT_PATH + "/count.m";
+
+  std::ofstream outfile(tmp_result_file.c_str());
+  if (!outfile.good()) {
+    std::cout << "cannot open file: " << tmp_result_file << std::endl;
+    exit(2);
+  }
+
+  this->toDot(outfile, false);
+
+  cmd << "math -script " << math_script_path << " " << tmp_result_file << " " << bound;
+  try {
+    DVLOG(VLOG_LEVEL) << "run_cmd(`" << cmd.str() << "`)";
+    result = Util::Cmd::run_cmd(cmd.str());
+  } catch (std::string& e) {
+    LOG(ERROR) << e;
+  }
+
+  return result;
+}
+
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeGraterThanOrEqualToZero(std::vector<int> indexes, int number_of_variables) {
   BinaryIntAutomaton_ptr postivie_numbers_auto = nullptr;
   DFA_ptr positive_numbers_dfa = nullptr;

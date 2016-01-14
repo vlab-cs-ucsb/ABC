@@ -13,7 +13,8 @@
 namespace Vlab {
 namespace Option {
 
-std::string Theory::TMP_PATH = "./";
+std::string Theory::TMP_PATH     = ".";
+std::string Theory::SCRIPT_PATH  = ".";
 
 } /* namespace Option */
 } /* namespace Vlab */

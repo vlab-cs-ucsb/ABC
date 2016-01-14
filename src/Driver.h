@@ -47,6 +47,7 @@ public:
   void solve();
   bool isSatisfiable();
   std::string count(std::string var_name, int bound, bool count_less_than_or_equal_to_bound = true);
+  std::string count(int bound, bool count_less_than_or_equal_to_bound = true);
   void printResult(Solver::Value_ptr value, std::ostream& out);
   void inspectResult(Solver::Value_ptr value, std::string file_name);
   std::map<SMT::Variable_ptr, Solver::Value_ptr> getSatisfyingVariables();

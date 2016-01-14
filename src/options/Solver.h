@@ -19,7 +19,8 @@ namespace Option {
 enum class Name : int {
   OUTPUT_PATH = 0,
   MODEL_COUNTER_ENABLED,
-  LIA_ENGINE_ENABLED
+  LIA_ENGINE_ENABLED,
+  SCRIPT_PATH
 };
 
 class Solver {
@@ -27,6 +28,7 @@ public:
   static bool MODEL_COUNTER_ENABLED;
   static bool LIA_ENGINE_ENABLED;
   static std::string OUTPUT_PATH;
+  static std::string SCRIPT_PATH;
 };
 
 } /* namespace Option */

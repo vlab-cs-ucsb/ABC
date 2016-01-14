@@ -19,6 +19,7 @@ namespace Option {
 class Theory {
 public:
   static std::string TMP_PATH;
+  static std::string SCRIPT_PATH;
 };
 
 } /* namespace Option */
