@@ -211,7 +211,17 @@ void Driver::setOption(Option::Name option, std::string value) {
 }
 
 void Driver::test() {
-return;
+  return;
+//  std::map<std::string ,int> eq_1 = {{"x", 0}, {"z", 1}, {"y", 2}};
+//  std::vector<int> coeff = {1, 2, 3};
+//
+//  Theory::ArithmeticFormula formula_2(eq_1, coeff);
+//  formula_2.setType(Theory::ArithmeticFormula::Type::EQ);
+//  Theory::BinaryIntAutomaton_ptr test_auto = Theory::BinaryIntAutomaton::makeAutomaton(&formula_2);
+//
+//  test_auto->inspectAuto();
+//  test_auto->inspectBDD();
+
 //    Theory::IntAutomaton_ptr int_auto_1 = Theory::IntAutomaton::makeInt(78);
 //    std::cout << "int: " << int_auto_1->getAnAcceptingInt() << std::endl;
 //    delete int_auto_1;
