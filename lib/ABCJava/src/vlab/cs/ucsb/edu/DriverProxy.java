@@ -43,16 +43,20 @@ public class DriverProxy {
     public DriverProxy(int logFlag) {
 	initABC(logFlag);
     }
-
-    public BigDecimal count(int bound) {
+    
+    public BigDecimal count(double bound) {
 	return count(ARITHMETIC_VARIABLE, bound, true);
-    }
+    } 
 
     public BigDecimal count(String var_name, int bound) {
 	return count(var_name, bound, true);
     }
+    
+    private BigDecimal count(String var_name, double bound) {
+	return count(var_name, bound, true);
+    }
 
-    public BigDecimal count(String var_name, int bound, boolean countLessThanOrEqualToBound) {
+    public BigDecimal count(String var_name, double bound, boolean countLessThanOrEqualToBound) {
 	String resultString = countVar(var_name, bound, countLessThanOrEqualToBound).trim();
 	BigDecimal result;
 
@@ -80,7 +84,7 @@ public class DriverProxy {
 
     public native boolean isSatisfiable(String constraint);
 
-    private native String countVar(String var_name, int bound, boolean countLessThanOrEqualToBound);
+    private native String countVar(String var_name, double bound, boolean countLessThanOrEqualToBound);
 
     public native void printResultAutomaton();
 

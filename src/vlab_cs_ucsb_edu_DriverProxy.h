@@ -42,10 +42,10 @@ JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    countVar
- * Signature: (Ljava/lang/String;IZ)Ljava/lang/String;
+ * Signature: (Ljava/lang/String;DZ)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countVar
-  (JNIEnv *, jobject, jstring, jint, jboolean);
+  (JNIEnv *, jobject, jstring, jdouble, jboolean);
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy

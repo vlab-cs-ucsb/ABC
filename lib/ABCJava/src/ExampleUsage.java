@@ -55,7 +55,7 @@ public class ExampleUsage {
     
     if (result) {
       System.out.println("Satisfiable");
-      int bound = 4;
+      double bound = 5.96417;
       BigDecimal count = abcDriver.count(bound);
       if (count != null) {
         System.out.println("Number of solutions within bound " + bound + " is " + count.toString());

@@ -114,7 +114,7 @@ int main(const int argc, const char **argv) {
             for (auto& entry : values) {
               LOG(INFO) << entry.first << " : " << entry.second;
             }
-//            LOG(INFO) << "count: " << variable_entry.second->getBinaryIntAutomaton()->count(3);
+            LOG(INFO) << "count: " << variable_entry.second->getBinaryIntAutomaton()->count(5.1);
             break;
           }
           default:

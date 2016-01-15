@@ -732,7 +732,7 @@ std::map<std::string, int> BinaryIntAutomaton::getAnAcceptingIntForEachVar() {
   return var_values;
 }
 
-std::string BinaryIntAutomaton::count(int bound, bool count_less_than_or_equal_to_bound) {
+std::string BinaryIntAutomaton::count(double bound, bool count_less_than_or_equal_to_bound) {
   std::stringstream cmd;
   std::string result;
   std::string tmp_result_file = Option::Theory::TMP_PATH + "/arith_result.dot";
@@ -746,7 +746,15 @@ std::string BinaryIntAutomaton::count(int bound, bool count_less_than_or_equal_t
 
   this->toDot(outfile, false);
 
-  cmd << "math -script " << math_script_path << " " << tmp_result_file << " " << bound;
+
+  cmd << "math -script " << math_script_path << " " << tmp_result_file << " ";
+
+  if (std::floor(bound) == bound) {
+    cmd << static_cast<int>(bound);
+  } else {
+    cmd << bound;
+  }
+
   try {
     DVLOG(VLOG_LEVEL) << "run_cmd(`" << cmd.str() << "`)";
     result = Util::Cmd::run_cmd(cmd.str());

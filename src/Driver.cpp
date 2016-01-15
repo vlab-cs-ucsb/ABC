@@ -94,7 +94,7 @@ bool Driver::isSatisfiable() {
   return symbol_table->isSatisfiable();
 }
 
-std::string Driver::count(std::string var_name, int bound, bool count_less_than_or_equal_to_bound) {
+std::string Driver::count(std::string var_name, double bound, bool count_less_than_or_equal_to_bound) {
   std::string result;
   symbol_table->unionValuesOfVariables(script);
   symbol_table->push_scope(script);

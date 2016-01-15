@@ -68,7 +68,7 @@ public:
 
   std::map<std::string, int> getAnAcceptingIntForEachVar();
 
-  virtual std::string count(int bound, bool count_less_than_or_equal_to_bound = true);
+  virtual std::string count(double bound, bool count_less_than_or_equal_to_bound = true);
 
 protected:
   BinaryIntAutomaton(ArithmeticFormula_ptr formula);

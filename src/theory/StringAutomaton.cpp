@@ -1219,8 +1219,20 @@ StringAutomaton_ptr StringAutomaton::subStrings() {
   return sub_strings_auto;
 }
 
-StringAutomaton_ptr StringAutomaton::charAt(int index){
-  return this->subString(index,index);
+StringAutomaton_ptr StringAutomaton::charAt(int index) {
+  StringAutomaton_ptr char_at_auto = subString(index, index);
+
+  if (index > 0) { // programming languages never return empty char for index > 0
+    StringAutomaton_ptr non_empty_strings = StringAutomaton::makeLengthGreaterThan(0);
+    StringAutomaton_ptr tmp_auto = char_at_auto;
+    char_at_auto = tmp_auto->intersect(non_empty_strings);
+    delete tmp_auto; tmp_auto = nullptr;
+    delete non_empty_strings; non_empty_strings = nullptr;
+  }
+
+  DVLOG(VLOG_LEVEL) << char_at_auto->id << " = [" << this->id << "]->charAt(" << index << ")";
+
+  return char_at_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::subString(int start){
