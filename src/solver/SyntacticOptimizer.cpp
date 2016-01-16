@@ -1096,41 +1096,15 @@ std::string SyntacticOptimizer::escape_regex(std::string regex) {
   return ss.str();
 }
 
-std::string SyntacticOptimizer::regex_to_str(std::string regex) {
-  std::string::size_type last = regex.substr(1).find_last_of("/");
-  return regex.substr(1, last);
-}
 
 void SyntacticOptimizer::append_constant(TermConstant_ptr left_constant, TermConstant_ptr right_constant) {
   std::stringstream ss;
+  ss << left_constant->getValue() << right_constant->getValue();
+  left_constant->primitive->setData(ss.str());
   if (Primitive::Type::REGEX == left_constant->getValueType()
-          and Primitive::Type::REGEX == right_constant->getValueType()) {
-    std::string left_data = regex_to_str(left_constant->getValue());
-    std::string right_data = regex_to_str(right_constant->getValue());
-    ss << "/" << left_data << right_data << "/";
-    left_constant->primitive->setType(Primitive::Type::REGEX);
-    left_constant->primitive->setData(ss.str());
-  } else if (Primitive::Type::STRING == left_constant->getValueType()
-          and Primitive::Type::STRING == right_constant->getValueType()) {
-    std::string left_data = left_constant->getValue();
-    std::string right_data = right_constant->getValue();
-    ss << left_data << right_data ;
-    left_constant->primitive->setType(Primitive::Type::STRING);
-    left_constant->primitive->setData(ss.str());
-
-  } else if (Primitive::Type::REGEX == left_constant->getValueType()
           or Primitive::Type::REGEX == right_constant->getValueType()) {
-    std::string left_data =
-            (Primitive::Type::REGEX == left_constant->getValueType()) ?
-                    regex_to_str(left_constant->getValue()) : left_constant->getValue();
-    std::string right_data =
-            (Primitive::Type::REGEX == right_constant->getValueType()) ?
-                    regex_to_str(right_constant->getValue()) : right_constant->getValue();
-    ss << "/" << left_data << right_data << "/";
     left_constant->primitive->setType(Primitive::Type::REGEX);
-    left_constant->primitive->setData(ss.str());
   }
-
 }
 
 bool SyntacticOptimizer::check_and_process_len_transformation(Term_ptr operation, Term_ptr& left_term,

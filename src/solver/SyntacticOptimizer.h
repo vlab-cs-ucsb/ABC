@@ -93,7 +93,6 @@ public:
 protected:
   void visit_and_callback(SMT::Term_ptr&);
   std::string escape_regex(std::string regex);
-  std::string regex_to_str(std::string regex);
   void append_constant(SMT::TermConstant_ptr, SMT::TermConstant_ptr);
   // TODO check len transformation later when pres. arith. added.
   bool check_and_process_len_transformation(SMT::Term_ptr, SMT::Term_ptr&, SMT::Term_ptr&);
