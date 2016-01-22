@@ -593,9 +593,8 @@ StringAutomaton_ptr StringAutomaton::concatenate(StringAutomaton_ptr other_auto)
 }
 
 /**
- * Re-implementation of  'dfa_concat_extrabit' in LibStranger
- * Added single string check
- *
+ * Initial Re-implementation of  'dfa_concat_extrabit' in LibStranger
+ *TODO Fix empty string bug that happens in case (concat /.{0,1}/ /{1,1}/)
  */
 StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
   DFA_ptr concat_dfa = nullptr, tmp_dfa = nullptr;
@@ -609,18 +608,14 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
     return this->clone();
   }
 
-  bool has_empty_string = other_auto->hasEmptyString();
+  bool right_hand_side_has_empty_string = other_auto->hasEmptyString();
   bool delete_other_auto = false;
-
-
-  if (has_empty_string and other_auto->hasIncomingTransition(other_auto->dfa->s)) {
+  if (right_hand_side_has_empty_string and other_auto->hasIncomingTransition(other_auto->dfa->s)) {
     DFA_ptr shifted_dfa = dfa_shift_empty_M(other_auto->dfa, other_auto->num_of_variables, other_auto->variable_indices);
     StringAutomaton_ptr shifted_auto = new StringAutomaton(shifted_dfa, other_auto->num_of_variables);
     other_auto = shifted_auto;
     delete_other_auto = true;
   }
-
-
 
   int var = num_of_variables;
   int* indices = variable_indices;
@@ -860,7 +855,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
 
   concat_auto = new StringAutomaton(concat_dfa, num_of_variables);
 
-  if (has_empty_string) {
+  if (right_hand_side_has_empty_string) {
     StringAutomaton_ptr tmp_auto = concat_auto;
     concat_auto = tmp_auto->union_(this);
     delete tmp_auto;

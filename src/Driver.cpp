@@ -145,7 +145,7 @@ void Driver::printResult(Solver::Value_ptr value, std::ostream& out) {
       value->getIntAutomaton()->toDotAscii(false, out);
       break;
     case Solver::Value::Type::BINARYINT_AUTOMATON:
-      value->getBinaryIntAutomaton()->toDot(out);
+      value->getBinaryIntAutomaton()->toDot(out, false);
       break;
     default:
       break;

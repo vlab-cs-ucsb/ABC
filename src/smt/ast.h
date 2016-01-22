@@ -72,7 +72,7 @@ public:
   virtual Command_ptr clone() const;
   virtual ~Command();
   virtual std::string str() const;
-  Command::Type getType() const;
+  virtual Command::Type getType() const;
 
   virtual void accept(Visitor_ptr);
   virtual void visit_children(Visitor_ptr);

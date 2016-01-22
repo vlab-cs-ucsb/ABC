@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <map>
+#include <unordered_map>
 #include <stack>
 #include <vector>
 #include <array>
@@ -105,6 +106,7 @@ protected:
     // r suffixes are for the rejecting clone
     int i, ir; // state index
     int s, sr; // status: 0 not yet processed, 1 to be expanded, 2 done
+    StateIndices(): i{-1}, ir{-1}, s{0}, sr{0} {}
   };
   ArithmeticFormula_ptr formula;
 private:

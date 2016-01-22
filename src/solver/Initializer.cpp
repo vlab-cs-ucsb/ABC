@@ -111,7 +111,7 @@ void Initializer::visitCommand(Command_ptr command) {
     break;
   }
   default:
-    LOG(WARNING)<< "'" << *command<< "' is not handled, skipping; contact us for any questions.";
+    DVLOG(VLOG_LEVEL)<< "'" << *command<< "' is not handled, skipping; contact us for any questions.";
     break;
   }
 }
@@ -320,7 +320,7 @@ void Initializer::verifyVariableDefinitions() {
   }
   if (not is_symbolic) {
     variable->setSymbolic(true);
-    LOG(INFO)<<"No target var defined by user; setting target var: " << *variable;
+//    LOG(INFO)<<"No target var defined by user; setting target var: " << *variable;
   }
 }
 

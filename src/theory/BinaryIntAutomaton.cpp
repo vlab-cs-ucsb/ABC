@@ -946,56 +946,40 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNotEquality(ArithmeticFormula_ptr
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThan(ArithmeticFormula_ptr formula) {
-  BinaryIntAutomaton_ptr less_than_auto = nullptr;
-  DFA_ptr less_than_dfa = nullptr, tmp_dfa = nullptr;
-
   formula->simplify();
 
-  int min = 0, max = 0, num_of_states, next_index, next_label, result, target;
-  int write1, label1, label2;
-  unsigned long transitions;
-  const int constant = formula->getConstant();
-  const int num_of_variables = formula->getCoefficients().size();
-  int* indices = getIndices(num_of_variables);
-  char *statuses = nullptr;
-  std::map<int , StateIndices> carry_map; // maps carries to state indices
-
+  int min = 0, max = 0;
   for (int& c : formula->getCoefficients()) {
-   if (c > 0) {
+    if (c > 0) {
      max += c;
-   } else {
+    } else {
      min += c;
-   }
+    }
   }
 
+  const int constant = formula->getConstant();
   if ( max < constant) {
    max = constant;
   } else if (min > constant) {
    min = constant;
   }
 
-  num_of_states = 2 * (max - min + 1);
-  statuses = new char[num_of_states + 1];
+  const int num_of_variables = formula->getCoefficients().size();
+  int num_of_states = 2 * (max - min + 1);
+  int* indices = getIndices(num_of_variables);
+  dfaSetup(num_of_states, num_of_variables, indices);
+  delete[] indices;
 
-  for (int i = min; i < max + 1; i++) {
-   carry_map[i].s = 0;
-   carry_map[i].sr = 0;
-   carry_map[i].i = -1;
-   carry_map[i].ir = -1;
-  }
+  int next_index = 0, next_label = constant, result, target;
+  int write1, label1, label2;
+  std::unordered_map<int, StateIndices> carry_map; // maps carries to state indices
 
   carry_map[constant].sr = 1;
-  next_index = 0;
-  next_label = constant;
   carry_map[constant].i = -1;
   carry_map[constant].ir = 0;
 
-
-
-  transitions = 1 << num_of_variables; //number of transitions from each state
-
-  dfaSetup(num_of_states, num_of_variables, indices);
-  delete[] indices;
+  CHECK_LT(num_of_variables, 64);
+  unsigned long transitions = 1 << num_of_variables; //number of transitions from each state
   int count = 0;
   while (next_label < max + 1) { //there is a state to expand (excuding sink)
    if (carry_map[next_label].i == count) {
@@ -1065,7 +1049,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThan(ArithmeticFormula_ptr fo
   }
 
   //define accepting and rejecting states
-
+  char *statuses = new char[num_of_states + 1];
   for (int i = 0; i < num_of_states; i++) {
    statuses[i] = '-';
   }
@@ -1077,12 +1061,12 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThan(ArithmeticFormula_ptr fo
   }
   statuses[num_of_states] = '\0';
 
-  tmp_dfa = dfaBuild(statuses);
+  DFA_ptr tmp_dfa = dfaBuild(statuses);
   tmp_dfa->ns = tmp_dfa->ns - (num_of_states - count);
-  less_than_dfa = dfaMinimize(tmp_dfa);
+  DFA_ptr less_than_dfa = dfaMinimize(tmp_dfa);
   dfaFree(tmp_dfa);
 
-  less_than_auto = new BinaryIntAutomaton(less_than_dfa, num_of_variables);
+  BinaryIntAutomaton_ptr less_than_auto = new BinaryIntAutomaton(less_than_dfa, num_of_variables);
   less_than_auto->setFormula(formula);
 
   DVLOG(VLOG_LEVEL) << less_than_auto->id << " = makeLessThan(" << *formula << ")";
