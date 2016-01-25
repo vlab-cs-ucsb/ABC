@@ -99,15 +99,14 @@ int main(const int argc, const char **argv) {
         std::stringstream ss;
         ss << output_root << "/result_" << index++ << ".dot";
         std::string out_file = ss.str();
-        //        driver.inspectResult(variable_entry.second, out_file);
-        std::string save_result = output_root + "/" + file_name.substr(file_name.find_last_of('/') + 2) + ".dot";
-        std::ofstream outfile(save_result.c_str());
-        if (!outfile.good()) {
-          std::cout << "cannot open file: " << save_result << std::endl;
-          exit(2);
-        }
-        driver.printResult(variable_entry.second, outfile);
-
+        driver.inspectResult(variable_entry.second, out_file);
+//        std::string save_result = output_root + "/" + file_name.substr(file_name.find_last_of('/') + 2) + ".dot";
+//        std::ofstream outfile(save_result.c_str());
+//        if (!outfile.good()) {
+//          std::cout << "cannot open file: " << save_result << std::endl;
+//          exit(2);
+//        }
+//        driver.printResult(variable_entry.second, outfile);
 
         switch (variable_entry.second->getType()) {
           case Vlab::Solver::Value::Type::INT_AUTOMATON: {

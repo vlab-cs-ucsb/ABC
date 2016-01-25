@@ -1184,7 +1184,6 @@ StringAutomaton_ptr StringAutomaton::prefixesAtIndex(int index){
   StringAutomaton_ptr prefixes_auto = nullptr;
   StringAutomaton_ptr length_auto = nullptr;
   StringAutomaton_ptr prefixesAt_auto = nullptr;
-
   prefixes_auto = this->prefixes();
   if (index == 0) {
     // when index is 0, result should also accept empty string if subject automaton accepts empty string
@@ -1216,17 +1215,16 @@ StringAutomaton_ptr StringAutomaton::subStrings() {
 
 StringAutomaton_ptr StringAutomaton::charAt(int index) {
   StringAutomaton_ptr char_at_auto = subString(index, index);
-
-  if (index > 0) { // programming languages never return empty char for index > 0
+  // programming languages never return empty char for index > 0
+  // or never return empty char when string is not an empty string
+  if (index > 0 || (not this->isInitialStateAccepting())) {
     StringAutomaton_ptr non_empty_strings = StringAutomaton::makeLengthGreaterThan(0);
     StringAutomaton_ptr tmp_auto = char_at_auto;
     char_at_auto = tmp_auto->intersect(non_empty_strings);
     delete tmp_auto; tmp_auto = nullptr;
     delete non_empty_strings; non_empty_strings = nullptr;
   }
-
   DVLOG(VLOG_LEVEL) << char_at_auto->id << " = [" << this->id << "]->charAt(" << index << ")";
-
   return char_at_auto;
 }
 
@@ -1237,6 +1235,9 @@ StringAutomaton_ptr StringAutomaton::subString(int start){
   return substring_auto;
 }
 
+/**
+ * TODO subString should return emtpy when start == end, start should be inclusive, end should be exclusive
+ */
 StringAutomaton_ptr StringAutomaton::subString(int start, int end){
   StringAutomaton_ptr substring_auto = nullptr, suffixes_auto = nullptr;
   suffixes_auto = this->suffixesFromIndex(start);

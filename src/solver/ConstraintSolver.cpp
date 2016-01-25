@@ -435,7 +435,7 @@ void ConstraintSolver::visitGt(Gt_ptr gt_term) {
     if (Value::Type::INT_CONSTANT == param_right->getType()) {
       result = new Value(param_left->getIntAutomaton()->isGreaterThan(param_right->getIntConstant()));
     } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
-      result = new Value(param_right->getIntAutomaton()->isGreaterThan(param_left->getIntAutomaton()));
+      result = new Value(param_left->getIntAutomaton()->isGreaterThan(param_right->getIntAutomaton()));
     } else {
       LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *gt_term;
     }
@@ -473,7 +473,7 @@ void ConstraintSolver::visitGe(Ge_ptr ge_term) {
 
   if (Value::Type::INT_CONSTANT == param_left->getType()) {
     if (Value::Type::INT_CONSTANT == param_right->getType()) {
-      result = new Value((param_left->getIntConstant() > param_right->getIntConstant()));
+      result = new Value((param_left->getIntConstant() >= param_right->getIntConstant()));
     } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
         result = new Value(param_right->getIntAutomaton()->isLessThanOrEqual(param_left->getIntConstant()));
     } else {
@@ -483,7 +483,7 @@ void ConstraintSolver::visitGe(Ge_ptr ge_term) {
     if (Value::Type::INT_CONSTANT == param_right->getType()) {
       result = new Value(param_left->getIntAutomaton()->isGreaterThanOrEqual(param_right->getIntConstant()));
     } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
-      result = new Value(param_right->getIntAutomaton()->isGreaterThanOrEqual(param_left->getIntAutomaton()));
+      result = new Value(param_left->getIntAutomaton()->isGreaterThanOrEqual(param_right->getIntAutomaton()));
     } else {
       LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *ge_term;
     }
@@ -521,7 +521,7 @@ void ConstraintSolver::visitLt(Lt_ptr lt_term) {
 
   if (Value::Type::INT_CONSTANT == param_left->getType()) {
     if (Value::Type::INT_CONSTANT == param_right->getType()) {
-      result = new Value((param_left->getIntConstant() > param_right->getIntConstant()));
+      result = new Value((param_left->getIntConstant() < param_right->getIntConstant()));
     } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
         result = new Value(param_right->getIntAutomaton()->isGreaterThan(param_left->getIntConstant()));
     } else {
@@ -531,7 +531,7 @@ void ConstraintSolver::visitLt(Lt_ptr lt_term) {
     if (Value::Type::INT_CONSTANT == param_right->getType()) {
       result = new Value(param_left->getIntAutomaton()->isLessThan(param_right->getIntConstant()));
     } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
-      result = new Value(param_right->getIntAutomaton()->isLessThan(param_left->getIntAutomaton()));
+      result = new Value(param_left->getIntAutomaton()->isLessThan(param_right->getIntAutomaton()));
     } else {
       LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *lt_term;
     }
@@ -566,10 +566,9 @@ void ConstraintSolver::visitLe(Le_ptr le_term) {
 
   param_left = getTermValue(le_term->left_term);
   param_right = getTermValue(le_term->right_term);
-
   if (Value::Type::INT_CONSTANT == param_left->getType()) {
     if (Value::Type::INT_CONSTANT == param_right->getType()) {
-      result = new Value((param_left->getIntConstant() > param_right->getIntConstant()));
+      result = new Value((param_left->getIntConstant() <= param_right->getIntConstant()));
     } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
         result = new Value(param_right->getIntAutomaton()->isGreaterThanOrEqual(param_left->getIntConstant()));
     } else {
@@ -579,7 +578,7 @@ void ConstraintSolver::visitLe(Le_ptr le_term) {
     if (Value::Type::INT_CONSTANT == param_right->getType()) {
       result = new Value(param_left->getIntAutomaton()->isLessThanOrEqual(param_right->getIntConstant()));
     } else if (Value::Type::INT_AUTOMATON == param_right->getType()) {
-      result = new Value(param_right->getIntAutomaton()->isLessThanOrEqual(param_left->getIntAutomaton()));
+      result = new Value(param_left->getIntAutomaton()->isLessThanOrEqual(param_right->getIntAutomaton()));
     } else {
       LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *le_term;
     }
@@ -834,7 +833,6 @@ void ConstraintSolver::visitCharAt(CharAt_ptr char_at_term) {
 
   Value_ptr result = nullptr, param_subject = getTermValue(char_at_term->subject_term),
       param_index = getTermValue(char_at_term->index_term);
-
   result = new Value(param_subject->getStringAutomaton()->charAt(param_index->getIntConstant()));
 
   setTermValue(char_at_term, result);
@@ -1165,6 +1163,7 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
     if (result != nullptr) {
       DVLOG(VLOG_LEVEL) << "Linear Arithmetic Constraint";
       if (arithmetic_constraint_solver.hasStringTerms(term) and result->isSatisfiable()) {
+        std::cout << "what the hack" << std::endl;
         Value_ptr string_term_result = nullptr;
         UnaryAutomaton_ptr string_term_unary_auto = nullptr;
         BinaryIntAutomaton_ptr string_term_binary_auto = nullptr,

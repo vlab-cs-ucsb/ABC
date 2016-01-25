@@ -1,0 +1,5 @@
+1- Resolve dependency between constraints
+2- Add binary natural numbers automaton
+3- Add conversion between binary int and binary natural numbers
+4- Do not convert into DNF for only LIA constraints
+5- subString(int, int) should be re-implemented for start index being inclusive and end index being exclusive
