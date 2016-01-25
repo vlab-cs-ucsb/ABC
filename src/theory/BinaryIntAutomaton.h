@@ -45,9 +45,11 @@ public:
 
   static BinaryIntAutomaton_ptr makePhi(ArithmeticFormula_ptr);
   static BinaryIntAutomaton_ptr makeAutomaton(ArithmeticFormula_ptr);
-
+  static BinaryIntAutomaton_ptr makeAutomaton(int value, std::string var_name,
+          ArithmeticFormula_ptr formula, bool add_leading_zeros = false);
   static BinaryIntAutomaton_ptr makeAutomaton(SemilinearSet_ptr semilinear_set, std::string var_name,
           ArithmeticFormula_ptr formula, bool add_leading_zeros = false);
+
 
 
   ArithmeticFormula_ptr getFormula();

@@ -100,6 +100,21 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(ArithmeticFormula_ptr f
   return result_auto;
 }
 
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(int value, std::string var_name,
+        ArithmeticFormula_ptr formula, bool add_leading_zeros) {
+
+  ArithmeticFormula_ptr constant_value_formula = formula->clone();
+  constant_value_formula->resetCoefficients();
+  constant_value_formula->setVariableCoefficient(var_name, 1);
+  constant_value_formula->setConstant(-value);
+  constant_value_formula->setType(ArithmeticFormula::Type::EQ);
+  BinaryIntAutomaton_ptr binary_auto = BinaryIntAutomaton::makeAutomaton(constant_value_formula);
+
+  DVLOG(VLOG_LEVEL)  << binary_auto->getId() << " = BinaryIntAutomaton::makeAutomaton(" << value << ", " << var_name << ", " << *formula << ", " << std::boolalpha << add_leading_zeros << ")";
+
+  return binary_auto;
+}
+
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(SemilinearSet_ptr semilinear_set, std::string var_name,
         ArithmeticFormula_ptr formula, bool add_leading_zeros) {
   BinaryIntAutomaton_ptr binary_auto = nullptr;
