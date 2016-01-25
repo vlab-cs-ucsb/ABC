@@ -51,6 +51,7 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
   Value_ptr result = getTermValue(assert_command->term);
   bool is_satisfiable = result->isSatisfiable();
+
   symbol_table->updateSatisfiability(is_satisfiable);
   symbol_table->setScopeSatisfiability(is_satisfiable);
   if ((Term::Type::OR not_eq assert_command->term->getType()) and
@@ -120,6 +121,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     check_and_visit(term);
     param = getTermValue(term);
     is_satisfiable = is_satisfiable and param->isSatisfiable();
+
     if (is_satisfiable) {
       update_variables();
     } else {
@@ -987,10 +989,19 @@ void ConstraintSolver::visitSortedVar(SortedVar_ptr sorted_var) {
 void ConstraintSolver::visitVarBinding(VarBinding_ptr var_binding) {
 }
 
+/**
+ * TODO improve integration with arithmetic solver,
+ * store arithmetic solver values via shared_ptr
+ */
 Value_ptr ConstraintSolver::getTermValue(Term_ptr term) {
-  Value_ptr value = arithmetic_constraint_solver.getTermValue(term);
-  if (value != nullptr) {
-    return value;
+  // never read values for and_term and or_term from arithmetic automaton
+  // we do not need binary automaton value for them, term_values will return
+  // satisfiability result for them
+  if ((not dynamic_cast<And_ptr> (term)) and (not dynamic_cast<Or_ptr>(term))) {
+    Value_ptr value = arithmetic_constraint_solver.getTermValue(term);
+    if (value != nullptr) {
+      return value;
+    }
   }
 
   auto iter = term_values.find(term);
