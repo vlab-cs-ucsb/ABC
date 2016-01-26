@@ -454,7 +454,10 @@ StringAutomaton_ptr StringAutomaton::makeLengthGreaterThanEqual(int length, int 
   return length_auto;
 }
 
-
+/**
+ * @param start inclusive
+ * @param end exclusive
+ */
 StringAutomaton_ptr StringAutomaton::makeLengthRange(int start, int end, int num_of_variables, int* variable_indices){
   StringAutomaton_ptr range_auto = nullptr, lessThan_auto = nullptr, greaterThanEqual_auto = nullptr;
 
@@ -914,35 +917,18 @@ StringAutomaton_ptr StringAutomaton::kleeneClosure() {
 
 
 StringAutomaton_ptr StringAutomaton::repeat(unsigned min) {
-  StringAutomaton_ptr repeated_auto = nullptr, union_auto = nullptr, concat_auto = nullptr, complement_auto = nullptr,
-          closure_auto = nullptr;
+  StringAutomaton_ptr repeated_auto = nullptr;
 
   if (min == 0) {
     repeated_auto = this->kleeneClosure();
   } else if (min == 1) {
     repeated_auto = this->closure();
   } else {
-    closure_auto = this->closure();
-    union_auto = this->clone();
-    concat_auto = this->clone();
-
-    for (unsigned int i = 2; i < min; i++) {
-      StringAutomaton_ptr temp_concat = concat_auto;
-      concat_auto = temp_concat->concat(this);
-      delete temp_concat;
-
-      StringAutomaton_ptr temp_union = union_auto;
-      union_auto = temp_union->union_(concat_auto);
-      delete temp_union;
-    }
-
-    complement_auto = union_auto->complement();
-    repeated_auto = closure_auto->intersect(complement_auto);
-
-    delete complement_auto;
-    delete concat_auto;
-    delete union_auto;
-    delete closure_auto;
+    StringAutomaton_ptr closure_auto = this->closure();
+    StringAutomaton_ptr range_auto = StringAutomaton::makeLengthGreaterThanEqual(min);
+    repeated_auto = closure_auto->intersect(range_auto);
+    delete range_auto; range_auto = nullptr;
+    delete closure_auto; closure_auto = nullptr;
   }
 
   DVLOG(VLOG_LEVEL) << repeated_auto->id << " = [" << this->id << "]->repeat(" << min << ")";
@@ -951,34 +937,19 @@ StringAutomaton_ptr StringAutomaton::repeat(unsigned min) {
 }
 
 StringAutomaton_ptr StringAutomaton::repeat(unsigned min, unsigned max) {
-  StringAutomaton_ptr repeated_auto = nullptr, concat_auto = nullptr;
+  StringAutomaton_ptr repeated_auto = nullptr;
 
-  // handle min
-  if (min == 0) { // {min, max} where min is 0
-    repeated_auto = StringAutomaton::makeEmptyString();
-    concat_auto = StringAutomaton::makeEmptyString();
-  } else {                    // {min, max} where min > 0
-    concat_auto = this->clone();     // {min, max} where min = 1
-    for (unsigned i = 2; i <= min; i++) { // {min, max} where min > 1
-      StringAutomaton_ptr temp_concat = concat_auto;
-      concat_auto = temp_concat->concat(this);
-      delete temp_concat;
-    }
-    repeated_auto = concat_auto->clone();
+  if (min == 0) {
+    repeated_auto = this->kleeneClosure();
+  } else {
+    repeated_auto = this->closure();
   }
 
-  // handle min + 1, max
-  for (unsigned i = min + 1; i <= max; i++) {
-    StringAutomaton_ptr temp_concat = concat_auto;
-    concat_auto = temp_concat->concat(this);
-    delete temp_concat;
-
-    StringAutomaton_ptr temp_union = repeated_auto;
-    repeated_auto = temp_union->union_(concat_auto);
-    delete temp_union;
-  }
-
-  delete concat_auto;
+  StringAutomaton_ptr range_auto = StringAutomaton::makeLengthRange(min, max + 1);
+  StringAutomaton_ptr tmp_auto = repeated_auto;
+  repeated_auto = tmp_auto->intersect(range_auto);
+  delete range_auto; range_auto = nullptr;
+  delete tmp_auto; tmp_auto = nullptr;
 
   DVLOG(VLOG_LEVEL) << repeated_auto->id << " = [" << this->id << "]->repeat(" << min << ", " << max << ")";
 
