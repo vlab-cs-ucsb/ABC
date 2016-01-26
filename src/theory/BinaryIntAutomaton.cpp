@@ -458,23 +458,39 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::getNegativeValuesFor(std::string var_
 BinaryIntAutomaton_ptr BinaryIntAutomaton::trimLeadingZeros() {
   CHECK_EQ(1, num_of_variables)<< "trimming is implemented for single track positive binary automaton";
 
-  BinaryIntAutomaton_ptr trimmed_auto = nullptr, tmp_auto = this->clone(),
-          trim_helper_auto = nullptr;
-  DFA_ptr tmp_dfa = nullptr;
+  BinaryIntAutomaton_ptr tmp_auto = this->clone();
+
+  // identify leading zeros
   std::vector<char> exception = {'0'};
   int next_state = -1;
-
+  int sink_state = tmp_auto->getSinkState();
+  std::unordered_map<int, std::vector<int>> possible_final_states;
+  std::stack<int> final_states;
   for (int i = 0; i < tmp_auto->dfa->ns; i++) {
     next_state = getNextState(i, exception);
-    if (isAcceptingState(next_state)) {
-      tmp_auto->dfa->f[i] = 1;
+    if ((sink_state not_eq next_state) and (i not_eq next_state)) {
+      possible_final_states[next_state].push_back(i);
+    }
+    if (isAcceptingState(i)) {
+      final_states.push(i);
     }
   }
 
-  trim_helper_auto = BinaryIntAutomaton::makeTrimHelperAuto(0,num_of_variables);
-  trim_helper_auto->setFormula(tmp_auto->formula->clone());
+  while (not final_states.empty()) {
+    next_state = final_states.top(); final_states.pop();
+    for (auto s : possible_final_states[next_state]) {
+      if (not tmp_auto->isAcceptingState(s)) {
+        tmp_auto->dfa->f[s] = 1;
+        final_states.push(s);
+      }
+    }
+  }
 
-  trimmed_auto = tmp_auto->intersect(trim_helper_auto);
+  tmp_auto->minimize();
+
+  BinaryIntAutomaton_ptr trim_helper_auto = BinaryIntAutomaton::makeTrimHelperAuto(0,num_of_variables);
+  trim_helper_auto->setFormula(tmp_auto->formula->clone());
+  BinaryIntAutomaton_ptr trimmed_auto = tmp_auto->intersect(trim_helper_auto);
   delete tmp_auto; tmp_auto = nullptr;
   delete trim_helper_auto; trim_helper_auto = nullptr;
 
@@ -692,7 +708,6 @@ UnaryAutomaton_ptr BinaryIntAutomaton::toUnaryAutomaton() {
   UnaryAutomaton_ptr unary_auto = nullptr;
   BinaryIntAutomaton_ptr trimmed_auto = nullptr;
   SemilinearSet_ptr semilinear_set = nullptr;
-
   trimmed_auto = this->trimLeadingZeros();
   semilinear_set = trimmed_auto->getSemilinearSet();
   delete trimmed_auto; trimmed_auto = nullptr;

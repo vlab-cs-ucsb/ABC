@@ -33,21 +33,26 @@ int main(const int argc, const char **argv) {
   FLAGS_logtostderr = 1;
 
   bool model_count_only = false;
+  bool enable_lia_engine = true;
   std::string bound_string = "50";
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == std::string("-c")) {
       model_count_only = true;
     } else if (argv[i] == std::string("-b")) {
       bound_string = argv[i + 1];
-      i++;
+      ++i;
     } else if (argv[i] == std::string("-f")) {
       file_name = argv[i + 1];
       file = new std::ifstream(file_name);
       in = file;
-      i++;
+      ++i;
     } else if (argv[i] == std::string("-v")) {
       FLAGS_v = std::stoi(argv[i + 1]);
-      i++;
+      ++i;
+    } else if (argv[i] == std::string("-u")) {
+      enable_lia_engine = false;
+    } else if (argv[i] == std::string("-p")) {
+      enable_lia_engine = true;
     } else {
 
     }
@@ -72,7 +77,7 @@ int main(const int argc, const char **argv) {
   int bound = std::stoi(bound_string);
 
   Vlab::Driver driver;
-  driver.setOption(Vlab::Option::Name::LIA_ENGINE_ENABLED, true);
+  driver.setOption(Vlab::Option::Name::LIA_ENGINE_ENABLED, enable_lia_engine);
   driver.setOption(Vlab::Option::Name::MODEL_COUNTER_ENABLED, true);
   driver.setOption(Vlab::Option::Name::OUTPUT_PATH, output_root);
   driver.setOption(Vlab::Option::Name::SCRIPT_PATH, std::string("./lib/mathematica"));

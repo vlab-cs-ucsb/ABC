@@ -1107,7 +1107,6 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
             LOG(FATAL) << "unexpected type";
           }
 //          string_term_binary_auto->inspectAuto();
-
           updated_arith_auto = result->getBinaryIntAutomaton()->intersect(string_term_binary_auto);
           delete string_term_binary_auto; string_term_binary_auto = nullptr;
           delete result; result = nullptr;
@@ -1119,7 +1118,8 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
 
 //          updated_arith_auto->inspectAuto();
 
-          // 2- update string term result
+          // 2- update string term result, since we first update binary binary automaton it may only contain
+          // numbers >= -1 (values a string constraint can return as an integer)
           string_term_binary_auto = updated_arith_auto->getBinaryAutomatonFor(string_term_var_name);
 
           if (has_minus_one) {
