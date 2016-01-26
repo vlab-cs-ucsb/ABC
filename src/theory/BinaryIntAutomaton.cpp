@@ -1018,6 +1018,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThan(ArithmeticFormula_ptr fo
      carry_map[next_label].sr = 2;
    }
 
+   // TODO instead of allocating that many of transitions, try to reduce them with a preprocessing
    dfaAllocExceptions(transitions);
 
    for (unsigned long j = 0; j < transitions; j++) {
@@ -1051,14 +1052,16 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThan(ArithmeticFormula_ptr fo
          next_index++;
          carry_map[target].i = next_index;
        }
-       dfaStoreException(carry_map[target].i, binaryFormat(j, num_of_variables));
+//       std::cout << count << " -> " << carry_map[target].i << " : " << &*getBinaryFormat(j, num_of_variables).begin() << std::endl;
+       dfaStoreException(carry_map[target].i, &*(getBinaryFormat(j, num_of_variables)).begin());
      } else {
        if (carry_map[target].sr == 0) {
          carry_map[target].sr = 1;
          next_index++;
          carry_map[target].ir = next_index;
        }
-       dfaStoreException(carry_map[target].ir, binaryFormat(j, num_of_variables));
+//       std::cout << count << " -> " << carry_map[target].i << " : " << &*getBinaryFormat(j, num_of_variables).begin() << std::endl;
+       dfaStoreException(carry_map[target].ir, &*(getBinaryFormat(j, num_of_variables)).begin());
      }
    }
 
