@@ -37,98 +37,37 @@ void Script::visit_children(Visitor_ptr v) {
   v->visit_list(command_list);
 }
 
-const std::string Command::Name::NONE = "none";
-const std::string Command::Name::SET_LOGIC = "set-logic";
-const std::string Command::Name::SET_OPTION = "set-option";
-const std::string Command::Name::SET_INFO = "set-info";
-const std::string Command::Name::DECLARE_SORT = "declare-sort";
-const std::string Command::Name::DEFINE_SORT = "define-sort";
-const std::string Command::Name::DECLARE_FUN = "declare-fun";
-const std::string Command::Name::DEFINE_FUN = "define-fun";
-const std::string Command::Name::PUSH = "push";
-const std::string Command::Name::POP = "pop";
-const std::string Command::Name::ASSERT = "assert";
-const std::string Command::Name::CHECK_SAT = "check-sat";
-const std::string Command::Name::CHECK_SAT_AND_COUNT = "check-sat-and-count";
-const std::string Command::Name::GET_ASSERTIONS = "get-assertions";
-const std::string Command::Name::GET_PROOF = "get-proof";
-const std::string Command::Name::GET_UNSAT_CORE = "get-unsat-core";
-const std::string Command::Name::GET_VALUE = "get-value";
-const std::string Command::Name::GET_ASSIGNMENT = "get-assignment";
-const std::string Command::Name::GET_OPTION = "get-option";
-const std::string Command::Name::GET_INFO = "get-info";
-const std::string Command::Name::EXIT = "exit";
-
 Command::Command()
         : type(Command::Type::NONE) {
 }
+
 Command::Command(Command::Type type)
         : type(type) {
 }
+
 Command::Command(const Command& other)
         : type(other.type) {
 }
 Command_ptr Command::clone() const {
   return new Command(*this);
 }
+
 Command::~Command() {
   DVLOG(AST_VLOG_LEVEL) << "Command( " << *this << " ) deallocated.";
 }
+
 std::string Command::str() const {
-  switch (type) {
-  case Command::Type::NONE:
-    return Command::Name::NONE;
-  case Command::Type::SET_LOGIC:
-    return Command::Name::SET_LOGIC;
-  case Command::Type::SET_OPTION:
-    return Command::Name::SET_OPTION;
-  case Command::Type::SET_INFO:
-    return Command::Name::SET_INFO;
-  case Command::Type::DECLARE_SORT:
-    return Command::Name::DECLARE_SORT;
-  case Command::Type::DEFINE_SORT:
-    return Command::Name::DEFINE_SORT;
-  case Command::Type::DECLARE_FUN:
-    return Command::Name::DECLARE_FUN;
-  case Command::Type::DEFINE_FUN:
-    return Command::Name::DEFINE_FUN;
-  case Command::Type::PUSH:
-    return Command::Name::PUSH;
-  case Command::Type::POP:
-    return Command::Name::POP;
-  case Command::Type::ASSERT:
-    return Command::Name::ASSERT;
-  case Command::Type::CHECK_SAT:
-    return Command::Name::CHECK_SAT;
-  case Command::Type::CHECK_SAT_AND_COUNT:
-    return Command::Name::CHECK_SAT_AND_COUNT;
-  case Command::Type::GET_ASSERTIONS:
-    return Command::Name::GET_ASSERTIONS;
-  case Command::Type::GET_PROOF:
-    return Command::Name::GET_PROOF;
-  case Command::Type::GET_UNSAT_CORE:
-    return Command::Name::GET_UNSAT_CORE;
-  case Command::Type::GET_VALUE:
-    return Command::Name::GET_VALUE;
-  case Command::Type::GET_ASSIGNMENT:
-    return Command::Name::GET_ASSIGNMENT;
-  case Command::Type::GET_OPTION:
-    return Command::Name::GET_OPTION;
-  case Command::Type::GET_INFO:
-    return Command::Name::GET_INFO;
-  case Command::Type::EXIT:
-    return Command::Name::EXIT;
-  default:
-    LOG(FATAL)<< "Unknown command!";
-    return "";
-  }
+  return "not handled";
 }
+
 Command::Type Command::getType() const {
   return type;
 }
+
 void Command::accept(Visitor_ptr v) {
   v->visitCommand(this);
 }
+
 void Command::visit_children(Visitor_ptr v) {
 }
 
@@ -139,15 +78,22 @@ std::ostream& operator<<(std::ostream& os, const Command& command) {
 SetLogic::SetLogic(Primitive_ptr symbol)
         : Command(Command::Type::SET_LOGIC), symbol(symbol) {
 }
+
 SetLogic::SetLogic(const SetLogic& other)
         : Command(other.type) {
   symbol = other.symbol->clone();
 }
+
 SetLogic* SetLogic::clone() const {
   return new SetLogic(*this);
 }
+
 SetLogic::~SetLogic() {
   delete symbol;
+}
+
+std::string SetLogic::str() const {
+  return "set-logic";
 }
 
 void SetLogic::visit_children(Visitor_ptr v) {
@@ -157,6 +103,7 @@ void SetLogic::visit_children(Visitor_ptr v) {
 DeclareFun::DeclareFun(Primitive_ptr symbol, SortList_ptr sort_list, Sort_ptr sort)
         : Command(Command::Type::DECLARE_FUN), symbol(symbol), sort_list(sort_list), sort(sort) {
 }
+
 DeclareFun::DeclareFun(const DeclareFun& other)
         : Command(other.type) {
   symbol = other.symbol->clone();
@@ -170,15 +117,22 @@ DeclareFun::DeclareFun(const DeclareFun& other)
   }
   sort = other.sort->clone();
 }
+
 DeclareFun* DeclareFun::clone() const {
   return new DeclareFun(*this);
 }
+
 DeclareFun::~DeclareFun() {
   delete symbol;
   deallocate_list(sort_list);
   delete sort_list;
   delete sort;
 }
+
+std::string DeclareFun::str() const {
+  return "declare-fun";
+}
+
 void DeclareFun::visit_children(Visitor_ptr v) {
   v->visit(symbol);
   v->visit_list(sort_list);
@@ -188,19 +142,26 @@ void DeclareFun::visit_children(Visitor_ptr v) {
 Assert::Assert(Term_ptr term)
         : Command(Command::Type::ASSERT), term(term) {
 }
+
 Assert::Assert(const Assert& other)
         : Command(other.type) {
   term = other.term->clone();
 }
+
 Assert_ptr Assert::clone() const {
   return new Assert(*this);
 }
+
 Assert::~Assert() {
   delete term;
 }
 
 void Assert::accept(Visitor_ptr v) {
   v->visitAssert(this);
+}
+
+std::string Assert::str() const {
+  return "assert";
 }
 
 void Assert::visit_children(Visitor_ptr v) {
@@ -210,18 +171,26 @@ void Assert::visit_children(Visitor_ptr v) {
 CheckSat::CheckSat()
         : Command(Command::Type::CHECK_SAT), symbol(nullptr) {
 }
+
 CheckSat::CheckSat(Primitive_ptr symbol)
         : Command(Command::Type::CHECK_SAT), symbol(symbol) {
 }
+
 CheckSat::CheckSat(const CheckSat& other)
         : Command(other.type) {
   symbol = (other.symbol == nullptr) ? other.symbol : other.symbol->clone();
 }
+
 CheckSat* CheckSat::clone() const {
   return new CheckSat(*this);
 }
+
 CheckSat::~CheckSat() {
   delete symbol;
+}
+
+std::string CheckSat::str() const {
+  return "check-sat";
 }
 
 void CheckSat::visit_children(Visitor_ptr v) {
@@ -251,6 +220,10 @@ CheckSatAndCount::~CheckSatAndCount() {
   delete symbol;
 }
 
+std::string CheckSatAndCount::str() const {
+  return "check-sat-and-count";
+}
+
 void CheckSatAndCount::visit_children(Visitor_ptr v) {
   v->visit(bound);
   v->visit(symbol);
@@ -259,52 +232,6 @@ void CheckSatAndCount::visit_children(Visitor_ptr v) {
 /* ends commands */
 
 /* Terms */
-
-const std::string Term::Name::NONE = "none";
-const std::string Term::Name::EXCLAMATION = "!";
-const std::string Term::Name::EXISTS = "exists";
-const std::string Term::Name::FORALL = "forall";
-const std::string Term::Name::LET = "let";
-const std::string Term::Name::TERM = "term";
-const std::string Term::Name::AND = "and";
-const std::string Term::Name::OR = "or";
-const std::string Term::Name::NOT = "not";
-const std::string Term::Name::UMINUS = "uminus";
-const std::string Term::Name::MINUS = "-";
-const std::string Term::Name::PLUS = "+";
-const std::string Term::Name::TIMES = "*";
-const std::string Term::Name::EQ = "=";
-const std::string Term::Name::NOTEQ = "!=";
-const std::string Term::Name::GT = ">";
-const std::string Term::Name::GE = ">=";
-const std::string Term::Name::LT = "<";
-const std::string Term::Name::LE = "<=";
-const std::string Term::Name::CONCAT = "concat";
-const std::string Term::Name::IN = "in";
-const std::string Term::Name::NOTIN = "notIn";
-const std::string Term::Name::LEN = "len";
-const std::string Term::Name::CONTAINS = "contains";
-const std::string Term::Name::NOTCONTAINS = "notContains";
-const std::string Term::Name::BEGINS = "begins";
-const std::string Term::Name::NOTBEGINS = "notBegins";
-const std::string Term::Name::ENDS = "ends";
-const std::string Term::Name::NOTENDS = "notEnds";
-const std::string Term::Name::INDEXOF = "indexOf";
-const std::string Term::Name::LASTINDEXOF= "lastIndexOf";
-const std::string Term::Name::CHARAT = "charAt";
-const std::string Term::Name::SUBSTRING = "subString";
-const std::string Term::Name::TOUPPER = "toUpper";
-const std::string Term::Name::TOLOWER = "toLower";
-const std::string Term::Name::TRIM = "trim";
-const std::string Term::Name::REPLACE = "replace";
-const std::string Term::Name::COUNT = "count";
-const std::string Term::Name::ITE = "ite";
-const std::string Term::Name::RECONCAT = "re.++";
-const std::string Term::Name::TOREGEX = "str.to.re";
-const std::string Term::Name::ASQUALIDENTIFIER = "as";
-const std::string Term::Name::QUALIDENTIFIER = "qual identifier";
-const std::string Term::Name::TERMCONSTANT = "term constant";
-const std::string Term::Name::UNKNOWN = "unknown";
 
 Term::Term()
         : type(Term::Type::TERM) {
@@ -318,106 +245,13 @@ Term::Term(const Term& other)
 Term_ptr Term::clone() const {
   return new Term(*this);
 }
+
 Term::~Term() {
   DVLOG(AST_VLOG_LEVEL) << "Term( " << this->str() << " ) deallocated.";
 }
 
 std::string Term::str() const {
-  switch (type) {
-  case Term::Type::NONE:
-    return Term::Name::NONE;
-  case Term::Type::EXCLAMATION:
-    return Term::Name::EXCLAMATION;
-  case Term::Type::EXISTS:
-    return Term::Name::EXISTS;
-  case Term::Type::FORALL:
-    return Term::Name::FORALL;
-  case Term::Type::LET:
-    return Term::Name::LET;
-  case Term::Type::TERM:
-    return Term::Name::TERM;
-  case Term::Type::AND:
-    return Term::Name::AND;
-  case Term::Type::OR:
-    return Term::Name::OR;
-  case Term::Type::NOT:
-    return Term::Name::NOT;
-  case Term::Type::UMINUS:
-    return Term::Name::UMINUS;
-  case Term::Type::MINUS:
-    return Term::Name::MINUS;
-  case Term::Type::PLUS:
-    return Term::Name::PLUS;
-  case Term::Type::TIMES:
-    return Term::Name::TIMES;
-  case Term::Type::EQ:
-    return Term::Name::EQ;
-  case Term::Type::NOTEQ:
-    return Term::Name::NOTEQ;
-  case Term::Type::GT:
-    return Term::Name::GT;
-  case Term::Type::GE:
-    return Term::Name::GE;
-  case Term::Type::LT:
-    return Term::Name::LT;
-  case Term::Type::LE:
-    return Term::Name::LE;
-  case Term::Type::CONCAT:
-    return Term::Name::CONCAT;
-  case Term::Type::IN:
-    return Term::Name::IN;
-  case Term::Type::NOTIN:
-    return Term::Name::NOTIN;
-  case Term::Type::LEN:
-    return Term::Name::LEN;
-  case Term::Type::CONTAINS:
-    return Term::Name::CONTAINS;
-  case Term::Type::NOTCONTAINS:
-    return Term::Name::NOTCONTAINS;
-  case Term::Type::BEGINS:
-    return Term::Name::BEGINS;
-  case Term::Type::NOTBEGINS:
-    return Term::Name::NOTBEGINS;
-  case Term::Type::ENDS:
-    return Term::Name::ENDS;
-  case Term::Type::NOTENDS:
-    return Term::Name::NOTENDS;
-  case Term::Type::INDEXOF:
-    return Term::Name::INDEXOF;
-  case Term::Type::LASTINDEXOF:
-    return Term::Name::LASTINDEXOF;
-  case Term::Type::CHARAT:
-    return Term::Name::CHARAT;
-  case Term::Type::SUBSTRING:
-    return Term::Name::SUBSTRING;
-  case Term::Type::TOUPPER:
-    return Term::Name::TOUPPER;
-  case Term::Type::TOLOWER:
-    return Term::Name::TOLOWER;
-  case Term::Type::TRIM:
-    return Term::Name::TRIM;
-  case Term::Type::REPLACE:
-    return Term::Name::REPLACE;
-  case Term::Type::COUNT:
-    return Term::Name::COUNT;
-  case Term::Type::ITE:
-    return Term::Name::ITE;
-  case Term::Type::RECONCAT:
-    return Term::Name::RECONCAT;
-  case Term::Type::TOREGEX:
-    return Term::Name::TOREGEX;
-  case Term::Type::ASQUALIDENTIFIER:
-    return Term::Name::ASQUALIDENTIFIER;
-  case Term::Type::QUALIDENTIFIER:
-    return Term::Name::QUALIDENTIFIER;
-  case Term::Type::TERMCONSTANT:
-    return Term::Name::TERMCONSTANT;
-  case Term::Type::UNKNOWN:
-    return Term::Name::UNKNOWN;
-  default:
-    LOG(FATAL)<< "Unknown term!";
-    return "";
-  }
+  return "term";
 }
 
 void Term::accept(Visitor_ptr v) {
@@ -462,6 +296,10 @@ Exclamation::~Exclamation() {
   delete attribute_list;
 }
 
+std::string Exclamation::str() const {
+  return "!";
+}
+
 void Exclamation::accept(Visitor_ptr v) {
   v->visitExclamation(this);
 }
@@ -492,6 +330,10 @@ Exists::~Exists() {
   deallocate_list(sorted_var_list);
   delete sorted_var_list;
   delete term;
+}
+
+std::string Exists::str() const {
+  return "exists";
 }
 
 void Exists::accept(Visitor_ptr v) {
@@ -526,6 +368,10 @@ ForAll::~ForAll() {
   delete term;
 }
 
+std::string ForAll::str() const {
+  return "forall";
+}
+
 void ForAll::accept(Visitor_ptr v) {
   v->visitForAll(this);
 }
@@ -558,6 +404,10 @@ Let::~Let() {
   delete term;
 }
 
+std::string Let::str() const {
+  return "let";
+}
+
 void Let::accept(Visitor_ptr v) {
   v->visitLet(this);
 }
@@ -585,9 +435,14 @@ And::~And() {
   delete term_list;
 }
 
+std::string And::str() const {
+  return "and";
+}
+
 void And::accept(Visitor_ptr v) {
   v->visitAnd(this);
 }
+
 void And::visit_children(Visitor_ptr v) {
   v->visit_list(term_list);
 }
@@ -610,9 +465,14 @@ Or::~Or() {
   delete term_list;
 }
 
+std::string Or::str() const {
+  return "or";
+}
+
 void Or::accept(Visitor_ptr v) {
   v->visitOr(this);
 }
+
 void Or::visit_children(Visitor_ptr v) {
   v->visit_list(term_list);
 }
@@ -620,20 +480,28 @@ void Or::visit_children(Visitor_ptr v) {
 Not::Not(Term_ptr term)
         : Term(Term::Type::NOT), term(term) {
 }
+
 Not::Not(const Not& other)
         : Term(other.type) {
   term = other.term->clone();
 }
+
 Not_ptr Not::clone() const {
   return new Not(*this);
 }
+
 Not::~Not() {
   delete term;
+}
+
+std::string Not::str() const {
+  return "not";
 }
 
 void Not::accept(Visitor_ptr v) {
   v->visitNot(this);
 }
+
 void Not::visit_children(Visitor_ptr v) {
   v->visit(term);
 }
@@ -641,20 +509,28 @@ void Not::visit_children(Visitor_ptr v) {
 UMinus::UMinus(Term_ptr term)
         : Term(Term::Type::UMINUS), term(term) {
 }
+
 UMinus::UMinus(const UMinus& other)
         : Term(other.type) {
   term = other.term->clone();
 }
+
 UMinus_ptr UMinus::clone() const {
   return new UMinus(*this);
 }
+
 UMinus::~UMinus() {
   delete term;
+}
+
+std::string UMinus::str() const {
+  return "uminus";
 }
 
 void UMinus::accept(Visitor_ptr v) {
   v->visitUMinus(this);
 }
+
 void UMinus::visit_children(Visitor_ptr v) {
   v->visit(term);
 }
@@ -662,22 +538,30 @@ void UMinus::visit_children(Visitor_ptr v) {
 Minus::Minus(Term_ptr left_term, Term_ptr right_term)
         : Term(Term::Type::MINUS), left_term(left_term), right_term(right_term) {
 }
+
 Minus::Minus(const Minus& other)
         : Term(other.type) {
   left_term = other.left_term->clone();
   right_term = other.right_term->clone();
 }
+
 Minus_ptr Minus::clone() const {
   return new Minus(*this);
 }
+
 Minus::~Minus() {
   delete left_term;
   delete right_term;
 }
 
+std::string Minus::str() const {
+  return "-";
+}
+
 void Minus::accept(Visitor_ptr v) {
   v->visitMinus(this);
 }
+
 void Minus::visit_children(Visitor_ptr v) {
   v->visit(left_term);
   v->visit(right_term);
@@ -686,6 +570,7 @@ void Minus::visit_children(Visitor_ptr v) {
 Plus::Plus(TermList_ptr term_list)
         : Term(Term::Type::PLUS), term_list(term_list) {
 }
+
 Plus::Plus(const Plus& other)
         : Term(other.type) {
   term_list = new TermList();
@@ -693,17 +578,24 @@ Plus::Plus(const Plus& other)
     term_list->push_back(term->clone());
   }
 }
+
 Plus_ptr Plus::clone() const {
   return new Plus(*this);
 }
+
 Plus::~Plus() {
   deallocate_list(term_list);
   delete term_list;
 }
 
+std::string Plus::str() const {
+  return "+";
+}
+
 void Plus::accept(Visitor_ptr v) {
   v->visitPlus(this);
 }
+
 void Plus::visit_children(Visitor_ptr v) {
   v->visit_list(term_list);
 }
@@ -711,6 +603,7 @@ void Plus::visit_children(Visitor_ptr v) {
 Times::Times(TermList_ptr term_list)
         : Term(Term::Type::TIMES), term_list(term_list) {
 }
+
 Times::Times(const Times& other)
         : Term(other.type) {
   term_list = new TermList();
@@ -718,17 +611,24 @@ Times::Times(const Times& other)
     term_list->push_back(term->clone());
   }
 }
+
 Times_ptr Times::clone() const {
   return new Times(*this);
 }
+
 Times::~Times() {
   deallocate_list(term_list);
   delete term_list;
 }
 
+std::string Times::str() const {
+  return "*";
+}
+
 void Times::accept(Visitor_ptr v) {
   v->visitTimes(this);
 }
+
 void Times::visit_children(Visitor_ptr v) {
   v->visit_list(term_list);
 }
@@ -736,22 +636,30 @@ void Times::visit_children(Visitor_ptr v) {
 Eq::Eq(Term_ptr left_term, Term_ptr right_term)
         : Term(Term::Type::EQ), left_term(left_term), right_term(right_term) {
 }
+
 Eq::Eq(const Eq& other)
         : Term(other.type) {
   left_term = other.left_term->clone();
   right_term = other.right_term->clone();
 }
+
 Eq_ptr Eq::clone() const {
   return new Eq(*this);
 }
+
 Eq::~Eq() {
   delete left_term;
   delete right_term;
 }
 
+std::string Eq::str() const {
+  return "=";
+}
+
 void Eq::accept(Visitor_ptr v) {
   v->visitEq(this);
 }
+
 void Eq::visit_children(Visitor_ptr v) {
   v->visit(left_term);
   v->visit(right_term);
@@ -760,22 +668,30 @@ void Eq::visit_children(Visitor_ptr v) {
 NotEq::NotEq(Term_ptr left_term, Term_ptr right_term)
         : Term(Term::Type::NOTEQ), left_term(left_term), right_term(right_term) {
 }
+
 NotEq::NotEq(const NotEq& other)
         : Term(other.type) {
   left_term = other.left_term->clone();
   right_term = other.right_term->clone();
 }
+
 NotEq_ptr NotEq::clone() const {
   return new NotEq(*this);
 }
+
 NotEq::~NotEq() {
   delete left_term;
   delete right_term;
 }
 
+std::string NotEq::str() const {
+  return "!=";
+}
+
 void NotEq::accept(Visitor_ptr v) {
   v->visitNotEq(this);
 }
+
 void NotEq::visit_children(Visitor_ptr v) {
   v->visit(left_term);
   v->visit(right_term);
@@ -784,6 +700,7 @@ void NotEq::visit_children(Visitor_ptr v) {
 Gt::Gt(Term_ptr left_term, Term_ptr right_term)
         : Term(Term::Type::GT), left_term(left_term), right_term(right_term) {
 }
+
 Gt::Gt(const Gt& other)
         : Term(other.type) {
   left_term = other.left_term->clone();
@@ -793,13 +710,19 @@ Gt::Gt(const Gt& other)
 Gt_ptr Gt::clone() const {
   return new Gt(*this);
 }
+
 Gt::~Gt() {
   delete left_term, delete right_term;
+}
+
+std::string Gt::str() const {
+  return ">";
 }
 
 void Gt::accept(Visitor_ptr v) {
   v->visitGt(this);
 }
+
 void Gt::visit_children(Visitor_ptr v) {
   v->visit(left_term);
   v->visit(right_term);
@@ -808,21 +731,29 @@ void Gt::visit_children(Visitor_ptr v) {
 Ge::Ge(Term_ptr left_term, Term_ptr right_term)
         : Term(Term::Type::GE), left_term(left_term), right_term(right_term) {
 }
+
 Ge::Ge(const Ge& other)
         : Term(other.type) {
   left_term = other.left_term->clone();
   right_term = other.right_term->clone();
 }
+
 Ge_ptr Ge::clone() const {
   return new Ge(*this);
 }
+
 Ge::~Ge() {
   delete left_term, delete right_term;
+}
+
+std::string Ge::str() const {
+  return ">=";
 }
 
 void Ge::accept(Visitor_ptr v) {
   v->visitGe(this);
 }
+
 void Ge::visit_children(Visitor_ptr v) {
   v->visit(left_term);
   v->visit(right_term);
@@ -831,21 +762,29 @@ void Ge::visit_children(Visitor_ptr v) {
 Lt::Lt(Term_ptr left_term, Term_ptr right_term)
         : Term(Term::Type::LT), left_term(left_term), right_term(right_term) {
 }
+
 Lt::Lt(const Lt& other)
         : Term(other.type) {
   left_term = other.left_term->clone();
   right_term = other.right_term->clone();
 }
+
 Lt_ptr Lt::clone() const {
   return new Lt(*this);
 }
+
 Lt::~Lt() {
   delete left_term, delete right_term;
+}
+
+std::string Lt::str() const {
+  return "<";
 }
 
 void Lt::accept(Visitor_ptr v) {
   v->visitLt(this);
 }
+
 void Lt::visit_children(Visitor_ptr v) {
   v->visit(left_term);
   v->visit(right_term);
@@ -854,21 +793,29 @@ void Lt::visit_children(Visitor_ptr v) {
 Le::Le(Term_ptr left_term, Term_ptr right_term)
         : Term(Term::Type::LE), left_term(left_term), right_term(right_term) {
 }
+
 Le::Le(const Le& other)
         : Term(other.type) {
   left_term = other.left_term->clone();
   right_term = other.right_term->clone();
 }
+
 Le_ptr Le::clone() const {
   return new Le(*this);
 }
+
 Le::~Le() {
   delete left_term, delete right_term;
+}
+
+std::string Le::str() const {
+  return "<=";
 }
 
 void Le::accept(Visitor_ptr v) {
   v->visitLe(this);
 }
+
 void Le::visit_children(Visitor_ptr v) {
   v->visit(left_term);
   v->visit(right_term);
@@ -877,6 +824,7 @@ void Le::visit_children(Visitor_ptr v) {
 Concat::Concat(TermList_ptr term_list)
         : Term(Term::Type::CONCAT), term_list(term_list) {
 }
+
 Concat::Concat(const Concat& other)
         : Term(other.type) {
   term_list = new TermList();
@@ -884,17 +832,24 @@ Concat::Concat(const Concat& other)
     term_list->push_back(term->clone());
   }
 }
+
 Concat_ptr Concat::clone() const {
   return new Concat(*this);
 }
+
 Concat::~Concat() {
   deallocate_list(term_list);
   delete term_list;
 }
 
+std::string Concat::str() const {
+  return "concat";
+}
+
 void Concat::accept(Visitor_ptr v) {
   v->visitConcat(this);
 }
+
 void Concat::visit_children(Visitor_ptr v) {
   v->visit_list(term_list);
 }
@@ -902,21 +857,29 @@ void Concat::visit_children(Visitor_ptr v) {
 In::In(Term_ptr left_term, Term_ptr right_term)
         : Term(Term::Type::IN), left_term(left_term), right_term(right_term) {
 }
+
 In::In(const In& other)
         : Term(other.type) {
   left_term = other.left_term->clone();
   right_term = other.right_term->clone();
 }
+
 In_ptr In::clone() const {
   return new In(*this);
 }
+
 In::~In() {
   delete left_term, delete right_term;
+}
+
+std::string In::str() const {
+  return "in";
 }
 
 void In::accept(Visitor_ptr v) {
   v->visitIn(this);
 }
+
 void In::visit_children(Visitor_ptr v) {
   v->visit(left_term);
   v->visit(right_term);
@@ -925,21 +888,29 @@ void In::visit_children(Visitor_ptr v) {
 NotIn::NotIn(Term_ptr left_term, Term_ptr right_term)
         : Term(Term::Type::NOTIN), left_term(left_term), right_term(right_term) {
 }
+
 NotIn::NotIn(const NotIn& other)
         : Term(other.type) {
   left_term = other.left_term->clone();
   right_term = other.right_term->clone();
 }
+
 NotIn_ptr NotIn::clone() const {
   return new NotIn(*this);
 }
+
 NotIn::~NotIn() {
   delete left_term, delete right_term;
+}
+
+std::string NotIn::str() const {
+  return "notIn";
 }
 
 void NotIn::accept(Visitor_ptr v) {
   v->visitNotIn(this);
 }
+
 void NotIn::visit_children(Visitor_ptr v) {
   v->visit(left_term);
   v->visit(right_term);
@@ -948,20 +919,28 @@ void NotIn::visit_children(Visitor_ptr v) {
 Len::Len(Term_ptr term)
         : Term(Term::Type::LEN), term(term) {
 }
+
 Len::Len(const Len& other)
         : Term(other.type) {
   term = other.term->clone();
 }
+
 Len_ptr Len::clone() const {
   return new Len(*this);
 }
+
 Len::~Len() {
   delete term;
+}
+
+std::string Len::str() const {
+  return "len";
 }
 
 void Len::accept(Visitor_ptr v) {
   v->visitLen(this);
 }
+
 void Len::visit_children(Visitor_ptr v) {
   v->visit(term);
 }
@@ -983,6 +962,10 @@ Contains_ptr Contains::clone() const {
 Contains::~Contains() {
   delete subject_term;
   delete search_term;
+}
+
+std::string Contains::str() const {
+  return "contains";
 }
 
 void Contains::accept(Visitor_ptr v) {
@@ -1013,6 +996,10 @@ NotContains::~NotContains() {
   delete search_term;
 }
 
+std::string NotContains::str() const {
+  return "notContains";
+}
+
 void NotContains::accept(Visitor_ptr v) {
   v->visitNotContains(this);
 }
@@ -1040,6 +1027,10 @@ Begins::~Begins() {
   delete search_term;
 }
 
+std::string Begins::str() const {
+  return "begins";
+}
+
 void Begins::accept(Visitor_ptr v) {
   v->visitBegins(this);
 }
@@ -1058,6 +1049,7 @@ NotBegins::NotBegins(const NotBegins& other)
   subject_term = other.subject_term->clone();
   search_term = other.search_term->clone();
 }
+
 NotBegins_ptr NotBegins::clone() const {
   return new NotBegins(*this);
 }
@@ -1065,6 +1057,10 @@ NotBegins_ptr NotBegins::clone() const {
 NotBegins::~NotBegins() {
   delete subject_term;
   delete search_term;
+}
+
+std::string NotBegins::str() const {
+  return "notBegins";
 }
 
 void NotBegins::accept(Visitor_ptr v) {
@@ -1095,6 +1091,10 @@ Ends::~Ends() {
   delete search_term;
 }
 
+std::string Ends::str() const {
+  return "ends";
+}
+
 void Ends::accept(Visitor_ptr v) {
   v->visitEnds(this);
 }
@@ -1121,6 +1121,10 @@ NotEnds_ptr NotEnds::clone() const {
 NotEnds::~NotEnds() {
   delete subject_term;
   delete search_term;
+}
+
+std::string NotEnds::str() const {
+  return "notEnds";
 }
 
 void NotEnds::accept(Visitor_ptr v) {
@@ -1160,6 +1164,10 @@ IndexOf::~IndexOf() {
   delete subject_term;
   delete search_term;
   delete from_index;
+}
+
+std::string IndexOf::str() const {
+  return "indexOf";
 }
 
 void IndexOf::accept(Visitor_ptr v) {
@@ -1210,6 +1218,10 @@ LastIndexOf::~LastIndexOf() {
   delete from_index;
 }
 
+std::string LastIndexOf::str() const {
+  return "lastIndexOf";
+}
+
 void LastIndexOf::accept(Visitor_ptr v) {
   v->visitLastIndexOf(this);
 }
@@ -1245,6 +1257,10 @@ CharAt_ptr CharAt::clone() const {
 CharAt::~CharAt() {
   delete subject_term;
   delete index_term;
+}
+
+std::string CharAt::str() const {
+  return "charAt";
 }
 
 void CharAt::accept(Visitor_ptr v) {
@@ -1286,6 +1302,10 @@ SubString::~SubString() {
   delete end_index_term;
 }
 
+std::string SubString::str() const {
+  return "subString";
+}
+
 void SubString::accept(Visitor_ptr v) {
   v->visitSubString(this);
 }
@@ -1321,6 +1341,10 @@ ToUpper::~ToUpper() {
   delete subject_term;
 }
 
+std::string ToUpper::str() const {
+  return "toUpper";
+}
+
 void ToUpper::accept(Visitor_ptr v) {
   v->visitToUpper(this);
 }
@@ -1346,6 +1370,10 @@ ToLower::~ToLower() {
   delete subject_term;
 }
 
+std::string ToLower::str() const {
+  return "toLower";
+}
+
 void ToLower::accept(Visitor_ptr v) {
   v->visitToLower(this);
 }
@@ -1369,6 +1397,10 @@ Trim_ptr Trim::clone() const {
 
 Trim::~Trim() {
   delete subject_term;
+}
+
+std::string Trim::str() const {
+  return "trim";
 }
 
 void Trim::accept(Visitor_ptr v) {
@@ -1400,6 +1432,10 @@ Replace::~Replace() {
   delete replace_term;
 }
 
+std::string Replace::str() const {
+  return "replace";
+}
+
 void Replace::accept(Visitor_ptr v) {
   v->visitReplace(this);
 }
@@ -1429,9 +1465,14 @@ Count::~Count() {
   delete bound_term;
 }
 
+std::string Count::str() const {
+  return "count";
+}
+
 void Count::accept(Visitor_ptr v) {
   v->visitCount(this);
 }
+
 void Count::visit_children(Visitor_ptr v) {
   v->visit(subject_term);
   v->visit(bound_term);
@@ -1440,24 +1481,32 @@ void Count::visit_children(Visitor_ptr v) {
 Ite::Ite(Term_ptr cond, Term_ptr then_branch, Term_ptr else_branch)
         : Term(Term::Type::ITE), cond(cond), then_branch(then_branch), else_branch(else_branch) {
 }
+
 Ite::Ite(const Ite& other)
         : Term(other.type) {
   cond = other.cond->clone();
   then_branch = other.then_branch->clone();
   else_branch = other.else_branch->clone();
 }
+
 Ite_ptr Ite::clone() const {
   return new Ite(*this);
 }
+
 Ite::~Ite() {
   delete cond;
   delete then_branch;
   delete else_branch;
 }
 
+std::string Ite::str() const {
+  return "ite";
+}
+
 void Ite::accept(Visitor_ptr v) {
   v->visitIte(this);
 }
+
 void Ite::visit_children(Visitor_ptr v) {
   v->visit(cond);
   v->visit(then_branch);
@@ -1467,6 +1516,7 @@ void Ite::visit_children(Visitor_ptr v) {
 ReConcat::ReConcat(TermList_ptr term_list)
         : Term(Term::Type::RECONCAT), term_list(term_list) {
 }
+
 ReConcat::ReConcat(const ReConcat& other)
         : Term(other.type) {
   term_list = new TermList();
@@ -1474,17 +1524,24 @@ ReConcat::ReConcat(const ReConcat& other)
     term_list->push_back(term->clone());
   }
 }
+
 ReConcat_ptr ReConcat::clone() const {
   return new ReConcat(*this);
 }
+
 ReConcat::~ReConcat() {
   deallocate_list(term_list);
   delete term_list;
 }
 
+std::string ReConcat::str() const {
+  return "re.++";
+}
+
 void ReConcat::accept(Visitor_ptr v) {
   v->visitReConcat(this);
 }
+
 void ReConcat::visit_children(Visitor_ptr v) {
   v->visit_list(term_list);
 }
@@ -1492,20 +1549,28 @@ void ReConcat::visit_children(Visitor_ptr v) {
 ToRegex::ToRegex(Term_ptr term)
         : Term(Term::Type::TOREGEX), term(term) {
 }
+
 ToRegex::ToRegex(const ToRegex& other)
         : Term(other.type) {
   term = other.term->clone();
 }
+
 ToRegex_ptr ToRegex::clone() const {
   return new ToRegex(*this);
 }
+
 ToRegex::~ToRegex() {
   delete term;
+}
+
+std::string ToRegex::str() const {
+  return "str.to.re";
 }
 
 void ToRegex::accept(Visitor_ptr v) {
   v->visitToRegex(this);
 }
+
 void ToRegex::visit_children(Visitor_ptr v) {
   v->visit(term);
 }
@@ -1513,6 +1578,7 @@ void ToRegex::visit_children(Visitor_ptr v) {
 UnknownTerm::UnknownTerm(Term_ptr term, TermList_ptr term_list)
         : Term(Term::Type::UNKNOWN), term(term), term_list(term_list) {
 }
+
 UnknownTerm::UnknownTerm(const UnknownTerm& other)
         : Term(other.type) {
   term = other.term->clone();
@@ -1521,18 +1587,25 @@ UnknownTerm::UnknownTerm(const UnknownTerm& other)
     term_list->push_back(term->clone());
   }
 }
+
 UnknownTerm* UnknownTerm::clone() const {
   return new UnknownTerm(*this);
 }
+
 UnknownTerm::~UnknownTerm() {
   delete term;
   deallocate_list(term_list);
   delete term_list;
 }
 
+std::string UnknownTerm::str() const {
+  return "unknown";
+}
+
 void UnknownTerm::accept(Visitor_ptr v) {
   v->visitUnknownTerm(this);
 }
+
 void UnknownTerm::visit_children(Visitor_ptr v) {
   v->visit(term);
   v->visit_list(term_list);
@@ -1541,22 +1614,30 @@ void UnknownTerm::visit_children(Visitor_ptr v) {
 AsQualIdentifier::AsQualIdentifier(Identifier_ptr identifier, Sort_ptr sort)
         : Term(Term::Type::ASQUALIDENTIFIER), identifier(identifier), sort(sort) {
 }
+
 AsQualIdentifier::AsQualIdentifier(const AsQualIdentifier& other)
         : Term(other.type) {
   identifier = other.identifier->clone();
   sort = other.sort->clone();
 }
+
 AsQualIdentifier_ptr AsQualIdentifier::clone() const {
   return new AsQualIdentifier(*this);
 }
+
 AsQualIdentifier::~AsQualIdentifier() {
   delete identifier;
   delete sort;
 }
 
+std::string AsQualIdentifier::str() const {
+  return "as";
+}
+
 void AsQualIdentifier::accept(Visitor_ptr v) {
   v->visitAsQualIdentifier(this);
 }
+
 void AsQualIdentifier::visit_children(Visitor_ptr v) {
   v->visit(identifier);
   v->visit(sort);
@@ -1565,15 +1646,22 @@ void AsQualIdentifier::visit_children(Visitor_ptr v) {
 QualIdentifier::QualIdentifier(Identifier_ptr identifier)
         : Term(Term::Type::QUALIDENTIFIER), identifier(identifier) {
 }
+
 QualIdentifier::QualIdentifier(const QualIdentifier& other)
         : Term(other.type) {
   identifier = other.identifier->clone();
 }
+
 QualIdentifier_ptr QualIdentifier::clone() const {
   return new QualIdentifier(*this);
 }
+
 QualIdentifier::~QualIdentifier() {
   delete identifier;
+}
+
+std::string QualIdentifier::str() const {
+  return "qid";
 }
 
 std::string QualIdentifier::getVarName() {
@@ -1590,15 +1678,22 @@ void QualIdentifier::visit_children(Visitor_ptr v) {
 TermConstant::TermConstant(Primitive_ptr primitive)
         : Term(Term::Type::TERMCONSTANT), primitive(primitive) {
 }
+
 TermConstant::TermConstant(const TermConstant& other)
         : Term(other.type) {
   primitive = other.primitive->clone();
 }
+
 TermConstant_ptr TermConstant::clone() const {
   return new TermConstant(*this);
 }
+
 TermConstant::~TermConstant() {
   delete primitive;
+}
+
+std::string TermConstant::str() const {
+  return "literal";
 }
 
 void TermConstant::accept(Visitor_ptr v) {

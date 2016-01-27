@@ -78,11 +78,9 @@ void SyntacticProcessor::convertAssertsToAnd() {
  * Applies De Morgan's Law and push negations down
  */
 void SyntacticProcessor::visitNot(Not_ptr not_term) {
-  switch (not_term->term->getType()) {
-  case Term::Type::AND: {
+  if (And_ptr and_term = dynamic_cast<And_ptr>(not_term->term)) {
     DVLOG(VLOG_LEVEL) << "push negation '(not (" << *not_term->term << " ... ))'";
-    Term_ptr* reference_term = term_stack.top();
-    And_ptr and_term = dynamic_cast<And_ptr>(not_term->term);
+    Term_ptr* reference_term = top();
 
     for (auto& sub_term : *and_term->term_list) {
       Not_ptr sub_not_term = new Not(sub_term);
@@ -95,12 +93,9 @@ void SyntacticProcessor::visitNot(Not_ptr not_term) {
 
     *reference_term = or_term;
     visitOr(or_term);
-    break;
-  }
-  case Term::Type::OR: {
+  } else if (Or_ptr or_term = dynamic_cast<Or_ptr>(not_term->term)) {
     DVLOG(VLOG_LEVEL) << "pushNegations '(not (" << *not_term->term << " ... ))'";
-    Term_ptr* reference_term = term_stack.top();
-    Or_ptr or_term = dynamic_cast<Or_ptr>(not_term->term);
+    Term_ptr* reference_term = top();
 
     for (auto& sub_term : *or_term->term_list) {
       Not_ptr sub_not_term = new Not(sub_term);
@@ -113,22 +108,16 @@ void SyntacticProcessor::visitNot(Not_ptr not_term) {
 
     *reference_term = and_term;
     visitAnd(and_term);
-    break;
-  }
-  case Term::Type::NOT: {
+  } else if (Not_ptr sub_not_term = dynamic_cast<Not_ptr>(not_term->term)) {
     DVLOG(VLOG_LEVEL) << "pushNegations '(not (" << *not_term->term << " ... ))'";
-    Term_ptr* reference_term = term_stack.top();
-    Not_ptr sub_not_term = dynamic_cast<Not_ptr>(not_term->term);
+    Term_ptr* reference_term = top();
 
     *reference_term = sub_not_term->term;
     sub_not_term->term = nullptr;
     delete not_term;
     visit(*reference_term);
-    break;
-  }
-  default:
+  } else {
     visit(not_term->term);
-    break;
   }
 }
 

@@ -52,7 +52,7 @@ AC_PROG_YACC
 #LT_INIT([disable-shared])
 LT_INIT
 
-# this will define a variable variable. you can use it in automake.am $(MONADFALIB)
+
 AC_HAVE_LIBRARY([glog], [LIBGLOG=-lglog], AC_MSG_ERROR(Glog logging library not found))
 AC_SUBST([LIBGLOG])
 
