@@ -210,7 +210,21 @@ Value::~Value() {
 
   Value_ptr Value::union_(Value_ptr other_value) const {
     Value_ptr union_value = nullptr;
-    LOG(FATAL) << "implement me";
+    if (Type::STRING_AUTOMATON == type and Type::STRING_AUTOMATON == other_value->type) {
+      union_value = new Value(string_automaton->union_(other_value->string_automaton));
+    } else if (Type::BINARYINT_AUTOMATON == type and Type::BINARYINT_AUTOMATON == other_value->type) {
+      union_value = new Value(binaryint_automaton->union_(other_value->binaryint_automaton));
+    } else if (Type::INT_AUTOMATON == type and Type::INT_AUTOMATON == other_value->type) {
+      union_value = new Value(int_automaton->union_(other_value->int_automaton));
+    } else if (Type::INT_CONSTANT == type and Type::INT_CONSTANT == other_value->type) {
+      union_value = new Value(Theory::IntAutomaton::makeInts({this->int_constant, other_value->int_constant}));
+    } else if (Type::INT_CONSTANT == type and Type::INT_AUTOMATON == other_value->type) {
+      union_value = new Value(other_value->int_automaton->union_(int_constant));
+    } else if (Type::INT_AUTOMATON == type and Type::INT_CONSTANT == other_value->type) {
+      union_value = new Value(int_automaton->union_(other_value->int_constant));
+    } else {
+      LOG(FATAL) << "cannot intersect types (implement me): " << *this << " & " << *other_value;
+    }
     return union_value;
   }
 

@@ -15,21 +15,21 @@ using namespace SMT;
 const int Initializer::VLOG_LEVEL = 19;
 
 Initializer::Initializer(Script_ptr script, SymbolTable_ptr symbol_table)
-        : root(script), symbol_table(symbol_table) {
+        : root_(script), symbol_table_(symbol_table) {
 }
 
 Initializer::~Initializer() {
 }
 
 void Initializer::start() {
-  CHECK_NOTNULL(root);
-  visit(root);
+  CHECK_NOTNULL(root_);
+  visit(root_);
   end();
 }
 
 void Initializer::end() {
   if (VLOG_IS_ON(19)) {
-    for (auto& pair : symbol_table->getVariables()) {
+    for (auto& pair : symbol_table_->getVariables()) {
       DVLOG(VLOG_LEVEL) << *pair.second;
     }
   }
@@ -57,54 +57,54 @@ void Initializer::visitCommand(Command_ptr command) {
   switch (command->getType()) {
   case Command::Type::DECLARE_FUN: {
     visit_children_of(command);
-    CHECK_EQ(1, primitives.size())<< "Expecting one symbol name.";
-    CHECK_EQ(1, sorts.size())<< "Currently supports only functions with no arguments.";
+    CHECK_EQ(1, primitives_.size())<< "Expecting one symbol name.";
+    CHECK_EQ(1, sorts_.size())<< "Currently supports only functions with no arguments.";
 
-    Primitive_ptr primitive = primitives.top();
-    primitives.pop();
-    Sort_ptr sort = sorts.top();
-    sorts.pop();
+    Primitive_ptr primitive = primitives_.top();
+    primitives_.pop();
+    Sort_ptr sort = sorts_.top();
+    sorts_.pop();
     if (sort->var_type == nullptr) {
       LOG(FATAL) << "Type is not supported: " << primitive->getData() << "<" << sort->identifier->getName() << ">";
     }
     Variable_ptr variable = new Variable(primitive, sort->var_type->getType());
-    symbol_table->addVariable(variable);
+    symbol_table_->addVariable(variable);
 
     break;
   }
   case Command::Type::CHECK_SAT: {
     visit_children_of(command);
-    if (primitives.size() == 1) {
-      Primitive_ptr primitive = primitives.top();
-      primitives.pop();
-      Variable_ptr variable = symbol_table->getVariable(primitive->getData());
+    if (primitives_.size() == 1) {
+      Primitive_ptr primitive = primitives_.top();
+      primitives_.pop();
+      Variable_ptr variable = symbol_table_->getVariable(primitive->getData());
       variable->setSymbolic(true);
       DVLOG(VLOG_LEVEL) << *variable << " is changed to a symbolic var.";
     }
-    CHECK_EQ(0, primitives.size())<< "unexpected primitive left.";
+    CHECK_EQ(0, primitives_.size())<< "unexpected primitive left.";
     break;
   }
   case Command::Type::CHECK_SAT_AND_COUNT: {
     visit_children_of(command);
-    if (primitives.size() == 1) {
-      Primitive_ptr primitive = primitives.top();
-      primitives.pop();
+    if (primitives_.size() == 1) {
+      Primitive_ptr primitive = primitives_.top();
+      primitives_.pop();
       int bound = std::stoi(primitive->getData());
-      symbol_table->setBound(bound);
+      symbol_table_->setBound(bound);
       DVLOG(VLOG_LEVEL) << "Model count bound: " << bound;
-    } else if (primitives.size() == 2) {
-      Primitive_ptr primitive = primitives.top();
-      primitives.pop();
-      Variable_ptr variable = symbol_table->getVariable(primitive->getData());
+    } else if (primitives_.size() == 2) {
+      Primitive_ptr primitive = primitives_.top();
+      primitives_.pop();
+      Variable_ptr variable = symbol_table_->getVariable(primitive->getData());
       variable->setSymbolic(true);
       DVLOG(VLOG_LEVEL) << *variable << " is changed to a symbolic var.";
-      primitive = primitives.top();
-      primitives.pop();
+      primitive = primitives_.top();
+      primitives_.pop();
       int bound = std::stoi(primitive->getData());
-      symbol_table->setBound(bound);
+      symbol_table_->setBound(bound);
       DVLOG(VLOG_LEVEL) << "Model count bound: " << bound;
     }
-    CHECK_EQ(0, primitives.size())<< "unexpected primitive left.";
+    CHECK_EQ(0, primitives_.size())<< "unexpected primitive left.";
     break;
   }
   case Command::Type::ASSERT: {
@@ -117,6 +117,7 @@ void Initializer::visitCommand(Command_ptr command) {
 }
 
 void Initializer::visitAssert(Assert_ptr assert_command) {
+  visit_children_of(assert_command);
 }
 
 void Initializer::visitTerm(Term_ptr term) {
@@ -256,7 +257,7 @@ void Initializer::visitIdentifier(Identifier_ptr identifier) {
 }
 
 void Initializer::visitPrimitive(Primitive_ptr primitive) {
-  primitives.push(primitive);
+  primitives_.push(primitive);
 }
 
 void Initializer::visitTVariable(TVariable_ptr t_variable) {
@@ -275,7 +276,7 @@ void Initializer::visitVariable(Variable_ptr variable) {
 }
 
 void Initializer::visitSort(Sort_ptr sort) {
-  sorts.push(sort);
+  sorts_.push(sort);
 }
 
 void Initializer::visitAttribute(Attribute_ptr attribute) {
@@ -289,7 +290,7 @@ void Initializer::visitVarBinding(VarBinding_ptr var_binding) {
 
 void Initializer::verifyVariableDefinitions() {
   bool is_symbolic = false;
-  VariableMap variable_map = symbol_table->getVariables();
+  VariableMap variable_map = symbol_table_->getVariables();
   Variable_ptr variable = variable_map.begin()->second;
   for (auto& pair : variable_map) {
     is_symbolic = pair.second->isSymbolic();

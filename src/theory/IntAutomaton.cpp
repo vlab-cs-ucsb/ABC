@@ -229,6 +229,29 @@ IntAutomaton_ptr IntAutomaton::makeIntRange(int start, int end, int num_of_varia
   return range_auto;
 }
 
+IntAutomaton_ptr IntAutomaton::makeInts(std::vector<int> values, int num_of_variables, int* variable_indices) {
+  IntAutomaton_ptr int_auto = nullptr;
+  if (values.size() > 0) {
+    auto max = std::max_element(values.begin(), values.end());
+
+    int_auto = IntAutomaton::makeInt(*max, num_of_variables, variable_indices);
+
+    for (int i : values) {
+      if (i < 0) {
+        int_auto->has_negative_1 = true;
+      } else {
+        int_auto->dfa->f[i] = 1;
+      }
+    }
+  } else {
+    int_auto = IntAutomaton::makePhi(num_of_variables, variable_indices);
+  }
+
+  DVLOG(VLOG_LEVEL) << int_auto->id << " = makeInts({...})";
+
+  return int_auto;
+}
+
 void IntAutomaton::setMinus1(bool has_minus_one) {
   has_negative_1 = has_minus_one;
 }

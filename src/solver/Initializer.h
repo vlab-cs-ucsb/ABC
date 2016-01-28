@@ -13,6 +13,7 @@
 #include<glog/logging.h>
 #include "smt/ast.h"
 #include "SymbolTable.h"
+#include "options/Solver.h"
 
 namespace Vlab {
 namespace Solver {
@@ -87,10 +88,10 @@ public:
 protected:
   void verifyVariableDefinitions();
 
-  SMT::Script_ptr root;
-  SymbolTable_ptr symbol_table;
-  std::stack<SMT::Primitive_ptr> primitives;
-  std::stack<SMT::Sort_ptr> sorts;
+  SMT::Script_ptr root_;
+  SymbolTable_ptr symbol_table_;
+  std::stack<SMT::Primitive_ptr> primitives_;
+  std::stack<SMT::Sort_ptr> sorts_;
 private:
   static const int VLOG_LEVEL;
 };

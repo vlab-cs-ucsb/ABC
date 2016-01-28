@@ -147,16 +147,18 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
     check_and_visit(term);
 
     param = getTermValue(term);
+    bool is_scope_satisfiable = param->isSatisfiable();
 
     if (Term::Type::AND not_eq term->getType()) {
-      if (param->isSatisfiable()) {
+      if (is_scope_satisfiable) {
         update_variables();
       }
       clearTermValuesAndLocalLetVars();
     }
-    bool is_scope_satisfiable = param->isSatisfiable();
+
     symbol_table->setScopeSatisfiability(is_scope_satisfiable);
     is_satisfiable = is_satisfiable or is_scope_satisfiable;
+
     symbol_table->pop_scope();
     if (is_satisfiable and (not Option::Solver::MODEL_COUNTER_ENABLED)) {
       break;

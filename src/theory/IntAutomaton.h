@@ -8,8 +8,12 @@
 #ifndef THEORY_INTAUTOMATON_H_
 #define THEORY_INTAUTOMATON_H_
 
+#include <vector>
+#include <algorithm>
+
 #include "Automaton.h"
 #include "UnaryAutomaton.h"
+
 
 namespace Vlab {
 namespace Theory {
@@ -50,6 +54,8 @@ public:
             IntAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
   static IntAutomaton_ptr makeIntRange(int start, int end, int num_of_variables =
             IntAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
+  static IntAutomaton_ptr makeInts(std::vector<int> values, int num_of_variables =
+              IntAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
 
   void setMinus1(bool has_minus_one);
   bool hasNegative1();

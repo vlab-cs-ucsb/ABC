@@ -112,7 +112,6 @@ int main(const int argc, const char **argv) {
 //          exit(2);
 //        }
 //        driver.printResult(variable_entry.second, outfile);
-
         switch (variable_entry.second->getType()) {
           case Vlab::Solver::Value::Type::INT_AUTOMATON: {
             LOG(INFO) << variable_entry.first->getName() << " : " << variable_entry.second->getASatisfyingExample();
