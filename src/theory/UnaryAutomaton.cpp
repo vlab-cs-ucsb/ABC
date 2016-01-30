@@ -11,6 +11,7 @@
 #include "UnaryAutomaton.h"
 #include "IntAutomaton.h"
 #include "BinaryIntAutomaton.h"
+#include "StringAutomaton.h"
 
 namespace Vlab {
 namespace Theory {
@@ -265,6 +266,28 @@ BinaryIntAutomaton_ptr UnaryAutomaton::toBinaryIntAutomaton(std::string var_name
   DVLOG(VLOG_LEVEL)  << binary_auto->getId() << " = [" << this->id << "]->toBinaryIntAutomaton(" << var_name << ", " << *binary_auto->getFormula() << ", " << add_minus_one << ")";
 
   return binary_auto;
+}
+
+StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
+  if (isCyclic()) {
+    LOG(FATAL)<< "to string method is not implemented for unbounded strings";
+  }
+
+  StringAutomaton_ptr result_auto = StringAutomaton::makePhi(),
+          tmp_1_auto = nullptr,
+          tmp_2_auto = nullptr;
+  for (int i = 0; i < this->dfa->ns; ++i) {
+    if (isAcceptingState(i)) {
+      tmp_1_auto = StringAutomaton::makeString(std::to_string(i));
+      tmp_2_auto = result_auto;
+      result_auto = tmp_2_auto->union_(tmp_1_auto);
+      delete tmp_1_auto;
+      delete tmp_2_auto;
+    }
+  }
+
+  DVLOG(VLOG_LEVEL)  << result_auto->getId() << " = [" << this->id << "]->toStringAutomaton()";
+  return result_auto;
 }
 
 } /* namespace Theory */

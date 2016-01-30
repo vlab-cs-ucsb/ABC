@@ -26,10 +26,13 @@ class UnaryAutomaton;
 typedef UnaryAutomaton* UnaryAutomaton_ptr;
 
 class IntAutomaton;
-typedef IntAutomaton* IntAutomaton_ptr;
+using IntAutomaton_ptr = IntAutomaton*;
 
 class BinaryIntAutomaton;
-typedef BinaryIntAutomaton* BinaryIntAutomaton_ptr;
+using BinaryIntAutomaton_ptr = BinaryIntAutomaton* ;
+
+class StringAutomaton;
+using StringAutomaton_ptr = StringAutomaton*;
 
 class UnaryAutomaton: public Automaton {
 public:
@@ -45,6 +48,7 @@ public:
   SemilinearSet_ptr getSemilinearSet();
   IntAutomaton_ptr toIntAutomaton(int number_of_variables, bool add_minus_one = false);
   BinaryIntAutomaton_ptr toBinaryIntAutomaton(std::string var_name, ArithmeticFormula_ptr formula, bool add_minus_one = false);
+  StringAutomaton_ptr toStringAutomaton();
 
 protected:
 
