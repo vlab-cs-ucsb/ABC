@@ -231,7 +231,7 @@ void OptimizationRuleRunner::visitIndexOf(IndexOf_ptr index_of_term) {
   visit_children_of(index_of_term);
 }
 
-void OptimizationRuleRunner::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
+void OptimizationRuleRunner::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
   check_and_substitute_var(last_index_of_term->subject_term);
   check_and_substitute_var(last_index_of_term->search_term);
   if (last_index_of_term->from_index) {
@@ -240,13 +240,13 @@ void OptimizationRuleRunner::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of
   visit_children_of(last_index_of_term);
 }
 
-void OptimizationRuleRunner::visitCharAt(SMT::CharAt_ptr char_at_term) {
+void OptimizationRuleRunner::visitCharAt(CharAt_ptr char_at_term) {
   check_and_substitute_var(char_at_term->subject_term);
   check_and_substitute_var(char_at_term->index_term);
   visit_children_of(char_at_term);
 }
 
-void OptimizationRuleRunner::visitSubString(SMT::SubString_ptr sub_string_term) {
+void OptimizationRuleRunner::visitSubString(SubString_ptr sub_string_term) {
   check_and_substitute_var(sub_string_term->subject_term);
   check_and_substitute_var(sub_string_term->start_index_term);
   if (sub_string_term->end_index_term) {
@@ -255,19 +255,29 @@ void OptimizationRuleRunner::visitSubString(SMT::SubString_ptr sub_string_term) 
   visit_children_of(sub_string_term);
 }
 
-void OptimizationRuleRunner::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
+void OptimizationRuleRunner::visitToUpper(ToUpper_ptr to_upper_term) {
   check_and_substitute_var(to_upper_term->subject_term);
   visit_children_of(to_upper_term);
 }
 
-void OptimizationRuleRunner::visitToLower(SMT::ToLower_ptr to_lower_term) {
+void OptimizationRuleRunner::visitToLower(ToLower_ptr to_lower_term) {
   check_and_substitute_var(to_lower_term->subject_term);
   visit_children_of(to_lower_term);
 }
 
-void OptimizationRuleRunner::visitTrim(SMT::Trim_ptr trim_term) {
+void OptimizationRuleRunner::visitTrim(Trim_ptr trim_term) {
   check_and_substitute_var(trim_term->subject_term);
   visit_children_of(trim_term);
+}
+
+void OptimizationRuleRunner::visitToString(ToString_ptr to_string_term) {
+  check_and_substitute_var(to_string_term->subject_term);
+  visit_children_of(to_string_term);
+}
+
+void OptimizationRuleRunner::visitToInt(ToInt_ptr to_int_term) {
+  check_and_substitute_var(to_int_term->subject_term);
+  visit_children_of(to_int_term);
 }
 
 void OptimizationRuleRunner::visitReplace(Replace_ptr replace_term) {

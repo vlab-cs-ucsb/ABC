@@ -108,7 +108,7 @@ protected:
   bool isAcceptingSingleWord();
   // TODO update it to work for non-accepting inputs
   std::vector<bool>* getAnAcceptingWord(std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
-
+  std::vector<char> decodeException(std::vector<char>& exception);
 
   static int* getIndices(int num_of_variables, int extra_num_of_variables = 0);
   static unsigned* getIndices(unsigned num_of_variables, unsigned extra_num_of_variables = 0);
@@ -126,7 +126,7 @@ protected:
   bool isStartStateReachableFromAnAcceptingState();
   bool hasNextState(int state, int search);
   int getNextState(int state, std::vector<char>& exception);
-  std::set<int>* getNextStates(int state);
+  std::set<int> getNextStates(int state);
   std::vector<NextState> getNextStatesOrdered(int state, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
   bool getAnAcceptingWord(NextState& state, std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
   AdjacencyList getAdjacencyCountList(bool count_reserved_words = true);

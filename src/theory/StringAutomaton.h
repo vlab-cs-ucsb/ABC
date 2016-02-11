@@ -119,6 +119,7 @@ public:
 
   DFA_ptr unaryLength();
   UnaryAutomaton_ptr toUnaryAutomaton();
+  IntAutomaton_ptr parseToIntAutomaton();
   IntAutomaton_ptr length();
   StringAutomaton_ptr restrictLengthTo(int length);
   StringAutomaton_ptr restrictLengthTo(IntAutomaton_ptr length_auto);

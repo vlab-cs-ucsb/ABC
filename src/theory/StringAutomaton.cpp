@@ -1645,6 +1645,89 @@ UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
   return unary_auto;
 }
 
+IntAutomaton_ptr StringAutomaton::parseToIntAutomaton() {
+  IntAutomaton_ptr int_auto = nullptr;
+  if (this->isCyclic()) {
+    int_auto = IntAutomaton::makeIntGreaterThanOrEqual(0);
+  } else if (this->isEmptyLanguage()) {
+    int_auto = IntAutomaton::makePhi();
+  } else {
+    using StatePaths = std::pair<int, std::vector<std::string>>;
+    std::vector<std::string> paths_to_state;
+    paths_to_state.push_back("");
+
+    std::stack<StatePaths> dfs_stack;
+    dfs_stack.push(std::make_pair(this->dfa->s, paths_to_state));
+
+    paths state_paths = nullptr, pp = nullptr;
+    trace_descr tp = nullptr;
+    int current_state;
+    int sink_state = this->getSinkState();
+
+
+    std::map<int, std::vector<std::string>> current_paths_to_state; // <to state, paths>
+    std::vector<char> current_exception;
+    std::vector<char> decoded_exception;
+    std::vector<int> int_values;
+
+    if (isAcceptingState(this->dfa->s)) {
+      int_values.push_back(0);
+    }
+
+    while (not dfs_stack.empty()) {
+      auto current_state_info = dfs_stack.top(); dfs_stack.pop();
+      current_state = current_state_info.first;
+      paths_to_state = current_state_info.second;
+
+      state_paths = pp = make_paths(dfa->bddm, dfa->q[current_state]);
+      while (pp) {
+        if (pp->to != (unsigned)sink_state) {
+          for (int j = 0; j < num_of_variables; j++) {
+            for (tp = pp->trace; tp && (tp->index != (unsigned)variable_indices[j]); tp= tp->next);
+              if (tp) {
+                if (tp->value){
+                  current_exception.push_back('1');
+                } else{
+                  current_exception.push_back('0');
+                }
+              } else {
+                current_exception.push_back('X');
+              }
+          }
+          // update path
+          decoded_exception = decodeException(current_exception);
+          for (auto ch : decoded_exception) {
+            for (auto p : paths_to_state) {
+              current_paths_to_state[pp->to].push_back(p + ch);
+            }
+          }
+        }
+        current_exception.clear();
+        tp = nullptr;
+        pp = pp->next;
+      }
+
+      for (auto& entry : current_paths_to_state) {
+        if (isAcceptingState(entry.first)) {
+          for (auto str_value : entry.second) {
+            int_values.push_back(std::stoi(str_value));
+          }
+        }
+        dfs_stack.push(std::make_pair(entry.first, entry.second));
+      }
+
+      kill_paths(state_paths);
+      state_paths = pp = nullptr;
+      current_paths_to_state.clear();
+    }
+
+    int_auto = IntAutomaton::makeInts(int_values);
+  }
+
+  DVLOG(VLOG_LEVEL) << int_auto->getId() << " = [" << this->id << "]->parseToIntAutomaton()";
+  return int_auto;
+}
+
 IntAutomaton_ptr StringAutomaton::length() {
   UnaryAutomaton_ptr unary_auto = nullptr;
   IntAutomaton_ptr length_auto = nullptr;
@@ -2133,7 +2216,7 @@ StringAutomaton_ptr StringAutomaton::indexOfHelper(StringAutomaton_ptr search_au
   int current_state = -1;
   int next_state = -1;
   std::vector<char> flag = {'1', '1', '1', '1', '1', '1', '1', '1'}; // 255
-  std::set<int>* next_states = nullptr;
+  std::set<int> next_states;
   std::stack<int> state_work_list;
   std::map<int, bool> visited;
 
@@ -2150,16 +2233,14 @@ StringAutomaton_ptr StringAutomaton::indexOfHelper(StringAutomaton_ptr search_au
 
     if (sink_state != (next_state = index_of_auto->getNextState(current_state, flag))) {
       index_of_auto->dfa->f[current_state] = 1; // mark final state for beginning of a match
-      next_states->erase(next_state);
+      next_states.erase(next_state);
     }
 
-    for (auto n : *next_states) {
+    for (auto n : next_states) {
       if (not visited[n]) {
         state_work_list.push(n);
       }
     }
-
-    delete next_states; next_states = nullptr;
   }
 
   index_of_auto->minimize();

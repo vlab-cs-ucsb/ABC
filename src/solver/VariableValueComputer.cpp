@@ -886,7 +886,7 @@ void VariableValueComputer::visitIndexOf(IndexOf_ptr index_of_term) {
   visit(child_term);
 }
 
-void VariableValueComputer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
+void VariableValueComputer::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *last_index_of_term;
   popTerm(last_index_of_term);
   Term_ptr child_term = current_path->back();
@@ -921,7 +921,7 @@ void VariableValueComputer::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_
 /**
  *
  */
-void VariableValueComputer::visitCharAt(SMT::CharAt_ptr char_at_term) {
+void VariableValueComputer::visitCharAt(CharAt_ptr char_at_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *char_at_term;
   popTerm(char_at_term);
   Term_ptr child_term = current_path->back();
@@ -954,7 +954,7 @@ void VariableValueComputer::visitCharAt(SMT::CharAt_ptr char_at_term) {
 /**
  * TODO check if we can do preimage with endswith ??
  */
-void VariableValueComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
+void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *sub_string_term;
   popTerm(sub_string_term);
   Term_ptr child_term = current_path->back();
@@ -1060,7 +1060,7 @@ void VariableValueComputer::visitSubString(SMT::SubString_ptr sub_string_term) {
  * TODO improve pre image computation
  *
  */
-void VariableValueComputer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
+void VariableValueComputer::visitToUpper(ToUpper_ptr to_upper_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *to_upper_term;
   popTerm(to_upper_term);
   Term_ptr child_term = current_path->back();
@@ -1079,7 +1079,7 @@ void VariableValueComputer::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
   visit(child_term);
 }
 
-void VariableValueComputer::visitToLower(SMT::ToLower_ptr to_lower_term) {
+void VariableValueComputer::visitToLower(ToLower_ptr to_lower_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *to_lower_term;
   popTerm(to_lower_term);
   Term_ptr child_term = current_path->back();
@@ -1098,7 +1098,7 @@ void VariableValueComputer::visitToLower(SMT::ToLower_ptr to_lower_term) {
   visit(child_term);
 }
 
-void VariableValueComputer::visitTrim(SMT::Trim_ptr trim_term) {
+void VariableValueComputer::visitTrim(Trim_ptr trim_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *trim_term;
   popTerm(trim_term);
   Term_ptr child_term = current_path->back();
@@ -1112,6 +1112,72 @@ void VariableValueComputer::visitTrim(SMT::Trim_ptr trim_term) {
   Value_ptr child_post_value = getTermPostImage(child_term);
   Theory::StringAutomaton_ptr child_pre_auto = term_value->getStringAutomaton()
       ->preTrim(child_post_value->getStringAutomaton());
+  child_value = new Value(child_pre_auto);
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
+}
+
+void VariableValueComputer::visitToString(ToString_ptr to_string_term) {
+  DVLOG(VLOG_LEVEL) << "pop: " << *to_string_term;
+  popTerm(to_string_term);
+  Term_ptr child_term = current_path->back();
+  Value_ptr child_value = getTermPreImage(child_term);
+  if (child_value not_eq nullptr) {
+    visit(child_term);
+    return;
+  }
+
+  Value_ptr term_value = getTermPreImage(to_string_term);
+  Value_ptr child_post_value = getTermPostImage(child_term);
+
+  Theory::IntAutomaton_ptr int_auto = term_value->getStringAutomaton()
+      ->parseToIntAutomaton();
+
+  if (int_auto->isAcceptingSingleInt()) {
+    int value = int_auto->getAnAcceptingInt();
+    child_value = new Value(value);
+  } else {
+    Theory::IntAutomaton_ptr child_pre_auto = nullptr;
+    if (Value::Type::INT_CONSTANT == child_post_value->getType()) {
+      child_pre_auto = int_auto->intersect(child_post_value->getIntConstant());
+    } else {
+      child_pre_auto = int_auto->intersect(child_post_value->getIntAutomaton());
+    }
+    child_value = new Value(child_pre_auto);
+  }
+
+  delete int_auto;
+
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
+}
+
+void VariableValueComputer::visitToInt(ToInt_ptr to_int_term) {
+  DVLOG(VLOG_LEVEL) << "pop: " << *to_int_term;
+  popTerm(to_int_term);
+  Term_ptr child_term = current_path->back();
+  Value_ptr child_value = getTermPreImage(child_term);
+  if (child_value not_eq nullptr) {
+    visit(child_term);
+    return;
+  }
+
+  Value_ptr term_value = getTermPreImage(to_int_term);
+  Value_ptr child_post_value = getTermPostImage(child_term);
+  Theory::StringAutomaton_ptr child_pre_auto = nullptr;
+  if (Value::Type::INT_CONSTANT == term_value->getType()) {
+    std::stringstream ss;
+    ss << term_value->getIntConstant();
+    auto str_auto = Theory::StringAutomaton::makeString(ss.str());
+    child_pre_auto = child_post_value->getStringAutomaton()->intersect(str_auto);
+    delete str_auto;
+  } else {
+    auto unary_auto = term_value->getIntAutomaton()->toUnaryAutomaton();
+    auto str_auto = unary_auto->toStringAutomaton();
+    child_pre_auto = child_post_value->getStringAutomaton()->intersect(str_auto);
+    delete unary_auto;
+  }
+
   child_value = new Value(child_pre_auto);
   setTermPreImage(child_term, child_value);
   visit(child_term);
@@ -1237,7 +1303,7 @@ void VariableValueComputer::visitSortedVar(SortedVar_ptr sorted_var) {
 void VariableValueComputer::visitVarBinding(VarBinding_ptr var_binding) {
 }
 
-Value_ptr VariableValueComputer::getTermPostImage(SMT::Term_ptr term) {
+Value_ptr VariableValueComputer::getTermPostImage(Term_ptr term) {
   auto iter = post_images.find(term);
   if (iter == post_images.end()) {
     LOG(FATAL)<< "post image value is not computed for term: " << *term;
@@ -1245,7 +1311,7 @@ Value_ptr VariableValueComputer::getTermPostImage(SMT::Term_ptr term) {
   return iter->second;
 }
 
-Value_ptr VariableValueComputer::getTermPreImage(SMT::Term_ptr term) {
+Value_ptr VariableValueComputer::getTermPreImage(Term_ptr term) {
   auto iter = pre_images.find(term);
   if (iter == pre_images.end()) {
     return nullptr;
@@ -1253,7 +1319,7 @@ Value_ptr VariableValueComputer::getTermPreImage(SMT::Term_ptr term) {
   return iter->second;
 }
 
-bool VariableValueComputer::setTermPreImage(SMT::Term_ptr term, Value_ptr value) {
+bool VariableValueComputer::setTermPreImage(Term_ptr term, Value_ptr value) {
   auto result = pre_images.insert(std::make_pair(term, value));
   if (result.second == false) {
     LOG(FATAL)<< "value is already computed for term: " << *term;
@@ -1261,7 +1327,7 @@ bool VariableValueComputer::setTermPreImage(SMT::Term_ptr term, Value_ptr value)
   return result.second;
 }
 
-void VariableValueComputer::popTerm(SMT::Term_ptr term) {
+void VariableValueComputer::popTerm(Term_ptr term) {
   if (current_path->back() == term) {
     current_path->pop_back();
   } else {

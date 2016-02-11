@@ -925,6 +925,14 @@ void SyntacticOptimizer::visitTrim(Trim_ptr trim_term) {
   visit_and_callback(trim_term->subject_term);
 }
 
+void SyntacticOptimizer::visitToString(ToString_ptr to_string_term) {
+  visit_and_callback(to_string_term->subject_term);
+}
+
+void SyntacticOptimizer::visitToInt(ToInt_ptr to_int_term) {
+  visit_and_callback(to_int_term->subject_term);
+}
+
 void SyntacticOptimizer::visitReplace(Replace_ptr replace_term) {
   visit_and_callback(replace_term->subject_term);
   visit_and_callback(replace_term->search_term);

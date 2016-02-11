@@ -858,6 +858,42 @@ void ConstraintSolver::visitTrim(Trim_ptr trim_term) {
 
 }
 
+void ConstraintSolver::visitToString(ToString_ptr to_string_term) {
+  visit_children_of(to_string_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *to_string_term;
+
+  Value_ptr param = getTermValue(to_string_term->subject_term);
+  Value_ptr result = nullptr;
+  if (Value::Type::INT_CONSTANT == param->getType()) {
+    std::stringstream ss;
+    ss << param->getIntConstant();
+    result = new Value(StringAutomaton::makeString(ss.str()));
+  } else {
+    auto unary_auto = param->getIntAutomaton()->toUnaryAutomaton();
+    result = new Value(unary_auto->toStringAutomaton());
+    delete unary_auto;
+  }
+
+  setTermValue(to_string_term, result);
+}
+
+void ConstraintSolver::visitToInt(ToInt_ptr to_int_term) {
+  visit_children_of(to_int_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *to_int_term;
+
+  Value_ptr param = getTermValue(to_int_term->subject_term);
+  Theory::IntAutomaton_ptr int_auto = param->getStringAutomaton()->parseToIntAutomaton();
+
+  Value_ptr result = nullptr;
+  if (int_auto->isAcceptingSingleInt()) {
+    result = new Value(int_auto->getAnAcceptingInt());
+  } else {
+    result = new Value(int_auto);
+  }
+
+  setTermValue(to_int_term, result);
+}
+
 void ConstraintSolver::visitReplace(Replace_ptr replace_term) {
   visit_children_of(replace_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *replace_term;

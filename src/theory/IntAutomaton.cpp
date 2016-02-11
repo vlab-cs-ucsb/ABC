@@ -806,7 +806,7 @@ bool IntAutomaton::isAcceptingSingleInt() {
       curr_state = -1,
       num_of_accepting_paths = 0;
   std::stack<int> state_path;
-  std::set<int>* next_states = nullptr;
+  std::set<int> next_states;
 
   state_path.push(this->dfa->s);
   while (not state_path.empty()) {
@@ -817,12 +817,11 @@ bool IntAutomaton::isAcceptingSingleInt() {
     if (num_of_accepting_paths > 1) {
       return false;
     }
-    next_states = this->getNextStates(curr_state);
-    next_states->erase(sink_state);
-    for (int next_state : *next_states) {
+    next_states = getNextStates(curr_state);
+    next_states.erase(sink_state);
+    for (int next_state : next_states) {
       state_path.push(next_state);
     }
-    delete next_states; next_states = nullptr;
   }
 
   return ((num_of_accepting_paths == 1) not_eq has_negative_1);
@@ -838,7 +837,7 @@ int IntAutomaton::getAnAcceptingInt() {
   std::stack<int> state_path;
   std::stack<int> path_length_stack;
   int path_length = 0;
-  std::set<int>* next_states = nullptr;
+  std::set<int> next_states;
 
   state_path.push(this->dfa->s);
   path_length_stack.push(0);
@@ -849,12 +848,11 @@ int IntAutomaton::getAnAcceptingInt() {
       return path_length;
     }
     next_states = this->getNextStates(curr_state);
-    next_states->erase(sink_state);
-    for (int next_state : *next_states) {
+    next_states.erase(sink_state);
+    for (int next_state : next_states) {
       state_path.push(next_state);
       path_length_stack.push(path_length + 1);
     }
-    delete next_states; next_states = nullptr;
   }
 
   if (has_negative_1) {

@@ -1,6 +1,6 @@
 (declare-fun in_1 () String)
 
-(assert (> (len (concat (concat (concat "~-1~" (len (concat "" (charAt in_1 0)))) "~") (charAt in_1 1))) (len (concat (concat "" (charAt in_1 0)) (charAt in_1 1)))))
+(assert (> (len (concat (concat (concat "~-1~" (toString (len (concat "" (charAt in_1 0))) )) "~") (charAt in_1 1))) (len (concat (concat "" (charAt in_1 0)) (charAt in_1 1)))))
 (assert (< 1 (len in_1)))
 (assert (< 0 (len in_1)))
 (check-sat)

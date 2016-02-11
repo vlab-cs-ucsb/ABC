@@ -1411,6 +1411,65 @@ void Trim::visit_children(Visitor_ptr v) {
   v->visit(subject_term);
 }
 
+ToString::ToString(Term_ptr subject_term)
+        : Term(Term::Type::TOSTRING), subject_term(subject_term) {
+}
+
+ToString::ToString(const ToString& other)
+        : Term(other.type) {
+  subject_term = other.subject_term->clone();
+}
+
+ToString_ptr ToString::clone() const {
+  return new ToString(*this);
+}
+
+ToString::~ToString() {
+  delete subject_term;
+}
+
+std::string ToString::str() const {
+  return "toString";
+}
+
+void ToString::accept(Visitor_ptr v) {
+  v->visitToString(this);
+}
+
+void ToString::visit_children(Visitor_ptr v) {
+  v->visit(subject_term);
+}
+
+ToInt::ToInt(Term_ptr subject_term)
+        : Term(Term::Type::TOINT), subject_term(subject_term) {
+}
+
+ToInt::ToInt(const ToInt& other)
+        : Term(other.type) {
+  subject_term = other.subject_term->clone();
+}
+
+ToInt_ptr ToInt::clone() const {
+  return new ToInt(*this);
+}
+
+ToInt::~ToInt() {
+  delete subject_term;
+}
+
+std::string ToInt::str() const {
+  return "toInt";
+}
+
+void ToInt::accept(Visitor_ptr v) {
+  v->visitToInt(this);
+}
+
+void ToInt::visit_children(Visitor_ptr v) {
+  v->visit(subject_term);
+}
+
+
 Replace::Replace(Term_ptr subject_term, Term_ptr search_term, Term_ptr replace_term)
         : Term(Term::Type::REPLACE), subject_term(subject_term), search_term(search_term), replace_term(replace_term) {
 }

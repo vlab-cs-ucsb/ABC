@@ -159,8 +159,8 @@ public:
     UMINUS, MINUS, PLUS, TIMES, EQ, NOTEQ, GT, GE, LT, LE, CONCAT, IN,
     NOTIN, LEN, CONTAINS, NOTCONTAINS, BEGINS, NOTBEGINS, ENDS, NOTENDS,
     INDEXOF, LASTINDEXOF, CHARAT, SUBSTRING, TOUPPER, TOLOWER, TRIM,
-    REPLACE, COUNT, ITE, RECONCAT, TOREGEX, UNKNOWN, ASQUALIDENTIFIER,
-    QUALIDENTIFIER, TERMCONSTANT
+    TOSTRING, TOINT, REPLACE, COUNT, ITE, RECONCAT, TOREGEX, UNKNOWN,
+    ASQUALIDENTIFIER, QUALIDENTIFIER, TERMCONSTANT
   };
 
   Term();
@@ -721,6 +721,34 @@ public:
   Trim(const Trim&);
   virtual Trim_ptr clone() const override;
   virtual ~Trim();
+
+  virtual std::string str() const override;
+  virtual void accept(Visitor_ptr) override;
+  virtual void visit_children(Visitor_ptr) override;
+
+  Term_ptr subject_term;
+};
+
+class ToString: public Term {
+public:
+  ToString(Term_ptr);
+  ToString(const ToString&);
+  virtual ToString_ptr clone() const override;
+  virtual ~ToString();
+
+  virtual std::string str() const override;
+  virtual void accept(Visitor_ptr) override;
+  virtual void visit_children(Visitor_ptr) override;
+
+  Term_ptr subject_term;
+};
+
+class ToInt: public Term {
+public:
+  ToInt(Term_ptr);
+  ToInt(const ToInt&);
+  virtual ToInt_ptr clone() const override;
+  virtual ~ToInt();
 
   virtual std::string str() const override;
   virtual void accept(Visitor_ptr) override;

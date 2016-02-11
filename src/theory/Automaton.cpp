@@ -193,15 +193,13 @@ bool Automaton::isCyclic(int state, std::map<int, bool>& is_discovered, std::map
   if (not is_discovered[state]) {
     is_discovered[state] = true;
     is_stack_member[state] = true;
-    std::set<int>* next_states = getNextStates(state);
-    for (auto next_state : *next_states) {
+    for (auto next_state : getNextStates(state)) {
       if ((not is_discovered[next_state]) and isCyclic(next_state, is_discovered, is_stack_member)) {
         return true;
       } else if (is_stack_member[next_state]) {
         return true;
       }
     }
-    delete next_states;
   }
   is_stack_member[state] = false;
   return false;
@@ -210,8 +208,7 @@ bool Automaton::isCyclic(int state, std::map<int, bool>& is_discovered, std::map
 bool Automaton::isStateReachableFrom(int search_state, int from_state, std::map<int, bool>& is_stack_member) {
   is_stack_member[from_state] = true;
 
-  std::set<int>* next_states = getNextStates(from_state);
-  for (auto next_state : *next_states) {
+  for (auto next_state : getNextStates(from_state)) {
     if ((not is_stack_member[next_state]) and (not isSinkState(next_state)) and
             isStateReachableFrom(search_state, next_state, is_stack_member)) {
       return true;
@@ -219,7 +216,6 @@ bool Automaton::isStateReachableFrom(int search_state, int from_state, std::map<
       return true;
     }
   }
-  delete next_states;
 
   is_stack_member[from_state] = false;
   return false;
@@ -230,7 +226,6 @@ bool Automaton::isStateReachableFrom(int search_state, int from_state, std::map<
  */
 Graph_ptr Automaton::toGraph() {
   Graph_ptr graph = new Graph();
-  std::set<int>* states = nullptr;
   GraphNode_ptr node = nullptr, next_node = nullptr;
   for (int s = 0; s < this->dfa->ns; s++) {
     node = new GraphNode(s);
@@ -249,8 +244,7 @@ Graph_ptr Automaton::toGraph() {
   node = nullptr;
   for (auto& entry : graph->getNodeMap()) {
     node = entry.second;
-    states = this->getNextStates(node->getID());
-    for (int id : *states) {
+    for (int id : getNextStates(node->getID())) {
       next_node = graph->getNode(id);
       node->addNextNode(next_node);
       next_node->addPrevNode(node);
@@ -327,6 +321,27 @@ std::vector<bool>* Automaton::getAnAcceptingWord(std::function<bool(unsigned& in
   }
 
   return nullptr;
+}
+
+std::vector<char> Automaton::decodeException(std::vector<char>& exception) {
+  std::vector<char> decoded_exceptions_in_ascii;
+  std::vector<char> tmp_holder;
+  decoded_exceptions_in_ascii.push_back(0);
+
+  for (auto ch : exception) {
+    for (auto& decoded_ch : decoded_exceptions_in_ascii) {
+      decoded_ch <<= 1; // by default it shifts by one and adds zero
+      if (ch == '1') {
+        decoded_ch |= 1;
+      } else if (ch == 'X') {
+        tmp_holder.push_back(decoded_ch); // ending with zero handled by shift
+        decoded_ch |= 1;
+      } // else ch == '0' is handled by initial shift
+    }
+    decoded_exceptions_in_ascii.insert(decoded_exceptions_in_ascii.end(), tmp_holder.begin(), tmp_holder.end());
+    tmp_holder.clear();
+  }
+  return decoded_exceptions_in_ascii;
 }
 
 bool Automaton::getAnAcceptingWord(NextState& state, std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::function<bool(unsigned& index)> next_node_heuristic) {
@@ -608,9 +623,9 @@ int Automaton::getNextState(int state, std::vector<char>& exception) {
 /**
  * @return vector of states that are 1 walk away
  */
-std::set<int>* Automaton::getNextStates(int state) {
+std::set<int> Automaton::getNextStates(int state) {
   unsigned p, l, r, index; // BDD traversal variables
-  std::set<int>* next_states = new std::set<int>();
+  std::set<int> next_states;
   std::stack<unsigned> nodes;
 
   p = this->dfa->q[state];
@@ -620,7 +635,7 @@ std::set<int>* Automaton::getNextStates(int state) {
     nodes.pop();
     LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
     if (index == BDD_LEAF_INDEX) {
-      next_states->insert(l);
+      next_states.insert(l);
     } else {
       nodes.push(l);
       nodes.push(r);
@@ -630,7 +645,7 @@ std::set<int>* Automaton::getNextStates(int state) {
 }
 
 /**
- * Returns next states with an example transition to it
+ * Returns next states with an example transition for each
  */
 std::vector<NextState> Automaton::getNextStatesOrdered(int state, std::function<bool(unsigned& index)> next_node_heuristic) {
   std::vector<NextState> next_states;

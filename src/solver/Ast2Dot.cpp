@@ -222,28 +222,36 @@ void Ast2Dot::visitIndexOf(IndexOf_ptr index_of_term) {
   visitTerm(index_of_term);
 }
 
-void Ast2Dot::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
+void Ast2Dot::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
   visitTerm(last_index_of_term);
 }
 
-void Ast2Dot::visitCharAt(SMT::CharAt_ptr char_at_term) {
+void Ast2Dot::visitCharAt(CharAt_ptr char_at_term) {
   visitTerm(char_at_term);
 }
 
-void Ast2Dot::visitSubString(SMT::SubString_ptr sub_string_term) {
+void Ast2Dot::visitSubString(SubString_ptr sub_string_term) {
   visitTerm(sub_string_term);
 }
 
-void Ast2Dot::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
+void Ast2Dot::visitToUpper(ToUpper_ptr to_upper_term) {
   visitTerm(to_upper_term);
 }
 
-void Ast2Dot::visitToLower(SMT::ToLower_ptr to_lower_term) {
+void Ast2Dot::visitToLower(ToLower_ptr to_lower_term) {
   visitTerm(to_lower_term);
 }
 
-void Ast2Dot::visitTrim(SMT::Trim_ptr trim_term) {
+void Ast2Dot::visitTrim(Trim_ptr trim_term) {
   visitTerm(trim_term);
+}
+
+void Ast2Dot::visitToString(ToString_ptr to_string_term) {
+  visitTerm(to_string_term);
+}
+
+void Ast2Dot::visitToInt(ToInt_ptr to_int_term) {
+  visitTerm(to_int_term);
 }
 
 void Ast2Dot::visitReplace(Replace_ptr replace_term) {
@@ -323,7 +331,7 @@ int Ast2Dot::inspectAST(Visitable_ptr node) {
   return std::system(dot_cmd.c_str());
 }
 
-bool Ast2Dot::isEquivalent(SMT::Visitable_ptr x, SMT::Visitable_ptr y) {
+bool Ast2Dot::isEquivalent(Visitable_ptr x, Visitable_ptr y) {
   if (x == y) {
     return true;
   }
@@ -331,7 +339,7 @@ bool Ast2Dot::isEquivalent(SMT::Visitable_ptr x, SMT::Visitable_ptr y) {
   return (Ast2Dot::toString(x) == Ast2Dot::toString(y));
 }
 
-std::string Ast2Dot::toString(SMT::Visitable_ptr node) {
+std::string Ast2Dot::toString(Visitable_ptr node) {
   std::stringstream ss;
   Ast2Dot toDot(&ss);
   toDot.start(node);

@@ -226,6 +226,12 @@ void Initializer::visitToLower(SMT::ToLower_ptr to_lower_term) {
 void Initializer::visitTrim(SMT::Trim_ptr trim_term) {
 }
 
+void Initializer::visitToString(SMT::ToString_ptr to_string_term) {
+}
+
+void Initializer::visitToInt(SMT::ToInt_ptr to_int_term) {
+}
+
 void Initializer::visitReplace(Replace_ptr replace_term) {
 }
 

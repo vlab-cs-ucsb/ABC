@@ -388,7 +388,7 @@ void ConstraintSorter::visitIndexOf(IndexOf_ptr index_of_term) {
   term_node = process_child_nodes(left_node, right_node);
 }
 
-void ConstraintSorter::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term) {
+void ConstraintSorter::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
   term_node = nullptr;
   visit(last_index_of_term->subject_term);
   TermNode_ptr left_node = term_node;
@@ -409,7 +409,7 @@ void ConstraintSorter::visitLastIndexOf(SMT::LastIndexOf_ptr last_index_of_term)
   term_node = process_child_nodes(left_node, right_node);
 }
 
-void ConstraintSorter::visitCharAt(SMT::CharAt_ptr char_at_term) {
+void ConstraintSorter::visitCharAt(CharAt_ptr char_at_term) {
   term_node = nullptr;
   visit(char_at_term->subject_term);
   TermNode_ptr left_node = term_node;
@@ -420,7 +420,7 @@ void ConstraintSorter::visitCharAt(SMT::CharAt_ptr char_at_term) {
   term_node = process_child_nodes(left_node, right_node);
 }
 
-void ConstraintSorter::visitSubString(SMT::SubString_ptr sub_string_term) {
+void ConstraintSorter::visitSubString(SubString_ptr sub_string_term) {
   term_node = nullptr;
   visit(sub_string_term->subject_term);
   TermNode_ptr left_node = term_node;
@@ -441,19 +441,29 @@ void ConstraintSorter::visitSubString(SMT::SubString_ptr sub_string_term) {
   term_node = process_child_nodes(left_node, right_node);
 }
 
-void ConstraintSorter::visitToUpper(SMT::ToUpper_ptr to_upper_term) {
+void ConstraintSorter::visitToUpper(ToUpper_ptr to_upper_term) {
   term_node = nullptr;
   visit_children_of(to_upper_term);
 }
 
-void ConstraintSorter::visitToLower(SMT::ToLower_ptr to_lower_term) {
+void ConstraintSorter::visitToLower(ToLower_ptr to_lower_term) {
   term_node = nullptr;
   visit_children_of(to_lower_term);
 }
 
-void ConstraintSorter::visitTrim(SMT::Trim_ptr trim_term) {
+void ConstraintSorter::visitTrim(Trim_ptr trim_term) {
   term_node = nullptr;
   visit_children_of(trim_term);
+}
+
+void ConstraintSorter::visitToString(ToString_ptr to_string_term) {
+  term_node = nullptr;
+  visit_children_of(to_string_term);
+}
+
+void ConstraintSorter::visitToInt(ToInt_ptr to_int_term) {
+  term_node = nullptr;
+  visit_children_of(to_int_term);
 }
 
 void ConstraintSorter::visitReplace(Replace_ptr replace_term) {

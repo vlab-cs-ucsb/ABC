@@ -59,6 +59,8 @@ public:
   virtual void visitToUpper(ToUpper_ptr) = 0;
   virtual void visitToLower(ToLower_ptr) = 0;
   virtual void visitTrim(Trim_ptr) = 0;
+  virtual void visitToString(ToString_ptr) = 0;
+  virtual void visitToInt(ToInt_ptr) = 0;
   virtual void visitReplace(Replace_ptr) = 0;
   virtual void visitCount(Count_ptr) = 0;
   virtual void visitIte(Ite_ptr) = 0;

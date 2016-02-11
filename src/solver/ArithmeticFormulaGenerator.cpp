@@ -457,6 +457,12 @@ void ArithmeticFormulaGenerator::visitToLower(ToLower_ptr to_lower_term) {
 void ArithmeticFormulaGenerator::visitTrim(Trim_ptr trim_term) {
 }
 
+void ArithmeticFormulaGenerator::visitToString(ToString_ptr to_string_term) {
+}
+
+void ArithmeticFormulaGenerator::visitToInt(ToInt_ptr to_int_term) {
+}
+
 void ArithmeticFormulaGenerator::visitReplace(Replace_ptr replace_term) {
 }
 

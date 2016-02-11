@@ -89,6 +89,8 @@
   TOUPPER              "toUpper"
   TOLOWER              "toLower"
   TRIM                 "trim"
+  TOSTRING             "toString"
+  TOINT                "toInt"
   REPLACE              "replace"
   COUNT                "count"
   ITE                  "ite"
@@ -267,6 +269,8 @@ term                  :
                       | "(" "toUpper" term ")"                                            { $$ = new ToUpper($3); }
                       | "(" "toLower" term ")"                                            { $$ = new ToLower($3); }
                       | "(" "trim" term term ")"                                          { $$ = new Trim($3); }
+                      | "(" "toString" term ")"                                           { $$ = new ToString($3); }
+                      | "(" "toInt" term ")"                                              { $$ = new ToInt($3); }
                       | "(" "replace" term term term ")"                                  { $$ = new Replace($3, $4, $5); }
                       | "(" "count" term term ")"                                         { $$ = new Count($3, $4); }
                       | "(" "ite" term term term ")"                                      { $$ = new Ite($3, $4, $5); }

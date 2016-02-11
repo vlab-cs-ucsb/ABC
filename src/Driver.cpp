@@ -212,6 +212,7 @@ void Driver::setOption(Option::Name option, std::string value) {
 
 void Driver::test() {
   return;
+
 //  std::map<std::string ,int> eq_1 = {{"x", 0}, {"z", 1}, {"y", 2}};
 //  std::vector<int> coeff = {1, 2, 3};
 //
@@ -226,8 +227,12 @@ void Driver::test() {
 //    std::cout << "int: " << int_auto_1->getAnAcceptingInt() << std::endl;
 //    delete int_auto_1;
 
-//  Theory::StringAutomaton_ptr str_auto_1 = Theory::StringAutomaton::makeRegexAuto("a*");
+//  Theory::StringAutomaton_ptr str_auto_1 = Theory::StringAutomaton::makeRegexAuto("[2-3][4-5]");
+//  str_auto_1->inspectAuto(false, true);
 //  str_auto_1->inspectAuto();
+//
+//  Theory::IntAutomaton_ptr int_auto = str_auto_1->parseToIntAutomaton();
+//  int_auto->inspectAuto();
 //  std::ofstream outfile("./output/testcase.dot");
 //  str_auto_1->toDot(outfile, false);
 //  Theory::StringAutomaton_ptr str_auto_2 = Theory::StringAutomaton::makeString("b");

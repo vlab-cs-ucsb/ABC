@@ -127,7 +127,6 @@ SemilinearSet_ptr UnaryAutomaton::getSemilinearSet() {
 
   std::vector<int> states;
   std::map<int, int> values;
-  std::set<int>* next_states = nullptr;
 
   if (sink_state == current_state) {
     return new SemilinearSet();
@@ -138,8 +137,7 @@ SemilinearSet_ptr UnaryAutomaton::getSemilinearSet() {
     values[current_state] = s;
     states.push_back(current_state);
 
-    next_states = getNextStates(current_state);
-    for (auto next_state : *next_states) {
+    for (auto next_state : getNextStates(current_state)) {
       if (next_state != sink_state) {
         if (values.find(next_state) != values.end()) {
           cycle_head_state = next_state;
@@ -149,7 +147,6 @@ SemilinearSet_ptr UnaryAutomaton::getSemilinearSet() {
       }
     }
 
-    delete next_states; next_states = nullptr;
     if (cycle_head_state != -1) {
       break;
     }
@@ -269,20 +266,46 @@ BinaryIntAutomaton_ptr UnaryAutomaton::toBinaryIntAutomaton(std::string var_name
 }
 
 StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
-  if (isCyclic()) {
-    LOG(FATAL)<< "to string method is not implemented for unbounded strings";
-  }
-
   StringAutomaton_ptr result_auto = StringAutomaton::makePhi(),
           tmp_1_auto = nullptr,
           tmp_2_auto = nullptr;
-  for (int i = 0; i < this->dfa->ns; ++i) {
-    if (isAcceptingState(i)) {
-      tmp_1_auto = StringAutomaton::makeString(std::to_string(i));
+
+  int sink_state = this->getSinkState();
+  int curr_state {this->dfa->s};
+
+  std::map<int, bool> is_visited;
+  std::queue<int> work_list;
+  if (curr_state != sink_state) {
+    work_list.push(curr_state);
+  }
+
+  int value = 0;
+  while ( not work_list.empty()) {
+    curr_state = work_list.front(); work_list.pop();
+
+    if (is_visited[curr_state]) { // cycle over approximate rest, an algorithm can be found to map between encodings (from semilinear set to string encoding)
+      std::string value_str = std::to_string(value);
+      std::string regex_str = "[0-9]{" + std::to_string(value_str.length()) + ",}";
+      tmp_1_auto = StringAutomaton::makeRegexAuto(regex_str);
+      tmp_2_auto = result_auto;
+      result_auto = tmp_2_auto->concat(tmp_1_auto);
+      delete tmp_1_auto;
+      delete tmp_2_auto;
+      break;
+    }
+
+    if (isAcceptingState(curr_state)) {
+      tmp_1_auto = StringAutomaton::makeString(std::to_string(value));
       tmp_2_auto = result_auto;
       result_auto = tmp_2_auto->union_(tmp_1_auto);
       delete tmp_1_auto;
       delete tmp_2_auto;
+    }
+    ++value;
+    for (auto next_state : this->getNextStates(curr_state)) {
+      if (sink_state != next_state) {
+        work_list.push(next_state);
+      }
     }
   }
 

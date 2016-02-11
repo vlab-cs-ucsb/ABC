@@ -69,6 +69,8 @@ public:
   void visitToUpper(SMT::ToUpper_ptr) override;
   void visitToLower(SMT::ToLower_ptr) override;
   void visitTrim(SMT::Trim_ptr) override;
+  void visitToString(SMT::ToString_ptr) override;
+  void visitToInt(SMT::ToInt_ptr) override;
   void visitReplace(SMT::Replace_ptr) override;
   void visitCount(SMT::Count_ptr) override;
   void visitIte(SMT::Ite_ptr) override;

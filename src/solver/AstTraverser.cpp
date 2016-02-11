@@ -462,6 +462,26 @@ void AstTraverser::visitTrim(Trim_ptr trim_term) {
   }
 }
 
+void AstTraverser::visitToString(ToString_ptr to_string_term) {
+  if (term_pre_callback and term_pre_callback(to_string_term)) {
+    visit(to_string_term->subject_term);
+  }
+
+  if (term_post_callback) {
+    term_post_callback(to_string_term);
+  }
+}
+
+void AstTraverser::visitToInt(ToInt_ptr to_int_term) {
+  if (term_pre_callback and term_pre_callback(to_int_term)) {
+    visit(to_int_term->subject_term);
+  }
+
+  if (term_post_callback) {
+    term_post_callback(to_int_term);
+  }
+}
+
 void AstTraverser::visitReplace(Replace_ptr replace_term) {
   if (term_pre_callback and term_pre_callback(replace_term)) {
     visit(replace_term->subject_term);
