@@ -121,7 +121,7 @@ VariableMap& SymbolTable::getVariables() {
   return variables;
 }
 
-SMT::Variable_ptr SymbolTable::getSymbolicVariable() {
+Variable_ptr SymbolTable::getSymbolicVariable() {
   auto it = std::find_if(variables.begin(), variables.end(),
       [](std::pair<std::string, SMT::Variable_ptr> entry) -> bool {
         return entry.second->isSymbolic();
@@ -131,6 +131,16 @@ SMT::Variable_ptr SymbolTable::getSymbolicVariable() {
   }
   LOG(FATAL) << "no symbolic variable found";
   return nullptr;
+}
+
+int SymbolTable::get_num_of_variables(Variable::Type type) {
+  int count = 0;
+  for (auto entry : variables) {
+    if (type == entry.second->getType()) {
+      ++count;
+    }
+  }
+  return count;
 }
 
 void SymbolTable::setBound(int bound) {

@@ -44,6 +44,7 @@ public:
   SMT::Variable_ptr getVariable(SMT::Term_ptr);
   VariableMap& getVariables();
   SMT::Variable_ptr getSymbolicVariable();
+  int get_num_of_variables(SMT::Variable::Type type);
 
   void setBound(int bound);
   int getBound();

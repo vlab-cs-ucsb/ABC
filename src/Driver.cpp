@@ -104,8 +104,18 @@ std::string Driver::count(std::string var_name, double bound, bool count_less_th
     case Vlab::Solver::Value::Type::STRING_AUTOMATON:
       result = var_value->getStringAutomaton()->count(bound, count_less_than_or_equal_to_bound);
       break;
-    case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON:
-      result = var_value->getBinaryIntAutomaton()->count(bound, count_less_than_or_equal_to_bound);
+    case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
+      auto binary_auto = var_value->getBinaryIntAutomaton();
+      result = binary_auto->count(bound, count_less_than_or_equal_to_bound);
+      int number_of_int_variables = symbol_table->get_num_of_variables(SMT::Variable::Type::INT);
+      int missing_number_of_int_variables = number_of_int_variables - binary_auto->getNumberOfVariables();
+      if (missing_number_of_int_variables > 0) {
+        auto count_result = std::stold(result);
+        count_result = count_result * bound * missing_number_of_int_variables;
+        result = std::to_string(count_result);
+      }
+      break;
+    }
     default:
       break;
   }
