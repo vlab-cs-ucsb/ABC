@@ -34,12 +34,14 @@ int main(const int argc, const char **argv) {
 
   bool model_count_only = false;
   bool enable_lia_engine = true;
+  bool model_count = false;
   std::string bound_string = "50";
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == std::string("-c")) {
       model_count_only = true;
     } else if (argv[i] == std::string("-b")) {
       bound_string = argv[i + 1];
+      model_count = true;
       ++i;
     } else if (argv[i] == std::string("-f")) {
       file_name = argv[i + 1];
@@ -119,6 +121,9 @@ int main(const int argc, const char **argv) {
           }
           case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
             LOG(INFO) << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"";
+            if (model_count) {
+              LOG(INFO) << "count: " << variable_entry.second->getStringAutomaton()->count(bound);
+            }
             break;
           }
           case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
@@ -126,7 +131,9 @@ int main(const int argc, const char **argv) {
             for (auto& entry : values) {
               LOG(INFO) << entry.first << " : " << entry.second;
             }
-//            LOG(INFO) << "count: " << variable_entry.second->getBinaryIntAutomaton()->count(5.1);
+            if (model_count) {
+              LOG(INFO) << "count: " << variable_entry.second->getBinaryIntAutomaton()->count(bound);
+            }
             break;
           }
           default:
