@@ -13,10 +13,12 @@
 
 #include <glog/logging.h>
 #include "smt/ast.h"
+#include "options/Solver.h"
 #include "SymbolTable.h"
 #include "AstTraverser.h"
 #include "Counter.h"
 #include "OptimizationRuleRunner.h"
+
 
 namespace Vlab {
 namespace Solver {
