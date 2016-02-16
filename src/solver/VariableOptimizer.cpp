@@ -50,17 +50,15 @@ void VariableOptimizer::start() {
 
   end();
 
-  if (not Option::Solver::LIA_ENGINE_ENABLED) {
-    DVLOG(VLOG_LEVEL) << "Int existential elimination";
-    existential_elimination_phase = true;
+  DVLOG(VLOG_LEVEL) << "Int existential elimination";
+  existential_elimination_phase = true;
 
-    counter.start();
-    target_type = Variable::Type::INT;
-    symbol_table->push_scope(root);
-    visitScript(root);
-    symbol_table->pop_scope();
-    end();
-  }
+  counter.start();
+  target_type = Variable::Type::INT;
+  symbol_table->push_scope(root);
+  visitScript(root);
+  symbol_table->pop_scope();
+  end();
 
   DVLOG(VLOG_LEVEL) << "String existential elimination";
   counter.start();

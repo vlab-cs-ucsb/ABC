@@ -64,6 +64,25 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makePhi(ArithmeticFormula_ptr formula
   return non_accepting_binary_auto;
 }
 
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAnyInt(ArithmeticFormula_ptr formula) {
+  int number_of_variables = formula->getNumberOfVariables();
+  int* indices = Automaton::getIndices(number_of_variables);
+  std::array<char, 2> statuses { '-', '+' };
+
+  dfaSetup(2, number_of_variables, indices);
+  delete[] indices; indices = nullptr;
+  dfaAllocExceptions(0);
+  dfaStoreState(1);
+  dfaAllocExceptions(0);
+  dfaStoreState(1);
+  DFA_ptr any_binary_int_dfa = dfaBuild(&*statuses.begin());
+  BinaryIntAutomaton_ptr any_int = new BinaryIntAutomaton(any_binary_int_dfa, number_of_variables);
+  any_int->setFormula(formula);
+
+  DVLOG(VLOG_LEVEL) << any_int->id << " = makeAnyInt(" << *formula << ")";
+  return any_int;
+}
+
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(ArithmeticFormula_ptr formula) {
   BinaryIntAutomaton_ptr result_auto = nullptr;
 
@@ -90,6 +109,11 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(ArithmeticFormula_ptr f
     }
     case ArithmeticFormula::Type::LE: {
       result_auto = BinaryIntAutomaton::makeLessThanOrEqual(formula);
+      break;
+    }
+    case ArithmeticFormula::Type::VAR: {
+      CHECK_EQ(1, formula->getNumberOfVariables());
+      result_auto = BinaryIntAutomaton::makeAnyInt(formula);
       break;
     }
     default:
@@ -727,7 +751,7 @@ std::map<std::string, int> BinaryIntAutomaton::getAnAcceptingIntForEachVar() {
 
   // first read the sign bit
   auto rit = example->rbegin();
-  for (int var_index = num_of_variables - 1; var_index >= num_of_variables; var_index--) {
+  for (int var_index = num_of_variables - 1; var_index >= (num_of_variables - 1); var_index--) {
     if (*rit) {
       values[var_index] = -1;
     } else {
@@ -747,6 +771,8 @@ std::map<std::string, int> BinaryIntAutomaton::getAnAcceptingIntForEachVar() {
     }
   }
 
+  delete example; example = nullptr;
+
   int bdd_index;
   std::string var_name;
   for (auto& var_entry : formula->getCoefficientIndexMap()) {
@@ -758,7 +784,6 @@ std::map<std::string, int> BinaryIntAutomaton::getAnAcceptingIntForEachVar() {
 
     var_values[var_name] = values[bdd_index];
   }
-
   return var_values;
 }
 

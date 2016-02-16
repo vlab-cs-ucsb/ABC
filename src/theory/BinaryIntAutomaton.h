@@ -44,6 +44,7 @@ public:
   virtual BinaryIntAutomaton_ptr clone() const;
 
   static BinaryIntAutomaton_ptr makePhi(ArithmeticFormula_ptr);
+  static BinaryIntAutomaton_ptr makeAnyInt(ArithmeticFormula_ptr);
   static BinaryIntAutomaton_ptr makeAutomaton(ArithmeticFormula_ptr);
   static BinaryIntAutomaton_ptr makeAutomaton(int value, std::string var_name,
           ArithmeticFormula_ptr formula, bool add_leading_zeros = false);

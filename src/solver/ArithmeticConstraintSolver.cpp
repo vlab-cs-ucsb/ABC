@@ -45,7 +45,8 @@ void ArithmeticConstraintSolver::setCallbacks() {
       case Term::Type::GT:
       case Term::Type::GE:
       case Term::Type::LT:
-      case Term::Type::LE: {
+      case Term::Type::LE:
+      case Term::Type::QUALIDENTIFIER: {
         DVLOG(VLOG_LEVEL) << "visit: " << *term;
         ArithmeticFormula_ptr formula = arithmetic_formula_generator.getTermFormula(term);
         if (formula == nullptr) {

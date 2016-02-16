@@ -26,7 +26,7 @@ class ArithmeticFormula {
 public:
   enum class Type :
           int {
-            NONE = 0, EQ, NOTEQ, GT, GE, LT, LE, INTERSECT, UNION
+            NONE = 0, EQ, NOTEQ, GT, GE, LT, LE, INTERSECT, UNION, VAR
           };
   ArithmeticFormula();
   ArithmeticFormula(std::map<std::string, int>& coeff_map, std::vector<int>& coeffs);
@@ -70,6 +70,7 @@ public:
     static const std::string LE;
     static const std::string INTERSECT;
     static const std::string UNION;
+    static const std::string VAR;
   };
 
   friend std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula);

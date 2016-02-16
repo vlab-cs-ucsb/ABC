@@ -22,6 +22,7 @@ const std::string ArithmeticFormula::Name::LT = "<";
 const std::string ArithmeticFormula::Name::LE = "<=";
 const std::string ArithmeticFormula::Name::INTERSECT = "&";
 const std::string ArithmeticFormula::Name::UNION = "|";
+const std::string ArithmeticFormula::Name::VAR = "<var>";
 
 ArithmeticFormula::ArithmeticFormula() :
       type(Type::NONE), constant(0) {
@@ -132,10 +133,13 @@ std::string ArithmeticFormula::str() const {
     case Type::UNION:
       ss << Name::UNION;
       break;
+    case Type::VAR:
+      ss << Name::VAR;
+      break;
     default:
       break;
   }
-  if (type != Type::INTERSECT and type != Type::UNION) {
+  if (type != Type::INTERSECT and type != Type::UNION and type != Type::VAR) {
     ss << " " << 0;
   }
 

@@ -495,6 +495,9 @@ void ArithmeticFormulaGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term)
     addArithmeticVariable(variable->getName());
     formula = new ArithmeticFormula(coeff_index_map, coefficients);
     formula->setVariableCoefficient(variable->getName(), 1);
+    if (formula->getNumberOfVariables() == 1) {
+      formula->setType(ArithmeticFormula::Type::VAR);
+    }
   }
 
   setTermFormula(qi_term, formula);

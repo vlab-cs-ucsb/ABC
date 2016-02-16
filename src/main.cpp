@@ -131,8 +131,9 @@ int main(const int argc, const char **argv) {
             for (auto& entry : values) {
               LOG(INFO) << entry.first << " : " << entry.second;
             }
+
             if (model_count) {
-              LOG(INFO) << "count: " << variable_entry.second->getBinaryIntAutomaton()->count(bound);
+              LOG(INFO) << "count: " << driver.count(bound);
             }
             break;
           }
