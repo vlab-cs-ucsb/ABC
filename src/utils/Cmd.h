@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <string>
+#include <sstream>
 
 namespace Vlab {
 namespace Util {

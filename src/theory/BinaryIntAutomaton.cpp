@@ -751,7 +751,7 @@ std::map<std::string, int> BinaryIntAutomaton::getAnAcceptingIntForEachVar() {
 
   // first read the sign bit
   auto rit = example->rbegin();
-  for (int var_index = num_of_variables - 1; var_index >= (num_of_variables - 1); var_index--) {
+  for (int var_index = num_of_variables - 1; var_index >= 0; --var_index) {
     if (*rit) {
       values[var_index] = -1;
     } else {
@@ -773,21 +773,21 @@ std::map<std::string, int> BinaryIntAutomaton::getAnAcceptingIntForEachVar() {
 
   delete example; example = nullptr;
 
-  int bdd_index;
+  int var_index;
   std::string var_name;
   for (auto& var_entry : formula->getCoefficientIndexMap()) {
     var_name = var_entry.first;
-    bdd_index = getBddVarIndex(var_name);
+    var_index = getBddVarIndex(var_name);
     if (var_name.length() > 10) {
       var_name = var_name.substr(0, 10);
     }
-
-    var_values[var_name] = values[bdd_index];
+    var_values[var_name] = values[var_index];
   }
+
   return var_values;
 }
 
-std::string BinaryIntAutomaton::count(double bound, bool count_less_than_or_equal_to_bound) {
+std::string BinaryIntAutomaton::SymbolicCount(double bound, bool count_less_than_or_equal_to_bound) {
   std::stringstream cmd;
   std::string result;
   std::string tmp_result_file = Option::Theory::TMP_PATH + "/arith_result.dot";

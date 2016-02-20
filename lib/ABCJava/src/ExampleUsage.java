@@ -27,10 +27,7 @@ public class ExampleUsage {
       int bound = 15;
       BigDecimal count = abcDriver.count("var_abc", bound);
       if (count != null) {
-        System.out.println("Number of solutions within bound: " + bound);
-        System.out.println("Log2: " + count.toString());
-        double approx = count.doubleValue();
-        System.out.println("Actual (approximated): " + Math.pow(2, approx));
+        System.out.println("Number of solutions within bound: " + bound + " is " + count.toString());
       } else {
         System.out.println("An error occured during counting, please contact vlab@cs.ucsb.edu");
       }
@@ -55,8 +52,8 @@ public class ExampleUsage {
     
     if (result) {
       System.out.println("Satisfiable");
-      double bound = 5.96417;
-      BigDecimal count = abcDriver.count(bound);
+      double bound = 5;
+      BigDecimal count = abcDriver.symbolicCount(bound);
       if (count != null) {
         System.out.println("Number of solutions within bound " + bound + " is " + count.toString());
       } else {

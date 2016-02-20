@@ -140,6 +140,11 @@ int SymbolTable::get_num_of_variables(Variable::Type type) {
       ++count;
     }
   }
+
+  if (Variable::Type::INT == type) {
+    --count; // exclude artificial int variable
+  }
+
   return count;
 }
 

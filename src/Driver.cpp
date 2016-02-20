@@ -94,7 +94,7 @@ bool Driver::isSatisfiable() {
   return symbol_table->isSatisfiable();
 }
 
-std::string Driver::count(std::string var_name, double bound, bool count_less_than_or_equal_to_bound) {
+std::string Driver::Count(std::string var_name, double bound, bool count_less_than_or_equal_to_bound) {
   std::string result;
   symbol_table->unionValuesOfVariables(script);
   symbol_table->push_scope(script);
@@ -102,17 +102,19 @@ std::string Driver::count(std::string var_name, double bound, bool count_less_th
   symbol_table->pop_scope();
   switch (var_value->getType()) {
     case Vlab::Solver::Value::Type::STRING_AUTOMATON:
-      result = var_value->getStringAutomaton()->count(bound, count_less_than_or_equal_to_bound);
+      result = var_value->getStringAutomaton()->Count(bound, count_less_than_or_equal_to_bound);
       break;
     case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
       auto binary_auto = var_value->getBinaryIntAutomaton();
-      result = binary_auto->count(bound, count_less_than_or_equal_to_bound);
+      result = binary_auto->Count(bound, count_less_than_or_equal_to_bound);
       int number_of_int_variables = symbol_table->get_num_of_variables(SMT::Variable::Type::INT);
       int missing_number_of_int_variables = number_of_int_variables - binary_auto->getNumberOfVariables();
       if (missing_number_of_int_variables > 0) {
-        auto count_result = std::stold(result);
-        count_result = count_result * bound * missing_number_of_int_variables;
-        result = std::to_string(count_result);
+        boost::multiprecision::cpp_int count_result (result) ;
+        count_result = count_result * static_cast<int>(bound) * missing_number_of_int_variables;
+        std::stringstream ss;
+        ss << count_result;
+        result = ss.str();
       }
       break;
     }
@@ -126,9 +128,46 @@ std::string Driver::count(std::string var_name, double bound, bool count_less_th
 /**
  * Binary Integer Automaton Count
  */
-std::string Driver::count(int bound, bool count_less_than_or_equal_to_bound) {
+std::string Driver::Count(int bound, bool count_less_than_or_equal_to_bound) {
   std::string var_name(Solver::SymbolTable::ARITHMETIC);
-  return count(var_name, bound, count_less_than_or_equal_to_bound);
+  return Count(var_name, bound, count_less_than_or_equal_to_bound);
+}
+
+// TODO verify behavior with bound as a double parameter.
+std::string Driver::SymbolicCount(std::string var_name, double bound, bool count_less_than_or_equal_to_bound) {
+  std::string result;
+  symbol_table->unionValuesOfVariables(script);
+  symbol_table->push_scope(script);
+  Vlab::Solver::Value_ptr var_value = symbol_table->getValue(var_name);
+  symbol_table->pop_scope();
+  switch (var_value->getType()) {
+    case Vlab::Solver::Value::Type::STRING_AUTOMATON:
+      result = var_value->getStringAutomaton()->SymbolicCount(bound, count_less_than_or_equal_to_bound);
+      break;
+    case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
+      auto binary_auto = var_value->getBinaryIntAutomaton();
+      result = binary_auto->SymbolicCount(bound, count_less_than_or_equal_to_bound);
+      int number_of_int_variables = symbol_table->get_num_of_variables(SMT::Variable::Type::INT);
+      int missing_number_of_int_variables = number_of_int_variables - binary_auto->getNumberOfVariables();
+      if (missing_number_of_int_variables > 0) {
+        boost::multiprecision::cpp_int count_result (result) ;
+        count_result = count_result * static_cast<int>(bound) * missing_number_of_int_variables;
+        std::stringstream ss;
+        ss << count_result;
+        result = ss.str();
+      }
+      break;
+    }
+    default:
+      break;
+  }
+
+  return result;
+}
+
+std::string Driver::SymbolicCount(int bound, bool count_less_than_or_equal_to_bound) {
+  std::string var_name(Solver::SymbolTable::ARITHMETIC);
+  return SymbolicCount(var_name, bound, count_less_than_or_equal_to_bound);
 }
 
 
@@ -237,10 +276,11 @@ void Driver::test() {
 //    std::cout << "int: " << int_auto_1->getAnAcceptingInt() << std::endl;
 //    delete int_auto_1;
 
-//  Theory::StringAutomaton_ptr str_auto_1 = Theory::StringAutomaton::makeRegexAuto("[2-3][4-5]");
-//  str_auto_1->inspectAuto(false, true);
+//  Theory::StringAutomaton_ptr str_auto_1 = Theory::StringAutomaton::makeRegexAuto("ab");
 //  str_auto_1->inspectAuto();
-//
+//  str_auto_1->inspectBDD();
+//  str_auto_1->Count(15);
+
 //  Theory::IntAutomaton_ptr int_auto = str_auto_1->parseToIntAutomaton();
 //  int_auto->inspectAuto();
 //  std::ofstream outfile("./output/testcase.dot");

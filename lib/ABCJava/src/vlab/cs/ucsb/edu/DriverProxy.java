@@ -67,6 +67,30 @@ public class DriverProxy {
 	}
 	return result;
     }
+    
+    public BigDecimal symbolicCount(double bound) {
+	return symbolicCount(ARITHMETIC_VARIABLE, bound, true);
+    } 
+
+    public BigDecimal symbolicCount(String var_name, int bound) {
+	return symbolicCount(var_name, bound, true);
+    }
+    
+    private BigDecimal symbolicCount(String var_name, double bound) {
+	return symbolicCount(var_name, bound, true);
+    }
+    
+    public BigDecimal symbolicCount(String var_name, double bound, boolean countLessThanOrEqualToBound) {
+	String resultString = symbolicCountVar(var_name, bound, countLessThanOrEqualToBound).trim();
+	BigDecimal result;
+
+	try {
+	    result = new BigDecimal(resultString);
+	} catch (NumberFormatException e) {
+	    result = null;
+	}
+	return result;
+    }
 
     public void setOption(Option option, boolean value) {
 	setOption(option.getValue(), value);
@@ -85,6 +109,8 @@ public class DriverProxy {
     public native boolean isSatisfiable(String constraint);
 
     private native String countVar(String var_name, double bound, boolean countLessThanOrEqualToBound);
+    
+    private native String symbolicCountVar(String var_name, double bound, boolean countLessThanOrEqualToBound);
 
     public native void printResultAutomaton();
 

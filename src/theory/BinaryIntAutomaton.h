@@ -72,7 +72,7 @@ public:
 
   std::map<std::string, int> getAnAcceptingIntForEachVar();
 
-  virtual std::string count(double bound, bool count_less_than_or_equal_to_bound = true);
+  std::string SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true) override;
 
 protected:
   BinaryIntAutomaton(ArithmeticFormula_ptr formula);

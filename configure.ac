@@ -65,11 +65,16 @@ AC_SUBST([LIBMONABDD])
 AC_CHECK_LIB([monamem], [mem_alloc], [LIBMONAMEM=-lmonamem], AC_MSG_ERROR(MONA MEM library not found))
 AC_SUBST([LIBMONAMEM])
 
+#AX_BOOST_BASE([1.54],, [AC_MSG_ERROR([This program needs Boost, but it was not found in your system])])
+AC_CHECK_HEADERS([boost/multiprecision/cpp_int.hpp], [], [AC_MSG_ERROR([Please install libboost_math library])], [])
+
 AC_CHECK_LIB([m], [floor],[LIBM=-lm], AC_MSG_ERROR(c math library m not found))
 AC_SUBST([LIBM])
 
 AC_HAVE_LIBRARY([stranger], [LIBSTRANGER=-lstranger], AC_MSG_ERROR(LibStranger string analysis library not found))
 AC_SUBST([LIBSTRANGER])
+
+
 
 # Define gmock variables 
 GMOCK_VERSION="1.7.0"

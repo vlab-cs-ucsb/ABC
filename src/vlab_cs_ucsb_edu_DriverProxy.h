@@ -49,6 +49,14 @@ JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countVar
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    symbolicCountVar
+ * Signature: (Ljava/lang/String;DZ)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_symbolicCountVar
+  (JNIEnv *, jobject, jstring, jdouble, jboolean);
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    printResultAutomaton
  * Signature: ()V
  */

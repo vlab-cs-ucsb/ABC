@@ -21,6 +21,7 @@
 #include <queue>
 #include <cmath>
 #include <functional>
+#include <boost/multiprecision/cpp_int.hpp>
 
 #include <glog/logging.h>
 //#include <mona/config.h>
@@ -42,13 +43,15 @@ namespace Vlab {
 namespace Theory {
 
 class Automaton;
-typedef Automaton* Automaton_ptr;
-typedef DFA* DFA_ptr;
+using Automaton_ptr = Automaton*;
+using DFA_ptr = DFA*;
 
-typedef std::pair<int ,int> Node; // pair.first = node id, pair.second node data
-typedef std::vector<Node> NodeVector;
-typedef std::vector<NodeVector> AdjacencyList;
-typedef std::pair<int, std::vector<bool>> NextState;
+using Node = std::pair<int ,int>; // pair.first = node id, pair.second node data
+using NodeVector = std::vector<Node>;
+using AdjacencyList = std::vector<NodeVector>;
+using CountVector = std::vector<boost::multiprecision::cpp_int>;
+using AdjacencyCountMatrix = std::vector<CountVector>;
+using NextState = std::pair<int, std::vector<bool>>;
 
 class Automaton {
 public:
@@ -88,7 +91,9 @@ public:
   bool isCyclic();
   bool isInCycle(int state);
   bool isStateReachableFrom(int search_state, int from_state);
-  virtual std::string count(int bound, bool count_less_than_or_equal_to_bound = true);
+  virtual std::string Count(int bound, bool count_less_than_or_equal_to_bound = true);
+  virtual std::string SymbolicCount(int bound, bool count_less_than_or_equal_to_bound = true);
+  virtual std::string SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true);
 
   Graph_ptr toGraph();
 
@@ -129,6 +134,7 @@ protected:
   std::set<int> getNextStates(int state);
   std::vector<NextState> getNextStatesOrdered(int state, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
   bool getAnAcceptingWord(NextState& state, std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
+  AdjacencyCountMatrix GetAdjacencyCountMatrix(bool count_reserved_words = true);
   AdjacencyList getAdjacencyCountList(bool count_reserved_words = true);
   void addReservedWordsToCount(AdjacencyList& adjaceny_count_list);
   void generateGFScript(int bound, std::ostream& out = std::cout, bool count_less_than_or_equal_to_bound = true);

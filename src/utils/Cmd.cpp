@@ -29,7 +29,11 @@ std::string run_cmd(std::string cmd) {
   if (status == -1) {
     throw std::string("error while terminating command.");
   }
-  return result;
+
+  std::string r_trimmed;
+  std::stringstream ss (result);
+  ss >> r_trimmed;
+  return r_trimmed;
 }
 
 } /* namespace Cmd */

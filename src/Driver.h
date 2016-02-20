@@ -12,6 +12,8 @@
 #include <map>
 #include <fstream>
 #include <memory>
+#include <boost/multiprecision/cpp_int.hpp>
+#include <boost/multiprecision/cpp_dec_float.hpp>
 
 #include <glog/logging.h>
 #include "options/Solver.h"
@@ -46,8 +48,11 @@ public:
   void initializeSolver();
   void solve();
   bool isSatisfiable();
-  std::string count(std::string var_name, double bound, bool count_less_than_or_equal_to_bound = true);
-  std::string count(int bound, bool count_less_than_or_equal_to_bound = true);
+  std::string Count(std::string var_name, double bound, bool count_less_than_or_equal_to_bound = true);
+  std::string Count(int bound, bool count_less_than_or_equal_to_bound = true);
+  std::string SymbolicCount(std::string var_name, double bound, bool count_less_than_or_equal_to_bound = true);
+  std::string SymbolicCount(int bound, bool count_less_than_or_equal_to_bound = true);
+
   void printResult(Solver::Value_ptr value, std::ostream& out);
   void inspectResult(Solver::Value_ptr value, std::string file_name);
   std::map<SMT::Variable_ptr, Solver::Value_ptr> getSatisfyingVariables();

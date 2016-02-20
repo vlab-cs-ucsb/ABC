@@ -170,7 +170,45 @@ bool Automaton::isStateReachableFrom(int search_state, int from_state) {
   return isStateReachableFrom(search_state, from_state, is_stack_member);
 }
 
-std::string Automaton::count(int bound, bool count_less_than_or_equal_to_bound) {
+std::string Automaton::Count(int bound, bool count_less_than_or_equal_to_bound) {
+  auto count_matrix = GetAdjacencyCountMatrix(true);
+  if (count_less_than_or_equal_to_bound) {
+    count_matrix[this->dfa->ns][this->dfa->ns] = 1;
+  }
+
+  int power = bound + 1; // matrix exponentiation is off by 1
+
+  if (power == 1) {
+    std::stringstream ss;
+    ss << count_matrix[this->dfa->s][this->dfa->ns];
+    std::string result = ss.str();
+    DVLOG(VLOG_LEVEL) << "[" << this->id << "]->count(" << bound << ") : " << result;
+    return result;
+  }
+
+  auto base_matrix = count_matrix;
+
+  for (int p = 1; p < power; ++p) { // TODO improve exponentiation algorithm
+    AdjacencyCountMatrix tmp_matrix (this->dfa->ns + 1, CountVector(this->dfa->ns + 1, 0));
+    for (int i = 0; i < this->dfa->ns + 1; ++i) {
+      for (int j = 0; j < this->dfa->ns + 1; ++j) {
+        for (int k = 0; k < this->dfa->ns + 1; ++k) {
+          tmp_matrix[i][j] += count_matrix[i][k] * base_matrix[k][j];
+        }
+      }
+    }
+    base_matrix = std::move(tmp_matrix);
+  }
+
+
+  std::stringstream ss;
+  ss << base_matrix[this->dfa->s][this->dfa->ns];
+  std::string result = ss.str();
+  DVLOG(VLOG_LEVEL) << "[" << this->id << "]->count(" << bound << ") : " << result;
+  return result;
+}
+
+std::string Automaton::SymbolicCount(int bound, bool count_less_than_or_equal_to_bound) {
   std::stringstream cmd;
   std::string result;
   std::string tmp_math_file = Option::Theory::TMP_PATH + "/math_script.m";
@@ -187,6 +225,10 @@ std::string Automaton::count(int bound, bool count_less_than_or_equal_to_bound) 
   }
 
   return result;
+}
+
+std::string Automaton::SymbolicCount(double bound, bool count_less_than_or_equal_to_bound) {
+  return SymbolicCount(static_cast<int>(bound), count_less_than_or_equal_to_bound);
 }
 
 bool Automaton::isCyclic(int state, std::map<int, bool>& is_discovered, std::map<int, bool>& is_stack_member) {
@@ -710,6 +752,64 @@ std::vector<NextState> Automaton::getNextStatesOrdered(int state, std::function<
   }
 
   return next_states;
+}
+
+AdjacencyCountMatrix Automaton::GetAdjacencyCountMatrix(bool count_reserved_words) {
+  AdjacencyCountMatrix count_matrix (this->dfa->ns + 1, CountVector(this->dfa->ns + 1, 0));
+
+  unsigned left, right, index;
+  for (int s = 0; s < this->dfa->ns; ++s) {
+    // pair<sbdd_node_id, bdd_depth>
+    Node current_bdd_node {dfa->q[s], 0}, left_node, right_node;
+    std::stack<Node> bdd_node_stack;
+    bdd_node_stack.push(current_bdd_node);
+
+    while (not bdd_node_stack.empty()) {
+      current_bdd_node = bdd_node_stack.top(); bdd_node_stack.pop();
+      LOAD_lri(&dfa->bddm->node_table[current_bdd_node.first], left, right, index);
+      if (index == BDD_LEAF_INDEX) {
+        count_matrix[s][left] += static_cast<int>(std::pow(2, (num_of_variables - current_bdd_node.second)));
+      } else {
+        left_node.first = left;
+        left_node.second = current_bdd_node.second + 1;
+        right_node.first = right;
+        right_node.second = current_bdd_node.second + 1;
+        bdd_node_stack.push(left_node);
+        bdd_node_stack.push(right_node);
+      }
+    }
+
+    // combine all accepting states into one artifical accepting state
+    if (isAcceptingState(s)) {
+      count_matrix[s][this->dfa->ns] = 1;
+    }
+  }
+
+  // TODO use extra bit instead of reserved words, so that we do not need counting trick.
+  if (count_reserved_words) {
+    for (int s = 0; s < this->dfa->ns; ++s) {
+      auto max_transition = std::max_element(count_matrix[s].begin(), count_matrix[s].end());
+      *max_transition += 2; // add two reserved words
+    }
+  }
+
+  // make transitions to sink count 0
+  int sink_state = this->getSinkState();
+  if (sink_state > -1) {
+    for (int s = 0; s < this->dfa->ns; ++s) {
+      count_matrix[s][sink_state] = 0;
+    }
+  }
+
+//  std::cout << std::endl;
+//  for (auto& row : count_matrix) {
+//    for (auto& col : row) {
+//      std::cout << col << " ";
+//    }
+//    std::cout << std::endl;
+//  }
+
+  return count_matrix;
 }
 
 AdjacencyList Automaton::getAdjacencyCountList(bool count_reserved_words) {

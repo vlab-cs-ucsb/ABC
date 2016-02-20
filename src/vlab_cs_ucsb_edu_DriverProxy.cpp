@@ -100,7 +100,22 @@ JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countVar (JNIEnv *en
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
   const char* var_name_str = env->GetStringUTFChars(varName, JNI_FALSE);
   std::string var_name = var_name_str;
-  std::string result = abc_driver->count(var_name, static_cast<double>(bound), static_cast<bool>(count_less_than_or_equal_bound));
+  std::string result = abc_driver->Count(var_name, static_cast<double>(bound), static_cast<bool>(count_less_than_or_equal_bound));
+  jstring resultString = env->NewStringUTF(result.c_str());
+  env->ReleaseStringUTFChars(varName, var_name_str);
+  return resultString;
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    symbolicCountVar
+ * Signature: (Ljava/lang/String;DZ)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_symbolicCountVar (JNIEnv *env, jobject obj, jstring varName, jdouble bound, jboolean count_less_than_or_equal_bound) {
+  Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
+  const char* var_name_str = env->GetStringUTFChars(varName, JNI_FALSE);
+  std::string var_name = var_name_str;
+  std::string result = abc_driver->SymbolicCount(var_name, static_cast<double>(bound), static_cast<bool>(count_less_than_or_equal_bound));
   jstring resultString = env->NewStringUTF(result.c_str());
   env->ReleaseStringUTFChars(varName, var_name_str);
   return resultString;

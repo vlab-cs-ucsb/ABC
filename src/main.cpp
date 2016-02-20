@@ -122,7 +122,7 @@ int main(const int argc, const char **argv) {
           case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
             LOG(INFO) << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"";
             if (model_count) {
-              LOG(INFO) << "count: " << variable_entry.second->getStringAutomaton()->count(bound);
+              LOG(INFO) << "count: " << variable_entry.second->getStringAutomaton()->SymbolicCount(bound);
             }
             break;
           }
@@ -133,7 +133,7 @@ int main(const int argc, const char **argv) {
             }
 
             if (model_count) {
-              LOG(INFO) << "count: " << driver.count(bound);
+              LOG(INFO) << "count: " << driver.SymbolicCount(bound);
             }
             break;
           }
