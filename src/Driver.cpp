@@ -276,10 +276,11 @@ void Driver::test() {
 //    std::cout << "int: " << int_auto_1->getAnAcceptingInt() << std::endl;
 //    delete int_auto_1;
 
-//  Theory::StringAutomaton_ptr str_auto_1 = Theory::StringAutomaton::makeRegexAuto("ab");
+//  Theory::StringAutomaton_ptr str_auto_1 = Theory::StringAutomaton::makeRegexAuto("(ab[c-d]|fe)");
 //  str_auto_1->inspectAuto();
 //  str_auto_1->inspectBDD();
-//  str_auto_1->Count(15);
+//  str_auto_1->Count(5);
+//  str_auto_1->Count(5,false);
 
 //  Theory::IntAutomaton_ptr int_auto = str_auto_1->parseToIntAutomaton();
 //  int_auto->inspectAuto();

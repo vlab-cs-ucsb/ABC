@@ -171,38 +171,42 @@ bool Automaton::isStateReachableFrom(int search_state, int from_state) {
 }
 
 std::string Automaton::Count(int bound, bool count_less_than_or_equal_to_bound) {
-  auto count_matrix = GetAdjacencyCountMatrix(true);
+  auto x = GetAdjacencyCountMatrix(true);
   if (count_less_than_or_equal_to_bound) {
-    count_matrix[this->dfa->ns][this->dfa->ns] = 1;
+    x[this->dfa->ns][this->dfa->ns] = 1;
   }
 
   int power = bound + 1; // matrix exponentiation is off by 1
 
   if (power == 1) {
     std::stringstream ss;
-    ss << count_matrix[this->dfa->s][this->dfa->ns];
+    ss << x[this->dfa->s][this->dfa->ns];
     std::string result = ss.str();
     DVLOG(VLOG_LEVEL) << "[" << this->id << "]->count(" << bound << ") : " << result;
     return result;
   }
 
-  auto base_matrix = count_matrix;
-
-  for (int p = 1; p < power; ++p) { // TODO improve exponentiation algorithm
-    AdjacencyCountMatrix tmp_matrix (this->dfa->ns + 1, CountVector(this->dfa->ns + 1, 0));
-    for (int i = 0; i < this->dfa->ns + 1; ++i) {
-      for (int j = 0; j < this->dfa->ns + 1; ++j) {
-        for (int k = 0; k < this->dfa->ns + 1; ++k) {
-          tmp_matrix[i][j] += count_matrix[i][k] * base_matrix[k][j];
-        }
-      }
-    }
-    base_matrix = std::move(tmp_matrix);
+  CountMatrix y (this->dfa->ns + 1, CountVector(this->dfa->ns + 1, 0));
+  for (int i = 0; i < y.size(); ++i) {
+    y[i][i] = 1;
   }
+
+  while (power > 1) {
+    if (power % 2 == 0) {
+      x = Util::Math::multiply_matrix(x, x);
+      power = power / 2;
+    } else {
+      y = Util::Math::multiply_matrix(x, y);
+      x = Util::Math::multiply_matrix(x, x);
+      power = (power - 1) / 2;
+    }
+  }
+
+  x = Util::Math::multiply_matrix(x, y);
 
 
   std::stringstream ss;
-  ss << base_matrix[this->dfa->s][this->dfa->ns];
+  ss << x[this->dfa->s][this->dfa->ns];
   std::string result = ss.str();
   DVLOG(VLOG_LEVEL) << "[" << this->id << "]->count(" << bound << ") : " << result;
   return result;
@@ -754,8 +758,8 @@ std::vector<NextState> Automaton::getNextStatesOrdered(int state, std::function<
   return next_states;
 }
 
-AdjacencyCountMatrix Automaton::GetAdjacencyCountMatrix(bool count_reserved_words) {
-  AdjacencyCountMatrix count_matrix (this->dfa->ns + 1, CountVector(this->dfa->ns + 1, 0));
+CountMatrix Automaton::GetAdjacencyCountMatrix(bool count_reserved_words) {
+  CountMatrix count_matrix (this->dfa->ns + 1, CountVector(this->dfa->ns + 1, 0));
 
   unsigned left, right, index;
   for (int s = 0; s < this->dfa->ns; ++s) {

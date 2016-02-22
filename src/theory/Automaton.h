@@ -35,6 +35,7 @@
 #include "options/Theory.h"
 #include "utils/RegularExpression.h"
 #include "utils/Cmd.h"
+#include "utils/Math.h"
 #include "Graph.h"
 #include "DAGraph.h"
 #include "SemilinearSet.h"
@@ -50,7 +51,7 @@ using Node = std::pair<int ,int>; // pair.first = node id, pair.second node data
 using NodeVector = std::vector<Node>;
 using AdjacencyList = std::vector<NodeVector>;
 using CountVector = std::vector<boost::multiprecision::cpp_int>;
-using AdjacencyCountMatrix = std::vector<CountVector>;
+using CountMatrix = std::vector<CountVector>;
 using NextState = std::pair<int, std::vector<bool>>;
 
 class Automaton {
@@ -134,7 +135,7 @@ protected:
   std::set<int> getNextStates(int state);
   std::vector<NextState> getNextStatesOrdered(int state, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
   bool getAnAcceptingWord(NextState& state, std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
-  AdjacencyCountMatrix GetAdjacencyCountMatrix(bool count_reserved_words = true);
+  CountMatrix GetAdjacencyCountMatrix(bool count_reserved_words = true);
   AdjacencyList getAdjacencyCountList(bool count_reserved_words = true);
   void addReservedWordsToCount(AdjacencyList& adjaceny_count_list);
   void generateGFScript(int bound, std::ostream& out = std::cout, bool count_less_than_or_equal_to_bound = true);
