@@ -1037,7 +1037,7 @@ void Automaton::generateMatrixScript(int bound, std::ostream& out, bool count_le
   out << "}];\n";
   // state indexes are off by one
   out << "numPaths = MatrixPower[A, " << bound + 2 << "][[" << this->dfa->s + 1 << ", " << this->dfa->ns + 1 << "]];\n";
-  out << "Print[N[Log2[numPaths]]];";
+  out << "Print[N[numPaths]];";
   out << std::endl;
 }
 

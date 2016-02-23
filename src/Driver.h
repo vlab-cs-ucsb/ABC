@@ -13,7 +13,6 @@
 #include <fstream>
 #include <memory>
 #include <boost/multiprecision/cpp_int.hpp>
-#include <boost/multiprecision/cpp_dec_float.hpp>
 
 #include <glog/logging.h>
 #include "options/Solver.h"
@@ -48,8 +47,8 @@ public:
   void initializeSolver();
   void solve();
   bool isSatisfiable();
-  std::string Count(std::string var_name, double bound, bool count_less_than_or_equal_to_bound = true);
-  std::string Count(int bound, bool count_less_than_or_equal_to_bound = true);
+  boost::multiprecision::cpp_int Count(std::string var_name, double bound, bool count_less_than_or_equal_to_bound = true);
+  boost::multiprecision::cpp_int Count(int bound, bool count_less_than_or_equal_to_bound = true);
   std::string SymbolicCount(std::string var_name, double bound, bool count_less_than_or_equal_to_bound = true);
   std::string SymbolicCount(int bound, bool count_less_than_or_equal_to_bound = true);
 

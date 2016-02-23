@@ -94,12 +94,12 @@ bool Driver::isSatisfiable() {
   return symbol_table->isSatisfiable();
 }
 
-std::string Driver::Count(std::string var_name, double bound, bool count_less_than_or_equal_to_bound) {
-  std::string result;
+boost::multiprecision::cpp_int Driver::Count(std::string var_name, double bound, bool count_less_than_or_equal_to_bound) {
   symbol_table->unionValuesOfVariables(script);
   symbol_table->push_scope(script);
   Vlab::Solver::Value_ptr var_value = symbol_table->getValue(var_name);
   symbol_table->pop_scope();
+  boost::multiprecision::cpp_int result;
   switch (var_value->getType()) {
     case Vlab::Solver::Value::Type::STRING_AUTOMATON:
       result = var_value->getStringAutomaton()->Count(bound, count_less_than_or_equal_to_bound);
@@ -108,13 +108,9 @@ std::string Driver::Count(std::string var_name, double bound, bool count_less_th
       auto binary_auto = var_value->getBinaryIntAutomaton();
       result = binary_auto->Count(bound, count_less_than_or_equal_to_bound);
       int number_of_int_variables = symbol_table->get_num_of_variables(SMT::Variable::Type::INT);
-      int missing_number_of_int_variables = number_of_int_variables - binary_auto->getNumberOfVariables();
-      if (missing_number_of_int_variables > 0) {
-        boost::multiprecision::cpp_int count_result (result) ;
-        count_result = count_result * static_cast<int>(bound) * missing_number_of_int_variables;
-        std::stringstream ss;
-        ss << count_result;
-        result = ss.str();
+      int number_of_untracked_int_variables = number_of_int_variables - binary_auto->getNumberOfVariables();
+      if (number_of_untracked_int_variables > 0) {
+        result = result * boost::multiprecision::pow( boost::multiprecision::cpp_int(2), (number_of_untracked_int_variables * static_cast<int>(bound)) );
       }
       break;
     }
@@ -128,7 +124,7 @@ std::string Driver::Count(std::string var_name, double bound, bool count_less_th
 /**
  * Binary Integer Automaton Count
  */
-std::string Driver::Count(int bound, bool count_less_than_or_equal_to_bound) {
+boost::multiprecision::cpp_int Driver::Count(int bound, bool count_less_than_or_equal_to_bound) {
   std::string var_name(Solver::SymbolTable::ARITHMETIC);
   return Count(var_name, bound, count_less_than_or_equal_to_bound);
 }
@@ -148,10 +144,10 @@ std::string Driver::SymbolicCount(std::string var_name, double bound, bool count
       auto binary_auto = var_value->getBinaryIntAutomaton();
       result = binary_auto->SymbolicCount(bound, count_less_than_or_equal_to_bound);
       int number_of_int_variables = symbol_table->get_num_of_variables(SMT::Variable::Type::INT);
-      int missing_number_of_int_variables = number_of_int_variables - binary_auto->getNumberOfVariables();
-      if (missing_number_of_int_variables > 0) {
+      int number_of_untracked_int_variables = number_of_int_variables - binary_auto->getNumberOfVariables();
+      if (number_of_untracked_int_variables > 0) {
         boost::multiprecision::cpp_int count_result (result) ;
-        count_result = count_result * static_cast<int>(bound) * missing_number_of_int_variables;
+        count_result = count_result * boost::multiprecision::pow( boost::multiprecision::cpp_int(2), (number_of_untracked_int_variables * static_cast<int>(bound)) );
         std::stringstream ss;
         ss << count_result;
         result = ss.str();
