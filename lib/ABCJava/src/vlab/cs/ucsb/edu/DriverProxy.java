@@ -45,7 +45,7 @@ public class DriverProxy {
     }
     
     public BigDecimal count(double bound) {
-	return count(ARITHMETIC_VARIABLE, bound, true);
+	return count(ARITHMETIC_VARIABLE, bound, false);
     } 
 
     public BigDecimal count(String var_name, int bound) {
@@ -69,7 +69,7 @@ public class DriverProxy {
     }
     
     public BigDecimal symbolicCount(double bound) {
-	return symbolicCount(ARITHMETIC_VARIABLE, bound, true);
+	return symbolicCount(ARITHMETIC_VARIABLE, bound, false);
     } 
 
     public BigDecimal symbolicCount(String var_name, int bound) {

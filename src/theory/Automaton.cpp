@@ -170,8 +170,8 @@ bool Automaton::isStateReachableFrom(int search_state, int from_state) {
   return isStateReachableFrom(search_state, from_state, is_stack_member);
 }
 
-boost::multiprecision::cpp_int Automaton::Count(int bound, bool count_less_than_or_equal_to_bound) {
-  auto x = GetAdjacencyCountMatrix(true);
+boost::multiprecision::cpp_int Automaton::Count(int bound, bool count_less_than_or_equal_to_bound, bool count_reserved_words) {
+  auto x = GetAdjacencyCountMatrix(count_reserved_words);
   if (count_less_than_or_equal_to_bound) {
     x[this->dfa->ns][this->dfa->ns] = 1;
   }
@@ -201,7 +201,6 @@ boost::multiprecision::cpp_int Automaton::Count(int bound, bool count_less_than_
   }
 
   x = Util::Math::multiply_matrix(x, y);
-
 
   auto result = x[this->dfa->s][this->dfa->ns];
   DVLOG(VLOG_LEVEL) << "[" << this->id << "]->count(" << bound << ") : " << result;
@@ -763,7 +762,6 @@ CountMatrix Automaton::GetAdjacencyCountMatrix(bool count_reserved_words) {
     Node current_bdd_node {dfa->q[s], 0}, left_node, right_node;
     std::stack<Node> bdd_node_stack;
     bdd_node_stack.push(current_bdd_node);
-
     while (not bdd_node_stack.empty()) {
       current_bdd_node = bdd_node_stack.top(); bdd_node_stack.pop();
       LOAD_lri(&dfa->bddm->node_table[current_bdd_node.first], left, right, index);

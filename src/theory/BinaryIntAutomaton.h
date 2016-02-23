@@ -51,8 +51,6 @@ public:
   static BinaryIntAutomaton_ptr makeAutomaton(SemilinearSet_ptr semilinear_set, std::string var_name,
           ArithmeticFormula_ptr formula, bool add_leading_zeros = false);
 
-
-
   ArithmeticFormula_ptr getFormula();
   void setFormula(ArithmeticFormula_ptr formula);
   bool hasNegative1();
@@ -72,6 +70,7 @@ public:
 
   std::map<std::string, int> getAnAcceptingIntForEachVar();
 
+  boost::multiprecision::cpp_int Count(int bound, bool count_less_than_or_equal_to_bound = false, bool count_reserved_words = false) override;
   std::string SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true) override;
 
 protected:

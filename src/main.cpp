@@ -134,8 +134,8 @@ int main(const int argc, const char **argv) {
             }
 
             if (model_count) {
-              LOG(INFO) << "count          : " << driver.Count(bound);
-              LOG(INFO) << "symbolic count : " << driver.SymbolicCount(bound);
+              LOG(INFO) << "count          : " << driver.Count(bound, false);
+              LOG(INFO) << "symbolic count : " << driver.SymbolicCount(bound, false);
             }
             break;
           }

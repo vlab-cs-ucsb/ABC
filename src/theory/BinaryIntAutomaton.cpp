@@ -795,6 +795,10 @@ std::map<std::string, int> BinaryIntAutomaton::getAnAcceptingIntForEachVar() {
   return var_values;
 }
 
+boost::multiprecision::cpp_int BinaryIntAutomaton::Count(int bound, bool count_less_than_or_equal_to_bound, bool count_reserved_words) {
+  return Automaton::Count(bound, count_less_than_or_equal_to_bound, count_reserved_words);
+}
+
 std::string BinaryIntAutomaton::SymbolicCount(double bound, bool count_less_than_or_equal_to_bound) {
   std::stringstream cmd;
   std::string result;
