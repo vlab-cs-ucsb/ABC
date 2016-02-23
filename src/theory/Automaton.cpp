@@ -170,7 +170,7 @@ bool Automaton::isStateReachableFrom(int search_state, int from_state) {
   return isStateReachableFrom(search_state, from_state, is_stack_member);
 }
 
-std::string Automaton::Count(int bound, bool count_less_than_or_equal_to_bound) {
+boost::multiprecision::cpp_int Automaton::Count(int bound, bool count_less_than_or_equal_to_bound) {
   auto x = GetAdjacencyCountMatrix(true);
   if (count_less_than_or_equal_to_bound) {
     x[this->dfa->ns][this->dfa->ns] = 1;
@@ -179,9 +179,7 @@ std::string Automaton::Count(int bound, bool count_less_than_or_equal_to_bound) 
   int power = bound + 1; // matrix exponentiation is off by 1
 
   if (power == 1) {
-    std::stringstream ss;
-    ss << x[this->dfa->s][this->dfa->ns];
-    std::string result = ss.str();
+    auto result = x[this->dfa->s][this->dfa->ns];
     DVLOG(VLOG_LEVEL) << "[" << this->id << "]->count(" << bound << ") : " << result;
     return result;
   }
@@ -205,9 +203,7 @@ std::string Automaton::Count(int bound, bool count_less_than_or_equal_to_bound) 
   x = Util::Math::multiply_matrix(x, y);
 
 
-  std::stringstream ss;
-  ss << x[this->dfa->s][this->dfa->ns];
-  std::string result = ss.str();
+  auto result = x[this->dfa->s][this->dfa->ns];
   DVLOG(VLOG_LEVEL) << "[" << this->id << "]->count(" << bound << ") : " << result;
   return result;
 }

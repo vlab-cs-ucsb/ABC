@@ -338,12 +338,20 @@ int BinaryIntAutomaton::getBddVarIndex(std::string var_name) {
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::complement() {
-  BinaryIntAutomaton_ptr complement_auto = nullptr;
   DFA_ptr complement_dfa = dfaCopy(this->dfa);
 
   dfaNegation(complement_dfa);
 
-  complement_auto = new BinaryIntAutomaton(complement_dfa, num_of_variables);
+  auto tmp_auto = new BinaryIntAutomaton(complement_dfa, num_of_variables);
+  tmp_auto->setFormula(this->formula->clone());
+
+  // a complemented auto may have initial state accepting, we should be safely avoided from that
+  auto any_int_auto = BinaryIntAutomaton::makeAnyInt(this->formula->clone());
+  auto complement_auto = any_int_auto->intersect(tmp_auto);
+  delete any_int_auto;
+  delete tmp_auto;
+  auto formula = complement_auto->getFormula();
+  delete formula;
   complement_auto->setFormula(this->formula->negateOperation());
 
   DVLOG(VLOG_LEVEL) << complement_auto->id << " = [" << this->id << "]->complement()";

@@ -92,7 +92,7 @@ public:
   bool isCyclic();
   bool isInCycle(int state);
   bool isStateReachableFrom(int search_state, int from_state);
-  virtual std::string Count(int bound, bool count_less_than_or_equal_to_bound = true);
+  virtual boost::multiprecision::cpp_int Count(int bound, bool count_less_than_or_equal_to_bound = true);
   virtual std::string SymbolicCount(int bound, bool count_less_than_or_equal_to_bound = true);
   virtual std::string SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true);
 
