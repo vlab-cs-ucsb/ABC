@@ -29,13 +29,13 @@ int lcm(int x, int y) {
 }
 
 Matrix multiply_matrix(Matrix& x, Matrix& y) {
-  int r = x[0].size();
-  int c = y.size();
+  unsigned r = x[0].size();
+  unsigned c = y.size();
 
   Matrix result(r, std::vector<boost::multiprecision::cpp_int> (c, 0));
-  for (int i = 0; i < r; ++i) {
-    for (int j = 0; j < c; ++j) {
-      for (int k = 0; k < r; ++k) {
+  for (unsigned i = 0; i < r; ++i) {
+    for (unsigned j = 0; j < c; ++j) {
+      for (unsigned k = 0; k < r; ++k) {
         result[i][j] += x[i][k] * y[k][j];
       }
     }

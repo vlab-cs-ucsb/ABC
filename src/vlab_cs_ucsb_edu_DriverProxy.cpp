@@ -131,16 +131,7 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_printResultAutomaton__ 
   if (abc_driver->isSatisfiable()) {
     int index = 0;
     for(auto& variable_entry : abc_driver->getSatisfyingVariables()) {
-      std::cout << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"" << std::endl;
-      switch (variable_entry.second->getType()) {
-        case Vlab::Solver::Value::Type::INT_AUTOMATON:
-        case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
-          abc_driver->printResult(variable_entry.second, std::cout);
-          break;
-        }
-        default:
-          break;
-      }
+      abc_driver->printResult(variable_entry.second, std::cout);
     }
     std::cout.flush();
   }
@@ -159,19 +150,10 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_printResultAutomaton__L
   if (abc_driver->isSatisfiable()) {
     int index = 0;
     for(auto& variable_entry : abc_driver->getSatisfyingVariables()) {
-      std::cout << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"" << std::endl;
-      switch (variable_entry.second->getType()) {
-        case Vlab::Solver::Value::Type::INT_AUTOMATON:
-        case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
-          std::stringstream ss;
-          ss << file_path << "_" << index << ".dot";
-          std::string out_file = ss.str();
-          abc_driver->inspectResult(variable_entry.second, out_file);
-          break;
-        }
-        default:
-          break;
-      }
+      std::stringstream ss;
+      ss << file_path << "_" << index << ".dot";
+      std::string out_file = ss.str();
+      abc_driver->inspectResult(variable_entry.second, out_file);
     }
     std::cout.flush();
   }

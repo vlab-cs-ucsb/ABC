@@ -187,7 +187,7 @@ std::string Automaton::Count(int bound, bool count_less_than_or_equal_to_bound) 
   }
 
   CountMatrix y (this->dfa->ns + 1, CountVector(this->dfa->ns + 1, 0));
-  for (int i = 0; i < y.size(); ++i) {
+  for (unsigned i = 0; i < y.size(); ++i) {
     y[i][i] = 1;
   }
 
