@@ -20,13 +20,13 @@
 namespace Vlab {
 namespace Solver {
 
-typedef std::map<std::string, SMT::Variable_ptr> VariableMap;
-typedef std::map<SMT::Variable_ptr, int> VariableCounterMap;
-typedef std::map<SMT::Visitable_ptr, VariableCounterMap> VariableCounterTable;
-typedef std::map<SMT::Variable_ptr, SMT::Term_ptr> VariableSubstitutionMap;
-typedef std::map<SMT::Visitable_ptr, VariableSubstitutionMap> VariableSubstitutionTable;
-typedef std::map<SMT::Variable_ptr, Value_ptr> VariableValueMap;
-typedef std::map<SMT::Visitable_ptr, VariableValueMap> VariableValueTable;
+using VariableMap = std::map<std::string, SMT::Variable_ptr>;
+using VariableCounterMap = std::map<SMT::Variable_ptr, int>;
+using VariableCounterTable = std::map<SMT::Visitable_ptr, VariableCounterMap>;
+using VariableSubstitutionMap = std::map<SMT::Variable_ptr, SMT::Variable_ptr>;
+using VariableSubstitutionTable = std::map<SMT::Visitable_ptr, VariableSubstitutionMap>;
+using VariableValueMap = std::map<SMT::Variable_ptr, Value_ptr>;
+using VariableValueTable = std::map<SMT::Visitable_ptr, VariableValueMap>;
 
 class SymbolTable {
 public:
@@ -50,7 +50,8 @@ public:
   int getBound();
 
   void push_scope(SMT::Visitable_ptr);
-  SMT::Visitable_ptr pop_scope();
+  SMT::Visitable_ptr top_scope();
+  void pop_scope();
 
 
   /*
@@ -62,12 +63,14 @@ public:
   int get_total_count(SMT::Variable_ptr);
   void reset_count();
 
-  bool add_var_substitution_rule(SMT::Variable_ptr, SMT::Term_ptr);
-  bool remove_var_substitution_rule(SMT::Variable_ptr);
-  SMT::Term_ptr get_variable_substitution_term(SMT::Variable_ptr);
-  VariableSubstitutionMap& get_variable_substitution_map();
-  VariableSubstitutionTable& get_variable_substitution_table();
-  void reset_substitution_rules();
+  bool add_variable_substitution_rule(SMT::Variable_ptr, SMT::Variable_ptr);
+  bool remove_variable_substitution_rule(SMT::Variable_ptr);
+  bool is_variable_substituted(SMT::Visitable_ptr, SMT::Variable_ptr);
+  bool is_variable_substituted(SMT::Variable_ptr);
+  SMT::Variable_ptr get_substituted_variable(SMT::Visitable_ptr, SMT::Variable_ptr);
+  SMT::Variable_ptr get_substituted_variable(SMT::Variable_ptr);
+  int get_num_of_substituted_variables(SMT::Visitable_ptr scope, SMT::Variable::Type type);
+  void merge_variable_substitution_rule_into_current_scope(SMT::Visitable_ptr scope, SMT::Variable_ptr variable);
 
   Value_ptr getValue(std::string var_name);
   Value_ptr getValue(SMT::Variable_ptr variable);
@@ -105,7 +108,10 @@ private:
   VariableCounterTable variable_counts_table;
 
   /**
-   * Rules for eliminating variables
+   * Applied existential elimination rules
+   * For each scope:
+   * Keeps a map for each variable that is substituted by another variable
+   * based on equality constraints
    */
   VariableSubstitutionTable variable_substitution_table;
 

@@ -49,7 +49,7 @@ void Initializer::visitScript(Script_ptr script) {
     }
   }
 
-  verifyVariableDefinitions();
+//  verifyVariableDefinitions();
 }
 
 void Initializer::visitCommand(Command_ptr command) {

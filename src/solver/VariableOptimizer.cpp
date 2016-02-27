@@ -71,7 +71,7 @@ void VariableOptimizer::start() {
 
 void VariableOptimizer::end() {
   if (VLOG_IS_ON(VLOG_LEVEL)) {
-    for (auto& rule_map : symbol_table->get_variable_substitution_table()) {
+    for (auto& rule_map : get_substitution_table()) {
       DVLOG(VLOG_LEVEL) << "Substitution map for scope: " << rule_map.first;
       for (auto& rule : rule_map.second) {
         DVLOG(VLOG_LEVEL) << "\t" << *rule.first << " (" << rule.first << ") -> " << *rule.second << " ("
@@ -80,11 +80,11 @@ void VariableOptimizer::end() {
     }
   }
 
-  OptimizationRuleRunner rule_runner(root, symbol_table);
+  OptimizationRuleRunner rule_runner(root, symbol_table, substitution_table);
   rule_runner.start();
 
   eq_constraint_count.clear();
-  symbol_table->reset_substitution_rules();
+  reset_substitution_rules();
 //  Ast2Dot dot(&std::cout);
 //  dot.inspectAST(root);
 }
@@ -176,7 +176,7 @@ void VariableOptimizer::add_variable_substitution_rule(Variable_ptr subject_var,
   }
 
   /* 1 - Update the target if the target variable is already a subject in the substitution map (rule transition) */
-  for (auto& substitution_rule : symbol_table->get_variable_substitution_map()) {
+  for (auto& substitution_rule : get_substitution_map()) {
     if (target_var == substitution_rule.first) {
       target_term = substitution_rule.second;
       break;
@@ -184,12 +184,12 @@ void VariableOptimizer::add_variable_substitution_rule(Variable_ptr subject_var,
   }
 
   /* 2 - Insert substitution rule */
-  if (not symbol_table->add_var_substitution_rule(subject_var, target_term->clone())) {
+  if (not add_substitution_rule(subject_var, target_term->clone())) {
     LOG(FATAL)<< "A variable cannot have multiple substitution rule: " << *subject_var;
   }
 
   /* 3 - Update a rule with the target if the subject variable is already a target */
-  for (auto& substitution_rule : symbol_table->get_variable_substitution_map()) {
+  for (auto& substitution_rule : get_substitution_map()) {
     if (Term::Type::QUALIDENTIFIER == substitution_rule.second->getType()) {
       if (subject_var == symbol_table->getVariable(substitution_rule.second)) {
         Term_ptr tmp_term = substitution_rule.second;
@@ -210,14 +210,61 @@ void VariableOptimizer::add_variable_substitution_rule(Variable_ptr subject_var,
   eq_constraint_count[subject_var]++;
   switch (eq_constraint_count[subject_var]) {
   case 1:
-    symbol_table->add_var_substitution_rule(subject_var, target_term->clone());
+    add_substitution_rule(subject_var, target_term->clone());
     break;
   case 2:
-    symbol_table->remove_var_substitution_rule(subject_var);
+    remove_substitution_rule(subject_var);
     break;
   default:
     break;
   }
+}
+
+bool VariableOptimizer::add_substitution_rule(Variable_ptr variable, Term_ptr target_term) {
+  auto result = substitution_table[symbol_table->top_scope()].insert(std::make_pair(variable, target_term));
+  return result.second;
+}
+
+bool VariableOptimizer::remove_substitution_rule(Variable_ptr variable) {
+  auto current_scope = symbol_table->top_scope();
+  auto it = substitution_table[current_scope].find(variable);
+  if (it != substitution_table[current_scope].end()) {
+    substitution_table[current_scope].erase(it);
+    return true;
+  }
+  return false;
+}
+
+Term_ptr VariableOptimizer::get_substitution_term(Variable_ptr variable) {
+  auto current_scope = symbol_table->top_scope();
+  auto it = substitution_table[current_scope].find(variable);
+  if (it == substitution_table[current_scope].end()) {
+    return nullptr;
+  }
+  return it->second;
+}
+
+/**
+ * Returns rules for the current scope
+ */
+SubstitutionMap& VariableOptimizer::get_substitution_map() {
+  return substitution_table[symbol_table->top_scope()];
+}
+
+/**
+ * Returns rules within all scopes
+ */
+SubstitutionTable& VariableOptimizer::get_substitution_table() {
+  return substitution_table;
+}
+
+void VariableOptimizer::reset_substitution_rules() {
+  for (auto& map_pair : substitution_table) {
+    for (auto& rule_pair : map_pair.second) {
+      delete rule_pair.second;
+    }
+  }
+  substitution_table.clear();
 }
 
 } /* namespace Solver */

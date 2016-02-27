@@ -21,7 +21,6 @@ SymbolTable::SymbolTable()
 }
 
 SymbolTable::~SymbolTable() {
-  reset_substitution_rules();
   for (auto& map_pair : variable_value_table) {
     for (auto& value_pair : map_pair.second) {
       delete value_pair.second;
@@ -48,6 +47,8 @@ void SymbolTable::setScopeSatisfiability(bool value) {
 
 /**
  * Unions values of variables if there is disjunction
+ * (May need a fix when doing union for binary int automaton)
+ * TODO Test with disjunctions
  */
 void SymbolTable::unionValuesOfVariables(Script_ptr script) {
   if (scopes.size() < 2) {
@@ -60,8 +61,18 @@ void SymbolTable::unionValuesOfVariables(Script_ptr script) {
   for (auto variable_entry : variables) {
     Value_ptr value = nullptr;
     for (auto scope : scopes) {
+
+      // first check and merge substitution rules
+      auto substituted_variable = get_substituted_variable(scope, variable_entry.second);
+      if (substituted_variable != nullptr) { // update rule in the global scope
+        merge_variable_substitution_rule_into_current_scope(scope, variable_entry.second);
+      } else {
+        substituted_variable = variable_entry.second;
+      }
+
+      // union values
       if (is_scope_satisfiable[scope]) {
-        auto scope_var_value = variable_value_table[scope].find(variable_entry.second);
+        auto scope_var_value = variable_value_table[scope].find(substituted_variable);
         if (scope_var_value != variable_value_table[scope].end()) {
           if (value) {
             Value_ptr tmp = value;
@@ -72,6 +83,7 @@ void SymbolTable::unionValuesOfVariables(Script_ptr script) {
           }
         }
       }
+
     }
     if (value) {
       setValue(variable_entry.second, value);
@@ -112,9 +124,10 @@ Variable_ptr SymbolTable::getVariable(std::string name) {
 }
 
 Variable_ptr SymbolTable::getVariable(Term_ptr term_ptr) {
-  QualIdentifier_ptr variable_identifier = dynamic_cast<QualIdentifier_ptr>(term_ptr);
-  CHECK_NOTNULL(variable_identifier);
-  return getVariable(variable_identifier->getVarName());
+  if (QualIdentifier_ptr variable_identifier = dynamic_cast<QualIdentifier_ptr>(term_ptr)) {
+    return getVariable(variable_identifier->getVarName());
+  }
+  return nullptr;
 }
 
 VariableMap& SymbolTable::getVariables() {
@@ -123,7 +136,7 @@ VariableMap& SymbolTable::getVariables() {
 
 Variable_ptr SymbolTable::getSymbolicVariable() {
   auto it = std::find_if(variables.begin(), variables.end(),
-      [](std::pair<std::string, SMT::Variable_ptr> entry) -> bool {
+      [](std::pair<std::string, Variable_ptr> entry) -> bool {
         return entry.second->isSymbolic();
   });
   if (it != variables.end()) {
@@ -161,10 +174,12 @@ void SymbolTable::push_scope(Visitable_ptr key) {
   scopes.insert(key);
 }
 
-Visitable_ptr SymbolTable::pop_scope() {
-  Visitable_ptr scope = scope_stack.back();
+Visitable_ptr SymbolTable::top_scope() {
+  return scope_stack.back();
+}
+
+void SymbolTable::pop_scope() {
   scope_stack.pop_back();
-  return scope;
 }
 
 
@@ -191,12 +206,12 @@ void SymbolTable::reset_count() {
   variable_counts_table.clear();
 }
 
-bool SymbolTable::add_var_substitution_rule(Variable_ptr variable, Term_ptr target_term) {
-  auto result = variable_substitution_table[scope_stack.back()].insert(std::make_pair(variable, target_term));
+bool SymbolTable::add_variable_substitution_rule(Variable_ptr subject_variable, Variable_ptr target_variable) {
+  auto result = variable_substitution_table[scope_stack.back()].insert(std::make_pair(subject_variable, target_variable));
   return result.second;
 }
 
-bool SymbolTable::remove_var_substitution_rule(Variable_ptr variable) {
+bool SymbolTable::remove_variable_substitution_rule(SMT::Variable_ptr variable) {
   auto it = variable_substitution_table[scope_stack.back()].find(variable);
   if (it != variable_substitution_table[scope_stack.back()].end()) {
     variable_substitution_table[scope_stack.back()].erase(it);
@@ -205,42 +220,57 @@ bool SymbolTable::remove_var_substitution_rule(Variable_ptr variable) {
   return false;
 }
 
-Term_ptr SymbolTable::get_variable_substitution_term(Variable_ptr variable) {
-  auto it = variable_substitution_table[scope_stack.back()].find(variable);
-  if (it == variable_substitution_table[scope_stack.back()].end()) {
-    return nullptr;
+bool SymbolTable::is_variable_substituted(Visitable_ptr scope, Variable_ptr variable) {
+  auto it = variable_substitution_table[scope].find(variable);
+  if (it != variable_substitution_table[scope].end()) {
+    return true;
   }
-  return it->second;
+  return false;
 }
 
-/**
- * Returns rules for the current scope
- */
-VariableSubstitutionMap& SymbolTable::get_variable_substitution_map() {
-  return variable_substitution_table[scope_stack.back()];
+bool SymbolTable::is_variable_substituted(Variable_ptr variable) {
+  return is_variable_substituted(scope_stack.back(), variable);
 }
 
-/**
- * Returns rules within all scopes
- */
-VariableSubstitutionTable& SymbolTable::get_variable_substitution_table() {
-  return variable_substitution_table;
+Variable_ptr SymbolTable::get_substituted_variable(Visitable_ptr scope, Variable_ptr variable) {
+  auto it = variable_substitution_table[scope].find(variable);
+  if (it != variable_substitution_table[scope].end()) {
+    return it->second;
+  }
+  return nullptr;
 }
 
-void SymbolTable::reset_substitution_rules() {
-  for (auto& map_pair : variable_substitution_table) {
-    for (auto& rule_pair : map_pair.second) {
-      delete rule_pair.second;
+Variable_ptr SymbolTable::get_substituted_variable(Variable_ptr variable) {
+  return get_substituted_variable(scope_stack.back(), variable);
+}
+
+int SymbolTable::get_num_of_substituted_variables(Visitable_ptr scope, Variable::Type type) {
+  int count = 0;
+  for (auto& rule : variable_substitution_table[scope]) {
+      if (rule.first->getType() == type and rule.second->getType() == type) {
+        ++count;
+      }
+  }
+  return count;
+}
+
+void SymbolTable::merge_variable_substitution_rule_into_current_scope(Visitable_ptr scope, Variable_ptr variable) {
+  auto substituted_variable = get_substituted_variable(scope, variable);
+  if (substituted_variable != nullptr) { // update rule in the global scope
+    auto current_scope_substitution = get_substituted_variable(substituted_variable);
+    if (current_scope_substitution != nullptr) { // if there is a reverse rule already in global scope, remove rule, do not add any rule
+      remove_variable_substitution_rule(substituted_variable);
+    } else {
+      add_variable_substitution_rule(variable, substituted_variable); // adds rule to global scope
     }
   }
-  variable_substitution_table.clear();
 }
 
 Value_ptr SymbolTable::getValue(std::string var_name) {
   return getValue(getVariable(var_name));
 }
 
-Value_ptr SymbolTable::getValue(SMT::Variable_ptr variable) {
+Value_ptr SymbolTable::getValue(Variable_ptr variable) {
   Value_ptr result = nullptr;
 
   for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); it++) {
@@ -270,7 +300,7 @@ Value_ptr SymbolTable::getValue(SMT::Variable_ptr variable) {
   return result;
 }
 
-VariableValueMap& SymbolTable::getValuesAtScope(SMT::Visitable_ptr scope) {
+VariableValueMap& SymbolTable::getValuesAtScope(Visitable_ptr scope) {
   return variable_value_table[scope];
 }
 
@@ -278,7 +308,7 @@ bool SymbolTable::setValue(std::string var_name, Value_ptr value) {
 return setValue(getVariable(var_name), value);
 }
 
-bool SymbolTable::setValue(SMT::Variable_ptr variable, Value_ptr value) {
+bool SymbolTable::setValue(Variable_ptr variable, Value_ptr value) {
   variable_value_table[scope_stack.back()][variable] = value;
   return true;
 }
@@ -296,7 +326,7 @@ bool SymbolTable::updateValue(std::string var_name, Value_ptr value) {
  * intersection as newest value.
  * Deletes old value if it is read from same scope
  */
-bool SymbolTable::updateValue(SMT::Variable_ptr variable, Value_ptr value) {
+bool SymbolTable::updateValue(Variable_ptr variable, Value_ptr value) {
   Value_ptr variable_old_value = getValue(variable);
   Value_ptr variable_new_value = variable_old_value->intersect(value);
 

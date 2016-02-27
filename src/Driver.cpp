@@ -108,7 +108,8 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, double bound,
       auto binary_auto = var_value->getBinaryIntAutomaton();
       result = binary_auto->Count(bound, count_less_than_or_equal_to_bound);
       int number_of_int_variables = symbol_table->get_num_of_variables(SMT::Variable::Type::INT);
-      int number_of_untracked_int_variables = number_of_int_variables - binary_auto->getNumberOfVariables();
+      int number_of_substituted_int_variables = symbol_table->get_num_of_substituted_variables(script, SMT::Variable::Type::INT);
+      int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables - binary_auto->getNumberOfVariables();
       if (number_of_untracked_int_variables > 0) {
         result = result * boost::multiprecision::pow( boost::multiprecision::cpp_int(2), (number_of_untracked_int_variables * static_cast<int>(bound)) );
       }
@@ -144,7 +145,8 @@ std::string Driver::SymbolicCount(std::string var_name, double bound, bool count
       auto binary_auto = var_value->getBinaryIntAutomaton();
       result = binary_auto->SymbolicCount(bound, count_less_than_or_equal_to_bound);
       int number_of_int_variables = symbol_table->get_num_of_variables(SMT::Variable::Type::INT);
-      int number_of_untracked_int_variables = number_of_int_variables - binary_auto->getNumberOfVariables();
+      int number_of_substituted_int_variables = symbol_table->get_num_of_substituted_variables(script, SMT::Variable::Type::INT);
+      int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables - binary_auto->getNumberOfVariables();
       if (number_of_untracked_int_variables > 0) {
         boost::multiprecision::cpp_int count_result (result) ;
         count_result = count_result * boost::multiprecision::pow( boost::multiprecision::cpp_int(2), (number_of_untracked_int_variables * static_cast<int>(bound)) );

@@ -17,9 +17,12 @@
 namespace Vlab {
 namespace Solver {
 
+using SubstitutionMap = std::map<SMT::Variable_ptr, SMT::Term_ptr>;
+using SubstitutionTable = std::map<SMT::Visitable_ptr, SubstitutionMap>;
+
 class OptimizationRuleRunner: public SMT::Visitor {
 public:
-  OptimizationRuleRunner(SMT::Script_ptr, SymbolTable_ptr);
+  OptimizationRuleRunner(SMT::Script_ptr, SymbolTable_ptr, SubstitutionTable& substitution_table);
   virtual ~OptimizationRuleRunner();
   void start() override;
   void end() override;
@@ -87,9 +90,11 @@ public:
 protected:
   bool has_optimization_rules();
   bool check_and_substitute_var(SMT::Term_ptr& term);
+  SMT::Term_ptr get_substitution_term(SMT::Variable_ptr);
 
   SMT::Script_ptr root;
   SymbolTable_ptr symbol_table;
+  SubstitutionTable& substitution_table;
 private:
   static const int VLOG_LEVEL;
 };

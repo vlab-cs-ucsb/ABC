@@ -14,8 +14,8 @@ using namespace SMT;
 
 const int OptimizationRuleRunner::VLOG_LEVEL = 16;
 
-OptimizationRuleRunner::OptimizationRuleRunner(Script_ptr script, SymbolTable_ptr symbol_table)
-        : root(script), symbol_table(symbol_table) {
+OptimizationRuleRunner::OptimizationRuleRunner(Script_ptr script, SymbolTable_ptr symbol_table, SubstitutionTable& substitution_table)
+        : root(script), symbol_table(symbol_table), substitution_table (substitution_table) {
 }
 
 OptimizationRuleRunner::~OptimizationRuleRunner() {
@@ -77,6 +77,7 @@ void OptimizationRuleRunner::visitForAll(ForAll_ptr for_all_term) {
 }
 
 void OptimizationRuleRunner::visitLet(Let_ptr let_term) {
+  LOG(ERROR)<< "optimizations are not checked for let term";
 }
 
 void OptimizationRuleRunner::visitAnd(And_ptr and_term) {
@@ -349,7 +350,7 @@ void OptimizationRuleRunner::visitVarBinding(VarBinding_ptr var_binding) {
 }
 
 bool OptimizationRuleRunner::has_optimization_rules() {
-  for (auto& pair : symbol_table->get_variable_substitution_table()) {
+  for (auto& pair : substitution_table) {
     if (not pair.second.empty()) {
       return true;
     }
@@ -360,16 +361,30 @@ bool OptimizationRuleRunner::has_optimization_rules() {
 bool OptimizationRuleRunner::check_and_substitute_var(Term_ptr& term) {
   if (Term::Type::QUALIDENTIFIER == term->getType()) {
     Variable_ptr variable = symbol_table->getVariable(term);
-    Term_ptr subs_term = symbol_table->get_variable_substitution_term(variable);
+    Term_ptr subs_term = get_substitution_term(variable);
     if (subs_term != nullptr) {
       DVLOG(VLOG_LEVEL) << "apply rule: " << *variable << " (" << variable << ") -> " << *subs_term << " ("
                                  << subs_term << " )";
       Term_ptr tmp_term = term;
       term = subs_term->clone();
       delete tmp_term;
+
+      auto subs_variable = symbol_table->getVariable(subs_term);
+      if (subs_variable) {
+        symbol_table->add_variable_substitution_rule(variable, subs_variable);
+      }
     }
   }
   return false;
+}
+
+Term_ptr OptimizationRuleRunner::get_substitution_term(Variable_ptr variable) {
+  auto current_scope = symbol_table->top_scope();
+  auto it = substitution_table[current_scope].find(variable);
+  if (it == substitution_table[current_scope].end()) {
+    return nullptr;
+  }
+  return it->second;
 }
 
 } /* namespace Solver */
