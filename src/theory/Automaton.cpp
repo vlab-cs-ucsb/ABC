@@ -988,7 +988,7 @@ void Automaton::generateGFScript(int bound, std::ostream& out, bool count_less_t
   out << "a[[1]] = b[[1]]/c[[1]];\n";
   out << "For[ i = 2, i <= maxLen, i++, a[[i]] = (b[[i]] - Total[c[[2;;i]]*a[[i-1;;1;;-1]]]) / c[[1]] ];\n";
   out << "numPaths = LinearRecurrence[p,a,{bound,bound}][[1]];\n";
-  out << "Print[N[Log2[numPaths]]];";
+  out << "Print[N[numPaths]];";
 
   out << std::endl;
 }
