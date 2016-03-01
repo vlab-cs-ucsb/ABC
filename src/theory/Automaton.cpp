@@ -753,6 +753,36 @@ std::vector<NextState> Automaton::getNextStatesOrdered(int state, std::function<
   return next_states;
 }
 
+std::set<int> Automaton::getStatesReachableBy(int walk) {
+  return getStatesReachableBy(walk, walk);
+}
+
+std::set<int> Automaton::getStatesReachableBy(int min_walk, int max_walk) {
+  std::set<int> states;
+
+  std::stack<std::pair<int, int>> state_stack;
+  int sink_state = getSinkState();
+  if (sink_state != this->dfa->s) {
+    state_stack.push(std::make_pair(this->dfa->s, 0));
+  }
+  while (not state_stack.empty()) {
+    auto current = state_stack.top(); state_stack.pop();
+
+    if (current.second >= min_walk and current.second <= max_walk) {
+      states.insert(current.first);
+    }
+
+    if (current.second < max_walk) {
+      for (auto next_state : getNextStates(current.first)) {
+        if (sink_state != next_state) {
+          state_stack.push(std::make_pair(next_state, current.second + 1));
+        }
+      }
+    }
+  }
+  return states;
+}
+
 CountMatrix Automaton::GetAdjacencyCountMatrix(bool count_reserved_words) {
   CountMatrix count_matrix (this->dfa->ns + 1, CountVector(this->dfa->ns + 1, 0));
 

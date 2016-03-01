@@ -92,8 +92,10 @@ public:
   StringAutomaton_ptr repeat(unsigned min, unsigned max);
 
   StringAutomaton_ptr suffixes();
-  StringAutomaton_ptr prefixes();
+  StringAutomaton_ptr suffixesAtIndex(int index);
   StringAutomaton_ptr suffixesFromIndex(int start);
+  StringAutomaton_ptr suffixesFromTo(int start, int end);
+  StringAutomaton_ptr prefixes();
   StringAutomaton_ptr prefixesUntilIndex(int end);
   StringAutomaton_ptr prefixesAtIndex(int index);
   StringAutomaton_ptr subStrings();

@@ -770,13 +770,23 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
     case SubString::Mode::FROMINDEXTOINDEX: {
       DVLOG(VLOG_LEVEL) << "subString mode: FROMINDEXTOINDEX";
       param_end_index = getTermValue(sub_string_term->end_index_term);
+
+      if (Value::Type::INT_AUTOMATON == param_end_index->getType()) {
+        if (param_end_index->getIntAutomaton()->isEmptyLanguage()) {
+          result = new Value(StringAutomaton::makePhi());
+        } else {
+          LOG(FATAL) << "Extend substring operation";
+        }
+      } else {
+
 //      CHECK_EQ(Value::Type::INT_CONSTANT, param_start_index->getType())
 //                    << "start index of a subString is expected to be an integer constant";
 //      CHECK_EQ(Value::Type::INT_CONSTANT, param_end_index->getType())
 //                    << "start index of a subString is expected to be an integer constant";
-      result = new Value(param_subject->getStringAutomaton()->subString(
-                  param_start_index->getIntConstant(),
-                  param_end_index->getIntConstant()));
+        result = new Value(param_subject->getStringAutomaton()->subString(
+                param_start_index->getIntConstant(),
+                param_end_index->getIntConstant()));
+      }
       break;
     }
     case SubString::Mode::FROMINDEXTOFIRSTOF: {

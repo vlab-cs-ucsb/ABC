@@ -90,7 +90,6 @@ public:
     INTERVAL
   };
 
-  //    StrangerAutomaton_ptr toAutomaton();
   std::string toString() const;
   void simplify();
   void copy(RegularExpression_ptr e);

@@ -134,6 +134,8 @@ protected:
   int getNextState(int state, std::vector<char>& exception);
   std::set<int> getNextStates(int state);
   std::vector<NextState> getNextStatesOrdered(int state, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
+  std::set<int> getStatesReachableBy(int walk);
+  std::set<int> getStatesReachableBy(int min_walk, int max_walk);
   bool getAnAcceptingWord(NextState& state, std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
   CountMatrix GetAdjacencyCountMatrix(bool count_reserved_words = true);
   AdjacencyList getAdjacencyCountList(bool count_reserved_words = true);
