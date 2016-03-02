@@ -94,7 +94,7 @@ bool Driver::isSatisfiable() {
   return symbol_table->isSatisfiable();
 }
 
-boost::multiprecision::cpp_int Driver::Count(std::string var_name, double bound, bool count_less_than_or_equal_to_bound) {
+boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound) {
   symbol_table->unionValuesOfVariables(script);
   symbol_table->push_scope(script);
   Vlab::Solver::Value_ptr var_value = symbol_table->getValue(var_name);
@@ -111,7 +111,11 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, double bound,
       int number_of_substituted_int_variables = symbol_table->get_num_of_substituted_variables(script, SMT::Variable::Type::INT);
       int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables - binary_auto->getNumberOfVariables();
       if (number_of_untracked_int_variables > 0) {
-        result = result * boost::multiprecision::pow( boost::multiprecision::cpp_int(2), (number_of_untracked_int_variables * static_cast<int>(bound)) );
+        int exponent = bound;
+        if (Option::Solver::LIA_NATURAL_NUMBERS_ONLY) {
+          --exponent;
+        }
+        result = result * boost::multiprecision::pow( boost::multiprecision::cpp_int(2), (number_of_untracked_int_variables * static_cast<int>(exponent)) );
       }
       break;
     }
@@ -125,14 +129,13 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, double bound,
 /**
  * Binary Integer Automaton Count
  */
-boost::multiprecision::cpp_int Driver::Count(int bound, bool count_less_than_or_equal_to_bound) {
+boost::multiprecision::cpp_int Driver::Count(const int bound, bool count_less_than_or_equal_to_bound) {
   std::string var_name(Solver::SymbolTable::ARITHMETIC);
   return Count(var_name, bound, count_less_than_or_equal_to_bound);
 }
 
-// TODO verify behavior with bound as a double parameter.
-std::string Driver::SymbolicCount(std::string var_name, double bound, bool count_less_than_or_equal_to_bound) {
-  std::string result;
+boost::multiprecision::cpp_int Driver::SymbolicCount(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound) {
+  boost::multiprecision::cpp_int result;
   symbol_table->unionValuesOfVariables(script);
   symbol_table->push_scope(script);
   Vlab::Solver::Value_ptr var_value = symbol_table->getValue(var_name);
@@ -148,11 +151,11 @@ std::string Driver::SymbolicCount(std::string var_name, double bound, bool count
       int number_of_substituted_int_variables = symbol_table->get_num_of_substituted_variables(script, SMT::Variable::Type::INT);
       int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables - binary_auto->getNumberOfVariables();
       if (number_of_untracked_int_variables > 0) {
-        boost::multiprecision::cpp_int count_result (result) ;
-        count_result = count_result * boost::multiprecision::pow( boost::multiprecision::cpp_int(2), (number_of_untracked_int_variables * static_cast<int>(bound)) );
-        std::stringstream ss;
-        ss << count_result;
-        result = ss.str();
+        int exponent = bound;
+        if (Option::Solver::LIA_NATURAL_NUMBERS_ONLY) {
+          --exponent;
+        }
+        result = result * boost::multiprecision::pow( boost::multiprecision::cpp_int(2), (number_of_untracked_int_variables * static_cast<int>(exponent)) );
       }
       break;
     }
@@ -163,7 +166,7 @@ std::string Driver::SymbolicCount(std::string var_name, double bound, bool count
   return result;
 }
 
-std::string Driver::SymbolicCount(int bound, bool count_less_than_or_equal_to_bound) {
+boost::multiprecision::cpp_int Driver::SymbolicCount(const int bound, bool count_less_than_or_equal_to_bound) {
   std::string var_name(Solver::SymbolTable::ARITHMETIC);
   return SymbolicCount(var_name, bound, count_less_than_or_equal_to_bound);
 }

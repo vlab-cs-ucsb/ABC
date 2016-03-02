@@ -71,7 +71,7 @@ public:
   std::map<std::string, int> getAnAcceptingIntForEachVar();
 
   boost::multiprecision::cpp_int Count(int bound, bool count_less_than_or_equal_to_bound = false, bool count_reserved_words = false) override;
-  std::string SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true) override;
+  boost::multiprecision::cpp_int SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true) override;
 
 protected:
   BinaryIntAutomaton(ArithmeticFormula_ptr formula);

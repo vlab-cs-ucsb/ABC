@@ -93,8 +93,8 @@ public:
   bool isInCycle(int state);
   bool isStateReachableFrom(int search_state, int from_state);
   virtual boost::multiprecision::cpp_int Count(int bound, bool count_less_than_or_equal_to_bound = true, bool count_reserved_words = true);
-  virtual std::string SymbolicCount(int bound, bool count_less_than_or_equal_to_bound = true);
-  virtual std::string SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true);
+  virtual boost::multiprecision::cpp_int SymbolicCount(int bound, bool count_less_than_or_equal_to_bound = true);
+  virtual boost::multiprecision::cpp_int SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true);
 
   Graph_ptr toGraph();
 

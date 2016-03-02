@@ -803,9 +803,9 @@ boost::multiprecision::cpp_int BinaryIntAutomaton::Count(int bound, bool count_l
   return Automaton::Count(bound, count_less_than_or_equal_to_bound, count_reserved_words);
 }
 
-std::string BinaryIntAutomaton::SymbolicCount(double bound, bool count_less_than_or_equal_to_bound) {
+boost::multiprecision::cpp_int BinaryIntAutomaton::SymbolicCount(double bound, bool count_less_than_or_equal_to_bound) {
   std::stringstream cmd;
-  std::string result;
+  std::string str_result;
   std::string tmp_result_file = Option::Theory::TMP_PATH + "/arith_result.dot";
   std::string math_script_path = Option::Theory::SCRIPT_PATH + "/count.m";
 
@@ -832,12 +832,12 @@ std::string BinaryIntAutomaton::SymbolicCount(double bound, bool count_less_than
 
   try {
     DVLOG(VLOG_LEVEL) << "run_cmd(`" << cmd.str() << "`)";
-    result = Util::Cmd::run_cmd(cmd.str());
+    str_result = Util::Cmd::run_cmd(cmd.str());
   } catch (std::string& e) {
     LOG(ERROR) << e;
   }
 
-  return result;
+  return boost::multiprecision::cpp_int (str_result);
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntGraterThanOrEqualToZero(std::vector<int> indexes, int number_of_variables) {

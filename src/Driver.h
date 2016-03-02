@@ -47,10 +47,10 @@ public:
   void initializeSolver();
   void solve();
   bool isSatisfiable();
-  boost::multiprecision::cpp_int Count(std::string var_name, double bound, bool count_less_than_or_equal_to_bound = true);
-  boost::multiprecision::cpp_int Count(int bound, bool count_less_than_or_equal_to_bound = true);
-  std::string SymbolicCount(std::string var_name, double bound, bool count_less_than_or_equal_to_bound = true);
-  std::string SymbolicCount(int bound, bool count_less_than_or_equal_to_bound = true);
+  boost::multiprecision::cpp_int Count(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound = true);
+  boost::multiprecision::cpp_int Count(const int bound, bool count_less_than_or_equal_to_bound = true);
+  boost::multiprecision::cpp_int SymbolicCount(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound = true);
+  boost::multiprecision::cpp_int SymbolicCount(const int bound, bool count_less_than_or_equal_to_bound = true);
 
   void printResult(Solver::Value_ptr value, std::ostream& out);
   void inspectResult(Solver::Value_ptr value, std::string file_name);

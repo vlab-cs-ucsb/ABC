@@ -207,9 +207,9 @@ boost::multiprecision::cpp_int Automaton::Count(int bound, bool count_less_than_
   return result;
 }
 
-std::string Automaton::SymbolicCount(int bound, bool count_less_than_or_equal_to_bound) {
+boost::multiprecision::cpp_int Automaton::SymbolicCount(int bound, bool count_less_than_or_equal_to_bound) {
   std::stringstream cmd;
-  std::string result;
+  std::string str_result;
   std::string tmp_math_file = Option::Theory::TMP_PATH + "/math_script.m";
   std::ofstream out_file(tmp_math_file.c_str());
 
@@ -218,15 +218,15 @@ std::string Automaton::SymbolicCount(int bound, bool count_less_than_or_equal_to
   cmd << "math -script " << tmp_math_file;
   try {
     DVLOG(VLOG_LEVEL) << "run_cmd(`" << cmd.str() << "`)";
-    result = Util::Cmd::run_cmd(cmd.str());
+    str_result = Util::Cmd::run_cmd(cmd.str());
   } catch (std::string& e) {
     LOG(ERROR) << e;
   }
 
-  return result;
+  return boost::multiprecision::cpp_int (str_result);
 }
 
-std::string Automaton::SymbolicCount(double bound, bool count_less_than_or_equal_to_bound) {
+boost::multiprecision::cpp_int Automaton::SymbolicCount(double bound, bool count_less_than_or_equal_to_bound) {
   return SymbolicCount(static_cast<int>(bound), count_less_than_or_equal_to_bound);
 }
 

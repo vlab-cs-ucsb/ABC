@@ -117,8 +117,10 @@ JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_symbolicCountVar (JN
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
   const char* var_name_str = env->GetStringUTFChars(varName, JNI_FALSE);
   std::string var_name = var_name_str;
-  std::string result = abc_driver->SymbolicCount(var_name, static_cast<double>(bound), static_cast<bool>(count_less_than_or_equal_bound));
-  jstring resultString = env->NewStringUTF(result.c_str());
+  auto result = abc_driver->SymbolicCount(var_name, static_cast<double>(bound), static_cast<bool>(count_less_than_or_equal_bound));
+  std::stringstream ss;
+  ss << result;
+  jstring resultString = env->NewStringUTF(ss.str().c_str());
   env->ReleaseStringUTFChars(varName, var_name_str);
   return resultString;
 }
