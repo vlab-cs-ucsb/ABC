@@ -28,7 +28,7 @@ namespace Solver {
 class ArithmeticConstraintSolver: public AstTraverser {
   typedef std::map<SMT::Term_ptr, Value_ptr> TermValueMap;
 public:
-  ArithmeticConstraintSolver(SMT::Script_ptr, SymbolTable_ptr);
+  ArithmeticConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, bool is_natural_number_only);
   virtual ~ArithmeticConstraintSolver();
 
   void start();
@@ -57,6 +57,7 @@ public:
 
 
 protected:
+  bool is_restricted_to_natural_numbers;
   SymbolTable_ptr symbol_table;
   ArithmeticFormulaGenerator arithmetic_formula_generator;
 

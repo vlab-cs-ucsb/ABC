@@ -21,7 +21,8 @@ enum class Name : int {
   MODEL_COUNTER_ENABLED,
   LIA_ENGINE_ENABLED,
   SCRIPT_PATH,
-  LIA_ONLY_CONSTRAINT
+  LIA_ONLY_CONSTRAINT,
+  LIA_NATURAL_NUMBERS_ONLY
 };
 
 class Solver {
@@ -31,6 +32,7 @@ public:
   static std::string OUTPUT_PATH;
   static std::string SCRIPT_PATH;
   static bool LIA_ONLY_CONSTRAINT;
+  static bool LIA_NATURAL_NUMBERS_ONLY;
 };
 
 } /* namespace Option */

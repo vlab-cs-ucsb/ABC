@@ -377,7 +377,7 @@ TEST_F(BinaryIntAutomatonTest, MakeLessThan) {
   formula_0.setConstant(-3);
   formula_0.setType(ArithmeticFormula::Type::LT);
 
-  auto_1 = TestableBinaryIntAutomaton::makeLessThan(formula_0.clone());
+  auto_1 = TestableBinaryIntAutomaton::makeIntLessThan(formula_0.clone());
 
   auto_1->toDot(ss);
   expected = Vlab::Test::FileHelper::getExpectation("theory", "BinaryIntAutomaton", "makeLessThan_01.dot");
@@ -385,7 +385,7 @@ TEST_F(BinaryIntAutomatonTest, MakeLessThan) {
   delete auto_1;
 
   formula_0.setConstant(3);
-  auto_1 = TestableBinaryIntAutomaton::makeLessThan(formula_0.clone());
+  auto_1 = TestableBinaryIntAutomaton::makeIntLessThan(formula_0.clone());
 
   ss.str("");
   auto_1->toDot(ss);
@@ -398,7 +398,7 @@ TEST_F(BinaryIntAutomatonTest, MakeLessThan) {
   formula_1.setVariableCoefficient("y", 2);
   formula_1.setConstant(-6);
   formula_1.setType(ArithmeticFormula::Type::LT);
-  auto_1 = TestableBinaryIntAutomaton::makeLessThan(formula_1.clone());
+  auto_1 = TestableBinaryIntAutomaton::makeIntLessThan(formula_1.clone());
 
   ss.str("");
   auto_1->toDot(ss);
@@ -407,7 +407,7 @@ TEST_F(BinaryIntAutomatonTest, MakeLessThan) {
   delete auto_1;
 
   formula_1.setVariableCoefficient("y", -2);
-  auto_1 = TestableBinaryIntAutomaton::makeLessThan(formula_1.clone());
+  auto_1 = TestableBinaryIntAutomaton::makeIntLessThan(formula_1.clone());
 
   ss.str("");
   auto_1->toDot(ss);

@@ -451,13 +451,33 @@ unsigned* Automaton::getIndices(unsigned num_of_variables, unsigned extra_num_of
 /**
  * Implementation for LibStranger's bintostr function
  */
-char* Automaton::binaryFormat(unsigned long number, int bit_length) {
-  char* binary_str = nullptr;
-  int index = bit_length;
-  unsigned long subject = number;
+//char* Automaton::binaryFormat(unsigned long number, int bit_length) {
+//  char* binary_str = nullptr;
+//  int index = bit_length;
+//  unsigned long subject = number;
+//
+//  // no extra bit
+//  binary_str = new char[bit_length + 1];
+//  binary_str[bit_length] = '\0';
+//
+//  for (index--; index >= 0; index--) {
+//    if (subject & 1) {
+//      binary_str[index] = '1';
+//    } else {
+//      binary_str[index] = '0';
+//    }
+//    if (subject > 0) {
+//      subject >>= 1;
+//    }
+//  }
+//
+//  return binary_str;
+//}
 
-  // no extra bit
-  binary_str = new char[bit_length + 1];
+std::vector<char> Automaton::getBinaryFormat(unsigned long number, int bit_length) {
+  int index = bit_length;
+  unsigned subject = number;
+  std::vector<char> binary_str (bit_length + 1);
   binary_str[bit_length] = '\0';
 
   for (index--; index >= 0; index--) {
@@ -471,24 +491,6 @@ char* Automaton::binaryFormat(unsigned long number, int bit_length) {
     }
   }
 
-  return binary_str;
-}
-
-std::vector<char> Automaton::getBinaryFormat(unsigned number, int bit_length) {
-  int index = bit_length;
-  unsigned subject = number;
-  std::vector<char> binary_str;
-
-  for (index--; index >= 0; index--) {
-    if (subject & 1) {
-      binary_str.push_back('1');
-    } else {
-      binary_str.push_back('0');
-    }
-    if (subject > 0) {
-      subject >>= 1;
-    }
-  }
   return binary_str;
 }
 

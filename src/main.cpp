@@ -34,6 +34,7 @@ int main(const int argc, const char **argv) {
 
   bool model_count_only = false;
   bool enable_lia_engine = true;
+  bool use_natural_numbers = false;
   bool model_count = false;
   std::string bound_string = "50";
   for (int i = 1; i < argc; ++i) {
@@ -55,6 +56,8 @@ int main(const int argc, const char **argv) {
       enable_lia_engine = false;
     } else if (argv[i] == std::string("-p")) {
       enable_lia_engine = true;
+    } else if (argv[i] == std::string("-n")) {
+      use_natural_numbers = true;
     } else {
 
     }
@@ -83,6 +86,7 @@ int main(const int argc, const char **argv) {
   driver.setOption(Vlab::Option::Name::MODEL_COUNTER_ENABLED, true);
   driver.setOption(Vlab::Option::Name::OUTPUT_PATH, output_root);
   driver.setOption(Vlab::Option::Name::SCRIPT_PATH, std::string("./lib/mathematica"));
+  driver.setOption(Vlab::Option::Name::LIA_NATURAL_NUMBERS_ONLY, use_natural_numbers);
 
   driver.test();
   driver.parse(in);

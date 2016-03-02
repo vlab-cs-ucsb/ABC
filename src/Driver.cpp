@@ -229,11 +229,14 @@ void Driver::reset() {
 
 void Driver::setOption(Option::Name option, bool value) {
   switch (option) {
+    case Option::Name::MODEL_COUNTER_ENABLED:
+      Option::Solver::MODEL_COUNTER_ENABLED = value;
+      break;
     case Option::Name::LIA_ENGINE_ENABLED:
       Option::Solver::LIA_ENGINE_ENABLED = value;
       break;
-    case Option::Name::MODEL_COUNTER_ENABLED:
-      Option::Solver::MODEL_COUNTER_ENABLED = value;
+    case Option::Name::LIA_NATURAL_NUMBERS_ONLY:
+      Option::Solver::LIA_NATURAL_NUMBERS_ONLY = value;
       break;
     default:
       LOG(ERROR) << "option not recognized: " << static_cast<int>(option) << " -> " << value;

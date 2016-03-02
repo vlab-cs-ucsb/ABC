@@ -17,7 +17,7 @@ const int ConstraintSolver::VLOG_LEVEL = 11;
 
 ConstraintSolver::ConstraintSolver(Script_ptr script,
     SymbolTable_ptr symbol_table) :
-    root(script), symbol_table(symbol_table), arithmetic_constraint_solver(script, symbol_table) {
+    root(script), symbol_table(symbol_table), arithmetic_constraint_solver(script, symbol_table, Option::Solver::LIA_NATURAL_NUMBERS_ONLY) {
 }
 
 ConstraintSolver::~ConstraintSolver() {

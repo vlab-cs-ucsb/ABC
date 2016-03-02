@@ -22,17 +22,16 @@ namespace Theory {
 
 const int BinaryIntAutomaton::VLOG_LEVEL = 9;
 
-BinaryIntAutomaton::BinaryIntAutomaton() :
-     Automaton(Automaton::Type::BINARYINT), formula (nullptr) {
+BinaryIntAutomaton::BinaryIntAutomaton(bool is_natural_number) :
+     Automaton(Automaton::Type::BINARYINT), is_natural_number{is_natural_number}, formula {nullptr} {
 }
 
-BinaryIntAutomaton::BinaryIntAutomaton(DFA_ptr dfa, int num_of_variables) :
-     Automaton(Automaton::Type::BINARYINT, dfa, num_of_variables), formula (nullptr) {
-
+BinaryIntAutomaton::BinaryIntAutomaton(DFA_ptr dfa, int num_of_variables, bool is_natural_number) :
+     Automaton(Automaton::Type::BINARYINT, dfa, num_of_variables), is_natural_number {is_natural_number}, formula {nullptr} {
 }
 
 BinaryIntAutomaton::BinaryIntAutomaton(const BinaryIntAutomaton& other) :
-     Automaton(other) {
+     Automaton(other), is_natural_number (other.is_natural_number) {
   if (other.formula) {
     formula = other.formula->clone();
   }
@@ -48,7 +47,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::clone() const {
   return cloned_auto;
 }
 
-BinaryIntAutomaton_ptr BinaryIntAutomaton::makePhi(ArithmeticFormula_ptr formula) {
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makePhi(ArithmeticFormula_ptr formula, bool is_natural_number) {
   DFA_ptr non_accepting_dfa = nullptr;
   BinaryIntAutomaton_ptr non_accepting_binary_auto = nullptr;
   int num_variables = formula->getNumberOfVariables();
@@ -56,7 +55,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makePhi(ArithmeticFormula_ptr formula
 
   non_accepting_dfa = Automaton::makePhi(num_variables, indices);
   delete[] indices; indices = nullptr;
-  non_accepting_binary_auto = new BinaryIntAutomaton(non_accepting_dfa, num_variables);
+  non_accepting_binary_auto = new BinaryIntAutomaton(non_accepting_dfa, num_variables, is_natural_number);
   non_accepting_binary_auto->setFormula(formula);
 
   DVLOG(VLOG_LEVEL) << non_accepting_binary_auto->id << " = makePhi(" << *formula << ")";
@@ -64,7 +63,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makePhi(ArithmeticFormula_ptr formula
   return non_accepting_binary_auto;
 }
 
-BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAnyInt(ArithmeticFormula_ptr formula) {
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAnyInt(ArithmeticFormula_ptr formula, bool is_natural_number) {
   int number_of_variables = formula->getNumberOfVariables();
   int* indices = Automaton::getIndices(number_of_variables);
   std::array<char, 2> statuses { '-', '+' };
@@ -76,44 +75,44 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAnyInt(ArithmeticFormula_ptr form
   dfaAllocExceptions(0);
   dfaStoreState(1);
   DFA_ptr any_binary_int_dfa = dfaBuild(&*statuses.begin());
-  BinaryIntAutomaton_ptr any_int = new BinaryIntAutomaton(any_binary_int_dfa, number_of_variables);
+  BinaryIntAutomaton_ptr any_int = new BinaryIntAutomaton(any_binary_int_dfa, number_of_variables, is_natural_number);
   any_int->setFormula(formula);
 
   DVLOG(VLOG_LEVEL) << any_int->id << " = makeAnyInt(" << *formula << ")";
   return any_int;
 }
 
-BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(ArithmeticFormula_ptr formula) {
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(ArithmeticFormula_ptr formula, bool is_natural_number) {
   BinaryIntAutomaton_ptr result_auto = nullptr;
 
   switch (formula->getType()) {
     case ArithmeticFormula::Type::EQ: {
-      result_auto = BinaryIntAutomaton::makeEquality(formula);
+        result_auto = BinaryIntAutomaton::makeEquality(formula, is_natural_number);
       break;
     }
     case ArithmeticFormula::Type::NOTEQ: {
-      result_auto = BinaryIntAutomaton::makeNotEquality(formula);
+      result_auto = BinaryIntAutomaton::makeNotEquality(formula, is_natural_number);
       break;
     }
     case ArithmeticFormula::Type::GT: {
-      result_auto = BinaryIntAutomaton::makeGreaterThan(formula);
+      result_auto = BinaryIntAutomaton::makeGreaterThan(formula, is_natural_number);
       break;
     }
     case ArithmeticFormula::Type::GE: {
-      result_auto = BinaryIntAutomaton::makeGreaterThanOrEqual(formula);
+      result_auto = BinaryIntAutomaton::makeGreaterThanOrEqual(formula, is_natural_number);
       break;
     }
     case ArithmeticFormula::Type::LT: {
-      result_auto = BinaryIntAutomaton::makeLessThan(formula);
+      result_auto = BinaryIntAutomaton::makeLessThan(formula, is_natural_number);
       break;
     }
     case ArithmeticFormula::Type::LE: {
-      result_auto = BinaryIntAutomaton::makeLessThanOrEqual(formula);
+      result_auto = BinaryIntAutomaton::makeLessThanOrEqual(formula, is_natural_number);
       break;
     }
     case ArithmeticFormula::Type::VAR: {
       CHECK_EQ(1, formula->getNumberOfVariables());
-      result_auto = BinaryIntAutomaton::makeAnyInt(formula);
+      result_auto = BinaryIntAutomaton::makeAnyInt(formula, is_natural_number);
       break;
     }
     default:
@@ -132,7 +131,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(int value, std::string 
   constant_value_formula->setVariableCoefficient(var_name, 1);
   constant_value_formula->setConstant(-value);
   constant_value_formula->setType(ArithmeticFormula::Type::EQ);
-  BinaryIntAutomaton_ptr binary_auto = BinaryIntAutomaton::makeAutomaton(constant_value_formula);
+  BinaryIntAutomaton_ptr binary_auto = BinaryIntAutomaton::makeAutomaton(constant_value_formula, not add_leading_zeros);
 
   DVLOG(VLOG_LEVEL)  << binary_auto->getId() << " = BinaryIntAutomaton::makeAutomaton(" << value << ", " << var_name << ", " << *formula << ", " << std::boolalpha << add_leading_zeros << ")";
 
@@ -263,7 +262,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(SemilinearSet_ptr semil
   dfaStoreState(sink_state);
   statuses[sink_state] = '-';
 
-  int zero_state = binary_states[0]->getd0(); // adding leading zeros makes acceptin zero 00, fix here
+  int zero_state = binary_states[0]->getd0(); // adding leading zeros makes accepting zero 00, fix here
   if ( zero_state > -1 and is_accepting_binary_state(binary_states[zero_state], semilinear_set)) {
     statuses[zero_state] = '+';
   }
@@ -286,7 +285,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(SemilinearSet_ptr semil
     number_of_variables = number_of_variables - 1;
   }
 
-  binary_auto = new BinaryIntAutomaton(dfaMinimize(binary_dfa), number_of_variables);
+  binary_auto = new BinaryIntAutomaton(dfaMinimize(binary_dfa), number_of_variables, not add_leading_zeros);
   binary_auto->setFormula(formula);
   dfaFree(binary_dfa); binary_dfa = nullptr;
 
@@ -342,11 +341,11 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::complement() {
 
   dfaNegation(complement_dfa);
 
-  auto tmp_auto = new BinaryIntAutomaton(complement_dfa, num_of_variables);
+  auto tmp_auto = new BinaryIntAutomaton(complement_dfa, num_of_variables, is_natural_number);
   tmp_auto->setFormula(this->formula->clone());
 
   // a complemented auto may have initial state accepting, we should be safely avoided from that
-  auto any_int_auto = BinaryIntAutomaton::makeAnyInt(this->formula->clone());
+  auto any_int_auto = BinaryIntAutomaton::makeAnyInt(this->formula->clone(), is_natural_number);
   auto complement_auto = any_int_auto->intersect(tmp_auto);
   delete any_int_auto;
   delete tmp_auto;
@@ -372,7 +371,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::intersect(BinaryIntAutomaton_ptr othe
   dfaFree(intersect_dfa);
   intersect_dfa = nullptr;
 
-  intersect_auto = new BinaryIntAutomaton(minimized_dfa, num_of_variables);
+  intersect_auto = new BinaryIntAutomaton(minimized_dfa, num_of_variables, is_natural_number);
   intersect_formula = this->formula->clone();
   intersect_formula->resetCoefficients();
   intersect_formula->setType(ArithmeticFormula::Type::INTERSECT);
@@ -397,7 +396,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::union_(BinaryIntAutomaton_ptr other_a
   dfaFree(union_dfa);
   union_dfa = nullptr;
 
-  union_auto = new BinaryIntAutomaton(minimized_dfa, num_of_variables);
+  union_auto = new BinaryIntAutomaton(minimized_dfa, num_of_variables, is_natural_number);
   union_formula = this->formula->clone();
   union_formula->resetCoefficients();
   union_formula->setType(ArithmeticFormula::Type::UNION);
@@ -448,7 +447,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::getBinaryAutomatonFor(std::string var
   dfaReplaceIndices(single_var_dfa, indices_map);
   delete[] indices_map;
 
-  single_var_auto = new BinaryIntAutomaton(single_var_dfa, 1);
+  single_var_auto = new BinaryIntAutomaton(single_var_dfa, 1, is_natural_number);
   single_var_formula = new ArithmeticFormula();
   single_var_formula->setType(ArithmeticFormula::Type::INTERSECT);
   single_var_formula->setVariableCoefficient(var_name, 1);
@@ -465,7 +464,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::getPositiveValuesFor(std::string var_
   int var_index = formula->getNumberOfVariables() - formula->getVariableIndex(var_name) - 1;
   indexes.push_back(var_index);
 
-  greater_than_or_equalt_to_zero_auto = BinaryIntAutomaton::makeGraterThanOrEqualToZero(indexes, formula->getNumberOfVariables());
+  greater_than_or_equalt_to_zero_auto = BinaryIntAutomaton::makeIntGraterThanOrEqualToZero(indexes, formula->getNumberOfVariables());
   greater_than_or_equalt_to_zero_auto->setFormula(formula->clone());
 
   positives_auto = this->intersect(greater_than_or_equalt_to_zero_auto);
@@ -757,15 +756,17 @@ std::map<std::string, int> BinaryIntAutomaton::getAnAcceptingIntForEachVar() {
 
   // Reads from most significant bits
 
-  // first read the sign bit
   auto rit = example->rbegin();
-  for (int var_index = num_of_variables - 1; var_index >= 0; --var_index) {
-    if (*rit) {
-      values[var_index] = -1;
-    } else {
-      values[var_index] = 0;
+  if (not is_natural_number) {
+    // read the sign bit for integers
+    for (int var_index = num_of_variables - 1; var_index >= 0; --var_index) {
+      if (*rit) {
+        values[var_index] = -1;
+      } else {
+        values[var_index] = 0;
+      }
+      rit++;
     }
-    rit++;
   }
 
   // read value bits
@@ -796,6 +797,9 @@ std::map<std::string, int> BinaryIntAutomaton::getAnAcceptingIntForEachVar() {
 }
 
 boost::multiprecision::cpp_int BinaryIntAutomaton::Count(int bound, bool count_less_than_or_equal_to_bound, bool count_reserved_words) {
+  if (is_natural_number) {
+    --bound; // no sign bit
+  }
   return Automaton::Count(bound, count_less_than_or_equal_to_bound, count_reserved_words);
 }
 
@@ -816,6 +820,10 @@ std::string BinaryIntAutomaton::SymbolicCount(double bound, bool count_less_than
 
   cmd << "math -script " << math_script_path << " " << tmp_result_file << " ";
 
+  if (is_natural_number) {
+    --bound; // no signed bit
+  }
+
   if (std::floor(bound) == bound) {
     cmd << static_cast<int>(bound);
   } else {
@@ -832,7 +840,7 @@ std::string BinaryIntAutomaton::SymbolicCount(double bound, bool count_less_than
   return result;
 }
 
-BinaryIntAutomaton_ptr BinaryIntAutomaton::makeGraterThanOrEqualToZero(std::vector<int> indexes, int number_of_variables) {
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntGraterThanOrEqualToZero(std::vector<int> indexes, int number_of_variables) {
   BinaryIntAutomaton_ptr postivie_numbers_auto = nullptr;
   DFA_ptr positive_numbers_dfa = nullptr;
   int* bin_variable_indices = getIndices(number_of_variables);
@@ -864,31 +872,33 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeGraterThanOrEqualToZero(std::vect
   dfaStoreState(2);
 
   positive_numbers_dfa = dfaBuild(&*statuses.begin());
-  postivie_numbers_auto = new BinaryIntAutomaton(positive_numbers_dfa, number_of_variables);
+  postivie_numbers_auto = new BinaryIntAutomaton(positive_numbers_dfa, number_of_variables, false);
 
   delete[] bin_variable_indices;
 
-  DVLOG(VLOG_LEVEL) << postivie_numbers_auto->id << " = [BinaryIntAutomaton]->makeGraterThanOrEqualToZero(<indexes>, " << number_of_variables << ")";
+  DVLOG(VLOG_LEVEL) << postivie_numbers_auto->id << " = [BinaryIntAutomaton]->makeIntGraterThanOrEqualToZero(<indexes>, " << number_of_variables << ")";
   return postivie_numbers_auto;
 }
 
-BinaryIntAutomaton_ptr BinaryIntAutomaton::makeEquality(ArithmeticFormula_ptr formula) {
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeEquality(ArithmeticFormula_ptr formula, bool is_natural_number) {
+  if (is_natural_number) {
+    return makeNaturalNumberEquality(formula);
+  } else {
+    return makeIntEquality(formula);
+  }
+}
+
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr formula) {
   BinaryIntAutomaton_ptr equality_auto = nullptr;
-  DFA_ptr equality_dfa = nullptr, tmp_dfa = nullptr;
 
   if ( not formula->simplify() ) {
-    equality_auto = BinaryIntAutomaton::makePhi(formula);
-    DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeEquality(" << *formula << ")";
+    equality_auto = BinaryIntAutomaton::makePhi(formula, false);
+    DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeIntEquality(" << *formula << ")";
     return equality_auto;
   }
 
-  int min = 0, max = 0, num_of_states, next_index, next_label, result, target;
-  unsigned long transitions;
   const int constant = formula->getConstant();
-  const int num_of_variables = formula->getCoefficients().size();
-  int* indices = getIndices(num_of_variables);
-  char *statuses = nullptr;
-  std::map<int , StateIndices> carry_map; // maps carries to state indices
+  int min = 0, max = 0;
 
   for (int& c : formula->getCoefficients()) {
     if (c > 0) {
@@ -904,25 +914,19 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeEquality(ArithmeticFormula_ptr fo
     min = constant;
   }
 
-  num_of_states = 2 * max - 2 * min + 3;
-  statuses = new char[num_of_states + 1];
+  int num_of_states = 2 * max - 2 * min + 3;
 
-  for (int i = min; i < max + 1; i++) {
-    carry_map[i].s = 0;
-    carry_map[i].sr = 0;
-    carry_map[i].i = -1;
-    carry_map[i].ir = -1;
-  }
-
+  std::map<int , StateIndices> carry_map; // maps carries to state indices
   carry_map[constant].sr = 1;
-  next_index = 0;
-  next_label = constant;
   carry_map[constant].i = -1;
   carry_map[constant].ir = 0;
 
+  int next_index = 0;
+  int next_label = constant;
 
-
-  transitions = 1 << num_of_variables; //number of transitions from each state
+  const int num_of_variables = formula->getCoefficients().size();
+  int* indices = getIndices(num_of_variables);
+  unsigned long transitions = 1 << num_of_variables; //number of transitions from each state
 
   dfaSetup(num_of_states, num_of_variables, indices);
 
@@ -935,7 +939,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeEquality(ArithmeticFormula_ptr fo
     }
 
     dfaAllocExceptions(transitions / 2);
-
+    int result, target;
     for (unsigned long j = 0; j < transitions; j++) {
       result = next_label + formula->countOnes(j);
       if ( not (result & 1) ) {
@@ -946,14 +950,14 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeEquality(ArithmeticFormula_ptr fo
             next_index++;
             carry_map[target].i = next_index;
           }
-          dfaStoreException(carry_map[target].i, binaryFormat(j, num_of_variables));
+          dfaStoreException(carry_map[target].i, &*(getBinaryFormat(j, num_of_variables)).begin());
         } else {
           if (carry_map[target].sr == 0) {
             carry_map[target].sr = 1;
             next_index++;
             carry_map[target].ir = next_index;
           }
-          dfaStoreException(carry_map[target].ir, binaryFormat(j, num_of_variables));
+          dfaStoreException(carry_map[target].ir, &*(getBinaryFormat(j, num_of_variables)).begin());
         }
       }
     }
@@ -975,7 +979,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeEquality(ArithmeticFormula_ptr fo
   }
 
   //define accepting and rejecting states
-
+  char *statuses = new char[num_of_states + 1];
   for (int i = 0; i < num_of_states; i++) {
     statuses[i] = '-';
   }
@@ -987,24 +991,124 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeEquality(ArithmeticFormula_ptr fo
   }
   statuses[num_of_states] = '\0';
 
-  tmp_dfa = dfaBuild(statuses);
-  equality_dfa = dfaMinimize(tmp_dfa);
+  DFA_ptr tmp_dfa = dfaBuild(statuses);
+  DFA_ptr equality_dfa = dfaMinimize(tmp_dfa);
   dfaFree(tmp_dfa);
   delete[] indices;
+  delete[] statuses;
 
-  equality_auto = new BinaryIntAutomaton(equality_dfa, num_of_variables);
+  equality_auto = new BinaryIntAutomaton(equality_dfa, num_of_variables, false);
   equality_auto->setFormula(formula);
 
-  DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeEquality(" << *formula << ")";
+  DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeIntEquality(" << *formula << ")";
 
   return equality_auto;
 }
 
-BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNotEquality(ArithmeticFormula_ptr formula) {
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberEquality(ArithmeticFormula_ptr formula) {
+  BinaryIntAutomaton_ptr equality_auto = nullptr;
+
+  if ( not formula->simplify() ) {
+    equality_auto = BinaryIntAutomaton::makePhi(formula, true);
+    DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeNaturalNumberEquality(" << *formula << ")";
+    return equality_auto;
+  }
+
+  const int constant = formula->getConstant();
+  int min = 0, max = 0;
+
+  for (int& c : formula->getCoefficients()) {
+    if (c > 0) {
+      max += c;
+    } else {
+      min += c;
+    }
+  }
+
+  if ( max < constant) {
+    max = constant;
+  } else if (min > constant) {
+    min = constant;
+  }
+
+  int num_of_states = max - min + 2;
+
+  std::map<int , StateIndices> carry_map; // maps carries to state indices
+  carry_map[constant].s = 1;
+  carry_map[constant].i = 0;
+
+  int next_index = 0,
+          next_label = constant;
+
+  const int num_of_variables = formula->getCoefficients().size();
+  int* indices = getIndices(num_of_variables);
+  unsigned long transitions = 1 << num_of_variables; //number of transitions from each state
+
+
+  dfaSetup(num_of_states, num_of_variables, indices);
+
+  int count = 0;
+  while (next_label < max + 1) { //there is a state to expand (excuding sink)
+    carry_map[next_label].s = 2;
+    dfaAllocExceptions(transitions / 2);
+    int result, target;
+    for (unsigned long j = 0; j < transitions; ++j) {
+      result = next_label + formula->countOnes(j);
+      if ( not (result & 1) ) {
+        target = result / 2;
+        if (carry_map[target].s == 0) {
+          carry_map[target].s = 1;
+          ++next_index;
+          carry_map[target].i = next_index;
+        }
+        dfaStoreException(carry_map[target].i, &*(getBinaryFormat(j, num_of_variables)).begin());
+      }
+    }
+
+    dfaStoreState(num_of_states - 1);
+
+    ++count;
+
+    //find next state to expand
+    for (next_label = min; (next_label <= max) and
+        (carry_map[next_label].i != count); ++next_label) { }
+
+  }
+
+  for (; count < num_of_states; ++count) {
+    dfaAllocExceptions(0);
+    dfaStoreState(num_of_states - 1);
+  }
+
+  //define accepting and rejecting states
+  char *statuses = new char[num_of_states + 1];
+  for (int i = 0; i < num_of_states; i++) {
+    statuses[i] = '-';
+  }
+
+  if (carry_map[0].s == 2) {
+    statuses[carry_map[0].i] = '+';
+  }
+  statuses[num_of_states] = '\0';
+
+  DFA_ptr tmp_dfa = dfaBuild(statuses);
+  DFA_ptr equality_dfa = dfaMinimize(tmp_dfa);
+  dfaFree(tmp_dfa);
+  delete[] indices;
+  delete[] statuses;
+
+  equality_auto = new BinaryIntAutomaton(equality_dfa, num_of_variables, true);
+  equality_auto->setFormula(formula);
+  DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeNaturalNumberEquality(" << *formula << ")";
+
+  return equality_auto;
+}
+
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNotEquality(ArithmeticFormula_ptr formula, bool is_natural_number) {
   BinaryIntAutomaton_ptr not_equal_auto = nullptr, tmp_auto = nullptr;
 
   formula->setType(ArithmeticFormula::Type::EQ);
-  tmp_auto = BinaryIntAutomaton::makeEquality(formula);
+  tmp_auto = BinaryIntAutomaton::makeEquality(formula, is_natural_number);
   not_equal_auto = tmp_auto->complement();
   delete tmp_auto; tmp_auto = nullptr;
 
@@ -1012,7 +1116,15 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNotEquality(ArithmeticFormula_ptr
   return not_equal_auto;
 }
 
-BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThan(ArithmeticFormula_ptr formula) {
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThan(ArithmeticFormula_ptr formula, bool is_natural_number) {
+  if (is_natural_number) {
+    return makeNaturalNumberLessThan(formula);
+  } else {
+    return makeIntLessThan(formula);
+  }
+}
+
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntLessThan(ArithmeticFormula_ptr formula) {
   formula->simplify();
 
   int min = 0, max = 0;
@@ -1039,7 +1151,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThan(ArithmeticFormula_ptr fo
 
   int next_index = 0, next_label = constant, result, target;
   int write1, label1, label2;
-  std::unordered_map<int, StateIndices> carry_map; // maps carries to state indices
+  std::map<int, StateIndices> carry_map; // maps carries to state indices
 
   carry_map[constant].sr = 1;
   carry_map[constant].i = -1;
@@ -1136,7 +1248,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThan(ArithmeticFormula_ptr fo
   DFA_ptr less_than_dfa = dfaMinimize(tmp_dfa);
   dfaFree(tmp_dfa);
 
-  BinaryIntAutomaton_ptr less_than_auto = new BinaryIntAutomaton(less_than_dfa, num_of_variables);
+  BinaryIntAutomaton_ptr less_than_auto = new BinaryIntAutomaton(less_than_dfa, num_of_variables, false);
   less_than_auto->setFormula(formula);
 
   DVLOG(VLOG_LEVEL) << less_than_auto->id << " = makeLessThan(" << *formula << ")";
@@ -1144,14 +1256,116 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThan(ArithmeticFormula_ptr fo
   return less_than_auto;
 }
 
-BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThanOrEqual(ArithmeticFormula_ptr formula) {
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticFormula_ptr formula) {
+  formula->simplify();
+
+  int min = 0, max = 0;
+  for (int& c : formula->getCoefficients()) {
+    if (c > 0) {
+     max += c;
+    } else {
+     min += c;
+    }
+  }
+
+  const int constant = formula->getConstant();
+  if ( max < constant) {
+   max = constant;
+  } else if (min > constant) {
+   min = constant;
+  }
+
+  std::map<int, StateIndices> carry_map; // maps carries to state indices
+  carry_map[constant].s = 1;
+  carry_map[constant].i = 0;
+
+  int next_index = 0,
+          next_label = constant;
+
+
+  const int num_of_variables = formula->getCoefficients().size();
+  CHECK_LT(num_of_variables, 64);
+  int num_of_states = max - min + 1;
+  int* indices = getIndices(num_of_variables);
+  dfaSetup(num_of_states, num_of_variables, indices);
+  delete[] indices;
+
+  // TODO instead of allocating that many of transitions, try to reduce them with a preprocessing
+  unsigned long transitions = 1 << num_of_variables; //number of transitions from each state
+  int count = 0;
+  while (next_label < max + 1) { //there is a state to expand (excuding sink)
+   carry_map[next_label].s = 2;
+
+   dfaAllocExceptions(transitions);
+
+   int result, target;
+   for (unsigned long j = 0; j < transitions; ++j) {
+     int num_of_ones = formula->countOnes(j);
+     result = next_label + num_of_ones;
+
+     if (result >= 0) {
+       target = result / 2;
+     } else {
+       target = (result - 1) / 2;
+     }
+
+     if (carry_map[target].s == 0) {
+       carry_map[target].s = 1;
+       ++next_index;
+       carry_map[target].i = next_index;
+     }
+
+     dfaStoreException(carry_map[target].i, &*(getBinaryFormat(j, num_of_variables)).begin());
+   }
+
+   dfaStoreState(count);
+   ++count;
+
+   //find next state to expand
+   for (next_label = min; (next_label <= max) and
+       (carry_map[next_label].i != count); ++next_label) { }
+
+  }
+
+  for (int i = count; i < num_of_states; ++i) {
+   dfaAllocExceptions(0);
+   dfaStoreState(i);
+  }
+
+  //define accepting and rejecting states
+  char *statuses = new char[num_of_states + 1];
+  for (int i = 0; i < num_of_states; ++i) {
+   statuses[i] = '-';
+  }
+
+  for (int i = min; i < 0; ++i) {
+   if (carry_map[i].s == 2) {
+     statuses[carry_map[i].i] = '+';
+   }
+  }
+  statuses[num_of_states] = '\0';
+
+  DFA_ptr tmp_dfa = dfaBuild(statuses);
+  delete[] statuses;
+  tmp_dfa->ns = tmp_dfa->ns - (num_of_states - count);
+  DFA_ptr less_than_dfa = dfaMinimize(tmp_dfa);
+  dfaFree(tmp_dfa);
+
+  BinaryIntAutomaton_ptr less_than_auto = new BinaryIntAutomaton(less_than_dfa, num_of_variables, true);
+  less_than_auto->setFormula(formula);
+  DVLOG(VLOG_LEVEL) << less_than_auto->id << " = makeNaturalNumberLessThan(" << *formula << ")";
+
+  return less_than_auto;
+}
+
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThanOrEqual(ArithmeticFormula_ptr formula, bool is_natural_number) {
   BinaryIntAutomaton_ptr less_than_or_equal_auto = nullptr;
 
   ArithmeticFormula_ptr less_than_formula = formula->clone();
   less_than_formula->setConstant(less_than_formula->getConstant() - 1);
   less_than_formula->setType(ArithmeticFormula::Type::LT);
 
-  less_than_or_equal_auto = BinaryIntAutomaton::makeLessThan(less_than_formula);
+  less_than_or_equal_auto = BinaryIntAutomaton::makeLessThan(less_than_formula, is_natural_number);
   less_than_or_equal_auto->setFormula(formula);
   delete less_than_formula;
 
@@ -1160,13 +1374,13 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThanOrEqual(ArithmeticFormula
   return less_than_or_equal_auto;
 }
 
-BinaryIntAutomaton_ptr BinaryIntAutomaton::makeGreaterThan(ArithmeticFormula_ptr formula) {
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeGreaterThan(ArithmeticFormula_ptr formula, bool is_natural_number) {
   BinaryIntAutomaton_ptr greater_than_auto = nullptr;
 
   ArithmeticFormula_ptr less_than_formula = formula->multiply(-1);
   less_than_formula->setType(ArithmeticFormula::Type::LT);
 
-  greater_than_auto = BinaryIntAutomaton::makeLessThan(less_than_formula);
+  greater_than_auto = BinaryIntAutomaton::makeLessThan(less_than_formula, is_natural_number);
   greater_than_auto->setFormula(formula);
   delete less_than_formula;
 
@@ -1175,14 +1389,14 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeGreaterThan(ArithmeticFormula_ptr
   return greater_than_auto;
 }
 
-BinaryIntAutomaton_ptr BinaryIntAutomaton::makeGreaterThanOrEqual(ArithmeticFormula_ptr formula) {
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeGreaterThanOrEqual(ArithmeticFormula_ptr formula, bool is_natural_number) {
   BinaryIntAutomaton_ptr greater_than_or_equal_auto = nullptr;
 
   ArithmeticFormula_ptr less_than_formula = formula->multiply(-1);
   less_than_formula->setConstant(less_than_formula->getConstant() - 1);
   less_than_formula->setType(ArithmeticFormula::Type::LT);
 
-  greater_than_or_equal_auto = BinaryIntAutomaton::makeLessThan(less_than_formula);
+  greater_than_or_equal_auto = BinaryIntAutomaton::makeLessThan(less_than_formula, is_natural_number);
   greater_than_or_equal_auto->setFormula(formula);
   delete less_than_formula;
 
@@ -1235,7 +1449,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeTrimHelperAuto(int var_index, int
   dfaStoreState(4);
 
   trim_helper_dfa = dfaBuild(statuses);
-  trim_helper_auto = new BinaryIntAutomaton(trim_helper_dfa, number_of_variables);
+  trim_helper_auto = new BinaryIntAutomaton(trim_helper_dfa, number_of_variables, false);
 
   delete[] indices;
   delete[] exception;

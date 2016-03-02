@@ -80,7 +80,6 @@ StringAutomaton_ptr StringAutomaton::makeString(std::string str, int num_of_vari
     return StringAutomaton::makeEmptyString();
   }
 
-  char* binary_char = nullptr;
   DFA_ptr result_dfa = nullptr;
   StringAutomaton_ptr result_auto = nullptr;
   int str_length = str.length();
@@ -92,9 +91,7 @@ StringAutomaton_ptr StringAutomaton::makeString(std::string str, int num_of_vari
   int i;
   for (i = 0; i < str_length; i++) {
     dfaAllocExceptions(1);
-    binary_char = StringAutomaton::binaryFormat((unsigned long) str[i], num_of_variables);
-    dfaStoreException(i + 1, binary_char);
-    delete binary_char;
+    dfaStoreException(i + 1, &*(getBinaryFormat((unsigned long) str[i], num_of_variables)).begin());
     dfaStoreState(str_length + 1);
     statuses[i] = '-';
   }
@@ -982,7 +979,6 @@ StringAutomaton_ptr StringAutomaton::suffixes() {
   char* statuses = new char[number_of_states + 1];
   unsigned extra_bits_value = 0;
   int number_of_extra_bits_needed = number_of_variables - this->num_of_variables;
-  char* extra_bit_binary_format = nullptr;
 
   std::vector<char>* current_exception = nullptr;
   std::map<int, std::map<std::vector<char>*, int>> exception_map;
@@ -1023,7 +1019,7 @@ StringAutomaton_ptr StringAutomaton::suffixes() {
       // add to start state by adding extra bits
       if (s != this->dfa->s) {
         extra_bits_value++;
-        extra_bit_binary_format = binaryFormat(extra_bits_value, number_of_extra_bits_needed);
+        auto extra_bit_binary_format = getBinaryFormat(extra_bits_value, number_of_extra_bits_needed);
         for (auto& exceptions : exception_map[s]) {
           current_exception = new std::vector<char>();
           current_exception->insert(current_exception->begin(), exceptions.first->begin(), exceptions.first->end());
@@ -1036,7 +1032,6 @@ StringAutomaton_ptr StringAutomaton::suffixes() {
           exception_map[this->dfa->s][current_exception] = exceptions.second;
           current_exception = nullptr;
         }
-        delete[] extra_bit_binary_format; extra_bit_binary_format = nullptr;
       } else {
         // initial state default transitions' extra bits extended with all zeros
         for (auto& exceptions : exception_map[this->dfa->s]) {
@@ -1126,7 +1121,6 @@ StringAutomaton_ptr StringAutomaton::suffixesFromTo(int start, int end) {
   char* statuses = new char[number_of_states + 1];
   unsigned extra_bits_value = 0;
   int number_of_extra_bits_needed = number_of_variables - this->num_of_variables;
-  char* extra_bit_binary_format = nullptr;
 
   std::vector<char>* current_exception = nullptr;
   std::map<int, std::map<std::vector<char>*, int>> exception_map;
@@ -1166,7 +1160,7 @@ StringAutomaton_ptr StringAutomaton::suffixesFromTo(int start, int end) {
       state_paths = pp = nullptr;
       // add to start state by adding extra bits
       if (suffixes_from.find(s) != suffixes_from.end()) {
-        extra_bit_binary_format = binaryFormat(extra_bits_value, number_of_extra_bits_needed);
+        auto extra_bit_binary_format = getBinaryFormat(extra_bits_value, number_of_extra_bits_needed);
         for (auto& exceptions : exception_map[state_id]) {
           current_exception = new std::vector<char>();
           current_exception->insert(current_exception->begin(), exceptions.first->begin(), exceptions.first->end());
@@ -1180,7 +1174,6 @@ StringAutomaton_ptr StringAutomaton::suffixesFromTo(int start, int end) {
           current_exception = nullptr;
         }
         ++extra_bits_value;
-        delete[] extra_bit_binary_format; extra_bit_binary_format = nullptr;
       } else {
         // initial state default transitions' extra bits extended with all zeros
         for (auto& exceptions : exception_map[this->dfa->s]) {
@@ -2260,12 +2253,10 @@ std::string StringAutomaton::getAnAcceptingString() {
   unsigned char c = 0;
   unsigned bit_range = num_of_variables - 1;
   unsigned read_count = 0;
-
   for (auto bit: *example) {
     if (bit) {
       c |= 1;
-    }
-    else {
+    } else {
       c |= 0;
     }
 
@@ -2280,6 +2271,7 @@ std::string StringAutomaton::getAnAcceptingString() {
       read_count++;
     }
   }
+  delete example;
   return ss.str();
 }
 
@@ -2928,7 +2920,6 @@ StringAutomaton_ptr StringAutomaton::removeReservedWords() {
   char* statuses = new char[number_of_states + 1];
   unsigned extra_bits_value = 0;
   int number_of_extra_bits_needed = number_of_variables - this->num_of_variables;
-  char* extra_bit_binary_format = nullptr;
   std::vector<char>* current_exception = nullptr;
 
   dfaSetup(number_of_states, number_of_variables, indices);
@@ -2936,7 +2927,7 @@ StringAutomaton_ptr StringAutomaton::removeReservedWords() {
     if (merged_states_via_reserved_words.find(s) != merged_states_via_reserved_words.end()) {
       statuses[s] = '-'; // initially
       for(auto merge_state : merged_states_via_reserved_words[s]) {
-        extra_bit_binary_format = binaryFormat(extra_bits_value, number_of_extra_bits_needed);
+        auto extra_bit_binary_format = getBinaryFormat(extra_bits_value, number_of_extra_bits_needed);
         state_paths = pp = make_paths(this->dfa->bddm, this->dfa->q[merge_state]);
         while (pp) {
           if (pp->to != (unsigned)sink_state) {
@@ -2977,7 +2968,6 @@ StringAutomaton_ptr StringAutomaton::removeReservedWords() {
 
         kill_paths(state_paths);
         state_paths = pp = nullptr;
-        delete[] extra_bit_binary_format; extra_bit_binary_format = nullptr;
         extra_bits_value++;
       }
 //       do allocation for merged states

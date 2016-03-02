@@ -13,11 +13,12 @@
 namespace Vlab {
 namespace Option {
 
-std::string Solver::OUTPUT_PATH     = ".";
-std::string Solver::SCRIPT_PATH     = ".";
-bool Solver::MODEL_COUNTER_ENABLED  = false;
-bool Solver::LIA_ENGINE_ENABLED     = true;
-bool Solver::LIA_ONLY_CONSTRAINT    = true;
+std::string Solver::OUTPUT_PATH         = ".";
+std::string Solver::SCRIPT_PATH         = ".";
+bool Solver::MODEL_COUNTER_ENABLED      = false;
+bool Solver::LIA_ENGINE_ENABLED         = true;
+bool Solver::LIA_ONLY_CONSTRAINT        = true;
+bool Solver::LIA_NATURAL_NUMBERS_ONLY   = false;
 
 } /* namespace Option */
 } /* namespace Vlab */

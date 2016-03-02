@@ -14,6 +14,7 @@ public class ExampleUsage {
     abcDriver.setOption(Option.SCRIPT_PATH, "/home/baki/Projects/ABC/lib/mathematica");
     abcDriver.setOption(Option.MODEL_COUNTER_ENABLED, true);
     abcDriver.setOption(Option.LIA_ENGINE_ENABLED, true);
+    abcDriver.setOption(Option.LIA_NATURAL_NUMBERS_ONLY, true);
     
     String constraint = "(set-logic QF_S)\n"
         + "(declare-fun var_abc () String)\n"

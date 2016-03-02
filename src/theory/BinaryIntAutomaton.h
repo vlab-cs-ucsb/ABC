@@ -36,16 +36,16 @@ typedef BinaryIntAutomaton* BinaryIntAutomaton_ptr;
 class BinaryIntAutomaton: public Automaton {
 public:
 
-  BinaryIntAutomaton();
-  BinaryIntAutomaton(DFA_ptr, int num_of_variables);
+  BinaryIntAutomaton(bool is_natural_number);
+  BinaryIntAutomaton(DFA_ptr, int num_of_variables, bool is_natural_number);
   BinaryIntAutomaton(const BinaryIntAutomaton&);
   virtual ~BinaryIntAutomaton();
 
   virtual BinaryIntAutomaton_ptr clone() const;
 
-  static BinaryIntAutomaton_ptr makePhi(ArithmeticFormula_ptr);
-  static BinaryIntAutomaton_ptr makeAnyInt(ArithmeticFormula_ptr);
-  static BinaryIntAutomaton_ptr makeAutomaton(ArithmeticFormula_ptr);
+  static BinaryIntAutomaton_ptr makePhi(ArithmeticFormula_ptr, bool is_natural_number);
+  static BinaryIntAutomaton_ptr makeAnyInt(ArithmeticFormula_ptr, bool is_natural_number);
+  static BinaryIntAutomaton_ptr makeAutomaton(ArithmeticFormula_ptr, bool is_natural_number);
   static BinaryIntAutomaton_ptr makeAutomaton(int value, std::string var_name,
           ArithmeticFormula_ptr formula, bool add_leading_zeros = false);
   static BinaryIntAutomaton_ptr makeAutomaton(SemilinearSet_ptr semilinear_set, std::string var_name,
@@ -75,13 +75,17 @@ public:
 
 protected:
   BinaryIntAutomaton(ArithmeticFormula_ptr formula);
-  static BinaryIntAutomaton_ptr makeGraterThanOrEqualToZero(std::vector<int> indexes, int number_of_variables);
-  static BinaryIntAutomaton_ptr makeEquality(ArithmeticFormula_ptr);
-  static BinaryIntAutomaton_ptr makeNotEquality(ArithmeticFormula_ptr);
-  static BinaryIntAutomaton_ptr makeLessThan(ArithmeticFormula_ptr);
-  static BinaryIntAutomaton_ptr makeLessThanOrEqual(ArithmeticFormula_ptr);
-  static BinaryIntAutomaton_ptr makeGreaterThan(ArithmeticFormula_ptr);
-  static BinaryIntAutomaton_ptr makeGreaterThanOrEqual(ArithmeticFormula_ptr);
+  static BinaryIntAutomaton_ptr makeIntGraterThanOrEqualToZero(std::vector<int> indexes, int number_of_variables);
+  static BinaryIntAutomaton_ptr makeEquality(ArithmeticFormula_ptr, bool is_natural_number);
+  static BinaryIntAutomaton_ptr makeIntEquality(ArithmeticFormula_ptr);
+  static BinaryIntAutomaton_ptr makeNaturalNumberEquality(ArithmeticFormula_ptr);
+  static BinaryIntAutomaton_ptr makeNotEquality(ArithmeticFormula_ptr, bool is_natural_number);
+  static BinaryIntAutomaton_ptr makeLessThan(ArithmeticFormula_ptr, bool is_natural_number);
+  static BinaryIntAutomaton_ptr makeIntLessThan(ArithmeticFormula_ptr);
+  static BinaryIntAutomaton_ptr makeNaturalNumberLessThan(ArithmeticFormula_ptr);
+  static BinaryIntAutomaton_ptr makeLessThanOrEqual(ArithmeticFormula_ptr, bool is_natural_number);
+  static BinaryIntAutomaton_ptr makeGreaterThan(ArithmeticFormula_ptr, bool is_natural_number);
+  static BinaryIntAutomaton_ptr makeGreaterThanOrEqual(ArithmeticFormula_ptr, bool is_natural_number);
   static BinaryIntAutomaton_ptr makeTrimHelperAuto(int var_index, int number_of_variables);
   static void compute_binary_states(std::vector<BinaryState_ptr>& binary_states,
           SemilinearSet_ptr semilinear_set);
@@ -110,6 +114,8 @@ protected:
     int s, sr; // status: 0 not yet processed, 1 to be expanded, 2 done
     StateIndices(): i{-1}, ir{-1}, s{0}, sr{0} {}
   };
+
+  bool is_natural_number;
   ArithmeticFormula_ptr formula;
 private:
   static const int VLOG_LEVEL;

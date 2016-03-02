@@ -16,7 +16,8 @@ import java.util.Map;
  */
 public class DriverProxy {
     public enum Option {
-	OUTPUT_PATH(0), MODEL_COUNTER_ENABLED(1), LIA_ENGINE_ENABLED(2), SCRIPT_PATH(3);
+	OUTPUT_PATH(0), MODEL_COUNTER_ENABLED(1), LIA_ENGINE_ENABLED(2), SCRIPT_PATH(3), 
+	LIA_ONLY_CONSTRAINT(4), LIA_NATURAL_NUMBERS_ONLY(5);
 
 	private final int value;
 

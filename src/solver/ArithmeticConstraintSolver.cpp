@@ -16,8 +16,8 @@ using namespace Theory;
 const int ArithmeticConstraintSolver::VLOG_LEVEL = 11;
 
 ArithmeticConstraintSolver::ArithmeticConstraintSolver(Script_ptr script,
-    SymbolTable_ptr symbol_table) :
-    AstTraverser(script), symbol_table(symbol_table),
+    SymbolTable_ptr symbol_table, bool is_natural_number_only) :
+    AstTraverser(script), is_restricted_to_natural_numbers {is_natural_number_only}, symbol_table(symbol_table),
     arithmetic_formula_generator(script, symbol_table) {
   setCallbacks();
 }
@@ -54,7 +54,7 @@ void ArithmeticConstraintSolver::setCallbacks() {
         }
 
         DVLOG(VLOG_LEVEL) << "Linear Arithmetic Equation: " << *formula;
-        BinaryIntAutomaton_ptr binary_int_auto = BinaryIntAutomaton::makeAutomaton(formula->clone());
+        BinaryIntAutomaton_ptr binary_int_auto = BinaryIntAutomaton::makeAutomaton(formula->clone(), is_restricted_to_natural_numbers);
 
         Value_ptr result = new Value(binary_int_auto);
 
@@ -112,7 +112,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
           result = and_value;
         }
       } else {
-        result = new Value(BinaryIntAutomaton::makePhi(formula->clone()));
+        result = new Value(BinaryIntAutomaton::makePhi(formula->clone(), is_restricted_to_natural_numbers));
         break;
       }
       clearTermValue(term);
