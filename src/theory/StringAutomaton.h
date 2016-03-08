@@ -82,7 +82,6 @@ public:
   StringAutomaton_ptr union_(StringAutomaton_ptr other_auto);
   StringAutomaton_ptr intersect(StringAutomaton_ptr other_auto);
   StringAutomaton_ptr difference(StringAutomaton_ptr other_auto);
-  StringAutomaton_ptr concatenate(StringAutomaton_ptr other_auto);
   StringAutomaton_ptr concat(StringAutomaton_ptr other_auto);
 
   StringAutomaton_ptr optional();

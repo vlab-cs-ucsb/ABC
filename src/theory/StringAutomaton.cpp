@@ -553,72 +553,39 @@ StringAutomaton_ptr StringAutomaton::difference(StringAutomaton_ptr other_auto) 
 }
 
 /**
- * @Deprecated
- */
-StringAutomaton_ptr StringAutomaton::concatenate(StringAutomaton_ptr other_auto) {
-  DFA_ptr concat_dfa = nullptr;
-  StringAutomaton_ptr concat_auto = nullptr;
-
-  LOG(FATAL) << "please use 'concat' function";
-
-  DFA_ptr M1 = this->dfa;
-  DFA_ptr M2 = other_auto->dfa;
-  int var = StringAutomaton::DEFAULT_NUM_OF_VARIABLES;
-  int* indices = StringAutomaton::DEFAULT_VARIABLE_INDICES;
-
-  StringAutomaton_ptr tmp0 = nullptr;
-      DFA *tmp1 = nullptr;
-
-
-      if(checkEmptyString(M2)) {
-        if(state_reachable(M2, M2->s, var, indices)){
-          tmp1 = dfa_shift_empty_M(M2, var, indices);
-          StringAutomaton_ptr tmp = new StringAutomaton(tmp1, var);
-          tmp0 = this->concat(tmp);
-          dfaFree(tmp1);
-        }
-        else{
-          tmp0 =  concat(other_auto);
-        }
-        tmp1 = dfa_union(tmp0->dfa, M1);
-        delete tmp0;
-      }else{
-        tmp1 = concat(other_auto)->dfa;
-      }
-  concat_auto = new StringAutomaton(tmp1, num_of_variables);
-
-  DVLOG(VLOG_LEVEL) << concat_auto->id << " = [" << this->id << "]->concatenate(" << other_auto->id << ")";
-
-  return concat_auto;
-}
-
-/**
  * Initial Re-implementation of  'dfa_concat_extrabit' in LibStranger
  *TODO Fix empty string bug that happens in case (concat /.{0,1}/ /{1,1}/)
  */
 StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
-  DFA_ptr concat_dfa = nullptr, tmp_dfa = nullptr;
-  StringAutomaton_ptr concat_auto = nullptr, to_union_auto = nullptr;
 
-  if (this->isEmptyLanguage() or other_auto->isEmptyLanguage()) {
+  StringAutomaton_ptr left_auto = this, right_auto = other_auto;
+
+
+  if (left_auto->isEmptyLanguage() or right_auto->isEmptyLanguage()) {
     return StringAutomaton::makePhi();
-  } else if (this->isEmptyString()) {
-    return other_auto->clone();
-  } else if (other_auto->isEmptyString()) {
-    return this->clone();
+  } else if (left_auto->isEmptyString()) {
+    return right_auto->clone();
+  } else if (right_auto->isEmptyString()) {
+    return left_auto->clone();
   }
 
-  bool right_hand_side_has_empty_string = other_auto->hasEmptyString();
-  bool delete_other_auto = false;
-  if (right_hand_side_has_empty_string and other_auto->hasIncomingTransition(other_auto->dfa->s)) {
-    DFA_ptr shifted_dfa = dfa_shift_empty_M(other_auto->dfa, other_auto->num_of_variables, other_auto->variable_indices);
-    StringAutomaton_ptr shifted_auto = new StringAutomaton(shifted_dfa, other_auto->num_of_variables);
-    other_auto = shifted_auto;
-    delete_other_auto = true;
+  bool left_hand_side_has_emtpy_string = left_auto->hasEmptyString();
+  bool right_hand_side_has_empty_string = right_auto->hasEmptyString();
+
+  if (left_hand_side_has_emtpy_string or right_hand_side_has_empty_string) {
+    auto any_string_other_than_empty = StringAutomaton::makeLengthGreaterThan(0);
+    if (left_hand_side_has_emtpy_string) {
+      left_auto = left_auto->intersect(any_string_other_than_empty);
+    }
+
+    if (right_hand_side_has_empty_string) {
+      right_auto = right_auto->intersect(any_string_other_than_empty);
+    }
+    delete any_string_other_than_empty;
   }
 
-  int var = num_of_variables;
-  int* indices = variable_indices;
+  int var = left_auto->num_of_variables;
+  int* indices = left_auto->variable_indices;
   int tmp_num_of_variables,
       state_id_shift_amount,
       expected_num_of_states,
@@ -640,17 +607,17 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
   char* statuses = nullptr;
 
   // variable initializations
-  sink_state_left_auto = this->getSinkState();
-  sink_state_right_auto = other_auto->getSinkState();
+  sink_state_left_auto = left_auto->getSinkState();
+  sink_state_right_auto = right_auto->getSinkState();
 
   CHECK_GT(sink_state_left_auto, -1);
   CHECK_GT(sink_state_right_auto, -1);
 
-  tmp_num_of_variables = this->num_of_variables + 1; // add one extra bit
-  state_id_shift_amount = this->dfa->ns;
+  tmp_num_of_variables = left_auto->num_of_variables + 1; // add one extra bit
+  state_id_shift_amount = left_auto->dfa->ns;
 
-  expected_num_of_states = this->dfa->ns + other_auto->dfa->ns - 1; // -1 is for to remove one of the sink states
-  is_start_state_reachable = other_auto->isStartStateReachableFromAnAcceptingState();
+  expected_num_of_states = left_auto->dfa->ns + right_auto->dfa->ns - 1; // -1 is for to remove one of the sink states
+  is_start_state_reachable = right_auto->isStartStateReachableFromAnAcceptingState();
   if (not is_start_state_reachable) {
     expected_num_of_states = expected_num_of_states  - 1; // if start state is reachable from an accepting state, it will be merge with accepting states of left hand side
   }
@@ -659,24 +626,24 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
   int* concat_indices = getIndices(tmp_num_of_variables);
 
   dfaSetup(expected_num_of_states, tmp_num_of_variables, concat_indices); //sink states are merged
-  state_paths = pp = make_paths(other_auto->dfa->bddm, other_auto->dfa->q[other_auto->dfa->s]);
+  state_paths = pp = make_paths(right_auto->dfa->bddm, right_auto->dfa->q[right_auto->dfa->s]);
   while (pp) {
     if ( pp->to != (unsigned)sink_state_right_auto ) {
       to_state = pp->to + state_id_shift_amount;
       // if there is a self loop keep it
-      if ( pp->to == (unsigned)other_auto->dfa->s ) {
+      if ( pp->to == (unsigned)right_auto->dfa->s ) {
         to_state -= 2;
       } else {
         if ( sink_state_right_auto >= 0 && pp->to > (unsigned)sink_state_right_auto ) {
           to_state--; //to new state, sink state will be eliminated and hence need -1
         }
-        if ((not is_start_state_reachable) && pp->to > (unsigned)other_auto->dfa->s) {
+        if ((not is_start_state_reachable) && pp->to > (unsigned)right_auto->dfa->s) {
           to_state--; // to new state, init state will be eliminated if init is not reachable
         }
       }
 
       current_exception = new std::vector<char>();
-      for (j = 0; j < other_auto->num_of_variables; j++) {
+      for (j = 0; j < right_auto->num_of_variables; j++) {
         //the following for loop can be avoided if the indices are in order
         for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
         if (tp) {
@@ -704,8 +671,8 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
   kill_paths(state_paths);
   state_paths = pp = nullptr;
 
-  for (i = 0; i < this->dfa->ns; i++) {
-    state_paths = pp = make_paths(this->dfa->bddm, this->dfa->q[i]);
+  for (i = 0; i < left_auto->dfa->ns; i++) {
+    state_paths = pp = make_paths(left_auto->dfa->bddm, left_auto->dfa->q[i]);
     while (pp) {
       if (pp->to == (unsigned)sink_state_left_auto) {
         pp = pp->next;
@@ -713,7 +680,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
       }
       to_state = pp->to;
       current_exception = new std::vector<char>();
-      for (j = 0; j < this->num_of_variables; j++) {
+      for (j = 0; j < left_auto->num_of_variables; j++) {
         for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
         if (tp) {
           if (tp->value) {
@@ -734,7 +701,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
     }
     current_exception = nullptr;
     // generate concat automaton
-    if (this->isAcceptingState(i)) {
+    if (left_auto->isAcceptingState(i)) {
       dfaAllocExceptions(exceptions_left_auto.size() + exceptions_right_auto.size());
       for (auto it = exceptions_left_auto.begin(); it != exceptions_left_auto.end();) {
         dfaStoreException(it->second, &*it->first->begin());
@@ -750,7 +717,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
       }
 
       dfaStoreState(sink_state_left_auto);
-      if (other_auto->isAcceptingState(0)) {
+      if (right_auto->isAcceptingState(0)) {
         statuses[i]='+';
       }
       else {
@@ -773,10 +740,10 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
   }
 
   //  initflag is 1 iff init is reached by some state. In this case,
-  for (i = 0; i < other_auto->dfa->ns; i++) {
+  for (i = 0; i < right_auto->dfa->ns; i++) {
     if ( i != sink_state_right_auto ) {
-      if ( i != other_auto->dfa->s || is_start_state_reachable) {
-        state_paths = pp = make_paths(other_auto->dfa->bddm, other_auto->dfa->q[i]);
+      if ( i != right_auto->dfa->s || is_start_state_reachable) {
+        state_paths = pp = make_paths(right_auto->dfa->bddm, right_auto->dfa->q[i]);
         while (pp) {
           if ( pp->to != (unsigned)sink_state_right_auto) {
             to_state = pp->to + state_id_shift_amount;
@@ -785,7 +752,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
               to_state--; //to new state, sink state will be eliminated and hence need -1
             }
 
-            if ( (not is_start_state_reachable) && pp->to > (unsigned)other_auto->dfa->s) {
+            if ( (not is_start_state_reachable) && pp->to > (unsigned)right_auto->dfa->s) {
               to_state--; // to new state, init state will be eliminated if init is not reachable
             }
 
@@ -824,14 +791,14 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
         dfaStoreState(sink_state_left_auto);
 
         loc = state_id_shift_amount + i;
-        if ( (not is_start_state_reachable) && i > other_auto->dfa->s) {
+        if ( (not is_start_state_reachable) && i > right_auto->dfa->s) {
           loc--;
         }
         if ( sink_state_right_auto >= 0 && i > sink_state_right_auto) {
           loc--;
         }
 
-        if ( other_auto->isAcceptingState(i)) {
+        if ( right_auto->isAcceptingState(i)) {
           statuses[loc]='+';
         } else {
           statuses[loc]='-';
@@ -845,23 +812,28 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
 
   statuses[expected_num_of_states]='\0';
 
-  concat_dfa = dfaBuild(statuses);
+  DFA_ptr concat_dfa = dfaBuild(statuses);
   delete[] statuses; statuses = nullptr;
   delete[] concat_indices; concat_indices = nullptr;
-  tmp_dfa = dfaProject(concat_dfa, (unsigned) var);
+  DFA_ptr tmp_dfa = dfaProject(concat_dfa, (unsigned) var);
   dfaFree(concat_dfa);
   concat_dfa = dfaMinimize(tmp_dfa);
   dfaFree(tmp_dfa); tmp_dfa = nullptr;
 
-  concat_auto = new StringAutomaton(concat_dfa, num_of_variables);
+  auto concat_auto = new StringAutomaton(concat_dfa, num_of_variables);
+
+  if (left_hand_side_has_emtpy_string) {
+    auto tmp_auto = concat_auto;
+    concat_auto = tmp_auto->union_(other_auto);
+    delete tmp_auto;
+    delete left_auto; left_auto = nullptr;
+  }
 
   if (right_hand_side_has_empty_string) {
-    StringAutomaton_ptr tmp_auto = concat_auto;
+    auto tmp_auto = concat_auto;
     concat_auto = tmp_auto->union_(this);
     delete tmp_auto;
-    if (delete_other_auto) {
-      delete other_auto;
-    }
+    delete right_auto; right_auto = nullptr;
   }
 
   DVLOG(VLOG_LEVEL) << concat_auto->id << " = [" << this->id << "]->concat(" << other_auto->id << ")";
@@ -1321,9 +1293,12 @@ StringAutomaton_ptr StringAutomaton::subStrings() {
 
 StringAutomaton_ptr StringAutomaton::charAt(int index) {
   StringAutomaton_ptr char_at_auto = subString(index, index);
-  // programming languages never return empty char for index > 0
+  // 1- programming languages never return empty char for index > 0
   // or never return empty char when string is not an empty string
-  if (index > 0 || (not this->isInitialStateAccepting())) {
+  // 2- Returning empty string at charAt[0] causues problems. If charAt[0]
+  // is an empty string, it means string is empty and empty string check
+  // should be done with othe ways to do it.
+  if (index >= 0 || (not this->isInitialStateAccepting())) {
     StringAutomaton_ptr non_empty_strings = StringAutomaton::makeLengthGreaterThan(0);
     StringAutomaton_ptr tmp_auto = char_at_auto;
     char_at_auto = tmp_auto->intersect(non_empty_strings);
