@@ -340,6 +340,8 @@ void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
   } else if (Value::Type::INT_CONSTANT == param_left->getType() and
           Value::Type::INT_CONSTANT == param_right->getType()) {
     result = new Value(param_left->getIntConstant() not_eq param_right->getIntConstant());
+  } else if (not (param_left->isSatisfiable() and param_right->isSatisfiable())) {
+    result = new Value(false);
   } else {
     Value_ptr intersection = param_left->intersect(param_right);
     if (not intersection->isSatisfiable()) {

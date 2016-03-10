@@ -227,7 +227,7 @@ void Driver::reset() {
   delete script;
   script = nullptr;
   symbol_table = nullptr;
-  LOG(INFO) << "Driver reseted.";
+//  LOG(INFO) << "Driver reseted.";
 }
 
 void Driver::setOption(Option::Name option, bool value) {
