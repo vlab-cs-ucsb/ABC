@@ -734,13 +734,17 @@ void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {
       continue;
     } else if(Term::Type::TERMCONSTANT == (*iter)->getType()) {
       TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter);
-      if (initial_term_constant == nullptr) {
+      if (term_constant->getValue() == "") {
+        delete term_constant; // deallocate
+        concat_term->term_list->erase(iter);
+        continue; // iterator updated by erase
+      } else if (initial_term_constant == nullptr) {
         initial_term_constant = term_constant;
       } else {
         append_constant(initial_term_constant, term_constant);
         delete term_constant; // deallocate
         concat_term->term_list->erase(iter);
-        continue;
+        continue; // iterator updated by erase
       }
     } else {
       initial_term_constant = nullptr;

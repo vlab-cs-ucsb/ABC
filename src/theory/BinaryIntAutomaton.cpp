@@ -66,7 +66,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makePhi(ArithmeticFormula_ptr formula
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAnyInt(ArithmeticFormula_ptr formula, bool is_natural_number) {
   int number_of_variables = formula->getNumberOfVariables();
   int* indices = Automaton::getIndices(number_of_variables);
-  std::array<char, 2> statuses { '-', '+' };
+  char statuses[2] { '-', '+' };
 
   dfaSetup(2, number_of_variables, indices);
   delete[] indices; indices = nullptr;
@@ -74,7 +74,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAnyInt(ArithmeticFormula_ptr form
   dfaStoreState(1);
   dfaAllocExceptions(0);
   dfaStoreState(1);
-  DFA_ptr any_binary_int_dfa = dfaBuild(&*statuses.begin());
+  DFA_ptr any_binary_int_dfa = dfaBuild(statuses);
   BinaryIntAutomaton_ptr any_int = new BinaryIntAutomaton(any_binary_int_dfa, number_of_variables, is_natural_number);
   any_int->setFormula(formula);
 
@@ -540,7 +540,6 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::addLeadingZeros() {
   int* indices = getIndices(number_of_variables);
 
   std::vector<char> leading_zero_exception;
-  std::vector<char> statuses;
   std::map<std::vector<char>*, int> exceptions;
   std::vector<char>* current_exception = nullptr;
 
@@ -845,7 +844,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntGraterThanOrEqualToZero(std::v
   DFA_ptr positive_numbers_dfa = nullptr;
   int* bin_variable_indices = getIndices(number_of_variables);
   int number_of_states = 3;
-  std::array<char, 3> statuses {'-', '+', '-'};
+  char statuses[3] {'-', '+', '-'};
   std::vector<char> exception;
 
   for (int i = 0; i < number_of_variables; i++) {
@@ -871,7 +870,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntGraterThanOrEqualToZero(std::v
   dfaAllocExceptions(0);
   dfaStoreState(2);
 
-  positive_numbers_dfa = dfaBuild(&*statuses.begin());
+  positive_numbers_dfa = dfaBuild(statuses);
   postivie_numbers_auto = new BinaryIntAutomaton(positive_numbers_dfa, number_of_variables, false);
 
   delete[] bin_variable_indices;

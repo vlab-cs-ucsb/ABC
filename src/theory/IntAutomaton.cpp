@@ -70,14 +70,14 @@ IntAutomaton_ptr IntAutomaton::makePhi(int num_of_variables, int* variable_indic
 IntAutomaton_ptr IntAutomaton::makeZero(int num_of_variables, int* variable_indices) {
   DFA_ptr zero_int_dfa = nullptr;
   IntAutomaton_ptr zero_int = nullptr;
-  std::array<char, 2> statuses { '+', '-' };
+  char statuses[2] { '+', '-' };
 
   dfaSetup(2, num_of_variables, variable_indices);
   dfaAllocExceptions(0);
   dfaStoreState(1);
   dfaAllocExceptions(0);
   dfaStoreState(1);
-  zero_int_dfa = dfaBuild(&*statuses.begin());
+  zero_int_dfa = dfaBuild(statuses);
   zero_int = new IntAutomaton(zero_int_dfa, num_of_variables);
 
   DVLOG(VLOG_LEVEL) << zero_int->id << " = makeZero()";
@@ -92,7 +92,7 @@ IntAutomaton_ptr IntAutomaton::makeZero(int num_of_variables, int* variable_indi
 IntAutomaton_ptr IntAutomaton::makeAnyInt(int num_of_variables, int* variable_indices) {
   DFA_ptr any_int_dfa = nullptr;
   IntAutomaton_ptr any_int = nullptr;
-  std::array<char, 2> statuses { '+', '-' };
+  char statuses[2] { '+', '-' };
   std::vector<char> reserved_1 = Automaton::getReservedWord('1', num_of_variables);
   std::vector<char> reserved_2 = Automaton::getReservedWord('0', num_of_variables);
   char* sharp1 = &*reserved_1.begin();
@@ -107,7 +107,7 @@ IntAutomaton_ptr IntAutomaton::makeAnyInt(int num_of_variables, int* variable_in
   dfaAllocExceptions(0);
   dfaStoreState(1);
 
-  any_int_dfa = dfaBuild(&*statuses.begin());
+  any_int_dfa = dfaBuild(statuses);
   any_int = new IntAutomaton(any_int_dfa, true, num_of_variables);
 
   DVLOG(VLOG_LEVEL) << any_int->id << " = makeAnyInt()";

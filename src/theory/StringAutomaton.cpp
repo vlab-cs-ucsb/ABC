@@ -60,14 +60,14 @@ StringAutomaton_ptr StringAutomaton::makePhi(int num_of_variables, int* variable
 StringAutomaton_ptr StringAutomaton::makeEmptyString(int num_of_variables, int* variable_indices) {
   DFA_ptr empty_string_dfa = nullptr;
   StringAutomaton_ptr empty_string = nullptr;
-  std::array<char, 2> statuses { '+', '-' };
+  char statuses[2] { '+', '-' };
 
   dfaSetup(2, num_of_variables, variable_indices);
   dfaAllocExceptions(0);
   dfaStoreState(1);
   dfaAllocExceptions(0);
   dfaStoreState(1);
-  empty_string_dfa = dfaBuild(&*statuses.begin());
+  empty_string_dfa = dfaBuild(statuses);
   empty_string = new StringAutomaton(empty_string_dfa, num_of_variables);
 
   DVLOG(VLOG_LEVEL) << empty_string->id << " = makeEmptyString()";
@@ -122,7 +122,7 @@ StringAutomaton_ptr StringAutomaton::makeString(std::string str, int num_of_vari
 StringAutomaton_ptr StringAutomaton::makeAnyString(int num_of_variables, int* variable_indices) {
   DFA_ptr any_string_dfa = nullptr;
   StringAutomaton_ptr any_string = nullptr;
-  std::array<char, 2> statuses { '+', '-' };
+  char statuses[2] { '+', '-' };
   std::vector<char> reserved_1 = Automaton::getReservedWord('1', num_of_variables);
   std::vector<char> reserved_2 = Automaton::getReservedWord('0', num_of_variables);
   char* sharp1 = &*reserved_1.begin();
@@ -137,7 +137,7 @@ StringAutomaton_ptr StringAutomaton::makeAnyString(int num_of_variables, int* va
   dfaAllocExceptions(0);
   dfaStoreState(1);
 
-  any_string_dfa = dfaBuild(&*statuses.begin());
+  any_string_dfa = dfaBuild(statuses);
   any_string = new StringAutomaton(any_string_dfa, num_of_variables);
 
   DVLOG(VLOG_LEVEL) << any_string->id << " = makeAnyString()";
@@ -171,7 +171,7 @@ StringAutomaton_ptr StringAutomaton::makeCharRange(char from, char to, int num_o
   int to_char = (int) to;
   int index;
   int initial_state;
-  std::array<char, 3> statuses { '-', '+', '-' };
+  char statuses[3] { '-', '+', '-' };
   DFA_ptr range_dfa = nullptr;
   StringAutomaton_ptr range_auto = nullptr;
 
@@ -200,7 +200,7 @@ StringAutomaton_ptr StringAutomaton::makeCharRange(char from, char to, int num_o
   dfaAllocExceptions(0);
   dfaStoreState(2);
 
-  range_dfa = dfaBuild(&*statuses.begin());
+  range_dfa = dfaBuild(statuses);
   range_auto = new StringAutomaton(range_dfa, num_of_variables);
 
   DVLOG(VLOG_LEVEL) << range_auto->id << " = makeCharRange('" << from << "', '" << to << "')";
@@ -212,7 +212,7 @@ StringAutomaton_ptr StringAutomaton::makeCharRange(char from, char to, int num_o
  * Regular expressions '.' operator
  */
 StringAutomaton_ptr StringAutomaton::makeAnyChar(int num_of_variables, int* variable_indices) {
-  std::array<char, 3> statuses { '-', '+', '-' };
+  char statuses[3] { '-', '+', '-' };
   std::vector<char> reserved_1 = Automaton::getReservedWord('1', num_of_variables);
   std::vector<char> reserved_2 = Automaton::getReservedWord('0', num_of_variables);
   char* sharp1 = &*reserved_1.begin();
@@ -231,7 +231,7 @@ StringAutomaton_ptr StringAutomaton::makeAnyChar(int num_of_variables, int* vari
   dfaAllocExceptions(0);
   dfaStoreState(2);
 
-  dot_dfa = dfaBuild(&*statuses.begin());
+  dot_dfa = dfaBuild(statuses);
   dot_auto = new StringAutomaton(dot_dfa, num_of_variables);
 
   DVLOG(VLOG_LEVEL) << dot_auto->id << " = makeAnyChar()";
@@ -990,7 +990,7 @@ StringAutomaton_ptr StringAutomaton::suffixes() {
       state_paths = pp = nullptr;
       // add to start state by adding extra bits
       if (s != this->dfa->s) {
-        extra_bits_value++;
+        ++extra_bits_value;
         auto extra_bit_binary_format = getBinaryFormat(extra_bits_value, number_of_extra_bits_needed);
         for (auto& exceptions : exception_map[s]) {
           current_exception = new std::vector<char>();
@@ -1079,20 +1079,21 @@ StringAutomaton_ptr StringAutomaton::suffixesFromTo(int start, int end) {
     suffixes_auto = StringAutomaton::makePhi();
     DVLOG(VLOG_LEVEL) << suffixes_auto->id << " = [" << this->id << "]->suffixes(" << start << ", " << end << ")";
     return suffixes_auto;
+  } else if (max == 1) {
+    max = 2; // that will increase the number_of_variables by 1, by doing so we get a perfectly minimized auto at the end
   }
-
-  int number_of_variables = this->num_of_variables,
-          number_of_states = this->dfa->ns + 1, // one extra start for the new start state
-          sink_state = this->getSinkState(),
-          next_state = -1;
 
   // if number of variables are too large for mona, implement an algorithm that find suffixes by finding
   // sub suffixes and union them
-  number_of_variables = this->num_of_variables + std::ceil(std::log2(max)); // number of variables required
+  const int number_of_variables = this->num_of_variables + std::ceil(std::log2(max)), // number of variables required
+          number_of_states = this->dfa->ns + 1; // one extra start for the new start state
+  int sink_state = this->getSinkState();
+
   int* indices = getIndices(number_of_variables);
   char* statuses = new char[number_of_states + 1];
   unsigned extra_bits_value = 0;
-  int number_of_extra_bits_needed = number_of_variables - this->num_of_variables;
+
+  const int number_of_extra_bits_needed = number_of_variables - this->num_of_variables;
 
   std::vector<char>* current_exception = nullptr;
   std::map<int, std::map<std::vector<char>*, int>> exception_map;
@@ -1120,7 +1121,6 @@ StringAutomaton_ptr StringAutomaton::suffixesFromTo(int start, int end) {
             }
           }
 
-
           exception_map[state_id][current_exception] = pp->to + 1; // there is a new start state, old states are off by one
           current_exception = nullptr;
         }
@@ -1138,7 +1138,7 @@ StringAutomaton_ptr StringAutomaton::suffixesFromTo(int start, int end) {
           current_exception->insert(current_exception->begin(), exceptions.first->begin(), exceptions.first->end());
           for (int i = 0; i < number_of_extra_bits_needed; i++) {
             current_exception->push_back(extra_bit_binary_format[i]); // new transitions for start state
-            exceptions.first->push_back('0'); // default transitions have all zero's in extrabits
+            exceptions.first->push_back('0');                         // default transitions have all zero's in extrabits
           }
           current_exception->push_back('\0');
           exceptions.first->push_back('\0');
@@ -1147,8 +1147,8 @@ StringAutomaton_ptr StringAutomaton::suffixesFromTo(int start, int end) {
         }
         ++extra_bits_value;
       } else {
-        // initial state default transitions' extra bits extended with all zeros
-        for (auto& exceptions : exception_map[this->dfa->s]) {
+        // default transitions' extra bits extended with all zeros
+        for (auto& exceptions : exception_map[s]) {
           for (int i = 0; i < number_of_extra_bits_needed; i++) {
             exceptions.first->push_back('0'); // default transitions have all zero's in extrabits
           }
@@ -1193,10 +1193,9 @@ StringAutomaton_ptr StringAutomaton::suffixesFromTo(int start, int end) {
   suffixes_auto = new StringAutomaton(dfaMinimize(result_dfa), number_of_variables);
   dfaFree(result_dfa); result_dfa = nullptr;
 
-  while (number_of_extra_bits_needed > 0) {
+  for ( int i = 0; i < number_of_extra_bits_needed; ++i) {
     suffixes_auto->project((unsigned)(suffixes_auto->num_of_variables - 1));
     suffixes_auto->minimize();
-    number_of_extra_bits_needed--;
   }
 
   DVLOG(VLOG_LEVEL) << suffixes_auto->id << " = [" << this->id << "]->suffixes(" << start << ", " << end << ")";
@@ -1259,17 +1258,15 @@ StringAutomaton_ptr StringAutomaton::prefixesUntilIndex(int index){
 }
 
 StringAutomaton_ptr StringAutomaton::prefixesAtIndex(int index){
-  StringAutomaton_ptr prefixes_auto = nullptr;
   StringAutomaton_ptr length_auto = nullptr;
-  StringAutomaton_ptr prefixesAt_auto = nullptr;
-  prefixes_auto = this->prefixes();
-  if (index == 0) {
+  auto prefixes_auto = this->prefixes();
+  if (index == 0 and this->hasEmptyString()) {
     // when index is 0, result should also accept empty string if subject automaton accepts empty string
     length_auto = StringAutomaton::makeLengthLessThanEqual(1);
   } else {
     length_auto = makeLengthEqual(index + 1);
   }
-  prefixesAt_auto = prefixes_auto->intersect(length_auto);
+  auto prefixesAt_auto = prefixes_auto->intersect(length_auto);
   delete prefixes_auto; prefixes_auto = nullptr;
   delete length_auto; length_auto = nullptr;
   DVLOG(VLOG_LEVEL) << prefixesAt_auto->id << " = [" << this->id << "]->prefixesAtIndex("<<index<<")";
@@ -1291,22 +1288,124 @@ StringAutomaton_ptr StringAutomaton::subStrings() {
   return sub_strings_auto;
 }
 
+/**
+ * Implemented based on Java semantics,
+ * Other language semantics should be considered by user
+ */
+//StringAutomaton_ptr StringAutomaton::charAt(int index) {
+//  auto suffixes_auto = this->suffixesAtIndex(index);
+//  auto char_at_auto = suffixes_auto->prefixesAtIndex(0);
+//  delete suffixes_auto;
+//
+//  // 1- programming languages never return empty char for index > 0
+//  // or never return empty char when string is not an empty string
+//  // 2- Returning empty string at charAt[0] causes problems. If charAt[0]
+//  // is an empty string in some language, it means string is empty and empty string check
+//  // should be done with other ways to do it.
+//  if (char_at_auto->hasEmptyString()) {
+//    // char at auto always has length one without any cycles, it is safe to
+//    // set initial state to non-accepting state
+//    char_at_auto->dfa->f[char_at_auto->dfa->s] = -1;
+//  }
+//  DVLOG(VLOG_LEVEL) << char_at_auto->id << " = [" << this->id << "]->charAt(" << index << ")";
+//  return char_at_auto;
+//}
+
 StringAutomaton_ptr StringAutomaton::charAt(int index) {
-  StringAutomaton_ptr char_at_auto = subString(index, index);
-  // 1- programming languages never return empty char for index > 0
-  // or never return empty char when string is not an empty string
-  // 2- Returning empty string at charAt[0] causues problems. If charAt[0]
-  // is an empty string, it means string is empty and empty string check
-  // should be done with othe ways to do it.
-  if (index >= 0 || (not this->isInitialStateAccepting())) {
-    StringAutomaton_ptr non_empty_strings = StringAutomaton::makeLengthGreaterThan(0);
-    StringAutomaton_ptr tmp_auto = char_at_auto;
-    char_at_auto = tmp_auto->intersect(non_empty_strings);
-    delete tmp_auto; tmp_auto = nullptr;
-    delete non_empty_strings; non_empty_strings = nullptr;
+
+  if (this->isEmptyLanguage()) {
+    auto charat_auto = StringAutomaton::makePhi();
+    DVLOG(VLOG_LEVEL) << charat_auto->id << " = [" << this->id << "]->charAt(" << index << ")";
+    return charat_auto;
   }
-  DVLOG(VLOG_LEVEL) << char_at_auto->id << " = [" << this->id << "]->charAt(" << index << ")";
-  return char_at_auto;
+
+  std::set<int> states_at_index = getStatesReachableBy(index);
+  unsigned max = states_at_index.size();
+  if (max == 0) {
+    auto charat_auto = StringAutomaton::makePhi();
+    DVLOG(VLOG_LEVEL) << charat_auto->id << " = [" << this->id << "]->charAt(" << index << ")";
+    return charat_auto;
+  }
+
+  // if number of variables are too large for mona, implement an algorithm that find suffixes by finding
+  // sub suffixes and union them
+  const int number_of_variables = this->num_of_variables + std::ceil(std::log2(max)), // number of variables required
+          sink_state = this->getSinkState();
+  int* indices = getIndices(number_of_variables);
+
+  unsigned extra_bits_value = 0;
+
+  const int number_of_extra_bits_needed = number_of_variables - this->num_of_variables;
+
+  std::vector<char>* current_exception = nullptr;
+  std::set<std::vector<char>*> exceptions;
+
+  paths state_paths = nullptr, pp = nullptr;
+  trace_descr tp = nullptr;
+  for (int s : states_at_index) {
+    state_paths = pp = make_paths(this->dfa->bddm, this->dfa->q[s]);
+    while (pp) {
+      if (pp->to != (unsigned)sink_state) {
+        current_exception = new std::vector<char>();
+        for (int j = 0; j < this->num_of_variables; j++) {
+          for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
+          if (tp) {
+            if (tp->value) {
+              current_exception->push_back('1');
+            } else {
+              current_exception->push_back('0');
+            }
+          } else {
+            current_exception->push_back('X');
+          }
+        }
+
+        auto extra_bit_binary_format = getBinaryFormat(extra_bits_value, number_of_extra_bits_needed);
+        for (int i = 0; i < number_of_extra_bits_needed; i++) {
+          current_exception->push_back(extra_bit_binary_format[i]); // collected transition
+        }
+        current_exception->push_back('\0');
+        exceptions.insert(current_exception);
+        current_exception = nullptr;
+      }
+      tp = nullptr;
+      pp = pp->next;
+    }
+    ++extra_bits_value;
+    kill_paths(state_paths);
+    state_paths = pp = nullptr;
+  }
+
+  char statuses[3] = {'-', '+', '-'};
+  dfaSetup(3, number_of_variables, indices);
+  // 0 -> 1
+  dfaAllocExceptions(exceptions.size());
+  for (auto it = exceptions.begin(); it != exceptions.end();) {
+    auto ex = *it;
+    dfaStoreException(1, &(*ex->begin()));
+    it = exceptions.erase(it);
+    delete ex;
+  }
+  dfaStoreState(2); // 0 -> 2
+
+  dfaAllocExceptions(0);
+  dfaStoreState(2); // 1 -> 2
+
+  dfaAllocExceptions(0);
+  dfaStoreState(2); // 2 -> 2
+
+  DFA_ptr result_dfa = dfaBuild(statuses);
+  delete[] indices;
+  auto charat_auto = new StringAutomaton(dfaMinimize(result_dfa), number_of_variables);
+  dfaFree(result_dfa); result_dfa = nullptr;
+
+  for ( int i = 0; i < number_of_extra_bits_needed; ++i) {
+    charat_auto->project((unsigned)(charat_auto->num_of_variables - 1));
+    charat_auto->minimize();
+  }
+
+  DVLOG(VLOG_LEVEL) << charat_auto->id << " = [" << this->id << "]->charAt(" << index << ")";
+  return charat_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::subString(int start){
@@ -1317,15 +1416,38 @@ StringAutomaton_ptr StringAutomaton::subString(int start){
 }
 
 /**
- * TODO subString should return empty when start == end, start should be inclusive, end should be exclusive
+ * subString returns empty when start == end, start is inclusive, end is exclusive
  */
-StringAutomaton_ptr StringAutomaton::subString(int start, int end){
-  StringAutomaton_ptr substring_auto = nullptr, suffixes_auto = nullptr;
-  suffixes_auto = this->suffixesAtIndex(start);
-  substring_auto = suffixes_auto->prefixesAtIndex(end - start);
+StringAutomaton_ptr StringAutomaton::subString(const int start, const int end){
+  if (start == end) {
+    auto substring_auto = StringAutomaton::makeEmptyString();
+    DVLOG(VLOG_LEVEL) << substring_auto->id << " = [" << this->id << "]->subString(" << start << "," << end << ")";
+    return substring_auto;
+  }
+
+  int adjusted_end = end;
+  if (start < end) {
+    --adjusted_end;
+  }
+
+  auto suffixes_auto = this->suffixesAtIndex(start);
+  auto substring_auto = suffixes_auto->prefixesAtIndex(adjusted_end - start);
   delete suffixes_auto;
   DVLOG(VLOG_LEVEL) << substring_auto->id << " = [" << this->id << "]->subString(" << start << "," << end << ")";
   return substring_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::subString(int start, IntAutomaton_ptr end_auto) {
+  auto valid_indexes = IntAutomaton::makeIntGreaterThan(start);
+  auto valid_end_indexes = end_auto->intersect(valid_indexes);
+  delete valid_indexes;
+  if (valid_end_indexes->isEmptyLanguage()) {
+    return StringAutomaton::makePhi();
+  } else if (valid_end_indexes->isAcceptingSingleInt()) {
+    return subString(start, valid_end_indexes->getAnAcceptingInt());
+  }
+  LOG (FATAL) << "Fully implement substring with symbolic ints";
+  return nullptr;
 }
 
 /**
@@ -2143,7 +2265,15 @@ StringAutomaton_ptr StringAutomaton::preConcatLeft(StringAutomaton_ptr right_aut
     result_dfa = dfa_pre_concat(this->dfa, right_auto->dfa, 1, num_of_variables, variable_indices);
   }
 
+  // BUG IN LIBSTRANGER WE SHOULD NOT HAVE DONT CARE STATES
+  for (int s = 0; s < result_dfa->ns; ++s) {
+    if (result_dfa->f[s] != 1) {
+      result_dfa->f[s] = -1;
+    }
+  }
+
   result_auto = new StringAutomaton(result_dfa, num_of_variables);
+  result_auto->minimize(); // IF WE REMOVE DONT CARES BASED ON ABOVE CHANGE
 
   DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->preLeftConcat(" << right_auto->id << ")";
 
@@ -2171,7 +2301,15 @@ StringAutomaton_ptr StringAutomaton::preConcatRight(StringAutomaton_ptr left_aut
     result_dfa = dfa_pre_concat(this->dfa, left_auto->dfa, 2, num_of_variables, variable_indices);
   }
 
+  // BUG IN LIBSTRANGER WE SHOULD NOT HAVE DONT CARE STATES
+  for (int s = 0; s < result_dfa->ns; ++s) {
+    if (result_dfa->f[s] != 1) {
+      result_dfa->f[s] = -1;
+    }
+  }
+
   result_auto = new StringAutomaton(result_dfa, num_of_variables);
+  result_auto->minimize(); // IF WE REMOVE DONT CARES BASED ON ABOVE CHANGE
 
   DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->preConcatRight(" << left_auto->id << ")";
 
@@ -2253,7 +2391,7 @@ std::string StringAutomaton::getAnAcceptingString() {
 StringAutomaton_ptr StringAutomaton::dfaSharpStringWithExtraBit(int num_of_variables, int* variable_indices) {
   DFA_ptr sharp_string_dfa = nullptr;
   StringAutomaton_ptr sharp_string_extra_bit = nullptr;
-  std::array<char, 2> statuses { '-', '+' };
+  char statuses[2] { '-', '+' };
   std::vector<char> reserved_1 = Automaton::getReservedWord('1', num_of_variables, true);
   char* sharp1 = &*reserved_1.begin();
   int *tmp_variable_indices = getIndices(num_of_variables, 1);
@@ -2266,7 +2404,7 @@ StringAutomaton_ptr StringAutomaton::dfaSharpStringWithExtraBit(int num_of_varia
   dfaAllocExceptions(0);
   dfaStoreState(1);
 
-  sharp_string_dfa = dfaBuild(&*statuses.begin());
+  sharp_string_dfa = dfaBuild(statuses);
   sharp_string_extra_bit = new StringAutomaton(sharp_string_dfa, num_of_variables + 1);
 
   DVLOG(VLOG_LEVEL) << sharp_string_extra_bit->id << " = dfaSharpStringWithExtraBit()";

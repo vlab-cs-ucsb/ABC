@@ -586,7 +586,9 @@ void ConstraintSolver::visitNotContains(NotContains_ptr not_contains_term) {
           param_subject = getTermValue(not_contains_term->subject_term),
           param_search = getTermValue(not_contains_term->search_term);
 
-  if (param_search->isSingleValue()) {
+  if (not (param_subject->isSatisfiable() and param_search->isSatisfiable())) {
+    result = new Value(false);
+  } else if (param_search->isSingleValue()) {
     Theory::StringAutomaton_ptr contains_auto = param_subject->getStringAutomaton()->contains(param_search->getStringAutomaton());
     result = new Value(param_subject->getStringAutomaton()->difference(contains_auto));
     delete contains_auto; contains_auto = nullptr;
@@ -605,7 +607,6 @@ void ConstraintSolver::visitNotContains(NotContains_ptr not_contains_term) {
     // there can be a more precise calculation instead of just cloning the subject
     result = param_subject->clone();
   }
-
   setTermValue(not_contains_term, result);
 }
 
@@ -776,8 +777,12 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
       if (Value::Type::INT_AUTOMATON == param_end_index->getType()) {
         if (param_end_index->getIntAutomaton()->isEmptyLanguage()) {
           result = new Value(StringAutomaton::makePhi());
+        } else if (Value::Type::INT_CONSTANT == param_start_index->getType()) {
+          result = new Value(param_subject->getStringAutomaton()->subString(
+                  param_start_index->getIntConstant(),
+                  param_end_index->getIntAutomaton()));
         } else {
-          LOG(FATAL) << "Extend substring operation";
+          LOG (FATAL) << "Fully implement substring for symbolic ints";
         }
       } else {
 
@@ -836,6 +841,7 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
       break;
   }
 
+//  result->getStringAutomaton()->inspectAuto();
   setTermValue(sub_string_term, result);
 }
 
