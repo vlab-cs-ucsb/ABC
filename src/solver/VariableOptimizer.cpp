@@ -74,8 +74,13 @@ void VariableOptimizer::end() {
     for (auto& rule_map : get_substitution_table()) {
       DVLOG(VLOG_LEVEL) << "Substitution map for scope: " << rule_map.first;
       for (auto& rule : rule_map.second) {
-        DVLOG(VLOG_LEVEL) << "\t" << *rule.first << " (" << rule.first << ") -> " << *rule.second << " ("
+        if (QualIdentifier_ptr qid = dynamic_cast<QualIdentifier_ptr>(rule.second)) {
+          DVLOG(VLOG_LEVEL) << "\t" << *rule.first << " (" << rule.first << ") -> " << qid->getVarName() << " ("
+                                   << qid << " )";
+        } else {
+          DVLOG(VLOG_LEVEL) << "\t" << *rule.first << " (" << rule.first << ") -> " << *rule.second << " ("
                                    << rule.second << " )";
+        }
       }
     }
   }
@@ -175,28 +180,47 @@ void VariableOptimizer::add_variable_substitution_rule(Variable_ptr subject_var,
     return;
   }
 
-  /* 1 - Update the target if the target variable is already a subject in the substitution map (rule transition) */
-  for (auto& substitution_rule : get_substitution_map()) {
-    if (target_var == substitution_rule.first) {
-      target_term = substitution_rule.second;
-      break;
+  bool iterate_substitution = true;
+  while (iterate_substitution) {
+    iterate_substitution = false;
+    /* 1 - Update the target if the target variable is already a subject in the substitution map (rule transition) */
+    auto substitution_rules = get_substitution_map();
+    auto it = substitution_rules.find(target_var);
+    if (it != substitution_rules.end()) {
+      target_term = it->second;
     }
-  }
 
-  /* 2 - Insert substitution rule */
-  if (not add_substitution_rule(subject_var, target_term->clone())) {
-    LOG(FATAL)<< "A variable cannot have multiple substitution rule: " << *subject_var;
-  }
+    /* 2 - Insert substitution rule */
+    auto target_term_clone = target_term->clone();
+    if (not add_substitution_rule(subject_var, target_term_clone)) {
+      delete target_term_clone; target_term_clone = nullptr;
+      // 2a - if there is a duplicated rule, a -> b, a -> c, add a rule for for c -> b instead of a -> c
+      if (QualIdentifier_ptr qid = dynamic_cast<QualIdentifier_ptr>(target_term)) {
+        auto current_target = substitution_rules[subject_var];
+        auto new_subject = symbol_table->getVariable(qid->getVarName());
+        if (QualIdentifier_ptr current_target_qid = dynamic_cast<QualIdentifier_ptr>(current_target)) {
+          subject_var = new_subject;
+          target_var = symbol_table->getVariable(current_target_qid->getVarName());
+          target_term = current_target;
+          iterate_substitution = true;
+          DVLOG(VLOG_LEVEL) << "Substitution rule iterates one more time with new parameters to handle transitive substitutions...";
+          continue;
+        }
+      }
+      LOG(FATAL)<< "A variable cannot have multiple substitution rule: " << *subject_var << " -> " << *target_var << " (updated to: " << *target_term << ")";
+    }
 
-  /* 3 - Update a rule with the target if the subject variable is already a target */
-  for (auto& substitution_rule : get_substitution_map()) {
-    if (Term::Type::QUALIDENTIFIER == substitution_rule.second->getType()) {
-      if (subject_var == symbol_table->getVariable(substitution_rule.second)) {
-        Term_ptr tmp_term = substitution_rule.second;
-        substitution_rule.second = target_term->clone();
-        delete tmp_term;
+    /* 3 - Update a rule with the target if the subject variable is already a target */
+    for (auto& substitution_rule : get_substitution_map()) {
+      if (Term::Type::QUALIDENTIFIER == substitution_rule.second->getType()) {
+        if (subject_var == symbol_table->getVariable(substitution_rule.second)) {
+          Term_ptr tmp_term = substitution_rule.second;
+          substitution_rule.second = target_term->clone();
+          delete tmp_term;
+        }
       }
     }
+
   }
 }
 

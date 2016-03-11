@@ -76,11 +76,13 @@ void SyntacticProcessor::convertAssertsToAnd() {
 
 /**
  * Applies De Morgan's Law and push negations down
+ * TODO pull not processing in SyntacticOptimizer into here
  */
 void SyntacticProcessor::visitNot(Not_ptr not_term) {
+  Term_ptr* reference_term = top();
+
   if (And_ptr and_term = dynamic_cast<And_ptr>(not_term->term)) {
-    DVLOG(VLOG_LEVEL) << "push negation '(not (" << *not_term->term << " ... ))'";
-    Term_ptr* reference_term = top();
+    DVLOG(VLOG_LEVEL) << "pushNegations '(not (" << *not_term->term << " ... ))'";
 
     for (auto& sub_term : *and_term->term_list) {
       Not_ptr sub_not_term = new Not(sub_term);
@@ -95,7 +97,6 @@ void SyntacticProcessor::visitNot(Not_ptr not_term) {
     visitOr(or_term);
   } else if (Or_ptr or_term = dynamic_cast<Or_ptr>(not_term->term)) {
     DVLOG(VLOG_LEVEL) << "pushNegations '(not (" << *not_term->term << " ... ))'";
-    Term_ptr* reference_term = top();
 
     for (auto& sub_term : *or_term->term_list) {
       Not_ptr sub_not_term = new Not(sub_term);
@@ -109,13 +110,136 @@ void SyntacticProcessor::visitNot(Not_ptr not_term) {
     *reference_term = and_term;
     visitAnd(and_term);
   } else if (Not_ptr sub_not_term = dynamic_cast<Not_ptr>(not_term->term)) {
-    DVLOG(VLOG_LEVEL) << "pushNegations '(not (" << *not_term->term << " ... ))'";
-    Term_ptr* reference_term = top();
+    DVLOG(VLOG_LEVEL) << "Transforming operation: (not (not a) to a";
 
     *reference_term = sub_not_term->term;
     sub_not_term->term = nullptr;
     delete not_term;
     visit(*reference_term);
+  } else if (Eq_ptr eq_term = dynamic_cast<Eq_ptr>(not_term->term)) {
+    DVLOG(VLOG_LEVEL) << "Transforming operation: (not (= ...)) to (!= ...)";
+
+    NotEq_ptr not_eq_term = new NotEq(eq_term->left_term, eq_term->right_term);
+    eq_term->left_term = nullptr; eq_term->right_term = nullptr;
+    delete not_term;
+
+    *reference_term = not_eq_term;
+    visitNotEq(not_eq_term);
+  } else if (NotEq_ptr not_eq_term = dynamic_cast<NotEq_ptr>(not_term->term)) {
+    DVLOG(VLOG_LEVEL) << "Transforming operation: (not (!= ...)) to (= ...)";
+
+    Eq_ptr eq_term = new Eq(not_eq_term->left_term, not_eq_term->right_term);
+    not_eq_term->left_term = nullptr; not_eq_term->right_term = nullptr;
+    delete not_term;
+
+    *reference_term = eq_term;
+    visitEq(eq_term);
+  } else if (Gt_ptr gt_term = dynamic_cast<Gt_ptr>(not_term->term)) {
+    DVLOG(VLOG_LEVEL) << "Transforming operation: (not (> ...)) to (<= ...)";
+
+    Le_ptr le_term = new Le(gt_term->left_term, gt_term->right_term);
+    gt_term->left_term = nullptr; gt_term->right_term = nullptr;
+    delete not_term;
+
+    *reference_term = le_term;
+    visitLe(le_term);
+  } else if (Ge_ptr ge_term = dynamic_cast<Ge_ptr>(not_term->term)) {
+    DVLOG(VLOG_LEVEL) << "Transforming operation: (not (>= ...)) to (< ...)";
+
+    Lt_ptr lt_term = new Lt(ge_term->left_term, ge_term->right_term);
+    ge_term->left_term = nullptr; ge_term->right_term = nullptr;
+    delete not_term;
+
+    *reference_term = lt_term;
+    visitLt(lt_term);
+  } else if (Lt_ptr lt_term = dynamic_cast<Lt_ptr>(not_term->term)) {
+    DVLOG(VLOG_LEVEL) << "Transforming operation: (not (< ...)) to (>= ...)";
+    Ge_ptr ge_term = new Ge(lt_term->left_term, lt_term->right_term);
+    lt_term->left_term = nullptr; lt_term->right_term = nullptr;
+    delete not_term;
+
+    *reference_term = ge_term;
+    visitGe(ge_term);
+  } else if (Le_ptr le_term = dynamic_cast<Le_ptr>(not_term->term)) {
+    DVLOG(VLOG_LEVEL) << "Transforming operation: (not (<= ...)) to (> ...)";
+    Gt_ptr gt_term = new Gt(le_term->left_term, le_term->right_term);
+    le_term->left_term = nullptr; le_term->right_term = nullptr;
+    delete not_term;
+
+    *reference_term = gt_term;
+    visitGt(gt_term);
+  } else if (In_ptr in_term = dynamic_cast<In_ptr>(not_term->term)) {
+    DVLOG(VLOG_LEVEL) << "Transforming operation: (not (in ...)) to (notIn ...)";
+
+    NotIn_ptr not_in_term = new NotIn(in_term->left_term, in_term->right_term);
+    in_term->left_term = nullptr; in_term->right_term = nullptr;
+    delete not_term;
+
+    *reference_term = not_in_term;
+    visitNotIn(not_in_term);
+  } else if (NotIn_ptr not_in_term = dynamic_cast<NotIn_ptr>(not_term->term)) {
+    DVLOG(VLOG_LEVEL) << "Transforming operation: (not (notIn ...)) to (in ...)";
+
+    In_ptr in_term = new In(not_in_term->left_term, not_in_term->right_term);
+    not_in_term->left_term = nullptr; not_in_term->right_term = nullptr;
+    delete not_term;
+
+    *reference_term = in_term;
+    visitIn(in_term);
+  } else if (Contains_ptr contains_term = dynamic_cast<Contains_ptr>(not_term->term)) {
+    DVLOG(VLOG_LEVEL) << "Transforming operation: (not (contains ...)) to (notContains ...)";
+
+    NotContains_ptr not_contains_term = new NotContains(contains_term->subject_term, contains_term->search_term);
+    contains_term->subject_term = nullptr; contains_term->search_term = nullptr;
+    delete not_term;
+
+    *reference_term = not_contains_term;
+    visitNotContains(not_contains_term);
+  } else if (NotContains_ptr not_contains_term = dynamic_cast<NotContains_ptr>(not_term->term)) {
+    DVLOG(VLOG_LEVEL) << "Transforming operation: (not (notContains ...)) to (contains ...)";
+
+    Contains_ptr contains_term = new Contains(not_contains_term->subject_term, not_contains_term->search_term);
+    not_contains_term->subject_term = nullptr; not_contains_term->search_term = nullptr;
+    delete not_term;
+
+    *reference_term = contains_term;
+    visitContains(contains_term);
+  } else if (Begins_ptr begins_term = dynamic_cast<Begins_ptr>(not_term->term)) {
+    DVLOG(VLOG_LEVEL) << "Transforming operation: (not (begins ...)) to (notBegins ...)";
+
+    NotBegins_ptr not_begins_term = new NotBegins(begins_term->subject_term, begins_term->search_term);
+    begins_term->subject_term = nullptr; begins_term->search_term = nullptr;
+    delete not_term;
+
+    *reference_term = not_begins_term;
+    visitNotBegins(not_begins_term);
+  } else if (NotBegins_ptr not_begins_term = dynamic_cast<NotBegins_ptr>(not_term->term)) {
+    DVLOG(VLOG_LEVEL) << "Transforming operation: (not (notBegins ...)) to (begins ...)";
+
+    Begins_ptr begins_term = new Begins(not_begins_term->subject_term, not_begins_term->search_term);
+    not_begins_term->subject_term = nullptr; not_begins_term->search_term = nullptr;
+    delete not_term;
+
+    *reference_term = begins_term;
+    visitBegins(begins_term);
+  } else if (Ends_ptr ends_term = dynamic_cast<Ends_ptr>(not_term->term)) {
+    DVLOG(VLOG_LEVEL) << "Transforming operation: (not (ends ...)) to (notEnds ...)";
+
+    NotEnds_ptr not_ends_term = new NotEnds(ends_term->subject_term, ends_term->search_term);
+    ends_term->subject_term = nullptr; ends_term->search_term = nullptr;
+    delete not_term;
+
+    *reference_term = not_ends_term;
+    visitNotEnds(not_ends_term);
+  } else if (NotEnds_ptr not_ends_term = dynamic_cast<NotEnds_ptr>(not_term->term)) {
+    DVLOG(VLOG_LEVEL) << "Transforming operation: (not (notEnds ...)) to (ends ...)";
+
+    Ends_ptr ends_term = new Ends(not_ends_term->subject_term, not_ends_term->search_term);
+    not_ends_term->subject_term = nullptr; not_ends_term->search_term = nullptr;
+    delete not_term;
+
+    *reference_term = ends_term;
+    visitEnds(ends_term);
   } else {
     visit(not_term->term);
   }

@@ -577,6 +577,14 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
     DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *eq_term << "'";
     if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
       add_callback_to_replace_with_bool(eq_term, "true");
+    } else {
+      DVLOG(VLOG_LEVEL) << "Applying notIn transformation for length: '" << *eq_term << "'";
+      callback = [eq_term](Term_ptr& term) mutable {
+        term = new In(eq_term->left_term, eq_term->right_term);
+        eq_term->left_term = nullptr;
+        eq_term->right_term = nullptr;
+        delete eq_term;
+      };
     }
   } else if (check_and_process_for_contains_transformation(eq_term->left_term, eq_term->right_term, -1) or
           check_and_process_for_contains_transformation(eq_term->right_term, eq_term->left_term, -1)) {
@@ -600,6 +608,14 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
     DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *not_eq_term << "'";
     if (Ast2Dot::isEquivalent(not_eq_term->left_term, not_eq_term->right_term)) {
       add_callback_to_replace_with_bool(not_eq_term, "false");
+    } else {
+      DVLOG(VLOG_LEVEL) << "Applying notIn transformation for length: '" << *not_eq_term << "'";
+      callback = [not_eq_term](Term_ptr& term) mutable {
+        term = new NotIn(not_eq_term->left_term, not_eq_term->right_term);
+        not_eq_term->left_term = nullptr;
+        not_eq_term->right_term = nullptr;
+        delete not_eq_term;
+      };
     }
   } else if (check_and_process_for_contains_transformation(not_eq_term->left_term, not_eq_term->right_term, -1) or
           check_and_process_for_contains_transformation(not_eq_term->right_term, not_eq_term->left_term, -1)) {
