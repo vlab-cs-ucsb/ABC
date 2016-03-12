@@ -574,7 +574,6 @@ void ConstraintSolver::visitContains(Contains_ptr contains_term) {
           param_search = getTermValue(contains_term->search_term);
 
   result = new Value(param_subject->getStringAutomaton()->contains(param_search->getStringAutomaton()));
-
   setTermValue(contains_term, result);
 }
 
@@ -607,6 +606,7 @@ void ConstraintSolver::visitNotContains(NotContains_ptr not_contains_term) {
     // there can be a more precise calculation instead of just cloning the subject
     result = param_subject->clone();
   }
+
   setTermValue(not_contains_term, result);
 }
 
@@ -1142,11 +1142,10 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
             has_minus_one = string_term_result->getIntAutomaton()->hasNegative1();
             number_of_variables_for_int_auto = string_term_result->getIntAutomaton()->getNumberOfVariables();
   //          result->getBinaryIntAutomaton()->inspectAuto();
-
             // 1- update arithmetic automaton
             string_term_unary_auto = string_term_result->getIntAutomaton()->toUnaryAutomaton();
 
-  //          string_term_unary_auto->inspectAuto(false);
+//            string_term_unary_auto->inspectAuto(false);
 
             string_term_binary_auto = string_term_unary_auto->
                     toBinaryIntAutomaton(string_term_var_name,
@@ -1162,7 +1161,7 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
           } else {
             LOG(FATAL) << "unexpected type";
           }
-//          string_term_binary_auto->inspectAuto();
+
           updated_arith_auto = result->getBinaryIntAutomaton()->intersect(string_term_binary_auto);
           delete string_term_binary_auto; string_term_binary_auto = nullptr;
           delete result; result = nullptr;
@@ -1183,7 +1182,6 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
             BinaryIntAutomaton_ptr positive_values_auto = string_term_binary_auto->getPositiveValuesFor(string_term_var_name);
             delete string_term_binary_auto;
             string_term_binary_auto = positive_values_auto;
-            delete positive_values_auto; positive_values_auto = nullptr;
           }
 
           string_term_unary_auto = string_term_binary_auto->toUnaryAutomaton();

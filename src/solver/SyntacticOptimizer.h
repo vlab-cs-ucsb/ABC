@@ -15,8 +15,10 @@
 
 #include <glog/logging.h>
 #include "smt/ast.h"
+#include "options/Solver.h"
 #include "Ast2Dot.h"
 #include "SymbolTable.h"
+#include "optimization/CharAtOptimization.h"
 
 namespace Vlab {
 namespace Solver {

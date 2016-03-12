@@ -7,6 +7,15 @@
 
 #include "SyntacticOptimizer.h"
 
+#include <cstdbool>
+#include <iterator>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "../smt/typedefs.h"
+#include "../smt/Visitor.h"
+
 namespace Vlab {
 namespace Solver {
 
@@ -804,6 +813,19 @@ void SyntacticOptimizer::visitNotIn(NotIn_ptr not_in_term) {
 
 void SyntacticOptimizer::visitLen(Len_ptr len_term) {
   visit_and_callback(len_term->term);
+
+  if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(len_term->term)) {
+    if (Primitive::Type::STRING == term_constant->getValueType()) {
+      std::string value = term_constant->getValue();
+      int len = value.length();
+      std::string str_len = std::to_string(len);
+      DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << len << "'";
+      callback = [this, len_term, str_len](Term_ptr& term) mutable {
+        term = generate_term_constant(str_len, Primitive::Type::NUMERAL);
+        delete len_term;
+      };
+    }
+  }
 }
 
 void SyntacticOptimizer::visitContains(Contains_ptr contains_term) {
@@ -912,6 +934,22 @@ void SyntacticOptimizer::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
 void SyntacticOptimizer::visitCharAt(CharAt_ptr char_at_term) {
   visit_and_callback(char_at_term->subject_term);
   visit_and_callback(char_at_term->index_term);
+
+  if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(char_at_term->index_term)) {
+    if (Primitive::Type::NUMERAL == term_constant->getValueType()) {
+      int value = std::stoi(term_constant->getValue());
+      Optimization::CharAtOptimization char_at_optimizer (value);
+      char_at_optimizer.visit(char_at_term->subject_term);
+      if (char_at_optimizer.is_optimizable()) {
+        std::string value = "" + char_at_optimizer.getValue();
+        DVLOG(VLOG_LEVEL) << "Applying charAt transformation: '" << value << "'";
+        callback = [this, char_at_term, value](Term_ptr& term) mutable {
+          term = generate_term_constant(value, Primitive::Type::STRING);
+          delete char_at_term;
+        };
+      }
+    }
+  }
 }
 
 void SyntacticOptimizer::visitSubString(SubString_ptr sub_string_term) {
@@ -919,6 +957,41 @@ void SyntacticOptimizer::visitSubString(SubString_ptr sub_string_term) {
   visit_and_callback(sub_string_term->start_index_term);
   if (sub_string_term->end_index_term) {
     visit_and_callback(sub_string_term->end_index_term);
+  }
+
+  bool sub_string_optimized = false;
+  if (TermConstant_ptr subject_term = dynamic_cast<TermConstant_ptr>(sub_string_term->subject_term)) {
+    if (Primitive::Type::STRING == subject_term->getValueType()) {
+      if (TermConstant_ptr start_index_term = dynamic_cast<TermConstant_ptr>(sub_string_term->start_index_term)) {
+        int start_index = std::stoi(start_index_term->getValue());
+        if (sub_string_term->end_index_term) {
+          if (TermConstant_ptr end_index_term = dynamic_cast<TermConstant_ptr>(sub_string_term->end_index_term)) {
+            int end_index = std::stoi(end_index_term->getValue());
+            std::string subject_str = subject_term->getValue();
+            std::string result = subject_str.substr(start_index, end_index-start_index);
+            DVLOG(VLOG_LEVEL) << "Applying subString transformation: '" << result << "'";
+            callback = [this, sub_string_term, result](Term_ptr& term) mutable {
+              term = generate_term_constant(result, Primitive::Type::STRING);
+              delete sub_string_term;
+            };
+            sub_string_optimized = true;
+          }
+        } else {
+          std::string subject_str = subject_term->getValue();
+          std::string result = subject_str.substr(start_index);
+          DVLOG(VLOG_LEVEL) << "Applying subString transformation: '" << result << "'";
+          callback = [this, sub_string_term, result](Term_ptr& term) mutable {
+            term = generate_term_constant(result, Primitive::Type::STRING);
+            delete sub_string_term;
+          };
+          sub_string_optimized = true;
+        }
+      }
+    }
+  }
+
+  if (sub_string_optimized) {
+    return;
   }
 
   SubString::Mode mode;
@@ -1137,6 +1210,11 @@ void SyntacticOptimizer::append_constant(TermConstant_ptr left_constant, TermCon
 
 bool SyntacticOptimizer::check_and_process_len_transformation(Term_ptr operation, Term_ptr& left_term,
         Term_ptr& right_term) {
+  // It is better to solve arithmetic constraints with LIA for precision
+  if (Option::Solver::LIA_ENGINE_ENABLED) {
+    return false;
+  }
+
   return __check_and_process_len_transformation(operation->getType(), left_term, right_term)
           || __check_and_process_len_transformation(syntactic_reverse_relation(operation->getType()), right_term, left_term);
 }
