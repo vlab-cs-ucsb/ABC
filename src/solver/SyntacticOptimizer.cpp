@@ -1020,10 +1020,32 @@ void SyntacticOptimizer::visitTrim(Trim_ptr trim_term) {
 
 void SyntacticOptimizer::visitToString(ToString_ptr to_string_term) {
   visit_and_callback(to_string_term->subject_term);
+
+  if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(to_string_term->subject_term)) {
+    if (Primitive::Type::NUMERAL == term_constant->getValueType()) {
+      std::string str_value = term_constant->getValue();
+      DVLOG(VLOG_LEVEL) << "Applying toString transformation: '" << str_value<< "'";
+      callback = [this, to_string_term, str_value](Term_ptr& term) mutable {
+        term = generate_term_constant(str_value, Primitive::Type::STRING);
+        delete to_string_term;
+      };
+    }
+  }
 }
 
 void SyntacticOptimizer::visitToInt(ToInt_ptr to_int_term) {
   visit_and_callback(to_int_term->subject_term);
+
+  if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(to_int_term->subject_term)) {
+    if (Primitive::Type::STRING == term_constant->getValueType()) {
+      std::string str_value = term_constant->getValue();
+      DVLOG(VLOG_LEVEL) << "Applying toInt transformation: '" << str_value << "'";
+      callback = [this, to_int_term, str_value](Term_ptr& term) mutable {
+        term = generate_term_constant(str_value, Primitive::Type::NUMERAL);
+        delete to_int_term;
+      };
+    }
+  }
 }
 
 void SyntacticOptimizer::visitReplace(Replace_ptr replace_term) {

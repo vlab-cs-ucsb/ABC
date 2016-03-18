@@ -111,87 +111,87 @@ void Ast2Dot::visitIdentifier(Identifier_ptr identifier) {
 }
 
 void Ast2Dot::visitExclamation(Exclamation_ptr exclamation_term) {
-  visitTerm(exclamation_term);
+  draw("&excl;", exclamation_term);
 }
 
 void Ast2Dot::visitExists(Exists_ptr exists_term) {
-  visitTerm(exists_term);
+  draw("&exist;", exists_term);
 }
 
 void Ast2Dot::visitForAll(ForAll_ptr for_all_term) {
-  visitTerm(for_all_term);
+  draw("&forall;", for_all_term);
 }
 
 void Ast2Dot::visitLet(Let_ptr let_term) {
-  visitTerm(let_term);
+  draw("let", let_term);
 }
 
 void Ast2Dot::visitAnd(And_ptr and_term) {
-  visitTerm(and_term);
+  draw("&and;", and_term);
 }
 
 void Ast2Dot::visitOr(Or_ptr or_term) {
-  visitTerm(or_term);
+  draw("&or;", or_term);
 }
 
 void Ast2Dot::visitNot(Not_ptr not_term) {
-  visitTerm(not_term);
+  draw("&not;", not_term);
 }
 
 void Ast2Dot::visitUMinus(UMinus_ptr u_minus_term) {
-  visitTerm(u_minus_term);
+  draw("&minus;", u_minus_term);
 }
 
 void Ast2Dot::visitMinus(Minus_ptr minus_term) {
-  visitTerm(minus_term);
+  draw("&minus;", minus_term);
 }
 
 void Ast2Dot::visitPlus(Plus_ptr plus_term) {
-  visitTerm(plus_term);
+  draw("+", plus_term);
 }
 
 void Ast2Dot::visitTimes(Times_ptr times_term) {
-  visitTerm(times_term);
+  draw("&lowast;", times_term);
 }
 
 void Ast2Dot::visitEq(Eq_ptr eq_term) {
-  visitTerm(eq_term);
+  draw("=", eq_term);
 }
 
 void Ast2Dot::visitNotEq(NotEq_ptr not_eq_term) {
-  visitTerm(not_eq_term);
+  draw("&ne;", not_eq_term);
 }
 
 void Ast2Dot::visitGt(Gt_ptr gt_term) {
-  visitTerm(gt_term);
+  draw("&gt;", gt_term);
 }
 
 void Ast2Dot::visitGe(Ge_ptr ge_term) {
-  visitTerm(ge_term);
+  draw("&ge;", ge_term);
 }
 
 void Ast2Dot::visitLt(Lt_ptr lt_term) {
-  visitTerm(lt_term);
+  draw("&lt;", lt_term);
 }
 
 void Ast2Dot::visitLe(Le_ptr le_term) {
-  visitTerm(le_term);
+  draw("&le;", le_term);
 }
 
 void Ast2Dot::visitConcat(Concat_ptr concat_term) {
-  visitTerm(concat_term);
+  draw("concat", concat_term);
 }
 
 void Ast2Dot::visitIn(In_ptr in_term) {
-  visitTerm(in_term);
+  draw("&isin;", in_term);
 }
 
 void Ast2Dot::visitNotIn(NotIn_ptr not_in_term) {
-  visitTerm(not_in_term);
+  draw("&notin;", not_in_term);
 }
 
-void Ast2Dot::visitLen(Len_ptr len_term) {
-  visitTerm(len_term);
+void Ast2Dot::visitLen(Len_ptr not_in_term) {
+  draw("len", not_in_term);
 }
 
 void Ast2Dot::visitContains(Contains_ptr contains_term) {
