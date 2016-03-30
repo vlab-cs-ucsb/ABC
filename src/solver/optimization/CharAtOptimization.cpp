@@ -16,7 +16,7 @@ namespace Optimization {
 
 using namespace SMT;
 
-CharAtOptimization::CharAtOptimization(unsigned index) : _is_optimized {false}, _index {index} {
+CharAtOptimization::CharAtOptimization(unsigned index) : _is_optimized {false}, _is_index_updated {false}, _index {index} {
 }
 
 CharAtOptimization::~CharAtOptimization() {
@@ -92,9 +92,17 @@ void CharAtOptimization::visitLe(Le_ptr le_term) {
 }
 
 void CharAtOptimization::visitConcat(Concat_ptr concat_term) {
+  // we only need to check first term of concat,
+  // concat operation is optimized before we check charAt, all constant prefixes combined in first param if there is
   for (auto term :*concat_term->term_list) {
     visit(term);
     break;
+  }
+
+  if (_is_index_updated) { // modify concat list
+    TermList_ptr updated_list = new TermList(concat_term->term_list->begin() + 1, concat_term->term_list->end());
+    delete concat_term->term_list;
+    concat_term->term_list = updated_list;
   }
 }
 
@@ -154,7 +162,6 @@ void CharAtOptimization::visitToLower(ToLower_ptr to_lower_term) {
 }
 
 void CharAtOptimization::visitTrim(Trim_ptr trim_term) {
-  visit(trim_term->subject_term);
 }
 
 void CharAtOptimization::visitToString(ToString_ptr to_string_term) {
@@ -194,6 +201,11 @@ void CharAtOptimization::visitTermConstant(TermConstant_ptr term_constant) {
     if (str_value.length() > _index) {
       _value = str_value[_index];
       _is_optimized = true;
+    } else {
+      // when term constant appears as first parameter in concat
+      // if charAt index is larger than concat's first param, we can get rid of first param of concat
+      _index -= str_value.length();
+      _is_index_updated = true;
     }
   }
 }
@@ -235,8 +247,16 @@ bool CharAtOptimization::is_optimizable() {
   return _is_optimized;
 }
 
-std::string CharAtOptimization::getValue() {
+bool CharAtOptimization::is_index_updated() {
+  return _is_index_updated;
+}
+
+std::string CharAtOptimization::get_char_at_result() {
   return _value;
+}
+
+unsigned CharAtOptimization::get_index() {
+  return _index;
 }
 
 } /* namespace Optimization */

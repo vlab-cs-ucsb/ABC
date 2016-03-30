@@ -88,9 +88,12 @@ public:
   void visitVariable(SMT::Variable_ptr) override;
 
   bool is_optimizable();
-  std::string getValue();
+  bool is_index_updated();
+  std::string get_char_at_result();
+  unsigned get_index();
 protected:
   bool _is_optimized;
+  bool _is_index_updated;
   unsigned _index;
   std::string _value;
 

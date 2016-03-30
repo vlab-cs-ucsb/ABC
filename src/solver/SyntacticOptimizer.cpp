@@ -941,12 +941,19 @@ void SyntacticOptimizer::visitCharAt(CharAt_ptr char_at_term) {
       Optimization::CharAtOptimization char_at_optimizer (value);
       char_at_optimizer.visit(char_at_term->subject_term);
       if (char_at_optimizer.is_optimizable()) {
-        std::string value = "" + char_at_optimizer.getValue();
+        std::string value = "" + char_at_optimizer.get_char_at_result();
         DVLOG(VLOG_LEVEL) << "Applying charAt transformation: '" << value << "'";
         callback = [this, char_at_term, value](Term_ptr& term) mutable {
           term = generate_term_constant(value, Primitive::Type::STRING);
           delete char_at_term;
         };
+      } else if (char_at_optimizer.is_index_updated()) {
+        unsigned new_index = char_at_optimizer.get_index();
+        auto new_index_term = generate_term_constant(std::to_string(new_index), Primitive::Type::NUMERAL);
+        delete char_at_term->index_term;
+        char_at_term->index_term = new_index_term;
+        // there is a possible change in concat term, re-process subtree
+        visit_and_callback(char_at_term->subject_term);
       }
     }
   }
