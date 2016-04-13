@@ -147,6 +147,7 @@ Usage
   (More documentation on ABC input language and format will be provided, please see *__&lt;abc-source-folder&gt;/test/fixtures__* folder for examples)
   
 ####JAVA
+
   You have to compile *__ABC__* with your *__JAVA_HOME__* path is set to a valid java path. Once you set your *__JAVA_HOME__* path, you need to install/re-install *__ABC__* on your system. 
   
   You need to set Java VM argument __java.library.path__ to path where your shared libraries are install, or alternatively you can set __LD_LIBRARY_PATH__ environment variable to that path.
@@ -159,3 +160,14 @@ ABC Language Specification
 ==========================
 
 to be prepared...
+
+Contributing to ABC Source
+==========================
+
+####Workflow
+
+  1- Always start working on your own branch, do not directly work on master branch
+
+  2- Follow [rebase work flow whenever](https://www.atlassian.com/git/tutorials/merging-vs-rebasing) possible
+
+  3- If you are not sure how to merge/rebase with/onto master, create a fresh branch out of master and first try to merge/rebase using that branch.
