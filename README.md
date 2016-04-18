@@ -174,4 +174,4 @@ Contributing to ABC Source
 
 ####Coding Style
 
-  Please study and follow [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html).
+  Please follow [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html).
