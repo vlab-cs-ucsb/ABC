@@ -171,3 +171,7 @@ Contributing to ABC Source
   2- Follow [rebase work flow whenever](https://www.atlassian.com/git/tutorials/merging-vs-rebasing) possible
 
   3- If you are not sure how to merge/rebase with/onto master, create a fresh branch out of master and first try to merge/rebase using that branch.
+
+####Coding Style
+
+  Please study and follow [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html).
