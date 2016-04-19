@@ -22,6 +22,7 @@ void DependencyChecker::start(){
         DVLOG(VLOG_LEVEL) << "ERROR CONNECTING!";
      }
 	redisReply *reply;	
+	//Change for the new version of components!
 	for (auto& c: symbol_table->getComponents()){
 		DVLOG(VLOG_LEVEL) << "Checking component " << c->toString();
 		std::string st = c->toString();

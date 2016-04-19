@@ -65,7 +65,7 @@ void VariableCollector::visitOr(Or_ptr or_term) {
       visit(term);
       symbol_table->pop_scope();
     }
-    else{
+    else {
       visit(term);
     }
   }

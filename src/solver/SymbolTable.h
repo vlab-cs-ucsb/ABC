@@ -16,9 +16,11 @@
 #include <glog/logging.h>
 #include "smt/ast.h"
 #include "Value.h"
+#include "Component.h"
 
 namespace Vlab {
 namespace Solver {
+
 
 using VariableMap = std::map<std::string, SMT::Variable_ptr>;
 using VariableCounterMap = std::map<SMT::Variable_ptr, int>;
@@ -27,6 +29,9 @@ using VariableSubstitutionMap = std::map<SMT::Variable_ptr, SMT::Variable_ptr>;
 using VariableSubstitutionTable = std::map<SMT::Visitable_ptr, VariableSubstitutionMap>;
 using VariableValueMap = std::map<SMT::Variable_ptr, Value_ptr>;
 using VariableValueTable = std::map<SMT::Visitable_ptr, VariableValueMap>;
+using ComponentMap = std::map<SMT::Visitable_ptr, std::vector<Component*>>;
+
+
 
 class SymbolTable {
 public:
@@ -63,6 +68,23 @@ public:
   int get_total_count(SMT::Variable_ptr);
   void reset_count();
 
+  /*
+  Functions to store and update a list of independent components. 
+  */
+ 
+
+  void updateComponents(Component*, SMT::Visitable_ptr);
+  std::vector<Component*> getComponents(SMT::Visitable_ptr);
+  ComponentMap getComponentMap();
+
+
+  int getNComponent(SMT::Visitable_ptr);
+
+  /*Added function to keep track of the amount of reuse 
+  int getReuse();
+  void incrementReuse();
+  */
+  
   bool add_variable_substitution_rule(SMT::Variable_ptr, SMT::Variable_ptr);
   bool remove_variable_substitution_rule(SMT::Variable_ptr);
   bool is_variable_substituted(SMT::Visitable_ptr, SMT::Variable_ptr);
@@ -84,7 +106,6 @@ public:
 private:
   bool global_assertion_result;
   int bound;
-
   /**
    * Name to variable map
    */
@@ -119,8 +140,13 @@ private:
    * Values of each variable for each scope
    */
   VariableValueTable variable_value_table;
+  /**
 
+  */
+  ComponentMap components;
   static const int VLOG_LEVEL;
+  //int reuse; 
+
 
 };
 

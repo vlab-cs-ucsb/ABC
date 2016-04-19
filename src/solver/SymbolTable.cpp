@@ -134,6 +134,31 @@ VariableMap& SymbolTable::getVariables() {
   return variables;
 }
 
+void SymbolTable::updateComponents(Component* c, Visitable_ptr scope){
+  components[scope].push_back(c);
+}
+
+std::vector<Component*> SymbolTable::getComponents(Visitable_ptr scope){
+  return components[scope];
+}
+
+ComponentMap SymbolTable::getComponentMap(){
+  return components;
+}
+
+int SymbolTable::getNComponent(Visitable_ptr scope){
+  return components[scope].size();
+}
+
+/*int SymbolTable::getReuse(){
+  return reuse; 
+}
+
+void SymbolTable::incrementReuse(){
+  reuse++; 
+}*/
+
+
 Variable_ptr SymbolTable::getSymbolicVariable() {
   auto it = std::find_if(variables.begin(), variables.end(),
       [](std::pair<std::string, Variable_ptr> entry) -> bool {
