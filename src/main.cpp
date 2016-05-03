@@ -139,7 +139,7 @@ int main(const int argc, const char **argv) {
 
             if (model_count) {
               LOG(INFO) << "count          : " << driver.Count(bound, false);
-              LOG(INFO) << "symbolic count : " << driver.SymbolicCount(bound, false);
+//              LOG(INFO) << "symbolic count : " << driver.SymbolicCount(bound, false);
             }
             break;
           }
@@ -150,6 +150,9 @@ int main(const int argc, const char **argv) {
     }
   } else {
     LOG(INFO) << "UNSAT";
+    if (model_count) {
+      LOG(INFO) << "count          : " << 0;
+    }
   }
   LOG(INFO)<< "done.";
   return 0;
