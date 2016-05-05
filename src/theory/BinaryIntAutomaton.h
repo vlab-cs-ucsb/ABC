@@ -11,21 +11,17 @@
 #ifndef THEORY_BINARYINTAUTOMATON_H_
 #define THEORY_BINARYINTAUTOMATON_H_
 
-#include <algorithm>
 #include <map>
-#include <unordered_map>
-#include <stack>
+#include <string>
 #include <vector>
-#include <array>
 
-#include "options/Theory.h"
-#include "utils/Math.h"
-#include "utils/List.h"
-#include "Automaton.h"
-#include "UnaryAutomaton.h"
+#include <boost/multiprecision/cpp_int.hpp>
+
 #include "ArithmeticFormula.h"
-#include "SemilinearSet.h"
+#include "Automaton.h"
 #include "BinaryState.h"
+#include "SemilinearSet.h"
+#include "UnaryAutomaton.h"
 
 namespace Vlab {
 namespace Theory {

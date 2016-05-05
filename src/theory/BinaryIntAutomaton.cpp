@@ -10,12 +10,25 @@
 
 #include "BinaryIntAutomaton.h"
 
-#include <glog/logging.h>
-#include <mona/dfa.h>
+#include <algorithm>
+#include <cmath>
+#include <cstdbool>
+#include <cstdlib>
 #include <iostream>
 #include <iterator>
-#include <map>
-#include <string>
+#include <sstream>
+#include <stack>
+#include <unordered_map>
+#include <utility>
+
+#include <boost/multiprecision/number.hpp>
+#include <glog/logging.h>
+#include <mona/bdd.h>
+#include <mona/dfa.h>
+
+#include "options/Theory.h"
+#include "utils/Math.h"
+#include "utils/List.h"
 
 namespace Vlab {
 namespace Theory {
@@ -915,6 +928,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
 
   int num_of_states = 2 * max - 2 * min + 3;
 
+  unsigned max_states_allowed = 0x80000000;
+  unsigned mona_check = 8 * num_of_states;
+  CHECK_LE(mona_check, max_states_allowed);
+
   std::map<int , StateIndices> carry_map; // maps carries to state indices
   carry_map[constant].sr = 1;
   carry_map[constant].i = -1;
@@ -969,7 +986,6 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
     for (next_label = min; (next_label <= max) and
         (carry_map[next_label].i != count) and
         (carry_map[next_label].ir != count); next_label++) { }
-
   }
 
   for (; count < num_of_states; count++) {
@@ -978,7 +994,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
   }
 
   //define accepting and rejecting states
-  char *statuses = new char[num_of_states + 1];
+  char *statuses = new char[num_of_states];
   for (int i = 0; i < num_of_states; i++) {
     statuses[i] = '-';
   }
@@ -988,7 +1004,6 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
       statuses[carry_map[next_label].i] = '+';
     }
   }
-  statuses[num_of_states] = '\0';
 
   DFA_ptr tmp_dfa = dfaBuild(statuses);
   DFA_ptr equality_dfa = dfaMinimize(tmp_dfa);
@@ -1031,6 +1046,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberEquality(ArithmeticF
   }
 
   int num_of_states = max - min + 2;
+
+  unsigned max_states_allowed = 0x80000000;
+  unsigned mona_check = 8 * num_of_states;
+  CHECK_LE(mona_check, max_states_allowed);
 
   std::map<int , StateIndices> carry_map; // maps carries to state indices
   carry_map[constant].s = 1;
@@ -1144,6 +1163,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntLessThan(ArithmeticFormula_ptr
 
   const int num_of_variables = formula->getCoefficients().size();
   int num_of_states = 2 * (max - min + 1);
+  unsigned max_states_allowed = 0x80000000;
+  unsigned mona_check = 8 * num_of_states;
+  CHECK_LE(mona_check, max_states_allowed);
+
   int* indices = getIndices(num_of_variables);
   dfaSetup(num_of_states, num_of_variables, indices);
   delete[] indices;
@@ -1285,6 +1308,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticF
   const int num_of_variables = formula->getCoefficients().size();
   CHECK_LT(num_of_variables, 64);
   int num_of_states = max - min + 1;
+  unsigned max_states_allowed = 0x80000000;
+  unsigned mona_check = 8 * num_of_states;
+  CHECK_LE(mona_check, max_states_allowed);
+
   int* indices = getIndices(num_of_variables);
   dfaSetup(num_of_states, num_of_variables, indices);
   delete[] indices;

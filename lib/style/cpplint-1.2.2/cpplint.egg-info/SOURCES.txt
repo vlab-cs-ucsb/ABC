@@ -1,0 +1,8 @@
+README.rst
+cpplint.py
+setup.py
+cpplint.egg-info/PKG-INFO
+cpplint.egg-info/SOURCES.txt
+cpplint.egg-info/dependency_links.txt
+cpplint.egg-info/entry_points.txt
+cpplint.egg-info/top_level.txt

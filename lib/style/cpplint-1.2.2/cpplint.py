@@ -44,6 +44,7 @@ same line, but it is far from perfect (in either direction).
 import codecs
 import copy
 import getopt
+import glob
 import math  # for log
 import os
 import re
@@ -51,16 +52,25 @@ import sre_compile
 import string
 import sys
 import unicodedata
+import xml.etree.ElementTree
 
+# The allowed extensions for file names
+# This is set by --extensions flag.
+_valid_extensions = set(['c', 'cc', 'cpp', 'cxx', 'c++', 'h', 'hpp', 'hxx',
+    'h++', 'cu', 'cuh'])
+
+_header_extensions = set(['h', 'hpp', 'hxx', 'h++', 'cuh'])
 
 _USAGE = """
-Syntax: cpplint.py [--verbose=#] [--output=vs7] [--filter=-x,+y,...]
-                   [--counting=total|toplevel|detailed] [--root=subdir]
-                   [--linelength=digits]
+Syntax: cpplint.py [--verbose=#] [--output=emacs|eclipse|vs7|junit]
+                   [--filter=-x,+y,...]
+                   [--counting=total|toplevel|detailed] [--repository=path]
+                   [--root=subdir] [--linelength=digits] [--recursive]
+                   [--exclude=path] [--extensions=hpp,cpp,...]
         <file> [file] ...
 
   The style guidelines this tries to follow are those in
-    http://google-styleguide.googlecode.com/svn/trunk/cppguide.xml
+    https://google.github.io/styleguide/cppguide.html
 
   Every problem is given a confidence score from 1-5, with 5 meaning we are
   certain of the problem, and 1 meaning it could be a legitimate construct.
@@ -71,17 +81,26 @@ Syntax: cpplint.py [--verbose=#] [--output=vs7] [--filter=-x,+y,...]
   suppresses errors of all categories on that line.
 
   The files passed in will be linted; at least one file must be provided.
-  Default linted extensions are .cc, .cpp, .cu, .cuh and .h.  Change the
-  extensions with the --extensions flag.
+  Default linted extensions are %s.
+  Other file types will be ignored.
+  Change the extensions with the --extensions flag.
 
   Flags:
 
-    output=vs7
-      By default, the output is formatted to ease emacs parsing.  Visual Studio
-      compatible output (vs7) may also be used.  Other formats are unsupported.
+    output=emacs|eclipse|vs7|junit
+      By default, the output is formatted to ease emacs parsing.  Output
+      compatible with eclipse (eclipse), Visual Studio (vs7), and JUnit
+      XML parsers such as those used in Jenkins and Bamboo may also be
+      used.  Other formats are unsupported.
 
     verbose=#
       Specify a number 0-5 to restrict errors to certain verbosity levels.
+      Errors with lower verbosity levels have lower confidence and are more
+      likely to be false positives.
+
+    quiet
+      Supress output other than linting errors, such as information about
+      which files have been processed and excluded.
 
     filter=-x,+y,...
       Specify a comma-separated list of category-filters to apply: only
@@ -105,17 +124,40 @@ Syntax: cpplint.py [--verbose=#] [--output=vs7] [--filter=-x,+y,...]
       also be printed. If 'detailed' is provided, then a count
       is provided for each category like 'build/class'.
 
-    root=subdir
-      The root directory used for deriving header guard CPP variable.
-      By default, the header guard CPP variable is calculated as the relative
-      path to the directory that contains .git, .hg, or .svn.  When this flag
-      is specified, the relative path is calculated from the specified
-      directory. If the specified directory does not exist, this flag is
-      ignored.
+    repository=path
+      The top level directory of the repository, used to derive the header
+      guard CPP variable. By default, this is determined by searching for a
+      path that contains .git, .hg, or .svn. When this flag is specified, the
+      given path is used instead. This option allows the header guard CPP
+      variable to remain consistent even if members of a team have different
+      repository root directories (such as when checking out a subdirectory
+      with SVN). In addition, users of non-mainstream version control systems
+      can use this flag to ensure readable header guard CPP variables.
 
       Examples:
-        Assuming that src/.git exists, the header guard CPP variables for
-        src/chrome/browser/ui/browser.h are:
+        Assuming that Alice checks out ProjectName and Bob checks out
+        ProjectName/trunk and trunk contains src/chrome/ui/browser.h, then
+        with no --repository flag, the header guard CPP variable will be:
+
+        Alice => TRUNK_SRC_CHROME_BROWSER_UI_BROWSER_H_
+        Bob   => SRC_CHROME_BROWSER_UI_BROWSER_H_
+
+        If Alice uses the --repository=trunk flag and Bob omits the flag or
+        uses --repository=. then the header guard CPP variable will be:
+
+        Alice => SRC_CHROME_BROWSER_UI_BROWSER_H_
+        Bob   => SRC_CHROME_BROWSER_UI_BROWSER_H_
+
+    root=subdir
+      The root directory used for deriving header guard CPP variables. This
+      directory is relative to the top level directory of the repository which
+      by default is determined by searching for a directory that contains .git,
+      .hg, or .svn but can also be controlled with the --repository flag. If
+      the specified directory does not exist, this flag is ignored.
+
+      Examples:
+        Assuming that src is the top level directory of the repository, the
+        header guard CPP variables for src/chrome/browser/ui/browser.h are:
 
         No flag => CHROME_BROWSER_UI_BROWSER_H_
         --root=chrome => BROWSER_UI_BROWSER_H_
@@ -127,6 +169,23 @@ Syntax: cpplint.py [--verbose=#] [--output=vs7] [--filter=-x,+y,...]
 
       Examples:
         --linelength=120
+
+    recursive
+      Search for files to lint recursively. Each directory given in the list
+      of files to be linted is replaced by all files that descend from that
+      directory. Files with extensions not in the valid extensions list are
+      excluded.
+
+    exclude=path
+      Exclude the given path from the list of files to be linted. Relative
+      paths are evaluated relative to the current directory and shell globbing
+      is performed. This flag can be provided multiple times to exclude
+      multiple files.
+
+      Examples:
+        --exclude=one.cc
+        --exclude=src/*.cc
+        --exclude=src/*.cc --exclude=test/*.cc
 
     extensions=extension,extension,...
       The allowed file extensions that cpplint will check
@@ -153,12 +212,12 @@ Syntax: cpplint.py [--verbose=#] [--output=vs7] [--filter=-x,+y,...]
 
     "exclude_files" allows to specify a regular expression to be matched against
     a file name. If the expression matches, the file is skipped and not run
-    through liner.
+    through the linter.
 
-    "linelength" allows to specify the allowed line length for the project.
+    "linelength" specifies the allowed line length for the project.
 
     CPPLINT.cfg has an effect on files in the same directory and all
-    sub-directories, unless overridden by a nested configuration file.
+    subdirectories, unless overridden by a nested configuration file.
 
       Example file:
         filter=-build/include_order,+build/include_alpha
@@ -167,8 +226,8 @@ Syntax: cpplint.py [--verbose=#] [--output=vs7] [--filter=-x,+y,...]
     The above example disables build/include_order warning and enables
     build/include_alpha as well as excludes all .cc from being
     processed by linter, in the current directory (where the .cfg
-    file is located) and all sub-directories.
-"""
+    file is located) and all subdirectories.
+""" % (list(_valid_extensions))
 
 # We categorize each error message we print.  Here are the categories.
 # We want an explicit list so we can list them all in cpplint --filter=.
@@ -183,6 +242,7 @@ _ERROR_CATEGORIES = [
     'build/forward_decl',
     'build/header_guard',
     'build/include',
+    'build/include_subdir',
     'build/include_alpha',
     'build/include_order',
     'build/include_what_you_use',
@@ -493,13 +553,37 @@ _error_suppressions = {}
 # This is set by --root flag.
 _root = None
 
+# The top level repository directory. If set, _root is calculated relative to
+# this directory instead of the directory containing version control artifacts.
+# This is set by the --repository flag.
+_repository = None
+
+# Files to exclude from linting. This is set by the --exclude flag.
+_excludes = None
+
+# Whether to supress PrintInfo messages
+_quiet = False
+
 # The allowed line length of files.
 # This is set by --linelength flag.
 _line_length = 80
 
-# The allowed extensions for file names
-# This is set by --extensions flag.
-_valid_extensions = set(['cc', 'h', 'cpp', 'cu', 'cuh'])
+if sys.version_info < (3,):
+    def u(x):
+        return codecs.unicode_escape_decode(x)[0]
+    TEXT_TYPE = unicode
+    # BINARY_TYPE = str
+    range = xrange
+    itervalues = dict.itervalues
+    iteritems = dict.iteritems
+else:
+    def u(x):
+        return x
+    TEXT_TYPE = str
+    # BINARY_TYPE = bytes
+    xrange = range
+    itervalues = dict.values
+    iteritems = dict.items
 
 def ParseNolintSuppressions(filename, raw_line, linenum, error):
   """Updates the global list of error-suppressions.
@@ -769,8 +853,15 @@ class _CppLintState(object):
 
     # output format:
     # "emacs" - format that emacs can parse (default)
+    # "eclipse" - format that eclipse can parse
     # "vs7" - format that Microsoft Visual Studio 7 can parse
+    # "junit" - format that Jenkins, Bamboo, etc can parse
     self.output_format = 'emacs'
+
+    # For JUnit output, save errors and failures until the end so that they
+    # can be written into the XML
+    self._junit_errors = []
+    self._junit_failures = []
 
   def SetOutputFormat(self, output_format):
     """Sets the output format for errors."""
@@ -840,10 +931,68 @@ class _CppLintState(object):
 
   def PrintErrorCounts(self):
     """Print a summary of errors by category, and the total."""
-    for category, count in self.errors_by_category.iteritems():
-      sys.stderr.write('Category \'%s\' errors found: %d\n' %
+    for category, count in iteritems(self.errors_by_category):
+      self.PrintInfo('Category \'%s\' errors found: %d\n' %
                        (category, count))
-    sys.stderr.write('Total errors found: %d\n' % self.error_count)
+    self.PrintInfo('Total errors found: %d\n' % self.error_count)
+
+  def PrintInfo(self, message):
+    if not _quiet and self.output_format != 'junit':
+      sys.stderr.write(message)
+
+  def PrintError(self, message):
+    if self.output_format == 'junit':
+      self._junit_errors.append(message)
+    else:
+      sys.stderr.write(message)
+
+  def AddJUnitFailure(self, filename, linenum, message, category, confidence):
+    self._junit_failures.append((filename, linenum, message, category,
+        confidence))
+
+  def FormatJUnitXML(self):
+    num_errors = len(self._junit_errors)
+    num_failures = len(self._junit_failures)
+
+    testsuite = xml.etree.ElementTree.Element('testsuite')
+    testsuite.attrib['name'] = 'cpplint'
+    testsuite.attrib['errors'] = str(num_errors)
+    testsuite.attrib['failures'] = str(num_failures)
+
+    if num_errors == 0 and num_failures == 0:
+      testsuite.attrib['tests'] = str(1)
+      xml.etree.ElementTree.SubElement(testsuite, 'testcase', name='passed')
+
+    else:
+      testsuite.attrib['tests'] = str(num_errors + num_failures)
+      if num_errors > 0:
+        testcase = xml.etree.ElementTree.SubElement(testsuite, 'testcase')
+        testcase.attrib['name'] = 'errors'
+        error = xml.etree.ElementTree.SubElement(testcase, 'error')
+        error.text = '\n'.join(self._junit_errors)
+      if num_failures > 0:
+        # Group failures by file
+        failed_file_order = []
+        failures_by_file = {}
+        for failure in self._junit_failures:
+          failed_file = failure[0]
+          if failed_file not in failed_file_order:
+            failed_file_order.append(failed_file)
+            failures_by_file[failed_file] = []
+          failures_by_file[failed_file].append(failure)
+        # Create a testcase for each file
+        for failed_file in failed_file_order:
+          failures = failures_by_file[failed_file]
+          testcase = xml.etree.ElementTree.SubElement(testsuite, 'testcase')
+          testcase.attrib['name'] = failed_file
+          failure = xml.etree.ElementTree.SubElement(testcase, 'failure')
+          template = '{0}: {1} [{2}] [{3}]'
+          texts = [template.format(f[1], f[2], f[3], f[4]) for f in failures]
+          failure.text = '\n'.join(texts)
+
+    xml_decl = '<?xml version="1.0" encoding="UTF-8" ?>\n'
+    return xml_decl + xml.etree.ElementTree.tostring(testsuite, 'utf-8').decode('utf-8')
+
 
 _cpplint_state = _CppLintState()
 
@@ -1000,6 +1149,20 @@ class FileInfo(object):
     if os.path.exists(fullname):
       project_dir = os.path.dirname(fullname)
 
+      # If the user specified a repository path, it exists, and the file is
+      # contained in it, use the specified repository path
+      if _repository:
+        repo = FileInfo(_repository).FullName()
+        root_dir = project_dir
+        while os.path.exists(root_dir):
+          # allow case insensitive compare on Windows
+          if os.path.normcase(root_dir) == os.path.normcase(repo):
+            return os.path.relpath(fullname, root_dir).replace('\\', '/')
+          one_up_dir = os.path.dirname(root_dir)
+          if one_up_dir == root_dir:
+            break
+          root_dir = one_up_dir
+
       if os.path.exists(os.path.join(project_dir, ".svn")):
         # If there's a .svn file in the current directory, we recursively look
         # up the directory tree for the top of the SVN checkout
@@ -1058,7 +1221,7 @@ class FileInfo(object):
 
   def IsSource(self):
     """File has a source file extension."""
-    return self.Extension()[1:] in ('c', 'cc', 'cpp', 'cxx')
+    return self.Extension()[1:] in _valid_extensions
 
 
 def _ShouldPrintError(category, confidence, linenum):
@@ -1114,15 +1277,18 @@ def Error(filename, linenum, category, confidence, message):
   if _ShouldPrintError(category, confidence, linenum):
     _cpplint_state.IncrementErrorCount(category)
     if _cpplint_state.output_format == 'vs7':
-      sys.stderr.write('%s(%s):  %s  [%s] [%d]\n' % (
+      _cpplint_state.PrintError('%s(%s):  %s  [%s] [%d]\n' % (
           filename, linenum, message, category, confidence))
     elif _cpplint_state.output_format == 'eclipse':
       sys.stderr.write('%s:%s: warning: %s  [%s] [%d]\n' % (
           filename, linenum, message, category, confidence))
+    elif _cpplint_state.output_format == 'junit':
+        _cpplint_state.AddJUnitFailure(filename, linenum, message, category,
+            confidence)
     else:
-      sys.stderr.write('%s:%s:  %s  [%s] [%d]\n' % (
-          filename, linenum, message, category, confidence))
-
+      m = '%s:%s:  %s  [%s] [%d]\n' % (
+          filename, linenum, message, category, confidence)
+      sys.stderr.write(m)
 
 # Matches standard C++ escape sequences per 2.13.2.3 of the C++ standard.
 _RE_PATTERN_CLEANSE_LINE_ESCAPES = re.compile(
@@ -1624,7 +1790,7 @@ def CheckForCopyright(filename, lines, error):
 
   # We'll say it should occur by line 10. Don't forget there's a
   # dummy line at the front.
-  for line in xrange(1, min(len(lines), 11)):
+  for line in range(1, min(len(lines), 11)):
     if re.search(r'Copyright', lines[line], re.I): break
   else:                       # means no copyright line was found
     error(filename, 0, 'legal/copyright', 5,
@@ -1670,7 +1836,7 @@ def GetHeaderGuardCPPVariable(filename):
   fileinfo = FileInfo(filename)
   file_path_from_root = fileinfo.RepositoryName()
   if _root:
-    file_path_from_root = re.sub('^' + _root + os.sep, '', file_path_from_root)
+    file_path_from_root = re.sub('^' + _root + '/', '', file_path_from_root)
   return re.sub(r'[^a-zA-Z0-9]', '_', file_path_from_root).upper() + '_'
 
 
@@ -1695,6 +1861,11 @@ def CheckForHeaderGuard(filename, clean_lines, error):
   raw_lines = clean_lines.lines_without_raw_strings
   for i in raw_lines:
     if Search(r'//\s*NOLINT\(build/header_guard\)', i):
+      return
+
+  # Allow pragma once instead of header guards
+  for i in raw_lines:
+    if Search(r'^\s*#pragma\s+once', i):
       return
 
   cppvar = GetHeaderGuardCPPVariable(filename)
@@ -1815,7 +1986,7 @@ def CheckForBadCharacters(filename, lines, error):
     error: The function to call with any errors found.
   """
   for linenum, line in enumerate(lines):
-    if u'\ufffd' in line:
+    if u('\ufffd') in line:
       error(filename, linenum, 'readability/utf8', 5,
             'Line contains invalid UTF-8 (or Unicode replacement character).')
     if '\0' in line:
@@ -2879,7 +3050,7 @@ def CheckForFunctionLengths(filename, clean_lines, linenum,
 
   if starting_func:
     body_found = False
-    for start_linenum in xrange(linenum, clean_lines.NumLines()):
+    for start_linenum in range(linenum, clean_lines.NumLines()):
       start_line = lines[start_linenum]
       joined_line += ' ' + start_line.lstrip()
       if Search(r'(;|})', start_line):  # Declarations and trivial functions
@@ -3467,16 +3638,24 @@ def IsRValueType(typenames, clean_lines, nesting_state, linenum, column):
   # recognize pointer and reference types:
   #   int* Function()
   #   int& Function()
-  if (match.group(2) in typenames or
-      match.group(2) in ['char', 'char16_t', 'char32_t', 'wchar_t', 'bool',
-                         'short', 'int', 'long', 'signed', 'unsigned',
-                         'float', 'double', 'void', 'auto', '>', '*', '&']):
+  symbol_match = Match(r'^(.*)([>*&])\s*$', prefix)
+  if symbol_match and symbol_match.group(2) in ['>', '*', '&']:
     return True
+
+  known_types = ['char', 'char16_t', 'char32_t', 'wchar_t', 'bool',
+                 'short', 'int', 'long', 'signed', 'unsigned',
+                 'float', 'double', 'void', 'auto']
+  last_word_match = Search(r'((\w|::)+)(\s*)$', prefix)
+  if last_word_match:
+    last_word = last_word_match.group(1)
+    before_last_word = prefix[:-len(last_word_match.group(0))]
+    if last_word in typenames or last_word in known_types:
+      return True
 
   # If we see a close parenthesis, look for decltype on the other side.
   # decltype would unambiguously identify a type, anything else is
   # probably a parenthesized expression and not a type.
-  if match.group(2) == ')':
+  if symbol_match and symbol_match.group(2) == ')':
     return IsDecltype(
         clean_lines, linenum, len(match.group(1)) + len(match.group(2)) - 1)
 
@@ -3506,7 +3685,7 @@ def IsRValueType(typenames, clean_lines, nesting_state, linenum, column):
   #   block        {   type&&
   #   constructor  {   expression &&
   start = linenum
-  line = match.group(1)
+  line = before_last_word if last_word_match else match.group(1)
   match_symbol = None
   while start >= 0:
     # We want to skip over identifiers and commas to get to a symbol.
@@ -4091,7 +4270,7 @@ def CheckTrailingSemicolon(filename, clean_lines, linenum, error):
         clean_lines, linenum, closing_brace_pos)
     if opening_parenthesis[2] > -1:
       line_prefix = opening_parenthesis[0][0:opening_parenthesis[2]]
-      macro = Search(r'\b([A-Z_]+)\s*$', line_prefix)
+      macro = Search(r'\b([A-Z0-9_]+)\s*$', line_prefix)
       func = Match(r'^(.*\])\s*$', line_prefix)
       if ((macro and
            macro.group(1) not in (
@@ -4358,7 +4537,7 @@ def GetLineWidth(line):
     The width of the line in column positions, accounting for Unicode
     combining characters and wide characters.
   """
-  if isinstance(line, unicode):
+  if isinstance(line, TEXT_TYPE):
     width = 0
     for uc in unicodedata.normalize('NFC', line):
       if unicodedata.east_asian_width(uc) in ('W', 'F'):
@@ -4570,6 +4749,10 @@ def _ClassifyInclude(fileinfo, include, is_system):
   # those already checked for above.
   is_cpp_h = include in _CPP_HEADERS
 
+  # Headers with C++ extensions shouldn't be considered C system headers
+  if is_system and os.path.splitext(include)[1] in ['.hpp', '.hxx', '.h++']:
+      is_system = False
+
   if is_system:
     if is_cpp_h:
       return _CPP_SYS_HEADER
@@ -4582,9 +4765,11 @@ def _ClassifyInclude(fileinfo, include, is_system):
   target_dir, target_base = (
       os.path.split(_DropCommonSuffixes(fileinfo.RepositoryName())))
   include_dir, include_base = os.path.split(_DropCommonSuffixes(include))
+  target_dir_pub = os.path.normpath(target_dir + '/../public')
+  target_dir_pub = target_dir_pub.replace('\\', '/')
   if target_base == include_base and (
       include_dir == target_dir or
-      include_dir == os.path.normpath(target_dir + '/../public')):
+      include_dir == target_dir_pub):
     return _LIKELY_MY_HEADER
 
   # If the target and include share some initial basename
@@ -4628,7 +4813,7 @@ def CheckIncludeLine(filename, clean_lines, linenum, include_state, error):
   # naming convention but not the include convention.
   match = Match(r'#include\s*"([^/]+\.h)"', line)
   if match and not _THIRD_PARTY_HEADERS_PATTERN.match(match.group(1)):
-    error(filename, linenum, 'build/include', 4,
+    error(filename, linenum, 'build/include_subdir', 4,
           'Include the directory when naming .h files')
 
   # we shouldn't include a file more than once. actually, there are a
@@ -4677,7 +4862,7 @@ def CheckIncludeLine(filename, clean_lines, linenum, include_state, error):
 
 
 def _GetTextInside(text, start_pattern):
-  r"""Retrieves all the text between matching open and close parentheses.
+  """Retrieves all the text between matching open and close parentheses.
 
   Given a string of lines and a regular expression string, retrieve all the text
   following the expression and between opening punctuation symbols like
@@ -4701,7 +4886,7 @@ def _GetTextInside(text, start_pattern):
 
   # Give opening punctuations to get the matching close-punctuations.
   matching_punctuation = {'(': ')', '{': '}', '[': ']'}
-  closing_punctuation = set(matching_punctuation.itervalues())
+  closing_punctuation = set(itervalues(matching_punctuation))
 
   # Find the position to start extracting text.
   match = re.search(start_pattern, text, re.M)
@@ -5622,7 +5807,7 @@ def CheckForIncludeWhatYouUse(filename, clean_lines, include_state, error,
   required = {}  # A map of header name to linenumber and the template entity.
                  # Example of required: { '<functional>': (1219, 'less<>') }
 
-  for linenum in xrange(clean_lines.NumLines()):
+  for linenum in range(clean_lines.NumLines()):
     line = clean_lines.elided[linenum]
     if not line or line[0] == '#':
       continue
@@ -5671,7 +5856,7 @@ def CheckForIncludeWhatYouUse(filename, clean_lines, include_state, error,
 
   # include_dict is modified during iteration, so we iterate over a copy of
   # the keys.
-  header_keys = include_dict.keys()
+  header_keys = list(include_dict.keys())
   for header in header_keys:
     (same_module, common_path) = FilesBelongToSameModule(abs_filename, header)
     fullpath = common_path + header
@@ -6023,10 +6208,10 @@ def ProcessFileData(filename, file_extension, lines, error,
   RemoveMultiLineComments(filename, lines, error)
   clean_lines = CleansedLines(lines)
 
-  if file_extension == 'h':
+  if file_extension in _header_extensions:
     CheckForHeaderGuard(filename, clean_lines, error)
 
-  for line in xrange(clean_lines.NumLines()):
+  for line in range(clean_lines.NumLines()):
     ProcessLine(filename, file_extension, clean_lines, line,
                 include_state, function_state, nesting_state, error,
                 extra_check_functions)
@@ -6092,24 +6277,23 @@ def ProcessConfigOverrides(filename):
             if base_name:
               pattern = re.compile(val)
               if pattern.match(base_name):
-                sys.stderr.write('Ignoring "%s": file excluded by "%s". '
-                                 'File path component "%s" matches '
-                                 'pattern "%s"\n' %
-                                 (filename, cfg_file, base_name, val))
+                _cpplint_state.PrintInfo('Ignoring "%s": file excluded by '
+                    '"%s". File path component "%s" matches pattern "%s"\n' %
+                    (filename, cfg_file, base_name, val))
                 return False
           elif name == 'linelength':
             global _line_length
             try:
                 _line_length = int(val)
             except ValueError:
-                sys.stderr.write('Line length must be numeric.')
+                _cpplint_state.PrintError('Line length must be numeric.')
           else:
-            sys.stderr.write(
+            _cpplint_state.PrintError(
                 'Invalid configuration option (%s) in file %s\n' %
                 (name, cfg_file))
 
     except IOError:
-      sys.stderr.write(
+      _cpplint_state.PrintError(
           "Skipping config file '%s': Can't open for reading\n" % cfg_file)
       keep_looking = False
 
@@ -6170,7 +6354,7 @@ def ProcessFile(filename, vlevel, extra_check_functions=[]):
         lf_lines.append(linenum + 1)
 
   except IOError:
-    sys.stderr.write(
+    _cpplint_state.PrintError(
         "Skipping input '%s': Can't open for reading\n" % filename)
     _RestoreFilters()
     return
@@ -6181,7 +6365,7 @@ def ProcessFile(filename, vlevel, extra_check_functions=[]):
   # When reading from stdin, the extension is unknown, so no cpplint tests
   # should rely on the extension.
   if filename != '-' and file_extension not in _valid_extensions:
-    sys.stderr.write('Ignoring %s; not a valid file name '
+    _cpplint_state.PrintError('Ignoring %s; not a valid file name '
                      '(%s)\n' % (filename, ', '.join(_valid_extensions)))
   else:
     ProcessFileData(filename, file_extension, lines, Error,
@@ -6205,7 +6389,7 @@ def ProcessFile(filename, vlevel, extra_check_functions=[]):
         Error(filename, linenum, 'whitespace/newline', 1,
               'Unexpected \\r (^M) found; better to use only \\n')
 
-  sys.stderr.write('Done processing %s\n' % filename)
+  _cpplint_state.PrintInfo('Done processing %s\n' % filename)
   _RestoreFilters()
 
 
@@ -6216,6 +6400,7 @@ def PrintUsage(message):
     message: The optional error message.
   """
   sys.stderr.write(_USAGE)
+
   if message:
     sys.exit('\nFATAL ERROR: ' + message)
   else:
@@ -6247,8 +6432,12 @@ def ParseArguments(args):
                                                  'counting=',
                                                  'filter=',
                                                  'root=',
+                                                 'repository=',
                                                  'linelength=',
-                                                 'extensions='])
+                                                 'extensions=',
+                                                 'exclude=',
+                                                 'quiet',
+                                                 'recursive'])
   except getopt.GetoptError:
     PrintUsage('Invalid arguments.')
 
@@ -6256,13 +6445,15 @@ def ParseArguments(args):
   output_format = _OutputFormat()
   filters = ''
   counting_style = ''
+  recursive = False
 
   for (opt, val) in opts:
     if opt == '--help':
       PrintUsage(None)
     elif opt == '--output':
-      if val not in ('emacs', 'vs7', 'eclipse'):
-        PrintUsage('The only allowed output formats are emacs, vs7 and eclipse.')
+      if val not in ('emacs', 'vs7', 'eclipse', 'junit'):
+        PrintUsage('The only allowed output formats are emacs, vs7, eclipse '
+                   'and junit.')
       output_format = val
     elif opt == '--verbose':
       verbosity = int(val)
@@ -6277,21 +6468,40 @@ def ParseArguments(args):
     elif opt == '--root':
       global _root
       _root = val
+    elif opt == '--repository':
+      global _repository
+      _repository = val
     elif opt == '--linelength':
       global _line_length
       try:
-          _line_length = int(val)
+        _line_length = int(val)
       except ValueError:
-          PrintUsage('Line length must be digits.')
+        PrintUsage('Line length must be digits.')
+    elif opt == '--exclude':
+      global _excludes
+      if not _excludes:
+        _excludes = set()
+      _excludes.update(glob.glob(val))
     elif opt == '--extensions':
       global _valid_extensions
       try:
-          _valid_extensions = set(val.split(','))
+        _valid_extensions = set(val.split(','))
       except ValueError:
-          PrintUsage('Extensions must be comma seperated list.')
+        PrintUsage('Extensions must be comma seperated list.')
+    elif opt == '--recursive':
+      recursive = True
+    elif opt == '--quiet':
+      global _quiet
+      _quiet = True
 
   if not filenames:
     PrintUsage('No files were specified.')
+
+  if recursive:
+    filenames = _ExpandDirectories(filenames)
+
+  if _excludes:
+    filenames = _FilterExcludedFiles(filenames)
 
   _SetOutputFormat(output_format)
   _SetVerboseLevel(verbosity)
@@ -6300,21 +6510,63 @@ def ParseArguments(args):
 
   return filenames
 
+def _ExpandDirectories(filenames):
+  """Searches a list of filenames and replaces directories in the list with
+  all files descending from those directories. Files with extensions not in
+  the valid extensions list are excluded.
+
+  Args:
+    filenames: A list of files or directories
+
+  Returns:
+    A list of all files that are members of filenames or descended from a
+    directory in filenames
+  """
+  expanded = set()
+  for filename in filenames:
+      if not os.path.isdir(filename):
+        expanded.add(filename)
+        continue
+
+      for root, dirs, files in os.walk(filename):
+        for file in files:
+          fullname = os.path.join(root, file)
+          if fullname.startswith('.' + os.path.sep):
+            fullname = fullname[len('.' + os.path.sep):]
+          expanded.add(fullname)
+
+  filtered = []
+  for filename in expanded:
+      if os.path.splitext(filename)[1][1:] in _valid_extensions:
+          filtered.append(filename)
+
+  return filtered
+
+def _FilterExcludedFiles(filenames):
+  """Filters out files listed in the --exclude command line switch. File paths
+  in the switch are evaluated relative to the current working directory
+  """
+  exclude_paths = [os.path.abspath(f) for f in _excludes]
+  return [f for f in filenames if os.path.abspath(f) not in exclude_paths]
 
 def main():
   filenames = ParseArguments(sys.argv[1:])
+  backup_err = sys.stderr
+  try:
+    # Change stderr to write with replacement characters so we don't die
+    # if we try to print something containing non-ASCII characters.
+    sys.stderr = codecs.StreamReader(sys.stderr,
+                                     'replace')
+    _cpplint_state.ResetErrorCounts()
+    for filename in filenames:
+      ProcessFile(filename, _cpplint_state.verbose_level)
+    _cpplint_state.PrintErrorCounts()
 
-  # Change stderr to write with replacement characters so we don't die
-  # if we try to print something containing non-ASCII characters.
-  sys.stderr = codecs.StreamReaderWriter(sys.stderr,
-                                         codecs.getreader('utf8'),
-                                         codecs.getwriter('utf8'),
-                                         'replace')
+    if _cpplint_state.output_format == 'junit':
+      sys.stderr.write(_cpplint_state.FormatJUnitXML())
 
-  _cpplint_state.ResetErrorCounts()
-  for filename in filenames:
-    ProcessFile(filename, _cpplint_state.verbose_level)
-  _cpplint_state.PrintErrorCounts()
+  finally:
+    sys.stderr = backup_err
 
   sys.exit(_cpplint_state.error_count > 0)
 
