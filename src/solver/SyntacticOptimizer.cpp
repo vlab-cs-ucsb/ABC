@@ -95,7 +95,7 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
     } else if (check_bool_constant_value(*iter, "false")) {
       has_false_term = true;
       break;
-    } else if (Term::Type::OR == (*iter)->getType()) {
+    } else if (Term::Type::OR == (*iter)->type()) {
       Or_ptr or_term = dynamic_cast<Or_ptr>(*iter);
       or_term_lists.push_back(*or_term->term_list);
       or_term->term_list->clear();
@@ -174,7 +174,7 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
     TermConstant_ptr initial_term_constant = nullptr;
     int pos = 0;
     for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
-      if (Term::Type::AND == (*iter)->getType()) { // Associativity
+      if (Term::Type::AND == (*iter)->type()) { // Associativity
         And_ptr sub_and_term = dynamic_cast<And_ptr>(*iter);
         and_term->term_list->erase(iter);
         and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
@@ -214,7 +214,7 @@ void SyntacticOptimizer::visitOr(Or_ptr or_term) {
     TermConstant_ptr initial_term_constant = nullptr;
     int pos = 0;
     for (auto iter = or_term->term_list->begin(); iter != or_term->term_list->end();) {
-      if (Term::Type::OR == (*iter)->getType()) { // Associativity
+      if (Term::Type::OR == (*iter)->type()) { // Associativity
         Or_ptr sub_or_term = dynamic_cast<Or_ptr>(*iter);
         or_term->term_list->erase(iter);
         or_term->term_list->insert(iter, sub_or_term->term_list->begin(), sub_or_term->term_list->end());
@@ -231,7 +231,7 @@ void SyntacticOptimizer::visitOr(Or_ptr or_term) {
 void SyntacticOptimizer::visitNot(Not_ptr not_term) {
   visit_and_callback(not_term->term);
 
-  switch (not_term->term->getType()) {
+  switch (not_term->term->type()) {
   case Term::Type::NOT: {
     DVLOG(VLOG_LEVEL) << "Transforming operation: (not (not a) to a";
     callback = [not_term](Term_ptr& term) mutable {
@@ -392,7 +392,7 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
 void SyntacticOptimizer::visitUMinus(UMinus_ptr u_minus_term) {
   visit_and_callback(u_minus_term->term);
 
-  if (Term::Type::UMINUS == u_minus_term->term->getType()) {
+  if (Term::Type::UMINUS == u_minus_term->term->type()) {
     DVLOG(VLOG_LEVEL) << "Transforming operation: (- (- a) to a";
     callback = [u_minus_term](Term_ptr& term) mutable {
       UMinus_ptr child_u_minus = dynamic_cast<UMinus_ptr>(u_minus_term->term);
@@ -407,8 +407,8 @@ void SyntacticOptimizer::visitMinus(Minus_ptr minus_term) {
   visit_and_callback(minus_term->left_term);
   visit_and_callback(minus_term->right_term);
 
-  if (Term::Type::TERMCONSTANT == minus_term->left_term->getType()
-          and Term::Type::TERMCONSTANT == minus_term->right_term->getType()) {
+  if (Term::Type::TERMCONSTANT == minus_term->left_term->type()
+          and Term::Type::TERMCONSTANT == minus_term->right_term->type()) {
     DVLOG(VLOG_LEVEL) << "Transforming operation: (- lc rc) to lc-rc";
     callback = [this, minus_term](Term_ptr& term) mutable {
       TermConstant_ptr left_constant = dynamic_cast<TermConstant_ptr>(minus_term->left_term);
@@ -425,7 +425,7 @@ void SyntacticOptimizer::visitMinus(Minus_ptr minus_term) {
       }
       delete minus_term;
     };
-  } else if (Term::Type::TERMCONSTANT == minus_term->right_term->getType()) {
+  } else if (Term::Type::TERMCONSTANT == minus_term->right_term->type()) {
     DVLOG(VLOG_LEVEL) << "Transforming operation: (- l 0) to l";
     TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(minus_term->right_term);
     if (term_constant->getValue() == "0") {
@@ -435,7 +435,7 @@ void SyntacticOptimizer::visitMinus(Minus_ptr minus_term) {
         delete minus_term;
       };
     }
-  } else if (Term::Type::UMINUS == minus_term->right_term->getType()) {
+  } else if (Term::Type::UMINUS == minus_term->right_term->type()) {
     DVLOG(VLOG_LEVEL) << "Transforming operation: (- l (- r) to (+ l r)";
     callback = [minus_term](Term_ptr& term) mutable {
       UMinus_ptr child_u_minus = dynamic_cast<UMinus_ptr>(minus_term->right_term);
@@ -461,7 +461,7 @@ void SyntacticOptimizer::visitPlus(Plus_ptr plus_term) {
   int pos = 0;
 
   for (auto iter = plus_term->term_list->begin(); iter != plus_term->term_list->end();) {
-    if (Term::Type::PLUS == (*iter)->getType()) {
+    if (Term::Type::PLUS == (*iter)->type()) {
       Plus_ptr sub_plus_term = dynamic_cast<Plus_ptr>(*iter);
       plus_term->term_list->erase(iter);
       plus_term->term_list->insert(iter, sub_plus_term->term_list->begin(), sub_plus_term->term_list->end());
@@ -469,16 +469,16 @@ void SyntacticOptimizer::visitPlus(Plus_ptr plus_term) {
       delete sub_plus_term;
       iter = plus_term->term_list->begin() + pos; // insertion invalidates iter, reset it
       continue;
-    } else if(Term::Type::TERMCONSTANT == (*iter)->getType()) {
+    } else if(Term::Type::TERMCONSTANT == (*iter)->type()) {
       TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter);
       std::string value = term_constant->getValue();
       constant_value += std::stoi(value);
       delete term_constant; // deallocate
       plus_term->term_list->erase(iter);
       continue;
-    } else if (Term::Type::UMINUS == (*iter)->getType()) {
+    } else if (Term::Type::UMINUS == (*iter)->type()) {
       UMinus_ptr u_minus = dynamic_cast<UMinus_ptr>(*iter);
-      if (Term::Type::TERMCONSTANT == u_minus->term->getType()) {
+      if (Term::Type::TERMCONSTANT == u_minus->term->type()) {
         TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(u_minus->term);
         std::string value = term_constant->getValue();
         constant_value -= std::stoi(value);
@@ -520,7 +520,7 @@ void SyntacticOptimizer::visitTimes(Times_ptr times_term) {
   int constant_value = 1;
   int pos = 0;
   for (auto iter = times_term->term_list->begin(); iter != times_term->term_list->end();) {
-    if (Term::Type::TIMES == (*iter)->getType()) {
+    if (Term::Type::TIMES == (*iter)->type()) {
       Plus_ptr sub_plus_term = dynamic_cast<Plus_ptr>(*iter);
       times_term->term_list->erase(iter);
       times_term->term_list->insert(iter, sub_plus_term->term_list->begin(), sub_plus_term->term_list->end());
@@ -528,16 +528,16 @@ void SyntacticOptimizer::visitTimes(Times_ptr times_term) {
       delete sub_plus_term;
       iter = times_term->term_list->begin() + pos; // insertion invalidates iter, reset it
       continue;
-    } else if(Term::Type::TERMCONSTANT == (*iter)->getType()) {
+    } else if(Term::Type::TERMCONSTANT == (*iter)->type()) {
       TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter);
       std::string value = term_constant->getValue();
       constant_value *= std::stoi(value);
       delete term_constant; // deallocate
       times_term->term_list->erase(iter);
       continue;
-    } else if (Term::Type::UMINUS == (*iter)->getType()) {
+    } else if (Term::Type::UMINUS == (*iter)->type()) {
       UMinus_ptr u_minus = dynamic_cast<UMinus_ptr>(*iter);
-      if (Term::Type::TERMCONSTANT == u_minus->term->getType()) {
+      if (Term::Type::TERMCONSTANT == u_minus->term->type()) {
         TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(u_minus->term);
         std::string value = term_constant->getValue();
         constant_value *= -std::stoi(value);
@@ -749,7 +749,7 @@ void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {
   TermConstant_ptr initial_term_constant = nullptr;
   int pos = 0;
   for (auto iter = concat_term->term_list->begin(); iter != concat_term->term_list->end();) {
-    if (Term::Type::CONCAT == (*iter)->getType()) {
+    if (Term::Type::CONCAT == (*iter)->type()) {
       Concat_ptr sub_concat_term = dynamic_cast<Concat_ptr>(*iter);
       concat_term->term_list->erase(iter);
       concat_term->term_list->insert(iter, sub_concat_term->term_list->begin(), sub_concat_term->term_list->end());
@@ -757,7 +757,7 @@ void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {
       delete sub_concat_term;
       iter = concat_term->term_list->begin() + pos; // insertion invalidates iter, reset it
       continue;
-    } else if(Term::Type::TERMCONSTANT == (*iter)->getType()) {
+    } else if(Term::Type::TERMCONSTANT == (*iter)->type()) {
       TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter);
       if (term_constant->getValue() == "") {
         delete term_constant; // deallocate
@@ -1106,7 +1106,7 @@ void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
   TermConstant_ptr initial_term_constant = nullptr;
   int pos = 0;
   for (auto iter = re_concat_term->term_list->begin(); iter != re_concat_term->term_list->end();) {
-    if (Term::Type::CONCAT == (*iter)->getType()) {
+    if (Term::Type::CONCAT == (*iter)->type()) {
       Concat_ptr sub_concat_term = dynamic_cast<Concat_ptr>(*iter);
       re_concat_term->term_list->erase(iter);
       re_concat_term->term_list->insert(iter, sub_concat_term->term_list->begin(), sub_concat_term->term_list->end());
@@ -1114,7 +1114,7 @@ void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
       delete sub_concat_term;
       iter = re_concat_term->term_list->begin() + pos; // insertion invalidates iter, reset it
       continue;
-    } else if (Term::Type::TERMCONSTANT == (*iter)->getType()) {
+    } else if (Term::Type::TERMCONSTANT == (*iter)->type()) {
       TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter);
       if (initial_term_constant == nullptr) {
         initial_term_constant = term_constant;
@@ -1143,7 +1143,7 @@ void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
 }
 
 void SyntacticOptimizer::visitToRegex(ToRegex_ptr to_regex_term) {
-  if (Term::Type::TERMCONSTANT == to_regex_term->term->getType()) {
+  if (Term::Type::TERMCONSTANT == to_regex_term->term->type()) {
     TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(to_regex_term->term);
     if (Primitive::Type::STRING == term_constant->getValueType()) {
       DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *to_regex_term << "'";
@@ -1244,15 +1244,15 @@ bool SyntacticOptimizer::check_and_process_len_transformation(Term_ptr operation
     return false;
   }
 
-  return __check_and_process_len_transformation(operation->getType(), left_term, right_term)
-          || __check_and_process_len_transformation(syntactic_reverse_relation(operation->getType()), right_term, left_term);
+  return __check_and_process_len_transformation(operation->type(), left_term, right_term)
+          || __check_and_process_len_transformation(syntactic_reverse_relation(operation->type()), right_term, left_term);
 }
 
 bool SyntacticOptimizer::__check_and_process_len_transformation(Term::Type operation, Term_ptr& left_term,
         Term_ptr& right_term) {
-  if (Term::Type::LEN == left_term->getType()) {
+  if (Term::Type::LEN == left_term->type()) {
     Len_ptr len_ptr = dynamic_cast<Len_ptr>(left_term);
-    if (Term::Type::TERMCONSTANT == right_term->getType()) {
+    if (Term::Type::TERMCONSTANT == right_term->type()) {
       TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(right_term);
       if (term_constant->getValueType() == Primitive::Type::NUMERAL) {
         int value = std::stoi(term_constant->getValue());
@@ -1326,13 +1326,13 @@ Term::Type SyntacticOptimizer::syntactic_reverse_relation(Term::Type operation) 
  */
 bool SyntacticOptimizer::check_and_process_for_contains_transformation(Term_ptr& left_term, Term_ptr& right_term, int compare_value) {
   TermConstant_ptr expected_constant_term = nullptr;
-  if (compare_value < 0 and Term::Type::UMINUS == right_term->getType()) {
+  if (compare_value < 0 and Term::Type::UMINUS == right_term->type()) {
     UMinus_ptr u_minus_term = dynamic_cast<UMinus_ptr>(right_term);
-    if (Term::Type::TERMCONSTANT == u_minus_term->term->getType()) {
+    if (Term::Type::TERMCONSTANT == u_minus_term->term->type()) {
       expected_constant_term = dynamic_cast<TermConstant_ptr>(u_minus_term->term);
       compare_value = -compare_value;
     }
-  } else if (Term::Type::TERMCONSTANT == right_term->getType()) {
+  } else if (Term::Type::TERMCONSTANT == right_term->type()) {
     expected_constant_term = dynamic_cast<TermConstant_ptr>(right_term);
   }
 
@@ -1374,7 +1374,7 @@ bool SyntacticOptimizer::check_and_process_for_contains_transformation(Term_ptr&
  * Checks only immediate children, may need to implement more sophisticated analysis for such optimizations
  */
 SubString::Mode SyntacticOptimizer::check_and_process_subString(SubString_ptr sub_string_term, Term_ptr &index_term) {
-  switch (index_term->getType()) {
+  switch (index_term->type()) {
     case Term::Type::INDEXOF: {
       IndexOf_ptr index_of_term = dynamic_cast<IndexOf_ptr>(index_term);
       if (Ast2Dot::isEquivalent(sub_string_term->subject_term, index_of_term->subject_term)) {
@@ -1546,7 +1546,7 @@ Let_ptr SyntacticOptimizer::generateLetTermFor(SubString_ptr sub_string_term, Su
 }
 
 int SyntacticOptimizer::check_and_process_index_operation(Term_ptr curent_term, Term_ptr subject_term, Term_ptr &index_term) {
-  switch (index_term->getType()) {
+  switch (index_term->type()) {
     case Term::Type::INDEXOF: {
       IndexOf_ptr index_of_term = dynamic_cast<IndexOf_ptr>(index_term);
       if (Ast2Dot::isEquivalent(subject_term, index_of_term->subject_term)) {
@@ -1812,7 +1812,7 @@ void SyntacticOptimizer::add_callback_to_replace_with_bool(Term_ptr term, std::s
 }
 
 bool SyntacticOptimizer::check_bool_constant_value(Term_ptr term, std::string value) {
-  if (Term::Type::TERMCONSTANT == term->getType()) {
+  if (Term::Type::TERMCONSTANT == term->type()) {
     TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(term);
     if (Primitive::Type::BOOL == term_constant->getValueType() and value == term_constant->getValue()) {
       return true;

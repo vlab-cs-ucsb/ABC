@@ -8,44 +8,41 @@
 #ifndef SOLVER_DEPENDENCYSLICER_H_
 #define SOLVER_DEPENDENCYSLICER_H_
 
+#include <map>
+#include <set>
+#include <vector>
 
-#include <glog/logging.h>
-#include "smt/ast.h"
-#include "options/Solver.h"
-#include "SymbolTable.h"
+#include "smt/typedefs.h"
 #include "AstTraverser.h"
-#include "VariableCollector.h"
-#include "OptimizationRuleRunner.h"
 #include "Component.h"
-
+#include "SymbolTable.h"
 
 namespace Vlab {
 namespace Solver {
-class DependencySlicer: public AstTraverser {
-public:
+class DependencySlicer : public AstTraverser {
+ public:
   DependencySlicer(SMT::Script_ptr, SymbolTable_ptr);
   virtual ~DependencySlicer();
-  void start();
-  void end();
-  void remap();
-
-  void visitAnd(SMT::And_ptr);
+  void start() override;
+  void end() override;
   void setCallbacks();
-  void visitOr(SMT::Or_ptr);
-  void visitAssert(SMT::Assert_ptr);
 
-private:
+  void visitAssert(SMT::Assert_ptr) override;
+  void visitAnd(SMT::And_ptr) override;
+  void visitOr(SMT::Or_ptr) override;
+  void visitQualIdentifier(SMT::QualIdentifier_ptr) override;
+
+
+ protected:
+  void add_variable_current_term_mapping(SMT::Variable_ptr);
+  std::vector<Component_ptr> GetComponentsFor(SMT::TermList_ptr);
+
+  SymbolTable_ptr symbol_table_;
+  SMT::Term_ptr current_term_;
+  std::map<SMT::Term_ptr, std::set<SMT::Variable_ptr>> term_variable_map_;
+ private:
   static const int VLOG_LEVEL;
-  std::map<SMT::Visitable_ptr, std::map<SMT::Variable_ptr, int>> ids;
-  std::map<SMT::Visitable_ptr,int> n_component;
-  bool term_phase;
-  std::map<SMT::Visitable_ptr, std::vector<std::vector<SMT::Term_ptr>>> components;
-  SMT::Visitable_ptr scope;
-
-protected:
-  SymbolTable_ptr symbol_table;
 };
-
 
 } /* namespace Solver */
 } /* namespace Vlab */

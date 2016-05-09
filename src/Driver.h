@@ -8,26 +8,22 @@
 #ifndef SRC_DRIVER_H_
 #define SRC_DRIVER_H_
 
-#include <string>
-#include <map>
-#include <fstream>
-#include <memory>
 #include <boost/multiprecision/cpp_int.hpp>
+#include <cstdbool>
+#include <iostream>
+#include <map>
+#include <string>
 
-#include <glog/logging.h>
 #include "options/Solver.h"
-#include "options/Theory.h"
-#include "solver/Ast2Dot.h"
-#include "parser/Scanner.h"
-#include "parser/parser.hpp"
-#include "solver/ConstraintSolver.h"
+#include "smt/typedefs.h"
 #include "solver/SymbolTable.h"
-#include "solver/Initializer.h"
-#include "solver/SyntacticOptimizer.h"
-#include "solver/VariableOptimizer.h"
-#include "solver/FormulaOptimizer.h"
-#include "solver/ConstraintSorter.h"
-#include "solver/SyntacticProcessor.h"
+#include "solver/Value.h"
+
+namespace Vlab {
+namespace SMT {
+class location;
+} /* namespace SMT */
+} /* namespace Vlab */
 
 namespace Vlab {
 

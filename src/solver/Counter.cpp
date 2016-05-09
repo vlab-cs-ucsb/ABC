@@ -40,7 +40,7 @@ void Counter::end() {
 
 void Counter::setCallbacks() {
   auto term_callback = [this] (Term_ptr term) -> bool {
-    switch (term->getType()) {
+    switch (term->type()) {
     case Term::Type::TERMCONSTANT: {
       return false;
     }

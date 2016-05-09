@@ -54,8 +54,8 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
   symbol_table->updateSatisfiability(is_satisfiable);
   symbol_table->setScopeSatisfiability(is_satisfiable);
-  if ((Term::Type::OR not_eq assert_command->term->getType()) and
-          (Term::Type::AND not_eq assert_command->term->getType())) {
+  if ((Term::Type::OR not_eq assert_command->term->type()) and
+          (Term::Type::AND not_eq assert_command->term->type())) {
 
     if (is_satisfiable) {
       update_variables();
@@ -149,7 +149,7 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
     param = getTermValue(term);
     bool is_scope_satisfiable = param->isSatisfiable();
 
-    if (Term::Type::AND not_eq term->getType()) {
+    if (Term::Type::AND not_eq term->type()) {
       if (is_scope_satisfiable) {
         update_variables();
       }
@@ -1118,8 +1118,8 @@ void ConstraintSolver::visit_children_of(Term_ptr term) {
 }
 
 bool ConstraintSolver::check_and_visit(Term_ptr term) {
-  if ((Term::Type::OR not_eq term->getType()) and
-            (Term::Type::AND not_eq term->getType())) {
+  if ((Term::Type::OR not_eq term->type()) and
+            (Term::Type::AND not_eq term->type())) {
 
     Value_ptr result = getTermValue(term);
     if (result != nullptr) {

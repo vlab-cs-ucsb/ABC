@@ -1,39 +1,39 @@
 
-
 #ifndef SOLVER_COMPONENT_H_
 #define SOLVER_COMPONENT_H_
 
+#include <cstdbool>
+#include <string>
+#include <vector>
 
-#include <glog/logging.h>
-#include "smt/ast.h"
-#include "options/Solver.h"
-#include "Ast2Dot.h"
-
-
+#include "smt/typedefs.h"
 
 namespace Vlab {
 namespace Solver {
+
 class Component {
-public:
-  Component(std::vector<SMT::Term_ptr>); //Will take in a vector of and pointers
+ public:
+  Component();
+  Component(SMT::Term_ptr);
+  Component(SMT::TermList);
   virtual ~Component();
-  std::vector<SMT::Term_ptr> getTerms();
-  bool isSolved();
-  void setSolved(bool);
-  bool isSat();
-  void setSat(bool);
+  void add_term(SMT::Term_ptr);
+  std::vector<SMT::Term_ptr> get_terms() const;
+  bool is_solved() const;
+  void set_solved(bool is_solved);
+  bool is_sat() const;
+  void set_sat(bool is_sat);
 
-  std::string toString(); 
+  std::string ToString();
+  std::string Name();
 
-
-private:
-  std::vector<SMT::Term_ptr> terms;
-  bool solved;
-  bool sat;
-  Ast2Dot dot;
-
+ protected:
+  bool is_solved_;
+  bool is_sat_;
+  SMT::TermList terms_;
 };
 
+using Component_ptr = Component*;
 
 } /* namespace Solver */
 } /* namespace Vlab */

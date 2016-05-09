@@ -170,7 +170,7 @@ public:
   virtual ~Term();
 
   virtual std::string str() const;
-  Term::Type getType() const;
+  Term::Type type() const;
 
   virtual void accept(Visitor_ptr) override;
   virtual void visit_children(Visitor_ptr) override;
@@ -178,7 +178,7 @@ public:
   friend std::ostream& operator<<(std::ostream& os, const Term& term);
 //	friend std::ostream& operator<<(std::ostream& os, const Term_ptr& term);
 protected:
-  const Term::Type type;
+  const Term::Type type_;
 };
 
 class Exclamation: public Term {

@@ -40,8 +40,6 @@ libabc_la_SOURCES = \
   ./solver/VariableOptimizer.h \
   ./solver/DependencySlicer.cpp \
   ./solver/DependencySlicer.h \
-  ./solver/VariableCollector.cpp \
-  ./solver/VariableCollector.h \
   ./solver/Component.cpp \
   ./solver/Component.h \
   ./solver/FormulaOptimizer.cpp \

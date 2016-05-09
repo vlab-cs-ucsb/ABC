@@ -1,47 +1,73 @@
 #include "Component.h"
 
+#include <sstream>
+#include <functional>
+
+#include "Ast2Dot.h"
+
 namespace Vlab {
 namespace Solver {
 
 using namespace SMT;
 
-Component::Component(std::vector<Term_ptr> terms): terms(terms), solved(false), sat(false){
+Component::Component()
+    : is_solved_ { false },
+      is_sat_ { false } {
+}
+
+Component::Component(SMT::Term_ptr term)
+    : is_solved_ { false },
+      is_sat_ { false } {
+  terms_.push_back(term);
+}
+
+Component::Component(TermList terms)
+    : is_solved_ { false },
+      is_sat_ { false },
+      terms_(terms) {
 }
 
 Component::~Component() {
 }
 
-std::vector<Term_ptr> Component::getTerms(){
-  return terms;
+void Component::add_term(SMT::Term_ptr term) {
+  terms_.push_back(term);
 }
 
-bool Component::isSolved(){
-  return solved;
+TermList Component::get_terms() const {
+  return terms_;
 }
 
-void Component::setSolved(bool solve){
-  solved = solve; 
+bool Component::is_solved() const {
+  return is_solved_;
 }
 
-bool Component::isSat() {
-  return sat; 
+void Component::set_solved(bool is_solved) {
+  is_solved_ = is_solved;
 }
 
-void Component::setSat(bool sat_) {
-  sat =  sat_;
+bool Component::is_sat() const {
+  return is_sat_;
 }
 
-std::string Component::toString(){
-  std::string s = "";
-  dot = Ast2Dot::Ast2Dot();
-  for (auto& term: terms){
-    s=s+dot.toString(term);
+void Component::set_sat(bool is_sat) {
+  is_sat_ = is_sat;
+}
+
+std::string Component::ToString() {
+  std::stringstream ss;
+  for (auto& term : terms_) {
+    ss << Ast2Dot::toString(term);
   }
-  return s;
+  return ss.str();
 }
 
+std::string Component::Name() {
+  std::stringstream ss;
+  std::hash<std::string> hash_func;
+  ss << 'C' << hash_func(ToString());
+  return ss.str();
+}
 
-
-
-} //Vlab
-} //Solver
+} /* namespace Solver */
+} /* namespace Vlab */

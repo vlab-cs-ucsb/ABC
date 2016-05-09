@@ -21,7 +21,6 @@
 namespace Vlab {
 namespace Solver {
 
-
 using VariableMap = std::map<std::string, SMT::Variable_ptr>;
 using VariableCounterMap = std::map<SMT::Variable_ptr, int>;
 using VariableCounterTable = std::map<SMT::Visitable_ptr, VariableCounterMap>;
@@ -29,7 +28,7 @@ using VariableSubstitutionMap = std::map<SMT::Variable_ptr, SMT::Variable_ptr>;
 using VariableSubstitutionTable = std::map<SMT::Visitable_ptr, VariableSubstitutionMap>;
 using VariableValueMap = std::map<SMT::Variable_ptr, Value_ptr>;
 using VariableValueTable = std::map<SMT::Visitable_ptr, VariableValueMap>;
-using ComponentMap = std::map<SMT::Visitable_ptr, std::vector<Component*>>;
+using ComponentMap = std::map<SMT::Visitable_ptr, std::vector<Component_ptr>>;
 
 
 
@@ -71,14 +70,14 @@ public:
   /*
   Functions to store and update a list of independent components. 
   */
- 
 
-  void updateComponents(Component*, SMT::Visitable_ptr);
-  std::vector<Component*> getComponents(SMT::Visitable_ptr);
-  ComponentMap getComponentMap();
+  void add_component(Component_ptr);
+  void add_components(std::vector<Component_ptr>&);
+  std::vector<Component_ptr> get_components_at(SMT::Visitable_ptr);
+  ComponentMap get_component_map();
 
 
-  int getNComponent(SMT::Visitable_ptr);
+  int get_number_of_components(SMT::Visitable_ptr);
 
   /*Added function to keep track of the amount of reuse 
   int getReuse();
@@ -140,13 +139,14 @@ private:
    * Values of each variable for each scope
    */
   VariableValueTable variable_value_table;
-  /**
 
-  */
-  ComponentMap components;
+  /**
+   * For each scope:
+   * Constraints that are dependent each other stored in the same component
+   */
+  ComponentMap components_;
   static const int VLOG_LEVEL;
   //int reuse; 
-
 
 };
 

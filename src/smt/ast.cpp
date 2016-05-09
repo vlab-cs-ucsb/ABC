@@ -234,13 +234,13 @@ void CheckSatAndCount::visit_children(Visitor_ptr v) {
 /* Terms */
 
 Term::Term()
-        : type(Term::Type::TERM) {
+        : type_(Term::Type::TERM) {
 }
 Term::Term(Term::Type type)
-        : type(type) {
+        : type_(type) {
 }
 Term::Term(const Term& other)
-        : type(other.type) {
+        : type_(other.type_) {
 }
 Term_ptr Term::clone() const {
   return new Term(*this);
@@ -261,8 +261,8 @@ void Term::visit_children(Visitor_ptr v) {
   LOG(FATAL)<< "Unhandled term production rule!";
 }
 
-Term::Type Term::getType() const {
-  return type;
+Term::Type Term::type() const {
+  return type_;
 }
 
 std::ostream& operator<<(std::ostream& os, const Term& term) {
@@ -278,7 +278,7 @@ Exclamation::Exclamation(Term_ptr term, AttributeList_ptr attribute_list)
 }
 
 Exclamation::Exclamation(const Exclamation& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   term = other.term->clone();
   attribute_list = new AttributeList();
   for (auto& attribute : *(other.attribute_list)) {
@@ -314,7 +314,7 @@ Exists::Exists(SortedVarList_ptr sorted_var_list, Term_ptr term)
 }
 
 Exists::Exists(const Exists& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   sorted_var_list = new SortedVarList();
   for (auto& sorted_var : *(other.sorted_var_list)) {
     sorted_var_list->push_back(sorted_var->clone());
@@ -350,7 +350,7 @@ ForAll::ForAll(SortedVarList_ptr sorted_var_list, Term_ptr term)
 }
 
 ForAll::ForAll(const ForAll& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   sorted_var_list = new SortedVarList();
   for (auto& sorted_var : *(other.sorted_var_list)) {
     sorted_var_list->push_back(sorted_var->clone());
@@ -386,7 +386,7 @@ Let::Let(VarBindingList_ptr var_binding_list, Term_ptr term)
 }
 
 Let::Let(const Let& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   var_binding_list = new VarBindingList();
   for (auto& var_binding : *(other.var_binding_list)) {
     var_binding_list->push_back(var_binding->clone());
@@ -421,7 +421,7 @@ And::And(TermList_ptr term_list)
         : Term(Term::Type::AND), term_list(term_list) {
 }
 And::And(const And& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   term_list = new TermList();
   for (auto& term : *(other.term_list)) {
     term_list->push_back(term->clone());
@@ -451,7 +451,7 @@ Or::Or(TermList_ptr term_list)
         : Term(Term::Type::OR), term_list(term_list) {
 }
 Or::Or(const Or& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   term_list = new TermList();
   for (auto& term : *(other.term_list)) {
     term_list->push_back(term->clone());
@@ -482,7 +482,7 @@ Not::Not(Term_ptr term)
 }
 
 Not::Not(const Not& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   term = other.term->clone();
 }
 
@@ -511,7 +511,7 @@ UMinus::UMinus(Term_ptr term)
 }
 
 UMinus::UMinus(const UMinus& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   term = other.term->clone();
 }
 
@@ -540,7 +540,7 @@ Minus::Minus(Term_ptr left_term, Term_ptr right_term)
 }
 
 Minus::Minus(const Minus& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   left_term = other.left_term->clone();
   right_term = other.right_term->clone();
 }
@@ -572,7 +572,7 @@ Plus::Plus(TermList_ptr term_list)
 }
 
 Plus::Plus(const Plus& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   term_list = new TermList();
   for (auto& term : *(other.term_list)) {
     term_list->push_back(term->clone());
@@ -605,7 +605,7 @@ Times::Times(TermList_ptr term_list)
 }
 
 Times::Times(const Times& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   term_list = new TermList();
   for (auto& term : *(other.term_list)) {
     term_list->push_back(term->clone());
@@ -638,7 +638,7 @@ Eq::Eq(Term_ptr left_term, Term_ptr right_term)
 }
 
 Eq::Eq(const Eq& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   left_term = other.left_term->clone();
   right_term = other.right_term->clone();
 }
@@ -670,7 +670,7 @@ NotEq::NotEq(Term_ptr left_term, Term_ptr right_term)
 }
 
 NotEq::NotEq(const NotEq& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   left_term = other.left_term->clone();
   right_term = other.right_term->clone();
 }
@@ -702,7 +702,7 @@ Gt::Gt(Term_ptr left_term, Term_ptr right_term)
 }
 
 Gt::Gt(const Gt& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   left_term = other.left_term->clone();
   right_term = other.right_term->clone();
 }
@@ -733,7 +733,7 @@ Ge::Ge(Term_ptr left_term, Term_ptr right_term)
 }
 
 Ge::Ge(const Ge& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   left_term = other.left_term->clone();
   right_term = other.right_term->clone();
 }
@@ -764,7 +764,7 @@ Lt::Lt(Term_ptr left_term, Term_ptr right_term)
 }
 
 Lt::Lt(const Lt& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   left_term = other.left_term->clone();
   right_term = other.right_term->clone();
 }
@@ -795,7 +795,7 @@ Le::Le(Term_ptr left_term, Term_ptr right_term)
 }
 
 Le::Le(const Le& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   left_term = other.left_term->clone();
   right_term = other.right_term->clone();
 }
@@ -826,7 +826,7 @@ Concat::Concat(TermList_ptr term_list)
 }
 
 Concat::Concat(const Concat& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   term_list = new TermList();
   for (auto& term : *(other.term_list)) {
     term_list->push_back(term->clone());
@@ -859,7 +859,7 @@ In::In(Term_ptr left_term, Term_ptr right_term)
 }
 
 In::In(const In& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   left_term = other.left_term->clone();
   right_term = other.right_term->clone();
 }
@@ -890,7 +890,7 @@ NotIn::NotIn(Term_ptr left_term, Term_ptr right_term)
 }
 
 NotIn::NotIn(const NotIn& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   left_term = other.left_term->clone();
   right_term = other.right_term->clone();
 }
@@ -921,7 +921,7 @@ Len::Len(Term_ptr term)
 }
 
 Len::Len(const Len& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   term = other.term->clone();
 }
 
@@ -950,7 +950,7 @@ Contains::Contains(Term_ptr subject_term, Term_ptr search_term)
 }
 
 Contains::Contains(const Contains& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   subject_term = other.subject_term->clone();
   search_term = other.search_term->clone();
 }
@@ -982,7 +982,7 @@ NotContains::NotContains(Term_ptr subject_term, Term_ptr search_term)
 }
 
 NotContains::NotContains(const NotContains& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   subject_term = other.subject_term->clone();
   search_term = other.search_term->clone();
 }
@@ -1014,7 +1014,7 @@ Begins::Begins(Term_ptr subject_term, Term_ptr search_term)
 }
 
 Begins::Begins(const Begins& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   subject_term = other.subject_term->clone();
   search_term = other.search_term->clone();
 }
@@ -1045,7 +1045,7 @@ NotBegins::NotBegins(Term_ptr subject_term, Term_ptr search_term)
 }
 
 NotBegins::NotBegins(const NotBegins& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   subject_term = other.subject_term->clone();
   search_term = other.search_term->clone();
 }
@@ -1077,7 +1077,7 @@ Ends::Ends(Term_ptr subject_term, Term_ptr search_term)
 }
 
 Ends::Ends(const Ends& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   subject_term = other.subject_term->clone();
   search_term = other.search_term->clone();
 }
@@ -1109,7 +1109,7 @@ NotEnds::NotEnds(Term_ptr subject_term, Term_ptr search_term)
 }
 
 NotEnds::NotEnds(const NotEnds& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   subject_term = other.subject_term->clone();
   search_term = other.search_term->clone();
 }
@@ -1147,7 +1147,7 @@ IndexOf::IndexOf(Term_ptr subject_term, Term_ptr search_term, Term_ptr from_inde
 }
 
 IndexOf::IndexOf(const IndexOf& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   subject_term = other.subject_term->clone();
   search_term = other.search_term->clone();
   if (from_index) {
@@ -1199,7 +1199,7 @@ LastIndexOf::LastIndexOf(Term_ptr subject_term, Term_ptr search_term, Term_ptr f
 }
 
 LastIndexOf::LastIndexOf(const LastIndexOf& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   subject_term = other.subject_term->clone();
   search_term = other.search_term->clone();
   if (from_index) {
@@ -1245,7 +1245,7 @@ CharAt::CharAt(Term_ptr subject_term, Term_ptr index_term)
 }
 
 CharAt::CharAt(const CharAt& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   subject_term = other.subject_term->clone();
   index_term = other.index_term->clone();
 }
@@ -1283,7 +1283,7 @@ SubString::SubString(Term_ptr subject_term, Term_ptr start_index_term, Term_ptr 
 }
 
 SubString::SubString(const SubString& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   subject_term = other.subject_term->clone();
   start_index_term = other.start_index_term->clone();
   if (end_index_term not_eq nullptr) {
@@ -1329,7 +1329,7 @@ ToUpper::ToUpper(Term_ptr subject_term)
 }
 
 ToUpper::ToUpper(const ToUpper& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   subject_term = other.subject_term->clone();
 }
 
@@ -1358,7 +1358,7 @@ ToLower::ToLower(Term_ptr subject_term)
 }
 
 ToLower::ToLower(const ToLower& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   subject_term = other.subject_term->clone();
 }
 
@@ -1387,7 +1387,7 @@ Trim::Trim(Term_ptr subject_term)
 }
 
 Trim::Trim(const Trim& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   subject_term = other.subject_term->clone();
 }
 
@@ -1416,7 +1416,7 @@ ToString::ToString(Term_ptr subject_term)
 }
 
 ToString::ToString(const ToString& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   subject_term = other.subject_term->clone();
 }
 
@@ -1445,7 +1445,7 @@ ToInt::ToInt(Term_ptr subject_term)
 }
 
 ToInt::ToInt(const ToInt& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   subject_term = other.subject_term->clone();
 }
 
@@ -1475,7 +1475,7 @@ Replace::Replace(Term_ptr subject_term, Term_ptr search_term, Term_ptr replace_t
 }
 
 Replace::Replace(const Replace& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   subject_term = other.subject_term->clone();
   search_term = other.search_term->clone();
   replace_term = other.replace_term->clone();
@@ -1510,7 +1510,7 @@ Count::Count(Term_ptr bound_term, Term_ptr subject_term)
 }
 
 Count::Count(const Count& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   subject_term = other.subject_term->clone();
   bound_term = other.bound_term->clone();
 }
@@ -1542,7 +1542,7 @@ Ite::Ite(Term_ptr cond, Term_ptr then_branch, Term_ptr else_branch)
 }
 
 Ite::Ite(const Ite& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   cond = other.cond->clone();
   then_branch = other.then_branch->clone();
   else_branch = other.else_branch->clone();
@@ -1577,7 +1577,7 @@ ReConcat::ReConcat(TermList_ptr term_list)
 }
 
 ReConcat::ReConcat(const ReConcat& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   term_list = new TermList();
   for (auto& term : *(other.term_list)) {
     term_list->push_back(term->clone());
@@ -1610,7 +1610,7 @@ ToRegex::ToRegex(Term_ptr term)
 }
 
 ToRegex::ToRegex(const ToRegex& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   term = other.term->clone();
 }
 
@@ -1639,7 +1639,7 @@ UnknownTerm::UnknownTerm(Term_ptr term, TermList_ptr term_list)
 }
 
 UnknownTerm::UnknownTerm(const UnknownTerm& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   term = other.term->clone();
   term_list = new TermList();
   for (auto& term : *(other.term_list)) {
@@ -1675,7 +1675,7 @@ AsQualIdentifier::AsQualIdentifier(Identifier_ptr identifier, Sort_ptr sort)
 }
 
 AsQualIdentifier::AsQualIdentifier(const AsQualIdentifier& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   identifier = other.identifier->clone();
   sort = other.sort->clone();
 }
@@ -1707,7 +1707,7 @@ QualIdentifier::QualIdentifier(Identifier_ptr identifier)
 }
 
 QualIdentifier::QualIdentifier(const QualIdentifier& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   identifier = other.identifier->clone();
 }
 
@@ -1739,7 +1739,7 @@ TermConstant::TermConstant(Primitive_ptr primitive)
 }
 
 TermConstant::TermConstant(const TermConstant& other)
-        : Term(other.type) {
+        : Term(other.type_) {
   primitive = other.primitive->clone();
 }
 

@@ -116,7 +116,7 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
         or_formula = param_formula->clone();
       } else if (not param_formula->isVariableOrderingSame(or_formula)) {
         param_formula->mergeCoefficients(or_formula);
-        if (Term::Type::AND == (*it)->getType()) {
+        if (Term::Type::AND == (*it)->type()) {
           And_ptr and_term = dynamic_cast<And_ptr>(*it);
           ArithmeticFormula_ptr child_formula = nullptr;
           for (auto& child_term : *(and_term->term_list)) {

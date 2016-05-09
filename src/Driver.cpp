@@ -7,13 +7,41 @@
 
 #include "Driver.h"
 
+#include <boost/multiprecision/detail/default_ops.hpp>
+#include <boost/multiprecision/detail/et_ops.hpp>
+#include <boost/multiprecision/detail/number_base.hpp>
+#include <boost/multiprecision/number.hpp>
+#include <glog/logging.h>
+#include <cstdlib>
+#include <fstream>
+#include <utility>
+
+#include "options/Theory.h"
+#include "parser/location.hh"
+#include "parser/parser.hpp"
+#include "parser/Scanner.h"
+#include "smt/ast.h"
+#include "solver/Ast2Dot.h"
+#include "solver/ConstraintSolver.h"
+#include "solver/ConstraintSorter.h"
+#include "solver/DependencySlicer.h"
+#include "solver/FormulaOptimizer.h"
+#include "solver/Initializer.h"
+#include "solver/SyntacticOptimizer.h"
+#include "solver/SyntacticProcessor.h"
+#include "solver/VariableOptimizer.h"
+#include "theory/BinaryIntAutomaton.h"
+#include "theory/IntAutomaton.h"
+#include "theory/StringAutomaton.h"
+
 namespace Vlab {
 
 //const Log::Level Driver::TAG = Log::DRIVER;
 bool Driver::IS_LOGGING_INITIALIZED = false;
 
 Driver::Driver()
-        : script(nullptr), symbol_table(nullptr) {
+    : script(nullptr),
+      symbol_table(nullptr) {
 }
 
 Driver::~Driver() {
@@ -32,7 +60,7 @@ void Driver::initializeABC(int log_level) {
 }
 
 void Driver::error(const std::string& m) {
-  LOG(ERROR) << m;
+  LOG(ERROR)<< m;
 }
 
 int Driver::parse(std::istream* in) {
@@ -71,8 +99,6 @@ void Driver::initializeSolver() {
   Solver::SyntacticProcessor syntactic_processor(script);
   syntactic_processor.start();
 
-
-
   //Dependency Checker calls to cache!
 
   //Solver::DependencyChecker checker(symbol_table);
@@ -81,9 +107,9 @@ void Driver::initializeSolver() {
   Solver::SyntacticOptimizer syntactic_optimizer(script, symbol_table);
   syntactic_optimizer.start();
 
-  Solver::DependencySlicer depslicer(script, symbol_table);
-  depslicer.start();
-  
+  Solver::DependencySlicer dependency_slicer(script, symbol_table);
+  dependency_slicer.start();
+
   Solver::VariableOptimizer variable_optimizer(script, symbol_table);
   variable_optimizer.start();
 
@@ -121,13 +147,16 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
       result = binary_auto->Count(bound, count_less_than_or_equal_to_bound);
       int number_of_int_variables = symbol_table->get_num_of_variables(SMT::Variable::Type::INT);
       int number_of_substituted_int_variables = symbol_table->get_num_of_substituted_variables(script, SMT::Variable::Type::INT);
-      int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables - binary_auto->getNumberOfVariables();
+      int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables
+          - binary_auto->getNumberOfVariables();
       if (number_of_untracked_int_variables > 0) {
         int exponent = bound;
         if (Option::Solver::LIA_NATURAL_NUMBERS_ONLY) {
           --exponent;
         }
-        result = result * boost::multiprecision::pow( boost::multiprecision::cpp_int(2), (number_of_untracked_int_variables * static_cast<int>(exponent)) );
+        result = result
+            * boost::multiprecision::pow(boost::multiprecision::cpp_int(2),
+                                         (number_of_untracked_int_variables * static_cast<int>(exponent)));
       }
       break;
     }
@@ -161,13 +190,16 @@ boost::multiprecision::cpp_int Driver::SymbolicCount(std::string var_name, const
       result = binary_auto->SymbolicCount(bound, count_less_than_or_equal_to_bound);
       int number_of_int_variables = symbol_table->get_num_of_variables(SMT::Variable::Type::INT);
       int number_of_substituted_int_variables = symbol_table->get_num_of_substituted_variables(script, SMT::Variable::Type::INT);
-      int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables - binary_auto->getNumberOfVariables();
+      int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables
+          - binary_auto->getNumberOfVariables();
       if (number_of_untracked_int_variables > 0) {
         int exponent = bound;
         if (Option::Solver::LIA_NATURAL_NUMBERS_ONLY) {
           --exponent;
         }
-        result = result * boost::multiprecision::pow( boost::multiprecision::cpp_int(2), (number_of_untracked_int_variables * static_cast<int>(exponent)) );
+        result = result
+            * boost::multiprecision::pow(boost::multiprecision::cpp_int(2),
+                                         (number_of_untracked_int_variables * static_cast<int>(exponent)));
       }
       break;
     }
@@ -183,7 +215,6 @@ boost::multiprecision::cpp_int Driver::SymbolicCount(const int bound, bool count
   return SymbolicCount(var_name, bound, count_less_than_or_equal_to_bound);
 }
 
-
 void Driver::inspectResult(Solver::Value_ptr value, std::string file_name) {
   std::ofstream outfile(file_name.c_str());
 
@@ -195,11 +226,10 @@ void Driver::inspectResult(Solver::Value_ptr value, std::string file_name) {
 
   printResult(value, outfile);
 
-
   std::string dot_cmd("dot " + file_name + " &");
   int r = std::system(dot_cmd.c_str());
 
-  LOG(INFO) << "result rendered? " << r << " : " << dot_cmd;
+  LOG(INFO)<< "result rendered? " << r << " : " << dot_cmd;
 }
 
 void Driver::printResult(Solver::Value_ptr value, std::ostream& out) {
@@ -225,7 +255,7 @@ std::map<SMT::Variable_ptr, Solver::Value_ptr> Driver::getSatisfyingVariables() 
 
 std::map<std::string, std::string> Driver::getSatisfyingExamples() {
   std::map<std::string, std::string> results;
-  for(auto& variable_entry : getSatisfyingVariables()) {
+  for (auto& variable_entry : getSatisfyingVariables()) {
     if (Solver::Value::Type::BINARYINT_AUTOMATON == variable_entry.second->getType()) {
       std::map<std::string, int> values = variable_entry.second->getBinaryIntAutomaton()->getAnAcceptingIntForEachVar();
       for (auto& entry : values) {
@@ -258,10 +288,10 @@ void Driver::setOption(Option::Name option, bool value) {
       Option::Solver::LIA_NATURAL_NUMBERS_ONLY = value;
       break;
     default:
-      LOG(ERROR) << "option not recognized: " << static_cast<int>(option) << " -> " << value;
+      LOG(ERROR)<< "option not recognized: " << static_cast<int>(option) << " -> " << value;
       break;
+    }
   }
-}
 
 void Driver::setOption(Option::Name option, std::string value) {
   switch (option) {
@@ -274,10 +304,10 @@ void Driver::setOption(Option::Name option, std::string value) {
       Option::Theory::SCRIPT_PATH = value;
       break;
     default:
-      LOG(ERROR) << "option not recognized: " << static_cast<int>(option) << " -> " << value;
+      LOG(ERROR)<< "option not recognized: " << static_cast<int>(option) << " -> " << value;
       break;
+    }
   }
-}
 
 void Driver::test() {
   return;
@@ -327,8 +357,6 @@ void Driver::test() {
 //  std::cout << "concat ok" << std::endl;
 //  str_auto_3->inspectAuto();
 
-
-
 //  non_accepting_auto->inspectAuto(true);
 
 //  Theory::StringAutomaton_ptr any_string = Theory::StringAutomaton::makeAnyString();
@@ -371,7 +399,6 @@ void Driver::test() {
 
   //Theory::StringAutomaton_ptr test_auto = a6->union_(a5->union_(a4->union_(a3->union_(a1->concatenate(char_range_closure)->concatenate(a2)))));
 //  Theory::StringAutomaton_ptr test_auto = a5->union_(a4->union_(a3->union_(a1->concatenate(char_range)->concatenate(a2))));
-
 
   //Theory::StringAutomaton_ptr result_auto = test_auto->charAt(5);
 //  Theory::StringAutomaton_ptr result_auto = test_auto->suffixesFromIndex(12);

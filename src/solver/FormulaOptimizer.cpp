@@ -100,12 +100,12 @@ void FormulaOptimizer::add_terms_to_check_list(TermList_ptr term_list) {
 bool FormulaOptimizer::check_term(Term_ptr term) {
   for (auto& scope : scope_stack) {
     for (auto& other_term : check_table[scope]) {
-      if (term->getType() == Term::Type::NOT and other_term->getType() != Term::Type::NOT) {
+      if (term->type() == Term::Type::NOT and other_term->type() != Term::Type::NOT) {
         Not_ptr not_term = dynamic_cast<Not_ptr>(term);
         if (Ast2Dot::isEquivalent(not_term->term, other_term)) {
           return true;
         }
-      } else if (term->getType() != Term::Type::NOT and other_term->getType() == Term::Type::NOT) {
+      } else if (term->type() != Term::Type::NOT and other_term->type() == Term::Type::NOT) {
         Not_ptr not_term = dynamic_cast<Not_ptr>(other_term);
         if (Ast2Dot::isEquivalent(not_term->term, term)) {
           return true;

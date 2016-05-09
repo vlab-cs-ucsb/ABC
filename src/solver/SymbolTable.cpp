@@ -134,20 +134,24 @@ VariableMap& SymbolTable::getVariables() {
   return variables;
 }
 
-void SymbolTable::updateComponents(Component* c, Visitable_ptr scope){
-  components[scope].push_back(c);
+void SymbolTable::add_component(Component_ptr component){
+  components_[scope_stack.back()].push_back(component);
 }
 
-std::vector<Component*> SymbolTable::getComponents(Visitable_ptr scope){
-  return components[scope];
+void SymbolTable::add_components(std::vector<Component_ptr>& components) {
+  components_[scope_stack.back()].insert(components_[scope_stack.back()].end(), components.begin(), components.end());
 }
 
-ComponentMap SymbolTable::getComponentMap(){
-  return components;
+std::vector<Component*> SymbolTable::get_components_at(Visitable_ptr scope){
+  return components_[scope];
 }
 
-int SymbolTable::getNComponent(Visitable_ptr scope){
-  return components[scope].size();
+ComponentMap SymbolTable::get_component_map(){
+  return components_;
+}
+
+int SymbolTable::get_number_of_components(Visitable_ptr scope){
+  return components_[scope].size();
 }
 
 /*int SymbolTable::getReuse(){

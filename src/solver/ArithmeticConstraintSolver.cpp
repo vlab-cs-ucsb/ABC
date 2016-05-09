@@ -38,7 +38,7 @@ void ArithmeticConstraintSolver::end() {
 
 void ArithmeticConstraintSolver::setCallbacks() {
   auto term_callback = [this] (Term_ptr term) -> bool {
-    switch (term->getType()) {
+    switch (term->type()) {
       case Term::Type::NOT:
       case Term::Type::EQ:
       case Term::Type::NOTEQ:

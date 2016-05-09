@@ -359,7 +359,7 @@ bool OptimizationRuleRunner::has_optimization_rules() {
 }
 
 bool OptimizationRuleRunner::check_and_substitute_var(Term_ptr& term) {
-  if (Term::Type::QUALIDENTIFIER == term->getType()) {
+  if (Term::Type::QUALIDENTIFIER == term->type()) {
     Variable_ptr variable = symbol_table->getVariable(term);
     Term_ptr subs_term = get_substitution_term(variable);
     if (subs_term != nullptr) {

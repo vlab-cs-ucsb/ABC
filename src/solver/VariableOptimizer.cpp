@@ -7,6 +7,16 @@
 
 #include "VariableOptimizer.h"
 
+#include <glog/logging.h>
+#include <glog/vlog_is_on.h>
+#include <iostream>
+#include <string>
+#include <utility>
+
+#include "smt/Visitor.h"
+#include "Counter.h"
+#include "OptimizationRuleRunner.h"
+
 namespace Vlab {
 namespace Solver {
 
@@ -124,8 +134,8 @@ void VariableOptimizer::visitOr(Or_ptr or_term) {
 
 void VariableOptimizer::visitEq(Eq_ptr eq_term) {
   if (existential_elimination_phase) {
-    if (Term::Type::QUALIDENTIFIER == eq_term->left_term->getType()
-            and Term::Type::QUALIDENTIFIER == eq_term->right_term->getType()) {
+    if (Term::Type::QUALIDENTIFIER == eq_term->left_term->type()
+            and Term::Type::QUALIDENTIFIER == eq_term->right_term->type()) {
 
       Variable_ptr left_var = symbol_table->getVariable(eq_term->left_term);
       Variable_ptr right_var = symbol_table->getVariable(eq_term->right_term);
@@ -151,18 +161,18 @@ void VariableOptimizer::visitEq(Eq_ptr eq_term) {
    * 2 - Variable may appear in other places with some other boolean variables
    */
   else if (Variable::Type::BOOL == target_type) {
-    if ((Term::Type::QUALIDENTIFIER == eq_term->left_term->getType()
-            or Term::Type::QUALIDENTIFIER == eq_term->right_term->getType())
-            and (Term::Type::QUALIDENTIFIER != eq_term->left_term->getType()
-                    or Term::Type::QUALIDENTIFIER != eq_term->right_term->getType())) {
+    if ((Term::Type::QUALIDENTIFIER == eq_term->left_term->type()
+            or Term::Type::QUALIDENTIFIER == eq_term->right_term->type())
+            and (Term::Type::QUALIDENTIFIER != eq_term->left_term->type()
+                    or Term::Type::QUALIDENTIFIER != eq_term->right_term->type())) {
 
       Variable_ptr target_variable =
-              (Term::Type::QUALIDENTIFIER == eq_term->left_term->getType()) ?
+              (Term::Type::QUALIDENTIFIER == eq_term->left_term->type()) ?
                       symbol_table->getVariable(eq_term->left_term) : symbol_table->getVariable(eq_term->right_term);
 
       if (target_variable->getType() == target_type) {
         Term_ptr target_term =
-                (Term::Type::QUALIDENTIFIER == eq_term->left_term->getType()) ?
+                (Term::Type::QUALIDENTIFIER == eq_term->left_term->type()) ?
                         eq_term->right_term : eq_term->left_term;
 
 //       std::cout << "rule add = " << *target_variable << " " << *target_term << std::endl;
@@ -212,7 +222,7 @@ void VariableOptimizer::add_variable_substitution_rule(Variable_ptr subject_var,
 
     /* 3 - Update a rule with the target if the subject variable is already a target */
     for (auto& substitution_rule : get_substitution_map()) {
-      if (Term::Type::QUALIDENTIFIER == substitution_rule.second->getType()) {
+      if (Term::Type::QUALIDENTIFIER == substitution_rule.second->type()) {
         if (subject_var == symbol_table->getVariable(substitution_rule.second)) {
           Term_ptr tmp_term = substitution_rule.second;
           substitution_rule.second = target_term->clone();

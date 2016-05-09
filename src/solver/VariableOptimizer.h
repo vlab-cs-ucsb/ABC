@@ -8,16 +8,13 @@
 #ifndef SOLVER_VARIABLEOPTIMIZER_H_
 #define SOLVER_VARIABLEOPTIMIZER_H_
 
-#include <stack>
+#include <cstdbool>
 #include <map>
 
-#include <glog/logging.h>
 #include "smt/ast.h"
-#include "options/Solver.h"
-#include "SymbolTable.h"
+#include "smt/typedefs.h"
 #include "AstTraverser.h"
-#include "Counter.h"
-#include "OptimizationRuleRunner.h"
+#include "SymbolTable.h"
 
 
 namespace Vlab {
