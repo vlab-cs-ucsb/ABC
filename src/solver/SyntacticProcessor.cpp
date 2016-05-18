@@ -76,7 +76,7 @@ void SyntacticProcessor::convertAssertsToAnd() {
 
 /**
  * Applies De Morgan's Law and push negations down
- * TODO pull not processing in SyntacticOptimizer into here
+ *
  */
 void SyntacticProcessor::visitNot(Not_ptr not_term) {
   Term_ptr* reference_term = top();

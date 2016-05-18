@@ -1,6 +1,9 @@
 /*
  * SyntacticProcessor.h
  *
+ * - Applies De Morgan's Law and push negations down
+ * - Does syntactic processing on input data types
+ *
  *  Created on: Sep 27, 2015
  *      Author: baki
  */
