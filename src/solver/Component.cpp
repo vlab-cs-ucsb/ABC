@@ -37,9 +37,9 @@ void Component::add_term(SMT::Term_ptr term) {
 }
 
 void Component::add_variable(SMT::Variable_ptr var) {
-  //if (std::find(variables_.begin(), variables_.end(), var) == variables_.end()) {
+  if (std::find(variables_.begin(), variables_.end(), var) == variables_.end()) {
     variables_.push_back(var);
-  //}
+  }
 }
 
 TermList Component::get_terms() const {

@@ -51,9 +51,7 @@ void DependencySlicer::end() {
         DVLOG(VLOG_LEVEL) << "Variables are:: ";
         for (auto& var : c->get_variables()) {
           DVLOG(VLOG_LEVEL) << var->getName();
-
         }
-
       }
     }
   }
@@ -148,6 +146,7 @@ void DependencySlicer::add_variable_current_term_mapping(SMT::Variable_ptr varia
 std::vector<Component_ptr> DependencySlicer::GetComponentsFor(SMT::TermList_ptr term_list) {
   std::map<Variable_ptr, Component_ptr> variable_to_component_map;
   Component_ptr current_component = nullptr;
+  std::vector Variable_ptr current_variables;
   for (auto it = term_list->begin(); it != term_list->end(); ++it) {
     current_component = nullptr;
     auto term = *it;
@@ -168,6 +167,7 @@ std::vector<Component_ptr> DependencySlicer::GetComponentsFor(SMT::TermList_ptr 
       variable_to_component_map[var] = current_component;
     }
     // check if current term has a shared variable with other terms
+    // TODO: continue to loop until no more variables added
     for (auto test_it = it + 1; test_it != term_list->end(); ++test_it) {
       auto other_term = *test_it;
       if (Util::List::has_intersection(term_variable_map_[term].begin(), term_variable_map_[term].end(), term_variable_map_[other_term].begin(), term_variable_map_[other_term].end())) {
