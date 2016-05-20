@@ -11,31 +11,47 @@ namespace Solver {
 using namespace SMT;
 
 Component::Component()
-    : is_solved_ { false },
-      is_sat_ { false } {
+  : is_solved_ { false },
+    is_sat_ { false } {
 }
 
 Component::Component(SMT::Term_ptr term)
-    : is_solved_ { false },
-      is_sat_ { false } {
+  : is_solved_ { false },
+    is_sat_ { false } {
   terms_.push_back(term);
 }
 
 Component::Component(TermList terms)
-    : is_solved_ { false },
-      is_sat_ { false },
-      terms_(terms) {
+  : is_solved_ { false },
+    is_sat_ { false },
+    terms_(terms) {
 }
 
 Component::~Component() {
 }
 
 void Component::add_term(SMT::Term_ptr term) {
-  terms_.push_back(term);
+  if (std::find(terms_.begin(), terms_.end(), term) == terms_.end()) {
+    terms_.push_back(term);
+  }
+}
+
+void Component::add_variable(SMT::Variable_ptr var) {
+  //if (std::find(variables_.begin(), variables_.end(), var) == variables_.end()) {
+    variables_.push_back(var);
+  //}
 }
 
 TermList Component::get_terms() const {
   return terms_;
+}
+
+std::vector<SMT::Variable_ptr> Component::get_variables() const {
+  return variables_;
+}
+
+int Component::get_size() const {
+  return variables_.size();
 }
 
 bool Component::is_solved() const {

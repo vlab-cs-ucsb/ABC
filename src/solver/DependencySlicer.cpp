@@ -19,9 +19,9 @@ using namespace SMT;
 const int DependencySlicer::VLOG_LEVEL = 20;
 
 DependencySlicer::DependencySlicer(Script_ptr script, SymbolTable_ptr symbol_table)
-    : AstTraverser(script),
-      symbol_table_(symbol_table),
-      current_term_(nullptr) {
+  : AstTraverser(script),
+    symbol_table_(symbol_table),
+    current_term_(nullptr) {
   setCallbacks();
 }
 
@@ -48,6 +48,12 @@ void DependencySlicer::end() {
       }
       for (auto& c : m.second) {
         DVLOG(VLOG_LEVEL) << "Component:: " << c->ToString();
+        DVLOG(VLOG_LEVEL) << "Variables are:: ";
+        for (auto& var : c->get_variables()) {
+          DVLOG(VLOG_LEVEL) << var->getName();
+
+        }
+
       }
     }
   }
@@ -77,15 +83,24 @@ void DependencySlicer::setCallbacks() {
 
 void DependencySlicer::visitAssert(Assert_ptr assert_command) {
   if ((Term::Type::OR not_eq assert_command->term->type()) and (Term::Type::AND not_eq assert_command->term->type())) {
+    current_term_ = assert_command->term;
+    visit(assert_command->term);
+    current_term_ = nullptr;
     // There is only one constraint
-    symbol_table_->add_component(new Component(assert_command->term));
+    Component* current_component = new Component(assert_command->term);
+    for (auto& var : term_variable_map_[assert_command->term]) {
+      current_component->add_variable(var);
+    }
+    symbol_table_->add_component(current_component);
+
+
   } else {
     visit_children_of(assert_command);
   }
 }
 
 void DependencySlicer::visitAnd(And_ptr and_term) {
-  for (auto& term : *(and_term->term_list)) {
+  for (auto& term : * (and_term->term_list)) {
     current_term_ = term;
     visit(term);
     current_term_ = nullptr;
@@ -98,11 +113,18 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
 }
 
 void DependencySlicer::visitOr(Or_ptr or_term) {
-  for (auto& term : *(or_term->term_list)) {
+  for (auto& term : * (or_term->term_list)) {
     symbol_table_->push_scope(term);
     if (Term::Type::AND not_eq term->type()) {
       // a single component, handle here
-      symbol_table_->add_component(new Component(term));
+      current_term_ = term;
+      visit(term);
+      current_term_ = nullptr;
+      Component* current_component = new Component(term);
+      for (auto& var : term_variable_map_[term]) {
+        current_component->add_variable(var);
+      }
+      symbol_table_->add_component(current_component);
     } else {
       visit(term);
     }
@@ -124,30 +146,42 @@ void DependencySlicer::add_variable_current_term_mapping(SMT::Variable_ptr varia
 }
 
 std::vector<Component_ptr> DependencySlicer::GetComponentsFor(SMT::TermList_ptr term_list) {
-  std::map<Term_ptr, Component_ptr> term_to_component_map;
+  std::map<Variable_ptr, Component_ptr> variable_to_component_map;
   Component_ptr current_component = nullptr;
   for (auto it = term_list->begin(); it != term_list->end(); ++it) {
+    current_component = nullptr;
     auto term = *it;
-    // find or initialize component that includes term
-    auto map_entry = term_to_component_map.find(term);
-    if (map_entry == term_to_component_map.end()) {
+    // find or initialize component that includes variable of term
+    for (auto& var : term_variable_map_[term]) {
+      auto map_entry = variable_to_component_map.find(var);
+      if (map_entry != variable_to_component_map.end()) {
+        current_component = map_entry->second;
+        current_component->add_term(term);
+        break;
+      }
+    }
+    if (current_component == nullptr) {
       current_component = new Component(term);
-      term_to_component_map[term] = current_component;
-    } else {
-      current_component = map_entry->second;
+    }
+    for (auto& var : term_variable_map_[term]) {
+      current_component->add_variable(var);
+      variable_to_component_map[var] = current_component;
     }
     // check if current term has a shared variable with other terms
     for (auto test_it = it + 1; test_it != term_list->end(); ++test_it) {
       auto other_term = *test_it;
       if (Util::List::has_intersection(term_variable_map_[term].begin(), term_variable_map_[term].end(), term_variable_map_[other_term].begin(), term_variable_map_[other_term].end())) {
         current_component->add_term(other_term);
-        term_to_component_map[other_term] = current_component;
+        for (auto& var : term_variable_map_[other_term]) {
+          variable_to_component_map[var] = current_component;
+          current_component->add_variable(var);
+        }
       }
     }
   }
 
   std::set<Component_ptr> unique_components;
-  for (auto& entry : term_to_component_map) {
+  for (auto& entry : variable_to_component_map) {
     unique_components.insert(entry.second);
   }
 
