@@ -165,6 +165,7 @@ std::vector<Component_ptr> DependencySlicer::GetComponentsFor(SMT::TermList_ptr 
     for (auto& var : term_variable_map_[term]) {
       current_component->add_variable(var);
       variable_to_component_map[var] = current_component;
+      symbol_table_->set_variable_component(var,current_component);
     }
     // check if current term has a shared variable with other terms
     // TODO: continue to loop until no more variables added

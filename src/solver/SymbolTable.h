@@ -153,11 +153,8 @@ private:
    * Constraints that are dependent each other stored in the same component
    */
   ComponentMap components_;
-
   ComponentValueMap component_values_;
-
   VariableComponentTable variable_component_table;
-
   static const int VLOG_LEVEL;
   //int reuse; 
 

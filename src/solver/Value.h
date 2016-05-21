@@ -17,6 +17,7 @@
 #include "theory/IntBoolAutomaton.h"
 #include "theory/BinaryIntAutomaton.h"
 #include "theory/StringAutomaton.h"
+#include "theory/MultiTrackAutomaton.h"
 
 namespace Vlab {
 namespace Solver {
@@ -33,7 +34,8 @@ public:
     INT_AUTOMATON,
     INTBOOL_AUTOMATON,
     BINARYINT_AUTOMATON,
-    STRING_AUTOMATON
+    STRING_AUTOMATON,
+    MULTITRACK_AUTOMATON
   };
 
   Value();
@@ -93,6 +95,7 @@ public:
     static const std::string INTBOOL_AUTOMATON;
     static const std::string BINARYINT_AUTOMATON;
     static const std::string STRING_AUTOMATON;
+    static const std::string MULTITRACK_AUTOMATON;
   };
 
   friend std::ostream& operator<<(std::ostream& os, const Value& value);
@@ -107,6 +110,7 @@ private:
     Theory::IntBoolAutomaton_ptr intbool_automaton;
     Theory::BinaryIntAutomaton_ptr binaryint_automaton;
     Theory::StringAutomaton_ptr string_automaton;
+    Theory::MultiTrackAutomaton_ptr multitrack_automaton;
   };
 
   static const int VLOG_LEVEL;

@@ -45,6 +45,15 @@ void StringConstraintSolver::setCallbacks() {
           DVLOG(VLOG_LEVEL) << "String Word Relation: " << "str()";
           MultiTrackAutomaton_ptr multi_auto = MultiTrackAutomaton::makeAutomaton(relation);
           Value_ptr result = new Value(multi_auto);
+          // update the value of each variable
+          std::vector<std::string,int> variables = relation->getVariableTrackMap();
+          for(auto& var_iter : variables) {
+            if(var_iter.second < 0) {
+              continue; //constant
+            }
+            std::string var_name = var_iter.first;
+            symbol_table->updateValue(var_name,result);
+          }
           setTermValue(term,result);
           break;
         }
@@ -81,9 +90,11 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
   bool is_satisfiable = true;
   StringRelation_ptr relation = nullptr;
   Value_ptr result = nullptr, param = nullptr, and_value = nullptr;
+
   for (auto &term : *(and_term->term_list)) {
     relation = string_relation_generator.getTermRelation(term);
     if(relation != nullptr) {
+      bindRelation(relation);
       visit(term);
       param = getTermValue(term);
       is_satisfiable = is_satisfiable and param->isSatisfiable();
@@ -237,6 +248,25 @@ std::map<Term_ptr, Term_ptr> &StringConstraintSolver::getTermValueIndex() {
 
 StringConstraintSolver::TermValueMap &StringConstraintSolver::getTermValues() {
   return term_values;
+}
+
+void StringConstraintSolver::bindRelation(StringRelation_ptr relation) {
+  Variable_ptr var = nullptr;
+  Component_ptr var_comp = nullptr;
+  std::map<std::string,int> vars = relation->getVariableTrackMap();
+
+  int next_track = 0;
+  for(auto& var_iter : vars) {
+    if(var_iter.second < 0) {
+      continue; //constant
+    }
+    std::string var_name = var_iter.first;
+    vars[var_name] = next_track++;
+    if(relation->getNumTracks() <= 0) {
+      relation->setNumTracks(var_comp->get_size());
+    }
+  }
+  relation->setVariableTrackMap(vars);
 }
 
 } /* namespace Solver */
