@@ -1,49 +1,33 @@
 /*
- * ConstraintSolver.h
- *
- *  Created on: Jun 24, 2015
- *      Author: baki
- */
+* Created by will on 3/4/16.
+* Currently, generates mapping between variables and
+* their respective tracks
+* Later, will serve as "phase 1", tracking relations only when needed,
+* and serving to eliminate as much work as possible, while still providing
+* relational analysis
+*/
 
-#ifndef SOLVER_CONSTRAINTSOLVER_H_
-#define SOLVER_CONSTRAINTSOLVER_H_
+#ifndef SRC_STRINGRELATIONGENERATOR_H
+#define SRC_STRINGRELATIONGENERATOR_H
 
-#include <string>
-#include <sstream>
 #include <map>
-#include <cstdlib>
-#include <cstdbool>
-#include <iostream>
-#include <iterator>
-#include <utility>
-#include <vector>
 
 #include <glog/logging.h>
-
-#include "smt/ast.h"
-#include "theory/UnaryAutomaton.h"
-#include "theory/IntAutomaton.h"
-#include "theory/ArithmeticFormula.h"
-#include "theory/BinaryIntAutomaton.h"
-#include "theory/StringAutomaton.h"
-#include "theory/MultiTrackAutomaton.h"
-#include "options/Solver.h"
-#include "Ast2Dot.h"
 #include "SymbolTable.h"
-#include "Value.h"
-#include "VariableValueComputer.h"
-#include "ArithmeticConstraintSolver.h"
-#include "StringConstraintSolver.h"
+#include "Ast2Dot.h"
+#include "smt/typedefs.h"
+#include "theory/MultiTrackAutomaton.h"
+#include "smt/ast.h"
+#include "theory/StringRelation.h"
 
 namespace Vlab {
 namespace Solver {
 
-class ConstraintSolver: public SMT::Visitor {
-  typedef std::map<SMT::Term_ptr, Value_ptr> TermValueMap;
-  typedef std::vector<std::vector<SMT::Term_ptr>> VariablePathTable;
+class StringRelationGenerator: public SMT::Visitor {
+
 public:
-  ConstraintSolver(SMT::Script_ptr, SymbolTable_ptr);
-  virtual ~ConstraintSolver();
+  StringRelationGenerator(SMT::Script_ptr, SymbolTable_ptr);
+  virtual ~StringRelationGenerator();
 
   void start() override;
   void end() override;
@@ -59,7 +43,7 @@ public:
   void visitAnd(SMT::And_ptr) override;
   void visitOr(SMT::Or_ptr) override;
   void visitNot(SMT::Not_ptr) override;
-  void visitUMinus(SMT::UMinus_ptr) override;
+  void visitUMinus(SMT::UMinus_ptr);
   void visitMinus(SMT::Minus_ptr) override;
   void visitPlus(SMT::Plus_ptr) override;
   void visitTimes(SMT::Times_ptr) override;
@@ -109,32 +93,26 @@ public:
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
 
+  Theory::StringRelation_ptr getTermRelation(SMT::Term_ptr term);
+
 protected:
-  Value_ptr getTermValue(SMT::Term_ptr term);
-  bool setTermValue(SMT::Term_ptr term, Value_ptr value);
-  void clearTermValue(SMT::Term_ptr term);
-  void clearTermValuesAndLocalLetVars();
-  void setVariablePath(SMT::QualIdentifier_ptr qi_term);
-  void update_variables();
-  void visit_children_of(SMT::Term_ptr term);
-  bool check_and_visit(SMT::Term_ptr term);
+  bool setTermRelation(SMT::Term_ptr term, Theory::StringRelation_ptr str_rel);
+  void deleteTermRelation(SMT::Term_ptr term);
+  void addStringVariable(std::string name);
 
   SMT::Script_ptr root;
   SymbolTable_ptr symbol_table;
+  std::map<SMT::Term_ptr, Theory::StringRelation_ptr> relations;
+  std::map<std::string, int> var_track_map;
 
-  ArithmeticConstraintSolver arithmetic_constraint_solver;
-  StringConstraintSolver string_constraint_solver;
-
-  TermValueMap term_values;
-
-  std::vector<SMT::Term_ptr> path_trace;
-  VariablePathTable variable_path_table;
+  int next_handle;
 
 private:
   static const int VLOG_LEVEL;
+
 };
 
 } /* namespace Solver */
 } /* namespace Vlab */
 
-#endif /* SOLVER_CONSTRAINTSOLVER_H_ */
+#endif //SRC_STRINGRELATIONGENERATOR_H

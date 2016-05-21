@@ -4,6 +4,7 @@
 
 #include <cstdbool>
 #include <string>
+#include <algorithm>
 #include <vector>
 
 #include "smt/typedefs.h"

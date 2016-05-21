@@ -17,7 +17,9 @@ const int ConstraintSolver::VLOG_LEVEL = 11;
 
 ConstraintSolver::ConstraintSolver(Script_ptr script,
     SymbolTable_ptr symbol_table) :
-    root(script), symbol_table(symbol_table), arithmetic_constraint_solver(script, symbol_table, Option::Solver::LIA_NATURAL_NUMBERS_ONLY) {
+    root(script), symbol_table(symbol_table),
+    arithmetic_constraint_solver(script, symbol_table, Option::Solver::LIA_NATURAL_NUMBERS_ONLY),
+    string_constraint_solver(script, symbol_table) {
 }
 
 ConstraintSolver::~ConstraintSolver() {
@@ -27,6 +29,7 @@ void ConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "start";
   if (Option::Solver::LIA_ENGINE_ENABLED) {
     arithmetic_constraint_solver.start();
+    string_constraint_solver.start();
   }
   visit(root);
   end();

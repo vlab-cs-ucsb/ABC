@@ -6,6 +6,7 @@
  */
 
 #include "SymbolTable.h"
+#include "../theory/MultiTrackAutomaton.h"
 
 namespace Vlab {
 namespace Solver {
@@ -368,6 +369,48 @@ bool SymbolTable::updateValue(Variable_ptr variable, Value_ptr value) {
 
   return true;
 }
+
+bool SymbolTable::set_variable_component(SMT::Variable_ptr variable, Component_ptr component) {
+  variable_component_table[scope_stack.back()][variable] = component;
+  return true;
+}
+
+Component_ptr SymbolTable::get_variable_component(SMT::Variable_ptr variable) {
+  for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); it++) {
+    auto entry = variable_component_table[(*it)].find(variable);
+    if (entry != variable_component_table[(*it)].end()) {
+      return entry->second;
+    }
+  }
+  return nullptr;
+}
+
+bool SymbolTable::set_component_value(Component_ptr component, Value_ptr value) {
+  component_values_[component] = value;
+  return true;
+}
+
+Value_ptr SymbolTable::get_component_value(Component_ptr component) {
+  if(component_values_.find(component) == component_values_.end()) {
+    return Theory::MultiTrackAutomaton::makeAnyAutoUnaligned(component->get_size();
+  }
+  return component_values_[component];
+}
+
+bool SymbolTable::update_component_value(Component_ptr component, Value_ptr value) {
+  Value_ptr component_old_value = get_component_value(component);
+  Value_ptr component_new_value = component_old_value->intersect(value);
+
+  if(component_values_[component] == component_old_value) {
+    set_component_value(component,component_new_value);
+    delete component_old_value; component_old_value = nullptr;
+  } else {
+    set_component_value(component,component_new_value);
+  }
+
+  return true;
+}
+
 
 } /* namespace Solver */
 } /* namespace Vlab */

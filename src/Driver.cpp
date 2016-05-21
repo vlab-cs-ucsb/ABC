@@ -33,6 +33,7 @@
 #include "theory/BinaryIntAutomaton.h"
 #include "theory/IntAutomaton.h"
 #include "theory/StringAutomaton.h"
+#include "theory/MultiTrackAutomaton.h"
 
 namespace Vlab {
 

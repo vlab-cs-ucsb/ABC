@@ -29,7 +29,9 @@ using VariableSubstitutionTable = std::map<SMT::Visitable_ptr, VariableSubstitut
 using VariableValueMap = std::map<SMT::Variable_ptr, Value_ptr>;
 using VariableValueTable = std::map<SMT::Visitable_ptr, VariableValueMap>;
 using ComponentMap = std::map<SMT::Visitable_ptr, std::vector<Component_ptr>>;
-
+using ComponentValueMap = std::map<Component_ptr,Value_ptr>;
+using VariableComponentMap = std::map<SMT::Variable_ptr, Component_ptr>;
+using VariableComponentTable = std::map<SMT::Visitable_ptr, VariableComponentMap>;
 
 
 class SymbolTable {
@@ -76,7 +78,6 @@ public:
   std::vector<Component_ptr> get_components_at(SMT::Visitable_ptr);
   ComponentMap get_component_map();
 
-
   int get_number_of_components(SMT::Visitable_ptr);
 
   /*Added function to keep track of the amount of reuse 
@@ -100,6 +101,13 @@ public:
   bool setValue(SMT::Variable_ptr variable, Value_ptr value);
   bool updateValue(std::string var_name, Value_ptr value);
   bool updateValue(SMT::Variable_ptr variable, Value_ptr value);
+
+  bool set_variable_component(SMT::Variable_ptr variable, Component_ptr component);
+  Component_ptr get_variable_component(SMT::Variable_ptr variable);
+
+  bool set_component_value(Component_ptr component, Value_ptr value);
+  Value_ptr get_component_value(Component_ptr component);
+  bool update_component_value(Component_ptr component, Value_ptr value);
 
   static const char ARITHMETIC[];
 private:
@@ -145,6 +153,11 @@ private:
    * Constraints that are dependent each other stored in the same component
    */
   ComponentMap components_;
+
+  ComponentValueMap component_values_;
+
+  VariableComponentTable variable_component_table;
+
   static const int VLOG_LEVEL;
   //int reuse; 
 

@@ -146,7 +146,7 @@ void DependencySlicer::add_variable_current_term_mapping(SMT::Variable_ptr varia
 std::vector<Component_ptr> DependencySlicer::GetComponentsFor(SMT::TermList_ptr term_list) {
   std::map<Variable_ptr, Component_ptr> variable_to_component_map;
   Component_ptr current_component = nullptr;
-  std::vector Variable_ptr current_variables;
+  std::vector<Variable_ptr>  current_variables;
   for (auto it = term_list->begin(); it != term_list->end(); ++it) {
     current_component = nullptr;
     auto term = *it;

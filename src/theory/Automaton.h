@@ -58,7 +58,7 @@ class Automaton {
 public:
   enum class Type
     : int {
-      NONE = 0, BOOL, UNARY, INT, INTBOOl, BINARYINT, STRING
+      NONE = 0, BOOL, UNARY, INT, INTBOOl, BINARYINT, STRING, MULTITRACK
   };
 
   Automaton(Automaton::Type type);
