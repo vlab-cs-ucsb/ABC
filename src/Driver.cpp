@@ -115,7 +115,7 @@ void Driver::initializeSolver() {
   variable_optimizer.start();
 
   Solver::FormulaOptimizer formula_optimizer(script, symbol_table);
-  formula_optimizer.start();
+  //formula_optimizer.start();
 
   Solver::ConstraintSorter constraint_sorter(script, symbol_table);
   constraint_sorter.start();

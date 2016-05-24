@@ -37,24 +37,51 @@ void StringConstraintSolver::setCallbacks() {
         case Term::Type::EQ:
         case Term::Type::NOTEQ: {
           DVLOG(VLOG_LEVEL) << "visit: " << *term;
-          StringRelation_ptr relation = string_relation_generator.getTermRelation(term);
+          StringRelation_ptr relation = string_relation_generator.get_term_relation(term);
           if(relation == nullptr) {
             return false;
           }
 
-          DVLOG(VLOG_LEVEL) << "String Word Relation: " << "str()";
-          MultiTrackAutomaton_ptr multi_auto = MultiTrackAutomaton::makeAutomaton(relation);
-          Value_ptr result = new Value(multi_auto);
-          // update the value of each variable
-          std::vector<std::string,int> variables = relation->getVariableTrackMap();
-          for(auto& var_iter : variables) {
-            if(var_iter.second < 0) {
-              continue; //constant
-            }
-            std::string var_name = var_iter.first;
-            symbol_table->updateValue(var_name,result);
+          StringRelation::Subrelation subrel = relation->get_subrelation_list()[0];
+          std::vector<std::pair<std::string,int>> tracks;
+          for(auto& name : subrel.names) {
+            tracks.push_back(std::make_pair(name,relation->get_variable_index(name)));
           }
-          setTermValue(term,result);
+          MultiTrackAutomaton_ptr multi_auto = nullptr;
+          if(term->type() == Term::Type::EQ)
+            multi_auto = MultiTrackAutomaton::makeEquality(tracks,relation->get_num_tracks());
+          else
+            multi_auto = MultiTrackAutomaton::makeNotEquality(tracks,relation->get_num_tracks());
+          relation->set_value_auto(multi_auto);
+
+/*
+          DVLOG(VLOG_LEVEL) << "--------------------";
+          if(relation->get_type() == StringRelation::Type::EQ) {
+            DVLOG(VLOG_LEVEL) << "String relation type: EQ";
+          } else if(relation->get_type() == StringRelation::Type::NOTEQ) {
+            DVLOG(VLOG_LEVEL) << "String relation type: NOTEQ";
+          }
+
+          DVLOG(VLOG_LEVEL) << "track[0]: " << "(" << tracks[0].first << "," << tracks[0].second << ")";
+          DVLOG(VLOG_LEVEL) << "track[1]: " << "(" << tracks[1].first << "," << tracks[1].second << ")";
+          MultiTrackAutomaton_ptr result_auto = relation->get_value_auto();
+          StringAutomaton_ptr string1_auto = relation->get_variable_value_auto(tracks[0].first);
+          if(string1_auto == nullptr) {
+            DVLOG(VLOG_LEVEL) << "string1 nullptr";
+          }
+          StringAutomaton_ptr string2_auto = relation->get_variable_value_auto(tracks[1].first);
+          if(string2_auto == nullptr) {
+            DVLOG(VLOG_LEVEL) << "string2 nullptr";
+          }
+
+          string1_auto->isEmptyLanguage();
+          DVLOG(VLOG_LEVEL) << string1_auto->getAnAcceptingString();
+          StringAutomaton_ptr temp = StringAutomaton::makeString("boo");
+          string2_auto = string1_auto->intersect(temp);
+          DVLOG(VLOG_LEVEL) << string2_auto->isEmptyLanguage();
+
+          DVLOG(VLOG_LEVEL) << "--------------------";
+*/
           break;
         }
         default:
@@ -90,39 +117,8 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
   bool is_satisfiable = true;
   StringRelation_ptr relation = nullptr;
   Value_ptr result = nullptr, param = nullptr, and_value = nullptr;
-
-  for (auto &term : *(and_term->term_list)) {
-    relation = string_relation_generator.getTermRelation(term);
-    if(relation != nullptr) {
-      bindRelation(relation);
-      visit(term);
-      param = getTermValue(term);
-      is_satisfiable = is_satisfiable and param->isSatisfiable();
-      if(is_satisfiable) {
-        if(result == nullptr) {
-          result = param->clone();
-        } else {
-          and_value = result->intersect(param);
-          delete result;
-          result = and_value;
-        }
-      } else {
-        result = new Value(MultiTrackAutomaton::makePhi(relation->clone()));
-        break;
-      }
-      clearTermValue(term);
-    }
-  }
-
-  for(auto& term : *(and_term->term_list)) {
-    relation = string_relation_generator.getTermRelation(term);
-    if(relation != nullptr) {
-      term_value_index[term] = and_term;
-      clearTermValue(term);
-    }
-  }
-
-  setTermValue(and_term,result);
+  visit_children_of(and_term);
+  set_term_value(and_term,result);
 }
 
 void StringConstraintSolver::visitOr(Or_ptr or_term) {
@@ -194,7 +190,7 @@ void StringConstraintSolver::visitReConcat(ReConcat_ptr reconcat_term) {
 void StringConstraintSolver::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 
-Value_ptr StringConstraintSolver::getTermValue(Term_ptr term) {
+Value_ptr StringConstraintSolver::get_term_value(Term_ptr term) {
   Term_ptr key = term;
   auto it1 = term_value_index.find(term);
   if (it1 != term_value_index.end()) {
@@ -209,7 +205,7 @@ Value_ptr StringConstraintSolver::getTermValue(Term_ptr term) {
   return nullptr;
 }
 
-bool StringConstraintSolver::setTermValue(Term_ptr term, Value_ptr value) {
+bool StringConstraintSolver::set_term_value(Term_ptr term, Value_ptr value) {
   auto result = term_values.insert(std::make_pair(term, value));
   if (result.second == false) {
     LOG(FATAL) << "value is already computed for term: " << *term;
@@ -218,7 +214,7 @@ bool StringConstraintSolver::setTermValue(Term_ptr term, Value_ptr value) {
   return result.second;
 }
 
-bool StringConstraintSolver::updateTermValue(Term_ptr term, Value_ptr value) {
+bool StringConstraintSolver::update_term_value(Term_ptr term, Value_ptr value) {
   Term_ptr key = term;
   auto it1 = term_value_index.find(term);
   if (it1 != term_value_index.end()) {
@@ -234,7 +230,7 @@ bool StringConstraintSolver::updateTermValue(Term_ptr term, Value_ptr value) {
   return false;
 }
 
-void StringConstraintSolver::clearTermValue(Term_ptr term) {
+void StringConstraintSolver::clear_term_value(Term_ptr term) {
   auto it = term_values.find(term);
   if (it != term_values.end()) {
     delete it->second;
@@ -242,31 +238,12 @@ void StringConstraintSolver::clearTermValue(Term_ptr term) {
   }
 }
 
-std::map<Term_ptr, Term_ptr> &StringConstraintSolver::getTermValueIndex() {
+std::map<Term_ptr, Term_ptr> &StringConstraintSolver::get_term_value_index() {
   return term_value_index;
 }
 
-StringConstraintSolver::TermValueMap &StringConstraintSolver::getTermValues() {
+StringConstraintSolver::TermValueMap &StringConstraintSolver::get_term_values() {
   return term_values;
-}
-
-void StringConstraintSolver::bindRelation(StringRelation_ptr relation) {
-  Variable_ptr var = nullptr;
-  Component_ptr var_comp = nullptr;
-  std::map<std::string,int> vars = relation->getVariableTrackMap();
-
-  int next_track = 0;
-  for(auto& var_iter : vars) {
-    if(var_iter.second < 0) {
-      continue; //constant
-    }
-    std::string var_name = var_iter.first;
-    vars[var_name] = next_track++;
-    if(relation->getNumTracks() <= 0) {
-      relation->setNumTracks(var_comp->get_size());
-    }
-  }
-  relation->setVariableTrackMap(vars);
 }
 
 } /* namespace Solver */

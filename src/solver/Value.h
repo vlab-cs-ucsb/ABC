@@ -46,6 +46,7 @@ public:
   Value(Theory::IntBoolAutomaton_ptr data);
   Value(Theory::BinaryIntAutomaton_ptr data);
   Value(Theory::StringAutomaton_ptr data);
+  Value(Theory::MultiTrackAutomaton_ptr data);
   Value(const Value&);
   Value_ptr clone() const;
   virtual ~Value();
@@ -61,6 +62,7 @@ public:
   void setData(Theory::IntBoolAutomaton_ptr data);
   void setData(Theory::BinaryIntAutomaton_ptr data);
   void setData(Theory::StringAutomaton_ptr data);
+  void setData(Theory::MultiTrackAutomaton_ptr data);
 
   bool getBoolConstant() const;
   int getIntConstant() const;
@@ -69,6 +71,7 @@ public:
   Theory::IntBoolAutomaton_ptr getIntBoolAutomaton() const;
   Theory::BinaryIntAutomaton_ptr getBinaryIntAutomaton() const;
   Theory::StringAutomaton_ptr getStringAutomaton() const;
+  Theory::MultiTrackAutomaton_ptr getMultiTrackAutomaton() const;
 
   Value_ptr union_(Value_ptr other_value) const;
   Value_ptr intersect(Value_ptr other_value) const;

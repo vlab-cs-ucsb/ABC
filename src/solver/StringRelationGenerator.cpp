@@ -30,7 +30,9 @@ void StringRelationGenerator::end() {
 }
 
 void StringRelationGenerator::visitScript(Script_ptr script) {
+  symbol_table->push_scope(script);
   visit_children_of(script);
+  symbol_table->pop_scope();
 }
 
 void StringRelationGenerator::visitCommand(Command_ptr command) {
@@ -66,7 +68,6 @@ void StringRelationGenerator::visitOr(Or_ptr or_term) {
     visit(term);
   }
   DVLOG(VLOG_LEVEL) << "visit: " << *or_term;
-
 }
 
 void StringRelationGenerator::visitNot(Not_ptr not_term) {
@@ -92,18 +93,26 @@ void StringRelationGenerator::visitEq(Eq_ptr eq_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *eq_term;
   StringRelation_ptr left_relation = nullptr, right_relation = nullptr,
                      relation = nullptr;
-  left_relation = getTermRelation(eq_term->left_term);
-  right_relation = getTermRelation(eq_term->right_term);
+  left_relation = get_term_relation(eq_term->left_term);
+  right_relation = get_term_relation(eq_term->right_term);
 
   if(left_relation not_eq nullptr and right_relation not_eq nullptr) {
-    if(left_relation->getType() == StringRelation::Type::VAR &&
-            right_relation->getType() == StringRelation::Type::VAR) {
-      relation = left_relation->combine(right_relation);
-      relation->setType(StringRelation::Type::EQ);
-      deleteTermRelation(eq_term->left_term);
-      deleteTermRelation(eq_term->right_term);
-      setTermRelation(eq_term,relation);
-    }
+    StringRelation::Subrelation left_subrelation = left_relation->get_subrelation_list()[0];
+    StringRelation::Subrelation right_subrelation = right_relation->get_subrelation_list()[0];
+    StringRelation::Subrelation subrelation;
+    subrelation.type = StringRelation::Type::EQ;
+    subrelation.names = left_subrelation.names;
+    subrelation.names.insert(subrelation.names.end(),right_subrelation.names.begin(),right_subrelation.names.end());
+
+    relation = new StringRelation();
+    relation->set_type(StringRelation::Type::EQ);
+    relation->add_subrelation(subrelation);
+    relation->set_variable_track_map(left_relation->get_variable_track_map()); // TODO: Make better
+    relation->set_num_tracks(left_relation->get_num_tracks());
+
+    delete_term_relation(eq_term->left_term);
+    delete_term_relation(eq_term->right_term);
+    set_term_relation(eq_term,relation);
   }
 }
 
@@ -112,18 +121,28 @@ void StringRelationGenerator::visitNotEq(NotEq_ptr not_eq_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *not_eq_term;
   StringRelation_ptr left_relation = nullptr, right_relation = nullptr,
                      relation = nullptr;
-  left_relation = getTermRelation(not_eq_term->left_term);
-  right_relation = getTermRelation(not_eq_term->right_term);
+  left_relation = get_term_relation(not_eq_term->left_term);
+  right_relation = get_term_relation(not_eq_term->right_term);
 
   if(left_relation not_eq nullptr and right_relation not_eq nullptr) {
-    if(left_relation->getType() == StringRelation::Type::VAR &&
-            right_relation->getType() == StringRelation::Type::VAR) {
-      relation = left_relation->combine(right_relation);
-      relation->setType(StringRelation::Type::NOTEQ);
-      deleteTermRelation(not_eq_term->left_term);
-      deleteTermRelation(not_eq_term->right_term);
-      setTermRelation(not_eq_term,relation);
-    }
+    StringRelation::Subrelation left_subrelation = left_relation->get_subrelation_list()[0];
+    StringRelation::Subrelation right_subrelation = right_relation->get_subrelation_list()[0];
+    StringRelation::Subrelation subrelation;
+    subrelation.type = StringRelation::Type::NOTEQ;
+    subrelation.names = left_subrelation.names;
+    subrelation.names.insert(subrelation.names.end(),right_subrelation.names.begin(),right_subrelation.names.end());
+
+    relation = new StringRelation();
+    relation->set_type(StringRelation::Type::NOTEQ);
+    relation->add_subrelation(subrelation);
+    DVLOG(VLOG_LEVEL) << left_relation->get_variable_track_map();
+    DVLOG(VLOG_LEVEL) << right_relation->get_variable_track_map();
+    relation->set_variable_track_map(left_relation->get_variable_track_map()); // TODO: Make better
+    relation->set_num_tracks(left_relation->get_num_tracks());
+
+    delete_term_relation(not_eq_term->left_term);
+    delete_term_relation(not_eq_term->right_term);
+    set_term_relation(not_eq_term,relation);
   }
 }
 
@@ -239,28 +258,50 @@ void StringRelationGenerator::visitAsQualIdentifier(AsQualIdentifier_ptr as_qual
 }
 
 void StringRelationGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term) {
-  StringRelation_ptr str_rel = nullptr;
   DVLOG(VLOG_LEVEL) << "visit: " << *qi_term;
+
+  Component_ptr var_component = nullptr;
+  StringRelation_ptr str_rel = nullptr;
   Variable_ptr variable = symbol_table->getVariable(qi_term->getVarName());
+  var_component = symbol_table->get_variable_component(variable);
+  if(var_component == nullptr) {
+    LOG(ERROR) << "StringRelationGenerator: variable has no component...";
+  }
+  if(component_trackmaps.find(var_component) == component_trackmaps.end()) {
+    DVLOG(VLOG_LEVEL) << "Setting up trackmap";
+    component_trackmaps[var_component] = std::map<std::string,int>();
+  }
+  if(component_trackmaps[var_component].find(variable->getName()) == component_trackmaps[var_component].end()) {
+    DVLOG(VLOG_LEVEL) << "Assigning tracknum for " << variable->getName() << " to " << component_trackmaps[var_component].size();
+    DVLOG(VLOG_LEVEL) << &component_trackmaps[var_component];
+    int track = component_trackmaps[var_component].size();
+    component_trackmaps[var_component][variable->getName()] = track;
+  }
 
   if (Variable::Type::STRING == variable->getType()) {
+    StringRelation::Subrelation subrel;
+    subrel.type = StringRelation::Type::VAR;
+    subrel.names = std::vector<std::string>(1,variable->getName());
     str_rel = new StringRelation();
-    // track set later, 0 for now
-    str_rel->addVariable(variable->getName(),0);
-    str_rel->setType(StringRelation::Type::VAR);
+    str_rel->set_type(StringRelation::Type::VAR);
+    str_rel->add_subrelation(subrel);
+    str_rel->set_variable_track_map(&component_trackmaps[var_component]);
+    str_rel->set_num_tracks(var_component->get_size());
   }
-  setTermRelation(qi_term,str_rel);
+  set_term_relation(qi_term,str_rel);
 }
 
 void StringRelationGenerator::visitTermConstant(TermConstant_ptr term_constant) {
   StringRelation_ptr str_rel = nullptr;
   DVLOG(VLOG_LEVEL) << "visit: " << *term_constant;
-
+  StringRelation::Subrelation subrel;
+  subrel.type = StringRelation::Type::VAR;
+  subrel.names = std::vector<std::string>(1,term_constant->getValue());
   str_rel = new StringRelation();
-  str_rel->addVariable(variable->getName(),-1);
-  str_rel->setType(StringRelation::Type::VAR); // misnomer, should be constant
+  str_rel->set_type(StringRelation::Type::CONSTANT);
+  str_rel->add_subrelation(subrel);
 
-  setTermRelation(qi_term,str_rel);
+  set_term_relation(term_constant,str_rel);
 }
 
 void StringRelationGenerator::visitSort(Sort_ptr sort_term) {
@@ -294,10 +335,9 @@ void StringRelationGenerator::visitPrimitive(Primitive_ptr prim_term) {
 }
 
 void StringRelationGenerator::visitVariable(Variable_ptr var_term) {
-  // do shit?
 }
 
-StringRelation_ptr StringRelationGenerator::getTermRelation(Term_ptr term) {
+StringRelation_ptr StringRelationGenerator::get_term_relation(Term_ptr term) {
   auto iter = relations.find(term);
   if(iter == relations.end()) {
     return nullptr;
@@ -305,7 +345,7 @@ StringRelation_ptr StringRelationGenerator::getTermRelation(Term_ptr term) {
   return iter->second;
 }
 
-bool StringRelationGenerator::setTermRelation(Term_ptr term, Theory::StringRelation_ptr str_rel) {
+bool StringRelationGenerator::set_term_relation(Term_ptr term, Theory::StringRelation_ptr str_rel) {
   auto result = relations.insert(std::make_pair(term,str_rel));
   if(result.second == false) {
     LOG(FATAL) << "relation is already computed for term: " << *term;
@@ -313,8 +353,8 @@ bool StringRelationGenerator::setTermRelation(Term_ptr term, Theory::StringRelat
   return result.second;
 }
 
-void StringRelationGenerator::deleteTermRelation(Term_ptr term) {
-  auto relation = getTermRelation(term);
+void StringRelationGenerator::delete_term_relation(Term_ptr term) {
+  auto relation = get_term_relation(term);
   if(relation not_eq nullptr) {
     delete relation;
     relations.erase(term);

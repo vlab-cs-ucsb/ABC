@@ -385,32 +385,6 @@ Component_ptr SymbolTable::get_variable_component(SMT::Variable_ptr variable) {
   return nullptr;
 }
 
-bool SymbolTable::set_component_value(Component_ptr component, Value_ptr value) {
-  component_values_[component] = value;
-  return true;
-}
-
-Value_ptr SymbolTable::get_component_value(Component_ptr component) {
-  if(component_values_.find(component) == component_values_.end()) {
-    return Theory::MultiTrackAutomaton::makeAnyAutoUnaligned(component->get_size();
-  }
-  return component_values_[component];
-}
-
-bool SymbolTable::update_component_value(Component_ptr component, Value_ptr value) {
-  Value_ptr component_old_value = get_component_value(component);
-  Value_ptr component_new_value = component_old_value->intersect(value);
-
-  if(component_values_[component] == component_old_value) {
-    set_component_value(component,component_new_value);
-    delete component_old_value; component_old_value = nullptr;
-  } else {
-    set_component_value(component,component_new_value);
-  }
-
-  return true;
-}
-
 
 } /* namespace Solver */
 } /* namespace Vlab */

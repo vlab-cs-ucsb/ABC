@@ -88,6 +88,8 @@ void DependencySlicer::visitAssert(Assert_ptr assert_command) {
     Component* current_component = new Component(assert_command->term);
     for (auto& var : term_variable_map_[assert_command->term]) {
       current_component->add_variable(var);
+
+      symbol_table_->set_variable_component(var,current_component);
     }
     symbol_table_->add_component(current_component);
 

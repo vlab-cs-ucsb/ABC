@@ -17,6 +17,7 @@
 #include "smt/ast.h"
 #include "Value.h"
 #include "Component.h"
+#include "theory/StringRelation.h"
 
 namespace Vlab {
 namespace Solver {
@@ -29,10 +30,8 @@ using VariableSubstitutionTable = std::map<SMT::Visitable_ptr, VariableSubstitut
 using VariableValueMap = std::map<SMT::Variable_ptr, Value_ptr>;
 using VariableValueTable = std::map<SMT::Visitable_ptr, VariableValueMap>;
 using ComponentMap = std::map<SMT::Visitable_ptr, std::vector<Component_ptr>>;
-using ComponentValueMap = std::map<Component_ptr,Value_ptr>;
 using VariableComponentMap = std::map<SMT::Variable_ptr, Component_ptr>;
 using VariableComponentTable = std::map<SMT::Visitable_ptr, VariableComponentMap>;
-
 
 class SymbolTable {
 public:
@@ -153,7 +152,6 @@ private:
    * Constraints that are dependent each other stored in the same component
    */
   ComponentMap components_;
-  ComponentValueMap component_values_;
   VariableComponentTable variable_component_table;
   static const int VLOG_LEVEL;
   //int reuse; 

@@ -93,19 +93,16 @@ public:
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
 
-  Theory::StringRelation_ptr getTermRelation(SMT::Term_ptr term);
+  Theory::StringRelation_ptr get_term_relation(SMT::Term_ptr term);
 
 protected:
-  bool setTermRelation(SMT::Term_ptr term, Theory::StringRelation_ptr str_rel);
-  void deleteTermRelation(SMT::Term_ptr term);
-  void addStringVariable(std::string name);
+  bool set_term_relation(SMT::Term_ptr term, Theory::StringRelation_ptr str_rel);
+  void delete_term_relation(SMT::Term_ptr term);
 
   SMT::Script_ptr root;
   SymbolTable_ptr symbol_table;
   std::map<SMT::Term_ptr, Theory::StringRelation_ptr> relations;
-  std::map<std::string, int> var_track_map;
-
-  int next_handle;
+  std::map<Component_ptr, std::map<std::string,int>> component_trackmaps;
 
 private:
   static const int VLOG_LEVEL;

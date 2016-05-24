@@ -12,7 +12,6 @@
 #include <unordered_map>
 #include <list>
 #include <chrono>
-#include "StringRelation.h"
 #include <glog/logging.h>
 #include <unordered_set>
 #include <queue>
@@ -32,14 +31,13 @@ class MultiTrackAutomaton: public Automaton {
 	virtual ~MultiTrackAutomaton();
 	virtual MultiTrackAutomaton_ptr clone() const;
 
-	static MultiTrackAutomaton_ptr makePhi(StringRelation_ptr str_rel);
-	static MultiTrackAutomaton_ptr makeAutomaton(StringRelation_ptr str_rel);
+	static MultiTrackAutomaton_ptr makePhi(size_t ntracks);
+	static MultiTrackAutomaton_ptr makeEquality(std::vector<std::pair<std::string, int>> tracks, size_t ntracks);
+	static MultiTrackAutomaton_ptr makeNotEquality(std::vector<std::pair<std::string, int>> tracks, size_t ntracks);
 	static MultiTrackAutomaton_ptr makeAnyAutoUnaligned(size_t num_tracks);
 	static MultiTrackAutomaton_ptr makeAnyAutoAligned(size_t num_tracks);
 
 	size_t getNumTracks() const;
-	StringRelation_ptr getRelation();
-	void setRelation(StringRelation_ptr str_rel);
 
 	MultiTrackAutomaton_ptr complement();
 	MultiTrackAutomaton_ptr union_(MultiTrackAutomaton_ptr other_auto);
@@ -47,26 +45,20 @@ class MultiTrackAutomaton: public Automaton {
 	MultiTrackAutomaton_ptr difference(MultiTrackAutomaton_ptr other_auto);
 
 	MultiTrackAutomaton_ptr projectKTrack(unsigned track);
-	StringAutomaton_ptr getKTrack(unsigned k) const;
+	StringAutomaton_ptr getKTrack(unsigned k);
 
 
  protected:
-  MultiTrackAutomaton(StringRelation_ptr str_rel);
-
-	static MultiTrackAutomaton_ptr makeEquality(StringRelation_ptr str_rel);
-	static MultiTrackAutomaton_ptr makeNotEquality(StringRelation_ptr str_rel);
 
 	static char* getLambda(int);
 	static DFA_ptr getLambdaStar(int, int*);
 	static bool checkLambda(std::string,int track_num,int num_tracks,int var);
 	static int* allocateMultipleAscIIIndex(int m, int length, int extra = 0);
-
-	MultiTrackAutomaton_ptr removeLambdaSuffix(unsigned track_num);
+	static DFA_ptr removeLambdaSuffix(DFA_ptr dfa);
 	DFA_ptr makeConcreteDFA();
 
 	static const size_t VAR_PER_TRACK = 8;
 	size_t num_of_tracks;
-	StringRelation_ptr string_relation;
 
  private:
 	static const int VLOG_LEVEL;

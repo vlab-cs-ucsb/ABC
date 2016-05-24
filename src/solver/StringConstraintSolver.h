@@ -59,22 +59,20 @@ public:
   void visitReConcat(SMT::ReConcat_ptr);
   void visitToRegex(SMT::ToRegex_ptr);
 
-  Value_ptr getTermValue(SMT::Term_ptr term);
-  bool setTermValue(SMT::Term_ptr term, Value_ptr value);
-  bool updateTermValue(SMT::Term_ptr term, Value_ptr Value);
-  void clearTermValue(SMT::Term_ptr term);
-  std::map<SMT::Term_ptr, SMT::Term_ptr>& getTermValueIndex();
-  TermValueMap& getTermValues();
+  Value_ptr get_term_value(SMT::Term_ptr term);
+  bool set_term_value(SMT::Term_ptr term, Value_ptr value);
+  bool update_term_value(SMT::Term_ptr term, Value_ptr Value);
+  void clear_term_value(SMT::Term_ptr term);
+  std::map<SMT::Term_ptr, SMT::Term_ptr>& get_term_value_index();
+  TermValueMap& get_term_values();
 
 protected:
-  void bindRelation(StringRelation_ptr str_rel);
 
   SymbolTable_ptr symbol_table;
   StringRelationGenerator string_relation_generator;
 
   TermValueMap term_values;
   std::map<SMT::Term_ptr, SMT::Term_ptr> term_value_index;
-  int next_handle;
 private:
   static const int VLOG_LEVEL;
 

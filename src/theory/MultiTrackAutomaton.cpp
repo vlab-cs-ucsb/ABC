@@ -6,8 +6,12 @@
 *
 */
 
-#include "MultiTrackAutomaton.h"
 // TODO: Use Automaton::getIndices rather than
+// TODO: getLambdaStar does not accept empty string, so it now functions like getLambdaPlus
+// 			this is due to issue in string concat from libstranger
+
+
+#include "MultiTrackAutomaton.h"
 namespace Vlab {
 namespace Theory {
 
@@ -15,18 +19,19 @@ const int MultiTrackAutomaton::VLOG_LEVEL = 20;
 
 MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, size_t num_tracks)
 			: Automaton(Automaton::Type::MULTITRACK, dfa, num_tracks * VAR_PER_TRACK),
-				num_of_tracks(num_tracks), string_relation(nullptr) {
+				num_of_tracks(num_tracks) {
 }
 
 MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, unsigned i_track, size_t num_tracks)
 			: Automaton(Automaton::Type::MULTITRACK, nullptr, num_tracks * VAR_PER_TRACK),
-			  num_of_tracks(num_tracks), string_relation(nullptr) {
+			  num_of_tracks(num_tracks) {
 	int *indices = allocateMultipleAscIIIndex(1,VAR_PER_TRACK);
 	DFA_ptr result,temp,M;
 	M = getLambdaStar(VAR_PER_TRACK,indices);
 	StringAutomaton_ptr t1,t2,t3;
 	t1 = new StringAutomaton(dfaCopy(dfa));
 	t2 = new StringAutomaton(M);
+
 	t3 = t1->concat(t2);
 	delete t1;
 	delete t2;
@@ -44,7 +49,6 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, unsigned i_track, size_t n
 	mindices = allocateMultipleAscIIIndex(num_tracks,VAR_PER_TRACK);
 	statuses = new char[len+1];
 	sink = find_sink(M);
-
 	// begin dfa building process
 	dfaSetup(M->ns, len, mindices);
 	for(unsigned i = 0; i < M->ns; i++) {
@@ -97,10 +101,7 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, unsigned i_track, size_t n
 
 MultiTrackAutomaton::MultiTrackAutomaton(const MultiTrackAutomaton& other)
 			: Automaton(other),
-				num_of_tracks(other.num_of_tracks), string_relation(nullptr) {
-	if(other.string_relation != nullptr) {
-		this->string_relation = other.string_relation->clone();
-	}
+				num_of_tracks(other.num_of_tracks) {
 }
 
 MultiTrackAutomaton::~MultiTrackAutomaton() {
@@ -124,6 +125,7 @@ char* MultiTrackAutomaton::getLambda(int var) {
 	return getSharp1(var); //11111111
 }
 
+// LAMBDAPLUS
 DFA_ptr MultiTrackAutomaton::getLambdaStar(int var, int* indices) {
 	char *lambda;
 	lambda = getLambda(var);
@@ -138,7 +140,8 @@ DFA_ptr MultiTrackAutomaton::getLambdaStar(int var, int* indices) {
 	dfaStoreState(2);
 	delete[] lambda;
 
-	return dfaBuild("++-");
+	//return dfaBuild("++-");
+	return dfaBuild("-+-");
 }
 
 bool MultiTrackAutomaton::checkLambda(std::string exeps, int track_num, int num_tracks, int var) {
@@ -149,39 +152,87 @@ bool MultiTrackAutomaton::checkLambda(std::string exeps, int track_num, int num_
 	return true;
 }
 
-MultiTrackAutomaton_ptr MultiTrackAutomaton::makePhi(StringRelation_ptr str_rel) {
+MultiTrackAutomaton_ptr MultiTrackAutomaton::makePhi(size_t ntracks) {
 	DFA_ptr non_accepting_dfa = nullptr;
 	MultiTrackAutomaton_ptr non_accepting_auto = nullptr;
-	int num_tracks = str_rel->getNumTracks();
-	int *indices = allocateMultipleAscIIIndex(num_tracks,VAR_PER_TRACK);
+	int *indices = allocateMultipleAscIIIndex(ntracks,VAR_PER_TRACK);
 
-	non_accepting_dfa = Automaton::makePhi(num_tracks*VAR_PER_TRACK, indices);
+	non_accepting_dfa = Automaton::makePhi(ntracks*VAR_PER_TRACK, indices);
 	delete[] indices; indices = nullptr;
-	non_accepting_auto = new MultiTrackAutomaton(non_accepting_dfa, num_tracks);
-	non_accepting_auto->setRelation(str_rel);
+	non_accepting_auto = new MultiTrackAutomaton(non_accepting_dfa, ntracks);
 
 	return non_accepting_auto;
 }
 
-MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAutomaton(StringRelation_ptr str_rel) {
-	MultiTrackAutomaton_ptr result_auto = nullptr;
-
-	switch(str_rel->getType()) {
-		case StringRelation::Type::EQ:
-			result_auto = makeEquality(str_rel);
-			break;
-		case StringRelation::Type::NOTEQ:
-			result_auto = makeNotEquality(str_rel);
-			break;
-		case StringRelation::Type::INTERSECT:
-			result_auto = makeAnyAutoUnaligned(str_rel->getNumTracks());
-			break;
-		default:
-			LOG(ERROR) << "Error in MultiTrackAutomaton::makeAutomaton: String relation type not defined";
-			result_auto = makeAnyAutoUnaligned(str_rel->getNumTracks());
-			break;
+MultiTrackAutomaton_ptr MultiTrackAutomaton::makeEquality(std::vector<std::pair<std::string,int>> tracks, size_t ntracks) {
+	MultiTrackAutomaton_ptr result_auto;
+	DFA_ptr temp_dfa, result_dfa;
+	size_t num_tracks = ntracks;
+	if(tracks.size() < 2) {
+		LOG(ERROR) << "Error in MultiTrackAutomaton::makeEquality: insufficient variables";
 	}
+
+	int left_track = tracks[0].second;
+	int right_track = tracks[1].second;
+
+	if(left_track == -1) {
+		StringAutomaton_ptr string_auto = StringAutomaton::makeString(tracks[0].first);
+		result_auto = new MultiTrackAutomaton(string_auto->getDFA(),right_track,ntracks);
+		delete string_auto;
+		return result_auto;
+	} else if(right_track == -1) {
+		StringAutomaton_ptr string_auto = StringAutomaton::makeString(tracks[1].first);
+		result_auto = new MultiTrackAutomaton(string_auto->getDFA(),left_track,ntracks);
+		delete string_auto;
+		return result_auto;
+	}
+
+	int var = VAR_PER_TRACK;
+	int len = num_tracks * var;
+	int *mindices = allocateMultipleAscIIIndex(num_tracks,var);
+	int nump = 1 << var;
+	dfaSetup(3,len,mindices);
+	dfaAllocExceptions(nump);
+	for(int i = 0; i < nump-1; i++) {
+		std::vector<char> exep = getBinaryFormat(i,var);
+		std::vector<char> str(len,'X');
+		for(int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = exep[k];
+			str[right_track+num_tracks*k] = exep[k];
+		}
+		str.push_back('\0');
+		dfaStoreException(0,&str[0]);
+	}
+
+	// append lambda
+	std::vector<char> exep = getBinaryFormat(nump-1,var);
+	std::vector<char> str(len,'X');
+	for(int k = 0; k < var; k++) {
+		str[left_track+num_tracks*k] = exep[k];
+		str[right_track+num_tracks*k] = exep[k];
+	}
+
+	str.push_back('\0');
+	dfaStoreException(1,&str[0]);
+	dfaStoreState(2);
+	dfaAllocExceptions(1);
+	dfaStoreException(1,&str[0]);
+	dfaStoreState(2);
+	dfaAllocExceptions(0);
+	dfaStoreState(2);
+	temp_dfa = dfaBuild("++-");
+	result_dfa = dfaMinimize(temp_dfa);
+	dfaFree(temp_dfa);
+	result_auto = new MultiTrackAutomaton(result_dfa,num_tracks);
 	return result_auto;
+}
+
+MultiTrackAutomaton_ptr MultiTrackAutomaton::makeNotEquality(std::vector<std::pair<std::string,int>> tracks, size_t ntracks) {
+	MultiTrackAutomaton_ptr eq_auto = nullptr, not_eq_auto = nullptr;
+	eq_auto = makeEquality(tracks, ntracks);
+	not_eq_auto = eq_auto->complement();
+	delete eq_auto;
+	return not_eq_auto;
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAnyAutoUnaligned(size_t num_tracks) {
@@ -219,14 +270,6 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAnyAutoAligned(size_t num_track
 
 size_t MultiTrackAutomaton::getNumTracks() const {
 	return this->num_of_tracks;
-}
-
-StringRelation_ptr MultiTrackAutomaton::getRelation() {
-	return this->string_relation;
-}
-
-void MultiTrackAutomaton::setRelation(StringRelation_ptr str_rel) {
-	this->string_relation = str_rel;
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::complement() {
@@ -289,6 +332,17 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::projectKTrack(unsigned k_track) {
 	DFA_ptr temp,result_dfa = this->dfa;
 	int flag = 0;
 
+	int *map = allocateMultipleAscIIIndex(this->num_of_tracks, VAR_PER_TRACK);
+
+	for(int i = 0,k=0,l=0; i < this->num_of_variables; i++) {
+	    if(i == k_track+l*this->num_of_tracks) {
+	        map[i] = (this->num_of_tracks-1)*VAR_PER_TRACK+l;
+	        l++;
+	        continue;
+	    }
+	    map[i] = k++;
+	}
+
 	for(unsigned j = 0; j < var_per_track; j++) {
 		temp = dfaProject(result_dfa,k_track+this->num_of_tracks*j);
 		if(flag)
@@ -297,33 +351,58 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::projectKTrack(unsigned k_track) {
 		flag = 1;
 		dfaFree(temp);
 	}
+	dfaReplaceIndices(result_dfa,map);
 	result_auto = new MultiTrackAutomaton(result_dfa,this->num_of_tracks-1);
 	return result_auto;
 }
 
-StringAutomaton_ptr MultiTrackAutomaton::getKTrack(unsigned k) const {
+//TODO: Why doesn't k=0 work?
+StringAutomaton_ptr MultiTrackAutomaton::getKTrack(unsigned k_track) {
 	DFA_ptr result = this->dfa, temp;
+	StringAutomaton_ptr result_auto = nullptr;
 	int flag = 0;
 
-	if(k >= this->num_of_tracks) {
+	if(k_track >= this->num_of_tracks) {
 		std::cerr << "error in MultiTrackAutomaton::getKTrack" << std::endl;
 		exit(1);
+	} else if(this->num_of_tracks == 1) {
+	    result= removeLambdaSuffix(this->dfa);
+	    result_auto = new StringAutomaton(result);
+		return result_auto;
+	} else if(k_track == 0) {
+		MultiTrackAutomaton_ptr m1, m2;
+		m1 = this->clone();
+		for (int i = this->num_of_tracks - 1; i > 0; i--) {
+			m2 = m1->projectKTrack(i);
+			delete m1;
+			m1 = m2;
+			m2 = nullptr;
+		}
+		result = removeLambdaSuffix(m1->dfa);
+		delete m1; m1 = nullptr;
+		result_auto = new StringAutomaton(result);
+		return result_auto;
 	}
 
-	// implementation of allocateIFirstMutipleAscIIIndex
-	// which sets less sig bit less priority, seq ordered...
-	int* map = new int[VAR_PER_TRACK*this->num_of_tracks];
-	for(unsigned i = 0; i < VAR_PER_TRACK*this->num_of_tracks; i++) {
-		map[i] = i;
-	}
-	for(unsigned i = 0; i < VAR_PER_TRACK; i++) {
-		map[i] = map[k+VAR_PER_TRACK*i];
-		map[k+VAR_PER_TRACK*i] = i;
-	}
+    // k_track needs to be mapped to indices 0-VAR_PER_TRACK
+    // while all others need to be pushed back by VAR_PER_TRACK, then
+    // interleaved with 1 less than current number of tracks
+	int* map = allocateMultipleAscIIIndex(this->num_of_tracks,VAR_PER_TRACK);
+    for(int i = 0; i < this->num_of_tracks; i++) {
+        if(i == k_track) {
+            for(int k = 0; k < VAR_PER_TRACK; k++) {
+                map[i+this->num_of_tracks*k] = k;
+            }
+        } else {
+            for(int k = 0; k < VAR_PER_TRACK; k++) {
+                map[i+this->num_of_tracks*k] = VAR_PER_TRACK + i+(this->num_of_tracks-1)*k;
+            }
+        }
+    }
 
 	// project away all but the kth track
 	for(int i = this->num_of_tracks-1; i >= 0; --i) {
-		if(i != k) {
+		if(i != k_track) {
 			for(int j = VAR_PER_TRACK-1; j>=0; --j) {
 				temp = dfaProject(result,i+this->num_of_tracks*j);
 				if(flag)
@@ -334,76 +413,14 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(unsigned k) const {
 			}
 		}
 	}
-
 	dfaReplaceIndices(result,map);
-	//dfaRemoveLambda(result,VAR_PER_TRACK);
-
+	temp = removeLambdaSuffix(result);
+	dfaFree(result);
+	result = temp;
 	return new StringAutomaton(result);
 }
 
-MultiTrackAutomaton_ptr MultiTrackAutomaton::makeEquality(StringRelation_ptr str_rel) {
-	MultiTrackAutomaton_ptr result_auto;
-	DFA_ptr temp_dfa, result_dfa;
-	std::vector<std::string> variables = str_rel->getVariables();
-	size_t num_tracks = str_rel->getNumTracks();
-
-	if(variables.size() < 2) {
-		LOG(ERROR) << "Error in MultiTrackAutomaton::makeEquality: insufficient variables";
-	}
-
-	int left_track = str_rel->getVariableIndex(variables[0]);
-	int right_track = str_rel->getVariableIndex(variables[1]);
-
-	int var = VAR_PER_TRACK;
-	int len = num_tracks * var;
-	int *mindices = allocateMultipleAscIIIndex(num_tracks,var);
-	int nump = 1 << var;
-	dfaSetup(3,len,mindices);
-	dfaAllocExceptions(nump);
-	for(int i = 0; i < nump-1; i++) {
-		std::vector<char> exep = getBinaryFormat(i,var);
-		std::vector<char> str(len,'X');
-		for(int k = 0; k < var; k++) {
-			str[left_track+num_tracks*k] = exep[k];
-			str[right_track+num_tracks*k] = exep[k];
-		}
-		str.push_back('\0');
-		dfaStoreException(0,&str[0]);
-	}
-
-	// append lambda
-	std::vector<char> exep = getBinaryFormat(nump-1,var);
-	std::vector<char> str(len,'X');
-	for(int k = 0; k < var; k++) {
-		str[left_track+num_tracks*k] = exep[k];
-		str[right_track+num_tracks*k] = exep[k];
-	}
-
-	str.push_back('\0');
-	dfaStoreException(1,&str[0]);
-	dfaStoreState(2);
-	dfaAllocExceptions(1);
-	dfaStoreException(1,&str[0]);
-	dfaStoreState(2);
-	dfaAllocExceptions(0);
-	dfaStoreState(2);
-	temp_dfa = dfaBuild("++-");
-	result_dfa = dfaMinimize(temp_dfa);
-	dfaFree(temp_dfa);
-	result_auto = new MultiTrackAutomaton(result_dfa,num_tracks);
-	return result_auto;
-}
-
-MultiTrackAutomaton_ptr MultiTrackAutomaton::makeNotEquality(StringRelation_ptr str_rel) {
-	MultiTrackAutomaton_ptr eq_auto = nullptr, not_eq_auto = nullptr;
-	eq_auto = makeEquality(str_rel);
-	not_eq_auto = eq_auto->complement();
-	delete eq_auto;
-	return not_eq_auto;
-}
-
-MultiTrackAutomaton_ptr MultiTrackAutomaton::removeLambdaSuffix(unsigned track_num) {
-	const size_t var_per_track = this->num_of_variables / this->num_of_tracks;
+DFA_ptr MultiTrackAutomaton::removeLambdaSuffix(DFA_ptr dfa) {
 	DFA_ptr result_dfa, temp;
 	paths state_paths, pp;
 	trace_descr tp;
@@ -412,25 +429,24 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::removeLambdaSuffix(unsigned track_n
 	int sink;
 	std::string symbol;
 	std::vector<Exception> state_exeps;
+	indices = MultiTrackAutomaton::allocateMultipleAscIIIndex(1,VAR_PER_TRACK);
+	sink = find_sink(dfa);
 
-	indices = MultiTrackAutomaton::allocateMultipleAscIIIndex(1,this->num_of_variables);
-	sink = find_sink(this->dfa);
-
-	dfaSetup(this->dfa->ns, this->num_of_variables, indices);
-	statuses = new char[this->dfa->ns+1];
-	for(unsigned i = 0; i < this->dfa->ns; i++) {
-		if(this->dfa->f[i] == 1)
+	dfaSetup(dfa->ns, VAR_PER_TRACK, indices);
+	statuses = new char[dfa->ns+1];
+	for(int i = 0; i < dfa->ns; i++) {
+		if(dfa->f[i] == 1)
 		  statuses[i] = '+';
 		else
 		  statuses[i] = '-';
-		state_paths = pp = make_paths(this->dfa->bddm, this->dfa->q[i]);
+		state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
 
 		// essentially, basic idea is to keep all transitions except for lambda transitions
 		// if there is a lambda transition on some state, that means that state must be
 		// an accepting state. get rid of the lambda transition and make that state accepting.
 		while (pp) {
 			if (pp->to != sink) {
-				for (unsigned j = 0; j < this->num_of_variables; j++) {
+				for (unsigned j = 0; j < VAR_PER_TRACK; j++) {
 					for (tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
 
 					if (tp) {
@@ -440,7 +456,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::removeLambdaSuffix(unsigned track_n
 					else
 						symbol += 'X';
 				}
-				if (MultiTrackAutomaton::checkLambda(symbol, track_num, this->num_of_tracks, var_per_track)) {
+				if (MultiTrackAutomaton::checkLambda(symbol, 0, 1, VAR_PER_TRACK)) {
 					statuses[i] = '+';
 				}
 				else {
@@ -461,13 +477,13 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::removeLambdaSuffix(unsigned track_n
 		dfaStoreState(sink);
 		state_exeps.clear();
 	}
-	statuses[this->dfa->ns] = '\0';
+	statuses[dfa->ns] = '\0';
 	temp = dfaBuild(statuses);
 	result_dfa = dfaMinimize(temp);
 	dfaFree(temp);
 
 	delete[] statuses;
-	return new MultiTrackAutomaton(result_dfa,this->num_of_tracks);
+	return result_dfa;
 }
 
 DFA_ptr MultiTrackAutomaton::makeConcreteDFA() {
