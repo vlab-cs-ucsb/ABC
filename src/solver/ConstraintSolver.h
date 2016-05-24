@@ -32,6 +32,7 @@
 #include "Value.h"
 #include "VariableValueComputer.h"
 #include "ArithmeticConstraintSolver.h"
+#include "Component.h"
 
 namespace Vlab {
 namespace Solver {
@@ -39,7 +40,7 @@ namespace Solver {
 class ConstraintSolver: public SMT::Visitor {
   typedef std::map<SMT::Term_ptr, Value_ptr> TermValueMap;
   typedef std::vector<std::vector<SMT::Term_ptr>> VariablePathTable;
-public:
+ public:
   ConstraintSolver(SMT::Script_ptr, SymbolTable_ptr);
   virtual ~ConstraintSolver();
 
@@ -107,7 +108,7 @@ public:
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
 
-protected:
+ protected:
   Value_ptr getTermValue(SMT::Term_ptr term);
   bool setTermValue(SMT::Term_ptr term, Value_ptr value);
   void clearTermValue(SMT::Term_ptr term);
@@ -123,11 +124,12 @@ protected:
   ArithmeticConstraintSolver arithmetic_constraint_solver;
 
   TermValueMap term_values;
+  Component_ptr current_component;
 
   std::vector<SMT::Term_ptr> path_trace;
   VariablePathTable variable_path_table;
 
-private:
+ private:
   static const int VLOG_LEVEL;
 };
 

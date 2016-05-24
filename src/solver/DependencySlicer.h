@@ -42,6 +42,7 @@ class DependencySlicer : public AstTraverser {
   std::map<SMT::Term_ptr, std::set<SMT::Variable_ptr>> term_variable_map_;
  private:
   static const int VLOG_LEVEL;
+  int number_components;
 };
 
 } /* namespace Solver */

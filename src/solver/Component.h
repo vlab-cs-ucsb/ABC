@@ -19,10 +19,12 @@ class Component {
   virtual ~Component();
   void add_term(SMT::Term_ptr);
   void add_variable(SMT::Variable_ptr);
-  std::vector<SMT::Term_ptr> get_terms() const;
+  SMT::TermList get_terms() const;
   std::vector<SMT::Variable_ptr> get_variables() const;
 
   int get_size() const;
+  int get_id() const;
+  void set_id(int id);
 
   bool is_solved() const;
   void set_solved(bool is_solved);
@@ -35,6 +37,7 @@ class Component {
  protected:
   bool is_solved_;
   bool is_sat_;
+  int id_;
   SMT::TermList terms_;
   std::vector<SMT::Variable_ptr> variables_;
 };
