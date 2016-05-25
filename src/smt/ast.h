@@ -20,6 +20,7 @@
 #include "typedefs.h"
 #include "Visitable.h"
 #include "Visitor.h"
+#include "solver/Component.h"
 
 namespace Vlab {
 namespace SMT {
@@ -27,7 +28,7 @@ namespace SMT {
 static const int AST_VLOG_LEVEL = 31;
 
 class Script: public Visitable {
-public:
+ public:
   Script(CommandList_ptr);
   Script(const Script&);
   virtual Script_ptr clone() const;
@@ -40,10 +41,10 @@ public:
 };
 
 class Command: public Visitable {
-public:
+ public:
   enum class Type
     : unsigned char {
-      NONE = 0,  SET_LOGIC, SET_OPTION, SET_INFO, DECLARE_SORT,
+    NONE = 0,  SET_LOGIC, SET_OPTION, SET_INFO, DECLARE_SORT,
     DEFINE_SORT, DECLARE_FUN, DEFINE_FUN, PUSH, POP, ASSERT,
     CHECK_SAT, CHECK_SAT_AND_COUNT, GET_ASSERTIONS, GET_PROOF,
     GET_UNSAT_CORE, GET_VALUE, GET_ASSIGNMENT, GET_OPTION,
@@ -62,7 +63,7 @@ public:
   virtual void visit_children(Visitor_ptr) override;
 
   friend std::ostream& operator<<(std::ostream& os, const Command& command);
-protected:
+ protected:
   const Command::Type type;
 };
 
@@ -70,7 +71,7 @@ protected:
  * ( set-logic <symbol> )
  */
 class SetLogic: public Command {
-public:
+ public:
   SetLogic(Primitive_ptr);
   SetLogic(const SetLogic&);
   virtual SetLogic_ptr clone() const override;
@@ -85,7 +86,7 @@ public:
  * ( declare-fun <symbol> ( <sort>* ) <sort> )
  */
 class DeclareFun: public Command {
-public:
+ public:
   DeclareFun(Primitive_ptr, SortList_ptr, Sort_ptr);
   DeclareFun(const DeclareFun&);
   virtual DeclareFun_ptr clone() const override;
@@ -102,7 +103,7 @@ public:
  * ( assert <term> )
  */
 class Assert: public Command {
-public:
+ public:
   Assert(Term_ptr);
   Assert(const Assert&);
   virtual Assert_ptr clone() const override;
@@ -112,13 +113,14 @@ public:
   virtual void visit_children(Visitor_ptr) override;
 
   Term_ptr term;
+  Solver::Component_ptr component;
 };
 
 /**
  * ( check-sat )
  */
 class CheckSat: public Command {
-public:
+ public:
   CheckSat();
   CheckSat(Primitive_ptr);
   CheckSat(const CheckSat&);
@@ -132,7 +134,7 @@ public:
 };
 
 class CheckSatAndCount: public Command {
-public:
+ public:
   CheckSatAndCount(Primitive_ptr);
   CheckSatAndCount(Primitive_ptr, Primitive_ptr);
   CheckSatAndCount(const CheckSatAndCount&);
@@ -152,10 +154,10 @@ public:
  * TODO Avoid Using Type Information, refactor usages and remove it
  */
 class Term: public Visitable {
-public:
+ public:
   enum class Type
     : unsigned char {
-      NONE = 0, EXCLAMATION, EXISTS, FORALL, LET, TERM, AND, OR, NOT,
+    NONE = 0, EXCLAMATION, EXISTS, FORALL, LET, TERM, AND, OR, NOT,
     UMINUS, MINUS, PLUS, TIMES, EQ, NOTEQ, GT, GE, LT, LE, CONCAT, IN,
     NOTIN, LEN, CONTAINS, NOTCONTAINS, BEGINS, NOTBEGINS, ENDS, NOTENDS,
     INDEXOF, LASTINDEXOF, CHARAT, SUBSTRING, TOUPPER, TOLOWER, TRIM,
@@ -176,13 +178,13 @@ public:
   virtual void visit_children(Visitor_ptr) override;
 
   friend std::ostream& operator<<(std::ostream& os, const Term& term);
-//	friend std::ostream& operator<<(std::ostream& os, const Term_ptr& term);
-protected:
+//  friend std::ostream& operator<<(std::ostream& os, const Term_ptr& term);
+ protected:
   const Term::Type type_;
 };
 
 class Exclamation: public Term {
-public:
+ public:
   Exclamation(Term_ptr, AttributeList_ptr);
   Exclamation(const Exclamation&);
   virtual Exclamation_ptr clone() const override;
@@ -197,7 +199,7 @@ public:
 };
 
 class Exists: public Term {
-public:
+ public:
   Exists(SortedVarList_ptr, Term_ptr);
   Exists(const Exists&);
   virtual Exists_ptr clone() const override;
@@ -212,7 +214,7 @@ public:
 };
 
 class ForAll: public Term {
-public:
+ public:
   ForAll(SortedVarList_ptr, Term_ptr);
   ForAll(const ForAll&);
   virtual ForAll_ptr clone() const override;
@@ -227,7 +229,7 @@ public:
 };
 
 class Let: public Term {
-public:
+ public:
   Let(VarBindingList_ptr, Term_ptr);
   Let(const Let&);
   virtual Let_ptr clone() const override;
@@ -242,7 +244,7 @@ public:
 };
 
 class And: public Term {
-public:
+ public:
   And(TermList_ptr);
   And(const And&);
   virtual And_ptr clone() const override;
@@ -253,11 +255,12 @@ public:
   virtual void visit_children(Visitor_ptr) override;
 
   TermList_ptr term_list;
+  Solver::Component_ptr component;
 
 };
 
 class Or: public Term {
-public:
+ public:
   Or(TermList_ptr);
   Or(const Or&);
   virtual Or_ptr clone() const override;
@@ -268,10 +271,11 @@ public:
   virtual void visit_children(Visitor_ptr) override;
 
   TermList_ptr term_list;
+  Solver::Component_ptr component;
 };
 
 class Not: public Term {
-public:
+ public:
   Not(Term_ptr);
   Not(const Not&);
   virtual Not_ptr clone() const override;
@@ -285,7 +289,7 @@ public:
 };
 
 class UMinus: public Term {
-public:
+ public:
   UMinus(Term_ptr);
   UMinus(const UMinus&);
   virtual UMinus_ptr clone() const override;
@@ -299,7 +303,7 @@ public:
 };
 
 class Minus: public Term {
-public:
+ public:
   Minus(Term_ptr, Term_ptr);
   Minus(const Minus&);
   virtual Minus_ptr clone() const override;
@@ -314,7 +318,7 @@ public:
 };
 
 class Plus: public Term {
-public:
+ public:
   Plus(TermList_ptr);
   Plus(const Plus&);
   virtual Plus_ptr clone() const override;
@@ -328,7 +332,7 @@ public:
 };
 
 class Times: public Term {
-public:
+ public:
   Times(TermList_ptr);
   Times(const Times&);
   virtual Times_ptr clone() const override;
@@ -342,7 +346,7 @@ public:
 };
 
 class Eq: public Term {
-public:
+ public:
   Eq(Term_ptr, Term_ptr);
   Eq(const Eq&);
   virtual Eq_ptr clone() const override;
@@ -357,7 +361,7 @@ public:
 };
 
 class NotEq: public Term {
-public:
+ public:
   NotEq(Term_ptr, Term_ptr);
   NotEq(const NotEq&);
   virtual NotEq_ptr clone() const override;
@@ -372,7 +376,7 @@ public:
 };
 
 class Gt: public Term {
-public:
+ public:
   Gt(Term_ptr, Term_ptr);
   Gt(const Gt&);
   virtual Gt_ptr clone() const override;
@@ -387,7 +391,7 @@ public:
 };
 
 class Ge: public Term {
-public:
+ public:
   Ge(Term_ptr, Term_ptr);
   Ge(const Ge&);
   virtual Ge_ptr clone() const override;
@@ -402,7 +406,7 @@ public:
 };
 
 class Lt: public Term {
-public:
+ public:
   Lt(Term_ptr, Term_ptr);
   Lt(const Lt&);
   virtual Lt_ptr clone() const override;
@@ -417,7 +421,7 @@ public:
 };
 
 class Le: public Term {
-public:
+ public:
   Le(Term_ptr, Term_ptr);
   Le(const Le&);
   virtual Le_ptr clone() const override;
@@ -432,7 +436,7 @@ public:
 };
 
 class Concat: public Term {
-public:
+ public:
   Concat(TermList_ptr);
   Concat(const Concat&);
   virtual Concat_ptr clone() const override;
@@ -446,7 +450,7 @@ public:
 };
 
 class In: public Term {
-public:
+ public:
   In(Term_ptr, Term_ptr);
   In(const In&);
   virtual In_ptr clone() const override;
@@ -461,7 +465,7 @@ public:
 };
 
 class NotIn: public Term {
-public:
+ public:
   NotIn(Term_ptr, Term_ptr);
   NotIn(const NotIn&);
   virtual NotIn_ptr clone() const override;
@@ -476,7 +480,7 @@ public:
 };
 
 class Len: public Term {
-public:
+ public:
   Len(Term_ptr);
   Len(const Len&);
   virtual Len_ptr clone() const override;
@@ -490,7 +494,7 @@ public:
 };
 
 class Contains: public Term {
-public:
+ public:
   Contains(Term_ptr, Term_ptr);
   Contains(const Contains&);
   virtual Contains_ptr clone() const override;
@@ -505,7 +509,7 @@ public:
 };
 
 class NotContains: public Term {
-public:
+ public:
   NotContains(Term_ptr, Term_ptr);
   NotContains(const NotContains&);
   virtual NotContains_ptr clone() const override;
@@ -520,7 +524,7 @@ public:
 };
 
 class Begins: public Term {
-public:
+ public:
   Begins(Term_ptr, Term_ptr);
   Begins(const Begins&);
   virtual Begins_ptr clone() const override;
@@ -535,7 +539,7 @@ public:
 };
 
 class NotBegins: public Term {
-public:
+ public:
   NotBegins(Term_ptr, Term_ptr);
   NotBegins(const NotBegins&);
   virtual NotBegins_ptr clone() const override;
@@ -550,7 +554,7 @@ public:
 };
 
 class Ends: public Term {
-public:
+ public:
   Ends(Term_ptr, Term_ptr);
   Ends(const Ends&);
   virtual Ends_ptr clone() const override;
@@ -565,7 +569,7 @@ public:
 };
 
 class NotEnds: public Term {
-public:
+ public:
   NotEnds(Term_ptr, Term_ptr);
   NotEnds(const NotEnds&);
   virtual NotEnds_ptr clone() const override;
@@ -580,13 +584,13 @@ public:
 };
 
 class IndexOf: public Term {
-public:
+ public:
   enum class Mode : int {
-            NONE = 0,
-            DEFAULT, // from index is nullptr,
-            FROMINDEX,          // from index is a numeral
-            FROMFIRSTOF,        // from index is string term to find first occurance
-            FROMLASTOF,         // from index is string term to find last occurance
+    NONE = 0,
+    DEFAULT, // from index is nullptr,
+    FROMINDEX,          // from index is a numeral
+    FROMFIRSTOF,        // from index is string term to find first occurance
+    FROMLASTOF,         // from index is string term to find last occurance
   };
   IndexOf(Term_ptr, Term_ptr);
   IndexOf(Term_ptr, Term_ptr, Term_ptr, Mode mode = Mode::FROMINDEX);
@@ -608,13 +612,13 @@ public:
 };
 
 class LastIndexOf: public Term {
-public:
+ public:
   enum class Mode : int {
-            NONE = 0,
-            DEFAULT,            // from index is nullptr,
-            FROMINDEX,          // from index is a numeral
-            FROMFIRSTOF,        // from index is string term to find first occurance
-            FROMLASTOF,         // from index is string term to find last occurance
+    NONE = 0,
+    DEFAULT,            // from index is nullptr,
+    FROMINDEX,          // from index is a numeral
+    FROMFIRSTOF,        // from index is string term to find first occurance
+    FROMLASTOF,         // from index is string term to find last occurance
   };
   LastIndexOf(Term_ptr, Term_ptr);
   LastIndexOf(Term_ptr, Term_ptr, Term_ptr, Mode mode = Mode::FROMINDEX);
@@ -636,7 +640,7 @@ public:
 };
 
 class CharAt: public Term {
-public:
+ public:
   CharAt(Term_ptr, Term_ptr);
   CharAt(const CharAt&);
   virtual CharAt_ptr clone() const override;
@@ -651,21 +655,21 @@ public:
 };
 
 class SubString: public Term {
-public:
+ public:
   enum class Mode : int {
-            NONE = 0,             // used only to check for optimizations
-            FROMINDEX,            // start index is a numeral
-            FROMFIRSTOF,          // start index is string term to find first occurance
-            FROMLASTOF,           // start index is string term to find last occurance
-            FROMINDEXTOINDEX,     // start index is numeral, end index is numeral
-            FROMINDEXTOFIRSTOF,   // start index is numeral, end index is string term to find first occurance
-            FROMINDEXTOLASTOF,    // start index is numeral, end index is string term to find last occurance
-            FROMFIRSTOFTOINDEX,   // start index is string term, end index is numeral
-            FROMFIRSTOFTOFIRSTOF, // start index is string term, end index is string term
-            FROMFIRSTOFTOLASTOF,  // start index is string term, end index is string term
-            FROMLASTOFTOINDEX,    // start index is string term, end index is numeral
-            FROMLASTOFTOFIRSTOF,  // start index is string term, end index is string term
-            FROMLASTOFTOLASTOF    // start index is string term, end index is string term
+    NONE = 0,             // used only to check for optimizations
+    FROMINDEX,            // start index is a numeral
+    FROMFIRSTOF,          // start index is string term to find first occurance
+    FROMLASTOF,           // start index is string term to find last occurance
+    FROMINDEXTOINDEX,     // start index is numeral, end index is numeral
+    FROMINDEXTOFIRSTOF,   // start index is numeral, end index is string term to find first occurance
+    FROMINDEXTOLASTOF,    // start index is numeral, end index is string term to find last occurance
+    FROMFIRSTOFTOINDEX,   // start index is string term, end index is numeral
+    FROMFIRSTOFTOFIRSTOF, // start index is string term, end index is string term
+    FROMFIRSTOFTOLASTOF,  // start index is string term, end index is string term
+    FROMLASTOFTOINDEX,    // start index is string term, end index is numeral
+    FROMLASTOFTOFIRSTOF,  // start index is string term, end index is string term
+    FROMLASTOFTOLASTOF    // start index is string term, end index is string term
 
   };
   SubString(Term_ptr, Term_ptr, Mode mode = Mode::FROMINDEX);
@@ -688,7 +692,7 @@ public:
 };
 
 class ToUpper: public Term {
-public:
+ public:
   ToUpper(Term_ptr);
   ToUpper(const ToUpper&);
   virtual ToUpper_ptr clone() const override;
@@ -702,7 +706,7 @@ public:
 };
 
 class ToLower: public Term {
-public:
+ public:
   ToLower(Term_ptr);
   ToLower(const ToLower&);
   virtual ToLower_ptr clone() const override;
@@ -716,7 +720,7 @@ public:
 };
 
 class Trim: public Term {
-public:
+ public:
   Trim(Term_ptr);
   Trim(const Trim&);
   virtual Trim_ptr clone() const override;
@@ -730,7 +734,7 @@ public:
 };
 
 class ToString: public Term {
-public:
+ public:
   ToString(Term_ptr);
   ToString(const ToString&);
   virtual ToString_ptr clone() const override;
@@ -744,7 +748,7 @@ public:
 };
 
 class ToInt: public Term {
-public:
+ public:
   ToInt(Term_ptr);
   ToInt(const ToInt&);
   virtual ToInt_ptr clone() const override;
@@ -758,7 +762,7 @@ public:
 };
 
 class Replace: public Term {
-public:
+ public:
   Replace(Term_ptr, Term_ptr, Term_ptr);
   Replace(const Replace&);
   virtual Replace_ptr clone() const override;
@@ -774,7 +778,7 @@ public:
 };
 
 class Count: public Term {
-public:
+ public:
   Count(Term_ptr, Term_ptr);
   Count(const Count&);
   virtual Count_ptr clone() const override;
@@ -789,7 +793,7 @@ public:
 };
 
 class Ite: public Term {
-public:
+ public:
   Ite(Term_ptr, Term_ptr, Term_ptr);
   Ite(const Ite&);
   virtual Ite_ptr clone() const override;
@@ -805,7 +809,7 @@ public:
 };
 
 class ReConcat: public Term {
-public:
+ public:
   ReConcat(TermList_ptr);
   ReConcat(const ReConcat&);
   virtual ReConcat_ptr clone() const override;
@@ -820,7 +824,7 @@ public:
 };
 
 class ToRegex: public Term {
-public:
+ public:
   ToRegex(Term_ptr);
   ToRegex(const ToRegex&);
   virtual ToRegex_ptr clone() const override;
@@ -834,7 +838,7 @@ public:
 };
 
 class UnknownTerm: public Term {
-public:
+ public:
   UnknownTerm(Term_ptr, TermList_ptr);
   UnknownTerm(const UnknownTerm&);
   virtual UnknownTerm* clone() const override;
@@ -853,7 +857,7 @@ public:
  * | identifier
  */
 class QualIdentifier: public Term {
-public:
+ public:
   QualIdentifier(Identifier_ptr);
   QualIdentifier(const QualIdentifier&);
   virtual QualIdentifier_ptr clone() const override;
@@ -870,7 +874,7 @@ public:
 };
 
 class AsQualIdentifier: public Term {
-public:
+ public:
   AsQualIdentifier(Identifier_ptr, Sort_ptr);
   AsQualIdentifier(const AsQualIdentifier&);
   virtual AsQualIdentifier_ptr clone() const override;
@@ -885,10 +889,10 @@ public:
 };
 
 class Primitive: public Visitable {
-public:
+ public:
   enum class Type
     : int {
-      NONE = 0, BOOL, BINARY, DECIMAL, HEXADECIMAL, KEYWORD, NUMERAL, STRING, REGEX, SYMBOL
+    NONE = 0, BOOL, BINARY, DECIMAL, HEXADECIMAL, KEYWORD, NUMERAL, STRING, REGEX, SYMBOL
   };
 
   Primitive(const std::string data, const Primitive::Type type);
@@ -905,7 +909,7 @@ public:
   void setType(Primitive::Type type);
 
   class Name {
-  public:
+   public:
     static const std::string NONE;
     static const std::string BOOL;
     static const std::string BINARY;
@@ -919,13 +923,13 @@ public:
   };
 
   friend std::ostream& operator<<(std::ostream& os, const Primitive& primitive);
-protected:
+ protected:
   std::string data;
   Primitive::Type type;
 };
 
 class TermConstant: public Term {
-public:
+ public:
   TermConstant(Primitive_ptr);
   TermConstant(const TermConstant&);
   virtual TermConstant_ptr clone() const override;
@@ -947,7 +951,7 @@ public:
  *  | type
  */
 class Sort: public Visitable {
-public:
+ public:
   Sort(Identifier_ptr);
   Sort(Identifier_ptr, SortList_ptr);
   Sort(TVariable_ptr);
@@ -962,13 +966,14 @@ public:
   SortList_ptr sort_list;
   TVariable_ptr var_type;
 
+
 };
 
 class TVariable: public Visitable {
-public:
+ public:
   enum class Type
     : int {
-      NONE = 0, BOOL, INT, STRING
+    NONE = 0, BOOL, INT, STRING
   };
 
   TVariable(TVariable::Type type);
@@ -982,8 +987,9 @@ public:
   virtual void accept(Visitor_ptr) override;
   virtual void visit_children(Visitor_ptr) override;
 
+
   class Name {
-  public:
+   public:
     static const std::string NONE;
     static const std::string BOOL;
     static const std::string INT;
@@ -991,12 +997,12 @@ public:
   };
 
   friend std::ostream& operator<<(std::ostream& os, const TVariable& t_variable);
-protected:
+ protected:
   const TVariable::Type type;
 };
 
 class TBool: public TVariable {
-public:
+ public:
   TBool();
   TBool(const TBool&);
   virtual TBool_ptr clone() const override;
@@ -1007,7 +1013,7 @@ public:
 };
 
 class TInt: public TVariable {
-public:
+ public:
   TInt();
   TInt(const TInt&);
   virtual TInt_ptr clone() const override;
@@ -1019,7 +1025,7 @@ public:
 };
 
 class TString: public TVariable {
-public:
+ public:
   TString();
   TString(const TString&);
   virtual TString_ptr clone() const override;
@@ -1034,7 +1040,7 @@ public:
  * | KEYWORD
  */
 class Attribute: public Visitable {
-public:
+ public:
   Attribute();
   Attribute(const Attribute&);
   virtual Attribute_ptr clone() const;
@@ -1049,7 +1055,7 @@ public:
  * "(" SYMBOL sort ")"
  */
 class SortedVar: public Visitable {
-public:
+ public:
   SortedVar(Primitive_ptr, Sort_ptr);
   SortedVar(const SortedVar&);
   virtual SortedVar_ptr clone() const;
@@ -1066,7 +1072,7 @@ public:
  * "(" SYMBOL term ")"
  */
 class VarBinding: public Visitable {
-public:
+ public:
   VarBinding(Primitive_ptr, Term_ptr);
   VarBinding(const VarBinding&);
   virtual VarBinding_ptr clone() const;
@@ -1084,7 +1090,7 @@ public:
  * | SYMBOL
  */
 class Identifier: public Visitable {
-public:
+ public:
   Identifier(Primitive_ptr);
   Identifier(Primitive_ptr, Primitive_ptr, NumeralList_ptr);
   Identifier(const Identifier&);
@@ -1103,7 +1109,7 @@ public:
 };
 
 class Variable: public TVariable {
-public:
+ public:
   Variable(std::string name, Type);
   Variable(Primitive_ptr, Type);
   Variable(std::string name, Type, bool is_symbolic);
@@ -1116,6 +1122,8 @@ public:
 
   std::string getName() const;
   Variable::Type getType() const;
+  Solver::Component_ptr component;
+
   bool isSymbolic() const;
   void setSymbolic(bool is_symbolic);
   bool isLocalLetVar() const;
@@ -1126,7 +1134,7 @@ public:
 
   static const std::string SYMBOLIC_VAR_PREFIX;
   static const std::string LOCAL_VAR_PREFIX;
-protected:
+ protected:
   std::string name;
   bool is_symbolic;
   bool is_local_let_var;

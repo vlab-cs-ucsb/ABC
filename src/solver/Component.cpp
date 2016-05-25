@@ -54,6 +54,14 @@ int Component::get_size() const {
   return variables_.size();
 }
 
+void Component::set_id(int id) {
+  id_ = id;
+}
+
+int Component::get_id() const {
+  return id_;
+}
+
 bool Component::is_solved() const {
   return is_solved_;
 }
