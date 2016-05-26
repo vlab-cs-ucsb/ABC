@@ -420,6 +420,42 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(unsigned k_track) {
 	return new StringAutomaton(result);
 }
 
+std::vector<std::string> MultiTrackAutomaton::getAnAcceptingStringForEachTrack() {
+  std::vector<std::string> strings(num_of_tracks, "");
+  DVLOG(VLOG_LEVEL) << "Getting bit string";
+  DVLOG(VLOG_LEVEL) << "variables: " << num_of_variables;
+  DVLOG(VLOG_LEVEL) << "tracks: " << num_of_tracks;
+  DVLOG(VLOG_LEVEL) << "variable per track: " << VAR_PER_TRACK;
+
+  std::vector<bool>* example = getAnAcceptingWord();
+  unsigned char c = 0;
+  unsigned num_transitions = example->size() / num_of_variables;
+  bool bit;
+
+  DVLOG(VLOG_LEVEL) << "We got: " << num_transitions << " transitions";
+
+  for(int t = 0; t < num_transitions; t++) {
+    unsigned offset = t*num_of_variables;
+    for (int i = 0; i < num_of_tracks; i++) {
+      for (int j = 0; j < VAR_PER_TRACK; j++) {
+        bit = (*example)[offset+i+num_of_tracks*j];
+        if(bit) {
+          c |= 1;
+        } else {
+          c |= 0;
+        }
+        if(j != VAR_PER_TRACK-1) {
+          c <<= 1;
+        }
+      }
+      strings[i] += c;
+      c = 0;
+    }
+  }
+  delete example;
+  return strings;
+}
+
 DFA_ptr MultiTrackAutomaton::removeLambdaSuffix(DFA_ptr dfa) {
 	DFA_ptr result_dfa, temp;
 	paths state_paths, pp;

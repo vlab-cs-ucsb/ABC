@@ -53,35 +53,8 @@ void StringConstraintSolver::setCallbacks() {
           else
             multi_auto = MultiTrackAutomaton::makeNotEquality(tracks,relation->get_num_tracks());
           relation->set_value_auto(multi_auto);
-
-/*
-          DVLOG(VLOG_LEVEL) << "--------------------";
-          if(relation->get_type() == StringRelation::Type::EQ) {
-            DVLOG(VLOG_LEVEL) << "String relation type: EQ";
-          } else if(relation->get_type() == StringRelation::Type::NOTEQ) {
-            DVLOG(VLOG_LEVEL) << "String relation type: NOTEQ";
-          }
-
-          DVLOG(VLOG_LEVEL) << "track[0]: " << "(" << tracks[0].first << "," << tracks[0].second << ")";
-          DVLOG(VLOG_LEVEL) << "track[1]: " << "(" << tracks[1].first << "," << tracks[1].second << ")";
-          MultiTrackAutomaton_ptr result_auto = relation->get_value_auto();
-          StringAutomaton_ptr string1_auto = relation->get_variable_value_auto(tracks[0].first);
-          if(string1_auto == nullptr) {
-            DVLOG(VLOG_LEVEL) << "string1 nullptr";
-          }
-          StringAutomaton_ptr string2_auto = relation->get_variable_value_auto(tracks[1].first);
-          if(string2_auto == nullptr) {
-            DVLOG(VLOG_LEVEL) << "string2 nullptr";
-          }
-
-          string1_auto->isEmptyLanguage();
-          DVLOG(VLOG_LEVEL) << string1_auto->getAnAcceptingString();
-          StringAutomaton_ptr temp = StringAutomaton::makeString("boo");
-          string2_auto = string1_auto->intersect(temp);
-          DVLOG(VLOG_LEVEL) << string2_auto->isEmptyLanguage();
-
-          DVLOG(VLOG_LEVEL) << "--------------------";
-*/
+          Value_ptr val = new Value(multi_auto);
+          set_term_value(term,val);
           break;
         }
         default:
@@ -115,10 +88,35 @@ void StringConstraintSolver::visitAssert(Assert_ptr assert_command) {
 void StringConstraintSolver::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
   bool is_satisfiable = true;
-  StringRelation_ptr relation = nullptr;
-  Value_ptr result = nullptr, param = nullptr, and_value = nullptr;
-  visit_children_of(and_term);
-  set_term_value(and_term,result);
+  Component_ptr current_component = nullptr;
+  StringRelation_ptr current_relation = nullptr, term_relation = nullptr, temp_relation;
+  Value_ptr term_value = nullptr;
+  if (and_term->component!= nullptr) {
+    current_component = and_term->component;
+  }
+
+  for(auto& term : *and_term->term_list) {
+    visit(term);
+    term_relation = string_relation_generator.get_term_relation(term);
+    if(term_relation != nullptr) {
+      if(current_relation == nullptr) {
+        current_relation = term_relation;
+      } else {
+        current_relation = current_relation->combine(term_relation);
+        string_relation_generator.delete_term_relation(term);
+        term_value = new Value(current_relation->get_value_auto()->clone());
+        update_term_value(term,term_value);
+      }
+
+    }
+  }
+
+  if(current_relation != nullptr) {
+    current_component->set_sat(!current_relation->get_value_auto()->isEmptyLanguage());
+    symbol_table->set_component_relation(current_component,current_relation);
+  }
+
+  set_term_value(and_term,term_value);
 }
 
 void StringConstraintSolver::visitOr(Or_ptr or_term) {

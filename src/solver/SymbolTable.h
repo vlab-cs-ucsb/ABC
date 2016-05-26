@@ -30,8 +30,7 @@ using VariableSubstitutionTable = std::map<SMT::Visitable_ptr, VariableSubstitut
 using VariableValueMap = std::map<SMT::Variable_ptr, Value_ptr>;
 using VariableValueTable = std::map<SMT::Visitable_ptr, VariableValueMap>;
 using ComponentMap = std::map<SMT::Visitable_ptr, std::vector<Component_ptr>>;
-using VariableComponentMap = std::map<SMT::Variable_ptr, Component_ptr>;
-using VariableComponentTable = std::map<SMT::Visitable_ptr, VariableComponentMap>;
+using ComponentRelationMap = std::map<Component_ptr, Theory::StringRelation_ptr>;
 
 class SymbolTable {
 public:
@@ -101,12 +100,8 @@ public:
   bool updateValue(std::string var_name, Value_ptr value);
   bool updateValue(SMT::Variable_ptr variable, Value_ptr value);
 
-  bool set_variable_component(SMT::Variable_ptr variable, Component_ptr component);
-  Component_ptr get_variable_component(SMT::Variable_ptr variable);
-
-  bool set_component_value(Component_ptr component, Value_ptr value);
-  Value_ptr get_component_value(Component_ptr component);
-  bool update_component_value(Component_ptr component, Value_ptr value);
+  Theory::StringRelation_ptr get_component_relation(Component_ptr component);
+  bool set_component_relation(Component_ptr component, Theory::StringRelation_ptr str_rel);
 
   static const char ARITHMETIC[];
 private:
@@ -152,7 +147,12 @@ private:
    * Constraints that are dependent each other stored in the same component
    */
   ComponentMap components_;
-  VariableComponentTable variable_component_table;
+
+  /**
+   * Each component has an associated string relation, for multitrack
+   */
+  ComponentRelationMap component_relations_;
+
   static const int VLOG_LEVEL;
   //int reuse; 
 

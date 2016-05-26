@@ -50,7 +50,7 @@ StringRelation_ptr StringRelation::combine(StringRelation_ptr other_relation) {
   result_relation = new StringRelation(StringRelation::Type::INTERSECT,
                                        this->var_track_map,
                                        subrels,
-                                       this->num_tracks,
+                                       this->var_track_map->size(),
                                        result_auto);
   return result_relation;
 }
@@ -60,10 +60,7 @@ StringAutomaton_ptr StringRelation::get_variable_value_auto(std::string name) {
   if(this->value == nullptr || var_track_map->find(name) == var_track_map->end()) {
     return nullptr;
   }
-  DVLOG(VLOG_LEVEL) << "A1";
-  DVLOG(VLOG_LEVEL) << "name: " << name << ", index: " << (*var_track_map)[name];
   res = value->getKTrack((*var_track_map)[name]);
-  DVLOG(VLOG_LEVEL) << "A2";
   return res;
 }
 
@@ -71,7 +68,7 @@ bool StringRelation::set_variable_value_auto(StringAutomaton_ptr value_auto, std
   if(var_track_map->find(name) == var_track_map->end() || value == nullptr) {
     return false;
   }
-  MultiTrackAutomaton_ptr temp_auto = new MultiTrackAutomaton(value_auto->getDFA(),(*var_track_map)[name],num_tracks);
+  MultiTrackAutomaton_ptr temp_auto = new MultiTrackAutomaton(value_auto->getDFA(),(*var_track_map)[name],var_track_map->size());
   MultiTrackAutomaton_ptr result_auto = value->intersect(temp_auto);
   delete temp_auto;
   delete value;

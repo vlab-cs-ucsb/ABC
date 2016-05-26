@@ -94,10 +94,10 @@ public:
   void visitVariable(SMT::Variable_ptr) override;
 
   Theory::StringRelation_ptr get_term_relation(SMT::Term_ptr term);
-
-protected:
   bool set_term_relation(SMT::Term_ptr term, Theory::StringRelation_ptr str_rel);
   void delete_term_relation(SMT::Term_ptr term);
+
+protected:
 
   SMT::Script_ptr root;
   SymbolTable_ptr symbol_table;

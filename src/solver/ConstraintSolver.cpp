@@ -53,8 +53,8 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
   if (assert_command->component!= nullptr){
     current_component = assert_command->component;
   }
+  
   check_and_visit(assert_command->term);
-
   Value_ptr result = getTermValue(assert_command->term);
   bool is_satisfiable = result->isSatisfiable();
 
@@ -65,6 +65,18 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
     if (is_satisfiable) {
       update_variables();
+    }
+  }
+  if(current_component != nullptr) {
+    DVLOG(VLOG_LEVEL) << "Got current component";
+    StringRelation_ptr relation = symbol_table->get_component_relation(current_component);
+    if(relation != nullptr) {
+      std::vector<std::string> strings = relation->get_value_auto()->getAnAcceptingStringForEachTrack();
+      for(auto& string : strings) {
+        DVLOG(VLOG_LEVEL) << string;
+      }
+    } else {
+      DVLOG(VLOG_LEVEL) << "No relation... :(";
     }
   }
   clearTermValuesAndLocalLetVars();
@@ -123,14 +135,27 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
   bool is_satisfiable = true;
   Value_ptr param = nullptr;
+  StringRelation_ptr current_relation = nullptr, term_relation = nullptr;
   if (and_term->component!= nullptr){
     current_component = and_term->component;
+    current_relation = symbol_table->get_component_relation(current_component);
+    if(current_relation != nullptr) {
+      for(auto& subrelation : current_relation->get_subrelation_list()){
+        DVLOG(VLOG_LEVEL) << "Subrelation";
+        for(auto& var : subrelation.names) {
+          DVLOG(VLOG_LEVEL) << var << "," << current_relation->get_variable_index(var);
+        }
+      }
+    }
   }
+
   for (auto& term : *(and_term->term_list)) {
     check_and_visit(term);
     param = getTermValue(term);
     is_satisfiable = is_satisfiable and param->isSatisfiable();
-
+    if(current_component != nullptr) {
+      is_satisfiable = is_satisfiable and current_component->is_sat();
+    }
     if (is_satisfiable) {
       update_variables();
     } else {
@@ -1070,6 +1095,10 @@ Value_ptr ConstraintSolver::getTermValue(Term_ptr term) {
     if (value != nullptr) {
       return value;
     }
+    value = string_constraint_solver.get_term_value(term);
+    if(value != nullptr) {
+      return value;
+    }
   }
 
   auto iter = term_values.find(term);
@@ -1135,6 +1164,12 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
 
     Value_ptr result = getTermValue(term);
     if (result != nullptr) {
+      if(string_constraint_solver.get_term_value(term) != nullptr) {
+        result = string_constraint_solver.get_term_value(term);
+        setTermValue(term,new Value(current_component->is_sat()));
+        return true;
+      }
+
       DVLOG(VLOG_LEVEL) << "Linear Arithmetic Constraint";
       if (arithmetic_constraint_solver.hasStringTerms(term) and result->isSatisfiable()) {
 

@@ -27,6 +27,7 @@
 #include "theory/ArithmeticFormula.h"
 #include "theory/BinaryIntAutomaton.h"
 #include "theory/StringAutomaton.h"
+#include "theory/StringRelation.h"
 
 
 namespace Vlab {

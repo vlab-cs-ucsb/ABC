@@ -301,6 +301,15 @@ Value_ptr SymbolTable::getValue(std::string var_name) {
 }
 
 Value_ptr SymbolTable::getValue(Variable_ptr variable) {
+
+  // Multitrack stuff real quick
+  Component_ptr component = variable->component;
+  Theory::StringRelation_ptr string_relation = get_component_relation(component);
+  if(string_relation != nullptr && string_relation->get_variable_index(variable->getName()) >= 0) {
+    // TODO: Fix memory leak, as this might not get destroyed
+    return new Value(string_relation->get_variable_value_auto(variable->getName()));
+  }
+
   Value_ptr result = nullptr;
 
   for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); it++) {
@@ -335,10 +344,20 @@ VariableValueMap& SymbolTable::getValuesAtScope(Visitable_ptr scope) {
 }
 
 bool SymbolTable::setValue(std::string var_name, Value_ptr value) {
-return setValue(getVariable(var_name), value);
+  return setValue(getVariable(var_name), value);
 }
 
 bool SymbolTable::setValue(Variable_ptr variable, Value_ptr value) {
+  // Multitrack stuff real quick
+  Component_ptr component = variable->component;
+  Theory::StringRelation_ptr string_relation = get_component_relation(component);
+  if(string_relation != nullptr && string_relation->get_variable_index(variable->getName()) >= 0) {
+    Theory::StringAutomaton_ptr string_auto = value->getStringAutomaton();
+    string_relation->set_variable_value_auto(string_auto,variable->getName());
+    component->set_sat(!string_relation->get_value_auto()->isEmptyLanguage());
+    return true;
+  }
+
   variable_value_table[scope_stack.back()][variable] = value;
   return true;
 }
@@ -357,6 +376,19 @@ bool SymbolTable::updateValue(std::string var_name, Value_ptr value) {
  * Deletes old value if it is read from same scope
  */
 bool SymbolTable::updateValue(Variable_ptr variable, Value_ptr value) {
+
+  // Multitrack stuff real quick
+  Component_ptr component = variable->component;
+  Theory::StringRelation_ptr string_relation = get_component_relation(component);
+  if(string_relation != nullptr && string_relation->get_variable_index(variable->getName()) >= 0) {
+    DVLOG(VLOG_LEVEL) << "Updating " << variable->getName() << "," << string_relation->get_variable_index(variable->getName());
+    DVLOG(VLOG_LEVEL) << value->getStringAutomaton()->getAnAcceptingString();
+    Theory::StringAutomaton_ptr string_auto = value->getStringAutomaton();
+    string_relation->set_variable_value_auto(string_auto,variable->getName());
+    component->set_sat(!string_relation->get_value_auto()->isEmptyLanguage());
+    return true;
+  }
+
   Value_ptr variable_old_value = getValue(variable);
   Value_ptr variable_new_value = variable_old_value->intersect(value);
 
@@ -370,21 +402,16 @@ bool SymbolTable::updateValue(Variable_ptr variable, Value_ptr value) {
   return true;
 }
 
-bool SymbolTable::set_variable_component(SMT::Variable_ptr variable, Component_ptr component) {
-  variable_component_table[scope_stack.back()][variable] = component;
+Theory::StringRelation_ptr SymbolTable::get_component_relation(Component_ptr component) {
+  if(component_relations_.find(component) == component_relations_.end())
+    return nullptr;
+  return component_relations_[component];
+}
+
+bool SymbolTable::set_component_relation(Component_ptr component, Theory::StringRelation_ptr str_rel) {
+  component_relations_[component] = str_rel;
   return true;
 }
-
-Component_ptr SymbolTable::get_variable_component(SMT::Variable_ptr variable) {
-  for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); it++) {
-    auto entry = variable_component_table[(*it)].find(variable);
-    if (entry != variable_component_table[(*it)].end()) {
-      return entry->second;
-    }
-  }
-  return nullptr;
-}
-
 
 } /* namespace Solver */
 } /* namespace Vlab */

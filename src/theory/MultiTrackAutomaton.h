@@ -46,7 +46,7 @@ class MultiTrackAutomaton: public Automaton {
 
 	MultiTrackAutomaton_ptr projectKTrack(unsigned track);
 	StringAutomaton_ptr getKTrack(unsigned k);
-
+	std::vector<std::string> getAnAcceptingStringForEachTrack();
 
  protected:
 

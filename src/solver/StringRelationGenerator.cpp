@@ -110,6 +110,24 @@ void StringRelationGenerator::visitEq(Eq_ptr eq_term) {
     relation->set_variable_track_map(left_relation->get_variable_track_map()); // TODO: Make better
     relation->set_num_tracks(left_relation->get_num_tracks());
 
+    std::map<std::string,int> *var_map = nullptr;
+    if(left_subrelation.type == StringRelation::Type::VAR) {
+      Variable_ptr var = symbol_table->getVariable(left_subrelation.names[0]);
+      var_map = &component_trackmaps[var->component];
+      if(var_map->find(var->getName()) == var_map->end()) {
+        int track = var_map->size();
+        (*var_map)[var->getName()] = track;
+      }
+    }
+    if(right_subrelation.type == StringRelation::Type::VAR) {
+      Variable_ptr var = symbol_table->getVariable(right_subrelation.names[0]);
+      var_map = &component_trackmaps[var->component];
+      if(var_map->find(var->getName()) == var_map->end()) {
+        int track = var_map->size();
+        (*var_map)[var->getName()] = track;
+      }
+    }
+
     delete_term_relation(eq_term->left_term);
     delete_term_relation(eq_term->right_term);
     set_term_relation(eq_term,relation);
@@ -135,10 +153,27 @@ void StringRelationGenerator::visitNotEq(NotEq_ptr not_eq_term) {
     relation = new StringRelation();
     relation->set_type(StringRelation::Type::NOTEQ);
     relation->add_subrelation(subrelation);
-    DVLOG(VLOG_LEVEL) << left_relation->get_variable_track_map();
-    DVLOG(VLOG_LEVEL) << right_relation->get_variable_track_map();
     relation->set_variable_track_map(left_relation->get_variable_track_map()); // TODO: Make better
     relation->set_num_tracks(left_relation->get_num_tracks());
+
+    std::map<std::string,int> *var_map = nullptr;
+      if(left_subrelation.type == StringRelation::Type::VAR) {
+        Variable_ptr var = symbol_table->getVariable(left_subrelation.names[0]);
+        var_map = &component_trackmaps[var->component];
+        if(var_map->find(var->getName()) == var_map->end()) {
+          int track = var_map->size();
+          (*var_map)[var->getName()] = track;
+        }
+      }
+      if(right_subrelation.type == StringRelation::Type::VAR) {
+        Variable_ptr var = symbol_table->getVariable(right_subrelation.names[0]);
+        var_map = &component_trackmaps[var->component];
+        if(var_map->find(var->getName()) == var_map->end()) {
+          int track = var_map->size();
+          (*var_map)[var->getName()] = track;
+        }
+      }
+
 
     delete_term_relation(not_eq_term->left_term);
     delete_term_relation(not_eq_term->right_term);
@@ -263,19 +298,12 @@ void StringRelationGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   Component_ptr var_component = nullptr;
   StringRelation_ptr str_rel = nullptr;
   Variable_ptr variable = symbol_table->getVariable(qi_term->getVarName());
-  var_component = symbol_table->get_variable_component(variable);
+  var_component = variable->component;
   if(var_component == nullptr) {
     LOG(ERROR) << "StringRelationGenerator: variable has no component...";
   }
   if(component_trackmaps.find(var_component) == component_trackmaps.end()) {
-    DVLOG(VLOG_LEVEL) << "Setting up trackmap";
     component_trackmaps[var_component] = std::map<std::string,int>();
-  }
-  if(component_trackmaps[var_component].find(variable->getName()) == component_trackmaps[var_component].end()) {
-    DVLOG(VLOG_LEVEL) << "Assigning tracknum for " << variable->getName() << " to " << component_trackmaps[var_component].size();
-    DVLOG(VLOG_LEVEL) << &component_trackmaps[var_component];
-    int track = component_trackmaps[var_component].size();
-    component_trackmaps[var_component][variable->getName()] = track;
   }
 
   if (Variable::Type::STRING == variable->getType()) {
@@ -286,7 +314,6 @@ void StringRelationGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term) {
     str_rel->set_type(StringRelation::Type::VAR);
     str_rel->add_subrelation(subrel);
     str_rel->set_variable_track_map(&component_trackmaps[var_component]);
-    str_rel->set_num_tracks(var_component->get_size());
   }
   set_term_relation(qi_term,str_rel);
 }
@@ -295,7 +322,7 @@ void StringRelationGenerator::visitTermConstant(TermConstant_ptr term_constant) 
   StringRelation_ptr str_rel = nullptr;
   DVLOG(VLOG_LEVEL) << "visit: " << *term_constant;
   StringRelation::Subrelation subrel;
-  subrel.type = StringRelation::Type::VAR;
+  subrel.type = StringRelation::Type::CONSTANT;
   subrel.names = std::vector<std::string>(1,term_constant->getValue());
   str_rel = new StringRelation();
   str_rel->set_type(StringRelation::Type::CONSTANT);
