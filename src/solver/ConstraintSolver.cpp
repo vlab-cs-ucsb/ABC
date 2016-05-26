@@ -53,7 +53,7 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
   if (assert_command->component!= nullptr){
     current_component = assert_command->component;
   }
-  
+
   check_and_visit(assert_command->term);
   Value_ptr result = getTermValue(assert_command->term);
   bool is_satisfiable = result->isSatisfiable();
