@@ -22,9 +22,9 @@ const int DependencySlicer::VLOG_LEVEL = 20;
 
 DependencySlicer::DependencySlicer(Script_ptr script, SymbolTable_ptr symbol_table)
   : AstTraverser(script),
+    number_of_components_ {0},
     symbol_table_(symbol_table),
-    current_term_(nullptr),
-    number_components(0) {
+    current_term_(nullptr) {
   setCallbacks();
 }
 
@@ -91,17 +91,17 @@ void DependencySlicer::visitAssert(Assert_ptr assert_command) {
     Component* current_component = new Component(assert_command->term);
     for (auto& var : term_variable_map_[assert_command->term]) {
       current_component->add_variable(var);
-      var->component = current_component;
+//      var->component = current_component;
     }
-    Variable_ptr v_new = new Variable(SymbolTable::ARITHMETIC + std::to_string(number_components), Variable::Type::INT);
+    Variable_ptr v_new = new Variable(SymbolTable::ARITHMETIC + std::to_string(number_of_components_), Variable::Type::INT);
     symbol_table_->addVariable(v_new);
-    v_new->component = current_component;
+//    v_new->component = current_component;
     current_component->add_variable(v_new);
-    current_component->set_id(number_components);
+    current_component->set_id(number_of_components_);
     symbol_table_->add_component(current_component);
 
-    assert_command->component = current_component;
-    number_components += 1;
+//    assert_command->component = current_component;
+    number_of_components_ += 1;
 
 
   } else {
@@ -126,16 +126,16 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
       term_list->push_back(term);
     }
     And_ptr new_and_term = new And(term_list);
-    new_and_term->component = c;
+//    new_and_term->component = c;
     and_term->term_list->push_back(new_and_term);
     //add new arithmetic variable for the component!
-    Variable_ptr v_new = new Variable(SymbolTable::ARITHMETIC + std::to_string(number_components), Variable::Type::INT);
+    Variable_ptr v_new = new Variable(SymbolTable::ARITHMETIC + std::to_string(number_of_components_), Variable::Type::INT);
     symbol_table_->addVariable(v_new);
-    v_new->component = c;
+//    v_new->component = c;
     c->add_variable(v_new);
-    c->set_id(number_components);
+    c->set_id(number_of_components_);
     symbol_table_->add_component(c);
-    number_components += 1;
+    number_of_components_ += 1;
   }
 
   //symbol_table_->add_components(components);
@@ -154,18 +154,18 @@ void DependencySlicer::visitOr(Or_ptr or_term) {
       Component* current_component = new Component(term);
       for (auto& var : term_variable_map_[term]) {
         current_component->add_variable(var);
-        var->component = current_component;
+//        var->component = current_component;
       }
-      Variable_ptr v_new = new Variable(SymbolTable::ARITHMETIC + std::to_string(number_components), Variable::Type::INT);
+      Variable_ptr v_new = new Variable(SymbolTable::ARITHMETIC + std::to_string(number_of_components_), Variable::Type::INT);
       symbol_table_->addVariable(v_new);
-      v_new->component = current_component;
+//      v_new->component = current_component;
       current_component->add_variable(v_new);
-      current_component->set_id(number_components);
-      or_term->component = current_component;
+      current_component->set_id(number_of_components_);
+//      or_term->component = current_component;
       symbol_table_->add_component(current_component);
 
 
-      number_components += 1;
+      number_of_components_ += 1;
 
     } else {
       visit(term);
@@ -235,7 +235,7 @@ std::vector<Component_ptr> DependencySlicer::GetComponentsFor(SMT::TermList_ptr 
                 change = true;
                 variable_to_component_map[var] = current_component;
                 current_component->add_variable(var);
-                var->component = current_component;
+//                var->component = current_component;
               }
             }
             break;

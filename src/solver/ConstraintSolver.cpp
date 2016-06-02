@@ -47,9 +47,9 @@ void ConstraintSolver::visitCommand(Command_ptr command) {
 
 void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
   DVLOG(VLOG_LEVEL) << "visit: " << *assert_command;
-  if (assert_command->component!= nullptr){
-    current_component = assert_command->component;
-  }
+//  if (assert_command->component!= nullptr){
+//    current_component = assert_command->component;
+//  }
   check_and_visit(assert_command->term);
 
   Value_ptr result = getTermValue(assert_command->term);
@@ -120,9 +120,9 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
   bool is_satisfiable = true;
   Value_ptr param = nullptr;
-  if (and_term->component!= nullptr){
-    current_component = and_term->component;
-  }
+//  if (and_term->component!= nullptr){
+//    current_component = and_term->component;
+//  }
   for (auto& term : *(and_term->term_list)) {
     check_and_visit(term);
     param = getTermValue(term);
@@ -147,9 +147,9 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
 
   bool is_satisfiable = false;
   Value_ptr param = nullptr;
-  if (or_term->component!=nullptr){
-    current_component= or_term->component;
-  }
+//  if (or_term->component!=nullptr){
+//    current_component= or_term->component;
+//  }
 
   for (auto& term : *(or_term->term_list)) {
     symbol_table->push_scope(term);

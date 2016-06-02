@@ -5,7 +5,6 @@
  *      Author: baki
  */
 
-
 #ifndef SMT_AST_H_
 #define SMT_AST_H_
 
@@ -20,14 +19,13 @@
 #include "typedefs.h"
 #include "Visitable.h"
 #include "Visitor.h"
-#include "solver/Component.h"
 
 namespace Vlab {
 namespace SMT {
 
 static const int AST_VLOG_LEVEL = 31;
 
-class Script: public Visitable {
+class Script : public Visitable {
  public:
   Script(CommandList_ptr);
   Script(const Script&);
@@ -40,15 +38,31 @@ class Script: public Visitable {
   CommandList_ptr command_list;
 };
 
-class Command: public Visitable {
+class Command : public Visitable {
  public:
   enum class Type
     : unsigned char {
-    NONE = 0,  SET_LOGIC, SET_OPTION, SET_INFO, DECLARE_SORT,
-    DEFINE_SORT, DECLARE_FUN, DEFINE_FUN, PUSH, POP, ASSERT,
-    CHECK_SAT, CHECK_SAT_AND_COUNT, GET_ASSERTIONS, GET_PROOF,
-    GET_UNSAT_CORE, GET_VALUE, GET_ASSIGNMENT, GET_OPTION,
-    GET_INFO, EXIT
+      NONE = 0,
+    SET_LOGIC,
+    SET_OPTION,
+    SET_INFO,
+    DECLARE_SORT,
+    DEFINE_SORT,
+    DECLARE_FUN,
+    DEFINE_FUN,
+    PUSH,
+    POP,
+    ASSERT,
+    CHECK_SAT,
+    CHECK_SAT_AND_COUNT,
+    GET_ASSERTIONS,
+    GET_PROOF,
+    GET_UNSAT_CORE,
+    GET_VALUE,
+    GET_ASSIGNMENT,
+    GET_OPTION,
+    GET_INFO,
+    EXIT
   };
 
   Command();
@@ -70,7 +84,7 @@ class Command: public Visitable {
 /**
  * ( set-logic <symbol> )
  */
-class SetLogic: public Command {
+class SetLogic : public Command {
  public:
   SetLogic(Primitive_ptr);
   SetLogic(const SetLogic&);
@@ -85,7 +99,7 @@ class SetLogic: public Command {
 /**
  * ( declare-fun <symbol> ( <sort>* ) <sort> )
  */
-class DeclareFun: public Command {
+class DeclareFun : public Command {
  public:
   DeclareFun(Primitive_ptr, SortList_ptr, Sort_ptr);
   DeclareFun(const DeclareFun&);
@@ -102,7 +116,7 @@ class DeclareFun: public Command {
 /**
  * ( assert <term> )
  */
-class Assert: public Command {
+class Assert : public Command {
  public:
   Assert(Term_ptr);
   Assert(const Assert&);
@@ -113,13 +127,13 @@ class Assert: public Command {
   virtual void visit_children(Visitor_ptr) override;
 
   Term_ptr term;
-  Solver::Component_ptr component;
+//  Solver::Component_ptr component;
 };
 
 /**
  * ( check-sat )
  */
-class CheckSat: public Command {
+class CheckSat : public Command {
  public:
   CheckSat();
   CheckSat(Primitive_ptr);
@@ -133,7 +147,7 @@ class CheckSat: public Command {
 
 };
 
-class CheckSatAndCount: public Command {
+class CheckSatAndCount : public Command {
  public:
   CheckSatAndCount(Primitive_ptr);
   CheckSatAndCount(Primitive_ptr, Primitive_ptr);
@@ -153,16 +167,57 @@ class CheckSatAndCount: public Command {
 /**
  * TODO Avoid Using Type Information, refactor usages and remove it
  */
-class Term: public Visitable {
+class Term : public Visitable {
  public:
   enum class Type
     : unsigned char {
-    NONE = 0, EXCLAMATION, EXISTS, FORALL, LET, TERM, AND, OR, NOT,
-    UMINUS, MINUS, PLUS, TIMES, EQ, NOTEQ, GT, GE, LT, LE, CONCAT, IN,
-    NOTIN, LEN, CONTAINS, NOTCONTAINS, BEGINS, NOTBEGINS, ENDS, NOTENDS,
-    INDEXOF, LASTINDEXOF, CHARAT, SUBSTRING, TOUPPER, TOLOWER, TRIM,
-    TOSTRING, TOINT, REPLACE, COUNT, ITE, RECONCAT, TOREGEX, UNKNOWN,
-    ASQUALIDENTIFIER, QUALIDENTIFIER, TERMCONSTANT
+      NONE = 0,
+    EXCLAMATION,
+    EXISTS,
+    FORALL,
+    LET,
+    TERM,
+    AND,
+    OR,
+    NOT,
+    UMINUS,
+    MINUS,
+    PLUS,
+    TIMES,
+    EQ,
+    NOTEQ,
+    GT,
+    GE,
+    LT,
+    LE,
+    CONCAT,
+    IN,
+    NOTIN,
+    LEN,
+    CONTAINS,
+    NOTCONTAINS,
+    BEGINS,
+    NOTBEGINS,
+    ENDS,
+    NOTENDS,
+    INDEXOF,
+    LASTINDEXOF,
+    CHARAT,
+    SUBSTRING,
+    TOUPPER,
+    TOLOWER,
+    TRIM,
+    TOSTRING,
+    TOINT,
+    REPLACE,
+    COUNT,
+    ITE,
+    RECONCAT,
+    TOREGEX,
+    UNKNOWN,
+    ASQUALIDENTIFIER,
+    QUALIDENTIFIER,
+    TERMCONSTANT
   };
 
   Term();
@@ -183,7 +238,7 @@ class Term: public Visitable {
   const Term::Type type_;
 };
 
-class Exclamation: public Term {
+class Exclamation : public Term {
  public:
   Exclamation(Term_ptr, AttributeList_ptr);
   Exclamation(const Exclamation&);
@@ -198,7 +253,7 @@ class Exclamation: public Term {
   AttributeList_ptr attribute_list;
 };
 
-class Exists: public Term {
+class Exists : public Term {
  public:
   Exists(SortedVarList_ptr, Term_ptr);
   Exists(const Exists&);
@@ -213,7 +268,7 @@ class Exists: public Term {
   Term_ptr term;
 };
 
-class ForAll: public Term {
+class ForAll : public Term {
  public:
   ForAll(SortedVarList_ptr, Term_ptr);
   ForAll(const ForAll&);
@@ -228,7 +283,7 @@ class ForAll: public Term {
   Term_ptr term;
 };
 
-class Let: public Term {
+class Let : public Term {
  public:
   Let(VarBindingList_ptr, Term_ptr);
   Let(const Let&);
@@ -243,7 +298,7 @@ class Let: public Term {
   Term_ptr term;
 };
 
-class And: public Term {
+class And : public Term {
  public:
   And(TermList_ptr);
   And(const And&);
@@ -255,11 +310,11 @@ class And: public Term {
   virtual void visit_children(Visitor_ptr) override;
 
   TermList_ptr term_list;
-  Solver::Component_ptr component;
+//  Solver::Component_ptr component;
 
 };
 
-class Or: public Term {
+class Or : public Term {
  public:
   Or(TermList_ptr);
   Or(const Or&);
@@ -271,10 +326,10 @@ class Or: public Term {
   virtual void visit_children(Visitor_ptr) override;
 
   TermList_ptr term_list;
-  Solver::Component_ptr component;
+//  Solver::Component_ptr component;
 };
 
-class Not: public Term {
+class Not : public Term {
  public:
   Not(Term_ptr);
   Not(const Not&);
@@ -288,7 +343,7 @@ class Not: public Term {
   Term_ptr term;
 };
 
-class UMinus: public Term {
+class UMinus : public Term {
  public:
   UMinus(Term_ptr);
   UMinus(const UMinus&);
@@ -302,7 +357,7 @@ class UMinus: public Term {
   Term_ptr term;
 };
 
-class Minus: public Term {
+class Minus : public Term {
  public:
   Minus(Term_ptr, Term_ptr);
   Minus(const Minus&);
@@ -317,7 +372,7 @@ class Minus: public Term {
   Term_ptr right_term;
 };
 
-class Plus: public Term {
+class Plus : public Term {
  public:
   Plus(TermList_ptr);
   Plus(const Plus&);
@@ -331,7 +386,7 @@ class Plus: public Term {
   TermList_ptr term_list;
 };
 
-class Times: public Term {
+class Times : public Term {
  public:
   Times(TermList_ptr);
   Times(const Times&);
@@ -345,7 +400,7 @@ class Times: public Term {
   TermList_ptr term_list;
 };
 
-class Eq: public Term {
+class Eq : public Term {
  public:
   Eq(Term_ptr, Term_ptr);
   Eq(const Eq&);
@@ -360,7 +415,7 @@ class Eq: public Term {
   Term_ptr right_term;
 };
 
-class NotEq: public Term {
+class NotEq : public Term {
  public:
   NotEq(Term_ptr, Term_ptr);
   NotEq(const NotEq&);
@@ -375,7 +430,7 @@ class NotEq: public Term {
   Term_ptr right_term;
 };
 
-class Gt: public Term {
+class Gt : public Term {
  public:
   Gt(Term_ptr, Term_ptr);
   Gt(const Gt&);
@@ -390,7 +445,7 @@ class Gt: public Term {
   Term_ptr right_term;
 };
 
-class Ge: public Term {
+class Ge : public Term {
  public:
   Ge(Term_ptr, Term_ptr);
   Ge(const Ge&);
@@ -405,7 +460,7 @@ class Ge: public Term {
   Term_ptr right_term;
 };
 
-class Lt: public Term {
+class Lt : public Term {
  public:
   Lt(Term_ptr, Term_ptr);
   Lt(const Lt&);
@@ -420,7 +475,7 @@ class Lt: public Term {
   Term_ptr right_term;
 };
 
-class Le: public Term {
+class Le : public Term {
  public:
   Le(Term_ptr, Term_ptr);
   Le(const Le&);
@@ -435,7 +490,7 @@ class Le: public Term {
   Term_ptr right_term;
 };
 
-class Concat: public Term {
+class Concat : public Term {
  public:
   Concat(TermList_ptr);
   Concat(const Concat&);
@@ -449,7 +504,7 @@ class Concat: public Term {
   TermList_ptr term_list;
 };
 
-class In: public Term {
+class In : public Term {
  public:
   In(Term_ptr, Term_ptr);
   In(const In&);
@@ -464,7 +519,7 @@ class In: public Term {
   Term_ptr right_term;
 };
 
-class NotIn: public Term {
+class NotIn : public Term {
  public:
   NotIn(Term_ptr, Term_ptr);
   NotIn(const NotIn&);
@@ -479,7 +534,7 @@ class NotIn: public Term {
   Term_ptr right_term;
 };
 
-class Len: public Term {
+class Len : public Term {
  public:
   Len(Term_ptr);
   Len(const Len&);
@@ -493,7 +548,7 @@ class Len: public Term {
   Term_ptr term;
 };
 
-class Contains: public Term {
+class Contains : public Term {
  public:
   Contains(Term_ptr, Term_ptr);
   Contains(const Contains&);
@@ -508,7 +563,7 @@ class Contains: public Term {
   Term_ptr search_term;
 };
 
-class NotContains: public Term {
+class NotContains : public Term {
  public:
   NotContains(Term_ptr, Term_ptr);
   NotContains(const NotContains&);
@@ -523,7 +578,7 @@ class NotContains: public Term {
   Term_ptr search_term;
 };
 
-class Begins: public Term {
+class Begins : public Term {
  public:
   Begins(Term_ptr, Term_ptr);
   Begins(const Begins&);
@@ -538,7 +593,7 @@ class Begins: public Term {
   Term_ptr search_term;
 };
 
-class NotBegins: public Term {
+class NotBegins : public Term {
  public:
   NotBegins(Term_ptr, Term_ptr);
   NotBegins(const NotBegins&);
@@ -553,7 +608,7 @@ class NotBegins: public Term {
   Term_ptr search_term;
 };
 
-class Ends: public Term {
+class Ends : public Term {
  public:
   Ends(Term_ptr, Term_ptr);
   Ends(const Ends&);
@@ -568,7 +623,7 @@ class Ends: public Term {
   Term_ptr search_term;
 };
 
-class NotEnds: public Term {
+class NotEnds : public Term {
  public:
   NotEnds(Term_ptr, Term_ptr);
   NotEnds(const NotEnds&);
@@ -583,11 +638,12 @@ class NotEnds: public Term {
   Term_ptr search_term;
 };
 
-class IndexOf: public Term {
+class IndexOf : public Term {
  public:
-  enum class Mode : int {
-    NONE = 0,
-    DEFAULT, // from index is nullptr,
+  enum class Mode
+    : int {
+      NONE = 0,
+    DEFAULT,  // from index is nullptr,
     FROMINDEX,          // from index is a numeral
     FROMFIRSTOF,        // from index is string term to find first occurance
     FROMLASTOF,         // from index is string term to find last occurance
@@ -611,10 +667,11 @@ class IndexOf: public Term {
   Mode mode;
 };
 
-class LastIndexOf: public Term {
+class LastIndexOf : public Term {
  public:
-  enum class Mode : int {
-    NONE = 0,
+  enum class Mode
+    : int {
+      NONE = 0,
     DEFAULT,            // from index is nullptr,
     FROMINDEX,          // from index is a numeral
     FROMFIRSTOF,        // from index is string term to find first occurance
@@ -639,7 +696,7 @@ class LastIndexOf: public Term {
   Mode mode;
 };
 
-class CharAt: public Term {
+class CharAt : public Term {
  public:
   CharAt(Term_ptr, Term_ptr);
   CharAt(const CharAt&);
@@ -654,10 +711,11 @@ class CharAt: public Term {
   Term_ptr index_term;
 };
 
-class SubString: public Term {
+class SubString : public Term {
  public:
-  enum class Mode : int {
-    NONE = 0,             // used only to check for optimizations
+  enum class Mode
+    : int {
+      NONE = 0,             // used only to check for optimizations
     FROMINDEX,            // start index is a numeral
     FROMFIRSTOF,          // start index is string term to find first occurance
     FROMLASTOF,           // start index is string term to find last occurance
@@ -665,7 +723,7 @@ class SubString: public Term {
     FROMINDEXTOFIRSTOF,   // start index is numeral, end index is string term to find first occurance
     FROMINDEXTOLASTOF,    // start index is numeral, end index is string term to find last occurance
     FROMFIRSTOFTOINDEX,   // start index is string term, end index is numeral
-    FROMFIRSTOFTOFIRSTOF, // start index is string term, end index is string term
+    FROMFIRSTOFTOFIRSTOF,  // start index is string term, end index is string term
     FROMFIRSTOFTOLASTOF,  // start index is string term, end index is string term
     FROMLASTOFTOINDEX,    // start index is string term, end index is numeral
     FROMLASTOFTOFIRSTOF,  // start index is string term, end index is string term
@@ -691,7 +749,7 @@ class SubString: public Term {
   Mode mode;
 };
 
-class ToUpper: public Term {
+class ToUpper : public Term {
  public:
   ToUpper(Term_ptr);
   ToUpper(const ToUpper&);
@@ -705,7 +763,7 @@ class ToUpper: public Term {
   Term_ptr subject_term;
 };
 
-class ToLower: public Term {
+class ToLower : public Term {
  public:
   ToLower(Term_ptr);
   ToLower(const ToLower&);
@@ -719,7 +777,7 @@ class ToLower: public Term {
   Term_ptr subject_term;
 };
 
-class Trim: public Term {
+class Trim : public Term {
  public:
   Trim(Term_ptr);
   Trim(const Trim&);
@@ -733,7 +791,7 @@ class Trim: public Term {
   Term_ptr subject_term;
 };
 
-class ToString: public Term {
+class ToString : public Term {
  public:
   ToString(Term_ptr);
   ToString(const ToString&);
@@ -747,7 +805,7 @@ class ToString: public Term {
   Term_ptr subject_term;
 };
 
-class ToInt: public Term {
+class ToInt : public Term {
  public:
   ToInt(Term_ptr);
   ToInt(const ToInt&);
@@ -761,7 +819,7 @@ class ToInt: public Term {
   Term_ptr subject_term;
 };
 
-class Replace: public Term {
+class Replace : public Term {
  public:
   Replace(Term_ptr, Term_ptr, Term_ptr);
   Replace(const Replace&);
@@ -777,7 +835,7 @@ class Replace: public Term {
   Term_ptr replace_term;
 };
 
-class Count: public Term {
+class Count : public Term {
  public:
   Count(Term_ptr, Term_ptr);
   Count(const Count&);
@@ -792,7 +850,7 @@ class Count: public Term {
   Term_ptr bound_term;
 };
 
-class Ite: public Term {
+class Ite : public Term {
  public:
   Ite(Term_ptr, Term_ptr, Term_ptr);
   Ite(const Ite&);
@@ -808,7 +866,7 @@ class Ite: public Term {
   Term_ptr else_branch;
 };
 
-class ReConcat: public Term {
+class ReConcat : public Term {
  public:
   ReConcat(TermList_ptr);
   ReConcat(const ReConcat&);
@@ -823,7 +881,7 @@ class ReConcat: public Term {
   // ToRegex specifically
 };
 
-class ToRegex: public Term {
+class ToRegex : public Term {
  public:
   ToRegex(Term_ptr);
   ToRegex(const ToRegex&);
@@ -837,7 +895,7 @@ class ToRegex: public Term {
   Term_ptr term;
 };
 
-class UnknownTerm: public Term {
+class UnknownTerm : public Term {
  public:
   UnknownTerm(Term_ptr, TermList_ptr);
   UnknownTerm(const UnknownTerm&);
@@ -856,7 +914,7 @@ class UnknownTerm: public Term {
  * "(" "as" identifier sort ")"
  * | identifier
  */
-class QualIdentifier: public Term {
+class QualIdentifier : public Term {
  public:
   QualIdentifier(Identifier_ptr);
   QualIdentifier(const QualIdentifier&);
@@ -873,7 +931,7 @@ class QualIdentifier: public Term {
 
 };
 
-class AsQualIdentifier: public Term {
+class AsQualIdentifier : public Term {
  public:
   AsQualIdentifier(Identifier_ptr, Sort_ptr);
   AsQualIdentifier(const AsQualIdentifier&);
@@ -888,11 +946,20 @@ class AsQualIdentifier: public Term {
   Sort_ptr sort;
 };
 
-class Primitive: public Visitable {
+class Primitive : public Visitable {
  public:
   enum class Type
     : int {
-    NONE = 0, BOOL, BINARY, DECIMAL, HEXADECIMAL, KEYWORD, NUMERAL, STRING, REGEX, SYMBOL
+      NONE = 0,
+    BOOL,
+    BINARY,
+    DECIMAL,
+    HEXADECIMAL,
+    KEYWORD,
+    NUMERAL,
+    STRING,
+    REGEX,
+    SYMBOL
   };
 
   Primitive(const std::string data, const Primitive::Type type);
@@ -928,7 +995,7 @@ class Primitive: public Visitable {
   Primitive::Type type;
 };
 
-class TermConstant: public Term {
+class TermConstant : public Term {
  public:
   TermConstant(Primitive_ptr);
   TermConstant(const TermConstant&);
@@ -950,7 +1017,7 @@ class TermConstant: public Term {
  *  | identifier
  *  | type
  */
-class Sort: public Visitable {
+class Sort : public Visitable {
  public:
   Sort(Identifier_ptr);
   Sort(Identifier_ptr, SortList_ptr);
@@ -966,14 +1033,16 @@ class Sort: public Visitable {
   SortList_ptr sort_list;
   TVariable_ptr var_type;
 
-
 };
 
-class TVariable: public Visitable {
+class TVariable : public Visitable {
  public:
   enum class Type
     : int {
-    NONE = 0, BOOL, INT, STRING
+      NONE = 0,
+    BOOL,
+    INT,
+    STRING
   };
 
   TVariable(TVariable::Type type);
@@ -986,7 +1055,6 @@ class TVariable: public Visitable {
 
   virtual void accept(Visitor_ptr) override;
   virtual void visit_children(Visitor_ptr) override;
-
 
   class Name {
    public:
@@ -1001,7 +1069,7 @@ class TVariable: public Visitable {
   const TVariable::Type type;
 };
 
-class TBool: public TVariable {
+class TBool : public TVariable {
  public:
   TBool();
   TBool(const TBool&);
@@ -1012,7 +1080,7 @@ class TBool: public TVariable {
   virtual void visit_children(Visitor_ptr) override;
 };
 
-class TInt: public TVariable {
+class TInt : public TVariable {
  public:
   TInt();
   TInt(const TInt&);
@@ -1024,7 +1092,7 @@ class TInt: public TVariable {
 
 };
 
-class TString: public TVariable {
+class TString : public TVariable {
  public:
   TString();
   TString(const TString&);
@@ -1039,7 +1107,7 @@ class TString: public TVariable {
  * : KEYWORD attribute_value
  * | KEYWORD
  */
-class Attribute: public Visitable {
+class Attribute : public Visitable {
  public:
   Attribute();
   Attribute(const Attribute&);
@@ -1054,7 +1122,7 @@ class Attribute: public Visitable {
 /**
  * "(" SYMBOL sort ")"
  */
-class SortedVar: public Visitable {
+class SortedVar : public Visitable {
  public:
   SortedVar(Primitive_ptr, Sort_ptr);
   SortedVar(const SortedVar&);
@@ -1071,7 +1139,7 @@ class SortedVar: public Visitable {
 /**
  * "(" SYMBOL term ")"
  */
-class VarBinding: public Visitable {
+class VarBinding : public Visitable {
  public:
   VarBinding(Primitive_ptr, Term_ptr);
   VarBinding(const VarBinding&);
@@ -1089,7 +1157,7 @@ class VarBinding: public Visitable {
  *  "(" "_" SYMBOL numeral_list_ ")"
  * | SYMBOL
  */
-class Identifier: public Visitable {
+class Identifier : public Visitable {
  public:
   Identifier(Primitive_ptr);
   Identifier(Primitive_ptr, Primitive_ptr, NumeralList_ptr);
@@ -1108,7 +1176,7 @@ class Identifier: public Visitable {
   NumeralList_ptr numeral_list;
 };
 
-class Variable: public TVariable {
+class Variable : public TVariable {
  public:
   Variable(std::string name, Type);
   Variable(Primitive_ptr, Type);
@@ -1122,7 +1190,7 @@ class Variable: public TVariable {
 
   std::string getName() const;
   Variable::Type getType() const;
-  Solver::Component_ptr component;
+//  Solver::Component_ptr component;
 
   bool isSymbolic() const;
   void setSymbolic(bool is_symbolic);

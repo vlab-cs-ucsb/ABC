@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "smt/typedefs.h"
+#include "smt/ast.h"
 
 namespace Vlab {
 namespace Solver {

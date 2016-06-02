@@ -95,12 +95,6 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
     } else if (check_bool_constant_value(*iter, "false")) {
       has_false_term = true;
       break;
-    } else if (Term::Type::OR == (*iter)->type()) {
-      Or_ptr or_term = dynamic_cast<Or_ptr>(*iter);
-      or_term_lists.push_back(*or_term->term_list);
-      or_term->term_list->clear();
-      delete or_term;
-      iter = and_term->term_list->erase(iter);
     } else {
       iter++;
     }
@@ -108,83 +102,8 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
 
   if (has_false_term) {
     add_callback_to_replace_with_bool(and_term, "false");
-  } else if (not ( or_term_lists.empty() )) { // convert to DNF
-
-    std::vector<TermList> cartesian = {{}};
-    for (auto& term_list_1 : or_term_lists) {
-      std::vector<TermList> sub_product;
-        for (auto& term_list_2 : cartesian) {
-            for (auto& term_1 : term_list_1) {
-                TermList term_list_2_clone;
-                for (auto& term_2 : term_list_2) {
-                  term_list_2_clone.push_back(term_2->clone());
-                }
-                sub_product.push_back(term_list_2_clone);
-                sub_product.back().push_back(term_1->clone());
-            }
-        }
-        // avoid memory leak
-        for (auto& term_list : cartesian) {
-          for (auto term : term_list) {
-            delete term;
-          }
-        }
-        for (auto& term : term_list_1) {
-          delete term; term = nullptr;
-        }
-        cartesian.clear();
-        cartesian.swap(sub_product);
-    }
-
-    TermList_ptr or_term_list = new TermList();
-    for (auto& term_list : cartesian) {
-      for (auto term : *and_term->term_list) {
-        term_list.push_back(term->clone());
-      }
-
-      TermList_ptr and_term_list = new TermList();
-      for (auto term : term_list) { // Associativity
-        if (And_ptr sub_and_term = dynamic_cast<And_ptr>(term)) {
-          and_term_list->insert(and_term_list->end(), sub_and_term->term_list->begin(), sub_and_term->term_list->end());
-        } else {
-          and_term_list->push_back(term);
-        }
-      }
-
-      or_term_list->push_back(new And(and_term_list));
-    }
-
-    Or_ptr or_term = new Or(or_term_list);
-    callback = [or_term, and_term](Term_ptr& term) mutable {
-      term = or_term;
-      delete and_term;
-    };
-
   } else if (and_term->term_list->empty()) {
     add_callback_to_replace_with_bool(and_term, "true");
-  } else if (and_term->term_list->size() == 1) {
-    callback = [and_term](Term_ptr& term) mutable {
-      Term_ptr child_term = and_term->term_list->front();
-      and_term->term_list->clear();
-      delete and_term;
-      term = child_term;
-    };
-  } else {
-    DVLOG(VLOG_LEVEL) << "Optimize operation: '" << *and_term << "'";
-    TermConstant_ptr initial_term_constant = nullptr;
-    int pos = 0;
-    for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
-      if (Term::Type::AND == (*iter)->type()) { // Associativity
-        And_ptr sub_and_term = dynamic_cast<And_ptr>(*iter);
-        and_term->term_list->erase(iter);
-        and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
-        sub_and_term->term_list->clear();
-        delete sub_and_term;
-        iter = and_term->term_list->begin() + pos; // insertion invalidates iter, reset it
-        continue;
-      }
-      iter++; pos++;
-    }
   }
 }
 

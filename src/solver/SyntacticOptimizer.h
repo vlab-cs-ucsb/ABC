@@ -25,7 +25,7 @@ namespace Solver {
 
 // TODO There may be a bug when we try to add multiple callbacks in one visit
 // check that behaviour especially for relational operations and
-// 'not' operation (add more optimizaiton for not)
+// 'not' operation (add more optimization for not)
 class SyntacticOptimizer: public SMT::Visitor {
 public:
   SyntacticOptimizer(SMT::Script_ptr, SymbolTable_ptr);

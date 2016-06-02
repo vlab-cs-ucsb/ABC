@@ -2,6 +2,7 @@
 
 #include <sstream>
 #include <functional>
+#include <algorithm>
 
 #include "Ast2Dot.h"
 
@@ -12,18 +13,21 @@ using namespace SMT;
 
 Component::Component()
   : is_solved_ { false },
-    is_sat_ { false } {
+    is_sat_ { false },
+    id_ {0} {
 }
 
 Component::Component(SMT::Term_ptr term)
   : is_solved_ { false },
-    is_sat_ { false } {
+    is_sat_ { false },
+    id_ {0} {
   terms_.push_back(term);
 }
 
 Component::Component(TermList terms)
   : is_solved_ { false },
     is_sat_ { false },
+    id_ {0},
     terms_(terms) {
 }
 

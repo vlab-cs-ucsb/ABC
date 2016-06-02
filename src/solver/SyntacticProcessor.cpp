@@ -73,6 +73,118 @@ void SyntacticProcessor::convertAssertsToAnd() {
     commands->push_back(current_assert);
   }
 }
+/**
+ * Converts formula into DNF form and and applies associativity rule to ands
+ * - This can be avoided for pure linear integer arithmetic constraints
+ *
+ */
+void SyntacticProcessor::visitAnd(And_ptr and_term) {
+  DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
+  bool has_false_term = false;
+  std::vector<TermList> or_term_lists;
+  for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
+    visit(*iter);
+    if (Term::Type::OR == (*iter)->type()) {
+      Or_ptr or_term = dynamic_cast<Or_ptr>(*iter);
+      or_term_lists.push_back(*or_term->term_list);
+      or_term->term_list->clear();
+      delete or_term;
+      iter = and_term->term_list->erase(iter);
+    } else {
+      iter++;
+    }
+  }
+
+  if (not ( or_term_lists.empty() )) {
+    std::vector<TermList> cartesian = {{}};
+    for (auto& term_list_1 : or_term_lists) {
+      std::vector<TermList> sub_product;
+        for (auto& term_list_2 : cartesian) {
+            for (auto& term_1 : term_list_1) {
+                TermList term_list_2_clone;
+                for (auto& term_2 : term_list_2) {
+                  term_list_2_clone.push_back(term_2->clone());
+                }
+                sub_product.push_back(term_list_2_clone);
+                sub_product.back().push_back(term_1->clone());
+            }
+        }
+        // avoid memory leak
+        for (auto& term_list : cartesian) {
+          for (auto term : term_list) {
+            delete term;
+          }
+        }
+        for (auto& term : term_list_1) {
+          delete term; term = nullptr;
+        }
+        cartesian.clear();
+        cartesian.swap(sub_product);
+    }
+
+    TermList_ptr or_term_list = new TermList();
+    for (auto& term_list : cartesian) {
+      for (auto term : *and_term->term_list) {
+        term_list.push_back(term->clone());
+      }
+
+      TermList_ptr and_term_list = new TermList();
+      for (auto term : term_list) { // Associativity
+        if (And_ptr sub_and_term = dynamic_cast<And_ptr>(term)) {
+          and_term_list->insert(and_term_list->end(), sub_and_term->term_list->begin(), sub_and_term->term_list->end());
+        } else {
+          and_term_list->push_back(term);
+        }
+      }
+
+      or_term_list->push_back(new And(and_term_list));
+    }
+
+    delete and_term;
+    Or_ptr or_term = new Or(or_term_list);
+    Term_ptr* reference_term = top();
+    *reference_term = or_term;
+  } else {
+    DVLOG(VLOG_LEVEL) << "Optimize operation: '" << *and_term << "'";
+    TermConstant_ptr initial_term_constant = nullptr;
+    int pos = 0;
+    for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
+      if (Term::Type::AND == (*iter)->type()) { // Associativity
+        And_ptr sub_and_term = dynamic_cast<And_ptr>(*iter);
+        and_term->term_list->erase(iter);
+        and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
+        sub_and_term->term_list->clear();
+        delete sub_and_term;
+        iter = and_term->term_list->begin() + pos; // insertion invalidates iter, reset it
+        continue;
+      }
+      iter++; pos++;
+    }
+  }
+}
+
+/**
+ * Apply Associativity to Or
+ */
+void SyntacticProcessor::visitOr(Or_ptr or_term) {
+  visit_children_of(or_term);
+
+  DVLOG(VLOG_LEVEL) << "Optimize operation: '" << *or_term << "'";
+  TermConstant_ptr initial_term_constant = nullptr;
+  int pos = 0;
+  for (auto iter = or_term->term_list->begin(); iter != or_term->term_list->end();) {
+    if (Term::Type::OR == (*iter)->type()) { // Associativity
+      Or_ptr sub_or_term = dynamic_cast<Or_ptr>(*iter);
+      or_term->term_list->erase(iter);
+      or_term->term_list->insert(iter, sub_or_term->term_list->begin(), sub_or_term->term_list->end());
+      sub_or_term->term_list->clear();
+      delete sub_or_term;
+      iter = or_term->term_list->begin() + pos; // insertion invalidates iter, reset it
+      continue;
+    }
+    iter++; pos++;
+  }
+}
 
 /**
  * Applies De Morgan's Law and push negations down

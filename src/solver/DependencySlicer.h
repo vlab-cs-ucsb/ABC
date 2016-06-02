@@ -37,12 +37,12 @@ class DependencySlicer : public AstTraverser {
   void add_variable_current_term_mapping(SMT::Variable_ptr);
   std::vector<Component_ptr> GetComponentsFor(SMT::TermList_ptr);
 
+  int number_of_components_;
   SymbolTable_ptr symbol_table_;
   SMT::Term_ptr current_term_;
   std::map<SMT::Term_ptr, std::set<SMT::Variable_ptr>> term_variable_map_;
  private:
   static const int VLOG_LEVEL;
-  int number_components;
 };
 
 } /* namespace Solver */

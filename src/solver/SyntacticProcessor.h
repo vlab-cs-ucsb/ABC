@@ -28,6 +28,8 @@ public:
   void end();
   void setCallbacks();
   void convertAssertsToAnd();
+  void visitAnd(SMT::And_ptr);
+  void visitOr(SMT::Or_ptr);
   void visitNot(SMT::Not_ptr);
   void visitIndexOf(SMT::IndexOf_ptr);
   void visitLastIndexOf(SMT::LastIndexOf_ptr);
