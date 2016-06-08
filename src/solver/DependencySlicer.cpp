@@ -18,9 +18,10 @@ namespace Solver {
 using namespace SMT;
 const int DependencySlicer::VLOG_LEVEL = 20;
 
-DependencySlicer::DependencySlicer(Script_ptr script, SymbolTable_ptr symbol_table)
+DependencySlicer::DependencySlicer(Script_ptr script, SymbolTable_ptr symbol_table, ConstraintInformation_ptr constraint_information)
     : AstTraverser(script),
       symbol_table_(symbol_table),
+      constraint_information_ (constraint_information),
       current_term_(nullptr) {
   setCallbacks();
 }
@@ -81,11 +82,15 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
     current_term_ = nullptr;
   }
 
+  constraint_information_->add_component(and_term);
+
   auto components = GetComponentsFor(and_term->term_list);
   if (components.size() > 1) {
     and_term->term_list->clear();
+    constraint_information_->remove_component(and_term);
     for (auto sub_term_list : components) {
       And_ptr and_component = new And(sub_term_list);
+      constraint_information_->add_component(and_component);
       and_term->term_list->push_back(and_component);
     }
   } else if (components.size() == 1) {

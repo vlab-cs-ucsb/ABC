@@ -13,6 +13,8 @@
 namespace Vlab {
 namespace Solver {
 
+using namespace SMT;
+
 ConstraintInformation::ConstraintInformation() {
   // TODO Auto-generated constructor stub
 
@@ -21,6 +23,20 @@ ConstraintInformation::ConstraintInformation() {
 ConstraintInformation::~ConstraintInformation() {
   // TODO Auto-generated destructor stub
 }
+
+bool ConstraintInformation::is_component(Visitable_ptr node) {
+  auto entry = components_.find(node);
+  return (entry not_eq components_.end());
+}
+
+void ConstraintInformation::add_component(Visitable_ptr node) {
+  components_.insert(node);
+}
+
+void ConstraintInformation::remove_component(Visitable_ptr node) {
+  components_.erase(node);
+}
+
 
 } /* namespace Solver */
 } /* namespace Vlab */

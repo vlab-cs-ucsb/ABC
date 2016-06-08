@@ -7,6 +7,15 @@
 
 #include "ArithmeticConstraintSolver.h"
 
+#include <glog/logging.h>
+#include <iostream>
+#include <utility>
+
+#include "smt/ast.h"
+#include "smt/Visitor.h"
+#include "theory/ArithmeticFormula.h"
+#include "theory/BinaryIntAutomaton.h"
+
 namespace Vlab {
 namespace Solver {
 
@@ -15,10 +24,14 @@ using namespace Theory;
 
 const int ArithmeticConstraintSolver::VLOG_LEVEL = 11;
 
-ArithmeticConstraintSolver::ArithmeticConstraintSolver(Script_ptr script,
-    SymbolTable_ptr symbol_table, bool is_natural_number_only) :
-    AstTraverser(script), is_restricted_to_natural_numbers {is_natural_number_only}, symbol_table(symbol_table),
-    arithmetic_formula_generator(script, symbol_table) {
+ArithmeticConstraintSolver::ArithmeticConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_table,
+                                                       ConstraintInformation_ptr constraint_information,
+                                                       bool is_natural_numbers_only)
+    : AstTraverser(script),
+      is_natural_numbers_only_ { is_natural_numbers_only },
+      symbol_table_(symbol_table),
+      constraint_information_(constraint_information),
+      arithmetic_formula_generator_(script, symbol_table) {
   setCallbacks();
 }
 
@@ -27,8 +40,8 @@ ArithmeticConstraintSolver::~ArithmeticConstraintSolver() {
 
 void ArithmeticConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "start";
-  arithmetic_formula_generator.visit(root);
-  string_terms_map = arithmetic_formula_generator.getStringTermsMap();
+  arithmetic_formula_generator_.visit(root);
+  string_terms_map_ = arithmetic_formula_generator_.get_string_terms_map();
   visitScript(root);
   end();
 }
@@ -37,35 +50,36 @@ void ArithmeticConstraintSolver::end() {
 }
 
 void ArithmeticConstraintSolver::setCallbacks() {
-  auto term_callback = [this] (Term_ptr term) -> bool {
-    switch (term->type()) {
-      case Term::Type::NOT:
-      case Term::Type::EQ:
-      case Term::Type::NOTEQ:
-      case Term::Type::GT:
-      case Term::Type::GE:
-      case Term::Type::LT:
-      case Term::Type::LE:
-      case Term::Type::QUALIDENTIFIER: {
-        DVLOG(VLOG_LEVEL) << "visit: " << *term;
-        ArithmeticFormula_ptr formula = arithmetic_formula_generator.getTermFormula(term);
-        if (formula == nullptr) {
-          return false;
+  auto term_callback =
+      [this] (Term_ptr term) -> bool {
+        switch (term->type()) {
+          case Term::Type::NOT:
+          case Term::Type::EQ:
+          case Term::Type::NOTEQ:
+          case Term::Type::GT:
+          case Term::Type::GE:
+          case Term::Type::LT:
+          case Term::Type::LE:
+          case Term::Type::QUALIDENTIFIER: {
+            DVLOG(VLOG_LEVEL) << "visit: " << *term;
+            ArithmeticFormula_ptr formula = arithmetic_formula_generator_.get_term_formula(term);
+            if (formula == nullptr) {
+              return false;
+            }
+
+            DVLOG(VLOG_LEVEL) << "Linear Arithmetic Equation: " << *formula;
+            BinaryIntAutomaton_ptr binary_int_auto = BinaryIntAutomaton::makeAutomaton(formula->clone(), is_natural_numbers_only_);
+
+            Value_ptr result = new Value(binary_int_auto);
+
+            setTermValue(term, result);
+            break;
+          }
+          default:
+          break;
         }
-
-        DVLOG(VLOG_LEVEL) << "Linear Arithmetic Equation: " << *formula;
-        BinaryIntAutomaton_ptr binary_int_auto = BinaryIntAutomaton::makeAutomaton(formula->clone(), is_restricted_to_natural_numbers);
-
-        Value_ptr result = new Value(binary_int_auto);
-
-        setTermValue(term, result);
-        break;
-      }
-      default:
-        break;
-    }
-    return false;
-  };
+        return false;
+      };
 
   auto command_callback = [](Command_ptr command) -> bool {
     if (Command::Type::ASSERT == command->getType()) {
@@ -79,13 +93,13 @@ void ArithmeticConstraintSolver::setCallbacks() {
 }
 
 void ArithmeticConstraintSolver::visitScript(Script_ptr script) {
-  symbol_table->push_scope(script);
+  symbol_table_->push_scope(script);
   visit_children_of(script);
-  symbol_table->pop_scope(); // global scope, it is reachable via script pointer all the time
+  symbol_table_->pop_scope();  // global scope, it is reachable via script pointer all the time
 }
 
 void ArithmeticConstraintSolver::visitAssert(Assert_ptr assert_command) {
-  DVLOG(VLOG_LEVEL)<< "visit: " << *assert_command;
+  DVLOG(VLOG_LEVEL) << "visit: " << *assert_command;
   AstTraverser::visit(assert_command->term);
 }
 
@@ -96,23 +110,30 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
   bool is_satisfiable = true;
   ArithmeticFormula_ptr formula = nullptr;
-  Value_ptr result = nullptr, param = nullptr, and_value = nullptr;
+  Value_ptr automaton_result = nullptr, param = nullptr, and_value = nullptr;
+  // TODO if it is not a component descent into children
+  if (not constraint_information_->is_component(and_term)) {
+    visit_children_of(and_term);
+    setTermValue(and_term, nullptr);
+    return;
+  }
+
   for (auto& term : *(and_term->term_list)) {
-    formula = arithmetic_formula_generator.getTermFormula(term);
+    formula = arithmetic_formula_generator_.get_term_formula(term);
     if (formula != nullptr) {
       visit(term);
       param = getTermValue(term);
       is_satisfiable = is_satisfiable and param->isSatisfiable();
       if (is_satisfiable) {
-        if (result == nullptr) {
-          result = param->clone();
+        if (automaton_result == nullptr) {
+          automaton_result = param->clone();
         } else {
-          and_value = result->intersect(param);
-          delete result;
-          result = and_value;
+          and_value = automaton_result->intersect(param);
+          delete automaton_result;
+          automaton_result = and_value;
         }
       } else {
-        result = new Value(BinaryIntAutomaton::makePhi(formula->clone(), is_restricted_to_natural_numbers));
+        automaton_result = new Value(BinaryIntAutomaton::makePhi(formula->clone(), is_natural_numbers_only_));
         break;
       }
       clearTermValue(term);
@@ -120,34 +141,50 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
   }
 
   for (auto& term : *(and_term->term_list)) {
-    formula = arithmetic_formula_generator.getTermFormula(term);
+    formula = arithmetic_formula_generator_.get_term_formula(term);
     if (formula != nullptr) {
-      term_value_index[term] = and_term;
+      term_value_index_[term] = and_term;
       clearTermValue(term);
     }
   }
 
-  setTermValue(and_term, result);
+  // Add a variable to symbol table to represent binary integer automaton
+  if (automaton_result != nullptr) {
+    std::string name = symbol_table_->get_var_name_for_node(and_term, Variable::Type::INT);
+    symbol_table_->addVariable(new Variable(name, Variable::Type::INT));
+  }
+
+  setTermValue(and_term, automaton_result);
 }
 
 void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *or_term;
   for (auto& term : *(or_term->term_list)) {
-    symbol_table->push_scope(term);
+    symbol_table_->push_scope(term);
     visit(term);
-    symbol_table->pop_scope();
+    symbol_table_->pop_scope();
   }
+}
+
+std::string ArithmeticConstraintSolver::get_int_variable_name(SMT::Term_ptr term) {
+  Term_ptr key = term;
+  auto it1 = term_value_index_.find(term);
+  if (it1 != term_value_index_.end()) {
+    key = it1->second;
+  }
+
+  return symbol_table_->get_var_name_for_node(key, Variable::Type::INT);
 }
 
 Value_ptr ArithmeticConstraintSolver::getTermValue(Term_ptr term) {
   Term_ptr key = term;
-  auto it1 = term_value_index.find(term);
-  if (it1 != term_value_index.end()) {
+  auto it1 = term_value_index_.find(term);
+  if (it1 != term_value_index_.end()) {
     key = it1->second;
   }
 
-  auto it2 = term_values.find(key);
-  if (it2 != term_values.end()) {
+  auto it2 = term_values_.find(key);
+  if (it2 != term_values_.end()) {
     return it2->second;
   }
 
@@ -155,23 +192,26 @@ Value_ptr ArithmeticConstraintSolver::getTermValue(Term_ptr term) {
 }
 
 bool ArithmeticConstraintSolver::setTermValue(Term_ptr term, Value_ptr value) {
-  auto result = term_values.insert(std::make_pair(term, value));
+  auto result = term_values_.insert(std::make_pair(term, value));
   if (result.second == false) {
     LOG(FATAL)<< "value is already computed for term: " << *term;
   }
-  term_value_index[term] = term;
+  term_value_index_[term] = term;
   return result.second;
 }
 
-bool ArithmeticConstraintSolver::updateTermValue(SMT::Term_ptr term, Value_ptr value) {
+/**
+ * Only updates pointer value, memory management should be done in the calling context
+ */
+bool ArithmeticConstraintSolver::update_term_value_pointer(SMT::Term_ptr term, Value_ptr value) {
   Term_ptr key = term;
-  auto it1 = term_value_index.find(term);
-  if (it1 != term_value_index.end()) {
+  auto it1 = term_value_index_.find(term);
+  if (it1 != term_value_index_.end()) {
     key = it1->second;
   }
 
-  auto it2 = term_values.find(key);
-  if (it2 != term_values.end()) {
+  auto it2 = term_values_.find(key);
+  if (it2 != term_values_.end()) {
     it2->second = value;
     return true;
   }
@@ -180,50 +220,48 @@ bool ArithmeticConstraintSolver::updateTermValue(SMT::Term_ptr term, Value_ptr v
 }
 
 void ArithmeticConstraintSolver::clearTermValues() {
-  for (auto& entry : term_values) {
+  for (auto& entry : term_values_) {
     delete entry.second;
   }
 
-  term_values.clear();
+  term_values_.clear();
 }
 
 void ArithmeticConstraintSolver::clearTermValue(Term_ptr term) {
-  auto it = term_values.find(term);
-  if (it != term_values.end()) {
+  auto it = term_values_.find(term);
+  if (it != term_values_.end()) {
     delete it->second;
-    term_values.erase(it);
+    term_values_.erase(it);
   }
 }
 
-
 bool ArithmeticConstraintSolver::hasStringTerms(Term_ptr term) {
-  return (string_terms_map.find(term) != string_terms_map.end());
+  return (string_terms_map_.find(term) != string_terms_map_.end());
 }
 
 TermList& ArithmeticConstraintSolver::getStringTermsIn(Term_ptr term) {
-  return string_terms_map[term];
+  return string_terms_map_[term];
 }
 
 std::map<SMT::Term_ptr, SMT::Term_ptr>& ArithmeticConstraintSolver::getTermValueIndex() {
-  return term_value_index;
+  return term_value_index_;
 }
 
 ArithmeticConstraintSolver::TermValueMap& ArithmeticConstraintSolver::getTermValues() {
-  return term_values;
+  return term_values_;
 }
 
 std::map<SMT::Term_ptr, SMT::TermList>& ArithmeticConstraintSolver::getStringTermsMap() {
-  return string_terms_map;
+  return string_terms_map_;
 }
 
 void ArithmeticConstraintSolver::assign(std::map<SMT::Term_ptr, SMT::Term_ptr>& term_value_index,
-        TermValueMap& term_values,
-        std::map<SMT::Term_ptr, SMT::TermList>& string_terms_map) {
-  term_value_index = this->term_value_index;
-  term_values = this->term_values;
-  string_terms_map = this->string_terms_map;
+                                        TermValueMap& term_values,
+                                        std::map<SMT::Term_ptr, SMT::TermList>& string_terms_map) {
+  term_value_index = this->term_value_index_;
+  term_values = this->term_values_;
+  string_terms_map = this->string_terms_map_;
 }
-
 
 } /* namespace Solver */
 } /* namespace Vlab */

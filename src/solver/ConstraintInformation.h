@@ -11,6 +11,11 @@
 #ifndef SRC_SOLVER_CONSTRAINTINFORMATION_H_
 #define SRC_SOLVER_CONSTRAINTINFORMATION_H_
 
+#include <cstdbool>
+#include <set>
+
+#include "smt/typedefs.h"
+
 namespace Vlab {
 namespace Solver {
 
@@ -18,6 +23,12 @@ class ConstraintInformation {
  public:
   ConstraintInformation();
   virtual ~ConstraintInformation();
+
+  bool is_component(SMT::Visitable_ptr);
+  void add_component(SMT::Visitable_ptr);
+  void remove_component(SMT::Visitable_ptr);
+ private:
+  std::set<SMT::Visitable_ptr> components_;
 };
 
 using ConstraintInformation_ptr = ConstraintInformation*;

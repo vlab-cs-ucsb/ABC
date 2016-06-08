@@ -93,23 +93,24 @@ public:
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
 
-  Theory::ArithmeticFormula_ptr getTermFormula(SMT::Term_ptr term);
-  bool hasStringTerms(SMT::Term_ptr term);
-  std::map<SMT::Term_ptr, SMT::TermList> getStringTermsMap();
-  SMT::TermList& getStringTermsIn(SMT::Term_ptr term);
-  void clearTermFormulas();
+  Theory::ArithmeticFormula_ptr get_term_formula(SMT::Term_ptr term);
+  bool has_string_terms(SMT::Term_ptr term);
+  std::map<SMT::Term_ptr, SMT::TermList> get_string_terms_map();
+  SMT::TermList& get_string_terms_in(SMT::Term_ptr term);
+  void clear_term_formulas();
 protected:
-  bool setTermFormula(SMT::Term_ptr term, Theory::ArithmeticFormula_ptr formula);
-  void deleteTermFormula(SMT::Term_ptr);
-  void addArithmeticVariable(std::string name);
+  bool set_term_formula(SMT::Term_ptr term, Theory::ArithmeticFormula_ptr formula);
+  void delete_term_formula(SMT::Term_ptr);
+  void add_int_variable(std::string name);
+  void reset_variable_coefficient_maps();
 
-  SMT::Script_ptr root;
-  SymbolTable_ptr symbol_table;
-  std::map<std::string, int> coeff_index_map;
-  std::vector<int> coefficients;
-  std::map<SMT::Term_ptr, Theory::ArithmeticFormula_ptr> formulas;
-  SMT::TermList string_terms;
-  std::map<SMT::Term_ptr, SMT::TermList> string_terms_map;
+  SMT::Script_ptr root_;
+  SymbolTable_ptr symbol_table_;
+  std::map<std::string, int> coeff_index_map_;
+  std::vector<int> coefficients_;
+  std::map<SMT::Term_ptr, Theory::ArithmeticFormula_ptr> formulas_;
+  SMT::TermList string_terms_;
+  std::map<SMT::Term_ptr, SMT::TermList> string_terms_map_;
 
 private:
   static const int VLOG_LEVEL;

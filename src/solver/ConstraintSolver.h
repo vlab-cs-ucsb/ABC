@@ -8,30 +8,15 @@
 #ifndef SOLVER_CONSTRAINTSOLVER_H_
 #define SOLVER_CONSTRAINTSOLVER_H_
 
-#include <string>
-#include <sstream>
-#include <map>
-#include <cstdlib>
 #include <cstdbool>
-#include <iostream>
-#include <iterator>
-#include <utility>
+#include <map>
 #include <vector>
 
-#include <glog/logging.h>
-
-#include "smt/ast.h"
-#include "theory/UnaryAutomaton.h"
-#include "theory/IntAutomaton.h"
-#include "theory/ArithmeticFormula.h"
-#include "theory/BinaryIntAutomaton.h"
-#include "theory/StringAutomaton.h"
-#include "options/Solver.h"
-#include "Ast2Dot.h"
-#include "SymbolTable.h"
-#include "Value.h"
-#include "VariableValueComputer.h"
-#include "ArithmeticConstraintSolver.h"
+#include "smt/typedefs.h"
+#include "solver/ArithmeticConstraintSolver.h"
+#include "solver/ConstraintInformation.h"
+#include "solver/SymbolTable.h"
+#include "solver/Value.h"
 
 namespace Vlab {
 namespace Solver {
@@ -40,7 +25,7 @@ class ConstraintSolver: public SMT::Visitor {
   typedef std::map<SMT::Term_ptr, Value_ptr> TermValueMap;
   typedef std::vector<std::vector<SMT::Term_ptr>> VariablePathTable;
  public:
-  ConstraintSolver(SMT::Script_ptr, SymbolTable_ptr);
+  ConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr);
   virtual ~ConstraintSolver();
 
   void start() override;
@@ -117,15 +102,16 @@ class ConstraintSolver: public SMT::Visitor {
   void visit_children_of(SMT::Term_ptr term);
   bool check_and_visit(SMT::Term_ptr term);
 
-  SMT::Script_ptr root;
-  SymbolTable_ptr symbol_table;
+  SMT::Script_ptr root_;
+  SymbolTable_ptr symbol_table_;
+  ConstraintInformation_ptr constraint_information_;
 
-  ArithmeticConstraintSolver arithmetic_constraint_solver;
+  ArithmeticConstraintSolver arithmetic_constraint_solver_;
 
-  TermValueMap term_values;
+  TermValueMap term_values_;
 
-  std::vector<SMT::Term_ptr> path_trace;
-  VariablePathTable variable_path_table;
+  std::vector<SMT::Term_ptr> path_trace_;
+  VariablePathTable variable_path_table_;
 
  private:
   static const int VLOG_LEVEL;

@@ -8,27 +8,23 @@
 #ifndef SOLVER_ARITHMETICCONSTRAINTSOLVER_H_
 #define SOLVER_ARITHMETICCONSTRAINTSOLVER_H_
 
-#include <string>
-#include <sstream>
+#include <cstdbool>
 #include <map>
 
-#include <glog/logging.h>
-
-#include "theory/ArithmeticFormula.h"
-#include "theory/BinaryIntAutomaton.h"
-#include "AstTraverser.h"
-#include "ArithmeticFormulaGenerator.h"
-#include "smt/ast.h"
-#include "SymbolTable.h"
-#include "Value.h"
+#include "smt/typedefs.h"
+#include "solver/ArithmeticFormulaGenerator.h"
+#include "solver/AstTraverser.h"
+#include "solver/ConstraintInformation.h"
+#include "solver/SymbolTable.h"
+#include "solver/Value.h"
 
 namespace Vlab {
 namespace Solver {
 
-class ArithmeticConstraintSolver: public AstTraverser {
+class ArithmeticConstraintSolver : public AstTraverser {
   using TermValueMap = std::map<SMT::Term_ptr, Value_ptr>;
-public:
-  ArithmeticConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, bool is_natural_number_only);
+ public:
+  ArithmeticConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr, bool is_natural_numbers_only);
   virtual ~ArithmeticConstraintSolver();
 
   void start();
@@ -41,34 +37,33 @@ public:
   void visitAnd(SMT::And_ptr);
   void visitOr(SMT::Or_ptr);
 
+  std::string get_int_variable_name(SMT::Term_ptr);
   Value_ptr getTermValue(SMT::Term_ptr term);
   bool setTermValue(SMT::Term_ptr term, Value_ptr value);
-  bool updateTermValue(SMT::Term_ptr term, Value_ptr value);
+  bool update_term_value_pointer(SMT::Term_ptr term, Value_ptr value);
   void clearTermValue(SMT::Term_ptr term);
-  void clearTermValues();
-  bool hasStringTerms(SMT::Term_ptr term);
+  void clearTermValues();bool hasStringTerms(SMT::Term_ptr term);
   SMT::TermList& getStringTermsIn(SMT::Term_ptr term);
   std::map<SMT::Term_ptr, SMT::Term_ptr>& getTermValueIndex();
   TermValueMap& getTermValues();
   std::map<SMT::Term_ptr, SMT::TermList>& getStringTermsMap();
-  void assign(std::map<SMT::Term_ptr, SMT::Term_ptr>& term_value_index,
-          TermValueMap& term_values,
-          std::map<SMT::Term_ptr, SMT::TermList>& string_terms_map);
+  void assign(std::map<SMT::Term_ptr, SMT::Term_ptr>& term_value_index, TermValueMap& term_values,
+              std::map<SMT::Term_ptr, SMT::TermList>& string_terms_map);
 
-
-protected:
-  bool is_restricted_to_natural_numbers;
-  SymbolTable_ptr symbol_table;
-  ArithmeticFormulaGenerator arithmetic_formula_generator;
+ protected:
+  bool is_natural_numbers_only_;
+  SymbolTable_ptr symbol_table_;
+  ConstraintInformation_ptr constraint_information_;
+  ArithmeticFormulaGenerator arithmetic_formula_generator_;
 
   /**
    * To keep single automaton for each variable we use a map
    */
-  std::map<SMT::Term_ptr, SMT::Term_ptr> term_value_index;
-  TermValueMap term_values;
-  std::map<SMT::Term_ptr, SMT::TermList> string_terms_map;
+  std::map<SMT::Term_ptr, SMT::Term_ptr> term_value_index_;
+  TermValueMap term_values_;
+  std::map<SMT::Term_ptr, SMT::TermList> string_terms_map_;
 
-private:
+ private:
   static const int VLOG_LEVEL;
 };
 

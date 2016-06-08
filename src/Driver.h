@@ -16,6 +16,7 @@
 
 #include "options/Solver.h"
 #include "smt/typedefs.h"
+#include "solver/ConstraintInformation.h"
 #include "solver/SymbolTable.h"
 #include "solver/Value.h"
 
@@ -60,12 +61,13 @@ public:
 
   void test();
 
-  SMT::Script_ptr script;
-  Solver::SymbolTable_ptr symbol_table;
+  SMT::Script_ptr script_;
+  Solver::SymbolTable_ptr symbol_table_;
+  Solver::ConstraintInformation_ptr constraint_information_;
 
-  int trace_parsing = 0;
-  int trace_scanning = 0;
-  std::string file;
+  int trace_parsing_ = 0;
+  int trace_scanning_ = 0;
+  std::string file_;
 
 private:
   static bool IS_LOGGING_INITIALIZED;

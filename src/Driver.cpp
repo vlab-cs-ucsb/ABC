@@ -25,11 +25,9 @@
 #include "solver/ConstraintSolver.h"
 #include "solver/ConstraintSorter.h"
 #include "solver/DependencySlicer.h"
-#include "solver/FormulaOptimizer.h"
 #include "solver/Initializer.h"
 #include "solver/SyntacticOptimizer.h"
 #include "solver/SyntacticProcessor.h"
-#include "solver/VariableOptimizer.h"
 #include "theory/BinaryIntAutomaton.h"
 #include "theory/IntAutomaton.h"
 #include "theory/StringAutomaton.h"
@@ -40,13 +38,15 @@ namespace Vlab {
 bool Driver::IS_LOGGING_INITIALIZED = false;
 
 Driver::Driver()
-    : script(nullptr),
-      symbol_table(nullptr) {
+    : script_ (nullptr),
+      symbol_table_ (nullptr),
+      constraint_information_ (nullptr) {
 }
 
 Driver::~Driver() {
-  delete symbol_table;
-  delete script;
+  delete symbol_table_;
+  delete script_;
+  delete constraint_information_;
 }
 
 void Driver::initializeABC(int log_level) {
@@ -66,7 +66,7 @@ void Driver::error(const std::string& m) {
 int Driver::parse(std::istream* in) {
   SMT::Scanner scanner(in);
   //	scanner.set_debug(trace_scanning);
-  SMT::Parser parser(script, scanner);
+  SMT::Parser parser(script_, scanner);
   //	parser.set_debug_level (trace_parsing);
   int res = parser.parse();
   CHECK_EQ(0, res)<< "Syntax error";
@@ -76,7 +76,7 @@ int Driver::parse(std::istream* in) {
 void Driver::ast2dot(std::ostream* out) {
 
   Solver::Ast2Dot ast2dot(out);
-  ast2dot.start(script);
+  ast2dot.start(script_);
 }
 
 void Driver::ast2dot(std::string file_name) {
@@ -91,12 +91,13 @@ void Driver::ast2dot(std::string file_name) {
 
 void Driver::initializeSolver() {
 
-  symbol_table = new Solver::SymbolTable();
+  symbol_table_ = new Solver::SymbolTable();
+  constraint_information_ = new Solver::ConstraintInformation();
 
-  Solver::Initializer initializer(script, symbol_table);
+  Solver::Initializer initializer(script_, symbol_table_);
   initializer.start();
 
-  Solver::SyntacticProcessor syntactic_processor(script);
+  Solver::SyntacticProcessor syntactic_processor(script_);
   syntactic_processor.start();
 
   //Dependency Checker calls to cache!
@@ -104,10 +105,10 @@ void Driver::initializeSolver() {
   //Solver::DependencyChecker checker(symbol_table);
   //checker.start();
 
-  Solver::SyntacticOptimizer syntactic_optimizer(script, symbol_table);
+  Solver::SyntacticOptimizer syntactic_optimizer(script_, symbol_table_);
   syntactic_optimizer.start();
 
-  Solver::DependencySlicer dependency_slicer(script, symbol_table);
+  Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
   dependency_slicer.start();
 
 //  Solver::VariableOptimizer variable_optimizer(script, symbol_table);
@@ -116,27 +117,30 @@ void Driver::initializeSolver() {
 //  Solver::FormulaOptimizer formula_optimizer(script, symbol_table);
 //  formula_optimizer.start();
 //
-  Solver::ConstraintSorter constraint_sorter(script, symbol_table);
+  Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
   constraint_sorter.start();
 }
 
 void Driver::solve() {
 
-  Solver::ConstraintSolver constraint_solver(script, symbol_table);
+  Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
   constraint_solver.start();
 
+  for (auto& pair : symbol_table_->getVariables()) {
+    DVLOG(0) << *pair.second;
+  }
   // TODO iterate to handle over-approximation
 }
 
 bool Driver::isSatisfiable() {
-  return symbol_table->isSatisfiable();
+  return symbol_table_->isSatisfiable();
 }
 
 boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound) {
-  symbol_table->unionValuesOfVariables(script);
-  symbol_table->push_scope(script);
-  Vlab::Solver::Value_ptr var_value = symbol_table->getValue(var_name);
-  symbol_table->pop_scope();
+  symbol_table_->unionValuesOfVariables(script_);
+  symbol_table_->push_scope(script_);
+  Vlab::Solver::Value_ptr var_value = symbol_table_->getValue(var_name);
+  symbol_table_->pop_scope();
   boost::multiprecision::cpp_int result;
   switch (var_value->getType()) {
     case Vlab::Solver::Value::Type::STRING_AUTOMATON:
@@ -145,8 +149,8 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
     case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
       auto binary_auto = var_value->getBinaryIntAutomaton();
       result = binary_auto->Count(bound, count_less_than_or_equal_to_bound);
-      int number_of_int_variables = symbol_table->get_num_of_variables(SMT::Variable::Type::INT);
-      int number_of_substituted_int_variables = symbol_table->get_num_of_substituted_variables(script, SMT::Variable::Type::INT);
+      int number_of_int_variables = symbol_table_->get_num_of_variables(SMT::Variable::Type::INT);
+      int number_of_substituted_int_variables = symbol_table_->get_num_of_substituted_variables(script_, SMT::Variable::Type::INT);
       int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables
           - binary_auto->getNumberOfVariables();
       if (number_of_untracked_int_variables > 0) {
@@ -177,10 +181,10 @@ boost::multiprecision::cpp_int Driver::Count(const int bound, bool count_less_th
 
 boost::multiprecision::cpp_int Driver::SymbolicCount(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound) {
   boost::multiprecision::cpp_int result;
-  symbol_table->unionValuesOfVariables(script);
-  symbol_table->push_scope(script);
-  Vlab::Solver::Value_ptr var_value = symbol_table->getValue(var_name);
-  symbol_table->pop_scope();
+  symbol_table_->unionValuesOfVariables(script_);
+  symbol_table_->push_scope(script_);
+  Vlab::Solver::Value_ptr var_value = symbol_table_->getValue(var_name);
+  symbol_table_->pop_scope();
   switch (var_value->getType()) {
     case Vlab::Solver::Value::Type::STRING_AUTOMATON:
       result = var_value->getStringAutomaton()->SymbolicCount(bound, count_less_than_or_equal_to_bound);
@@ -188,8 +192,8 @@ boost::multiprecision::cpp_int Driver::SymbolicCount(std::string var_name, const
     case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
       auto binary_auto = var_value->getBinaryIntAutomaton();
       result = binary_auto->SymbolicCount(bound, count_less_than_or_equal_to_bound);
-      int number_of_int_variables = symbol_table->get_num_of_variables(SMT::Variable::Type::INT);
-      int number_of_substituted_int_variables = symbol_table->get_num_of_substituted_variables(script, SMT::Variable::Type::INT);
+      int number_of_int_variables = symbol_table_->get_num_of_variables(SMT::Variable::Type::INT);
+      int number_of_substituted_int_variables = symbol_table_->get_num_of_substituted_variables(script_, SMT::Variable::Type::INT);
       int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables
           - binary_auto->getNumberOfVariables();
       if (number_of_untracked_int_variables > 0) {
@@ -249,8 +253,8 @@ void Driver::printResult(Solver::Value_ptr value, std::ostream& out) {
 }
 
 std::map<SMT::Variable_ptr, Solver::Value_ptr> Driver::getSatisfyingVariables() {
-  symbol_table->unionValuesOfVariables(script);
-  return symbol_table->getValuesAtScope(script);
+  symbol_table_->unionValuesOfVariables(script_);
+  return symbol_table_->getValuesAtScope(script_);
 }
 
 std::map<std::string, std::string> Driver::getSatisfyingExamples() {
@@ -269,10 +273,10 @@ std::map<std::string, std::string> Driver::getSatisfyingExamples() {
 }
 
 void Driver::reset() {
-  delete symbol_table;
-  delete script;
-  script = nullptr;
-  symbol_table = nullptr;
+  delete symbol_table_;
+  delete script_;
+  script_ = nullptr;
+  symbol_table_ = nullptr;
 //  LOG(INFO) << "Driver reseted.";
 }
 

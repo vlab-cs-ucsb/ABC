@@ -11,18 +11,17 @@
 #include <map>
 #include <set>
 #include <vector>
-#include <queue>
 
-#include "smt/typedefs.h"
+#include "../smt/typedefs.h"
 #include "solver/AstTraverser.h"
-#include "solver/SymbolTable.h"
 #include "solver/ConstraintInformation.h"
+#include "solver/SymbolTable.h"
 
 namespace Vlab {
 namespace Solver {
 class DependencySlicer : public AstTraverser {
  public:
-  DependencySlicer(SMT::Script_ptr, SymbolTable_ptr);
+  DependencySlicer(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr);
   virtual ~DependencySlicer();
   void start() override;
   void end() override;
@@ -40,6 +39,7 @@ class DependencySlicer : public AstTraverser {
   std::vector<SMT::TermList_ptr> GetComponentsFor(SMT::TermList_ptr);
 
   SymbolTable_ptr symbol_table_;
+  ConstraintInformation_ptr constraint_information_;
   SMT::Term_ptr current_term_;
   std::map<SMT::Term_ptr, std::set<SMT::Variable_ptr>> term_variable_map_;
   std::map<SMT::Variable_ptr, std::set<SMT::Term_ptr>> variable_term_map_;
