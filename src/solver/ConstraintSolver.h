@@ -32,7 +32,6 @@
 #include "Value.h"
 #include "VariableValueComputer.h"
 #include "ArithmeticConstraintSolver.h"
-#include "Component.h"
 
 namespace Vlab {
 namespace Solver {
@@ -124,7 +123,6 @@ class ConstraintSolver: public SMT::Visitor {
   ArithmeticConstraintSolver arithmetic_constraint_solver;
 
   TermValueMap term_values;
-  Component_ptr current_component;
 
   std::vector<SMT::Term_ptr> path_trace;
   VariablePathTable variable_path_table;

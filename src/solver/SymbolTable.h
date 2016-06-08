@@ -12,11 +12,14 @@
 #include <map>
 #include <set>
 #include <algorithm>
+#include <functional>
+#include <string>
+#include <sstream>
 
 #include <glog/logging.h>
 #include "smt/ast.h"
-#include "Value.h"
-#include "Component.h"
+#include "solver/Ast2Dot.h"
+#include "solver/Value.h"
 
 namespace Vlab {
 namespace Solver {
@@ -28,7 +31,6 @@ using VariableSubstitutionMap = std::map<SMT::Variable_ptr, SMT::Variable_ptr>;
 using VariableSubstitutionTable = std::map<SMT::Visitable_ptr, VariableSubstitutionMap>;
 using VariableValueMap = std::map<SMT::Variable_ptr, Value_ptr>;
 using VariableValueTable = std::map<SMT::Visitable_ptr, VariableValueMap>;
-using ComponentMap = std::map<SMT::Visitable_ptr, std::vector<Component_ptr>>;
 
 
 
@@ -67,18 +69,6 @@ public:
   int get_total_count(SMT::Variable_ptr);
   void reset_count();
 
-  /*
-  Functions to store and update a list of independent components. 
-  */
-
-  void add_component(Component_ptr);
-  void add_components(std::vector<Component_ptr>&);
-  std::vector<Component_ptr> get_components_at(SMT::Visitable_ptr);
-  ComponentMap get_component_map();
-
-
-  int get_number_of_components(SMT::Visitable_ptr);
-
   /*Added function to keep track of the amount of reuse 
   int getReuse();
   void incrementReuse();
@@ -101,8 +91,13 @@ public:
   bool updateValue(std::string var_name, Value_ptr value);
   bool updateValue(SMT::Variable_ptr variable, Value_ptr value);
 
+  std::string get_var_name_for_expression(SMT::Visitable_ptr, SMT::Variable::Type);
+  std::string get_var_name_for_node(SMT::Visitable_ptr, SMT::Variable::Type);
+
   static const char ARITHMETIC[];
 private:
+  std::string generate_internal_name(std::string, SMT::Variable::Type);
+
   bool global_assertion_result;
   int bound;
   /**
@@ -140,17 +135,12 @@ private:
    */
   VariableValueTable variable_value_table;
 
-  /**
-   * For each scope:
-   * Constraints that are dependent each other stored in the same component
-   */
-  ComponentMap components_;
   static const int VLOG_LEVEL;
   //int reuse; 
 
 };
 
-typedef SymbolTable* SymbolTable_ptr;
+using SymbolTable_ptr = SymbolTable*;
 
 } /* namespace Solver */
 } /* namespace Vlab */

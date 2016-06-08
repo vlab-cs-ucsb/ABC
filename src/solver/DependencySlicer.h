@@ -11,11 +11,12 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <queue>
 
 #include "smt/typedefs.h"
-#include "AstTraverser.h"
-#include "Component.h"
-#include "SymbolTable.h"
+#include "solver/AstTraverser.h"
+#include "solver/SymbolTable.h"
+#include "solver/ConstraintInformation.h"
 
 namespace Vlab {
 namespace Solver {
@@ -35,12 +36,13 @@ class DependencySlicer : public AstTraverser {
 
  protected:
   void add_variable_current_term_mapping(SMT::Variable_ptr);
-  std::vector<Component_ptr> GetComponentsFor(SMT::TermList_ptr);
+  void clear_mappings();
+  std::vector<SMT::TermList_ptr> GetComponentsFor(SMT::TermList_ptr);
 
-  int number_of_components_;
   SymbolTable_ptr symbol_table_;
   SMT::Term_ptr current_term_;
   std::map<SMT::Term_ptr, std::set<SMT::Variable_ptr>> term_variable_map_;
+  std::map<SMT::Variable_ptr, std::set<SMT::Term_ptr>> variable_term_map_;
  private:
   static const int VLOG_LEVEL;
 };

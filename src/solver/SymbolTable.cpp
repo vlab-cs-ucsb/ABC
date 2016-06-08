@@ -134,26 +134,6 @@ VariableMap& SymbolTable::getVariables() {
   return variables;
 }
 
-void SymbolTable::add_component(Component_ptr component){
-  components_[scope_stack.back()].push_back(component);
-}
-
-void SymbolTable::add_components(std::vector<Component_ptr>& components) {
-  components_[scope_stack.back()].insert(components_[scope_stack.back()].end(), components.begin(), components.end());
-}
-
-std::vector<Component*> SymbolTable::get_components_at(Visitable_ptr scope){
-  return components_[scope];
-}
-
-ComponentMap SymbolTable::get_component_map(){
-  return components_;
-}
-
-int SymbolTable::get_number_of_components(Visitable_ptr scope){
-  return components_[scope].size();
-}
-
 /*int SymbolTable::getReuse(){
   return reuse; 
 }
@@ -367,6 +347,46 @@ bool SymbolTable::updateValue(Variable_ptr variable, Value_ptr value) {
   }
 
   return true;
+}
+
+/**
+ * @returns a name for the expression using its string version
+ */
+std::string SymbolTable::get_var_name_for_expression(Visitable_ptr node, Variable::Type type) {
+  std::string str_value = Ast2Dot::toString(node);
+  std::hash<std::string> hash_func;
+  std::stringstream ss;
+  ss << hash_func(str_value);
+  return generate_internal_name(ss.str(), type);
+}
+
+/**
+ * @returns a name for the node identify by memory address of the node
+ */
+std::string SymbolTable::get_var_name_for_node(Visitable_ptr node, Variable::Type type) {
+  std::stringstream ss;
+  ss << node;
+  return generate_internal_name(ss.str(), type);
+}
+
+std::string SymbolTable::generate_internal_name(std::string name, SMT::Variable::Type type) {
+  std::stringstream ss;
+  ss << "__vlab__";
+  switch (type) {
+    case Variable::Type::BOOL:
+      ss << "bool";
+      break;
+    case Variable::Type::INT:
+      ss << "int";
+      break;
+    case Variable::Type::STRING:
+      ss << "str";
+      break;
+    default:
+      break;
+  }
+  ss << "__" << name;
+  return ss.str();
 }
 
 } /* namespace Solver */

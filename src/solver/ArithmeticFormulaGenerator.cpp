@@ -381,7 +381,7 @@ void ArithmeticFormulaGenerator::visitLen(Len_ptr len_term) {
 
   ArithmeticFormula_ptr formula = nullptr;
 
-  std::string name = Ast2Dot::toString(len_term);
+  std::string name = symbol_table->get_var_name_for_expression(len_term, Variable::Type::INT);
 
   addArithmeticVariable(name);
   formula = new ArithmeticFormula(coeff_index_map, coefficients);
@@ -415,7 +415,7 @@ void ArithmeticFormulaGenerator::visitIndexOf(IndexOf_ptr index_of_term) {
 
   ArithmeticFormula_ptr formula = nullptr;
 
-  std::string name = Ast2Dot::toString(index_of_term);
+  std::string name = symbol_table->get_var_name_for_expression(index_of_term, Variable::Type::INT);
 
   addArithmeticVariable(name);
   formula = new ArithmeticFormula(coeff_index_map, coefficients);
@@ -431,7 +431,7 @@ void ArithmeticFormulaGenerator::visitLastIndexOf(LastIndexOf_ptr last_index_of_
 
   ArithmeticFormula_ptr formula = nullptr;
 
-  std::string name = Ast2Dot::toString(last_index_of_term);
+  std::string name = symbol_table->get_var_name_for_expression(last_index_of_term, Variable::Type::INT);
 
   addArithmeticVariable(name);
   formula = new ArithmeticFormula(coeff_index_map, coefficients);

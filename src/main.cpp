@@ -186,4 +186,3 @@ static const std::string get_default_log_dir() {
   int r = std::system("mkdir -p ./log");
   return "./log";
 }
-

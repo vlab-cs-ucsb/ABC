@@ -110,12 +110,12 @@ void Driver::initializeSolver() {
   Solver::DependencySlicer dependency_slicer(script, symbol_table);
   dependency_slicer.start();
 
-  Solver::VariableOptimizer variable_optimizer(script, symbol_table);
-  variable_optimizer.start();
-
-  Solver::FormulaOptimizer formula_optimizer(script, symbol_table);
-  formula_optimizer.start();
-
+//  Solver::VariableOptimizer variable_optimizer(script, symbol_table);
+//  variable_optimizer.start();
+//
+//  Solver::FormulaOptimizer formula_optimizer(script, symbol_table);
+//  formula_optimizer.start();
+//
   Solver::ConstraintSorter constraint_sorter(script, symbol_table);
   constraint_sorter.start();
 }
@@ -226,7 +226,7 @@ void Driver::inspectResult(Solver::Value_ptr value, std::string file_name) {
 
   printResult(value, outfile);
 
-  std::string dot_cmd("dot " + file_name + " &");
+  std::string dot_cmd("xdot " + file_name + " &");
   int r = std::system(dot_cmd.c_str());
 
   LOG(INFO)<< "result rendered? " << r << " : " << dot_cmd;

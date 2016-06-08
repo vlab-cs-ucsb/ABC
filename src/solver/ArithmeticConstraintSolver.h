@@ -26,7 +26,7 @@ namespace Vlab {
 namespace Solver {
 
 class ArithmeticConstraintSolver: public AstTraverser {
-  typedef std::map<SMT::Term_ptr, Value_ptr> TermValueMap;
+  using TermValueMap = std::map<SMT::Term_ptr, Value_ptr>;
 public:
   ArithmeticConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, bool is_natural_number_only);
   virtual ~ArithmeticConstraintSolver();
