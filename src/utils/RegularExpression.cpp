@@ -20,6 +20,7 @@ const int RegularExpression::AUTOMATON = 0x0010;
 const int RegularExpression::INTERVAL = 0x0020;
 const int RegularExpression::ALL = 0xffff;
 const int RegularExpression::NONE = 0x0000;
+const int RegularExpression::DEFAULT = 0x000f;
 
 RegularExpression::RegularExpression()
         : exp1(nullptr), exp2(nullptr), min(0), max(0), digits(0), flags(0), c('\0'), from('\0'), to('\0'), regex_string(
@@ -30,11 +31,11 @@ RegularExpression::RegularExpression()
 RegularExpression::RegularExpression(std::string regex)
         : exp1(nullptr), exp2(nullptr), min(0), max(0), digits(0), flags(0), c('\0'), from('\0'), to('\0'), regex_string(
                 ""), s(""), pos(0), type(Type::NONE) {
-  init(regex, COMPLEMENT bitor EMPTY);
+  init(regex, DEFAULT);
 }
 
 RegularExpression::RegularExpression(std::string regex, int syntax_flags)
-        : exp1(nullptr), exp2(nullptr), min(0), max(0), digits(0), flags(0), c('\0'), from('\0'), to('\0'), regex_string(
+        : exp1(nullptr), exp2(nullptr), min(0), max(0), digits(0), flags(syntax_flags), c('\0'), from('\0'), to('\0'), regex_string(
                 ""), s(""), pos(0), type(Type::NONE) {
   init(regex, syntax_flags);
 

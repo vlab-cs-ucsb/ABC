@@ -270,6 +270,26 @@ void Ast2Dot::visitReConcat(ReConcat_ptr re_concat_term) {
   visitTerm(re_concat_term);
 }
 
+void Ast2Dot::visitReUnion(ReUnion_ptr re_union_term) {
+  visitTerm(re_union_term);
+}
+
+void Ast2Dot::visitReInter(ReInter_ptr re_inter_term) {
+  visitTerm(re_inter_term);
+}
+
+void Ast2Dot::visitReStar(ReStar_ptr re_star_term) {
+  visitTerm(re_star_term);
+}
+
+void Ast2Dot::visitRePlus(RePlus_ptr re_plus_term) {
+  visitTerm(re_plus_term);
+}
+
+void Ast2Dot::visitReOpt(ReOpt_ptr re_opt_term) {
+  visitTerm(re_opt_term);
+}
+
 void Ast2Dot::visitToRegex(ToRegex_ptr to_regex_term) {
   visitTerm(to_regex_term);
 }

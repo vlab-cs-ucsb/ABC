@@ -1695,6 +1695,164 @@ void ReConcat::visit_children(Visitor_ptr v) {
   v->visit_list(term_list);
 }
 
+ReUnion::ReUnion(TermList_ptr term_list)
+    : Term(Term::Type::REUNION),
+      term_list(term_list) {
+}
+
+ReUnion::ReUnion(const ReUnion& other)
+    : Term(other.type_) {
+  term_list = new TermList();
+  for (auto& term : *(other.term_list)) {
+    term_list->push_back(term->clone());
+  }
+}
+
+ReUnion_ptr ReUnion::clone() const {
+  return new ReUnion(*this);
+}
+
+ReUnion::~ReUnion() {
+  deallocate_list(term_list);
+  delete term_list;
+}
+
+std::string ReUnion::str() const {
+  return "re.union";
+}
+
+void ReUnion::accept(Visitor_ptr v) {
+  v->visitReUnion(this);
+}
+
+void ReUnion::visit_children(Visitor_ptr v) {
+  v->visit_list(term_list);
+}
+
+ReInter::ReInter(TermList_ptr term_list)
+    : Term(Term::Type::REINTER),
+      term_list(term_list) {
+}
+
+ReInter::ReInter(const ReInter& other)
+    : Term(other.type_) {
+  term_list = new TermList();
+  for (auto& term : *(other.term_list)) {
+    term_list->push_back(term->clone());
+  }
+}
+
+ReInter_ptr ReInter::clone() const {
+  return new ReInter(*this);
+}
+
+ReInter::~ReInter() {
+  deallocate_list(term_list);
+  delete term_list;
+}
+
+std::string ReInter::str() const {
+  return "re.inter";
+}
+
+void ReInter::accept(Visitor_ptr v) {
+  v->visitReInter(this);
+}
+
+void ReInter::visit_children(Visitor_ptr v) {
+  v->visit_list(term_list);
+}
+
+ReStar::ReStar(Term_ptr term)
+    : Term(Term::Type::RESTAR),
+      term(term) {
+}
+
+ReStar::ReStar(const ReStar& other)
+    : Term(other.type_) {
+  term = other.term->clone();
+}
+
+ReStar_ptr ReStar::clone() const {
+  return new ReStar(*this);
+}
+
+ReStar::~ReStar() {
+  delete term;
+}
+
+std::string ReStar::str() const {
+  return "re.*";
+}
+
+void ReStar::accept(Visitor_ptr v) {
+  v->visitReStar(this);
+}
+
+void ReStar::visit_children(Visitor_ptr v) {
+  v->visit(term);
+}
+
+RePlus::RePlus(Term_ptr term)
+    : Term(Term::Type::REPLUS),
+      term(term) {
+}
+
+RePlus::RePlus(const RePlus& other)
+    : Term(other.type_) {
+  term = other.term->clone();
+}
+
+RePlus_ptr RePlus::clone() const {
+  return new RePlus(*this);
+}
+
+RePlus::~RePlus() {
+  delete term;
+}
+
+std::string RePlus::str() const {
+  return "re.+";
+}
+
+void RePlus::accept(Visitor_ptr v) {
+  v->visitRePlus(this);
+}
+
+void RePlus::visit_children(Visitor_ptr v) {
+  v->visit(term);
+}
+
+ReOpt::ReOpt(Term_ptr term)
+    : Term(Term::Type::REOPT),
+      term(term) {
+}
+
+ReOpt::ReOpt(const ReOpt& other)
+    : Term(other.type_) {
+  term = other.term->clone();
+}
+
+ReOpt_ptr ReOpt::clone() const {
+  return new ReOpt(*this);
+}
+
+ReOpt::~ReOpt() {
+  delete term;
+}
+
+std::string ReOpt::str() const {
+  return "re.opt";
+}
+
+void ReOpt::accept(Visitor_ptr v) {
+  v->visitReOpt(this);
+}
+
+void ReOpt::visit_children(Visitor_ptr v) {
+  v->visit(term);
+}
+
 ToRegex::ToRegex(Term_ptr term)
     : Term(Term::Type::TOREGEX),
       term(term) {

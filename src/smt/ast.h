@@ -127,7 +127,6 @@ class Assert : public Command {
   virtual void visit_children(Visitor_ptr) override;
 
   Term_ptr term;
-//  Solver::Component_ptr component;
 };
 
 /**
@@ -213,6 +212,11 @@ class Term : public Visitable {
     COUNT,
     ITE,
     RECONCAT,
+    REUNION,
+    REINTER,
+    RESTAR,
+    REPLUS,
+    REOPT,
     TOREGEX,
     UNKNOWN,
     ASQUALIDENTIFIER,
@@ -310,8 +314,6 @@ class And : public Term {
   virtual void visit_children(Visitor_ptr) override;
 
   TermList_ptr term_list;
-//  Solver::Component_ptr component;
-
 };
 
 class Or : public Term {
@@ -326,7 +328,6 @@ class Or : public Term {
   virtual void visit_children(Visitor_ptr) override;
 
   TermList_ptr term_list;
-//  Solver::Component_ptr component;
 };
 
 class Not : public Term {
@@ -881,6 +882,76 @@ class ReConcat : public Term {
   // ToRegex specifically
 };
 
+class ReUnion : public Term {
+ public:
+  ReUnion(TermList_ptr);
+  ReUnion(const ReUnion&);
+  virtual ReUnion_ptr clone() const override;
+  virtual ~ReUnion();
+
+  virtual std::string str() const override;
+  virtual void accept(Visitor_ptr) override;
+  virtual void visit_children(Visitor_ptr) override;
+
+  TermList_ptr term_list;
+};
+
+class ReInter : public Term {
+ public:
+  ReInter(TermList_ptr);
+  ReInter(const ReInter&);
+  virtual ReInter_ptr clone() const override;
+  virtual ~ReInter();
+
+  virtual std::string str() const override;
+  virtual void accept(Visitor_ptr) override;
+  virtual void visit_children(Visitor_ptr) override;
+
+  TermList_ptr term_list;
+};
+
+class ReStar : public Term {
+ public:
+  ReStar(Term_ptr);
+  ReStar(const ReStar&);
+  virtual ReStar_ptr clone() const override;
+  virtual ~ReStar();
+
+  virtual std::string str() const override;
+  virtual void accept(Visitor_ptr) override;
+  virtual void visit_children(Visitor_ptr) override;
+
+  Term_ptr term;
+};
+
+class RePlus : public Term {
+ public:
+  RePlus(Term_ptr);
+  RePlus(const RePlus&);
+  virtual RePlus_ptr clone() const override;
+  virtual ~RePlus();
+
+  virtual std::string str() const override;
+  virtual void accept(Visitor_ptr) override;
+  virtual void visit_children(Visitor_ptr) override;
+
+  Term_ptr term;
+};
+
+class ReOpt : public Term {
+ public:
+  ReOpt(Term_ptr);
+  ReOpt(const ReOpt&);
+  virtual ReOpt_ptr clone() const override;
+  virtual ~ReOpt();
+
+  virtual std::string str() const override;
+  virtual void accept(Visitor_ptr) override;
+  virtual void visit_children(Visitor_ptr) override;
+
+  Term_ptr term;
+};
+
 class ToRegex : public Term {
  public:
   ToRegex(Term_ptr);
@@ -1190,7 +1261,6 @@ class Variable : public TVariable {
 
   std::string getName() const;
   Variable::Type getType() const;
-//  Solver::Component_ptr component;
 
   bool isSymbolic() const;
   void setSymbolic(bool is_symbolic);

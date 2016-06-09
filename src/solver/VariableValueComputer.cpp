@@ -1223,6 +1223,21 @@ void VariableValueComputer::visitIte(Ite_ptr ite_term) {
 void VariableValueComputer::visitReConcat(ReConcat_ptr re_concat_term) {
 }
 
+void VariableValueComputer::visitReUnion(ReUnion_ptr re_union_term) {
+}
+
+void VariableValueComputer::visitReInter(ReInter_ptr re_inter_term) {
+}
+
+void VariableValueComputer::visitReStar(ReStar_ptr re_star_term) {
+}
+
+void VariableValueComputer::visitRePlus(RePlus_ptr re_plus_term) {
+}
+
+void VariableValueComputer::visitReOpt(ReOpt_ptr re_opt_term) {
+}
+
 void VariableValueComputer::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 

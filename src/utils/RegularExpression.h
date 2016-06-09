@@ -69,6 +69,12 @@ public:
    */
   static int const NONE;
 
+  /**
+   * Syntax flag, used as a default combinations of the flag
+   * Enables all except AUTOMATON and INTERVAL
+   */
+  static int const DEFAULT;
+
   enum class Type : int {
     NONE = 0,
     UNION,

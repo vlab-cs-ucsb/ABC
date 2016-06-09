@@ -301,6 +301,21 @@ void OptimizationRuleRunner::visitIte(Ite_ptr ite_term) {
 void OptimizationRuleRunner::visitReConcat(ReConcat_ptr re_concat_term) {
 }
 
+void OptimizationRuleRunner::visitReUnion(ReUnion_ptr re_union_term) {
+}
+
+void OptimizationRuleRunner::visitReInter(ReInter_ptr re_inter_term) {
+}
+
+void OptimizationRuleRunner::visitReStar(ReStar_ptr re_star_term) {
+}
+
+void OptimizationRuleRunner::visitRePlus(RePlus_ptr re_plus_term) {
+}
+
+void OptimizationRuleRunner::visitReOpt(ReOpt_ptr re_opt_term) {
+}
+
 void OptimizationRuleRunner::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 

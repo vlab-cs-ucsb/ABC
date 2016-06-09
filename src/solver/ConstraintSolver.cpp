@@ -962,6 +962,21 @@ void ConstraintSolver::visitReConcat(ReConcat_ptr re_concat_term) {
 void ConstraintSolver::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 
+void ConstraintSolver::visitReUnion(ReUnion_ptr re_union_term) {
+}
+
+void ConstraintSolver::visitReInter(ReInter_ptr re_inter_term) {
+}
+
+void ConstraintSolver::visitReStar(ReStar_ptr re_star_term) {
+}
+
+void ConstraintSolver::visitRePlus(RePlus_ptr re_plus_term) {
+}
+
+void ConstraintSolver::visitReOpt(ReOpt_ptr re_opt_term) {
+}
+
 void ConstraintSolver::visitUnknownTerm(Unknown_ptr unknown_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *unknown_term;
   LOG(WARNING)<< "operation is not known, over-approximate params: " << *(unknown_term->term);
@@ -1144,6 +1159,7 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
       DVLOG(VLOG_LEVEL) << "Linear Arithmetic Constraint";
       if (arithmetic_constraint_solver_.hasStringTerms(term) and result->isSatisfiable()) {
         process_mixed_integer_string_constraints_in(term);
+        result = getTermValue(term); // get updated result
       }
       symbol_table_->setValue(arithmetic_constraint_solver_.get_int_variable_name(term), result);
       return false;
@@ -1165,7 +1181,7 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
   for (auto& string_term : arithmetic_constraint_solver_.getStringTermsIn(term)) {
     visit(string_term);
     string_term_result = getTermValue(string_term);
-    std::string string_term_var_name = Ast2Dot::toString(string_term);
+    std::string string_term_var_name = symbol_table_->get_var_name_for_expression(string_term, Variable::Type::INT);
 
     if (Value::Type::INT_AUTOMATON == string_term_result->getType()) {
       has_minus_one = string_term_result->getIntAutomaton()->hasNegative1();

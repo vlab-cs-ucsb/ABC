@@ -182,6 +182,21 @@ void CharAtOptimization::visitIte(Ite_ptr ite_term) {
 void CharAtOptimization::visitReConcat(ReConcat_ptr re_concat_term) {
 }
 
+void CharAtOptimization::visitReUnion(ReUnion_ptr re_union_term) {
+}
+
+void CharAtOptimization::visitReInter(ReInter_ptr re_inter_term) {
+}
+
+void CharAtOptimization::visitReStar(ReStar_ptr re_star_term) {
+}
+
+void CharAtOptimization::visitRePlus(RePlus_ptr re_plus_term) {
+}
+
+void CharAtOptimization::visitReOpt(ReOpt_ptr re_opt_term) {
+}
+
 void CharAtOptimization::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 

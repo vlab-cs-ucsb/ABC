@@ -527,6 +527,56 @@ void AstTraverser::visitReConcat(ReConcat_ptr re_concat_term) {
   }
 }
 
+void AstTraverser::visitReUnion(ReUnion_ptr re_union_term) {
+  if (term_pre_callback and term_pre_callback(re_union_term)) {
+    visit_term_list(re_union_term->term_list);
+  }
+
+  if (term_post_callback) {
+    term_post_callback(re_union_term);
+  }
+}
+
+void AstTraverser::visitReInter(ReInter_ptr re_inter_term) {
+  if (term_pre_callback and term_pre_callback(re_inter_term)) {
+    visit_term_list(re_inter_term->term_list);
+  }
+
+  if (term_post_callback) {
+    term_post_callback(re_inter_term);
+  }
+}
+
+void AstTraverser::visitReStar(ReStar_ptr re_star_term) {
+  if (term_pre_callback and term_pre_callback(re_star_term)) {
+    visit(re_star_term->term);
+  }
+
+  if (term_post_callback) {
+    term_post_callback(re_star_term);
+  }
+}
+
+void AstTraverser::visitRePlus(RePlus_ptr re_plus_term) {
+  if (term_pre_callback and term_pre_callback(re_plus_term)) {
+    visit(re_plus_term->term);
+  }
+
+  if (term_post_callback) {
+    term_post_callback(re_plus_term);
+  }
+}
+
+void AstTraverser::visitReOpt(ReOpt_ptr re_opt_term) {
+  if (term_pre_callback and term_pre_callback(re_opt_term)) {
+    visit(re_opt_term->term);
+  }
+
+  if (term_post_callback) {
+    term_post_callback(re_opt_term);
+  }
+}
+
 void AstTraverser::visitToRegex(ToRegex_ptr to_regex_term) {
   if (term_pre_callback and term_pre_callback(to_regex_term)) {
     visit(to_regex_term->term);

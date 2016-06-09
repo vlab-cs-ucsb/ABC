@@ -244,6 +244,21 @@ void Initializer::visitIte(Ite_ptr ite_term) {
 void Initializer::visitReConcat(ReConcat_ptr re_concat_term) {
 }
 
+void Initializer::visitReUnion(ReUnion_ptr re_union_term) {
+}
+
+void Initializer::visitReInter(ReInter_ptr re_inter_term) {
+}
+
+void Initializer::visitReStar(ReStar_ptr re_star_term) {
+}
+
+void Initializer::visitRePlus(RePlus_ptr re_plus_term) {
+}
+
+void Initializer::visitReOpt(ReOpt_ptr re_opt_term) {
+}
+
 void Initializer::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 

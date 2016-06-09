@@ -479,6 +479,21 @@ void ArithmeticFormulaGenerator::visitIte(Ite_ptr ite_term) {
 void ArithmeticFormulaGenerator::visitReConcat(ReConcat_ptr re_concat_term) {
 }
 
+void ArithmeticFormulaGenerator::visitReUnion(ReUnion_ptr re_union_term) {
+}
+
+void ArithmeticFormulaGenerator::visitReInter(ReInter_ptr re_inter_term) {
+}
+
+void ArithmeticFormulaGenerator::visitReStar(ReStar_ptr re_star_term) {
+}
+
+void ArithmeticFormulaGenerator::visitRePlus(RePlus_ptr re_plus_term) {
+}
+
+void ArithmeticFormulaGenerator::visitReOpt(ReOpt_ptr re_opt_term) {
+}
+
 void ArithmeticFormulaGenerator::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 

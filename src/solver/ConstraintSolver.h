@@ -75,6 +75,11 @@ class ConstraintSolver: public SMT::Visitor {
   void visitCount(SMT::Count_ptr) override;
   void visitIte(SMT::Ite_ptr) override;
   void visitReConcat(SMT::ReConcat_ptr) override;
+  void visitReUnion(SMT::ReUnion_ptr) override;
+  void visitReInter(SMT::ReInter_ptr) override;
+  void visitReStar(SMT::ReStar_ptr) override;
+  void visitRePlus(SMT::RePlus_ptr) override;
+  void visitReOpt(SMT::ReOpt_ptr) override;
   void visitToRegex(SMT::ToRegex_ptr) override;
   void visitUnknownTerm(SMT::Unknown_ptr) override;
   void visitAsQualIdentifier(SMT::AsQualIdentifier_ptr) override;

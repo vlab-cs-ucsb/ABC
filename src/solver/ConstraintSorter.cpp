@@ -501,6 +501,21 @@ void ConstraintSorter::visitIte(Ite_ptr ite_term) {
 void ConstraintSorter::visitReConcat(ReConcat_ptr re_concat_term) {
 }
 
+void ConstraintSorter::visitReUnion(ReUnion_ptr re_union_term) {
+}
+
+void ConstraintSorter::visitReInter(ReInter_ptr re_inter_term) {
+}
+
+void ConstraintSorter::visitReStar(ReStar_ptr re_star_term) {
+}
+
+void ConstraintSorter::visitRePlus(RePlus_ptr re_plus_term) {
+}
+
+void ConstraintSorter::visitReOpt(ReOpt_ptr re_opt_term) {
+}
+
 void ConstraintSorter::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 

@@ -96,6 +96,11 @@
   ITE                  "ite"
   RE_CONCAT            "re.++"
   RE_OR                "re.or"
+  RE_UNION             "re.union"
+  RE_INTER             "re.inter"
+  RE_STAR              "re.*"
+  RE_PLUS              "re.+"
+  RE_OPT               "re.opt"
   CONCAT_CVC           "str.++"
   IN_CVC               "str.in.re"
   LEN_CVC              "str.len"
@@ -276,6 +281,11 @@ term                  :
                       | "(" "ite" term term term ")"                                      { $$ = new Ite($3, $4, $5); }
                       | "(" "re.++" term_list_ ")"                                        { $$ = new ReConcat($3); }
                       | "(" "re.or" term_list_ ")"                                        { $$ = new Or($3); }
+                      | "(" "re.union" term_list_ ")"                                     { $$ = new ReUnion($3); }
+                      | "(" "re.inter" term_list_ ")"                                     { $$ = new ReInter($3); }
+                      | "(" "re.*" term ")"                                               { $$ = new ReStar($3); }
+                      | "(" "re.+" term ")"                                               { $$ = new RePlus($3); }
+                      | "(" "re.opt" term ")"                                             { $$ = new ReOpt($3); }
                       | "(" "str.++" term_list_ ")"                                       { $$ = new Concat($3); }
                       | "(" "str.in.re" term term ")"                                     { $$ = new In($3, $4); }
                       | "(" "str.len" term ")"                                            { $$ = new Len($3); }

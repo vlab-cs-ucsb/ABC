@@ -1061,6 +1061,151 @@ void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
   };
 }
 
+void SyntacticOptimizer::visitReUnion(ReUnion_ptr re_union_term) {
+  for (auto& term_ptr : *(re_union_term->term_list)) {
+    visit_and_callback(term_ptr);
+  }
+
+  DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *re_union_term << "' into regex syntax union";
+  TermConstant_ptr union_regex_term_constant = nullptr;
+
+  for (auto iter = re_union_term->term_list->begin(); iter != re_union_term->term_list->end();) {
+    if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter)) {
+      if (union_regex_term_constant == nullptr) {
+        union_regex_term_constant = term_constant;
+        std::string value = term_constant->getValue();
+        if (*(value.begin()) != '(' or *(value.end()-1) != ')') {
+          value = "(" + value + ")";
+          union_regex_term_constant->primitive->setData(value);
+        }
+      } else {
+        std::stringstream ss;
+        ss << union_regex_term_constant->getValue() << "|";
+        std::string value = term_constant->getValue();
+        if (*(value.begin()) != '(' or *(value.end()-1) != ')') {
+          ss << "(" << value  << ")";
+        } else {
+          ss << value;
+        }
+        union_regex_term_constant->primitive->setData(ss.str());
+        delete term_constant; // deallocate
+        re_union_term->term_list->erase(iter);
+        continue;
+      }
+    } else {
+      LOG(FATAL)<< "un-expected term as a parameter to 're.union'";
+    }
+    iter++;
+  }
+
+  callback = [re_union_term] (Term_ptr& term) mutable {
+    term = re_union_term->term_list->front();
+    re_union_term->term_list->clear();
+    delete re_union_term;
+  };
+}
+
+void SyntacticOptimizer::visitReInter(ReInter_ptr re_inter_term) {
+  for (auto& term_ptr : *(re_inter_term->term_list)) {
+    visit_and_callback(term_ptr);
+  }
+
+  DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *re_inter_term << "' into regex syntax intersection";
+  TermConstant_ptr intersection_regex_term_constant = nullptr;
+
+  for (auto iter = re_inter_term->term_list->begin(); iter != re_inter_term->term_list->end();) {
+    if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter)) {
+      if (intersection_regex_term_constant == nullptr) {
+        intersection_regex_term_constant = term_constant;
+        std::string value = term_constant->getValue();
+        if (*(value.begin()) != '(' or *(value.end()-1) != ')') {
+          value = "(" + value + ")";
+          intersection_regex_term_constant->primitive->setData(value);
+        }
+      } else {
+        std::stringstream ss;
+        ss << intersection_regex_term_constant->getValue() << "&";
+        std::string value = term_constant->getValue();
+        if (*(value.begin()) != '(' or *(value.end()-1) != ')') {
+          ss << "(" << value  << ")";
+        } else {
+          ss << value;
+        }
+        intersection_regex_term_constant->primitive->setData(ss.str());
+        delete term_constant; // deallocate
+        re_inter_term->term_list->erase(iter);
+        continue;
+      }
+    } else {
+      LOG(FATAL)<< "un-expected term as a parameter to 're.inter'";
+    }
+    iter++;
+  }
+
+  callback = [re_inter_term] (Term_ptr& term) mutable {
+    term = re_inter_term->term_list->front();
+    re_inter_term->term_list->clear();
+    delete re_inter_term;
+  };
+}
+
+void SyntacticOptimizer::visitReStar(ReStar_ptr re_star_term) {
+  visit_and_callback(re_star_term->term);
+
+  DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *re_star_term << "' into regex syntax star";
+  if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(re_star_term->term)) {
+    std::string value = term_constant->getValue();
+    value = "(" + value + ")*";
+    term_constant->primitive->setData(value);
+  } else {
+    LOG(FATAL)<< "un-expected term as a parameter to 're.star'";
+  }
+
+  callback = [re_star_term] (Term_ptr& term) mutable {
+    term = re_star_term->term;
+    re_star_term->term = nullptr;
+    delete re_star_term;
+  };
+}
+
+void SyntacticOptimizer::visitRePlus(RePlus_ptr re_plus_term) {
+  visit_and_callback(re_plus_term->term);
+
+  DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *re_plus_term << "' into regex syntax plus";
+  if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(re_plus_term->term)) {
+    std::string value = term_constant->getValue();
+    value = "(" + value + ")+";
+    term_constant->primitive->setData(value);
+  } else {
+    LOG(FATAL)<< "un-expected term as a parameter to 're.plus'";
+  }
+
+  callback = [re_plus_term] (Term_ptr& term) mutable {
+    term = re_plus_term->term;
+    re_plus_term->term = nullptr;
+    delete re_plus_term;
+  };
+}
+
+void SyntacticOptimizer::visitReOpt(ReOpt_ptr re_opt_term) {
+  visit_and_callback(re_opt_term->term);
+
+  DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *re_opt_term << "' into regex syntax optional";
+  if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(re_opt_term->term)) {
+    std::string value = term_constant->getValue();
+    value = "(" + value + ")?";
+    term_constant->primitive->setData(value);
+  } else {
+    LOG(FATAL)<< "un-expected term as a parameter to 're.plus'";
+  }
+
+  callback = [re_opt_term] (Term_ptr& term) mutable {
+    term = re_opt_term->term;
+    re_opt_term->term = nullptr;
+    delete re_opt_term;
+  };
+}
+
 void SyntacticOptimizer::visitToRegex(ToRegex_ptr to_regex_term) {
   if (Term::Type::TERMCONSTANT == to_regex_term->term->type()) {
     TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(to_regex_term->term);
