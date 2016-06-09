@@ -10,6 +10,7 @@
 
 #include "StringAutomaton.h"
 #include <glog/logging.h>
+#include "StringRelation.h"
 
 namespace Vlab {
 namespace Theory {
@@ -26,12 +27,11 @@ class MultiTrackAutomaton: public Automaton {
 	virtual MultiTrackAutomaton_ptr clone() const;
 
 	static MultiTrackAutomaton_ptr makePhi(int ntracks);
-	static MultiTrackAutomaton_ptr makeEquality(std::vector<std::pair<std::string, int>> tracks, int ntracks);
-	static MultiTrackAutomaton_ptr makeNotEquality(std::vector<std::pair<std::string, int>> tracks, int ntracks);
+	static MultiTrackAutomaton_ptr makeAuto(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks);
+	static MultiTrackAutomaton_ptr makeEquality(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks);
+	static MultiTrackAutomaton_ptr makeNotEquality(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks);
 	static MultiTrackAutomaton_ptr makeAnyAutoUnaligned(int num_tracks);
 	static MultiTrackAutomaton_ptr makeAnyAutoAligned(int num_tracks);
-
-	int getNumTracks() const;
 
 	MultiTrackAutomaton_ptr complement();
 	MultiTrackAutomaton_ptr union_(MultiTrackAutomaton_ptr other_auto);
@@ -41,6 +41,11 @@ class MultiTrackAutomaton: public Automaton {
 	MultiTrackAutomaton_ptr projectKTrack(int track);
 	StringAutomaton_ptr getKTrack(int k);
 	std::vector<std::string> getAnAcceptingStringForEachTrack();
+	int getNumTracks() const;
+
+	StringRelation_ptr getRelation();
+	StringRelation_ptr getRelationClone() const;
+	bool setRelation(StringRelation_ptr relation);
 
  protected:
 
@@ -54,6 +59,7 @@ class MultiTrackAutomaton: public Automaton {
 	int num_of_tracks;
 
  private:
+ 	StringRelation_ptr relation;
 	static const int VLOG_LEVEL;
 };
 

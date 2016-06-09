@@ -47,12 +47,7 @@ void StringConstraintSolver::setCallbacks() {
           for(auto& name : subrel.names) {
             tracks.push_back(std::make_pair(name,relation->get_variable_index(name)));
           }
-          MultiTrackAutomaton_ptr multi_auto = nullptr;
-          if(term->type() == Term::Type::EQ)
-            multi_auto = MultiTrackAutomaton::makeEquality(tracks,relation->get_num_tracks());
-          else
-            multi_auto = MultiTrackAutomaton::makeNotEquality(tracks,relation->get_num_tracks());
-          relation->set_value_auto(multi_auto);
+          MultiTrackAutomaton_ptr multi_auto = MultiTrackAutomaton::makeAuto(relation,tracks);
           Value_ptr val = new Value(multi_auto);
           set_term_value(term,val);
           break;
@@ -82,6 +77,7 @@ void StringConstraintSolver::visitScript(Script_ptr script) {
 
 void StringConstraintSolver::visitAssert(Assert_ptr assert_command) {
   DVLOG(VLOG_LEVEL) << "visit: " << *assert_command;
+  // for temporary variable->term mappings for interplay between
   AstTraverser::visit(assert_command->term);
 }
 
@@ -89,34 +85,43 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
   bool is_satisfiable = true;
   Component_ptr current_component = nullptr;
-  StringRelation_ptr current_relation = nullptr, term_relation = nullptr, temp_relation;
-  Value_ptr term_value = nullptr;
+  StringRelation_ptr relation = nullptr;
+  Value_ptr result = nullptr, param = nullptr, and_value = nullptr;
   if (and_term->component!= nullptr) {
     current_component = and_term->component;
   }
 
   for(auto& term : *and_term->term_list) {
-    visit(term);
-    term_relation = string_relation_generator.get_term_relation(term);
-    if(term_relation != nullptr) {
-      if(current_relation == nullptr) {
-        current_relation = term_relation;
+    relation = string_relation_generator.get_term_relation(term);
+    if(relation != nullptr) {
+      visit(term);
+      param = get_term_value(term);
+      is_satisfiable = is_satisfiable and param->isSatisfiable();
+      if(is_satisfiable) {
+        if (result == nullptr) {
+          result = param->clone();
+        } else {
+          and_value = result->intersect(param);
+          delete result;
+          result = and_value;
+        }
       } else {
-        current_relation = current_relation->combine(term_relation);
-        string_relation_generator.delete_term_relation(term);
-        term_value = new Value(current_relation->get_value_auto()->clone());
-        update_term_value(term,term_value);
+        result = new Value(MultiTrackAutomaton::makePhi(relation->get_num_tracks()));
+        break;
       }
+    }
+    clear_term_value(term);
+  }
 
+  for (auto& term : *(and_term->term_list)) {
+    relation = string_relation_generator.get_term_relation(term);
+    if (relation != nullptr) {
+      term_value_index[term] = and_term;
+      clear_term_value(term);
     }
   }
 
-  if(current_relation != nullptr) {
-    current_component->set_sat(!current_relation->get_value_auto()->isEmptyLanguage());
-    symbol_table->set_component_relation(current_component,current_relation);
-  }
-
-  set_term_value(and_term,term_value);
+  set_term_value(and_term, result);
 }
 
 void StringConstraintSolver::visitOr(Or_ptr or_term) {
@@ -242,6 +247,66 @@ std::map<Term_ptr, Term_ptr> &StringConstraintSolver::get_term_value_index() {
 
 StringConstraintSolver::TermValueMap &StringConstraintSolver::get_term_values() {
   return term_values;
+}
+
+Value_ptr StringConstraintSolver::get_variable_value(Variable_ptr variable) {
+  MultiTrackAutomaton_ptr relation_auto = nullptr;
+  StringAutomaton_ptr variable_auto = nullptr;
+  StringRelation_ptr variable_relation = nullptr;
+  Value_ptr relation_value = get_relational_value(variable);
+  if(relation_value == nullptr) {
+    return nullptr;
+  }
+  relation_auto = relation_value->getMultiTrackAutomaton();
+  variable_relation = relation_auto->getRelation();
+  variable_auto = relation_auto->getKTrack(variable_relation->get_variable_index(variable->getName()));
+  return new Value(variable_auto);
+}
+
+bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_ptr value) {
+  MultiTrackAutomaton_ptr relation_auto = nullptr, variable_multi_auto = nullptr,intersect_auto = nullptr;
+  StringAutomaton_ptr variable_auto = nullptr;
+  Value_ptr relation_value = nullptr;
+  StringRelation_ptr variable_relation = nullptr;
+  Term_ptr term = string_relation_generator.get_parent_term(variable);
+  relation_value = get_relational_value(variable);
+  if(relation_value == nullptr) {
+    DVLOG(VLOG_LEVEL) << "Unable to get update relational value for variable: " << variable->getName();
+    return false;
+  }
+  relation_auto = relation_value->getMultiTrackAutomaton();
+  variable_relation = relation_auto->getRelation();
+
+  // place variable value on multitrack, intersect and update corresonding term value
+  variable_multi_auto = new MultiTrackAutomaton(variable_auto->getDFA(),
+                                       variable_relation->get_variable_index(variable->getName()),
+                                       variable_relation->get_num_tracks());
+  intersect_auto = relation_auto->intersect(variable_multi_auto);
+  relation_value = new Value(intersect_auto);
+  clear_term_value(term);
+  set_term_value(term, relation_value);
+  return true;
+}
+
+Value_ptr StringConstraintSolver::get_relational_value(SMT::Variable_ptr variable) {
+  Value_ptr relation_value = nullptr;
+  StringRelation_ptr variable_relation = nullptr;
+  Term_ptr term = string_relation_generator.get_parent_term(variable);
+
+  if(term == nullptr) {
+    DVLOG(VLOG_LEVEL) << "Parent term not set for variable";
+    return nullptr;
+  }
+  relation_value = get_term_value(term);
+  if(relation_value == nullptr || relation_value->getType() != Value::Type::MULTITRACK_AUTOMATON) {
+    return nullptr;
+  }
+  variable_relation = relation_value->getMultiTrackAutomaton()->getRelation();
+  if(variable_relation->get_variable_index(variable->getName()) == -1) {
+    DVLOG(VLOG_LEVEL) << "Variable not part of expected relation";
+    return nullptr;
+  }
+  return relation_value;
 }
 
 } /* namespace Solver */

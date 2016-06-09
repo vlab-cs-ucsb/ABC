@@ -8,7 +8,6 @@
 #include <string>
 #include <map>
 #include <vector>
-#include "MultiTrackAutomaton.h"
 #include <glog/logging.h>
 
 namespace Vlab {
@@ -31,7 +30,7 @@ public:
 
     StringRelation();
     StringRelation(Type t,std::map<std::string, int> *var_map,std::vector<Subrelation> subrels,
-                    size_t ntracks, MultiTrackAutomaton_ptr value_auto);
+                    size_t ntracks);
     virtual ~StringRelation();
 
     StringRelation(const StringRelation&);
@@ -39,15 +38,8 @@ public:
 
     StringRelation_ptr combine(StringRelation_ptr other_relation);
 
-    StringAutomaton_ptr get_variable_value_auto(std::string name);
-    bool set_variable_value_auto(StringAutomaton_ptr value_auto, std::string name);
-
     void add_subrelation(Subrelation subrel);
     std::vector<Subrelation> get_subrelation_list();
-
-    MultiTrackAutomaton_ptr get_value_auto();
-    bool set_value_auto(MultiTrackAutomaton_ptr value_auto);
-    bool update_value_auto(MultiTrackAutomaton_ptr value_auto);
 
     void set_type(Type type);
     StringRelation::Type get_type() const;
@@ -64,7 +56,6 @@ protected:
     std::map<std::string, int> *var_track_map;
     std::vector<Subrelation> subrelations;
     size_t num_tracks;
-    MultiTrackAutomaton_ptr value;
 
 private:
   static const int VLOG_LEVEL;

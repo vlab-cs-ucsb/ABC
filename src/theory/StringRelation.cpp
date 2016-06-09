@@ -11,13 +11,12 @@ const int StringRelation::VLOG_LEVEL = 25;
 
 StringRelation::StringRelation() :
       type(Type::NONE) {
-  value = nullptr;
   num_tracks = 0;
 }
 
 StringRelation::StringRelation(Type t,std::map<std::string, int> *var_map,std::vector<Subrelation> subrels,
-                    size_t ntracks, MultiTrackAutomaton_ptr value_auto) :
-      type(t), var_track_map(var_map), subrelations(subrels), num_tracks(ntracks), value(value_auto) {
+                    size_t ntracks) :
+      type(t), var_track_map(var_map), subrelations(subrels), num_tracks(ntracks) {
 }
 
 StringRelation::~StringRelation() {
@@ -25,56 +24,31 @@ StringRelation::~StringRelation() {
 
 StringRelation::StringRelation(const StringRelation &other) :
       type(other.type), var_track_map(other.var_track_map),
-      subrelations(other.subrelations), num_tracks(other.num_tracks),
-      value(other.value) {
+      subrelations(other.subrelations), num_tracks(other.num_tracks) {
 }
 
 StringRelation_ptr StringRelation::clone() const {
   return new StringRelation(*this);
 }
 
+//TODO: Check if the relations are equal...
 StringRelation_ptr StringRelation::combine(StringRelation_ptr other_relation) {
+  StringRelation_ptr result_relation = nullptr;
   if(var_track_map != other_relation->get_variable_track_map()) {
     LOG(ERROR) << "error in stringrelation combine: track maps are not identical";
     return nullptr;
   }
 
-  MultiTrackAutomaton_ptr result_auto = nullptr;
-  StringRelation_ptr result_relation = nullptr;
-
   // combine their relations
   std::vector<Subrelation> subrels(this->subrelations);
   subrels.insert(subrels.end(), other_relation->subrelations.begin(), other_relation->subrelations.end());
-  // intersect multitracks
-  result_auto = this->value->intersect(other_relation->value);
   result_relation = new StringRelation(StringRelation::Type::INTERSECT,
                                        this->var_track_map,
                                        subrels,
-                                       this->var_track_map->size(),
-                                       result_auto);
+                                       this->var_track_map->size());
   return result_relation;
 }
 
-StringAutomaton_ptr StringRelation::get_variable_value_auto(std::string name) {
-  StringAutomaton_ptr res;
-  if(this->value == nullptr || var_track_map->find(name) == var_track_map->end()) {
-    return nullptr;
-  }
-  res = value->getKTrack((*var_track_map)[name]);
-  return res;
-}
-
-bool StringRelation::set_variable_value_auto(StringAutomaton_ptr value_auto, std::string name) {
-  if(var_track_map->find(name) == var_track_map->end() || value == nullptr) {
-    return false;
-  }
-  MultiTrackAutomaton_ptr temp_auto = new MultiTrackAutomaton(value_auto->getDFA(),(*var_track_map)[name],var_track_map->size());
-  MultiTrackAutomaton_ptr result_auto = value->intersect(temp_auto);
-  delete temp_auto;
-  delete value;
-  value = result_auto;
-  return true;
-}
 
 void StringRelation::add_subrelation(StringRelation::Subrelation subrel) {
   this->subrelations.push_back(subrel);
@@ -82,33 +56,6 @@ void StringRelation::add_subrelation(StringRelation::Subrelation subrel) {
 
 std::vector<StringRelation::Subrelation> StringRelation::get_subrelation_list() {
   return subrelations;
-}
-
-MultiTrackAutomaton_ptr StringRelation::get_value_auto() {
-  return value;
-}
-
-bool StringRelation::set_value_auto(MultiTrackAutomaton_ptr value_auto) {
-  if(value_auto->getNumTracks() != get_num_tracks()) {
-    return false;
-  }
-  value = value_auto;
-  return true;
-}
-
-bool StringRelation::update_value_auto(MultiTrackAutomaton_ptr value_auto) {
-  if(value == nullptr) {
-    return set_value_auto(value_auto);
-  }
-
-  if(value_auto->getNumTracks() != value->getNumTracks()) {
-    LOG(ERROR) << "in update_value_auto, track size does not match";
-    return false;
-  }
-  MultiTrackAutomaton_ptr result_auto = value->intersect(value_auto);
-  delete value;
-  value = result_auto;
-  return true;
 }
 
 void StringRelation::set_type(Type type) {

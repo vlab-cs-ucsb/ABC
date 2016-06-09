@@ -67,18 +67,6 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
       update_variables();
     }
   }
-  if(current_component != nullptr) {
-    DVLOG(VLOG_LEVEL) << "Got current component";
-    StringRelation_ptr relation = symbol_table->get_component_relation(current_component);
-    if(relation != nullptr) {
-      std::vector<std::string> strings = relation->get_value_auto()->getAnAcceptingStringForEachTrack();
-      for(auto& string : strings) {
-        DVLOG(VLOG_LEVEL) << string;
-      }
-    } else {
-      DVLOG(VLOG_LEVEL) << "No relation... :(";
-    }
-  }
   clearTermValuesAndLocalLetVars();
 }
 
@@ -135,30 +123,22 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
   bool is_satisfiable = true;
   Value_ptr param = nullptr;
-  StringRelation_ptr current_relation = nullptr, term_relation = nullptr;
-  if (and_term->component!= nullptr){
-    current_component = and_term->component;
-    current_relation = symbol_table->get_component_relation(current_component);
-    if(current_relation != nullptr) {
-      for(auto& subrelation : current_relation->get_subrelation_list()){
-        DVLOG(VLOG_LEVEL) << "Subrelation";
-        for(auto& var : subrelation.names) {
-          DVLOG(VLOG_LEVEL) << var << "," << current_relation->get_variable_index(var);
-        }
-      }
-    }
+  if (and_term->component!=nullptr){
+    current_component= and_term->component;
   }
 
   for (auto& term : *(and_term->term_list)) {
     check_and_visit(term);
     param = getTermValue(term);
     is_satisfiable = is_satisfiable and param->isSatisfiable();
-    if(current_component != nullptr) {
-      is_satisfiable = is_satisfiable and current_component->is_sat();
-    }
     if (is_satisfiable) {
+      // update variables, but if any relational variables were updated, we need to
+      // reupdate satisfiability, as it may change
+      still_sat = true;
       update_variables();
-    } else {
+      is_satisfiable = is_satisfiable and still_sat;
+    }
+    if (not is_satisfiable){
       clearTermValuesAndLocalLetVars();
       break;
     }
@@ -1000,9 +980,21 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *qi_term;
 
   Variable_ptr variable = symbol_table->getVariable(qi_term->getVarName());
-  Value_ptr variable_value = symbol_table->getValue(variable);
-  Value_ptr result = variable_value->clone();
-
+  Value_ptr variable_value = nullptr, result = nullptr;
+  // check if variable is relational first. if so, since we're storing
+  // multitrack values in the string constraint solver, get the variable's value
+  // from there and clone it into the symbol table, so the variable value computer has
+  // the most recent value
+  variable_value = string_constraint_solver.get_variable_value(variable);
+  if(variable_value != nullptr) {
+    // variable relational, put in symbol table and tag for later update
+    symbol_table->setValue(variable,variable_value);
+    tagged_variables.push_back(variable);
+  } else {
+    // variable not relational, just get normally from symbol table
+    variable_value = symbol_table->getValue(variable);
+  }
+  result = variable_value->clone();
   setTermValue(qi_term, result);
   setVariablePath(qi_term);
 }
@@ -1146,10 +1138,23 @@ void ConstraintSolver::update_variables() {
   if (variable_path_table.size() == 0) {
     return;
   }
-
   VariableValueComputer value_updater(symbol_table, variable_path_table, term_values);
   value_updater.start();
   variable_path_table.clear();
+  // update any relational variables tagged prior to variable value computer
+  // and update any changes in satisfiability
+  for(auto& var : tagged_variables) {
+    Value_ptr value = symbol_table->getValue(var);
+    if(value == nullptr) {
+      DVLOG(VLOG_LEVEL) << "Inconsistent value for variable: " << var->getName();
+      continue;
+    }
+    string_constraint_solver.update_variable_value(var,value);
+    still_sat = still_sat and value->isSatisfiable();
+    delete value;
+    symbol_table->setValue(var,nullptr);
+  }
+  tagged_variables.clear();
 }
 
 void ConstraintSolver::visit_children_of(Term_ptr term) {

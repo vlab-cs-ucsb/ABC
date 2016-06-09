@@ -96,15 +96,18 @@ public:
   Theory::StringRelation_ptr get_term_relation(SMT::Term_ptr term);
   bool set_term_relation(SMT::Term_ptr term, Theory::StringRelation_ptr str_rel);
   void delete_term_relation(SMT::Term_ptr term);
-
+  SMT::Term_ptr get_parent_term(SMT::Variable_ptr variable);
+  bool set_parent_term(SMT::Variable_ptr variable, SMT::Term_ptr term);
 protected:
 
   SMT::Script_ptr root;
   SymbolTable_ptr symbol_table;
   std::map<SMT::Term_ptr, Theory::StringRelation_ptr> relations;
   std::map<Component_ptr, std::map<std::string,int>> component_trackmaps;
-
+  // for interplay between single/multitrack
+  std::map<SMT::Variable_ptr, SMT::Term_ptr> variable_term_map;
 private:
+  SMT::Term_ptr current_term;
   static const int VLOG_LEVEL;
 
 };

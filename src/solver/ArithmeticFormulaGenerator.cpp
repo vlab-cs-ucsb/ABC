@@ -222,6 +222,8 @@ void ArithmeticFormulaGenerator::visitTimes(Times_ptr times_term) {
     visit(term_ptr);
     param_formula = getTermFormula(term_ptr);
     if (param_formula->isConstant()) {
+
+
       multiplicant = multiplicant * param_formula->getConstant();
     } else if (times_formula == nullptr) {
       times_formula = param_formula->clone();

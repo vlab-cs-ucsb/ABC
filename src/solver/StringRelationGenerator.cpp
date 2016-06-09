@@ -14,6 +14,7 @@ const int StringRelationGenerator::VLOG_LEVEL = 14;
 
 StringRelationGenerator::StringRelationGenerator(Script_ptr script, SymbolTable_ptr st)
   : root(script), symbol_table(st) {
+  current_term = nullptr;
 }
 
 StringRelationGenerator::~StringRelationGenerator() {
@@ -40,6 +41,7 @@ void StringRelationGenerator::visitCommand(Command_ptr command) {
 }
 
 void StringRelationGenerator::visitAssert(Assert_ptr assert_command) {
+  current_term = assert_command->term;
   visit_children_of(assert_command);
 }
 
@@ -59,11 +61,13 @@ void StringRelationGenerator::visitLet(Let_ptr let_term) {
 }
 
 void StringRelationGenerator::visitAnd(And_ptr and_term) {
+  current_term = and_term;
   visit_children_of(and_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
 }
 
 void StringRelationGenerator::visitOr(Or_ptr or_term) {
+  current_term = or_term;
   for (auto &term : *(or_term->term_list)) {
     visit(term);
   }
@@ -298,7 +302,9 @@ void StringRelationGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   Component_ptr var_component = nullptr;
   StringRelation_ptr str_rel = nullptr;
   Variable_ptr variable = symbol_table->getVariable(qi_term->getVarName());
+  set_parent_term(variable,current_term);
   var_component = variable->component;
+
   if(var_component == nullptr) {
     LOG(ERROR) << "StringRelationGenerator: variable has no component...";
   }
@@ -386,6 +392,19 @@ void StringRelationGenerator::delete_term_relation(Term_ptr term) {
     delete relation;
     relations.erase(term);
   }
+}
+
+Term_ptr StringRelationGenerator::get_parent_term(Variable_ptr variable) {
+  auto it = variable_term_map.find(variable);
+  if (it != variable_term_map.end()) {
+    return nullptr;
+  }
+  return variable_term_map[variable];
+}
+
+bool StringRelationGenerator::set_parent_term(Variable_ptr variable, Term_ptr term) {
+  variable_term_map[variable] = term;
+  return true;
 }
 
 } /* namespace Solver */

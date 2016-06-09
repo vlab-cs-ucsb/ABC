@@ -132,6 +132,9 @@ class ConstraintSolver: public SMT::Visitor {
   std::vector<SMT::Term_ptr> path_trace;
   VariablePathTable variable_path_table;
 
+  // for relational variables that need to be updated
+  std::vector<SMT::Variable_ptr> tagged_variables;
+  bool still_sat;
  private:
   static const int VLOG_LEVEL;
 };

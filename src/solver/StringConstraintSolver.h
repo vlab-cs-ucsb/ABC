@@ -66,6 +66,11 @@ public:
   std::map<SMT::Term_ptr, SMT::Term_ptr>& get_term_value_index();
   TermValueMap& get_term_values();
 
+  Value_ptr get_variable_value(SMT::Variable_ptr variable);
+  bool update_variable_value(SMT::Variable_ptr variable, Value_ptr value);
+
+  Value_ptr get_relational_value(SMT::Variable_ptr variable);
+
 protected:
 
   SymbolTable_ptr symbol_table;
@@ -73,6 +78,7 @@ protected:
 
   TermValueMap term_values;
   std::map<SMT::Term_ptr, SMT::Term_ptr> term_value_index;
+
 private:
   static const int VLOG_LEVEL;
 

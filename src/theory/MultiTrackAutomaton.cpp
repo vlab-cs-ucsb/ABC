@@ -6,7 +6,6 @@
 *
 */
 
-// TODO: Use Automaton::getIndices rather than
 // TODO: getLambdaStar does not accept empty string, so it now functions like getLambdaPlus
 // 			this is due to issue in string concat from libstranger
 
@@ -19,12 +18,12 @@ const int MultiTrackAutomaton::VLOG_LEVEL = 20;
 
 MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int num_tracks)
 			: Automaton(Automaton::Type::MULTITRACK, dfa, num_tracks * VAR_PER_TRACK),
-				num_of_tracks(num_tracks) {
+				num_of_tracks(num_tracks), relation(nullptr) {
 }
 
 MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_tracks)
 			: Automaton(Automaton::Type::MULTITRACK, nullptr, num_tracks * VAR_PER_TRACK),
-			  num_of_tracks(num_tracks) {
+			  num_of_tracks(num_tracks), relation(nullptr) {
 	int *indices = getIndices(VAR_PER_TRACK);
 	DFA_ptr result,temp,M;
 	M = getLambdaStar(VAR_PER_TRACK,indices);
@@ -102,46 +101,16 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_track
 
 MultiTrackAutomaton::MultiTrackAutomaton(const MultiTrackAutomaton& other)
 			: Automaton(other),
-				num_of_tracks(other.num_of_tracks) {
+				num_of_tracks(other.num_of_tracks), relation(other.getRelationClone()) {
 }
 
 MultiTrackAutomaton::~MultiTrackAutomaton() {
+  delete relation;
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::clone() const {
 	MultiTrackAutomaton_ptr cloned_auto = new MultiTrackAutomaton(*this);
 	return cloned_auto;
-}
-
-char* MultiTrackAutomaton::getLambda(int var) {
-	return getSharp1(var); //11111111
-}
-
-// LAMBDAPLUS
-DFA_ptr MultiTrackAutomaton::getLambdaStar(int var, int* indices) {
-	char *lambda;
-	lambda = getLambda(var);
-	dfaSetup(3, var, indices);
-	dfaAllocExceptions(1);
-	dfaStoreException(1, lambda);
-	dfaStoreState(2);
-	dfaAllocExceptions(1);
-	dfaStoreException(1, lambda);
-	dfaStoreState(2);
-	dfaAllocExceptions(0);
-	dfaStoreState(2);
-	delete[] lambda;
-
-	//return dfaBuild("++-");
-	return dfaBuild("-+-");
-}
-
-bool MultiTrackAutomaton::checkLambda(std::string exeps, int track_num, int num_tracks, int var) {
-	for(int i = 0; i < var; i++) {
-		if(exeps[track_num+num_tracks*i] != '1')
-			return false;
-	}
-	return true;
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makePhi(int ntracks) {
@@ -152,14 +121,31 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makePhi(int ntracks) {
 	non_accepting_dfa = Automaton::makePhi(ntracks*VAR_PER_TRACK, indices);
 	delete[] indices; indices = nullptr;
 	non_accepting_auto = new MultiTrackAutomaton(non_accepting_dfa, ntracks);
-
+	non_accepting_auto->setRelation(nullptr);
 	return non_accepting_auto;
 }
 
-MultiTrackAutomaton_ptr MultiTrackAutomaton::makeEquality(std::vector<std::pair<std::string,int>> tracks, int ntracks) {
+MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAuto(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks) {
+	MultiTrackAutomaton_ptr result_auto = nullptr;
+	switch(relation->get_type()) {
+    case StringRelation::Type::EQ:
+      result_auto = MultiTrackAutomaton::makeEquality(relation, tracks);
+      break;
+    case StringRelation::Type::NOTEQ:
+      result_auto = MultiTrackAutomaton::makeNotEquality(relation, tracks);
+      break;
+    default:
+      DVLOG(VLOG_LEVEL) << "StringRelation type not supported";
+      result_auto = nullptr;
+      break;
+	}
+	return result_auto;
+}
+
+MultiTrackAutomaton_ptr MultiTrackAutomaton::makeEquality(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks) {
 	MultiTrackAutomaton_ptr result_auto;
 	DFA_ptr temp_dfa, result_dfa;
-	int num_tracks = ntracks;
+	int num_tracks = relation->get_num_tracks();
 	if(tracks.size() < 2) {
 		LOG(ERROR) << "Error in MultiTrackAutomaton::makeEquality: insufficient variables";
 	}
@@ -169,12 +155,12 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeEquality(std::vector<std::pair<
 
 	if(left_track == -1) {
 		StringAutomaton_ptr string_auto = StringAutomaton::makeString(tracks[0].first);
-		result_auto = new MultiTrackAutomaton(string_auto->getDFA(),right_track,ntracks);
+		result_auto = new MultiTrackAutomaton(string_auto->getDFA(),right_track,num_tracks);
 		delete string_auto;
 		return result_auto;
 	} else if(right_track == -1) {
 		StringAutomaton_ptr string_auto = StringAutomaton::makeString(tracks[1].first);
-		result_auto = new MultiTrackAutomaton(string_auto->getDFA(),left_track,ntracks);
+		result_auto = new MultiTrackAutomaton(string_auto->getDFA(),left_track,num_tracks);
 		delete string_auto;
 		return result_auto;
 	}
@@ -216,13 +202,14 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeEquality(std::vector<std::pair<
 	result_dfa = dfaMinimize(temp_dfa);
 	dfaFree(temp_dfa);
 	result_auto = new MultiTrackAutomaton(result_dfa,num_tracks);
+	result_auto->setRelation(relation);
 	delete[] mindices;
 	return result_auto;
 }
 
-MultiTrackAutomaton_ptr MultiTrackAutomaton::makeNotEquality(std::vector<std::pair<std::string,int>> tracks, int ntracks) {
+MultiTrackAutomaton_ptr MultiTrackAutomaton::makeNotEquality(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks) {
 	MultiTrackAutomaton_ptr eq_auto = nullptr, not_eq_auto = nullptr;
-	eq_auto = makeEquality(tracks, ntracks);
+	eq_auto = MultiTrackAutomaton::makeEquality(relation, tracks);
 	not_eq_auto = eq_auto->complement();
 	delete eq_auto;
 	return not_eq_auto;
@@ -264,10 +251,6 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAnyAutoAligned(int num_tracks) 
 	return aligned_auto;
 }
 
-int MultiTrackAutomaton::getNumTracks() const {
-	return this->num_of_tracks;
-}
-
 MultiTrackAutomaton_ptr MultiTrackAutomaton::complement() {
   DFA_ptr complement_dfa = nullptr;
 	MultiTrackAutomaton_ptr temp_auto = nullptr, complement_auto = nullptr, aligned_universe_auto = nullptr;
@@ -276,6 +259,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::complement() {
 	temp_auto = new MultiTrackAutomaton(complement_dfa,this->num_of_tracks);
 	aligned_universe_auto = makeAnyAutoAligned(this->num_of_tracks);
 	complement_auto = temp_auto->intersect(aligned_universe_auto);
+	complement_auto->setRelation(getRelationClone());
 	delete temp_auto;
 	delete aligned_universe_auto;
 
@@ -293,6 +277,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::union_(MultiTrackAutomaton_ptr othe
 	minimized_dfa = dfaMinimize(intersect_dfa);
 	dfaFree(intersect_dfa);
 	union_auto = new MultiTrackAutomaton(minimized_dfa, this->num_of_tracks);
+	union_auto->setRelation(getRelationClone());
 	return union_auto;
 }
 
@@ -304,21 +289,25 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::difference(MultiTrackAutomaton_ptr 
 	MultiTrackAutomaton_ptr complement_auto, difference_auto;
 	complement_auto = other_auto->complement();
 	difference_auto = this->intersect(complement_auto);
+	difference_auto->setRelation(getRelationClone());
 	delete complement_auto; complement_auto = nullptr;
 	return difference_auto;
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::intersect(MultiTrackAutomaton_ptr other_auto) {
+	DFA_ptr intersect_dfa, minimized_dfa = nullptr;
+	MultiTrackAutomaton_ptr intersect_auto = nullptr;
+	StringRelation_ptr intersect_relation = nullptr;
 	if (this->num_of_tracks != other_auto->num_of_tracks) {
 		LOG(ERROR) << "Error in MultiTrackAutomaton::intersect, unequal track numbers";
 		return this->clone();
 	}
-	DFA_ptr intersect_dfa, minimized_dfa;
-	MultiTrackAutomaton_ptr intersect_auto;
 	intersect_dfa = dfaProduct(this->dfa, other_auto->dfa, dfaAND);
 	minimized_dfa = dfaMinimize(intersect_dfa);
-	dfaFree(intersect_dfa);
+  dfaFree(intersect_dfa);
 	intersect_auto = new MultiTrackAutomaton(minimized_dfa, this->num_of_tracks);
+	intersect_relation = this->relation->combine(other_auto->relation);
+	intersect_auto->setRelation(intersect_relation);
 	return intersect_auto;
 }
 
@@ -349,6 +338,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::projectKTrack(int k_track) {
 	dfaReplaceIndices(result_dfa,map);
 	delete[] map;
 	result_auto = new MultiTrackAutomaton(result_dfa,this->num_of_tracks-1);
+	result_auto->setRelation(getRelationClone());
 	return result_auto;
 }
 
@@ -447,6 +437,57 @@ std::vector<std::string> MultiTrackAutomaton::getAnAcceptingStringForEachTrack()
   }
   delete example;
   return strings;
+}
+
+int MultiTrackAutomaton::getNumTracks() const {
+	return this->num_of_tracks;
+}
+
+StringRelation_ptr MultiTrackAutomaton::getRelation() {
+  return this->relation;
+}
+
+StringRelation_ptr MultiTrackAutomaton::getRelationClone() const {
+  return this->relation->clone();
+}
+
+bool MultiTrackAutomaton::setRelation(StringRelation_ptr relation) {
+  if(this->relation == nullptr) {
+    delete this->relation;
+  }
+  this->relation = relation;
+  return true;
+}
+
+char* MultiTrackAutomaton::getLambda(int var) {
+	return getSharp1(var); //11111111
+}
+
+// LAMBDAPLUS
+DFA_ptr MultiTrackAutomaton::getLambdaStar(int var, int* indices) {
+	char *lambda;
+	lambda = getLambda(var);
+	dfaSetup(3, var, indices);
+	dfaAllocExceptions(1);
+	dfaStoreException(1, lambda);
+	dfaStoreState(2);
+	dfaAllocExceptions(1);
+	dfaStoreException(1, lambda);
+	dfaStoreState(2);
+	dfaAllocExceptions(0);
+	dfaStoreState(2);
+	delete[] lambda;
+
+	//return dfaBuild("++-");
+	return dfaBuild("-+-");
+}
+
+bool MultiTrackAutomaton::checkLambda(std::string exeps, int track_num, int num_tracks, int var) {
+	for(int i = 0; i < var; i++) {
+		if(exeps[track_num+num_tracks*i] != '1')
+			return false;
+	}
+	return true;
 }
 
 DFA_ptr MultiTrackAutomaton::removeLambdaSuffix(DFA_ptr dfa, int num_vars) {
