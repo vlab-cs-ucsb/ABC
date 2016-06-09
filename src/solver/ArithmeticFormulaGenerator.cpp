@@ -41,7 +41,7 @@ void ArithmeticFormulaGenerator::start() {
 }
 
 void ArithmeticFormulaGenerator::end() {
-
+  reset_variable_coefficient_maps();
 }
 
 void ArithmeticFormulaGenerator::visitScript(Script_ptr script) {
@@ -98,7 +98,7 @@ void ArithmeticFormulaGenerator::visitAnd(And_ptr and_term) {
     set_term_formula(and_term, and_formula);
   }
 
-  // clear coefficient maps for other possible and components
+  // clear coefficient maps at the end of possible component
   reset_variable_coefficient_maps();
 }
 

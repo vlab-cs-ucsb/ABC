@@ -27,6 +27,7 @@ class ArithmeticConstraintSolver : public AstTraverser {
   ArithmeticConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr, bool is_natural_numbers_only);
   virtual ~ArithmeticConstraintSolver();
 
+  void start(SMT::Visitable_ptr);
   void start();
   void end();
 

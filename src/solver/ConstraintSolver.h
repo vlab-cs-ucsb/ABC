@@ -101,6 +101,7 @@ class ConstraintSolver: public SMT::Visitor {
   void update_variables();
   void visit_children_of(SMT::Term_ptr term);
   bool check_and_visit(SMT::Term_ptr term);
+  void process_mixed_integer_string_constraints_in(SMT::Term_ptr term);
 
   SMT::Script_ptr root_;
   SymbolTable_ptr symbol_table_;

@@ -94,7 +94,6 @@ public:
   std::string get_var_name_for_expression(SMT::Visitable_ptr, SMT::Variable::Type);
   std::string get_var_name_for_node(SMT::Visitable_ptr, SMT::Variable::Type);
 
-  static const char ARITHMETIC[];
 private:
   std::string generate_internal_name(std::string, SMT::Variable::Type);
 

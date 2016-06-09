@@ -13,11 +13,9 @@ namespace Solver {
 using namespace SMT;
 
 const int SymbolTable::VLOG_LEVEL = 10;
-const char SymbolTable::ARITHMETIC[] = "__VLAB_CS_ARITHMETIC__";
 
 SymbolTable::SymbolTable()
         : global_assertion_result(true), bound(50) {
-  addVariable(new Variable(ARITHMETIC, Variable::Type::INT));
 }
 
 SymbolTable::~SymbolTable() {

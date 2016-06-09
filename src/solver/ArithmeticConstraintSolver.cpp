@@ -38,6 +38,17 @@ ArithmeticConstraintSolver::ArithmeticConstraintSolver(Script_ptr script, Symbol
 ArithmeticConstraintSolver::~ArithmeticConstraintSolver() {
 }
 
+/**
+ * Used to solve local arithmetic constraints
+ */
+void ArithmeticConstraintSolver::start(Visitable_ptr node) {
+  DVLOG(VLOG_LEVEL) << "start";
+  arithmetic_formula_generator_.visit(node);
+  string_terms_map_ = arithmetic_formula_generator_.get_string_terms_map();
+  this->Visitor::visit(node);
+  end();
+}
+
 void ArithmeticConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "start";
   arithmetic_formula_generator_.visit(root);
@@ -47,6 +58,7 @@ void ArithmeticConstraintSolver::start() {
 }
 
 void ArithmeticConstraintSolver::end() {
+  arithmetic_formula_generator_.end();
 }
 
 void ArithmeticConstraintSolver::setCallbacks() {
@@ -108,15 +120,17 @@ void ArithmeticConstraintSolver::visitAssert(Assert_ptr assert_command) {
  */
 void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
-  bool is_satisfiable = true;
-  ArithmeticFormula_ptr formula = nullptr;
-  Value_ptr automaton_result = nullptr, param = nullptr, and_value = nullptr;
-  // TODO if it is not a component descent into children
+
+  //if this is not a component descent into children and do not create result automaton
   if (not constraint_information_->is_component(and_term)) {
     visit_children_of(and_term);
     setTermValue(and_term, nullptr);
     return;
   }
+
+  bool is_satisfiable = true;
+  ArithmeticFormula_ptr formula = nullptr;
+  Value_ptr automaton_result = nullptr, param = nullptr, and_value = nullptr;
 
   for (auto& term : *(and_term->term_list)) {
     formula = arithmetic_formula_generator_.get_term_formula(term);
@@ -149,6 +163,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
   }
 
   // Add a variable to symbol table to represent binary integer automaton
+  // Binary automaton is added to symbol table in constraint solver
   if (automaton_result != nullptr) {
     std::string name = symbol_table_->get_var_name_for_node(and_term, Variable::Type::INT);
     symbol_table_->addVariable(new Variable(name, Variable::Type::INT));
