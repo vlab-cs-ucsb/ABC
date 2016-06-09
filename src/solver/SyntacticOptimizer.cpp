@@ -1087,7 +1087,7 @@ void SyntacticOptimizer::visitReUnion(ReUnion_ptr re_union_term) {
         } else {
           ss << value;
         }
-        union_regex_term_constant->primitive->setData(ss.str());
+        union_regex_term_constant->primitive->setData("(" + ss.str() + ")");
         delete term_constant; // deallocate
         re_union_term->term_list->erase(iter);
         continue;
@@ -1131,7 +1131,7 @@ void SyntacticOptimizer::visitReInter(ReInter_ptr re_inter_term) {
         } else {
           ss << value;
         }
-        intersection_regex_term_constant->primitive->setData(ss.str());
+        intersection_regex_term_constant->primitive->setData("(" + ss.str() + ")");
         delete term_constant; // deallocate
         re_inter_term->term_list->erase(iter);
         continue;
@@ -1228,6 +1228,7 @@ void SyntacticOptimizer::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 
 void SyntacticOptimizer::visitUnknownTerm(Unknown_ptr unknown_term) {
+//  LOG(FATAL)<< "check unknown term" << *unknown_term;
 }
 
 void SyntacticOptimizer::visitAsQualIdentifier(AsQualIdentifier_ptr as_qid_term) {
