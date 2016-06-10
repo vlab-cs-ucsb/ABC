@@ -31,6 +31,7 @@
 #include "theory/BinaryIntAutomaton.h"
 #include "theory/IntAutomaton.h"
 #include "theory/StringAutomaton.h"
+#include "theory/MultiTrackAutomaton.h"
 
 namespace Vlab {
 
@@ -125,10 +126,6 @@ void Driver::solve() {
 
   Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
   constraint_solver.start();
-
-  for (auto& pair : symbol_table_->getVariables()) {
-    DVLOG(0) << *pair.second;
-  }
   // TODO iterate to handle over-approximation
 }
 

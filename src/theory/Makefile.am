@@ -45,7 +45,11 @@ libabcautomaton_la_SOURCES = \
 	StringAutomaton.cpp \
 	StringAutomaton.h \
 	BinaryIntAutomaton.cpp \
-	BinaryIntAutomaton.h
+	BinaryIntAutomaton.h \
+	MultiTrackAutomaton.cpp \
+	MultiTrackAutomaton.h \
+	StringRelation.cpp \
+	StringRelation.h
 
 libabcautomaton_la_LDFLAGS = -version-info 0:1:0
 	

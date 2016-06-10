@@ -34,10 +34,14 @@ const int ConstraintSolver::VLOG_LEVEL = 11;
 
 ConstraintSolver::ConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_table,
                                    ConstraintInformation_ptr constraint_information)
-    : root_(script),
+    : still_sat { false },
+      root_(script),
       symbol_table_(symbol_table),
       constraint_information_(constraint_information),
-      arithmetic_constraint_solver_(script, symbol_table, constraint_information, Option::Solver::LIA_NATURAL_NUMBERS_ONLY) {
+      arithmetic_constraint_solver_(script, symbol_table, constraint_information,
+                                    Option::Solver::LIA_NATURAL_NUMBERS_ONLY),
+      string_constraint_solver(script, symbol_table) {
+
 }
 
 ConstraintSolver::~ConstraintSolver() {
@@ -48,7 +52,9 @@ void ConstraintSolver::start() {
 //  if (Option::Solver::LIA_ENGINE_ENABLED) {
 //    arithmetic_constraint_solver_.start();
 //  }
+  string_constraint_solver.start();
   visit(root_);
+
   end();
 }
 
@@ -145,14 +151,19 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
   bool is_satisfiable = true;
   Value_ptr param = nullptr;
+
   for (auto& term : *(and_term->term_list)) {
     check_and_visit(term);
     param = getTermValue(term);
     is_satisfiable = is_satisfiable and param->isSatisfiable();
-
     if (is_satisfiable) {
+      // update variables, but if any relational variables were updated, we need to
+      // reupdate satisfiability, as it may change
+      still_sat = true;
       update_variables();
-    } else {
+      is_satisfiable = is_satisfiable and still_sat;
+    }
+    if (not is_satisfiable) {
       clearTermValuesAndLocalLetVars();
       break;
     }
@@ -998,7 +1009,19 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *qi_term;
 
   Variable_ptr variable = symbol_table_->getVariable(qi_term->getVarName());
-  Value_ptr variable_value = symbol_table_->getValue(variable);
+  // check if variable is relational first. if so, since we're storing
+  // multitrack values in the string constraint solver, get the variable's value
+  // from there and clone it into the symbol table, so the variable value computer has
+  // the most recent value
+  Value_ptr variable_value = string_constraint_solver.get_variable_value(variable);
+  if (variable_value != nullptr) {
+    // variable relational, put in symbol table and tag for later update
+    symbol_table_->setValue(variable, variable_value);
+    tagged_variables.push_back(variable);
+  } else {
+    // variable not relational, just get normally from symbol table
+    variable_value = symbol_table_->getValue(variable);
+  }
   Value_ptr result = variable_value->clone();
 
   setTermValue(qi_term, result);
@@ -1092,6 +1115,10 @@ Value_ptr ConstraintSolver::getTermValue(Term_ptr term) {
     if (value != nullptr) {
       return value;
     }
+    value = string_constraint_solver.get_term_value(term);
+    if (value != nullptr) {
+      return value;
+    }
   }
 
   auto iter = term_values_.find(term);
@@ -1143,6 +1170,21 @@ void ConstraintSolver::update_variables() {
   VariableValueComputer value_updater(symbol_table_, variable_path_table_, term_values_);
   value_updater.start();
   variable_path_table_.clear();
+  // update any relational variables tagged prior to variable value computer
+  // and update any changes in satisfiability
+  for (auto& var : tagged_variables) {
+    Value_ptr value = symbol_table_->getValue(var);
+    if (value == nullptr) {
+      DVLOG(VLOG_LEVEL) << "Inconsistent value for variable: " << var->getName();
+      continue;
+    }
+    string_constraint_solver.update_variable_value(var, value);
+    still_sat = still_sat and value->isSatisfiable();
+    delete value;
+    symbol_table_->setValue(var, nullptr);
+  }
+  tagged_variables.clear();
+
 }
 
 void ConstraintSolver::visit_children_of(Term_ptr term) {
@@ -1156,10 +1198,17 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
 
     Value_ptr result = getTermValue(term);
     if (result != nullptr) {
-      DVLOG(VLOG_LEVEL) << "Linear Arithmetic Constraint";
+      if (string_constraint_solver.get_term_value(term) != nullptr) {
+        DVLOG(VLOG_LEVEL) << "Mixed Multi- and Single- Track String Automata Constraint";
+        result = string_constraint_solver.get_term_value(term);
+        setTermValue(term, new Value(result->isSatisfiable()));
+        return true;
+      }
+
       if (arithmetic_constraint_solver_.hasStringTerms(term) and result->isSatisfiable()) {
+        DVLOG(VLOG_LEVEL) << "Mixed Linear Arithmetic Constraint";
         process_mixed_integer_string_constraints_in(term);
-        result = getTermValue(term); // get updated result
+        result = getTermValue(term);  // get updated result
       }
       symbol_table_->setValue(arithmetic_constraint_solver_.get_int_variable_name(term), result);
       return false;
@@ -1225,8 +1274,7 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
 
     if (has_minus_one) {
       has_minus_one = string_term_binary_auto->hasNegative1();
-      BinaryIntAutomaton_ptr positive_values_auto = string_term_binary_auto->getPositiveValuesFor(
-          string_term_var_name);
+      BinaryIntAutomaton_ptr positive_values_auto = string_term_binary_auto->getPositiveValuesFor(string_term_var_name);
       delete string_term_binary_auto;
       string_term_binary_auto = positive_values_auto;
     }

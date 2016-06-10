@@ -17,6 +17,7 @@
 #include "theory/IntBoolAutomaton.h"
 #include "theory/BinaryIntAutomaton.h"
 #include "theory/StringAutomaton.h"
+#include "theory/MultiTrackAutomaton.h"
 
 namespace Vlab {
 namespace Solver {
@@ -25,15 +26,19 @@ class Value;
 typedef Value* Value_ptr;
 
 class Value {
-public:
+ public:
   enum class Type
     : int {
-      NONE = 0, BOOl_CONSTANT, INT_CONSTANT, STRING_CONSTANT, // not represented here as a data, can refer to singleton automaton
+      NONE = 0,
+    BOOl_CONSTANT,
+    INT_CONSTANT,
+    STRING_CONSTANT,  // not represented here as a data, can refer to singleton automaton
     BOOL_AUTOMATON,
     INT_AUTOMATON,
     INTBOOL_AUTOMATON,
     BINARYINT_AUTOMATON,
-    STRING_AUTOMATON
+    STRING_AUTOMATON,
+    MULTITRACK_AUTOMATON
   };
 
   Value();
@@ -44,6 +49,7 @@ public:
   Value(Theory::IntBoolAutomaton_ptr data);
   Value(Theory::BinaryIntAutomaton_ptr data);
   Value(Theory::StringAutomaton_ptr data);
+  Value(Theory::MultiTrackAutomaton_ptr data);
   Value(const Value&);
   Value_ptr clone() const;
   virtual ~Value();
@@ -59,6 +65,7 @@ public:
   void setData(Theory::IntBoolAutomaton_ptr data);
   void setData(Theory::BinaryIntAutomaton_ptr data);
   void setData(Theory::StringAutomaton_ptr data);
+  void setData(Theory::MultiTrackAutomaton_ptr data);
 
   bool getBoolConstant() const;
   int getIntConstant() const;
@@ -67,6 +74,7 @@ public:
   Theory::IntBoolAutomaton_ptr getIntBoolAutomaton() const;
   Theory::BinaryIntAutomaton_ptr getBinaryIntAutomaton() const;
   Theory::StringAutomaton_ptr getStringAutomaton() const;
+  Theory::MultiTrackAutomaton_ptr getMultiTrackAutomaton() const;
 
   Value_ptr union_(Value_ptr other_value) const;
   Value_ptr intersect(Value_ptr other_value) const;
@@ -78,12 +86,11 @@ public:
   Value_ptr times(Value_ptr other_value) const;
   Value_ptr minus(Value_ptr other_value) const;
 
-  bool isSatisfiable();
-  bool isSingleValue();
+  bool isSatisfiable();bool isSingleValue();
   std::string getASatisfyingExample();
 
   class Name {
-  public:
+   public:
     static const std::string NONE;
     static const std::string BOOL_CONSTANT;
     static const std::string INT_CONSTANT;
@@ -93,10 +100,11 @@ public:
     static const std::string INTBOOL_AUTOMATON;
     static const std::string BINARYINT_AUTOMATON;
     static const std::string STRING_AUTOMATON;
+    static const std::string MULTITRACK_AUTOMATON;
   };
 
   friend std::ostream& operator<<(std::ostream& os, const Value& value);
-private:
+ private:
   Value::Type type;
 
   union {
@@ -107,6 +115,7 @@ private:
     Theory::IntBoolAutomaton_ptr intbool_automaton;
     Theory::BinaryIntAutomaton_ptr binaryint_automaton;
     Theory::StringAutomaton_ptr string_automaton;
+    Theory::MultiTrackAutomaton_ptr multitrack_automaton;
   };
 
   static const int VLOG_LEVEL;

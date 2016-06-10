@@ -52,6 +52,10 @@ libabc_la_SOURCES = \
   ./solver/ArithmeticFormulaGenerator.h \
   ./solver/ArithmeticConstraintSolver.cpp \
   ./solver/ArithmeticConstraintSolver.h \
+  ./solver/StringRelationGenerator.cpp \
+  ./solver/StringRelationGenerator.h \
+  ./solver/StringConstraintSolver.cpp \
+  ./solver/StringConstraintSolver.h \
   ./solver/ConstraintSolver.cpp \
 	./solver/ConstraintSolver.h \
 	./options/Solver.cpp \
