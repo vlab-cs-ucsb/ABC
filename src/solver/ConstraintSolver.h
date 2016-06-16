@@ -117,7 +117,7 @@ class ConstraintSolver: public SMT::Visitor {
   ConstraintInformation_ptr constraint_information_;
 
   ArithmeticConstraintSolver arithmetic_constraint_solver_;
-  StringConstraintSolver string_constraint_solver;
+  StringConstraintSolver string_constraint_solver_;
 
   TermValueMap term_values_;
 

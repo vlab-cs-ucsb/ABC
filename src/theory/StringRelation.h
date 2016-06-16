@@ -8,6 +8,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <memory>
 #include <glog/logging.h>
 
 namespace Vlab {
@@ -35,7 +36,7 @@ class StringRelation {
   };
 
   StringRelation();
-  StringRelation(Type t, std::map<std::string, int> *var_map, std::vector<Subrelation> subrels, size_t ntracks);
+  StringRelation(Type t, std::shared_ptr<std::map<std::string, int>> var_map, std::vector<Subrelation> subrels, size_t ntracks);
   virtual ~StringRelation();
 
   StringRelation(const StringRelation&);
@@ -53,12 +54,12 @@ class StringRelation {
   void set_num_tracks(size_t ntracks);
   size_t get_num_tracks() const;
 
-  std::map<std::string, int>* get_variable_track_map();
-  void set_variable_track_map(std::map<std::string, int>* track_map);
+  std::shared_ptr<std::map<std::string, int>> get_variable_track_map();
+  void set_variable_track_map(std::shared_ptr<std::map<std::string, int>> track_map);
 
  protected:
   Type type;
-  std::map<std::string, int> *var_track_map;
+  std::shared_ptr<std::map<std::string, int>> var_track_map;
   std::vector<Subrelation> subrelations;
   size_t num_tracks;
 

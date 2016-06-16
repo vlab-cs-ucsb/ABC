@@ -12,9 +12,11 @@ using namespace Theory;
 
 const int StringConstraintSolver::VLOG_LEVEL = 13;
 
-StringConstraintSolver::StringConstraintSolver(Script_ptr script, SymbolTable_ptr symb)
+StringConstraintSolver::StringConstraintSolver(Script_ptr script, SymbolTable_ptr symb,
+                         ConstraintInformation_ptr constraint_information)
   : AstTraverser(script), symbol_table(symb),
-    string_relation_generator(script, symb) {
+    string_relation_generator_(script, symb),
+    constraint_information_(constraint_information) {
   setCallbacks();
 }
 
@@ -23,8 +25,14 @@ StringConstraintSolver::~StringConstraintSolver() {
 }
 
 void StringConstraintSolver::start() {
-  string_relation_generator.visit(root);
+  string_relation_generator_.visit(root);
   visitScript(root);
+  end();
+}
+
+void StringConstraintSolver::start(SMT::Visitable_ptr node) {
+  string_relation_generator_.visit(node);
+  this->Visitor::visit(node);
   end();
 }
 
@@ -37,7 +45,7 @@ void StringConstraintSolver::setCallbacks() {
         case Term::Type::EQ:
         case Term::Type::NOTEQ: {
           DVLOG(VLOG_LEVEL) << "visit: " << *term;
-          StringRelation_ptr relation = string_relation_generator.get_term_relation(term);
+          StringRelation_ptr relation = string_relation_generator_.get_term_relation(term);
           if(relation == nullptr) {
             return false;
           }
@@ -83,6 +91,13 @@ void StringConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
 void StringConstraintSolver::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
+
+  if (not constraint_information_->is_component(and_term)) {
+    visit_children_of(and_term);
+    set_term_value(and_term, nullptr);
+    return;
+  }
+
   bool is_satisfiable = true;
 
   StringRelation_ptr relation = nullptr;
@@ -90,7 +105,7 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
 
 
   for(auto& term : *and_term->term_list) {
-    relation = string_relation_generator.get_term_relation(term);
+    relation = string_relation_generator_.get_term_relation(term);
     if(relation != nullptr) {
       visit(term);
       param = get_term_value(term);
@@ -112,7 +127,7 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
   }
 
   for (auto& term : *(and_term->term_list)) {
-    relation = string_relation_generator.get_term_relation(term);
+    relation = string_relation_generator_.get_term_relation(term);
     if (relation != nullptr) {
       term_value_index[term] = and_term;
       clear_term_value(term);
@@ -266,7 +281,7 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
   StringAutomaton_ptr variable_auto = nullptr;
   Value_ptr relation_value = nullptr;
   StringRelation_ptr variable_relation = nullptr;
-  Term_ptr term = string_relation_generator.get_parent_term(variable);
+  Term_ptr term = string_relation_generator_.get_parent_term(variable);
   relation_value = get_relational_value(variable);
   if(relation_value == nullptr) {
     DVLOG(VLOG_LEVEL) << "Unable to get update relational value for variable: " << variable->getName();
@@ -289,7 +304,7 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
 Value_ptr StringConstraintSolver::get_relational_value(SMT::Variable_ptr variable) {
   Value_ptr relation_value = nullptr;
   StringRelation_ptr variable_relation = nullptr;
-  Term_ptr term = string_relation_generator.get_parent_term(variable);
+  Term_ptr term = string_relation_generator_.get_parent_term(variable);
 
   if(term == nullptr) {
     DVLOG(VLOG_LEVEL) << "Parent term not set for variable";

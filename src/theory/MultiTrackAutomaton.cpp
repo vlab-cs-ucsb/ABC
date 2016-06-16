@@ -253,7 +253,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAnyAutoAligned(int num_tracks) 
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::complement() {
   DFA_ptr complement_dfa = nullptr;
-	MultiTrackAutomaton_ptr temp_auto = nullptr, complement_auto = nullptr, aligned_universe_auto = nullptr;
+  MultiTrackAutomaton_ptr temp_auto = nullptr, complement_auto = nullptr, aligned_universe_auto = nullptr;
 	complement_dfa = dfaCopy(this->dfa);
 	dfaNegation(complement_dfa);
 	temp_auto = new MultiTrackAutomaton(complement_dfa,this->num_of_tracks);
@@ -306,8 +306,8 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::intersect(MultiTrackAutomaton_ptr o
 	minimized_dfa = dfaMinimize(intersect_dfa);
   dfaFree(intersect_dfa);
 	intersect_auto = new MultiTrackAutomaton(minimized_dfa, this->num_of_tracks);
-	intersect_relation = this->relation->combine(other_auto->relation);
-	intersect_auto->setRelation(intersect_relation);
+	//intersect_relation = this->relation->combine(other_auto->relation);
+	//intersect_auto->setRelation(intersect_relation);
 	return intersect_auto;
 }
 

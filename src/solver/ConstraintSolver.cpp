@@ -40,7 +40,7 @@ ConstraintSolver::ConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_tab
       constraint_information_(constraint_information),
       arithmetic_constraint_solver_(script, symbol_table, constraint_information,
                                     Option::Solver::LIA_NATURAL_NUMBERS_ONLY),
-      string_constraint_solver(script, symbol_table) {
+      string_constraint_solver_(script, symbol_table, constraint_information) {
 
 }
 
@@ -49,10 +49,6 @@ ConstraintSolver::~ConstraintSolver() {
 
 void ConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "start";
-//  if (Option::Solver::LIA_ENGINE_ENABLED) {
-//    arithmetic_constraint_solver_.start();
-//  }
-  string_constraint_solver.start();
   visit(root_);
 
   end();
@@ -147,6 +143,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     if (Option::Solver::LIA_ENGINE_ENABLED) {
       arithmetic_constraint_solver_.start(and_term);
     }
+    string_constraint_solver_.start(and_term);
   }
 
   bool is_satisfiable = true;
@@ -1013,7 +1010,7 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   // multitrack values in the string constraint solver, get the variable's value
   // from there and clone it into the symbol table, so the variable value computer has
   // the most recent value
-  Value_ptr variable_value = string_constraint_solver.get_variable_value(variable);
+  Value_ptr variable_value = string_constraint_solver_.get_variable_value(variable);
   if (variable_value != nullptr) {
     // variable relational, put in symbol table and tag for later update
     symbol_table_->setValue(variable, variable_value);
@@ -1115,7 +1112,7 @@ Value_ptr ConstraintSolver::getTermValue(Term_ptr term) {
     if (value != nullptr) {
       return value;
     }
-    value = string_constraint_solver.get_term_value(term);
+    value = string_constraint_solver_.get_term_value(term);
     if (value != nullptr) {
       return value;
     }
@@ -1178,7 +1175,7 @@ void ConstraintSolver::update_variables() {
       DVLOG(VLOG_LEVEL) << "Inconsistent value for variable: " << var->getName();
       continue;
     }
-    string_constraint_solver.update_variable_value(var, value);
+    string_constraint_solver_.update_variable_value(var, value);
     still_sat = still_sat and value->isSatisfiable();
     delete value;
     symbol_table_->setValue(var, nullptr);
@@ -1198,9 +1195,9 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
 
     Value_ptr result = getTermValue(term);
     if (result != nullptr) {
-      if (string_constraint_solver.get_term_value(term) != nullptr) {
+      if (string_constraint_solver_.get_term_value(term) != nullptr) {
         DVLOG(VLOG_LEVEL) << "Mixed Multi- and Single- Track String Automata Constraint";
-        result = string_constraint_solver.get_term_value(term);
+        result = string_constraint_solver_.get_term_value(term);
         setTermValue(term, new Value(result->isSatisfiable()));
         return true;
       }

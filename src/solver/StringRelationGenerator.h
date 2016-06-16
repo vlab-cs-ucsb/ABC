@@ -12,6 +12,7 @@
 
 #include <cstdbool>
 #include <map>
+#include <memory>
 
 #include "smt/ast.h"
 #include "theory/StringRelation.h"
@@ -100,10 +101,14 @@ class StringRelationGenerator : public SMT::Visitor {
   void delete_term_relation(SMT::Term_ptr term);
   SMT::Term_ptr get_parent_term(SMT::Variable_ptr variable);bool set_parent_term(SMT::Variable_ptr variable,
                                                                                  SMT::Term_ptr term);
+  void reset_variable_trackmap();
+
  protected:
 
   SMT::Script_ptr root;
   SymbolTable_ptr symbol_table;
+
+  std::shared_ptr<std::map<std::string,int>> current_trackmap;
   std::map<SMT::Term_ptr, Theory::StringRelation_ptr> relations;
   // for interplay between single/multitrack
   std::map<SMT::Variable_ptr, SMT::Term_ptr> variable_term_map;

@@ -12,6 +12,7 @@
 #include "theory/MultiTrackAutomaton.h"
 #include "theory/StringAutomaton.h"
 #include "StringRelationGenerator.h"
+#include "ConstraintInformation.h"
 #include "AstTraverser.h"
 #include "smt/ast.h"
 #include "SymbolTable.h"
@@ -24,10 +25,12 @@ namespace Solver {
 class StringConstraintSolver: public AstTraverser {
   typedef std::map<SMT::Term_ptr, Value_ptr> TermValueMap; // holds multitrack
 public:
-  StringConstraintSolver(SMT::Script_ptr, SymbolTable_ptr);
+  StringConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr);
   virtual ~StringConstraintSolver();
 
   void start();
+  void start(SMT::Visitable_ptr);
+
   void end();
 
   void setCallbacks();
@@ -74,8 +77,9 @@ public:
 protected:
 
   SymbolTable_ptr symbol_table;
-  StringRelationGenerator string_relation_generator;
+  ConstraintInformation_ptr constraint_information_;
 
+  StringRelationGenerator string_relation_generator_;
   TermValueMap term_values;
   std::map<SMT::Term_ptr, SMT::Term_ptr> term_value_index;
 
