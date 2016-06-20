@@ -38,6 +38,10 @@ libabc_la_SOURCES = \
   ./solver/OptimizationRuleRunner.h \
   ./solver/VariableOptimizer.cpp \
   ./solver/VariableOptimizer.h \
+  ./solver/EquivalenceGenerator.h \
+  ./solver/EquivalenceGenerator.cpp \
+  ./solver/EquivClassRuleRunner.cpp \
+  ./solver/EquivClassRuleRunner.h \
   ./solver/ConstraintInformation.cpp \
   ./solver/ConstraintInformation.h \
   ./solver/DependencySlicer.cpp \

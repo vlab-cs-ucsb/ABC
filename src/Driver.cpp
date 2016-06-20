@@ -26,6 +26,7 @@
 #include "solver/ConstraintSorter.h"
 #include "solver/DependencySlicer.h"
 #include "solver/Initializer.h"
+#include "solver/EquivalenceGenerator.h"
 #include "solver/SyntacticOptimizer.h"
 #include "solver/SyntacticProcessor.h"
 #include "theory/BinaryIntAutomaton.h"
@@ -111,13 +112,14 @@ void Driver::initializeSolver() {
 
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
   dependency_slicer.start();
+  
+  Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
+  equivalence_generator.start();
 
-//  Solver::VariableOptimizer variable_optimizer(script, symbol_table);
-//  variable_optimizer.start();
-//
-//  Solver::FormulaOptimizer formula_optimizer(script, symbol_table);
-//  formula_optimizer.start();
-//
+
+  //Solver::FormulaOptimizer formula_optimizer(script, symbol_table);
+  //formula_optimizer.start();
+
   Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
   constraint_sorter.start();
 }
@@ -231,7 +233,7 @@ void Driver::inspectResult(Solver::Value_ptr value, std::string file_name) {
 
   printResult(value, outfile);
 
-  std::string dot_cmd("xdot " + file_name + " &");
+  std::string dot_cmd("dot -Tpng " + file_name + "> " +file_name.substr(0,file_name.length()-3)+"png & open " + file_name.substr(0,file_name.length()-3)+"png");
   int r = std::system(dot_cmd.c_str());
 
   LOG(INFO)<< "result rendered? " << r << " : " << dot_cmd;
