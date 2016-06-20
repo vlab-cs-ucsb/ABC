@@ -1,12 +1,5 @@
-/*
- * OptimizationRuleRunner.h
- *
- *  Created on: May 6, 2015
- *      Author: baki
- */
-
-#ifndef SOLVER_OPTIMIZATIONRULERUNNER_H_
-#define SOLVER_OPTIMIZATIONRULERUNNER_H_
+#ifndef SOLVER_EQUIVCLASSRULERUNNER_H_
+#define SOLVER_EQUIVCLASSRULERUNNER_H_
 
 #include <glog/logging.h>
 #include "smt/ast.h"
@@ -17,13 +10,13 @@
 namespace Vlab {
 namespace Solver {
 
-using SubstitutionMap = std::map<SMT::Variable_ptr, SMT::Term_ptr>; 
+using SubstitutionMap = std::map<SMT::Variable_ptr, SMT::Term_ptr>;
 using SubstitutionTable = std::map<SMT::Visitable_ptr, SubstitutionMap>;
 
-class OptimizationRuleRunner: public SMT::Visitor {
-public:
-  OptimizationRuleRunner(SMT::Script_ptr, SymbolTable_ptr, SubstitutionTable& substitution_table);
-  virtual ~OptimizationRuleRunner();
+class EquivClassRuleRunner: public SMT::Visitor {
+ public:
+  EquivClassRuleRunner(SMT::Script_ptr, SymbolTable_ptr, SubstitutionTable& substitution_table, std::set<SMT::Visitable_ptr>);
+  virtual ~EquivClassRuleRunner();
   void start() override;
   void end() override;
 
@@ -92,19 +85,23 @@ public:
   void visitIdentifier(SMT::Identifier_ptr) override;
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
-protected:
+
+
+ protected:
   bool has_optimization_rules();
   bool check_and_substitute_var(SMT::Term_ptr& term);
   SMT::Term_ptr get_substitution_term(SMT::Variable_ptr);
 
+
   SMT::Script_ptr root;
-  SymbolTable_ptr symbol_table;
-  SubstitutionTable& substitution_table;
-private:
+  SymbolTable_ptr symbol_table_;
+  SubstitutionTable& substitution_table_;
+  std::set<SMT::Visitable_ptr> mark_as_false_;
+ private:
   static const int VLOG_LEVEL;
 };
 
 } /* namespace Solver */
 } /* namespace Vlab */
 
-#endif /* SOLVER_OPTIMIZATIONRULERUNNER_H_ */
+#endif /* SOLVER_EQUIVCLASSRULERUNNER_H_ */

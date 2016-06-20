@@ -27,6 +27,9 @@ class ConstraintInformation {
   bool is_component(SMT::Visitable_ptr);
   void add_component(SMT::Visitable_ptr);
   void remove_component(SMT::Visitable_ptr);
+
+  std::set<SMT::Visitable_ptr> get_components();
+  
  private:
   std::set<SMT::Visitable_ptr> components_;
 };

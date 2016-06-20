@@ -48,6 +48,10 @@ libabc_la_SOURCES = \
   ./solver/ConstraintSorter.h \
   ./solver/VariableValueComputer.cpp \
   ./solver/VariableValueComputer.h \
+  ./solver/EquivalenceGenerator.h \
+  ./solver/EquivalenceGenerator.cpp \
+  ./solver/EquivClassRuleRunner.cpp \
+  ./solver/EquivClassRuleRunner.h \
   ./solver/ArithmeticFormulaGenerator.cpp \
   ./solver/ArithmeticFormulaGenerator.h \
   ./solver/ArithmeticConstraintSolver.cpp \

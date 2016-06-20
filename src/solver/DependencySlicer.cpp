@@ -41,7 +41,11 @@ void DependencySlicer::start() {
 
 void DependencySlicer::end() {
   if (VLOG_IS_ON(VLOG_LEVEL)) {
-
+    for (auto& c : constraint_information_->get_components()){
+      DVLOG(VLOG_LEVEL) << c;
+      DVLOG(VLOG_LEVEL) <<  dynamic_cast<And_ptr>(c)->term_list->size();
+    }
+    
   }
 }
 

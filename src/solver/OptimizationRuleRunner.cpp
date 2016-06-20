@@ -373,6 +373,9 @@ bool OptimizationRuleRunner::has_optimization_rules() {
   return false;
 }
 
+//Works only on variables
+//IDEA - check if term considered is a variable
+//If it is a variable substitute it in!
 bool OptimizationRuleRunner::check_and_substitute_var(Term_ptr& term) {
   if (Term::Type::QUALIDENTIFIER == term->type()) {
     Variable_ptr variable = symbol_table->getVariable(term);
@@ -383,7 +386,7 @@ bool OptimizationRuleRunner::check_and_substitute_var(Term_ptr& term) {
       Term_ptr tmp_term = term;
       term = subs_term->clone();
       delete tmp_term;
-
+      //add the rule we just followed to the symbol table!
       auto subs_variable = symbol_table->getVariable(subs_term);
       if (subs_variable) {
         symbol_table->add_variable_substitution_rule(variable, subs_variable);

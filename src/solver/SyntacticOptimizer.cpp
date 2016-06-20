@@ -32,6 +32,7 @@ SyntacticOptimizer::~SyntacticOptimizer() {
 }
 
 void SyntacticOptimizer::start() {
+  DVLOG(VLOG_LEVEL) << "SyntacticOptimizer is called!";
   visit(root);
   end();
 }
@@ -498,6 +499,8 @@ void SyntacticOptimizer::visitTimes(Times_ptr times_term) {
 void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
   visit_and_callback(eq_term->left_term);
   visit_and_callback(eq_term->right_term);
+  DVLOG(VLOG_LEVEL) << "Calling is equiv!";
+
 
   if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
     add_callback_to_replace_with_bool(eq_term, "true");

@@ -37,6 +37,10 @@ void ConstraintInformation::remove_component(Visitable_ptr node) {
   components_.erase(node);
 }
 
+std::set<Visitable_ptr> ConstraintInformation::get_components(){
+	return components_;
+}
+
 
 } /* namespace Solver */
 } /* namespace Vlab */
