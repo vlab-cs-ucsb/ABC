@@ -22,8 +22,8 @@ void BinaryIntAutomatonTest::SetUp() {
   std::vector<int> coefficients = {1,2,3};
   std::map<std::string, int> coeff_index_map = {{"x", 0}, {"y", 1}, {"z", 2}};
   formula = new ArithmeticFormula(coeff_index_map, coefficients);
-  formula->setType(ArithmeticFormula::Type::EQ);
-  formula->setConstant(7);
+  formula->set_type(ArithmeticFormula::Type::EQ);
+  formula->set_constant(7);
 }
 
 void BinaryIntAutomatonTest::TearDown() {
@@ -62,21 +62,21 @@ TEST_F(BinaryIntAutomatonTest, Complement) {
     BinaryIntAutomaton_ptr auto_1 = nullptr;
     BinaryIntAutomaton_ptr auto_2 = nullptr;
     ArithmeticFormula formula_0;
-    formula_0.setVariableCoefficient("x", 1);
-    formula_0.setConstant(-3);
-    formula_0.setType(ArithmeticFormula::Type::EQ);
+    formula_0.set_variable_coefficient("x", 1);
+    formula_0.set_constant(-3);
+    formula_0.set_type(ArithmeticFormula::Type::EQ);
 
     auto_1 = testable_binary_automaton.makeEquality(formula_0.clone());
     auto_2 = auto_1->complement();
     auto_2->toDot(ss);
     expected = Vlab::Test::FileHelper::getExpectation("theory", "BinaryIntAutomaton", "makeNotEquality_01.dot");
     EXPECT_THAT(expected, ss.str());
-    EXPECT_EQ(ArithmeticFormula::Type::NOTEQ, auto_2->getFormula()->getType());
+    EXPECT_EQ(ArithmeticFormula::Type::NOTEQ, auto_2->getFormula()->get_type());
     delete auto_1;
     delete auto_2;
 
 
-    formula_0.setConstant(3);
+    formula_0.set_constant(3);
     auto_1 = testable_binary_automaton.makeEquality(formula_0.clone());
     auto_2 = auto_1->complement();
 
@@ -84,15 +84,15 @@ TEST_F(BinaryIntAutomatonTest, Complement) {
     auto_2->toDot(ss);
     expected = Vlab::Test::FileHelper::getExpectation("theory", "BinaryIntAutomaton", "makeNotEquality_02.dot");
     EXPECT_THAT(expected, ss.str());
-    EXPECT_EQ(ArithmeticFormula::Type::NOTEQ, auto_2->getFormula()->getType());
+    EXPECT_EQ(ArithmeticFormula::Type::NOTEQ, auto_2->getFormula()->get_type());
     delete auto_1;
     delete auto_2;
 
     ArithmeticFormula formula_1;
-    formula_1.setVariableCoefficient("x", 1);
-    formula_1.setVariableCoefficient("y", 2);
-    formula_1.setConstant(-6);
-    formula_1.setType(ArithmeticFormula::Type::NOTEQ);
+    formula_1.set_variable_coefficient("x", 1);
+    formula_1.set_variable_coefficient("y", 2);
+    formula_1.set_constant(-6);
+    formula_1.set_type(ArithmeticFormula::Type::NOTEQ);
     auto_1 = TestableBinaryIntAutomaton::makeNotEquality(formula_1.clone());
     auto_2 = auto_1->complement();
 
@@ -100,11 +100,11 @@ TEST_F(BinaryIntAutomatonTest, Complement) {
     auto_2->toDot(ss);
     expected = Vlab::Test::FileHelper::getExpectation("theory", "BinaryIntAutomaton", "makeEquality_03.dot");
     EXPECT_THAT(expected, ss.str());
-    EXPECT_EQ(ArithmeticFormula::Type::EQ, auto_2->getFormula()->getType());
+    EXPECT_EQ(ArithmeticFormula::Type::EQ, auto_2->getFormula()->get_type());
     delete auto_1;
     delete auto_2;
 
-    formula_1.setVariableCoefficient("y", -2);
+    formula_1.set_variable_coefficient("y", -2);
     auto_1 = TestableBinaryIntAutomaton::makeNotEquality(formula_1.clone());
     auto_2 = auto_1->complement();
 
@@ -112,7 +112,7 @@ TEST_F(BinaryIntAutomatonTest, Complement) {
     auto_2->toDot(ss);
     expected = Vlab::Test::FileHelper::getExpectation("theory", "BinaryIntAutomaton", "makeEquality_04.dot");
     EXPECT_THAT(expected, ss.str());
-    EXPECT_EQ(ArithmeticFormula::Type::EQ, auto_2->getFormula()->getType());
+    EXPECT_EQ(ArithmeticFormula::Type::EQ, auto_2->getFormula()->get_type());
     delete auto_1;
     delete auto_2;
 }
@@ -125,19 +125,19 @@ TEST_F(BinaryIntAutomatonTest, Intersect) {
     BinaryIntAutomaton_ptr auto_2 = nullptr;
     BinaryIntAutomaton_ptr auto_3 = nullptr;
     ArithmeticFormula formula_0;
-    formula_0.setVariableCoefficient("x", 1);
-    formula_0.setConstant(-3);
-    formula_0.setType(ArithmeticFormula::Type::GE);
+    formula_0.set_variable_coefficient("x", 1);
+    formula_0.set_constant(-3);
+    formula_0.set_type(ArithmeticFormula::Type::GE);
 
     ArithmeticFormula formula_1;
-    formula_1.setVariableCoefficient("y", 2);
-    formula_1.setConstant(-6);
-    formula_1.setType(ArithmeticFormula::Type::NOTEQ);
+    formula_1.set_variable_coefficient("y", 2);
+    formula_1.set_constant(-6);
+    formula_1.set_type(ArithmeticFormula::Type::NOTEQ);
 
     ArithmeticFormula formula_2;
-    formula_2.setVariableCoefficient("x", 1);
-    formula_2.setConstant(-3);
-    formula_2.setType(ArithmeticFormula::Type::LE);
+    formula_2.set_variable_coefficient("x", 1);
+    formula_2.set_constant(-3);
+    formula_2.set_type(ArithmeticFormula::Type::LE);
 
     auto_1 = testable_binary_automaton.makeAutomaton(formula_0.clone());
     auto_2 = testable_binary_automaton.makeAutomaton(formula_1.clone());
@@ -149,10 +149,10 @@ TEST_F(BinaryIntAutomatonTest, Intersect) {
     delete auto_1;
     delete auto_2;
 
-    formula_0.setType(ArithmeticFormula::Type::EQ);
+    formula_0.set_type(ArithmeticFormula::Type::EQ);
     auto_1 = testable_binary_automaton.makeAutomaton(formula_0.clone());
 
-    EXPECT_EQ(ArithmeticFormula::Type::INTERSECT, auto_3->getFormula()->getType());
+    EXPECT_EQ(ArithmeticFormula::Type::INTERSECT, auto_3->getFormula()->get_type());
 
     auto_2 = auto_3->difference(auto_1);
     EXPECT_TRUE(auto_2->isEmptyLanguage());
@@ -170,19 +170,19 @@ TEST_F(BinaryIntAutomatonTest, Union) {
     BinaryIntAutomaton_ptr auto_2 = nullptr;
     BinaryIntAutomaton_ptr auto_3 = nullptr;
     ArithmeticFormula formula_0;
-    formula_0.setVariableCoefficient("x", 1);
-    formula_0.setConstant(-3);
-    formula_0.setType(ArithmeticFormula::Type::LT);
+    formula_0.set_variable_coefficient("x", 1);
+    formula_0.set_constant(-3);
+    formula_0.set_type(ArithmeticFormula::Type::LT);
 
     ArithmeticFormula formula_1;
-    formula_1.setVariableCoefficient("y", 2);
-    formula_1.setConstant(-6);
-    formula_1.setType(ArithmeticFormula::Type::NOTEQ);
+    formula_1.set_variable_coefficient("y", 2);
+    formula_1.set_constant(-6);
+    formula_1.set_type(ArithmeticFormula::Type::NOTEQ);
 
     ArithmeticFormula formula_2;
-    formula_2.setVariableCoefficient("x", 1);
-    formula_2.setConstant(-3);
-    formula_2.setType(ArithmeticFormula::Type::GT);
+    formula_2.set_variable_coefficient("x", 1);
+    formula_2.set_constant(-3);
+    formula_2.set_type(ArithmeticFormula::Type::GT);
 
     auto_1 = testable_binary_automaton.makeAutomaton(formula_0.clone());
     auto_2 = testable_binary_automaton.makeAutomaton(formula_1.clone());
@@ -195,10 +195,10 @@ TEST_F(BinaryIntAutomatonTest, Union) {
     delete auto_1;
     delete auto_2;
 
-    formula_0.setType(ArithmeticFormula::Type::NOTEQ);
+    formula_0.set_type(ArithmeticFormula::Type::NOTEQ);
     auto_1 = testable_binary_automaton.makeAutomaton(formula_0.clone());
 
-    EXPECT_EQ(ArithmeticFormula::Type::UNION, auto_3->getFormula()->getType());
+    EXPECT_EQ(ArithmeticFormula::Type::UNION, auto_3->getFormula()->get_type());
     auto_2 = auto_3->difference(auto_1);
     EXPECT_TRUE(auto_2->isEmptyLanguage());
 
@@ -216,14 +216,14 @@ TEST_F(BinaryIntAutomatonTest, Difference) {
   BinaryIntAutomaton_ptr auto_2 = nullptr;
   BinaryIntAutomaton_ptr auto_3 = nullptr;
   ArithmeticFormula formula_0;
-  formula_0.setVariableCoefficient("x", 1);
-  formula_0.setConstant(-3);
-  formula_0.setType(ArithmeticFormula::Type::LE);
+  formula_0.set_variable_coefficient("x", 1);
+  formula_0.set_constant(-3);
+  formula_0.set_type(ArithmeticFormula::Type::LE);
 
   ArithmeticFormula formula_1;
-  formula_1.setVariableCoefficient("x", 1);
-  formula_1.setConstant(-3);
-  formula_1.setType(ArithmeticFormula::Type::LT);
+  formula_1.set_variable_coefficient("x", 1);
+  formula_1.set_constant(-3);
+  formula_1.set_type(ArithmeticFormula::Type::LT);
 
   auto_1 = testable_binary_automaton.makeAutomaton(formula_0.clone());
   auto_2 = testable_binary_automaton.makeAutomaton(formula_1.clone());
@@ -232,7 +232,7 @@ TEST_F(BinaryIntAutomatonTest, Difference) {
   delete auto_1;
   delete auto_2;
 
-  formula_0.setType(ArithmeticFormula::Type::EQ);
+  formula_0.set_type(ArithmeticFormula::Type::EQ);
   auto_1 = testable_binary_automaton.makeAutomaton(formula_0.clone());
 
   auto_2 = auto_3->difference(auto_1);
@@ -251,10 +251,10 @@ TEST_F(BinaryIntAutomatonTest, GetBinaryAutomatonFor) {
   BinaryIntAutomaton_ptr auto_2 = nullptr;
 
   ArithmeticFormula formula_0;
-  formula_0.setVariableCoefficient("x", 1);
-  formula_0.setVariableCoefficient("y", -2);
-  formula_0.setConstant(0);
-  formula_0.setType(ArithmeticFormula::Type::EQ);
+  formula_0.set_variable_coefficient("x", 1);
+  formula_0.set_variable_coefficient("y", -2);
+  formula_0.set_constant(0);
+  formula_0.set_type(ArithmeticFormula::Type::EQ);
 
   auto_1 = BinaryIntAutomaton::makeAutomaton(formula_0.clone());
   auto_2 = auto_1->getBinaryAutomatonFor("x");
@@ -276,9 +276,9 @@ TEST_F(BinaryIntAutomatonTest, MakeEquality) {
   BinaryIntAutomaton_ptr auto_1 = nullptr;
   ArithmeticFormula formula_0;
   TestableBinaryIntAutomaton testable_binary_automaton;
-  formula_0.setVariableCoefficient("x", 1);
-  formula_0.setConstant(-3);
-  formula_0.setType(ArithmeticFormula::Type::EQ);
+  formula_0.set_variable_coefficient("x", 1);
+  formula_0.set_constant(-3);
+  formula_0.set_type(ArithmeticFormula::Type::EQ);
 
 
   auto_1 = testable_binary_automaton.makeEquality(formula_0.clone());
@@ -288,7 +288,7 @@ TEST_F(BinaryIntAutomatonTest, MakeEquality) {
   EXPECT_THAT(expected, ss.str());
   delete auto_1;
 
-  formula_0.setConstant(3);
+  formula_0.set_constant(3);
   auto_1 = testable_binary_automaton.makeEquality(formula_0.clone());
 
   ss.str("");
@@ -298,10 +298,10 @@ TEST_F(BinaryIntAutomatonTest, MakeEquality) {
   delete auto_1;
 
   ArithmeticFormula formula_1;
-  formula_1.setVariableCoefficient("x", 1);
-  formula_1.setVariableCoefficient("y", 2);
-  formula_1.setConstant(-6);
-  formula_1.setType(ArithmeticFormula::Type::EQ);
+  formula_1.set_variable_coefficient("x", 1);
+  formula_1.set_variable_coefficient("y", 2);
+  formula_1.set_constant(-6);
+  formula_1.set_type(ArithmeticFormula::Type::EQ);
   auto_1 = testable_binary_automaton.makeEquality(formula_1.clone());
 
   ss.str("");
@@ -310,7 +310,7 @@ TEST_F(BinaryIntAutomatonTest, MakeEquality) {
   EXPECT_THAT(expected, ss.str());
   delete auto_1;
 
-  formula_1.setVariableCoefficient("y", -2);
+  formula_1.set_variable_coefficient("y", -2);
   auto_1 = testable_binary_automaton.makeEquality(formula_1.clone());
 
   ss.str("");
@@ -325,9 +325,9 @@ TEST_F(BinaryIntAutomatonTest, MakeNotEquality) {
   std::string expected;
   BinaryIntAutomaton_ptr auto_1 = nullptr;
   ArithmeticFormula formula_0;
-  formula_0.setVariableCoefficient("x", 1);
-  formula_0.setConstant(-3);
-  formula_0.setType(ArithmeticFormula::Type::NOTEQ);
+  formula_0.set_variable_coefficient("x", 1);
+  formula_0.set_constant(-3);
+  formula_0.set_type(ArithmeticFormula::Type::NOTEQ);
 
   auto_1 = TestableBinaryIntAutomaton::makeNotEquality(formula_0.clone());
 
@@ -336,7 +336,7 @@ TEST_F(BinaryIntAutomatonTest, MakeNotEquality) {
   EXPECT_THAT(expected, ss.str());
   delete auto_1;
 
-  formula_0.setConstant(3);
+  formula_0.set_constant(3);
   auto_1 = TestableBinaryIntAutomaton::makeNotEquality(formula_0.clone());
 
   ss.str("");
@@ -346,10 +346,10 @@ TEST_F(BinaryIntAutomatonTest, MakeNotEquality) {
   delete auto_1;
 
   ArithmeticFormula formula_1;
-  formula_1.setVariableCoefficient("x", 1);
-  formula_1.setVariableCoefficient("y", 2);
-  formula_1.setConstant(-6);
-  formula_1.setType(ArithmeticFormula::Type::NOTEQ);
+  formula_1.set_variable_coefficient("x", 1);
+  formula_1.set_variable_coefficient("y", 2);
+  formula_1.set_constant(-6);
+  formula_1.set_type(ArithmeticFormula::Type::NOTEQ);
   auto_1 = TestableBinaryIntAutomaton::makeNotEquality(formula_1.clone());
 
   ss.str("");
@@ -358,7 +358,7 @@ TEST_F(BinaryIntAutomatonTest, MakeNotEquality) {
   EXPECT_THAT(expected, ss.str());
   delete auto_1;
 
-  formula_1.setVariableCoefficient("y", -2);
+  formula_1.set_variable_coefficient("y", -2);
   auto_1 = TestableBinaryIntAutomaton::makeNotEquality(formula_1.clone());
 
   ss.str("");
@@ -373,9 +373,9 @@ TEST_F(BinaryIntAutomatonTest, MakeLessThan) {
   std::string expected;
   BinaryIntAutomaton_ptr auto_1 = nullptr;
   ArithmeticFormula formula_0;
-  formula_0.setVariableCoefficient("x", 1);
-  formula_0.setConstant(-3);
-  formula_0.setType(ArithmeticFormula::Type::LT);
+  formula_0.set_variable_coefficient("x", 1);
+  formula_0.set_constant(-3);
+  formula_0.set_type(ArithmeticFormula::Type::LT);
 
   auto_1 = TestableBinaryIntAutomaton::makeIntLessThan(formula_0.clone());
 
@@ -384,7 +384,7 @@ TEST_F(BinaryIntAutomatonTest, MakeLessThan) {
   EXPECT_THAT(expected, ss.str());
   delete auto_1;
 
-  formula_0.setConstant(3);
+  formula_0.set_constant(3);
   auto_1 = TestableBinaryIntAutomaton::makeIntLessThan(formula_0.clone());
 
   ss.str("");
@@ -394,10 +394,10 @@ TEST_F(BinaryIntAutomatonTest, MakeLessThan) {
   delete auto_1;
 
   ArithmeticFormula formula_1;
-  formula_1.setVariableCoefficient("x", 1);
-  formula_1.setVariableCoefficient("y", 2);
-  formula_1.setConstant(-6);
-  formula_1.setType(ArithmeticFormula::Type::LT);
+  formula_1.set_variable_coefficient("x", 1);
+  formula_1.set_variable_coefficient("y", 2);
+  formula_1.set_constant(-6);
+  formula_1.set_type(ArithmeticFormula::Type::LT);
   auto_1 = TestableBinaryIntAutomaton::makeIntLessThan(formula_1.clone());
 
   ss.str("");
@@ -406,7 +406,7 @@ TEST_F(BinaryIntAutomatonTest, MakeLessThan) {
   EXPECT_THAT(expected, ss.str());
   delete auto_1;
 
-  formula_1.setVariableCoefficient("y", -2);
+  formula_1.set_variable_coefficient("y", -2);
   auto_1 = TestableBinaryIntAutomaton::makeIntLessThan(formula_1.clone());
 
   ss.str("");
@@ -421,9 +421,9 @@ TEST_F(BinaryIntAutomatonTest, MakeLessThanOrEqual) {
   std::string expected;
   BinaryIntAutomaton_ptr auto_1 = nullptr;
   ArithmeticFormula formula_0;
-  formula_0.setVariableCoefficient("x", 1);
-  formula_0.setConstant(-3);
-  formula_0.setType(ArithmeticFormula::Type::LE);
+  formula_0.set_variable_coefficient("x", 1);
+  formula_0.set_constant(-3);
+  formula_0.set_type(ArithmeticFormula::Type::LE);
 
   auto_1 = TestableBinaryIntAutomaton::makeLessThanOrEqual(formula_0.clone());
 
@@ -432,7 +432,7 @@ TEST_F(BinaryIntAutomatonTest, MakeLessThanOrEqual) {
   EXPECT_THAT(expected, ss.str());
   delete auto_1;
 
-  formula_0.setConstant(3);
+  formula_0.set_constant(3);
   auto_1 = TestableBinaryIntAutomaton::makeLessThanOrEqual(formula_0.clone());
 
   ss.str("");
@@ -442,10 +442,10 @@ TEST_F(BinaryIntAutomatonTest, MakeLessThanOrEqual) {
   delete auto_1;
 
   ArithmeticFormula formula_1;
-  formula_1.setVariableCoefficient("x", 1);
-  formula_1.setVariableCoefficient("y", 2);
-  formula_1.setConstant(-6);
-  formula_1.setType(ArithmeticFormula::Type::LE);
+  formula_1.set_variable_coefficient("x", 1);
+  formula_1.set_variable_coefficient("y", 2);
+  formula_1.set_constant(-6);
+  formula_1.set_type(ArithmeticFormula::Type::LE);
   auto_1 = TestableBinaryIntAutomaton::makeLessThanOrEqual(formula_1.clone());
 
   ss.str("");
@@ -454,7 +454,7 @@ TEST_F(BinaryIntAutomatonTest, MakeLessThanOrEqual) {
   EXPECT_THAT(expected, ss.str());
   delete auto_1;
 
-  formula_1.setVariableCoefficient("y", -2);
+  formula_1.set_variable_coefficient("y", -2);
   auto_1 = TestableBinaryIntAutomaton::makeLessThanOrEqual(formula_1.clone());
 
   ss.str("");
@@ -469,9 +469,9 @@ TEST_F(BinaryIntAutomatonTest, MakeGreaterThan) {
   std::string expected;
   BinaryIntAutomaton_ptr auto_1 = nullptr;
   ArithmeticFormula formula_0;
-  formula_0.setVariableCoefficient("x", 1);
-  formula_0.setConstant(-3);
-  formula_0.setType(ArithmeticFormula::Type::GT);
+  formula_0.set_variable_coefficient("x", 1);
+  formula_0.set_constant(-3);
+  formula_0.set_type(ArithmeticFormula::Type::GT);
 
   auto_1 = TestableBinaryIntAutomaton::makeGreaterThan(formula_0.clone());
 
@@ -480,7 +480,7 @@ TEST_F(BinaryIntAutomatonTest, MakeGreaterThan) {
   EXPECT_THAT(expected, ss.str());
   delete auto_1;
 
-  formula_0.setConstant(3);
+  formula_0.set_constant(3);
   auto_1 = TestableBinaryIntAutomaton::makeGreaterThan(formula_0.clone());
 
   ss.str("");
@@ -490,10 +490,10 @@ TEST_F(BinaryIntAutomatonTest, MakeGreaterThan) {
   delete auto_1;
 
   ArithmeticFormula formula_1;
-  formula_1.setVariableCoefficient("x", 1);
-  formula_1.setVariableCoefficient("y", 2);
-  formula_1.setConstant(-6);
-  formula_1.setType(ArithmeticFormula::Type::GT);
+  formula_1.set_variable_coefficient("x", 1);
+  formula_1.set_variable_coefficient("y", 2);
+  formula_1.set_constant(-6);
+  formula_1.set_type(ArithmeticFormula::Type::GT);
   auto_1 = TestableBinaryIntAutomaton::makeGreaterThan(formula_1.clone());
 
   ss.str("");
@@ -502,7 +502,7 @@ TEST_F(BinaryIntAutomatonTest, MakeGreaterThan) {
   EXPECT_THAT(expected, ss.str());
   delete auto_1;
 
-  formula_1.setVariableCoefficient("y", -2);
+  formula_1.set_variable_coefficient("y", -2);
   auto_1 = TestableBinaryIntAutomaton::makeGreaterThan(formula_1.clone());
 
   ss.str("");
@@ -517,9 +517,9 @@ TEST_F(BinaryIntAutomatonTest, MakeGreaterThanOrEqual) {
   std::string expected;
   BinaryIntAutomaton_ptr auto_1 = nullptr;
   ArithmeticFormula formula_0;
-  formula_0.setVariableCoefficient("x", 1);
-  formula_0.setConstant(-3);
-  formula_0.setType(ArithmeticFormula::Type::GE);
+  formula_0.set_variable_coefficient("x", 1);
+  formula_0.set_constant(-3);
+  formula_0.set_type(ArithmeticFormula::Type::GE);
 
   auto_1 = TestableBinaryIntAutomaton::makeGreaterThanOrEqual(formula_0.clone());
 
@@ -528,7 +528,7 @@ TEST_F(BinaryIntAutomatonTest, MakeGreaterThanOrEqual) {
   EXPECT_THAT(expected, ss.str());
   delete auto_1;
 
-  formula_0.setConstant(3);
+  formula_0.set_constant(3);
   auto_1 = TestableBinaryIntAutomaton::makeGreaterThanOrEqual(formula_0.clone());
 
   ss.str("");
@@ -538,10 +538,10 @@ TEST_F(BinaryIntAutomatonTest, MakeGreaterThanOrEqual) {
   delete auto_1;
 
   ArithmeticFormula formula_1;
-  formula_1.setVariableCoefficient("x", 1);
-  formula_1.setVariableCoefficient("y", 2);
-  formula_1.setConstant(-6);
-  formula_1.setType(ArithmeticFormula::Type::GE);
+  formula_1.set_variable_coefficient("x", 1);
+  formula_1.set_variable_coefficient("y", 2);
+  formula_1.set_constant(-6);
+  formula_1.set_type(ArithmeticFormula::Type::GE);
   auto_1 = TestableBinaryIntAutomaton::makeGreaterThanOrEqual(formula_1.clone());
 
   ss.str("");
@@ -550,7 +550,7 @@ TEST_F(BinaryIntAutomatonTest, MakeGreaterThanOrEqual) {
   EXPECT_THAT(expected, ss.str());
   delete auto_1;
 
-  formula_1.setVariableCoefficient("y", -2);
+  formula_1.set_variable_coefficient("y", -2);
   auto_1 = TestableBinaryIntAutomaton::makeGreaterThanOrEqual(formula_1.clone());
 
   ss.str("");
@@ -564,8 +564,8 @@ TEST_F(BinaryIntAutomatonTest, MakeAutomaton) {
   std::vector<int> coeff = {1};
   std::map<std::string, int> indexes = {{"x", 0}};
   ArithmeticFormula formula_0(indexes, coeff);
-  formula_0.setConstant(3);
-  formula_0.setType(ArithmeticFormula::Type::NONE);
+  formula_0.set_constant(3);
+  formula_0.set_type(ArithmeticFormula::Type::NONE);
 
   EXPECT_DEATH(TestableBinaryIntAutomaton::BinaryIntAutomaton::makeAutomaton(formula_0.clone()), ".*Equation type is not specified, please set type for input formula.*");
 

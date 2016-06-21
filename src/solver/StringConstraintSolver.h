@@ -23,7 +23,7 @@ namespace Vlab {
 namespace Solver {
 
 class StringConstraintSolver: public AstTraverser {
-  typedef std::map<SMT::Term_ptr, Value_ptr> TermValueMap; // holds multitrack
+  using TermValueMap = std::map<SMT::Term_ptr, Value_ptr>; // holds multitrack
 public:
   StringConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr);
   virtual ~StringConstraintSolver();
@@ -76,12 +76,11 @@ public:
 
 protected:
 
-  SymbolTable_ptr symbol_table;
+  SymbolTable_ptr symbol_table_;
   ConstraintInformation_ptr constraint_information_;
-
   StringRelationGenerator string_relation_generator_;
-  TermValueMap term_values;
-  std::map<SMT::Term_ptr, SMT::Term_ptr> term_value_index;
+  TermValueMap term_values_;
+  std::map<SMT::Term_ptr, SMT::Term_ptr> term_value_index_;
 
 private:
   static const int VLOG_LEVEL;

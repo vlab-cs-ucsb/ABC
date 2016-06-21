@@ -27,6 +27,7 @@ class StringRelationGenerator : public SMT::Visitor {
   StringRelationGenerator(SMT::Script_ptr, SymbolTable_ptr);
   virtual ~StringRelationGenerator();
 
+  void start(SMT::Visitable_ptr);
   void start() override;
   void end() override;
 
@@ -96,8 +97,8 @@ class StringRelationGenerator : public SMT::Visitor {
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
 
-  Theory::StringRelation_ptr get_term_relation(SMT::Term_ptr term);bool set_term_relation(
-      SMT::Term_ptr term, Theory::StringRelation_ptr str_rel);
+  Theory::StringRelation_ptr get_term_relation(SMT::Term_ptr term);
+  bool set_term_relation(SMT::Term_ptr term, Theory::StringRelation_ptr str_rel);
   void delete_term_relation(SMT::Term_ptr term);
   SMT::Term_ptr get_parent_term(SMT::Variable_ptr variable);bool set_parent_term(SMT::Variable_ptr variable,
                                                                                  SMT::Term_ptr term);
@@ -105,15 +106,15 @@ class StringRelationGenerator : public SMT::Visitor {
 
  protected:
 
-  SMT::Script_ptr root;
-  SymbolTable_ptr symbol_table;
+  SMT::Script_ptr root_;
+  SymbolTable_ptr symbol_table_;
 
-  std::shared_ptr<std::map<std::string,int>> current_trackmap;
-  std::map<SMT::Term_ptr, Theory::StringRelation_ptr> relations;
+  std::shared_ptr<std::map<std::string,int>> current_trackmap_;
+  std::map<SMT::Term_ptr, Theory::StringRelation_ptr> relations_;
   // for interplay between single/multitrack
-  std::map<SMT::Variable_ptr, SMT::Term_ptr> variable_term_map;
+  std::map<SMT::Variable_ptr, SMT::Term_ptr> variable_term_map_;
  private:
-  SMT::Term_ptr current_term;
+  SMT::Term_ptr current_term_;
   static const int VLOG_LEVEL;
 
 };

@@ -15,7 +15,7 @@ namespace Vlab {
 namespace Theory {
 
 class StringRelation;
-typedef StringRelation *StringRelation_ptr;
+using StringRelation_ptr = StringRelation*;
 
 class StringRelation {
  public:
@@ -25,6 +25,10 @@ class StringRelation {
       NONE = 0,
     EQ,
     NOTEQ,
+    GT,
+    GE,
+    LT,
+    LE,
     INTERSECT,
     VAR,
     CONSTANT
@@ -36,7 +40,8 @@ class StringRelation {
   };
 
   StringRelation();
-  StringRelation(Type t, std::shared_ptr<std::map<std::string, int>> var_map, std::vector<Subrelation> subrels, size_t ntracks);
+  StringRelation(Type t, std::shared_ptr<std::map<std::string, int>> var_map, std::vector<Subrelation> subrels,
+                 size_t ntracks);
   virtual ~StringRelation();
 
   StringRelation(const StringRelation&);
@@ -58,10 +63,10 @@ class StringRelation {
   void set_variable_track_map(std::shared_ptr<std::map<std::string, int>> track_map);
 
  protected:
-  Type type;
-  std::shared_ptr<std::map<std::string, int>> var_track_map;
-  std::vector<Subrelation> subrelations;
-  size_t num_tracks;
+  Type type_;
+  std::shared_ptr<std::map<std::string, int>> var_track_map_;
+  std::vector<Subrelation> subrelations_;
+  size_t num_tracks_;
 
  private:
   static const int VLOG_LEVEL;

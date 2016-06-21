@@ -14,7 +14,7 @@ const int StringConstraintSolver::VLOG_LEVEL = 13;
 
 StringConstraintSolver::StringConstraintSolver(Script_ptr script, SymbolTable_ptr symb,
                          ConstraintInformation_ptr constraint_information)
-  : AstTraverser(script), symbol_table(symb),
+  : AstTraverser(script), symbol_table_(symb),
     string_relation_generator_(script, symb),
     constraint_information_(constraint_information) {
   setCallbacks();
@@ -78,9 +78,9 @@ void StringConstraintSolver::setCallbacks() {
 }
 
 void StringConstraintSolver::visitScript(Script_ptr script) {
-  symbol_table->push_scope(script);
+  symbol_table_->push_scope(script);
   visit_children_of(script);
-  symbol_table->pop_scope();
+  symbol_table_->pop_scope();
 }
 
 void StringConstraintSolver::visitAssert(Assert_ptr assert_command) {
@@ -129,7 +129,7 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
   for (auto& term : *(and_term->term_list)) {
     relation = string_relation_generator_.get_term_relation(term);
     if (relation != nullptr) {
-      term_value_index[term] = and_term;
+      term_value_index_[term] = and_term;
       clear_term_value(term);
     }
   }
@@ -208,13 +208,13 @@ void StringConstraintSolver::visitToRegex(ToRegex_ptr to_regex_term) {
 
 Value_ptr StringConstraintSolver::get_term_value(Term_ptr term) {
   Term_ptr key = term;
-  auto it1 = term_value_index.find(term);
-  if (it1 != term_value_index.end()) {
+  auto it1 = term_value_index_.find(term);
+  if (it1 != term_value_index_.end()) {
     key = it1->second;
   }
 
-  auto it2 = term_values.find(key);
-  if (it2 != term_values.end()) {
+  auto it2 = term_values_.find(key);
+  if (it2 != term_values_.end()) {
     return it2->second;
   }
 
@@ -222,23 +222,23 @@ Value_ptr StringConstraintSolver::get_term_value(Term_ptr term) {
 }
 
 bool StringConstraintSolver::set_term_value(Term_ptr term, Value_ptr value) {
-  auto result = term_values.insert(std::make_pair(term, value));
+  auto result = term_values_.insert(std::make_pair(term, value));
   if (result.second == false) {
     LOG(FATAL) << "value is already computed for term: " << *term;
   }
-  term_value_index[term] = term;
+  term_value_index_[term] = term;
   return result.second;
 }
 
 bool StringConstraintSolver::update_term_value(Term_ptr term, Value_ptr value) {
   Term_ptr key = term;
-  auto it1 = term_value_index.find(term);
-  if (it1 != term_value_index.end()) {
+  auto it1 = term_value_index_.find(term);
+  if (it1 != term_value_index_.end()) {
     key = it1->second;
   }
 
-  auto it2 = term_values.find(key);
-  if (it2 != term_values.end()) {
+  auto it2 = term_values_.find(key);
+  if (it2 != term_values_.end()) {
     it2->second = value;
     return true;
   }
@@ -247,19 +247,19 @@ bool StringConstraintSolver::update_term_value(Term_ptr term, Value_ptr value) {
 }
 
 void StringConstraintSolver::clear_term_value(Term_ptr term) {
-  auto it = term_values.find(term);
-  if (it != term_values.end()) {
+  auto it = term_values_.find(term);
+  if (it != term_values_.end()) {
     delete it->second;
-    term_values.erase(it);
+    term_values_.erase(it);
   }
 }
 
 std::map<Term_ptr, Term_ptr> &StringConstraintSolver::get_term_value_index() {
-  return term_value_index;
+  return term_value_index_;
 }
 
 StringConstraintSolver::TermValueMap &StringConstraintSolver::get_term_values() {
-  return term_values;
+  return term_values_;
 }
 
 Value_ptr StringConstraintSolver::get_variable_value(Variable_ptr variable) {

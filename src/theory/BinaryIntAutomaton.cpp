@@ -63,7 +63,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::clone() const {
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makePhi(ArithmeticFormula_ptr formula, bool is_natural_number) {
   DFA_ptr non_accepting_dfa = nullptr;
   BinaryIntAutomaton_ptr non_accepting_binary_auto = nullptr;
-  int num_variables = formula->getNumberOfVariables();
+  int num_variables = formula->get_number_of_variables();
   int* indices = Automaton::getIndices(num_variables);
 
   non_accepting_dfa = Automaton::makePhi(num_variables, indices);
@@ -77,7 +77,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makePhi(ArithmeticFormula_ptr formula
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAnyInt(ArithmeticFormula_ptr formula, bool is_natural_number) {
-  int number_of_variables = formula->getNumberOfVariables();
+  int number_of_variables = formula->get_number_of_variables();
   int* indices = Automaton::getIndices(number_of_variables);
   char statuses[2] { '-', '+' };
 
@@ -98,7 +98,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAnyInt(ArithmeticFormula_ptr form
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(ArithmeticFormula_ptr formula, bool is_natural_number) {
   BinaryIntAutomaton_ptr result_auto = nullptr;
 
-  switch (formula->getType()) {
+  switch (formula->get_type()) {
     case ArithmeticFormula::Type::EQ: {
         result_auto = BinaryIntAutomaton::makeEquality(formula, is_natural_number);
       break;
@@ -124,7 +124,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(ArithmeticFormula_ptr f
       break;
     }
     case ArithmeticFormula::Type::VAR: {
-      CHECK_EQ(1, formula->getNumberOfVariables());
+      CHECK_EQ(1, formula->get_number_of_variables());
       result_auto = BinaryIntAutomaton::makeAnyInt(formula, is_natural_number);
       break;
     }
@@ -140,10 +140,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(int value, std::string 
         ArithmeticFormula_ptr formula, bool add_leading_zeros) {
 
   ArithmeticFormula_ptr constant_value_formula = formula->clone();
-  constant_value_formula->resetCoefficients();
-  constant_value_formula->setVariableCoefficient(var_name, 1);
-  constant_value_formula->setConstant(-value);
-  constant_value_formula->setType(ArithmeticFormula::Type::EQ);
+  constant_value_formula->reset_coefficients();
+  constant_value_formula->set_variable_coefficient(var_name, 1);
+  constant_value_formula->set_constant(-value);
+  constant_value_formula->set_type(ArithmeticFormula::Type::EQ);
   BinaryIntAutomaton_ptr binary_auto = BinaryIntAutomaton::makeAutomaton(constant_value_formula, not add_leading_zeros);
 
   DVLOG(VLOG_LEVEL)  << binary_auto->getId() << " = BinaryIntAutomaton::makeAutomaton(" << value << ", " << var_name << ", " << *formula << ", " << std::boolalpha << add_leading_zeros << ")";
@@ -155,8 +155,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(SemilinearSet_ptr semil
         ArithmeticFormula_ptr formula, bool add_leading_zeros) {
   BinaryIntAutomaton_ptr binary_auto = nullptr;
   DFA_ptr binary_dfa = nullptr, tmp_dfa = nullptr;
-  int var_index = formula->getNumberOfVariables() - formula->getVariableIndex(var_name) - 1;
-  int number_of_variables = formula->getNumberOfVariables(),
+  int var_index = formula->get_number_of_variables() - formula->get_variable_index(var_name) - 1;
+  int number_of_variables = formula->get_number_of_variables(),
           leading_zero_state = 0,
           sink_state = 0,
           number_of_binary_states = 0,
@@ -346,7 +346,7 @@ bool BinaryIntAutomaton::hasNegative1() {
 
 // bdd vars are ordered in the reverse order of coefficients
 int BinaryIntAutomaton::getBddVarIndex(std::string var_name) {
-  return num_of_variables - formula->getVariableIndex(var_name) - 1;
+  return num_of_variables - formula->get_variable_index(var_name) - 1;
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::complement() {
@@ -364,7 +364,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::complement() {
   delete tmp_auto;
   auto formula = complement_auto->getFormula();
   delete formula;
-  complement_auto->setFormula(this->formula->negateOperation());
+  complement_auto->setFormula(this->formula->NegateOperation());
 
   DVLOG(VLOG_LEVEL) << complement_auto->id << " = [" << this->id << "]->complement()";
   return complement_auto;
@@ -375,7 +375,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::intersect(BinaryIntAutomaton_ptr othe
   BinaryIntAutomaton_ptr intersect_auto = nullptr;
   ArithmeticFormula_ptr intersect_formula = nullptr;
 
-  if (not formula->isVariableOrderingSame(other_auto->formula)) {
+  if (not formula->IsVariableOrderingSame(other_auto->formula)) {
     LOG(FATAL)<< "You cannot intersect binary automata with different variable orderings";
   }
 
@@ -386,8 +386,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::intersect(BinaryIntAutomaton_ptr othe
 
   intersect_auto = new BinaryIntAutomaton(minimized_dfa, num_of_variables, is_natural_number);
   intersect_formula = this->formula->clone();
-  intersect_formula->resetCoefficients();
-  intersect_formula->setType(ArithmeticFormula::Type::INTERSECT);
+  intersect_formula->reset_coefficients();
+  intersect_formula->set_type(ArithmeticFormula::Type::INTERSECT);
   intersect_auto->setFormula(intersect_formula);
 
   DVLOG(VLOG_LEVEL) << intersect_auto->id << " = [" << this->id << "]->intersect(" << other_auto->id << ")";
@@ -400,7 +400,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::union_(BinaryIntAutomaton_ptr other_a
   BinaryIntAutomaton_ptr union_auto = nullptr;
   ArithmeticFormula_ptr union_formula = nullptr;
 
-  if (not formula->isVariableOrderingSame(other_auto->formula)) {
+  if (not formula->IsVariableOrderingSame(other_auto->formula)) {
     LOG(FATAL)<< "You cannot union binary automata with different variable orderings";
   }
 
@@ -411,8 +411,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::union_(BinaryIntAutomaton_ptr other_a
 
   union_auto = new BinaryIntAutomaton(minimized_dfa, num_of_variables, is_natural_number);
   union_formula = this->formula->clone();
-  union_formula->resetCoefficients();
-  union_formula->setType(ArithmeticFormula::Type::UNION);
+  union_formula->reset_coefficients();
+  union_formula->set_type(ArithmeticFormula::Type::UNION);
   union_auto->setFormula(union_formula);
 
   DVLOG(VLOG_LEVEL) << union_auto->id << " = [" << this->id << "]->union(" << other_auto->id << ")";
@@ -440,7 +440,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::getBinaryAutomatonFor(std::string var
   BinaryIntAutomaton_ptr single_var_auto = nullptr;
   ArithmeticFormula_ptr single_var_formula = nullptr;
   DFA_ptr single_var_dfa = dfaCopy(this->dfa), tmp_dfa = nullptr;
-  CHECK_EQ(num_of_variables, formula->getNumberOfVariables())<< "number of variables is not consistent with formula";
+  CHECK_EQ(num_of_variables, formula->get_number_of_variables())<< "number of variables is not consistent with formula";
   int bdd_var_index = getBddVarIndex(var_name);
   for (int i = num_of_variables - 1 ; i >= 0; i--) {
     if (i != bdd_var_index) {
@@ -462,8 +462,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::getBinaryAutomatonFor(std::string var
 
   single_var_auto = new BinaryIntAutomaton(single_var_dfa, 1, is_natural_number);
   single_var_formula = new ArithmeticFormula();
-  single_var_formula->setType(ArithmeticFormula::Type::INTERSECT);
-  single_var_formula->setVariableCoefficient(var_name, 1);
+  single_var_formula->set_type(ArithmeticFormula::Type::INTERSECT);
+  single_var_formula->set_variable_coefficient(var_name, 1);
   single_var_auto->setFormula(single_var_formula);
 
   DVLOG(VLOG_LEVEL) << single_var_auto->id << " = [" << this->id << "]->getBinaryAutomatonOf(" << var_name << ")";
@@ -474,10 +474,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::getPositiveValuesFor(std::string var_
   BinaryIntAutomaton_ptr positives_auto = nullptr, greater_than_or_equalt_to_zero_auto = nullptr;
 
   std::vector<int> indexes;
-  int var_index = formula->getNumberOfVariables() - formula->getVariableIndex(var_name) - 1;
+  int var_index = formula->get_number_of_variables() - formula->get_variable_index(var_name) - 1;
   indexes.push_back(var_index);
 
-  greater_than_or_equalt_to_zero_auto = BinaryIntAutomaton::makeIntGraterThanOrEqualToZero(indexes, formula->getNumberOfVariables());
+  greater_than_or_equalt_to_zero_auto = BinaryIntAutomaton::makeIntGraterThanOrEqualToZero(indexes, formula->get_number_of_variables());
   greater_than_or_equalt_to_zero_auto->setFormula(formula->clone());
 
   positives_auto = this->intersect(greater_than_or_equalt_to_zero_auto);
@@ -579,7 +579,7 @@ SemilinearSet_ptr BinaryIntAutomaton::getSemilinearSet() {
           tmp_1_auto = nullptr, tmp_2_auto = nullptr,
           diff_auto = nullptr;
   std::vector<SemilinearSet_ptr> semilinears;
-  std::string var_name = this->formula->getCoefficientIndexMap().begin()->first;
+  std::string var_name = this->formula->get_coefficient_index_map().begin()->first;
   int current_state = this->dfa->s,
           sink_state = this->getSinkState();
   std::vector<int> constants, bases;
@@ -796,7 +796,7 @@ std::map<std::string, int> BinaryIntAutomaton::getAnAcceptingIntForEachVar() {
 
   int var_index;
   std::string var_name;
-  for (auto& var_entry : formula->getCoefficientIndexMap()) {
+  for (auto& var_entry : formula->get_coefficient_index_map()) {
     var_name = var_entry.first;
     var_index = getBddVarIndex(var_name);
     if (var_name.length() > 10) {
@@ -903,16 +903,16 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeEquality(ArithmeticFormula_ptr fo
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr formula) {
   BinaryIntAutomaton_ptr equality_auto = nullptr;
 
-  if ( not formula->simplify() ) {
+  if ( not formula->Simplify() ) {
     equality_auto = BinaryIntAutomaton::makePhi(formula, false);
     DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeIntEquality(" << *formula << ")";
     return equality_auto;
   }
 
-  const int constant = formula->getConstant();
+  const int constant = formula->get_constant();
   int min = 0, max = 0;
 
-  for (int& c : formula->getCoefficients()) {
+  for (int& c : formula->get_coefficients()) {
     if (c > 0) {
       max += c;
     } else {
@@ -940,7 +940,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
   int next_index = 0;
   int next_label = constant;
 
-  const int num_of_variables = formula->getCoefficients().size();
+  const int num_of_variables = formula->get_coefficients().size();
   int* indices = getIndices(num_of_variables);
   unsigned long transitions = 1 << num_of_variables; //number of transitions from each state
 
@@ -957,7 +957,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
     dfaAllocExceptions(transitions / 2);
     int result, target;
     for (unsigned long j = 0; j < transitions; j++) {
-      result = next_label + formula->countOnes(j);
+      result = next_label + formula->CountOnes(j);
       if ( not (result & 1) ) {
         target = result / 2;
         if (target == next_label) {
@@ -1022,16 +1022,16 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberEquality(ArithmeticFormula_ptr formula) {
   BinaryIntAutomaton_ptr equality_auto = nullptr;
 
-  if ( not formula->simplify() ) {
+  if ( not formula->Simplify() ) {
     equality_auto = BinaryIntAutomaton::makePhi(formula, true);
     DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeNaturalNumberEquality(" << *formula << ")";
     return equality_auto;
   }
 
-  const int constant = formula->getConstant();
+  const int constant = formula->get_constant();
   int min = 0, max = 0;
 
-  for (int& c : formula->getCoefficients()) {
+  for (int& c : formula->get_coefficients()) {
     if (c > 0) {
       max += c;
     } else {
@@ -1058,7 +1058,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberEquality(ArithmeticF
   int next_index = 0,
           next_label = constant;
 
-  const int num_of_variables = formula->getCoefficients().size();
+  const int num_of_variables = formula->get_coefficients().size();
   int* indices = getIndices(num_of_variables);
   unsigned long transitions = 1 << num_of_variables; //number of transitions from each state
 
@@ -1071,7 +1071,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberEquality(ArithmeticF
     dfaAllocExceptions(transitions / 2);
     int result, target;
     for (unsigned long j = 0; j < transitions; ++j) {
-      result = next_label + formula->countOnes(j);
+      result = next_label + formula->CountOnes(j);
       if ( not (result & 1) ) {
         target = result / 2;
         if (carry_map[target].s == 0) {
@@ -1125,7 +1125,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberEquality(ArithmeticF
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNotEquality(ArithmeticFormula_ptr formula, bool is_natural_number) {
   BinaryIntAutomaton_ptr not_equal_auto = nullptr, tmp_auto = nullptr;
 
-  formula->setType(ArithmeticFormula::Type::EQ);
+  formula->set_type(ArithmeticFormula::Type::EQ);
   tmp_auto = BinaryIntAutomaton::makeEquality(formula, is_natural_number);
   not_equal_auto = tmp_auto->complement();
   delete tmp_auto; tmp_auto = nullptr;
@@ -1143,10 +1143,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThan(ArithmeticFormula_ptr fo
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntLessThan(ArithmeticFormula_ptr formula) {
-  formula->simplify();
+  formula->Simplify();
 
   int min = 0, max = 0;
-  for (int& c : formula->getCoefficients()) {
+  for (int& c : formula->get_coefficients()) {
     if (c > 0) {
      max += c;
     } else {
@@ -1154,14 +1154,14 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntLessThan(ArithmeticFormula_ptr
     }
   }
 
-  const int constant = formula->getConstant();
+  const int constant = formula->get_constant();
   if ( max < constant) {
    max = constant;
   } else if (min > constant) {
    min = constant;
   }
 
-  const int num_of_variables = formula->getCoefficients().size();
+  const int num_of_variables = formula->get_coefficients().size();
   int num_of_states = 2 * (max - min + 1);
   unsigned max_states_allowed = 0x80000000;
   unsigned mona_check = 8 * num_of_states;
@@ -1193,7 +1193,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntLessThan(ArithmeticFormula_ptr
    dfaAllocExceptions(transitions);
 
    for (unsigned long j = 0; j < transitions; j++) {
-     int num_of_ones = formula->countOnes(j);
+     int num_of_ones = formula->CountOnes(j);
      result = next_label + num_of_ones;
 
      if (result >= 0) {
@@ -1279,10 +1279,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntLessThan(ArithmeticFormula_ptr
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticFormula_ptr formula) {
-  formula->simplify();
+  formula->Simplify();
 
   int min = 0, max = 0;
-  for (int& c : formula->getCoefficients()) {
+  for (int& c : formula->get_coefficients()) {
     if (c > 0) {
      max += c;
     } else {
@@ -1290,7 +1290,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticF
     }
   }
 
-  const int constant = formula->getConstant();
+  const int constant = formula->get_constant();
   if ( max < constant) {
    max = constant;
   } else if (min > constant) {
@@ -1305,7 +1305,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticF
           next_label = constant;
 
 
-  const int num_of_variables = formula->getCoefficients().size();
+  const int num_of_variables = formula->get_coefficients().size();
   CHECK_LT(num_of_variables, 64);
   int num_of_states = max - min + 1;
   unsigned max_states_allowed = 0x80000000;
@@ -1326,7 +1326,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticF
 
    int result, target;
    for (unsigned long j = 0; j < transitions; ++j) {
-     int num_of_ones = formula->countOnes(j);
+     int num_of_ones = formula->CountOnes(j);
      result = next_label + num_of_ones;
 
      if (result >= 0) {
@@ -1388,8 +1388,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThanOrEqual(ArithmeticFormula
   BinaryIntAutomaton_ptr less_than_or_equal_auto = nullptr;
 
   ArithmeticFormula_ptr less_than_formula = formula->clone();
-  less_than_formula->setConstant(less_than_formula->getConstant() - 1);
-  less_than_formula->setType(ArithmeticFormula::Type::LT);
+  less_than_formula->set_constant(less_than_formula->get_constant() - 1);
+  less_than_formula->set_type(ArithmeticFormula::Type::LT);
 
   less_than_or_equal_auto = BinaryIntAutomaton::makeLessThan(less_than_formula, is_natural_number);
   less_than_or_equal_auto->setFormula(formula);
@@ -1403,8 +1403,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThanOrEqual(ArithmeticFormula
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeGreaterThan(ArithmeticFormula_ptr formula, bool is_natural_number) {
   BinaryIntAutomaton_ptr greater_than_auto = nullptr;
 
-  ArithmeticFormula_ptr less_than_formula = formula->multiply(-1);
-  less_than_formula->setType(ArithmeticFormula::Type::LT);
+  ArithmeticFormula_ptr less_than_formula = formula->Multiply(-1);
+  less_than_formula->set_type(ArithmeticFormula::Type::LT);
 
   greater_than_auto = BinaryIntAutomaton::makeLessThan(less_than_formula, is_natural_number);
   greater_than_auto->setFormula(formula);
@@ -1418,9 +1418,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeGreaterThan(ArithmeticFormula_ptr
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeGreaterThanOrEqual(ArithmeticFormula_ptr formula, bool is_natural_number) {
   BinaryIntAutomaton_ptr greater_than_or_equal_auto = nullptr;
 
-  ArithmeticFormula_ptr less_than_formula = formula->multiply(-1);
-  less_than_formula->setConstant(less_than_formula->getConstant() - 1);
-  less_than_formula->setType(ArithmeticFormula::Type::LT);
+  ArithmeticFormula_ptr less_than_formula = formula->Multiply(-1);
+  less_than_formula->set_constant(less_than_formula->get_constant() - 1);
+  less_than_formula->set_type(ArithmeticFormula::Type::LT);
 
   greater_than_or_equal_auto = BinaryIntAutomaton::makeLessThan(less_than_formula, is_natural_number);
   greater_than_or_equal_auto->setFormula(formula);

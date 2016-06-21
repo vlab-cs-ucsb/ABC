@@ -249,10 +249,10 @@ BinaryIntAutomaton_ptr UnaryAutomaton::toBinaryIntAutomaton(std::string var_name
   if (add_minus_one) {
     BinaryIntAutomaton_ptr minus_one_auto = nullptr, tmp_auto = nullptr;
     ArithmeticFormula_ptr minus_one_formula = formula->clone();
-    minus_one_formula->resetCoefficients();
-    minus_one_formula->setVariableCoefficient(var_name, 1);
-    minus_one_formula->setConstant(1);
-    minus_one_formula->setType(ArithmeticFormula::Type::EQ);
+    minus_one_formula->reset_coefficients();
+    minus_one_formula->set_variable_coefficient(var_name, 1);
+    minus_one_formula->set_constant(1);
+    minus_one_formula->set_type(ArithmeticFormula::Type::EQ);
     minus_one_auto = BinaryIntAutomaton::makeAutomaton(minus_one_formula, false);
     tmp_auto = binary_auto;
     binary_auto = tmp_auto->union_(minus_one_auto);

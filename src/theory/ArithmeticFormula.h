@@ -15,6 +15,7 @@
 #include <cmath>
 
 #include <glog/logging.h>
+#include "utils/Math.h"
 
 namespace Vlab {
 namespace Theory {
@@ -36,53 +37,36 @@ public:
   ArithmeticFormula_ptr clone() const;
 
   std::string str() const;
-  void setType(Type type);
-  ArithmeticFormula::Type getType() const;
-  int getNumberOfVariables() const;
-  std::vector<int>& getCoefficients();
-  std::map<std::string, int>& getCoefficientIndexMap();
-  int getVariableIndex(std::string);
-  int getVariableCoefficient(std::string);
-  void setVariableCoefficient(std::string, int coeff);
-  int getConstant();
-  void setConstant(int constant);
-  bool isConstant();
-  bool isVariableOrderingSame(ArithmeticFormula_ptr other_formula);
-  void mergeCoefficients(ArithmeticFormula_ptr other_formula);
-  void resetCoefficients(int value = 0);
+  void set_type(Type type);
+  ArithmeticFormula::Type get_type() const;
+  int get_number_of_variables() const;
+  std::vector<int>& get_coefficients();
+  std::map<std::string, int>& get_coefficient_index_map();
+  int get_variable_index(std::string);
+  int get_variable_coefficient(std::string);
+  void set_variable_coefficient(std::string, int coeff);
+  int get_constant();
+  void set_constant(int constant);
+  bool is_constant();
+  bool IsVariableOrderingSame(ArithmeticFormula_ptr other_formula);
+  void MergeCoefficients(ArithmeticFormula_ptr other_formula);
+  void reset_coefficients(int value = 0);
 
-  ArithmeticFormula_ptr substract(ArithmeticFormula_ptr);
-  ArithmeticFormula_ptr negateOperation();
-  ArithmeticFormula_ptr multiply(int value);
-  ArithmeticFormula_ptr add(ArithmeticFormula_ptr);
+  ArithmeticFormula_ptr Substract(ArithmeticFormula_ptr);
+  ArithmeticFormula_ptr NegateOperation();
+  ArithmeticFormula_ptr Multiply(int value);
+  ArithmeticFormula_ptr Add(ArithmeticFormula_ptr);
 
-  bool simplify();
-  int countOnes(unsigned long n);
-
-  class Name {
-  public:
-    static const std::string NONE;
-    static const std::string EQ;
-    static const std::string NOTEQ;
-    static const std::string GT;
-    static const std::string GE;
-    static const std::string LT;
-    static const std::string LE;
-    static const std::string INTERSECT;
-    static const std::string UNION;
-    static const std::string VAR;
-  };
+  bool Simplify();
+  int CountOnes(unsigned long n);
 
   friend std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula);
 
 protected:
-  int gcd(int x , int y);
-
-
-  ArithmeticFormula::Type type;
-  int constant;
-  std::map<std::string, int> coeff_index_map;
-  std::vector<int> coefficients;
+  ArithmeticFormula::Type type_;
+  int constant_;
+  std::map<std::string, int> coeff_index_map_;
+  std::vector<int> coefficients_;
 
 private:
   static const int VLOG_LEVEL;

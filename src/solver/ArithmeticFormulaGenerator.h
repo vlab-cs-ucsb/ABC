@@ -29,6 +29,7 @@ public:
   ArithmeticFormulaGenerator(SMT::Script_ptr, SymbolTable_ptr);
   virtual ~ArithmeticFormulaGenerator();
 
+  void start(SMT::Visitable_ptr);
   void start() override;
   void end() override;
 

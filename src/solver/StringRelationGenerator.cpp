@@ -17,20 +17,26 @@ using namespace Theory;
 
 const int StringRelationGenerator::VLOG_LEVEL = 14;
 
-StringRelationGenerator::StringRelationGenerator(Script_ptr script, SymbolTable_ptr st)
-    : root(script),
-      symbol_table(st) {
-  current_term = nullptr;
-  current_trackmap = std::shared_ptr<std::map<std::string,int>>(new std::map<std::string,int>);
+StringRelationGenerator::StringRelationGenerator(Script_ptr script, SymbolTable_ptr symbol_table)
+    : root_(script),
+      symbol_table_(symbol_table) {
+  current_term_ = nullptr;
+  current_trackmap_ = std::shared_ptr<std::map<std::string,int>>(new std::map<std::string,int>);
 }
 
 StringRelationGenerator::~StringRelationGenerator() {
   // delete var track map ptr?
 }
 
+void StringRelationGenerator::start(Visitable_ptr node) {
+  DVLOG(VLOG_LEVEL) << "String relation extraction starts at node: " << node;
+  visit(node);
+  end();
+}
+
 void StringRelationGenerator::start() {
-  DVLOG(VLOG_LEVEL) << "String relation extraction starts";
-  visit(root);
+  DVLOG(VLOG_LEVEL) << "String relation extraction starts at root";
+  visit(root_);
   end();
 }
 
@@ -38,9 +44,9 @@ void StringRelationGenerator::end() {
 }
 
 void StringRelationGenerator::visitScript(Script_ptr script) {
-  symbol_table->push_scope(script);
+  symbol_table_->push_scope(script);
   visit_children_of(script);
-  symbol_table->pop_scope();
+  symbol_table_->pop_scope();
 }
 
 void StringRelationGenerator::visitCommand(Command_ptr command) {
@@ -48,7 +54,7 @@ void StringRelationGenerator::visitCommand(Command_ptr command) {
 }
 
 void StringRelationGenerator::visitAssert(Assert_ptr assert_command) {
-  current_term = assert_command->term;
+  current_term_ = assert_command->term;
   visit_children_of(assert_command);
 }
 
@@ -68,16 +74,17 @@ void StringRelationGenerator::visitLet(Let_ptr let_term) {
 }
 
 void StringRelationGenerator::visitAnd(And_ptr and_term) {
-  current_term = and_term;
+  current_term_ = and_term;
   visit_children_of(and_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
 
+  //
   // clear coefficient maps at the end of possible component
-  current_trackmap = std::shared_ptr<std::map<std::string,int>>(new std::map<std::string,int>);
+  current_trackmap_ = std::shared_ptr<std::map<std::string,int>>(new std::map<std::string,int>);
 }
 
 void StringRelationGenerator::visitOr(Or_ptr or_term) {
-  current_term = or_term;
+  current_term_ = or_term;
   for (auto &term : *(or_term->term_list)) {
     visit(term);
   }
@@ -124,17 +131,17 @@ void StringRelationGenerator::visitEq(Eq_ptr eq_term) {
     relation->set_num_tracks(left_relation->get_num_tracks());
 
     if (left_subrelation.type == StringRelation::Type::VAR) {
-      Variable_ptr var = symbol_table->getVariable(left_subrelation.names[0]);
-      if (current_trackmap->find(var->getName()) == current_trackmap->end()) {
-        int track = current_trackmap->size();
-        (*current_trackmap)[var->getName()] = track;
+      Variable_ptr var = symbol_table_->getVariable(left_subrelation.names[0]);
+      if (current_trackmap_->find(var->getName()) == current_trackmap_->end()) {
+        int track = current_trackmap_->size();
+        (*current_trackmap_)[var->getName()] = track;
       }
     }
     if (right_subrelation.type == StringRelation::Type::VAR) {
-      Variable_ptr var = symbol_table->getVariable(right_subrelation.names[0]);
-      if (current_trackmap->find(var->getName()) == current_trackmap->end()) {
-        int track = current_trackmap->size();
-        (*current_trackmap)[var->getName()] = track;
+      Variable_ptr var = symbol_table_->getVariable(right_subrelation.names[0]);
+      if (current_trackmap_->find(var->getName()) == current_trackmap_->end()) {
+        int track = current_trackmap_->size();
+        (*current_trackmap_)[var->getName()] = track;
       }
     }
 
@@ -166,17 +173,17 @@ void StringRelationGenerator::visitNotEq(NotEq_ptr not_eq_term) {
     relation->set_num_tracks(left_relation->get_num_tracks());
 
     if (left_subrelation.type == StringRelation::Type::VAR) {
-      Variable_ptr var = symbol_table->getVariable(left_subrelation.names[0]);
-      if (current_trackmap->find(var->getName()) == current_trackmap->end()) {
-        int track = current_trackmap->size();
-        (*current_trackmap)[var->getName()] = track;
+      Variable_ptr var = symbol_table_->getVariable(left_subrelation.names[0]);
+      if (current_trackmap_->find(var->getName()) == current_trackmap_->end()) {
+        int track = current_trackmap_->size();
+        (*current_trackmap_)[var->getName()] = track;
       }
     }
     if (right_subrelation.type == StringRelation::Type::VAR) {
-      Variable_ptr var = symbol_table->getVariable(right_subrelation.names[0]);
-      if (current_trackmap->find(var->getName()) == current_trackmap->end()) {
-        int track = current_trackmap->size();
-        (*current_trackmap)[var->getName()] = track;
+      Variable_ptr var = symbol_table_->getVariable(right_subrelation.names[0]);
+      if (current_trackmap_->find(var->getName()) == current_trackmap_->end()) {
+        int track = current_trackmap_->size();
+        (*current_trackmap_)[var->getName()] = track;
       }
     }
 
@@ -316,8 +323,8 @@ void StringRelationGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *qi_term;
 
   StringRelation_ptr str_rel = nullptr;
-  Variable_ptr variable = symbol_table->getVariable(qi_term->getVarName());
-  set_parent_term(variable, current_term);
+  Variable_ptr variable = symbol_table_->getVariable(qi_term->getVarName());
+  set_parent_term(variable, current_term_);
 
   if (Variable::Type::STRING == variable->getType()) {
     StringRelation::Subrelation subrel;
@@ -325,7 +332,7 @@ void StringRelationGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term) {
     subrel.names = std::vector<std::string>(1, variable->getName());
     str_rel = new StringRelation();
     str_rel->set_type(StringRelation::Type::VAR);
-    str_rel->set_variable_track_map(current_trackmap);
+    str_rel->set_variable_track_map(current_trackmap_);
     str_rel->add_subrelation(subrel);
   }
   set_term_relation(qi_term, str_rel);
@@ -378,15 +385,15 @@ void StringRelationGenerator::visitVariable(Variable_ptr var_term) {
 }
 
 StringRelation_ptr StringRelationGenerator::get_term_relation(Term_ptr term) {
-  auto iter = relations.find(term);
-  if (iter == relations.end()) {
+  auto iter = relations_.find(term);
+  if (iter == relations_.end()) {
     return nullptr;
   }
   return iter->second;
 }
 
 bool StringRelationGenerator::set_term_relation(Term_ptr term, Theory::StringRelation_ptr str_rel) {
-  auto result = relations.insert(std::make_pair(term, str_rel));
+  auto result = relations_.insert(std::make_pair(term, str_rel));
   if (result.second == false) {
     LOG(FATAL)<< "relation is already computed for term: " << *term;
   }
@@ -397,25 +404,25 @@ void StringRelationGenerator::delete_term_relation(Term_ptr term) {
   auto relation = get_term_relation(term);
   if (relation not_eq nullptr) {
     delete relation;
-    relations.erase(term);
+    relations_.erase(term);
   }
 }
 
 Term_ptr StringRelationGenerator::get_parent_term(Variable_ptr variable) {
-  auto it = variable_term_map.find(variable);
-  if (it != variable_term_map.end()) {
+  auto it = variable_term_map_.find(variable);
+  if (it != variable_term_map_.end()) {
     return nullptr;
   }
-  return variable_term_map[variable];
+  return variable_term_map_[variable];
 }
 
 bool StringRelationGenerator::set_parent_term(Variable_ptr variable, Term_ptr term) {
-  variable_term_map[variable] = term;
+  variable_term_map_[variable] = term;
   return true;
 }
 
 void StringRelationGenerator::reset_variable_trackmap() {
-  current_trackmap->clear();
+  current_trackmap_->clear();
 }
 
 } /* namespace Solver */

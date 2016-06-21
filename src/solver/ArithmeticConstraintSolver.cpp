@@ -42,16 +42,16 @@ ArithmeticConstraintSolver::~ArithmeticConstraintSolver() {
  * Used to solve local arithmetic constraints
  */
 void ArithmeticConstraintSolver::start(Visitable_ptr node) {
-  DVLOG(VLOG_LEVEL) << "start";
-  arithmetic_formula_generator_.visit(node);
+  DVLOG(VLOG_LEVEL) << "Arithmetic constraint solving starts at node: " << node;
+  arithmetic_formula_generator_.start(node);
   string_terms_map_ = arithmetic_formula_generator_.get_string_terms_map();
   this->Visitor::visit(node);
   end();
 }
 
 void ArithmeticConstraintSolver::start() {
-  DVLOG(VLOG_LEVEL) << "start";
-  arithmetic_formula_generator_.visit(root);
+  DVLOG(VLOG_LEVEL) << "Arithmetic constraint solving starts at root";
+  arithmetic_formula_generator_.start();
   string_terms_map_ = arithmetic_formula_generator_.get_string_terms_map();
   visitScript(root);
   end();

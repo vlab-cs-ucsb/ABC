@@ -19,7 +19,7 @@ using namespace Theory;
 const int ArithmeticFormulaGenerator::VLOG_LEVEL = 12;
 
 /**
- * Generates one big coefficient vector for all int and length variables used
+ * Generates a coefficient vector for all int and str->int terms that are in same component
  *
  */
 ArithmeticFormulaGenerator::ArithmeticFormulaGenerator( Script_ptr script, SymbolTable_ptr symbol_table) :
@@ -34,8 +34,14 @@ ArithmeticFormulaGenerator::~ArithmeticFormulaGenerator() {
   }
 }
 
+void ArithmeticFormulaGenerator::start(Visitable_ptr node) {
+  DVLOG(VLOG_LEVEL) << "Arithmetic constraint extraction starts at node: " << node;
+  visit(node);
+  end();
+}
+
 void ArithmeticFormulaGenerator::start() {
-  DVLOG(VLOG_LEVEL) << "Arithmetic constraint extraction starts";
+  DVLOG(VLOG_LEVEL) << "Arithmetic constraint extraction starts at root";
   visit(root_);
   end();
 }
@@ -87,14 +93,14 @@ void ArithmeticFormulaGenerator::visitAnd(And_ptr and_term) {
     if (param_formula not_eq nullptr) {
       if (and_formula == nullptr) {
         and_formula = param_formula->clone();
-      } else if (not param_formula->isVariableOrderingSame(and_formula)) {
-        param_formula->mergeCoefficients(and_formula);
+      } else if (not param_formula->IsVariableOrderingSame(and_formula)) {
+        param_formula->MergeCoefficients(and_formula);
       }
     }
   }
 
   if (and_formula not_eq nullptr) {
-    and_formula->setType(ArithmeticFormula::Type::INTERSECT);
+    and_formula->set_type(ArithmeticFormula::Type::INTERSECT);
     set_term_formula(and_term, and_formula);
   }
 
@@ -117,15 +123,15 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
     if (param_formula not_eq nullptr) {
       if (or_formula == nullptr) {
         or_formula = param_formula->clone();
-      } else if (not param_formula->isVariableOrderingSame(or_formula)) {
-        param_formula->mergeCoefficients(or_formula);
+      } else if (not param_formula->IsVariableOrderingSame(or_formula)) {
+        param_formula->MergeCoefficients(or_formula);
         if (Term::Type::AND == (*it)->type()) {
           And_ptr and_term = dynamic_cast<And_ptr>(*it);
           ArithmeticFormula_ptr child_formula = nullptr;
           for (auto& child_term : *(and_term->term_list)) {
             child_formula = get_term_formula(child_term);
             if (child_formula not_eq nullptr) {
-              child_formula->mergeCoefficients(param_formula);
+              child_formula->MergeCoefficients(param_formula);
             }
           }
         }
@@ -134,7 +140,7 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
   }
 
   if (or_formula not_eq nullptr) {
-    or_formula->setType(ArithmeticFormula::Type::UNION);
+    or_formula->set_type(ArithmeticFormula::Type::UNION);
     set_term_formula(or_term, or_formula);
   }
 }
@@ -147,7 +153,7 @@ void ArithmeticFormulaGenerator::visitNot(Not_ptr not_term) {
   child_formula = get_term_formula(not_term->term);
 
   if (child_formula not_eq nullptr) {
-    formula = child_formula->negateOperation();
+    formula = child_formula->NegateOperation();
     delete_term_formula(not_term->term);
     set_term_formula(not_term, formula);
   }
@@ -172,7 +178,7 @@ void ArithmeticFormulaGenerator::visitUMinus(UMinus_ptr u_minus_term) {
   child_formula = get_term_formula(u_minus_term->term);
 
   if (child_formula not_eq nullptr) {
-    formula = child_formula->multiply(-1);
+    formula = child_formula->Multiply(-1);
     delete_term_formula(u_minus_term->term);
     set_term_formula(u_minus_term, formula);
   }
@@ -187,8 +193,8 @@ void ArithmeticFormulaGenerator::visitMinus(Minus_ptr minus_term) {
   right_formula = get_term_formula(minus_term->right_term);
 
   if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
-    formula = left_formula->substract(right_formula);
-    formula->setType(ArithmeticFormula::Type::EQ);
+    formula = left_formula->Substract(right_formula);
+    formula->set_type(ArithmeticFormula::Type::EQ);
     delete_term_formula(minus_term->left_term);
     delete_term_formula(minus_term->right_term);
     set_term_formula(minus_term, formula);
@@ -204,7 +210,7 @@ void ArithmeticFormulaGenerator::visitPlus(Plus_ptr plus_term) {
     if (formula == nullptr) {
       formula = param_formula->clone();
     } else {
-      plus_formula = formula->add(param_formula);
+      plus_formula = formula->Add(param_formula);
       delete formula;
       formula = plus_formula;
     }
@@ -224,8 +230,8 @@ void ArithmeticFormulaGenerator::visitTimes(Times_ptr times_term) {
   for (auto& term_ptr : *(times_term->term_list)) {
     visit(term_ptr);
     param_formula = get_term_formula(term_ptr);
-    if (param_formula->isConstant()) {
-      multiplicant = multiplicant * param_formula->getConstant();
+    if (param_formula->is_constant()) {
+      multiplicant = multiplicant * param_formula->get_constant();
     } else if (times_formula == nullptr) {
       times_formula = param_formula->clone();
     } else {
@@ -234,7 +240,7 @@ void ArithmeticFormulaGenerator::visitTimes(Times_ptr times_term) {
     delete_term_formula(term_ptr);
   }
 
-  formula = times_formula->multiply(multiplicant);
+  formula = times_formula->Multiply(multiplicant);
   delete times_formula; times_formula = nullptr;
   set_term_formula(times_term, formula);
 }
@@ -248,8 +254,8 @@ void ArithmeticFormulaGenerator::visitEq(Eq_ptr eq_term) {
   right_formula = get_term_formula(eq_term->right_term);
 
   if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
-    formula = left_formula->substract(right_formula);
-    formula->setType(ArithmeticFormula::Type::EQ);
+    formula = left_formula->Substract(right_formula);
+    formula->set_type(ArithmeticFormula::Type::EQ);
     delete_term_formula(eq_term->left_term);
     delete_term_formula(eq_term->right_term);
     set_term_formula(eq_term, formula);
@@ -270,8 +276,8 @@ void ArithmeticFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
   right_formula = get_term_formula(not_eq_term->right_term);
 
   if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
-    formula = left_formula->substract(right_formula);
-    formula->setType(ArithmeticFormula::Type::NOTEQ);
+    formula = left_formula->Substract(right_formula);
+    formula->set_type(ArithmeticFormula::Type::NOTEQ);
     delete_term_formula(not_eq_term->left_term);
     delete_term_formula(not_eq_term->right_term);
     set_term_formula(not_eq_term, formula);
@@ -290,8 +296,8 @@ void ArithmeticFormulaGenerator::visitGt(Gt_ptr gt_term) {
   left_formula = get_term_formula(gt_term->left_term);
   right_formula = get_term_formula(gt_term->right_term);
 
-  formula = left_formula->substract(right_formula);
-  formula->setType(ArithmeticFormula::Type::GT);
+  formula = left_formula->Substract(right_formula);
+  formula->set_type(ArithmeticFormula::Type::GT);
   delete_term_formula(gt_term->left_term);
   delete_term_formula(gt_term->right_term);
 
@@ -311,8 +317,8 @@ void ArithmeticFormulaGenerator::visitGe(Ge_ptr ge_term) {
   left_formula = get_term_formula(ge_term->left_term);
   right_formula = get_term_formula(ge_term->right_term);
 
-  formula = left_formula->substract(right_formula);
-  formula->setType(ArithmeticFormula::Type::GE);
+  formula = left_formula->Substract(right_formula);
+  formula->set_type(ArithmeticFormula::Type::GE);
   delete_term_formula(ge_term->left_term);
   delete_term_formula(ge_term->right_term);
 
@@ -332,8 +338,8 @@ void ArithmeticFormulaGenerator::visitLt(Lt_ptr lt_term) {
   left_formula = get_term_formula(lt_term->left_term);
   right_formula = get_term_formula(lt_term->right_term);
 
-  formula = left_formula->substract(right_formula);
-  formula->setType(ArithmeticFormula::Type::LT);
+  formula = left_formula->Substract(right_formula);
+  formula->set_type(ArithmeticFormula::Type::LT);
   delete_term_formula(lt_term->left_term);
   delete_term_formula(lt_term->right_term);
 
@@ -353,8 +359,8 @@ void ArithmeticFormulaGenerator::visitLe(Le_ptr le_term) {
   left_formula = get_term_formula(le_term->left_term);
   right_formula = get_term_formula(le_term->right_term);
 
-  formula = left_formula->substract(right_formula);
-  formula->setType(ArithmeticFormula::Type::LE);
+  formula = left_formula->Substract(right_formula);
+  formula->set_type(ArithmeticFormula::Type::LE);
   delete_term_formula(le_term->left_term);
   delete_term_formula(le_term->right_term);
 
@@ -388,7 +394,7 @@ void ArithmeticFormulaGenerator::visitLen(Len_ptr len_term) {
 
   add_int_variable(name);
   formula = new ArithmeticFormula(coeff_index_map_, coefficients_);
-  formula->setVariableCoefficient(name, 1);
+  formula->set_variable_coefficient(name, 1);
 
   set_term_formula(len_term, formula);
 
@@ -422,7 +428,7 @@ void ArithmeticFormulaGenerator::visitIndexOf(IndexOf_ptr index_of_term) {
 
   add_int_variable(name);
   formula = new ArithmeticFormula(coeff_index_map_, coefficients_);
-  formula->setVariableCoefficient(name, 1);
+  formula->set_variable_coefficient(name, 1);
 
   set_term_formula(index_of_term, formula);
 
@@ -438,7 +444,7 @@ void ArithmeticFormulaGenerator::visitLastIndexOf(LastIndexOf_ptr last_index_of_
 
   add_int_variable(name);
   formula = new ArithmeticFormula(coeff_index_map_, coefficients_);
-  formula->setVariableCoefficient(name, 1);
+  formula->set_variable_coefficient(name, 1);
 
   set_term_formula(last_index_of_term, formula);
 
@@ -512,9 +518,9 @@ void ArithmeticFormulaGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term)
   if (Variable::Type::INT == variable->getType()) {
     add_int_variable(variable->getName());
     formula = new ArithmeticFormula(coeff_index_map_, coefficients_);
-    formula->setVariableCoefficient(variable->getName(), 1);
-    if (formula->getNumberOfVariables() == 1) {
-      formula->setType(ArithmeticFormula::Type::VAR);
+    formula->set_variable_coefficient(variable->getName(), 1);
+    if (formula->get_number_of_variables() == 1) {
+      formula->set_type(ArithmeticFormula::Type::VAR);
     }
   }
 
@@ -530,7 +536,7 @@ void ArithmeticFormulaGenerator::visitTermConstant(TermConstant_ptr term_constan
     case Primitive::Type::NUMERAL: {
       int constant = std::stoi(term_constant->getValue());
       formula = new ArithmeticFormula(coeff_index_map_, coefficients_);
-      formula->setConstant(constant);
+      formula->set_constant(constant);
       break;
     }
     default:
