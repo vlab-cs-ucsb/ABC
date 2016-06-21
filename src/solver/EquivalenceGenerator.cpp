@@ -162,12 +162,16 @@ bool EquivalenceGenerator::make_substitution_rules() {
         }
       }
     }
-    if (rep_constant != nullptr && rep_variable != nullptr) {
-      //Uncomment the below line in order to allow the variable representative to be replaced by the constant representative.
-      //add_variable_substitution_rule(symbol_table_->getVariable(rep_variable), rep_constant);
+    //Add the substitution rules for constants
+    if (rep_constant != nullptr) {
+      for (auto& e : s) {
+        if (variables_.find(e) != variables_.end()) {
+          add_variable_substitution_rule(symbol_table_->getVariable(e), rep_constant);
+        }
+      }
     }
     //Add the substituion rules for variables
-    if (rep_variable != nullptr) {
+    else if (rep_variable != nullptr) {
       for (auto& e : s) {
         if (variables_.find(e) != variables_.end() && symbol_table_->getVariable(e) != symbol_table_->getVariable(rep_variable)) {
           add_variable_substitution_rule(symbol_table_->getVariable(e), rep_variable);

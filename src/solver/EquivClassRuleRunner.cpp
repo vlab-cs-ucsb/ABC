@@ -1,4 +1,6 @@
 #include "EquivClassRuleRunner.h"
+#include "solver/Value.h"
+
 
 namespace Vlab {
 namespace Solver {
@@ -357,8 +359,6 @@ void EquivClassRuleRunner::visitSortedVar(SortedVar_ptr sorted_var) {
 void EquivClassRuleRunner::visitVarBinding(VarBinding_ptr var_binding) {
 }
 
-
-//Currently working only on variables.
 bool EquivClassRuleRunner::check_and_substitute_var(Term_ptr& term) {
   if (Term::Type::QUALIDENTIFIER == term->type()) {
     Variable_ptr variable = symbol_table_->getVariable(term);
@@ -369,14 +369,49 @@ bool EquivClassRuleRunner::check_and_substitute_var(Term_ptr& term) {
       Term_ptr tmp_term = term;
       term = subs_term->clone();
       delete tmp_term;
-      //add the rule we just followed to the symbol table if both are variables!
 
+      //Add the rule to the symbol table if both are variables.
       auto subs_variable = symbol_table_->getVariable(subs_term);
       if (subs_variable) {
         symbol_table_->add_variable_substitution_rule(variable, subs_variable);
       }
-      //If the substituted term is not a variable, then it is a constant!
-      //TODO add solved value to the symbol table...
+      //If the substituted term is not a variable, then it is a constant.
+      //Construct the appropriate automaton and store it in the symbol table as the solution for the variable.
+      else if  (Term::Type::TERMCONSTANT == subs_term->type())  {
+        Value_ptr result = nullptr;
+        switch (dynamic_cast<TermConstant_ptr>(subs_term)->getValueType()) {
+        case Primitive::Type::BOOL: {
+          bool b;
+          std::istringstream(dynamic_cast<TermConstant_ptr>(subs_term)->getValue()) >> std::boolalpha >> b;
+          result = new Value(b);          
+          break;
+        }
+        case Primitive::Type::BINARY:
+          LOG(FATAL) << "implement me";
+          break;
+        case Primitive::Type::HEXADECIMAL:
+          LOG(FATAL) << "implement me";
+          break;
+        case Primitive::Type::DECIMAL:
+          LOG(FATAL) << "implement me";
+          break;
+        case Primitive::Type::NUMERAL:
+          result = new Value(std::stoi(dynamic_cast<TermConstant_ptr>(subs_term)->getValue()));
+          symbol_table_->setValue(variable, result);
+          break;
+        case Primitive::Type::STRING:
+          result = new Value(Theory::StringAutomaton::makeString(dynamic_cast<TermConstant_ptr>(subs_term)->getValue()));
+          symbol_table_->setValue(variable, result);
+          break;
+        case Primitive::Type::REGEX:
+          result = new Value(Theory::StringAutomaton::makeRegexAuto(dynamic_cast<TermConstant_ptr>(subs_term)->getValue()));
+          symbol_table_->setValue(variable, result);
+          break;
+        default:
+          LOG(FATAL) << "unhandled term constant: " << *subs_term;
+          break;
+        }
+      }
     }
   }
   return false;

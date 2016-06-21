@@ -25,7 +25,7 @@ unsigned SyntacticOptimizer::name_counter = 0;
 const int SyntacticOptimizer::VLOG_LEVEL = 18;
 
 SyntacticOptimizer::SyntacticOptimizer(Script_ptr script, SymbolTable_ptr symbol_table)
-        : root(script), symbol_table(symbol_table), current_assert(nullptr) {
+  : root(script), symbol_table(symbol_table), current_assert(nullptr) {
 }
 
 SyntacticOptimizer::~SyntacticOptimizer() {
@@ -123,7 +123,7 @@ void SyntacticOptimizer::visitOr(Or_ptr or_term) {
   if (or_term->term_list->empty()) {
     add_callback_to_replace_with_bool(or_term, "false");
   } else if (or_term->term_list->size() == 1) {
-    callback = [or_term](Term_ptr& term) mutable {
+    callback = [or_term](Term_ptr & term) mutable {
       Term_ptr child_term = or_term->term_list->front();
       or_term->term_list->clear();
       delete or_term;
@@ -154,7 +154,7 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
   switch (not_term->term->type()) {
   case Term::Type::NOT: {
     DVLOG(VLOG_LEVEL) << "Transforming operation: (not (not a) to a";
-    callback = [not_term](Term_ptr& term) mutable {
+    callback = [not_term](Term_ptr & term) mutable {
       Not_ptr child_not = dynamic_cast<Not_ptr>(not_term->term);
       term = child_not->term;
       child_not->term = nullptr;
@@ -164,7 +164,7 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
   }
   case Term::Type::EQ: {
     DVLOG(VLOG_LEVEL) << "Transforming operation: (not (= ...)) to (!= ...)";
-    callback = [not_term](Term_ptr& term) mutable {
+    callback = [not_term](Term_ptr & term) mutable {
       Eq_ptr eq_term = dynamic_cast<Eq_ptr>(not_term->term);
       NotEq_ptr not_eq_term = new NotEq(eq_term->left_term, eq_term->right_term);
       eq_term->left_term = nullptr; eq_term->right_term = nullptr;
@@ -175,17 +175,17 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
   }
   case Term::Type::NOTEQ: {
     DVLOG(VLOG_LEVEL) << "Transforming operation: (not (!= ...)) to (= ...)";
-    callback = [not_term](Term_ptr& term) mutable {
-    NotEq_ptr not_eq_term = dynamic_cast<NotEq_ptr>(not_term->term);
-    Eq_ptr eq_term = new Eq(not_eq_term->left_term, not_eq_term->right_term);
-    not_eq_term->left_term = nullptr; not_eq_term->right_term = nullptr;
-    term = eq_term;
-    delete not_term;
+    callback = [not_term](Term_ptr & term) mutable {
+      NotEq_ptr not_eq_term = dynamic_cast<NotEq_ptr>(not_term->term);
+      Eq_ptr eq_term = new Eq(not_eq_term->left_term, not_eq_term->right_term);
+      not_eq_term->left_term = nullptr; not_eq_term->right_term = nullptr;
+      term = eq_term;
+      delete not_term;
     };
     break;
   }
   case Term::Type::GT: {
-    callback = [not_term](Term_ptr& term) mutable {
+    callback = [not_term](Term_ptr & term) mutable {
       Gt_ptr gt_term = dynamic_cast<Gt_ptr>(not_term->term);
       Le_ptr le_term = new Le(gt_term->left_term, gt_term->right_term);
       gt_term->left_term = nullptr; gt_term->right_term = nullptr;
@@ -195,7 +195,7 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
     break;
   }
   case Term::Type::GE: {
-    callback = [not_term](Term_ptr& term) mutable {
+    callback = [not_term](Term_ptr & term) mutable {
       Ge_ptr ge_term = dynamic_cast<Ge_ptr>(not_term->term);
       Lt_ptr lt_term = new Lt(ge_term->left_term, ge_term->right_term);
       ge_term->left_term = nullptr; ge_term->right_term = nullptr;
@@ -205,7 +205,7 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
     break;
   }
   case Term::Type::LT: {
-    callback = [not_term](Term_ptr& term) mutable {
+    callback = [not_term](Term_ptr & term) mutable {
       Lt_ptr lt_term = dynamic_cast<Lt_ptr>(not_term->term);
       Ge_ptr ge_term = new Ge(lt_term->left_term, lt_term->right_term);
       lt_term->left_term = nullptr; lt_term->right_term = nullptr;
@@ -215,7 +215,7 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
     break;
   }
   case Term::Type::LE: {
-    callback = [not_term](Term_ptr& term) mutable {
+    callback = [not_term](Term_ptr & term) mutable {
       Le_ptr le_term = dynamic_cast<Le_ptr>(not_term->term);
       Gt_ptr gt_term = new Gt(le_term->left_term, le_term->right_term);
       le_term->left_term = nullptr; le_term->right_term = nullptr;
@@ -225,7 +225,7 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
     break;
   }
   case Term::Type::IN: {
-    callback = [not_term](Term_ptr& term) mutable {
+    callback = [not_term](Term_ptr & term) mutable {
       In_ptr in_term = dynamic_cast<In_ptr>(not_term->term);
       NotIn_ptr not_in_term = new NotIn(in_term->left_term, in_term->right_term);
       in_term->left_term = nullptr; in_term->right_term = nullptr;
@@ -235,7 +235,7 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
     break;
   }
   case Term::Type::NOTIN: {
-    callback = [not_term](Term_ptr& term) mutable {
+    callback = [not_term](Term_ptr & term) mutable {
       NotIn_ptr not_in_term = dynamic_cast<NotIn_ptr>(not_term->term);
       In_ptr in_term = new In(not_in_term->left_term, not_in_term->right_term);
       not_in_term->left_term = nullptr; not_in_term->right_term = nullptr;
@@ -245,7 +245,7 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
     break;
   }
   case Term::Type::CONTAINS: {
-    callback = [not_term](Term_ptr& term) mutable {
+    callback = [not_term](Term_ptr & term) mutable {
       Contains_ptr contains_term = dynamic_cast<Contains_ptr>(not_term->term);
       NotContains_ptr not_contains_term = new NotContains(contains_term->subject_term, contains_term->search_term);
       contains_term->subject_term = nullptr; contains_term->search_term = nullptr;
@@ -255,7 +255,7 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
     break;
   }
   case Term::Type::NOTCONTAINS: {
-    callback = [not_term](Term_ptr& term) mutable {
+    callback = [not_term](Term_ptr & term) mutable {
       NotContains_ptr not_contains_term = dynamic_cast<NotContains_ptr>(not_term->term);
       Contains_ptr contains_term = new Contains(not_contains_term->subject_term, not_contains_term->search_term);
       not_contains_term->subject_term = nullptr; not_contains_term->search_term = nullptr;
@@ -265,7 +265,7 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
     break;
   }
   case Term::Type::BEGINS: {
-    callback = [not_term](Term_ptr& term) mutable {
+    callback = [not_term](Term_ptr & term) mutable {
       Begins_ptr begins_term = dynamic_cast<Begins_ptr>(not_term->term);
       NotBegins_ptr not_begins_term = new NotBegins(begins_term->subject_term, begins_term->search_term);
       begins_term->subject_term = nullptr; begins_term->search_term = nullptr;
@@ -275,7 +275,7 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
     break;
   }
   case Term::Type::NOTBEGINS: {
-    callback = [not_term](Term_ptr& term) mutable {
+    callback = [not_term](Term_ptr & term) mutable {
       NotBegins_ptr not_begins_term = dynamic_cast<NotBegins_ptr>(not_term->term);
       Begins_ptr begins_term = new Begins(not_begins_term->subject_term, not_begins_term->search_term);
       not_begins_term->subject_term = nullptr; not_begins_term->search_term = nullptr;
@@ -285,7 +285,7 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
     break;
   }
   case Term::Type::ENDS: {
-    callback = [not_term](Term_ptr& term) mutable {
+    callback = [not_term](Term_ptr & term) mutable {
       Ends_ptr ends_term = dynamic_cast<Ends_ptr>(not_term->term);
       NotEnds_ptr not_ends_term = new NotEnds(ends_term->subject_term, ends_term->search_term);
       ends_term->subject_term = nullptr; ends_term->search_term = nullptr;
@@ -295,7 +295,7 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
     break;
   }
   case Term::Type::NOTENDS: {
-    callback = [not_term](Term_ptr& term) mutable {
+    callback = [not_term](Term_ptr & term) mutable {
       NotEnds_ptr not_ends_term = dynamic_cast<NotEnds_ptr>(not_term->term);
       Ends_ptr ends_term = new Ends(not_ends_term->subject_term, not_ends_term->search_term);
       not_ends_term->subject_term = nullptr; not_ends_term->search_term = nullptr;
@@ -314,7 +314,7 @@ void SyntacticOptimizer::visitUMinus(UMinus_ptr u_minus_term) {
 
   if (Term::Type::UMINUS == u_minus_term->term->type()) {
     DVLOG(VLOG_LEVEL) << "Transforming operation: (- (- a) to a";
-    callback = [u_minus_term](Term_ptr& term) mutable {
+    callback = [u_minus_term](Term_ptr & term) mutable {
       UMinus_ptr child_u_minus = dynamic_cast<UMinus_ptr>(u_minus_term->term);
       term = child_u_minus->term;
       child_u_minus->term = nullptr;
@@ -328,9 +328,9 @@ void SyntacticOptimizer::visitMinus(Minus_ptr minus_term) {
   visit_and_callback(minus_term->right_term);
 
   if (Term::Type::TERMCONSTANT == minus_term->left_term->type()
-          and Term::Type::TERMCONSTANT == minus_term->right_term->type()) {
+      and Term::Type::TERMCONSTANT == minus_term->right_term->type()) {
     DVLOG(VLOG_LEVEL) << "Transforming operation: (- lc rc) to lc-rc";
-    callback = [this, minus_term](Term_ptr& term) mutable {
+    callback = [this, minus_term](Term_ptr & term) mutable {
       TermConstant_ptr left_constant = dynamic_cast<TermConstant_ptr>(minus_term->left_term);
       TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(minus_term->right_term);
 
@@ -339,9 +339,9 @@ void SyntacticOptimizer::visitMinus(Minus_ptr minus_term) {
 
       int result = left_value - right_value;
       if (result >= 0) {
-        term = this->generate_term_constant(std::to_string(result),Primitive::Type::NUMERAL);
+        term = this->generate_term_constant(std::to_string(result), Primitive::Type::NUMERAL);
       } else {
-        term = new UMinus(this->generate_term_constant(std::to_string(-result),Primitive::Type::NUMERAL));
+        term = new UMinus(this->generate_term_constant(std::to_string(-result), Primitive::Type::NUMERAL));
       }
       delete minus_term;
     };
@@ -349,7 +349,7 @@ void SyntacticOptimizer::visitMinus(Minus_ptr minus_term) {
     DVLOG(VLOG_LEVEL) << "Transforming operation: (- l 0) to l";
     TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(minus_term->right_term);
     if (term_constant->getValue() == "0") {
-      callback = [minus_term](Term_ptr& term) mutable {
+      callback = [minus_term](Term_ptr & term) mutable {
         term = minus_term->left_term;
         minus_term->left_term = nullptr;
         delete minus_term;
@@ -357,7 +357,7 @@ void SyntacticOptimizer::visitMinus(Minus_ptr minus_term) {
     }
   } else if (Term::Type::UMINUS == minus_term->right_term->type()) {
     DVLOG(VLOG_LEVEL) << "Transforming operation: (- l (- r) to (+ l r)";
-    callback = [minus_term](Term_ptr& term) mutable {
+    callback = [minus_term](Term_ptr & term) mutable {
       UMinus_ptr child_u_minus = dynamic_cast<UMinus_ptr>(minus_term->right_term);
       TermList_ptr term_list = new TermList();
       term_list->push_back(minus_term->left_term);
@@ -371,7 +371,7 @@ void SyntacticOptimizer::visitMinus(Minus_ptr minus_term) {
 }
 
 void SyntacticOptimizer::visitPlus(Plus_ptr plus_term) {
-  for (auto& term_ptr : *(plus_term->term_list)) {
+  for (auto& term_ptr : * (plus_term->term_list)) {
     visit_and_callback(term_ptr);
   }
 
@@ -389,7 +389,7 @@ void SyntacticOptimizer::visitPlus(Plus_ptr plus_term) {
       delete sub_plus_term;
       iter = plus_term->term_list->begin() + pos; // insertion invalidates iter, reset it
       continue;
-    } else if(Term::Type::TERMCONSTANT == (*iter)->type()) {
+    } else if (Term::Type::TERMCONSTANT == (*iter)->type()) {
       TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter);
       std::string value = term_constant->getValue();
       constant_value += std::stoi(value);
@@ -422,7 +422,7 @@ void SyntacticOptimizer::visitPlus(Plus_ptr plus_term) {
   } // else constant value is zero, do not need to add it
 
   if (plus_term->term_list->size() == 1) {
-    callback = [plus_term] (Term_ptr& term) mutable {
+    callback = [plus_term] (Term_ptr & term) mutable {
       term = plus_term->term_list->front();
       plus_term->term_list->clear();
       delete plus_term;
@@ -431,7 +431,7 @@ void SyntacticOptimizer::visitPlus(Plus_ptr plus_term) {
 }
 
 void SyntacticOptimizer::visitTimes(Times_ptr times_term) {
-  for (auto& term_ptr : *(times_term->term_list)) {
+  for (auto& term_ptr : * (times_term->term_list)) {
     visit_and_callback(term_ptr);
   }
 
@@ -448,7 +448,7 @@ void SyntacticOptimizer::visitTimes(Times_ptr times_term) {
       delete sub_plus_term;
       iter = times_term->term_list->begin() + pos; // insertion invalidates iter, reset it
       continue;
-    } else if(Term::Type::TERMCONSTANT == (*iter)->type()) {
+    } else if (Term::Type::TERMCONSTANT == (*iter)->type()) {
       TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter);
       std::string value = term_constant->getValue();
       constant_value *= std::stoi(value);
@@ -488,7 +488,7 @@ void SyntacticOptimizer::visitTimes(Times_ptr times_term) {
   } // else constant value is 1, do not need to add it
 
   if (times_term->term_list->size() == 1) {
-    callback = [times_term] (Term_ptr& term) mutable {
+    callback = [times_term] (Term_ptr & term) mutable {
       term = times_term->term_list->front();
       times_term->term_list->clear();
       delete times_term;
@@ -499,7 +499,6 @@ void SyntacticOptimizer::visitTimes(Times_ptr times_term) {
 void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
   visit_and_callback(eq_term->left_term);
   visit_and_callback(eq_term->right_term);
-  DVLOG(VLOG_LEVEL) << "Calling is equiv!";
 
 
   if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
@@ -510,7 +509,7 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
       add_callback_to_replace_with_bool(eq_term, "true");
     } else {
       DVLOG(VLOG_LEVEL) << "Applying notIn transformation for length: '" << *eq_term << "'";
-      callback = [eq_term](Term_ptr& term) mutable {
+      callback = [eq_term](Term_ptr & term) mutable {
         term = new In(eq_term->left_term, eq_term->right_term);
         eq_term->left_term = nullptr;
         eq_term->right_term = nullptr;
@@ -518,9 +517,9 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
       };
     }
   } else if (check_and_process_for_contains_transformation(eq_term->left_term, eq_term->right_term, -1) or
-          check_and_process_for_contains_transformation(eq_term->right_term, eq_term->left_term, -1)) {
+             check_and_process_for_contains_transformation(eq_term->right_term, eq_term->left_term, -1)) {
     DVLOG(VLOG_LEVEL) << "Applying notContains transformation: '" << *eq_term << "'";
-    callback = [eq_term](Term_ptr& term) mutable {
+    callback = [eq_term](Term_ptr & term) mutable {
       term = new NotContains(eq_term->left_term, eq_term->right_term);
       eq_term->left_term = nullptr;
       eq_term->right_term = nullptr;
@@ -541,7 +540,7 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
       add_callback_to_replace_with_bool(not_eq_term, "false");
     } else {
       DVLOG(VLOG_LEVEL) << "Applying notIn transformation for length: '" << *not_eq_term << "'";
-      callback = [not_eq_term](Term_ptr& term) mutable {
+      callback = [not_eq_term](Term_ptr & term) mutable {
         term = new NotIn(not_eq_term->left_term, not_eq_term->right_term);
         not_eq_term->left_term = nullptr;
         not_eq_term->right_term = nullptr;
@@ -549,9 +548,9 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
       };
     }
   } else if (check_and_process_for_contains_transformation(not_eq_term->left_term, not_eq_term->right_term, -1) or
-          check_and_process_for_contains_transformation(not_eq_term->right_term, not_eq_term->left_term, -1)) {
+             check_and_process_for_contains_transformation(not_eq_term->right_term, not_eq_term->left_term, -1)) {
     DVLOG(VLOG_LEVEL) << "Applying Contains transformation: '" << *not_eq_term << "'";
-    callback = [not_eq_term](Term_ptr& term) mutable {
+    callback = [not_eq_term](Term_ptr & term) mutable {
       term = new Contains(not_eq_term->left_term, not_eq_term->right_term);
       not_eq_term->left_term = nullptr;
       not_eq_term->right_term = nullptr;
@@ -571,7 +570,7 @@ void SyntacticOptimizer::visitGt(Gt_ptr gt_term) {
     if (Ast2Dot::isEquivalent(gt_term->left_term, gt_term->right_term)) {
       add_callback_to_replace_with_bool(gt_term, "false");
     } else {
-      callback = [gt_term](Term_ptr& term) mutable {
+      callback = [gt_term](Term_ptr & term) mutable {
         term = new Eq(gt_term->left_term, gt_term->right_term);
         gt_term->left_term = nullptr;
         gt_term->right_term = nullptr;
@@ -592,7 +591,7 @@ void SyntacticOptimizer::visitGe(Ge_ptr ge_term) {
     if (Ast2Dot::isEquivalent(ge_term->left_term, ge_term->right_term)) {
       add_callback_to_replace_with_bool(ge_term, "true");
     } else {
-      callback = [ge_term](Term_ptr& term) mutable {
+      callback = [ge_term](Term_ptr & term) mutable {
         term = new Eq(ge_term->left_term, ge_term->right_term);
         ge_term->left_term = nullptr;
         ge_term->right_term = nullptr;
@@ -613,7 +612,7 @@ void SyntacticOptimizer::visitLt(Lt_ptr lt_term) {
     if (Ast2Dot::isEquivalent(lt_term->left_term, lt_term->right_term)) {
       add_callback_to_replace_with_bool(lt_term, "false");
     } else {
-      callback = [lt_term](Term_ptr& term) mutable {
+      callback = [lt_term](Term_ptr & term) mutable {
         term = new Eq(lt_term->left_term, lt_term->right_term);
         lt_term->left_term = nullptr;
         lt_term->right_term = nullptr;
@@ -621,9 +620,9 @@ void SyntacticOptimizer::visitLt(Lt_ptr lt_term) {
       };
     }
   } else if (check_and_process_for_contains_transformation(lt_term->left_term, lt_term->right_term, 0) or
-          check_and_process_for_contains_transformation(lt_term->right_term, lt_term->left_term, 0)) {
+             check_and_process_for_contains_transformation(lt_term->right_term, lt_term->left_term, 0)) {
     DVLOG(VLOG_LEVEL) << "Applying notContains transformation: '" << *lt_term << "'";
-    callback = [lt_term](Term_ptr& term) mutable {
+    callback = [lt_term](Term_ptr & term) mutable {
       term = new NotContains(lt_term->left_term, lt_term->right_term);
       lt_term->left_term = nullptr;
       lt_term->right_term = nullptr;
@@ -643,7 +642,7 @@ void SyntacticOptimizer::visitLe(Le_ptr le_term) {
     if (Ast2Dot::isEquivalent(le_term->left_term, le_term->right_term)) {
       add_callback_to_replace_with_bool(le_term, "true");
     } else {
-      callback = [le_term](Term_ptr& term) mutable {
+      callback = [le_term](Term_ptr & term) mutable {
         term = new Eq(le_term->left_term, le_term->right_term);
         le_term->left_term = nullptr;
         le_term->right_term = nullptr;
@@ -651,9 +650,9 @@ void SyntacticOptimizer::visitLe(Le_ptr le_term) {
       };
     }
   } else if (check_and_process_for_contains_transformation(le_term->left_term, le_term->right_term, -1) or
-          check_and_process_for_contains_transformation(le_term->right_term, le_term->left_term, -1)) {
+             check_and_process_for_contains_transformation(le_term->right_term, le_term->left_term, -1)) {
     DVLOG(VLOG_LEVEL) << "Applying notContains transformation: '" << *le_term << "'";
-    callback = [le_term](Term_ptr& term) mutable {
+    callback = [le_term](Term_ptr & term) mutable {
       term = new NotContains(le_term->left_term, le_term->right_term);
       le_term->left_term = nullptr;
       le_term->right_term = nullptr;
@@ -663,7 +662,7 @@ void SyntacticOptimizer::visitLe(Le_ptr le_term) {
 }
 
 void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {
-  for (auto& term_ptr : *(concat_term->term_list)) {
+  for (auto& term_ptr : * (concat_term->term_list)) {
     visit_and_callback(term_ptr);
   }
 
@@ -679,7 +678,7 @@ void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {
       delete sub_concat_term;
       iter = concat_term->term_list->begin() + pos; // insertion invalidates iter, reset it
       continue;
-    } else if(Term::Type::TERMCONSTANT == (*iter)->type()) {
+    } else if (Term::Type::TERMCONSTANT == (*iter)->type()) {
       TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter);
       if (term_constant->getValue() == "") {
         delete term_constant; // deallocate
@@ -700,7 +699,7 @@ void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {
   }
 
   if (concat_term->term_list->size() == 1) {
-    callback = [concat_term] (Term_ptr& term) mutable {
+    callback = [concat_term] (Term_ptr & term) mutable {
       term = concat_term->term_list->front();
       concat_term->term_list->clear();
       delete concat_term;
@@ -713,7 +712,7 @@ void SyntacticOptimizer::visitIn(In_ptr in_term) {
   visit_and_callback(in_term->right_term);
 
   if (Ast2Dot::isEquivalent(in_term->left_term, in_term->right_term)) {
-    callback = [in_term](Term_ptr& term) mutable {
+    callback = [in_term](Term_ptr & term) mutable {
       term = in_term->left_term;
       in_term->left_term = nullptr;
       delete in_term;
@@ -726,7 +725,7 @@ void SyntacticOptimizer::visitNotIn(NotIn_ptr not_in_term) {
   visit_and_callback(not_in_term->right_term);
 
   if (Ast2Dot::isEquivalent(not_in_term->left_term, not_in_term->right_term)) {
-    callback = [this, not_in_term](Term_ptr& term) mutable {
+    callback = [this, not_in_term](Term_ptr & term) mutable {
       term = generate_term_constant("/#/", Primitive::Type::REGEX);
       delete not_in_term;
     };
@@ -742,7 +741,7 @@ void SyntacticOptimizer::visitLen(Len_ptr len_term) {
       int len = value.length();
       std::string str_len = std::to_string(len);
       DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << len << "'";
-      callback = [this, len_term, str_len](Term_ptr& term) mutable {
+      callback = [this, len_term, str_len](Term_ptr & term) mutable {
         term = generate_term_constant(str_len, Primitive::Type::NUMERAL);
         delete len_term;
       };
@@ -755,7 +754,7 @@ void SyntacticOptimizer::visitContains(Contains_ptr contains_term) {
   visit_and_callback(contains_term->search_term);
 
   if (Ast2Dot::isEquivalent(contains_term->subject_term, contains_term->search_term)) {
-    callback = [contains_term](Term_ptr& term) mutable {
+    callback = [contains_term](Term_ptr & term) mutable {
       term = contains_term->subject_term;
       contains_term->subject_term = nullptr;
       delete contains_term;
@@ -768,7 +767,7 @@ void SyntacticOptimizer::visitNotContains(NotContains_ptr not_contains_term) {
   visit_and_callback(not_contains_term->search_term);
 
   if (Ast2Dot::isEquivalent(not_contains_term->subject_term, not_contains_term->search_term)) {
-    callback = [this, not_contains_term](Term_ptr& term) mutable {
+    callback = [this, not_contains_term](Term_ptr & term) mutable {
       term = generate_term_constant("/#/", Primitive::Type::REGEX);
       delete not_contains_term;
     };
@@ -780,7 +779,7 @@ void SyntacticOptimizer::visitBegins(Begins_ptr begins_term) {
   visit_and_callback(begins_term->search_term);
 
   if (Ast2Dot::isEquivalent(begins_term->subject_term, begins_term->search_term)) {
-    callback = [begins_term](Term_ptr& term) mutable {
+    callback = [begins_term](Term_ptr & term) mutable {
       term = begins_term->subject_term;
       begins_term->subject_term = nullptr;
       delete begins_term;
@@ -793,7 +792,7 @@ void SyntacticOptimizer::visitNotBegins(NotBegins_ptr not_begins_term) {
   visit_and_callback(not_begins_term->search_term);
 
   if (Ast2Dot::isEquivalent(not_begins_term->subject_term, not_begins_term->search_term)) {
-    callback = [this, not_begins_term](Term_ptr& term) mutable {
+    callback = [this, not_begins_term](Term_ptr & term) mutable {
       term = generate_term_constant("/#/", Primitive::Type::REGEX);
       delete not_begins_term;
     };
@@ -805,7 +804,7 @@ void SyntacticOptimizer::visitEnds(Ends_ptr ends_term) {
   visit_and_callback(ends_term->search_term);
 
   if (Ast2Dot::isEquivalent(ends_term->subject_term, ends_term->search_term)) {
-    callback = [ends_term](Term_ptr& term) mutable {
+    callback = [ends_term](Term_ptr & term) mutable {
       term = ends_term->subject_term;
       ends_term->subject_term = nullptr;
       delete ends_term;
@@ -818,7 +817,7 @@ void SyntacticOptimizer::visitNotEnds(NotEnds_ptr not_ends_term) {
   visit_and_callback(not_ends_term->search_term);
 
   if (Ast2Dot::isEquivalent(not_ends_term->subject_term, not_ends_term->search_term)) {
-    callback = [this, not_ends_term](Term_ptr& term) mutable {
+    callback = [this, not_ends_term](Term_ptr & term) mutable {
       term = generate_term_constant("/#/", Primitive::Type::REGEX);
       delete not_ends_term;
     };
@@ -865,7 +864,7 @@ void SyntacticOptimizer::visitCharAt(CharAt_ptr char_at_term) {
       if (char_at_optimizer.is_optimizable()) {
         std::string value = "" + char_at_optimizer.get_char_at_result();
         DVLOG(VLOG_LEVEL) << "Applying charAt transformation: '" << value << "'";
-        callback = [this, char_at_term, value](Term_ptr& term) mutable {
+        callback = [this, char_at_term, value](Term_ptr & term) mutable {
           term = generate_term_constant(value, Primitive::Type::STRING);
           delete char_at_term;
         };
@@ -897,9 +896,9 @@ void SyntacticOptimizer::visitSubString(SubString_ptr sub_string_term) {
           if (TermConstant_ptr end_index_term = dynamic_cast<TermConstant_ptr>(sub_string_term->end_index_term)) {
             int end_index = std::stoi(end_index_term->getValue());
             std::string subject_str = subject_term->getValue();
-            std::string result = subject_str.substr(start_index, end_index-start_index);
+            std::string result = subject_str.substr(start_index, end_index - start_index);
             DVLOG(VLOG_LEVEL) << "Applying subString transformation: '" << result << "'";
-            callback = [this, sub_string_term, result](Term_ptr& term) mutable {
+            callback = [this, sub_string_term, result](Term_ptr & term) mutable {
               term = generate_term_constant(result, Primitive::Type::STRING);
               delete sub_string_term;
             };
@@ -909,7 +908,7 @@ void SyntacticOptimizer::visitSubString(SubString_ptr sub_string_term) {
           std::string subject_str = subject_term->getValue();
           std::string result = subject_str.substr(start_index);
           DVLOG(VLOG_LEVEL) << "Applying subString transformation: '" << result << "'";
-          callback = [this, sub_string_term, result](Term_ptr& term) mutable {
+          callback = [this, sub_string_term, result](Term_ptr & term) mutable {
             term = generate_term_constant(result, Primitive::Type::STRING);
             delete sub_string_term;
           };
@@ -953,8 +952,8 @@ void SyntacticOptimizer::visitToString(ToString_ptr to_string_term) {
   if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(to_string_term->subject_term)) {
     if (Primitive::Type::NUMERAL == term_constant->getValueType()) {
       std::string str_value = term_constant->getValue();
-      DVLOG(VLOG_LEVEL) << "Applying toString transformation: '" << str_value<< "'";
-      callback = [this, to_string_term, str_value](Term_ptr& term) mutable {
+      DVLOG(VLOG_LEVEL) << "Applying toString transformation: '" << str_value << "'";
+      callback = [this, to_string_term, str_value](Term_ptr & term) mutable {
         term = generate_term_constant(str_value, Primitive::Type::STRING);
         delete to_string_term;
       };
@@ -969,7 +968,7 @@ void SyntacticOptimizer::visitToInt(ToInt_ptr to_int_term) {
     if (Primitive::Type::STRING == term_constant->getValueType()) {
       std::string str_value = term_constant->getValue();
       DVLOG(VLOG_LEVEL) << "Applying toInt transformation: '" << str_value << "'";
-      callback = [this, to_int_term, str_value](Term_ptr& term) mutable {
+      callback = [this, to_int_term, str_value](Term_ptr & term) mutable {
         term = generate_term_constant(str_value, Primitive::Type::NUMERAL);
         delete to_int_term;
       };
@@ -983,7 +982,7 @@ void SyntacticOptimizer::visitReplace(Replace_ptr replace_term) {
   visit_and_callback(replace_term->replace_term);
 
   if (Ast2Dot::isEquivalent(replace_term->search_term, replace_term->replace_term)) {
-    callback = [replace_term](Term_ptr& term) mutable {
+    callback = [replace_term](Term_ptr & term) mutable {
       term = replace_term->subject_term;
       replace_term->subject_term = nullptr;
       delete replace_term;
@@ -997,7 +996,7 @@ void SyntacticOptimizer::visitCount(Count_ptr count_term) {
 }
 
 void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {
-  callback = [ite_term] (Term_ptr& term) mutable {
+  callback = [ite_term] (Term_ptr & term) mutable {
     DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *ite_term << "' into 'or'";
     And_ptr then_branch = dynamic_cast<And_ptr>(ite_term->then_branch);
     And_ptr else_branch = dynamic_cast<And_ptr>(ite_term->else_branch);
@@ -1020,7 +1019,7 @@ void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {
 }
 
 void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
-  for (auto& term_ptr : *(re_concat_term->term_list)) {
+  for (auto& term_ptr : * (re_concat_term->term_list)) {
     visit_and_callback(term_ptr);
   }
 
@@ -1052,7 +1051,7 @@ void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
     iter++; pos++;
   }
 
-  callback = [re_concat_term] (Term_ptr& term) mutable {
+  callback = [re_concat_term] (Term_ptr & term) mutable {
     if (re_concat_term->term_list->size() == 1) {
       term = re_concat_term->term_list->front();
       re_concat_term->term_list->clear();
@@ -1065,7 +1064,7 @@ void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
 }
 
 void SyntacticOptimizer::visitReUnion(ReUnion_ptr re_union_term) {
-  for (auto& term_ptr : *(re_union_term->term_list)) {
+  for (auto& term_ptr : * (re_union_term->term_list)) {
     visit_and_callback(term_ptr);
   }
 
@@ -1077,7 +1076,7 @@ void SyntacticOptimizer::visitReUnion(ReUnion_ptr re_union_term) {
       if (union_regex_term_constant == nullptr) {
         union_regex_term_constant = term_constant;
         std::string value = term_constant->getValue();
-        if (*(value.begin()) != '(' or *(value.end()-1) != ')') {
+        if (*(value.begin()) != '(' or * (value.end() - 1) != ')') {
           value = "(" + value + ")";
           union_regex_term_constant->primitive->setData(value);
         }
@@ -1085,7 +1084,7 @@ void SyntacticOptimizer::visitReUnion(ReUnion_ptr re_union_term) {
         std::stringstream ss;
         ss << union_regex_term_constant->getValue() << "|";
         std::string value = term_constant->getValue();
-        if (*(value.begin()) != '(' or *(value.end()-1) != ')') {
+        if (*(value.begin()) != '(' or * (value.end() - 1) != ')') {
           ss << "(" << value  << ")";
         } else {
           ss << value;
@@ -1096,12 +1095,12 @@ void SyntacticOptimizer::visitReUnion(ReUnion_ptr re_union_term) {
         continue;
       }
     } else {
-      LOG(FATAL)<< "un-expected term as a parameter to 're.union'";
+      LOG(FATAL) << "un-expected term as a parameter to 're.union'";
     }
     iter++;
   }
 
-  callback = [re_union_term] (Term_ptr& term) mutable {
+  callback = [re_union_term] (Term_ptr & term) mutable {
     term = re_union_term->term_list->front();
     re_union_term->term_list->clear();
     delete re_union_term;
@@ -1109,7 +1108,7 @@ void SyntacticOptimizer::visitReUnion(ReUnion_ptr re_union_term) {
 }
 
 void SyntacticOptimizer::visitReInter(ReInter_ptr re_inter_term) {
-  for (auto& term_ptr : *(re_inter_term->term_list)) {
+  for (auto& term_ptr : * (re_inter_term->term_list)) {
     visit_and_callback(term_ptr);
   }
 
@@ -1121,7 +1120,7 @@ void SyntacticOptimizer::visitReInter(ReInter_ptr re_inter_term) {
       if (intersection_regex_term_constant == nullptr) {
         intersection_regex_term_constant = term_constant;
         std::string value = term_constant->getValue();
-        if (*(value.begin()) != '(' or *(value.end()-1) != ')') {
+        if (*(value.begin()) != '(' or * (value.end() - 1) != ')') {
           value = "(" + value + ")";
           intersection_regex_term_constant->primitive->setData(value);
         }
@@ -1129,7 +1128,7 @@ void SyntacticOptimizer::visitReInter(ReInter_ptr re_inter_term) {
         std::stringstream ss;
         ss << intersection_regex_term_constant->getValue() << "&";
         std::string value = term_constant->getValue();
-        if (*(value.begin()) != '(' or *(value.end()-1) != ')') {
+        if (*(value.begin()) != '(' or * (value.end() - 1) != ')') {
           ss << "(" << value  << ")";
         } else {
           ss << value;
@@ -1140,12 +1139,12 @@ void SyntacticOptimizer::visitReInter(ReInter_ptr re_inter_term) {
         continue;
       }
     } else {
-      LOG(FATAL)<< "un-expected term as a parameter to 're.inter'";
+      LOG(FATAL) << "un-expected term as a parameter to 're.inter'";
     }
     iter++;
   }
 
-  callback = [re_inter_term] (Term_ptr& term) mutable {
+  callback = [re_inter_term] (Term_ptr & term) mutable {
     term = re_inter_term->term_list->front();
     re_inter_term->term_list->clear();
     delete re_inter_term;
@@ -1161,10 +1160,10 @@ void SyntacticOptimizer::visitReStar(ReStar_ptr re_star_term) {
     value = "(" + value + ")*";
     term_constant->primitive->setData(value);
   } else {
-    LOG(FATAL)<< "un-expected term as a parameter to 're.star'";
+    LOG(FATAL) << "un-expected term as a parameter to 're.star'";
   }
 
-  callback = [re_star_term] (Term_ptr& term) mutable {
+  callback = [re_star_term] (Term_ptr & term) mutable {
     term = re_star_term->term;
     re_star_term->term = nullptr;
     delete re_star_term;
@@ -1180,10 +1179,10 @@ void SyntacticOptimizer::visitRePlus(RePlus_ptr re_plus_term) {
     value = "(" + value + ")+";
     term_constant->primitive->setData(value);
   } else {
-    LOG(FATAL)<< "un-expected term as a parameter to 're.plus'";
+    LOG(FATAL) << "un-expected term as a parameter to 're.plus'";
   }
 
-  callback = [re_plus_term] (Term_ptr& term) mutable {
+  callback = [re_plus_term] (Term_ptr & term) mutable {
     term = re_plus_term->term;
     re_plus_term->term = nullptr;
     delete re_plus_term;
@@ -1199,10 +1198,10 @@ void SyntacticOptimizer::visitReOpt(ReOpt_ptr re_opt_term) {
     value = "(" + value + ")?";
     term_constant->primitive->setData(value);
   } else {
-    LOG(FATAL)<< "un-expected term as a parameter to 're.plus'";
+    LOG(FATAL) << "un-expected term as a parameter to 're.plus'";
   }
 
-  callback = [re_opt_term] (Term_ptr& term) mutable {
+  callback = [re_opt_term] (Term_ptr & term) mutable {
     term = re_opt_term->term;
     re_opt_term->term = nullptr;
     delete re_opt_term;
@@ -1221,7 +1220,7 @@ void SyntacticOptimizer::visitToRegex(ToRegex_ptr to_regex_term) {
       delete term_constant->primitive;
       term_constant->primitive = regex_primitive;
 
-      callback = [to_regex_term] (Term_ptr& term) mutable {
+      callback = [to_regex_term] (Term_ptr & term) mutable {
         term = to_regex_term->term;
         to_regex_term->term = nullptr;
         delete to_regex_term;
@@ -1300,24 +1299,24 @@ void SyntacticOptimizer::append_constant(TermConstant_ptr left_constant, TermCon
   ss << left_constant->getValue() << right_constant->getValue();
   left_constant->primitive->setData(ss.str());
   if (Primitive::Type::REGEX == left_constant->getValueType()
-          or Primitive::Type::REGEX == right_constant->getValueType()) {
+      or Primitive::Type::REGEX == right_constant->getValueType()) {
     left_constant->primitive->setType(Primitive::Type::REGEX);
   }
 }
 
 bool SyntacticOptimizer::check_and_process_len_transformation(Term_ptr operation, Term_ptr& left_term,
-        Term_ptr& right_term) {
+    Term_ptr& right_term) {
   // It is better to solve arithmetic constraints with LIA for precision
   if (Option::Solver::LIA_ENGINE_ENABLED) {
     return false;
   }
 
   return __check_and_process_len_transformation(operation->type(), left_term, right_term)
-          || __check_and_process_len_transformation(syntactic_reverse_relation(operation->type()), right_term, left_term);
+         || __check_and_process_len_transformation(syntactic_reverse_relation(operation->type()), right_term, left_term);
 }
 
 bool SyntacticOptimizer::__check_and_process_len_transformation(Term::Type operation, Term_ptr& left_term,
-        Term_ptr& right_term) {
+    Term_ptr& right_term) {
   if (Term::Type::LEN == left_term->type()) {
     Len_ptr len_ptr = dynamic_cast<Len_ptr>(left_term);
     if (Term::Type::TERMCONSTANT == right_term->type()) {
@@ -1375,16 +1374,16 @@ bool SyntacticOptimizer::__check_and_process_len_transformation(Term::Type opera
 
 Term::Type SyntacticOptimizer::syntactic_reverse_relation(Term::Type operation) {
   switch (operation) {
-    case Term::Type::LT:
-      return Term::Type::GT;
-    case Term::Type::LE:
-      return Term::Type::GE;
-    case Term::Type::GT:
-      return Term::Type::LT;
-    case Term::Type::GE:
-      return Term::Type::LE;
-    default:
-      return operation;
+  case Term::Type::LT:
+    return Term::Type::GT;
+  case Term::Type::LE:
+    return Term::Type::GE;
+  case Term::Type::GT:
+    return Term::Type::LT;
+  case Term::Type::GE:
+    return Term::Type::LE;
+  default:
+    return operation;
   }
 }
 
@@ -1405,7 +1404,7 @@ bool SyntacticOptimizer::check_and_process_for_contains_transformation(Term_ptr&
   }
 
   if (expected_constant_term == nullptr or
-          Primitive::Type::NUMERAL != expected_constant_term->getValueType()) {
+      Primitive::Type::NUMERAL != expected_constant_term->getValueType()) {
     return false;
   } else if (compare_value != std::stoi(expected_constant_term->getValue())) {
     return false;
@@ -1443,90 +1442,90 @@ bool SyntacticOptimizer::check_and_process_for_contains_transformation(Term_ptr&
  */
 SubString::Mode SyntacticOptimizer::check_and_process_subString(SubString_ptr sub_string_term, Term_ptr &index_term) {
   switch (index_term->type()) {
-    case Term::Type::INDEXOF: {
-      IndexOf_ptr index_of_term = dynamic_cast<IndexOf_ptr>(index_term);
-      if (Ast2Dot::isEquivalent(sub_string_term->subject_term, index_of_term->subject_term)) {
-        switch (index_of_term->getMode()) {
-          case IndexOf::Mode::DEFAULT: {
-            index_term = index_of_term->search_term;
-            index_of_term->search_term = nullptr;
-            delete index_of_term;
-            break;
-          }
-          case IndexOf::Mode::FROMINDEX: {
-            callback = [this, sub_string_term, index_of_term, &index_term](Term_ptr& term) mutable {
-              Let_ptr let_term = this->generateLetTermFor(sub_string_term, SubString::Mode::FROMINDEX, index_of_term, index_term);
-              term = let_term;
-            };
-            break;
-          }
-          case IndexOf::Mode::FROMFIRSTOF: {
-            // add callback for let construct
-            callback = [this, sub_string_term, index_of_term, &index_term](Term_ptr& term) mutable {
-              Let_ptr let_term = this->generateLetTermFor(sub_string_term, SubString::Mode::FROMFIRSTOF, index_of_term, index_term);
-              term = let_term;
-            };
-            break;
-          }
-          case IndexOf::Mode::FROMLASTOF: {
-            // add callback for let construct
-            callback = [this, sub_string_term, index_of_term, &index_term](Term_ptr& term) mutable {
-              // Generate string binding for local substring
-              Let_ptr let_term = this->generateLetTermFor(sub_string_term, SubString::Mode::FROMLASTOF, index_of_term, index_term);
-              term = let_term;
-            };
-            break;
-          }
-          default:
-            break;
-        }
-        return SubString::Mode::FROMFIRSTOF;
+  case Term::Type::INDEXOF: {
+    IndexOf_ptr index_of_term = dynamic_cast<IndexOf_ptr>(index_term);
+    if (Ast2Dot::isEquivalent(sub_string_term->subject_term, index_of_term->subject_term)) {
+      switch (index_of_term->getMode()) {
+      case IndexOf::Mode::DEFAULT: {
+        index_term = index_of_term->search_term;
+        index_of_term->search_term = nullptr;
+        delete index_of_term;
+        break;
       }
-      break;
-    } // end of IndexOf case
-    case Term::Type::LASTINDEXOF: {
-      LastIndexOf_ptr last_index_of_term = dynamic_cast<LastIndexOf_ptr>(index_term);
-      if (Ast2Dot::isEquivalent(sub_string_term->subject_term, last_index_of_term->subject_term)) {
-        switch (last_index_of_term->getMode()) {
-          case LastIndexOf::Mode::DEFAULT: {
-            index_term = last_index_of_term->search_term;
-            last_index_of_term->search_term = nullptr;
-            delete last_index_of_term;
-            break;
-          }
-          case LastIndexOf::Mode::FROMINDEX: {
-            callback = [this, sub_string_term, last_index_of_term, &index_term](Term_ptr& term) mutable {
-              Let_ptr let_term = this->generateLetTermFor(sub_string_term, SubString::Mode::FROMINDEX, last_index_of_term, index_term);
-              term = let_term;
-            };
-            break;
-          }
-          case LastIndexOf::Mode::FROMFIRSTOF: {
-            // add callback for let construct
-            callback = [this, sub_string_term, last_index_of_term, &index_term](Term_ptr& term) mutable {
-              Let_ptr let_term = this->generateLetTermFor(sub_string_term, SubString::Mode::FROMFIRSTOF, last_index_of_term, index_term);
-              term = let_term;
-            };
-            break;
-          }
-          case LastIndexOf::Mode::FROMLASTOF: {
-            // add callback for let construct
-            callback = [this, sub_string_term, last_index_of_term, &index_term](Term_ptr& term) mutable {
-              // Generate string binding for local substring
-              Let_ptr let_term = this->generateLetTermFor(sub_string_term, SubString::Mode::FROMLASTOF, last_index_of_term, index_term);
-              term = let_term;
-            };
-            break;
-          }
-          default:
-            break;
-        }
-        return SubString::Mode::FROMLASTOF;
+      case IndexOf::Mode::FROMINDEX: {
+        callback = [this, sub_string_term, index_of_term, &index_term](Term_ptr & term) mutable {
+          Let_ptr let_term = this->generateLetTermFor(sub_string_term, SubString::Mode::FROMINDEX, index_of_term, index_term);
+          term = let_term;
+        };
+        break;
       }
-      break;
-    } // end LastIndexOf case
-    default:
-      break;
+      case IndexOf::Mode::FROMFIRSTOF: {
+        // add callback for let construct
+        callback = [this, sub_string_term, index_of_term, &index_term](Term_ptr & term) mutable {
+          Let_ptr let_term = this->generateLetTermFor(sub_string_term, SubString::Mode::FROMFIRSTOF, index_of_term, index_term);
+          term = let_term;
+        };
+        break;
+      }
+      case IndexOf::Mode::FROMLASTOF: {
+        // add callback for let construct
+        callback = [this, sub_string_term, index_of_term, &index_term](Term_ptr & term) mutable {
+          // Generate string binding for local substring
+          Let_ptr let_term = this->generateLetTermFor(sub_string_term, SubString::Mode::FROMLASTOF, index_of_term, index_term);
+          term = let_term;
+        };
+        break;
+      }
+      default:
+        break;
+      }
+      return SubString::Mode::FROMFIRSTOF;
+    }
+    break;
+  } // end of IndexOf case
+  case Term::Type::LASTINDEXOF: {
+    LastIndexOf_ptr last_index_of_term = dynamic_cast<LastIndexOf_ptr>(index_term);
+    if (Ast2Dot::isEquivalent(sub_string_term->subject_term, last_index_of_term->subject_term)) {
+      switch (last_index_of_term->getMode()) {
+      case LastIndexOf::Mode::DEFAULT: {
+        index_term = last_index_of_term->search_term;
+        last_index_of_term->search_term = nullptr;
+        delete last_index_of_term;
+        break;
+      }
+      case LastIndexOf::Mode::FROMINDEX: {
+        callback = [this, sub_string_term, last_index_of_term, &index_term](Term_ptr & term) mutable {
+          Let_ptr let_term = this->generateLetTermFor(sub_string_term, SubString::Mode::FROMINDEX, last_index_of_term, index_term);
+          term = let_term;
+        };
+        break;
+      }
+      case LastIndexOf::Mode::FROMFIRSTOF: {
+        // add callback for let construct
+        callback = [this, sub_string_term, last_index_of_term, &index_term](Term_ptr & term) mutable {
+          Let_ptr let_term = this->generateLetTermFor(sub_string_term, SubString::Mode::FROMFIRSTOF, last_index_of_term, index_term);
+          term = let_term;
+        };
+        break;
+      }
+      case LastIndexOf::Mode::FROMLASTOF: {
+        // add callback for let construct
+        callback = [this, sub_string_term, last_index_of_term, &index_term](Term_ptr & term) mutable {
+          // Generate string binding for local substring
+          Let_ptr let_term = this->generateLetTermFor(sub_string_term, SubString::Mode::FROMLASTOF, last_index_of_term, index_term);
+          term = let_term;
+        };
+        break;
+      }
+      default:
+        break;
+      }
+      return SubString::Mode::FROMLASTOF;
+    }
+    break;
+  } // end LastIndexOf case
+  default:
+    break;
   }
   return SubString::Mode::NONE; // do not change anything
 }
@@ -1615,134 +1614,134 @@ Let_ptr SyntacticOptimizer::generateLetTermFor(SubString_ptr sub_string_term, Su
 
 int SyntacticOptimizer::check_and_process_index_operation(Term_ptr curent_term, Term_ptr subject_term, Term_ptr &index_term) {
   switch (index_term->type()) {
-    case Term::Type::INDEXOF: {
-      IndexOf_ptr index_of_term = dynamic_cast<IndexOf_ptr>(index_term);
-      if (Ast2Dot::isEquivalent(subject_term, index_of_term->subject_term)) {
-        switch (index_of_term->getMode()) {
-          case IndexOf::Mode::DEFAULT: {
-            index_term = index_of_term->search_term;
-            index_of_term->search_term = nullptr;
-            delete index_of_term;
-            break;
-          }
-          case IndexOf::Mode::FROMINDEX: {
-            if (IndexOf_ptr current_cast_term = dynamic_cast<IndexOf_ptr>(curent_term)) {
-              callback = [this, current_cast_term, index_of_term, &index_term](Term_ptr& term) mutable {
-                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMINDEX, index_of_term, index_term);
-                term = let_term;
-              };
-            } else if (LastIndexOf_ptr current_cast_term = dynamic_cast<LastIndexOf_ptr>(curent_term)) {
-              callback = [this, current_cast_term, index_of_term, &index_term](Term_ptr& term) mutable {
-                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMINDEX, index_of_term, index_term);
-                term = let_term;
-              };
-            }
-            break;
-          }
-          case IndexOf::Mode::FROMFIRSTOF: {
-            if (IndexOf_ptr current_cast_term = dynamic_cast<IndexOf_ptr>(curent_term)) {
-              callback = [this, current_cast_term, index_of_term, &index_term](Term_ptr& term) mutable {
-                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMFIRSTOF, index_of_term, index_term);
-                term = let_term;
-              };
-            } else if (LastIndexOf_ptr current_cast_term = dynamic_cast<LastIndexOf_ptr>(curent_term)) {
-              callback = [this, current_cast_term, index_of_term, &index_term](Term_ptr& term) mutable {
-                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMFIRSTOF, index_of_term, index_term);
-                term = let_term;
-              };
-            }
-            break;
-          }
-          case IndexOf::Mode::FROMLASTOF: {
-            if (IndexOf_ptr current_cast_term = dynamic_cast<IndexOf_ptr>(curent_term)) {
-              callback = [this, current_cast_term, index_of_term, &index_term](Term_ptr& term) mutable {
-                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMLASTOF, index_of_term, index_term);
-                term = let_term;
-              };
-            } else if (LastIndexOf_ptr current_cast_term = dynamic_cast<LastIndexOf_ptr>(curent_term)) {
-              callback = [this, current_cast_term, index_of_term, &index_term](Term_ptr& term) mutable {
-                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMLASTOF, index_of_term, index_term);
-                term = let_term;
-              };
-            }
-            break;
-          }
-          default:
-            // add let bindings for other modes of indexof operation to make it work with default mode
-            LOG(FATAL)<< "implement cases where index_term is optimized index operation";
-            break;
-        }
-        return static_cast<int>(IndexOf::Mode::FROMFIRSTOF);
-      } else {
-        DVLOG(VLOG_LEVEL)<< "index operation optimization fails, please extend implementation";
+  case Term::Type::INDEXOF: {
+    IndexOf_ptr index_of_term = dynamic_cast<IndexOf_ptr>(index_term);
+    if (Ast2Dot::isEquivalent(subject_term, index_of_term->subject_term)) {
+      switch (index_of_term->getMode()) {
+      case IndexOf::Mode::DEFAULT: {
+        index_term = index_of_term->search_term;
+        index_of_term->search_term = nullptr;
+        delete index_of_term;
+        break;
       }
-      break;
-    }
-    case Term::Type::LASTINDEXOF: {
-      LastIndexOf_ptr last_index_of_term = dynamic_cast<LastIndexOf_ptr>(index_term);
-      if (Ast2Dot::isEquivalent(subject_term, last_index_of_term->subject_term)) {
-        switch (last_index_of_term->getMode()) {
-          case LastIndexOf::Mode::DEFAULT: {
-            index_term = last_index_of_term->search_term;
-            last_index_of_term->search_term = nullptr;
-            delete last_index_of_term;
-            break;
-          }
-          case LastIndexOf::Mode::FROMINDEX: {
-            if (IndexOf_ptr current_cast_term = dynamic_cast<IndexOf_ptr>(curent_term)) {
-              callback = [this, current_cast_term, last_index_of_term, &index_term](Term_ptr& term) mutable {
-                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMINDEX, last_index_of_term, index_term);
-                term = let_term;
-              };
-            } else if (LastIndexOf_ptr current_cast_term = dynamic_cast<LastIndexOf_ptr>(curent_term)) {
-              callback = [this, current_cast_term, last_index_of_term, &index_term](Term_ptr& term) mutable {
-                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMINDEX, last_index_of_term, index_term);
-                term = let_term;
-              };
-            }
-            break;
-          }
-          case LastIndexOf::Mode::FROMFIRSTOF: {
-            if (IndexOf_ptr current_cast_term = dynamic_cast<IndexOf_ptr>(curent_term)) {
-              callback = [this, current_cast_term, last_index_of_term, &index_term](Term_ptr& term) mutable {
-                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMFIRSTOF, last_index_of_term, index_term);
-                term = let_term;
-              };
-            } else if (LastIndexOf_ptr current_cast_term = dynamic_cast<LastIndexOf_ptr>(curent_term)) {
-              callback = [this, current_cast_term, last_index_of_term, &index_term](Term_ptr& term) mutable {
-                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMFIRSTOF, last_index_of_term, index_term);
-                term = let_term;
-              };
-            }
-            break;
-          }
-          case LastIndexOf::Mode::FROMLASTOF: {
-            if (IndexOf_ptr current_cast_term = dynamic_cast<IndexOf_ptr>(curent_term)) {
-              callback = [this, current_cast_term, last_index_of_term, &index_term](Term_ptr& term) mutable {
-                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMLASTOF, last_index_of_term, index_term);
-                term = let_term;
-              };
-            } else if (LastIndexOf_ptr current_cast_term = dynamic_cast<LastIndexOf_ptr>(curent_term)) {
-              callback = [this, current_cast_term, last_index_of_term, &index_term](Term_ptr& term) mutable {
-                Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMLASTOF, last_index_of_term, index_term);
-                term = let_term;
-              };
-            }
-            break;
-          }
-          default:
-            // add let bindings for other modes of lastIndexof operation to make it work with default mode
-            LOG(FATAL)<< "implement cases where index_term is optimized index operation";
-            break;
+      case IndexOf::Mode::FROMINDEX: {
+        if (IndexOf_ptr current_cast_term = dynamic_cast<IndexOf_ptr>(curent_term)) {
+          callback = [this, current_cast_term, index_of_term, &index_term](Term_ptr & term) mutable {
+            Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMINDEX, index_of_term, index_term);
+            term = let_term;
+          };
+        } else if (LastIndexOf_ptr current_cast_term = dynamic_cast<LastIndexOf_ptr>(curent_term)) {
+          callback = [this, current_cast_term, index_of_term, &index_term](Term_ptr & term) mutable {
+            Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMINDEX, index_of_term, index_term);
+            term = let_term;
+          };
         }
-        return static_cast<int>(LastIndexOf::Mode::FROMLASTOF);
-      } else {
-        DVLOG(VLOG_LEVEL)<< "index operation optimization fails, please extend implementation";
+        break;
       }
-      break;
+      case IndexOf::Mode::FROMFIRSTOF: {
+        if (IndexOf_ptr current_cast_term = dynamic_cast<IndexOf_ptr>(curent_term)) {
+          callback = [this, current_cast_term, index_of_term, &index_term](Term_ptr & term) mutable {
+            Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMFIRSTOF, index_of_term, index_term);
+            term = let_term;
+          };
+        } else if (LastIndexOf_ptr current_cast_term = dynamic_cast<LastIndexOf_ptr>(curent_term)) {
+          callback = [this, current_cast_term, index_of_term, &index_term](Term_ptr & term) mutable {
+            Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMFIRSTOF, index_of_term, index_term);
+            term = let_term;
+          };
+        }
+        break;
+      }
+      case IndexOf::Mode::FROMLASTOF: {
+        if (IndexOf_ptr current_cast_term = dynamic_cast<IndexOf_ptr>(curent_term)) {
+          callback = [this, current_cast_term, index_of_term, &index_term](Term_ptr & term) mutable {
+            Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMLASTOF, index_of_term, index_term);
+            term = let_term;
+          };
+        } else if (LastIndexOf_ptr current_cast_term = dynamic_cast<LastIndexOf_ptr>(curent_term)) {
+          callback = [this, current_cast_term, index_of_term, &index_term](Term_ptr & term) mutable {
+            Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMLASTOF, index_of_term, index_term);
+            term = let_term;
+          };
+        }
+        break;
+      }
+      default:
+        // add let bindings for other modes of indexof operation to make it work with default mode
+        LOG(FATAL) << "implement cases where index_term is optimized index operation";
+        break;
+      }
+      return static_cast<int>(IndexOf::Mode::FROMFIRSTOF);
+    } else {
+      DVLOG(VLOG_LEVEL) << "index operation optimization fails, please extend implementation";
     }
-    default:
-      break;
+    break;
+  }
+  case Term::Type::LASTINDEXOF: {
+    LastIndexOf_ptr last_index_of_term = dynamic_cast<LastIndexOf_ptr>(index_term);
+    if (Ast2Dot::isEquivalent(subject_term, last_index_of_term->subject_term)) {
+      switch (last_index_of_term->getMode()) {
+      case LastIndexOf::Mode::DEFAULT: {
+        index_term = last_index_of_term->search_term;
+        last_index_of_term->search_term = nullptr;
+        delete last_index_of_term;
+        break;
+      }
+      case LastIndexOf::Mode::FROMINDEX: {
+        if (IndexOf_ptr current_cast_term = dynamic_cast<IndexOf_ptr>(curent_term)) {
+          callback = [this, current_cast_term, last_index_of_term, &index_term](Term_ptr & term) mutable {
+            Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMINDEX, last_index_of_term, index_term);
+            term = let_term;
+          };
+        } else if (LastIndexOf_ptr current_cast_term = dynamic_cast<LastIndexOf_ptr>(curent_term)) {
+          callback = [this, current_cast_term, last_index_of_term, &index_term](Term_ptr & term) mutable {
+            Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMINDEX, last_index_of_term, index_term);
+            term = let_term;
+          };
+        }
+        break;
+      }
+      case LastIndexOf::Mode::FROMFIRSTOF: {
+        if (IndexOf_ptr current_cast_term = dynamic_cast<IndexOf_ptr>(curent_term)) {
+          callback = [this, current_cast_term, last_index_of_term, &index_term](Term_ptr & term) mutable {
+            Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMFIRSTOF, last_index_of_term, index_term);
+            term = let_term;
+          };
+        } else if (LastIndexOf_ptr current_cast_term = dynamic_cast<LastIndexOf_ptr>(curent_term)) {
+          callback = [this, current_cast_term, last_index_of_term, &index_term](Term_ptr & term) mutable {
+            Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMFIRSTOF, last_index_of_term, index_term);
+            term = let_term;
+          };
+        }
+        break;
+      }
+      case LastIndexOf::Mode::FROMLASTOF: {
+        if (IndexOf_ptr current_cast_term = dynamic_cast<IndexOf_ptr>(curent_term)) {
+          callback = [this, current_cast_term, last_index_of_term, &index_term](Term_ptr & term) mutable {
+            Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMLASTOF, last_index_of_term, index_term);
+            term = let_term;
+          };
+        } else if (LastIndexOf_ptr current_cast_term = dynamic_cast<LastIndexOf_ptr>(curent_term)) {
+          callback = [this, current_cast_term, last_index_of_term, &index_term](Term_ptr & term) mutable {
+            Let_ptr let_term = this->generateLetTermFor(current_cast_term, SubString::Mode::FROMLASTOF, last_index_of_term, index_term);
+            term = let_term;
+          };
+        }
+        break;
+      }
+      default:
+        // add let bindings for other modes of lastIndexof operation to make it work with default mode
+        LOG(FATAL) << "implement cases where index_term is optimized index operation";
+        break;
+      }
+      return static_cast<int>(LastIndexOf::Mode::FROMLASTOF);
+    } else {
+      DVLOG(VLOG_LEVEL) << "index operation optimization fails, please extend implementation";
+    }
+    break;
+  }
+  default:
+    break;
   }
 
   return 0; // do not change anything
@@ -1873,7 +1872,7 @@ Term_ptr SyntacticOptimizer::generate_dummy_term() {
 
 void SyntacticOptimizer::add_callback_to_replace_with_bool(Term_ptr term, std::string value) {
   DVLOG(VLOG_LEVEL) << "Replacing with '" << value << "': '" << *term << "'";
-  callback = [this, term, value](Term_ptr& ref_term) mutable {
+  callback = [this, term, value](Term_ptr & ref_term) mutable {
     ref_term = generate_term_constant(value, Primitive::Type::BOOL);
     delete term;
   };
