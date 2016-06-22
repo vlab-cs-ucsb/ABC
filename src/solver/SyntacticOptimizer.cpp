@@ -38,6 +38,8 @@ void SyntacticOptimizer::start() {
 }
 
 void SyntacticOptimizer::end() {
+  DVLOG(VLOG_LEVEL) << "SyntacticOptimizer is finished!";
+
 }
 
 void SyntacticOptimizer::visitScript(Script_ptr script) {
@@ -998,19 +1000,52 @@ void SyntacticOptimizer::visitCount(Count_ptr count_term) {
 void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {
   callback = [ite_term] (Term_ptr & term) mutable {
     DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *ite_term << "' into 'or'";
-    And_ptr then_branch = dynamic_cast<And_ptr>(ite_term->then_branch);
-    And_ptr else_branch = dynamic_cast<And_ptr>(ite_term->else_branch);
-    then_branch->term_list->insert(then_branch->term_list->begin(), ite_term->cond->clone());
+    And_ptr then_branch;
+    And_ptr else_branch;
+    if (Term::Type::AND == ite_term->then_branch->type()) {
+      then_branch = dynamic_cast<And_ptr>(ite_term->then_branch);
+      then_branch->term_list->insert(then_branch->term_list->begin(), ite_term->cond->clone());
+    } else {
+      TermList_ptr tl = new TermList();
+      Term_ptr save = ite_term->then_branch->clone();
+      tl->push_back(save);
+      tl->push_back(ite_term->cond->clone());
+      And_ptr tmp = new And(tl);
+      then_branch = tmp;
+    }
     if (Not_ptr not_term = dynamic_cast<Not_ptr>(ite_term->cond)) {
-      else_branch->term_list->insert(else_branch->term_list->begin(), not_term->term->clone());
+      if (Term::Type::AND == ite_term->else_branch->type()) {
+        else_branch = dynamic_cast<And_ptr>(ite_term->else_branch);
+        else_branch->term_list->insert(else_branch->term_list->begin(), not_term->term->clone());
+
+      } else {
+        TermList_ptr tl = new TermList();
+        Term_ptr save = ite_term->else_branch->clone();
+        tl->push_back(save);
+        tl->push_back(not_term->term->clone());
+        And_ptr tmp = new And(tl);
+        else_branch = tmp;
+      }
     } else {
       not_term = new Not(ite_term->cond);
-      else_branch->term_list->insert(else_branch->term_list->begin(), not_term->clone());
-    }
+      if (Term::Type::AND == ite_term->else_branch->type()) {
+        else_branch = dynamic_cast<And_ptr>(ite_term->else_branch);
+        else_branch->term_list->insert(else_branch->term_list->begin(), not_term->clone());
 
+      } else {
+        TermList_ptr tl = new TermList();
+        Term_ptr save = ite_term->else_branch->clone();
+        tl->push_back(save);
+        tl->push_back(not_term->clone());
+        And_ptr tmp = new And(tl);
+        else_branch = tmp;
+      }
+
+    }
     TermList_ptr term_list = new TermList();
     term_list->push_back(then_branch);
     term_list->push_back(else_branch);
+
     term = new Or(term_list);
     ite_term->then_branch = nullptr;
     ite_term->else_branch = nullptr;
@@ -1275,7 +1310,7 @@ void SyntacticOptimizer::visitSortedVar(SortedVar_ptr sorted_var) {
 void SyntacticOptimizer::visitVarBinding(VarBinding_ptr var_binding) {
 }
 
-void SyntacticOptimizer::visit_and_callback(Term_ptr& term) {
+void SyntacticOptimizer::visit_and_callback(Term_ptr & term) {
   visit(term);
   if (callback) {
     callback(term);
@@ -1304,8 +1339,8 @@ void SyntacticOptimizer::append_constant(TermConstant_ptr left_constant, TermCon
   }
 }
 
-bool SyntacticOptimizer::check_and_process_len_transformation(Term_ptr operation, Term_ptr& left_term,
-    Term_ptr& right_term) {
+bool SyntacticOptimizer::check_and_process_len_transformation(Term_ptr operation, Term_ptr & left_term,
+    Term_ptr & right_term) {
   // It is better to solve arithmetic constraints with LIA for precision
   if (Option::Solver::LIA_ENGINE_ENABLED) {
     return false;
@@ -1315,8 +1350,8 @@ bool SyntacticOptimizer::check_and_process_len_transformation(Term_ptr operation
          || __check_and_process_len_transformation(syntactic_reverse_relation(operation->type()), right_term, left_term);
 }
 
-bool SyntacticOptimizer::__check_and_process_len_transformation(Term::Type operation, Term_ptr& left_term,
-    Term_ptr& right_term) {
+bool SyntacticOptimizer::__check_and_process_len_transformation(Term::Type operation, Term_ptr & left_term,
+    Term_ptr & right_term) {
   if (Term::Type::LEN == left_term->type()) {
     Len_ptr len_ptr = dynamic_cast<Len_ptr>(left_term);
     if (Term::Type::TERMCONSTANT == right_term->type()) {
@@ -1391,7 +1426,7 @@ Term::Type SyntacticOptimizer::syntactic_reverse_relation(Term::Type operation) 
  * Checks if we can convert indexOf and lastIndexOf operations to contains operation
  * when they are used to check if a string does not contain other one
  */
-bool SyntacticOptimizer::check_and_process_for_contains_transformation(Term_ptr& left_term, Term_ptr& right_term, int compare_value) {
+bool SyntacticOptimizer::check_and_process_for_contains_transformation(Term_ptr & left_term, Term_ptr & right_term, int compare_value) {
   TermConstant_ptr expected_constant_term = nullptr;
   if (compare_value < 0 and Term::Type::UMINUS == right_term->type()) {
     UMinus_ptr u_minus_term = dynamic_cast<UMinus_ptr>(right_term);
@@ -1440,7 +1475,7 @@ bool SyntacticOptimizer::check_and_process_for_contains_transformation(Term_ptr&
 /**
  * Checks only immediate children, may need to implement more sophisticated analysis for such optimizations
  */
-SubString::Mode SyntacticOptimizer::check_and_process_subString(SubString_ptr sub_string_term, Term_ptr &index_term) {
+SubString::Mode SyntacticOptimizer::check_and_process_subString(SubString_ptr sub_string_term, Term_ptr & index_term) {
   switch (index_term->type()) {
   case Term::Type::INDEXOF: {
     IndexOf_ptr index_of_term = dynamic_cast<IndexOf_ptr>(index_term);
@@ -1530,7 +1565,7 @@ SubString::Mode SyntacticOptimizer::check_and_process_subString(SubString_ptr su
   return SubString::Mode::NONE; // do not change anything
 }
 
-SubString::Mode SyntacticOptimizer::check_and_process_subString(SubString_ptr sub_string_term, Term_ptr &start_index_term, Term_ptr &end_index_term ) {
+SubString::Mode SyntacticOptimizer::check_and_process_subString(SubString_ptr sub_string_term, Term_ptr & start_index_term, Term_ptr & end_index_term ) {
   SubString::Mode start_index_mode = check_and_process_subString(sub_string_term, start_index_term);
   if (callback) {
     // first let the callback called in a new callback and visit the substring again for end index
@@ -1562,7 +1597,7 @@ SubString::Mode SyntacticOptimizer::check_and_process_subString(SubString_ptr su
   return SubString::Mode::NONE; // do not change anything
 }
 
-Let_ptr SyntacticOptimizer::generateLetTermFor(SubString_ptr sub_string_term, SubString::Mode local_substring_mode, LastIndexOf_ptr last_index_of_term, Term_ptr &index_term) {
+Let_ptr SyntacticOptimizer::generateLetTermFor(SubString_ptr sub_string_term, SubString::Mode local_substring_mode, LastIndexOf_ptr last_index_of_term, Term_ptr & index_term) {
   Let_ptr let_term = nullptr;
   // Generate string binding for local substring
   Variable_ptr string_var = generate_local_var(Variable::Type::STRING);
@@ -1587,7 +1622,7 @@ Let_ptr SyntacticOptimizer::generateLetTermFor(SubString_ptr sub_string_term, Su
   return let_term;
 }
 
-Let_ptr SyntacticOptimizer::generateLetTermFor(SubString_ptr sub_string_term, SubString::Mode local_substring_mode, IndexOf_ptr index_of_term, Term_ptr &index_term) {
+Let_ptr SyntacticOptimizer::generateLetTermFor(SubString_ptr sub_string_term, SubString::Mode local_substring_mode, IndexOf_ptr index_of_term, Term_ptr & index_term) {
   Let_ptr let_term = nullptr;
   // Generate string binding for local substring
   Variable_ptr string_var = generate_local_var(Variable::Type::STRING);
@@ -1612,7 +1647,7 @@ Let_ptr SyntacticOptimizer::generateLetTermFor(SubString_ptr sub_string_term, Su
   return let_term;
 }
 
-int SyntacticOptimizer::check_and_process_index_operation(Term_ptr curent_term, Term_ptr subject_term, Term_ptr &index_term) {
+int SyntacticOptimizer::check_and_process_index_operation(Term_ptr curent_term, Term_ptr subject_term, Term_ptr & index_term) {
   switch (index_term->type()) {
   case Term::Type::INDEXOF: {
     IndexOf_ptr index_of_term = dynamic_cast<IndexOf_ptr>(index_term);
@@ -1747,7 +1782,7 @@ int SyntacticOptimizer::check_and_process_index_operation(Term_ptr curent_term, 
   return 0; // do not change anything
 }
 
-Let_ptr SyntacticOptimizer::generateLetTermFor(IndexOf_ptr index_of_term, SubString::Mode local_substring_mode, IndexOf_ptr param_index_of_term, Term_ptr &index_term) {
+Let_ptr SyntacticOptimizer::generateLetTermFor(IndexOf_ptr index_of_term, SubString::Mode local_substring_mode, IndexOf_ptr param_index_of_term, Term_ptr & index_term) {
   Let_ptr let_term = nullptr;
   // Generate string binding for local substring
   Variable_ptr string_var = generate_local_var(Variable::Type::STRING);
@@ -1772,7 +1807,7 @@ Let_ptr SyntacticOptimizer::generateLetTermFor(IndexOf_ptr index_of_term, SubStr
   return let_term;
 }
 
-Let_ptr SyntacticOptimizer::generateLetTermFor(IndexOf_ptr index_of_term, SubString::Mode local_substring_mode, LastIndexOf_ptr param_last_index_of_term, Term_ptr &index_term) {
+Let_ptr SyntacticOptimizer::generateLetTermFor(IndexOf_ptr index_of_term, SubString::Mode local_substring_mode, LastIndexOf_ptr param_last_index_of_term, Term_ptr & index_term) {
   Let_ptr let_term = nullptr;
   // Generate string binding for local substring
   Variable_ptr string_var = generate_local_var(Variable::Type::STRING);
@@ -1797,7 +1832,7 @@ Let_ptr SyntacticOptimizer::generateLetTermFor(IndexOf_ptr index_of_term, SubStr
   return let_term;
 }
 
-Let_ptr SyntacticOptimizer::generateLetTermFor(LastIndexOf_ptr last_index_of_term, SubString::Mode local_substring_mode, IndexOf_ptr param_index_of_term, Term_ptr &index_term) {
+Let_ptr SyntacticOptimizer::generateLetTermFor(LastIndexOf_ptr last_index_of_term, SubString::Mode local_substring_mode, IndexOf_ptr param_index_of_term, Term_ptr & index_term) {
   Let_ptr let_term = nullptr;
   // Generate string binding for local substring
   Variable_ptr string_var = generate_local_var(Variable::Type::STRING);
@@ -1822,7 +1857,7 @@ Let_ptr SyntacticOptimizer::generateLetTermFor(LastIndexOf_ptr last_index_of_ter
   return let_term;
 }
 
-Let_ptr SyntacticOptimizer::generateLetTermFor(LastIndexOf_ptr last_index_of_term, SubString::Mode local_substring_mode, LastIndexOf_ptr param_last_index_of_term, Term_ptr &index_term) {
+Let_ptr SyntacticOptimizer::generateLetTermFor(LastIndexOf_ptr last_index_of_term, SubString::Mode local_substring_mode, LastIndexOf_ptr param_last_index_of_term, Term_ptr & index_term) {
   Let_ptr let_term = nullptr;
   // Generate string binding for local substring
   Variable_ptr string_var = generate_local_var(Variable::Type::STRING);
