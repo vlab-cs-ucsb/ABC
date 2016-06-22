@@ -32,7 +32,7 @@ SyntacticOptimizer::~SyntacticOptimizer() {
 }
 
 void SyntacticOptimizer::start() {
-  DVLOG(VLOG_LEVEL) << "SyntacticOptimizer is called!";
+  DVLOG(VLOG_LEVEL) << "Start SyntacticOptimizer";
   visit(root);
   end();
 }
@@ -1080,6 +1080,7 @@ void SyntacticOptimizer::visitReUnion(ReUnion_ptr re_union_term) {
           value = "(" + value + ")";
           union_regex_term_constant->primitive->setData(value);
         }
+        union_regex_term_constant->primitive->setType(Primitive::Type::REGEX);
       } else {
         std::stringstream ss;
         ss << union_regex_term_constant->getValue() << "|";
@@ -1159,6 +1160,7 @@ void SyntacticOptimizer::visitReStar(ReStar_ptr re_star_term) {
     std::string value = term_constant->getValue();
     value = "(" + value + ")*";
     term_constant->primitive->setData(value);
+    term_constant->primitive->setType(Primitive::Type::REGEX);
   } else {
     LOG(FATAL) << "un-expected term as a parameter to 're.star'";
   }
@@ -1178,6 +1180,7 @@ void SyntacticOptimizer::visitRePlus(RePlus_ptr re_plus_term) {
     std::string value = term_constant->getValue();
     value = "(" + value + ")+";
     term_constant->primitive->setData(value);
+    term_constant->primitive->setType(Primitive::Type::REGEX);
   } else {
     LOG(FATAL) << "un-expected term as a parameter to 're.plus'";
   }
@@ -1197,6 +1200,7 @@ void SyntacticOptimizer::visitReOpt(ReOpt_ptr re_opt_term) {
     std::string value = term_constant->getValue();
     value = "(" + value + ")?";
     term_constant->primitive->setData(value);
+    term_constant->primitive->setType(Primitive::Type::REGEX);
   } else {
     LOG(FATAL) << "un-expected term as a parameter to 're.plus'";
   }

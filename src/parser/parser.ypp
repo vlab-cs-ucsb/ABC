@@ -101,6 +101,7 @@
   RE_STAR              "re.*"
   RE_PLUS              "re.+"
   RE_OPT               "re.opt"
+  RE_RANGE             "re.range"
   CONCAT_CVC           "str.++"
   IN_CVC               "str.in.re"
   LEN_CVC              "str.len"
@@ -114,6 +115,7 @@
   CHECK_SAT            "check-sat"
   CHECK_SAT_AND_COUNT  "check-sat-and-count"
   DECLARE_FUN          "declare-fun"
+  DECLARE_VAR          "declare-variable"
   DECLARE_SORT         "declare-sort"
   DEFINE_FUN           "define-fun"
   DEFINE_SORT          "define-sort"
@@ -187,6 +189,7 @@ command               :
                       | "(" "declare-sort" SYMBOL NUMERAL ")"                             { $$ = new Command(); }
                       | "(" "define-sort" SYMBOL "(" symbol_list ")" sort ")"             { $$ = new Command(); }
                       | "(" "declare-fun" SYMBOL "(" sort_list ")" sort ")"               { $$ = new DeclareFun(new Primitive($3, Primitive::Type::SYMBOL), $5, $7);}
+                      | "(" DECLARE_VAR SYMBOL sort ")"                                   { $$ = new DeclareFun(new Primitive($3, Primitive::Type::SYMBOL), nullptr, $4);}
                       | "(" "define-fun" SYMBOL "(" sorted_var_list ")" sort term ")"     { $$ = new Command(); }                
                       | "(" "push" NUMERAL ")"                                            { $$ = new Command(); }
                       | "(" "pop" NUMERAL ")"                                             { $$ = new Command(); }
@@ -232,110 +235,108 @@ symbol_list_          :
 
 /* Terms */
 term_list_            :
-                        term_list_ term                                                   { $1 -> push_back($2); $$ = $1;}
-                      | term                                                              { $$ = new TermList(); $$ -> push_back($1);}
+                        term_list_ term                                                 { $1 -> push_back($2); $$ = $1;}
+                      | term                                                            { $$ = new TermList(); $$ -> push_back($1);}
                       ;
 
 term                  :
-                        "(" "!" term attribute_list_ ")"                                  { $$ = new Exclamation($3, $4); }
-                      | "(" "exists" "(" sorted_var_list_ ")" term ")"                    { $$ = new Exists($4, $6); }
-                      | "(" "forall" "(" sorted_var_list_ ")" term ")"                    { $$ = new ForAll($4, $6); }
-                      | "(" "let" "(" var_binding_list_ ")" term ")"                      { $$ = new Let($4, $6); }
-                      | "(" "and" term_list_ ")"                                          { $$ = new And($3); }
-                      | "(" "or" term_list_ ")"                                           { $$ = new Or($3); }  
-                      | "(" "not" term ")"                                                { $$ = new Not($3); }
-                      | "(" "-" term ")"                                                  { $$ = new UMinus($3); }
-                      | "(" "-" term term ")"                                             { $$ = new Minus($3, $4); }
-                      | "(" "+" term_list_ ")"                                            { $$ = new Plus($3); }
-                      | "(" "*" term_list_ ")"                                            { $$ = new Times($3); }
-                      | "(" "=" term term ")"                                             { $$ = new Eq($3, $4); }
-                      | "(" "!=" term term ")"                                            { $$ = new NotEq($3, $4); }
-                      | "(" ">" term term ")"                                             { $$ = new Gt($3, $4); }
-                      | "(" ">=" term term ")"                                            { $$ = new Ge($3, $4); }
-                      | "(" "<" term term ")"                                             { $$ = new Lt($3, $4); }
-                      | "(" "<=" term term ")"                                            { $$ = new Le($3, $4); }
-                      | "(" "concat" term_list_ ")"                                       { $$ = new Concat($3); }
-                      | "(" "in" term term ")"                                            { $$ = new In($3, $4); }
-                      | "(" "notIn" term term ")"                                         { $$ = new NotIn($3, $4); }
-                      | "(" "len" term ")"                                                { $$ = new Len($3); }
-                      | "(" "contains" term term ")"                                      { $$ = new Contains($3, $4); }
-                      | "(" "notContains" term term ")"                                   { $$ = new NotContains($3, $4); }
-                      | "(" "begins" term term ")"                                        { $$ = new Begins($3, $4); }
-                      | "(" "notBegins" term term ")"                                     { $$ = new NotBegins($3, $4); }
-                      | "(" "ends" term term ")"                                          { $$ = new Ends($3, $4); }
-                      | "(" "notEnds" term term ")"                                       { $$ = new NotEnds($3, $4); }
-                      | "(" "indexOf" term term ")"                                       { $$ = new IndexOf($3, $4); }
-                      | "(" "indexOf" term term term ")"                                  { $$ = new IndexOf($3, $4, $5); }
-                      | "(" "lastIndexOf" term term ")"                                   { $$ = new LastIndexOf($3, $4); }
-                      | "(" "lastIndexOf" term term term ")"                              { $$ = new LastIndexOf($3, $4, $5); } 
-                      | "(" "charAt" term term ")"                                        { $$ = new CharAt($3, $4); }
-                      | "(" "subString" term term ")"                                     { $$ = new SubString($3, $4); }
-                      | "(" "subString" term term term ")"                                { $$ = new SubString($3, $4, $5); }
-                      | "(" "toUpper" term ")"                                            { $$ = new ToUpper($3); }
-                      | "(" "toLower" term ")"                                            { $$ = new ToLower($3); }
-                      | "(" "trim" term term ")"                                          { $$ = new Trim($3); }
-                      | "(" "toString" term ")"                                           { $$ = new ToString($3); }
-                      | "(" "toInt" term ")"                                              { $$ = new ToInt($3); }
-                      | "(" "replace" term term term ")"                                  { $$ = new Replace($3, $4, $5); }
-                      | "(" "count" term term ")"                                         { $$ = new Count($3, $4); }
-                      | "(" "ite" term term term ")"                                      { $$ = new Ite($3, $4, $5); }
-                      | "(" "re.++" term_list_ ")"                                        { $$ = new ReConcat($3); }
-                      | "(" "re.or" term_list_ ")"                                        { $$ = new Or($3); }
-                      | "(" "re.union" term_list_ ")"                                     { $$ = new ReUnion($3); }
-                      | "(" "re.inter" term_list_ ")"                                     { $$ = new ReInter($3); }
-                      | "(" "re.*" term ")"                                               { $$ = new ReStar($3); }
-                      | "(" "re.+" term ")"                                               { $$ = new RePlus($3); }
-                      | "(" "re.opt" term ")"                                             { $$ = new ReOpt($3); }
-                      | "(" "str.++" term_list_ ")"                                       { $$ = new Concat($3); }
-                      | "(" "str.in.re" term term ")"                                     { $$ = new In($3, $4); }
-                      | "(" "str.len" term ")"                                            { $$ = new Len($3); }
-                      | "(" "str.to.re" term ")"                                          { $$ = new ToRegex($3); }
-                      | "(" qual_identifier term_list_ ")"                                { $$ = new UnknownTerm($2, $3); }
-                      | qual_identifier                                                   { $$ = $1; }
-                      | term_constant                                                     { $$ = $1; }
+                        "(" "!" term attribute_list_ ")"                                { $$ = new Exclamation($3, $4); }
+                      | "(" "exists" "(" sorted_var_list_ ")" term ")"                  { $$ = new Exists($4, $6); }
+                      | "(" "forall" "(" sorted_var_list_ ")" term ")"                  { $$ = new ForAll($4, $6); }
+                      | "(" "let" "(" var_binding_list_ ")" term ")"                    { $$ = new Let($4, $6); }
+                      | "(" AND term_list_ ")"                                          { $$ = new And($3); }
+                      | "(" OR term_list_ ")"                                           { $$ = new Or($3); }  
+                      | "(" NOT term ")"                                                { $$ = new Not($3); }
+                      | "(" MINUS term ")"                                              { $$ = new UMinus($3); }
+                      | "(" MINUS term term ")"                                         { $$ = new Minus($3, $4); }
+                      | "(" PLUS term_list_ ")"                                         { $$ = new Plus($3); }
+                      | "(" STAR term_list_ ")"                                         { $$ = new Times($3); }
+                      | "(" EQ term term ")"                                            { $$ = new Eq($3, $4); }
+                      | "(" NOTEQ term term ")"                                         { $$ = new NotEq($3, $4); }
+                      | "(" GT term term ")"                                            { $$ = new Gt($3, $4); }
+                      | "(" GE term term ")"                                            { $$ = new Ge($3, $4); }
+                      | "(" LT term term ")"                                            { $$ = new Lt($3, $4); }
+                      | "(" LE term term ")"                                            { $$ = new Le($3, $4); }
+                      | "(" CONCAT term_list_ ")"                                       { $$ = new Concat($3); }
+                      | "(" IN term term ")"                                            { $$ = new In($3, $4); }
+                      | "(" NOTIN term term ")"                                         { $$ = new NotIn($3, $4); }
+                      | "(" LEN term ")"                                                { $$ = new Len($3); }
+                      | "(" CONTAINS term term ")"                                      { $$ = new Contains($3, $4); }
+                      | "(" NOTCONTAINS term term ")"                                   { $$ = new NotContains($3, $4); }
+                      | "(" BEGINS term term ")"                                        { $$ = new Begins($3, $4); }
+                      | "(" NOTBEGINS term term ")"                                     { $$ = new NotBegins($3, $4); }
+                      | "(" ENDS term term ")"                                          { $$ = new Ends($3, $4); }
+                      | "(" NOTENDS term term ")"                                       { $$ = new NotEnds($3, $4); }
+                      | "(" INDEXOF term term ")"                                       { $$ = new IndexOf($3, $4); }
+                      | "(" INDEXOF term term term ")"                                  { $$ = new IndexOf($3, $4, $5); }
+                      | "(" LASTINDEXOF term term ")"                                   { $$ = new LastIndexOf($3, $4); }
+                      | "(" LASTINDEXOF term term term ")"                              { $$ = new LastIndexOf($3, $4, $5); } 
+                      | "(" CHARAT term term ")"                                        { $$ = new CharAt($3, $4); }
+                      | "(" SUBSTRING term term ")"                                     { $$ = new SubString($3, $4); }
+                      | "(" SUBSTRING term term term ")"                                { $$ = new SubString($3, $4, $5); }
+                      | "(" TOUPPER term ")"                                            { $$ = new ToUpper($3); }
+                      | "(" TOLOWER term ")"                                            { $$ = new ToLower($3); }
+                      | "(" TRIM term term ")"                                          { $$ = new Trim($3); }
+                      | "(" TOSTRING term ")"                                           { $$ = new ToString($3); }
+                      | "(" TOINT term ")"                                              { $$ = new ToInt($3); }
+                      | "(" REPLACE term term term ")"                                  { $$ = new Replace($3, $4, $5); }
+                      | "(" COUNT term term ")"                                         { $$ = new Count($3, $4); }
+                      | "(" ITE term term term ")"                                      { $$ = new Ite($3, $4, $5); }
+                      | "(" RE_CONCAT term_list_ ")"                                    { $$ = new ReConcat($3); }
+                      | "(" RE_OR term_list_ ")"                                        { $$ = new Or($3); }
+                      | "(" RE_UNION term_list_ ")"                                     { $$ = new ReUnion($3); }
+                      | "(" RE_INTER term_list_ ")"                                     { $$ = new ReInter($3); }
+                      | "(" RE_STAR term ")"                                            { $$ = new ReStar($3); }
+                      | "(" RE_PLUS term ")"                                            { $$ = new RePlus($3); }
+                      | "(" RE_OPT term ")"                                             { $$ = new ReOpt($3); }
+                      | "(" RE_RANGE term term ")"                                      { $$ = ReRangeToRegex($3, $4);}
+                      | "(" TO_REGEX term ")"                                           { $$ = new ToRegex($3); }
+                      | "(" qual_identifier term_list_ ")"                              { $$ = new UnknownTerm($2, $3); }
+                      | qual_identifier                                                 { $$ = $1; }
+                      | term_constant                                                   { $$ = $1; }
                       ;
 
 sorted_var_list       :
-                        sorted_var_list_                                                  { $$ = $1; }
-                      | /* empty */                                                       { $$ = new SortedVarList(); }
+                        sorted_var_list_                                                { $$ = $1; }
+                      | /* empty */                                                     { $$ = new SortedVarList(); }
                       ;
 
 sorted_var_list_      :
-                        sorted_var_list_ sorted_var                                       { $1 -> push_back($2); $$ = $1; }
-                      | sorted_var                                                        { $$ = new SortedVarList(); $$ -> push_back($1); }
+                        sorted_var_list_ sorted_var                                     { $1 -> push_back($2); $$ = $1; }
+                      | sorted_var                                                      { $$ = new SortedVarList(); $$ -> push_back($1); }
                       ;
 
 sorted_var            :
-                        "(" SYMBOL sort ")"                                               { $$ = new SortedVar(new Primitive($2, Primitive::Type::SYMBOL), $3); }
+                        "(" SYMBOL sort ")"                                             { $$ = new SortedVar(new Primitive($2, Primitive::Type::SYMBOL), $3); }
                       ;
 
 var_binding_list_     :
-                        var_binding_list_ var_binding                                     { $1 -> push_back($2); $$ = $1; }
-                      | var_binding                                                       { $$ = new VarBindingList(); $$ -> push_back($1); }
+                        var_binding_list_ var_binding                                   { $1 -> push_back($2); $$ = $1; }
+                      | var_binding                                                     { $$ = new VarBindingList(); $$ -> push_back($1); }
                       ;
 
 var_binding           :
-                        "(" SYMBOL  term ")"                                               { $$ = new VarBinding(new Primitive($2, Primitive::Type::SYMBOL), $3); }
+                        "(" SYMBOL  term ")"                                            { $$ = new VarBinding(new Primitive($2, Primitive::Type::SYMBOL), $3); }
                       ;
                       
 qual_identifier       :
-                        "(" "as" identifier sort ")"                                      { $$ = new AsQualIdentifier($3, $4); }
-                      | identifier                                                        { $$ = new QualIdentifier($1); }
+                        "(" "as" identifier sort ")"                                    { $$ = new AsQualIdentifier($3, $4); }
+                      | identifier                                                      { $$ = new QualIdentifier($1); }
                       ;
 
 term_constant         :
-                        spec_constant                                                     { $$ = new TermConstant($1); }  
+                        spec_constant                                                   { $$ = new TermConstant($1); }  
                       ;
 
 /* Attributes */
 attribute_list_       :
-                        attribute_list_ attribute                                         { $1->push_back($2); $$ = $1; }  
-                      | attribute                                                         { $$ = new AttributeList(); $$->push_back($1); }
+                        attribute_list_ attribute                                       { $1->push_back($2); $$ = $1; }  
+                      | attribute                                                       { $$ = new AttributeList(); $$->push_back($1); }
                       ;
 
 attribute             :
-                        KEYWORD attribute_value                                           { $$ = new Attribute(); }
-                      | KEYWORD                                                           { $$ = new Attribute(); }
+                        KEYWORD attribute_value                                         { $$ = new Attribute(); }
+                      | KEYWORD                                                         { $$ = new Attribute(); }
                       ;
 
 attribute_value       :
@@ -347,36 +348,36 @@ attribute_value       :
 /* Sorts */
 
 sort_list             :
-                        sort_list_                                                        { $$ = $1; }
-                      | /* empty */                                                       { $$ = nullptr; }
+                        sort_list_                                                      { $$ = $1; }
+                      | /* empty */                                                     { $$ = nullptr; }
                       ;
                       
 sort_list_            :
-                        sort_list_ sort                                                   { $1->push_back($2); $$ = $1; }
-                      | sort                                                              { $$ = new SortList(); $$->push_back($1); }
+                        sort_list_ sort                                                 { $1->push_back($2); $$ = $1; }
+                      | sort                                                            { $$ = new SortList(); $$->push_back($1); }
                       ; 
 
 sort                  :
-                        "(" identifier sort_list_ ")"                                     { $$ = new Sort($2, $3); }
-                      | identifier                                                        { $$ = new Sort($1); }
-                      | t_variable                                                          { $$ = new Sort($1); } 
+                        "(" identifier sort_list_ ")"                                   { $$ = new Sort($2, $3); }
+                      | identifier                                                      { $$ = new Sort($1); }
+                      | t_variable                                                      { $$ = new Sort($1); } 
                       ;
 
 t_variable              :
-                        TBOOL                                                             { $$ = new TBool(); }
-                      | TINT                                                              { $$ = new TInt(); }
-                      | TSTRING                                                           { $$ = new TString(); }
+                        TBOOL                                                           { $$ = new TBool(); }
+                      | TINT                                                            { $$ = new TInt(); }
+                      | TSTRING                                                         { $$ = new TString(); }
                       ;
 
 /* Identifiers */
 identifier            :
-                        "(" "_" SYMBOL numeral_list_ ")"                                  { $$ = new Identifier(new Primitive("_", Primitive::Type::SYMBOL), new Primitive($3, Primitive::Type::SYMBOL), $4); }
-                      | SYMBOL                                                            { $$ = new Identifier(new Primitive($1, Primitive::Type::SYMBOL)); } 
+                        "(" "_" SYMBOL numeral_list_ ")"                                { $$ = new Identifier(new Primitive("_", Primitive::Type::SYMBOL), new Primitive($3, Primitive::Type::SYMBOL), $4); }
+                      | SYMBOL                                                          { $$ = new Identifier(new Primitive($1, Primitive::Type::SYMBOL)); } 
                       ;
 
 numeral_list_         :
-                        numeral_list_ NUMERAL                                             { $1 -> push_back(new Primitive($2, Primitive::Type::SYMBOL)); $$ = $1; }
-                      | NUMERAL                                                           { $$ = new NumeralList(); $$ -> push_back(new Primitive($1, Primitive::Type::SYMBOL)); }
+                        numeral_list_ NUMERAL                                           { $1 -> push_back(new Primitive($2, Primitive::Type::SYMBOL)); $$ = $1; }
+                      | NUMERAL                                                         { $$ = new NumeralList(); $$ -> push_back(new Primitive($1, Primitive::Type::SYMBOL)); }
                       ;
 
 /* S-expressions */

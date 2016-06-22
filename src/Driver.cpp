@@ -113,8 +113,8 @@ void Driver::initializeSolver() {
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
   dependency_slicer.start();
 
-  Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
-  equivalence_generator.start();
+//  Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
+//  equivalence_generator.start();
 
 //  Solver::VariableOptimizer variable_optimizer(script, symbol_table);
 //  variable_optimizer.start();
@@ -335,7 +335,7 @@ void Driver::test() {
 //    std::cout << "int: " << int_auto_1->getAnAcceptingInt() << std::endl;
 //    delete int_auto_1;
 
-//  Theory::StringAutomaton_ptr str_auto_1 = Theory::StringAutomaton::makeRegexAuto("(ab[c-d]|fe)");
+//  Theory::StringAutomaton_ptr str_auto_1 = Theory::StringAutomaton::makeRegexAuto("[a-u]");
 //  str_auto_1->inspectAuto();
 //  str_auto_1->inspectBDD();
 //  str_auto_1->Count(5);

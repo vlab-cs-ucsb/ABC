@@ -103,14 +103,13 @@ int main(const int argc, const char **argv) {
   driver.solve();
 
   if (driver.isSatisfiable()) {
-    LOG(INFO)<< "SAT";
     if (VLOG_IS_ON(30)) {
       unsigned index = 0;
       for(auto& variable_entry : driver.getSatisfyingVariables()) {
         std::stringstream ss;
         ss << output_root << "/result_" << index++ << ".dot";
         std::string out_file = ss.str();
-        //driver.inspectResult(variable_entry.second, out_file);
+        driver.inspectResult(variable_entry.second, out_file);
 //        std::string save_result = output_root + "/" + file_name.substr(file_name.find_last_of('/') + 2) + ".dot";
 //        std::ofstream outfile(save_result.c_str());
 //        if (!outfile.good()) {
@@ -148,8 +147,9 @@ int main(const int argc, const char **argv) {
         }
       }
     }
+    LOG(INFO)<< "report: SAT";
   } else {
-    LOG(INFO) << "UNSAT";
+    LOG(INFO) << "report: UNSAT";
     if (model_count) {
       LOG(INFO) << "count          : " << 0;
     }

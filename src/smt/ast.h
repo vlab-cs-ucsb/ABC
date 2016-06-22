@@ -1278,6 +1278,12 @@ class Variable : public TVariable {
   bool is_local_let_var;
 };
 
+/**
+ * HELPER FUNCTIONS
+ */
+
+TermConstant_ptr ReRangeToRegex(Term_ptr left, Term_ptr right);
+
 } /* namespace SMT */
 } /* namespace Vlab */
 

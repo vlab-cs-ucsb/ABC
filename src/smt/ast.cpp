@@ -2476,5 +2476,22 @@ void Variable::accept(Visitor_ptr v) {
 void Variable::visit_children(Visitor_ptr v) {
 }
 
+/**
+ * HELPER FUNCTIONS
+ */
+
+TermConstant_ptr ReRangeToRegex(Term_ptr left, Term_ptr right) {
+  TermConstant_ptr left_constant = dynamic_cast<TermConstant_ptr>(left);
+  TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(right);
+
+  if (left_constant != nullptr and right_constant != nullptr) {
+    std::stringstream ss;
+    ss << "[" << left_constant->getValue() << "-" << right_constant->getValue() << "]";
+    return new TermConstant(new Primitive(ss.str(), Primitive::Type::REGEX));
+  }
+  LOG(FATAL) << "handle re.range operation";
+  return nullptr;
+}
+
 } /* namespace SMT */
 } /* namespace Vlab */
