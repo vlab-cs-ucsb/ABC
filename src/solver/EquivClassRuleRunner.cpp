@@ -383,7 +383,7 @@ bool EquivClassRuleRunner::check_and_substitute_var(Term_ptr& term) {
         case Primitive::Type::BOOL: {
           bool b;
           std::istringstream(dynamic_cast<TermConstant_ptr>(subs_term)->getValue()) >> std::boolalpha >> b;
-          result = new Value(b);          
+          result = new Value(b);
           break;
         }
         case Primitive::Type::BINARY:
@@ -417,6 +417,8 @@ bool EquivClassRuleRunner::check_and_substitute_var(Term_ptr& term) {
   return false;
 }
 
+
+
 Term_ptr EquivClassRuleRunner::get_substitution_term(Variable_ptr variable) {
   auto current_scope = symbol_table_->top_scope();
   auto it = substitution_table_[current_scope].find(variable);
@@ -433,6 +435,11 @@ bool EquivClassRuleRunner::has_optimization_rules() {
       return true;
     }
   }
+
+  if (mark_as_false_.size() != 0) {
+    return true;
+  }
+
   return false;
 }
 
