@@ -10,15 +10,16 @@
 namespace Vlab {
 namespace Theory {
 
-
 const int ArithmeticFormula::VLOG_LEVEL = 15;
 
-ArithmeticFormula::ArithmeticFormula() :
-      type_(Type::NONE), constant_(0) {
+ArithmeticFormula::ArithmeticFormula()
+    : type_(Type::NONE),
+      constant_(0) {
 }
 
-ArithmeticFormula::ArithmeticFormula(std::map<std::string, int>& coeff_map, std::vector<int>& coeffs) :
-      type_(Type::NONE), constant_(0) {
+ArithmeticFormula::ArithmeticFormula(std::map<std::string, int>& coeff_map, std::vector<int>& coeffs)
+    : type_(Type::NONE),
+      constant_(0) {
   coeff_index_map_ = coeff_map;
   coefficients_ = coeffs;
 }
@@ -26,8 +27,9 @@ ArithmeticFormula::ArithmeticFormula(std::map<std::string, int>& coeff_map, std:
 ArithmeticFormula::~ArithmeticFormula() {
 }
 
-ArithmeticFormula::ArithmeticFormula(const ArithmeticFormula& other) :
-      type_(other.type_), constant_(other.constant_),
+ArithmeticFormula::ArithmeticFormula(const ArithmeticFormula& other)
+    : type_(other.type_),
+      constant_(other.constant_),
       coeff_index_map_(other.coeff_index_map_),
       coefficients_(other.coefficients_) {
 
@@ -49,8 +51,7 @@ std::string ArithmeticFormula::str() const {
     std::string name = pair.first;
     if (pair.first.find("len") != std::string::npos) {
       name = "len_term";
-    } else if (pair.first.find("lastIndexOf") != std::string::npos or
-            pair.first.find("indexOf") != std::string::npos) {
+    } else if (pair.first.find("lastIndexOf") != std::string::npos or pair.first.find("indexOf") != std::string::npos) {
       name = "index_term";
     }
     variable_names[pair.second] = name;
@@ -193,7 +194,7 @@ void ArithmeticFormula::set_constant(int constant) {
 
 bool ArithmeticFormula::is_constant() {
   for (auto& coeff : coefficients_) {
-    if ( coeff != 0) {
+    if (coeff != 0) {
       return false;
     }
   }
@@ -222,7 +223,7 @@ bool ArithmeticFormula::IsVariableOrderingSame(ArithmeticFormula_ptr other_formu
  */
 void ArithmeticFormula::MergeCoefficients(ArithmeticFormula_ptr other_formula) {
   std::map<std::string, int> merged_coeff_index_map = other_formula->coeff_index_map_;
-  std::vector<int> merged_coefficients (merged_coeff_index_map.size()); // all zeros
+  std::vector<int> merged_coefficients(merged_coeff_index_map.size());  // all zeros
 
   for (auto& pair : coeff_index_map_) {
     auto it = merged_coeff_index_map.find(pair.first);
@@ -344,14 +345,14 @@ bool ArithmeticFormula::Simplify() {
       if (constant_ >= 0) {
         constant_ = constant_ / gcd_value;
       } else {
-        constant_ = std::floor((double)constant_/gcd_value);
+        constant_ = std::floor((double) constant_ / gcd_value);
       }
       break;
     }
     default:
       LOG(FATAL)<< "Simplification is only done after converting into '=' or '<' equation";
       break;
-  }
+    }
 
   for (int& c : coefficients_) {
     c = c / gcd_value;

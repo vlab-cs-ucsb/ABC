@@ -30,6 +30,7 @@ class StringRelation {
     LT,
     LE,
     INTERSECT,
+    UNION,
     VAR,
     CONSTANT
   };
@@ -47,23 +48,26 @@ class StringRelation {
   StringRelation(const StringRelation&);
   StringRelation_ptr clone() const;
 
-  StringRelation_ptr combine(StringRelation_ptr other_relation);
+  std::string str() const;
+  void set_type(Type type);
+  StringRelation::Type get_type() const;
+  void set_num_tracks(size_t ntracks);
+  size_t get_num_tracks() const;
+  int get_variable_index(std::string name) const;
+  std::map<std::string ,int>& get_term_track_map();
+
+  bool IsTrackOrderingSame(StringRelation_ptr other_relation);
+  StringRelation_ptr Combine(StringRelation_ptr other_relation);
 
   void add_subrelation(Subrelation subrel);
   std::vector<Subrelation> get_subrelation_list();
-
-  void set_type(Type type);
-  StringRelation::Type get_type() const;
-
-  int get_variable_index(std::string name) const;
-  void set_num_tracks(size_t ntracks);
-  size_t get_num_tracks() const;
-
   std::shared_ptr<std::map<std::string, int>> get_variable_track_map();
   void set_variable_track_map(std::shared_ptr<std::map<std::string, int>> track_map);
 
+  friend std::ostream& operator<<(std::ostream& os, const StringRelation& relation);
  protected:
-  Type type_;
+  StringRelation::Type type_;
+  std::map<std::string ,int> term_track_map_;
   std::shared_ptr<std::map<std::string, int>> var_track_map_;
   std::vector<Subrelation> subrelations_;
   size_t num_tracks_;
