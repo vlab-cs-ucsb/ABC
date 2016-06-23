@@ -23,13 +23,17 @@ class MultiTrackAutomaton: public Automaton {
 	MultiTrackAutomaton(DFA_ptr dfa, int num_tracks);
 	MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_tracks);
 	MultiTrackAutomaton(const MultiTrackAutomaton&);
-	virtual ~MultiTrackAutomaton();
+virtual ~MultiTrackAutomaton();
 	virtual MultiTrackAutomaton_ptr clone() const;
 
 	static MultiTrackAutomaton_ptr makePhi(int ntracks);
 	static MultiTrackAutomaton_ptr makeAuto(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks);
 	static MultiTrackAutomaton_ptr makeEquality(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks);
 	static MultiTrackAutomaton_ptr makeNotEquality(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks);
+	static MultiTrackAutomaton_ptr makeLessThan(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks);
+	static MultiTrackAutomaton_ptr makeLessThanOrEqual(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks);
+	static MultiTrackAutomaton_ptr makeGreaterThan(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks);
+	static MultiTrackAutomaton_ptr makeGreaterThanOrEqual(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks);
 	static MultiTrackAutomaton_ptr makeAnyAutoUnaligned(int num_tracks);
 	static MultiTrackAutomaton_ptr makeAnyAutoAligned(int num_tracks);
 

@@ -43,7 +43,11 @@ void StringConstraintSolver::setCallbacks() {
   auto term_callback = [this](Term_ptr term) -> bool {
       switch (term->type()) {
         case Term::Type::EQ:
-        case Term::Type::NOTEQ: {
+        case Term::Type::NOTEQ:
+        case Term::Type::GT:
+        case Term::Type::GE:
+        case Term::Type::LT:
+        case Term::Type::LE: {
           DVLOG(VLOG_LEVEL) << "visit: " << *term;
           StringRelation_ptr relation = string_relation_generator_.get_term_relation(term);
           if(relation == nullptr) {

@@ -200,6 +200,45 @@ void StringRelationGenerator::visitGe(Ge_ptr ge_term) {
 }
 
 void StringRelationGenerator::visitLt(Lt_ptr lt_term) {
+  visit_children_of(lt_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *lt_term;
+  StringRelation_ptr left_relation = nullptr, right_relation = nullptr, relation = nullptr;
+  left_relation = get_term_relation(lt_term->left_term);
+  right_relation = get_term_relation(lt_term->right_term);
+
+  if (left_relation not_eq nullptr and right_relation not_eq nullptr) {
+    StringRelation::Subrelation left_subrelation = left_relation->get_subrelation_list()[0];
+    StringRelation::Subrelation right_subrelation = right_relation->get_subrelation_list()[0];
+    StringRelation::Subrelation subrelation;
+    subrelation.type = StringRelation::Type::LT;
+    subrelation.names = left_subrelation.names;
+    subrelation.names.insert(subrelation.names.end(), right_subrelation.names.begin(), right_subrelation.names.end());
+
+    relation = new StringRelation();
+    relation->set_type(StringRelation::Type::LT);
+    relation->add_subrelation(subrelation);
+    relation->set_variable_track_map(left_relation->get_variable_track_map());
+    relation->set_num_tracks(left_relation->get_num_tracks());
+
+    if (left_subrelation.type == StringRelation::Type::VAR) {
+      Variable_ptr var = symbol_table_->getVariable(left_subrelation.names[0]);
+      if (current_trackmap_->find(var->getName()) == current_trackmap_->end()) {
+        int track = current_trackmap_->size();
+        (*current_trackmap_)[var->getName()] = track;
+      }
+    }
+    if (right_subrelation.type == StringRelation::Type::VAR) {
+      Variable_ptr var = symbol_table_->getVariable(right_subrelation.names[0]);
+      if (current_trackmap_->find(var->getName()) == current_trackmap_->end()) {
+        int track = current_trackmap_->size();
+        (*current_trackmap_)[var->getName()] = track;
+      }
+    }
+
+    delete_term_relation(lt_term->left_term);
+    delete_term_relation(lt_term->right_term);
+    set_term_relation(lt_term, relation);
+  }
 }
 
 void StringRelationGenerator::visitLe(Le_ptr le_term) {

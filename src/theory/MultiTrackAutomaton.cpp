@@ -134,6 +134,9 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAuto(StringRelation_ptr relatio
     case StringRelation::Type::NOTEQ:
       result_auto = MultiTrackAutomaton::makeNotEquality(relation, tracks);
       break;
+    case StringRelation::Type::LT:
+      result_auto = MultiTrackAutomaton::makeLessThan(relation, tracks);
+      break;
     default:
       DVLOG(VLOG_LEVEL) << "StringRelation type not supported";
       result_auto = nullptr;
@@ -213,6 +216,150 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeNotEquality(StringRelation_ptr 
 	not_eq_auto = eq_auto->complement();
 	delete eq_auto;
 	return not_eq_auto;
+}
+
+MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks) {
+	MultiTrackAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
+	StringAutomaton_ptr constant_string_auto = nullptr;
+	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr;
+	int num_tracks = relation->get_num_tracks();
+	if(tracks.size() < 2) {
+		LOG(ERROR) << "Error in MultiTrackAutomaton::makeLessThan: insufficient variables";
+	}
+	int left_track = tracks[0].second;
+	int right_track = tracks[1].second;
+	// if one side is constant, replace with temp variable on last track,
+	// proceeed normally, then intersect it
+	// i.e., construct x < y
+	// then intersect ^ with multitrack where constant is on y track
+	// then project y track away
+	if(left_track == -1) {
+		// make room for temp variable
+		left_track = num_tracks;
+		num_tracks++;
+		constant_string_auto = StringAutomaton::makeString(tracks[0].first);
+	} else if(right_track == -1) {
+		// make room for temp variable
+		right_track = num_tracks;
+		num_tracks++;
+		constant_string_auto = StringAutomaton::makeString(tracks[1].first);
+	}
+
+	int var = VAR_PER_TRACK;
+	int len = num_tracks * var;
+	int *mindices = getIndices(num_tracks*var);
+
+	int nump = 1 << var;
+	// label each state for readability
+	int lambda = nump-1, dest = 0,
+		  init = 0,
+		  lambda_star = 1,
+		  lambda_lambda = 2,
+		  sink = 3;
+	std::vector<char> exep_lambda = getBinaryFormat(lambda, var);
+	dfaSetup(4,len,mindices);
+
+	// initial state
+	// if i < j and j != lambda, still valid, loop to init
+	// if i == lambda, j != lambda, still good, but goto lambda_star
+	// if i == lambda, j == lambda, still good, but goto lambda_lambda
+	// otherwise, goto sink
+	dfaAllocExceptions(nump*nump);
+	for(int i = 0; i < nump; i++) {
+		for(int j = 0; j < nump; j++) {
+			if(i < j && j != lambda) {
+				dest = init;
+			} else if(i == lambda && j != lambda) {
+				dest = lambda_star;
+			} else if(i == lambda && j == lambda) {
+				dest = lambda_lambda;
+			} else {
+				dest = sink;
+			}
+			std::vector<char> exep_i = getBinaryFormat(i, var);
+			std::vector<char> exep_j = getBinaryFormat(j, var);
+			std::vector<char> str(len, 'X');
+			for (int k = 0; k < var; k++) {
+				str[left_track + num_tracks * k] = exep_i[k];
+				str[right_track + num_tracks * k] = exep_j[k];
+			}
+			str.push_back('\0');
+			dfaStoreException(dest, &str[0]);
+		}
+	}
+	dfaStoreState(sink);
+
+	// lambda_star state (i must be lambda)
+	// if i == lambda, j != lambda, still valid, loop to lambda_star
+	// if i == lambda, j == lambda, still valid, but goto lambda_lambda
+	// otherwise, goto sink
+	dfaAllocExceptions(nump);
+	for(int j = 0; j < nump; j++) {
+		if(j != lambda) {
+			dest = lambda_star;
+		} else {
+			dest = lambda_lambda;
+		}
+		std::vector<char> exep_j = getBinaryFormat(j, var);
+		std::vector<char> str(len, 'X');
+		for (int k = 0; k < var; k++) {
+			str[left_track + num_tracks * k] = exep_lambda[k];
+			str[right_track + num_tracks * k] = exep_j[k];
+		}
+		str.push_back('\0');
+		dfaStoreException(dest, &str[0]);
+	}
+	dfaStoreState(sink);
+
+	// lambda_lambda state (i,j must both be lambda)
+	// if i == lambda, j == lambda, still valid, loop to lambda_lambda
+	// otherwise, goto sink
+	dfaAllocExceptions(1);
+	std::vector<char> str2(len, 'X');
+	for (int k = 0; k < var; k++) {
+		str2[left_track + num_tracks * k] = exep_lambda[k];
+		str2[right_track + num_tracks * k] = exep_lambda[k];
+	}
+	str2.push_back('\0');
+	dfaStoreException(lambda_lambda, &str2[0]);
+	dfaStoreState(sink);
+
+	// sink state
+	dfaAllocExceptions(0);
+	dfaStoreState(sink);
+
+	// build it!
+	temp_dfa = dfaBuild("+++-");
+	result_dfa = dfaMinimize(temp_dfa);
+	dfaFree(temp_dfa);
+	result_auto = new MultiTrackAutomaton(result_dfa,num_tracks);
+
+	// if constant_string_auto != nullptr, then either the left or right
+	// side of the inequality is constant; we need to intersect it with
+	// the multitrack where the constant is on the extra track, then
+	// project away the extra track before we return
+	if(constant_string_auto != nullptr) {
+		MultiTrackAutomaton_ptr constant_multi_auto = new MultiTrackAutomaton(constant_string_auto->getDFA(),num_tracks-1,num_tracks);
+		temp_auto = result_auto->intersect(constant_multi_auto);
+		delete result_auto;
+		delete constant_multi_auto;
+		delete constant_string_auto;
+		result_auto = temp_auto->projectKTrack(num_tracks-1);
+		delete temp_auto;
+	}
+
+	result_auto->setRelation(relation);
+	delete[] mindices;
+	return result_auto;
+}
+
+MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThanOrEqual(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks) {
+}
+
+MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThan(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks) {
+}
+
+MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThanOrEqual(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks) {
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAnyAutoUnaligned(int num_tracks) {
