@@ -19,6 +19,8 @@ bool Solver::MODEL_COUNTER_ENABLED      = false;
 bool Solver::LIA_ENGINE_ENABLED         = true;
 bool Solver::LIA_ONLY_CONSTRAINT        = true;
 bool Solver::LIA_NATURAL_NUMBERS_ONLY   = false;
+bool Solver::ENABLE_RELATIONAL_STRING_AUTOMATA = true;
+bool Solver::FORCE_DNF_FORMULA = false;
 
 } /* namespace Option */
 } /* namespace Vlab */

@@ -15,6 +15,7 @@
 
 #include "AstTraverser.h"
 #include "smt/ast.h"
+#include "options/Solver.h"
 
 namespace Vlab {
 namespace Solver {
@@ -35,7 +36,7 @@ public:
   void visitLastIndexOf(SMT::LastIndexOf_ptr);
 
 protected:
-  SMT::Or_ptr TransformIteToOr(SMT::Ite_ptr);
+  bool CheckAndConvertToDnf(SMT::And_ptr);
   void check_and_convert_numeral_to_char(SMT::TermConstant_ptr);
 
 private:

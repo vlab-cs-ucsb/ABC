@@ -24,7 +24,7 @@ Script_ptr Script::clone() const {
   return new Script(*this);
 }
 Script::~Script() {
-  DVLOG(AST_VLOG_LEVEL) << "Script deallocated.";
+  DVLOG(VLOG_LEVEL) << "Script deallocated.";
   deallocate_list(command_list);
   delete command_list;
 }
@@ -53,7 +53,7 @@ Command_ptr Command::clone() const {
 }
 
 Command::~Command() {
-  DVLOG(AST_VLOG_LEVEL) << "Command( " << *this << " ) deallocated.";
+  DVLOG(VLOG_LEVEL) << "Command( " << *this << " ) deallocated.";
 }
 
 std::string Command::str() const {
@@ -258,7 +258,7 @@ Term_ptr Term::clone() const {
 }
 
 Term::~Term() {
-  DVLOG(AST_VLOG_LEVEL) << "Term( " << this->str() << " ) deallocated.";
+  DVLOG(VLOG_LEVEL) << "Term( " << this->str() << " ) deallocated.";
 }
 
 std::string Term::str() const {
@@ -2232,7 +2232,7 @@ Primitive_ptr Primitive::clone() const {
   return new Primitive(*this);
 }
 Primitive::~Primitive() {
-  DVLOG(AST_VLOG_LEVEL) << "Primitive( " << *this << " ) deallocated.";
+  DVLOG(VLOG_LEVEL) << "Primitive( " << *this << " ) deallocated.";
 }
 
 std::string Primitive::str() const {
@@ -2496,6 +2496,56 @@ TermConstant_ptr ReRangeToRegex(Term_ptr left, Term_ptr right) {
   }
   LOG(FATAL) << "handle re.range operation";
   return nullptr;
+}
+
+Or_ptr TransformIteToOr(Term_ptr ite_condition, Term_ptr ite_then_branch, Term_ptr ite_else_branch) {
+  DVLOG(VLOG_LEVEL) << "Parser converts 'ite' term to 'or' term";
+  Term_ptr then_branch_term = nullptr;
+  Term_ptr else_branch_term = nullptr;
+  Term_ptr true_cond = ite_condition;
+  Term_ptr false_cond = nullptr;
+  if (Not_ptr not_term = dynamic_cast<Not_ptr>(true_cond)) {
+    false_cond = not_term->term->clone();
+  } else {
+    false_cond = new Not(true_cond->clone());
+  }
+
+  // process then branch
+  if (And_ptr then_branch = dynamic_cast<And_ptr>(ite_then_branch)) {
+    then_branch->term_list->insert(then_branch->term_list->begin(), true_cond);
+    then_branch_term = then_branch;
+  } else if (Or_ptr then_branch = dynamic_cast<Or_ptr>(ite_then_branch)) {
+    then_branch->term_list->insert(then_branch->term_list->begin(), true_cond);
+    then_branch_term = then_branch;
+  } else {
+    TermList_ptr local_term_list = new TermList();
+    local_term_list->push_back(true_cond);
+    local_term_list->push_back(ite_then_branch);
+    then_branch_term = new And(local_term_list);
+  }
+
+  // process else branch
+  if (And_ptr else_branch = dynamic_cast<And_ptr>(ite_else_branch)) {
+    else_branch->term_list->insert(else_branch->term_list->begin(), false_cond);
+    else_branch_term = else_branch;
+  } else if (Or_ptr else_branch = dynamic_cast<Or_ptr>(ite_else_branch)) {
+    else_branch->term_list->insert(else_branch->term_list->begin(), false_cond);
+    else_branch_term = else_branch;
+  } else {
+    TermList_ptr local_term_list = new TermList();
+    local_term_list->push_back(false_cond);
+    local_term_list->push_back(ite_else_branch);
+    else_branch_term = new And(local_term_list);
+  }
+
+  TermList_ptr term_list = new TermList();
+  term_list->push_back(then_branch_term);
+  term_list->push_back(else_branch_term);
+
+  Or_ptr or_term = new Or(term_list);
+  ite_then_branch = nullptr;
+  ite_else_branch = nullptr;
+  return or_term;
 }
 
 

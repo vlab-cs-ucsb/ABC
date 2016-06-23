@@ -296,6 +296,12 @@ void Driver::setOption(Option::Name option, bool value) {
   case Option::Name::LIA_NATURAL_NUMBERS_ONLY:
     Option::Solver::LIA_NATURAL_NUMBERS_ONLY = value;
     break;
+  case Option::Name::ENABLE_RELATIONAL_STRING_AUTOMATA:
+    Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA = value;
+    break;
+  case Option::Name::FORCE_DNF_FORMULA:
+    Option::Solver::FORCE_DNF_FORMULA = value;
+    break;
   default:
     LOG(ERROR) << "option not recognized: " << static_cast<int>(option) << " -> " << value;
     break;

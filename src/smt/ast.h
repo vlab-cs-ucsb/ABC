@@ -23,7 +23,7 @@
 namespace Vlab {
 namespace SMT {
 
-static const int AST_VLOG_LEVEL = 31;
+static const int VLOG_LEVEL = 31;
 
 class Script : public Visitable {
  public:
@@ -1288,6 +1288,7 @@ class Variable : public TVariable {
  */
 
 TermConstant_ptr ReRangeToRegex(Term_ptr left, Term_ptr right);
+SMT::Or_ptr TransformIteToOr(SMT::Term_ptr ite_condition, SMT::Term_ptr ite_then_branch, SMT::Term_ptr ite_else_branch);
 
 } /* namespace SMT */
 } /* namespace Vlab */

@@ -22,7 +22,9 @@ enum class Name : int {
   LIA_ENGINE_ENABLED,
   SCRIPT_PATH,
   LIA_ONLY_CONSTRAINT,
-  LIA_NATURAL_NUMBERS_ONLY
+  LIA_NATURAL_NUMBERS_ONLY,
+  ENABLE_RELATIONAL_STRING_AUTOMATA,
+  FORCE_DNF_FORMULA
 };
 
 class Solver {
@@ -33,6 +35,8 @@ public:
   static std::string SCRIPT_PATH;
   static bool LIA_ONLY_CONSTRAINT;
   static bool LIA_NATURAL_NUMBERS_ONLY;
+  static bool ENABLE_RELATIONAL_STRING_AUTOMATA;
+  static bool FORCE_DNF_FORMULA;
 };
 
 } /* namespace Option */

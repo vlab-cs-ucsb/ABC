@@ -282,7 +282,7 @@ term                  :
                       | "(" TOINT term ")"                                              { $$ = new ToInt($3); }
                       | "(" REPLACE term term term ")"                                  { $$ = new Replace($3, $4, $5); }
                       | "(" COUNT term term ")"                                         { $$ = new Count($3, $4); }
-                      | "(" ITE term term term ")"                                      { $$ = new Ite($3, $4, $5); }
+                      | "(" ITE term term term ")"                                      { $$ = TransformIteToOr($3, $4, $5); }
                       | "(" RE_CONCAT term_list_ ")"                                    { $$ = new ReConcat($3); }
                       | "(" RE_OR term_list_ ")"                                        { $$ = new Or($3); }
                       | "(" RE_UNION term_list_ ")"                                     { $$ = new ReUnion($3); }
