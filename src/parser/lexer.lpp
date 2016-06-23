@@ -55,6 +55,8 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "forall"            { return Parser::make_FORALL          (loc);  }
 "let"               { return Parser::make_LET             (loc);  }
 "par"               { return Parser::make_PAR             (loc);  }
+"implies"           { return Parser::make_IMPLIES             (loc);  }
+
 
 
 "and"               { return Parser::make_AND             (loc);  }
@@ -85,9 +87,12 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "notContains"       { return Parser::make_NOTCONTAINS     (loc);  }
 "begins"            { return Parser::make_BEGINS          (loc);  }
 "BeginsWith"        { return Parser::make_BEGINS          (loc);  }
+"StartsWith"        { return Parser::make_BEGINS          (loc);  }
+"str.prefixof"      { return Parser::make_BEGINS          (loc);  }
 "notBegins"         { return Parser::make_NOTBEGINS       (loc);  }
 "ends"              { return Parser::make_ENDS            (loc);  }
 "EndsWith"          { return Parser::make_ENDS            (loc);  }
+"str.suffixof"      { return Parser::make_ENDS            (loc);  }
 "notEnds"           { return Parser::make_NOTENDS         (loc);  }
 "indexOf"           { return Parser::make_INDEXOF         (loc);  }
 "str.indexof"       { return Parser::make_INDEXOF         (loc);  }
@@ -127,6 +132,8 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "Str2Reg"           { return Parser::make_TO_REGEX        (loc);  }
 
 "Bool"              { return Parser::make_TBOOL           (loc);  } 
+"bool"              { return Parser::make_TBOOL           (loc);  } 
+
 "Int"               { return Parser::make_TINT            (loc);  }
 "String"            { return Parser::make_TSTRING         (loc);  }
                  

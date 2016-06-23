@@ -57,7 +57,7 @@
   FORALL               "forall"
   LET                  "let"
   PAR                  "par"
-
+  IMPLIES              "implies"
   AND                  "and"
   OR                   "or"
   NOT                  "not"
@@ -244,6 +244,7 @@ term                  :
                       | "(" "exists" "(" sorted_var_list_ ")" term ")"                  { $$ = new Exists($4, $6); }
                       | "(" "forall" "(" sorted_var_list_ ")" term ")"                  { $$ = new ForAll($4, $6); }
                       | "(" "let" "(" var_binding_list_ ")" term ")"                    { $$ = new Let($4, $6); }
+                      | "(" IMPLIES term term ")"                                       { $$ = new Or(CreateTermList(2, new Not($3), $4)); }
                       | "(" AND term_list_ ")"                                          { $$ = new And($3); }
                       | "(" OR term_list_ ")"                                           { $$ = new Or($3); }  
                       | "(" NOT term ")"                                                { $$ = new Not($3); }

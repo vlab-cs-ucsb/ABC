@@ -6,6 +6,7 @@
  */
 
 #include "ast.h"
+#include <stdarg.h>
 
 namespace Vlab {
 namespace SMT {
@@ -2496,6 +2497,16 @@ TermConstant_ptr ReRangeToRegex(Term_ptr left, Term_ptr right) {
   }
   LOG(FATAL) << "handle re.range operation";
   return nullptr;
+}
+
+TermList_ptr CreateTermList(int n, ...){
+  va_list vl;
+  va_start(vl,n);
+  TermList_ptr tl = new TermList();
+  for (int i=0;i<n;i++){
+    tl->push_back(va_arg(vl, Term_ptr));
+  }
+  return tl;
 }
 
 

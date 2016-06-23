@@ -1288,6 +1288,7 @@ class Variable : public TVariable {
  */
 
 TermConstant_ptr ReRangeToRegex(Term_ptr left, Term_ptr right);
+TermList_ptr CreateTermList(int, ...);
 
 } /* namespace SMT */
 } /* namespace Vlab */
