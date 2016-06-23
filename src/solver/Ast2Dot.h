@@ -99,7 +99,7 @@ public:
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
 
-  int inspectAST(SMT::Visitable_ptr node);
+  static int inspectAST(SMT::Visitable_ptr node);
   static std::string toString(SMT::Visitable_ptr node);
   static bool isEquivalent(SMT::Visitable_ptr x, SMT::Visitable_ptr y);
 

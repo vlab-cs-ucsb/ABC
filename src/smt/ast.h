@@ -62,6 +62,7 @@ class Command : public Visitable {
     GET_ASSIGNMENT,
     GET_OPTION,
     GET_INFO,
+    GET_MODEL,
     EXIT
   };
 
@@ -716,19 +717,20 @@ class SubString : public Term {
  public:
   enum class Mode
     : int {
-      NONE = 0,             // used only to check for optimizations
-    FROMINDEX,            // start index is a numeral
-    FROMFIRSTOF,          // start index is string term to find first occurance
-    FROMLASTOF,           // start index is string term to find last occurance
-    FROMINDEXTOINDEX,     // start index is numeral, end index is numeral
-    FROMINDEXTOFIRSTOF,   // start index is numeral, end index is string term to find first occurance
-    FROMINDEXTOLASTOF,    // start index is numeral, end index is string term to find last occurance
-    FROMFIRSTOFTOINDEX,   // start index is string term, end index is numeral
+      NONE = 0,            // used only to check for optimizations
+    FROMINDEX,             // start index is a numeral
+    FROMFIRSTOF,           // start index is string term to find first occurance
+    FROMLASTOF,            // start index is string term to find last occurance
+    FROMINDEXTOINDEX,      // start index is numeral, end index is numeral
+    FROMINDEXTOFIRSTOF,    // start index is numeral, end index is string term to find first occurance
+    FROMINDEXTOLASTOF,     // start index is numeral, end index is string term to find last occurance
+    FROMFIRSTOFTOINDEX,    // start index is string term, end index is numeral
     FROMFIRSTOFTOFIRSTOF,  // start index is string term, end index is string term
-    FROMFIRSTOFTOLASTOF,  // start index is string term, end index is string term
-    FROMLASTOFTOINDEX,    // start index is string term, end index is numeral
-    FROMLASTOFTOFIRSTOF,  // start index is string term, end index is string term
-    FROMLASTOFTOLASTOF    // start index is string term, end index is string term
+    FROMFIRSTOFTOLASTOF,   // start index is string term, end index is string term
+    FROMLASTOFTOINDEX,     // start index is string term, end index is numeral
+    FROMLASTOFTOFIRSTOF,   // start index is string term, end index is string term
+    FROMLASTOFTOLASTOF,    // start index is string term, end index is string term
+    LASTINDEXLENGTH        // last index is the length of the substring, conversion required
 
   };
   SubString(Term_ptr, Term_ptr, Mode mode = Mode::FROMINDEX);
@@ -1280,6 +1282,9 @@ class Variable : public TVariable {
 
 /**
  * HELPER FUNCTIONS
+ *
+ * Syntactic transformations can be made available to parser, in that case we will not be able to
+ * see original parsed tree
  */
 
 TermConstant_ptr ReRangeToRegex(Term_ptr left, Term_ptr right);

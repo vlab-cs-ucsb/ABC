@@ -83,9 +83,16 @@ void SyntacticProcessor::visitAnd(And_ptr and_term) {
   bool has_false_term = false;
   std::vector<TermList> or_term_lists;
   for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
-    visit(*iter);
-    if (Term::Type::OR == (*iter)->type()) {
-      Or_ptr or_term = dynamic_cast<Or_ptr>(*iter);
+//    visit(*iter);
+
+    Or_ptr or_term = nullptr;
+    if (Or_ptr test_or_term = dynamic_cast<Or_ptr>(*iter)) {
+      or_term = test_or_term;
+    } else if (Ite_ptr ite_term = dynamic_cast<Ite_ptr>(*iter)) {
+      or_term = TransformIteToOr(ite_term);
+    }
+
+    if (or_term not_eq nullptr) {
       or_term_lists.push_back(*or_term->term_list);
       or_term->term_list->clear();
       delete or_term;
@@ -112,7 +119,7 @@ void SyntacticProcessor::visitAnd(And_ptr and_term) {
         // avoid memory leak
         for (auto& term_list : cartesian) {
           for (auto term : term_list) {
-            delete term;
+            delete term; term = nullptr;
           }
         }
         for (auto& term : term_list_1) {
@@ -149,8 +156,7 @@ void SyntacticProcessor::visitAnd(And_ptr and_term) {
     TermConstant_ptr initial_term_constant = nullptr;
     int pos = 0;
     for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
-      if (Term::Type::AND == (*iter)->type()) { // Associativity
-        And_ptr sub_and_term = dynamic_cast<And_ptr>(*iter);
+      if (And_ptr sub_and_term = dynamic_cast<And_ptr>(*iter)) { // Associativity
         and_term->term_list->erase(iter);
         and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
         sub_and_term->term_list->clear();
@@ -161,6 +167,7 @@ void SyntacticProcessor::visitAnd(And_ptr and_term) {
       iter++; pos++;
     }
   }
+  DVLOG(VLOG_LEVEL) << "return: " << *and_term;
 }
 
 /**
@@ -168,13 +175,19 @@ void SyntacticProcessor::visitAnd(And_ptr and_term) {
  */
 void SyntacticProcessor::visitOr(Or_ptr or_term) {
   visit_children_of(or_term);
-
-  DVLOG(VLOG_LEVEL) << "Optimize operation: '" << *or_term << "'";
+  DVLOG(VLOG_LEVEL) << "visit: '" << *or_term << "'";
   TermConstant_ptr initial_term_constant = nullptr;
   int pos = 0;
   for (auto iter = or_term->term_list->begin(); iter != or_term->term_list->end();) {
-    if (Term::Type::OR == (*iter)->type()) { // Associativity
-      Or_ptr sub_or_term = dynamic_cast<Or_ptr>(*iter);
+    Or_ptr sub_or_term = nullptr;
+
+    if (Or_ptr test_or_term =  dynamic_cast<Or_ptr>(*iter)) {
+      sub_or_term = test_or_term;
+    } else if (Ite_ptr ite_term = dynamic_cast<Ite_ptr>(*iter)){
+      sub_or_term = TransformIteToOr(ite_term);
+    }
+
+    if (sub_or_term not_eq nullptr) { // Associativity
       or_term->term_list->erase(iter);
       or_term->term_list->insert(iter, sub_or_term->term_list->begin(), sub_or_term->term_list->end());
       sub_or_term->term_list->clear();
@@ -387,6 +400,57 @@ void SyntacticProcessor::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
     }
     visit(last_index_of_term->from_index);
   }
+}
+
+Or_ptr SyntacticProcessor::TransformIteToOr(Ite_ptr ite_term) {
+  DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *ite_term << "' into 'or'";
+  Term_ptr then_branch_term = nullptr;
+  Term_ptr else_branch_term = nullptr;
+  Term_ptr true_cond = ite_term->cond->clone();
+  Term_ptr false_cond = nullptr;
+  if (Not_ptr not_term = dynamic_cast<Not_ptr>(ite_term->cond)) {
+    false_cond = not_term->term->clone();
+  } else {
+    false_cond = new Not(ite_term->cond->clone());
+  }
+
+  // process then branch
+  if (And_ptr then_branch = dynamic_cast<And_ptr>(ite_term->then_branch)) {
+    then_branch->term_list->insert(then_branch->term_list->begin(), true_cond);
+    then_branch_term = then_branch;
+  } else if (Or_ptr then_branch = dynamic_cast<Or_ptr>(ite_term->then_branch)) {
+    then_branch->term_list->insert(then_branch->term_list->begin(), true_cond);
+    then_branch_term = then_branch;
+  } else {
+    TermList_ptr local_term_list = new TermList();
+    local_term_list->push_back(true_cond);
+    local_term_list->push_back(ite_term->then_branch);
+    then_branch_term = new And(local_term_list);
+  }
+
+  // process else branch
+  if (And_ptr else_branch = dynamic_cast<And_ptr>(ite_term->else_branch)) {
+    else_branch->term_list->insert(else_branch->term_list->begin(), false_cond);
+    else_branch_term = else_branch;
+  } else if (Or_ptr else_branch = dynamic_cast<Or_ptr>(ite_term->else_branch)) {
+    else_branch->term_list->insert(else_branch->term_list->begin(), false_cond);
+    else_branch_term = else_branch;
+  } else {
+    TermList_ptr local_term_list = new TermList();
+    local_term_list->push_back(false_cond);
+    local_term_list->push_back(ite_term->else_branch);
+    else_branch_term = new And(local_term_list);
+  }
+
+  TermList_ptr term_list = new TermList();
+  term_list->push_back(then_branch_term);
+  term_list->push_back(else_branch_term);
+
+  Or_ptr or_term = new Or(term_list);
+  ite_term->then_branch = nullptr;
+  ite_term->else_branch = nullptr;
+  delete ite_term;
+  return or_term;
 }
 
 void SyntacticProcessor::check_and_convert_numeral_to_char(TermConstant_ptr term_constant) {

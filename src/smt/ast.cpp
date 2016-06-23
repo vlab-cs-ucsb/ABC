@@ -1213,8 +1213,10 @@ IndexOf::IndexOf(const IndexOf& other)
     : Term(other.type_) {
   subject_term = other.subject_term->clone();
   search_term = other.search_term->clone();
-  if (from_index) {
+  if (other.from_index) {
     from_index = other.from_index->clone();
+  } else {
+    from_index = nullptr;
   }
   mode = other.mode;
 }
@@ -1271,8 +1273,10 @@ LastIndexOf::LastIndexOf(const LastIndexOf& other)
     : Term(other.type_) {
   subject_term = other.subject_term->clone();
   search_term = other.search_term->clone();
-  if (from_index) {
+  if (other.from_index) {
     from_index = other.from_index->clone();
+  } else {
+    from_index = nullptr;
   }
   mode = other.mode;
 }
@@ -1363,8 +1367,10 @@ SubString::SubString(const SubString& other)
     : Term(other.type_) {
   subject_term = other.subject_term->clone();
   start_index_term = other.start_index_term->clone();
-  if (end_index_term not_eq nullptr) {
+  if (other.end_index_term not_eq nullptr) {
     end_index_term = other.end_index_term->clone();
+  } else {
+    end_index_term = nullptr;
   }
   mode = other.mode;
 }
@@ -2483,7 +2489,6 @@ void Variable::visit_children(Visitor_ptr v) {
 TermConstant_ptr ReRangeToRegex(Term_ptr left, Term_ptr right) {
   TermConstant_ptr left_constant = dynamic_cast<TermConstant_ptr>(left);
   TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(right);
-
   if (left_constant != nullptr and right_constant != nullptr) {
     std::stringstream ss;
     ss << "[" << left_constant->getValue() << "-" << right_constant->getValue() << "]";
@@ -2492,6 +2497,7 @@ TermConstant_ptr ReRangeToRegex(Term_ptr left, Term_ptr right) {
   LOG(FATAL) << "handle re.range operation";
   return nullptr;
 }
+
 
 } /* namespace SMT */
 } /* namespace Vlab */

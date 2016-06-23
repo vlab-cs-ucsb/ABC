@@ -998,59 +998,10 @@ void SyntacticOptimizer::visitCount(Count_ptr count_term) {
 }
 
 void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {
-  callback = [ite_term] (Term_ptr & term) mutable {
-    DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *ite_term << "' into 'or'";
-    And_ptr then_branch;
-    And_ptr else_branch;
-    if (Term::Type::AND == ite_term->then_branch->type()) {
-      then_branch = dynamic_cast<And_ptr>(ite_term->then_branch);
-      then_branch->term_list->insert(then_branch->term_list->begin(), ite_term->cond->clone());
-    } else {
-      TermList_ptr tl = new TermList();
-      Term_ptr save = ite_term->then_branch->clone();
-      tl->push_back(save);
-      tl->push_back(ite_term->cond->clone());
-      And_ptr tmp = new And(tl);
-      then_branch = tmp;
-    }
-    if (Not_ptr not_term = dynamic_cast<Not_ptr>(ite_term->cond)) {
-      if (Term::Type::AND == ite_term->else_branch->type()) {
-        else_branch = dynamic_cast<And_ptr>(ite_term->else_branch);
-        else_branch->term_list->insert(else_branch->term_list->begin(), not_term->term->clone());
-
-      } else {
-        TermList_ptr tl = new TermList();
-        Term_ptr save = ite_term->else_branch->clone();
-        tl->push_back(save);
-        tl->push_back(not_term->term->clone());
-        And_ptr tmp = new And(tl);
-        else_branch = tmp;
-      }
-    } else {
-      not_term = new Not(ite_term->cond);
-      if (Term::Type::AND == ite_term->else_branch->type()) {
-        else_branch = dynamic_cast<And_ptr>(ite_term->else_branch);
-        else_branch->term_list->insert(else_branch->term_list->begin(), not_term->clone());
-
-      } else {
-        TermList_ptr tl = new TermList();
-        Term_ptr save = ite_term->else_branch->clone();
-        tl->push_back(save);
-        tl->push_back(not_term->clone());
-        And_ptr tmp = new And(tl);
-        else_branch = tmp;
-      }
-
-    }
-    TermList_ptr term_list = new TermList();
-    term_list->push_back(then_branch);
-    term_list->push_back(else_branch);
-
-    term = new Or(term_list);
-    ite_term->then_branch = nullptr;
-    ite_term->else_branch = nullptr;
-    delete ite_term;
-  };
+  LOG(FATAL) << "ite term should be handled in SyntacticProcessor";
+  //  callback = [ite_term] (Term_ptr & term) mutable {
+//
+//  };
 }
 
 void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {

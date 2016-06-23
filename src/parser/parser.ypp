@@ -84,6 +84,7 @@
   LASTINDEXOF          "lastIndexOf"
   CHARAT               "charAt"
   SUBSTRING            "subString"
+  SUBSTRINGLENGTH      "subStringLength"
   SUBSTRINGFIRSTOF     "subStringFirstOf"
   SUBSTRINGLASTOF      "subStringLastOf"
   TOUPPER              "toUpper"
@@ -102,9 +103,6 @@
   RE_PLUS              "re.+"
   RE_OPT               "re.opt"
   RE_RANGE             "re.range"
-  CONCAT_CVC           "str.++"
-  IN_CVC               "str.in.re"
-  LEN_CVC              "str.len"
   TO_REGEX             "str.to.re"  
 
   TBOOL                 "TBool"
@@ -123,6 +121,7 @@
   GET_ASSERTIONS       "get-assertions"
   GET_ASSIGNMENT       "get-assignment"
   GET_INFO             "get-info"
+  GET_MODEL            "get-model"
   GET_OPTION           "get-option"
   GET_PROOF            "get-proof"
   GET_UNSAT_CORE       "get-unsat-core"
@@ -189,7 +188,7 @@ command               :
                       | "(" "declare-sort" SYMBOL NUMERAL ")"                             { $$ = new Command(); }
                       | "(" "define-sort" SYMBOL "(" symbol_list ")" sort ")"             { $$ = new Command(); }
                       | "(" "declare-fun" SYMBOL "(" sort_list ")" sort ")"               { $$ = new DeclareFun(new Primitive($3, Primitive::Type::SYMBOL), $5, $7);}
-                      | "(" DECLARE_VAR SYMBOL sort ")"                                   { $$ = new DeclareFun(new Primitive($3, Primitive::Type::SYMBOL), nullptr, $4);}
+                      | "(" "declare-fun" SYMBOL sort ")"                                 { $$ = new DeclareFun(new Primitive($3, Primitive::Type::SYMBOL), nullptr, $4);}
                       | "(" "define-fun" SYMBOL "(" sorted_var_list ")" sort term ")"     { $$ = new Command(); }                
                       | "(" "push" NUMERAL ")"                                            { $$ = new Command(); }
                       | "(" "pop" NUMERAL ")"                                             { $$ = new Command(); }
@@ -199,6 +198,7 @@ command               :
                       | "(" "check-sat-and-count" NUMERAL ")"                             { $$ = new CheckSatAndCount(new Primitive($3, Primitive::Type::NUMERAL)); }
                       | "(" "check-sat-and-count" NUMERAL SYMBOL ")"                      { $$ = new CheckSatAndCount(new Primitive($3, Primitive::Type::NUMERAL), new Primitive($4, Primitive::Type::SYMBOL)); }
                       | "(" "get-assertions" ")"                                          { $$ = new Command(); } 
+                      | "(" "get-model" ")"                                               { $$ = new Command(); }
                       | "(" "get-proof" ")"                                               { $$ = new Command(); } 
                       | "(" "get-unsat-core" ")"                                          { $$ = new Command(); }   
                       | "(" "get-value" term_list_ ")"                                    { $$ = new Command(); }
@@ -274,6 +274,7 @@ term                  :
                       | "(" CHARAT term term ")"                                        { $$ = new CharAt($3, $4); }
                       | "(" SUBSTRING term term ")"                                     { $$ = new SubString($3, $4); }
                       | "(" SUBSTRING term term term ")"                                { $$ = new SubString($3, $4, $5); }
+                      | "(" SUBSTRINGLENGTH term term term ")"                          { $$ = new SubString($3, $4, $5, SubString::Mode::LASTINDEXLENGTH); }
                       | "(" TOUPPER term ")"                                            { $$ = new ToUpper($3); }
                       | "(" TOLOWER term ")"                                            { $$ = new ToLower($3); }
                       | "(" TRIM term term ")"                                          { $$ = new Trim($3); }

@@ -343,8 +343,7 @@ int Ast2Dot::inspectAST(Visitable_ptr node) {
     std::cout << "cannot open file: " << file_name << std::endl;
     exit(2);
   }
-  m_out = &outfile;
-  start(node);
+  outfile << Ast2Dot::toString(node);
   outfile.close();
 
   std::string dot_cmd("xdot " + file_name + " &");

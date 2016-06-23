@@ -35,6 +35,7 @@ public:
   void visitLastIndexOf(SMT::LastIndexOf_ptr);
 
 protected:
+  SMT::Or_ptr TransformIteToOr(SMT::Ite_ptr);
   void check_and_convert_numeral_to_char(SMT::TermConstant_ptr);
 
 private:
