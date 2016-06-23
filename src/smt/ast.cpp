@@ -6,6 +6,7 @@
  */
 
 #include "ast.h"
+#include <stdarg.h>
 
 namespace Vlab {
 namespace SMT {
@@ -2546,6 +2547,16 @@ Or_ptr TransformIteToOr(Term_ptr ite_condition, Term_ptr ite_then_branch, Term_p
   ite_then_branch = nullptr;
   ite_else_branch = nullptr;
   return or_term;
+}
+
+TermList_ptr CreateTermList(int n, ...) {
+  va_list vl;
+  va_start(vl,n);
+  TermList_ptr tl = new TermList();
+  for (int i = 0; i < n; i++){
+    tl->push_back(va_arg(vl, Term_ptr));
+  }
+  return tl;
 }
 
 
