@@ -44,9 +44,7 @@ void StringRelationGenerator::end() {
 }
 
 void StringRelationGenerator::visitScript(Script_ptr script) {
-  symbol_table_->push_scope(script);
   visit_children_of(script);
-  symbol_table_->pop_scope();
 }
 
 void StringRelationGenerator::visitCommand(Command_ptr command) {
@@ -449,7 +447,7 @@ void StringRelationGenerator::delete_term_relation(Term_ptr term) {
 
 Term_ptr StringRelationGenerator::get_parent_term(Variable_ptr variable) {
   auto it = variable_term_map_.find(variable);
-  if (it != variable_term_map_.end()) {
+  if (it == variable_term_map_.end()) {
     return nullptr;
   }
   return variable_term_map_[variable];

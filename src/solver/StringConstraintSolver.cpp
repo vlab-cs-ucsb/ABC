@@ -25,13 +25,13 @@ StringConstraintSolver::~StringConstraintSolver() {
 }
 
 void StringConstraintSolver::start() {
-  string_relation_generator_.visit(root);
+  string_relation_generator_.start(root);
   visitScript(root);
   end();
 }
 
 void StringConstraintSolver::start(SMT::Visitable_ptr node) {
-  string_relation_generator_.visit(node);
+  string_relation_generator_.start(node);
   this->Visitor::visit(node);
   end();
 }
@@ -142,6 +142,12 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
 }
 
 void StringConstraintSolver::visitOr(Or_ptr or_term) {
+  DVLOG(VLOG_LEVEL) << "visit: " << *or_term;
+  for (auto& term : *(or_term->term_list)) {
+    symbol_table_->push_scope(term);
+    visit(term);
+    symbol_table_->pop_scope();
+  }
 }
 
 void StringConstraintSolver::visitConcat(Concat_ptr concat_term) {
@@ -272,6 +278,7 @@ Value_ptr StringConstraintSolver::get_variable_value(Variable_ptr variable) {
   StringRelation_ptr variable_relation = nullptr;
   Value_ptr relation_value = get_relational_value(variable);
   if(relation_value == nullptr) {
+    DVLOG(VLOG_LEVEL) << "No relation value!?";
     return nullptr;
   }
   relation_auto = relation_value->getMultiTrackAutomaton();
@@ -291,6 +298,7 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
     DVLOG(VLOG_LEVEL) << "Unable to get update relational value for variable: " << variable->getName();
     return false;
   }
+  variable_auto = value->getStringAutomaton();
   relation_auto = relation_value->getMultiTrackAutomaton();
   variable_relation = relation_auto->getRelation();
 
@@ -309,9 +317,8 @@ Value_ptr StringConstraintSolver::get_relational_value(SMT::Variable_ptr variabl
   Value_ptr relation_value = nullptr;
   StringRelation_ptr variable_relation = nullptr;
   Term_ptr term = string_relation_generator_.get_parent_term(variable);
-
   if(term == nullptr) {
-    DVLOG(VLOG_LEVEL) << "Parent term not set for variable";
+    DVLOG(VLOG_LEVEL) << "Parent term not set for variable: " << variable << "," << *variable;
     return nullptr;
   }
   relation_value = get_term_value(term);

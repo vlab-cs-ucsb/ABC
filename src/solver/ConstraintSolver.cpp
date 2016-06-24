@@ -141,7 +141,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   // If we are in a component solve arithmetic constraints first
   if (constraint_information_->is_component(and_term)) {
     if (Option::Solver::LIA_ENGINE_ENABLED) {
-      arithmetic_constraint_solver_.start(and_term);
+      //arithmetic_constraint_solver_.start(and_term);
     }
     string_constraint_solver_.start(and_term);
   }
@@ -1012,6 +1012,7 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   // the most recent value
   Value_ptr variable_value = string_constraint_solver_.get_variable_value(variable);
   if (variable_value != nullptr) {
+    DVLOG(VLOG_LEVEL) << "Relational variable: " << *variable;
     // variable relational, put in symbol table and tag for later update
     symbol_table_->setValue(variable, variable_value);
     tagged_variables.push_back(variable);

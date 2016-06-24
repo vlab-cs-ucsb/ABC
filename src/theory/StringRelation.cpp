@@ -97,6 +97,11 @@ size_t StringRelation::get_num_tracks() const {
 }
 
 int StringRelation::get_variable_index(std::string name) const {
+  if(var_track_map_ == nullptr) {
+    DVLOG(VLOG_LEVEL) << "its null...";
+  } else {
+    DVLOG(VLOG_LEVEL) << "dunno";
+  }
   auto iter = var_track_map_->find(name);
   if (iter == var_track_map_->end()) {
     return -1;
