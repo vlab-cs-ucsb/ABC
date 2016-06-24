@@ -17,14 +17,16 @@
 #include "smt/ast.h"
 #include "theory/StringRelation.h"
 #include "SymbolTable.h"
+#include "ConstraintInformation.h"
 
 namespace Vlab {
 namespace Solver {
 
 class StringRelationGenerator : public SMT::Visitor {
-
+  using VariableTrackMap = std::map<std::string, int>;
+  using VariableTrackMap_ptr = VariableTrackMap*;
  public:
-  StringRelationGenerator(SMT::Script_ptr, SymbolTable_ptr);
+  StringRelationGenerator(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr);
   virtual ~StringRelationGenerator();
 
   void start(SMT::Visitable_ptr);
@@ -97,21 +99,24 @@ class StringRelationGenerator : public SMT::Visitor {
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
 
-  Theory::StringRelation_ptr get_term_relation(SMT::Term_ptr term);bool set_term_relation(
-      SMT::Term_ptr term, Theory::StringRelation_ptr str_rel);
+  Theory::StringRelation_ptr get_term_relation(SMT::Term_ptr term);
+  bool set_term_relation(SMT::Term_ptr term, Theory::StringRelation_ptr str_rel);
   void delete_term_relation(SMT::Term_ptr term);
+
   SMT::Term_ptr get_parent_term(SMT::Variable_ptr variable);
   bool set_parent_term(SMT::Variable_ptr variable,SMT::Term_ptr term);
-  void reset_variable_trackmap();
 
  protected:
+  void add_string_variable(SMT::Variable_ptr variable, SMT::Term_ptr term);
+  VariableTrackMap_ptr get_term_trackmap(SMT::Term_ptr term);
 
   SMT::Script_ptr root_;
   SymbolTable_ptr symbol_table_;
+  ConstraintInformation_ptr constraint_information_;
 
-  std::shared_ptr<std::map<std::string, int>> current_trackmap_;
   std::map<SMT::Term_ptr, Theory::StringRelation_ptr> relations_;
   // for interplay between single/multitrack
+  std::map<SMT::Term_ptr, VariableTrackMap_ptr> term_trackmap_table_;
   std::map<SMT::Variable_ptr, SMT::Term_ptr> variable_term_map_;
  private:
   SMT::Term_ptr current_term_;

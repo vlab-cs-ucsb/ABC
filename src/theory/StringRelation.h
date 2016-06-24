@@ -41,7 +41,7 @@ class StringRelation {
   };
 
   StringRelation();
-  StringRelation(Type t, std::shared_ptr<std::map<std::string, int>> var_map, std::vector<Subrelation> subrels,
+  StringRelation(Type t, std::map<std::string, int>* trackmap, std::vector<Subrelation> subrels,
                  size_t ntracks);
   virtual ~StringRelation();
 
@@ -53,22 +53,21 @@ class StringRelation {
   StringRelation::Type get_type() const;
   void set_num_tracks(size_t ntracks);
   size_t get_num_tracks() const;
-  int get_variable_index(std::string name) const;
-  std::map<std::string ,int>& get_term_track_map();
+  int get_variable_index(std::string name);
+  std::map<std::string ,int>* get_term_trackmap();
 
-  bool IsTrackOrderingSame(StringRelation_ptr other_relation);
-  StringRelation_ptr Combine(StringRelation_ptr other_relation);
+  bool has_same_trackmap(StringRelation_ptr other_relation);
+  StringRelation_ptr combine(StringRelation_ptr other_relation);
 
   void add_subrelation(Subrelation subrel);
   std::vector<Subrelation> get_subrelation_list();
-  std::shared_ptr<std::map<std::string, int>> get_variable_track_map();
-  void set_variable_track_map(std::shared_ptr<std::map<std::string, int>> track_map);
+  std::map<std::string, int>* get_variable_trackmap();
+  void set_variable_trackmap(std::map<std::string, int>* trackmap);
 
   friend std::ostream& operator<<(std::ostream& os, const StringRelation& relation);
  protected:
   StringRelation::Type type_;
-  std::map<std::string ,int> term_track_map_;
-  std::shared_ptr<std::map<std::string, int>> var_track_map_;
+  std::map<std::string, int>* trackmap_handle_;
   std::vector<Subrelation> subrelations_;
   size_t num_tracks_;
 

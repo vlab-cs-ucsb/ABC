@@ -17,11 +17,11 @@ using namespace Theory;
 
 const int StringRelationGenerator::VLOG_LEVEL = 14;
 
-StringRelationGenerator::StringRelationGenerator(Script_ptr script, SymbolTable_ptr symbol_table)
+StringRelationGenerator::StringRelationGenerator(Script_ptr script, SymbolTable_ptr symbol_table, ConstraintInformation_ptr constraint_information)
     : root_(script),
-      symbol_table_(symbol_table) {
+      symbol_table_(symbol_table),
+      constraint_information_(constraint_information) {
   current_term_ = nullptr;
-  current_trackmap_ = std::shared_ptr<std::map<std::string,int>>(new std::map<std::string,int>);
 }
 
 StringRelationGenerator::~StringRelationGenerator() {
@@ -76,9 +76,19 @@ void StringRelationGenerator::visitAnd(And_ptr and_term) {
   visit_children_of(and_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
 
-  //
-  // clear coefficient maps at the end of possible component
-  current_trackmap_ = std::shared_ptr<std::map<std::string,int>>(new std::map<std::string,int>);
+  if (not constraint_information_->is_component(and_term)) {
+    return;
+  }
+
+  StringRelation_ptr term_relation = nullptr;
+  VariableTrackMap_ptr current_trackmap = get_term_trackmap(current_term_);
+  for (auto& term : *(and_term->term_list)) {
+    term_relation = get_term_relation(term);
+    if(term_relation != nullptr) {
+      term_relation->set_variable_trackmap(current_trackmap);
+      term_relation->set_num_tracks(current_trackmap->size());
+    }
+  }
 }
 
 void StringRelationGenerator::visitOr(Or_ptr or_term) {
@@ -125,22 +135,15 @@ void StringRelationGenerator::visitEq(Eq_ptr eq_term) {
     relation = new StringRelation();
     relation->set_type(StringRelation::Type::EQ);
     relation->add_subrelation(subrelation);
-    relation->set_variable_track_map(left_relation->get_variable_track_map());
-    relation->set_num_tracks(left_relation->get_num_tracks());
+    relation->set_variable_trackmap(nullptr);
 
     if (left_subrelation.type == StringRelation::Type::VAR) {
       Variable_ptr var = symbol_table_->getVariable(left_subrelation.names[0]);
-      if (current_trackmap_->find(var->getName()) == current_trackmap_->end()) {
-        int track = current_trackmap_->size();
-        (*current_trackmap_)[var->getName()] = track;
-      }
+      add_string_variable(var,current_term_);
     }
     if (right_subrelation.type == StringRelation::Type::VAR) {
       Variable_ptr var = symbol_table_->getVariable(right_subrelation.names[0]);
-      if (current_trackmap_->find(var->getName()) == current_trackmap_->end()) {
-        int track = current_trackmap_->size();
-        (*current_trackmap_)[var->getName()] = track;
-      }
+      add_string_variable(var,current_term_);
     }
 
     delete_term_relation(eq_term->left_term);
@@ -167,22 +170,15 @@ void StringRelationGenerator::visitNotEq(NotEq_ptr not_eq_term) {
     relation = new StringRelation();
     relation->set_type(StringRelation::Type::NOTEQ);
     relation->add_subrelation(subrelation);
-    relation->set_variable_track_map(left_relation->get_variable_track_map());  // TODO: Make better
-    relation->set_num_tracks(left_relation->get_num_tracks());
+    relation->set_variable_trackmap(nullptr);
 
     if (left_subrelation.type == StringRelation::Type::VAR) {
       Variable_ptr var = symbol_table_->getVariable(left_subrelation.names[0]);
-      if (current_trackmap_->find(var->getName()) == current_trackmap_->end()) {
-        int track = current_trackmap_->size();
-        (*current_trackmap_)[var->getName()] = track;
-      }
+      add_string_variable(var,current_term_);
     }
     if (right_subrelation.type == StringRelation::Type::VAR) {
       Variable_ptr var = symbol_table_->getVariable(right_subrelation.names[0]);
-      if (current_trackmap_->find(var->getName()) == current_trackmap_->end()) {
-        int track = current_trackmap_->size();
-        (*current_trackmap_)[var->getName()] = track;
-      }
+      add_string_variable(var,current_term_);
     }
 
     delete_term_relation(not_eq_term->left_term);
@@ -200,10 +196,10 @@ void StringRelationGenerator::visitGe(Ge_ptr ge_term) {
 void StringRelationGenerator::visitLt(Lt_ptr lt_term) {
   visit_children_of(lt_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *lt_term;
+
   StringRelation_ptr left_relation = nullptr, right_relation = nullptr, relation = nullptr;
   left_relation = get_term_relation(lt_term->left_term);
   right_relation = get_term_relation(lt_term->right_term);
-
   if (left_relation not_eq nullptr and right_relation not_eq nullptr) {
     StringRelation::Subrelation left_subrelation = left_relation->get_subrelation_list()[0];
     StringRelation::Subrelation right_subrelation = right_relation->get_subrelation_list()[0];
@@ -215,22 +211,16 @@ void StringRelationGenerator::visitLt(Lt_ptr lt_term) {
     relation = new StringRelation();
     relation->set_type(StringRelation::Type::LT);
     relation->add_subrelation(subrelation);
-    relation->set_variable_track_map(left_relation->get_variable_track_map());
-    relation->set_num_tracks(left_relation->get_num_tracks());
+    relation->set_variable_trackmap(nullptr);
 
     if (left_subrelation.type == StringRelation::Type::VAR) {
       Variable_ptr var = symbol_table_->getVariable(left_subrelation.names[0]);
-      if (current_trackmap_->find(var->getName()) == current_trackmap_->end()) {
-        int track = current_trackmap_->size();
-        (*current_trackmap_)[var->getName()] = track;
-      }
+      add_string_variable(var,current_term_);
     }
+
     if (right_subrelation.type == StringRelation::Type::VAR) {
       Variable_ptr var = symbol_table_->getVariable(right_subrelation.names[0]);
-      if (current_trackmap_->find(var->getName()) == current_trackmap_->end()) {
-        int track = current_trackmap_->size();
-        (*current_trackmap_)[var->getName()] = track;
-      }
+      add_string_variable(var,current_term_);
     }
 
     delete_term_relation(lt_term->left_term);
@@ -358,7 +348,9 @@ void StringRelationGenerator::visitAsQualIdentifier(AsQualIdentifier_ptr as_qual
 
 void StringRelationGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *qi_term;
-
+  if(get_term_relation(qi_term) != nullptr) {
+    return;
+  }
   StringRelation_ptr str_rel = nullptr;
   Variable_ptr variable = symbol_table_->getVariable(qi_term->getVarName());
   set_parent_term(variable, current_term_);
@@ -369,15 +361,18 @@ void StringRelationGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term) {
     subrel.names = std::vector<std::string>(1, variable->getName());
     str_rel = new StringRelation();
     str_rel->set_type(StringRelation::Type::VAR);
-    str_rel->set_variable_track_map(current_trackmap_);
     str_rel->add_subrelation(subrel);
   }
   set_term_relation(qi_term, str_rel);
 }
 
 void StringRelationGenerator::visitTermConstant(TermConstant_ptr term_constant) {
-  StringRelation_ptr str_rel = nullptr;
+
   DVLOG(VLOG_LEVEL) << "visit: " << *term_constant;
+  if(get_term_relation(term_constant) != nullptr) {
+    return;
+  }
+  StringRelation_ptr str_rel = nullptr;
   StringRelation::Subrelation subrel;
   subrel.type = StringRelation::Type::CONSTANT;
   subrel.names = std::vector<std::string>(1, term_constant->getValue());
@@ -458,8 +453,21 @@ bool StringRelationGenerator::set_parent_term(Variable_ptr variable, Term_ptr te
   return true;
 }
 
-void StringRelationGenerator::reset_variable_trackmap() {
-  current_trackmap_->clear();
+void StringRelationGenerator::add_string_variable(Variable_ptr variable, Term_ptr term) {
+  int id;
+  std::string variable_name = variable->getName();
+  if(term_trackmap_table_.find(term) == term_trackmap_table_.end()) {
+    term_trackmap_table_[term] = new std::map<std::string, int>();
+  }
+  id = term_trackmap_table_[term]->size();
+  (*term_trackmap_table_[term])[variable_name]= id;
+}
+
+StringRelationGenerator::VariableTrackMap_ptr StringRelationGenerator::get_term_trackmap(SMT::Term_ptr term) {
+  if(term_trackmap_table_.find(term) == term_trackmap_table_.end()) {
+    return nullptr;
+  }
+  return term_trackmap_table_[term];
 }
 
 } /* namespace Solver */

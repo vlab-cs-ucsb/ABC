@@ -15,7 +15,7 @@ const int StringConstraintSolver::VLOG_LEVEL = 13;
 StringConstraintSolver::StringConstraintSolver(Script_ptr script, SymbolTable_ptr symb,
                          ConstraintInformation_ptr constraint_information)
   : AstTraverser(script), symbol_table_(symb),
-    string_relation_generator_(script, symb),
+    string_relation_generator_(script, symb, constraint_information),
     constraint_information_(constraint_information) {
   setCallbacks();
 }
@@ -278,7 +278,6 @@ Value_ptr StringConstraintSolver::get_variable_value(Variable_ptr variable) {
   StringRelation_ptr variable_relation = nullptr;
   Value_ptr relation_value = get_relational_value(variable);
   if(relation_value == nullptr) {
-    DVLOG(VLOG_LEVEL) << "No relation value!?";
     return nullptr;
   }
   relation_auto = relation_value->getMultiTrackAutomaton();
@@ -295,7 +294,7 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
   Term_ptr term = string_relation_generator_.get_parent_term(variable);
   relation_value = get_relational_value(variable);
   if(relation_value == nullptr) {
-    DVLOG(VLOG_LEVEL) << "Unable to get update relational value for variable: " << variable->getName();
+    LOG(FATAL) << "Unable to get update relational value for variable: " << variable->getName();
     return false;
   }
   variable_auto = value->getStringAutomaton();
@@ -318,7 +317,6 @@ Value_ptr StringConstraintSolver::get_relational_value(SMT::Variable_ptr variabl
   StringRelation_ptr variable_relation = nullptr;
   Term_ptr term = string_relation_generator_.get_parent_term(variable);
   if(term == nullptr) {
-    DVLOG(VLOG_LEVEL) << "Parent term not set for variable: " << variable << "," << *variable;
     return nullptr;
   }
   relation_value = get_term_value(term);
@@ -327,7 +325,7 @@ Value_ptr StringConstraintSolver::get_relational_value(SMT::Variable_ptr variabl
   }
   variable_relation = relation_value->getMultiTrackAutomaton()->getRelation();
   if(variable_relation->get_variable_index(variable->getName()) == -1) {
-    DVLOG(VLOG_LEVEL) << "Variable not part of expected relation";
+    LOG(FATAL) << "Variable not part of expected relation";
     return nullptr;
   }
   return relation_value;

@@ -11,14 +11,14 @@ const int StringRelation::VLOG_LEVEL = 25;
 
 StringRelation::StringRelation()
     : type_(Type::NONE),
-      var_track_map_(nullptr) {
+      trackmap_handle_(nullptr) {
   num_tracks_ = 0;
 }
 
-StringRelation::StringRelation(Type t, std::shared_ptr<std::map<std::string, int>> var_map,
+StringRelation::StringRelation(Type t, std::map<std::string, int>* trackmap,
                                std::vector<Subrelation> subrels, size_t ntracks)
     : type_(t),
-      var_track_map_(var_map),
+      trackmap_handle_(trackmap),
       subrelations_(subrels),
       num_tracks_(ntracks) {
 }
@@ -28,7 +28,7 @@ StringRelation::~StringRelation() {
 
 StringRelation::StringRelation(const StringRelation &other)
     : type_(other.type_),
-      var_track_map_(other.var_track_map_),
+      trackmap_handle_(other.trackmap_handle_),
       subrelations_(other.subrelations_),
       num_tracks_(other.num_tracks_) {
 }
@@ -93,55 +93,41 @@ void StringRelation::set_num_tracks(size_t ntracks) {
 }
 
 size_t StringRelation::get_num_tracks() const {
-  return this->var_track_map_->size();
+  return this->trackmap_handle_->size();
 }
 
-int StringRelation::get_variable_index(std::string name) const {
-  if(var_track_map_ == nullptr) {
-    DVLOG(VLOG_LEVEL) << "its null...";
-  } else {
-    DVLOG(VLOG_LEVEL) << "dunno";
+int StringRelation::get_variable_index(std::string name) {
+  if(trackmap_handle_ == nullptr) {
+    LOG(FATAL) << "Cannot get variable index: no trackmap set in relation for variable: " << name;
   }
-  auto iter = var_track_map_->find(name);
-  if (iter == var_track_map_->end()) {
+
+  auto iter = trackmap_handle_->find(name);
+  if (iter == trackmap_handle_->end()) {
+    DVLOG(VLOG_LEVEL) << "No index for: " << name;
     return -1;
   }
   return iter->second;
 }
 
-std::map<std::string ,int>& StringRelation::get_term_track_map() {
-  return term_track_map_;
+std::map<std::string ,int>* StringRelation::get_term_trackmap() {
+  return trackmap_handle_;
 }
 
-bool StringRelation::IsTrackOrderingSame(StringRelation_ptr other_relation) {
-  if (term_track_map_.size() not_eq other_relation->term_track_map_.size()) {
+bool StringRelation::has_same_trackmap(StringRelation_ptr other_relation) {
+  if (trackmap_handle_ not_eq other_relation->trackmap_handle_) {
     return false;
-  }
-
-  for (auto& pair : term_track_map_) {
-    auto other_pair = other_relation->term_track_map_.find(pair.first);
-    if (other_pair == other_relation->term_track_map_.end()) {
-      return false;
-    } else if (pair.second not_eq other_pair->second) {
-      return false;
-    }
   }
 
   return true;
 }
 
 //TODO: Check if the relations are equal...
-StringRelation_ptr StringRelation::Combine(StringRelation_ptr other_relation) {
+StringRelation_ptr StringRelation::combine(StringRelation_ptr other_relation) {
   StringRelation_ptr result_relation = nullptr;
-  //if (var_track_map != other_relation->get_variable_track_map()) {
-  //  LOG(ERROR)<< "error in stringrelation combine: track maps are not identical";
-  //  return nullptr;
-  //}
-  // combine their relations
   std::vector<Subrelation> subrels(this->subrelations_);
   subrels.insert(subrels.end(), other_relation->subrelations_.begin(), other_relation->subrelations_.end());
-  result_relation = new StringRelation(StringRelation::Type::INTERSECT, this->var_track_map_, subrels,
-                                       this->var_track_map_->size());
+  result_relation = new StringRelation(StringRelation::Type::INTERSECT, this->trackmap_handle_, subrels,
+                                       this->trackmap_handle_->size());
   return result_relation;
 }
 
@@ -153,12 +139,12 @@ std::vector<StringRelation::Subrelation> StringRelation::get_subrelation_list() 
   return subrelations_;
 }
 
-std::shared_ptr<std::map<std::string, int>> StringRelation::get_variable_track_map() {
-  return this->var_track_map_;
+std::map<std::string, int>* StringRelation::get_variable_trackmap() {
+  return this->trackmap_handle_;
 }
 
-void StringRelation::set_variable_track_map(std::shared_ptr<std::map<std::string, int>> track_map) {
-  this->var_track_map_ = track_map;
+void StringRelation::set_variable_trackmap(std::map<std::string, int>* trackmap) {
+  this->trackmap_handle_ = trackmap;
 }
 
 std::ostream& operator<<(std::ostream& os, const StringRelation& relation) {

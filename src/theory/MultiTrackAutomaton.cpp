@@ -735,8 +735,17 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::intersect(MultiTrackAutomaton_ptr o
 	minimized_dfa = dfaMinimize(intersect_dfa);
   dfaFree(intersect_dfa);
 	intersect_auto = new MultiTrackAutomaton(minimized_dfa, this->num_of_tracks);
-	//intersect_relation = this->relation->combine(other_auto->relation);
-	//intersect_auto->setRelation(intersect_relation);
+
+	if(this->relation == nullptr && other_auto->relation == nullptr) {
+		LOG(FATAL) << "No relation set for either multitrack during intersection";
+	} else if(other_auto->relation == nullptr) {
+		intersect_relation = this->relation->clone();
+	} else if(this->relation == nullptr) {
+		intersect_relation = other_auto->relation->clone();
+	} else {
+		intersect_relation = this->relation->combine(other_auto->relation);
+	}
+	intersect_auto->setRelation(intersect_relation);
 	return intersect_auto;
 }
 
