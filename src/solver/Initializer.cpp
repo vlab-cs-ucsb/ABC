@@ -117,7 +117,7 @@ void Initializer::visitCommand(Command_ptr command) {
 }
 
 void Initializer::visitAssert(Assert_ptr assert_command) {
-  visit_children_of(assert_command);
+//  visit_children_of(assert_command);
 }
 
 void Initializer::visitTerm(Term_ptr term) {

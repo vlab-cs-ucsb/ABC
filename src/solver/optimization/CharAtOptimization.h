@@ -101,6 +101,8 @@ protected:
   bool _is_index_updated;
   unsigned _index;
   std::string _value;
+private:
+  static const int VLOG_LEVEL;
 
 };
 

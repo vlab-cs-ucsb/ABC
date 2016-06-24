@@ -72,11 +72,7 @@ void DependencySlicer::setCallbacks() {
 }
 
 void DependencySlicer::visitAssert(Assert_ptr assert_command) {
-  if ((Term::Type::OR not_eq assert_command->term->type()) and (Term::Type::AND not_eq assert_command->term->type())) {
-    //TODO There is only one constraint
-  } else {
-    visit_children_of(assert_command);
-  }
+  visit_children_of(assert_command);
 }
 
 void DependencySlicer::visitAnd(And_ptr and_term) {
@@ -89,7 +85,7 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
   constraint_information_->add_component(and_term);
 
   auto components = GetComponentsFor(and_term->term_list);
-  if (components.size() > 1) {
+  if (components.size() > 1) { // and term breaks into multiple components
     and_term->term_list->clear();
     constraint_information_->remove_component(and_term);
     for (auto sub_term_list : components) {
@@ -110,16 +106,31 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
 void DependencySlicer::visitOr(Or_ptr or_term) {
   for (auto& term : *(or_term->term_list)) {
     symbol_table_->push_scope(term);
-    if (Term::Type::AND not_eq term->type()) {
-      // TODO a single component, handle here
-    } else {
-      visit(term);
-    }
+    current_term_ = term;
+    visit(term);
+    current_term_ = nullptr;
     symbol_table_->pop_scope();
   }
 
+  constraint_information_->add_component(or_term);
+
+  auto components = GetComponentsFor(or_term->term_list);
+  if (components.size() > 1) { // and term breaks into multiple components
+    or_term->term_list->clear();
+    constraint_information_->remove_component(or_term);
+    for (auto sub_term_list : components) {
+      Or_ptr or_component = new Or(sub_term_list);
+      constraint_information_->add_component(or_component);
+      or_term->term_list->push_back(or_component);
+    }
+  } else if (components.size() == 1) {
+    // deallocate term list to avoid memory leak
+    components[0]->clear();
+    delete components[0];
+  }
+
+  // reset data
   clear_mappings();
-  // TODO handle components for a Or term at symbol table level (we use dnf form)
 }
 
 /**
@@ -127,9 +138,7 @@ void DependencySlicer::visitOr(Or_ptr or_term) {
  */
 void DependencySlicer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   Variable_ptr variable = symbol_table_->getVariable(qi_term->getVarName());
-  if (not variable->isLocalLetVar()) {
-    add_variable_current_term_mapping(variable);
-  }
+  add_variable_current_term_mapping(variable);
 }
 
 void DependencySlicer::add_variable_current_term_mapping(Variable_ptr variable) {

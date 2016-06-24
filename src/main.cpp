@@ -36,6 +36,8 @@ int main(const int argc, const char **argv) {
   bool enable_lia_engine = true;
   bool use_natural_numbers = false;
   bool model_count = false;
+  bool enable_relational_string_automata = true;
+  bool force_dnf_formula = false;
   std::string bound_string = "50";
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == std::string("-c")) {
@@ -58,6 +60,12 @@ int main(const int argc, const char **argv) {
       enable_lia_engine = true;
     } else if (argv[i] == std::string("-n")) {
       use_natural_numbers = true;
+    } else if (argv[i] == std::string("-d")) {
+      force_dnf_formula = true;
+    } else if (argv[i] == std::string("-r")) {
+      enable_relational_string_automata = true;
+    } else if (argv[i] == std::string("-s")) {
+      enable_relational_string_automata = false;
     } else {
 
     }
@@ -66,9 +74,9 @@ int main(const int argc, const char **argv) {
   google::InitGoogleLogging(argv[0]);
 
   /* log test start */
-  DLOG(INFO)<< "debug log start";
-  LOG(INFO)<< "production log";
-  DVLOG(1) << "vlog log";
+//  DLOG(INFO)<< "debug log start";
+//  LOG(INFO)<< "production log";
+//  DVLOG(1) << "vlog log";
 
   if (VLOG_IS_ON(1)) {
     //std::cout << "yaaay" << std::endl;
@@ -87,6 +95,8 @@ int main(const int argc, const char **argv) {
   driver.setOption(Vlab::Option::Name::OUTPUT_PATH, output_root);
   driver.setOption(Vlab::Option::Name::SCRIPT_PATH, std::string("./lib/mathematica"));
   driver.setOption(Vlab::Option::Name::LIA_NATURAL_NUMBERS_ONLY, use_natural_numbers);
+  driver.setOption(Vlab::Option::Name::ENABLE_RELATIONAL_STRING_AUTOMATA, enable_relational_string_automata);
+  driver.setOption(Vlab::Option::Name::FORCE_DNF_FORMULA, force_dnf_formula);
 
   driver.test();
   driver.parse(in);

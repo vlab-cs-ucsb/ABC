@@ -102,14 +102,9 @@ void Driver::initializeSolver() {
   Solver::SyntacticProcessor syntactic_processor(script_);
   syntactic_processor.start();
 
-  //Dependency Checker calls to cache!
-
-  //Solver::DependencyChecker checker(symbol_table);
-  //checker.start();
-
   Solver::SyntacticOptimizer syntactic_optimizer(script_, symbol_table_);
   syntactic_optimizer.start();
-
+  Solver::Ast2Dot::inspectAST(script_);
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
   dependency_slicer.start();
 
@@ -295,6 +290,12 @@ void Driver::setOption(Option::Name option, bool value) {
     break;
   case Option::Name::LIA_NATURAL_NUMBERS_ONLY:
     Option::Solver::LIA_NATURAL_NUMBERS_ONLY = value;
+    break;
+  case Option::Name::ENABLE_RELATIONAL_STRING_AUTOMATA:
+    Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA = value;
+    break;
+  case Option::Name::FORCE_DNF_FORMULA:
+    Option::Solver::FORCE_DNF_FORMULA = value;
     break;
   default:
     LOG(ERROR) << "option not recognized: " << static_cast<int>(option) << " -> " << value;
