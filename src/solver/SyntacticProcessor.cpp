@@ -57,21 +57,20 @@ void SyntacticProcessor::convertAssertsToAnd() {
   And_ptr and_term = nullptr;
   TermList_ptr term_list = nullptr;
 
-  if (commands->size() > 1) {
-    term_list = new TermList();
-    for (auto command : *commands) {
-      current_assert = dynamic_cast<Assert_ptr>(command);
-      if (current_assert) {
-        term_list->push_back(current_assert->term);
-        current_assert->term = nullptr;
-        delete current_assert;
-      }
+  term_list = new TermList();
+  for (auto command : *commands) {
+    current_assert = dynamic_cast<Assert_ptr>(command);
+    if (current_assert) {
+      term_list->push_back(current_assert->term);
+      current_assert->term = nullptr;
+      delete current_assert;
     }
-    commands->clear();
-    and_term = new And(term_list);
-    current_assert = new Assert(and_term);
-    commands->push_back(current_assert);
   }
+
+  commands->clear();
+  and_term = new And(term_list);
+  current_assert = new Assert(and_term);
+  commands->push_back(current_assert);
 }
 /**
  * Converts formula into DNF form and and applies associativity rule to ands

@@ -102,7 +102,6 @@ public:
 protected:
   void visit_and_callback(SMT::Term_ptr&);
   void append_constant(SMT::TermConstant_ptr, SMT::TermConstant_ptr);
-  // TODO check len transformation later when pres. arith. added.
   bool check_and_process_len_transformation(SMT::Term_ptr, SMT::Term_ptr&, SMT::Term_ptr&);
   bool __check_and_process_len_transformation(SMT::Term::Type, SMT::Term_ptr&, SMT::Term_ptr&);
   SMT::Term::Type syntactic_reverse_relation(SMT::Term::Type operation);

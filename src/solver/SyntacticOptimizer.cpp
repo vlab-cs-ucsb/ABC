@@ -96,6 +96,15 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
     add_callback_to_replace_with_bool(and_term, "false");
   } else if (and_term->term_list->empty()) {
     add_callback_to_replace_with_bool(and_term, "true");
+  } else if (and_term->term_list->size() == 1) {
+    auto child_term = and_term->term_list->front();
+    if (dynamic_cast<And_ptr>(child_term) or dynamic_cast<Or_ptr>(child_term)) {
+      callback = [and_term, child_term](Term_ptr& term) mutable {
+        and_term->term_list->clear();
+        delete and_term;
+        term = child_term;
+      };
+    }
   }
 
   DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
@@ -116,6 +125,15 @@ void SyntacticOptimizer::visitOr(Or_ptr or_term) {
 
   if (or_term->term_list->empty()) {
     add_callback_to_replace_with_bool(or_term, "false");
+  } else if (or_term->term_list->size() == 1) {
+    auto child_term = or_term->term_list->front();
+    if (dynamic_cast<And_ptr>(child_term) or dynamic_cast<Or_ptr>(child_term)) {
+      callback = [or_term, child_term](Term_ptr& term) mutable {
+        or_term->term_list->clear();
+        delete or_term;
+        term = child_term;
+      };
+    }
   }
 
   DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;

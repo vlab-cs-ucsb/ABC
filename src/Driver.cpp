@@ -102,14 +102,9 @@ void Driver::initializeSolver() {
   Solver::SyntacticProcessor syntactic_processor(script_);
   syntactic_processor.start();
 
-  //Dependency Checker calls to cache!
-
-  //Solver::DependencyChecker checker(symbol_table);
-  //checker.start();
-
   Solver::SyntacticOptimizer syntactic_optimizer(script_, symbol_table_);
   syntactic_optimizer.start();
-
+  Solver::Ast2Dot::inspectAST(script_);
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
   dependency_slicer.start();
 
