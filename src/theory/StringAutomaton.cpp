@@ -480,7 +480,7 @@ StringAutomaton_ptr StringAutomaton::complement() {
   StringAutomaton_ptr any_string = StringAutomaton::makeAnyString();
 
   dfaNegation(current_dfa);
-  complement_dfa = dfaProduct(any_string->dfa, current_dfa, dfaAND);
+  complement_dfa = dfaProduct(any_string->dfa, current_dfa, dfaAND); // this is to handle case where we complement an automaton that has empty language (/#/ in regex notation)
   delete any_string; any_string = nullptr;
   dfaFree(current_dfa); current_dfa = nullptr;
 

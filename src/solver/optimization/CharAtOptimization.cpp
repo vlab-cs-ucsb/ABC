@@ -16,7 +16,10 @@ namespace Optimization {
 
 using namespace SMT;
 
+const int CharAtOptimization::VLOG_LEVEL = 18;
+
 CharAtOptimization::CharAtOptimization(unsigned index) : _is_optimized {false}, _is_index_updated {false}, _index {index} {
+  DVLOG(VLOG_LEVEL) << "'CharAtOptimization' initizalized...";
 }
 
 CharAtOptimization::~CharAtOptimization() {

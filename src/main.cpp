@@ -74,9 +74,9 @@ int main(const int argc, const char **argv) {
   google::InitGoogleLogging(argv[0]);
 
   /* log test start */
-  DLOG(INFO)<< "debug log start";
-  LOG(INFO)<< "production log";
-  DVLOG(1) << "vlog log";
+//  DLOG(INFO)<< "debug log start";
+//  LOG(INFO)<< "production log";
+//  DVLOG(1) << "vlog log";
 
   if (VLOG_IS_ON(1)) {
     //std::cout << "yaaay" << std::endl;

@@ -101,7 +101,6 @@ public:
   void visitVariable(SMT::Variable_ptr) override;
 protected:
   void visit_and_callback(SMT::Term_ptr&);
-  std::string escape_regex(std::string regex);
   void append_constant(SMT::TermConstant_ptr, SMT::TermConstant_ptr);
   // TODO check len transformation later when pres. arith. added.
   bool check_and_process_len_transformation(SMT::Term_ptr, SMT::Term_ptr&, SMT::Term_ptr&);
@@ -118,7 +117,6 @@ protected:
   SMT::Let_ptr generateLetTermFor(SMT::LastIndexOf_ptr index_of_term, SMT::SubString::Mode local_substring_mode, SMT::IndexOf_ptr param_index_of_term, SMT::Term_ptr &index_term);
   SMT::Let_ptr generateLetTermFor(SMT::LastIndexOf_ptr index_of_term, SMT::SubString::Mode local_substring_mode, SMT::LastIndexOf_ptr param_last_index_of_term, SMT::Term_ptr &index_term);
   SMT::Term_ptr generate_term_constant(std::string data, SMT::Primitive::Type type);
-  SMT::Term_ptr generate_dummy_term();
   void add_callback_to_replace_with_bool(SMT::Term_ptr, std::string value);
   bool check_bool_constant_value(SMT::Term_ptr, std::string value);
   inline SMT::Variable_ptr generate_local_var(SMT::Variable::Type type);
@@ -128,7 +126,6 @@ protected:
 
   SMT::Script_ptr root;
   SymbolTable_ptr symbol_table;
-  SMT::Assert_ptr current_assert;
   std::function<void(SMT::Term_ptr&)> callback;
   static unsigned name_counter;
 private:
