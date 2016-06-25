@@ -152,7 +152,7 @@ bool EquivalenceGenerator::make_substitution_rules() {
       }
     }
     //Check and see if there is a contradiction based on two non-equivalent constants being in the same equivalence class.
-    if (rep_constant != nullptr) {
+    /*if (rep_constant != nullptr) {
       for (auto& e : s) {
         if (constants_.find(e) != constants_.end()) {
           if (dynamic_cast<TermConstant_ptr>(rep_constant)->getValue() != e) {
@@ -161,7 +161,7 @@ bool EquivalenceGenerator::make_substitution_rules() {
           }
         }
       }
-    }
+    }*/
     //Add the substitution rules for constants
     if (rep_constant != nullptr) {
       for (auto& e : s) {
