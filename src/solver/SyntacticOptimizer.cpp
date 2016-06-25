@@ -758,6 +758,12 @@ void SyntacticOptimizer::visitIn(In_ptr in_term) {
   DVLOG(VLOG_LEVEL) << "post visit start: " << *in_term << "@" << in_term;
   if (Ast2Dot::isEquivalent(in_term->left_term, in_term->right_term)) {
     add_callback_to_replace_with_bool(in_term, "true");
+  } else if (check_and_process_constant_string({in_term->left_term, in_term->right_term})) {
+    callback = [in_term] (Term_ptr & term) mutable {
+      term = new Eq(in_term->left_term, in_term->right_term);
+      in_term->left_term = nullptr; in_term->right_term = nullptr;
+      delete in_term;
+    };
   }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *in_term << "@" << in_term;
 }
@@ -1003,14 +1009,17 @@ void SyntacticOptimizer::visitSubString(SubString_ptr sub_string_term) {
 
 void SyntacticOptimizer::visitToUpper(ToUpper_ptr to_upper_term) {
   visit_and_callback(to_upper_term->subject_term);
+  // TODO add optimization
 }
 
 void SyntacticOptimizer::visitToLower(ToLower_ptr to_lower_term) {
   visit_and_callback(to_lower_term->subject_term);
+  // TODO add optimization
 }
 
 void SyntacticOptimizer::visitTrim(Trim_ptr trim_term) {
   visit_and_callback(trim_term->subject_term);
+  // TODO add optimization
 }
 
 void SyntacticOptimizer::visitToString(ToString_ptr to_string_term) {
@@ -1348,6 +1357,7 @@ void SyntacticOptimizer::visit_and_callback(Term_ptr & term) {
   if (callback) {
     callback(term);
     callback = nullptr;
+    visit(term); // Recursively check for optimizations
   }
 }
 
@@ -1359,6 +1369,43 @@ void SyntacticOptimizer::append_constant(TermConstant_ptr left_constant, TermCon
       or Primitive::Type::REGEX == right_constant->getValueType()) {
     left_constant->primitive->setType(Primitive::Type::REGEX);
   }
+}
+
+bool SyntacticOptimizer::check_and_process_constant_string(std::initializer_list<SMT::Term_ptr> terms) {
+  bool is_a_term_string_constant = false;
+  for (auto term : terms) {
+    if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(term)) {
+      if (Primitive::Type::STRING == term_constant->getValueType()) {
+        is_a_term_string_constant = true;
+      } else if (Primitive::Type::REGEX == term_constant->getValueType()) {
+        std::string data = term_constant->getValue();
+        std::regex empty_string_regex(R"( *. *\{ *0 *, *0 *\} *)");
+        if (std::regex_match(data, empty_string_regex)) {
+          term_constant->primitive->setData("");
+          term_constant->primitive->setType(Primitive::Type::STRING);
+          is_a_term_string_constant = true;
+        } else {
+          // just check if regex is a constant, keep it as regex
+          std::string regex_symbols = "+*?.@~&|[]";
+          bool no_special_symbol = true;
+          auto index = data.find_first_of(regex_symbols);
+          while (index != std::string::npos) {
+            if (index > 0 and data[index-1] == '\\' ) {
+              index = data.find_first_of(regex_symbols, index + 1);
+            } else {
+              no_special_symbol = false;
+              break;
+            }
+          }
+          if (no_special_symbol) {
+            is_a_term_string_constant = true;
+          }
+        }
+      }
+    }
+  }
+
+  return is_a_term_string_constant;
 }
 
 bool SyntacticOptimizer::check_and_process_len_transformation(Term_ptr operation, Term_ptr & left_term,

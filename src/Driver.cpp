@@ -104,7 +104,7 @@ void Driver::initializeSolver() {
 
   Solver::SyntacticOptimizer syntactic_optimizer(script_, symbol_table_);
   syntactic_optimizer.start();
-  Solver::Ast2Dot::inspectAST(script_);
+
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
   dependency_slicer.start();
 

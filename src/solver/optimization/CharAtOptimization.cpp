@@ -153,7 +153,6 @@ void CharAtOptimization::visitSubString(SubString_ptr sub_string_term) {
       visit(sub_string_term->subject_term);
     }
   }
-
 }
 
 void CharAtOptimization::visitToUpper(ToUpper_ptr to_upper_term) {
