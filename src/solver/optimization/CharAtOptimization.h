@@ -11,6 +11,11 @@
 #ifndef SRC_SOLVER_OPTIMIZATION_CHARATOPTIMIZATION_H_
 #define SRC_SOLVER_OPTIMIZATION_CHARATOPTIMIZATION_H_
 
+#include <algorithm>
+#include <string>
+#include <sstream>
+#include <cctype>
+
 #include <glog/logging.h>
 #include "smt/ast.h"
 
@@ -23,6 +28,7 @@ public:
   CharAtOptimization(unsigned index);
   virtual ~CharAtOptimization();
 
+  void start(SMT::Term_ptr term);
   void start() override;
   void end() override;
 
@@ -97,10 +103,11 @@ public:
   std::string get_char_at_result();
   unsigned get_index();
 protected:
-  bool _is_optimized;
-  bool _is_index_updated;
-  unsigned _index;
-  std::string _value;
+  bool is_optimized_;
+  bool is_index_updated_;
+  unsigned index_;
+  int end_index_;
+  std::string value_;
 private:
   static const int VLOG_LEVEL;
 

@@ -928,7 +928,7 @@ void SyntacticOptimizer::visitCharAt(CharAt_ptr char_at_term) {
     if (Primitive::Type::NUMERAL == term_constant->getValueType()) {
       int value = std::stoi(term_constant->getValue());
       Optimization::CharAtOptimization char_at_optimizer (value);
-      char_at_optimizer.visit(char_at_term->subject_term);
+      char_at_optimizer.start(char_at_term->subject_term);
       if (char_at_optimizer.is_optimizable()) {
         std::string value = "" + char_at_optimizer.get_char_at_result();
         DVLOG(VLOG_LEVEL) << "Applying charAt transformation: '" << value << "'";
@@ -1317,6 +1317,14 @@ void SyntacticOptimizer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 }
 
 void SyntacticOptimizer::visitTermConstant(TermConstant_ptr term_constant) {
+  if (Primitive::Type::REGEX == term_constant->getValueType()) {
+    std::string data = term_constant->getValue();
+    Util::RegularExpression regular_expression (data);
+    if (regular_expression.is_constant_string()) {
+      term_constant->primitive->setType(Primitive::Type::STRING);
+      term_constant->primitive->setData(regular_expression.get_constant_string());
+    }
+  }
 }
 
 void SyntacticOptimizer::visitIdentifier(Identifier_ptr identifier) {
@@ -1379,27 +1387,11 @@ bool SyntacticOptimizer::check_and_process_constant_string(std::initializer_list
         is_a_term_string_constant = true;
       } else if (Primitive::Type::REGEX == term_constant->getValueType()) {
         std::string data = term_constant->getValue();
-        std::regex empty_string_regex(R"( *. *\{ *0 *, *0 *\} *)");
-        if (std::regex_match(data, empty_string_regex)) {
-          term_constant->primitive->setData("");
+        Util::RegularExpression regular_expression (data);
+        if (regular_expression.is_constant_string()) {
           term_constant->primitive->setType(Primitive::Type::STRING);
+          term_constant->primitive->setData(regular_expression.get_constant_string());
           is_a_term_string_constant = true;
-        } else {
-          // just check if regex is a constant, keep it as regex
-          std::string regex_symbols = "+*?.@~&|[]";
-          bool no_special_symbol = true;
-          auto index = data.find_first_of(regex_symbols);
-          while (index != std::string::npos) {
-            if (index > 0 and data[index-1] == '\\' ) {
-              index = data.find_first_of(regex_symbols, index + 1);
-            } else {
-              no_special_symbol = false;
-              break;
-            }
-          }
-          if (no_special_symbol) {
-            is_a_term_string_constant = true;
-          }
         }
       }
     }

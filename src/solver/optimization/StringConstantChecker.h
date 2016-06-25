@@ -1,39 +1,35 @@
 /*
- * SyntacticOptimizer.h
+ * StringConstantChecker.h
  *
- *  Created on: Apr 28, 2015
+ *  Created on: Jun 25, 2016
  *      Author: baki
+ *   Copyright: Copyright 2015 The ABC Authors. All rights reserved. 
+ *              Use of this source code is governed license that can
+ *              be found in the COPYING file.
  */
 
-#ifndef SOLVER_SYNTACTICOPTIMIZER_H_
-#define SOLVER_SYNTACTICOPTIMIZER_H_
+#ifndef SRC_SOLVER_OPTIMIZATION_STRINGCONSTANTCHECKER_H_
+#define SRC_SOLVER_OPTIMIZATION_STRINGCONSTANTCHECKER_H_
 
-#include <iostream>
-#include <sstream>
-#include <queue>
-#include <functional>
+#include <algorithm>
 #include <string>
-#include <regex>
+#include <sstream>
 
 #include <glog/logging.h>
 #include "smt/ast.h"
-#include "options/Solver.h"
-#include "Ast2Dot.h"
-#include "SymbolTable.h"
-#include "optimization/CharAtOptimization.h"
-#include "utils/RegularExpression.h"
 
 namespace Vlab {
 namespace Solver {
+namespace Optimization {
 
-// TODO There may be a bug when we try to add multiple callbacks in one visit
-// check that behaviour especially for relational operations and
-// 'not' operation (add more optimization for not)
-class SyntacticOptimizer: public SMT::Visitor {
-public:
-  SyntacticOptimizer(SMT::Script_ptr, SymbolTable_ptr);
-  virtual ~SyntacticOptimizer();
+class StringConstantChecker: public SMT::Visitor {
+ public:
+  enum class Mode : int {PREFIX = 0, SUFFIX};
 
+  StringConstantChecker();
+  virtual ~StringConstantChecker();
+
+  void start(SMT::Term_ptr term, StringConstantChecker::Mode mode);
   void start() override;
   void end() override;
 
@@ -102,40 +98,24 @@ public:
   void visitIdentifier(SMT::Identifier_ptr) override;
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
+
+  bool is_optimizable();
+  bool is_index_updated();
+  std::string get_char_at_result();
+  unsigned get_index();
 protected:
-  void visit_and_callback(SMT::Term_ptr&);
-  void append_constant(SMT::TermConstant_ptr, SMT::TermConstant_ptr);
-  bool check_and_process_constant_string(std::initializer_list<SMT::Term_ptr> terms);
-  bool check_and_process_len_transformation(SMT::Term_ptr, SMT::Term_ptr&, SMT::Term_ptr&);
-  bool __check_and_process_len_transformation(SMT::Term::Type, SMT::Term_ptr&, SMT::Term_ptr&);
-  SMT::Term::Type syntactic_reverse_relation(SMT::Term::Type operation);
-  bool check_and_process_for_contains_transformation(SMT::Term_ptr&, SMT::Term_ptr&, int compare_value);
-  SMT::SubString::Mode check_and_process_subString(SMT::SubString_ptr sub_string_term, SMT::Term_ptr &index_term);
-  SMT::SubString::Mode check_and_process_subString(SMT::SubString_ptr sub_string_term, SMT::Term_ptr &start_index_term, SMT::Term_ptr &end_index_term );
-  SMT::Let_ptr generateLetTermFor(SMT::SubString_ptr sub_string_term, SMT::SubString::Mode local_substring_mode, SMT::LastIndexOf_ptr last_index_of_term, SMT::Term_ptr &index_term);
-  SMT::Let_ptr generateLetTermFor(SMT::SubString_ptr sub_string_term, SMT::SubString::Mode local_substring_mode, SMT::IndexOf_ptr index_of_term, SMT::Term_ptr &index_term);
-  int check_and_process_index_operation(SMT::Term_ptr current_term, SMT::Term_ptr subject_term, SMT::Term_ptr &index_term);
-  SMT::Let_ptr generateLetTermFor(SMT::IndexOf_ptr index_of_term, SMT::SubString::Mode local_substring_mode, SMT::IndexOf_ptr param_index_of_term, SMT::Term_ptr &index_term);
-  SMT::Let_ptr generateLetTermFor(SMT::IndexOf_ptr index_of_term, SMT::SubString::Mode local_substring_mode, SMT::LastIndexOf_ptr param_last_index_of_term, SMT::Term_ptr &index_term);
-  SMT::Let_ptr generateLetTermFor(SMT::LastIndexOf_ptr index_of_term, SMT::SubString::Mode local_substring_mode, SMT::IndexOf_ptr param_index_of_term, SMT::Term_ptr &index_term);
-  SMT::Let_ptr generateLetTermFor(SMT::LastIndexOf_ptr index_of_term, SMT::SubString::Mode local_substring_mode, SMT::LastIndexOf_ptr param_last_index_of_term, SMT::Term_ptr &index_term);
-  SMT::Term_ptr generate_term_constant(std::string data, SMT::Primitive::Type type);
-  void add_callback_to_replace_with_bool(SMT::Term_ptr, std::string value);
-  bool check_bool_constant_value(SMT::Term_ptr, std::string value);
-  SMT::Variable_ptr generate_local_var(SMT::Variable::Type type);
-  SMT::QualIdentifier_ptr generate_qual_identifier(std::string var_name);
-
-
-
-  SMT::Script_ptr root;
-  SymbolTable_ptr symbol_table;
-  std::function<void(SMT::Term_ptr&)> callback;
-  static unsigned name_counter;
+  StringConstantChecker::Mode mode_;
+  bool is_constant_;
+  bool is_index_updated_;
+  unsigned index_;
+  int end_index_;
+  std::string value_;
 private:
   static const int VLOG_LEVEL;
 };
 
+} /* namespace Optimization */
 } /* namespace Solver */
 } /* namespace Vlab */
 
-#endif /* SOLVER_SYNTACTICOPTIMIZER_H_ */
+#endif /* SRC_SOLVER_OPTIMIZATION_STRINGCONSTANTCHECKER_H_ */

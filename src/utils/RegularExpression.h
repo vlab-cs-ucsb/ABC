@@ -96,8 +96,9 @@ public:
     INTERVAL
   };
 
+  bool is_constant_string() const;
+  std::string get_constant_string() const;
   std::string toString() const;
-  void simplify();
   void copy(RegularExpression_ptr e);
   static RegularExpression_ptr makeUnion(RegularExpression_ptr exp1, RegularExpression_ptr exp2);
   static RegularExpression_ptr makeConcatenation(RegularExpression_ptr exp1, RegularExpression_ptr exp2);
@@ -148,18 +149,18 @@ private:
   char next();
   bool check(int flag);
 
-  RegularExpression_ptr exp1;
-  RegularExpression_ptr exp2;
-  unsigned long min;
-  unsigned long max;
-  unsigned digits;
-  int flags;
-  char c;
-  char from, to;
-  std::string regex_string;
-  std::string s;
-  std::string::size_type pos;
-  Type type;
+  RegularExpression_ptr exp1_;
+  RegularExpression_ptr exp2_;
+  unsigned long min_;
+  unsigned long max_;
+  unsigned digits_;
+  int flags_;
+  char character_;
+  char from_char_, to_char_;
+  std::string regex_string_;
+  std::string string_;
+  std::string::size_type pos_;
+  Type type_;
 
   static const int VLOG_LEVEL;
 };
