@@ -140,9 +140,9 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   // If we are in a component solve arithmetic constraints first
   if (constraint_information_->is_component(and_term)) {
     if (Option::Solver::LIA_ENGINE_ENABLED) {
-      //arithmetic_constraint_solver_.start(and_term);
+      arithmetic_constraint_solver_.start(and_term);
     }
-    string_constraint_solver_.start(and_term);
+    //string_constraint_solver_.start(and_term);
   }
 
   bool is_satisfiable = true;
@@ -1195,13 +1195,14 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
 
     Value_ptr result = getTermValue(term);
     if (result != nullptr) {
+      /*
       if (string_constraint_solver_.get_term_value(term) != nullptr) {
         DVLOG(VLOG_LEVEL) << "Mixed Multi- and Single- Track String Automata Constraint";
         result = string_constraint_solver_.get_term_value(term);
         setTermValue(term, new Value(result->isSatisfiable()));
         return true;
       }
-
+      */
       if (arithmetic_constraint_solver_.hasStringTerms(term) and result->isSatisfiable()) {
         DVLOG(VLOG_LEVEL) << "Mixed Linear Arithmetic Constraint";
         process_mixed_integer_string_constraints_in(term);

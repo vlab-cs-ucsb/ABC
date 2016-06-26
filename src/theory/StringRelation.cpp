@@ -24,7 +24,6 @@ StringRelation::StringRelation(Type t, std::map<std::string, int>* trackmap,
 }
 
 StringRelation::~StringRelation() {
-  DVLOG(VLOG_LEVEL) << "Bye";
 }
 
 StringRelation::StringRelation(const StringRelation &other)
