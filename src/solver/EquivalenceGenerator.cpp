@@ -8,7 +8,6 @@
 #include "EquivalenceGenerator.h"
 
 #include <glog/logging.h>
-#include <glog/vlog_is_on.h>
 #include <iostream>
 #include <string>
 #include <utility>
@@ -19,7 +18,6 @@
 
 #include "EquivClassRuleRunner.h"
 
-
 namespace Vlab {
 namespace Solver {
 
@@ -28,7 +26,8 @@ using namespace SMT;
 const int EquivalenceGenerator::VLOG_LEVEL = 15;
 
 EquivalenceGenerator::EquivalenceGenerator(Script_ptr script, SymbolTable_ptr symbol_table)
-  : AstTraverser(script), symbol_table_(symbol_table) {
+    : AstTraverser(script),
+      symbol_table_(symbol_table) {
   setCallbacks();
 }
 
@@ -51,16 +50,20 @@ void EquivalenceGenerator::start() {
 }
 
 void EquivalenceGenerator::end() {
-  for (auto& map_pair : substitution_map_) {
-    SubstitutionMap vmap = substitution_map_[map_pair.first];
-    for (auto& pair : vmap) {
-      DVLOG(VLOG_LEVEL) << "In scope " << map_pair.first;
-      if (Term::Type::TERMCONSTANT == pair.second->type()) {
-        DVLOG(VLOG_LEVEL) << "Replacing " << pair.first->getName() << " with " << dynamic_cast<TermConstant_ptr>(pair.second)->getValue();
-      } else if (Term::Type::QUALIDENTIFIER == pair.second->type()) {
-        DVLOG(VLOG_LEVEL) << "Replacing " << pair.first->getName() << " with " << (symbol_table_->getVariable(pair.second))->getName();
-      } else {
-        DVLOG(VLOG_LEVEL) << "UNEXPECTED TERM IN REPLACEMENT MAP!";
+  if (VLOG_IS_ON(VLOG_LEVEL)) {
+    for (auto& map_pair : substitution_map_) {
+      SubstitutionMap vmap = substitution_map_[map_pair.first];
+      for (auto& pair : vmap) {
+        DVLOG(VLOG_LEVEL) << "In scope " << map_pair.first;
+        if (Term::Type::TERMCONSTANT == pair.second->type()) {
+          DVLOG(VLOG_LEVEL) << "Replacing " << pair.first->getName() << " with "
+                            << dynamic_cast<TermConstant_ptr>(pair.second)->getValue();
+        } else if (Term::Type::QUALIDENTIFIER == pair.second->type()) {
+          DVLOG(VLOG_LEVEL) << "Replacing " << pair.first->getName() << " with "
+                            << (symbol_table_->getVariable(pair.second))->getName();
+        } else {
+          LOG(FATAL) << "UNEXPECTED TERM IN REPLACEMENT MAP!";
+        }
       }
     }
   }
@@ -143,6 +146,7 @@ bool EquivalenceGenerator::make_substitution_rules() {
     rep_variable = nullptr;
     rep_constant = nullptr;
     //Currently no procedure in place for choosing the variable representive.
+    //TODO BAKI we can choose the variable that appears most, we can get that information from counter
     for (auto& e : s) {
       if (variables_.find(e) != variables_.end()) {
         rep_variable = variables_[e];
@@ -173,7 +177,8 @@ bool EquivalenceGenerator::make_substitution_rules() {
     //Add the substituion rules for variables
     else if (rep_variable != nullptr) {
       for (auto& e : s) {
-        if (variables_.find(e) != variables_.end() && symbol_table_->getVariable(e) != symbol_table_->getVariable(rep_variable)) {
+        if (variables_.find(e) != variables_.end()
+            and symbol_table_->getVariable(e) != symbol_table_->getVariable(rep_variable)) {
           add_variable_substitution_rule(symbol_table_->getVariable(e), rep_variable);
         }
       }
@@ -181,7 +186,6 @@ bool EquivalenceGenerator::make_substitution_rules() {
   }
   return false;
 }
-
 
 bool EquivalenceGenerator::add_variable_substitution_rule(Variable_ptr variable, Term_ptr target_term) {
   auto result = substitution_map_[symbol_table_->top_scope()].insert(std::make_pair(variable, target_term));
@@ -222,11 +226,9 @@ void EquivalenceGenerator::merge(int a, int b) {
   }
 }
 
-
 void EquivalenceGenerator::reset_substitution_rules() {
   substitution_map_.clear();
 }
-
 
 void EquivalenceGenerator::clear_mappings() {
   term_to_component_map_.clear();
