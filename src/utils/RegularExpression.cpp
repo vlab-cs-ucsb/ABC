@@ -118,7 +118,7 @@ std::string RegularExpression::toString() const {
     break;
   case Type::CHAR: {
     std::string character = "" + character_;
-    if (character.find_first_of("&|?*+.@#{}[]~\"\\")) {
+    if (character.find_first_of("&|?*+.@#(){}[]~\"\\")) {
       character = "\\" + character;
     }
     ss << character;

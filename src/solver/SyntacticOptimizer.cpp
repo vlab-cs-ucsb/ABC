@@ -13,8 +13,8 @@
 #include <utility>
 #include <vector>
 
-#include "../smt/typedefs.h"
-#include "../smt/Visitor.h"
+#include "smt/typedefs.h"
+#include "smt/Visitor.h"
 
 namespace Vlab {
 namespace Solver {
@@ -711,6 +711,7 @@ void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *concat_term << "@" << concat_term;
   TermConstant_ptr initial_term_constant = nullptr;
+  Optimization::StringConstantChecker string_constant_checker;
   int pos = 0;
   for (auto iter = concat_term->term_list->begin(); iter != concat_term->term_list->end();) {
     if (Term::Type::CONCAT == (*iter)->type()) {
@@ -721,8 +722,7 @@ void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {
       delete sub_concat_term;
       iter = concat_term->term_list->begin() + pos; // insertion invalidates iter, reset it
       continue;
-    } else if (Term::Type::TERMCONSTANT == (*iter)->type()) {
-      TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter);
+    } else if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter)) {
       if (term_constant->getValue() == "") {
         delete term_constant; // deallocate
         concat_term->term_list->erase(iter);
@@ -736,6 +736,14 @@ void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {
         continue; // iterator updated by erase
       }
     } else {
+      if (initial_term_constant) { // if there is a constant regex makes it string
+        string_constant_checker.visitTermConstant(initial_term_constant);
+        if (string_constant_checker.is_constant_string()) {
+          initial_term_constant->primitive->setData(string_constant_checker.get_constant_string());
+          initial_term_constant->primitive->setType(Primitive::Type::STRING);
+        }
+        string_constant_checker.end();
+      }
       initial_term_constant = nullptr;
     }
     iter++; pos++;
@@ -924,29 +932,20 @@ void SyntacticOptimizer::visitCharAt(CharAt_ptr char_at_term) {
   visit_and_callback(char_at_term->index_term);
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *char_at_term << "@" << char_at_term;
-  if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(char_at_term->index_term)) {
-    if (Primitive::Type::NUMERAL == term_constant->getValueType()) {
-      int value = std::stoi(term_constant->getValue());
-      Optimization::CharAtOptimization char_at_optimizer (value);
-      char_at_optimizer.start(char_at_term->subject_term);
-      if (char_at_optimizer.is_optimizable()) {
-        std::string value = "" + char_at_optimizer.get_char_at_result();
-        DVLOG(VLOG_LEVEL) << "Applying charAt transformation: '" << value << "'";
-        callback = [this, char_at_term, value](Term_ptr & term) mutable {
-          term = generate_term_constant(value, Primitive::Type::STRING);
-          delete char_at_term;
-        };
-      } else if (char_at_optimizer.is_index_updated()) {
-        unsigned new_index = char_at_optimizer.get_index();
-        auto new_index_term = generate_term_constant(std::to_string(new_index), Primitive::Type::NUMERAL);
-        delete char_at_term->index_term;
-        char_at_term->index_term = new_index_term;
-        // there is a possible change in concat term, re-process subtree
-        DVLOG(VLOG_LEVEL) << "char at optimization -> re visit term start" << *(char_at_term->subject_term);
-        visit_and_callback(char_at_term->subject_term);
-        DVLOG(VLOG_LEVEL) << "char at optimization -> re visit term end" << *(char_at_term->subject_term);
-      }
-    }
+  Optimization::CharAtOptimization char_at_optimizer (char_at_term);
+  char_at_optimizer.start();
+  if (char_at_optimizer.is_optimizable()) {
+    std::string str_value = "" + char_at_optimizer.get_char_at_result();
+    DVLOG(VLOG_LEVEL) << "Applying charAt transformation: '" << str_value << "'";
+    callback = [this, char_at_term, str_value](Term_ptr & term) mutable {
+      term = generate_term_constant(str_value, Primitive::Type::STRING);
+      delete char_at_term;
+    };
+  } else if (char_at_optimizer.is_index_updated()) {
+    // there is a possible change in concat term, re-process subtree
+    DVLOG(VLOG_LEVEL) << "char at optimization -> re visit term start" << *(char_at_term->subject_term);
+    visit_and_callback(char_at_term->subject_term);
+    DVLOG(VLOG_LEVEL) << "char at optimization -> re visit term end" << *(char_at_term->subject_term);
   }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *char_at_term << "@" << char_at_term;
 }
@@ -959,39 +958,22 @@ void SyntacticOptimizer::visitSubString(SubString_ptr sub_string_term) {
   }
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *sub_string_term << "@" << sub_string_term;
-  bool sub_string_optimized = false;
-  if (TermConstant_ptr subject_term = dynamic_cast<TermConstant_ptr>(sub_string_term->subject_term)) {
-    if (Primitive::Type::STRING == subject_term->getValueType()) {
-      if (TermConstant_ptr start_index_term = dynamic_cast<TermConstant_ptr>(sub_string_term->start_index_term)) {
-        int start_index = std::stoi(start_index_term->getValue());
-        if (sub_string_term->end_index_term) {
-          if (TermConstant_ptr end_index_term = dynamic_cast<TermConstant_ptr>(sub_string_term->end_index_term)) {
-            int end_index = std::stoi(end_index_term->getValue());
-            std::string subject_str = subject_term->getValue();
-            std::string result = subject_str.substr(start_index, end_index - start_index);
-            DVLOG(VLOG_LEVEL) << "Applying subString transformation: '" << result << "'";
-            callback = [this, sub_string_term, result](Term_ptr & term) mutable {
-              term = generate_term_constant(result, Primitive::Type::STRING);
-              delete sub_string_term;
-            };
-            sub_string_optimized = true;
-          }
-        } else {
-          std::string subject_str = subject_term->getValue();
-          std::string result = subject_str.substr(start_index);
-          DVLOG(VLOG_LEVEL) << "Applying subString transformation: '" << result << "'";
-          callback = [this, sub_string_term, result](Term_ptr & term) mutable {
-            term = generate_term_constant(result, Primitive::Type::STRING);
-            delete sub_string_term;
-          };
-          sub_string_optimized = true;
-        }
-      }
-    }
+  Optimization::SubstringOptimization substring_optimizer (sub_string_term);
+  substring_optimizer.start();
+  if (substring_optimizer.is_optimizable()) {
+    std::string value = substring_optimizer.get_substring_result();
+    DVLOG(VLOG_LEVEL) << "Applying 'subString' transformation";
+    callback = [this, sub_string_term, value](Term_ptr & term) mutable {
+      term = generate_term_constant(value, Primitive::Type::STRING);
+      delete sub_string_term;
+    };
+    return;
   }
 
-  if (sub_string_optimized) {
-    return;
+  if (substring_optimizer.is_index_updated()) {
+    DVLOG(VLOG_LEVEL) << "substring optimization -> re visit term start" << *(sub_string_term->subject_term);
+    visit_and_callback(sub_string_term->subject_term);
+    DVLOG(VLOG_LEVEL) << "substring optimization -> re visit term end" << *(sub_string_term->subject_term);
   }
 
   SubString::Mode mode;
@@ -1009,12 +991,32 @@ void SyntacticOptimizer::visitSubString(SubString_ptr sub_string_term) {
 
 void SyntacticOptimizer::visitToUpper(ToUpper_ptr to_upper_term) {
   visit_and_callback(to_upper_term->subject_term);
-  // TODO add optimization
+  Optimization::StringConstantChecker string_constant_checker;
+  string_constant_checker.start(to_upper_term->subject_term);
+  if (string_constant_checker.is_constant_string()) {
+    std::string data = string_constant_checker.get_constant_string();
+    std::transform(data.begin(), data.end(), data.begin(), ::toupper);
+    DVLOG(VLOG_LEVEL) << "Applying toupper transformation.";
+    callback = [this, to_upper_term, data](Term_ptr & term) mutable {
+      term = generate_term_constant(data, Primitive::Type::STRING);
+      delete to_upper_term;
+    };
+  }
 }
 
 void SyntacticOptimizer::visitToLower(ToLower_ptr to_lower_term) {
   visit_and_callback(to_lower_term->subject_term);
-  // TODO add optimization
+  Optimization::StringConstantChecker string_constant_checker;
+  string_constant_checker.start(to_lower_term->subject_term);
+  if (string_constant_checker.is_constant_string()) {
+    std::string data = string_constant_checker.get_constant_string();
+    std::transform(data.begin(), data.end(), data.begin(), ::tolower);
+    DVLOG(VLOG_LEVEL) << "Applying tolower transformation.";
+    callback = [this, to_lower_term, data](Term_ptr & term) mutable {
+      term = generate_term_constant(data, Primitive::Type::STRING);
+      delete to_lower_term;
+    };
+  }
 }
 
 void SyntacticOptimizer::visitTrim(Trim_ptr trim_term) {
@@ -1043,15 +1045,16 @@ void SyntacticOptimizer::visitToInt(ToInt_ptr to_int_term) {
   visit_and_callback(to_int_term->subject_term);
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *to_int_term << "@" << to_int_term;
-  if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(to_int_term->subject_term)) {
-    if (Primitive::Type::STRING == term_constant->getValueType()) {
-      std::string str_value = term_constant->getValue();
-      DVLOG(VLOG_LEVEL) << "Applying toInt transformation: '" << str_value << "'";
-      callback = [this, to_int_term, str_value](Term_ptr & term) mutable {
-        term = generate_term_constant(str_value, Primitive::Type::NUMERAL);
-        delete to_int_term;
-      };
-    }
+  Optimization::StringConstantChecker string_constant_checker;
+  string_constant_checker.start(to_int_term->subject_term);
+  if (string_constant_checker.is_constant_string()) {
+    std::string data = string_constant_checker.get_constant_string();
+    std::transform(data.begin(), data.end(), data.begin(), ::tolower);
+    DVLOG(VLOG_LEVEL) << "Applying toint transformation.";
+    callback = [this, to_int_term, data](Term_ptr & term) mutable {
+      term = generate_term_constant(data, Primitive::Type::NUMERAL);
+      delete to_int_term;
+    };
   }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *to_int_term << "@" << to_int_term;
 }
@@ -1088,6 +1091,7 @@ void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *re_concat_term << "@" << re_concat_term;
   TermConstant_ptr initial_term_constant = nullptr;
+  Optimization::StringConstantChecker string_constant_checker;
   int pos = 0;
   for (auto iter = re_concat_term->term_list->begin(); iter != re_concat_term->term_list->end();) {
     if (Term::Type::CONCAT == (*iter)->type()) {
@@ -1098,8 +1102,7 @@ void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
       delete sub_concat_term;
       iter = re_concat_term->term_list->begin() + pos; // insertion invalidates iter, reset it
       continue;
-    } else if (Term::Type::TERMCONSTANT == (*iter)->type()) {
-      TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter);
+    } else if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter)) {
       if (initial_term_constant == nullptr) {
         initial_term_constant = term_constant;
       } else {
@@ -1109,6 +1112,14 @@ void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
         continue;
       }
     } else {
+      if (initial_term_constant) { // if there is a constant regex makes it string
+        string_constant_checker.visitTermConstant(initial_term_constant);
+        if (string_constant_checker.is_constant_string()) {
+          initial_term_constant->primitive->setData(string_constant_checker.get_constant_string());
+          initial_term_constant->primitive->setType(Primitive::Type::STRING);
+        }
+        string_constant_checker.end();
+      }
       initial_term_constant = nullptr;
     }
     iter++; pos++;
@@ -1317,14 +1328,8 @@ void SyntacticOptimizer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 }
 
 void SyntacticOptimizer::visitTermConstant(TermConstant_ptr term_constant) {
-  if (Primitive::Type::REGEX == term_constant->getValueType()) {
-    std::string data = term_constant->getValue();
-    Util::RegularExpression regular_expression (data);
-    if (regular_expression.is_constant_string()) {
-      term_constant->primitive->setType(Primitive::Type::STRING);
-      term_constant->primitive->setData(regular_expression.get_constant_string());
-    }
-  }
+  Optimization::StringConstantChecker string_constant_checker;
+  string_constant_checker.visitTermConstant(term_constant);
 }
 
 void SyntacticOptimizer::visitIdentifier(Identifier_ptr identifier) {

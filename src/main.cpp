@@ -10,7 +10,9 @@
 
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <cstdlib>
+#include <vector>
 
 //#define NDEBUG
 
@@ -38,6 +40,7 @@ int main(const int argc, const char **argv) {
   bool model_count = false;
   bool enable_relational_string_automata = true;
   bool force_dnf_formula = false;
+  bool experiment_mode = false;
   std::string bound_string = "50";
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == std::string("-c")) {
@@ -66,10 +69,13 @@ int main(const int argc, const char **argv) {
       enable_relational_string_automata = true;
     } else if (argv[i] == std::string("-s")) {
       enable_relational_string_automata = false;
-    } else {
+    } else if (argv[i] == std::string("-e")) {
+      experiment_mode = true;
+    }  else {
 
     }
   }
+
 
   google::InitGoogleLogging(argv[0]);
 
@@ -87,7 +93,22 @@ int main(const int argc, const char **argv) {
     LOG(FATAL)<< "Cannot find input: ";
   }
 
-  int bound = std::stoi(bound_string);
+  int bound = 0;
+  std::vector<int> bounds;
+  std::stringstream ss;
+  for (auto c : bound_string) {
+    if (c == ',') {
+      ss >> bound;
+      bounds.push_back(bound);
+      ss.str("");
+    } else {
+      ss << c;
+    }
+  }
+  if (bounds.size() == 1) {
+    bound = bounds.front();
+  }
+
 
   Vlab::Driver driver;
   driver.setOption(Vlab::Option::Name::LIA_ENGINE_ENABLED, enable_lia_engine);
@@ -157,11 +178,21 @@ int main(const int argc, const char **argv) {
         }
       }
     }
-    LOG(INFO)<< "report: SAT";
+
+    LOG(INFO)<< "report is_sat: SAT";
+    if (experiment_mode) {
+      for(auto& variable_entry : driver.getSatisfyingVariables()) {
+        if (variable_entry.first->isSymbolic()) {
+          for (auto b : bounds) {
+            LOG(INFO)<< "report bound: " << b << " count: " << driver.Count(variable_entry.first->getName(), b, true)  << "var: " << variable_entry.first->getName() ;
+          }
+        }
+      }
+    }
   } else {
     LOG(INFO) << "report: UNSAT";
     if (model_count) {
-      LOG(INFO) << "count          : " << 0;
+      LOG(INFO) << "report count: " << 0;
     }
   }
   LOG(INFO)<< "done.";

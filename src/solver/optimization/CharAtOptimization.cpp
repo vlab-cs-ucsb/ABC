@@ -18,18 +18,29 @@ using namespace SMT;
 
 const int CharAtOptimization::VLOG_LEVEL = 18;
 
-CharAtOptimization::CharAtOptimization(unsigned index) : is_optimized_ {false}, is_index_updated_ {false}, index_ {index}, end_index_{-1} {
-  DVLOG(VLOG_LEVEL) << "'CharAtOptimization' initizalized...";
+CharAtOptimization::CharAtOptimization(CharAt_ptr char_at_term) : is_optimized_ {false}, is_index_updated_ {false} {
+  subject_term_ = nullptr;
+  index_term_constant_ = nullptr;
+  index_ = 0;
+  if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(char_at_term->index_term)) {
+    if (Primitive::Type::NUMERAL == term_constant->getValueType()) {
+      std::stringstream ss (term_constant->getValue());
+      ss >> index_;
+      subject_term_ = char_at_term->subject_term;
+      index_term_constant_ = term_constant;
+    }
+  }
 }
 
 CharAtOptimization::~CharAtOptimization() {
 }
 
-void CharAtOptimization::start(SMT::Term_ptr term) {
-  visit(term);
-}
-
 void CharAtOptimization::start() {
+  visit(subject_term_);
+
+  if (is_index_updated_) {
+    index_term_constant_->primitive->setData(std::to_string(index_));
+  }
 }
 
 void CharAtOptimization::end() {
@@ -101,10 +112,7 @@ void CharAtOptimization::visitLe(Le_ptr le_term) {
 void CharAtOptimization::visitConcat(Concat_ptr concat_term) {
   // we only need to check first term of concat,
   // concat operation is optimized before we check charAt, all constant prefixes combined in first param if there is
-  for (auto term :*concat_term->term_list) {
-    visit(term);
-    break;
-  }
+  visit(concat_term->term_list->front());
 
   if (is_index_updated_) { // modify concat list
     TermList_ptr updated_list = new TermList(concat_term->term_list->begin() + 1, concat_term->term_list->end());
@@ -149,34 +157,11 @@ void CharAtOptimization::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
 void CharAtOptimization::visitCharAt(CharAt_ptr char_at_term) {
 }
 
+/**
+ * Sub string must be optimized, we can't do more
+ */
 void CharAtOptimization::visitSubString(SubString_ptr sub_string_term) {
-  if (sub_string_term->end_index_term == nullptr) {
-    if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(sub_string_term->start_index_term)) {
-      if (Primitive::Type::NUMERAL == term_constant->getValueType()) {
-        unsigned sub_str_index = std::stoul(term_constant->getValue());
-        index_ = index_ + sub_str_index;
-        DVLOG(VLOG_LEVEL) << "sub string start index update: " << sub_str_index;
-        visit(sub_string_term->subject_term);
-      }
-    }
-  } else {
-    if (TermConstant_ptr end_constant = dynamic_cast<TermConstant_ptr>(sub_string_term->end_index_term)) {
-      if (TermConstant_ptr begin_constant = dynamic_cast<TermConstant_ptr>(sub_string_term->start_index_term)) {
-        if (Primitive::Type::NUMERAL == end_constant->getValueType() and Primitive::Type::NUMERAL == begin_constant->getValueType()) {
-          unsigned begin_index = std::stoul(begin_constant->getValue());
-          int end_index = std::stoi(end_constant->getValue());
-          index_ = index_ + begin_index;
-          if (end_index_ == -1) {
-            end_index_ = end_index;
-          } else {
-            end_index_ = end_index_ - end_index + 1;
-          }
-          DVLOG(VLOG_LEVEL) << "sub string start index and end index update: " << begin_index << "," << end_index;
-          visit(sub_string_term->subject_term);
-        }
-      }
-    }
-  }
+
 }
 
 void CharAtOptimization::visitToUpper(ToUpper_ptr to_upper_term) {
@@ -192,11 +177,7 @@ void CharAtOptimization::visitToLower(ToLower_ptr to_lower_term) {
 }
 
 void CharAtOptimization::visitTrim(Trim_ptr trim_term) {
-  visit_children_of(trim_term);
-  // TODO find a better way to do trim
-  std::stringstream ss (value_);
-  value_ = "";
-  ss >> value_;
+
 }
 
 void CharAtOptimization::visitToString(ToString_ptr to_string_term) {
@@ -245,15 +226,17 @@ void CharAtOptimization::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 }
 
 void CharAtOptimization::visitTermConstant(TermConstant_ptr term_constant) {
-
-  if (Primitive::Type::STRING == term_constant->getValueType()) {
-    std::string str_value = term_constant->getValue();
+  StringConstantChecker string_constant_checker;
+  string_constant_checker.visitTermConstant(term_constant);
+  if (string_constant_checker.is_constant_string()) {
+    std::string str_value = string_constant_checker.get_constant_string();
     if (str_value.length() > index_) {
       value_ = str_value[index_];
       is_optimized_ = true;
     } else {
       // when term constant appears as first parameter in concat
       // if charAt index is larger than concat's first param, we can get rid of first param of concat
+      term_constant->primitive->setData("");
       index_ -= str_value.length();
       is_index_updated_ = true;
     }
@@ -305,7 +288,7 @@ std::string CharAtOptimization::get_char_at_result() {
   return value_;
 }
 
-unsigned CharAtOptimization::get_index() {
+size_t CharAtOptimization::get_index() {
   return index_;
 }
 

@@ -21,6 +21,7 @@
 #include "Ast2Dot.h"
 #include "SymbolTable.h"
 #include "optimization/CharAtOptimization.h"
+#include "optimization/SubstringOptimization.h"
 #include "utils/RegularExpression.h"
 
 namespace Vlab {

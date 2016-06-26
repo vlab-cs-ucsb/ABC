@@ -149,11 +149,13 @@ protected:
   bool isStateReachableFrom(int search_state, int from_state, std::map<int, bool>& is_stack_member);
 
   const Automaton::Type type;
+  bool is_count_matrix_cached_;
   DFA_ptr dfa;
   int num_of_variables;
   int* variable_indices;
   unsigned long id;
   static unsigned long trace_id;
+  CountMatrix count_matrix_;
 private:
   char* getAnExample(bool accepting=true); // MONA version
   static int name_counter;

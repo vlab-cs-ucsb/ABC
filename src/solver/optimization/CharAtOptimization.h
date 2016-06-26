@@ -18,6 +18,7 @@
 
 #include <glog/logging.h>
 #include "smt/ast.h"
+#include "StringConstantChecker.h"
 
 namespace Vlab {
 namespace Solver {
@@ -25,10 +26,9 @@ namespace Optimization {
 
 class CharAtOptimization: public SMT::Visitor {
 public:
-  CharAtOptimization(unsigned index);
+  CharAtOptimization(SMT::CharAt_ptr);
   virtual ~CharAtOptimization();
 
-  void start(SMT::Term_ptr term);
   void start() override;
   void end() override;
 
@@ -101,12 +101,13 @@ public:
   bool is_optimizable();
   bool is_index_updated();
   std::string get_char_at_result();
-  unsigned get_index();
+  size_t get_index();
 protected:
   bool is_optimized_;
   bool is_index_updated_;
-  unsigned index_;
-  int end_index_;
+  SMT::Term_ptr subject_term_;
+  SMT::TermConstant_ptr index_term_constant_;
+  size_t index_;
   std::string value_;
 private:
   static const int VLOG_LEVEL;

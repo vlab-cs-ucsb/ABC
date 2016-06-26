@@ -18,7 +18,8 @@ using namespace SMT;
 
 const int StringConstantChecker::VLOG_LEVEL = 18;
 
-StringConstantChecker::StringConstantChecker() : index_{0}, end_index_{-1} {
+StringConstantChecker::StringConstantChecker()
+        : mode_ (StringConstantChecker::Mode::FULL), term_constant_ { nullptr } {
   DVLOG(VLOG_LEVEL) << "'StringConstantChecker' initizalized...";
 }
 
@@ -27,8 +28,8 @@ StringConstantChecker::~StringConstantChecker() {
 
 void StringConstantChecker::start(Term_ptr term, StringConstantChecker::Mode mode) {
   mode_ = mode;
-  index_ = 0;
-  end_index_ = -1;
+  term_constant_ = nullptr;
+  value_ = "";
   visit(term);
 }
 
@@ -36,6 +37,9 @@ void StringConstantChecker::start() {
 }
 
 void StringConstantChecker::end() {
+  mode_ = StringConstantChecker::Mode::FULL;
+  term_constant_ = nullptr;
+  value_ = "";
 }
 
 void StringConstantChecker::visitScript(Script_ptr script) {
@@ -101,17 +105,16 @@ void StringConstantChecker::visitLt(Lt_ptr lt_term) {
 void StringConstantChecker::visitLe(Le_ptr le_term) {
 }
 
+/**
+ * Make use of the fact that concats are already processed
+ */
 void StringConstantChecker::visitConcat(Concat_ptr concat_term) {
   if (Mode::PREFIX == mode_) {
     visit(concat_term->term_list->front());
   } else if (Mode::SUFFIX == mode_) {
     visit(concat_term->term_list->back());
-  }
-
-  if (is_index_updated_) { // modify concat list
-    TermList_ptr updated_list = new TermList(concat_term->term_list->begin() + 1, concat_term->term_list->end());
-    delete concat_term->term_list;
-    concat_term->term_list = updated_list;
+  } else {
+    term_constant_ = nullptr;
   }
 }
 
@@ -148,57 +151,42 @@ void StringConstantChecker::visitIndexOf(IndexOf_ptr index_of_term) {
 void StringConstantChecker::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
 }
 
+/**
+ * Char at must be optimized, we can't do more
+ */
 void StringConstantChecker::visitCharAt(CharAt_ptr char_at_term) {
 }
 
+/**
+ * Sub string must be optimized, we can't do more
+ */
 void StringConstantChecker::visitSubString(SubString_ptr sub_string_term) {
-  if (sub_string_term->end_index_term == nullptr) {
-    if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(sub_string_term->start_index_term)) {
-      if (Primitive::Type::NUMERAL == term_constant->getValueType()) {
-        unsigned sub_str_index = std::stoul(term_constant->getValue());
-        index_ = index_ + sub_str_index;
-        DVLOG(VLOG_LEVEL) << "sub string start index update: " << sub_str_index;
-        visit(sub_string_term->subject_term);
-      }
-    }
-  } else {
-    if (TermConstant_ptr end_constant = dynamic_cast<TermConstant_ptr>(sub_string_term->end_index_term)) {
-      if (TermConstant_ptr begin_constant = dynamic_cast<TermConstant_ptr>(sub_string_term->start_index_term)) {
-        if (Primitive::Type::NUMERAL == end_constant->getValueType() and Primitive::Type::NUMERAL == begin_constant->getValueType()) {
-          unsigned begin_index = std::stoul(begin_constant->getValue());
-          int end_index = std::stoi(end_constant->getValue());
-          index_ = index_ + begin_index;
-          if (end_index_ == -1) {
-            end_index_ = end_index;
-          } else {
-            end_index_ = end_index_ - end_index + 1;
-          }
-          DVLOG(VLOG_LEVEL) << "sub string start index and end index update: " << begin_index << "," << end_index;
-          visit(sub_string_term->subject_term);
-        }
-      }
-    }
-  }
+
 }
 
+/**
+ * Transform to upper data
+ */
 void StringConstantChecker::visitToUpper(ToUpper_ptr to_upper_term) {
   visit_children_of(to_upper_term);
   // TODO works for ascii, need to consider other character encodings
   std::transform(value_.begin(), value_.end(), value_.begin(), ::toupper);
 }
 
+/**
+ * Transform to lower data
+ */
 void StringConstantChecker::visitToLower(ToLower_ptr to_lower_term) {
   visit_children_of(to_lower_term);
   // TODO works for ascii, need to consider other character encodings
   std::transform(value_.begin(), value_.end(), value_.begin(), ::tolower);
 }
 
+/**
+ * trim must be optimized, we can't do more
+ */
 void StringConstantChecker::visitTrim(Trim_ptr trim_term) {
-  visit_children_of(trim_term);
-  // TODO find a better way to do trim
-  std::stringstream ss (value_);
-  value_ = "";
-  ss >> value_;
+
 }
 
 void StringConstantChecker::visitToString(ToString_ptr to_string_term) {
@@ -246,14 +234,23 @@ void StringConstantChecker::visitAsQualIdentifier(AsQualIdentifier_ptr as_qid_te
 void StringConstantChecker::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 }
 
+/**
+ * Checks for a constant string, transform if regex represents a constant string
+ */
 void StringConstantChecker::visitTermConstant(TermConstant_ptr term_constant) {
-
   if (Primitive::Type::STRING == term_constant->getValueType()) {
+    term_constant_ = term_constant;
     value_ = term_constant->getValue();
-    is_constant_ = true;
   } else if (Primitive::Type::REGEX == term_constant->getValueType()) {
-    LOG(FATAL) << "implement me";
-    is_constant_ = true;
+    std::string data = term_constant->getValue();
+    Util::RegularExpression regular_expression (data);
+    if (regular_expression.is_constant_string()) {
+      term_constant->primitive->setType(Primitive::Type::STRING);
+      term_constant->primitive->setData(regular_expression.get_constant_string());
+      term_constant_ = term_constant;
+      value_ = term_constant->getValue();
+      DVLOG(VLOG_LEVEL) << "Constant string regex transformed";
+    }
   }
 }
 
@@ -290,22 +287,17 @@ void StringConstantChecker::visitSortedVar(SortedVar_ptr sorted_var) {
 void StringConstantChecker::visitVarBinding(VarBinding_ptr var_binding) {
 }
 
-bool StringConstantChecker::is_optimizable() {
-  return is_constant_;
+bool StringConstantChecker::is_constant_string() {
+  return (term_constant_ != nullptr);
 }
 
-bool StringConstantChecker::is_index_updated() {
-  return is_index_updated_;
+std::string StringConstantChecker::get_constant_string() {
+  if (term_constant_) {
+    return term_constant_->getValue();
+  }
+  LOG(FATAL) << "constant string is not found";
+  return "";
 }
-
-std::string StringConstantChecker::get_char_at_result() {
-  return value_;
-}
-
-unsigned StringConstantChecker::get_index() {
-  return index_;
-}
-
 
 } /* namespace Optimization */
 } /* namespace Solver */
