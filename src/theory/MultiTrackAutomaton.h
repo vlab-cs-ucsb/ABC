@@ -58,8 +58,9 @@ virtual ~MultiTrackAutomaton();
 	static bool checkLambda(std::string,int track_num,int num_tracks,int var);
 	static DFA_ptr removeLambdaSuffix(DFA_ptr dfa, int num_vars);
 	DFA_ptr makeConcreteDFA();
-	static std::vector<std::vector<char>> all_less_than_strings(int bits);
 
+	// possible to cache this value before constraint solving, for reuse
+	static std::vector<std::vector<char>> binary_relation_ordering_transitions(StringRelation::Type type, int bits);
 
 	static const int VAR_PER_TRACK = 8;
 	int num_of_tracks;

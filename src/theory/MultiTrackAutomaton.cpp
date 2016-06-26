@@ -276,8 +276,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr rel
 		exeps.push_back(std::make_pair(str,init));
 	}
 
-	// get all less than strings (bdd thingy with lucas)
-	std::vector<std::vector<char>> less_than_trans(all_less_than_strings(var));
+	std::vector<std::vector<char>> less_than_trans(binary_relation_ordering_transitions(StringRelation::Type::LT,var));
 	for(auto& trans : less_than_trans) {
 		exeps.push_back(std::make_pair(trans,accept));
 	}
@@ -319,23 +318,6 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr rel
 	}
 
 	result_auto->setRelation(relation);
-
-/*
-	DVLOG(VLOG_LEVEL) << "==================TEST==================";
-
-	StringAutomaton_ptr s1,s2,s3,s4,s5;
-	MultiTrackAutomaton_ptr m1,m2,m3,m4;
-	s1 = StringAutomaton::makeString("t");
-	s2 = StringAutomaton::makeString("abc");
-	s3 = StringAutomaton::makeString("ab");
-	m1 = new MultiTrackAutomaton(s2->getDFA(),0,2);
-	m2 = new MultiTrackAutomaton(s3->getDFA(),1,2);
-	m3 = m1->intersect(m2);
-	DVLOG(VLOG_LEVEL) << "m3: " << m3->isEmptyLanguage();
-	m4 = result_auto->intersect(m3);
-	DVLOG(VLOG_LEVEL) << "m4: " << m4->isEmptyLanguage();
-	DVLOG(VLOG_LEVEL) << "==================DONE==================";
-*/
 
 	delete[] mindices;
 	return result_auto;
@@ -734,7 +716,44 @@ DFA_ptr MultiTrackAutomaton::makeConcreteDFA() {
 	return result_dfa;
 }
 
-std::vector<std::vector<char>> MultiTrackAutomaton::all_less_than_strings(int bits) {
+std::vector<std::vector<char>> MultiTrackAutomaton::binary_relation_ordering_transitions(StringRelation::Type type, int bits_per_var) {
+	bool final_states[6] = {false,false,false,false,false,false};
+	switch(type) {
+		case StringRelation::Type::EQ:
+			final_states[0] = true;
+			final_states[3] = true;
+			break;
+		case StringRelation::Type::NOTEQ:
+			final_states[1] = true;
+			final_states[2] = true;
+			final_states[4] = true;
+			final_states[5] = true;
+			break;
+		case StringRelation::Type::LT:
+			final_states[2] = true;
+			final_states[4] = true;
+			break;
+		case StringRelation::Type::LE:
+		  final_states[0] = true;
+			final_states[3] = true;
+			final_states[2] = true;
+			final_states[4] = true;
+			break;
+		case StringRelation::Type::GT:
+			final_states[1] = true;
+			final_states[5] = true;
+			break;
+		case StringRelation::Type::GE:
+			final_states[0] = true;
+			final_states[3] = true;
+			final_states[1] = true;
+			final_states[5] = true;
+			break;
+		default:
+			LOG(FATAL) << "Invalid relation ordering type";
+			break;
+	}
+
 	std::vector<std::map<std::string,int>> states(6);
 	states[0]["00"] = 3;
 	states[0]["01"] = 1;
@@ -761,8 +780,8 @@ std::vector<std::vector<char>> MultiTrackAutomaton::all_less_than_strings(int bi
 
 	while(!next.empty()) {
 		std::pair<int,std::string> curr = next.front();
-		if(curr.second.size() >= 2 * VAR_PER_TRACK) {
-			if(curr.first == 2 || curr.first == 4) {
+		if(curr.second.size() >= 2 * bits_per_var) {
+			if(final_states[curr.first] || final_states[curr.first]) {
 				std::vector<char> v(curr.second.begin(), curr.second.end());
 				v.push_back('\0');
 				good_trans.push_back(v);
