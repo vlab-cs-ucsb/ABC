@@ -227,7 +227,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeNotEquality(StringRelation_ptr 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks) {
 	MultiTrackAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
 	StringAutomaton_ptr constant_string_auto = nullptr;
-	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr;
+	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
 	int num_tracks = relation->get_num_tracks();
 	if(tracks.size() < 2) {
 		LOG(ERROR) << "Error in MultiTrackAutomaton::makeLessThan: insufficient variables";
@@ -254,98 +254,33 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr rel
 	int var = VAR_PER_TRACK;
 	int len = num_tracks * var;
 	int *mindices = getIndices(num_tracks*var);
+	int nump = 1 << var;
 	int init = 0,
-		  lambda_star = 1,
-		  lambda_lambda = 2,
-		  sink = 3;
+	    accept = 1,
+		  sink = 2;
 
-	dfaSetup(4,len,mindices);
+	dfaSetup(3,len,mindices);
   std::vector<std::pair<std::vector<char>,int>> exeps;
 
-  /************ initial state *******************/
+	/************ initial state *******************/
 
-	// if i < j and j != lambda, still valid, loop to init
-	// if i == lambda, j != lambda, still good, but goto lambda_star
-	// if i == lambda, j == lambda, still good, but goto lambda_lambda
-	// otherwise, goto sink
+	// if char == char and neither are lambda, loop
+  for(int i = 0; i < nump-1; i++) {
+		std::vector<char> exep = getBinaryFormat(i,var);
+		std::vector<char> str(len,'X');
+		for(int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = exep[k];
+			str[right_track+num_tracks*k] = exep[k];
+		}
+		str.push_back('\0');
+		exeps.push_back(std::make_pair(str,init));
+	}
 
-
-  // take advantage of symbolic transtions
-  // all the transitions where left < right follow the pattern:
-  // 0 / 1
-  // 0X / 1X
-  // 0XX / 1XX
-  // ...
-  // 0XXXXXXX / 1XXXXXXX
-  // BUT we need to account for if left is lambda, and right isn't, we
-  // need to go to a separate state
-  // and if left and right are both lambda, then we need to go to even
-  // another state! so, to account for this, we do another pass, like so:
-  // 1111110X / 11111110
-  // 111110XX / 1111110X
-  // ...
-  // 0XXXXXXX / 10XXXXXX
-  // both passes combined represent all transitions where left < right, excluing lambda
-
-  // ----- first pass -----
-  std::vector<char> exep_left(var,'0');
-  std::vector<char> exep_right(var,'0');
-  for(int pos = var-1; pos > 0; --pos) {
-    exep_right[pos] = '1';
-    std::vector<char> str(len, 'X');
-    for (int k = 0; k < var; k++) {
-      str[left_track + num_tracks * k] = exep_left[k];
-      str[right_track + num_tracks * k] = exep_right[k];
-    }
-    str.push_back('\0');
-    exeps.push_back(std::make_pair(str,init));
-    exep_left[pos] = 'X';
-    exep_right[pos] = 'X';
-  }
-  // ----- second pass (reversed) ------
-  // exep_left / exep_right should be
-  // 0XXXXXXX / 0XXXXXXX
-  for(int pos = 0; pos < var-1; pos++) {
-    exep_right[pos] = '1';
-    exep_right[pos+1] = '0';
-    std::vector<char> str(len, 'X');
-    for (int k = 0; k < var; k++) {
-      str[left_track + num_tracks * k] = exep_left[k];
-      str[right_track + num_tracks * k] = exep_right[k];
-    }
-    str.push_back('\0');
-    exeps.push_back(std::make_pair(str,init));
-    exep_left[pos] = '1';
-    exep_left[pos+1] = '0';
-  }
-
-  // now transitions where left = lambda, right = lambda
-  // exep_left / exep_right should be
-  // 11111110 / 11111110
-  exep_left[var-1] = '1';
-  exep_right[var-1] = '1';
-  std::vector<char> str2(len, 'X');
-  for (int k = 0; k < var; k++) {
-    str2[left_track + num_tracks * k] = exep_left[k];
-    str2[right_track + num_tracks * k] = exep_right[k];
-  }
-  str2.push_back('\0');
-  exeps.push_back(std::make_pair(str2,lambda_lambda));
-
-  // now transitions where left == lambda, right == star-lambda
-  // exep_left / exep_right should be
-  // 11111111 / 11111111
-  for(int pos = var-1; pos >= 0; --pos) {
-    exep_right[pos] = '0';
-    std::vector<char> str(len, 'X');
-    for (int k = 0; k < var; k++) {
-      str[left_track + num_tracks * k] = exep_left[k];
-      str[right_track + num_tracks * k] = exep_right[k];
-    }
-    str.push_back('\0');
-    exeps.push_back(std::make_pair(str,lambda_star));
-    exep_right[pos] = 'X';
-  }
+	// get all less than strings (bdd thingy with lucas)
+	std::vector<std::vector<char>> less_than_trans(all_less_than_strings(var));
+	for(auto& trans : less_than_trans) {
+		exeps.push_back(std::make_pair(trans,accept));
+	}
 
 	dfaAllocExceptions(exeps.size());
 	for(int i = 0; i < exeps.size(); i++) {
@@ -353,74 +288,27 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr rel
 	}
 	dfaStoreState(sink);
   exeps.clear();
-  /****************************************************************/
 
-	/************* lambda_star state (i must be lambda) *****************/
-	exep_left = std::vector<char>(var,'1');
-	exep_right = std::vector<char>(var,'1');
-	// lambda / lambda, good but goes to lambda_lambda state
-  str2 = std::vector<char>(len, 'X');
-  for (int k = 0; k < var; k++) {
-    str2[left_track + num_tracks * k] = exep_left[k];
-    str2[right_track + num_tracks * k] = exep_right[k];
-  }
-  str2.push_back('\0');
-  exeps.push_back(std::make_pair(str2,lambda_lambda));
+	/************* accept state, anything *****************/
+  dfaAllocExceptions(0);
+  dfaStoreState(accept);
 
-  // now transitions where left == lambda, right == star-lambda
-  // exep_left, exep_right both lambda / lambda currently
-  for(int pos = var-1; pos >= 0; --pos) {
-    exep_right[pos] = '0';
-    std::vector<char> str(len, 'X');
-    for (int k = 0; k < var; k++) {
-      str[left_track + num_tracks * k] = exep_left[k];
-      str[right_track + num_tracks * k] = exep_right[k];
-    }
-    str.push_back('\0');
-    exeps.push_back(std::make_pair(str,lambda_star));
-    exep_right[pos] = 'X';
-  }
-
-	dfaAllocExceptions(exeps.size());
-	for(int i = 0; i < exeps.size(); i++) {
-	  dfaStoreException(exeps[i].second, &(exeps[i].first)[0]);
-	}
-	dfaStoreState(sink);
-  exeps.clear();
-  /*************************************************************8/
-
-
-	/************ lambda_lambda state (i,j must both be lambda) ***********/
-	exep_left = std::vector<char>(var,'1');
-	exep_right = std::vector<char>(var,'1');
-	// if i == lambda, j == lambda, still valid, loop to lambda_lambda
-	// otherwise, goto sink
-	dfaAllocExceptions(1);
-	str2 = std::vector<char>(len, 'X');
-	for (int k = 0; k < var; k++) {
-		str2[left_track + num_tracks * k] = exep_left[k];
-		str2[right_track + num_tracks * k] = exep_right[k];
-	}
-	str2.push_back('\0');
-	dfaStoreException(lambda_lambda, &str2[0]);
-	dfaStoreState(sink);
-	/******************************************************************/
-
-	/****************** sink state ************************/
+	/****************** sink state, nothing ************************/
 	dfaAllocExceptions(0);
 	dfaStoreState(sink);
-  /**************************************************************/
 
 	// build it!
-	temp_dfa = dfaBuild("+++-");
+	temp_dfa = dfaBuild("++-");
 	result_dfa = dfaMinimize(temp_dfa);
 	dfaFree(temp_dfa);
+
 	result_auto = new MultiTrackAutomaton(result_dfa,num_tracks);
 	// if constant_string_auto != nullptr, then either the left or right
 	// side of the inequality is constant; we need to intersect it with
 	// the multitrack where the constant is on the extra track, then
 	// project away the extra track before we return
 	if(constant_string_auto != nullptr) {
+	  DVLOG(VLOG_LEVEL) << "NOT EMPTY";
 		MultiTrackAutomaton_ptr constant_multi_auto = new MultiTrackAutomaton(constant_string_auto->getDFA(),num_tracks-1,num_tracks);
 		temp_auto = result_auto->intersect(constant_multi_auto);
 		delete result_auto;
@@ -431,6 +319,24 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr rel
 	}
 
 	result_auto->setRelation(relation);
+
+/*
+	DVLOG(VLOG_LEVEL) << "==================TEST==================";
+
+	StringAutomaton_ptr s1,s2,s3,s4,s5;
+	MultiTrackAutomaton_ptr m1,m2,m3,m4;
+	s1 = StringAutomaton::makeString("t");
+	s2 = StringAutomaton::makeString("abc");
+	s3 = StringAutomaton::makeString("ab");
+	m1 = new MultiTrackAutomaton(s2->getDFA(),0,2);
+	m2 = new MultiTrackAutomaton(s3->getDFA(),1,2);
+	m3 = m1->intersect(m2);
+	DVLOG(VLOG_LEVEL) << "m3: " << m3->isEmptyLanguage();
+	m4 = result_auto->intersect(m3);
+	DVLOG(VLOG_LEVEL) << "m4: " << m4->isEmptyLanguage();
+	DVLOG(VLOG_LEVEL) << "==================DONE==================";
+*/
+
 	delete[] mindices;
 	return result_auto;
 }
@@ -737,7 +643,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::intersect(MultiTrackAutomaton_ptr o
 	intersect_auto = new MultiTrackAutomaton(minimized_dfa, this->num_of_tracks);
 
 	if(this->relation == nullptr && other_auto->relation == nullptr) {
-		LOG(FATAL) << "No relation set for either multitrack during intersection";
+		//LOG(FATAL) << "No relation set for either multitrack during intersection";
 	} else if(other_auto->relation == nullptr) {
 		intersect_relation = this->relation->clone();
 	} else if(this->relation == nullptr) {
@@ -1015,7 +921,49 @@ DFA_ptr MultiTrackAutomaton::makeConcreteDFA() {
 	result_dfa = dfaBuild("+-");
 	delete[] indices;
 	return result_dfa;
+}
 
+std::vector<std::vector<char>> MultiTrackAutomaton::all_less_than_strings(int bits) {
+	std::vector<std::map<std::string,int>> states(6);
+	states[0]["00"] = 3;
+	states[0]["01"] = 1;
+	states[0]["10"] = 2;
+	states[0]["11"] = 0;
+
+	states[1]["X1"] = 1;
+	states[1]["X0"] = 4;
+
+	states[2]["1X"] = 2;
+	states[2]["0X"] = 5;
+
+	states[3]["00"] = 3;
+	states[3]["01"] = 4;
+	states[3]["10"] = 5;
+	states[3]["11"] = 3;
+
+	states[4]["XX"] = 4;
+	states[5]["XX"] = 5;
+
+	std::vector<std::vector<char>> good_trans;
+	std::queue<std::pair<int,std::string>> next;
+	next.push(std::make_pair(0,""));
+
+	while(!next.empty()) {
+		std::pair<int,std::string> curr = next.front();
+		if(curr.second.size() >= 2 * VAR_PER_TRACK) {
+			if(curr.first == 2 || curr.first == 4) {
+				std::vector<char> v(curr.second.begin(), curr.second.end());
+				v.push_back('\0');
+				good_trans.push_back(v);
+			}
+		} else {
+			for(auto& t : states[curr.first]) {
+				next.push(std::make_pair(t.second,curr.second + t.first));
+			}
+		}
+		next.pop();
+	}
+	return good_trans;
 }
 
 } /* namespace Vlab */

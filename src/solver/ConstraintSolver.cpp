@@ -74,7 +74,6 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
   Value_ptr result = getTermValue(assert_command->term);
   bool is_satisfiable = result->isSatisfiable();
-
   symbol_table_->updateSatisfiability(is_satisfiable);
   symbol_table_->setScopeSatisfiability(is_satisfiable);
   if ((Term::Type::OR not_eq assert_command->term->type()) and (Term::Type::AND not_eq assert_command->term->type())) {
@@ -148,7 +147,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
   bool is_satisfiable = true;
   Value_ptr param = nullptr;
-
   for (auto& term : *(and_term->term_list)) {
     check_and_visit(term);
     param = getTermValue(term);
@@ -166,9 +164,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     }
     clearTermValuesAndLocalLetVars();
   }
-
   Value_ptr result = new Value(is_satisfiable);
-
   setTermValue(and_term, result);
 }
 
@@ -1170,17 +1166,20 @@ void ConstraintSolver::update_variables() {
   variable_path_table_.clear();
   // update any relational variables tagged prior to variable value computer
   // and update any changes in satisfiability
+  DVLOG(VLOG_LEVEL) << "Begin updating!";
   for (auto& var : tagged_variables) {
     Value_ptr value = symbol_table_->getValue(var);
     if (value == nullptr) {
       DVLOG(VLOG_LEVEL) << "Inconsistent value for variable: " << var->getName();
       continue;
     }
+    DVLOG(VLOG_LEVEL) << "Updating variable: " << var->getName();
     string_constraint_solver_.update_variable_value(var, value);
     still_sat = still_sat and value->isSatisfiable();
     delete value;
     symbol_table_->setValue(var, nullptr);
   }
+  DVLOG(VLOG_LEVEL) << "Done updating!";
   tagged_variables.clear();
 
 }
