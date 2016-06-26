@@ -31,6 +31,7 @@ class StringConstantChecker: public SMT::Visitor {
   virtual ~StringConstantChecker();
 
   void start(SMT::Term_ptr term, StringConstantChecker::Mode mode = StringConstantChecker::Mode::FULL);
+  void start(SMT::TermConstant_ptr term_constant, StringConstantChecker::Mode mode = StringConstantChecker::Mode::FULL);
   void end() override;
 
   void visitScript(SMT::Script_ptr) override;

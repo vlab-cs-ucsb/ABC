@@ -737,12 +737,11 @@ void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {
       }
     } else {
       if (initial_term_constant) { // if there is a constant regex makes it string
-        string_constant_checker.visitTermConstant(initial_term_constant);
+        string_constant_checker.start(initial_term_constant);
         if (string_constant_checker.is_constant_string()) {
           initial_term_constant->primitive->setData(string_constant_checker.get_constant_string());
           initial_term_constant->primitive->setType(Primitive::Type::STRING);
         }
-        string_constant_checker.end();
       }
       initial_term_constant = nullptr;
     }
@@ -1113,7 +1112,7 @@ void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
       }
     } else {
       if (initial_term_constant) { // if there is a constant regex makes it string
-        string_constant_checker.visitTermConstant(initial_term_constant);
+        string_constant_checker.start(initial_term_constant);
         if (string_constant_checker.is_constant_string()) {
           initial_term_constant->primitive->setData(string_constant_checker.get_constant_string());
           initial_term_constant->primitive->setType(Primitive::Type::STRING);
@@ -1329,7 +1328,7 @@ void SyntacticOptimizer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 
 void SyntacticOptimizer::visitTermConstant(TermConstant_ptr term_constant) {
   Optimization::StringConstantChecker string_constant_checker;
-  string_constant_checker.visitTermConstant(term_constant);
+  string_constant_checker.start(term_constant);
 }
 
 void SyntacticOptimizer::visitIdentifier(Identifier_ptr identifier) {

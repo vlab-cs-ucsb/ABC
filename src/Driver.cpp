@@ -320,7 +320,7 @@ void Driver::setOption(Option::Name option, std::string value) {
 }
 
 void Driver::test() {
-//  return;
+  return;
 
 
 

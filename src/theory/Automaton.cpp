@@ -844,6 +844,7 @@ CountMatrix Automaton::GetAdjacencyCountMatrix(bool count_reserved_words) {
 //    std::cout << std::endl;
 //  }
   count_matrix_ = count_matrix;
+  is_count_matrix_cached_ = true;
   return count_matrix;
 }
 

@@ -142,7 +142,10 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     if (Option::Solver::LIA_ENGINE_ENABLED) {
       arithmetic_constraint_solver_.start(and_term);
     }
-    //string_constraint_solver_.start(and_term);
+
+    if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA) {
+      string_constraint_solver_.start(and_term);
+    }
   }
 
   bool is_satisfiable = true;
@@ -1006,7 +1009,10 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   // multitrack values in the string constraint solver, get the variable's value
   // from there and clone it into the symbol table, so the variable value computer has
   // the most recent value
-  Value_ptr variable_value = string_constraint_solver_.get_variable_value(variable);
+  Value_ptr variable_value = nullptr;
+  if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA) {
+    variable_value = string_constraint_solver_.get_variable_value(variable);
+  }
   if (variable_value != nullptr) {
     DVLOG(VLOG_LEVEL) << "Relational variable: " << *variable;
     // variable relational, put in symbol table and tag for later update
@@ -1195,14 +1201,12 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
 
     Value_ptr result = getTermValue(term);
     if (result != nullptr) {
-      /*
       if (string_constraint_solver_.get_term_value(term) != nullptr) {
         DVLOG(VLOG_LEVEL) << "Mixed Multi- and Single- Track String Automata Constraint";
         result = string_constraint_solver_.get_term_value(term);
         setTermValue(term, new Value(result->isSatisfiable()));
         return true;
       }
-      */
       if (arithmetic_constraint_solver_.hasStringTerms(term) and result->isSatisfiable()) {
         DVLOG(VLOG_LEVEL) << "Mixed Linear Arithmetic Constraint";
         process_mixed_integer_string_constraints_in(term);

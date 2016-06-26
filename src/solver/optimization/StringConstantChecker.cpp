@@ -33,6 +33,13 @@ void StringConstantChecker::start(Term_ptr term, StringConstantChecker::Mode mod
   visit(term);
 }
 
+void StringConstantChecker::start(TermConstant_ptr term_constant, StringConstantChecker::Mode mode) {
+  mode_ = mode;
+  term_constant_ = nullptr;
+  value_ = "";
+  visitTermConstant(term_constant);
+}
+
 void StringConstantChecker::start() {
 }
 

@@ -250,7 +250,7 @@ void SubstringOptimization::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 
 void SubstringOptimization::visitTermConstant(TermConstant_ptr term_constant) {
   StringConstantChecker string_constant_checker;
-  string_constant_checker.visitTermConstant(term_constant);
+  string_constant_checker.start(term_constant);
   if (string_constant_checker.is_constant_string()) {
     std::string str_value = string_constant_checker.get_constant_string();
     if (has_end_index_) {
