@@ -104,7 +104,7 @@ void Driver::initializeSolver() {
 
   Solver::SyntacticOptimizer syntactic_optimizer(script_, symbol_table_);
   syntactic_optimizer.start();
-  Solver::Ast2Dot::inspectAST(script_);
+
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
   dependency_slicer.start();
 
@@ -322,6 +322,8 @@ void Driver::setOption(Option::Name option, std::string value) {
 void Driver::test() {
   return;
 
+
+
 //  std::map<std::string ,int> eq_1 = {{"x", 0}, {"z", 1}, {"y", 2}};
 //  std::vector<int> coeff = {1, 2, 3};
 //
@@ -336,7 +338,11 @@ void Driver::test() {
 //    std::cout << "int: " << int_auto_1->getAnAcceptingInt() << std::endl;
 //    delete int_auto_1;
 
-//  Theory::StringAutomaton_ptr str_auto_1 = Theory::StringAutomaton::makeRegexAuto("[a-u]");
+//  Theory::StringAutomaton_ptr str_auto_1 = Theory::StringAutomaton::makeRegexAuto("ad");
+//  auto result = str_auto_1->getAnAcceptingString();
+//  for (auto c : result) {
+//    std::cout << c << std::endl;
+//  }
 //  str_auto_1->inspectAuto();
 //  str_auto_1->inspectBDD();
 //  str_auto_1->Count(5);

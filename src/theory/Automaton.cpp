@@ -25,16 +25,16 @@ const std::string Automaton::Name::STRING = "StringAutomaton";
 const std::string Automaton::Name::BINARYINT = "BinaryIntAutomaton";
 
 Automaton::Automaton(Automaton::Type type)
-        : type(type), dfa(nullptr), num_of_variables(0), variable_indices(nullptr), id(Automaton::trace_id++) {
+        : type(type), is_count_matrix_cached_{false}, dfa(nullptr), num_of_variables(0), variable_indices(nullptr), id(Automaton::trace_id++) {
 }
 
 Automaton::Automaton(Automaton::Type type, DFA_ptr dfa, int num_of_variables)
-        : type(type), dfa(dfa), num_of_variables(num_of_variables), id(Automaton::trace_id++) {
+        : type(type), is_count_matrix_cached_{false}, dfa(dfa), num_of_variables(num_of_variables), id(Automaton::trace_id++) {
   variable_indices = getIndices(num_of_variables, 1); // make indices one more to be safe
 }
 
 Automaton::Automaton(const Automaton& other)
-        : type(other.type), dfa(dfaCopy(other.dfa)), num_of_variables(other.num_of_variables), id(Automaton::trace_id++) {
+        : type(other.type), is_count_matrix_cached_{false}, dfa(dfaCopy(other.dfa)), num_of_variables(other.num_of_variables), id(Automaton::trace_id++) {
   variable_indices = getIndices(num_of_variables, 1); // make indices one more to be safe
 }
 
@@ -171,6 +171,7 @@ bool Automaton::isStateReachableFrom(int search_state, int from_state) {
 }
 
 boost::multiprecision::cpp_int Automaton::Count(int bound, bool count_less_than_or_equal_to_bound, bool count_reserved_words) {
+
   auto x = GetAdjacencyCountMatrix(count_reserved_words);
   if (count_less_than_or_equal_to_bound) {
     x[this->dfa->ns][this->dfa->ns] = 1;
@@ -786,6 +787,10 @@ std::set<int> Automaton::getStatesReachableBy(int min_walk, int max_walk) {
 }
 
 CountMatrix Automaton::GetAdjacencyCountMatrix(bool count_reserved_words) {
+  if (is_count_matrix_cached_) {
+    return count_matrix_;
+  }
+
   CountMatrix count_matrix (this->dfa->ns + 1, CountVector(this->dfa->ns + 1, 0));
 
   unsigned left, right, index;
@@ -838,7 +843,8 @@ CountMatrix Automaton::GetAdjacencyCountMatrix(bool count_reserved_words) {
 //    }
 //    std::cout << std::endl;
 //  }
-
+  count_matrix_ = count_matrix;
+  is_count_matrix_cached_ = true;
   return count_matrix;
 }
 

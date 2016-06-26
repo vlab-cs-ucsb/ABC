@@ -1,15 +1,11 @@
 /*
- * CharAtOptimization.h
+ * SubstringOptimization.h
  *
- *  Created on: Mar 11, 2016
- *      Author: baki
- *   Copyright: Copyright 2015 The ABC Authors. All rights reserved. 
+ *  Created on: Jun 25, 2016
+ *   Copyright: Copyright 2015 The ABC Authors. All rights reserved.
  *              Use of this source code is governed license that can
  *              be found in the COPYING file.
  */
-
-#ifndef SRC_SOLVER_OPTIMIZATION_CHARATOPTIMIZATION_H_
-#define SRC_SOLVER_OPTIMIZATION_CHARATOPTIMIZATION_H_
 
 #include <algorithm>
 #include <string>
@@ -20,14 +16,17 @@
 #include "smt/ast.h"
 #include "StringConstantChecker.h"
 
+#ifndef SRC_SOLVER_OPTIMIZATION_SUBSTRINGOPTIMIZATION_H_
+#define SRC_SOLVER_OPTIMIZATION_SUBSTRINGOPTIMIZATION_H_
+
 namespace Vlab {
 namespace Solver {
 namespace Optimization {
 
-class CharAtOptimization: public SMT::Visitor {
+class SubstringOptimization: public SMT::Visitor {
 public:
-  CharAtOptimization(SMT::CharAt_ptr);
-  virtual ~CharAtOptimization();
+  SubstringOptimization(SMT::SubString_ptr);
+  virtual ~SubstringOptimization();
 
   void start() override;
   void end() override;
@@ -99,23 +98,32 @@ public:
   void visitVariable(SMT::Variable_ptr) override;
 
   bool is_optimizable();
+  std::string get_substring_result();
   bool is_index_updated();
-  std::string get_char_at_result();
-  size_t get_index();
+  bool has_end_index();
+  bool has_constant_end_index();
+  bool can_remove_constant();
+  size_t get_start_index();
+
 protected:
   bool is_optimized_;
   bool is_index_updated_;
+  bool concat_seen_;
+  bool can_remove_constant_term_;
+  bool has_end_index_;
+  bool has_constant_end_index_;
   SMT::Term_ptr subject_term_;
-  SMT::TermConstant_ptr index_term_constant_;
-  size_t index_;
+  SMT::TermConstant_ptr start_index_term_constant_;
+  SMT::TermConstant_ptr end_index_term_constant_;
+  size_t start_index_;
+  size_t end_index_;
   std::string value_;
 private:
   static const int VLOG_LEVEL;
-
 };
 
 } /* namespace Optimization */
 } /* namespace Solver */
 } /* namespace Vlab */
 
-#endif /* SRC_SOLVER_OPTIMIZATION_CHARATOPTIMIZATION_H_ */
+#endif /* SRC_SOLVER_OPTIMIZATION_SUBSTRINGOPTIMIZATION_H_ */

@@ -90,7 +90,6 @@ void SyntacticProcessor::visitAnd(And_ptr and_term) {
   // if converted into dnf, and_term is not valid anymore
   if (not converted_into_dnf) {
     DVLOG(VLOG_LEVEL) << "Check and apply associativity: " << *and_term;
-    TermConstant_ptr initial_term_constant = nullptr;
     int pos = 0;
     for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
       if (And_ptr sub_and_term = dynamic_cast<And_ptr>(*iter)) { // Associativity
@@ -114,7 +113,7 @@ void SyntacticProcessor::visitOr(Or_ptr or_term) {
   visit_term_list(or_term->term_list);
   DVLOG(VLOG_LEVEL) << "post visit start: " << *or_term << "@" << or_term;
   DVLOG(VLOG_LEVEL) << "Check and apply associativity: " << *or_term;
-  TermConstant_ptr initial_term_constant = nullptr;
+
   int pos = 0;
   for (auto iter = or_term->term_list->begin(); iter != or_term->term_list->end();) {
     if (Or_ptr sub_or_term =  dynamic_cast<Or_ptr>(*iter)) { // Associativity

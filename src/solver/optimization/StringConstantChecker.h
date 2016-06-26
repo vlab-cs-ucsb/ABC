@@ -1,35 +1,37 @@
 /*
- * CharAtOptimization.h
+ * StringConstantChecker.h
  *
- *  Created on: Mar 11, 2016
+ *  Created on: Jun 25, 2016
  *      Author: baki
  *   Copyright: Copyright 2015 The ABC Authors. All rights reserved. 
  *              Use of this source code is governed license that can
  *              be found in the COPYING file.
  */
 
-#ifndef SRC_SOLVER_OPTIMIZATION_CHARATOPTIMIZATION_H_
-#define SRC_SOLVER_OPTIMIZATION_CHARATOPTIMIZATION_H_
+#ifndef SRC_SOLVER_OPTIMIZATION_STRINGCONSTANTCHECKER_H_
+#define SRC_SOLVER_OPTIMIZATION_STRINGCONSTANTCHECKER_H_
 
 #include <algorithm>
 #include <string>
 #include <sstream>
-#include <cctype>
 
 #include <glog/logging.h>
 #include "smt/ast.h"
-#include "StringConstantChecker.h"
+#include "utils/RegularExpression.h"
 
 namespace Vlab {
 namespace Solver {
 namespace Optimization {
 
-class CharAtOptimization: public SMT::Visitor {
-public:
-  CharAtOptimization(SMT::CharAt_ptr);
-  virtual ~CharAtOptimization();
+class StringConstantChecker: public SMT::Visitor {
+ public:
+  enum class Mode : int {FULL = 0, PREFIX, SUFFIX};
 
-  void start() override;
+  StringConstantChecker();
+  virtual ~StringConstantChecker();
+
+  void start(SMT::Term_ptr term, StringConstantChecker::Mode mode = StringConstantChecker::Mode::FULL);
+  void start(SMT::TermConstant_ptr term_constant, StringConstantChecker::Mode mode = StringConstantChecker::Mode::FULL);
   void end() override;
 
   void visitScript(SMT::Script_ptr) override;
@@ -98,24 +100,19 @@ public:
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
 
-  bool is_optimizable();
-  bool is_index_updated();
-  std::string get_char_at_result();
-  size_t get_index();
+  bool is_constant_string();
+  std::string get_constant_string();
 protected:
-  bool is_optimized_;
-  bool is_index_updated_;
-  SMT::Term_ptr subject_term_;
-  SMT::TermConstant_ptr index_term_constant_;
-  size_t index_;
+  StringConstantChecker::Mode mode_;
+  SMT::TermConstant_ptr term_constant_;
   std::string value_;
 private:
+  void start() override;
   static const int VLOG_LEVEL;
-
 };
 
 } /* namespace Optimization */
 } /* namespace Solver */
 } /* namespace Vlab */
 
-#endif /* SRC_SOLVER_OPTIMIZATION_CHARATOPTIMIZATION_H_ */
+#endif /* SRC_SOLVER_OPTIMIZATION_STRINGCONSTANTCHECKER_H_ */

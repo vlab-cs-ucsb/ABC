@@ -12,6 +12,8 @@
 #include <sstream>
 #include <queue>
 #include <functional>
+#include <string>
+#include <regex>
 
 #include <glog/logging.h>
 #include "smt/ast.h"
@@ -19,6 +21,8 @@
 #include "Ast2Dot.h"
 #include "SymbolTable.h"
 #include "optimization/CharAtOptimization.h"
+#include "optimization/SubstringOptimization.h"
+#include "utils/RegularExpression.h"
 
 namespace Vlab {
 namespace Solver {
@@ -102,6 +106,7 @@ public:
 protected:
   void visit_and_callback(SMT::Term_ptr&);
   void append_constant(SMT::TermConstant_ptr, SMT::TermConstant_ptr);
+  bool check_and_process_constant_string(std::initializer_list<SMT::Term_ptr> terms);
   bool check_and_process_len_transformation(SMT::Term_ptr, SMT::Term_ptr&, SMT::Term_ptr&);
   bool __check_and_process_len_transformation(SMT::Term::Type, SMT::Term_ptr&, SMT::Term_ptr&);
   SMT::Term::Type syntactic_reverse_relation(SMT::Term::Type operation);
@@ -118,8 +123,8 @@ protected:
   SMT::Term_ptr generate_term_constant(std::string data, SMT::Primitive::Type type);
   void add_callback_to_replace_with_bool(SMT::Term_ptr, std::string value);
   bool check_bool_constant_value(SMT::Term_ptr, std::string value);
-  inline SMT::Variable_ptr generate_local_var(SMT::Variable::Type type);
-  inline SMT::QualIdentifier_ptr generate_qual_identifier(std::string var_name);
+  SMT::Variable_ptr generate_local_var(SMT::Variable::Type type);
+  SMT::QualIdentifier_ptr generate_qual_identifier(std::string var_name);
 
 
 

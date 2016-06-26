@@ -10,9 +10,13 @@
 
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <cstdlib>
+#include <vector>
+#include <chrono>
+#include <ratio>
 
-//#define NDEBUG
+#define NDEBUG
 
 #include <glog/logging.h>
 #include <Driver.h>
@@ -38,6 +42,7 @@ int main(const int argc, const char **argv) {
   bool model_count = false;
   bool enable_relational_string_automata = true;
   bool force_dnf_formula = false;
+  bool experiment_mode = false;
   std::string bound_string = "50";
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == std::string("-c")) {
@@ -66,10 +71,13 @@ int main(const int argc, const char **argv) {
       enable_relational_string_automata = true;
     } else if (argv[i] == std::string("-s")) {
       enable_relational_string_automata = false;
-    } else {
+    } else if (argv[i] == std::string("-e")) {
+      experiment_mode = true;
+    }  else {
 
     }
   }
+
 
   google::InitGoogleLogging(argv[0]);
 
@@ -87,7 +95,32 @@ int main(const int argc, const char **argv) {
     LOG(FATAL)<< "Cannot find input: ";
   }
 
-  int bound = std::stoi(bound_string);
+  /**
+   * allow multiple counts
+   * example option: -b 10,25,50,100
+   */
+  int bound = 0;
+  std::vector<int> bounds;
+  std::stringstream ss;
+  for (auto c : bound_string) {
+    if (c == ',') {
+      ss >> bound;
+      bounds.push_back(bound);
+      ss.str("");
+      ss.clear();
+    } else {
+      ss << c;
+    }
+  }
+
+  if (ss.str() != "") {
+    ss >> bound;
+    bounds.push_back(bound);
+  }
+
+  if (bounds.size() == 1) {
+    bound = bounds.front();
+  }
 
   Vlab::Driver driver;
   driver.setOption(Vlab::Option::Name::LIA_ENGINE_ENABLED, enable_lia_engine);
@@ -104,6 +137,7 @@ int main(const int argc, const char **argv) {
     driver.ast2dot(output_root + "/parser_out.dot");
   }
 
+  auto start = std::chrono::steady_clock::now();
   driver.initializeSolver();
 
   if (VLOG_IS_ON(30)) {
@@ -111,6 +145,8 @@ int main(const int argc, const char **argv) {
   }
 
   driver.solve();
+  auto end = std::chrono::steady_clock::now();
+  auto solving_time = end - start;
 
   if (driver.isSatisfiable()) {
     if (VLOG_IS_ON(30)) {
@@ -135,7 +171,7 @@ int main(const int argc, const char **argv) {
           case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
             LOG(INFO) << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"";
             if (model_count) {
-              LOG(INFO) << "count          : " << driver.Count(variable_entry.first->getName(), bound, false);
+              LOG(INFO) << "var: " << variable_entry.first->getName() << " count          : " << driver.Count(variable_entry.first->getName(), bound, false);
 //              LOG(INFO) << "symbolic count : " << driver.SymbolicCount(variable_entry.first->getName(), bound);
             }
             break;
@@ -157,11 +193,26 @@ int main(const int argc, const char **argv) {
         }
       }
     }
-    LOG(INFO)<< "report: SAT";
+
+    LOG(INFO)<< "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
+    if (experiment_mode) {
+      for(auto& variable_entry : driver.getSatisfyingVariables()) {
+        if (variable_entry.first->isSymbolic()) {
+          LOG(INFO)<< "report var: " << variable_entry.first->getName();
+          for (auto b : bounds) {
+            start = std::chrono::steady_clock::now();
+            auto count_result = driver.Count(variable_entry.first->getName(), b, true);
+            end = std::chrono::steady_clock::now();
+            auto count_time = end - start;
+            LOG(INFO)<< "report bound: " << b << " count: " << count_result  << " time: " << std::chrono::duration <long double, std::milli> (count_time).count() << " ms";
+          }
+        }
+      }
+    }
   } else {
-    LOG(INFO) << "report: UNSAT";
+    LOG(INFO) << "report is_sat: UNSAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
     if (model_count) {
-      LOG(INFO) << "count          : " << 0;
+      LOG(INFO) << "report count: 0 time: 0";
     }
   }
   LOG(INFO)<< "done.";

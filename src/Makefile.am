@@ -28,8 +28,12 @@ libabc_la_SOURCES = \
   ./solver/Initializer.h \
   ./solver/SyntacticProcessor.cpp \
   ./solver/SyntacticProcessor.h \
+  ./solver/optimization/StringConstantChecker.cpp \
+  ./solver/optimization/StringConstantChecker.h \
   ./solver/optimization/CharAtOptimization.cpp \
   ./solver/optimization/CharAtOptimization.h \
+  ./solver/optimization/SubstringOptimization.cpp \
+  ./solver/optimization/SubstringOptimization.h \
   ./solver/SyntacticOptimizer.cpp \
   ./solver/SyntacticOptimizer.h \
   ./solver/Counter.cpp \
