@@ -108,8 +108,9 @@ void Driver::initializeSolver() {
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
   dependency_slicer.start();
 
-//  Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
-//  equivalence_generator.start();
+
+  Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
+  equivalence_generator.start();
 
 //  Solver::VariableOptimizer variable_optimizer(script, symbol_table);
 //  variable_optimizer.start();
@@ -117,8 +118,8 @@ void Driver::initializeSolver() {
 //  Solver::FormulaOptimizer formula_optimizer(script, symbol_table);
 //  formula_optimizer.start();
 //
-  Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
-  constraint_sorter.start();
+  //Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
+  //constraint_sorter.start();
 }
 
 void Driver::solve() {
