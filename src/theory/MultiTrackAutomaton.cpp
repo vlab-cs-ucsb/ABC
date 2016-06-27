@@ -14,6 +14,7 @@
 namespace Vlab {
 namespace Theory {
 
+MultiTrackAutomaton::TransitionTable MultiTrackAutomaton::transition_table;
 const int MultiTrackAutomaton::VLOG_LEVEL = 20;
 
 MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int num_tracks)
@@ -122,26 +123,26 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makePhi(int ntracks) {
 	return non_accepting_auto;
 }
 
-MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAuto(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks) {
+MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAuto(StringRelation_ptr relation) {
 	MultiTrackAutomaton_ptr result_auto = nullptr;
 	switch(relation->get_type()) {
     case StringRelation::Type::EQ:
-      result_auto = MultiTrackAutomaton::makeEquality(relation, tracks);
+      result_auto = MultiTrackAutomaton::makeEquality(relation);
       break;
     case StringRelation::Type::NOTEQ:
-      result_auto = MultiTrackAutomaton::makeNotEquality(relation, tracks);
+      result_auto = MultiTrackAutomaton::makeNotEquality(relation);
       break;
     case StringRelation::Type::GT:
-      result_auto = MultiTrackAutomaton::makeGreaterThan(relation, tracks);
+      result_auto = MultiTrackAutomaton::makeGreaterThan(relation);
       break;
     case StringRelation::Type::GE:
-      result_auto = MultiTrackAutomaton::makeGreaterThanOrEqual(relation, tracks);
+      result_auto = MultiTrackAutomaton::makeGreaterThanOrEqual(relation);
       break;
     case StringRelation::Type::LT:
-      result_auto = MultiTrackAutomaton::makeLessThan(relation, tracks);
+      result_auto = MultiTrackAutomaton::makeLessThan(relation);
       break;
     case StringRelation::Type::LE:
-      result_auto = MultiTrackAutomaton::makeLessThanOrEqual(relation, tracks);
+      result_auto = MultiTrackAutomaton::makeLessThanOrEqual(relation);
       break;
     default:
       DVLOG(VLOG_LEVEL) << "StringRelation type not supported";
@@ -151,24 +152,26 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAuto(StringRelation_ptr relatio
 	return result_auto;
 }
 
-MultiTrackAutomaton_ptr MultiTrackAutomaton::makeEquality(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks) {
+MultiTrackAutomaton_ptr MultiTrackAutomaton::makeEquality(StringRelation_ptr relation) {
 	MultiTrackAutomaton_ptr result_auto;
 	DFA_ptr temp_dfa, result_dfa;
-	int num_tracks = relation->get_num_tracks();
-	if(tracks.size() < 2) {
+  std::map<std::string,int>* trackmap = relation->get_variable_trackmap();
+	int num_tracks = trackmap->size();
+	if(num_tracks < 2) {
 		LOG(ERROR) << "Error in MultiTrackAutomaton::makeEquality: insufficient variables";
 	}
-
-	int left_track = tracks[0].second;
-	int right_track = tracks[1].second;
+  std::string left_data = relation->get_left()->get_data();
+  std::string right_data = relation->get_right()->get_data();
+	int left_track = (*trackmap)[left_data];
+	int right_track = (*trackmap)[right_data];
 
 	if(left_track == -1) {
-		StringAutomaton_ptr string_auto = StringAutomaton::makeString(tracks[0].first);
+		StringAutomaton_ptr string_auto = StringAutomaton::makeString(left_data);
 		result_auto = new MultiTrackAutomaton(string_auto->getDFA(),right_track,num_tracks);
 		delete string_auto;
 		return result_auto;
 	} else if(right_track == -1) {
-		StringAutomaton_ptr string_auto = StringAutomaton::makeString(tracks[1].first);
+		StringAutomaton_ptr string_auto = StringAutomaton::makeString(right_data);
 		result_auto = new MultiTrackAutomaton(string_auto->getDFA(),left_track,num_tracks);
 		delete string_auto;
 		return result_auto;
@@ -216,24 +219,27 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeEquality(StringRelation_ptr rel
 	return result_auto;
 }
 
-MultiTrackAutomaton_ptr MultiTrackAutomaton::makeNotEquality(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks) {
+MultiTrackAutomaton_ptr MultiTrackAutomaton::makeNotEquality(StringRelation_ptr relation) {
 	MultiTrackAutomaton_ptr eq_auto = nullptr, not_eq_auto = nullptr;
-	eq_auto = MultiTrackAutomaton::makeEquality(relation, tracks);
+	eq_auto = MultiTrackAutomaton::makeEquality(relation);
 	not_eq_auto = eq_auto->complement();
 	delete eq_auto;
 	return not_eq_auto;
 }
 
-MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks) {
+MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr relation) {
 	MultiTrackAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
 	StringAutomaton_ptr constant_string_auto = nullptr;
 	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
-	int num_tracks = relation->get_num_tracks();
-	if(tracks.size() < 2) {
-		LOG(ERROR) << "Error in MultiTrackAutomaton::makeLessThan: insufficient variables";
+	std::map<std::string,int>* trackmap = relation->get_variable_trackmap();
+	int num_tracks = trackmap->size();
+	if(num_tracks < 2) {
+		LOG(ERROR) << "Error in MultiTrackAutomaton::makeEquality: insufficient variables";
 	}
-	int left_track = tracks[0].second;
-	int right_track = tracks[1].second;
+  std::string left_data = relation->get_left()->get_data();
+  std::string right_data = relation->get_right()->get_data();
+	int left_track = (*trackmap)[left_data];
+	int right_track = (*trackmap)[right_data];
 	// if one side is constant, replace with temp variable on last track,
 	// proceeed normally, then intersect it
 	// i.e., construct x < y
@@ -243,12 +249,12 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr rel
 		// make room for temp variable
 		left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(tracks[0].first);
+		constant_string_auto = StringAutomaton::makeString(left_data);
 	} else if(right_track == -1) {
 		// make room for temp variable
 		right_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(tracks[1].first);
+		constant_string_auto = StringAutomaton::makeString(right_data);
 	}
 
 	int var = VAR_PER_TRACK;
@@ -261,24 +267,32 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr rel
 
 	dfaSetup(3,len,mindices);
   std::vector<std::pair<std::vector<char>,int>> exeps;
-
+  TransitionVector tv;
 	/************ initial state *******************/
 
 	// if char == char and neither are lambda, loop
-  for(int i = 0; i < nump-1; i++) {
-		std::vector<char> exep = getBinaryFormat(i,var);
+	tv = generate_transitions_for_relation(StringRelation::Type::EQ_NO_LAMBDA,var);
+
+  for(auto& t : tv) {
 		std::vector<char> str(len,'X');
 		for(int k = 0; k < var; k++) {
-			str[left_track+num_tracks*k] = exep[k];
-			str[right_track+num_tracks*k] = exep[k];
+			str[left_track+num_tracks*k] = t.first[k];
+			str[right_track+num_tracks*k] = t.second[k];
 		}
 		str.push_back('\0');
 		exeps.push_back(std::make_pair(str,init));
 	}
 
-	std::vector<std::vector<char>> less_than_trans(binary_relation_ordering_transitions(StringRelation::Type::LT,var));
-	for(auto& trans : less_than_trans) {
-		exeps.push_back(std::make_pair(trans,accept));
+  // if left char < right char, or left is lambda and right is not lambda, then accept
+	tv = generate_transitions_for_relation(StringRelation::Type::LT,var);
+	for(auto& t : tv) {
+		std::vector<char> str(len,'X');
+		for(int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = t.first[k];
+			str[right_track+num_tracks*k] = t.second[k];
+		}
+		str.push_back('\0');
+		exeps.push_back(std::make_pair(str,accept));
 	}
 
 	dfaAllocExceptions(exeps.size());
@@ -323,21 +337,127 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr rel
 	return result_auto;
 }
 
-MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThanOrEqual(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks) {
+MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThanOrEqual(StringRelation_ptr relation) {
   MultiTrackAutomaton_ptr greater_than_auto = nullptr, less_than_or_equal_auto = nullptr;
-	greater_than_auto = MultiTrackAutomaton::makeLessThan(relation, tracks);
+	greater_than_auto = MultiTrackAutomaton::makeLessThan(relation);
 	less_than_or_equal_auto = greater_than_auto->complement();
 	delete greater_than_auto;
 	return less_than_or_equal_auto;
 }
 
-MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThan(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks) {
-  return nullptr;
+MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThan(StringRelation_ptr relation) {
+  MultiTrackAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
+	StringAutomaton_ptr constant_string_auto = nullptr;
+	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
+	std::map<std::string,int>* trackmap = relation->get_variable_trackmap();
+	int num_tracks = trackmap->size();
+	if(num_tracks < 2) {
+		LOG(ERROR) << "Error in MultiTrackAutomaton::makeEquality: insufficient variables";
+	}
+  std::string left_data = relation->get_left()->get_data();
+  std::string right_data = relation->get_right()->get_data();
+	int left_track = (*trackmap)[left_data];
+	int right_track = (*trackmap)[right_data];
+	// if one side is constant, replace with temp variable on last track,
+	// proceeed normally, then intersect it
+	// i.e., construct x > y
+	// then intersect ^ with multitrack where constant is on y track
+	// then project y track away
+	if(left_track == -1) {
+		// make room for temp variable
+		left_track = num_tracks;
+		num_tracks++;
+		constant_string_auto = StringAutomaton::makeString(left_data);
+	} else if(right_track == -1) {
+		// make room for temp variable
+		right_track = num_tracks;
+		num_tracks++;
+		constant_string_auto = StringAutomaton::makeString(right_data);
+	}
+
+	int var = VAR_PER_TRACK;
+	int len = num_tracks * var;
+	int *mindices = getIndices(num_tracks*var);
+	int nump = 1 << var;
+	int init = 0,
+	    accept = 1,
+		  sink = 2;
+
+	dfaSetup(3,len,mindices);
+  std::vector<std::pair<std::vector<char>,int>> exeps;
+  TransitionVector tv;
+	/************ initial state *******************/
+
+	// if char == char and neither are lambda, loop
+	tv = generate_transitions_for_relation(StringRelation::Type::EQ_NO_LAMBDA,var);
+
+  for(auto& t : tv) {
+		std::vector<char> str(len,'X');
+		for(int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = t.first[k];
+			str[right_track+num_tracks*k] = t.second[k];
+		}
+		str.push_back('\0');
+		exeps.push_back(std::make_pair(str,init));
+	}
+
+  // if left char > right char, or right is lambda and left is not lambda, then accept
+	tv = generate_transitions_for_relation(StringRelation::Type::GT,var);
+	for(auto& t : tv) {
+		std::vector<char> str(len,'X');
+		for(int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = t.first[k];
+			str[right_track+num_tracks*k] = t.second[k];
+		}
+		str.push_back('\0');
+		exeps.push_back(std::make_pair(str,accept));
+	}
+
+	dfaAllocExceptions(exeps.size());
+	for(int i = 0; i < exeps.size(); i++) {
+	  dfaStoreException(exeps[i].second, &(exeps[i].first)[0]);
+	}
+	dfaStoreState(sink);
+  exeps.clear();
+
+	/************* accept state, anything *****************/
+  dfaAllocExceptions(0);
+  dfaStoreState(accept);
+
+	/****************** sink state, nothing ************************/
+	dfaAllocExceptions(0);
+	dfaStoreState(sink);
+
+	// build it!
+	temp_dfa = dfaBuild("++-");
+	result_dfa = dfaMinimize(temp_dfa);
+	dfaFree(temp_dfa);
+
+	result_auto = new MultiTrackAutomaton(result_dfa,num_tracks);
+	// if constant_string_auto != nullptr, then either the left or right
+	// side of the inequality is constant; we need to intersect it with
+	// the multitrack where the constant is on the extra track, then
+	// project away the extra track before we return
+	if(constant_string_auto != nullptr) {
+	  DVLOG(VLOG_LEVEL) << "NOT EMPTY";
+		MultiTrackAutomaton_ptr constant_multi_auto = new MultiTrackAutomaton(constant_string_auto->getDFA(),num_tracks-1,num_tracks);
+		temp_auto = result_auto->intersect(constant_multi_auto);
+		delete result_auto;
+		delete constant_multi_auto;
+		delete constant_string_auto;
+		result_auto = temp_auto->projectKTrack(num_tracks-1);
+		delete temp_auto;
+	}
+
+	result_auto->setRelation(relation);
+
+	delete[] mindices;
+	return result_auto;
 }
 
-MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThanOrEqual(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks) {
+MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThanOrEqual(StringRelation_ptr relation) {
   MultiTrackAutomaton_ptr less_than_auto = nullptr, greater_than_or_equal_auto = nullptr;
-	less_than_auto = MultiTrackAutomaton::makeLessThan(relation, tracks);
+	less_than_auto = MultiTrackAutomaton::makeLessThan(relation);
 	greater_than_or_equal_auto = less_than_auto->complement();
 	delete less_than_auto;
 	return greater_than_or_equal_auto;
@@ -442,7 +562,10 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::intersect(MultiTrackAutomaton_ptr o
 	} else if(this->relation == nullptr) {
 		intersect_relation = other_auto->relation->clone();
 	} else {
-		intersect_relation = this->relation->combine(other_auto->relation);
+		intersect_relation = new StringRelation();
+		intersect_relation->set_type(StringRelation::Type::INTERSECT);
+		intersect_relation->set_left(this->relation->clone());
+		intersect_relation->set_right(other_auto->relation->clone());
 	}
 	intersect_auto->setRelation(intersect_relation);
 	return intersect_auto;
@@ -551,8 +674,6 @@ std::vector<std::string> MultiTrackAutomaton::getAnAcceptingStringForEachTrack()
   unsigned num_transitions = example->size() / num_of_variables;
   bool bit;
   unsigned sharp1 = 254, sharp2 = 255;
-
-  DVLOG(VLOG_LEVEL) << "We got: " << num_transitions << " transitions";
 
   for(int t = 0; t < num_transitions; t++) {
     unsigned offset = t*num_of_variables;
@@ -716,7 +837,14 @@ DFA_ptr MultiTrackAutomaton::makeConcreteDFA() {
 	return result_dfa;
 }
 
-std::vector<std::vector<char>> MultiTrackAutomaton::binary_relation_ordering_transitions(StringRelation::Type type, int bits_per_var) {
+const MultiTrackAutomaton::TransitionVector& MultiTrackAutomaton::generate_transitions_for_relation(StringRelation::Type type, int bits_per_var) {
+  // check table for precomputed value first
+  std::pair<int,StringRelation::Type> key(bits_per_var,type);
+	if(transition_table.find(key) != transition_table.end()) {
+	  return transition_table[key];
+	}
+
+	// not previously computed; compute now and cache for later.
 	bool final_states[6] = {false,false,false,false,false,false};
 	switch(type) {
 		case StringRelation::Type::EQ:
@@ -749,6 +877,9 @@ std::vector<std::vector<char>> MultiTrackAutomaton::binary_relation_ordering_tra
 			final_states[1] = true;
 			final_states[5] = true;
 			break;
+		case StringRelation::Type::EQ_NO_LAMBDA:
+		  final_states[3] = true;
+			break;
 		default:
 			LOG(FATAL) << "Invalid relation ordering type";
 			break;
@@ -774,26 +905,32 @@ std::vector<std::vector<char>> MultiTrackAutomaton::binary_relation_ordering_tra
 	states[4]["XX"] = 4;
 	states[5]["XX"] = 5;
 
-	std::vector<std::vector<char>> good_trans;
-	std::queue<std::pair<int,std::string>> next;
-	next.push(std::make_pair(0,""));
+	TransitionVector good_trans;
+	std::queue<std::pair<int,std::pair<std::string,std::string>>> next;
+	next.push(std::make_pair(0,std::make_pair("","")));
 
 	while(!next.empty()) {
-		std::pair<int,std::string> curr = next.front();
-		if(curr.second.size() >= 2 * bits_per_var) {
-			if(final_states[curr.first] || final_states[curr.first]) {
-				std::vector<char> v(curr.second.begin(), curr.second.end());
-				v.push_back('\0');
-				good_trans.push_back(v);
+		std::pair<int,std::pair<std::string,std::string>> curr = next.front();
+		if(curr.second.first.size() >= bits_per_var) {
+			if(final_states[curr.first]) {
+				good_trans.push_back(curr.second);
 			}
 		} else {
 			for(auto& t : states[curr.first]) {
-				next.push(std::make_pair(t.second,curr.second + t.first));
+				next.push(std::make_pair(
+				    t.second,
+				    std::make_pair(
+				        curr.second.first + std::string(1,t.first[0]),
+				        curr.second.second + std::string(1,t.first[1]))));
 			}
 		}
 		next.pop();
 	}
-	return good_trans;
+
+	// cache the transitions for later
+	transition_table[key] = good_trans;
+
+	return transition_table[key];
 }
 
 } /* namespace Vlab */

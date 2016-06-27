@@ -19,6 +19,9 @@ class MultiTrackAutomaton;
 typedef MultiTrackAutomaton* MultiTrackAutomaton_ptr;
 
 class MultiTrackAutomaton: public Automaton {
+  using TransitionVector = std::vector<std::pair<std::string,std::string>>;
+  using TransitionTable = std::map<std::pair<int,StringRelation::Type>,TransitionVector>;
+
  public:
 	MultiTrackAutomaton(DFA_ptr dfa, int num_tracks);
 	MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_tracks);
@@ -27,13 +30,13 @@ virtual ~MultiTrackAutomaton();
 	virtual MultiTrackAutomaton_ptr clone() const;
 
 	static MultiTrackAutomaton_ptr makePhi(int ntracks);
-	static MultiTrackAutomaton_ptr makeAuto(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks);
-	static MultiTrackAutomaton_ptr makeEquality(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks);
-	static MultiTrackAutomaton_ptr makeNotEquality(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks);
-	static MultiTrackAutomaton_ptr makeLessThan(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks);
-	static MultiTrackAutomaton_ptr makeLessThanOrEqual(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks);
-	static MultiTrackAutomaton_ptr makeGreaterThan(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks);
-	static MultiTrackAutomaton_ptr makeGreaterThanOrEqual(StringRelation_ptr relation, std::vector<std::pair<std::string,int>> tracks);
+	static MultiTrackAutomaton_ptr makeAuto(StringRelation_ptr relation);
+	static MultiTrackAutomaton_ptr makeEquality(StringRelation_ptr relation);
+	static MultiTrackAutomaton_ptr makeNotEquality(StringRelation_ptr relation);
+	static MultiTrackAutomaton_ptr makeLessThan(StringRelation_ptr relation);
+	static MultiTrackAutomaton_ptr makeLessThanOrEqual(StringRelation_ptr relation);
+	static MultiTrackAutomaton_ptr makeGreaterThan(StringRelation_ptr relation);
+	static MultiTrackAutomaton_ptr makeGreaterThanOrEqual(StringRelation_ptr relation);
 	static MultiTrackAutomaton_ptr makeAnyAutoUnaligned(int num_tracks);
 	static MultiTrackAutomaton_ptr makeAnyAutoAligned(int num_tracks);
 
@@ -59,14 +62,14 @@ virtual ~MultiTrackAutomaton();
 	static DFA_ptr removeLambdaSuffix(DFA_ptr dfa, int num_vars);
 	DFA_ptr makeConcreteDFA();
 
-	// possible to cache this value before constraint solving, for reuse
-	static std::vector<std::vector<char>> binary_relation_ordering_transitions(StringRelation::Type type, int bits);
-
 	static const int VAR_PER_TRACK = 8;
 	int num_of_tracks;
 
  private:
+  static const TransitionVector& generate_transitions_for_relation(StringRelation::Type type, int bits_per_var);
+
  	StringRelation_ptr relation;
+ 	static TransitionTable transition_table;
 	static const int VLOG_LEVEL;
 };
 

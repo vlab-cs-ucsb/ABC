@@ -11,26 +11,40 @@ const int StringRelation::VLOG_LEVEL = 25;
 
 StringRelation::StringRelation()
     : type_(Type::NONE),
+      left_(nullptr),
+      right_(nullptr),
+      data_(""),
       trackmap_handle_(nullptr) {
-  num_tracks_ = 0;
 }
 
-StringRelation::StringRelation(Type t, std::map<std::string, int>* trackmap,
-                               std::vector<Subrelation> subrels, size_t ntracks)
+StringRelation::StringRelation(Type t, StringRelation_ptr left, StringRelation_ptr right,
+                std::string data, std::map<std::string, int>* trackmap)
     : type_(t),
-      trackmap_handle_(trackmap),
-      subrelations_(subrels),
-      num_tracks_(ntracks) {
+      left_(left),
+      right_(right),
+      data_(data),
+      trackmap_handle_(trackmap) {
 }
 
 StringRelation::~StringRelation() {
+  if(left_) delete left_;
+  if(right_) delete right_;
 }
 
-StringRelation::StringRelation(const StringRelation &other)
-    : type_(other.type_),
-      trackmap_handle_(other.trackmap_handle_),
-      subrelations_(other.subrelations_),
-      num_tracks_(other.num_tracks_) {
+StringRelation::StringRelation(const StringRelation &other) {
+  this->type_ = other.type_;
+  if(other.left_ != nullptr) {
+    this->left_ = other.left_->clone();
+  } else {
+    this->left_ = nullptr;
+  }
+  if(other.right_ != nullptr) {
+    this->right_ = other.left_->clone();
+  } else {
+    this->right_ = nullptr;
+  }
+  this->data_ = other.data_;
+  this->trackmap_handle_ = other.trackmap_handle_;
 }
 
 StringRelation_ptr StringRelation::clone() const {
@@ -66,10 +80,10 @@ std::string StringRelation::str() const {
     case Type::UNION:
       ss << "|";
       break;
-    case Type::VAR:
+    case Type::STRING_VAR:
       ss << "<var>";
       break;
-    case Type::CONSTANT:
+    case Type::STRING_CONSTANT:
       ss << "<constant>";
       break;
     default:
@@ -88,12 +102,27 @@ StringRelation::Type StringRelation::get_type() const {
   return this->type_;
 }
 
-void StringRelation::set_num_tracks(size_t ntracks) {
-  this->num_tracks_ = ntracks;
+void StringRelation::set_left(StringRelation_ptr left) {
+  this->left_ = left;
+}
+StringRelation_ptr StringRelation::get_left() {
+  return this->left_;
 }
 
-size_t StringRelation::get_num_tracks() const {
-  return this->trackmap_handle_->size();
+void StringRelation::set_right(StringRelation_ptr right) {
+  this->right_ = right;
+}
+
+StringRelation_ptr StringRelation::get_right() {
+  return this->right_;
+}
+
+void StringRelation::set_data(std::string data) {
+  this->data_ = data;
+}
+
+std::string StringRelation::get_data() {
+  return this->data_;
 }
 
 int StringRelation::get_variable_index(std::string name) {
@@ -121,30 +150,19 @@ bool StringRelation::has_same_trackmap(StringRelation_ptr other_relation) {
   return true;
 }
 
-//TODO: Check if the relations are equal...
-StringRelation_ptr StringRelation::combine(StringRelation_ptr other_relation) {
-  StringRelation_ptr result_relation = nullptr;
-  std::vector<Subrelation> subrels(this->subrelations_);
-  subrels.insert(subrels.end(), other_relation->subrelations_.begin(), other_relation->subrelations_.end());
-  result_relation = new StringRelation(StringRelation::Type::INTERSECT, this->trackmap_handle_, subrels,
-                                       this->trackmap_handle_->size());
-  return result_relation;
-}
-
-void StringRelation::add_subrelation(StringRelation::Subrelation subrel) {
-  this->subrelations_.push_back(subrel);
-}
-
-std::vector<StringRelation::Subrelation> StringRelation::get_subrelation_list() {
-  return subrelations_;
-}
-
 std::map<std::string, int>* StringRelation::get_variable_trackmap() {
   return this->trackmap_handle_;
 }
 
 void StringRelation::set_variable_trackmap(std::map<std::string, int>* trackmap) {
   this->trackmap_handle_ = trackmap;
+}
+
+int StringRelation::get_num_tracks() {
+  if(trackmap_handle_ == nullptr) {
+    return 0;
+  }
+  return trackmap_handle_->size();
 }
 
 std::ostream& operator<<(std::ostream& os, const StringRelation& relation) {

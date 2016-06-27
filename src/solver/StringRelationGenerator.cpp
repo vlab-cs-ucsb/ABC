@@ -86,7 +86,6 @@ void StringRelationGenerator::visitAnd(And_ptr and_term) {
     term_relation = get_term_relation(term);
     if(term_relation != nullptr) {
       term_relation->set_variable_trackmap(current_trackmap);
-      term_relation->set_num_tracks(current_trackmap->size());
     }
   }
 }
@@ -118,79 +117,133 @@ void StringRelationGenerator::visitTimes(Times_ptr times_term) {
 }
 
 void StringRelationGenerator::visitEq(Eq_ptr eq_term) {
-  visit_children_of(eq_term);
-  DVLOG(VLOG_LEVEL) << "visit: " << *eq_term;
   StringRelation_ptr left_relation = nullptr, right_relation = nullptr, relation = nullptr;
   left_relation = get_term_relation(eq_term->left_term);
   right_relation = get_term_relation(eq_term->right_term);
-
-  if (left_relation not_eq nullptr and right_relation not_eq nullptr) {
-    StringRelation::Subrelation left_subrelation = left_relation->get_subrelation_list()[0];
-    StringRelation::Subrelation right_subrelation = right_relation->get_subrelation_list()[0];
-    StringRelation::Subrelation subrelation;
-    subrelation.type = StringRelation::Type::EQ;
-    subrelation.names = left_subrelation.names;
-    subrelation.names.insert(subrelation.names.end(), right_subrelation.names.begin(), right_subrelation.names.end());
-
-    relation = new StringRelation();
-    relation->set_type(StringRelation::Type::EQ);
-    relation->add_subrelation(subrelation);
-    relation->set_variable_trackmap(nullptr);
-
-    if (left_subrelation.type == StringRelation::Type::VAR) {
-      Variable_ptr var = symbol_table_->getVariable(left_subrelation.names[0]);
-      add_string_variable(var,current_term_);
-    }
-    if (right_subrelation.type == StringRelation::Type::VAR) {
-      Variable_ptr var = symbol_table_->getVariable(right_subrelation.names[0]);
-      add_string_variable(var,current_term_);
-    }
-
-    delete_term_relation(eq_term->left_term);
-    delete_term_relation(eq_term->right_term);
-    set_term_relation(eq_term, relation);
+  if (left_relation == nullptr || right_relation == nullptr) {
+    return;
   }
+
+  relation = new StringRelation(StringRelation::Type::EQ,
+                                left_relation->clone(),
+                                right_relation->clone(),
+                                "",
+                                nullptr);
+
+  if (left_relation->get_type() == StringRelation::Type::STRING_VAR ||
+        left_relation->get_type() == StringRelation::Type::INT_VAR) {
+    Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
+    add_string_variable(var,current_term_);
+  }
+
+  if (right_relation->get_type() == StringRelation::Type::STRING_VAR ||
+        right_relation->get_type() == StringRelation::Type::INT_VAR) {
+    Variable_ptr var = symbol_table_->getVariable(right_relation->get_data());
+    add_string_variable(var,current_term_);
+  }
+
+  delete_term_relation(eq_term->left_term);
+  delete_term_relation(eq_term->right_term);
+  set_term_relation(eq_term, relation);
 }
 
 void StringRelationGenerator::visitNotEq(NotEq_ptr not_eq_term) {
-  visit_children_of(not_eq_term);
-  DVLOG(VLOG_LEVEL) << "visit: " << *not_eq_term;
   StringRelation_ptr left_relation = nullptr, right_relation = nullptr, relation = nullptr;
   left_relation = get_term_relation(not_eq_term->left_term);
   right_relation = get_term_relation(not_eq_term->right_term);
-
-  if (left_relation not_eq nullptr and right_relation not_eq nullptr) {
-    StringRelation::Subrelation left_subrelation = left_relation->get_subrelation_list()[0];
-    StringRelation::Subrelation right_subrelation = right_relation->get_subrelation_list()[0];
-    StringRelation::Subrelation subrelation;
-    subrelation.type = StringRelation::Type::NOTEQ;
-    subrelation.names = left_subrelation.names;
-    subrelation.names.insert(subrelation.names.end(), right_subrelation.names.begin(), right_subrelation.names.end());
-
-    relation = new StringRelation();
-    relation->set_type(StringRelation::Type::NOTEQ);
-    relation->add_subrelation(subrelation);
-    relation->set_variable_trackmap(nullptr);
-
-    if (left_subrelation.type == StringRelation::Type::VAR) {
-      Variable_ptr var = symbol_table_->getVariable(left_subrelation.names[0]);
-      add_string_variable(var,current_term_);
-    }
-    if (right_subrelation.type == StringRelation::Type::VAR) {
-      Variable_ptr var = symbol_table_->getVariable(right_subrelation.names[0]);
-      add_string_variable(var,current_term_);
-    }
-
-    delete_term_relation(not_eq_term->left_term);
-    delete_term_relation(not_eq_term->right_term);
-    set_term_relation(not_eq_term, relation);
+  if (left_relation == nullptr || right_relation == nullptr) {
+    return;
   }
+
+  relation = new StringRelation(StringRelation::Type::NOTEQ,
+                                left_relation->clone(),
+                                right_relation->clone(),
+                                "",
+                                nullptr);
+
+  if (left_relation->get_type() == StringRelation::Type::STRING_VAR ||
+        left_relation->get_type() == StringRelation::Type::INT_VAR) {
+    Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
+    add_string_variable(var,current_term_);
+  }
+
+  if (right_relation->get_type() == StringRelation::Type::STRING_VAR ||
+        right_relation->get_type() == StringRelation::Type::INT_VAR) {
+    Variable_ptr var = symbol_table_->getVariable(right_relation->get_data());
+    add_string_variable(var,current_term_);
+  }
+
+  delete_term_relation(not_eq_term->left_term);
+  delete_term_relation(not_eq_term->right_term);
+  set_term_relation(not_eq_term, relation);
 }
 
 void StringRelationGenerator::visitGt(Gt_ptr gt_term) {
+  visit_children_of(gt_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *gt_term;
+
+  StringRelation_ptr left_relation = nullptr, right_relation = nullptr, relation = nullptr;
+  left_relation = get_term_relation(gt_term->left_term);
+  right_relation = get_term_relation(gt_term->right_term);
+  if (left_relation == nullptr || right_relation == nullptr) {
+    return;
+  }
+
+  relation = new StringRelation(StringRelation::Type::GT,
+                                left_relation->clone(),
+                                right_relation->clone(),
+                                "",
+                                nullptr);
+
+  if (left_relation->get_type() == StringRelation::Type::STRING_VAR ||
+        left_relation->get_type() == StringRelation::Type::INT_VAR) {
+    Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
+    add_string_variable(var,current_term_);
+  }
+
+  if (right_relation->get_type() == StringRelation::Type::STRING_VAR ||
+        right_relation->get_type() == StringRelation::Type::INT_VAR) {
+    Variable_ptr var = symbol_table_->getVariable(right_relation->get_data());
+    add_string_variable(var,current_term_);
+  }
+
+  delete_term_relation(gt_term->left_term);
+  delete_term_relation(gt_term->right_term);
+  set_term_relation(gt_term, relation);
 }
 
 void StringRelationGenerator::visitGe(Ge_ptr ge_term) {
+  visit_children_of(ge_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *ge_term;
+
+  StringRelation_ptr left_relation = nullptr, right_relation = nullptr, relation = nullptr;
+  left_relation = get_term_relation(ge_term->left_term);
+  right_relation = get_term_relation(ge_term->right_term);
+  if (left_relation == nullptr || right_relation == nullptr) {
+    return;
+  }
+
+  relation = new StringRelation(StringRelation::Type::GE,
+                                left_relation->clone(),
+                                right_relation->clone(),
+                                "",
+                                nullptr);
+
+  if (left_relation->get_type() == StringRelation::Type::STRING_VAR ||
+        left_relation->get_type() == StringRelation::Type::INT_VAR) {
+    Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
+    add_string_variable(var,current_term_);
+  }
+
+  if (right_relation->get_type() == StringRelation::Type::STRING_VAR ||
+        right_relation->get_type() == StringRelation::Type::INT_VAR) {
+    Variable_ptr var = symbol_table_->getVariable(right_relation->get_data());
+    add_string_variable(var,current_term_);
+  }
+
+  delete_term_relation(ge_term->left_term);
+  delete_term_relation(ge_term->right_term);
+  set_term_relation(ge_term, relation);
 }
 
 void StringRelationGenerator::visitLt(Lt_ptr lt_term) {
@@ -200,36 +253,65 @@ void StringRelationGenerator::visitLt(Lt_ptr lt_term) {
   StringRelation_ptr left_relation = nullptr, right_relation = nullptr, relation = nullptr;
   left_relation = get_term_relation(lt_term->left_term);
   right_relation = get_term_relation(lt_term->right_term);
-  if (left_relation not_eq nullptr and right_relation not_eq nullptr) {
-    StringRelation::Subrelation left_subrelation = left_relation->get_subrelation_list()[0];
-    StringRelation::Subrelation right_subrelation = right_relation->get_subrelation_list()[0];
-    StringRelation::Subrelation subrelation;
-    subrelation.type = StringRelation::Type::LT;
-    subrelation.names = left_subrelation.names;
-    subrelation.names.insert(subrelation.names.end(), right_subrelation.names.begin(), right_subrelation.names.end());
-
-    relation = new StringRelation();
-    relation->set_type(StringRelation::Type::LT);
-    relation->add_subrelation(subrelation);
-    relation->set_variable_trackmap(nullptr);
-
-    if (left_subrelation.type == StringRelation::Type::VAR) {
-      Variable_ptr var = symbol_table_->getVariable(left_subrelation.names[0]);
-      add_string_variable(var,current_term_);
-    }
-
-    if (right_subrelation.type == StringRelation::Type::VAR) {
-      Variable_ptr var = symbol_table_->getVariable(right_subrelation.names[0]);
-      add_string_variable(var,current_term_);
-    }
-
-    delete_term_relation(lt_term->left_term);
-    delete_term_relation(lt_term->right_term);
-    set_term_relation(lt_term, relation);
+  if (left_relation == nullptr || right_relation == nullptr) {
+    return;
   }
+
+  relation = new StringRelation(StringRelation::Type::LT,
+                                left_relation->clone(),
+                                right_relation->clone(),
+                                "",
+                                nullptr);
+
+  if (left_relation->get_type() == StringRelation::Type::STRING_VAR ||
+        left_relation->get_type() == StringRelation::Type::INT_VAR) {
+    Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
+    add_string_variable(var,current_term_);
+  }
+
+  if (right_relation->get_type() == StringRelation::Type::STRING_VAR ||
+        right_relation->get_type() == StringRelation::Type::INT_VAR) {
+    Variable_ptr var = symbol_table_->getVariable(right_relation->get_data());
+    add_string_variable(var,current_term_);
+  }
+
+  delete_term_relation(lt_term->left_term);
+  delete_term_relation(lt_term->right_term);
+  set_term_relation(lt_term, relation);
 }
 
 void StringRelationGenerator::visitLe(Le_ptr le_term) {
+  visit_children_of(le_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *le_term;
+
+  StringRelation_ptr left_relation = nullptr, right_relation = nullptr, relation = nullptr;
+  left_relation = get_term_relation(le_term->left_term);
+  right_relation = get_term_relation(le_term->right_term);
+  if (left_relation == nullptr || right_relation == nullptr) {
+    return;
+  }
+
+  relation = new StringRelation(StringRelation::Type::LE,
+                                left_relation->clone(),
+                                right_relation->clone(),
+                                "",
+                                nullptr);
+
+  if (left_relation->get_type() == StringRelation::Type::STRING_VAR ||
+        left_relation->get_type() == StringRelation::Type::INT_VAR) {
+    Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
+    add_string_variable(var,current_term_);
+  }
+
+  if (right_relation->get_type() == StringRelation::Type::STRING_VAR ||
+        right_relation->get_type() == StringRelation::Type::INT_VAR) {
+    Variable_ptr var = symbol_table_->getVariable(right_relation->get_data());
+    add_string_variable(var,current_term_);
+  }
+
+  delete_term_relation(le_term->left_term);
+  delete_term_relation(le_term->right_term);
+  set_term_relation(le_term, relation);
 }
 
 void StringRelationGenerator::visitConcat(Concat_ptr concat_term) {
@@ -355,14 +437,21 @@ void StringRelationGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   Variable_ptr variable = symbol_table_->getVariable(qi_term->getVarName());
   set_parent_term(variable, current_term_);
 
-  if (Variable::Type::STRING == variable->getType()) {
-    StringRelation::Subrelation subrel;
-    subrel.type = StringRelation::Type::VAR;
-    subrel.names = std::vector<std::string>(1, variable->getName());
-    str_rel = new StringRelation();
-    str_rel->set_type(StringRelation::Type::VAR);
-    str_rel->add_subrelation(subrel);
+  switch(variable->getType()) {
+    case Variable::Type::STRING:
+      str_rel = new StringRelation();
+      str_rel->set_type(StringRelation::Type::STRING_VAR);
+      str_rel->set_data(variable->getName());
+      break;
+    case Variable::Type::INT:
+      str_rel = new StringRelation();
+      str_rel->set_type(StringRelation::Type::INT_VAR);
+      str_rel->set_data(variable->getName());
+      break;
+    default:
+      break;
   }
+
   set_term_relation(qi_term, str_rel);
 }
 
@@ -373,12 +462,20 @@ void StringRelationGenerator::visitTermConstant(TermConstant_ptr term_constant) 
     return;
   }
   StringRelation_ptr str_rel = nullptr;
-  StringRelation::Subrelation subrel;
-  subrel.type = StringRelation::Type::CONSTANT;
-  subrel.names = std::vector<std::string>(1, term_constant->getValue());
-  str_rel = new StringRelation();
-  str_rel->set_type(StringRelation::Type::CONSTANT);
-  str_rel->add_subrelation(subrel);
+  switch(term_constant->getValueType()) {
+    case Primitive::Type::STRING:
+      str_rel = new StringRelation();
+      str_rel->set_type(StringRelation::Type::STRING_CONSTANT);
+      str_rel->set_data(term_constant->getValue());
+      break;
+    case Primitive::Type::REGEX:
+      str_rel = new StringRelation();
+      str_rel->set_type(StringRelation::Type::REGEX);
+      str_rel->set_data(term_constant->getValue());
+      break;
+    default:
+      break;
+  }
 
   set_term_relation(term_constant, str_rel);
 }

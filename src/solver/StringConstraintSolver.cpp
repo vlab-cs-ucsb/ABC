@@ -54,12 +54,7 @@ void StringConstraintSolver::setCallbacks() {
             return false;
           }
 
-          StringRelation::Subrelation subrel = relation->get_subrelation_list()[0];
-          std::vector<std::pair<std::string,int>> tracks;
-          for(auto& name : subrel.names) {
-            tracks.push_back(std::make_pair(name,relation->get_variable_index(name)));
-          }
-          MultiTrackAutomaton_ptr multi_auto = MultiTrackAutomaton::makeAuto(relation,tracks);
+          MultiTrackAutomaton_ptr multi_auto = MultiTrackAutomaton::makeAuto(relation);
           Value_ptr val = new Value(multi_auto);
           set_term_value(term,val);
           break;
