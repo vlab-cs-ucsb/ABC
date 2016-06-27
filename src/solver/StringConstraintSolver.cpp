@@ -102,7 +102,7 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
   StringRelation_ptr relation = nullptr;
   Value_ptr result = nullptr, param = nullptr, and_value = nullptr;
 
-
+  DVLOG(VLOG_LEVEL) << ">>>BEGIN";
   for(auto& term : *and_term->term_list) {
     relation = string_relation_generator_.get_term_relation(term);
     if(relation != nullptr) {
@@ -124,6 +124,7 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
     }
     clear_term_value(term);
   }
+  DVLOG(VLOG_LEVEL) << "<<<END";
 
   for (auto& term : *(and_term->term_list)) {
     relation = string_relation_generator_.get_term_relation(term);
@@ -277,7 +278,10 @@ Value_ptr StringConstraintSolver::get_variable_value(Variable_ptr variable) {
   }
   relation_auto = relation_value->getMultiTrackAutomaton();
   variable_relation = relation_auto->getRelation();
+  DVLOG(VLOG_LEVEL) << "var: " << variable->getName();
+  DVLOG(VLOG_LEVEL) << "getting ktrack: " << variable_relation->get_variable_index(variable->getName());
   variable_auto = relation_auto->getKTrack(variable_relation->get_variable_index(variable->getName()));
+  DVLOG(VLOG_LEVEL) << "Got ktrack";
   return new Value(variable_auto);
 }
 

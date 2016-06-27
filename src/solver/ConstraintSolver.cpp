@@ -1012,7 +1012,9 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   // the most recent value
   Value_ptr variable_value = nullptr;
   if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA) {
+    DVLOG(VLOG_LEVEL) << "Getting var";
     variable_value = string_constraint_solver_.get_variable_value(variable);
+    DVLOG(VLOG_LEVEL) << "Got var";
   }
   if (variable_value != nullptr) {
     DVLOG(VLOG_LEVEL) << "Relational variable: " << *variable;

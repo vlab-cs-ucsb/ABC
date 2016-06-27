@@ -117,6 +117,9 @@ void StringRelationGenerator::visitTimes(Times_ptr times_term) {
 }
 
 void StringRelationGenerator::visitEq(Eq_ptr eq_term) {
+  visit_children_of(eq_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *eq_term;
+
   StringRelation_ptr left_relation = nullptr, right_relation = nullptr, relation = nullptr;
   left_relation = get_term_relation(eq_term->left_term);
   right_relation = get_term_relation(eq_term->right_term);
@@ -148,6 +151,9 @@ void StringRelationGenerator::visitEq(Eq_ptr eq_term) {
 }
 
 void StringRelationGenerator::visitNotEq(NotEq_ptr not_eq_term) {
+  visit_children_of(not_eq_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *not_eq_term;
+
   StringRelation_ptr left_relation = nullptr, right_relation = nullptr, relation = nullptr;
   left_relation = get_term_relation(not_eq_term->left_term);
   right_relation = get_term_relation(not_eq_term->right_term);
@@ -553,8 +559,12 @@ bool StringRelationGenerator::set_parent_term(Variable_ptr variable, Term_ptr te
 void StringRelationGenerator::add_string_variable(Variable_ptr variable, Term_ptr term) {
   int id;
   std::string variable_name = variable->getName();
+
   if(term_trackmap_table_.find(term) == term_trackmap_table_.end()) {
     term_trackmap_table_[term] = new std::map<std::string, int>();
+  }
+  if(term_trackmap_table_[term]->find(variable_name) != term_trackmap_table_[term]->end()) {
+    return;
   }
   id = term_trackmap_table_[term]->size();
   (*term_trackmap_table_[term])[variable_name]= id;

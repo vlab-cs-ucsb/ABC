@@ -36,7 +36,8 @@ class StringRelation {
     STRING_VAR,
     STRING_CONSTANT,
     REGEX,
-    EQ_NO_LAMBDA
+    EQ_NO_LAMBDA,
+    EQ_ONLY_LAMBDA
   };
 
   StringRelation();

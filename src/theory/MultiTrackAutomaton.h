@@ -51,7 +51,6 @@ virtual ~MultiTrackAutomaton();
 	int getNumTracks() const;
 
 	StringRelation_ptr getRelation();
-	StringRelation_ptr getRelationClone() const;
 	bool setRelation(StringRelation_ptr relation);
 
  protected:
@@ -61,12 +60,13 @@ virtual ~MultiTrackAutomaton();
 	static bool checkLambda(std::string,int track_num,int num_tracks,int var);
 	static DFA_ptr removeLambdaSuffix(DFA_ptr dfa, int num_vars);
 	DFA_ptr makeConcreteDFA();
+	static const TransitionVector& generate_transitions_for_relation(StringRelation::Type type, int bits_per_var);
+	static DFA_ptr make_binary_relation_dfa(StringRelation::Type type, int bits_per_var, int num_tracks, int left_track, int right_track);
 
 	static const int VAR_PER_TRACK = 8;
 	int num_of_tracks;
 
  private:
-  static const TransitionVector& generate_transitions_for_relation(StringRelation::Type type, int bits_per_var);
 
  	StringRelation_ptr relation;
  	static TransitionTable transition_table;

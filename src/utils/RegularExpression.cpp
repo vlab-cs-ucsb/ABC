@@ -153,7 +153,7 @@ std::string RegularExpression::toString() const {
           ss << '"' << cleaner.str() << '"';
           cleaner.str("");
         }
-        ss << ss << '\\' << '"';
+        ss << '\\' << '"';
       } else {
         cleaner << c;
       }

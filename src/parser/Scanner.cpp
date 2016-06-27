@@ -23,7 +23,7 @@ Scanner::~Scanner() {
 }
 
 void Scanner::LexerOutput(const char* buf, int size) {
-  *yyout << std::setw(9) << Scanner::TAG << ": " << buf << std::endl;
+  yyout << std::setw(9) << Scanner::TAG << ": " << buf << std::endl;
 }
 
 void Scanner::LexerError(const char* msg) {
