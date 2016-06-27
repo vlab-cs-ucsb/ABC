@@ -94,8 +94,10 @@ void SymbolTable::unionValuesOfVariables(Script_ptr script) {
  * Removes let scope and all its data
  */
 void SymbolTable::clearLetScopes() {
+  std::cout << "calling clear let scope " << std::endl;
   for (auto sit = scopes.begin(); sit != scopes.end(); ) {
     if (dynamic_cast<Let_ptr>(*sit) not_eq nullptr) {
+      LOG(FATAL) << "trying to cler a let scope";
       for (auto it = variable_value_table[*sit].begin(); it != variable_value_table[*sit].end(); ) {
         delete it->second; it->second = nullptr;
         it = variable_value_table[*sit].erase(it);

@@ -99,7 +99,7 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
   } else if (and_term->term_list->size() == 1) {
     auto child_term = and_term->term_list->front();
     if (dynamic_cast<And_ptr>(child_term) or dynamic_cast<Or_ptr>(child_term)) {
-      callback = [and_term, child_term](Term_ptr& term) mutable {
+      callback = [and_term, child_term](Term_ptr & term) mutable {
         and_term->term_list->clear();
         delete and_term;
         term = child_term;
@@ -128,7 +128,7 @@ void SyntacticOptimizer::visitOr(Or_ptr or_term) {
   } else if (or_term->term_list->size() == 1) {
     auto child_term = or_term->term_list->front();
     if (dynamic_cast<And_ptr>(child_term) or dynamic_cast<Or_ptr>(child_term)) {
-      callback = [or_term, child_term](Term_ptr& term) mutable {
+      callback = [or_term, child_term](Term_ptr & term) mutable {
         or_term->term_list->clear();
         delete or_term;
         term = child_term;
@@ -509,6 +509,15 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *eq_term << "@" << eq_term;
 
+  //Catches when two non equal constants are set to each other!
+  if (eq_term->left_term->type() == Term::Type::TERMCONSTANT) {
+    if (eq_term->right_term->type() == Term::Type::TERMCONSTANT) {
+      if (dynamic_cast<TermConstant_ptr>(eq_term->left_term)->getValue() != dynamic_cast<TermConstant_ptr>(eq_term->right_term)->getValue()) {
+        add_callback_to_replace_with_bool(eq_term, "false");
+      }
+    }
+  }
+
   if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
     add_callback_to_replace_with_bool(eq_term, "true");
   } else if (check_and_process_len_transformation(eq_term, eq_term->left_term, eq_term->right_term)) {
@@ -592,7 +601,7 @@ void SyntacticOptimizer::visitGt(Gt_ptr gt_term) {
       };
     }
   } else if (check_and_process_for_contains_transformation(gt_term->left_term, gt_term->right_term, -1) or
-      check_and_process_for_contains_transformation(gt_term->right_term, gt_term->left_term, -1)) {
+             check_and_process_for_contains_transformation(gt_term->right_term, gt_term->left_term, -1)) {
     DVLOG(VLOG_LEVEL) << "Applying 'contains' transformation: '" << *gt_term << "'";
     callback = [gt_term](Term_ptr & term) mutable {
       term = new Contains(gt_term->left_term, gt_term->right_term);
@@ -625,7 +634,7 @@ void SyntacticOptimizer::visitGe(Ge_ptr ge_term) {
       };
     }
   } else if (check_and_process_for_contains_transformation(ge_term->left_term, ge_term->right_term, 0) or
-              check_and_process_for_contains_transformation(ge_term->right_term, ge_term->left_term, 0)) {
+             check_and_process_for_contains_transformation(ge_term->right_term, ge_term->left_term, 0)) {
     DVLOG(VLOG_LEVEL) << "Applying 'contains' transformation: '" << *ge_term << "'";
     callback = [ge_term](Term_ptr & term) mutable {
       term = new Contains(ge_term->left_term, ge_term->right_term);

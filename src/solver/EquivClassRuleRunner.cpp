@@ -30,8 +30,8 @@ void EquivClassRuleRunner::start() {
 
 }
 void EquivClassRuleRunner::end() {
-  SyntacticOptimizer syntactic_optimizer(root, symbol_table_);
-  syntactic_optimizer.start();
+  //SyntacticOptimizer syntactic_optimizer(root, symbol_table_);
+  //syntactic_optimizer.start();
 }
 
 
@@ -384,6 +384,7 @@ bool EquivClassRuleRunner::check_and_substitute_var(Term_ptr& term) {
           bool b;
           std::istringstream(dynamic_cast<TermConstant_ptr>(subs_term)->getValue()) >> std::boolalpha >> b;
           result = new Value(b);
+          symbol_table_->setValue(variable, result);
           break;
         }
         case Primitive::Type::BINARY:
@@ -442,8 +443,6 @@ bool EquivClassRuleRunner::has_optimization_rules() {
 
   return false;
 }
-
-
 
 } /* namespace Solver */
 } /* namespace Vlab */
