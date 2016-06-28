@@ -15,7 +15,7 @@ using SubstitutionTable = std::map<SMT::Visitable_ptr, SubstitutionMap>;
 
 class EquivClassRuleRunner: public SMT::Visitor {
  public:
-  EquivClassRuleRunner(SMT::Script_ptr, SymbolTable_ptr, SubstitutionTable& substitution_table, std::set<SMT::Visitable_ptr>);
+  EquivClassRuleRunner(SMT::Script_ptr, SymbolTable_ptr);
   virtual ~EquivClassRuleRunner();
   void start() override;
   void end() override;
@@ -90,13 +90,9 @@ class EquivClassRuleRunner: public SMT::Visitor {
  protected:
   bool has_optimization_rules();
   bool check_and_substitute_var(SMT::Term_ptr& term);
-  SMT::Term_ptr get_substitution_term(SMT::Variable_ptr);
-
 
   SMT::Script_ptr root;
   SymbolTable_ptr symbol_table_;
-  SubstitutionTable& substitution_table_;
-  std::set<SMT::Visitable_ptr> mark_as_false_;
  private:
   static const int VLOG_LEVEL;
 };

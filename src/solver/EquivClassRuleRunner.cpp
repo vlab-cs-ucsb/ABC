@@ -9,15 +9,14 @@ using namespace SMT;
 
 const int EquivClassRuleRunner::VLOG_LEVEL = 16;
 
-EquivClassRuleRunner::EquivClassRuleRunner(Script_ptr script, SymbolTable_ptr symbol_table, SubstitutionTable& substitution_table, std::set<Visitable_ptr> mark_as_false)
-  : root(script), symbol_table_(symbol_table), substitution_table_ (substitution_table), mark_as_false_(mark_as_false) {
+EquivClassRuleRunner::EquivClassRuleRunner(Script_ptr script, SymbolTable_ptr symbol_table)
+  : root(script), symbol_table_(symbol_table) {
 }
 
 EquivClassRuleRunner::~EquivClassRuleRunner() {
 }
 
 void EquivClassRuleRunner::start() {
-  //TOOD: Also need to check if any terms should be replaced by false.
   if (not has_optimization_rules()) {
     return;
   }
@@ -27,7 +26,6 @@ void EquivClassRuleRunner::start() {
   symbol_table_->pop_scope();
 
   end();
-
 }
 void EquivClassRuleRunner::end() {
   SyntacticOptimizer syntactic_optimizer(root, symbol_table_);
@@ -40,18 +38,6 @@ void EquivClassRuleRunner::visitScript(Script_ptr script) {
 }
 
 void EquivClassRuleRunner::visitCommand(Command_ptr command) {
-
-  switch (command->getType()) {
-  case Command::Type::ASSERT: {
-    Assert_ptr assert_command = dynamic_cast<Assert_ptr>(command);
-    check_and_substitute_var(assert_command->term);
-    visit_children_of(assert_command);
-    break;
-  }
-  default:
-    LOG(FATAL) << "'" << *command << "' is not expected.";
-    break;
-  }
 }
 
 void EquivClassRuleRunner::visitAssert(Assert_ptr assert_command) {
@@ -359,10 +345,28 @@ void EquivClassRuleRunner::visitSortedVar(SortedVar_ptr sorted_var) {
 void EquivClassRuleRunner::visitVarBinding(VarBinding_ptr var_binding) {
 }
 
+bool EquivClassRuleRunner::has_optimization_rules() {
+  return (symbol_table_->get_equivalance_class_table().size() > 0);
+}
+
 bool EquivClassRuleRunner::check_and_substitute_var(Term_ptr& term) {
   if (Term::Type::QUALIDENTIFIER == term->type()) {
     Variable_ptr variable = symbol_table_->getVariable(term);
-    Term_ptr subs_term = get_substitution_term(variable);
+    auto equiv = symbol_table_->get_equivalence_class_of(variable);
+    if (equiv) {
+      Term_ptr subs_term = equiv->get_representative_term();
+      Term_ptr tmp_term = term;
+      term = subs_term->clone();
+      delete tmp_term;
+
+      // if we replace with a constant update representative variable with the value of constant
+      if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(subs_term)) {
+
+        auto representative_variable = equiv->get_representative_variable();
+
+      }
+    }
+    Term_ptr subs_term = nullptr; //get_substitution_term(variable);
     if (subs_term != nullptr) {
       DVLOG(VLOG_LEVEL) << "apply rule: " << *variable << " (" << variable << ") -> " << *subs_term << " ("
                         << subs_term << " )";
@@ -414,32 +418,6 @@ bool EquivClassRuleRunner::check_and_substitute_var(Term_ptr& term) {
       }
     }
   }
-  return false;
-}
-
-
-
-Term_ptr EquivClassRuleRunner::get_substitution_term(Variable_ptr variable) {
-  auto current_scope = symbol_table_->top_scope();
-  auto it = substitution_table_[current_scope].find(variable);
-  if (it == substitution_table_[current_scope].end()) {
-    return nullptr;
-  }
-  return it->second;
-}
-
-
-bool EquivClassRuleRunner::has_optimization_rules() {
-  for (auto& pair : substitution_table_) {
-    if (not pair.second.empty()) {
-      return true;
-    }
-  }
-
-  if (mark_as_false_.size() != 0) {
-    return true;
-  }
-
   return false;
 }
 

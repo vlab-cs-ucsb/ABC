@@ -128,6 +128,14 @@ std::set<Variable_ptr>& EquivalenceClass::get_variables() {
   return variables_;
 }
 
+Variable_ptr EquivalenceClass::get_representative_variable() {
+  return representative_variable_;
+}
+
+Term_ptr EquivalenceClass::get_representative_term() {
+  return representative_term_;
+}
+
 /**
  * Do not change representative variable
  * Do not change representative term unless there is a constant

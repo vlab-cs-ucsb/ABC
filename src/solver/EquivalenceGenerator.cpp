@@ -53,8 +53,9 @@ void EquivalenceGenerator::end() {
     }
   }
 
-//  EquivClassRuleRunner rule_runner(root, symbol_table_, substitution_map_, set_to_false_);
-//  rule_runner.start();
+
+  EquivClassRuleRunner rule_runner(root, symbol_table_);
+  rule_runner.start();
 }
 
 void EquivalenceGenerator::setCallbacks() {

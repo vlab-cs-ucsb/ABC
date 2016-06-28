@@ -42,6 +42,8 @@ class EquivalenceClass {
 
   int get_number_of_variables();
   std::set<SMT::Variable_ptr>& get_variables();
+  SMT::Variable_ptr get_representative_variable();
+  SMT::Term_ptr get_representative_term();
 
   void merge(EquivalenceClass_ptr other);
 
