@@ -30,6 +30,8 @@ libabc_la_SOURCES = \
   ./solver/SyntacticProcessor.h \
   ./solver/optimization/ConstantTermChecker.cpp \
   ./solver/optimization/ConstantTermChecker.h \
+  ./solver/optimization/ConstantTermOptimization.cpp \
+  ./solver/optimization/ConstantTermOptimization.h \
   ./solver/optimization/CharAtOptimization.cpp \
   ./solver/optimization/CharAtOptimization.h \
   ./solver/optimization/SubstringOptimization.cpp \

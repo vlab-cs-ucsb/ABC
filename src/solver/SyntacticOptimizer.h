@@ -23,6 +23,9 @@
 #include "optimization/CharAtOptimization.h"
 #include "optimization/SubstringOptimization.h"
 #include "utils/RegularExpression.h"
+#include "optimization/ConstantTermChecker.h"
+#include "optimization/ConstantTermOptimization.h"
+
 
 namespace Vlab {
 namespace Solver {
@@ -125,7 +128,7 @@ protected:
   bool check_bool_constant_value(SMT::Term_ptr, std::string value);
   SMT::Variable_ptr generate_local_var(SMT::Variable::Type type);
   SMT::QualIdentifier_ptr generate_qual_identifier(std::string var_name);
-
+  bool match_prefix(SMT::Term_ptr, SMT::Term_ptr);
 
 
   SMT::Script_ptr root;

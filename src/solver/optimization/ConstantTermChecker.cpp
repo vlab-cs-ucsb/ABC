@@ -253,7 +253,7 @@ void ConstantTermChecker::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 void ConstantTermChecker::visitTermConstant(TermConstant_ptr term_constant) {
   if (Primitive::Type::STRING == term_constant->getValueType()) {
     term_constant_ = term_constant;
-    string_value_ = term_constant->getValue();
+    string_value_ = term_constant->getValue(); 
   } else if (Primitive::Type::REGEX == term_constant->getValueType()) {
     std::string data = term_constant->getValue();
     Util::RegularExpression regular_expression (data);
@@ -320,7 +320,7 @@ bool ConstantTermChecker::is_constant_int() {
 
 
 bool ConstantTermChecker::is_constant_string() {
-  return (is_constant() and Primitive::Type::BOOL == term_constant_->getValueType());
+  return (is_constant() and Primitive::Type::STRING == term_constant_->getValueType());
 }
 
 bool ConstantTermChecker::get_constant_bool() {

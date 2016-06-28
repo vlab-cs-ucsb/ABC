@@ -99,7 +99,7 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
   } else if (and_term->term_list->size() == 1) {
     auto child_term = and_term->term_list->front();
     if (dynamic_cast<And_ptr>(child_term) or dynamic_cast<Or_ptr>(child_term)) {
-      callback = [and_term, child_term](Term_ptr& term) mutable {
+      callback = [and_term, child_term](Term_ptr & term) mutable {
         and_term->term_list->clear();
         delete and_term;
         term = child_term;
@@ -128,7 +128,7 @@ void SyntacticOptimizer::visitOr(Or_ptr or_term) {
   } else if (or_term->term_list->size() == 1) {
     auto child_term = or_term->term_list->front();
     if (dynamic_cast<And_ptr>(child_term) or dynamic_cast<Or_ptr>(child_term)) {
-      callback = [or_term, child_term](Term_ptr& term) mutable {
+      callback = [or_term, child_term](Term_ptr & term) mutable {
         or_term->term_list->clear();
         delete or_term;
         term = child_term;
@@ -503,11 +503,86 @@ void SyntacticOptimizer::visitTimes(Times_ptr times_term) {
   DVLOG(VLOG_LEVEL) << "post visit end: " << *times_term << "@" << times_term;
 }
 
+
+//Function to match and remove the longest shared prefix of two terms 
+bool SyntacticOptimizer::match_prefix(Term_ptr left, Term_ptr right) {
+  Optimization::ConstantTermChecker constant_term_checker_left;
+  Optimization::ConstantTermChecker constant_term_checker_right;
+  constant_term_checker_left.start(left, Optimization::ConstantTermChecker::Mode::PREFIX);
+  constant_term_checker_right.start(right, Optimization::ConstantTermChecker::Mode::PREFIX);
+
+  //If both are not constant prefixes no matching can be done 
+  if (! constant_term_checker_right.is_constant_string() or ! constant_term_checker_left.is_constant_string()) {
+    return true;
+  } else {
+    std::string left_value = constant_term_checker_left.get_constant_string();
+    std::string right_value = constant_term_checker_right.get_constant_string();
+    if (left_value.size() <= right_value.size()) {
+      if (equal(left_value.begin(), left_value.end(), right_value.begin())) { //check if the smaller is a prefix of the larger.
+        //If so, remove the prefix appropriately  
+        Optimization::ConstantTermOptimization term_matcher_left;
+        term_matcher_left.start(left, left_value.size(), Optimization::ConstantTermOptimization::Mode::PREFIX); 
+        Optimization::ConstantTermOptimization term_matcher_right;
+        term_matcher_right.start(right, left_value.size(), Optimization::ConstantTermOptimization::Mode::PREFIX);
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      if (equal(right_value.begin(), right_value.end(), left_value.begin())) {
+        Optimization::ConstantTermOptimization term_matcher_left;
+        term_matcher_left.start(left, right_value.size(), Optimization::ConstantTermOptimization::Mode::PREFIX);
+        Optimization::ConstantTermOptimization term_matcher_right;
+        term_matcher_right.start(right, right_value.size(), Optimization::ConstantTermOptimization::Mode::PREFIX);
+        return false;
+      } else {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+
 void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
+
   visit_and_callback(eq_term->left_term);
   visit_and_callback(eq_term->right_term);
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *eq_term << "@" << eq_term;
+
+  bool match = match_prefix(eq_term->left_term, eq_term->right_term);
+  if (! match) {
+    add_callback_to_replace_with_bool(eq_term, "false");
+    return;
+  }
+
+  //Might need to update. 
+  visit_and_callback(eq_term->left_term);
+  visit_and_callback(eq_term->right_term);
+
+  Optimization::ConstantTermChecker constant_term_checker_left;
+  Optimization::ConstantTermChecker constant_term_checker_right;
+
+  constant_term_checker_left.start(eq_term->left_term, Optimization::ConstantTermChecker::Mode::FULL);
+  constant_term_checker_right.start(eq_term->right_term, Optimization::ConstantTermChecker::Mode::FULL);
+
+  if (constant_term_checker_left.is_constant() && constant_term_checker_right.is_constant()) {
+
+    if (constant_term_checker_left.is_constant_bool() && constant_term_checker_right.is_constant_bool()) {
+      if (constant_term_checker_left.get_constant_bool() != constant_term_checker_right.get_constant_bool()) {
+        add_callback_to_replace_with_bool(eq_term, "false");
+      }
+    } else if (constant_term_checker_left.is_constant_int() && constant_term_checker_right.is_constant_int()) {
+      if (constant_term_checker_left.get_constant_int() != constant_term_checker_right.get_constant_int()) {
+        add_callback_to_replace_with_bool(eq_term, "false");
+      }
+    } else if (!constant_term_checker_left.is_constant_string() or !constant_term_checker_right.is_constant_string()) {
+      DVLOG(VLOG_LEVEL) << "conflicting types";
+      add_callback_to_replace_with_bool(eq_term, "false");
+    }
+  }
+
 
   if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
     add_callback_to_replace_with_bool(eq_term, "true");
@@ -540,8 +615,6 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
 void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
   visit_and_callback(not_eq_term->left_term);
   visit_and_callback(not_eq_term->right_term);
-
-  DVLOG(VLOG_LEVEL) << "post visit start: " << *not_eq_term << "@" << not_eq_term;
 
   if (Ast2Dot::isEquivalent(not_eq_term->left_term, not_eq_term->right_term)) {
     add_callback_to_replace_with_bool(not_eq_term, "false");
@@ -592,7 +665,7 @@ void SyntacticOptimizer::visitGt(Gt_ptr gt_term) {
       };
     }
   } else if (check_and_process_for_contains_transformation(gt_term->left_term, gt_term->right_term, -1) or
-      check_and_process_for_contains_transformation(gt_term->right_term, gt_term->left_term, -1)) {
+             check_and_process_for_contains_transformation(gt_term->right_term, gt_term->left_term, -1)) {
     DVLOG(VLOG_LEVEL) << "Applying 'contains' transformation: '" << *gt_term << "'";
     callback = [gt_term](Term_ptr & term) mutable {
       term = new Contains(gt_term->left_term, gt_term->right_term);
@@ -625,7 +698,7 @@ void SyntacticOptimizer::visitGe(Ge_ptr ge_term) {
       };
     }
   } else if (check_and_process_for_contains_transformation(ge_term->left_term, ge_term->right_term, 0) or
-              check_and_process_for_contains_transformation(ge_term->right_term, ge_term->left_term, 0)) {
+             check_and_process_for_contains_transformation(ge_term->right_term, ge_term->left_term, 0)) {
     DVLOG(VLOG_LEVEL) << "Applying 'contains' transformation: '" << *ge_term << "'";
     callback = [ge_term](Term_ptr & term) mutable {
       term = new Contains(ge_term->left_term, ge_term->right_term);
@@ -1327,8 +1400,11 @@ void SyntacticOptimizer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 }
 
 void SyntacticOptimizer::visitTermConstant(TermConstant_ptr term_constant) {
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *term_constant << "@" << term_constant;
   Optimization::ConstantTermChecker string_constant_checker;
   string_constant_checker.start(term_constant);
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *term_constant << "@" << term_constant;
+
 }
 
 void SyntacticOptimizer::visitIdentifier(Identifier_ptr identifier) {
@@ -1414,6 +1490,7 @@ bool SyntacticOptimizer::check_and_process_len_transformation(Term_ptr operation
   return __check_and_process_len_transformation(operation->type(), left_term, right_term)
          || __check_and_process_len_transformation(syntactic_reverse_relation(operation->type()), right_term, left_term);
 }
+
 
 bool SyntacticOptimizer::__check_and_process_len_transformation(Term::Type operation, Term_ptr & left_term,
     Term_ptr & right_term) {
