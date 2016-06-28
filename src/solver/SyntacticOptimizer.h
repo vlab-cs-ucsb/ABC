@@ -129,6 +129,7 @@ protected:
   SMT::Variable_ptr generate_local_var(SMT::Variable::Type type);
   SMT::QualIdentifier_ptr generate_qual_identifier(std::string var_name);
   bool match_prefix(SMT::Term_ptr, SMT::Term_ptr);
+  bool match_suffix(SMT::Term_ptr, SMT::Term_ptr);
 
 
   SMT::Script_ptr root;

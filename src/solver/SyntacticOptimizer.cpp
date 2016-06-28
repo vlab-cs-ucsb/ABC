@@ -503,47 +503,6 @@ void SyntacticOptimizer::visitTimes(Times_ptr times_term) {
   DVLOG(VLOG_LEVEL) << "post visit end: " << *times_term << "@" << times_term;
 }
 
-
-//Function to match and remove the longest shared prefix of two terms 
-bool SyntacticOptimizer::match_prefix(Term_ptr left, Term_ptr right) {
-  Optimization::ConstantTermChecker constant_term_checker_left;
-  Optimization::ConstantTermChecker constant_term_checker_right;
-  constant_term_checker_left.start(left, Optimization::ConstantTermChecker::Mode::PREFIX);
-  constant_term_checker_right.start(right, Optimization::ConstantTermChecker::Mode::PREFIX);
-
-  //If both are not constant prefixes no matching can be done 
-  if (! constant_term_checker_right.is_constant_string() or ! constant_term_checker_left.is_constant_string()) {
-    return true;
-  } else {
-    std::string left_value = constant_term_checker_left.get_constant_string();
-    std::string right_value = constant_term_checker_right.get_constant_string();
-    if (left_value.size() <= right_value.size()) {
-      if (equal(left_value.begin(), left_value.end(), right_value.begin())) { //check if the smaller is a prefix of the larger.
-        //If so, remove the prefix appropriately  
-        Optimization::ConstantTermOptimization term_matcher_left;
-        term_matcher_left.start(left, left_value.size(), Optimization::ConstantTermOptimization::Mode::PREFIX); 
-        Optimization::ConstantTermOptimization term_matcher_right;
-        term_matcher_right.start(right, left_value.size(), Optimization::ConstantTermOptimization::Mode::PREFIX);
-        return true;
-      } else {
-        return false;
-      }
-    } else {
-      if (equal(right_value.begin(), right_value.end(), left_value.begin())) {
-        Optimization::ConstantTermOptimization term_matcher_left;
-        term_matcher_left.start(left, right_value.size(), Optimization::ConstantTermOptimization::Mode::PREFIX);
-        Optimization::ConstantTermOptimization term_matcher_right;
-        term_matcher_right.start(right, right_value.size(), Optimization::ConstantTermOptimization::Mode::PREFIX);
-        return false;
-      } else {
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
-
 void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
 
   visit_and_callback(eq_term->left_term);
@@ -551,13 +510,17 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *eq_term << "@" << eq_term;
 
-  bool match = match_prefix(eq_term->left_term, eq_term->right_term);
-  if (! match) {
+  bool match_p = match_prefix(eq_term->left_term, eq_term->right_term);
+  if (! match_p) {
     add_callback_to_replace_with_bool(eq_term, "false");
     return;
   }
-
-  //Might need to update. 
+  bool match_s = match_suffix(eq_term->left_term, eq_term->right_term);
+  if (! match_s) {
+    add_callback_to_replace_with_bool(eq_term, "false");
+    return;
+  }
+  //Might need to update.
   visit_and_callback(eq_term->left_term);
   visit_and_callback(eq_term->right_term);
 
@@ -568,7 +531,6 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
   constant_term_checker_right.start(eq_term->right_term, Optimization::ConstantTermChecker::Mode::FULL);
 
   if (constant_term_checker_left.is_constant() && constant_term_checker_right.is_constant()) {
-
     if (constant_term_checker_left.is_constant_bool() && constant_term_checker_right.is_constant_bool()) {
       if (constant_term_checker_left.get_constant_bool() != constant_term_checker_right.get_constant_bool()) {
         add_callback_to_replace_with_bool(eq_term, "false");
@@ -2046,6 +2008,85 @@ bool SyntacticOptimizer::check_bool_constant_value(Term_ptr term, std::string va
   }
 
   return false;
+}
+
+
+//Function to match and remove the longest shared prefix of two terms
+bool SyntacticOptimizer::match_prefix(Term_ptr left, Term_ptr right) {
+  Optimization::ConstantTermChecker constant_term_checker_left;
+  Optimization::ConstantTermChecker constant_term_checker_right;
+  constant_term_checker_left.start(left, Optimization::ConstantTermChecker::Mode::PREFIX);
+  constant_term_checker_right.start(right, Optimization::ConstantTermChecker::Mode::PREFIX);
+
+  //If both are not constant prefixes no matching can be done
+  if (! constant_term_checker_right.is_constant_string() or ! constant_term_checker_left.is_constant_string()) {
+    return true;
+  } else {
+    std::string left_value = constant_term_checker_left.get_constant_string();
+    std::string right_value = constant_term_checker_right.get_constant_string();
+    if (left_value.size() <= right_value.size()) {
+      if (equal(left_value.begin(), left_value.end(), right_value.begin())) { //check if the smaller is a prefix of the larger.
+        //If so, remove the prefix appropriately
+        Optimization::ConstantTermOptimization term_matcher_left;
+        term_matcher_left.start(left, left_value.size(), Optimization::ConstantTermOptimization::Mode::PREFIX);
+        Optimization::ConstantTermOptimization term_matcher_right;
+        term_matcher_right.start(right, left_value.size(), Optimization::ConstantTermOptimization::Mode::PREFIX);
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      if (equal(right_value.begin(), right_value.end(), left_value.begin())) {
+        Optimization::ConstantTermOptimization term_matcher_left;
+        term_matcher_left.start(left, right_value.size(), Optimization::ConstantTermOptimization::Mode::PREFIX);
+        Optimization::ConstantTermOptimization term_matcher_right;
+        term_matcher_right.start(right, right_value.size(), Optimization::ConstantTermOptimization::Mode::PREFIX);
+        return false;
+      } else {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+//Function to match and remove the longest shared suffix of two terms
+bool SyntacticOptimizer::match_suffix(Term_ptr left, Term_ptr right) {
+  Optimization::ConstantTermChecker constant_term_checker_left;
+  Optimization::ConstantTermChecker constant_term_checker_right;
+  constant_term_checker_left.start(left, Optimization::ConstantTermChecker::Mode::SUFFIX);
+  constant_term_checker_right.start(right, Optimization::ConstantTermChecker::Mode::SUFFIX);
+
+  //If both are not constant prefixes no matching can be done
+  if (! constant_term_checker_right.is_constant_string() or ! constant_term_checker_left.is_constant_string()) {
+    return true;
+  } else {
+    std::string left_value = constant_term_checker_left.get_constant_string();
+    std::string right_value = constant_term_checker_right.get_constant_string();
+    if (left_value.size() <= right_value.size()) {
+      if (equal(left_value.rbegin(), left_value.rend(), right_value.rbegin())) { //check if the smaller is a suffix of the larger.
+        //If so, remove the prefix appropriately
+        Optimization::ConstantTermOptimization term_matcher_left;
+        term_matcher_left.start(left, left_value.size(), Optimization::ConstantTermOptimization::Mode::SUFFIX);
+        Optimization::ConstantTermOptimization term_matcher_right;
+        term_matcher_right.start(right, left_value.size(), Optimization::ConstantTermOptimization::Mode::SUFFIX);
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      if (equal(right_value.begin(), right_value.end(), left_value.begin())) {
+        Optimization::ConstantTermOptimization term_matcher_left;
+        term_matcher_left.start(left, right_value.size(), Optimization::ConstantTermOptimization::Mode::SUFFIX);
+        Optimization::ConstantTermOptimization term_matcher_right;
+        term_matcher_right.start(right, right_value.size(), Optimization::ConstantTermOptimization::Mode::SUFFIX);
+        return false;
+      } else {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 /**
