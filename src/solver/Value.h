@@ -23,7 +23,7 @@ namespace Vlab {
 namespace Solver {
 
 class Value;
-typedef Value* Value_ptr;
+using Value_ptr = Value*;
 
 class Value {
  public:

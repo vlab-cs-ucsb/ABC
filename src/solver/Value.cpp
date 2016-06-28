@@ -145,7 +145,7 @@ std::string Value::str() const {
       ss << Name::NONE;
       break;
     case Type::BOOl_CONSTANT:
-      ss << Name::BOOL_CONSTANT << " : " << bool_constant;
+      ss << Name::BOOL_CONSTANT << " : " << std::boolalpha << bool_constant;
       break;
     case Type::INT_CONSTANT:
       ss << Name::INT_CONSTANT << " : " << int_constant;

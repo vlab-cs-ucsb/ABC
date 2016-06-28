@@ -32,8 +32,6 @@ EquivalenceGenerator::~EquivalenceGenerator() {
 
 void EquivalenceGenerator::start() {
   DVLOG(VLOG_LEVEL) << "Starting the EquivalenceGenerator";
-  Counter counter(root, symbol_table_);
-  counter.start();
   symbol_table_->push_scope(root);
   visitScript(root);
   end();
@@ -52,7 +50,6 @@ void EquivalenceGenerator::end() {
       }
     }
   }
-
 
   EquivClassRuleRunner rule_runner(root, symbol_table_);
   rule_runner.start();

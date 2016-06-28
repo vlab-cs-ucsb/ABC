@@ -97,6 +97,7 @@ void FormulaOptimizer::add_terms_to_check_list(TermList_ptr term_list) {
   check_table[scope_stack.back()].insert(check_table[scope_stack.back()].end(), term_list->begin(), term_list->end());
 }
 
+// TODO update the check based on all not equality and equality checks
 bool FormulaOptimizer::check_term(Term_ptr term) {
   for (auto& scope : scope_stack) {
     for (auto& other_term : check_table[scope]) {

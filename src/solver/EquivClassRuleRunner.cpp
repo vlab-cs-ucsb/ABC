@@ -1,6 +1,14 @@
-#include "EquivClassRuleRunner.h"
-#include "solver/Value.h"
+/*
+ * EquivClassRuleRunner.cpp
+ *
+  *  Created on: May 4, 2015
+ *      Author: baki, tegan
+ *   Copyright: Copyright 2015 The ABC Authors. All rights reserved.
+ *              Use of this source code is governed license that can
+ *              be found in the COPYING file.
+ */
 
+#include "EquivClassRuleRunner.h"
 
 namespace Vlab {
 namespace Solver {
@@ -357,68 +365,43 @@ bool EquivClassRuleRunner::check_and_substitute_var(Term_ptr& term) {
       Term_ptr subs_term = equiv->get_representative_term();
       Term_ptr tmp_term = term;
       term = subs_term->clone();
-      delete tmp_term;
-
+      delete tmp_term; tmp_term = nullptr;
+      DVLOG(VLOG_LEVEL)<< "apply substitution for: " << *variable << " -> " << *subs_term;
       // if we replace with a constant update representative variable with the value of constant
       if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(subs_term)) {
-
         auto representative_variable = equiv->get_representative_variable();
-
+        set_variable_value(representative_variable, term_constant);
       }
-    }
-    Term_ptr subs_term = nullptr; //get_substitution_term(variable);
-    if (subs_term != nullptr) {
-      DVLOG(VLOG_LEVEL) << "apply rule: " << *variable << " (" << variable << ") -> " << *subs_term << " ("
-                        << subs_term << " )";
-      Term_ptr tmp_term = term;
-      term = subs_term->clone();
-      delete tmp_term;
-
-      //Add the rule to the symbol table if both are variables.
-      auto subs_variable = symbol_table_->getVariable(subs_term);
-      if (subs_variable) {
-        symbol_table_->add_variable_substitution_rule(variable, subs_variable);
-      }
-      //If the substituted term is not a variable, then it is a constant.
-      //Construct the appropriate automaton and store it in the symbol table as the solution for the variable.
-      else if  (Term::Type::TERMCONSTANT == subs_term->type())  {
-        Value_ptr result = nullptr;
-        switch (dynamic_cast<TermConstant_ptr>(subs_term)->getValueType()) {
-        case Primitive::Type::BOOL: {
-          bool b;
-          std::istringstream(dynamic_cast<TermConstant_ptr>(subs_term)->getValue()) >> std::boolalpha >> b;
-          result = new Value(b);
-          break;
-        }
-        case Primitive::Type::BINARY:
-          LOG(FATAL) << "implement me";
-          break;
-        case Primitive::Type::HEXADECIMAL:
-          LOG(FATAL) << "implement me";
-          break;
-        case Primitive::Type::DECIMAL:
-          LOG(FATAL) << "implement me";
-          break;
-        case Primitive::Type::NUMERAL:
-          result = new Value(std::stoi(dynamic_cast<TermConstant_ptr>(subs_term)->getValue()));
-          symbol_table_->setValue(variable, result);
-          break;
-        case Primitive::Type::STRING:
-          result = new Value(Theory::StringAutomaton::makeString(dynamic_cast<TermConstant_ptr>(subs_term)->getValue()));
-          symbol_table_->setValue(variable, result);
-          break;
-        case Primitive::Type::REGEX:
-          result = new Value(Theory::StringAutomaton::makeRegexAuto(dynamic_cast<TermConstant_ptr>(subs_term)->getValue()));
-          symbol_table_->setValue(variable, result);
-          break;
-        default:
-          LOG(FATAL) << "unhandled term constant: " << *subs_term;
-          break;
-        }
-      }
+      return true;
     }
   }
   return false;
+}
+
+void EquivClassRuleRunner::set_variable_value(Variable_ptr variable, TermConstant_ptr term_constant) {
+  Value_ptr result = nullptr;
+  switch (term_constant->getValueType()) {
+    case Primitive::Type::BOOL: {
+      std::stringstream ss(term_constant->getValue());
+      bool b;
+      ss >> std::boolalpha >> b;
+      result = new Value(b);
+    }
+      break;
+    case Primitive::Type::NUMERAL: {
+      result = new Value(std::stoi(term_constant->getValue()));
+    }
+      break;
+    case Primitive::Type::STRING: {
+      result = new Value(Theory::StringAutomaton::makeString(term_constant->getValue()));
+    }
+      break;
+    default:
+      LOG(FATAL)<< "constant is not supported for substitution: " << term_constant->getValue();
+      break;
+  }
+  symbol_table_->setValue(variable, result);
+  DVLOG(VLOG_LEVEL)<< "value updated for variable: " << *variable << " -> " << *result;
 }
 
 

@@ -59,6 +59,10 @@ EquivalenceClass_ptr EquivalenceClass::clone() const {
   return new EquivalenceClass(*this);
 }
 
+Variable::Type EquivalenceClass::get_type() {
+  return type_;
+}
+
 bool EquivalenceClass::has_constant() const {
   return false;
 }

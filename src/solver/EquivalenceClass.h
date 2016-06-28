@@ -34,6 +34,8 @@ class EquivalenceClass {
   EquivalenceClass(const EquivalenceClass&);
   EquivalenceClass_ptr clone() const;
 
+  SMT::Variable::Type get_type();
+
   bool has_constant() const;
   std::string str() const;
   void add(SMT::Variable_ptr variable);

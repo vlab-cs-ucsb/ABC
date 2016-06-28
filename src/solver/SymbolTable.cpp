@@ -44,11 +44,11 @@ void SymbolTable::setScopeSatisfiability(bool value) {
 }
 
 /**
- * Unions values of variables if there is disjunction
+ * Unions values of variables if there is disjunction in DNF form
  * (May need a fix when doing union for binary int automaton)
- * TODO Test with disjunctions
+ *
  */
-void SymbolTable::unionValuesOfVariables(Script_ptr script) {
+void SymbolTable::UnionValuesOfVariables(Script_ptr script) {
   if (scopes.size() < 2) {
     return;
   } else if (variable_value_table[script].size() > 0) { // a union operation is done before
@@ -58,30 +58,26 @@ void SymbolTable::unionValuesOfVariables(Script_ptr script) {
   push_scope(script);
   for (auto variable_entry : variables) {
     Value_ptr value = nullptr;
-    for (auto scope : scopes) {
-
-      // first check and merge substitution rules
-      auto substituted_variable = get_substituted_variable(scope, variable_entry.second);
-      if (substituted_variable != nullptr) { // update rule in the global scope
-        merge_variable_substitution_rule_into_current_scope(scope, variable_entry.second);
-      } else {
-        substituted_variable = variable_entry.second;
-      }
-
+    for (auto scope : scopes) { // dnf form
       // union values
       if (is_scope_satisfiable[scope]) {
-        auto scope_var_value = variable_value_table[scope].find(substituted_variable);
-        if (scope_var_value != variable_value_table[scope].end()) {
-          if (value) {
-            Value_ptr tmp = value;
-            value = tmp->union_(scope_var_value->second);
-            delete tmp;
-          } else {
-            value = scope_var_value->second->clone();
-          }
+        auto variable = variable_entry.second;
+        auto top_equiv_class = get_equivalence_class_of(variable);
+        auto local_equiv_class = get_equivalence_class_of_at_scope(scope, variable);
+        Value_ptr scope_var_value = nullptr;
+        if (top_equiv_class or local_equiv_class) {
+          variable = local_equiv_class->get_representative_variable();
+        }
+        scope_var_value = get_value_at_scope(scope, variable);
+
+        if (value) {
+          Value_ptr tmp = value;
+          value = tmp->union_(scope_var_value);
+          delete tmp;
+        } else {
+          value = scope_var_value->clone();
         }
       }
-
     }
     if (value) {
       setValue(variable_entry.second, value);
@@ -213,64 +209,20 @@ void SymbolTable::reset_count() {
   variable_counts_table.clear();
 }
 
-bool SymbolTable::add_variable_substitution_rule(Variable_ptr subject_variable, Variable_ptr target_variable) {
-  auto result = variable_substitution_table[scope_stack.back()].insert(std::make_pair(subject_variable, target_variable));
-  return result.second;
-}
-
-bool SymbolTable::remove_variable_substitution_rule(SMT::Variable_ptr variable) {
-  auto it = variable_substitution_table[scope_stack.back()].find(variable);
-  if (it != variable_substitution_table[scope_stack.back()].end()) {
-    variable_substitution_table[scope_stack.back()].erase(it);
-    return true;
-  }
-  return false;
-}
-
-bool SymbolTable::is_variable_substituted(Visitable_ptr scope, Variable_ptr variable) {
-  auto it = variable_substitution_table[scope].find(variable);
-  if (it != variable_substitution_table[scope].end()) {
-    return true;
-  }
-  return false;
-}
-
-bool SymbolTable::is_variable_substituted(Variable_ptr variable) {
-  return is_variable_substituted(scope_stack.back(), variable);
-}
-
-Variable_ptr SymbolTable::get_substituted_variable(Visitable_ptr scope, Variable_ptr variable) {
-  auto it = variable_substitution_table[scope].find(variable);
-  if (it != variable_substitution_table[scope].end()) {
-    return it->second;
-  }
-  return nullptr;
-}
-
-Variable_ptr SymbolTable::get_substituted_variable(Variable_ptr variable) {
-  return get_substituted_variable(scope_stack.back(), variable);
-}
-
 int SymbolTable::get_num_of_substituted_variables(Visitable_ptr scope, Variable::Type type) {
   int count = 0;
-  for (auto& rule : variable_substitution_table[scope]) {
-      if (rule.first->getType() == type and rule.second->getType() == type) {
-        ++count;
+  int num_of_var = 0;
+  for (auto& equiv_entry : variable_equivalence_table[scope]) {
+      if (equiv_entry.second->get_type() == type) {
+        num_of_var = equiv_entry.second->get_number_of_variables();
+        if (num_of_var > 1) {
+          count = count + num_of_var - 1;
+        } else {
+          count = count + 1;
+        }
       }
   }
   return count;
-}
-
-void SymbolTable::merge_variable_substitution_rule_into_current_scope(Visitable_ptr scope, Variable_ptr variable) {
-  auto substituted_variable = get_substituted_variable(scope, variable);
-  if (substituted_variable != nullptr) { // update rule in the global scope
-    auto current_scope_substitution = get_substituted_variable(substituted_variable);
-    if (current_scope_substitution != nullptr) { // if there is a reverse rule already in global scope, remove rule, do not add any rule
-      remove_variable_substitution_rule(substituted_variable);
-    } else {
-      add_variable_substitution_rule(variable, substituted_variable); // adds rule to global scope
-    }
-  }
 }
 
 EquivClassTable& SymbolTable::get_equivalance_class_table() {
@@ -281,7 +233,7 @@ EquivClassTable& SymbolTable::get_equivalance_class_table() {
  * Get equivalence class for variable if exists
  * If it is found in upper scopes return a clone of it
  */
-EquivalenceClass_ptr SymbolTable::get_equivalence_class_of(SMT::Variable_ptr variable) {
+EquivalenceClass_ptr SymbolTable::get_equivalence_class_of(Variable_ptr variable) {
   auto entry = variable_equivalence_table[scope_stack.back()].find(variable);
   if (entry != variable_equivalence_table[scope_stack.back()].end()) {
     return entry->second; // return equiv class from current scope
@@ -299,6 +251,14 @@ EquivalenceClass_ptr SymbolTable::get_equivalence_class_of(SMT::Variable_ptr var
     }
   }
 
+  return nullptr;
+}
+
+EquivalenceClass_ptr SymbolTable::get_equivalence_class_of_at_scope(Visitable_ptr scope, Variable_ptr variable) {
+  auto it = variable_equivalence_table[scope].find(variable);
+  if (it != variable_equivalence_table[scope].end()) {
+    return it->second;
+  }
   return nullptr;
 }
 
@@ -339,6 +299,14 @@ Value_ptr SymbolTable::getValue(Variable_ptr variable) {
   }
   setValue(variable, result);
   return result;
+}
+
+Value_ptr SymbolTable::get_value_at_scope(Visitable_ptr scope, Variable_ptr variable) {
+  auto it = variable_value_table[scope].find(variable);
+  if (it != variable_value_table[scope].end()) {
+    return it->second;
+  }
+  return nullptr;
 }
 
 VariableValueMap& SymbolTable::getValuesAtScope(Visitable_ptr scope) {

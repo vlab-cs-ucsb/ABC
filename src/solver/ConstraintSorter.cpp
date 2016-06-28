@@ -50,15 +50,6 @@ void ConstraintSorter::visitScript(Script_ptr script) {
 }
 
 void ConstraintSorter::visitCommand(Command_ptr command) {
-  switch (command->getType()) {
-  case Command::Type::ASSERT: {
-    visit_children_of(command);
-    break;
-  }
-  default:
-    LOG(FATAL)<< "'" << *command<< "' is not expected.";
-    break;
-  }
 }
 
 void ConstraintSorter::visitAssert(Assert_ptr assert_command) {

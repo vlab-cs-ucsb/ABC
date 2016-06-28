@@ -45,7 +45,7 @@ public:
   bool isSatisfiable();
   void updateSatisfiability(bool value);
   void setScopeSatisfiability(bool value);
-  void unionValuesOfVariables(SMT::Script_ptr script);
+  void UnionValuesOfVariables(SMT::Script_ptr script);
   void clearLetScopes();
 
   void addVariable(SMT::Variable_ptr);
@@ -76,23 +76,17 @@ public:
   int getReuse();
   void incrementReuse();
   */
-  
-  bool add_variable_substitution_rule(SMT::Variable_ptr, SMT::Variable_ptr);
-  bool remove_variable_substitution_rule(SMT::Variable_ptr);
-  bool is_variable_substituted(SMT::Visitable_ptr, SMT::Variable_ptr);
-  bool is_variable_substituted(SMT::Variable_ptr);
-  SMT::Variable_ptr get_substituted_variable(SMT::Visitable_ptr, SMT::Variable_ptr);
-  SMT::Variable_ptr get_substituted_variable(SMT::Variable_ptr);
-  int get_num_of_substituted_variables(SMT::Visitable_ptr scope, SMT::Variable::Type type);
-  void merge_variable_substitution_rule_into_current_scope(SMT::Visitable_ptr scope, SMT::Variable_ptr variable);
 
+  int get_num_of_substituted_variables(SMT::Visitable_ptr scope, SMT::Variable::Type type);
   EquivClassTable& get_equivalance_class_table();
   EquivalenceClass_ptr get_equivalence_class_of(SMT::Variable_ptr);
+  EquivalenceClass_ptr get_equivalence_class_of_at_scope(SMT::Visitable_ptr scope, SMT::Variable_ptr);
   void add_variable_equiv_class_mapping(SMT::Variable_ptr, EquivalenceClass_ptr);
 
 
   Value_ptr getValue(std::string var_name);
   Value_ptr getValue(SMT::Variable_ptr variable);
+  Value_ptr get_value_at_scope(SMT::Visitable_ptr scope, SMT::Variable_ptr variable);
   VariableValueMap& getValuesAtScope(SMT::Visitable_ptr scope);
   bool setValue(std::string var_name, Value_ptr value);
   bool setValue(SMT::Variable_ptr variable, Value_ptr value);

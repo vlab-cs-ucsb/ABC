@@ -102,6 +102,7 @@ void Driver::initializeSolver() {
   Solver::SyntacticProcessor syntactic_processor(script_);
   syntactic_processor.start();
 
+  //TODO assign variables to bottom when a branch is not satisfiable
   Solver::SyntacticOptimizer syntactic_optimizer(script_, symbol_table_);
   syntactic_optimizer.start();
 
@@ -112,12 +113,10 @@ void Driver::initializeSolver() {
   Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
   equivalence_generator.start();
 
-//  Solver::VariableOptimizer variable_optimizer(script, symbol_table);
-//  variable_optimizer.start();
-//
-//  Solver::FormulaOptimizer formula_optimizer(script, symbol_table);
+  // TODO needs update to handle all operations that returns bool
+//  Solver::FormulaOptimizer formula_optimizer(script_, symbol_table_);
 //  formula_optimizer.start();
-//
+
   Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
   constraint_sorter.start();
 }
@@ -126,7 +125,7 @@ void Driver::solve() {
 
   Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
   constraint_solver.start();
-  // TODO iterate to handle over-approximation
+  // TODO iterate to handle over-approximation, solve the part that contributes to over-approximation
 }
 
 bool Driver::isSatisfiable() {
@@ -134,7 +133,7 @@ bool Driver::isSatisfiable() {
 }
 
 boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound) {
-  symbol_table_->unionValuesOfVariables(script_);
+  symbol_table_->UnionValuesOfVariables(script_);
   symbol_table_->push_scope(script_);
   Vlab::Solver::Value_ptr var_value = symbol_table_->getValue(var_name);
   symbol_table_->pop_scope();
@@ -180,7 +179,7 @@ boost::multiprecision::cpp_int Driver::Count(const int bound, bool count_less_th
 
 boost::multiprecision::cpp_int Driver::SymbolicCount(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound) {
   boost::multiprecision::cpp_int result;
-  symbol_table_->unionValuesOfVariables(script_);
+  symbol_table_->UnionValuesOfVariables(script_);
   symbol_table_->push_scope(script_);
   Vlab::Solver::Value_ptr var_value = symbol_table_->getValue(var_name);
   symbol_table_->pop_scope();
@@ -254,7 +253,7 @@ void Driver::printResult(Solver::Value_ptr value, std::ostream& out) {
 }
 
 std::map<SMT::Variable_ptr, Solver::Value_ptr> Driver::getSatisfyingVariables() {
-  symbol_table_->unionValuesOfVariables(script_);
+  symbol_table_->UnionValuesOfVariables(script_);
   return symbol_table_->getValuesAtScope(script_);
 }
 

@@ -1,17 +1,32 @@
+/*
+ * EquivClassRuleRunner.h
+ *
+  *  Created on: May 4, 2015
+ *      Author: baki, tegan
+ *   Copyright: Copyright 2015 The ABC Authors. All rights reserved.
+ *              Use of this source code is governed license that can
+ *              be found in the COPYING file.
+ */
+
 #ifndef SOLVER_EQUIVCLASSRULERUNNER_H_
 #define SOLVER_EQUIVCLASSRULERUNNER_H_
 
+#include <cstdbool>
+#include <iostream>
+#include <map>
+#include <sstream>
+#include <string>
+
 #include <glog/logging.h>
 #include "smt/ast.h"
-#include "Ast2Dot.h"
-#include "SymbolTable.h"
-#include "SyntacticOptimizer.h"
+#include "theory/StringAutomaton.h"
+#include "solver/Value.h"
+#include "solver/SymbolTable.h"
+#include "solver/EquivalenceClass.h"
+#include "solver/SyntacticOptimizer.h"
 
 namespace Vlab {
 namespace Solver {
-
-using SubstitutionMap = std::map<SMT::Variable_ptr, SMT::Term_ptr>;
-using SubstitutionTable = std::map<SMT::Visitable_ptr, SubstitutionMap>;
 
 class EquivClassRuleRunner: public SMT::Visitor {
  public:
@@ -90,6 +105,7 @@ class EquivClassRuleRunner: public SMT::Visitor {
  protected:
   bool has_optimization_rules();
   bool check_and_substitute_var(SMT::Term_ptr& term);
+  void set_variable_value(SMT::Variable_ptr variable, SMT::TermConstant_ptr term_constant);
 
   SMT::Script_ptr root;
   SymbolTable_ptr symbol_table_;
