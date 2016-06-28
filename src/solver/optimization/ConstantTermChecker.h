@@ -1,30 +1,38 @@
 /*
- * OptimizationRuleRunner.h
+ * ConstantTermChecker.h
  *
- *  Created on: May 6, 2015
+ *  Created on: Jun 25, 2016
  *      Author: baki
+ *   Copyright: Copyright 2015 The ABC Authors. All rights reserved. 
+ *              Use of this source code is governed license that can
+ *              be found in the COPYING file.
  */
 
-#ifndef SOLVER_OPTIMIZATIONRULERUNNER_H_
-#define SOLVER_OPTIMIZATIONRULERUNNER_H_
+#ifndef SRC_SOLVER_OPTIMIZATION_CONSTANTTERMCHECKER_H_
+#define SRC_SOLVER_OPTIMIZATION_CONSTANTTERMCHECKER_H_
+
+#include <algorithm>
+#include <string>
+#include <sstream>
+#include <iomanip>
 
 #include <glog/logging.h>
 #include "smt/ast.h"
-#include "Ast2Dot.h"
-#include "SymbolTable.h"
-#include "SyntacticOptimizer.h"
+#include "utils/RegularExpression.h"
 
 namespace Vlab {
 namespace Solver {
+namespace Optimization {
 
-using SubstitutionMap = std::map<SMT::Variable_ptr, SMT::Term_ptr>; 
-using SubstitutionTable = std::map<SMT::Visitable_ptr, SubstitutionMap>;
+class ConstantTermChecker: public SMT::Visitor {
+ public:
+  enum class Mode : int {FULL = 0, PREFIX, SUFFIX, ONLY_TERM_CONSTANT};
 
-class OptimizationRuleRunner: public SMT::Visitor {
-public:
-  OptimizationRuleRunner(SMT::Script_ptr, SymbolTable_ptr, SubstitutionTable& substitution_table);
-  virtual ~OptimizationRuleRunner();
-  void start() override;
+  ConstantTermChecker();
+  virtual ~ConstantTermChecker();
+
+  void start(SMT::Term_ptr term, ConstantTermChecker::Mode mode = ConstantTermChecker::Mode::FULL);
+  void start(SMT::TermConstant_ptr term_constant, ConstantTermChecker::Mode mode = ConstantTermChecker::Mode::ONLY_TERM_CONSTANT);
   void end() override;
 
   void visitScript(SMT::Script_ptr) override;
@@ -92,19 +100,27 @@ public:
   void visitIdentifier(SMT::Identifier_ptr) override;
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
-protected:
-  bool has_optimization_rules();
-  bool check_and_substitute_var(SMT::Term_ptr& term);
-  SMT::Term_ptr get_substitution_term(SMT::Variable_ptr);
 
-  SMT::Script_ptr root;
-  SymbolTable_ptr symbol_table;
-  SubstitutionTable& substitution_table;
+  bool is_constant();
+  bool is_constant_bool();
+  bool is_constant_int();
+  bool is_constant_string();
+  bool get_constant_bool();
+  int get_constant_int();
+  SMT::TermConstant_ptr get_term_constant();
+  std::string get_constant_string();
+  std::string get_constant_as_string();
+protected:
+  ConstantTermChecker::Mode mode_;
+  SMT::TermConstant_ptr term_constant_;
+  std::string string_value_;
 private:
+  void start() override;
   static const int VLOG_LEVEL;
 };
 
+} /* namespace Optimization */
 } /* namespace Solver */
 } /* namespace Vlab */
 
-#endif /* SOLVER_OPTIMIZATIONRULERUNNER_H_ */
+#endif /* SRC_SOLVER_OPTIMIZATION_CONSTANTTERMCHECKER_H_ */

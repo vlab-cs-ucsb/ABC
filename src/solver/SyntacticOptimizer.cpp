@@ -711,7 +711,7 @@ void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *concat_term << "@" << concat_term;
   TermConstant_ptr initial_term_constant = nullptr;
-  Optimization::StringConstantChecker string_constant_checker;
+  Optimization::ConstantTermChecker string_constant_checker;
   int pos = 0;
   for (auto iter = concat_term->term_list->begin(); iter != concat_term->term_list->end();) {
     if (Term::Type::CONCAT == (*iter)->type()) {
@@ -990,7 +990,7 @@ void SyntacticOptimizer::visitSubString(SubString_ptr sub_string_term) {
 
 void SyntacticOptimizer::visitToUpper(ToUpper_ptr to_upper_term) {
   visit_and_callback(to_upper_term->subject_term);
-  Optimization::StringConstantChecker string_constant_checker;
+  Optimization::ConstantTermChecker string_constant_checker;
   string_constant_checker.start(to_upper_term->subject_term);
   if (string_constant_checker.is_constant_string()) {
     std::string data = string_constant_checker.get_constant_string();
@@ -1005,7 +1005,7 @@ void SyntacticOptimizer::visitToUpper(ToUpper_ptr to_upper_term) {
 
 void SyntacticOptimizer::visitToLower(ToLower_ptr to_lower_term) {
   visit_and_callback(to_lower_term->subject_term);
-  Optimization::StringConstantChecker string_constant_checker;
+  Optimization::ConstantTermChecker string_constant_checker;
   string_constant_checker.start(to_lower_term->subject_term);
   if (string_constant_checker.is_constant_string()) {
     std::string data = string_constant_checker.get_constant_string();
@@ -1044,7 +1044,7 @@ void SyntacticOptimizer::visitToInt(ToInt_ptr to_int_term) {
   visit_and_callback(to_int_term->subject_term);
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *to_int_term << "@" << to_int_term;
-  Optimization::StringConstantChecker string_constant_checker;
+  Optimization::ConstantTermChecker string_constant_checker;
   string_constant_checker.start(to_int_term->subject_term);
   if (string_constant_checker.is_constant_string()) {
     std::string data = string_constant_checker.get_constant_string();
@@ -1090,7 +1090,7 @@ void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *re_concat_term << "@" << re_concat_term;
   TermConstant_ptr initial_term_constant = nullptr;
-  Optimization::StringConstantChecker string_constant_checker;
+  Optimization::ConstantTermChecker string_constant_checker;
   int pos = 0;
   for (auto iter = re_concat_term->term_list->begin(); iter != re_concat_term->term_list->end();) {
     if (Term::Type::CONCAT == (*iter)->type()) {
@@ -1327,7 +1327,7 @@ void SyntacticOptimizer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 }
 
 void SyntacticOptimizer::visitTermConstant(TermConstant_ptr term_constant) {
-  Optimization::StringConstantChecker string_constant_checker;
+  Optimization::ConstantTermChecker string_constant_checker;
   string_constant_checker.start(term_constant);
 }
 

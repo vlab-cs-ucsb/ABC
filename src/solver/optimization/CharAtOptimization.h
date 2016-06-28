@@ -17,8 +17,9 @@
 #include <cctype>
 
 #include <glog/logging.h>
+
+#include "ConstantTermChecker.h"
 #include "smt/ast.h"
-#include "StringConstantChecker.h"
 
 namespace Vlab {
 namespace Solver {

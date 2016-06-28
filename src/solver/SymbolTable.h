@@ -20,6 +20,7 @@
 #include "smt/ast.h"
 #include "solver/Ast2Dot.h"
 #include "solver/Value.h"
+#include "solver/EquivalenceClass.h"
 
 namespace Vlab {
 namespace Solver {
@@ -27,6 +28,8 @@ namespace Solver {
 using VariableMap = std::map<std::string, SMT::Variable_ptr>;
 using VariableCounterMap = std::map<SMT::Variable_ptr, int>;
 using VariableCounterTable = std::map<SMT::Visitable_ptr, VariableCounterMap>;
+using EquivClassMap = std::map<SMT::Variable_ptr, EquivalenceClass_ptr>;
+using EquivClassTable = std::map<SMT::Visitable_ptr, EquivClassMap>;
 using VariableSubstitutionMap = std::map<SMT::Variable_ptr, SMT::Variable_ptr>;
 using VariableSubstitutionTable = std::map<SMT::Visitable_ptr, VariableSubstitutionMap>;
 using VariableValueMap = std::map<SMT::Variable_ptr, Value_ptr>;
@@ -83,6 +86,11 @@ public:
   int get_num_of_substituted_variables(SMT::Visitable_ptr scope, SMT::Variable::Type type);
   void merge_variable_substitution_rule_into_current_scope(SMT::Visitable_ptr scope, SMT::Variable_ptr variable);
 
+  EquivClassTable& get_equivalance_class_table();
+  EquivalenceClass_ptr get_equivalence_class_of(SMT::Variable_ptr);
+  void add_variable_equiv_class_mapping(SMT::Variable_ptr, EquivalenceClass_ptr);
+
+
   Value_ptr getValue(std::string var_name);
   Value_ptr getValue(SMT::Variable_ptr variable);
   VariableValueMap& getValuesAtScope(SMT::Visitable_ptr scope);
@@ -120,6 +128,11 @@ private:
    * Number of usages of variables
    */
   VariableCounterTable variable_counts_table;
+
+  /**
+   * Has a mapping from variable to its corresponding equivalence class if any exists
+   */
+  EquivClassTable variable_equivalence_table;
 
   /**
    * Applied existential elimination rules

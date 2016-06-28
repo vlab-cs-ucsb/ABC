@@ -28,8 +28,8 @@ libabc_la_SOURCES = \
   ./solver/Initializer.h \
   ./solver/SyntacticProcessor.cpp \
   ./solver/SyntacticProcessor.h \
-  ./solver/optimization/StringConstantChecker.cpp \
-  ./solver/optimization/StringConstantChecker.h \
+  ./solver/optimization/ConstantTermChecker.cpp \
+  ./solver/optimization/ConstantTermChecker.h \
   ./solver/optimization/CharAtOptimization.cpp \
   ./solver/optimization/CharAtOptimization.h \
   ./solver/optimization/SubstringOptimization.cpp \
@@ -38,24 +38,22 @@ libabc_la_SOURCES = \
   ./solver/SyntacticOptimizer.h \
   ./solver/Counter.cpp \
   ./solver/Counter.h \
-  ./solver/OptimizationRuleRunner.cpp \
-  ./solver/OptimizationRuleRunner.h \
-  ./solver/VariableOptimizer.cpp \
-  ./solver/VariableOptimizer.h \
   ./solver/ConstraintInformation.cpp \
   ./solver/ConstraintInformation.h \
   ./solver/DependencySlicer.cpp \
   ./solver/DependencySlicer.h \
+  ./solver/EquivalenceClass.cpp \
+  ./solver/EquivalenceClass.h \
+  ./solver/EquivalenceGenerator.h \
+  ./solver/EquivalenceGenerator.cpp \
+  ./solver/EquivClassRuleRunner.cpp \
+  ./solver/EquivClassRuleRunner.h \
   ./solver/FormulaOptimizer.cpp \
   ./solver/FormulaOptimizer.h \
   ./solver/ConstraintSorter.cpp \
   ./solver/ConstraintSorter.h \
   ./solver/VariableValueComputer.cpp \
   ./solver/VariableValueComputer.h \
-  ./solver/EquivalenceGenerator.h \
-  ./solver/EquivalenceGenerator.cpp \
-  ./solver/EquivClassRuleRunner.cpp \
-  ./solver/EquivClassRuleRunner.h \
   ./solver/ArithmeticFormulaGenerator.cpp \
   ./solver/ArithmeticFormulaGenerator.h \
   ./solver/ArithmeticConstraintSolver.cpp \

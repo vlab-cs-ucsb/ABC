@@ -273,12 +273,44 @@ void SymbolTable::merge_variable_substitution_rule_into_current_scope(Visitable_
   }
 }
 
+EquivClassTable& SymbolTable::get_equivalance_class_table() {
+  return variable_equivalence_table;
+}
+
+/**
+ * Get equivalence class for variable if exists
+ * If it is found in upper scopes return a clone of it
+ */
+EquivalenceClass_ptr SymbolTable::get_equivalence_class_of(SMT::Variable_ptr variable) {
+  auto entry = variable_equivalence_table[scope_stack.back()].find(variable);
+  if (entry != variable_equivalence_table[scope_stack.back()].end()) {
+    return entry->second; // return equiv class from current scope
+  }
+
+  if (scope_stack.size() > 1) { // search in upper scopes
+    for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); it++) {
+      auto entry = variable_equivalence_table[(*it)].find(variable);
+      if (entry != variable_equivalence_table[(*it)].end()) {
+        // clone equiv class from parent and put it to the current scope
+        auto equiv_class = entry->second->clone();
+        add_variable_equiv_class_mapping(variable, equiv_class);
+        return equiv_class;
+      }
+    }
+  }
+
+  return nullptr;
+}
+
+void SymbolTable::add_variable_equiv_class_mapping(SMT::Variable_ptr variable, EquivalenceClass_ptr equiv_class) {
+  variable_equivalence_table[scope_stack.back()][variable] = equiv_class;
+}
+
 Value_ptr SymbolTable::getValue(std::string var_name) {
   return getValue(getVariable(var_name));
 }
 
 Value_ptr SymbolTable::getValue(Variable_ptr variable) {
-  Value_ptr result = nullptr;
 
   for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); it++) {
     auto entry = variable_value_table[(*it)].find(variable);
@@ -286,6 +318,8 @@ Value_ptr SymbolTable::getValue(Variable_ptr variable) {
       return entry->second;
     }
   }
+
+  Value_ptr result = nullptr;
 
   switch (variable->getType()) {
   case Variable::Type::BOOL:

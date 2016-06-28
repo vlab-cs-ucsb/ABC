@@ -13,8 +13,9 @@
 #include <cctype>
 
 #include <glog/logging.h>
+
+#include "ConstantTermChecker.h"
 #include "smt/ast.h"
-#include "StringConstantChecker.h"
 
 #ifndef SRC_SOLVER_OPTIMIZATION_SUBSTRINGOPTIMIZATION_H_
 #define SRC_SOLVER_OPTIMIZATION_SUBSTRINGOPTIMIZATION_H_

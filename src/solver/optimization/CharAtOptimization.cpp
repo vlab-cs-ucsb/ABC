@@ -226,7 +226,7 @@ void CharAtOptimization::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 }
 
 void CharAtOptimization::visitTermConstant(TermConstant_ptr term_constant) {
-  StringConstantChecker string_constant_checker;
+  ConstantTermChecker string_constant_checker;
   string_constant_checker.start(term_constant);
   if (string_constant_checker.is_constant_string()) {
     std::string str_value = string_constant_checker.get_constant_string();

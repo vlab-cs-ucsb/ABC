@@ -1,22 +1,14 @@
 /*
- * VariableOptimizer.cpp
+ * EquivalenceGenerator.cpp
  *
- *  Created on: May 4, 2015
- *      Author: baki
+  *  Created on: May 4, 2015
+ *      Author: baki, tegan
+ *   Copyright: Copyright 2015 The ABC Authors. All rights reserved.
+ *              Use of this source code is governed license that can
+ *              be found in the COPYING file.
  */
 
 #include "EquivalenceGenerator.h"
-
-#include <glog/logging.h>
-#include <iostream>
-#include <string>
-#include <utility>
-
-#include "smt/Visitor.h"
-#include "Counter.h"
-#include "Ast2Dot.h"
-
-#include "EquivClassRuleRunner.h"
 
 namespace Vlab {
 namespace Solver {
@@ -27,7 +19,11 @@ const int EquivalenceGenerator::VLOG_LEVEL = 15;
 
 EquivalenceGenerator::EquivalenceGenerator(Script_ptr script, SymbolTable_ptr symbol_table)
     : AstTraverser(script),
-      symbol_table_(symbol_table) {
+      symbol_table_(symbol_table),
+      left_variable_{nullptr},
+      right_variable_{nullptr},
+      term_constant_{nullptr},
+      unclassified_term_{nullptr} {
   setCallbacks();
 }
 
@@ -35,42 +31,30 @@ EquivalenceGenerator::~EquivalenceGenerator() {
 }
 
 void EquivalenceGenerator::start() {
-  Counter counter(root, symbol_table_);
   DVLOG(VLOG_LEVEL) << "Starting the EquivalenceGenerator";
+  Counter counter(root, symbol_table_);
   counter.start();
   symbol_table_->push_scope(root);
   visitScript(root);
-  bool is_false = make_substitution_rules();
-  if (is_false) {
-    set_to_false_.insert(root);
-  }
-  symbol_table_->pop_scope();
-  clear_mappings();
   end();
 }
 
 void EquivalenceGenerator::end() {
   if (VLOG_IS_ON(VLOG_LEVEL)) {
-    for (auto& map_pair : substitution_map_) {
-      SubstitutionMap vmap = substitution_map_[map_pair.first];
-      for (auto& pair : vmap) {
-        DVLOG(VLOG_LEVEL) << "In scope " << map_pair.first;
-        if (Term::Type::TERMCONSTANT == pair.second->type()) {
-          DVLOG(VLOG_LEVEL) << "Replacing " << pair.first->getName() << " with "
-                            << dynamic_cast<TermConstant_ptr>(pair.second)->getValue();
-        } else if (Term::Type::QUALIDENTIFIER == pair.second->type()) {
-          DVLOG(VLOG_LEVEL) << "Replacing " << pair.first->getName() << " with "
-                            << (symbol_table_->getVariable(pair.second))->getName();
-        } else {
-          LOG(FATAL) << "UNEXPECTED TERM IN REPLACEMENT MAP!";
-        }
+    for(auto& table_entry : symbol_table_->get_equivalance_class_table()) {
+      DVLOG(VLOG_LEVEL) << " equivalence scope: " << "@" << table_entry.first;
+      std::set<EquivalenceClass_ptr> unique_ones;
+      for (auto& map_entry : table_entry.second) {
+        unique_ones.insert(map_entry.second);
+      }
+      for (auto equiv : unique_ones) {
+        DVLOG(VLOG_LEVEL) << " equivalence: " << *equiv;
       }
     }
   }
-  EquivClassRuleRunner rule_runner(root, symbol_table_, substitution_map_, set_to_false_);
-  rule_runner.start();
 
-  reset_substitution_rules();
+//  EquivClassRuleRunner rule_runner(root, symbol_table_, substitution_map_, set_to_false_);
+//  rule_runner.start();
 }
 
 void EquivalenceGenerator::setCallbacks() {
@@ -89,150 +73,180 @@ void EquivalenceGenerator::setCallbacks() {
   setTermPreCallback(term_callback);
 }
 
+/**
+ * Visit children that are not disjunction first
+ */
 void EquivalenceGenerator::visitAnd(And_ptr and_term) {
-  visit_children_of(and_term);
+  TermList or_terms;
+  for (auto term : *(and_term->term_list)) {
+    if (Term::Type::OR not_eq term->type()) {
+      visit(term);
+    } else {
+      or_terms.push_back(term);
+    }
+  }
+
+  for (auto term : or_terms) {
+    visit(term);
+  }
 }
 
 void EquivalenceGenerator::visitOr(Or_ptr or_term) {
-  for (auto iter = or_term->term_list->begin(); iter != or_term->term_list->end();) {
-    symbol_table_->push_scope(*iter);
-    visit(*iter);
-    bool is_false = make_substitution_rules();
-    if (is_false) {
-      set_to_false_.insert(*iter);
-    }
-    clear_mappings();
+  for (auto term : *(or_term->term_list)) {
+    symbol_table_->push_scope(term);
+    visit(term);
     symbol_table_->pop_scope();
-    iter++;
   }
 }
 
+/**
+ * conditionals sets member variables based on the conditions
+ * @left_variable_, @right_variable_, @term_constant_, @unclassified_term_
+ */
 void EquivalenceGenerator::visitEq(Eq_ptr eq_term) {
-  //DVLOG(VLOG_LEVEL) << "Visiting an eq";
-  std::string rep_left = get_string_rep(eq_term->left_term);
-  std::string rep_right = get_string_rep(eq_term->right_term);
+  DVLOG(VLOG_LEVEL) << "visit start: " << *eq_term << "@" << eq_term;
 
-  if (term_to_component_map_.find(rep_left) != term_to_component_map_.end()) {
-    if (term_to_component_map_.find(rep_right) != term_to_component_map_.end()) {
-      if (term_to_component_map_[rep_right] != term_to_component_map_[rep_left]) {
-        merge(term_to_component_map_[rep_right], term_to_component_map_[rep_left]);
-      }
-    } else {
-      extend_equiv_class(rep_right, rep_left);
+  if (is_equiv_of_variables(eq_term->left_term, eq_term->right_term)) {
+    auto left_equiv_class = symbol_table_->get_equivalence_class_of(left_variable_);
+    auto right_equiv_class = symbol_table_->get_equivalence_class_of(right_variable_);
+    if (left_equiv_class and right_equiv_class) { // merge them
+      update_equiv_class_and_symbol_table(left_equiv_class, right_equiv_class);
+    } else if (left_equiv_class) { // add right variable
+      update_equiv_class_and_symbol_table(left_equiv_class, right_variable_);
+    } else if (right_equiv_class) { // add to right variable
+      update_equiv_class_and_symbol_table(right_equiv_class, left_variable_);
+    } else { // create a new equivalence class
+      create_equiv_class_and_update_symbol_table(left_variable_, right_variable_);
     }
-  } else if (term_to_component_map_.find(rep_right) != term_to_component_map_.end()) {
-    extend_equiv_class(rep_left, rep_right);
-  } else {
-    //Make a new equivalence class. Insert both the left and right terms.
-    term_to_component_map_[rep_left] = sub_components_.size();
-    term_to_component_map_[rep_right] = sub_components_.size();
-    std::set<std::string> component;
-    component.insert(rep_left);
-    component.insert(rep_right);
-    sub_components_.push_back(component);
+  } else if (is_equiv_of_variable_and_constant(eq_term->left_term, eq_term->right_term)) {
+    auto equiv_class = symbol_table_->get_equivalence_class_of(left_variable_);
+    if (equiv_class) {
+      update_equiv_class_and_symbol_table(equiv_class, term_constant_);
+    } else {
+      create_equiv_class_and_update_symbol_table(left_variable_, term_constant_);
+    }
+  } else if (is_equiv_of_bool_var_and_term(eq_term->left_term, eq_term->right_term)) {
+    auto equiv_class = symbol_table_->get_equivalence_class_of(left_variable_);
+    if (equiv_class) {
+      update_equiv_class_and_symbol_table(equiv_class, unclassified_term_);
+    } else {
+      create_equiv_class_and_update_symbol_table(left_variable_, unclassified_term_);
+    }
+  } else { // equivalence of other terms, cannot handle for now
+
   }
+
+  left_variable_ = nullptr;
+  right_variable_ = nullptr;
+  term_constant_ = nullptr;
+  unclassified_term_ = nullptr;
+
+  DVLOG(VLOG_LEVEL) << "visit end: " << *eq_term << "@" << eq_term;
 }
 
-bool EquivalenceGenerator::make_substitution_rules() {
-  //First make a set containing the unique equivalence classes
-  std::set<std::set<std::string>> unique_components_;
-  for (auto& entry : term_to_component_map_) {
-    unique_components_.insert(sub_components_[entry.second]);
-  }
-  //For each equivalence class, choose a variable representative and when appropriate, a constant representative
-  Term_ptr rep_variable;
-  Term_ptr rep_constant;
-  for (auto& s : unique_components_) {
-    rep_variable = nullptr;
-    rep_constant = nullptr;
-    //Currently no procedure in place for choosing the variable representive.
-    //TODO BAKI we can choose the variable that appears most, we can get that information from counter
-    for (auto& e : s) {
-      if (variables_.find(e) != variables_.end()) {
-        rep_variable = variables_[e];
-      }
-      if (constants_.find(e) != constants_.end()) {
-        rep_constant = constants_[e];
-      }
-    }
-    //Check and see if there is a contradiction based on two non-equivalent constants being in the same equivalence class.
-    /*if (rep_constant != nullptr) {
-      for (auto& e : s) {
-        if (constants_.find(e) != constants_.end()) {
-          if (dynamic_cast<TermConstant_ptr>(rep_constant)->getValue() != e) {
-            //DVLOG(VLOG_LEVEL) << "CONTRADICTION IN THIS SCOPE!";
-            return true;
-          }
-        }
-      }
-    }*/
-    //Add the substitution rules for constants
-    if (rep_constant != nullptr) {
-      for (auto& e : s) {
-        if (variables_.find(e) != variables_.end()) {
-          add_variable_substitution_rule(symbol_table_->getVariable(e), rep_constant);
-        }
-      }
-    }
-    //Add the substituion rules for variables
-    else if (rep_variable != nullptr) {
-      for (auto& e : s) {
-        if (variables_.find(e) != variables_.end()
-            and symbol_table_->getVariable(e) != symbol_table_->getVariable(rep_variable)) {
-          add_variable_substitution_rule(symbol_table_->getVariable(e), rep_variable);
-        }
-      }
+/**
+ * checks and sets members variables @left_variable_, @right_variable based on result
+ */
+bool EquivalenceGenerator::is_equiv_of_variables(SMT::Term_ptr left_term, SMT::Term_ptr right_term) {
+  if (QualIdentifier_ptr left_id = dynamic_cast<QualIdentifier_ptr>(left_term)) {
+    if (QualIdentifier_ptr right_id = dynamic_cast<QualIdentifier_ptr>(right_term)) {
+      left_variable_ = symbol_table_->getVariable(left_id->getVarName());
+      right_variable_ = symbol_table_->getVariable(right_id->getVarName());
+      DVLOG(VLOG_LEVEL)<< "variable equivalence: " << left_variable_->getName() << " = " << right_variable_->getName();
+      return true;
     }
   }
   return false;
 }
 
-bool EquivalenceGenerator::add_variable_substitution_rule(Variable_ptr variable, Term_ptr target_term) {
-  auto result = substitution_map_[symbol_table_->top_scope()].insert(std::make_pair(variable, target_term));
-  return result.second;
-}
-
-//Update an equivalence class
-void EquivalenceGenerator::extend_equiv_class(std::string to_add, std::string to_add_to) {
-  term_to_component_map_[to_add] = term_to_component_map_[to_add_to];
-  sub_components_[term_to_component_map_[to_add]].insert(to_add);
-}
-
-//Generate a string representation of a term!
-std::string EquivalenceGenerator::get_string_rep(Term_ptr term) {
-  std::string rep = Ast2Dot::toString(term);
-  if (Term::Type::QUALIDENTIFIER == term->type()) {
-    rep = (symbol_table_->getVariable(term))->getName();
-    variables_[rep] = term;
+/**
+ * When true saves variable in @left_variable_ member and saves constant in @term_constant_ member
+ */
+bool EquivalenceGenerator::is_equiv_of_variable_and_constant(SMT::Term_ptr left_term, SMT::Term_ptr right_term) {
+  Optimization::ConstantTermChecker constant_term_checker;
+  if (QualIdentifier_ptr left_id = dynamic_cast<QualIdentifier_ptr>(left_term)) {
+    constant_term_checker.start(right_term, Optimization::ConstantTermChecker::Mode::ONLY_TERM_CONSTANT);
+    if (constant_term_checker.is_constant()) {
+      left_variable_ = symbol_table_->getVariable(left_id->getVarName());
+      term_constant_ = constant_term_checker.get_term_constant();
+      DVLOG(VLOG_LEVEL)<< "variable to constant equivalence: " << left_variable_->getName() << " = " << term_constant_->getValue();
+      return true;
+    }
+  } else if (QualIdentifier_ptr right_id = dynamic_cast<QualIdentifier_ptr>(right_term)) {
+    constant_term_checker.start(left_term, Optimization::ConstantTermChecker::Mode::ONLY_TERM_CONSTANT);
+    if (constant_term_checker.is_constant()) {
+      left_variable_ = symbol_table_->getVariable(right_id->getVarName()); // we use @left_variable_ member in that case
+      term_constant_ = constant_term_checker.get_term_constant();
+      DVLOG(VLOG_LEVEL)<< "variable to constant equivalence: " << left_variable_->getName() << " = " << term_constant_->getValue();
+      return true;
+    }
   }
-  if (Term::Type::TERMCONSTANT == term->type()) {
-    rep = dynamic_cast<TermConstant_ptr>(term)->getValue();
-    constants_[rep] = term;
-  }
-  return rep;
+  return false;
 }
 
-//Merge two equivalence classes
-void EquivalenceGenerator::merge(int a, int b) {
-  int to_merge_to = b;
-  int to_merge = a;
-  if (sub_components_[a].size() > sub_components_[b].size()) {
-    to_merge_to = a;
-    to_merge = b;
+/**
+ * We can replace bool variables with the terms they are assigned
+ * Assumes you already checked for equivalence of variables
+ */
+bool EquivalenceGenerator::is_equiv_of_bool_var_and_term(SMT::Term_ptr left_term, SMT::Term_ptr right_term) {
+  if (QualIdentifier_ptr left_id = dynamic_cast<QualIdentifier_ptr>(left_term)) {
+    auto variable = symbol_table_->getVariable(left_id->getVarName());
+    if (Variable::Type::BOOL == variable->getType()) {
+      left_variable_ = variable;
+      unclassified_term_ = right_term;
+      DVLOG(VLOG_LEVEL)<< "bool variable to term equivalence: " << left_variable_->getName() << " = " << *unclassified_term_;
+      return true;
+    }
+  } else if (QualIdentifier_ptr right_id = dynamic_cast<QualIdentifier_ptr>(right_term)) {
+    auto variable = symbol_table_->getVariable(right_id->getVarName());
+    if (Variable::Type::BOOL == variable->getType()) {
+      left_variable_ = variable; // we use @left_variable_ member in that case
+      unclassified_term_ = left_term;
+      DVLOG(VLOG_LEVEL)<< "bool variable to term equivalence: " << left_variable_->getName() << " = " << *unclassified_term_;
+      return true;
+    }
   }
-  for (auto& e : sub_components_[to_merge]) {
-    sub_components_[to_merge_to].insert(e);
-    term_to_component_map_[e] = to_merge_to;
-  }
+  return false;
 }
 
-void EquivalenceGenerator::reset_substitution_rules() {
-  substitution_map_.clear();
+void EquivalenceGenerator::update_equiv_class_and_symbol_table(EquivalenceClass_ptr left_equiv,
+                                                               EquivalenceClass_ptr right_equiv) {
+  left_equiv->merge(right_equiv);
+  for (auto variable : right_equiv->get_variables()) {
+    symbol_table_->add_variable_equiv_class_mapping(variable, left_equiv);
+  }
+  delete right_equiv;
 }
 
-void EquivalenceGenerator::clear_mappings() {
-  term_to_component_map_.clear();
-  sub_components_.clear();
+void EquivalenceGenerator::update_equiv_class_and_symbol_table(EquivalenceClass_ptr equiv, SMT::Variable_ptr variable) {
+  equiv->add(variable);
+  symbol_table_->add_variable_equiv_class_mapping(variable, equiv);
+
+}
+
+void EquivalenceGenerator::update_equiv_class_and_symbol_table(EquivalenceClass_ptr equiv, SMT::TermConstant_ptr term_constant) {
+  equiv->add(term_constant);
+}
+
+void EquivalenceGenerator::update_equiv_class_and_symbol_table(EquivalenceClass_ptr equiv, SMT::Term_ptr term) {
+  equiv->add(term);
+}
+
+void EquivalenceGenerator::create_equiv_class_and_update_symbol_table(SMT::Variable_ptr left_variable,
+                                                                      SMT::Variable_ptr right_variable) {
+  auto equiv = new EquivalenceClass(left_variable, right_variable);
+  symbol_table_->add_variable_equiv_class_mapping(left_variable, equiv);
+  symbol_table_->add_variable_equiv_class_mapping(right_variable, equiv);
+}
+
+void EquivalenceGenerator::create_equiv_class_and_update_symbol_table(SMT::Variable_ptr variable, SMT::TermConstant_ptr term_constant) {
+  auto equiv = new EquivalenceClass(variable, term_constant);
+  symbol_table_->add_variable_equiv_class_mapping(variable, equiv);
+}
+
+void EquivalenceGenerator::create_equiv_class_and_update_symbol_table(SMT::Variable_ptr variable, SMT::Term_ptr term) {
+  auto equiv = new EquivalenceClass(variable, term);
+  symbol_table_->add_variable_equiv_class_mapping(variable, equiv);
 }
 
 } /* namespace Solver */
