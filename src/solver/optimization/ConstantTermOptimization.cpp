@@ -171,7 +171,7 @@ void ConstantTermOptimization::visitSubString(SubString_ptr sub_string_term) {
 void ConstantTermOptimization::visitToUpper(ToUpper_ptr to_upper_term) {
   visit_children_of(to_upper_term);
 
-
+}
 /**
  * Transform to lower data
  */
@@ -239,6 +239,10 @@ void ConstantTermOptimization::visitTermConstant(TermConstant_ptr term_constant)
     std::string new_string = term_constant->getValue();
     if (Mode::PREFIX == mode_) {
       new_string.erase(0, length_);
+      term_constant->primitive->setData(new_string);
+    }
+    else{
+      new_string = new_string.substr(0,new_string.size() - length_);
       term_constant->primitive->setData(new_string);
     }
   }
