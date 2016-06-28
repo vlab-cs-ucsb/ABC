@@ -83,8 +83,11 @@ void StringRelationGenerator::visitAnd(And_ptr and_term) {
   StringRelation_ptr term_relation = nullptr;
   VariableTrackMap_ptr current_trackmap = get_term_trackmap(current_term_);
   for (auto& term : *(and_term->term_list)) {
+    DVLOG(VLOG_LEVEL) << "Term: " << *term;
     term_relation = get_term_relation(term);
     if(term_relation != nullptr) {
+      if(current_trackmap == nullptr)
+        DVLOG(VLOG_LEVEL) << "Setting trackmap to NULL for " << *term;
       term_relation->set_variable_trackmap(current_trackmap);
     }
   }
@@ -436,13 +439,15 @@ void StringRelationGenerator::visitAsQualIdentifier(AsQualIdentifier_ptr as_qual
 
 void StringRelationGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *qi_term;
+  DVLOG(VLOG_LEVEL) << "Should be qi_term";
   if(get_term_relation(qi_term) != nullptr) {
+    DVLOG(VLOG_LEVEL) << "We dun care!";
     return;
   }
   StringRelation_ptr str_rel = nullptr;
   Variable_ptr variable = symbol_table_->getVariable(qi_term->getVarName());
   set_parent_term(variable, current_term_);
-
+DVLOG(VLOG_LEVEL) << " type: " << variable->getType();
   switch(variable->getType()) {
     case Variable::Type::STRING:
       str_rel = new StringRelation();

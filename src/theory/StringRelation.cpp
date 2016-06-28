@@ -138,10 +138,6 @@ int StringRelation::get_variable_index(std::string name) {
   return iter->second;
 }
 
-std::map<std::string ,int>* StringRelation::get_term_trackmap() {
-  return trackmap_handle_;
-}
-
 bool StringRelation::has_same_trackmap(StringRelation_ptr other_relation) {
   if (trackmap_handle_ not_eq other_relation->trackmap_handle_) {
     return false;
