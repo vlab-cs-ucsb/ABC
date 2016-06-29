@@ -578,6 +578,12 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
   visit_and_callback(not_eq_term->left_term);
   visit_and_callback(not_eq_term->right_term);
 
+  bool match_p = match_prefix(not_eq_term->left_term, not_eq_term->right_term);
+  bool match_s = match_suffix(not_eq_term->left_term, not_eq_term->right_term);
+
+  visit_and_callback(not_eq_term->left_term);
+  visit_and_callback(not_eq_term->right_term);
+
   if (Ast2Dot::isEquivalent(not_eq_term->left_term, not_eq_term->right_term)) {
     add_callback_to_replace_with_bool(not_eq_term, "false");
   } else if (check_and_process_len_transformation(not_eq_term, not_eq_term->left_term, not_eq_term->right_term)) {
@@ -862,6 +868,8 @@ void SyntacticOptimizer::visitContains(Contains_ptr contains_term) {
   visit_and_callback(contains_term->search_term);
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *contains_term << "@" << contains_term;
+
+
   if (Ast2Dot::isEquivalent(contains_term->subject_term, contains_term->search_term)) {
     add_callback_to_replace_with_bool(contains_term, "true");
   }
@@ -880,6 +888,15 @@ void SyntacticOptimizer::visitNotContains(NotContains_ptr not_contains_term) {
 }
 
 void SyntacticOptimizer::visitBegins(Begins_ptr begins_term) {
+  visit_and_callback(begins_term->subject_term);
+  visit_and_callback(begins_term->search_term);
+
+  bool match = match_prefix(begins_term->subject_term, begins_term->search_term);
+  if (! match) {
+    add_callback_to_replace_with_bool(begins_term, "false");
+    return;
+  }
+
   visit_and_callback(begins_term->subject_term);
   visit_and_callback(begins_term->search_term);
 
@@ -902,6 +919,16 @@ void SyntacticOptimizer::visitNotBegins(NotBegins_ptr not_begins_term) {
 }
 
 void SyntacticOptimizer::visitEnds(Ends_ptr ends_term) {
+  visit_and_callback(ends_term->subject_term);
+  visit_and_callback(ends_term->search_term);
+
+
+  bool match = match_suffix(ends_term->subject_term, ends_term->search_term);
+  if (! match) {
+    add_callback_to_replace_with_bool(ends_term, "false");
+    return;
+  }
+
   visit_and_callback(ends_term->subject_term);
   visit_and_callback(ends_term->search_term);
 
@@ -2041,7 +2068,7 @@ bool SyntacticOptimizer::match_prefix(Term_ptr left, Term_ptr right) {
         term_matcher_left.start(left, right_value.size(), Optimization::ConstantTermOptimization::Mode::PREFIX);
         Optimization::ConstantTermOptimization term_matcher_right;
         term_matcher_right.start(right, right_value.size(), Optimization::ConstantTermOptimization::Mode::PREFIX);
-        return false;
+        return true;
       } else {
         return false;
       }
@@ -2075,12 +2102,12 @@ bool SyntacticOptimizer::match_suffix(Term_ptr left, Term_ptr right) {
         return false;
       }
     } else {
-      if (equal(right_value.begin(), right_value.end(), left_value.begin())) {
+      if (equal(right_value.rbegin(), right_value.rend(), left_value.rbegin())) {
         Optimization::ConstantTermOptimization term_matcher_left;
         term_matcher_left.start(left, right_value.size(), Optimization::ConstantTermOptimization::Mode::SUFFIX);
         Optimization::ConstantTermOptimization term_matcher_right;
         term_matcher_right.start(right, right_value.size(), Optimization::ConstantTermOptimization::Mode::SUFFIX);
-        return false;
+        return true;
       } else {
         return false;
       }
