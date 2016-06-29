@@ -310,7 +310,6 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
   variable_auto = value->getStringAutomaton();
   relation_auto = relation_value->getMultiTrackAutomaton();
   variable_relation = relation_auto->getRelation();
-
   // place variable value on multitrack, intersect and update corresonding term value
   variable_multi_auto = new MultiTrackAutomaton(variable_auto->getDFA(),
                                        variable_relation->get_variable_index(variable->getName()),
@@ -337,7 +336,7 @@ Value_ptr StringConstraintSolver::get_relational_value(SMT::Variable_ptr variabl
   }
   variable_relation = relation_value->getMultiTrackAutomaton()->getRelation();
   if(variable_relation->get_variable_index(variable->getName()) == -1) {
-    LOG(FATAL) << "Variable not part of expected relation";
+    DVLOG(VLOG_LEVEL) << "Variable not part of expected relation";
     return nullptr;
   }
   return relation_value;

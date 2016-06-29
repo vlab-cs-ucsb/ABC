@@ -1213,6 +1213,7 @@ void ConstraintSolver::update_variables() {
     }
     DVLOG(VLOG_LEVEL) << "Updating variable: " << var->getName();
     string_constraint_solver_.update_variable_value(var, value);
+    DVLOG(VLOG_LEVEL) << "..........";
     still_sat = still_sat and value->isSatisfiable();
     delete value;
     symbol_table_->setValue(var, nullptr);

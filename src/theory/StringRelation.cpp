@@ -133,6 +133,11 @@ int StringRelation::get_variable_index(std::string name) {
   auto iter = trackmap_handle_->find(name);
   if (iter == trackmap_handle_->end()) {
     DVLOG(VLOG_LEVEL) << "No index for: " << name;
+
+    for(auto& it : *trackmap_handle_) {
+      DVLOG(VLOG_LEVEL) << it.first << " -> " << it.second;
+    }
+
     return -1;
   }
   return iter->second;

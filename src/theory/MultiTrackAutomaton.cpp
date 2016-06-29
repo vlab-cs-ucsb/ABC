@@ -25,6 +25,7 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int num_tracks)
 MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_tracks)
 			: Automaton(Automaton::Type::MULTITRACK, nullptr, num_tracks * VAR_PER_TRACK),
 			  num_of_tracks(num_tracks), relation(nullptr) {
+
 	int *indices = getIndices(VAR_PER_TRACK);
 	DFA_ptr result,temp,M;
 	M = getLambdaStar(VAR_PER_TRACK,indices);
@@ -44,8 +45,9 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_track
 	int len;
 	len = num_tracks * VAR_PER_TRACK;
 	mindices = getIndices(num_tracks*VAR_PER_TRACK);
-	statuses = new char[len+1];
+	statuses = new char[M->ns+1];
 	sink = find_sink(M);
+
 	// begin dfa building process
 	dfaSetup(M->ns, len, mindices);
 	for(unsigned i = 0; i < M->ns; i++) {
@@ -649,7 +651,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::intersect(MultiTrackAutomaton_ptr o
 	intersect_auto = new MultiTrackAutomaton(minimized_dfa, this->num_of_tracks);
 
 	if(this->relation == nullptr && other_auto->relation == nullptr) {
-		LOG(FATAL) << "No relation set for either multitrack during intersection";
+		DVLOG(VLOG_LEVEL) << "No relation set for either multitrack during intersection";
 	} else if(other_auto->relation == nullptr) {
 		intersect_relation = this->relation->clone();
 	} else if(this->relation == nullptr) {
@@ -705,10 +707,12 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 		std::cerr << "error in MultiTrackAutomaton::getKTrack" << std::endl;
 		exit(1);
 	} else if(this->num_of_tracks == 1) {
-	    result= removeLambdaSuffix(this->dfa,VAR_PER_TRACK);
-	    result_auto = new StringAutomaton(result);
+	  DVLOG(VLOG_LEVEL) << "   getKTrack, but only 1 track";
+    result= removeLambdaSuffix(this->dfa,VAR_PER_TRACK);
+    result_auto = new StringAutomaton(result);
 		return result_auto;
 	} else if(k_track == 0) {
+	  DVLOG(VLOG_LEVEL) << "   getKTrack, more than one track, but k_track is 0";
 		MultiTrackAutomaton_ptr m1, m2;
 		m1 = this->clone();
 		for (int i = this->num_of_tracks - 1; i > 0; i--) {
@@ -718,10 +722,12 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 			m2 = nullptr;
 		}
 		if(find_sink(m1->dfa) != -1) {
+		  DVLOG(VLOG_LEVEL) << " we has sink";
 			result = removeLambdaSuffix(m1->dfa, VAR_PER_TRACK);
 			delete m1; m1 = nullptr;
 			result_auto = new StringAutomaton(result);
 		} else {
+		  DVLOG(VLOG_LEVEL) << " sink has gone down the drain...";
 			delete m1; m1 = nullptr;
 			return StringAutomaton::makeAnyString();
 		}

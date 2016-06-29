@@ -86,6 +86,7 @@ void StringRelationGenerator::visitAnd(And_ptr and_term) {
     DVLOG(VLOG_LEVEL) << "Term: " << *term;
     term_relation = get_term_relation(term);
     if(term_relation != nullptr) {
+      DVLOG(VLOG_LEVEL) << "is relational";
       if(current_trackmap == nullptr)
         DVLOG(VLOG_LEVEL) << "Setting trackmap to NULL for " << *term;
       term_relation->set_variable_trackmap(current_trackmap);
@@ -459,14 +460,16 @@ void StringRelationGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *qi_term;
   StringRelation_ptr str_rel = nullptr;
   Variable_ptr variable = symbol_table_->getVariable(qi_term->getVarName());
-  set_parent_term(variable, current_term_);
+  DVLOG(VLOG_LEVEL) << "-->variable name: " << variable->getName();
   switch(variable->getType()) {
     case Variable::Type::STRING:
+      set_parent_term(variable, current_term_);
       str_rel = new StringRelation();
       str_rel->set_type(StringRelation::Type::STRING_VAR);
       str_rel->set_data(variable->getName());
       break;
     case Variable::Type::INT:
+      set_parent_term(variable, current_term_);
       str_rel = new StringRelation();
       str_rel->set_type(StringRelation::Type::INT_VAR);
       str_rel->set_data(variable->getName());
@@ -485,6 +488,7 @@ void StringRelationGenerator::visitTermConstant(TermConstant_ptr term_constant) 
     return;
   }
   StringRelation_ptr str_rel = nullptr;
+  DVLOG(VLOG_LEVEL) << "-->term constant: " << term_constant->getValue();
   switch(term_constant->getValueType()) {
     case Primitive::Type::STRING:
       str_rel = new StringRelation();
@@ -583,7 +587,9 @@ void StringRelationGenerator::add_string_variable(Variable_ptr variable, Term_pt
   if(term_trackmap_table_[term]->find(variable_name) != term_trackmap_table_[term]->end()) {
     return;
   }
+
   id = term_trackmap_table_[term]->size();
+  DVLOG(VLOG_LEVEL) << "Adding to trackmap:   " << variable_name << " -> " << id;
   (*term_trackmap_table_[term])[variable_name]= id;
 }
 
