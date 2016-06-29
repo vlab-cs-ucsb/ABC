@@ -128,6 +128,9 @@ void StringRelationGenerator::visitEq(Eq_ptr eq_term) {
   right_relation = get_term_relation(eq_term->right_term);
   if (left_relation == nullptr || right_relation == nullptr) {
     return;
+  } else if (eq_term->left_term->type() == Term::Type::TERMCONSTANT &&
+             eq_term->right_term->type() == Term::Type::TERMCONSTANT) {
+    return;
   }
 
   relation = new StringRelation(StringRelation::Type::EQ,
@@ -161,6 +164,9 @@ void StringRelationGenerator::visitNotEq(NotEq_ptr not_eq_term) {
   left_relation = get_term_relation(not_eq_term->left_term);
   right_relation = get_term_relation(not_eq_term->right_term);
   if (left_relation == nullptr || right_relation == nullptr) {
+    return;
+  } else if (not_eq_term->left_term->type() == Term::Type::TERMCONSTANT &&
+             not_eq_term->right_term->type() == Term::Type::TERMCONSTANT) {
     return;
   }
 
@@ -196,6 +202,9 @@ void StringRelationGenerator::visitGt(Gt_ptr gt_term) {
   right_relation = get_term_relation(gt_term->right_term);
   if (left_relation == nullptr || right_relation == nullptr) {
     return;
+  } else if (gt_term->left_term->type() == Term::Type::TERMCONSTANT &&
+             gt_term->right_term->type() == Term::Type::TERMCONSTANT) {
+    return;
   }
 
   relation = new StringRelation(StringRelation::Type::GT,
@@ -229,6 +238,9 @@ void StringRelationGenerator::visitGe(Ge_ptr ge_term) {
   left_relation = get_term_relation(ge_term->left_term);
   right_relation = get_term_relation(ge_term->right_term);
   if (left_relation == nullptr || right_relation == nullptr) {
+    return;
+  } else if (ge_term->left_term->type() == Term::Type::TERMCONSTANT &&
+             ge_term->right_term->type() == Term::Type::TERMCONSTANT) {
     return;
   }
 
@@ -264,6 +276,9 @@ void StringRelationGenerator::visitLt(Lt_ptr lt_term) {
   right_relation = get_term_relation(lt_term->right_term);
   if (left_relation == nullptr || right_relation == nullptr) {
     return;
+  } else if (lt_term->left_term->type() == Term::Type::TERMCONSTANT &&
+             lt_term->right_term->type() == Term::Type::TERMCONSTANT) {
+    return;
   }
 
   relation = new StringRelation(StringRelation::Type::LT,
@@ -297,6 +312,9 @@ void StringRelationGenerator::visitLe(Le_ptr le_term) {
   left_relation = get_term_relation(le_term->left_term);
   right_relation = get_term_relation(le_term->right_term);
   if (left_relation == nullptr || right_relation == nullptr) {
+    return;
+  } else if (le_term->left_term->type() == Term::Type::TERMCONSTANT &&
+             le_term->right_term->type() == Term::Type::TERMCONSTANT) {
     return;
   }
 

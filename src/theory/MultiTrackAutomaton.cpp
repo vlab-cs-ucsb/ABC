@@ -274,10 +274,45 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr rel
 	StringAutomaton_ptr constant_string_auto = nullptr;
 	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
 
+/*
+DVLOG(VLOG_LEVEL) << "++++++++++++++++++TESTING REVERSE";
 
-DVLOG(VLOG_LEVEL) << "TESTING REVERSE";
-DVLOG(VLOG_LEVEL) << "DONE TESTING REVERSE";
+	std::string str1,regex_str;
+	StringAutomaton_ptr s1,s2,s3,s4,r1,r2,r3,res;
+	MultiTrackAutomaton_ptr m1,m2;
+  regex_str = "(abc|xyz)TOOL";
+  str1 = regex_str;
+	//s1 = StringAutomaton::makeString(str1);
+  s1 = StringAutomaton::makeRegexAuto(regex_str);
+  s2 = StringAutomaton::makeString("abcTOOL");
+  s3 = StringAutomaton::makeString("xyzTOOL");
 
+  r2 = MultiTrackAutomaton::get_reverse_auto(s2);
+  r3 = MultiTrackAutomaton::get_reverse_auto(s3);
+
+	DVLOG(VLOG_LEVEL) << "Test string: " << str1;
+	DVLOG(VLOG_LEVEL) << "from auto: " << s1->getAnAcceptingString();
+  DVLOG(VLOG_LEVEL) << "s2: " << s2->getAnAcceptingString();
+  DVLOG(VLOG_LEVEL) << "s3: " << s3->getAnAcceptingString();
+  DVLOG(VLOG_LEVEL) << "r2: " << r2->getAnAcceptingString();
+  DVLOG(VLOG_LEVEL) << "r3: " << r3->getAnAcceptingString();
+  s4 = s1->intersect(s2);
+  DVLOG(VLOG_LEVEL) << s4->getAnAcceptingString();
+  s4 = s1->intersect(s3);
+  DVLOG(VLOG_LEVEL) << s4->getAnAcceptingString();
+
+  DVLOG(VLOG_LEVEL) << "begin reverse";
+  res = MultiTrackAutomaton::get_reverse_auto(s1);
+  DVLOG(VLOG_LEVEL) << "done reverse";
+
+  DVLOG(VLOG_LEVEL) << "reversed: " << res->getAnAcceptingString();
+  r1 = res->intersect(r2);
+  DVLOG(VLOG_LEVEL) << r1->getAnAcceptingString();
+  r1 = res->intersect(r3);
+  DVLOG(VLOG_LEVEL) << r1->getAnAcceptingString();
+
+DVLOG(VLOG_LEVEL) << "====================DONE TESTING REVERSE";
+*/
 	std::map<std::string,int>* trackmap = relation->get_variable_trackmap();
 	int num_tracks = trackmap->size(),
 			left_track,right_track;
@@ -1091,20 +1126,19 @@ DFA_ptr MultiTrackAutomaton::make_binary_relation_dfa(StringRelation::Type type,
 	return result_dfa;
 
 }
-/*
-MultiTrackAutomaton_ptr MultiTrackAutomaton::get_reverse_auto() {
-	int initial_var_per_track = this->num_of_variables / this->num_of_tracks;
+
+StringAutomaton_ptr MultiTrackAutomaton::get_reverse_auto(StringAutomaton_ptr string_auto) {
+	int initial_var_per_track = VAR_PER_TRACK;
 	std::map<std::pair<std::string, int>, int> same_reversed_paths;
 	std::string ex;
 	std::pair<std::string, int> p;
 
-	DFA_ptr other = this->dfa;
+	DFA_ptr other = string_auto->getDFA();
 	DFA_ptr temp,result;
 	paths state_paths = nullptr, pp = nullptr;
 	trace_descr tp = nullptr;
-	int* indices = getIndices(this->num_of_tracks*initial_var_per_track);
+	int* indices = getIndices(VAR_PER_TRACK);
 	int sink = find_sink(other);
-
 	// initialize array of reversed exceptions, for new reversed DFA
 	//std::vector<std::vector<Exception>*> statepaths(other->ns+1);
 	std::vector<std::vector<std::pair<std::string,int>>> state_exeps(other->ns+1);
@@ -1115,7 +1149,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::get_reverse_auto() {
 		while(pp) {
 			// copy transition leading to final state, but with extra bits
 			if(other->f[pp->to] == 1) {
-				for(int j = 0; j < this->num_of_variables; j++) {
+				for(int j = 0; j < VAR_PER_TRACK; j++) {
 					for(tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
 					if(tp) {
 						if(tp->value) ex.push_back('1');
@@ -1127,16 +1161,16 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::get_reverse_auto() {
 				state_exeps[0].push_back(std::make_pair(ex,i+1));
 				//p = make_pair(ex,pp->to+1);
 				p = make_pair(ex,0);
-				if(same_reversed_paths.count(p) == 1)
-					same_reversed_paths[p]++;
-				else
+				if(same_reversed_paths.find(p) == same_reversed_paths.end())
 					same_reversed_paths[p] = 1;
+				else
+					same_reversed_paths[p]++;
 			}
 			ex = "";
 			// continue with other transitions
 			if(pp->to != sink) {
 				// grab the indices/path
-				for(int j = 0; j < this->num_of_variables; j++) {
+				for(int j = 0; j < VAR_PER_TRACK; j++) {
 					//the following for loop can be avoided if the indices are in order
 					for(tp = pp->trace; tp && tp->index != indices[j]; tp = tp->next);
 					if(tp) {
@@ -1148,17 +1182,16 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::get_reverse_auto() {
 				ex.push_back('0');
 				state_exeps[pp->to+1].push_back(std::make_pair(ex,i+1));
 				p = make_pair(ex,pp->to+1);
-				if(same_reversed_paths.count(p) == 1)
-					same_reversed_paths[p]++;
-				else
+				if(same_reversed_paths.find(p) == same_reversed_paths.end())
 					same_reversed_paths[p] = 1;
+				else
+					same_reversed_paths[p]++;
 			}
 			ex = "";
 			pp = pp->next;
 		}
 		kill_paths(state_paths);
 	}
-
 	// determine max number of bits needed
 	unsigned max = 0;
 	for(auto it : same_reversed_paths) {
@@ -1166,14 +1199,23 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::get_reverse_auto() {
 	}
 	delete[] indices;
 
-	size_t num_variables_per_track = initial_var_per_track + 1 + std::ceil(std::log2(max));
-	size_t num_variables_total_with_extrabits = num_variables_per_track * this->num_of_tracks;
-	size_t number_of_extra_bits_needed = num_variables_per_track - initial_var_per_track - 1;
-	size_t len = num_variables_total_with_extrabits;
+  int extra = (max == 0) ? 0 : std::ceil(std::log2(max));
+	int num_variables_per_track = initial_var_per_track + 1 + extra;
+	int num_variables_total_with_extrabits = num_variables_per_track;
+	int number_of_extra_bits_needed = num_variables_per_track - initial_var_per_track - 1;
+	int len = num_variables_total_with_extrabits;
 	unsigned extra_bits_value = 0;
+
+	//DVLOG(VLOG_LEVEL) << "extra                              : " << extra;
+	//DVLOG(VLOG_LEVEL) << "MAX same transitions               : " << max;
+	//DVLOG(VLOG_LEVEL) << "num_variables_per_track            : " << num_variables_per_track;
+	//DVLOG(VLOG_LEVEL) << "num_variables_total_with_extrabits : " << num_variables_total_with_extrabits;
+	//DVLOG(VLOG_LEVEL) << "number_of_extra_bits_needed        : " << number_of_extra_bits_needed;
+	//DVLOG(VLOG_LEVEL) << "len                                : " << len;
+
 	char* statuses;
 
-	indices = allocateMultipleAscIIIndex(this->num_of_tracks,num_variables_per_track);
+	indices = getIndices(num_variables_per_track);
 	dfaSetup(other->ns+1, len, indices);
 	statuses = new char[other->ns+1+1];
 
@@ -1182,32 +1224,39 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::get_reverse_auto() {
 
 	// using the reversed transitions, make new reversed DFA
 	// start with new final state
-
 	dfaAllocExceptions(state_exeps[0].size());
 
 	std::vector<char> binformat;
-
 	for(int j = 0; j < state_exeps[0].size(); j++) {
 		p = make_pair(state_exeps[0][j].first,0);
 
 		if(same_reversed_paths[p] > 0) {
-			binformat = Automaton::getBinaryFormat(nextnum[0],number_of_extra_bits_needed);
+			//DVLOG(VLOG_LEVEL) << "nextnum[0]: " << nextnum[0];
+      //DVLOG(VLOG_LEVEL) << " orrr: " << max - same_reversed_paths[p];
+			binformat = Automaton::getBinaryFormat(max - same_reversed_paths[p],number_of_extra_bits_needed);
 			nextnum[0]++;
 			same_reversed_paths[p]--;
 		} else {
-			std::cout << "ERROR in MultiTrackAutomaton::getReverseMDFA" << std::endl;
+			DVLOG(VLOG_LEVEL) << "ERROR in MultiTrackAutomaton::getReverseMDFA";
 		}
 
 		binformat.push_back('\0');
-
+		//DVLOG(VLOG_LEVEL) << "binformat: " << &binformat[0];
 		std::vector<char> v((state_exeps[0][j].first).begin(), (state_exeps[0][j].first).end());
+		//std::vector<char> v2((state_exeps[0][j].first).begin(), (state_exeps[0][j].first).end());
+		//v2.push_back('\0');
 		v.insert(v.end(),binformat.begin(), binformat.end());
+		//DVLOG(VLOG_LEVEL) << &v2[0] << " -> " << state_exeps[0][j].second;
+		//DVLOG(VLOG_LEVEL) << &v[0] << " -> " << state_exeps[0][j].second;
+		//DVLOG(VLOG_LEVEL) << "-----";
 		dfaStoreException(state_exeps[0][j].second, &v[0]);
 	}
+	//DVLOG(VLOG_LEVEL) << "Ima crash riiiiggghhhtt aabbboouuuuttt here";
 	statuses[0] = '0';
 	dfaStoreState(sink+1);
-
+//DVLOG(VLOG_LEVEL) << "A";
 	for(int i = 0; i < other->ns; i++) {
+		//DVLOG(VLOG_LEVEL) << "state: " << i;
 		// final states no longer accept
 		if(other->f[i] == -1)
 			statuses[i+1] = '-';
@@ -1220,7 +1269,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::get_reverse_auto() {
 
 			p = make_pair(std::string(state_exeps[i+1][j].first),i+1);
 			if(same_reversed_paths[p] > 0) {
-				binformat = Automaton::getBinaryFormat(nextnum[i+1],number_of_extra_bits_needed);
+				binformat = Automaton::getBinaryFormat(max - same_reversed_paths[p],number_of_extra_bits_needed);
 				nextnum[i+1]++;
 				same_reversed_paths[p]--;
 			} else {
@@ -1229,16 +1278,16 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::get_reverse_auto() {
 
 			binformat.push_back('\0');
 
-			std::vector<char> v((state_exeps[i+1][j].first).begin(), ((state_exeps[i+1][j].first).end());
+			std::vector<char> v((state_exeps[i+1][j].first).begin(), ((state_exeps[i+1][j].first).end()));
 			v.insert(v.end(),binformat.begin(), binformat.end());
 			dfaStoreException(state_exeps[i+1][j].second, &v[0]);
 		}
 		dfaStoreState(sink+1);
 	}
-
+	//DVLOG(VLOG_LEVEL) << "B";
 	// previous initial state is now the final state
 	statuses[1] = '+';
-	if(this->dfa->f[0] == 1) statuses[0] = '+';
+	if(other->f[0] == 1) statuses[0] = '+';
 	statuses[other->ns+1] = '\0';
 	temp = dfaBuild(statuses);
 	delete[] statuses;
@@ -1250,8 +1299,8 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::get_reverse_auto() {
 		temp = dfaMinimize(result);
 		dfaFree(result);
 	}
-	return new MultiTrackAutomaton(temp,this->num_of_tracks);
+	return new StringAutomaton(temp);
 }
-*/
+
 } /* namespace Vlab */
 } /* namespace Theory */

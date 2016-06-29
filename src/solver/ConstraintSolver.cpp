@@ -812,6 +812,35 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
               param_subject->getStringAutomaton()->subString(param_start_index->getIntConstant(),
                                                              param_end_index->getIntAutomaton()));
         } else {
+/*
+          StringAutomaton_ptr original, reversed, prefixes, temp, result;
+          Value_ptr start_index_value, ss_length_value;
+          IntAutomaton_ptr start_index_auto, ss_length_auto, original_length, temp_length;
+          start_index_value = getTermValue(sub_string_term->start_index_term);
+          ss_length_value = getTermValue(sub_string_term->end_index_term);
+
+          start_index_auto = start_index_value->getIntAutomaton();
+          ss_length_auto = ss_length_value->getIntAutomaton();
+
+          original = param_subject->getStringAutomaton();
+          original_length = original->length();
+          temp_length = original_length->minus(start_index_auto);
+
+          reversed = MultiTrackAutomaton::get_reverse_auto(original);
+          prefixes = reversed->prefixes();
+          temp = prefixes->restrictLengthTo(temp_length);
+
+          original = MultiTrackAutomaton::get_reverse_auto(temp);
+          temp = original->prefixes();
+          result = temp->restrictLengthTo(ss_length_auto);
+
+          DVLOG(VLOG_LEVEL) << "Hope for the best: " << result->isEmptyLanguage();
+          DVLOG(VLOG_LEVEL) << result->getAnAcceptingString();
+          DVLOG(VLOG_LEVEL) << "original length: " << original_length->getAnAcceptingInt();
+          DVLOG(VLOG_LEVEL) << "start index : " << start_index_auto->getAnAcceptingInt();
+          DVLOG(VLOG_LEVEL) << "length ss: " << ss_length_auto->getAnAcceptingInt();
+          DVLOG(VLOG_LEVEL) << "temp_len: " << temp_length->getAnAcceptingInt();
+          */
           LOG (FATAL)<< "Fully implement substring for symbolic ints";
         }
       } else {
