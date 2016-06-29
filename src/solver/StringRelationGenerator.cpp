@@ -439,15 +439,9 @@ void StringRelationGenerator::visitAsQualIdentifier(AsQualIdentifier_ptr as_qual
 
 void StringRelationGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *qi_term;
-  DVLOG(VLOG_LEVEL) << "Should be qi_term";
-  if(get_term_relation(qi_term) != nullptr) {
-    DVLOG(VLOG_LEVEL) << "We dun care!";
-    return;
-  }
   StringRelation_ptr str_rel = nullptr;
   Variable_ptr variable = symbol_table_->getVariable(qi_term->getVarName());
   set_parent_term(variable, current_term_);
-DVLOG(VLOG_LEVEL) << " type: " << variable->getType();
   switch(variable->getType()) {
     case Variable::Type::STRING:
       str_rel = new StringRelation();

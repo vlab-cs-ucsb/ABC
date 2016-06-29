@@ -102,7 +102,6 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
   StringRelation_ptr relation = nullptr;
   Value_ptr result = nullptr, param = nullptr, and_value = nullptr;
 
-  DVLOG(VLOG_LEVEL) << ">>>BEGIN";
   for(auto& term : *and_term->term_list) {
     relation = string_relation_generator_.get_term_relation(term);
     if(relation != nullptr) {
@@ -124,7 +123,6 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
     }
     clear_term_value(term);
   }
-  DVLOG(VLOG_LEVEL) << "<<<END";
 
   for (auto& term : *(and_term->term_list)) {
     relation = string_relation_generator_.get_term_relation(term);
@@ -134,6 +132,10 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
     }
   }
 
+  if(result != nullptr) {
+    std::string name = symbol_table_->get_var_name_for_node(and_term, Variable::Type::STRING);
+    symbol_table_->addVariable(new Variable(name, Variable::Type::STRING));
+  }
   set_term_value(and_term, result);
 }
 
@@ -210,6 +212,15 @@ void StringConstraintSolver::visitReConcat(ReConcat_ptr reconcat_term) {
 }
 
 void StringConstraintSolver::visitToRegex(ToRegex_ptr to_regex_term) {
+}
+
+std::string StringConstraintSolver::get_string_variable_name(Term_ptr term) {
+  Term_ptr key = term;
+  auto it1 = term_value_index_.find(term);
+  if (it1 != term_value_index_.end()) {
+    key = it1->second;
+  }
+  return symbol_table_->get_var_name_for_node(key, Variable::Type::STRING);
 }
 
 Value_ptr StringConstraintSolver::get_term_value(Term_ptr term) {
@@ -314,8 +325,10 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
 Value_ptr StringConstraintSolver::get_relational_value(SMT::Variable_ptr variable) {
   Value_ptr relation_value = nullptr;
   StringRelation_ptr variable_relation = nullptr;
+
   Term_ptr term = string_relation_generator_.get_parent_term(variable);
   if(term == nullptr) {
+    DVLOG(VLOG_LEVEL) << "Parent term not set for " << *variable << " | " << variable;
     return nullptr;
   }
   relation_value = get_term_value(term);

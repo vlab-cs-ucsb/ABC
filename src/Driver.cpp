@@ -254,7 +254,9 @@ void Driver::printResult(Solver::Value_ptr value, std::ostream& out) {
 }
 
 std::map<SMT::Variable_ptr, Solver::Value_ptr> Driver::getSatisfyingVariables() {
+  LOG(INFO) << "Getting sat vars";
   symbol_table_->unionValuesOfVariables(script_);
+  LOG(INFO) << "Returning sat vars";
   return symbol_table_->getValuesAtScope(script_);
 }
 

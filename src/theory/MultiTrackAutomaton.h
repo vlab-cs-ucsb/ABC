@@ -62,6 +62,7 @@ virtual ~MultiTrackAutomaton();
 	DFA_ptr makeConcreteDFA();
 	static const TransitionVector& generate_transitions_for_relation(StringRelation::Type type, int bits_per_var);
 	static DFA_ptr make_binary_relation_dfa(StringRelation::Type type, int bits_per_var, int num_tracks, int left_track, int right_track);
+	MultiTrackAutomaton_ptr get_reverse_auto();
 
 	static const int VAR_PER_TRACK = 8;
 	int num_of_tracks;

@@ -1208,6 +1208,7 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
         DVLOG(VLOG_LEVEL) << "Mixed Multi- and Single- Track String Automata Constraint";
         result = string_constraint_solver_.get_term_value(term);
         setTermValue(term, new Value(result->isSatisfiable()));
+        symbol_table_->setValue(string_constraint_solver_.get_string_variable_name(term), result);
         return true;
       }
       if (arithmetic_constraint_solver_.hasStringTerms(term) and result->isSatisfiable()) {

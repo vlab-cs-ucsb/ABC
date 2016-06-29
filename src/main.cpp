@@ -16,7 +16,7 @@
 #include <chrono>
 #include <ratio>
 
-#define NDEBUG
+//#define NDEBUG
 
 #include <glog/logging.h>
 #include <Driver.h>
@@ -152,6 +152,25 @@ int main(const int argc, const char **argv) {
     if (VLOG_IS_ON(30)) {
       unsigned index = 0;
       for(auto& variable_entry : driver.getSatisfyingVariables()) {
+
+        /*
+         * PROBLEM
+         *
+         * if x,y are relational variables, they have no value in the symbol table.
+         * the string_multitrack is in the table, akin to binaryint.
+         *
+         * to fix, insert null check here for variable_entry.second, which will happen if
+         * the variable is relational. then, we can do whatever stuffs.
+         */
+        if(variable_entry.second == nullptr) {
+          // check to make sure its actually relational first... otherwise, we got probs
+          // if(relational)
+          LOG(INFO) << "var: " << variable_entry.first->str() << " : relational!";
+          // else
+          // BAAAAD
+          continue;
+        }
+
         std::stringstream ss;
         ss << output_root << "/result_" << index++ << ".dot";
         std::string out_file = ss.str();
@@ -188,10 +207,15 @@ int main(const int argc, const char **argv) {
             }
             break;
           }
+          case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {
+            LOG(INFO) << "Insert multitrack sat var struff here";
+            break;
+          }
           default:
           break;
         }
       }
+      LOG(INFO) << "-----------END --------";
     }
 
     LOG(INFO)<< "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
