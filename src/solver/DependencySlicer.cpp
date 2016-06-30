@@ -19,10 +19,10 @@ using namespace SMT;
 const int DependencySlicer::VLOG_LEVEL = 20;
 
 DependencySlicer::DependencySlicer(Script_ptr script, SymbolTable_ptr symbol_table, ConstraintInformation_ptr constraint_information)
-    : AstTraverser(script),
-      symbol_table_(symbol_table),
-      constraint_information_ (constraint_information),
-      current_term_(nullptr) {
+  : AstTraverser(script),
+    symbol_table_(symbol_table),
+    constraint_information_ (constraint_information),
+    current_term_(nullptr) {
   setCallbacks();
 }
 
@@ -32,7 +32,7 @@ DependencySlicer::~DependencySlicer() {
 void DependencySlicer::start() {
   DVLOG(VLOG_LEVEL) << "Starting the Dependency Slicer";
 
-  symbol_table_->push_scope(root);
+  symbol_table_->push_scope(root, false);
   visitScript(root);
   symbol_table_->pop_scope();
 
@@ -45,7 +45,7 @@ void DependencySlicer::end() {
       DVLOG(VLOG_LEVEL) << c;
       DVLOG(VLOG_LEVEL) <<  dynamic_cast<And_ptr>(c)->term_list->size();
     }
-    
+
   }*/
 }
 
@@ -76,7 +76,7 @@ void DependencySlicer::visitAssert(Assert_ptr assert_command) {
 }
 
 void DependencySlicer::visitAnd(And_ptr and_term) {
-  for (auto& term : *(and_term->term_list)) {
+  for (auto& term : * (and_term->term_list)) {
     current_term_ = term;
     visit(term);
     current_term_ = nullptr;
@@ -104,8 +104,8 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
 }
 
 void DependencySlicer::visitOr(Or_ptr or_term) {
-  for (auto& term : *(or_term->term_list)) {
-    symbol_table_->push_scope(term);
+  for (auto& term : * (or_term->term_list)) {
+    symbol_table_->push_scope(term, false);
     current_term_ = term;
     visit(term);
     current_term_ = nullptr;
