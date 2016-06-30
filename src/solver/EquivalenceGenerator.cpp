@@ -38,7 +38,7 @@ void EquivalenceGenerator::start() {
   Counter counter(root, symbol_table_);
   DVLOG(VLOG_LEVEL) << "Starting the EquivalenceGenerator";
   counter.start();
-  symbol_table_->push_scope(root);
+  symbol_table_->push_scope(root, false);
   visitScript(root);
   bool is_false = make_substitution_rules();
   if (is_false) {
@@ -95,7 +95,7 @@ void EquivalenceGenerator::visitAnd(And_ptr and_term) {
 
 void EquivalenceGenerator::visitOr(Or_ptr or_term) {
   for (auto iter = or_term->term_list->begin(); iter != or_term->term_list->end();) {
-    symbol_table_->push_scope(*iter);
+    symbol_table_->push_scope(*iter, false);
     visit(*iter);
     bool is_false = make_substitution_rules();
     if (is_false) {

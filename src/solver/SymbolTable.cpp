@@ -15,7 +15,7 @@ using namespace SMT;
 const int SymbolTable::VLOG_LEVEL = 10;
 
 SymbolTable::SymbolTable()
-        : global_assertion_result(true), bound(50) {
+  : global_assertion_result(true), bound(50) {
 }
 
 SymbolTable::~SymbolTable() {
@@ -72,11 +72,14 @@ void SymbolTable::unionValuesOfVariables(Script_ptr script) {
       if (is_scope_satisfiable[scope]) {
         auto scope_var_value = variable_value_table[scope].find(substituted_variable);
         if (scope_var_value != variable_value_table[scope].end()) {
+          if (scope_var_value->second == nullptr) {
+          }
           if (value) {
             Value_ptr tmp = value;
             value = tmp->union_(scope_var_value->second);
             delete tmp;
           } else {
+
             value = scope_var_value->second->clone();
           }
         }
@@ -94,10 +97,8 @@ void SymbolTable::unionValuesOfVariables(Script_ptr script) {
  * Removes let scope and all its data
  */
 void SymbolTable::clearLetScopes() {
-  //std::cout << "calling clear let scope " << std::endl;
   for (auto sit = scopes.begin(); sit != scopes.end(); ) {
     if (dynamic_cast<Let_ptr>(*sit) not_eq nullptr) {
-      LOG(FATAL) << "trying to cler a let scope";
       for (auto it = variable_value_table[*sit].begin(); it != variable_value_table[*sit].end(); ) {
         delete it->second; it->second = nullptr;
         it = variable_value_table[*sit].erase(it);
@@ -113,7 +114,7 @@ void SymbolTable::clearLetScopes() {
 void SymbolTable::addVariable(Variable_ptr variable) {
   auto result = variables.insert(std::make_pair(variable->getName(), variable));
   if (not result.second) {
-    LOG(FATAL)<< "Duplicate variable definition: " << *variable;
+    LOG(FATAL) << "Duplicate variable definition: " << *variable;
   }
 }
 
@@ -135,18 +136,18 @@ VariableMap& SymbolTable::getVariables() {
 }
 
 /*int SymbolTable::getReuse(){
-  return reuse; 
+  return reuse;
 }
 
 void SymbolTable::incrementReuse(){
-  reuse++; 
+  reuse++;
 }*/
 
 
 Variable_ptr SymbolTable::getSymbolicVariable() {
   auto it = std::find_if(variables.begin(), variables.end(),
-      [](std::pair<std::string, Variable_ptr> entry) -> bool {
-        return entry.second->isSymbolic();
+  [](std::pair<std::string, Variable_ptr> entry) -> bool {
+    return entry.second->isSymbolic();
   });
   if (it != variables.end()) {
     return it->second;
@@ -178,9 +179,11 @@ int SymbolTable::getBound() {
   return bound;
 }
 
-void SymbolTable::push_scope(Visitable_ptr key) {
+void SymbolTable::push_scope(Visitable_ptr key, bool save_scope) {
   scope_stack.push_back(key);
-  scopes.insert(key);
+  if (save_scope) {
+    //scopes.insert(key);
+  }
 }
 
 Visitable_ptr SymbolTable::top_scope() {
@@ -190,6 +193,7 @@ Visitable_ptr SymbolTable::top_scope() {
 void SymbolTable::pop_scope() {
   scope_stack.pop_back();
 }
+
 
 
 void SymbolTable::increment_count(Variable_ptr variable) {
@@ -256,9 +260,9 @@ Variable_ptr SymbolTable::get_substituted_variable(Variable_ptr variable) {
 int SymbolTable::get_num_of_substituted_variables(Visitable_ptr scope, Variable::Type type) {
   int count = 0;
   for (auto& rule : variable_substitution_table[scope]) {
-      if (rule.first->getType() == type and rule.second->getType() == type) {
-        ++count;
-      }
+    if (rule.first->getType() == type and rule.second->getType() == type) {
+      ++count;
+    }
   }
   return count;
 }
@@ -314,7 +318,7 @@ VariableValueMap& SymbolTable::getValuesAtScope(Visitable_ptr scope) {
 }
 
 bool SymbolTable::setValue(std::string var_name, Value_ptr value) {
-return setValue(getVariable(var_name), value);
+  return setValue(getVariable(var_name), value);
 }
 
 bool SymbolTable::setValue(Variable_ptr variable, Value_ptr value) {
@@ -373,17 +377,17 @@ std::string SymbolTable::generate_internal_name(std::string name, SMT::Variable:
   std::stringstream ss;
   ss << "__vlab__";
   switch (type) {
-    case Variable::Type::BOOL:
-      ss << "bool";
-      break;
-    case Variable::Type::INT:
-      ss << "int";
-      break;
-    case Variable::Type::STRING:
-      ss << "str";
-      break;
-    default:
-      break;
+  case Variable::Type::BOOL:
+    ss << "bool";
+    break;
+  case Variable::Type::INT:
+    ss << "int";
+    break;
+  case Variable::Type::STRING:
+    ss << "str";
+    break;
+  default:
+    break;
   }
   ss << "__" << name;
   return ss.str();
