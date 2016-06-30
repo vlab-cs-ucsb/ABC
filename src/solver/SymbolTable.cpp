@@ -182,7 +182,7 @@ int SymbolTable::getBound() {
 void SymbolTable::push_scope(Visitable_ptr key, bool save_scope) {
   scope_stack.push_back(key);
   if (save_scope) {
-    //scopes.insert(key);
+    scopes.insert(key);
   }
 }
 
