@@ -1148,7 +1148,7 @@ StringAutomaton_ptr MultiTrackAutomaton::get_reverse_auto(StringAutomaton_ptr st
 	// initialize array of reversed exceptions, for new reversed DFA
 	//std::vector<std::vector<Exception>*> statepaths(other->ns+1);
 	std::vector<std::vector<std::pair<std::string,int>>> state_exeps(other->ns+1);
-
+  int num_x = 0;
 	// for each state, grab their transitions and reverse their direction
 	for(int i = 0; i < other->ns; i++) {
 		state_paths = pp = make_paths(other->bddm, other->q[i]);
@@ -1160,18 +1160,21 @@ StringAutomaton_ptr MultiTrackAutomaton::get_reverse_auto(StringAutomaton_ptr st
 					if(tp) {
 						if(tp->value) ex.push_back('1');
 						else ex.push_back('0');
-					}
-					else ex.push_back('X');
+					} else {
+            ex.push_back('X');
+            num_x += 1;
+          }
 				}
 				ex.push_back('1');
 				state_exeps[0].push_back(std::make_pair(ex,i+1));
 				//p = make_pair(ex,pp->to+1);
 				p = make_pair(ex,0);
 				if(same_reversed_paths.find(p) == same_reversed_paths.end())
-					same_reversed_paths[p] = 1;
+					same_reversed_paths[p] = 1 + num_x;
 				else
 					same_reversed_paths[p]++;
 			}
+			num_x = 0;
 			ex = "";
 			// continue with other transitions
 			if(pp->to != sink) {
@@ -1183,16 +1186,20 @@ StringAutomaton_ptr MultiTrackAutomaton::get_reverse_auto(StringAutomaton_ptr st
 						if(tp->value) ex.push_back('1');
 						else ex.push_back('0');
 					}
-					else ex.push_back('X');
+					else {
+            ex.push_back('X');
+            num_x += 1;
+          }
 				}
 				ex.push_back('0');
 				state_exeps[pp->to+1].push_back(std::make_pair(ex,i+1));
 				p = make_pair(ex,pp->to+1);
 				if(same_reversed_paths.find(p) == same_reversed_paths.end())
-					same_reversed_paths[p] = 1;
+					same_reversed_paths[p] = 1 + num_x;
 				else
 					same_reversed_paths[p]++;
 			}
+			num_x = 0;
 			ex = "";
 			pp = pp->next;
 		}
@@ -1212,12 +1219,12 @@ StringAutomaton_ptr MultiTrackAutomaton::get_reverse_auto(StringAutomaton_ptr st
 	int len = num_variables_total_with_extrabits;
 	unsigned extra_bits_value = 0;
 
-	//DVLOG(VLOG_LEVEL) << "extra                              : " << extra;
-	//DVLOG(VLOG_LEVEL) << "MAX same transitions               : " << max;
-	//DVLOG(VLOG_LEVEL) << "num_variables_per_track            : " << num_variables_per_track;
-	//DVLOG(VLOG_LEVEL) << "num_variables_total_with_extrabits : " << num_variables_total_with_extrabits;
-	//DVLOG(VLOG_LEVEL) << "number_of_extra_bits_needed        : " << number_of_extra_bits_needed;
-	//DVLOG(VLOG_LEVEL) << "len                                : " << len;
+	DVLOG(VLOG_LEVEL) << "extra                              : " << extra;
+	DVLOG(VLOG_LEVEL) << "MAX same transitions               : " << max;
+	DVLOG(VLOG_LEVEL) << "num_variables_per_track            : " << num_variables_per_track;
+	DVLOG(VLOG_LEVEL) << "num_variables_total_with_extrabits : " << num_variables_total_with_extrabits;
+	DVLOG(VLOG_LEVEL) << "number_of_extra_bits_needed        : " << number_of_extra_bits_needed;
+	DVLOG(VLOG_LEVEL) << "len                                : " << len;
 
 	char* statuses;
 
@@ -1247,14 +1254,14 @@ StringAutomaton_ptr MultiTrackAutomaton::get_reverse_auto(StringAutomaton_ptr st
 		}
 
 		binformat.push_back('\0');
-		//DVLOG(VLOG_LEVEL) << "binformat: " << &binformat[0];
+		DVLOG(VLOG_LEVEL) << "binformat: " << &binformat[0];
 		std::vector<char> v((state_exeps[0][j].first).begin(), (state_exeps[0][j].first).end());
-		//std::vector<char> v2((state_exeps[0][j].first).begin(), (state_exeps[0][j].first).end());
-		//v2.push_back('\0');
+		std::vector<char> v2((state_exeps[0][j].first).begin(), (state_exeps[0][j].first).end());
+		v2.push_back('\0');
 		v.insert(v.end(),binformat.begin(), binformat.end());
-		//DVLOG(VLOG_LEVEL) << &v2[0] << " -> " << state_exeps[0][j].second;
-		//DVLOG(VLOG_LEVEL) << &v[0] << " -> " << state_exeps[0][j].second;
-		//DVLOG(VLOG_LEVEL) << "-----";
+		DVLOG(VLOG_LEVEL) << &v2[0] << " -> " << state_exeps[0][j].second;
+		DVLOG(VLOG_LEVEL) << &v[0] << " -> " << state_exeps[0][j].second;
+		DVLOG(VLOG_LEVEL) << "-----";
 		dfaStoreException(state_exeps[0][j].second, &v[0]);
 	}
 	//DVLOG(VLOG_LEVEL) << "Ima crash riiiiggghhhtt aabbboouuuuttt here";
