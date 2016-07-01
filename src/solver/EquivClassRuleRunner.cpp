@@ -22,7 +22,7 @@ void EquivClassRuleRunner::start() {
     return;
   }
 
-  symbol_table_->push_scope(root);
+  symbol_table_->push_scope(root, false);
   visit(root);
   symbol_table_->pop_scope();
 
@@ -30,8 +30,8 @@ void EquivClassRuleRunner::start() {
 
 }
 void EquivClassRuleRunner::end() {
-  //SyntacticOptimizer syntactic_optimizer(root, symbol_table_);
-  //syntactic_optimizer.start();
+  SyntacticOptimizer syntactic_optimizer(root, symbol_table_);
+  syntactic_optimizer.start();
 }
 
 
@@ -85,7 +85,7 @@ void EquivClassRuleRunner::visitAnd(And_ptr and_term) {
 void EquivClassRuleRunner::visitOr(Or_ptr or_term) {
   for (auto& term : * (or_term->term_list)) {
     check_and_substitute_var(term);
-    symbol_table_->push_scope(term);
+    symbol_table_->push_scope(term, false);
     visit(term);
     symbol_table_->pop_scope();
   }

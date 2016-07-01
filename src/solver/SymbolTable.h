@@ -55,7 +55,7 @@ public:
   void setBound(int bound);
   int getBound();
 
-  void push_scope(SMT::Visitable_ptr);
+  void push_scope(SMT::Visitable_ptr, bool save_scope = true);
   SMT::Visitable_ptr top_scope();
   void pop_scope();
 
