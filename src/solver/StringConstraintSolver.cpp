@@ -220,6 +220,8 @@ std::string StringConstraintSolver::get_string_variable_name(Term_ptr term) {
   if (it1 != term_value_index_.end()) {
     key = it1->second;
   }
+
+  DVLOG(VLOG_LEVEL) << "++++++++++++++++++++++++++++ returning for term " << *term << ":  " << symbol_table_->get_var_name_for_node(key, Variable::Type::STRING);
   return symbol_table_->get_var_name_for_node(key, Variable::Type::STRING);
 }
 
@@ -318,6 +320,8 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
   relation_value = new Value(intersect_auto);
   clear_term_value(term);
   set_term_value(term, relation_value);
+  DVLOG(VLOG_LEVEL) << " updated setting.... : " << get_string_variable_name(term);
+  symbol_table_->setValue(get_string_variable_name(term),relation_value);
   return true;
 }
 

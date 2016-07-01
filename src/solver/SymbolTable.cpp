@@ -76,7 +76,7 @@ void SymbolTable::unionValuesOfVariables(Script_ptr script) {
             Value_ptr tmp = value;
             value = tmp->union_(scope_var_value->second);
             delete tmp;
-          } else {
+          } else if(scope_var_value->second != nullptr) {
             value = scope_var_value->second->clone();
           }
         }
@@ -165,6 +165,10 @@ int SymbolTable::get_num_of_variables(Variable::Type type) {
 
   if (Variable::Type::INT == type) {
     --count; // exclude artificial int variable
+  }
+
+  if (Variable::Type::STRING == type) {
+    --count; // exclude artificial string variable
   }
 
   return count;
