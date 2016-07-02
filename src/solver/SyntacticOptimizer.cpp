@@ -58,7 +58,7 @@ void SyntacticOptimizer::visitAssert(Assert_ptr assert_command) {
     symbol_table_->updateSatisfiability(false);
     symbol_table_->setScopeSatisfiability(false);
   } else if (check_bool_constant_value(assert_command->term, "true")) {
-    LOG(FATAL)<< "constraint is already SAT, use symbol table and make use of this information";
+    DVLOG(VLOG_LEVEL) << "constraint is already SAT, use symbol table and make use of this information";
   }
 }
 
