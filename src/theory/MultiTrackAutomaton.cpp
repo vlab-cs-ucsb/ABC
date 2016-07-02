@@ -47,7 +47,6 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_track
 	mindices = getIndices(num_tracks*VAR_PER_TRACK);
 	statuses = new char[M->ns+1];
 	sink = find_sink(M);
-	std::cout << "before" << std::endl;
 	// begin dfa building process
 	dfaSetup(M->ns, len, mindices);
 	for(unsigned i = 0; i < M->ns; i++) {
@@ -127,30 +126,30 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makePhi(int ntracks) {
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAuto(StringRelation_ptr relation) {
 	MultiTrackAutomaton_ptr result_auto = nullptr;
-	DVLOG(VLOG_LEVEL) << "Begin making auto....";
+	DVLOG(VLOG_LEVEL) << "Begin making auto...., track size is " << relation->get_num_tracks();
 	switch(relation->get_type()) {
     case StringRelation::Type::EQ:
-    	DVLOG(VLOG_LEVEL) << "EQ";
+    	//DVLOG(VLOG_LEVEL) << "EQ";
       result_auto = MultiTrackAutomaton::makeEquality(relation);
       break;
     case StringRelation::Type::NOTEQ:
-    	DVLOG(VLOG_LEVEL) << "NOTEQ";
+    	//DVLOG(VLOG_LEVEL) << "NOTEQ";
       result_auto = MultiTrackAutomaton::makeNotEquality(relation);
       break;
     case StringRelation::Type::GT:
-    DVLOG(VLOG_LEVEL) << "GT";
+    //DVLOG(VLOG_LEVEL) << "GT";
       result_auto = MultiTrackAutomaton::makeGreaterThan(relation);
       break;
     case StringRelation::Type::GE:
-    DVLOG(VLOG_LEVEL) << "GE";
+    //DVLOG(VLOG_LEVEL) << "GE";
       result_auto = MultiTrackAutomaton::makeGreaterThanOrEqual(relation);
       break;
     case StringRelation::Type::LT:
-    	DVLOG(VLOG_LEVEL) << "LT";
+    	//DVLOG(VLOG_LEVEL) << "LT";
       result_auto = MultiTrackAutomaton::makeLessThan(relation);
       break;
     case StringRelation::Type::LE:
-    	DVLOG(VLOG_LEVEL) << "LE";
+    	//DVLOG(VLOG_LEVEL) << "LE";
       result_auto = MultiTrackAutomaton::makeLessThanOrEqual(relation);
       break;
     default:
@@ -163,111 +162,64 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAuto(StringRelation_ptr relatio
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeEquality(StringRelation_ptr relation) {
-	MultiTrackAutomaton_ptr result_auto;
-	DFA_ptr temp_dfa, result_dfa;
-  std::map<std::string,int>* trackmap = relation->get_variable_trackmap();
+	MultiTrackAutomaton_ptr result_auto = nullptr;
+	DFA_ptr result_dfa = nullptr;
+	std::map<std::string,int>* trackmap = relation->get_variable_trackmap();
 	int num_tracks = trackmap->size(),
 			left_track,right_track;
-
 	StringRelation_ptr left_relation = relation->get_left(),
 		                 right_relation = relation->get_right();
-  std::string left_data = left_relation->get_data();
-  std::string right_data = right_relation->get_data();
+	std::string left_data,right_data;
 
-  if(left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
-		StringAutomaton_ptr string_auto = StringAutomaton::makeString(left_data);
-		right_track = (*trackmap)[right_data];
-		result_auto = new MultiTrackAutomaton(string_auto->getDFA(),right_track,num_tracks);
-		delete string_auto;
-		result_auto->setRelation(relation->clone());
-		return result_auto;
-	} else if(left_relation->get_type() == StringRelation::Type::REGEX) {
-		StringAutomaton_ptr string_auto = StringAutomaton::makeRegexAuto(left_data);
-		right_track = (*trackmap)[right_data];
-		result_auto = new MultiTrackAutomaton(string_auto->getDFA(),right_track,num_tracks);
-		delete string_auto;
-		result_auto->setRelation(relation->clone());
-		return result_auto;
-  } else {
-  	left_track = (*trackmap)[left_data];
+  if((left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) ||
+				(left_relation->get_type() == StringRelation::Type::REGEX)) {
+		LOG(FATAL) << "Left side is constant, multitrack shouldn't be handling it";
 	}
-	if(right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
-		StringAutomaton_ptr string_auto = StringAutomaton::makeString(right_data);
-		result_auto = new MultiTrackAutomaton(string_auto->getDFA(),left_track,num_tracks);
-		delete string_auto;
-		result_auto->setRelation(relation->clone());
-		return result_auto;
-	} else if(right_relation->get_type() == StringRelation::Type::REGEX) {
-		StringAutomaton_ptr string_auto = StringAutomaton::makeRegexAuto(right_data);
-		result_auto = new MultiTrackAutomaton(string_auto->getDFA(),left_track,num_tracks);
-		delete string_auto;
-		result_auto->setRelation(relation->clone());
-		return result_auto;
-  } else {
-  	right_track = (*trackmap)[right_data];
+	if((right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) ||
+				(right_relation->get_type() == StringRelation::Type::REGEX)) {
+		LOG(FATAL) << "Right side is constant, multitrack shouldn't be handling it";
 	}
+
+	left_data = left_relation->get_data();
+	right_data = right_relation->get_data();
+	left_track = relation->get_variable_index(left_data);
+	right_track = relation->get_variable_index(right_data);
 
 	result_dfa = make_binary_relation_dfa(StringRelation::Type::EQ,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	result_auto = new MultiTrackAutomaton(result_dfa,num_tracks);
 	result_auto->setRelation(relation->clone());
+
 	return result_auto;
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeNotEquality(StringRelation_ptr relation) {
-	MultiTrackAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
-	StringAutomaton_ptr constant_string_auto = nullptr;
-	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
+	MultiTrackAutomaton_ptr result_auto = nullptr;
+	DFA_ptr result_dfa = nullptr;
 	std::map<std::string,int>* trackmap = relation->get_variable_trackmap();
 	int num_tracks = trackmap->size(),
 			left_track,right_track;
-
 	StringRelation_ptr left_relation = relation->get_left(),
 		                 right_relation = relation->get_right();
-  std::string left_data = left_relation->get_data();
-  std::string right_data = right_relation->get_data();
+	std::string left_data,right_data;
 
-  if(left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
-  	left_track = num_tracks;
-		num_tracks++;
-		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
-  } else if(left_relation->get_type() == StringRelation::Type::REGEX) {
-		left_track = num_tracks;
-		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(left_data);
-	} else {
-  	left_track = (*trackmap)[left_data];
+  if((left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) ||
+				(left_relation->get_type() == StringRelation::Type::REGEX)) {
+		LOG(FATAL) << "Left side is constant, multitrack shouldn't be handling it";
+	}
+	if((right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) ||
+				(right_relation->get_type() == StringRelation::Type::REGEX)) {
+		LOG(FATAL) << "Right side is constant, multitrack shouldn't be handling it";
 	}
 
-	if(right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
-  	right_track = num_tracks;
-		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(right_data);
-  } else if(right_relation->get_type() == StringRelation::Type::REGEX) {
-		right_track = num_tracks;
-		num_tracks++;
-		constant_string_auto = StringAutomaton::makeRegexAuto(right_data);
-	} else {
-  	right_track = (*trackmap)[right_data];
-	}
+	left_data = left_relation->get_data();
+	right_data = right_relation->get_data();
+	left_track = relation->get_variable_index(left_data);
+	right_track = relation->get_variable_index(right_data);
 
 	result_dfa = make_binary_relation_dfa(StringRelation::Type::NOTEQ,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	result_auto = new MultiTrackAutomaton(result_dfa,num_tracks);
-	// if constant_string_auto != nullptr, then either the left or right
-	// side of the inequality is constant; we need to intersect it with
-	// the multitrack where the constant is on the extra track, then
-	// project away the extra track before we return
-	if(constant_string_auto != nullptr) {
-	  DVLOG(VLOG_LEVEL) << "NOT EMPTY";
-		MultiTrackAutomaton_ptr constant_multi_auto = new MultiTrackAutomaton(constant_string_auto->getDFA(),num_tracks-1,num_tracks);
-		temp_auto = result_auto->intersect(constant_multi_auto);
-		delete result_auto;
-		delete constant_multi_auto;
-		delete constant_string_auto;
-		result_auto = temp_auto->projectKTrack(num_tracks-1);
-		delete temp_auto;
-	}
-
 	result_auto->setRelation(relation->clone());
+
 	return result_auto;
 }
 
@@ -764,11 +716,13 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 	}
 	dfaReplaceIndices(result,map);
 	if(find_sink(result) != -1) {
+		DVLOG(VLOG_LEVEL) << "has sink";
 		temp = removeLambdaSuffix(result, VAR_PER_TRACK);
 		dfaFree(result);
 		result = temp;
 		result_auto = new StringAutomaton(result);
 	} else {
+		DVLOG(VLOG_LEVEL) << "no sink";
 		dfaFree(result);
 		result_auto = StringAutomaton::makeAnyString();
 	}

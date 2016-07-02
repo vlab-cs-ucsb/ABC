@@ -105,7 +105,6 @@ void StringRelationGenerator::visitOr(Or_ptr or_term) {
 void StringRelationGenerator::visitNot(Not_ptr not_term) {
   visit_children_of(not_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *not_term;
-  // implement here
 }
 
 void StringRelationGenerator::visitUMinus(UMinus_ptr uminus_term) {
@@ -129,8 +128,15 @@ void StringRelationGenerator::visitEq(Eq_ptr eq_term) {
   right_relation = get_term_relation(eq_term->right_term);
   if (left_relation == nullptr || right_relation == nullptr) {
     return;
-  } else if (eq_term->left_term->type() == Term::Type::TERMCONSTANT &&
-             eq_term->right_term->type() == Term::Type::TERMCONSTANT) {
+  } else if (eq_term->left_term->type() == Term::Type::TERMCONSTANT) {
+    DVLOG(VLOG_LEVEL) << "--- Left constant => no multitrack";
+    delete_term_relation(eq_term->left_term);
+    set_term_relation(eq_term,nullptr);
+    return;
+  } else if (eq_term->right_term->type() == Term::Type::TERMCONSTANT) {
+    DVLOG(VLOG_LEVEL) << "--- Right constant => no multitrack";
+    delete_term_relation(eq_term->right_term);
+    set_term_relation(eq_term,nullptr);
     return;
   }
 
@@ -166,8 +172,15 @@ void StringRelationGenerator::visitNotEq(NotEq_ptr not_eq_term) {
   right_relation = get_term_relation(not_eq_term->right_term);
   if (left_relation == nullptr || right_relation == nullptr) {
     return;
-  } else if (not_eq_term->left_term->type() == Term::Type::TERMCONSTANT &&
-             not_eq_term->right_term->type() == Term::Type::TERMCONSTANT) {
+  } else if (not_eq_term->left_term->type() == Term::Type::TERMCONSTANT) {
+    DVLOG(VLOG_LEVEL) << "--- Left constant => no multitrack";
+    delete_term_relation(not_eq_term->left_term);
+    set_term_relation(not_eq_term,nullptr);
+    return;
+  } else if (not_eq_term->right_term->type() == Term::Type::TERMCONSTANT) {
+    DVLOG(VLOG_LEVEL) << "--- Right constant => no multitrack";
+    delete_term_relation(not_eq_term->right_term);
+    set_term_relation(not_eq_term,nullptr);
     return;
   }
 

@@ -56,6 +56,7 @@ void StringConstraintSolver::setCallbacks() {
 
           MultiTrackAutomaton_ptr multi_auto = MultiTrackAutomaton::makeAuto(relation);
           Value_ptr val = new Value(multi_auto);
+          DVLOG(VLOG_LEVEL) << "setting term " << term << " value";
           set_term_value(term,val);
           break;
         }
