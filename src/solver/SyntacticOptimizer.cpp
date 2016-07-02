@@ -316,6 +316,22 @@ void SyntacticOptimizer::visitUMinus(UMinus_ptr u_minus_term) {
       child_u_minus->term = nullptr;
       delete u_minus_term;
     };
+  } else if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(u_minus_term->term)) {
+    if (Primitive::Type::NUMERAL == term_constant->getValueType()) {
+      DVLOG(VLOG_LEVEL) << "Transforming operation: (- c) to -c";
+      std::string data = term_constant->getValue();
+      if (data.find("-") == 0) {
+        term_constant->primitive->setData(data.substr(1));
+      } else {
+        term_constant->primitive->setData("-" + data);
+      }
+      callback_ = [u_minus_term](Term_ptr & term) mutable {
+        UMinus_ptr child_u_minus = dynamic_cast<UMinus_ptr>(u_minus_term->term);
+        term = child_u_minus->term;
+        child_u_minus->term = nullptr;
+        delete u_minus_term;
+      };
+    }
   }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *u_minus_term << "@" << u_minus_term;
 }
