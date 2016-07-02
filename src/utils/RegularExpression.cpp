@@ -20,7 +20,7 @@ const int RegularExpression::AUTOMATON = 0x0010;
 const int RegularExpression::INTERVAL = 0x0020;
 const int RegularExpression::ALL = 0xffff;
 const int RegularExpression::NONE = 0x0000;
-const int RegularExpression::DEFAULT = 0x000f;
+int RegularExpression::DEFAULT = 0x000f;
 
 RegularExpression::RegularExpression()
         : exp1_(nullptr), exp2_(nullptr), min_(0), max_(0), digits_(0), flags_(0), character_('\0'), from_char_('\0'), to_char_('\0'), regex_string_(
@@ -395,8 +395,15 @@ RegularExpression_ptr RegularExpression::makeRepeat(RegularExpression_ptr exp, u
 
 RegularExpression_ptr RegularExpression::makeComplement(RegularExpression_ptr exp) {
   RegularExpression_ptr regex = new RegularExpression();
-  regex->type_ = Type::COMPLEMENT;
-  regex->exp1_ = exp;
+  if (Type::COMPLEMENT == exp->type_) { // optimize complement
+    auto child_regex = exp->exp1_;
+    exp->exp1_ = nullptr;
+    delete exp;
+    regex->copy(child_regex);
+  } else {
+    regex->type_ = Type::COMPLEMENT;
+    regex->exp1_ = exp;
+  }
   return regex;
 }
 

@@ -130,6 +130,7 @@ int main(const int argc, const char **argv) {
   driver.setOption(Vlab::Option::Name::LIA_NATURAL_NUMBERS_ONLY, use_natural_numbers);
   driver.setOption(Vlab::Option::Name::ENABLE_RELATIONAL_STRING_AUTOMATA, enable_relational_string_automata);
   driver.setOption(Vlab::Option::Name::FORCE_DNF_FORMULA, force_dnf_formula);
+  Vlab::Util::RegularExpression::DEFAULT = 0x000e;
 
   driver.test();
   driver.parse(in);

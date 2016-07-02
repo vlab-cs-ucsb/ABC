@@ -73,7 +73,7 @@ public:
    * Syntax flag, used as a default combinations of the flag
    * Enables all except AUTOMATON and INTERVAL
    */
-  static int const DEFAULT;
+  static int DEFAULT;
 
   enum class Type : int {
     NONE = 0,

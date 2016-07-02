@@ -26,6 +26,7 @@
 #include "solver/ConstraintSorter.h"
 #include "solver/DependencySlicer.h"
 #include "solver/EquivalenceGenerator.h"
+#include "solver/FormulaOptimizer.h"
 #include "solver/Initializer.h"
 #include "solver/SyntacticOptimizer.h"
 #include "solver/SyntacticProcessor.h"
@@ -114,9 +115,8 @@ void Driver::initializeSolver() {
     equivalence_generator.start();
   } while (equivalence_generator.has_constant_substitution());
 
-// TODO needs update to handle all operations that returns bool
-//  Solver::FormulaOptimizer formula_optimizer(script_, symbol_table_);
-//  formula_optimizer.start();
+  Solver::FormulaOptimizer formula_optimizer(script_, symbol_table_);
+  formula_optimizer.start();
 
 //  Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
 //  constraint_sorter.start();

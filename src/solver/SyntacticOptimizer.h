@@ -132,9 +132,9 @@ protected:
   bool match_suffix(SMT::Term_ptr, SMT::Term_ptr);
 
 
-  SMT::Script_ptr root;
-  SymbolTable_ptr symbol_table;
-  std::function<void(SMT::Term_ptr&)> callback;
+  SMT::Script_ptr root_;
+  SymbolTable_ptr symbol_table_;
+  std::function<void(SMT::Term_ptr&)> callback_;
   static unsigned name_counter;
 private:
   static const int VLOG_LEVEL;
