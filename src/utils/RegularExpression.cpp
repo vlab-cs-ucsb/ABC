@@ -3,6 +3,34 @@
  *
  *  Created on: Jun 24, 2015
  *      Author: baki
+ *
+ *  Original source is a Java file: https://github.com/cs-au-dk/dk.brics.automaton/blob/master/src/dk/brics/automaton/RegExp.java
+ * dk.brics.automaton
+ *
+ * Copyright (c) 2001-2011 Anders Moeller
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "RegularExpression.h"
@@ -23,27 +51,86 @@ const int RegularExpression::NONE = 0x0000;
 int RegularExpression::DEFAULT = 0x000f;
 
 RegularExpression::RegularExpression()
-        : exp1_(nullptr), exp2_(nullptr), min_(0), max_(0), digits_(0), flags_(0), character_('\0'), from_char_('\0'), to_char_('\0'), regex_string_(
-                ""), string_(""), pos_(0), type_(Type::NONE) {
+    : type_(Type::NONE),
+      flags_(DEFAULT),
+      character_('\0'),
+      from_char_('\0'),
+      to_char_('\0'),
+      digits_(0),
+      min_(0),
+      max_(0),
+      pos_(0),
+      exp1_(nullptr),
+      exp2_(nullptr),
+      string_(""),
+      input_regex_string_("") {
 
 }
 
 RegularExpression::RegularExpression(std::string regex)
-        : exp1_(nullptr), exp2_(nullptr), min_(0), max_(0), digits_(0), flags_(0), character_('\0'), from_char_('\0'), to_char_('\0'), regex_string_(
-                ""), string_(""), pos_(0), type_(Type::NONE) {
-  init(regex, DEFAULT);
+    : type_(Type::NONE),
+      flags_(DEFAULT),
+      character_('\0'),
+      from_char_('\0'),
+      to_char_('\0'),
+      digits_(0),
+      min_(0),
+      max_(0),
+      pos_(0),
+      exp1_(nullptr),
+      exp2_(nullptr),
+      string_(""),
+      input_regex_string_(regex) {
+  parse();
 }
 
 RegularExpression::RegularExpression(std::string regex, int syntax_flags)
-        : exp1_(nullptr), exp2_(nullptr), min_(0), max_(0), digits_(0), flags_(syntax_flags), character_('\0'), from_char_('\0'), to_char_('\0'), regex_string_(
-                ""), string_(""), pos_(0), type_(Type::NONE) {
-  init(regex, syntax_flags);
+    : type_(Type::NONE),
+      flags_(syntax_flags),
+      character_('\0'),
+      from_char_('\0'),
+      to_char_('\0'),
+      digits_(0),
+      min_(0),
+      max_(0),
+      pos_(0),
+      exp1_(nullptr),
+      exp2_(nullptr),
+      string_(""),
+      input_regex_string_(regex) {
+  parse();
+}
+
+RegularExpression::RegularExpression(const RegularExpression& other)
+    : type_ { other.type_ },
+      flags_(other.flags_),
+      character_(other.character_),
+      from_char_(other.from_char_),
+      to_char_(other.to_char_),
+      digits_(other.digits_),
+      min_(other.min_),
+      max_(other.max_),
+      pos_(other.pos_),
+      exp1_(nullptr),
+      exp2_(nullptr),
+      string_(other.string_),
+      input_regex_string_(other.input_regex_string_) {
+
+  if (other.exp1_) {
+    exp1_ = other.exp1_->clone();
+  }
+
+  if (other.exp2_) {
+    exp2_ = other.exp2_->clone();
+  }
 
 }
 
 RegularExpression::~RegularExpression() {
-  delete exp1_; exp1_ = nullptr;
-  delete exp2_; exp2_ = nullptr;
+  delete exp1_;
+  exp1_ = nullptr;
+  delete exp2_;
+  exp2_ = nullptr;
 }
 
 bool RegularExpression::is_constant_string() const {
@@ -56,157 +143,145 @@ std::string RegularExpression::get_constant_string() const {
   } else if (type_ == Type::CHAR) {
     return "" + character_;
   } else {
-    LOG(FATAL) << "Regular expression is not a constant string";
+    LOG(FATAL)<< "Regular expression is not a constant string";
     return "";
   }
 }
 
-std::string RegularExpression::toString() const {
+std::string RegularExpression::str() const {
   std::stringstream ss;
   switch (type_) {
-  case Type::UNION:
-    ss << '(' << *exp1_ << '|' << *exp2_ << ')';
-    break;
-  case Type::CONCATENATION:
-    ss << *exp1_ << *exp2_;
-    break;
-  case Type::INTERSECTION:
-    ss << '(' << *exp1_ << '&' << *exp2_ << ')';
-    break;
-  case Type::OPTIONAL:
-    if (exp1_->type_ == Type::CHAR or exp1_->type_ == Type::ANYCHAR
-          or exp1_->type_ == Type::EMPTY) {
-      ss << *exp1_ << "?";
-    } else {
-      ss << '(' << *exp1_ << ")?";
-    }
-    break;
-  case Type::REPEAT_STAR:
-    if (exp1_->type_ == Type::CHAR or exp1_->type_ == Type::ANYCHAR
-            or exp1_->type_ == Type::EMPTY) {
-      ss << *exp1_ << "*";
-    } else {
-      ss << '(' << *exp1_ << ")*";
-    }
-    break;
-  case Type::REPEAT_PLUS:
-    if (exp1_->type_ == Type::CHAR or exp1_->type_ == Type::ANYCHAR
-            or exp1_->type_ == Type::EMPTY) {
-      ss << *exp1_ << "+";
-    } else {
-      ss << '(' << *exp1_ << ")+";
-    }
-    break;
-  case Type::REPEAT_MIN:
-    if (exp1_->type_ == Type::CHAR or exp1_->type_ == Type::ANYCHAR
-            or exp1_->type_ == Type::EMPTY) {
-      ss << *exp1_ << "{" << std::to_string(min_) << ",}";
-    } else {
-      ss << '(' << *exp1_ << "){" << std::to_string(min_) << ",}";
-    }
-    break;
-  case Type::REPEAT_MINMAX:
-    if (exp1_->type_ == Type::CHAR or exp1_->type_ == Type::ANYCHAR
-            or exp1_->type_ == Type::EMPTY) {
-      ss << *exp1_ << "{" << std::to_string(min_) << "," << std::to_string(max_) << "}";
-    } else {
-      ss << '(' << *exp1_ << "){" << std::to_string(min_) << "," << std::to_string(max_) << "}";
-    }
-    break;
-  case Type::COMPLEMENT:
-    ss << "~(" << *exp1_ << ')';
-    break;
-  case Type::CHAR: {
-    std::string character = "" + character_;
-    if (character.find_first_of("&|?*+.@#(){}[]~\"\\")) {
-      character = "\\" + character;
-    }
-    ss << character;
-  };
-    break;
-  case Type::CHAR_RANGE: {
-    std::string from = "" + from_char_;
-    std::string to = "" + to_char_;
-    if (from.find_first_of("^\\")) {
-      from = "\\" + from;
-    }
-
-    if (to.find_first_of("^\\")) {
-      to = "\\" + to;
-    }
-
-    ss << "[" << from << "-" << to << "]";
-  };
-    break;
-  case Type::ANYCHAR:
-    ss << '.';
-    break;
-  case Type::EMPTY:
-    ss << '#';
-    break;
-  case Type::STRING: {// regex strings are quoted
-    // if there is a quote escape it by getting out of string regex
-    std::stringstream cleaner;
-    for (auto c : string_) {
-      if (c == '"') {
-        if (cleaner.str() != "") {
-          ss << '"' << cleaner.str() << '"';
-          cleaner.str("");
-        }
-        ss << '\\' << '"';
+    case Type::UNION:
+      ss << '(' << *exp1_ << '|' << *exp2_ << ')';
+      break;
+    case Type::CONCATENATION:
+      ss << *exp1_ << *exp2_;
+      break;
+    case Type::INTERSECTION:
+      ss << '(' << *exp1_ << '&' << *exp2_ << ')';
+      break;
+    case Type::OPTIONAL:
+      if (exp1_->type_ == Type::CHAR or exp1_->type_ == Type::ANYCHAR or exp1_->type_ == Type::EMPTY) {
+        ss << *exp1_ << "?";
       } else {
-        cleaner << c;
+        ss << '(' << *exp1_ << ")?";
       }
-    }
-    if (cleaner.str() != "") {
-      ss << '"' << cleaner.str() << '"';
-    }
-  };
-    break;
-  case Type::ANYSTRING:
-    ss << '@';
-    break;
-  case Type::AUTOMATON:
-    ss << '<' << string_ << '>';
-    break;
-  case Type::INTERVAL: {
-    std::string min_str = std::to_string(min_);
-    std::string max_str = std::to_string(max_);
-    ss << '<';
-    if (digits_ > 0) {
-      for (unsigned i = (unsigned) min_str.length(); i < digits_; i++) {
-        ss << '0';
+      break;
+    case Type::REPEAT_STAR:
+      if (exp1_->type_ == Type::CHAR or exp1_->type_ == Type::ANYCHAR or exp1_->type_ == Type::EMPTY) {
+        ss << *exp1_ << "*";
+      } else {
+        ss << '(' << *exp1_ << ")*";
       }
+      break;
+    case Type::REPEAT_PLUS:
+      if (exp1_->type_ == Type::CHAR or exp1_->type_ == Type::ANYCHAR or exp1_->type_ == Type::EMPTY) {
+        ss << *exp1_ << "+";
+      } else {
+        ss << '(' << *exp1_ << ")+";
+      }
+      break;
+    case Type::REPEAT_MIN:
+      if (exp1_->type_ == Type::CHAR or exp1_->type_ == Type::ANYCHAR or exp1_->type_ == Type::EMPTY) {
+        ss << *exp1_ << "{" << std::to_string(min_) << ",}";
+      } else {
+        ss << '(' << *exp1_ << "){" << std::to_string(min_) << ",}";
+      }
+      break;
+    case Type::REPEAT_MINMAX:
+      if (exp1_->type_ == Type::CHAR or exp1_->type_ == Type::ANYCHAR or exp1_->type_ == Type::EMPTY) {
+        ss << *exp1_ << "{" << std::to_string(min_) << "," << std::to_string(max_) << "}";
+      } else {
+        ss << '(' << *exp1_ << "){" << std::to_string(min_) << "," << std::to_string(max_) << "}";
+      }
+      break;
+    case Type::COMPLEMENT:
+      ss << "~(" << *exp1_ << ')';
+      break;
+    case Type::CHAR: {
+      std::string character = "" + character_;
+      if (character.find_first_of("&|?*+.@#(){}[]~\"\\")) {
+        character = "\\" + character;
+      }
+      ss << character;
     }
+      ;
+      break;
+    case Type::CHAR_RANGE: {
+      std::string from = "" + from_char_;
+      std::string to = "" + to_char_;
+      if (from.find_first_of("^\\")) {
+        from = "\\" + from;
+      }
 
-    ss << min_str << '-';
-    if (digits_ > 0) {
-      for (unsigned i = (unsigned) max_str.length(); i < digits_; i++) {
-        ss << '0';
+      if (to.find_first_of("^\\")) {
+        to = "\\" + to;
+      }
+
+      ss << "[" << from << "-" << to << "]";
+    }
+      ;
+      break;
+    case Type::ANYCHAR:
+      ss << '.';
+      break;
+    case Type::EMPTY:
+      ss << '#';
+      break;
+    case Type::STRING: {  // regex strings are quoted
+      // if there is a quote escape it by getting out of string regex
+      std::stringstream cleaner;
+      for (auto c : string_) {
+        if (c == '"') {
+          if (cleaner.str() != "") {
+            ss << '"' << cleaner.str() << '"';
+            cleaner.str("");
+          }
+          ss << '\\' << '"';
+        } else {
+          cleaner << c;
+        }
+      }
+      if (cleaner.str() != "") {
+        ss << '"' << cleaner.str() << '"';
       }
     }
-    ss << max_str << '>';
-    break;
-  }
-  default:
+      ;
+      break;
+    case Type::ANYSTRING:
+      ss << '@';
+      break;
+    case Type::AUTOMATON:
+      ss << '<' << string_ << '>';
+      break;
+    case Type::INTERVAL: {
+      std::string min_str = std::to_string(min_);
+      std::string max_str = std::to_string(max_);
+      ss << '<';
+      if (digits_ > 0) {
+        for (unsigned i = (unsigned) min_str.length(); i < digits_; i++) {
+          ss << '0';
+        }
+      }
 
-    break;
+      ss << min_str << '-';
+      if (digits_ > 0) {
+        for (unsigned i = (unsigned) max_str.length(); i < digits_; i++) {
+          ss << '0';
+        }
+      }
+      ss << max_str << '>';
+      break;
+    }
+    default:
+
+      break;
   }
   return ss.str();
 }
 
-void RegularExpression::copy(RegularExpression_ptr e) {
-  type_ = e->type_;
-  exp1_ = e->exp1_;
-  exp2_ = e->exp2_;
-  this->string_ = e->string_;
-  character_ = e->character_;
-  min_ = e->min_;
-  max_ = e->max_;
-  digits_ = e->digits_;
-  from_char_ = e->from_char_;
-  to_char_ = e->to_char_;
-  regex_string_ = "";
+RegularExpression_ptr RegularExpression::clone() const {
+  return new RegularExpression(*this);
 }
 
 RegularExpression_ptr RegularExpression::makeUnion(RegularExpression_ptr exp1, RegularExpression_ptr exp2) {
@@ -232,13 +307,19 @@ RegularExpression_ptr RegularExpression::makeUnion(RegularExpression_ptr exp1, R
   }
 
   RegularExpression_ptr regex = new RegularExpression();
-  if (is_left_constant and is_right_constant and left == right) { // optimize
+  if (is_left_constant and is_right_constant and left == right) {  // optimize
     regex->type_ = Type::STRING;
     regex->string_ = left;
-  } else if (exp1->type_ == Type::EMPTY) { // optimize
-    regex->copy(exp2);
-  } else if (exp2->type_ == Type::EMPTY) { // optimize
-    regex->copy(exp1);
+    delete exp1;
+    delete exp2;
+  } else if (exp1->type_ == Type::EMPTY) {  // optimize
+    regex = exp2->clone();
+    delete exp1;
+    delete exp2;
+  } else if (exp2->type_ == Type::EMPTY) {  // optimize
+    regex = exp1->clone();
+    delete exp1;
+    delete exp2;
   } else {
     regex->type_ = Type::UNION;
     regex->exp1_ = exp1;
@@ -248,36 +329,52 @@ RegularExpression_ptr RegularExpression::makeUnion(RegularExpression_ptr exp1, R
 }
 
 RegularExpression_ptr RegularExpression::makeConcatenation(RegularExpression_ptr exp1, RegularExpression_ptr exp2) {
-  if ((exp1->type_ == Type::CHAR or exp1->type_ == Type::STRING)
-          and (exp2->type_ == Type::CHAR or exp2->type_ == Type::STRING)) {
-    return RegularExpression::makeString(exp1, exp2);
+  RegularExpression_ptr regex = nullptr;
+  if ((exp1->type_ == Type::EMPTY or exp1->type_ == Type::EMPTY)) {
+    regex = RegularExpression::makeEmpty();
+    delete exp1;
+    delete exp2;
+  } else if (exp1->type_ == Type::STRING and exp1->string_ == "") {
+    regex = exp2->clone();
+    delete exp1;
+    delete exp2;
+  } else if (exp2->type_ == Type::STRING and exp2->string_ == "") {
+    regex = exp1->clone();
+    delete exp1;
+    delete exp2;
+  } else if ((exp1->type_ == Type::CHAR or exp1->type_ == Type::STRING)
+      and (exp2->type_ == Type::CHAR or exp2->type_ == Type::STRING)) {
+    regex = RegularExpression::concat_constants(exp1, exp2);
+    delete exp1;
+    delete exp2;
+  } else if (exp1->type_ == Type::CONCATENATION
+      and (exp1->exp2_->type_ == Type::CHAR or exp1->exp2_->type_ == Type::STRING)
+      and (exp2->type_ == Type::CHAR or exp2->type_ == Type::STRING)) {
+    regex = new RegularExpression();
+    regex->type_ = Type::CONCATENATION;
+    regex->exp1_ = exp1->exp1_->clone();
+    regex->exp2_ = RegularExpression::concat_constants(exp1->exp2_, exp2);
+    delete exp1;
+    delete exp2;
+  } else if ((exp1->type_ == Type::CHAR or exp1->type_ == Type::STRING) and exp2->type_ == Type::CONCATENATION
+      and (exp2->exp1_->type_ == Type::CHAR or exp2->exp1_->type_ == Type::STRING)) {
+    regex = new RegularExpression();
+    regex->type_ = Type::CONCATENATION;
+    regex->exp1_ = RegularExpression::concat_constants(exp1, exp2->exp1_);
+    regex->exp2_ = exp2->exp2_->clone();
+    delete exp1;
+    delete exp2;
+  } else {
+    regex = new RegularExpression();
+    regex->type_ = Type::CONCATENATION;
+    regex->exp1_ = exp1;
+    regex->exp2_ = exp2;
   }
 
-  RegularExpression_ptr regex = new RegularExpression();
-  if (exp1->type_ == Type::STRING and exp1->string_ == "") {
-    regex->copy(exp2);
-  } else if (exp2->type_ == Type::STRING and exp2->string_ == "") {
-    regex->copy(exp1);
-  } else {
-    regex->type_ = Type::CONCATENATION;
-    if (exp1->type_ == Type::CONCATENATION and (exp1->exp2_->type_ == Type::CHAR or exp1->exp2_->type_ == Type::STRING)
-            and (exp2->type_ == Type::CHAR or exp2->type_ == Type::STRING)) {
-      regex->exp1_ = exp1->exp1_;
-      regex->exp2_ = RegularExpression::makeString(exp1->exp2_, exp2);
-    } else if ((exp1->type_ == Type::CHAR or exp1->type_ == Type::STRING) and exp2->type_ == Type::CONCATENATION
-            and (exp2->exp1_->type_ == Type::CHAR or exp2->exp1_->type_ == Type::STRING)) {
-      regex->exp1_ = RegularExpression::makeString(exp1, exp2->exp1_);
-      regex->exp2_ = exp2->exp2_;
-    } else {
-      regex->exp1_ = exp1;
-      regex->exp2_ = exp2;
-    }
-  }
   return regex;
 }
 
 RegularExpression_ptr RegularExpression::makeIntersection(RegularExpression_ptr exp1, RegularExpression_ptr exp2) {
-
   bool is_left_constant = false;
   bool is_right_constant = false;
   std::string left;
@@ -299,13 +396,19 @@ RegularExpression_ptr RegularExpression::makeIntersection(RegularExpression_ptr 
     is_right_constant = true;
   }
 
-  RegularExpression_ptr regex = new RegularExpression();
-  if (is_left_constant and is_right_constant and left == right) { // optimize
+  RegularExpression_ptr regex = nullptr;
+  if (is_left_constant and is_right_constant and left == right) {  // optimize
+    regex = new RegularExpression();
     regex->type_ = Type::STRING;
     regex->string_ = left;
-  } else if (exp1->type_ == Type::EMPTY or exp2->type_ == Type::EMPTY) { // optimize
-    regex->type_ = Type::EMPTY;
+    delete exp1;
+    delete exp2;
+  } else if (exp1->type_ == Type::EMPTY or exp2->type_ == Type::EMPTY) {  // optimize
+    regex = RegularExpression::makeEmpty();
+    delete exp1;
+    delete exp2;
   } else {
+    regex = new RegularExpression();
     regex->type_ = Type::INTERSECTION;
     regex->exp1_ = exp1;
     regex->exp2_ = exp2;
@@ -318,6 +421,7 @@ RegularExpression_ptr RegularExpression::makeOptional(RegularExpression_ptr exp)
   if (exp->type_ == Type::STRING and exp->string_ == "") {
     regex->type_ = Type::STRING;
     regex->string_ = "";
+    delete exp;
   } else {
     regex->type_ = Type::OPTIONAL;
     regex->exp1_ = exp;
@@ -327,12 +431,14 @@ RegularExpression_ptr RegularExpression::makeOptional(RegularExpression_ptr exp)
 
 RegularExpression_ptr RegularExpression::makeRepeatStar(RegularExpression_ptr exp) {
   RegularExpression_ptr regex = new RegularExpression();
-  if (exp->type_ == Type::EMPTY) { // optimize
+  if (exp->type_ == Type::EMPTY) {  // optimize
     regex->type_ = Type::STRING;
     regex->string_ = "";
-  } else if (exp->type_ == Type::STRING and exp->string_ == "") { // optimize
+    delete exp;
+  } else if (exp->type_ == Type::STRING and exp->string_ == "") {  // optimize
     regex->type_ = Type::STRING;
     regex->string_ = "";
+    delete exp;
   } else {
     regex->type_ = Type::REPEAT_STAR;
     regex->exp1_ = exp;
@@ -345,6 +451,7 @@ RegularExpression_ptr RegularExpression::makeRepeatPlus(RegularExpression_ptr ex
   if (exp->type_ == Type::STRING and exp->string_ == "") {
     regex->type_ = Type::STRING;
     regex->string_ = "";
+    delete exp;
   } else {
     regex->type_ = Type::REPEAT_PLUS;
     regex->exp1_ = exp;
@@ -354,9 +461,10 @@ RegularExpression_ptr RegularExpression::makeRepeatPlus(RegularExpression_ptr ex
 
 RegularExpression_ptr RegularExpression::makeRepeat(RegularExpression_ptr exp, unsigned long min) {
   RegularExpression_ptr regex = new RegularExpression();
-  if (exp->type_ == Type::STRING and exp->string_ == "") { // optimize
+  if (exp->type_ == Type::STRING and exp->string_ == "") {  // optimize
     regex->type_ = Type::STRING;
     regex->string_ = "";
+    delete exp;
   } else {
     regex->type_ = Type::REPEAT_MIN;
     regex->exp1_ = exp;
@@ -367,23 +475,26 @@ RegularExpression_ptr RegularExpression::makeRepeat(RegularExpression_ptr exp, u
 
 RegularExpression_ptr RegularExpression::makeRepeat(RegularExpression_ptr exp, unsigned long min, unsigned long max) {
   RegularExpression_ptr regex = new RegularExpression();
-  if (min == 0 and max == 0) { // optimize empty string
+  if (min == 0 and max == 0) {  // optimize empty string
     regex->type_ = Type::STRING;
     regex->string_ = "";
-  } else if (min == max and exp->type_ == Type::STRING) { // optimize one constant string
+    delete exp;
+  } else if (min == max and exp->type_ == Type::STRING) {  // optimize one constant string
     regex->type_ = Type::STRING;
     std::stringstream ss;
     for (unsigned long i = 0; i < min; ++i) {
       ss << exp->string_;
     }
     regex->string_ = ss.str();
-  } else if (min == max and exp->type_ == Type::CHAR) { // optimize one constant string
+    delete exp;
+  } else if (min == max and exp->type_ == Type::CHAR) {  // optimize one constant string
     regex->type_ = Type::STRING;
     std::stringstream ss;
     for (unsigned long i = 0; i < min; ++i) {
       ss << exp->character_;
     }
     regex->string_ = ss.str();
+    delete exp;
   } else {
     regex->type_ = Type::REPEAT_MINMAX;
     regex->exp1_ = exp;
@@ -394,13 +505,12 @@ RegularExpression_ptr RegularExpression::makeRepeat(RegularExpression_ptr exp, u
 }
 
 RegularExpression_ptr RegularExpression::makeComplement(RegularExpression_ptr exp) {
-  RegularExpression_ptr regex = new RegularExpression();
-  if (Type::COMPLEMENT == exp->type_) { // optimize complement
-    auto child_regex = exp->exp1_;
-    exp->exp1_ = nullptr;
+  RegularExpression_ptr regex = nullptr;
+  if (Type::COMPLEMENT == exp->type_) {  // optimize complement
+    regex = exp->exp1_->clone();
     delete exp;
-    regex->copy(child_regex);
   } else {
+    regex = new RegularExpression();
     regex->type_ = Type::COMPLEMENT;
     regex->exp1_ = exp;
   }
@@ -416,7 +526,7 @@ RegularExpression_ptr RegularExpression::makeChar(char c) {
 
 RegularExpression_ptr RegularExpression::makeCharRange(char from, char to) {
   RegularExpression_ptr regex = new RegularExpression();
-  if (from == to) { // optimize
+  if (from == to) {  // optimize
     regex->type_ = Type::CHAR;
     regex->character_ = from;
   } else {
@@ -511,7 +621,7 @@ RegularExpression_ptr RegularExpression::parseRepeatExp() {
         LOG(FATAL)<< "integer expected at position: " << pos_;
       }
 
-      unsigned long n = std::stoul(regex_string_.substr(start, pos_ - start));
+      unsigned long n = std::stoul(input_regex_string_.substr(start, pos_ - start));
       unsigned long m;
       bool is_m_set = false;
       if (match(',')) {
@@ -521,7 +631,7 @@ RegularExpression_ptr RegularExpression::parseRepeatExp() {
         }
 
         if (start != pos_) {
-          m = std::stoul(regex_string_.substr(start, pos_ - start));
+          m = std::stoul(input_regex_string_.substr(start, pos_ - start));
           is_m_set = true;
         }
 
@@ -607,7 +717,7 @@ RegularExpression_ptr RegularExpression::parseSimpleExp() {
       LOG(FATAL)<< "expected '\"' at position: " << pos_;
     }
 
-    return RegularExpression::makeString(regex_string_.substr(start, (pos_ - 1 - start)));
+    return RegularExpression::makeString(input_regex_string_.substr(start, (pos_ - 1 - start)));
   } else if (match('(')) {
     if (match(')')) {
       return RegularExpression::makeString("");
@@ -630,7 +740,7 @@ RegularExpression_ptr RegularExpression::parseSimpleExp() {
       LOG(FATAL)<< "expected '>' at position: " << pos_;
     }
 
-    std::string s = regex_string_.substr(start, (pos_ - 1 - start));
+    std::string s = input_regex_string_.substr(start, (pos_ - 1 - start));
     std::string::size_type i = s.find('-');
     if (i == std::string::npos) {
       if (!check(AUTOMATON)) {
@@ -675,47 +785,47 @@ char RegularExpression::parseCharExp() {
   return next();
 }
 
-RegularExpression::Type RegularExpression::getType() {
+RegularExpression::Type RegularExpression::type() {
   return type_;
 }
 
-RegularExpression_ptr RegularExpression::getExpr1() {
+RegularExpression_ptr RegularExpression::get_expr1() {
   return exp1_;
 }
 
-RegularExpression_ptr RegularExpression::getExpr2() {
+RegularExpression_ptr RegularExpression::get_expr2() {
   return exp2_;
 }
 
-unsigned long RegularExpression::getMin() {
+unsigned long RegularExpression::get_min() {
   return min_;
 }
 
-unsigned long RegularExpression::getMax() {
+unsigned long RegularExpression::get_max() {
   return max_;
 }
 
-char RegularExpression::getChar() {
+char RegularExpression::get_character() {
   return character_;
 }
 
-char RegularExpression::getFrom() {
+char RegularExpression::get_from_character() {
   return from_char_;
 }
 
-char RegularExpression::getTo() {
+char RegularExpression::get_to_character() {
   return to_char_;
 }
 
-std::string RegularExpression::getS() {
+std::string RegularExpression::get_string() {
   return string_;
 }
 
 std::ostream& operator<<(std::ostream& os, const RegularExpression& regex) {
-  return os << regex.toString();
+  return os << regex.str();
 }
 
-RegularExpression_ptr RegularExpression::makeString(RegularExpression_ptr exp1, RegularExpression_ptr exp2) {
+RegularExpression_ptr RegularExpression::concat_constants(RegularExpression_ptr exp1, RegularExpression_ptr exp2) {
   std::stringstream ss;
   if (exp1->type_ == Type::STRING) {
     ss << exp1->string_;
@@ -731,45 +841,41 @@ RegularExpression_ptr RegularExpression::makeString(RegularExpression_ptr exp1, 
   return RegularExpression::makeString(ss.str());
 }
 
-void RegularExpression::init(std::string regex, int syntax_flags) {
-
-//  CHECK_EQ(0, regex.find("/"));
-//  std::string::size_type last = regex.substr(1).find_last_of("/");
-//  CHECK_NE(std::string::npos, last);
-//
-//  regex_string_ = regex.substr(1, last);
-
-  regex_string_ = regex;
-  flags_ = syntax_flags;
-  RegularExpression_ptr e = parseUnionExp();
-
-  if (pos_ < regex_string_.length()) {
-    LOG(FATAL)<< "end-of-string expected at position: " << pos_;
+void RegularExpression::parse() {
+  if (input_regex_string_ == "") {
+    type_ = Type::STRING;
+    string_ = "";
+    return;
   }
 
+  RegularExpression_ptr e = parseUnionExp();
+  if (pos_ < input_regex_string_.length()) {
+    LOG(FATAL)<< "end-of-string expected at position: " << pos_;
+  }
   type_ = e->type_;
-  exp1_ = e->exp1_;
-  exp2_ = e->exp2_;
-  this->string_ = e->string_;
+  flags_ = e->flags_;
   character_ = e->character_;
-  min_ = e->min_;
-  max_ = e->max_;
-  digits_ = e->digits_;
   from_char_ = e->from_char_;
   to_char_ = e->to_char_;
-  regex_string_ = "";
+  digits_ = e->digits_;
+  min_ = e->min_;
+  max_ = e->max_;
+  pos_ = e->pos_;
+  exp1_ = e->exp1_;
+  string_ = e->string_;
+  input_regex_string_ = e->input_regex_string_;
 }
 
 bool RegularExpression::peek(std::string s) {
-  return (more() and (s.find(regex_string_[pos_]) != std::string::npos));
+  return (more() and (s.find(input_regex_string_[pos_]) != std::string::npos));
 }
 
 bool RegularExpression::match(char c) {
-  if (pos_ >= regex_string_.length()) {
+  if (pos_ >= input_regex_string_.length()) {
     return false;
   }
 
-  if (regex_string_[pos_] == c) {
+  if (input_regex_string_[pos_] == c) {
     pos_++;
     return true;
   }
@@ -777,7 +883,7 @@ bool RegularExpression::match(char c) {
 }
 
 bool RegularExpression::more() {
-  return pos_ < regex_string_.length();
+  return pos_ < input_regex_string_.length();
 }
 
 char RegularExpression::next() {
@@ -785,7 +891,7 @@ char RegularExpression::next() {
     LOG(FATAL)<< "unexpected end-of-string";
   }
 
-  return regex_string_[pos_++];
+  return input_regex_string_[pos_++];
 }
 
 bool RegularExpression::check(int flag) {
