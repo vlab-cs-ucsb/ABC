@@ -54,7 +54,9 @@ void SyntacticOptimizer::visitCommand(Command_ptr command) {
 void SyntacticOptimizer::visitAssert(Assert_ptr assert_command) {
   visit_and_callback(assert_command->term);
   if (check_bool_constant_value(assert_command->term, "false")) {
-    LOG(FATAL)<< "constraint is already UNSAT, use symbol table and make use of this information";
+    DVLOG(VLOG_LEVEL)<< "constraint is already UNSAT, use symbol table and make use of this information";
+    symbol_table->updateSatisfiability(false);
+    symbol_table->setScopeSatisfiability(false);
   } else if (check_bool_constant_value(assert_command->term, "true")) {
     LOG(FATAL) << "constraint is already SAT, use symbol table and make use of this information";
   }

@@ -15,10 +15,11 @@ namespace Solver {
 
 using namespace SMT;
 
-const int EquivalenceGenerator::VLOG_LEVEL = 15;
+const int EquivalenceGenerator::VLOG_LEVEL = 19;
 
 EquivalenceGenerator::EquivalenceGenerator(Script_ptr script, SymbolTable_ptr symbol_table)
     : AstTraverser(script),
+      has_constant_substitution_(false),
       symbol_table_(symbol_table),
       left_variable_{nullptr},
       right_variable_{nullptr},
@@ -32,8 +33,10 @@ EquivalenceGenerator::~EquivalenceGenerator() {
 
 void EquivalenceGenerator::start() {
   DVLOG(VLOG_LEVEL) << "Starting the EquivalenceGenerator";
+  has_constant_substitution_ = false;
   symbol_table_->push_scope(root, false);
   visitScript(root);
+  symbol_table_->pop_scope();
   end();
 }
 
@@ -98,7 +101,7 @@ void EquivalenceGenerator::visitOr(Or_ptr or_term) {
 }
 
 /**
- * conditionals sets member variables based on the conditions
+ * conditions sets member variables based on the conditions
  * @left_variable_, @right_variable_, @term_constant_, @unclassified_term_
  */
 void EquivalenceGenerator::visitEq(Eq_ptr eq_term) {
@@ -111,12 +114,13 @@ void EquivalenceGenerator::visitEq(Eq_ptr eq_term) {
       update_equiv_class_and_symbol_table(left_equiv_class, right_equiv_class);
     } else if (left_equiv_class) { // add right variable
       update_equiv_class_and_symbol_table(left_equiv_class, right_variable_);
-    } else if (right_equiv_class) { // add to right variable
+    } else if (right_equiv_class) { // add left variable
       update_equiv_class_and_symbol_table(right_equiv_class, left_variable_);
     } else { // create a new equivalence class
       create_equiv_class_and_update_symbol_table(left_variable_, right_variable_);
     }
   } else if (is_equiv_of_variable_and_constant(eq_term->left_term, eq_term->right_term)) {
+    has_constant_substitution_ = true;
     auto equiv_class = symbol_table_->get_equivalence_class_of(left_variable_);
     if (equiv_class) {
       update_equiv_class_and_symbol_table(equiv_class, term_constant_);
@@ -140,6 +144,10 @@ void EquivalenceGenerator::visitEq(Eq_ptr eq_term) {
   unclassified_term_ = nullptr;
 
   DVLOG(VLOG_LEVEL) << "visit end: " << *eq_term << "@" << eq_term;
+}
+
+bool EquivalenceGenerator::has_constant_substitution() {
+  return has_constant_substitution_;
 }
 
 /**
@@ -209,6 +217,7 @@ bool EquivalenceGenerator::is_equiv_of_bool_var_and_term(SMT::Term_ptr left_term
 
 void EquivalenceGenerator::update_equiv_class_and_symbol_table(EquivalenceClass_ptr left_equiv,
                                                                EquivalenceClass_ptr right_equiv) {
+//  DVLOG(VLOG_LEVEL)<< "merge: " << *left_equiv << " U " << *right_equiv;
   left_equiv->merge(right_equiv);
   for (auto variable : right_equiv->get_variables()) {
     symbol_table_->add_variable_equiv_class_mapping(variable, left_equiv);
@@ -217,16 +226,18 @@ void EquivalenceGenerator::update_equiv_class_and_symbol_table(EquivalenceClass_
 }
 
 void EquivalenceGenerator::update_equiv_class_and_symbol_table(EquivalenceClass_ptr equiv, SMT::Variable_ptr variable) {
+//  DVLOG(VLOG_LEVEL)<< "add variable: " << variable->getName() << " >> " << *equiv;
   equiv->add(variable);
   symbol_table_->add_variable_equiv_class_mapping(variable, equiv);
-
 }
 
 void EquivalenceGenerator::update_equiv_class_and_symbol_table(EquivalenceClass_ptr equiv, SMT::TermConstant_ptr term_constant) {
+//  DVLOG(VLOG_LEVEL)<< "constant: \"" << term_constant->getValue() << "\" >> " << *equiv;
   equiv->add(term_constant);
 }
 
 void EquivalenceGenerator::update_equiv_class_and_symbol_table(EquivalenceClass_ptr equiv, SMT::Term_ptr term) {
+  DVLOG(VLOG_LEVEL)<< "add term: " << *term << " >> " << *equiv;
   equiv->add(term);
 }
 

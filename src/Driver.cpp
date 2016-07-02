@@ -110,10 +110,9 @@ void Driver::initializeSolver() {
   dependency_slicer.start();
 
   Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
-  equivalence_generator.start();
-
-//  Solver::EquivalenceGenerator equivalence_generator2(script_, symbol_table_);
-//  equivalence_generator2.start();
+  do {
+    equivalence_generator.start();
+  } while (equivalence_generator.has_constant_substitution());
 
 // TODO needs update to handle all operations that returns bool
 //  Solver::FormulaOptimizer formula_optimizer(script_, symbol_table_);

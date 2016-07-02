@@ -21,7 +21,7 @@ EquivalenceClass::EquivalenceClass(Variable_ptr v1, Term_ptr term) {
   representative_term_ = term->clone();
   rep_string = term->str();
   variables_.insert(v1);
-  unclassified_terms_.insert(term);
+  unclassified_terms_.insert(term->clone());
 }
 
 EquivalenceClass::EquivalenceClass(Variable_ptr v1, TermConstant_ptr term_constant) {
@@ -30,7 +30,7 @@ EquivalenceClass::EquivalenceClass(Variable_ptr v1, TermConstant_ptr term_consta
   representative_term_ = term_constant->clone();
   rep_string = term_constant->getValue();
   variables_.insert(v1);
-  constants_.insert(term_constant);
+  constants_.insert(term_constant->clone());
 }
 
 EquivalenceClass::EquivalenceClass(Variable_ptr v1, Variable_ptr v2) {
@@ -44,6 +44,12 @@ EquivalenceClass::EquivalenceClass(Variable_ptr v1, Variable_ptr v2) {
 
 EquivalenceClass::~EquivalenceClass() {
   delete representative_term_;
+  for (auto c : constants_) {
+    delete c;
+  }
+  for (auto u : unclassified_terms_) {
+    delete u;
+  }
 }
 
 EquivalenceClass::EquivalenceClass(const EquivalenceClass& other)
@@ -51,8 +57,12 @@ EquivalenceClass::EquivalenceClass(const EquivalenceClass& other)
       representative_variable_ { other.representative_variable_ } {
   representative_term_ = other.representative_term_->clone();
   variables_ = other.variables_;
-  constants_ = other.constants_;
-  unclassified_terms_ = other.unclassified_terms_;
+  for (auto c : other.constants_) {
+    constants_.insert(c->clone());
+  }
+  for (auto u : other.unclassified_terms_) {
+    unclassified_terms_.insert(u->clone());
+  }
 }
 
 EquivalenceClass_ptr EquivalenceClass::clone() const {
@@ -64,17 +74,18 @@ Variable::Type EquivalenceClass::get_type() {
 }
 
 bool EquivalenceClass::has_constant() const {
-  return false;
+  return (constants_.size() > 0);
 }
 
 std::string EquivalenceClass::str() const {
   std::stringstream ss;
 
   ss << "id variable: " << representative_variable_->getName();
-  ss << " - replacement: " << rep_string << " ==> ";
+  ss << " - replacement: \"" << rep_string << "\" ==> ";
   for (auto var : variables_) {
     ss << var->getName() << " ";
   }
+
   for (auto c : constants_) {
     ss << "\"" << c->getValue() << "\" ";
   }
@@ -97,7 +108,7 @@ void EquivalenceClass::add(TermConstant_ptr constant) {
   if (constants_.size() == 0) {
     can_update_representative_term_to_constant = true;
   }
-  constants_.insert(constant);
+  constants_.insert(constant->clone());
   // if we do not have a constant but now if we do, update representative term
   if (can_update_representative_term_to_constant) {
     delete representative_term_;
@@ -116,7 +127,7 @@ void EquivalenceClass::add(Term_ptr unclassified_term) {
   if (constants_.size() == 0 and unclassified_terms_.size() == 0) {
     can_update_representative_term = true;
   }
-  unclassified_terms_.insert(unclassified_term);
+  unclassified_terms_.insert(unclassified_term->clone());
   if (can_update_representative_term) {
     delete representative_term_;
     representative_term_ = (*(unclassified_terms_.begin()))->clone();
@@ -155,8 +166,12 @@ void EquivalenceClass::merge(EquivalenceClass_ptr other) {
   }
 
   variables_.insert(other->variables_.begin(), other->variables_.end());
-  constants_.insert(other->constants_.begin(), other->constants_.end());
-  unclassified_terms_.insert(other->unclassified_terms_.begin(), other->unclassified_terms_.end());
+  for (auto c : other->constants_) {
+    constants_.insert(c->clone());
+  }
+  for (auto u : other->unclassified_terms_) {
+    unclassified_terms_.insert(u->clone());
+  }
 
   // if we do not have a constant but now if we do, update representative term
   if (can_update_representative_term_to_constant and constants_.size() > 0) {

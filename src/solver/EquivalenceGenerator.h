@@ -43,6 +43,7 @@ class EquivalenceGenerator : public AstTraverser {
   void visitOr(SMT::Or_ptr);
   void visitEq(SMT::Eq_ptr);
 
+  bool has_constant_substitution();
  protected:
   bool is_equiv_of_variables(SMT::Term_ptr left_term, SMT::Term_ptr right_term);
   bool is_equiv_of_variable_and_constant(SMT::Term_ptr left_term, SMT::Term_ptr right_term);
@@ -56,6 +57,7 @@ class EquivalenceGenerator : public AstTraverser {
   void create_equiv_class_and_update_symbol_table(SMT::Variable_ptr, SMT::TermConstant_ptr);
   void create_equiv_class_and_update_symbol_table(SMT::Variable_ptr, SMT::Term_ptr);
 
+  bool has_constant_substitution_;
   SymbolTable_ptr symbol_table_;
   SMT::Variable_ptr left_variable_;
   SMT::Variable_ptr right_variable_;
