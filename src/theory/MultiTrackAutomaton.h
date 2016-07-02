@@ -72,6 +72,7 @@ virtual ~MultiTrackAutomaton();
  	StringRelation_ptr relation;
  	static TransitionTable transition_table;
 	static const int VLOG_LEVEL;
+
 };
 
 } /* namespace Theory */

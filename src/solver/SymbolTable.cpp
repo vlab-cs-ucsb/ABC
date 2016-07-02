@@ -161,6 +161,10 @@ int SymbolTable::get_num_of_variables(Variable::Type type) {
     --count; // exclude artificial int variable
   }
 
+  if (Variable::Type::STRING == type) {
+    --count; // exclude artificial string variable
+  }
+
   return count;
 }
 

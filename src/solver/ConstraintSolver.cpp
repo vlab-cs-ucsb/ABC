@@ -868,31 +868,52 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
     }
     default:
 
-      if(sub_string_term->start_index_term->type() != Term::Type::QUALIDENTIFIER
-          || sub_string_term->end_index_term->type() != Term::Type::QUALIDENTIFIER) {
+      if((sub_string_term->start_index_term->type() != Term::Type::QUALIDENTIFIER
+            && sub_string_term->start_index_term->type() != Term::Type::TERMCONSTANT)
+         ||
+          (sub_string_term->end_index_term->type() != Term::Type::QUALIDENTIFIER
+            && sub_string_term->end_index_term->type() != Term::Type::TERMCONSTANT)) {
+        LOG(INFO) << sub_string_term->start_index_term->str();
+        LOG(INFO) << sub_string_term->end_index_term->str();
         LOG(FATAL)<< "Undefined subString semantic";
-      } else {
-        LOG(INFO) << "";
-        LOG(INFO) << "CHOO CHOO MUTHERFUCKER";
-        LOG(INFO) << "";
       }
-
-      DVLOG(VLOG_LEVEL) << "------- WORRYING BEGINS --------";
 
       StringAutomaton_ptr original, reversed, prefixes, temp, result_value;
       Value_ptr start_index_value, ss_length_value;
       IntAutomaton_ptr start_index_auto, ss_length_auto, original_length, temp_length;
+
+      DVLOG(VLOG_LEVEL) << "------- WORRYING BEGINS --------";
+
+
       start_index_value = getTermValue(sub_string_term->start_index_term);
       ss_length_value = getTermValue(sub_string_term->end_index_term);
 
-      start_index_auto = start_index_value->getIntAutomaton();
-      ss_length_auto = ss_length_value->getIntAutomaton();
+      if(start_index_value->getType() == Value::Type::INT_CONSTANT) {
+        start_index_auto = IntAutomaton::makeInt(start_index_value->getIntConstant());
+      } else if(start_index_value->getType() == Value::Type::INT_AUTOMATON) {
+        start_index_auto = start_index_value->getIntAutomaton();
+      } else {
+        LOG(FATAL) << "Bad value type for start_index_value, substring";
+      }
+
+      if(ss_length_value->getType() == Value::Type::INT_CONSTANT) {
+        ss_length_auto = IntAutomaton::makeInt(ss_length_value->getIntConstant());
+      } else if(ss_length_value->getType() == Value::Type::INT_AUTOMATON) {
+        ss_length_auto = ss_length_value->getIntAutomaton();
+      } else {
+        LOG(FATAL) << "Bad value type for ss_length_value, substring";
+      }
 
       DVLOG(VLOG_LEVEL) << ">>>>>>>> WORRYING INTENSIFIES >>>>>>>>";
 
+      DVLOG(VLOG_LEVEL) << 1;
       original = param_subject->getStringAutomaton();
+      DVLOG(VLOG_LEVEL) << 2;
       original_length = original->length();
+      DVLOG(VLOG_LEVEL) << 3;
+      DVLOG(VLOG_LEVEL) << start_index_value->str() << "," << ss_length_value->str();
       temp_length = original_length->minus(start_index_auto);
+      DVLOG(VLOG_LEVEL) << 4;
       delete original_length;
 
       DVLOG(VLOG_LEVEL) << "<<<<<<<<< WORRYING MORE HARDER >>>>>>>>>";
@@ -1268,7 +1289,7 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
         result = string_constraint_solver_.get_term_value(term);
         setTermValue(term, new Value(result->isSatisfiable()));
         symbol_table_->setValue(string_constraint_solver_.get_string_variable_name(term), result);
-        return true;
+        return false;
       }
       if (arithmetic_constraint_solver_.hasStringTerms(term) and result->isSatisfiable()) {
         DVLOG(VLOG_LEVEL) << "Mixed Linear Arithmetic Constraint";
