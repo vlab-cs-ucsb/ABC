@@ -47,7 +47,7 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_track
 	mindices = getIndices(num_tracks*VAR_PER_TRACK);
 	statuses = new char[M->ns+1];
 	sink = find_sink(M);
-
+	std::cout << "before" << std::endl;
 	// begin dfa building process
 	dfaSetup(M->ns, len, mindices);
 	for(unsigned i = 0; i < M->ns; i++) {
@@ -88,7 +88,7 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_track
 		else
 			statuses[i] = '0';
 	}
-	statuses[len] = '\0';
+	statuses[M->ns] = '\0';
 	temp = dfaBuild(statuses);
 	result = dfaMinimize(temp);
 	dfaFree(temp);
