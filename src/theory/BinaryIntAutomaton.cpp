@@ -624,7 +624,7 @@ SemilinearSet_ptr BinaryIntAutomaton::getSemilinearSet() {
     tmp_2_auto = this->intersect(tmp_1_auto);
     delete tmp_1_auto; tmp_1_auto = nullptr;
 
-    tmp_2_auto->getBaseConstants(constants); // automaton is acyclic, it will return all constants
+    tmp_2_auto->getBaseConstants(constants); // if automaton is acyclic, it will return all constants
     Util::List::sort_and_remove_duplicate(constants);
     semilinear_set->setConstants(constants);
     constants.clear();
@@ -1639,7 +1639,6 @@ void BinaryIntAutomaton::getCycleStatus(int state, std::map<int, int>& disc, std
     } else if (is_stack_member[next_state]) {
       low[state] = std::min(low[state], disc[next_state]);
     }
-
   }
 
   if (low[state] == disc[state]) { // head of SCC
