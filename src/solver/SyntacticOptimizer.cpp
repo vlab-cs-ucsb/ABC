@@ -54,11 +54,11 @@ void SyntacticOptimizer::visitCommand(Command_ptr command) {
 void SyntacticOptimizer::visitAssert(Assert_ptr assert_command) {
   visit_and_callback(assert_command->term);
   if (check_bool_constant_value(assert_command->term, "false")) {
-    DVLOG(VLOG_LEVEL)<< "constraint is already UNSAT, use symbol table and make use of this information";
+    DVLOG(VLOG_LEVEL) << "constraint is already UNSAT, use symbol table and make use of this information";
     symbol_table->updateSatisfiability(false);
     symbol_table->setScopeSatisfiability(false);
   } else if (check_bool_constant_value(assert_command->term, "true")) {
-    LOG(FATAL) << "constraint is already SAT, use symbol table and make use of this information";
+    LOG(FATAL)<< "constraint is already SAT, use symbol table and make use of this information";
   }
 }
 
@@ -694,602 +694,610 @@ void SyntacticOptimizer::visitGe(Ge_ptr ge_term) {
 }
 
 void SyntacticOptimizer::visitLt(Lt_ptr lt_term) {
-visit_and_callback(lt_term->left_term);
-visit_and_callback(lt_term->right_term);
+  visit_and_callback(lt_term->left_term);
+  visit_and_callback(lt_term->right_term);
 
-DVLOG(VLOG_LEVEL) << "post visit start: " << *lt_term << "@" << lt_term;
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *lt_term << "@" << lt_term;
 
-if (Ast2Dot::isEquivalent(lt_term->left_term, lt_term->right_term)) {
-  add_callback_to_replace_with_bool(lt_term, "false");
-} else if (check_and_process_len_transformation(lt_term, lt_term->left_term, lt_term->right_term)) {
-  DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *lt_term << "'";
   if (Ast2Dot::isEquivalent(lt_term->left_term, lt_term->right_term)) {
     add_callback_to_replace_with_bool(lt_term, "false");
-  } else {
+  } else if (check_and_process_len_transformation(lt_term, lt_term->left_term, lt_term->right_term)) {
+    DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *lt_term << "'";
+    if (Ast2Dot::isEquivalent(lt_term->left_term, lt_term->right_term)) {
+      add_callback_to_replace_with_bool(lt_term, "false");
+    } else {
+      callback = [lt_term](Term_ptr & term) mutable {
+        term = new In(lt_term->left_term, lt_term->right_term);
+        lt_term->left_term = nullptr;
+        lt_term->right_term = nullptr;
+        delete lt_term;
+      };
+    }
+  } else if (check_and_process_for_contains_transformation(lt_term->left_term, lt_term->right_term, 0)
+      or check_and_process_for_contains_transformation(lt_term->right_term, lt_term->left_term, 0)) {
+    DVLOG(VLOG_LEVEL) << "Applying notContains transformation: '" << *lt_term << "'";
     callback = [lt_term](Term_ptr & term) mutable {
-      term = new In(lt_term->left_term, lt_term->right_term);
+      term = new NotContains(lt_term->left_term, lt_term->right_term);
       lt_term->left_term = nullptr;
       lt_term->right_term = nullptr;
       delete lt_term;
     };
   }
-} else if (check_and_process_for_contains_transformation(lt_term->left_term, lt_term->right_term, 0)
-    or check_and_process_for_contains_transformation(lt_term->right_term, lt_term->left_term, 0)) {
-  DVLOG(VLOG_LEVEL) << "Applying notContains transformation: '" << *lt_term << "'";
-  callback = [lt_term](Term_ptr & term) mutable {
-    term = new NotContains(lt_term->left_term, lt_term->right_term);
-    lt_term->left_term = nullptr;
-    lt_term->right_term = nullptr;
-    delete lt_term;
-  };
-}
-DVLOG(VLOG_LEVEL) << "post visit end: " << *lt_term << "@" << lt_term;
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *lt_term << "@" << lt_term;
 }
 
 void SyntacticOptimizer::visitLe(Le_ptr le_term) {
-visit_and_callback(le_term->left_term);
-visit_and_callback(le_term->right_term);
+  visit_and_callback(le_term->left_term);
+  visit_and_callback(le_term->right_term);
 
-DVLOG(VLOG_LEVEL) << "post visit start: " << *le_term << "@" << le_term;
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *le_term << "@" << le_term;
 
-if (Ast2Dot::isEquivalent(le_term->left_term, le_term->right_term)) {
-  add_callback_to_replace_with_bool(le_term, "true");
-} else if (check_and_process_len_transformation(le_term, le_term->left_term, le_term->right_term)) {
-  DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *le_term << "'";
   if (Ast2Dot::isEquivalent(le_term->left_term, le_term->right_term)) {
     add_callback_to_replace_with_bool(le_term, "true");
-  } else {
+  } else if (check_and_process_len_transformation(le_term, le_term->left_term, le_term->right_term)) {
+    DVLOG(VLOG_LEVEL) << "Applying len transformation: '" << *le_term << "'";
+    if (Ast2Dot::isEquivalent(le_term->left_term, le_term->right_term)) {
+      add_callback_to_replace_with_bool(le_term, "true");
+    } else {
+      callback = [le_term](Term_ptr & term) mutable {
+        term = new In(le_term->left_term, le_term->right_term);
+        le_term->left_term = nullptr;
+        le_term->right_term = nullptr;
+        delete le_term;
+      };
+    }
+  } else if (check_and_process_for_contains_transformation(le_term->left_term, le_term->right_term, -1)
+      or check_and_process_for_contains_transformation(le_term->right_term, le_term->left_term, -1)) {
+    DVLOG(VLOG_LEVEL) << "Applying notContains transformation: '" << *le_term << "'";
     callback = [le_term](Term_ptr & term) mutable {
-      term = new In(le_term->left_term, le_term->right_term);
+      term = new NotContains(le_term->left_term, le_term->right_term);
       le_term->left_term = nullptr;
       le_term->right_term = nullptr;
       delete le_term;
     };
   }
-} else if (check_and_process_for_contains_transformation(le_term->left_term, le_term->right_term, -1)
-    or check_and_process_for_contains_transformation(le_term->right_term, le_term->left_term, -1)) {
-  DVLOG(VLOG_LEVEL) << "Applying notContains transformation: '" << *le_term << "'";
-  callback = [le_term](Term_ptr & term) mutable {
-    term = new NotContains(le_term->left_term, le_term->right_term);
-    le_term->left_term = nullptr;
-    le_term->right_term = nullptr;
-    delete le_term;
-  };
-}
 
-DVLOG(VLOG_LEVEL) << "post visit end: " << *le_term << "@" << le_term;
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *le_term << "@" << le_term;
 }
 
 void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {
-for (auto& term_ptr : *(concat_term->term_list)) {
-  visit_and_callback(term_ptr);
-}
-
-DVLOG(VLOG_LEVEL) << "post visit start: " << *concat_term << "@" << concat_term;
-TermConstant_ptr initial_term_constant = nullptr;
-Optimization::ConstantTermChecker string_constant_checker;
-int pos = 0;
-for (auto iter = concat_term->term_list->begin(); iter != concat_term->term_list->end();) {
-  if (Term::Type::CONCAT == (*iter)->type()) {
-    Concat_ptr sub_concat_term = dynamic_cast<Concat_ptr>(*iter);
-    concat_term->term_list->erase(iter);
-    concat_term->term_list->insert(iter, sub_concat_term->term_list->begin(), sub_concat_term->term_list->end());
-    sub_concat_term->term_list->clear();
-    delete sub_concat_term;
-    iter = concat_term->term_list->begin() + pos;  // insertion invalidates iter, reset it
-    continue;
-  } else if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter)) {
-    if (term_constant->getValue() == "") {
-      delete term_constant;  // deallocate
-      concat_term->term_list->erase(iter);
-      continue;  // iterator updated by erase
-    } else if (initial_term_constant == nullptr) {
-      initial_term_constant = term_constant;
-    } else {
-      append_constant(initial_term_constant, term_constant);
-      delete term_constant;  // deallocate
-      concat_term->term_list->erase(iter);
-      continue;  // iterator updated by erase
-    }
-  } else {
-    if (initial_term_constant) {  // if there is a constant regex makes it string
-      string_constant_checker.start(initial_term_constant);
-      if (string_constant_checker.is_constant_string()) {
-        initial_term_constant->primitive->setData(string_constant_checker.get_constant_string());
-        initial_term_constant->primitive->setType(Primitive::Type::STRING);
-      }
-    }
-    initial_term_constant = nullptr;
+  for (auto& term_ptr : *(concat_term->term_list)) {
+    visit_and_callback(term_ptr);
   }
-  iter++;
-  pos++;
-}
 
-if (concat_term->term_list->size() == 1) {
-  callback = [concat_term] (Term_ptr & term) mutable {
-    term = concat_term->term_list->front();
-    concat_term->term_list->clear();
-    delete concat_term;
-  };
-}
-DVLOG(VLOG_LEVEL) << "post visit end: " << *concat_term << "@" << concat_term;
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *concat_term << "@" << concat_term;
+  TermConstant_ptr initial_term_constant = nullptr;
+  Optimization::ConstantTermChecker string_constant_checker;
+  int pos = 0;
+  for (auto iter = concat_term->term_list->begin(); iter != concat_term->term_list->end();) {
+    if (Term::Type::CONCAT == (*iter)->type()) {
+      Concat_ptr sub_concat_term = dynamic_cast<Concat_ptr>(*iter);
+      concat_term->term_list->erase(iter);
+      concat_term->term_list->insert(iter, sub_concat_term->term_list->begin(), sub_concat_term->term_list->end());
+      sub_concat_term->term_list->clear();
+      delete sub_concat_term;
+      iter = concat_term->term_list->begin() + pos;  // insertion invalidates iter, reset it
+      continue;
+    } else if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter)) {
+      if (term_constant->getValue() == "") {
+        delete term_constant;  // deallocate
+        concat_term->term_list->erase(iter);
+        continue;  // iterator updated by erase
+      } else if (initial_term_constant == nullptr) {
+        initial_term_constant = term_constant;
+      } else {
+        append_constant(initial_term_constant, term_constant);
+        delete term_constant;  // deallocate
+        concat_term->term_list->erase(iter);
+        continue;  // iterator updated by erase
+      }
+    } else {
+      if (initial_term_constant) {  // if there is a constant regex makes it string
+        string_constant_checker.start(initial_term_constant);
+        if (string_constant_checker.is_constant_string()) {
+          initial_term_constant->primitive->setData(string_constant_checker.get_constant_string());
+          initial_term_constant->primitive->setType(Primitive::Type::STRING);
+        }
+      }
+      initial_term_constant = nullptr;
+    }
+    iter++;
+    pos++;
+  }
+
+  if (concat_term->term_list->size() == 1) {
+    callback = [concat_term] (Term_ptr & term) mutable {
+      term = concat_term->term_list->front();
+      concat_term->term_list->clear();
+      delete concat_term;
+    };
+  }
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *concat_term << "@" << concat_term;
 }
 
 void SyntacticOptimizer::visitIn(In_ptr in_term) {
-visit_and_callback(in_term->left_term);
-visit_and_callback(in_term->right_term);
+  visit_and_callback(in_term->left_term);
+  visit_and_callback(in_term->right_term);
 
-DVLOG(VLOG_LEVEL) << "post visit start: " << *in_term << "@" << in_term;
-if (Ast2Dot::isEquivalent(in_term->left_term, in_term->right_term)) {
-  add_callback_to_replace_with_bool(in_term, "true");
-} else if (check_and_process_constant_string( { in_term->left_term, in_term->right_term })) {
-  callback = [in_term] (Term_ptr & term) mutable {
-    term = new Eq(in_term->left_term, in_term->right_term);
-    in_term->left_term = nullptr; in_term->right_term = nullptr;
-    delete in_term;
-  };
-}
-DVLOG(VLOG_LEVEL) << "post visit end: " << *in_term << "@" << in_term;
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *in_term << "@" << in_term;
+  if (Ast2Dot::isEquivalent(in_term->left_term, in_term->right_term)) {
+    add_callback_to_replace_with_bool(in_term, "true");
+  } else if (check_and_process_constant_string( { in_term->left_term, in_term->right_term })) {
+    callback = [in_term] (Term_ptr & term) mutable {
+      term = new Eq(in_term->left_term, in_term->right_term);
+      in_term->left_term = nullptr; in_term->right_term = nullptr;
+      delete in_term;
+    };
+  }
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *in_term << "@" << in_term;
 }
 
 void SyntacticOptimizer::visitNotIn(NotIn_ptr not_in_term) {
-visit_and_callback(not_in_term->left_term);
-visit_and_callback(not_in_term->right_term);
+  visit_and_callback(not_in_term->left_term);
+  visit_and_callback(not_in_term->right_term);
 
-DVLOG(VLOG_LEVEL) << "post visit start: " << *not_in_term << "@" << not_in_term;
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *not_in_term << "@" << not_in_term;
 
-if (Ast2Dot::isEquivalent(not_in_term->left_term, not_in_term->right_term)) {
-  add_callback_to_replace_with_bool(not_in_term, "false");
-} else if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(not_in_term->right_term)) {
-  if (Primitive::Type::REGEX == term_constant->getValueType()) {
-    std::string data = term_constant->getValue();
-    if (data.find("~") == 0) {
-      data = data.substr(1);
-    } else {
-      data = "~(" + data + ")";
-    }
-    term_constant->primitive->setData(data);
-    callback = [not_in_term](Term_ptr & term) mutable {
-      term = new In(not_in_term->left_term, not_in_term->right_term);
+  if (Ast2Dot::isEquivalent(not_in_term->left_term, not_in_term->right_term)) {
+    add_callback_to_replace_with_bool(not_in_term, "false");
+  } else if (check_and_process_constant_string( { not_in_term->left_term, not_in_term->right_term })) {
+    callback = [not_in_term] (Term_ptr & term) mutable {
+      term = new NotEq(not_in_term->left_term, not_in_term->right_term);
       not_in_term->left_term = nullptr; not_in_term->right_term = nullptr;
       delete not_in_term;
     };
+  } else if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(not_in_term->right_term)) {
+    if (Primitive::Type::REGEX == term_constant->getValueType()) {
+      std::string data = term_constant->getValue();
+      if (data.find("~") == 0) {
+        data = data.substr(1);
+      } else {
+        data = "~(" + data + ")";
+      }
+      term_constant->primitive->setData(data);
+      callback = [not_in_term](Term_ptr & term) mutable {
+        term = new In(not_in_term->left_term, not_in_term->right_term);
+        not_in_term->left_term = nullptr; not_in_term->right_term = nullptr;
+        delete not_in_term;
+      };
+    }
   }
-}
-DVLOG(VLOG_LEVEL) << "post visit end: " << *not_in_term << "@" << not_in_term;
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *not_in_term << "@" << not_in_term;
 }
 
 void SyntacticOptimizer::visitLen(Len_ptr len_term) {
-visit_and_callback(len_term->term);
+  visit_and_callback(len_term->term);
 
-DVLOG(VLOG_LEVEL) << "post visit start: " << *len_term << "@" << len_term;
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *len_term << "@" << len_term;
 
-if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(len_term->term)) {
-  if (Primitive::Type::STRING == term_constant->getValueType()) {
-    DVLOG(VLOG_LEVEL) << "computing 'len' for string constant";
-    std::string value = term_constant->getValue();
-    int len = value.length();
-    std::string str_len = std::to_string(len);
-    callback = [this, len_term, str_len](Term_ptr & term) mutable {
-      term = generate_term_constant(str_len, Primitive::Type::NUMERAL);
-      delete len_term;
-    };
+  if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(len_term->term)) {
+    if (Primitive::Type::STRING == term_constant->getValueType()) {
+      DVLOG(VLOG_LEVEL) << "computing 'len' for string constant";
+      std::string value = term_constant->getValue();
+      int len = value.length();
+      std::string str_len = std::to_string(len);
+      callback = [this, len_term, str_len](Term_ptr & term) mutable {
+        term = generate_term_constant(str_len, Primitive::Type::NUMERAL);
+        delete len_term;
+      };
+    }
   }
-}
-DVLOG(VLOG_LEVEL) << "post visit end: " << *len_term << "@" << len_term;
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *len_term << "@" << len_term;
 }
 
 void SyntacticOptimizer::visitContains(Contains_ptr contains_term) {
-visit_and_callback(contains_term->subject_term);
-visit_and_callback(contains_term->search_term);
+  visit_and_callback(contains_term->subject_term);
+  visit_and_callback(contains_term->search_term);
 
-DVLOG(VLOG_LEVEL) << "post visit start: " << *contains_term << "@" << contains_term;
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *contains_term << "@" << contains_term;
 
-Optimization::ConstantTermChecker constant_term_checker;
-Optimization::ConstantTermChecker constant_term_checker_subject;
+  Optimization::ConstantTermChecker constant_term_checker;
+  Optimization::ConstantTermChecker constant_term_checker_subject;
 
-constant_term_checker.start(contains_term->search_term, Optimization::ConstantTermChecker::Mode::FULL);
+  constant_term_checker.start(contains_term->search_term, Optimization::ConstantTermChecker::Mode::FULL);
 
-if (constant_term_checker.is_constant_string()) {
-  std::string search_ = constant_term_checker.get_constant_string();
-  constant_term_checker_subject.start(contains_term->subject_term, Optimization::ConstantTermChecker::Mode::FULL);
-  //If they are both constants, we can check the contains directly
-  if (constant_term_checker_subject.is_constant_string()) {
-    std::string subject_ = constant_term_checker_subject.get_constant_string();
-    if (subject_.find(search_) != std::string::npos) {
-      add_callback_to_replace_with_bool(contains_term, "true");
-    } else {
-      add_callback_to_replace_with_bool(contains_term, "false");
+  if (constant_term_checker.is_constant_string()) {
+    std::string search_ = constant_term_checker.get_constant_string();
+    constant_term_checker_subject.start(contains_term->subject_term, Optimization::ConstantTermChecker::Mode::FULL);
+    //If they are both constants, we can check the contains directly
+    if (constant_term_checker_subject.is_constant_string()) {
+      std::string subject_ = constant_term_checker_subject.get_constant_string();
+      if (subject_.find(search_) != std::string::npos) {
+        add_callback_to_replace_with_bool(contains_term, "true");
+      } else {
+        add_callback_to_replace_with_bool(contains_term, "false");
+      }
+    }
+    constant_term_checker_subject.start(contains_term->subject_term, Optimization::ConstantTermChecker::Mode::PREFIX);
+    //check if the search term is contained in the prefix
+    if (constant_term_checker_subject.is_constant_string()) {
+      std::string subject_prefix = constant_term_checker_subject.get_constant_string();
+      if (subject_prefix.find(search_) != std::string::npos) {
+        add_callback_to_replace_with_bool(contains_term, "true");
+      }
+    }
+    constant_term_checker_subject.start(contains_term->subject_term, Optimization::ConstantTermChecker::Mode::SUFFIX);
+    //check if the search term is contained in the suffix
+    if (constant_term_checker_subject.is_constant_string()) {
+      std::string subject_suffix = constant_term_checker_subject.get_constant_string();
+      if (subject_suffix.find(search_) != std::string::npos) {
+        add_callback_to_replace_with_bool(contains_term, "true");
+      }
     }
   }
-  constant_term_checker_subject.start(contains_term->subject_term, Optimization::ConstantTermChecker::Mode::PREFIX);
-  //check if the search term is contained in the prefix
-  if (constant_term_checker_subject.is_constant_string()) {
-    std::string subject_prefix = constant_term_checker_subject.get_constant_string();
-    if (subject_prefix.find(search_) != std::string::npos) {
-      add_callback_to_replace_with_bool(contains_term, "true");
-    }
-  }
-  constant_term_checker_subject.start(contains_term->subject_term, Optimization::ConstantTermChecker::Mode::SUFFIX);
-  //check if the search term is contained in the suffix
-  if (constant_term_checker_subject.is_constant_string()) {
-    std::string subject_suffix = constant_term_checker_subject.get_constant_string();
-    if (subject_suffix.find(search_) != std::string::npos) {
-      add_callback_to_replace_with_bool(contains_term, "true");
-    }
-  }
-}
 
 //This is now redundent.
-/*else if (Ast2Dot::isEquivalent(contains_term->subject_term, contains_term->search_term)) {
- add_callback_to_replace_with_bool(contains_term, "true");
- }*/
-DVLOG(VLOG_LEVEL) << "post visit end: " << *contains_term << "@" << contains_term;
+  /*else if (Ast2Dot::isEquivalent(contains_term->subject_term, contains_term->search_term)) {
+   add_callback_to_replace_with_bool(contains_term, "true");
+   }*/
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *contains_term << "@" << contains_term;
 }
 
 void SyntacticOptimizer::visitNotContains(NotContains_ptr not_contains_term) {
-visit_and_callback(not_contains_term->subject_term);
-visit_and_callback(not_contains_term->search_term);
+  visit_and_callback(not_contains_term->subject_term);
+  visit_and_callback(not_contains_term->search_term);
 
-DVLOG(VLOG_LEVEL) << "post visit start: " << *not_contains_term << "@" << not_contains_term;
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *not_contains_term << "@" << not_contains_term;
 
-Optimization::ConstantTermChecker constant_term_checker;
-Optimization::ConstantTermChecker constant_term_checker_subject;
+  Optimization::ConstantTermChecker constant_term_checker;
+  Optimization::ConstantTermChecker constant_term_checker_subject;
 
-constant_term_checker.start(not_contains_term->search_term, Optimization::ConstantTermChecker::Mode::FULL);
+  constant_term_checker.start(not_contains_term->search_term, Optimization::ConstantTermChecker::Mode::FULL);
 
-if (constant_term_checker.is_constant_string()) {
-  std::string search_ = constant_term_checker.get_constant_string();
-  constant_term_checker_subject.start(not_contains_term->subject_term, Optimization::ConstantTermChecker::Mode::FULL);
-  //If they are both constants, we can check the contains directly
-  if (constant_term_checker_subject.is_constant_string()) {
-    std::string subject_ = constant_term_checker_subject.get_constant_string();
-    if (subject_.find(search_) != std::string::npos) {
-      add_callback_to_replace_with_bool(not_contains_term, "false");
-    } else {
-      add_callback_to_replace_with_bool(not_contains_term, "true");
+  if (constant_term_checker.is_constant_string()) {
+    std::string search_ = constant_term_checker.get_constant_string();
+    constant_term_checker_subject.start(not_contains_term->subject_term, Optimization::ConstantTermChecker::Mode::FULL);
+    //If they are both constants, we can check the contains directly
+    if (constant_term_checker_subject.is_constant_string()) {
+      std::string subject_ = constant_term_checker_subject.get_constant_string();
+      if (subject_.find(search_) != std::string::npos) {
+        add_callback_to_replace_with_bool(not_contains_term, "false");
+      } else {
+        add_callback_to_replace_with_bool(not_contains_term, "true");
+      }
+    }
+    constant_term_checker_subject.start(not_contains_term->subject_term,
+                                        Optimization::ConstantTermChecker::Mode::PREFIX);
+    //check if the search term is contained in the prefix
+    if (constant_term_checker_subject.is_constant_string()) {
+      std::string subject_prefix = constant_term_checker_subject.get_constant_string();
+      if (subject_prefix.find(search_) != std::string::npos) {
+        add_callback_to_replace_with_bool(not_contains_term, "false");
+      }
+    }
+    constant_term_checker_subject.start(not_contains_term->subject_term,
+                                        Optimization::ConstantTermChecker::Mode::SUFFIX);
+    //check if the search term is contained in the suffix
+    if (constant_term_checker_subject.is_constant_string()) {
+      std::string subject_suffix = constant_term_checker_subject.get_constant_string();
+      if (subject_suffix.find(search_) != std::string::npos) {
+        add_callback_to_replace_with_bool(not_contains_term, "false");
+      }
     }
   }
-  constant_term_checker_subject.start(not_contains_term->subject_term, Optimization::ConstantTermChecker::Mode::PREFIX);
-  //check if the search term is contained in the prefix
-  if (constant_term_checker_subject.is_constant_string()) {
-    std::string subject_prefix = constant_term_checker_subject.get_constant_string();
-    if (subject_prefix.find(search_) != std::string::npos) {
-      add_callback_to_replace_with_bool(not_contains_term, "false");
-    }
-  }
-  constant_term_checker_subject.start(not_contains_term->subject_term, Optimization::ConstantTermChecker::Mode::SUFFIX);
-  //check if the search term is contained in the suffix
-  if (constant_term_checker_subject.is_constant_string()) {
-    std::string subject_suffix = constant_term_checker_subject.get_constant_string();
-    if (subject_suffix.find(search_) != std::string::npos) {
-      add_callback_to_replace_with_bool(not_contains_term, "false");
-    }
-  }
-}
 
-/*if (Ast2Dot::isEquivalent(not_contains_term->subject_term, not_contains_term->search_term)) {
- add_callback_to_replace_with_bool(not_contains_term, "false");
- }*/
-DVLOG(VLOG_LEVEL) << "post visit end: " << *not_contains_term << "@" << not_contains_term;
+  /*if (Ast2Dot::isEquivalent(not_contains_term->subject_term, not_contains_term->search_term)) {
+   add_callback_to_replace_with_bool(not_contains_term, "false");
+   }*/
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *not_contains_term << "@" << not_contains_term;
 }
 
 void SyntacticOptimizer::visitBegins(Begins_ptr begins_term) {
-visit_and_callback(begins_term->subject_term);
-visit_and_callback(begins_term->search_term);
+  visit_and_callback(begins_term->subject_term);
+  visit_and_callback(begins_term->search_term);
 
-bool match = match_prefix(begins_term->subject_term, begins_term->search_term);
-if (!match) {
-  add_callback_to_replace_with_bool(begins_term, "false");
-  return;
-}
+  bool match = match_prefix(begins_term->subject_term, begins_term->search_term);
+  if (!match) {
+    add_callback_to_replace_with_bool(begins_term, "false");
+    return;
+  }
 
-visit_and_callback(begins_term->subject_term);
-visit_and_callback(begins_term->search_term);
+  visit_and_callback(begins_term->subject_term);
+  visit_and_callback(begins_term->search_term);
 
-Optimization::ConstantTermChecker constant_term_checker;
+  Optimization::ConstantTermChecker constant_term_checker;
 
-constant_term_checker.start(begins_term->search_term, Optimization::ConstantTermChecker::Mode::FULL);
+  constant_term_checker.start(begins_term->search_term, Optimization::ConstantTermChecker::Mode::FULL);
 
-if (constant_term_checker.is_constant_string()) {
-  if (constant_term_checker.get_constant_string() == "") {
+  if (constant_term_checker.is_constant_string()) {
+    if (constant_term_checker.get_constant_string() == "") {
+      add_callback_to_replace_with_bool(begins_term, "true");
+    }
+  }
+
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *begins_term << "@" << begins_term;
+  if (Ast2Dot::isEquivalent(begins_term->subject_term, begins_term->search_term)) {
     add_callback_to_replace_with_bool(begins_term, "true");
   }
-}
-
-DVLOG(VLOG_LEVEL) << "post visit start: " << *begins_term << "@" << begins_term;
-if (Ast2Dot::isEquivalent(begins_term->subject_term, begins_term->search_term)) {
-  add_callback_to_replace_with_bool(begins_term, "true");
-}
-DVLOG(VLOG_LEVEL) << "post visit end: " << *begins_term << "@" << begins_term;
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *begins_term << "@" << begins_term;
 }
 
 void SyntacticOptimizer::visitNotBegins(NotBegins_ptr not_begins_term) {
-visit_and_callback(not_begins_term->subject_term);
-visit_and_callback(not_begins_term->search_term);
+  visit_and_callback(not_begins_term->subject_term);
+  visit_and_callback(not_begins_term->search_term);
 
-bool match = match_prefix(not_begins_term->subject_term, not_begins_term->search_term);
-if (!match) {
-  add_callback_to_replace_with_bool(not_begins_term, "true");
-  return;
-}
+  bool match = match_prefix(not_begins_term->subject_term, not_begins_term->search_term);
+  if (!match) {
+    add_callback_to_replace_with_bool(not_begins_term, "true");
+    return;
+  }
 
-visit_and_callback(not_begins_term->subject_term);
-visit_and_callback(not_begins_term->search_term);
+  visit_and_callback(not_begins_term->subject_term);
+  visit_and_callback(not_begins_term->search_term);
 
-Optimization::ConstantTermChecker constant_term_checker;
+  Optimization::ConstantTermChecker constant_term_checker;
 
-constant_term_checker.start(not_begins_term->search_term, Optimization::ConstantTermChecker::Mode::FULL);
+  constant_term_checker.start(not_begins_term->search_term, Optimization::ConstantTermChecker::Mode::FULL);
 
-if (constant_term_checker.is_constant_string()) {
-  if (constant_term_checker.get_constant_string() == "") {
+  if (constant_term_checker.is_constant_string()) {
+    if (constant_term_checker.get_constant_string() == "") {
+      add_callback_to_replace_with_bool(not_begins_term, "false");
+    }
+  }
+
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *not_begins_term << "@" << not_begins_term;
+  if (Ast2Dot::isEquivalent(not_begins_term->subject_term, not_begins_term->search_term)) {
     add_callback_to_replace_with_bool(not_begins_term, "false");
   }
-}
-
-DVLOG(VLOG_LEVEL) << "post visit start: " << *not_begins_term << "@" << not_begins_term;
-if (Ast2Dot::isEquivalent(not_begins_term->subject_term, not_begins_term->search_term)) {
-  add_callback_to_replace_with_bool(not_begins_term, "false");
-}
-DVLOG(VLOG_LEVEL) << "post visit end: " << *not_begins_term << "@" << not_begins_term;
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *not_begins_term << "@" << not_begins_term;
 }
 
 void SyntacticOptimizer::visitEnds(Ends_ptr ends_term) {
-visit_and_callback(ends_term->subject_term);
-visit_and_callback(ends_term->search_term);
+  visit_and_callback(ends_term->subject_term);
+  visit_and_callback(ends_term->search_term);
 
-bool match = match_suffix(ends_term->subject_term, ends_term->search_term);
-if (!match) {
-  add_callback_to_replace_with_bool(ends_term, "false");
-  return;
-}
+  bool match = match_suffix(ends_term->subject_term, ends_term->search_term);
+  if (!match) {
+    add_callback_to_replace_with_bool(ends_term, "false");
+    return;
+  }
 
-visit_and_callback(ends_term->subject_term);
-visit_and_callback(ends_term->search_term);
+  visit_and_callback(ends_term->subject_term);
+  visit_and_callback(ends_term->search_term);
 
-Optimization::ConstantTermChecker constant_term_checker;
+  Optimization::ConstantTermChecker constant_term_checker;
 
-constant_term_checker.start(ends_term->search_term, Optimization::ConstantTermChecker::Mode::FULL);
+  constant_term_checker.start(ends_term->search_term, Optimization::ConstantTermChecker::Mode::FULL);
 
-if (constant_term_checker.is_constant_string()) {
-  if (constant_term_checker.get_constant_string() == "") {
+  if (constant_term_checker.is_constant_string()) {
+    if (constant_term_checker.get_constant_string() == "") {
+      add_callback_to_replace_with_bool(ends_term, "true");
+    }
+  }
+
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *ends_term << "@" << ends_term;
+  if (Ast2Dot::isEquivalent(ends_term->subject_term, ends_term->search_term)) {
     add_callback_to_replace_with_bool(ends_term, "true");
   }
-}
-
-DVLOG(VLOG_LEVEL) << "post visit start: " << *ends_term << "@" << ends_term;
-if (Ast2Dot::isEquivalent(ends_term->subject_term, ends_term->search_term)) {
-  add_callback_to_replace_with_bool(ends_term, "true");
-}
-DVLOG(VLOG_LEVEL) << "post visit end: " << *ends_term << "@" << ends_term;
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *ends_term << "@" << ends_term;
 }
 
 void SyntacticOptimizer::visitNotEnds(NotEnds_ptr not_ends_term) {
-visit_and_callback(not_ends_term->subject_term);
-visit_and_callback(not_ends_term->search_term);
+  visit_and_callback(not_ends_term->subject_term);
+  visit_and_callback(not_ends_term->search_term);
 
-bool match = match_suffix(not_ends_term->subject_term, not_ends_term->search_term);
-if (!match) {
-  add_callback_to_replace_with_bool(not_ends_term, "true");
-  return;
-}
+  bool match = match_suffix(not_ends_term->subject_term, not_ends_term->search_term);
+  if (!match) {
+    add_callback_to_replace_with_bool(not_ends_term, "true");
+    return;
+  }
 
-visit_and_callback(not_ends_term->subject_term);
-visit_and_callback(not_ends_term->search_term);
+  visit_and_callback(not_ends_term->subject_term);
+  visit_and_callback(not_ends_term->search_term);
 
-Optimization::ConstantTermChecker constant_term_checker;
+  Optimization::ConstantTermChecker constant_term_checker;
 
-constant_term_checker.start(not_ends_term->search_term, Optimization::ConstantTermChecker::Mode::FULL);
+  constant_term_checker.start(not_ends_term->search_term, Optimization::ConstantTermChecker::Mode::FULL);
 
-if (constant_term_checker.is_constant_string()) {
-  if (constant_term_checker.get_constant_string() == "") {
+  if (constant_term_checker.is_constant_string()) {
+    if (constant_term_checker.get_constant_string() == "") {
+      add_callback_to_replace_with_bool(not_ends_term, "false");
+    }
+  }
+
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *not_ends_term << "@" << not_ends_term;
+  if (Ast2Dot::isEquivalent(not_ends_term->subject_term, not_ends_term->search_term)) {
     add_callback_to_replace_with_bool(not_ends_term, "false");
   }
-}
-
-DVLOG(VLOG_LEVEL) << "post visit start: " << *not_ends_term << "@" << not_ends_term;
-if (Ast2Dot::isEquivalent(not_ends_term->subject_term, not_ends_term->search_term)) {
-  add_callback_to_replace_with_bool(not_ends_term, "false");
-}
-DVLOG(VLOG_LEVEL) << "post visit end: " << *not_ends_term << "@" << not_ends_term;
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *not_ends_term << "@" << not_ends_term;
 }
 
 void SyntacticOptimizer::visitIndexOf(IndexOf_ptr index_of_term) {
-visit_and_callback(index_of_term->subject_term);
-visit_and_callback(index_of_term->search_term);
-if (index_of_term->from_index) {
-  visit_and_callback(index_of_term->from_index);
-}
-
-DVLOG(VLOG_LEVEL) << "post visit start: " << *index_of_term << "@" << index_of_term;
-if (index_of_term->from_index) {
-  IndexOf::Mode mode;
-  int mode_value = check_and_process_index_operation(index_of_term, index_of_term->subject_term,
-                                                     index_of_term->from_index);
-  mode = static_cast<IndexOf::Mode>(mode_value);
-  if (IndexOf::Mode::NONE != mode) {
-    index_of_term->setMode(mode);
+  visit_and_callback(index_of_term->subject_term);
+  visit_and_callback(index_of_term->search_term);
+  if (index_of_term->from_index) {
+    visit_and_callback(index_of_term->from_index);
   }
-}
-DVLOG(VLOG_LEVEL) << "post visit end: " << *index_of_term << "@" << index_of_term;
+
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *index_of_term << "@" << index_of_term;
+  if (index_of_term->from_index) {
+    IndexOf::Mode mode;
+    int mode_value = check_and_process_index_operation(index_of_term, index_of_term->subject_term,
+                                                       index_of_term->from_index);
+    mode = static_cast<IndexOf::Mode>(mode_value);
+    if (IndexOf::Mode::NONE != mode) {
+      index_of_term->setMode(mode);
+    }
+  }
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *index_of_term << "@" << index_of_term;
 }
 
 void SyntacticOptimizer::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
-visit_and_callback(last_index_of_term->subject_term);
-visit_and_callback(last_index_of_term->search_term);
-if (last_index_of_term->from_index) {
-  visit_and_callback(last_index_of_term->from_index);
-}
-
-DVLOG(VLOG_LEVEL) << "post visit start: " << *last_index_of_term << "@" << last_index_of_term;
-if (last_index_of_term->from_index) {
-  LastIndexOf::Mode mode;
-  int mode_value = check_and_process_index_operation(last_index_of_term, last_index_of_term->subject_term,
-                                                     last_index_of_term->from_index);
-  mode = static_cast<LastIndexOf::Mode>(mode_value);
-  if (LastIndexOf::Mode::NONE != mode) {
-    last_index_of_term->setMode(mode);
+  visit_and_callback(last_index_of_term->subject_term);
+  visit_and_callback(last_index_of_term->search_term);
+  if (last_index_of_term->from_index) {
+    visit_and_callback(last_index_of_term->from_index);
   }
-}
-DVLOG(VLOG_LEVEL) << "post visit end: " << *last_index_of_term << "@" << last_index_of_term;
+
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *last_index_of_term << "@" << last_index_of_term;
+  if (last_index_of_term->from_index) {
+    LastIndexOf::Mode mode;
+    int mode_value = check_and_process_index_operation(last_index_of_term, last_index_of_term->subject_term,
+                                                       last_index_of_term->from_index);
+    mode = static_cast<LastIndexOf::Mode>(mode_value);
+    if (LastIndexOf::Mode::NONE != mode) {
+      last_index_of_term->setMode(mode);
+    }
+  }
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *last_index_of_term << "@" << last_index_of_term;
 }
 
 void SyntacticOptimizer::visitCharAt(CharAt_ptr char_at_term) {
-visit_and_callback(char_at_term->subject_term);
-visit_and_callback(char_at_term->index_term);
-
-DVLOG(VLOG_LEVEL) << "post visit start: " << *char_at_term << "@" << char_at_term;
-Optimization::CharAtOptimization char_at_optimizer(char_at_term);
-char_at_optimizer.start();
-if (char_at_optimizer.is_optimizable()) {
-  std::string str_value = "" + char_at_optimizer.get_char_at_result();
-  DVLOG(VLOG_LEVEL) << "Applying charAt transformation: '" << str_value << "'";
-  callback = [this, char_at_term, str_value](Term_ptr & term) mutable {
-    term = generate_term_constant(str_value, Primitive::Type::STRING);
-    delete char_at_term;
-  };
-} else if (char_at_optimizer.is_index_updated()) {
-  // there is a possible change in concat term, re-process subtree
-  DVLOG(VLOG_LEVEL) << "char at optimization -> re visit term start" << *(char_at_term->subject_term);
   visit_and_callback(char_at_term->subject_term);
-  DVLOG(VLOG_LEVEL) << "char at optimization -> re visit term end" << *(char_at_term->subject_term);
-}
-DVLOG(VLOG_LEVEL) << "post visit end: " << *char_at_term << "@" << char_at_term;
+  visit_and_callback(char_at_term->index_term);
+
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *char_at_term << "@" << char_at_term;
+  Optimization::CharAtOptimization char_at_optimizer(char_at_term);
+  char_at_optimizer.start();
+  if (char_at_optimizer.is_optimizable()) {
+    std::string str_value = "" + char_at_optimizer.get_char_at_result();
+    DVLOG(VLOG_LEVEL) << "Applying charAt transformation: '" << str_value << "'";
+    callback = [this, char_at_term, str_value](Term_ptr & term) mutable {
+      term = generate_term_constant(str_value, Primitive::Type::STRING);
+      delete char_at_term;
+    };
+  } else if (char_at_optimizer.is_index_updated()) {
+    // there is a possible change in concat term, re-process subtree
+    DVLOG(VLOG_LEVEL) << "char at optimization -> re visit term start" << *(char_at_term->subject_term);
+    visit_and_callback(char_at_term->subject_term);
+    DVLOG(VLOG_LEVEL) << "char at optimization -> re visit term end" << *(char_at_term->subject_term);
+  }
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *char_at_term << "@" << char_at_term;
 }
 
 void SyntacticOptimizer::visitSubString(SubString_ptr sub_string_term) {
-visit_and_callback(sub_string_term->subject_term);
-visit_and_callback(sub_string_term->start_index_term);
-if (sub_string_term->end_index_term) {
-  visit_and_callback(sub_string_term->end_index_term);
-}
-
-DVLOG(VLOG_LEVEL) << "post visit start: " << *sub_string_term << "@" << sub_string_term;
-Optimization::SubstringOptimization substring_optimizer(sub_string_term);
-substring_optimizer.start();
-if (substring_optimizer.is_optimizable()) {
-  std::string value = substring_optimizer.get_substring_result();
-  DVLOG(VLOG_LEVEL) << "Applying 'subString' transformation";
-  callback = [this, sub_string_term, value](Term_ptr & term) mutable {
-    term = generate_term_constant(value, Primitive::Type::STRING);
-    delete sub_string_term;
-  };
-  return;
-}
-
-if (substring_optimizer.is_index_updated()) {
-  DVLOG(VLOG_LEVEL) << "substring optimization -> re visit term start" << *(sub_string_term->subject_term);
   visit_and_callback(sub_string_term->subject_term);
-  DVLOG(VLOG_LEVEL) << "substring optimization -> re visit term end" << *(sub_string_term->subject_term);
-}
+  visit_and_callback(sub_string_term->start_index_term);
+  if (sub_string_term->end_index_term) {
+    visit_and_callback(sub_string_term->end_index_term);
+  }
 
-SubString::Mode mode;
-if (sub_string_term->end_index_term) {
-  mode = check_and_process_subString(sub_string_term, sub_string_term->start_index_term,
-                                     sub_string_term->end_index_term);
-} else {
-  mode = check_and_process_subString(sub_string_term, sub_string_term->start_index_term);
-}
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *sub_string_term << "@" << sub_string_term;
+  Optimization::SubstringOptimization substring_optimizer(sub_string_term);
+  substring_optimizer.start();
+  if (substring_optimizer.is_optimizable()) {
+    std::string value = substring_optimizer.get_substring_result();
+    DVLOG(VLOG_LEVEL) << "Applying 'subString' transformation";
+    callback = [this, sub_string_term, value](Term_ptr & term) mutable {
+      term = generate_term_constant(value, Primitive::Type::STRING);
+      delete sub_string_term;
+    };
+    return;
+  }
 
-if (SubString::Mode::NONE != mode) {
-  sub_string_term->setMode(mode);
-}
-DVLOG(VLOG_LEVEL) << "post visit end: " << *sub_string_term << "@" << sub_string_term;
+  if (substring_optimizer.is_index_updated()) {
+    DVLOG(VLOG_LEVEL) << "substring optimization -> re visit term start" << *(sub_string_term->subject_term);
+    visit_and_callback(sub_string_term->subject_term);
+    DVLOG(VLOG_LEVEL) << "substring optimization -> re visit term end" << *(sub_string_term->subject_term);
+  }
+
+  SubString::Mode mode;
+  if (sub_string_term->end_index_term) {
+    mode = check_and_process_subString(sub_string_term, sub_string_term->start_index_term,
+                                       sub_string_term->end_index_term);
+  } else {
+    mode = check_and_process_subString(sub_string_term, sub_string_term->start_index_term);
+  }
+
+  if (SubString::Mode::NONE != mode) {
+    sub_string_term->setMode(mode);
+  }
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *sub_string_term << "@" << sub_string_term;
 }
 
 void SyntacticOptimizer::visitToUpper(ToUpper_ptr to_upper_term) {
-visit_and_callback(to_upper_term->subject_term);
-Optimization::ConstantTermChecker string_constant_checker;
-string_constant_checker.start(to_upper_term->subject_term);
-if (string_constant_checker.is_constant_string()) {
-  std::string data = string_constant_checker.get_constant_string();
-  std::transform(data.begin(), data.end(), data.begin(), ::toupper);
-  DVLOG(VLOG_LEVEL) << "Applying toupper transformation.";
-  callback = [this, to_upper_term, data](Term_ptr & term) mutable {
-    term = generate_term_constant(data, Primitive::Type::STRING);
-    delete to_upper_term;
-  };
-}
+  visit_and_callback(to_upper_term->subject_term);
+  Optimization::ConstantTermChecker string_constant_checker;
+  string_constant_checker.start(to_upper_term->subject_term);
+  if (string_constant_checker.is_constant_string()) {
+    std::string data = string_constant_checker.get_constant_string();
+    std::transform(data.begin(), data.end(), data.begin(), ::toupper);
+    DVLOG(VLOG_LEVEL) << "Applying toupper transformation.";
+    callback = [this, to_upper_term, data](Term_ptr & term) mutable {
+      term = generate_term_constant(data, Primitive::Type::STRING);
+      delete to_upper_term;
+    };
+  }
 }
 
 void SyntacticOptimizer::visitToLower(ToLower_ptr to_lower_term) {
-visit_and_callback(to_lower_term->subject_term);
-Optimization::ConstantTermChecker string_constant_checker;
-string_constant_checker.start(to_lower_term->subject_term);
-if (string_constant_checker.is_constant_string()) {
-  std::string data = string_constant_checker.get_constant_string();
-  std::transform(data.begin(), data.end(), data.begin(), ::tolower);
-  DVLOG(VLOG_LEVEL) << "Applying tolower transformation.";
-  callback = [this, to_lower_term, data](Term_ptr & term) mutable {
-    term = generate_term_constant(data, Primitive::Type::STRING);
-    delete to_lower_term;
-  };
-}
+  visit_and_callback(to_lower_term->subject_term);
+  Optimization::ConstantTermChecker string_constant_checker;
+  string_constant_checker.start(to_lower_term->subject_term);
+  if (string_constant_checker.is_constant_string()) {
+    std::string data = string_constant_checker.get_constant_string();
+    std::transform(data.begin(), data.end(), data.begin(), ::tolower);
+    DVLOG(VLOG_LEVEL) << "Applying tolower transformation.";
+    callback = [this, to_lower_term, data](Term_ptr & term) mutable {
+      term = generate_term_constant(data, Primitive::Type::STRING);
+      delete to_lower_term;
+    };
+  }
 }
 
 void SyntacticOptimizer::visitTrim(Trim_ptr trim_term) {
-visit_and_callback(trim_term->subject_term);
+  visit_and_callback(trim_term->subject_term);
 // TODO add optimization
 }
 
 void SyntacticOptimizer::visitToString(ToString_ptr to_string_term) {
-visit_and_callback(to_string_term->subject_term);
+  visit_and_callback(to_string_term->subject_term);
 
-DVLOG(VLOG_LEVEL) << "post visit start: " << *to_string_term << "@" << to_string_term;
-if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(to_string_term->subject_term)) {
-  if (Primitive::Type::NUMERAL == term_constant->getValueType()) {
-    std::string str_value = term_constant->getValue();
-    DVLOG(VLOG_LEVEL) << "Applying 'toString' transformation: '" << str_value << "'";
-    callback = [this, to_string_term, str_value](Term_ptr & term) mutable {
-      term = generate_term_constant(str_value, Primitive::Type::STRING);
-      delete to_string_term;
-    };
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *to_string_term << "@" << to_string_term;
+  if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(to_string_term->subject_term)) {
+    if (Primitive::Type::NUMERAL == term_constant->getValueType()) {
+      std::string str_value = term_constant->getValue();
+      DVLOG(VLOG_LEVEL) << "Applying 'toString' transformation: '" << str_value << "'";
+      callback = [this, to_string_term, str_value](Term_ptr & term) mutable {
+        term = generate_term_constant(str_value, Primitive::Type::STRING);
+        delete to_string_term;
+      };
+    }
   }
-}
-DVLOG(VLOG_LEVEL) << "post visit end: " << *to_string_term << "@" << to_string_term;
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *to_string_term << "@" << to_string_term;
 }
 
 void SyntacticOptimizer::visitToInt(ToInt_ptr to_int_term) {
-visit_and_callback(to_int_term->subject_term);
+  visit_and_callback(to_int_term->subject_term);
 
-DVLOG(VLOG_LEVEL) << "post visit start: " << *to_int_term << "@" << to_int_term;
-Optimization::ConstantTermChecker string_constant_checker;
-string_constant_checker.start(to_int_term->subject_term);
-if (string_constant_checker.is_constant_string()) {
-  std::string data = string_constant_checker.get_constant_string();
-  std::transform(data.begin(), data.end(), data.begin(), ::tolower);
-  DVLOG(VLOG_LEVEL) << "Applying toint transformation.";
-  callback = [this, to_int_term, data](Term_ptr & term) mutable {
-    term = generate_term_constant(data, Primitive::Type::NUMERAL);
-    delete to_int_term;
-  };
-}
-DVLOG(VLOG_LEVEL) << "post visit end: " << *to_int_term << "@" << to_int_term;
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *to_int_term << "@" << to_int_term;
+  Optimization::ConstantTermChecker string_constant_checker;
+  string_constant_checker.start(to_int_term->subject_term);
+  if (string_constant_checker.is_constant_string()) {
+    std::string data = string_constant_checker.get_constant_string();
+    std::transform(data.begin(), data.end(), data.begin(), ::tolower);
+    DVLOG(VLOG_LEVEL) << "Applying toint transformation.";
+    callback = [this, to_int_term, data](Term_ptr & term) mutable {
+      term = generate_term_constant(data, Primitive::Type::NUMERAL);
+      delete to_int_term;
+    };
+  }
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *to_int_term << "@" << to_int_term;
 }
 
 void SyntacticOptimizer::visitReplace(Replace_ptr replace_term) {
-visit_and_callback(replace_term->subject_term);
-visit_and_callback(replace_term->search_term);
-visit_and_callback(replace_term->replace_term);
+  visit_and_callback(replace_term->subject_term);
+  visit_and_callback(replace_term->search_term);
+  visit_and_callback(replace_term->replace_term);
 
-DVLOG(VLOG_LEVEL) << "post visit start: " << *replace_term << "@" << replace_term;
-if (Ast2Dot::isEquivalent(replace_term->search_term, replace_term->replace_term)) {
-  callback = [replace_term](Term_ptr & term) mutable {
-    term = replace_term->subject_term;
-    replace_term->subject_term = nullptr;
-    delete replace_term;
-  };
-}
-DVLOG(VLOG_LEVEL) << "post visit end: " << *replace_term << "@" << replace_term;
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *replace_term << "@" << replace_term;
+  if (Ast2Dot::isEquivalent(replace_term->search_term, replace_term->replace_term)) {
+    callback = [replace_term](Term_ptr & term) mutable {
+      term = replace_term->subject_term;
+      replace_term->subject_term = nullptr;
+      delete replace_term;
+    };
+  }
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *replace_term << "@" << replace_term;
 }
 
 void SyntacticOptimizer::visitCount(Count_ptr count_term) {
-visit_and_callback(count_term->subject_term);
-visit_and_callback(count_term->bound_term);
+  visit_and_callback(count_term->subject_term);
+  visit_and_callback(count_term->bound_term);
 }
 
 void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {
-LOG(FATAL)<< "'ite' term should be converted to 'or' term by parser";
+  LOG(FATAL)<< "'ite' term should be converted to 'or' term by parser";
 }
 
 void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {
@@ -1582,7 +1590,7 @@ void SyntacticOptimizer::visit_and_callback(Term_ptr & term) {
   if (callback) {
     callback(term);
     callback = nullptr;
-    visit_and_callback(term); // TODO be carefull!!
+    visit_and_callback(term);  // TODO be carefull!!
   }
 }
 
@@ -1598,19 +1606,11 @@ void SyntacticOptimizer::append_constant(TermConstant_ptr left_constant, TermCon
 
 bool SyntacticOptimizer::check_and_process_constant_string(std::initializer_list<SMT::Term_ptr> terms) {
   bool is_a_term_string_constant = false;
+  Optimization::ConstantTermChecker constant_term_checker;
   for (auto term : terms) {
-    if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(term)) {
-      if (Primitive::Type::STRING == term_constant->getValueType()) {
-        is_a_term_string_constant = true;
-      } else if (Primitive::Type::REGEX == term_constant->getValueType()) {
-        std::string data = term_constant->getValue();
-        Util::RegularExpression regular_expression(data);
-        if (regular_expression.is_constant_string()) {
-          term_constant->primitive->setType(Primitive::Type::STRING);
-          term_constant->primitive->setData(regular_expression.get_constant_string());
-          is_a_term_string_constant = true;
-        }
-      }
+    constant_term_checker.start(term, Optimization::ConstantTermChecker::Mode::ONLY_TERM_CONSTANT);
+    if (constant_term_checker.is_constant()) {
+      is_a_term_string_constant = true;
     }
   }
 
