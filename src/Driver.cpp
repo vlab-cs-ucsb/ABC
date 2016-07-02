@@ -102,7 +102,6 @@ void Driver::initializeSolver() {
   Solver::SyntacticProcessor syntactic_processor(script_);
   syntactic_processor.start();
 
-  //TODO assign variables to bottom when a branch is not satisfiable
   Solver::SyntacticOptimizer syntactic_optimizer(script_, symbol_table_);
   syntactic_optimizer.start();
 
@@ -113,12 +112,13 @@ void Driver::initializeSolver() {
   Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
   equivalence_generator.start();
 
-  // TODO needs update to handle all operations that returns bool
+// TODO needs update to handle all operations that returns bool
 //  Solver::FormulaOptimizer formula_optimizer(script_, symbol_table_);
 //  formula_optimizer.start();
 
   Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
   constraint_sorter.start();
+
 }
 
 void Driver::solve() {

@@ -31,18 +31,18 @@ class StringRelation {
     LE,
     INTERSECT,
     UNION,
-    VAR,
-    CONSTANT
-  };
-
-  struct Subrelation {
-    StringRelation::Type type;
-    std::vector<std::string> names;
+    INT_VAR,
+    INT_CONSTANT,
+    STRING_VAR,
+    STRING_CONSTANT,
+    REGEX,
+    EQ_NO_LAMBDA,
+    EQ_ONLY_LAMBDA
   };
 
   StringRelation();
-  StringRelation(Type t, std::map<std::string, int>* trackmap, std::vector<Subrelation> subrels,
-                 size_t ntracks);
+  StringRelation(Type t, StringRelation_ptr left, StringRelation_ptr right,
+                  std::string data, std::map<std::string, int>* trackmap);
   virtual ~StringRelation();
 
   StringRelation(const StringRelation&);
@@ -51,25 +51,32 @@ class StringRelation {
   std::string str() const;
   void set_type(Type type);
   StringRelation::Type get_type() const;
-  void set_num_tracks(size_t ntracks);
-  size_t get_num_tracks() const;
+
+  void set_left(StringRelation_ptr left);
+  StringRelation_ptr get_left();
+  void set_right(StringRelation_ptr right);
+  StringRelation_ptr get_right();
+
+  void set_data(std::string data);
+  std::string get_data();
+
   int get_variable_index(std::string name);
   std::map<std::string ,int>* get_term_trackmap();
 
   bool has_same_trackmap(StringRelation_ptr other_relation);
-  StringRelation_ptr combine(StringRelation_ptr other_relation);
 
-  void add_subrelation(Subrelation subrel);
-  std::vector<Subrelation> get_subrelation_list();
   std::map<std::string, int>* get_variable_trackmap();
   void set_variable_trackmap(std::map<std::string, int>* trackmap);
+
+  int get_num_tracks();
 
   friend std::ostream& operator<<(std::ostream& os, const StringRelation& relation);
  protected:
   StringRelation::Type type_;
+  StringRelation_ptr left_;
+  StringRelation_ptr right_;
+  std::string data_;
   std::map<std::string, int>* trackmap_handle_;
-  std::vector<Subrelation> subrelations_;
-  size_t num_tracks_;
 
  private:
   static const int VLOG_LEVEL;

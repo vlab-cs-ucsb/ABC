@@ -140,9 +140,8 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   // If we are in a component solve arithmetic constraints first
   if (constraint_information_->is_component(and_term)) {
     if (Option::Solver::LIA_ENGINE_ENABLED) {
-      arithmetic_constraint_solver_.start(and_term);
+      //arithmetic_constraint_solver_.start(and_term);
     }
-
     if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA) {
       string_constraint_solver_.start(and_term);
     }
@@ -150,6 +149,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
   bool is_satisfiable = true;
   Value_ptr param = nullptr;
+  DVLOG(VLOG_LEVEL) << "Start!";
   for (auto& term : *(and_term->term_list)) {
     check_and_visit(term);
     param = getTermValue(term);
@@ -169,6 +169,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   }
   Value_ptr result = new Value(is_satisfiable);
   setTermValue(and_term, result);
+  DVLOG(VLOG_LEVEL) << "Done!";
 }
 
 void ConstraintSolver::visitOr(Or_ptr or_term) {
@@ -866,7 +867,65 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
       break;
     }
     default:
-      LOG(FATAL)<< "Undefined subString semantic";
+
+      if(sub_string_term->start_index_term->type() != Term::Type::QUALIDENTIFIER
+          || sub_string_term->end_index_term->type() != Term::Type::QUALIDENTIFIER) {
+        LOG(FATAL)<< "Undefined subString semantic";
+      } else {
+        LOG(INFO) << "";
+        LOG(INFO) << "CHOO CHOO MUTHERFUCKER";
+        LOG(INFO) << "";
+      }
+
+      DVLOG(VLOG_LEVEL) << "------- WORRYING BEGINS --------";
+
+      StringAutomaton_ptr original, reversed, prefixes, temp, result_value;
+      Value_ptr start_index_value, ss_length_value;
+      IntAutomaton_ptr start_index_auto, ss_length_auto, original_length, temp_length;
+      start_index_value = getTermValue(sub_string_term->start_index_term);
+      ss_length_value = getTermValue(sub_string_term->end_index_term);
+
+      start_index_auto = start_index_value->getIntAutomaton();
+      ss_length_auto = ss_length_value->getIntAutomaton();
+
+      DVLOG(VLOG_LEVEL) << ">>>>>>>> WORRYING INTENSIFIES >>>>>>>>";
+
+      original = param_subject->getStringAutomaton();
+      original_length = original->length();
+      temp_length = original_length->minus(start_index_auto);
+      delete original_length;
+
+      DVLOG(VLOG_LEVEL) << "<<<<<<<<< WORRYING MORE HARDER >>>>>>>>>";
+
+      reversed = MultiTrackAutomaton::get_reverse_auto(original);
+      DVLOG(VLOG_LEVEL) << 1;
+      prefixes = reversed->prefixes();
+      DVLOG(VLOG_LEVEL) << 2;
+      delete reversed;
+      DVLOG(VLOG_LEVEL) << 3;
+      temp = prefixes->restrictLengthTo(temp_length);
+      DVLOG(VLOG_LEVEL) << 4;
+      delete prefixes;
+      delete temp_length;
+
+      DVLOG(VLOG_LEVEL) << "     i ded       ";
+
+      original = MultiTrackAutomaton::get_reverse_auto(temp);
+      delete temp;
+      temp = original->prefixes();
+      delete original;
+      result_value = temp->restrictLengthTo(ss_length_auto);
+      result = new Value(StringAutomaton::makeAnyString());
+      delete temp;
+      DVLOG(VLOG_LEVEL) << "   !!!  we dunnit !!! ";
+      //DVLOG(VLOG_LEVEL) << "Hope for the best: " << result->isEmptyLanguage();
+      //DVLOG(VLOG_LEVEL) << result->getAnAcceptingString();
+      //DVLOG(VLOG_LEVEL) << "original length: " << original_length->getAnAcceptingInt();
+      //DVLOG(VLOG_LEVEL) << "start index : " << start_index_auto->getAnAcceptingInt();
+      //DVLOG(VLOG_LEVEL) << "length ss: " << ss_length_auto->getAnAcceptingInt();
+      //DVLOG(VLOG_LEVEL) << "temp_len: " << temp_length->getAnAcceptingInt();
+
+
       break;
     }
 
@@ -1011,7 +1070,9 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   // the most recent value
   Value_ptr variable_value = nullptr;
   if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA) {
+    DVLOG(VLOG_LEVEL) << "Getting var";
     variable_value = string_constraint_solver_.get_variable_value(variable);
+    DVLOG(VLOG_LEVEL) << "Got var";
   }
   if (variable_value != nullptr) {
     DVLOG(VLOG_LEVEL) << "Relational variable: " << *variable;
@@ -1181,6 +1242,7 @@ void ConstraintSolver::update_variables() {
     }
     DVLOG(VLOG_LEVEL) << "Updating variable: " << var->getName();
     string_constraint_solver_.update_variable_value(var, value);
+    DVLOG(VLOG_LEVEL) << "..........";
     still_sat = still_sat and value->isSatisfiable();
     delete value;
     symbol_table_->setValue(var, nullptr);
@@ -1205,6 +1267,7 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
         DVLOG(VLOG_LEVEL) << "Mixed Multi- and Single- Track String Automata Constraint";
         result = string_constraint_solver_.get_term_value(term);
         setTermValue(term, new Value(result->isSatisfiable()));
+        symbol_table_->setValue(string_constraint_solver_.get_string_variable_name(term), result);
         return true;
       }
       if (arithmetic_constraint_solver_.hasStringTerms(term) and result->isSatisfiable()) {

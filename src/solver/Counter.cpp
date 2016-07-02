@@ -24,7 +24,7 @@ Counter::~Counter() {
 
 void Counter::start() {
   symbol_table->reset_count();
-  symbol_table->push_scope(root);
+  symbol_table->push_scope(root, false);
   visitScript(root);
   symbol_table->pop_scope();
   end();
@@ -63,7 +63,7 @@ void Counter::setCallbacks() {
 
 void Counter::visitOr(Or_ptr or_term) {
   for (auto& term : *(or_term->term_list)) {
-    symbol_table->push_scope(term);
+    symbol_table->push_scope(term, false);
     visit(term);
     symbol_table->pop_scope();
   }

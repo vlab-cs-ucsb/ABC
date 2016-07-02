@@ -30,8 +30,6 @@ using VariableCounterMap = std::map<SMT::Variable_ptr, int>;
 using VariableCounterTable = std::map<SMT::Visitable_ptr, VariableCounterMap>;
 using EquivClassMap = std::map<SMT::Variable_ptr, EquivalenceClass_ptr>;
 using EquivClassTable = std::map<SMT::Visitable_ptr, EquivClassMap>;
-using VariableSubstitutionMap = std::map<SMT::Variable_ptr, SMT::Variable_ptr>;
-using VariableSubstitutionTable = std::map<SMT::Visitable_ptr, VariableSubstitutionMap>;
 using VariableValueMap = std::map<SMT::Variable_ptr, Value_ptr>;
 using VariableValueTable = std::map<SMT::Visitable_ptr, VariableValueMap>;
 
@@ -58,7 +56,7 @@ public:
   void setBound(int bound);
   int getBound();
 
-  void push_scope(SMT::Visitable_ptr);
+  void push_scope(SMT::Visitable_ptr, bool save_scope = true);
   SMT::Visitable_ptr top_scope();
   void pop_scope();
 
@@ -127,14 +125,6 @@ private:
    * Has a mapping from variable to its corresponding equivalence class if any exists
    */
   EquivClassTable variable_equivalence_table;
-
-  /**
-   * Applied existential elimination rules
-   * For each scope:
-   * Keeps a map for each variable that is substituted by another variable
-   * based on equality constraints
-   */
-  VariableSubstitutionTable variable_substitution_table;
 
   /**
    * Values of each variable for each scope

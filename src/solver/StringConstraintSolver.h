@@ -62,6 +62,7 @@ public:
   void visitReConcat(SMT::ReConcat_ptr);
   void visitToRegex(SMT::ToRegex_ptr);
 
+  std::string get_string_variable_name(SMT::Term_ptr term);
   Value_ptr get_term_value(SMT::Term_ptr term);
   bool set_term_value(SMT::Term_ptr term, Value_ptr value);
   bool update_term_value(SMT::Term_ptr term, Value_ptr Value);

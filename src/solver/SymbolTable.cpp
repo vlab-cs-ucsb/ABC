@@ -15,7 +15,7 @@ using namespace SMT;
 const int SymbolTable::VLOG_LEVEL = 10;
 
 SymbolTable::SymbolTable()
-        : global_assertion_result(true), bound(50) {
+  : global_assertion_result(true), bound(50) {
 }
 
 SymbolTable::~SymbolTable() {
@@ -107,7 +107,7 @@ void SymbolTable::clearLetScopes() {
 void SymbolTable::addVariable(Variable_ptr variable) {
   auto result = variables.insert(std::make_pair(variable->getName(), variable));
   if (not result.second) {
-    LOG(FATAL)<< "Duplicate variable definition: " << *variable;
+    LOG(FATAL) << "Duplicate variable definition: " << *variable;
   }
 }
 
@@ -129,18 +129,18 @@ VariableMap& SymbolTable::getVariables() {
 }
 
 /*int SymbolTable::getReuse(){
-  return reuse; 
+  return reuse;
 }
 
 void SymbolTable::incrementReuse(){
-  reuse++; 
+  reuse++;
 }*/
 
 
 Variable_ptr SymbolTable::getSymbolicVariable() {
   auto it = std::find_if(variables.begin(), variables.end(),
-      [](std::pair<std::string, Variable_ptr> entry) -> bool {
-        return entry.second->isSymbolic();
+  [](std::pair<std::string, Variable_ptr> entry) -> bool {
+    return entry.second->isSymbolic();
   });
   if (it != variables.end()) {
     return it->second;
@@ -172,9 +172,11 @@ int SymbolTable::getBound() {
   return bound;
 }
 
-void SymbolTable::push_scope(Visitable_ptr key) {
+void SymbolTable::push_scope(Visitable_ptr key, bool save_scope) {
   scope_stack.push_back(key);
-  scopes.insert(key);
+  if (save_scope) {
+    scopes.insert(key);
+  }
 }
 
 Visitable_ptr SymbolTable::top_scope() {
@@ -184,6 +186,7 @@ Visitable_ptr SymbolTable::top_scope() {
 void SymbolTable::pop_scope() {
   scope_stack.pop_back();
 }
+
 
 
 void SymbolTable::increment_count(Variable_ptr variable) {
@@ -314,7 +317,7 @@ VariableValueMap& SymbolTable::getValuesAtScope(Visitable_ptr scope) {
 }
 
 bool SymbolTable::setValue(std::string var_name, Value_ptr value) {
-return setValue(getVariable(var_name), value);
+  return setValue(getVariable(var_name), value);
 }
 
 bool SymbolTable::setValue(Variable_ptr variable, Value_ptr value) {
@@ -373,17 +376,17 @@ std::string SymbolTable::generate_internal_name(std::string name, SMT::Variable:
   std::stringstream ss;
   ss << "__vlab__";
   switch (type) {
-    case Variable::Type::BOOL:
-      ss << "bool";
-      break;
-    case Variable::Type::INT:
-      ss << "int";
-      break;
-    case Variable::Type::STRING:
-      ss << "str";
-      break;
-    default:
-      break;
+  case Variable::Type::BOOL:
+    ss << "bool";
+    break;
+  case Variable::Type::INT:
+    ss << "int";
+    break;
+  case Variable::Type::STRING:
+    ss << "str";
+    break;
+  default:
+    break;
   }
   ss << "__" << name;
   return ss.str();

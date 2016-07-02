@@ -29,7 +29,7 @@ void EquivClassRuleRunner::start() {
     return;
   }
 
-  symbol_table_->push_scope(root);
+  symbol_table_->push_scope(root, false);
   visit(root);
   symbol_table_->pop_scope();
 
@@ -79,7 +79,7 @@ void EquivClassRuleRunner::visitAnd(And_ptr and_term) {
 void EquivClassRuleRunner::visitOr(Or_ptr or_term) {
   for (auto& term : * (or_term->term_list)) {
     check_and_substitute_var(term);
-    symbol_table_->push_scope(term);
+    symbol_table_->push_scope(term, false);
     visit(term);
     symbol_table_->pop_scope();
   }
@@ -365,6 +365,7 @@ bool EquivClassRuleRunner::check_and_substitute_var(Term_ptr& term) {
       Term_ptr subs_term = equiv->get_representative_term();
       Term_ptr tmp_term = term;
       term = subs_term->clone();
+
       delete tmp_term; tmp_term = nullptr;
       DVLOG(VLOG_LEVEL)<< "apply substitution for: " << *variable << " -> " << *subs_term;
       // if we replace with a constant update representative variable with the value of constant
@@ -403,8 +404,6 @@ void EquivClassRuleRunner::set_variable_value(Variable_ptr variable, TermConstan
   symbol_table_->setValue(variable, result);
   DVLOG(VLOG_LEVEL)<< "value updated for variable: " << *variable << " -> " << *result;
 }
-
-
 
 } /* namespace Solver */
 } /* namespace Vlab */

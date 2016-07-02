@@ -32,7 +32,7 @@ EquivalenceGenerator::~EquivalenceGenerator() {
 
 void EquivalenceGenerator::start() {
   DVLOG(VLOG_LEVEL) << "Starting the EquivalenceGenerator";
-  symbol_table_->push_scope(root);
+  symbol_table_->push_scope(root, false);
   visitScript(root);
   end();
 }
@@ -91,7 +91,7 @@ void EquivalenceGenerator::visitAnd(And_ptr and_term) {
 
 void EquivalenceGenerator::visitOr(Or_ptr or_term) {
   for (auto term : *(or_term->term_list)) {
-    symbol_table_->push_scope(term);
+    symbol_table_->push_scope(term, false);
     visit(term);
     symbol_table_->pop_scope();
   }
