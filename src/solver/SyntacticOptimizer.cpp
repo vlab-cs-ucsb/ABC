@@ -1580,7 +1580,7 @@ void SyntacticOptimizer::visit_and_callback(Term_ptr & term) {
   if (callback) {
     callback(term);
     callback = nullptr;
-    visit(term);  // Recursively check for optimizations
+    visit_and_callback(term); // TODO be carefull!!
   }
 }
 
@@ -1621,7 +1621,6 @@ bool SyntacticOptimizer::check_and_process_len_transformation(Term_ptr operation
 //  if (Option::Solver::LIA_ENGINE_ENABLED) {
 //    return false;
 //  }
-
   return __check_and_process_len_transformation(operation->type(), left_term, right_term)
       || __check_and_process_len_transformation(syntactic_reverse_relation(operation->type()), right_term, left_term);
 }
@@ -1668,8 +1667,8 @@ bool SyntacticOptimizer::__check_and_process_len_transformation(Term::Type opera
           default:
             return false;
         }
-        regex_template.replace(regex_template.find_first_of("%s"), 2, l_value);  // replace l
-        regex_template.replace(regex_template.find_first_of("%s"), 2, r_value);  // replace r
+        regex_template.replace(regex_template.find("%s"), 2, l_value);  // replace l
+        regex_template.replace(regex_template.find("%s"), 2, r_value);  // replace r
         term_constant->primitive->setData(regex_template);
         term_constant->primitive->setType(Primitive::Type::REGEX);
         left_term = len_ptr->term;

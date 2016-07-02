@@ -112,12 +112,15 @@ void Driver::initializeSolver() {
   Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
   equivalence_generator.start();
 
+//  Solver::EquivalenceGenerator equivalence_generator2(script_, symbol_table_);
+//  equivalence_generator2.start();
+
 // TODO needs update to handle all operations that returns bool
 //  Solver::FormulaOptimizer formula_optimizer(script_, symbol_table_);
 //  formula_optimizer.start();
 
-  Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
-  constraint_sorter.start();
+//  Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
+//  constraint_sorter.start();
 
 }
 
