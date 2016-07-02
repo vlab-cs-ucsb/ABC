@@ -242,8 +242,8 @@ StringAutomaton_ptr StringAutomaton::makeAnyChar(int num_of_variables, int* vari
 StringAutomaton_ptr StringAutomaton::makeRegexAuto(std::string regex, int num_of_variables, int* variable_indices) {
   StringAutomaton_ptr regex_auto = nullptr;
 
-  Util::RegularExpression_ptr regular_expression = new Util::RegularExpression(regex);
-  regex_auto = StringAutomaton::makeRegexAuto(regular_expression);
+  Util::RegularExpression regular_expression (regex);
+  regex_auto = StringAutomaton::makeRegexAuto(&regular_expression);
 
   DVLOG(VLOG_LEVEL) << regex_auto->id << " = makeRegexAuto(" << regex << ")";
 
@@ -255,10 +255,10 @@ StringAutomaton_ptr StringAutomaton::makeRegexAuto(Util::RegularExpression_ptr r
   StringAutomaton_ptr regex_expr1_auto = nullptr;
   StringAutomaton_ptr regex_expr2_auto = nullptr;
 
-  switch (regular_expression->getType()) {
+  switch (regular_expression->type()) {
   case Util::RegularExpression::Type::UNION:
-    regex_expr1_auto = StringAutomaton::makeRegexAuto(regular_expression->getExpr1());
-    regex_expr2_auto = StringAutomaton::makeRegexAuto(regular_expression->getExpr2());
+    regex_expr1_auto = StringAutomaton::makeRegexAuto(regular_expression->get_expr1());
+    regex_expr2_auto = StringAutomaton::makeRegexAuto(regular_expression->get_expr2());
     regex_auto = regex_expr1_auto->union_(regex_expr2_auto);
     delete regex_expr1_auto;
     regex_expr1_auto = nullptr;
@@ -266,8 +266,8 @@ StringAutomaton_ptr StringAutomaton::makeRegexAuto(Util::RegularExpression_ptr r
     regex_expr2_auto = nullptr;
     break;
   case Util::RegularExpression::Type::CONCATENATION:
-    regex_expr1_auto = StringAutomaton::makeRegexAuto(regular_expression->getExpr1());
-    regex_expr2_auto = StringAutomaton::makeRegexAuto(regular_expression->getExpr2());
+    regex_expr1_auto = StringAutomaton::makeRegexAuto(regular_expression->get_expr1());
+    regex_expr2_auto = StringAutomaton::makeRegexAuto(regular_expression->get_expr2());
     regex_auto = regex_expr1_auto->concat(regex_expr2_auto);
     delete regex_expr1_auto;
     regex_expr1_auto = nullptr;
@@ -275,8 +275,8 @@ StringAutomaton_ptr StringAutomaton::makeRegexAuto(Util::RegularExpression_ptr r
     regex_expr2_auto = nullptr;
     break;
   case Util::RegularExpression::Type::INTERSECTION:
-    regex_expr1_auto = StringAutomaton::makeRegexAuto(regular_expression->getExpr1());
-    regex_expr2_auto = StringAutomaton::makeRegexAuto(regular_expression->getExpr2());
+    regex_expr1_auto = StringAutomaton::makeRegexAuto(regular_expression->get_expr1());
+    regex_expr2_auto = StringAutomaton::makeRegexAuto(regular_expression->get_expr2());
     regex_auto = regex_expr1_auto->intersect(regex_expr2_auto);
     delete regex_expr1_auto;
     regex_expr1_auto = nullptr;
@@ -284,46 +284,46 @@ StringAutomaton_ptr StringAutomaton::makeRegexAuto(Util::RegularExpression_ptr r
     regex_expr2_auto = nullptr;
     break;
   case Util::RegularExpression::Type::OPTIONAL:
-    regex_expr1_auto = StringAutomaton::makeRegexAuto(regular_expression->getExpr1());
+    regex_expr1_auto = StringAutomaton::makeRegexAuto(regular_expression->get_expr1());
     regex_auto = regex_expr1_auto->optional();
     delete regex_expr1_auto;
     regex_expr1_auto = nullptr;
     break;
   case Util::RegularExpression::Type::REPEAT_STAR:
-    regex_expr1_auto = StringAutomaton::makeRegexAuto(regular_expression->getExpr1());
+    regex_expr1_auto = StringAutomaton::makeRegexAuto(regular_expression->get_expr1());
     regex_auto = regex_expr1_auto->kleeneClosure();
     delete regex_expr1_auto;
     regex_expr1_auto = nullptr;
     break;
   case Util::RegularExpression::Type::REPEAT_PLUS:
-    regex_expr1_auto = StringAutomaton::makeRegexAuto(regular_expression->getExpr1());
+    regex_expr1_auto = StringAutomaton::makeRegexAuto(regular_expression->get_expr1());
     regex_auto = regex_expr1_auto->closure();
     delete regex_expr1_auto;
     regex_expr1_auto = nullptr;
     break;
   case Util::RegularExpression::Type::REPEAT_MIN:
-    regex_expr1_auto = StringAutomaton::makeRegexAuto(regular_expression->getExpr1());
-    regex_auto = regex_expr1_auto->repeat(regular_expression->getMin());
+    regex_expr1_auto = StringAutomaton::makeRegexAuto(regular_expression->get_expr1());
+    regex_auto = regex_expr1_auto->repeat(regular_expression->get_min());
     delete regex_expr1_auto;
     regex_expr1_auto = nullptr;
     break;
   case Util::RegularExpression::Type::REPEAT_MINMAX:
-    regex_expr1_auto = StringAutomaton::makeRegexAuto(regular_expression->getExpr1());
-    regex_auto = regex_expr1_auto->repeat(regular_expression->getMin(), regular_expression->getMax());
+    regex_expr1_auto = StringAutomaton::makeRegexAuto(regular_expression->get_expr1());
+    regex_auto = regex_expr1_auto->repeat(regular_expression->get_min(), regular_expression->get_max());
     delete regex_expr1_auto;
     regex_expr1_auto = nullptr;
     break;
   case Util::RegularExpression::Type::COMPLEMENT:
-    regex_expr1_auto = StringAutomaton::makeRegexAuto(regular_expression->getExpr1());
+    regex_expr1_auto = StringAutomaton::makeRegexAuto(regular_expression->get_expr1());
     regex_auto = regex_expr1_auto->complement();
     delete regex_expr1_auto;
     regex_expr1_auto = nullptr;
     break;
   case Util::RegularExpression::Type::CHAR:
-    regex_auto = StringAutomaton::makeChar(regular_expression->getChar());
+    regex_auto = StringAutomaton::makeChar(regular_expression->get_character());
     break;
   case Util::RegularExpression::Type::CHAR_RANGE:
-    regex_auto = StringAutomaton::makeCharRange(regular_expression->getFrom(), regular_expression->getTo());
+    regex_auto = StringAutomaton::makeCharRange(regular_expression->get_from_character(), regular_expression->get_to_character());
     break;
   case Util::RegularExpression::Type::ANYCHAR:
     regex_auto = StringAutomaton::makeAnyChar();
@@ -332,7 +332,7 @@ StringAutomaton_ptr StringAutomaton::makeRegexAuto(Util::RegularExpression_ptr r
     regex_auto = StringAutomaton::makePhi();
     break;
   case Util::RegularExpression::Type::STRING:
-    regex_auto = StringAutomaton::makeString(regular_expression->getS());
+    regex_auto = StringAutomaton::makeString(regular_expression->get_string());
     break;
   case Util::RegularExpression::Type::ANYSTRING:
     regex_auto = StringAutomaton::makeAnyString();

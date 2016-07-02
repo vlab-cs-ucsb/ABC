@@ -3,6 +3,34 @@
  *
  *  Created on: Jun 24, 2015
  *      Author: baki
+ *
+ *  Original source is a Java file: https://github.com/cs-au-dk/dk.brics.automaton/blob/master/src/dk/brics/automaton/RegExp.java
+ * dk.brics.automaton
+ *
+ * Copyright (c) 2001-2011 Anders Moeller
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #ifndef UTILS_REGULAREXPRESSION_H_
@@ -24,11 +52,6 @@ typedef RegularExpression* RegularExpression_ptr;
 
 class RegularExpression {
 public:
-  RegularExpression();
-  RegularExpression(std::string regex);
-  RegularExpression(std::string regex, int syntax_flags);
-  virtual ~RegularExpression();
-
   /**
    * Syntax flag, enables intersection (<tt>&amp;</tt>).
    */
@@ -96,10 +119,16 @@ public:
     INTERVAL
   };
 
+  RegularExpression();
+  RegularExpression(std::string regex);
+  RegularExpression(std::string regex, int syntax_flags);
+  RegularExpression(const RegularExpression&);
+  virtual ~RegularExpression();
+
   bool is_constant_string() const;
   std::string get_constant_string() const;
-  std::string toString() const;
-  void copy(RegularExpression_ptr e);
+  std::string str() const;
+  RegularExpression_ptr clone() const;
   static RegularExpression_ptr makeUnion(RegularExpression_ptr exp1, RegularExpression_ptr exp2);
   static RegularExpression_ptr makeConcatenation(RegularExpression_ptr exp1, RegularExpression_ptr exp2);
   static RegularExpression_ptr makeIntersection(RegularExpression_ptr exp1, RegularExpression_ptr exp2);
@@ -128,39 +157,40 @@ public:
   RegularExpression_ptr parseSimpleExp();
   char parseCharExp();
 
-  Type getType();
-  RegularExpression_ptr getExpr1();
-  RegularExpression_ptr getExpr2();
-  unsigned long getMin();
-  unsigned long getMax();
-  char getChar();
-  char getFrom();
-  char getTo();
-  std::string getS();
+  Type type();
+  RegularExpression_ptr get_expr1();
+  RegularExpression_ptr get_expr2();
+  unsigned long get_min();
+  unsigned long get_max();
+  char get_character();
+  char get_from_character();
+  char get_to_character();
+  std::string get_string();
 
   friend std::ostream& operator<<(std::ostream& os, const RegularExpression& regex);
 private:
 
-  static RegularExpression_ptr makeString(RegularExpression_ptr exp1, RegularExpression_ptr exp2);
-  void init(std::string s, int syntax_flags);
+  static RegularExpression_ptr concat_constants(RegularExpression_ptr exp1, RegularExpression_ptr exp2);
+  void parse();
   bool peek(std::string s);
   bool match(char c);
   bool more();
   char next();
   bool check(int flag);
 
-  RegularExpression_ptr exp1_;
-  RegularExpression_ptr exp2_;
-  unsigned long min_;
-  unsigned long max_;
-  unsigned digits_;
+  Type type_;
   int flags_;
   char character_;
-  char from_char_, to_char_;
-  std::string regex_string_;
-  std::string string_;
+  char from_char_;
+  char to_char_;
+  unsigned digits_;
+  unsigned long min_;
+  unsigned long max_;
   std::string::size_type pos_;
-  Type type_;
+  RegularExpression_ptr exp1_;
+  RegularExpression_ptr exp2_;
+  std::string string_;
+  std::string input_regex_string_;
 
   static const int VLOG_LEVEL;
 };
