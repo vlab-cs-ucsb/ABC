@@ -196,11 +196,11 @@ std::string RegularExpression::str() const {
     case Type::CHAR_RANGE: {
       std::string from = std::string(1, from_char_);
       std::string to = std::string(1, to_char_);
-      if (from_char_ == '^' or from_char_ == '\'') {
+      if (from_char_ == '^' or from_char_ == '\\' or from_char_ == '[' or from_char_ == ']') {
         from = "\\" + from;
       }
 
-      if (to_char_ == '^' or to_char_ == '\'') {
+      if (to_char_ == '^' or to_char_ == '\\' or to_char_ == '[' or to_char_ == ']') {
         to = "\\" + to;
       }
 
