@@ -20,7 +20,6 @@ const int ConstantTermChecker::VLOG_LEVEL = 18;
 
 ConstantTermChecker::ConstantTermChecker()
         : mode_ (ConstantTermChecker::Mode::FULL), term_constant_ { nullptr } {
-  DVLOG(VLOG_LEVEL) << "'ConstantTermChecker' initizalized...";
 }
 
 ConstantTermChecker::~ConstantTermChecker() {
@@ -37,7 +36,6 @@ void ConstantTermChecker::start(TermConstant_ptr term_constant, ConstantTermChec
   mode_ = mode;
   term_constant_ = nullptr;
   string_value_ = "";
-  std::cout << "term constant mode is called" << std::endl;
   visitTermConstant(term_constant);
 }
 

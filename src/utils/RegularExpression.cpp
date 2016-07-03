@@ -848,8 +848,8 @@ void RegularExpression::parse() {
   if (pos_ < input_regex_string_.length()) {
     LOG(FATAL)<< "end-of-string expected at position: " << pos_;
   }
+
   type_ = e->type_;
-  flags_ = e->flags_;
   character_ = e->character_;
   from_char_ = e->from_char_;
   to_char_ = e->to_char_;
@@ -858,8 +858,8 @@ void RegularExpression::parse() {
   max_ = e->max_;
   pos_ = e->pos_;
   exp1_ = e->exp1_;
+  exp2_ = e->exp2_;
   string_ = e->string_;
-  input_regex_string_ = e->input_regex_string_;
 }
 
 bool RegularExpression::peek(std::string s) {

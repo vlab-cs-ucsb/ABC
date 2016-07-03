@@ -1377,28 +1377,25 @@ void SyntacticOptimizer::visitReUnion(ReUnion_ptr re_union_term) {
   }
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *re_union_term << "@" << re_union_term;
-  TermConstant_ptr union_regex_term_constant = nullptr;
-  Util::RegularExpression_ptr regex_union = Util::RegularExpression::makeString("");
+  Util::RegularExpression_ptr union_regex = Util::RegularExpression::makeEmpty();
   Util::RegularExpression_ptr child_regex = nullptr, tmp_regex = nullptr;
   for (auto term : *(re_union_term->term_list)) {
     if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(term)) {
       if (Primitive::Type::STRING == term_constant->getValueType() or Primitive::Type::REGEX == term_constant->getValueType()) {
         child_regex = new Util::RegularExpression(term_constant->getValue());
-        tmp_regex = regex_union;
-        // child_regex will be delete in makeUnion
-        // ugly to avoid possible cycle
-        regex_union = Util::RegularExpression::makeUnion(tmp_regex->clone(), child_regex);
-        delete tmp_regex;
+        tmp_regex = union_regex;
+        union_regex = Util::RegularExpression::makeUnion(tmp_regex->clone(), child_regex->clone());
+        delete tmp_regex; delete child_regex;
       } else {
         LOG(FATAL) << "un-expected constant as a parameter to 're.union'";
       }
     } else {
       LOG(FATAL)<< "un-expected term as a parameter to 're.union'";
     }
-    delete term;
   }
 
-  auto regex_term_constant = generate_term_constant(regex_union->str(), Primitive::Type::REGEX);
+  auto regex_term_constant = generate_term_constant(union_regex->str(), Primitive::Type::REGEX);
+  delete union_regex;
   callback_ = [regex_term_constant, re_union_term] (Term_ptr & term) mutable {
     term = regex_term_constant;
     delete re_union_term;

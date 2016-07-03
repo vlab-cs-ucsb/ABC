@@ -16,7 +16,7 @@
 #include <chrono>
 #include <ratio>
 
-//#define NDEBUG
+#define NDEBUG
 
 #include <glog/logging.h>
 #include <Driver.h>
