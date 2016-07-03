@@ -37,6 +37,7 @@ void ConstantTermChecker::start(TermConstant_ptr term_constant, ConstantTermChec
   mode_ = mode;
   term_constant_ = nullptr;
   string_value_ = "";
+  std::cout << "term constant mode is called" << std::endl;
   visitTermConstant(term_constant);
 }
 
@@ -259,7 +260,7 @@ void ConstantTermChecker::visitTermConstant(TermConstant_ptr term_constant) {
     Util::RegularExpression regular_expression (data);
     if (regular_expression.is_constant_string()) {
       term_constant->primitive->setType(Primitive::Type::STRING);
-      term_constant->primitive->setData(regular_expression.get_constant_string());
+      term_constant->primitive->setData(regular_expression.str());
       term_constant_ = term_constant;
       string_value_ = term_constant->getValue();
       DVLOG(VLOG_LEVEL) << "Constant string regex transformed";

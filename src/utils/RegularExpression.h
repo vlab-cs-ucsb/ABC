@@ -126,9 +126,9 @@ public:
   virtual ~RegularExpression();
 
   bool is_constant_string() const;
-  std::string get_constant_string() const;
   std::string str() const;
   RegularExpression_ptr clone() const;
+  static std::string escape_raw_string(std::string input);
   static RegularExpression_ptr makeUnion(RegularExpression_ptr exp1, RegularExpression_ptr exp2);
   static RegularExpression_ptr makeConcatenation(RegularExpression_ptr exp1, RegularExpression_ptr exp2);
   static RegularExpression_ptr makeIntersection(RegularExpression_ptr exp1, RegularExpression_ptr exp2);

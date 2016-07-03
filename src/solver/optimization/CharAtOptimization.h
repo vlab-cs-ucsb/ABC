@@ -101,7 +101,7 @@ public:
 
   bool is_optimizable();
   bool is_index_updated();
-  std::string get_char_at_result();
+  std::string get_char_at_result_as_string();
   size_t get_index();
 protected:
   bool is_optimized_;

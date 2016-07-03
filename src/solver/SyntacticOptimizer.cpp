@@ -1166,7 +1166,7 @@ void SyntacticOptimizer::visitCharAt(CharAt_ptr char_at_term) {
   Optimization::CharAtOptimization char_at_optimizer(char_at_term);
   char_at_optimizer.start();
   if (char_at_optimizer.is_optimizable()) {
-    std::string str_value = "" + char_at_optimizer.get_char_at_result();
+    std::string str_value = char_at_optimizer.get_char_at_result_as_string();
     DVLOG(VLOG_LEVEL) << "Applying charAt transformation: '" << str_value << "'";
     callback_ = [this, char_at_term, str_value](Term_ptr & term) mutable {
       term = generate_term_constant(str_value, Primitive::Type::STRING);
@@ -1378,40 +1378,29 @@ void SyntacticOptimizer::visitReUnion(ReUnion_ptr re_union_term) {
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *re_union_term << "@" << re_union_term;
   TermConstant_ptr union_regex_term_constant = nullptr;
-
-  for (auto iter = re_union_term->term_list->begin(); iter != re_union_term->term_list->end();) {
-    if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter)) {
-      if (union_regex_term_constant == nullptr) {
-        union_regex_term_constant = term_constant;
-        std::string value = term_constant->getValue();
-        if (*(value.begin()) != '(' or *(value.end() - 1) != ')') {
-          value = "(" + value + ")";
-          union_regex_term_constant->primitive->setData(value);
-        }
-        union_regex_term_constant->primitive->setType(Primitive::Type::REGEX);
+  Util::RegularExpression_ptr regex_union = Util::RegularExpression::makeString("");
+  Util::RegularExpression_ptr child_regex = nullptr, tmp_regex = nullptr;
+  for (auto term : *(re_union_term->term_list)) {
+    if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(term)) {
+      if (Primitive::Type::STRING == term_constant->getValueType() or Primitive::Type::REGEX == term_constant->getValueType()) {
+        child_regex = new Util::RegularExpression(term_constant->getValue());
+        tmp_regex = regex_union;
+        // child_regex will be delete in makeUnion
+        // ugly to avoid possible cycle
+        regex_union = Util::RegularExpression::makeUnion(tmp_regex->clone(), child_regex);
+        delete tmp_regex;
       } else {
-        std::stringstream ss;
-        ss << union_regex_term_constant->getValue() << "|";
-        std::string value = term_constant->getValue();
-        if (*(value.begin()) != '(' or *(value.end() - 1) != ')') {
-          ss << "(" << value << ")";
-        } else {
-          ss << value;
-        }
-        union_regex_term_constant->primitive->setData("(" + ss.str() + ")");
-        delete term_constant;  // deallocate
-        re_union_term->term_list->erase(iter);
-        continue;
+        LOG(FATAL) << "un-expected constant as a parameter to 're.union'";
       }
     } else {
       LOG(FATAL)<< "un-expected term as a parameter to 're.union'";
     }
-    iter++;
+    delete term;
   }
 
-  callback_ = [re_union_term] (Term_ptr & term) mutable {
-    term = re_union_term->term_list->front();
-    re_union_term->term_list->clear();
+  auto regex_term_constant = generate_term_constant(regex_union->str(), Primitive::Type::REGEX);
+  callback_ = [regex_term_constant, re_union_term] (Term_ptr & term) mutable {
+    term = regex_term_constant;
     delete re_union_term;
   };
   DVLOG(VLOG_LEVEL) << "post visit end: " << *re_union_term << "@" << re_union_term;
@@ -1529,17 +1518,12 @@ void SyntacticOptimizer::visitToRegex(ToRegex_ptr to_regex_term) {
   visit_and_callback(to_regex_term->term);
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *to_regex_term << "@" << to_regex_term;
-  if (Term::Type::TERMCONSTANT == to_regex_term->term->type()) {
-    TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(to_regex_term->term);
+  if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(to_regex_term->term)) {
     if (Primitive::Type::STRING == term_constant->getValueType()) {
       DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *to_regex_term << "'";
-      std::string regex_template = "%s";
-      std::string escaped_regex = escape_regex(term_constant->getValue());
-      regex_template.replace(regex_template.find_first_of("%s"), 2, escaped_regex);
-      Primitive_ptr regex_primitive = new Primitive(regex_template, Primitive::Type::REGEX);
-      delete term_constant->primitive;
-      term_constant->primitive = regex_primitive;
-
+      std::string data = term_constant->getValue();
+      term_constant->primitive->setData(Util::RegularExpression::escape_raw_string(data));
+      term_constant->primitive->setType(Primitive::Type::REGEX);
       callback_ = [to_regex_term] (Term_ptr & term) mutable {
         term = to_regex_term->term;
         to_regex_term->term = nullptr;

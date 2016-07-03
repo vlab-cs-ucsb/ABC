@@ -137,17 +137,6 @@ bool RegularExpression::is_constant_string() const {
   return (type_ == Type::STRING or type_ == Type::CHAR);
 }
 
-std::string RegularExpression::get_constant_string() const {
-  if (type_ == Type::STRING) {
-    return string_;
-  } else if (type_ == Type::CHAR) {
-    return "" + character_;
-  } else {
-    LOG(FATAL)<< "Regular expression is not a constant string";
-    return "";
-  }
-}
-
 std::string RegularExpression::str() const {
   std::stringstream ss;
   switch (type_) {
@@ -199,22 +188,19 @@ std::string RegularExpression::str() const {
       ss << "~(" << *exp1_ << ')';
       break;
     case Type::CHAR: {
-      std::string character = "" + character_;
-      if (character.find_first_of("&|?*+.@#(){}[]~\"\\")) {
-        character = "\\" + character;
-      }
-      ss << character;
+      std::string character(1, character_);
+      ss << RegularExpression::escape_raw_string(character);
     }
       ;
       break;
     case Type::CHAR_RANGE: {
-      std::string from = "" + from_char_;
-      std::string to = "" + to_char_;
-      if (from.find_first_of("^\\")) {
+      std::string from = std::string(1, from_char_);
+      std::string to = std::string(1, to_char_);
+      if (from_char_ == '^' or from_char_ == '\'') {
         from = "\\" + from;
       }
 
-      if (to.find_first_of("^\\")) {
+      if (to_char_ == '^' or to_char_ == '\'') {
         to = "\\" + to;
       }
 
@@ -228,23 +214,8 @@ std::string RegularExpression::str() const {
     case Type::EMPTY:
       ss << '#';
       break;
-    case Type::STRING: {  // regex strings are quoted
-      // if there is a quote escape it by getting out of string regex
-      std::stringstream cleaner;
-      for (auto c : string_) {
-        if (c == '"') {
-          if (cleaner.str() != "") {
-            ss << '"' << cleaner.str() << '"';
-            cleaner.str("");
-          }
-          ss << '\\' << '"';
-        } else {
-          cleaner << c;
-        }
-      }
-      if (cleaner.str() != "") {
-        ss << '"' << cleaner.str() << '"';
-      }
+    case Type::STRING: {
+      ss << RegularExpression::escape_raw_string(string_); // output without quotes by escaping
     }
       ;
       break;
@@ -284,6 +255,31 @@ RegularExpression_ptr RegularExpression::clone() const {
   return new RegularExpression(*this);
 }
 
+/**
+ *
+ */
+std::string RegularExpression::escape_raw_string(std::string input) {
+  std::stringstream ss;
+  std::string special = ".+*?(){}[]\"|\\";
+  for (auto c : input) {
+    if (special.find(c) != std::string::npos) {
+      ss << "\\";
+    } else if ( ((DEFAULT & INTERSECTION) != 0) and c == '&') {
+      ss << "\\";
+    } else if ( ((DEFAULT & COMPLEMENT) != 0) and c == '~') {
+      ss << "\\";
+    } else if ( ((DEFAULT & EMPTY) != 0) and c == '#') {
+      ss << "\\";
+    } else if ( ((DEFAULT & ANYSTRING) != 0) and c == '@') {
+      ss << "\\";
+    } else if ( ( ((DEFAULT & INTERVAL) != 0) or ((DEFAULT & AUTOMATON) != 0)) and ( c == '<' or c == '>')) {
+      ss << "\\";
+    }
+    ss << c;
+  }
+  return ss.str();
+}
+
 RegularExpression_ptr RegularExpression::makeUnion(RegularExpression_ptr exp1, RegularExpression_ptr exp2) {
   bool is_left_constant = false;
   bool is_right_constant = false;
@@ -294,7 +290,7 @@ RegularExpression_ptr RegularExpression::makeUnion(RegularExpression_ptr exp1, R
     left = exp1->string_;
     is_left_constant = true;
   } else if (exp1->type_ == Type::CHAR) {
-    left = "" + exp1->character_;
+    left = std::string(1,exp1->character_);
     is_left_constant = true;
   }
 
@@ -302,7 +298,7 @@ RegularExpression_ptr RegularExpression::makeUnion(RegularExpression_ptr exp1, R
     right = exp2->string_;
     is_right_constant = true;
   } else if (exp2->type_ == Type::CHAR) {
-    right = "" + exp2->character_;
+    right = std::string(1, exp2->character_);
     is_right_constant = true;
   }
 
@@ -384,7 +380,7 @@ RegularExpression_ptr RegularExpression::makeIntersection(RegularExpression_ptr 
     left = exp1->string_;
     is_left_constant = true;
   } else if (exp1->type_ == Type::CHAR) {
-    left = "" + exp1->character_;
+    left = std::string(1, exp1->character_);
     is_left_constant = true;
   }
 
@@ -392,7 +388,7 @@ RegularExpression_ptr RegularExpression::makeIntersection(RegularExpression_ptr 
     right = exp2->string_;
     is_right_constant = true;
   } else if (exp2->type_ == Type::CHAR) {
-    right = "" + exp2->character_;
+    right = std::string(1, exp2->character_);
     is_right_constant = true;
   }
 

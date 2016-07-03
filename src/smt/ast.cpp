@@ -2559,15 +2559,6 @@ TermList_ptr CreateTermList(int n, ...) {
   return tl;
 }
 
-/**
- * TODO implement regex escaping from other languages
- * special chars for us
- * ?, +, *, &, |, #, @ ... please check RegularExpression class for details
- */
-std::string escape_regex(std::string str) {
-  return str;
-}
-
 
 } /* namespace SMT */
 } /* namespace Vlab */
