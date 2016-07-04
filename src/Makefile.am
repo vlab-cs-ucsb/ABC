@@ -52,6 +52,8 @@ libabc_la_SOURCES = \
   ./solver/EquivClassRuleRunner.h \
   ./solver/FormulaOptimizer.cpp \
   ./solver/FormulaOptimizer.h \
+  ./solver/ImplicationRunner.h \
+  ./solver/ImplicationRunner.cpp \
   ./solver/ConstraintSorter.cpp \
   ./solver/ConstraintSorter.h \
   ./solver/VariableValueComputer.cpp \

@@ -30,6 +30,7 @@
 #include "solver/Initializer.h"
 #include "solver/SyntacticOptimizer.h"
 #include "solver/SyntacticProcessor.h"
+#include "solver/ImplicationRunner.h"
 #include "theory/BinaryIntAutomaton.h"
 #include "theory/IntAutomaton.h"
 #include "theory/StringAutomaton.h"
@@ -117,6 +118,9 @@ void Driver::initializeSolver() {
 
   Solver::FormulaOptimizer formula_optimizer(script_, symbol_table_);
   formula_optimizer.start();
+
+  Solver::ImplicationRunner implication_runner(script_, symbol_table_);
+  implication_runner.start();
 
   Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
   constraint_sorter.start();
