@@ -118,8 +118,8 @@ void Driver::initializeSolver() {
   Solver::FormulaOptimizer formula_optimizer(script_, symbol_table_);
   formula_optimizer.start();
 
-//  Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
-//  constraint_sorter.start();
+  Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
+  constraint_sorter.start();
 
 }
 
@@ -319,6 +319,10 @@ void Driver::setOption(Option::Name option, std::string value) {
     LOG(ERROR) << "option not recognized: " << static_cast<int>(option) << " -> " << value;
     break;
   }
+}
+
+SMT::Variable_ptr Driver::get_smc_query_variable() {
+  return symbol_table_->getSymbolicVariable();
 }
 
 void Driver::test() {

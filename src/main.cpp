@@ -8,6 +8,8 @@
  ============================================================================
  */
 
+#define NDEBUG
+
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -15,8 +17,6 @@
 #include <vector>
 #include <chrono>
 #include <ratio>
-
-//#define NDEBUG
 
 #include <glog/logging.h>
 #include <Driver.h>
@@ -215,17 +215,14 @@ int main(const int argc, const char **argv) {
 
     LOG(INFO)<< "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
     if (experiment_mode) {
-      for(auto& variable_entry : driver.getSatisfyingVariables()) {
-        if (variable_entry.first->isSymbolic()) {
-          LOG(INFO)<< "report var: " << variable_entry.first->getName();
-          for (auto b : bounds) {
-            start = std::chrono::steady_clock::now();
-            auto count_result = driver.Count(variable_entry.first->getName(), b, true);
-            end = std::chrono::steady_clock::now();
-            auto count_time = end - start;
-            LOG(INFO)<< "report bound: " << b << " count: " << count_result  << " time: " << std::chrono::duration <long double, std::milli> (count_time).count() << " ms";
-          }
-        }
+      auto query_variable = driver.get_smc_query_variable();
+      LOG(INFO)<< "report var: " << query_variable->getName();
+      for (auto b : bounds) {
+        start = std::chrono::steady_clock::now();
+        auto count_result = driver.Count(query_variable->getName(), b, true);
+        end = std::chrono::steady_clock::now();
+        auto count_time = end - start;
+        LOG(INFO)<< "report bound: " << b << " count: " << count_result  << " time: " << std::chrono::duration <long double, std::milli> (count_time).count() << " ms";
       }
     }
   } else {

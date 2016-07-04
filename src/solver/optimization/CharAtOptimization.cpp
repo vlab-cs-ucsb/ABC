@@ -284,7 +284,7 @@ bool CharAtOptimization::is_index_updated() {
   return is_index_updated_;
 }
 
-std::string CharAtOptimization::get_char_at_result() {
+std::string CharAtOptimization::get_char_at_result_as_string() {
   return value_;
 }
 
