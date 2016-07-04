@@ -109,12 +109,12 @@ void Driver::initializeSolver() {
   // TODO dependency slicer should work on no dnf version
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
   dependency_slicer.start();
-/*
+
   Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
   do {
     equivalence_generator.start();
   } while (equivalence_generator.has_constant_substitution());
-*/
+
   Solver::FormulaOptimizer formula_optimizer(script_, symbol_table_);
   formula_optimizer.start();
 
