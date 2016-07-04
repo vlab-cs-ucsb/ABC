@@ -109,12 +109,12 @@ void Driver::initializeSolver() {
   // TODO dependency slicer should work on no dnf version
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
   dependency_slicer.start();
-
+/*
   Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
   do {
     equivalence_generator.start();
   } while (equivalence_generator.has_constant_substitution());
-
+*/
   Solver::FormulaOptimizer formula_optimizer(script_, symbol_table_);
   formula_optimizer.start();
 
@@ -160,6 +160,10 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
                * boost::multiprecision::pow(boost::multiprecision::cpp_int(2),
                                             (number_of_untracked_int_variables * static_cast<int>(exponent)));
     }
+    break;
+  }
+  case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {
+    result = var_value->getMultiTrackAutomaton()->Count(bound, count_less_than_or_equal_to_bound, true);
     break;
   }
   default:

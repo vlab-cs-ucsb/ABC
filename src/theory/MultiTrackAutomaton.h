@@ -51,6 +51,7 @@ virtual ~MultiTrackAutomaton();
 
 	MultiTrackAutomaton_ptr projectKTrack(int track);
 	StringAutomaton_ptr getKTrack(int k);
+	boost::multiprecision::cpp_int Count(int bound, bool count_less_than_or_equal_to_bound, bool count_reserved_words);
 	std::vector<std::string> getAnAcceptingStringForEachTrack();
 	int getNumTracks() const;
 

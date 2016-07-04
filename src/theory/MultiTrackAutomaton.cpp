@@ -1142,6 +1142,91 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 	return result_auto;
 }
 
+boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_less_than_or_equal_to_bound, bool count_reserved_words) {
+  // remove last lambda loop
+
+  DFA_ptr original_dfa = nullptr, temp_dfa = nullptr,trimmed_dfa = nullptr;
+
+	original_dfa = this->dfa;
+  trace_descr tp;
+  paths state_paths,pp;
+  int sink = find_sink(original_dfa);
+  if(sink < 0) {
+  	LOG(FATAL) << "Cant count, no sink!";
+  }
+  int var = VAR_PER_TRACK;
+  int len = var * num_of_tracks;
+  int* mindices = getIndices(len);
+  char* statuses = new char[original_dfa->ns+1];
+	std::vector<std::pair<std::vector<char>,int>> state_exeps;
+
+  dfaSetup(original_dfa->ns,len,mindices);
+  for(int i = 0; i < original_dfa->ns; i++) {
+  	state_paths = pp = make_paths(original_dfa->bddm, original_dfa->q[i]);
+  	while(pp) {
+  		if(pp->to == sink) {
+  			pp = pp->next;
+  			continue;
+  		}
+
+			std::vector<char> exep(len,'X');
+  		for(int j = 0; j < len; j++) {
+  			for(tp = pp->trace; tp && (tp->index != mindices[j]); tp= tp->next);
+  			if(tp) {
+  				if(tp->value) exep[j] = '1';
+  				else exep[j] = '0';
+  			}
+  			else exep[j] = 'X';
+  		}
+
+  		// if lambda and loops back, dont add it
+  		bool is_lambda = true;
+  		for(int k = 0; k < len; k++) {
+  			if(exep[k] != '1') {
+  				is_lambda = false;
+  				break;
+  			}
+  		}
+
+
+  		if(!is_lambda || pp->to != i) {
+  			exep.push_back('\0');
+  			state_exeps.push_back(std::make_pair(exep,pp->to));
+  		}
+			pp = pp->next;
+  	}
+  	kill_paths(state_paths);
+
+  	dfaAllocExceptions(state_exeps.size());
+  	for(int k = 0; k < state_exeps.size(); k++) {
+  		dfaStoreException(state_exeps[k].second, &state_exeps[k].first[0]);
+  	}
+  	dfaStoreState(sink);
+
+  	if(original_dfa->f[i] == 1)
+  		statuses[i] = '+';
+		else if(original_dfa->f[i] == -1)
+			statuses[i] = '-';
+		else
+			statuses[i] = '0';
+
+		state_exeps.clear();
+  }
+  statuses[original_dfa->ns] = '\0';
+  temp_dfa = dfaBuild(statuses);
+  trimmed_dfa = dfaMinimize(temp_dfa);
+  dfaFree(temp_dfa);
+  delete[] mindices;
+  delete statuses;
+
+  this->dfa = trimmed_dfa;
+	boost::multiprecision::cpp_int ret = Automaton::Count(bound, count_less_than_or_equal_to_bound, count_reserved_words);
+  this->dfa = original_dfa;
+  dfaFree(trimmed_dfa);
+
+  return ret;
+}
+
 std::vector<std::string> MultiTrackAutomaton::getAnAcceptingStringForEachTrack() {
   std::vector<std::string> strings(num_of_tracks, "");
   std::vector<bool>* example = getAnAcceptingWord();
