@@ -80,6 +80,7 @@ public:
   EquivalenceClass_ptr get_equivalence_class_of(SMT::Variable_ptr);
   EquivalenceClass_ptr get_equivalence_class_of_at_scope(SMT::Visitable_ptr scope, SMT::Variable_ptr);
   void add_variable_equiv_class_mapping(SMT::Variable_ptr, EquivalenceClass_ptr);
+  SMT::Variable_ptr get_representative_variable_of_at_scope(SMT::Visitable_ptr scope, SMT::Variable_ptr);
 
 
   Value_ptr getValue(std::string var_name);

@@ -144,7 +144,9 @@ bool Driver::isSatisfiable() {
 boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound) {
   symbol_table_->UnionValuesOfVariables(script_);
   symbol_table_->push_scope(script_);
+
   Vlab::Solver::Value_ptr var_value = symbol_table_->getValue(var_name);
+
   if(Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA) {
     if(var_value->getType() == Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON) {
       LOG(INFO) << "var to count is RELATIONAL";

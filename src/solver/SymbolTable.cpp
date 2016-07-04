@@ -273,14 +273,25 @@ void SymbolTable::add_variable_equiv_class_mapping(SMT::Variable_ptr variable, E
   variable_equivalence_table[scope_stack.back()][variable] = equiv_class;
 }
 
+Variable_ptr SymbolTable::get_representative_variable_of_at_scope(Visitable_ptr scope, Variable_ptr variable) {
+  EquivalenceClass_ptr equiv_class = get_equivalence_class_of_at_scope(scope, variable);
+  if (equiv_class != nullptr) {
+    return equiv_class->get_representative_variable();
+  }
+  return variable;
+}
+
 Value_ptr SymbolTable::getValue(std::string var_name) {
   return getValue(getVariable(var_name));
 }
 
 Value_ptr SymbolTable::getValue(Variable_ptr variable) {
 
+
+
   for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); it++) {
-    auto entry = variable_value_table[(*it)].find(variable);
+    auto representative_variable = get_representative_variable_of_at_scope((*it), variable);
+    auto entry = variable_value_table[(*it)].find(representative_variable);
     if (entry != variable_value_table[(*it)].end()) {
       return entry->second;
     }
