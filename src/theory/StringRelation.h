@@ -31,13 +31,14 @@ class StringRelation {
     LE,
     INTERSECT,
     UNION,
-    INT_VAR,
-    INT_CONSTANT,
     STRING_VAR,
     STRING_CONSTANT,
     REGEX,
     EQ_NO_LAMBDA,
-    EQ_ONLY_LAMBDA
+    EQ_ONLY_LAMBDA,
+    BEGINS,
+    NOTBEGINS,
+    CONCAT_VAR_CONSTANT
   };
 
   StringRelation();

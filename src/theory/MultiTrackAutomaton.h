@@ -31,6 +31,9 @@ virtual ~MultiTrackAutomaton();
 
 	static MultiTrackAutomaton_ptr makePhi(int ntracks);
 	static MultiTrackAutomaton_ptr makeAuto(StringRelation_ptr relation);
+	static MultiTrackAutomaton_ptr makeBegins(StringRelation_ptr relation);
+	static MultiTrackAutomaton_ptr makeNotBegins(StringRelation_ptr relation);
+	static MultiTrackAutomaton_ptr makeConcatExtraTrack(StringRelation_ptr relation);
 	static MultiTrackAutomaton_ptr makeEquality(StringRelation_ptr relation);
 	static MultiTrackAutomaton_ptr makeNotEquality(StringRelation_ptr relation);
 	static MultiTrackAutomaton_ptr makeLessThan(StringRelation_ptr relation);
@@ -63,7 +66,7 @@ virtual ~MultiTrackAutomaton();
 	DFA_ptr makeConcreteDFA();
 	static const TransitionVector& generate_transitions_for_relation(StringRelation::Type type, int bits_per_var);
 	static DFA_ptr make_binary_relation_dfa(StringRelation::Type type, int bits_per_var, int num_tracks, int left_track, int right_track);
-
+	static DFA_ptr make_binary_aligned_dfa(int left_track, int right_track, int total_tracks);
 	static const int VAR_PER_TRACK = 8;
 	int num_of_tracks;
 

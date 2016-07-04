@@ -41,20 +41,92 @@ void StringConstraintSolver::end() {
 
 void StringConstraintSolver::setCallbacks() {
   auto term_callback = [this](Term_ptr term) -> bool {
+
       switch (term->type()) {
         case Term::Type::EQ:
         case Term::Type::NOTEQ:
         case Term::Type::GT:
         case Term::Type::GE:
         case Term::Type::LT:
-        case Term::Type::LE: {
+        case Term::Type::LE:
+        case Term::Type::BEGINS:
+        case Term::Type::NOTBEGINS: {
           DVLOG(VLOG_LEVEL) << "visit: " << *term;
+
           StringRelation_ptr relation = string_relation_generator_.get_term_relation(term);
           if(relation == nullptr) {
             return false;
           }
+          StringRelation_ptr left = relation->get_left();
+          StringRelation_ptr right = relation->get_right();
+          StringRelation_ptr temp_relation = nullptr;
+          MultiTrackAutomaton_ptr multi_auto = nullptr,
+                                  temp_auto = nullptr,
+                                  result_auto = nullptr;
+          /*
+           * Xc < Y   =>   Z < Y && Z = Xc
+           */
+          if(left->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
+            DVLOG(VLOG_LEVEL) << "Concat on left side!";
+            // Add temp track for temp variable, Z
+            std::map<std::string,int>* trackmap_handle = relation->get_variable_trackmap();
+            std::string name = symbol_table_->get_var_name_for_node(term, Variable::Type::STRING);
+            int id = trackmap_handle->size();
+            (*trackmap_handle)[name] = id;
+            temp_relation = new StringRelation();
+            temp_relation->set_type(StringRelation::Type::STRING_VAR);
+            temp_relation->set_data(name);
 
-          MultiTrackAutomaton_ptr multi_auto = MultiTrackAutomaton::makeAuto(relation);
+
+            relation->set_left(temp_relation);
+            // Z relation_op Y
+            temp_auto = MultiTrackAutomaton::makeAuto(relation);
+            relation->set_left(left);
+
+            // Z = Xc (temp var Z on last track)
+            left->set_variable_trackmap(trackmap_handle);
+            multi_auto = MultiTrackAutomaton::makeConcatExtraTrack(left);
+            result_auto = temp_auto->intersect(multi_auto);
+            delete temp_auto;
+            delete multi_auto;
+            // project away temp track/variable Z
+            multi_auto = result_auto->projectKTrack(id);
+            delete result_auto;
+
+            trackmap_handle->erase(name);
+            multi_auto->setRelation(relation);
+            delete temp_relation;
+          } else if(right->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
+            DVLOG(VLOG_LEVEL) << "Concat on right side!";
+            std::map<std::string, int> *trackmap_handle = relation->get_variable_trackmap();
+            std::string name = symbol_table_->get_var_name_for_node(term, Variable::Type::STRING);
+            int id = trackmap_handle->size();
+            (*trackmap_handle)[name] = id;
+
+            temp_relation = new StringRelation();
+            temp_relation->set_type(StringRelation::Type::STRING_VAR);
+            temp_relation->set_data(name);
+
+            relation->set_right(temp_relation);
+            temp_auto = MultiTrackAutomaton::makeAuto(relation);
+            relation->set_right(right);
+
+            right->set_variable_trackmap(trackmap_handle);
+            multi_auto = MultiTrackAutomaton::makeConcatExtraTrack(right);
+            result_auto = temp_auto->intersect(multi_auto);
+            delete temp_auto;
+            delete multi_auto;
+            multi_auto = result_auto->projectKTrack(id);
+            delete result_auto;
+
+            trackmap_handle->erase(name);
+            multi_auto->setRelation(relation);
+            delete temp_relation;
+          } else {
+            DVLOG(VLOG_LEVEL) << "No concat!";
+            multi_auto = MultiTrackAutomaton::makeAuto(relation);
+          }
+
           Value_ptr val = new Value(multi_auto);
           DVLOG(VLOG_LEVEL) << "setting term " << term << " value";
           set_term_value(term,val);
@@ -85,7 +157,6 @@ void StringConstraintSolver::visitScript(Script_ptr script) {
 
 void StringConstraintSolver::visitAssert(Assert_ptr assert_command) {
   DVLOG(VLOG_LEVEL) << "visit: " << *assert_command;
-  // for temporary variable->term mappings for interplay between
   AstTraverser::visit(assert_command->term);
 }
 
@@ -165,12 +236,6 @@ void StringConstraintSolver::visitContains(Contains_ptr contains_term) {
 }
 
 void StringConstraintSolver::visitNotContains(NotContains_ptr not_contains_term) {
-}
-
-void StringConstraintSolver::visitBegins(Begins_ptr begins_term) {
-}
-
-void StringConstraintSolver::visitNotBegins(NotBegins_ptr not_begins_term) {
 }
 
 void StringConstraintSolver::visitEnds(Ends_ptr ends_term) {

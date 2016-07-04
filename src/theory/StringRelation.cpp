@@ -39,7 +39,7 @@ StringRelation::StringRelation(const StringRelation &other) {
     this->left_ = nullptr;
   }
   if(other.right_ != nullptr) {
-    this->right_ = other.left_->clone();
+    this->right_ = other.right_->clone();
   } else {
     this->right_ = nullptr;
   }

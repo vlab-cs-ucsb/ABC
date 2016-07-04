@@ -45,8 +45,6 @@ public:
   void visitLen(SMT::Len_ptr);
   void visitContains(SMT::Contains_ptr);
   void visitNotContains(SMT::NotContains_ptr);
-  void visitBegins(SMT::Begins_ptr);
-  void visitNotBegins(SMT::NotBegins_ptr);
   void visitEnds(SMT::Ends_ptr);
   void visitNotEnds(SMT::NotEnds_ptr);
   void visitIndexOf(SMT::IndexOf_ptr);
