@@ -119,8 +119,11 @@ void Driver::initializeSolver() {
   Solver::FormulaOptimizer formula_optimizer(script_, symbol_table_);
   formula_optimizer.start();
 
-  Solver::ImplicationRunner implication_runner(script_, symbol_table_);
-  implication_runner.start();
+
+  if (Option::Solver::ENABLE_IMPLICATIONS) {
+    Solver::ImplicationRunner implication_runner(script_, symbol_table_);
+    implication_runner.start();
+  }
 
   Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
   constraint_sorter.start();
@@ -312,6 +315,9 @@ void Driver::setOption(Option::Name option, bool value) {
     break;
   case Option::Name::FORCE_DNF_FORMULA:
     Option::Solver::FORCE_DNF_FORMULA = value;
+    break;
+  case Option::Name::ENABLE_IMPLICATIONS:
+    Option::Solver::ENABLE_IMPLICATIONS = value;
     break;
   default:
     LOG(ERROR) << "option not recognized: " << static_cast<int>(option) << " -> " << value;

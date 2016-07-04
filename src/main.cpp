@@ -43,6 +43,8 @@ int main(const int argc, const char **argv) {
   bool enable_relational_string_automata = true;
   bool force_dnf_formula = false;
   bool experiment_mode = false;
+  bool enable_implications = true;
+
   std::string bound_string = "50";
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == std::string("-c")) {
@@ -73,7 +75,11 @@ int main(const int argc, const char **argv) {
       enable_relational_string_automata = false;
     } else if (argv[i] == std::string("-e")) {
       experiment_mode = true;
-    }  else {
+    } else if (argv[i] == std::string("--enable-implications")) {
+      enable_implications = true;
+    } else if (argv[i] == std::string("--disable-implications")) {
+      enable_implications = false;
+    } else {
 
     }
   }
@@ -130,6 +136,7 @@ int main(const int argc, const char **argv) {
   driver.setOption(Vlab::Option::Name::LIA_NATURAL_NUMBERS_ONLY, use_natural_numbers);
   driver.setOption(Vlab::Option::Name::ENABLE_RELATIONAL_STRING_AUTOMATA, enable_relational_string_automata);
   driver.setOption(Vlab::Option::Name::FORCE_DNF_FORMULA, force_dnf_formula);
+  driver.setOption(Vlab::Option::Name::ENABLE_IMPLICATIONS, enable_implications);
   Vlab::Util::RegularExpression::DEFAULT = 0x000e;
 
   driver.test();

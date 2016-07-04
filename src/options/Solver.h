@@ -24,7 +24,8 @@ enum class Name : int {
   LIA_ONLY_CONSTRAINT,
   LIA_NATURAL_NUMBERS_ONLY,
   ENABLE_RELATIONAL_STRING_AUTOMATA,
-  FORCE_DNF_FORMULA
+  FORCE_DNF_FORMULA,
+  ENABLE_IMPLICATIONS
 };
 
 class Solver {
@@ -37,6 +38,7 @@ public:
   static bool LIA_NATURAL_NUMBERS_ONLY;
   static bool ENABLE_RELATIONAL_STRING_AUTOMATA;
   static bool FORCE_DNF_FORMULA;
+  static bool ENABLE_IMPLICATIONS;
 };
 
 } /* namespace Option */
