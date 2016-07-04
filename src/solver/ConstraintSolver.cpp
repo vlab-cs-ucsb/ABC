@@ -140,7 +140,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   // If we are in a component solve arithmetic constraints first
   if (constraint_information_->is_component(and_term)) {
     if (Option::Solver::LIA_ENGINE_ENABLED) {
-      //arithmetic_constraint_solver_.start(and_term);
+      arithmetic_constraint_solver_.start(and_term);
     }
     if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA) {
       string_constraint_solver_.start(and_term);
@@ -169,6 +169,28 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   }
   Value_ptr result = new Value(is_satisfiable);
   setTermValue(and_term, result);
+
+
+  if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA && string_constraint_solver_.get_term_value(and_term) != nullptr) {
+    // put the relational variables into the symbol table
+    std::string result_name = string_constraint_solver_.get_string_variable_name(and_term);
+    result = symbol_table_->getValue(result_name);
+    if (result != nullptr) {
+      StringRelation_ptr relation = result->getMultiTrackAutomaton()->getRelation();
+      if (relation == nullptr) {
+        LOG(FATAL) << "Relation should not be null if putting in symbol table";
+      }
+      if (relation->get_variable_trackmap() == nullptr) {
+        DVLOG(VLOG_LEVEL) << "Got a relation, but no trackmap!?";
+        LOG(FATAL) << "BAAAAD";
+      }
+      for (auto &var_track : *relation->get_variable_trackmap()) {
+        DVLOG(VLOG_LEVEL) << "variable: " << var_track.first << " relational, going to symbol table";
+        //symbol_table_->setValue(var_track.first,new Value(result->getMultiTrackAutomaton()->getKTrack(var_track.second)));
+        symbol_table_->setValue(var_track.first, result->clone());
+      }
+    }
+  }
   DVLOG(VLOG_LEVEL) << "Done!";
 }
 
@@ -1289,14 +1311,14 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
         result = string_constraint_solver_.get_term_value(term);
         setTermValue(term, new Value(result->isSatisfiable()));
         symbol_table_->setValue(string_constraint_solver_.get_string_variable_name(term), result);
-        return false;
       }
       if (arithmetic_constraint_solver_.hasStringTerms(term) and result->isSatisfiable()) {
         DVLOG(VLOG_LEVEL) << "Mixed Linear Arithmetic Constraint";
         process_mixed_integer_string_constraints_in(term);
         result = getTermValue(term);  // get updated result
+        symbol_table_->setValue(arithmetic_constraint_solver_.get_int_variable_name(term), result);
       }
-      symbol_table_->setValue(arithmetic_constraint_solver_.get_int_variable_name(term), result);
+
       return false;
     }
   }

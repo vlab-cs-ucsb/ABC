@@ -395,7 +395,7 @@ void StringRelationGenerator::visitLe(Le_ptr le_term) {
 }
 
 void StringRelationGenerator::visitConcat(Concat_ptr concat_term) {
-  visit_children_of(concat_term);
+  /*visit_children_of(concat_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *concat_term;
 
   StringRelation_ptr left_relation = nullptr, right_relation = nullptr, relation = nullptr;
@@ -421,6 +421,7 @@ void StringRelationGenerator::visitConcat(Concat_ptr concat_term) {
   delete_term_relation(concat_term->term_list->at(0));
   delete_term_relation(concat_term->term_list->at(1));
   set_term_relation(concat_term, relation);
+   */
 }
 
 void StringRelationGenerator::visitIn(In_ptr in_term) {

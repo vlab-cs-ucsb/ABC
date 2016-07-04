@@ -1144,7 +1144,7 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 
 boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_less_than_or_equal_to_bound, bool count_reserved_words) {
   // remove last lambda loop
-
+	LOG(INFO) << "RELATIONAL COUNT";
   DFA_ptr original_dfa = nullptr, temp_dfa = nullptr,trimmed_dfa = nullptr;
 
 	original_dfa = this->dfa;
@@ -1188,8 +1188,7 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
   			}
   		}
 
-
-  		if(!is_lambda || pp->to != i) {
+  		if(!is_lambda || pp->to != i || original_dfa->f[i] != 1) {
   			exep.push_back('\0');
   			state_exeps.push_back(std::make_pair(exep,pp->to));
   		}
@@ -1220,7 +1219,7 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
   delete statuses;
 
   this->dfa = trimmed_dfa;
-	boost::multiprecision::cpp_int ret = Automaton::Count(bound, count_less_than_or_equal_to_bound, count_reserved_words);
+	boost::multiprecision::cpp_int ret = Automaton::Count(bound+1, count_less_than_or_equal_to_bound, true);
   this->dfa = original_dfa;
   dfaFree(trimmed_dfa);
 
