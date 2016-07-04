@@ -1145,9 +1145,12 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_less_than_or_equal_to_bound, bool count_reserved_words) {
   // remove last lambda loop
 	LOG(INFO) << "RELATIONAL COUNT";
+	LOG(INFO) << "tracks: " << num_of_tracks;
+	LOG(INFO) << "vars: " << num_of_variables;
   DFA_ptr original_dfa = nullptr, temp_dfa = nullptr,trimmed_dfa = nullptr;
 
-	original_dfa = this->dfa;
+	original_dfa = dfaMinimize(this->dfa);
+
   trace_descr tp;
   paths state_paths,pp;
   int sink = find_sink(original_dfa);
@@ -1159,7 +1162,7 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
   int* mindices = getIndices(len);
   char* statuses = new char[original_dfa->ns+1];
 	std::vector<std::pair<std::vector<char>,int>> state_exeps;
-
+	LOG(INFO) << "states: " << original_dfa->ns;
   dfaSetup(original_dfa->ns,len,mindices);
   for(int i = 0; i < original_dfa->ns; i++) {
   	state_paths = pp = make_paths(original_dfa->bddm, original_dfa->q[i]);
@@ -1195,7 +1198,7 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
 			pp = pp->next;
   	}
   	kill_paths(state_paths);
-
+		LOG(INFO) << state_exeps.size();
   	dfaAllocExceptions(state_exeps.size());
   	for(int k = 0; k < state_exeps.size(); k++) {
   		dfaStoreException(state_exeps[k].second, &state_exeps[k].first[0]);
@@ -1219,10 +1222,11 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
   delete statuses;
 
   this->dfa = trimmed_dfa;
+  LOG(INFO) << "Start counting!";
 	boost::multiprecision::cpp_int ret = Automaton::Count(bound+1, count_less_than_or_equal_to_bound, true);
   this->dfa = original_dfa;
   dfaFree(trimmed_dfa);
-
+	LOG(INFO) << "DUN!";
   return ret;
 }
 

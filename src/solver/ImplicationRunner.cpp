@@ -85,6 +85,7 @@ void ImplicationRunner::visitOr(Or_ptr or_term) {
 }
 
 void ImplicationRunner::visitEq(Eq_ptr eq_term) {
+
   if (Concat_ptr left_id = dynamic_cast<Concat_ptr>(eq_term->left_term)) {
     if (Concat_ptr right_id = dynamic_cast<Concat_ptr>(eq_term->right_term)) {
       Term_ptr implication_term = new Eq(get_length(left_id), get_length(right_id));
@@ -93,7 +94,7 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
       Term_ptr implication_term = new Eq(get_length(left_id), get_length(eq_term->right_term));
       current_and_->term_list->push_back(implication_term);
       if (QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->right_term)) {
-        Term_ptr implication_term_begins = new Begins(right_variable, left_id->term_list->front());
+        Term_ptr implication_term_begins = new Begins(right_variable->clone(), left_id->term_list->front()->clone());
         current_and_->term_list->push_back(implication_term_begins);
       }
     }
@@ -102,11 +103,12 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
       Term_ptr implication_term = new Eq(get_length(eq_term->left_term), get_length(right_id));
       current_and_->term_list->push_back(implication_term);
       if (QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {
-        Term_ptr implication_term_begins = new Begins(left_variable, right_id->term_list->front());
+        Term_ptr implication_term_begins = new Begins(left_variable->clone(), right_id->term_list->front()->clone());
         current_and_->term_list->push_back(implication_term_begins);
       }
     }
   }
+
 }
 
 void ImplicationRunner::visitContains(Contains_ptr contains) {
@@ -130,7 +132,7 @@ void ImplicationRunner::visitEnds(Ends_ptr ends) {
 void ImplicationRunner::visitNotContains(NotContains_ptr not_contains) {
   if (QualIdentifier_ptr left_id = dynamic_cast<QualIdentifier_ptr>(not_contains->subject_term)) {
     if (QualIdentifier_ptr right_id = dynamic_cast<QualIdentifier_ptr>(not_contains->search_term)) {
-      NotBegins_ptr implication_term = new NotBegins(not_contains->subject_term, not_contains->search_term);
+      NotBegins_ptr implication_term = new NotBegins(not_contains->subject_term->clone(), not_contains->search_term->clone());
       current_and_->term_list->push_back(implication_term);
     }
   }
@@ -140,7 +142,7 @@ void ImplicationRunner::visitNotContains(NotContains_ptr not_contains) {
 void ImplicationRunner::visitNotEnds(NotEnds_ptr not_ends) {
   if (QualIdentifier_ptr left_id = dynamic_cast<QualIdentifier_ptr>(not_ends->subject_term)) {
     if (QualIdentifier_ptr right_id = dynamic_cast<QualIdentifier_ptr>(not_ends->search_term)) {
-      NotEq_ptr implication_term = new NotEq(not_ends->subject_term, not_ends->search_term);
+      NotEq_ptr implication_term = new NotEq(not_ends->subject_term->clone(), not_ends->search_term->clone());
       current_and_->term_list->push_back(implication_term);
     }
   }
@@ -154,7 +156,7 @@ Term_ptr ImplicationRunner::get_length(Term_ptr term) {
   if (Concat_ptr concat = dynamic_cast<Concat_ptr>(term)) {
     return get_length_concat(concat);
   }
-  return new Len(term);
+  return new Len(term->clone());
 }
 
 TermConstant_ptr ImplicationRunner::get_length_constant(TermConstant_ptr term_constant) {
@@ -168,10 +170,10 @@ Plus_ptr ImplicationRunner::get_length_concat(Concat_ptr concat) {
   TermList_ptr term_list = new TermList();
   for (auto& term_ptr : * (concat->term_list)) {
     //Convert length directly to an integer if the term is a constant.
-    if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(term_ptr)) {
+    if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(term_ptr->clone())) {
       term_list->push_back(get_length(term_constant));
     } else {
-      term_list->push_back(new Len(term_ptr));
+      term_list->push_back(new Len(term_ptr->clone()));
     }
   }
   return new Plus(term_list);

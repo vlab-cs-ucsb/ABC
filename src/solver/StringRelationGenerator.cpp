@@ -395,7 +395,7 @@ void StringRelationGenerator::visitLe(Le_ptr le_term) {
 }
 
 void StringRelationGenerator::visitConcat(Concat_ptr concat_term) {
-  /*visit_children_of(concat_term);
+  visit_children_of(concat_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *concat_term;
 
   StringRelation_ptr left_relation = nullptr, right_relation = nullptr, relation = nullptr;
@@ -421,7 +421,6 @@ void StringRelationGenerator::visitConcat(Concat_ptr concat_term) {
   delete_term_relation(concat_term->term_list->at(0));
   delete_term_relation(concat_term->term_list->at(1));
   set_term_relation(concat_term, relation);
-   */
 }
 
 void StringRelationGenerator::visitIn(In_ptr in_term) {
@@ -452,7 +451,7 @@ void StringRelationGenerator::visitBegins(Begins_ptr begins_term) {
   right_relation = get_term_relation(begins_term->search_term);
   if ((left_relation == nullptr || right_relation == nullptr)
         || (begins_term->subject_term->type() != Term::Type::QUALIDENTIFIER
-            && begins_term->search_term->type() != Term::Type::QUALIDENTIFIER)) {
+            || begins_term->search_term->type() != Term::Type::QUALIDENTIFIER)) {
     delete_term_relation(begins_term->subject_term);
     delete_term_relation(begins_term->search_term);
     set_term_relation(begins_term,nullptr);
@@ -463,7 +462,6 @@ void StringRelationGenerator::visitBegins(Begins_ptr begins_term) {
                                 right_relation->clone(),
                                 "",
                                 nullptr);
-
   Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
   add_string_variable(var,current_term_);
   var = symbol_table_->getVariable(right_relation->get_data());
@@ -483,7 +481,7 @@ void StringRelationGenerator::visitNotBegins(NotBegins_ptr not_begins_term) {
   right_relation = get_term_relation(not_begins_term->search_term);
   if ((left_relation == nullptr || right_relation == nullptr)
         || (not_begins_term->subject_term->type() != Term::Type::QUALIDENTIFIER
-            && not_begins_term->search_term->type() != Term::Type::QUALIDENTIFIER)) {
+            || not_begins_term->search_term->type() != Term::Type::QUALIDENTIFIER)) {
     delete_term_relation(not_begins_term->subject_term);
     delete_term_relation(not_begins_term->search_term);
     set_term_relation(not_begins_term,nullptr);
