@@ -59,6 +59,7 @@ public:
   void setOption(Option::Name option, bool value);
   void setOption(Option::Name option, std::string value);
 
+  SMT::Variable_ptr get_smc_query_variable();
   void test();
 
   SMT::Script_ptr script_;
