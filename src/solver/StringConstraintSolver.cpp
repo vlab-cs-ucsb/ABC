@@ -129,7 +129,8 @@ void StringConstraintSolver::setCallbacks() {
 
           Value_ptr val = new Value(multi_auto);
           DVLOG(VLOG_LEVEL) << "setting term " << term << " value";
-          set_term_value(term,val);
+          std::string group_name = string_relation_generator_.get_term_group_name(term);
+          symbol_table_->updateValue(group_name,val);
           break;
         }
         default:
@@ -165,7 +166,6 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
 
   if (not constraint_information_->is_component(and_term)) {
     visit_children_of(and_term);
-    set_term_value(and_term, nullptr);
     return;
   }
 
@@ -181,34 +181,13 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
       param = get_term_value(term);
       is_satisfiable = is_satisfiable and param->isSatisfiable();
       if(is_satisfiable) {
-        if (result == nullptr) {
-          result = param->clone();
-        } else {
-          and_value = result->intersect(param);
-          delete result;
-          result = and_value;
-        }
+        continue;
       } else {
         result = new Value(MultiTrackAutomaton::makePhi(relation->get_num_tracks()));
         break;
       }
     }
-    clear_term_value(term);
   }
-
-  for (auto& term : *(and_term->term_list)) {
-    relation = string_relation_generator_.get_term_relation(term);
-    if (relation != nullptr) {
-      term_value_index_[term] = and_term;
-      clear_term_value(term);
-    }
-  }
-
-  if(result != nullptr) {
-    std::string name = symbol_table_->get_var_name_for_node(and_term, Variable::Type::STRING);
-    symbol_table_->addVariable(new Variable(name, Variable::Type::STRING));
-  }
-  set_term_value(and_term, result);
 }
 
 void StringConstraintSolver::visitOr(Or_ptr or_term) {
@@ -281,86 +260,41 @@ void StringConstraintSolver::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 
 std::string StringConstraintSolver::get_string_variable_name(Term_ptr term) {
-  Term_ptr key = term;
-  auto it1 = term_value_index_.find(term);
-  if (it1 != term_value_index_.end()) {
-    key = it1->second;
-  }
-
-  DVLOG(VLOG_LEVEL) << "++++++++++++++++++++++++++++ returning for term " << *term << ":  " << symbol_table_->get_var_name_for_node(key, Variable::Type::STRING);
-  return symbol_table_->get_var_name_for_node(key, Variable::Type::STRING);
+  std::string group_name = string_relation_generator_.get_term_group_name(term);
+  return group_name;
 }
 
 Value_ptr StringConstraintSolver::get_term_value(Term_ptr term) {
-  Term_ptr key = term;
-  auto it1 = term_value_index_.find(term);
-  if (it1 != term_value_index_.end()) {
-    key = it1->second;
+  std::string group_name = string_relation_generator_.get_term_group_name(term);
+  if(!group_name.empty()) {
+    return symbol_table_->getValue(group_name);
   }
-
-  auto it2 = term_values_.find(key);
-  if (it2 != term_values_.end()) {
-    return it2->second;
-  }
-
   return nullptr;
 }
 
 bool StringConstraintSolver::set_term_value(Term_ptr term, Value_ptr value) {
-  auto result = term_values_.insert(std::make_pair(term, value));
-  if (result.second == false) {
-    LOG(FATAL) << "value is already computed for term: " << *term;
-  }
-  term_value_index_[term] = term;
-  return result.second;
-}
-
-bool StringConstraintSolver::update_term_value(Term_ptr term, Value_ptr value) {
-  Term_ptr key = term;
-  auto it1 = term_value_index_.find(term);
-  if (it1 != term_value_index_.end()) {
-    key = it1->second;
-  }
-
-  auto it2 = term_values_.find(key);
-  if (it2 != term_values_.end()) {
-    it2->second = value;
+  std::string group_name = string_relation_generator_.get_term_group_name(term);
+  if(!group_name.empty()) {
+    symbol_table_->setValue(group_name,value);
     return true;
   }
-
   return false;
-}
-
-void StringConstraintSolver::clear_term_value(Term_ptr term) {
-  auto it = term_values_.find(term);
-  if (it != term_values_.end()) {
-    delete it->second;
-    term_values_.erase(it);
-  }
-}
-
-std::map<Term_ptr, Term_ptr> &StringConstraintSolver::get_term_value_index() {
-  return term_value_index_;
-}
-
-StringConstraintSolver::TermValueMap &StringConstraintSolver::get_term_values() {
-  return term_values_;
 }
 
 Value_ptr StringConstraintSolver::get_variable_value(Variable_ptr variable) {
   MultiTrackAutomaton_ptr relation_auto = nullptr;
   StringAutomaton_ptr variable_auto = nullptr;
   StringRelation_ptr variable_relation = nullptr;
-  Value_ptr relation_value = get_relational_value(variable);
-  if(relation_value == nullptr) {
+  Value_ptr relation_value = nullptr;
+  std::string group_name = string_relation_generator_.get_variable_group_name(variable);
+  if(group_name.empty()) {
     return nullptr;
   }
+  relation_value = symbol_table_->getValue(group_name);
+
   relation_auto = relation_value->getMultiTrackAutomaton();
   variable_relation = relation_auto->getRelation();
-  DVLOG(VLOG_LEVEL) << "var: " << variable->getName();
-  DVLOG(VLOG_LEVEL) << "getting ktrack: " << variable_relation->get_variable_index(variable->getName());
   variable_auto = relation_auto->getKTrack(variable_relation->get_variable_index(variable->getName()));
-  DVLOG(VLOG_LEVEL) << "Got ktrack";
   return new Value(variable_auto);
 }
 
@@ -369,12 +303,12 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
   StringAutomaton_ptr variable_auto = nullptr;
   Value_ptr relation_value = nullptr;
   StringRelation_ptr variable_relation = nullptr;
-  Term_ptr term = string_relation_generator_.get_parent_term(variable);
-  relation_value = get_relational_value(variable);
-  if(relation_value == nullptr) {
-    LOG(FATAL) << "Unable to get update relational value for variable: " << variable->getName();
-    return false;
+  std::string group_name = string_relation_generator_.get_variable_group_name(variable);
+  if(group_name.empty()) {
+    LOG(FATAL) << "Empty group name!";
   }
+  relation_value = symbol_table_->getValue(group_name);
+
   variable_auto = value->getStringAutomaton();
   relation_auto = relation_value->getMultiTrackAutomaton();
   variable_relation = relation_auto->getRelation();
@@ -382,34 +316,9 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
   variable_multi_auto = new MultiTrackAutomaton(variable_auto->getDFA(),
                                        variable_relation->get_variable_index(variable->getName()),
                                        variable_relation->get_num_tracks());
-  intersect_auto = relation_auto->intersect(variable_multi_auto);
-  relation_value = new Value(intersect_auto);
-  clear_term_value(term);
-  set_term_value(term, relation_value);
-  DVLOG(VLOG_LEVEL) << " updated setting.... : " << get_string_variable_name(term);
-  symbol_table_->setValue(get_string_variable_name(term),relation_value);
+  variable_multi_auto->setRelation(variable_relation->clone());
+  symbol_table_->updateValue(group_name,new Value(variable_multi_auto));
   return true;
-}
-
-Value_ptr StringConstraintSolver::get_relational_value(SMT::Variable_ptr variable) {
-  Value_ptr relation_value = nullptr;
-  StringRelation_ptr variable_relation = nullptr;
-
-  Term_ptr term = string_relation_generator_.get_parent_term(variable);
-  if(term == nullptr) {
-    DVLOG(VLOG_LEVEL) << "Parent term not set for " << *variable << " | " << variable;
-    return nullptr;
-  }
-  relation_value = get_term_value(term);
-  if(relation_value == nullptr || relation_value->getType() != Value::Type::MULTITRACK_AUTOMATON) {
-    return nullptr;
-  }
-  variable_relation = relation_value->getMultiTrackAutomaton()->getRelation();
-  if(variable_relation->get_variable_index(variable->getName()) == -1) {
-    DVLOG(VLOG_LEVEL) << "Variable not part of expected relation";
-    return nullptr;
-  }
-  return relation_value;
 }
 
 } /* namespace Solver */

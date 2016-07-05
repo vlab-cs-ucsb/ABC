@@ -63,23 +63,16 @@ public:
   std::string get_string_variable_name(SMT::Term_ptr term);
   Value_ptr get_term_value(SMT::Term_ptr term);
   bool set_term_value(SMT::Term_ptr term, Value_ptr value);
-  bool update_term_value(SMT::Term_ptr term, Value_ptr Value);
   void clear_term_value(SMT::Term_ptr term);
-  std::map<SMT::Term_ptr, SMT::Term_ptr>& get_term_value_index();
-  TermValueMap& get_term_values();
 
   Value_ptr get_variable_value(SMT::Variable_ptr variable);
   bool update_variable_value(SMT::Variable_ptr variable, Value_ptr value);
-
-  Value_ptr get_relational_value(SMT::Variable_ptr variable);
 
 protected:
 
   SymbolTable_ptr symbol_table_;
   ConstraintInformation_ptr constraint_information_;
   StringRelationGenerator string_relation_generator_;
-  TermValueMap term_values_;
-  std::map<SMT::Term_ptr, SMT::Term_ptr> term_value_index_;
 
 private:
   static const int VLOG_LEVEL;

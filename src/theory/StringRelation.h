@@ -18,7 +18,9 @@ class StringRelation;
 using StringRelation_ptr = StringRelation*;
 
 class StringRelation {
+
  public:
+ std::vector<std::string> variables;
   enum class Type
     :
     int {
@@ -78,6 +80,7 @@ class StringRelation {
   StringRelation_ptr right_;
   std::string data_;
   std::map<std::string, int>* trackmap_handle_;
+
 
  private:
   static const int VLOG_LEVEL;

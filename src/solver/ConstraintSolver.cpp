@@ -170,24 +170,25 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   Value_ptr result = new Value(is_satisfiable);
   setTermValue(and_term, result);
 
-
-  if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA && string_constraint_solver_.get_term_value(and_term) != nullptr) {
+  if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA && constraint_information_->is_component(and_term)) {
     // put the relational variables into the symbol table
-    std::string result_name = string_constraint_solver_.get_string_variable_name(and_term);
-    result = symbol_table_->getValue(result_name);
-    if (result != nullptr) {
-      StringRelation_ptr relation = result->getMultiTrackAutomaton()->getRelation();
-      if (relation == nullptr) {
-        LOG(FATAL) << "Relation should not be null if putting in symbol table";
-      }
-      if (relation->get_variable_trackmap() == nullptr) {
-        DVLOG(VLOG_LEVEL) << "Got a relation, but no trackmap!?";
-        LOG(FATAL) << "BAAAAD";
-      }
-      for (auto &var_track : *relation->get_variable_trackmap()) {
-        DVLOG(VLOG_LEVEL) << "variable: " << var_track.first << " relational, going to symbol table";
-        //symbol_table_->setValue(var_track.first,new Value(result->getMultiTrackAutomaton()->getKTrack(var_track.second)));
-        symbol_table_->setValue(var_track.first, result->clone());
+    for (auto &term : *(and_term->term_list)) {
+      Value_ptr val = string_constraint_solver_.get_term_value(term);
+      if (val != nullptr) {
+        StringRelation_ptr relation = val->getMultiTrackAutomaton()->getRelation();
+        if (relation == nullptr) {
+          LOG(INFO) << val->str();
+          LOG(FATAL) << "Relation should not be null if putting in symbol table";
+        }
+        if (relation->get_variable_trackmap() == nullptr) {
+          DVLOG(VLOG_LEVEL) << "Got a relation, but no trackmap!?";
+          LOG(FATAL) << "BAAAAD";
+        }
+        for (auto &var_track : *relation->get_variable_trackmap()) {
+          DVLOG(VLOG_LEVEL) << "variable: " << var_track.first << " relational, going to symbol table";
+          //symbol_table_->setValue(var_track.first,new Value(result->getMultiTrackAutomaton()->getKTrack(var_track.second)));
+          symbol_table_->setValue(var_track.first, val->clone());
+        }
       }
     }
   }
@@ -1113,7 +1114,7 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   // the most recent value
   Value_ptr variable_value = nullptr;
   if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA) {
-    DVLOG(VLOG_LEVEL) << "Getting var";
+    DVLOG(VLOG_LEVEL) << "Getting var value for " << variable->getName();
     variable_value = string_constraint_solver_.get_variable_value(variable);
     DVLOG(VLOG_LEVEL) << "Got var";
   }
@@ -1310,7 +1311,6 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
         DVLOG(VLOG_LEVEL) << "Mixed Multi- and Single- Track String Automata Constraint";
         result = string_constraint_solver_.get_term_value(term);
         setTermValue(term, new Value(result->isSatisfiable()));
-        symbol_table_->setValue(string_constraint_solver_.get_string_variable_name(term), result);
       }
       if (arithmetic_constraint_solver_.hasStringTerms(term) and result->isSatisfiable()) {
         DVLOG(VLOG_LEVEL) << "Mixed Linear Arithmetic Constraint";

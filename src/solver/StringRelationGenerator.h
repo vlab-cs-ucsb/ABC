@@ -13,6 +13,7 @@
 #include <cstdbool>
 #include <map>
 #include <memory>
+#include <unordered_set>
 
 #include "smt/ast.h"
 #include "theory/StringRelation.h"
@@ -25,6 +26,7 @@ namespace Solver {
 class StringRelationGenerator : public SMT::Visitor {
   using VariableTrackMap = std::map<std::string, int>;
   using VariableTrackMap_ptr = VariableTrackMap*;
+
  public:
   StringRelationGenerator(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr);
   virtual ~StringRelationGenerator();
@@ -103,21 +105,28 @@ class StringRelationGenerator : public SMT::Visitor {
   bool set_term_relation(SMT::Term_ptr term, Theory::StringRelation_ptr str_rel);
   void delete_term_relation(SMT::Term_ptr term);
 
-  SMT::Term_ptr get_parent_term(SMT::Variable_ptr variable);
-  bool set_parent_term(SMT::Variable_ptr variable,SMT::Term_ptr term);
+  std::string get_variable_group_name(SMT::Variable_ptr variable);
+  std::string get_term_group_name(SMT::Term_ptr term);
 
  protected:
-  void add_string_variable(SMT::Variable_ptr variable, SMT::Term_ptr term);
-  VariableTrackMap_ptr get_term_trackmap(SMT::Term_ptr term);
+  void add_string_variables(std::vector<std::string> variables);
+  VariableTrackMap_ptr get_group_trackmap(std::string name);
+  void create_trackmaps();
 
   SMT::Script_ptr root_;
   SymbolTable_ptr symbol_table_;
   ConstraintInformation_ptr constraint_information_;
 
   std::map<SMT::Term_ptr, Theory::StringRelation_ptr> relations_;
+
   // for interplay between single/multitrack
-  std::map<SMT::Term_ptr, VariableTrackMap_ptr> term_trackmap_table_;
-  std::map<SMT::Variable_ptr, SMT::Term_ptr> variable_term_map_;
+  //std::map<SMT::Term_ptr, VariableTrackMap_ptr> term_trackmap_table_;
+  //std::map<SMT::Variable_ptr, SMT::Term_ptr> variable_term_map_;
+  std::map<SMT::Term_ptr, std::string> term_group_map;
+  std::map<SMT::Variable_ptr,std::string> variable_group_name_mapping;
+  std::map<std::string,VariableTrackMap_ptr> group_trackmaps;
+  std::map<std::string,std::unordered_set<std::string>*> relation_groups;
+
  private:
   SMT::Term_ptr current_term_;
   static const int VLOG_LEVEL;

@@ -74,6 +74,7 @@ void StringRelationGenerator::visitLet(Let_ptr let_term) {
 void StringRelationGenerator::visitAnd(And_ptr and_term) {
   current_term_ = and_term;
   visit_children_of(and_term);
+  create_trackmaps();
   DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
 
   if (not constraint_information_->is_component(and_term)) {
@@ -81,15 +82,24 @@ void StringRelationGenerator::visitAnd(And_ptr and_term) {
   }
 
   StringRelation_ptr term_relation = nullptr;
-  VariableTrackMap_ptr current_trackmap = get_term_trackmap(current_term_);
   for (auto& term : *(and_term->term_list)) {
-    DVLOG(VLOG_LEVEL) << "Term: " << *term;
     term_relation = get_term_relation(term);
     if(term_relation != nullptr) {
-      DVLOG(VLOG_LEVEL) << "is relational";
-      if(current_trackmap == nullptr)
-        DVLOG(VLOG_LEVEL) << "Setting trackmap to NULL for " << *term;
-      term_relation->set_variable_trackmap(current_trackmap);
+      if(term->type() == Term::Type::QUALIDENTIFIER) {
+        delete_term_relation(term);
+        continue;
+      }
+      std::string group_name = get_variable_group_name(symbol_table_->getVariable(term_relation->variables[0]));
+      term_group_map[term] = group_name;
+      VariableTrackMap_ptr trackmap = get_group_trackmap(group_name);
+      if(trackmap == nullptr) {
+        LOG(FATAL) << "no trackmap found...";
+      }
+      for(auto& var : *trackmap) {
+        DVLOG(VLOG_LEVEL) << var.first << " -> " << var.second;
+      }
+      DVLOG(VLOG_LEVEL) << "size: " << trackmap->size();
+      term_relation->set_variable_trackmap(trackmap);
     }
   }
 }
@@ -122,7 +132,6 @@ void StringRelationGenerator::visitTimes(Times_ptr times_term) {
 void StringRelationGenerator::visitEq(Eq_ptr eq_term) {
   visit_children_of(eq_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *eq_term;
-  DVLOG(VLOG_LEVEL) << "type: " << eq_term->type();
   StringRelation_ptr left_relation = nullptr, right_relation = nullptr, relation = nullptr;
   left_relation = get_term_relation(eq_term->left_term);
   right_relation = get_term_relation(eq_term->right_term);
@@ -152,22 +161,24 @@ void StringRelationGenerator::visitEq(Eq_ptr eq_term) {
                                 right_relation->clone(),
                                 "",
                                 nullptr);
-
+  std::vector<std::string> vars;
   if (left_relation->get_type() == StringRelation::Type::STRING_VAR) {
     Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   } else if(left_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
     Variable_ptr var = symbol_table_->getVariable(left_relation->get_left()->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   }
 
   if (right_relation->get_type() == StringRelation::Type::STRING_VAR) {
     Variable_ptr var = symbol_table_->getVariable(right_relation->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   } else if(right_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
     Variable_ptr var = symbol_table_->getVariable(right_relation->get_left()->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   }
+  relation->variables = vars;
+  add_string_variables(vars);
 
   delete_term_relation(eq_term->left_term);
   delete_term_relation(eq_term->right_term);
@@ -206,22 +217,24 @@ void StringRelationGenerator::visitNotEq(NotEq_ptr not_eq_term) {
                                 right_relation->clone(),
                                 "",
                                 nullptr);
-
+  std::vector<std::string> vars;
   if (left_relation->get_type() == StringRelation::Type::STRING_VAR) {
     Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   } else if(left_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
     Variable_ptr var = symbol_table_->getVariable(left_relation->get_left()->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   }
 
   if (right_relation->get_type() == StringRelation::Type::STRING_VAR) {
     Variable_ptr var = symbol_table_->getVariable(right_relation->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   } else if(right_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
     Variable_ptr var = symbol_table_->getVariable(right_relation->get_left()->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   }
+  relation->variables = vars;
+  add_string_variables(vars);
 
   delete_term_relation(not_eq_term->left_term);
   delete_term_relation(not_eq_term->right_term);
@@ -248,21 +261,24 @@ void StringRelationGenerator::visitGt(Gt_ptr gt_term) {
                                 right_relation->clone(),
                                 "",
                                 nullptr);
+  std::vector<std::string> vars;
   if (left_relation->get_type() == StringRelation::Type::STRING_VAR) {
     Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   } else if(left_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
     Variable_ptr var = symbol_table_->getVariable(left_relation->get_left()->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   }
 
   if (right_relation->get_type() == StringRelation::Type::STRING_VAR) {
     Variable_ptr var = symbol_table_->getVariable(right_relation->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   } else if(right_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
     Variable_ptr var = symbol_table_->getVariable(right_relation->get_left()->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   }
+  relation->variables = vars;
+  add_string_variables(vars);
 
   delete_term_relation(gt_term->left_term);
   delete_term_relation(gt_term->right_term);
@@ -289,21 +305,24 @@ void StringRelationGenerator::visitGe(Ge_ptr ge_term) {
                                 right_relation->clone(),
                                 "",
                                 nullptr);
+  std::vector<std::string> vars;
   if (left_relation->get_type() == StringRelation::Type::STRING_VAR) {
     Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   } else if(left_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
     Variable_ptr var = symbol_table_->getVariable(left_relation->get_left()->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   }
 
   if (right_relation->get_type() == StringRelation::Type::STRING_VAR) {
     Variable_ptr var = symbol_table_->getVariable(right_relation->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   } else if(right_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
     Variable_ptr var = symbol_table_->getVariable(right_relation->get_left()->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   }
+  relation->variables = vars;
+  add_string_variables(vars);
 
   delete_term_relation(ge_term->left_term);
   delete_term_relation(ge_term->right_term);
@@ -330,21 +349,24 @@ void StringRelationGenerator::visitLt(Lt_ptr lt_term) {
                                 right_relation->clone(),
                                 "",
                                 nullptr);
+  std::vector<std::string> vars;
   if (left_relation->get_type() == StringRelation::Type::STRING_VAR) {
     Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   } else if(left_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
     Variable_ptr var = symbol_table_->getVariable(left_relation->get_left()->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   }
 
   if (right_relation->get_type() == StringRelation::Type::STRING_VAR) {
     Variable_ptr var = symbol_table_->getVariable(right_relation->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   } else if(right_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
     Variable_ptr var = symbol_table_->getVariable(right_relation->get_left()->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   }
+  relation->variables = vars;
+  add_string_variables(vars);
 
   delete_term_relation(lt_term->left_term);
   delete_term_relation(lt_term->right_term);
@@ -373,21 +395,24 @@ void StringRelationGenerator::visitLe(Le_ptr le_term) {
                                 right_relation->clone(),
                                 "",
                                 nullptr);
+  std::vector<std::string> vars;
   if (left_relation->get_type() == StringRelation::Type::STRING_VAR) {
     Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   } else if(left_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
     Variable_ptr var = symbol_table_->getVariable(left_relation->get_left()->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   }
 
   if (right_relation->get_type() == StringRelation::Type::STRING_VAR) {
     Variable_ptr var = symbol_table_->getVariable(right_relation->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   } else if(right_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
     Variable_ptr var = symbol_table_->getVariable(right_relation->get_left()->get_data());
-    add_string_variable(var,current_term_);
+    vars.push_back(var->getName());
   }
+  relation->variables = vars;
+  add_string_variables(vars);
 
   delete_term_relation(le_term->left_term);
   delete_term_relation(le_term->right_term);
@@ -462,10 +487,15 @@ void StringRelationGenerator::visitBegins(Begins_ptr begins_term) {
                                 right_relation->clone(),
                                 "",
                                 nullptr);
+
+  std::vector<std::string> vars;
   Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
-  add_string_variable(var,current_term_);
+  vars.push_back(var->getName());
   var = symbol_table_->getVariable(right_relation->get_data());
-  add_string_variable(var,current_term_);
+  vars.push_back(var->getName());
+
+  relation->variables = vars;
+  add_string_variables(vars);
 
   delete_term_relation(begins_term->subject_term);
   delete_term_relation(begins_term->search_term);
@@ -492,10 +522,14 @@ void StringRelationGenerator::visitNotBegins(NotBegins_ptr not_begins_term) {
                                 right_relation->clone(),
                                 "",
                                 nullptr);
+  std::vector<std::string> vars;
   Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
-  add_string_variable(var,current_term_);
+  vars.push_back(var->getName());
   var = symbol_table_->getVariable(right_relation->get_data());
-  add_string_variable(var,current_term_);
+  vars.push_back(var->getName());
+
+  relation->variables = vars;
+  add_string_variables(vars);
 
   delete_term_relation(not_begins_term->subject_term);
   delete_term_relation(not_begins_term->search_term);
@@ -592,7 +626,6 @@ void StringRelationGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   DVLOG(VLOG_LEVEL) << "-->variable name: " << variable->getName();
   switch(variable->getType()) {
     case Variable::Type::STRING:
-      set_parent_term(variable, current_term_);
       str_rel = new StringRelation();
       str_rel->set_type(StringRelation::Type::STRING_VAR);
       str_rel->set_data(variable->getName());
@@ -687,40 +720,81 @@ void StringRelationGenerator::delete_term_relation(Term_ptr term) {
   }
 }
 
-Term_ptr StringRelationGenerator::get_parent_term(Variable_ptr variable) {
-  auto it = variable_term_map_.find(variable);
-  if (it == variable_term_map_.end()) {
+std::string StringRelationGenerator::get_variable_group_name(SMT::Variable_ptr variable) {
+  if(variable_group_name_mapping.find(variable) == variable_group_name_mapping.end()) {
+    return "";
+  }
+  return variable_group_name_mapping[variable];
+}
+
+std::string StringRelationGenerator::get_term_group_name(SMT::Term_ptr term) {
+  if(term_group_map.find(term) == term_group_map.end()) {
+    return "";
+  }
+  return term_group_map[term];
+}
+
+void StringRelationGenerator::add_string_variables(std::vector<std::string> variables) {
+
+  std::unordered_set<std::string>* last = nullptr;
+
+  for(auto& v : variables) {
+    std::string name = v;
+    if(relation_groups.find(name) != relation_groups.end()) {
+      // if last is null, then just set last to this group
+      // otherwise, merge last group and this one, unless they're the same
+      if(last == nullptr) {
+        last = relation_groups[name];
+      } else if(last != relation_groups[name]){
+        relation_groups[name]->insert(last->begin(), last->end());
+        delete last; last = relation_groups[name];
+        for(auto& s : *last) {
+          relation_groups[s] = last;
+        }
+      }
+    } else {
+      // if last is null, create new group, add it
+      // otherwise, add this var to last
+      if(last == nullptr) {
+        last = new std::unordered_set<std::string>;
+        last->insert(name);
+        relation_groups[name] = last;
+      } else {
+        last->insert(name);
+        relation_groups[name] = last;
+      }
+    }
+  }
+}
+
+std::map<std::string,int>* StringRelationGenerator::get_group_trackmap(std::string name) {
+  if(group_trackmaps.find(name) == group_trackmaps.end()) {
     return nullptr;
   }
-  return variable_term_map_[variable];
+  return group_trackmaps[name];
 }
 
-bool StringRelationGenerator::set_parent_term(Variable_ptr variable, Term_ptr term) {
-  variable_term_map_[variable] = term;
-  return true;
-}
+void StringRelationGenerator::create_trackmaps() {
+  VariableTrackMap_ptr trackmap = nullptr;
+  for(auto& group : relation_groups) {
+    if(variable_group_name_mapping.find(symbol_table_->getVariable(group.first)) != variable_group_name_mapping.end()) {
+      continue;
+    }
+    std::string group_name = symbol_table_->get_var_name_for_node(current_term_, Variable::Type::STRING);
+    group_name += group.first;
+    symbol_table_->addVariable(new Variable(group_name, Variable::Type::STRING));
+    symbol_table_->setValue(group_name,new Value(MultiTrackAutomaton::makeAnyAutoUnaligned(group.second->size())));
 
-void StringRelationGenerator::add_string_variable(Variable_ptr variable, Term_ptr term) {
-  int id;
-  std::string variable_name = variable->getName();
-
-  if(term_trackmap_table_.find(term) == term_trackmap_table_.end()) {
-    term_trackmap_table_[term] = new std::map<std::string, int>();
+    trackmap = new std::map<std::string,int>;
+    int track = 0;
+    for(auto& var : *group.second) {
+      Variable_ptr v = symbol_table_->getVariable(var);
+      (*trackmap)[var] = track++;
+      variable_group_name_mapping[v] = group_name;
+    }
+    group_trackmaps[group_name] = trackmap;
   }
-  if(term_trackmap_table_[term]->find(variable_name) != term_trackmap_table_[term]->end()) {
-    return;
-  }
-
-  id = term_trackmap_table_[term]->size();
-  DVLOG(VLOG_LEVEL) << "Adding to trackmap:   " << variable_name << " -> " << id;
-  (*term_trackmap_table_[term])[variable_name]= id;
-}
-
-StringRelationGenerator::VariableTrackMap_ptr StringRelationGenerator::get_term_trackmap(SMT::Term_ptr term) {
-  if(term_trackmap_table_.find(term) == term_trackmap_table_.end()) {
-    return nullptr;
-  }
-  return term_trackmap_table_[term];
+  relation_groups.clear();
 }
 
 } /* namespace Solver */
