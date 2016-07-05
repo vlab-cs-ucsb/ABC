@@ -157,7 +157,7 @@ int main(const int argc, const char **argv) {
   auto solving_time = end - start;
 
   if (driver.isSatisfiable()) {
-    if (VLOG_IS_ON(30) and not experiment_mode) {
+    if (VLOG_IS_ON(30)) {
       unsigned index = 0;
       for(auto& variable_entry : driver.getSatisfyingVariables()) {
 
