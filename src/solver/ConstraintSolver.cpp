@@ -185,9 +185,13 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
           LOG(FATAL) << "BAAAAD";
         }
         for (auto &var_track : *relation->get_variable_trackmap()) {
-          DVLOG(VLOG_LEVEL) << "variable: " << var_track.first << " relational, going to symbol table";
+          //DVLOG(VLOG_LEVEL) << "variable: " << var_track.first << " relational, going to symbol table";
           //symbol_table_->setValue(var_track.first,new Value(result->getMultiTrackAutomaton()->getKTrack(var_track.second)));
-          symbol_table_->setValue(var_track.first, val->clone());
+          Variable_ptr v = symbol_table_->getVariable(var_track.first);
+          if(v->isSymbolic()) {
+            DVLOG(VLOG_LEVEL) << "Setting value for symbolic var " << v->getName();
+            symbol_table_->setValue(var_track.first, val->clone());
+          }
         }
       }
     }
