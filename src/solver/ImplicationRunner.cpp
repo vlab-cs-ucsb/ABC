@@ -68,12 +68,13 @@ void ImplicationRunner::visitAssert(Assert_ptr assert_command) {
 }
 
 void ImplicationRunner::visitAnd(And_ptr and_term) {
-  for (auto& term : * (and_term->term_list)) {
+  int i = 0;
+  while(i < and_term->term_list->size()) {
     current_and_ = and_term;
-    visit(term);
+    visit(and_term->term_list->at(i));
     current_and_ = nullptr;
+    i++;
   }
-
 }
 
 void ImplicationRunner::visitOr(Or_ptr or_term) {
@@ -85,30 +86,38 @@ void ImplicationRunner::visitOr(Or_ptr or_term) {
 }
 
 void ImplicationRunner::visitEq(Eq_ptr eq_term) {
-
+DVLOG(VLOG_LEVEL) << 1;
   if (Concat_ptr left_id = dynamic_cast<Concat_ptr>(eq_term->left_term)) {
+  DVLOG(VLOG_LEVEL) << 2;
     if (Concat_ptr right_id = dynamic_cast<Concat_ptr>(eq_term->right_term)) {
+      DVLOG(VLOG_LEVEL) << 3;
       Term_ptr implication_term = new Eq(get_length(left_id), get_length(right_id));
       current_and_->term_list->push_back(implication_term);
     } else if (!is_precise(left_id) or !dynamic_cast<QualIdentifier_ptr>(eq_term->right_term)) {
+      DVLOG(VLOG_LEVEL) << 4;
       Term_ptr implication_term = new Eq(get_length(left_id), get_length(eq_term->right_term));
       current_and_->term_list->push_back(implication_term);
       if (QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->right_term)) {
+        DVLOG(VLOG_LEVEL) << 5;
         Term_ptr implication_term_begins = new Begins(right_variable->clone(), left_id->term_list->front()->clone());
         current_and_->term_list->push_back(implication_term_begins);
       }
     }
   } else if (Concat_ptr right_id = dynamic_cast<Concat_ptr>(eq_term->right_term)) {
+    DVLOG(VLOG_LEVEL) << 6;
     if (!is_precise(right_id) or !dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {
+      DVLOG(VLOG_LEVEL) << 7;
       Term_ptr implication_term = new Eq(get_length(eq_term->left_term), get_length(right_id));
+      DVLOG(VLOG_LEVEL) << "CREATED: " << implication_term;
       current_and_->term_list->push_back(implication_term);
       if (QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {
+        DVLOG(VLOG_LEVEL) << 8;
         Term_ptr implication_term_begins = new Begins(left_variable->clone(), right_id->term_list->front()->clone());
         current_and_->term_list->push_back(implication_term_begins);
       }
     }
   }
-
+  DVLOG(VLOG_LEVEL) << "out";
 }
 
 void ImplicationRunner::visitContains(Contains_ptr contains) {
@@ -170,7 +179,7 @@ Plus_ptr ImplicationRunner::get_length_concat(Concat_ptr concat) {
   TermList_ptr term_list = new TermList();
   for (auto& term_ptr : * (concat->term_list)) {
     //Convert length directly to an integer if the term is a constant.
-    if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(term_ptr->clone())) {
+    if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(term_ptr)) {
       term_list->push_back(get_length(term_constant));
     } else {
       term_list->push_back(new Len(term_ptr->clone()));
