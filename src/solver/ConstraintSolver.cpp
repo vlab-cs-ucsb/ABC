@@ -34,7 +34,8 @@ const int ConstraintSolver::VLOG_LEVEL = 11;
 
 ConstraintSolver::ConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_table,
                                    ConstraintInformation_ptr constraint_information)
-    : still_sat { false },
+    : still_sat_ { false },
+      iteration_count_ {0},
       root_(script),
       symbol_table_(symbol_table),
       constraint_information_(constraint_information),
@@ -51,6 +52,15 @@ void ConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "start";
   visit(root_);
 
+  end();
+}
+
+void ConstraintSolver::start(int iteration_count) {
+  DVLOG(VLOG_LEVEL) << "start" << iteration_count;
+  iteration_count_ = iteration_count;
+  for (iteration_count_ = 0; iteration_count_ < iteration_count; ++iteration_count_) {
+    visit(root_);
+  }
   end();
 }
 
@@ -138,7 +148,8 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
 
   // If we are in a component solve arithmetic constraints first
-  if (constraint_information_->is_component(and_term)) {
+  // Solve arithmetic constraints or relational string constraints only once
+  if (constraint_information_->is_component(and_term) and iteration_count_ == 0) {
     if (Option::Solver::LIA_ENGINE_ENABLED) {
       arithmetic_constraint_solver_.start(and_term);
     }
@@ -157,9 +168,9 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     if (is_satisfiable) {
       // update variables, but if any relational variables were updated, we need to
       // reupdate satisfiability, as it may change
-      still_sat = true;
+      still_sat_ = true;
       update_variables();
-      is_satisfiable = is_satisfiable and still_sat;
+      is_satisfiable = is_satisfiable and still_sat_;
     }
     if (not is_satisfiable) {
       clearTermValuesAndLocalLetVars();
@@ -1291,7 +1302,7 @@ void ConstraintSolver::update_variables() {
     DVLOG(VLOG_LEVEL) << "Updating variable: " << var->getName();
     string_constraint_solver_.update_variable_value(var, value);
     DVLOG(VLOG_LEVEL) << "..........";
-    still_sat = still_sat and value->isSatisfiable();
+    still_sat_ = still_sat_ and value->isSatisfiable();
     delete value;
     symbol_table_->setValue(var, nullptr);
   }
