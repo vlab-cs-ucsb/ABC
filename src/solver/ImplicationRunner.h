@@ -37,11 +37,9 @@ class ImplicationRunner : public AstTraverser {
   void visitNotEnds(SMT::NotEnds_ptr) override;
 
 
-
  protected:
   SymbolTable_ptr symbol_table_;
   SMT::And_ptr current_and_;
-  std::set<std::string> arith_variables_;
 
   bool is_precise(SMT::Concat_ptr);
   SMT::Term_ptr get_length(SMT::Term_ptr);

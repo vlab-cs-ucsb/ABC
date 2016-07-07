@@ -17,7 +17,6 @@ namespace Solver {
 
 using namespace SMT;
 const int ImplicationRunner::VLOG_LEVEL = 20;
-const int MAX_ARITH_VARIABLES = 15;
 
 ImplicationRunner::ImplicationRunner(Script_ptr script, SymbolTable_ptr symbol_table)
   : AstTraverser(script),
@@ -81,8 +80,6 @@ void ImplicationRunner::visitOr(Or_ptr or_term) {
   for (auto& term : * (or_term->term_list)) {
     symbol_table_->push_scope(term, false);
     visit(term);
-    LOG(INFO) << "--- added " << arith_variables_.size() << " variables";
-    arith_variables_.clear();
     symbol_table_->pop_scope();
   }
 }
@@ -102,16 +99,8 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
     }
   } else if (Concat_ptr right_id = dynamic_cast<Concat_ptr>(eq_term->right_term)) {
     if (!is_precise(right_id) or !dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {
-
-      std::set<std::string> before = arith_variables_;
       Term_ptr implication_term = new Eq(get_length(eq_term->left_term), get_length(right_id));
-      if(arith_variables_.size() <= MAX_ARITH_VARIABLES) {
-        current_and_->term_list->push_back(implication_term);
-      } else {
-        delete implication_term;
-        arith_variables_ = before;
-      }
-
+      current_and_->term_list->push_back(implication_term);
       if (QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {
         Term_ptr implication_term_begins = new Begins(left_variable->clone(), right_id->term_list->front()->clone());
         current_and_->term_list->push_back(implication_term_begins);
@@ -165,10 +154,6 @@ Term_ptr ImplicationRunner::get_length(Term_ptr term) {
   if (Concat_ptr concat = dynamic_cast<Concat_ptr>(term)) {
     return get_length_concat(concat);
   }
-
-  if (QualIdentifier_ptr var = dynamic_cast<QualIdentifier_ptr>(term)) {
-    arith_variables_.insert(var->getVarName());
-  }
   return new Len(term->clone());
 }
 
@@ -186,9 +171,6 @@ Plus_ptr ImplicationRunner::get_length_concat(Concat_ptr concat) {
     if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(term_ptr)) {
       term_list->push_back(get_length(term_constant));
     } else {
-      if (QualIdentifier_ptr var = dynamic_cast<QualIdentifier_ptr>(term_ptr)) {
-        arith_variables_.insert(var->getVarName());
-      }
       term_list->push_back(new Len(term_ptr->clone()));
     }
   }
