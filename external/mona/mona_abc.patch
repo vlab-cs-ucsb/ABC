@@ -33,8 +33,8 @@ index ec2f578..df76f74 100644
  
 -#define MAX_EXCEPTION 50
 -#define MAX_VARIABLES 10
-+#define MAX_EXCEPTION 4096
-+#define MAX_VARIABLES 30
++#define MAX_EXCEPTION 1048576
++#define MAX_VARIABLES 2000
  /* #warning INTERNAL LIMITS */
  
  struct path_descr {
