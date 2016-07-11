@@ -35,18 +35,20 @@ use it as a static or dynamic lib or you can run it from command line. This guid
     ``$ sudo apt-get install python``
 
 ####Project Dependencies
-  - [Glog](https://github.com/google/glog) logging library for C++. It is an autotools project. Please follow the instructions in their website if the below shortcut doesn't work for you. (The latest version of the glog may not compile because of this [issue](https://github.com/google/glog/issues/52). Below commands checkouts a working version for Ubuntu 14.04 that is known to be working)
+  - [Glog](https://github.com/google/glog) logging library for C++. It is an autotools project. Please follow the instructions in their website if the below shortcut doesn't work for you.
 
   ```
   $ cd <your home directory or a preferred directory>
   $ git clone https://github.com/google/glog.git
   $ cd glog
-  $ git checkout tags/v0.3.3
+  $ git apply <ABC_ROOT_DIR>/external/glog/glog_abc_autotools.patch
+  $ libtoolize && aclocal && automake --gnu --add-missing && autoreconf -ivf // update autotool files
   $ ./configure
   $ make all
   $ sudo make install
   $ sudo ldconfig
-```
+  
+  ```
   You should have glog libraries installed at */usr/local/lib* and headers installed at */usr/local/include/glog/* after running above commands. 
 
   - [Mona](http://www.brics.dk/mona/) is used for symbolic representation of automata. 
@@ -67,8 +69,8 @@ use it as a static or dynamic lib or you can run it from command line. This guid
   1- *__MONA/DFA/makebasic.c__* as follows:
   ```c
   // DFA/makebasic.c
-  #define MAX_EXCEPTION 50   /* LINE 27: change this to 4096. */
-  #define MAX_VARIABLES 10   /* LINE 28: change this to 30    */
+  #define MAX_EXCEPTION 50   /* LINE 27: change this to 1048576. */
+  #define MAX_VARIABLES 10   /* LINE 28: change this to 2000    */
 ```
   You can set above declarations to larger values whenever you need and reinstall mona. (In case you get an *invariant violation error* message in makefile.c by MONA)
 

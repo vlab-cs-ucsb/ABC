@@ -351,6 +351,10 @@ void Driver::test() {
   return;
 
 
+//    int indices[4] = {0,1,2,3};
+//    Theory::StringAutomaton_ptr test = Theory::StringAutomaton::makeAnyString(4, indices);
+//    test->inspectAuto(true, true);
+//    test->inspectBDD();
 
 //  std::map<std::string ,int> eq_1 = {{"x", 0}, {"z", 1}, {"y", 2}};
 //  std::vector<int> coeff = {1, 2, 3};

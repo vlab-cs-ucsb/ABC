@@ -287,8 +287,6 @@ Value_ptr SymbolTable::getValue(std::string var_name) {
 
 Value_ptr SymbolTable::getValue(Variable_ptr variable) {
 
-
-
   for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); it++) {
     auto representative_variable = get_representative_variable_of_at_scope((*it), variable);
     auto entry = variable_value_table[(*it)].find(representative_variable);

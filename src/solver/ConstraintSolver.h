@@ -32,6 +32,7 @@ class ConstraintSolver: public SMT::Visitor {
   virtual ~ConstraintSolver();
 
   void start() override;
+  void start(int iteration_count);
   void end() override;
 
   void visitScript(SMT::Script_ptr) override;
@@ -111,7 +112,8 @@ class ConstraintSolver: public SMT::Visitor {
   bool check_and_visit(SMT::Term_ptr term);
   void process_mixed_integer_string_constraints_in(SMT::Term_ptr term);
 
-  bool still_sat;
+  bool still_sat_;
+  int iteration_count_;
   SMT::Script_ptr root_;
   SymbolTable_ptr symbol_table_;
   ConstraintInformation_ptr constraint_information_;
