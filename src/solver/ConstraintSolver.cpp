@@ -374,6 +374,8 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
   Value_ptr result = nullptr, param_left = getTermValue(eq_term->left_term), param_right = getTermValue(
       eq_term->right_term);
 
+
+
   if (Value::Type::BOOl_CONSTANT == param_left->getType() and Value::Type::BOOl_CONSTANT == param_right->getType()) {
     result = new Value(param_left->getBoolConstant() == param_right->getBoolConstant());
   } else if (Value::Type::INT_CONSTANT == param_left->getType()
@@ -382,7 +384,6 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
   } else {
     result = param_left->intersect(param_right);
   }
-
   setTermValue(eq_term, result);
 }
 
@@ -555,6 +556,7 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
     }
   }
   path_trace_.pop_back();
+  DVLOG(VLOG_LEVEL) << "------ checking result " << result->isSatisfiable();
   setTermValue(concat_term, result);
 }
 

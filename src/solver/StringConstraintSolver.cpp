@@ -128,9 +128,9 @@ void StringConstraintSolver::setCallbacks() {
           }
 
           Value_ptr val = new Value(multi_auto);
-          DVLOG(VLOG_LEVEL) << "setting term " << term << " value";
           std::string group_name = string_relation_generator_.get_term_group_name(term);
           symbol_table_->updateValue(group_name,val);
+          DVLOG(VLOG_LEVEL) << "Updating group name: " << group_name;
           break;
         }
         default:
@@ -290,6 +290,7 @@ Value_ptr StringConstraintSolver::get_variable_value(Variable_ptr variable) {
   if(group_name.empty()) {
     return nullptr;
   }
+  DVLOG(VLOG_LEVEL) << "VARIABLE: " << variable->str() << " is part of GROUP: " << group_name;
   relation_value = symbol_table_->getValue(group_name);
 
   relation_auto = relation_value->getMultiTrackAutomaton();
@@ -308,8 +309,9 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
     LOG(FATAL) << "Empty group name!";
   }
   relation_value = symbol_table_->getValue(group_name);
-
+  DVLOG(VLOG_LEVEL) << "VARIABLE: " << variable->str() << " is part of GROUP: " << group_name;
   variable_auto = value->getStringAutomaton();
+
   relation_auto = relation_value->getMultiTrackAutomaton();
   variable_relation = relation_auto->getRelation();
   // place variable value on multitrack, intersect and update corresonding term value
@@ -317,6 +319,7 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
                                        variable_relation->get_variable_index(variable->getName()),
                                        variable_relation->get_num_tracks());
   variable_multi_auto->setRelation(variable_relation->clone());
+
   symbol_table_->updateValue(group_name,new Value(variable_multi_auto));
   return true;
 }
