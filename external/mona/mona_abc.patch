@@ -1,14 +1,12 @@
 diff --git a/BDD/bdd_external.h b/BDD/bdd_external.h
-index 8cb60a5..b8f972e 100644
+index 8cb60a5..b822d0d 100644
 --- a/BDD/bdd_external.h
 +++ b/BDD/bdd_external.h
-@@ -21,6 +21,10 @@
+@@ -21,6 +21,8 @@
  #ifndef __BDD_EXTERNAL_H
  #define __BDD_EXTERNAL_H
  
-+#ifdef __cplusplus
 +#define export _export
-+#endif
 +
  #include "bdd.h"
  
@@ -24,7 +22,7 @@ index 3acf219..f73a77d 100644
 -mona_HEADERS = bdd.h
 +mona_HEADERS = bdd.h bdd_external.h bdd_dump.h
 diff --git a/DFA/makebasic.c b/DFA/makebasic.c
-index ec2f578..df76f74 100644
+index ec2f578..bbc40ce 100644
 --- a/DFA/makebasic.c
 +++ b/DFA/makebasic.c
 @@ -24,8 +24,8 @@

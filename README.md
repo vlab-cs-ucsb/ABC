@@ -77,13 +77,11 @@ use it as a static or dynamic lib or you can run it from command line. This guid
   2- *__MONA/BDD/bdd_external.h__* as follows:
   ```c
   \#ifndef __BDD_EXTERNAL_H
-  \#define __BDD_EXTERNAL_H  /* LINE 22                       */
+  \#define __BDD_EXTERNAL_H  /* LINE 22                                                    */
 
-  \#ifdef __cplusplus
-  \#define export _export   /* Put those 3 lines here         */
-  \#endif
+  \#define export _export   /* Put that line here to avoid c++ keyword 'export' collision  */
   
-  \#include "bdd.h"          /* LINE 24                       */
+  \#include "bdd.h"          /* LINE 24                                                    */
   ```
   
   3- *__MONA/BDD/makefile.am__* as follows:

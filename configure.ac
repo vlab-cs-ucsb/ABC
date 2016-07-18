@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([ABC],[1.0],[vlab@cs.ucsb.edu])
+AC_INIT([ABC],[1.0],[vlab@cs.ucsb.edu],[abc],[https://github.com/vlab-cs-ucsb/ABC])
 
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_LIBOBJ_DIR([lib])
@@ -40,7 +40,7 @@ AC_SUBST([JAVA_HEADERS])
 # Check for programs
 AC_LANG([C++])
 AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX_11([noext])
+AX_CXX_COMPILE_STDCXX_14([noext])
 AX_CHECK_COMPILE_FLAG([-Wall -Wextra -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter],\
     [CXXFLAGS="$CXXFLAGS -Wall -Wextra -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter"])
 
@@ -66,7 +66,7 @@ AC_CHECK_LIB([monamem], [mem_alloc], [LIBMONAMEM=-lmonamem], AC_MSG_ERROR(MONA M
 AC_SUBST([LIBMONAMEM])
 
 #AX_BOOST_BASE([1.54],, [AC_MSG_ERROR([This program needs Boost, but it was not found in your system])])
-AC_CHECK_HEADERS([boost/multiprecision/cpp_int.hpp], [], [AC_MSG_ERROR([Please install libboost_math library])], [])
+AC_CHECK_HEADERS([boost/multiprecision/cpp_int.hpp], [], [AC_MSG_ERROR([Please install boost multiprecision headers])], [])
 
 AC_CHECK_LIB([m], [floor],[LIBM=-lm], AC_MSG_ERROR(c math library m not found))
 AC_SUBST([LIBM])
