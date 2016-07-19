@@ -160,7 +160,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
   bool is_satisfiable = true;
   Value_ptr param = nullptr;
-  DVLOG(VLOG_LEVEL) << "Start!";
   for (auto& term : *(and_term->term_list)) {
     check_and_visit(term);
     param = getTermValue(term);
@@ -180,7 +179,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   }
   Value_ptr result = new Value(is_satisfiable);
   setTermValue(and_term, result);
-
   if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA && constraint_information_->is_component(and_term)) {
     // put the relational variables into the symbol table
     for (auto &term : *(and_term->term_list)) {
@@ -196,13 +194,10 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
           LOG(FATAL) << "BAAAAD";
         }
         for (auto &var_track : *relation->get_variable_trackmap()) {
-          //DVLOG(VLOG_LEVEL) << "variable: " << var_track.first << " relational, going to symbol table";
-          //symbol_table_->setValue(var_track.first,new Value(result->getMultiTrackAutomaton()->getKTrack(var_track.second)));
           Variable_ptr v = symbol_table_->getVariable(var_track.first);
           if(v->isSymbolic()) {
-            DVLOG(VLOG_LEVEL) << "Setting value for symbolic var " << v->getName();
-            //symbol_table_->setValue(var_track.first, val->clone());
-            symbol_table_->setValue(var_track.first,new Value(result->getMultiTrackAutomaton()->getKTrack(var_track.second)));
+            DVLOG(VLOG_LEVEL) << "Setting value for symbolic var " << v->getName() << " with track number: " << val->getMultiTrackAutomaton()->getKTrack(var_track.second);
+            symbol_table_->setValue(var_track.first,new Value(val->getMultiTrackAutomaton()->getKTrack(var_track.second)));
           }
         }
       }

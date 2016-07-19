@@ -1011,7 +1011,7 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 	int flag = 0;
 
 	if(k_track >= this->num_of_tracks) {
-		LOG(FATAL) << "error in MultiTrackAutomaton::getKTrack";
+		LOG(FATAL) << "error in MultiTrackAutomaton::getKTrack; k_track,num_tracks = " << k_track << "," << this->num_of_tracks;
 	} else if(this->num_of_tracks == 1) {
 	  DVLOG(VLOG_LEVEL) << "   getKTrack, but only 1 track";
     result= removeLambdaSuffix(this->dfa,VAR_PER_TRACK);
