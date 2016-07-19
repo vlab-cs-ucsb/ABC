@@ -108,7 +108,7 @@ StringAutomaton_ptr StringAutomaton::makeString(std::string str, int num_of_vari
 
   result_dfa = dfaBuild(statuses);
   result_auto = new StringAutomaton(result_dfa, num_of_variables);
-  delete statuses;
+  delete[] statuses;
 
   DVLOG(VLOG_LEVEL) << result_auto->id << " = makeString(\"" << str << "\")";
 

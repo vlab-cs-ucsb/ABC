@@ -475,7 +475,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 
 	int var = VAR_PER_TRACK;
 	int len = num_tracks * var;
-	int *mindices = getIndices(num_tracks*var);
+	int *mindices = getIndices(len);
 	char* statuses = new char[temp_dfa->ns+2];
 	int nump = 1 << var;
 
@@ -512,7 +512,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 				// make right track lambda
 				str[right_track+num_tracks*j] = '1';
 			}
-			str.push_back('\'');
+			str.push_back('\0');
 			state_exeps.push_back(std::make_pair(str,pp->to));
 			pp = pp->next;
 		}
@@ -528,7 +528,6 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 			str.push_back('\0');
 			state_exeps.push_back(std::make_pair(str,temp_dfa->ns));
 		}
-
 		dfaAllocExceptions(state_exeps.size());
 		for(int k = 0; k < state_exeps.size(); k++) {
 			dfaStoreException(state_exeps[k].second, &state_exeps[k].first[0]);
