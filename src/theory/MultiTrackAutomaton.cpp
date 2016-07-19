@@ -106,7 +106,8 @@ MultiTrackAutomaton::MultiTrackAutomaton(const MultiTrackAutomaton& other)
 }
 
 MultiTrackAutomaton::~MultiTrackAutomaton() {
-  delete relation;
+	if (relation != nullptr)
+  	delete relation;
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::clone() const {
@@ -129,11 +130,6 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makePhi(int ntracks) {
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAuto(StringRelation_ptr relation) {
 	MultiTrackAutomaton_ptr result_auto = nullptr;
 	DVLOG(VLOG_LEVEL) << "Begin making auto...., track size is " << relation->get_num_tracks();
-
-
-	StringRelation_ptr left = relation->get_left(),
-										 right = relation->get_right(),
-										 temp = nullptr;
 
 	switch(relation->get_type()) {
     case StringRelation::Type::EQ:
@@ -569,68 +565,6 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeEquality(StringRelation_ptr relation) {
-	/*
-	MultiTrackAutomaton_ptr result_auto = nullptr;
-	DFA_ptr temp_dfa, result_dfa;
-	int num_tracks = relation->get_num_tracks(),
-			left_track,right_track;
-	StringRelation_ptr left_relation = relation->get_left(),
-		                 right_relation = relation->get_right();
-	std::string left_data,right_data;
-	TransitionVector tv;
-	// "left relation" is variable, "right relation" is constant
-	// the real left is actually just the last track
-	left_data = left_relation->get_data();
-	right_data = right_relation->get_data();
-	left_track = relation->get_variable_index(left_data);
-	right_track = relation->get_variable_index(right_data);
-
-	int var = VAR_PER_TRACK;
-	int len = num_tracks * var;
-	int *mindices = getIndices(num_tracks*var);
-	int nump = 1 << var;
-	std::vector<char> exep_lambda = getBinaryFormat(nump-1,var);
-	tv = generate_transitions_for_relation(StringRelation::Type::EQ_NO_LAMBDA,var);
-	dfaSetup(3,len,mindices);
-	dfaAllocExceptions(tv.size() + 1); // 1 extra for lambda stuff below
-	for(int i = 0; i < tv.size(); i++) {
-		std::vector<char> str(len,'X');
-		for(int k = 0; k < var; k++) {
-			str[left_track+num_tracks*k] = tv[i].first[k];
-			str[right_track+num_tracks*k] = tv[i].second[k];
-		}
-		str.push_back('\0');
-		dfaStoreException(0,&str[0]);
-	}
-
-	// lambda, lambda goto lambda/lambda state
-	std::vector<char> str(len,'X');
-	for (int k = 0; k < var; k++) {
-		str[left_track+num_tracks*k] = exep_lambda[k];
-		str[right_track+num_tracks*k] = exep_lambda[k];
-	}
-	str.push_back('\0');
-	dfaStoreException(1,&str[0]);
-	dfaStoreState(2);
-
-	// lambda,lambda state
-	dfaAllocExceptions(1);
-	dfaStoreException(1,&str[0]);
-	dfaStoreState(2);
-	// sink
-	dfaAllocExceptions(0);
-	dfaStoreState(2);
-
-	temp_dfa = dfaBuild("-+-");
-	result_dfa = dfaMinimize(temp_dfa);
-	dfaFree(temp_dfa);
-	result_auto = new MultiTrackAutomaton(result_dfa,num_tracks);
-	result_auto->setRelation(relation->clone());
-
-	delete[] mindices;
-	return result_auto;
-*/
-
 	MultiTrackAutomaton_ptr result_auto = nullptr;
 	DFA_ptr result_dfa = nullptr;
 	std::map<std::string,int>* trackmap = relation->get_variable_trackmap();
@@ -731,15 +665,6 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr rel
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThanOrEqual(StringRelation_ptr relation) {
-  /*
-  MultiTrackAutomaton_ptr greater_than_auto = nullptr, less_than_or_equal_auto = nullptr;
-	greater_than_auto = MultiTrackAutomaton::makeLessThan(relation);
-	less_than_or_equal_auto = greater_than_auto->complement();
-	delete greater_than_auto;
-  less_than_or_equal_auto->inspectBDD();
-  return less_than_or_equal_auto;
-   */
-
   MultiTrackAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
 	StringAutomaton_ptr constant_string_auto = nullptr;
 	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
@@ -857,14 +782,6 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThan(StringRelation_ptr 
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThanOrEqual(StringRelation_ptr relation) {
-  /*
-  MultiTrackAutomaton_ptr less_than_auto = nullptr, greater_than_or_equal_auto = nullptr;
-	less_than_auto = MultiTrackAutomaton::makeLessThan(relation);
-	greater_than_or_equal_auto = less_than_auto->complement();
-	delete less_than_auto;
-	return greater_than_or_equal_auto;
-	*/
-
 	MultiTrackAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
 	StringAutomaton_ptr constant_string_auto = nullptr;
 	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
@@ -926,12 +843,9 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAnyAutoUnaligned(int num_tracks
 	DFA_ptr result, temp;
 	int len = VAR_PER_TRACK * num_tracks;
 	int *mindices = Automaton::getIndices(num_tracks*VAR_PER_TRACK);
-	std::vector<char> str(len, 'X');
-	str.push_back('\0');
 
 	dfaSetup(1, len, mindices);
-	dfaAllocExceptions(1);
-	dfaStoreException(0,&str[0]);
+	dfaAllocExceptions(0);
 	dfaStoreState(0);
 
 	temp = dfaBuild("+");
@@ -955,6 +869,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAnyAutoAligned(int num_tracks) 
 		delete any_auto;
 		aligned_auto = temp_auto;
 	}
+	delete any_string_auto;
 	return aligned_auto;
 }
 
@@ -966,7 +881,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::complement() {
 	temp_auto = new MultiTrackAutomaton(complement_dfa,this->num_of_tracks);
 	aligned_universe_auto = makeAnyAutoAligned(this->num_of_tracks);
 	complement_auto = temp_auto->intersect(aligned_universe_auto);
-	complement_auto->setRelation(relation->clone());
+	complement_auto->setRelation(this->relation->clone());
 	delete temp_auto;
 	delete aligned_universe_auto;
 
@@ -980,11 +895,25 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::union_(MultiTrackAutomaton_ptr othe
 	}
   DFA_ptr intersect_dfa, minimized_dfa;
 	MultiTrackAutomaton_ptr union_auto;
+	StringRelation_ptr union_relation = nullptr;
 	intersect_dfa = dfaProduct(this->dfa, other_auto->dfa, dfaOR);
 	minimized_dfa = dfaMinimize(intersect_dfa);
 	dfaFree(intersect_dfa);
 	union_auto = new MultiTrackAutomaton(minimized_dfa, this->num_of_tracks);
-	union_auto->setRelation(relation->clone());
+	if(this->relation == nullptr && other_auto->relation == nullptr) {
+		LOG(FATAL) << "No relation set for either multitrack during union";
+	} else if(other_auto->relation == nullptr) {
+		union_relation = this->relation->clone();
+	} else if(this->relation == nullptr) {
+		union_relation = other_auto->relation->clone();
+	} else {
+		union_relation = new StringRelation();
+		union_relation->set_type(StringRelation::Type::UNION);
+		union_relation->set_left(this->relation->clone());
+		union_relation->set_right(other_auto->relation->clone());
+		union_relation->set_variable_trackmap(this->relation->get_variable_trackmap());
+	}
+	union_auto->setRelation(union_relation);
 	return union_auto;
 }
 
@@ -994,10 +923,24 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::difference(MultiTrackAutomaton_ptr 
 		return this->clone();
 	}
 	MultiTrackAutomaton_ptr complement_auto, difference_auto;
+	StringRelation_ptr difference_relation = nullptr;
 	complement_auto = other_auto->complement();
 	difference_auto = this->intersect(complement_auto);
-	difference_auto->setRelation(relation->clone());
-	delete complement_auto; complement_auto = nullptr;
+	if(this->relation == nullptr && other_auto->relation == nullptr) {
+		LOG(FATAL) << "No relation set for either multitrack during difference";
+	} else if(other_auto->relation == nullptr) {
+		difference_relation = this->relation->clone();
+	} else if(this->relation == nullptr) {
+		difference_relation = other_auto->relation->clone();
+	} else {
+		difference_relation = new StringRelation();
+		difference_relation->set_type(StringRelation::Type::DIFFERENCE);
+		difference_relation->set_left(this->relation->clone());
+		difference_relation->set_right(other_auto->relation->clone());
+		difference_relation->set_variable_trackmap(this->relation->get_variable_trackmap());
+	}
+	difference_auto->setRelation(difference_relation);
+	delete complement_auto;
 	return difference_auto;
 }
 
@@ -1062,15 +1005,13 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::projectKTrack(int k_track) {
 	return result_auto;
 }
 
-//TODO: Why doesn't k=0 work?
 StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 	DFA_ptr result = this->dfa, temp;
 	StringAutomaton_ptr result_auto = nullptr;
 	int flag = 0;
 
 	if(k_track >= this->num_of_tracks) {
-		std::cerr << "error in MultiTrackAutomaton::getKTrack" << std::endl;
-		exit(1);
+		LOG(FATAL) << "error in MultiTrackAutomaton::getKTrack";
 	} else if(this->num_of_tracks == 1) {
 	  DVLOG(VLOG_LEVEL) << "   getKTrack, but only 1 track";
     result= removeLambdaSuffix(this->dfa,VAR_PER_TRACK);
@@ -1124,7 +1065,6 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 
 boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_less_than_or_equal_to_bound, bool count_reserved_words) {
   // remove last lambda loop
-	LOG(INFO) << "RELATIONAL COUNT";
   DFA_ptr original_dfa = nullptr, temp_dfa = nullptr,trimmed_dfa = nullptr;
 	original_dfa = this->dfa;
   trace_descr tp;
@@ -1193,7 +1133,7 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
   trimmed_dfa = dfaMinimize(temp_dfa);
   dfaFree(temp_dfa);
   delete[] mindices;
-  delete statuses;
+  delete[] statuses;
 
   this->dfa = trimmed_dfa;
 	boost::multiprecision::cpp_int ret = Automaton::Count(bound+1, count_less_than_or_equal_to_bound, true);
@@ -1253,7 +1193,6 @@ char* MultiTrackAutomaton::getLambda(int var) {
 	return getSharp1(var); //11111111
 }
 
-// LAMBDAPLUS
 DFA_ptr MultiTrackAutomaton::getLambdaStar(int var, int* indices) {
 	char *lambda;
 	lambda = getLambda(var);
@@ -1268,8 +1207,7 @@ DFA_ptr MultiTrackAutomaton::getLambdaStar(int var, int* indices) {
 	dfaStoreState(2);
 	delete[] lambda;
 
-	//return dfaBuild("++-");
-	return dfaBuild("-+-");
+	return dfaBuild("++-");
 }
 
 bool MultiTrackAutomaton::checkLambda(std::string exeps, int track_num, int num_tracks, int var) {
@@ -1295,10 +1233,6 @@ DFA_ptr MultiTrackAutomaton::removeLambdaSuffix(DFA_ptr dfa, int num_vars) {
 	statuses = new char[dfa->ns+1];
 	for(int i = 0; i < dfa->ns; i++) {
 		statuses[i] = '-';
-		//if(dfa->f[i] == 1)
-		//  statuses[i] = '+';
-		//else
-		//  statuses[i] = '-';
 		state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
 
 		// essentially, basic idea is to keep all transitions except for lambda transitions
@@ -1318,7 +1252,6 @@ DFA_ptr MultiTrackAutomaton::removeLambdaSuffix(DFA_ptr dfa, int num_vars) {
 				}
 				if (MultiTrackAutomaton::checkLambda(symbol, 0, 1, num_vars)) {
 					statuses[i] = '+';
-					//statuses[pp->to] = '+';
 				}
 				else {
 					state_exeps.push_back(std::make_pair(symbol, pp->to));
@@ -1356,28 +1289,6 @@ DFA_ptr MultiTrackAutomaton::removeLambdaSuffix(DFA_ptr dfa, int num_vars) {
 	result_dfa = dfaCopy(result_string_auto->getDFA());
 	delete result_string_auto;
 
-	return result_dfa;
-}
-
-DFA_ptr MultiTrackAutomaton::makeConcreteDFA() {
-	DFA_ptr result_dfa;
-	int *indices = getIndices(VAR_PER_TRACK);
-	int nump = 1 << VAR_PER_TRACK;
-
-	dfaSetup(2,VAR_PER_TRACK,indices);
-	dfaAllocExceptions(nump-1);
-	for(int i = 0; i < nump-1; i++) {
-		std::vector<char> exep = getBinaryFormat(i,VAR_PER_TRACK);
-		exep.push_back('\0');
-		dfaStoreException(0,&exep[0]);
-	}
-	dfaStoreState(1);
-
-	dfaAllocExceptions(0);
-	dfaStoreState(1);
-
-	result_dfa = dfaBuild("+-");
-	delete[] indices;
 	return result_dfa;
 }
 
@@ -1523,6 +1434,7 @@ DFA_ptr MultiTrackAutomaton::make_binary_relation_dfa(StringRelation::Type type,
 			break;
 		default:
 			DVLOG(VLOG_LEVEL) << "Invalid stringrelation type! can't make dfa...";
+			delete[] mindices;
 			return nullptr;
   }
 
@@ -1576,7 +1488,6 @@ DFA_ptr MultiTrackAutomaton::make_binary_relation_dfa(StringRelation::Type type,
 
 	delete[] mindices;
 	return result_dfa;
-
 }
 
 DFA_ptr MultiTrackAutomaton::make_binary_aligned_dfa(int left_track, int right_track, int num_tracks) {
@@ -1654,14 +1565,10 @@ DFA_ptr MultiTrackAutomaton::make_binary_aligned_dfa(int left_track, int right_t
 	dfaStoreState(sink);
 
 
-
-
 	// -------lambda_lambda state
 	dfaAllocExceptions(1);
 	dfaStoreException(lambda_lambda,&str[0]);
 	dfaStoreState(sink);
-
-
 
 
 	// ------- star_lambda state
@@ -1679,8 +1586,6 @@ DFA_ptr MultiTrackAutomaton::make_binary_aligned_dfa(int left_track, int right_t
 		dfaStoreException(star_lambda,&str[0]);
 	}
 	dfaStoreState(sink);
-
-
 
 	// sink
 	dfaAllocExceptions(0);

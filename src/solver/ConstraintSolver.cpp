@@ -201,7 +201,8 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
           Variable_ptr v = symbol_table_->getVariable(var_track.first);
           if(v->isSymbolic()) {
             DVLOG(VLOG_LEVEL) << "Setting value for symbolic var " << v->getName();
-            symbol_table_->setValue(var_track.first, val->clone());
+            //symbol_table_->setValue(var_track.first, val->clone());
+            symbol_table_->setValue(var_track.first,new Value(result->getMultiTrackAutomaton()->getKTrack(var_track.second)));
           }
         }
       }

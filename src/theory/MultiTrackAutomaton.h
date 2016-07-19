@@ -64,10 +64,10 @@ virtual ~MultiTrackAutomaton();
 	static DFA_ptr getLambdaStar(int, int*);
 	static bool checkLambda(std::string,int track_num,int num_tracks,int var);
 	static DFA_ptr removeLambdaSuffix(DFA_ptr dfa, int num_vars);
-	DFA_ptr makeConcreteDFA();
 	static const TransitionVector& generate_transitions_for_relation(StringRelation::Type type, int bits_per_var);
 	static DFA_ptr make_binary_relation_dfa(StringRelation::Type type, int bits_per_var, int num_tracks, int left_track, int right_track);
 	static DFA_ptr make_binary_aligned_dfa(int left_track, int right_track, int total_tracks);
+
 	static const int VAR_PER_TRACK = 8;
 	int num_of_tracks;
 

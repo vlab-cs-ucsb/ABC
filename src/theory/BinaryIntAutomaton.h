@@ -103,7 +103,7 @@ protected:
   void getBaseConstants(int state, unsigned char *is_visited, std::vector<bool>& path, std::vector<int>& constants, unsigned max_number_of_bit_limit);
   //  void getBaseConstants2(std::vector<int>& constants);
   //  void getBaseConstants(int state, bool *is_stack_member, std::vector<bool>& path, std::vector<int>& constants);
-
+O
   struct StateIndices {
     // r suffixes are for the rejecting clone
     int i, ir; // state index
