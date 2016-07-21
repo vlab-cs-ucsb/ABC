@@ -78,6 +78,8 @@ public:
   static StringAutomaton_ptr makeLengthRange(int start, int end, int num_of_variables =
             StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
 
+  static void release_default_indices();
+
   StringAutomaton_ptr complement();
   StringAutomaton_ptr union_(StringAutomaton_ptr other_auto);
   StringAutomaton_ptr intersect(StringAutomaton_ptr other_auto);
