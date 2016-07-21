@@ -372,6 +372,17 @@ int ArithmeticFormula::CountOnes(unsigned long n) {
   return ones;
 }
 
+int ArithmeticFormula::CountOnes(boost::multiprecision::cpp_int n) {
+  int ones = 0;
+  for (auto& c : coefficients_) {
+    if (boost::multiprecision::bit_test(n, 0)) {
+      ones += c;
+    }
+    n >>= 1;
+  }
+  return ones;
+}
+
 std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula) {
   return os << formula.str();
 }

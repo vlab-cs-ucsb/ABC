@@ -118,8 +118,9 @@ protected:
 
   static int* getIndices(int num_of_variables, int extra_num_of_variables = 0);
   static unsigned* getIndices(unsigned num_of_variables, unsigned extra_num_of_variables = 0);
-//  static char* binaryFormat(unsigned long n, int bit_length);
+  // TODO remove vector<char> version of binary format
   static std::vector<char> getBinaryFormat(unsigned long n, int bit_length);
+  static std::string getBinaryString(unsigned long n, int bit_length);
   static std::vector<char> getReservedWord(char last_char, int length, bool extra_bit = false);
   void minimize();
   void project(unsigned index);

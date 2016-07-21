@@ -13,6 +13,7 @@
 #include <string>
 #include <sstream>
 #include <cmath>
+#include <boost/multiprecision/cpp_int.hpp>
 
 #include <glog/logging.h>
 #include "utils/Math.h"
@@ -59,6 +60,7 @@ public:
 
   bool Simplify();
   int CountOnes(unsigned long n);
+  int CountOnes(boost::multiprecision::cpp_int n);
 
   friend std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula);
 

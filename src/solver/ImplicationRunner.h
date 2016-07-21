@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "../smt/typedefs.h"
+#include "options/Solver.h"
 #include "solver/AstTraverser.h"
 #include "solver/SymbolTable.h"
 
