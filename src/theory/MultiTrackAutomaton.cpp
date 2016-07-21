@@ -841,7 +841,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThanOrEqual(StringRelati
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAnyAutoUnaligned(int num_tracks) {
 	DFA_ptr result, temp;
 	int len = VAR_PER_TRACK * num_tracks;
-	int *mindices = Automaton::getIndices(num_tracks*VAR_PER_TRACK);
+	int *mindices = Automaton::getIndices(len);
 
 	dfaSetup(1, len, mindices);
 	dfaAllocExceptions(0);
@@ -880,7 +880,8 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::complement() {
 	temp_auto = new MultiTrackAutomaton(complement_dfa,this->num_of_tracks);
 	aligned_universe_auto = makeAnyAutoAligned(this->num_of_tracks);
 	complement_auto = temp_auto->intersect(aligned_universe_auto);
-	complement_auto->setRelation(this->relation->clone());
+	if(this->relation != nullptr)
+	  complement_auto->setRelation(this->relation->clone());
 	delete temp_auto;
 	delete aligned_universe_auto;
 

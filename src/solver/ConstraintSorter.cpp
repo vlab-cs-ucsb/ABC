@@ -170,6 +170,7 @@ void ConstraintSorter::visitPlus(Plus_ptr plus_term) {
       result_node->shiftToRight();
     } else if (term_node != nullptr) {
       result_node->addVariableNodes(term_node->getAllNodes(), false);
+      delete term_node;
     }
   }
   term_node = result_node;
@@ -185,6 +186,7 @@ void ConstraintSorter::visitTimes(Times_ptr times_term) {
       result_node->shiftToRight();
     } else if (term_node != nullptr) {
       result_node->addVariableNodes(term_node->getAllNodes(), false);
+      delete term_node;
     }
   }
   term_node = result_node;
@@ -267,6 +269,7 @@ void ConstraintSorter::visitConcat(Concat_ptr concat_term) {
       result_node->shiftToRight();
     } else if (term_node != nullptr) {
       result_node->addVariableNodes(term_node->getAllNodes(), false);
+      delete term_node;
     }
   }
   term_node = result_node;

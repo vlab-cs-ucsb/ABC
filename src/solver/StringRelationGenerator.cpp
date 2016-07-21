@@ -25,9 +25,12 @@ StringRelationGenerator::StringRelationGenerator(Script_ptr script, SymbolTable_
 }
 
 StringRelationGenerator::~StringRelationGenerator() {
-  for(auto it = relations_.cbegin(); it != relations_.cend(); it++) {
-    delete relations_[it->first];
-    relations_[it->first] = nullptr;
+  for(auto it = relations_.cbegin(); it != relations_.cend();) {
+    if(relations_[it->first] != nullptr) {
+      delete relations_[it->first];
+      relations_[it->first] = nullptr;
+    }
+    it++;
   }
 }
 

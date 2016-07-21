@@ -94,7 +94,7 @@ void StringConstraintSolver::setCallbacks() {
             delete result_auto;
 
             trackmap_handle->erase(name);
-            multi_auto->setRelation(relation);
+            multi_auto->setRelation(relation->clone());
             delete temp_relation;
           } else if(right->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
             DVLOG(VLOG_LEVEL) << "Concat on right side!";
@@ -120,7 +120,7 @@ void StringConstraintSolver::setCallbacks() {
             delete result_auto;
 
             trackmap_handle->erase(name);
-            multi_auto->setRelation(relation);
+            multi_auto->setRelation(relation->clone());
             delete temp_relation;
           } else {
             DVLOG(VLOG_LEVEL) << "No concat!";
@@ -182,14 +182,12 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
       visit(term);
       param = get_term_value(term);
       is_satisfiable = is_satisfiable and param->isSatisfiable();
-      if(is_satisfiable) {
-        continue;
-      } else {
+      string_relation_generator_.delete_term_relation(term);
+      if(!is_satisfiable) {
         result = new Value(MultiTrackAutomaton::makePhi(relation->get_num_tracks()));
         break;
       }
     }
-    string_relation_generator_.delete_term_relation(term);
   }
 }
 
@@ -324,7 +322,9 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
                                        variable_relation->get_num_tracks());
   variable_multi_auto->setRelation(variable_relation->clone());
 
-  symbol_table_->updateValue(group_name,new Value(variable_multi_auto));
+  Value_ptr val = new Value(variable_multi_auto);
+  symbol_table_->updateValue(group_name,val);
+  delete val;
   return true;
 }
 
