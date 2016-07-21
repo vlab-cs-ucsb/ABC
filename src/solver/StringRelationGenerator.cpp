@@ -25,7 +25,10 @@ StringRelationGenerator::StringRelationGenerator(Script_ptr script, SymbolTable_
 }
 
 StringRelationGenerator::~StringRelationGenerator() {
-  // delete var track map ptr?
+  for(auto it = relations_.cbegin(); it != relations_.cend(); it++) {
+    delete relations_[it->first];
+    relations_[it->first] = nullptr;
+  }
 }
 
 void StringRelationGenerator::start(Visitable_ptr node) {
@@ -74,7 +77,6 @@ void StringRelationGenerator::visitLet(Let_ptr let_term) {
 void StringRelationGenerator::visitAnd(And_ptr and_term) {
   current_term_ = and_term;
   visit_children_of(and_term);
-  create_trackmaps();
   DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
 
   if (not constraint_information_->is_component(and_term)) {
@@ -89,17 +91,14 @@ void StringRelationGenerator::visitAnd(And_ptr and_term) {
         delete_term_relation(term);
         continue;
       }
-      std::string group_name = get_variable_group_name(symbol_table_->getVariable(term_relation->variables[0]));
+      std::string group_name = get_variable_group_name(current_term_,symbol_table_->getVariable(term_relation->variables[0]));
       term_group_map[term] = group_name;
       VariableTrackMap_ptr trackmap = get_group_trackmap(group_name);
-      if(trackmap == nullptr) {
-        LOG(FATAL) << "no trackmap found...";
-      }
-      for(auto& var : *trackmap) {
-        DVLOG(VLOG_LEVEL) << var.first << " -> " << var.second;
-      }
-      DVLOG(VLOG_LEVEL) << "size: " << trackmap->size();
       term_relation->set_variable_trackmap(trackmap);
+      if(symbol_table_->get_variable_unsafe(group_name) == nullptr) {
+        symbol_table_->addVariable(new Variable(group_name,Variable::Type::STRING));
+        symbol_table_->setValue(group_name,new Value(MultiTrackAutomaton::makeAnyAutoUnaligned(trackmap->size())));
+      }
     }
   }
 }
@@ -178,7 +177,7 @@ void StringRelationGenerator::visitEq(Eq_ptr eq_term) {
     vars.push_back(var->getName());
   }
   relation->variables = vars;
-  add_string_variables(vars);
+  add_string_variables(current_term_,vars);
 
   delete_term_relation(eq_term->left_term);
   delete_term_relation(eq_term->right_term);
@@ -203,10 +202,12 @@ void StringRelationGenerator::visitNotEq(NotEq_ptr not_eq_term) {
   } else if (not_eq_term->left_term->type() == Term::Type::TERMCONSTANT) {
     DVLOG(VLOG_LEVEL) << "--- Left constant => no multitrack";
     delete_term_relation(not_eq_term->left_term);
+    delete_term_relation(not_eq_term->right_term);
     set_term_relation(not_eq_term,nullptr);
     return;
   } else if (not_eq_term->right_term->type() == Term::Type::TERMCONSTANT) {
     DVLOG(VLOG_LEVEL) << "--- Right constant => no multitrack";
+    delete_term_relation(not_eq_term->left_term);
     delete_term_relation(not_eq_term->right_term);
     set_term_relation(not_eq_term,nullptr);
     return;
@@ -234,7 +235,7 @@ void StringRelationGenerator::visitNotEq(NotEq_ptr not_eq_term) {
     vars.push_back(var->getName());
   }
   relation->variables = vars;
-  add_string_variables(vars);
+  add_string_variables(current_term_,vars);
 
   delete_term_relation(not_eq_term->left_term);
   delete_term_relation(not_eq_term->right_term);
@@ -278,7 +279,7 @@ void StringRelationGenerator::visitGt(Gt_ptr gt_term) {
     vars.push_back(var->getName());
   }
   relation->variables = vars;
-  add_string_variables(vars);
+  add_string_variables(current_term_,vars);
 
   delete_term_relation(gt_term->left_term);
   delete_term_relation(gt_term->right_term);
@@ -322,7 +323,7 @@ void StringRelationGenerator::visitGe(Ge_ptr ge_term) {
     vars.push_back(var->getName());
   }
   relation->variables = vars;
-  add_string_variables(vars);
+  add_string_variables(current_term_,vars);
 
   delete_term_relation(ge_term->left_term);
   delete_term_relation(ge_term->right_term);
@@ -366,7 +367,7 @@ void StringRelationGenerator::visitLt(Lt_ptr lt_term) {
     vars.push_back(var->getName());
   }
   relation->variables = vars;
-  add_string_variables(vars);
+  add_string_variables(current_term_,vars);
 
   delete_term_relation(lt_term->left_term);
   delete_term_relation(lt_term->right_term);
@@ -412,7 +413,7 @@ void StringRelationGenerator::visitLe(Le_ptr le_term) {
     vars.push_back(var->getName());
   }
   relation->variables = vars;
-  add_string_variables(vars);
+  add_string_variables(current_term_,vars);
 
   delete_term_relation(le_term->left_term);
   delete_term_relation(le_term->right_term);
@@ -497,7 +498,7 @@ void StringRelationGenerator::visitBegins(Begins_ptr begins_term) {
   vars.push_back(var->getName());
 
   relation->variables = vars;
-  add_string_variables(vars);
+  add_string_variables(current_term_,vars);
 
   delete_term_relation(begins_term->subject_term);
   delete_term_relation(begins_term->search_term);
@@ -531,7 +532,7 @@ void StringRelationGenerator::visitNotBegins(NotBegins_ptr not_begins_term) {
   vars.push_back(var->getName());
 
   relation->variables = vars;
-  add_string_variables(vars);
+  add_string_variables(current_term_,vars);
 
   delete_term_relation(not_begins_term->subject_term);
   delete_term_relation(not_begins_term->search_term);
@@ -628,9 +629,11 @@ void StringRelationGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   DVLOG(VLOG_LEVEL) << "-->variable name: " << variable->getName();
   switch(variable->getType()) {
     case Variable::Type::STRING:
-      str_rel = new StringRelation();
-      str_rel->set_type(StringRelation::Type::STRING_VAR);
-      str_rel->set_data(variable->getName());
+      str_rel = new StringRelation(StringRelation::Type::STRING_VAR,
+                                  nullptr,
+                                  nullptr,
+                                  variable->getName(),
+                                  nullptr);
       break;
     default:
       break;
@@ -722,11 +725,13 @@ void StringRelationGenerator::delete_term_relation(Term_ptr term) {
   }
 }
 
-std::string StringRelationGenerator::get_variable_group_name(SMT::Variable_ptr variable) {
-  if(variable_group_name_mapping.find(variable) == variable_group_name_mapping.end()) {
+std::string StringRelationGenerator::get_variable_group_name(Term_ptr term,Variable_ptr variable) {
+  std::string var_name = variable->getName();
+  if(variable_group_table_[term].find(var_name) == variable_group_table_[term].end()) {
+    DVLOG(VLOG_LEVEL) << var_name << " has no group";
     return "";
   }
-  return variable_group_name_mapping[variable];
+  return variable_group_table_[term][var_name];
 }
 
 std::string StringRelationGenerator::get_term_group_name(SMT::Term_ptr term) {
@@ -736,67 +741,50 @@ std::string StringRelationGenerator::get_term_group_name(SMT::Term_ptr term) {
   return term_group_map[term];
 }
 
-void StringRelationGenerator::add_string_variables(std::vector<std::string> variables) {
-
-  std::unordered_set<std::string>* last = nullptr;
-
-  for(auto& v : variables) {
-    std::string name = v;
-    if(relation_groups.find(name) != relation_groups.end()) {
-      // if last is null, then just set last to this group
-      // otherwise, merge last group and this one, unless they're the same
-      if(last == nullptr) {
-        last = relation_groups[name];
-      } else if(last != relation_groups[name]){
-        relation_groups[name]->insert(last->begin(), last->end());
-        delete last; last = relation_groups[name];
-        for(auto& s : *last) {
-          relation_groups[s] = last;
-        }
+void StringRelationGenerator::add_string_variables(Term_ptr term, std::vector<std::string> variables) {
+  std::string start_group;
+  // get a starting group from the variable list
+  for(auto& var : variables) {
+    if(variable_group_table_[term].find(var) != variable_group_table_[term].end()) {
+      start_group = variable_group_table_[term][var];
+      break;
+    }
+  }
+  // if no group is found at all, create new one
+  if(start_group.empty()) {
+    start_group = generate_group_name(term, variables[0]);
+  }
+  // merge each variable's groups together into start_group
+  for(auto& var : variables) {
+    if(variable_group_table_[term].find(var) == variable_group_table_[term].end()) {
+      variable_group_table_[term][var] = start_group;
+      int track = group_variables_map_[start_group].size();
+      group_variables_map_[start_group][var] = track;
+    } else if(variable_group_table_[term][var] != start_group) {
+      // merge the two groups
+      std::string var_group = variable_group_table_[term][var];
+      for(auto& iter : group_variables_map_[var_group]) {
+        variable_group_table_[term][iter.first] = start_group;
+        int track = group_variables_map_[start_group].size();
+        group_variables_map_[start_group][iter.first] = track;
       }
-    } else {
-      // if last is null, create new group, add it
-      // otherwise, add this var to last
-      if(last == nullptr) {
-        last = new std::unordered_set<std::string>;
-        last->insert(name);
-        relation_groups[name] = last;
-      } else {
-        last->insert(name);
-        relation_groups[name] = last;
-      }
+      group_variables_map_.erase(var_group);
     }
   }
 }
 
-std::map<std::string,int>* StringRelationGenerator::get_group_trackmap(std::string name) {
-  if(group_trackmaps.find(name) == group_trackmaps.end()) {
+std::string StringRelationGenerator::generate_group_name(SMT::Term_ptr term, std::string var_name) {
+  std::string group_name = symbol_table_->get_var_name_for_node(term,SMT::Variable::Type::STRING);
+  group_name += var_name;
+  return group_name;
+}
+
+VariableTrackMap_ptr StringRelationGenerator::get_group_trackmap(std::string name) {
+  if(group_variables_map_.find(name) == group_variables_map_.end()) {
+    DVLOG(VLOG_LEVEL) << "no trackmap for group: " << name;
     return nullptr;
   }
-  return group_trackmaps[name];
-}
-
-void StringRelationGenerator::create_trackmaps() {
-  VariableTrackMap_ptr trackmap = nullptr;
-  for(auto& group : relation_groups) {
-    if(variable_group_name_mapping.find(symbol_table_->getVariable(group.first)) != variable_group_name_mapping.end()) {
-      continue;
-    }
-    std::string group_name = symbol_table_->get_var_name_for_node(current_term_, Variable::Type::STRING);
-    group_name += group.first;
-    symbol_table_->addVariable(new Variable(group_name, Variable::Type::STRING));
-    symbol_table_->setValue(group_name,new Value(MultiTrackAutomaton::makeAnyAutoUnaligned(group.second->size())));
-
-    trackmap = new std::map<std::string,int>;
-    int track = 0;
-    for(auto& var : *group.second) {
-      Variable_ptr v = symbol_table_->getVariable(var);
-      (*trackmap)[var] = track++;
-      variable_group_name_mapping[v] = group_name;
-    }
-    group_trackmaps[group_name] = trackmap;
-  }
-  relation_groups.clear();
+  return &group_variables_map_[name];
 }
 
 } /* namespace Solver */

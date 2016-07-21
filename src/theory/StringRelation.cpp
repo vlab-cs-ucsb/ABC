@@ -15,6 +15,7 @@ StringRelation::StringRelation()
       right_(nullptr),
       data_(""),
       trackmap_handle_(nullptr) {
+  DVLOG(VLOG_LEVEL) << "HELLO : " << str();
 }
 
 StringRelation::StringRelation(Type t, StringRelation_ptr left, StringRelation_ptr right,
@@ -24,9 +25,11 @@ StringRelation::StringRelation(Type t, StringRelation_ptr left, StringRelation_p
       right_(right),
       data_(data),
       trackmap_handle_(trackmap) {
+  DVLOG(VLOG_LEVEL) << "HELLO : " << str();
 }
 
 StringRelation::~StringRelation() {
+  DVLOG(VLOG_LEVEL) << "BYEBYE : " << str();
   if(left_) delete left_;
   if(right_) delete right_;
 }
@@ -45,6 +48,7 @@ StringRelation::StringRelation(const StringRelation &other) {
   }
   this->data_ = other.data_;
   this->trackmap_handle_ = other.trackmap_handle_;
+  DVLOG(VLOG_LEVEL) << "HELLO (CLONE) : " << str();
 }
 
 StringRelation_ptr StringRelation::clone() const {

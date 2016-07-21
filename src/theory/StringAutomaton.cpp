@@ -422,13 +422,15 @@ StringAutomaton_ptr StringAutomaton::makeLengthLessThanEqual(int length, int num
 }
 
 StringAutomaton_ptr StringAutomaton::makeLengthGreaterThan(int length, int num_of_variables, int* variable_indices){
-  StringAutomaton_ptr length_auto = nullptr;
+  StringAutomaton_ptr length_auto = nullptr, temp_auto = nullptr;
 
   if(length < 0){
     length_auto = StringAutomaton::makeAnyString();
   }
   else{
-    length_auto = StringAutomaton::makeLengthLessThanEqual(length)->complement();
+    temp_auto = StringAutomaton::makeLengthLessThanEqual(length);
+    length_auto = temp_auto->complement();
+    delete temp_auto;
   }
 
   DVLOG(VLOG_LEVEL) << length_auto->id << " = makeLengthGreaterThan(" << length <<  ")";
@@ -437,13 +439,15 @@ StringAutomaton_ptr StringAutomaton::makeLengthGreaterThan(int length, int num_o
 }
 
 StringAutomaton_ptr StringAutomaton::makeLengthGreaterThanEqual(int length, int num_of_variables, int* variable_indices){
-  StringAutomaton_ptr length_auto = nullptr;
+  StringAutomaton_ptr length_auto = nullptr, temp_auto = nullptr;
 
   if(length < 0){
     length_auto = StringAutomaton::makeAnyString();
   }
   else{
-    length_auto = StringAutomaton::makeLengthLessThan(length)->complement();
+    temp_auto = StringAutomaton::makeLengthLessThan(length);
+    length_auto = temp_auto->complement();
+    delete temp_auto;
   }
 
   DVLOG(VLOG_LEVEL) << length_auto->id << " = makeLengthGreaterThanEqual(" << length <<  ")";

@@ -241,6 +241,8 @@ int main(const int argc, const char **argv) {
     }
   }
   LOG(INFO)<< "done.";
+  if(file != nullptr)
+    delete file;
   return 0;
 }
 
