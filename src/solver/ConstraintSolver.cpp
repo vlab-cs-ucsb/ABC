@@ -205,6 +205,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   }
   DVLOG(VLOG_LEVEL) << "Done constraint solving, releasing default indices";
   Vlab::Theory::StringAutomaton::release_default_indices();
+  Vlab::Theory::IntAutomaton::release_default_indices();
 }
 
 void ConstraintSolver::visitOr(Or_ptr or_term) {
