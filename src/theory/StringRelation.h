@@ -33,6 +33,7 @@ class StringRelation {
     LE,
     INTERSECT,
     UNION,
+    DIFFERENCE,
     STRING_VAR,
     STRING_CONSTANT,
     REGEX,
