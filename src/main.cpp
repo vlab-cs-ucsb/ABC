@@ -211,6 +211,7 @@ int main(const int argc, const char **argv) {
           }
           case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {
             LOG(INFO) << "Insert multitrack sat var struff here";
+            variable_entry.second->getMultiTrackAutomaton()->inspectAuto();
             if (model_count) {
               LOG(INFO) << "var: " << variable_entry.first->getName() << " count          : " << driver.Count(variable_entry.first->getName(), bound, false);
             }

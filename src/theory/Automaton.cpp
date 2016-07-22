@@ -1558,5 +1558,6 @@ int Automaton::inspectBDD() {
   return std::system(dot_cmd.c_str());
 }
 
+
 } /* namespace Theory */
 } /* namespace Vlab */

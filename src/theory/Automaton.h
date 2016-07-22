@@ -24,14 +24,13 @@
 #include <boost/multiprecision/cpp_int.hpp>
 
 #include <glog/logging.h>
-//#include <mona/config.h>
+#include "stranger/stranger.h"
+#include "stranger/stranger_lib_internal.h"
 //#include <mona/mem.h>
-//#include <mona/bdd.h>
 //#include <mona/bdd_external.h>
 //#include <mona/bdd_dump.h>
 //#include <mona/dfa.h>
-#include <stranger/stranger.h>
-#include <stranger/stranger_lib_internal.h>
+
 #include "options/Theory.h"
 #include "utils/RegularExpression.h"
 #include "utils/Cmd.h"
@@ -144,9 +143,15 @@ protected:
   void generateMatrixScript(int bound, std::ostream& out = std::cout, bool count_less_than_or_equal_to_bound = true);
   void preProcessAdjacencyList(AdjacencyList& adjaceny_count_list);
 
-
   bool isCyclic(int state, std::map<int, bool>& is_discovered, std::map<int, bool>& is_stack_member);
   bool isStateReachableFrom(int search_state, int from_state, std::map<int, bool>& is_stack_member);
+
+
+
+  /*
+   * Operations from LIBSTRANGER
+   */
+
 
   const Automaton::Type type;
   bool is_count_matrix_cached_;

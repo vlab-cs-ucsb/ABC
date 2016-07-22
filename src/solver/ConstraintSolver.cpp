@@ -185,6 +185,9 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       Value_ptr val = string_constraint_solver_.get_term_value(term);
       if (val != nullptr) {
         StringRelation_ptr relation = val->getMultiTrackAutomaton()->getRelation();
+
+        //val->getMultiTrackAutomaton()->inspectAuto();
+
         if (relation == nullptr) {
           LOG(INFO) << val->str();
           LOG(FATAL) << "Relation should not be null if putting in symbol table";
@@ -195,17 +198,20 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         }
         for (auto &var_track : *relation->get_variable_trackmap()) {
           Variable_ptr v = symbol_table_->getVariable(var_track.first);
+          symbol_table_->setValue(var_track.first,val);
+          /*
           if(v->isSymbolic()) {
             DVLOG(VLOG_LEVEL) << "Setting value for symbolic var " << v->getName() << " with track number: " << val->getMultiTrackAutomaton()->getKTrack(var_track.second);
             symbol_table_->setValue(var_track.first,new Value(val->getMultiTrackAutomaton()->getKTrack(var_track.second)));
           }
+           */
         }
       }
     }
   }
   DVLOG(VLOG_LEVEL) << "Done constraint solving, releasing default indices";
-  Vlab::Theory::StringAutomaton::release_default_indices();
-  Vlab::Theory::IntAutomaton::release_default_indices();
+  //Vlab::Theory::StringAutomaton::release_default_indices();
+  //Vlab::Theory::IntAutomaton::release_default_indices();
 }
 
 void ConstraintSolver::visitOr(Or_ptr or_term) {

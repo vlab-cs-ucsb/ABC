@@ -87,7 +87,7 @@ public:
   StringAutomaton_ptr concat(StringAutomaton_ptr other_auto);
 
   StringAutomaton_ptr optional();
-  StringAutomaton_ptr closure();
+  StringAutomaton_ptr closure(); // MAJOR CHANGES
   StringAutomaton_ptr kleeneClosure();
   StringAutomaton_ptr repeat(unsigned min);
   StringAutomaton_ptr repeat(unsigned min, unsigned max);
@@ -175,6 +175,12 @@ protected:
   StringAutomaton_ptr search(StringAutomaton_ptr search_auto, bool use_extra_bit = false);
   StringAutomaton_ptr removeReservedWords();
 
+
+  /*
+   * string dfa operations from LIBSTRANGER
+   */
+  static DFA_ptr dfaStringAutomatonL1toL2(int start, int end);
+
   static int DEFAULT_NUM_OF_VARIABLES;
   static int* DEFAULT_VARIABLE_INDICES;
   static unsigned* DEFAULT_UNSIGNED_VARIABLE_INDICES;
@@ -182,6 +188,9 @@ protected:
 private:
   static int name_counter;
   static const int VLOG_LEVEL;
+
+  static const int SHARP0;
+  static const int SHARP1;
 };
 
 } /* namespace Theory */

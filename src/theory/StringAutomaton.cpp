@@ -11,6 +11,8 @@ namespace Vlab {
 namespace Theory {
 
 const int StringAutomaton::VLOG_LEVEL = 8;
+const int StringAutomaton::SHARP0 = 254;
+const int StringAutomaton::SHARP1 = 255;
 
 int StringAutomaton::name_counter = 0;
 
@@ -198,7 +200,8 @@ StringAutomaton_ptr StringAutomaton::makeCharRange(char from, char to, int num_o
   //state 0
   dfaAllocExceptions(initial_state + 1);
   for (index = from_char; index <= to_char; index++) {
-    dfaStoreException(1, bintostr(index, num_of_variables));
+    std::vector<char> v = getBinaryFormat(index,num_of_variables);
+    dfaStoreException(1, &v[0]);
   }
   dfaStoreState(2);
 
@@ -373,11 +376,8 @@ StringAutomaton_ptr StringAutomaton::makeLengthEqual(int length, int num_of_vari
     length_auto = StringAutomaton::makeEmptyString();
   }
   else{
-    int* default_indices = Automaton::getIndices(StringAutomaton::DEFAULT_NUM_OF_VARIABLES, 1);
-    DFA_ptr length_dfa = dfaStringAutomatonL1toL2(length, length,
-             StringAutomaton::DEFAULT_NUM_OF_VARIABLES, default_indices);
-         length_auto = new StringAutomaton(length_dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-    delete[] default_indices;
+    DFA_ptr length_dfa = dfaStringAutomatonL1toL2(length, length);
+    length_auto = new StringAutomaton(length_dfa);
   }
 
   DVLOG(VLOG_LEVEL) << length_auto->id << " = makeLength(" << length <<  ")";
@@ -395,11 +395,8 @@ StringAutomaton_ptr StringAutomaton::makeLengthLessThan(int length, int num_of_v
      length_auto = StringAutomaton::makePhi();
    }
    else{
-     int* default_indices = Automaton::getIndices(StringAutomaton::DEFAULT_NUM_OF_VARIABLES, 1);
-     DFA_ptr length_dfa = dfaStringAutomatonL1toL2(0, length-1,
-         StringAutomaton::DEFAULT_NUM_OF_VARIABLES, default_indices);
-     length_auto = new StringAutomaton(length_dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-     delete[] default_indices;
+     DFA_ptr length_dfa = dfaStringAutomatonL1toL2(0, length-1);
+     length_auto = new StringAutomaton(length_dfa);
    }
 
    DVLOG(VLOG_LEVEL) << length_auto->id << " = makeLengthLessThan(" << length <<  ")";
@@ -421,11 +418,8 @@ StringAutomaton_ptr StringAutomaton::makeLengthLessThanEqual(int length, int num
   }
   else{
 //    length_auto = anyChar_auto->repeat(0,length);
-    int* default_indices = Automaton::getIndices(StringAutomaton::DEFAULT_NUM_OF_VARIABLES, 1);
-    DFA_ptr length_dfa = dfaStringAutomatonL1toL2(0, length,
-             StringAutomaton::DEFAULT_NUM_OF_VARIABLES, default_indices);
-         length_auto = new StringAutomaton(length_dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-    delete[] default_indices;
+    DFA_ptr length_dfa = dfaStringAutomatonL1toL2(0, length);
+    length_auto = new StringAutomaton(length_dfa);
   }
 
   delete anyChar_auto;
@@ -872,23 +866,104 @@ StringAutomaton_ptr StringAutomaton::optional() {
   return optional_auto;
 }
 
-/**
- * TODO improve implementation by refactoring libstranger call
- *
- */
 StringAutomaton_ptr StringAutomaton::closure() {
-  DFA_ptr closure_dfa = nullptr;
-  StringAutomaton_ptr closure_auto = nullptr;
+  StringAutomaton_ptr result_auto = nullptr;
+  DFA_ptr result_dfa = nullptr, temp_dfa = nullptr;
+  paths state_paths, pp;
+  trace_descr tp;
+  int sink = getSinkState();
+  CHECK_GT(sink,-1);
+  int var = DEFAULT_NUM_OF_VARIABLES;
+  int len = var + 1; //one extra bit
+  int *indices = getIndices(var,1);
+  char *statuses = new char[dfa->ns+1];
+  std::vector<std::pair<int,std::vector<char>>> added_exeps, original_exeps;
+  std::vector<char> exep;
 
-  int* default_indices = Automaton::getIndices(StringAutomaton::DEFAULT_NUM_OF_VARIABLES, 1);
-  closure_dfa = dfa_closure_extrabit(dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
-          default_indices);
-  closure_auto = new StringAutomaton(closure_dfa, num_of_variables);
-  delete[] default_indices;
+  dfaSetup(dfa->ns, len, indices);
+  //construct the added paths
+  state_paths = pp = make_paths(dfa->bddm, dfa->q[dfa->s]);
+  exep = std::vector<char>(len,'X');
+  exep.push_back('\0');
+  while (pp) {
+    if (pp->to != sink) {
+      for (int j = 0; j < var; j++) {
+        //the following for loop can be avoided if the indices are in order
+        for (tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
+        if (tp) {
+          if (tp->value)
+            exep[j] = '1';
+          else
+            exep[j] = '0';
+        } else
+          exep[j] = 'X';
+      }
+      exep[len-1] = '1'; //new path
+      added_exeps.push_back(std::make_pair(pp->to,exep));
+    }
+    pp = pp->next;
+  }
+  kill_paths(state_paths);
 
-  DVLOG(VLOG_LEVEL) << closure_auto->id << " = [" << this->id << "]->closure()";
+  exep = std::vector<char>(len,'X');
+  exep.push_back('\0');
+  for (int i = 0; i < dfa->ns; i++) {
+    state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
+    while (pp) {
+      if (pp->to != sink) {
+        for (int j = 0; j < var; j++) {
+          //the following for loop can be avoided if the indices are in order
+          for (tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
 
-  return closure_auto;
+          if (tp) {
+            if (tp->value)
+              exep[j] = '1';
+            else
+              exep[j] = '0';
+          } else
+            exep[j] = 'X';
+        }
+        exep[len-1] = '0'; //old value
+        original_exeps.push_back(std::make_pair(pp->to,exep));
+      }
+      pp = pp->next;
+    }
+    if (dfa->f[i] == 1) { //add added paths
+      dfaAllocExceptions(added_exeps.size() + original_exeps.size());
+      for(int k = 0; k < added_exeps.size(); k++) {
+        dfaStoreException(added_exeps[k].first,&added_exeps[k].second[0]);
+      }
+      for(int k = 0; k < original_exeps.size(); k++) {
+        dfaStoreException(original_exeps[k].first,&original_exeps[k].second[0]);
+      }
+      statuses[i] = '+';
+    } else {
+      dfaAllocExceptions(original_exeps.size());
+      for(int k = 0; k < original_exeps.size(); k++) {
+        dfaStoreException(original_exeps[k].first,&original_exeps[k].second[0]);
+      }
+      if (dfa->f[i] == -1)
+        statuses[i] = '-';
+      else
+        statuses[i] = '0';
+    }
+    dfaStoreState(sink);
+    kill_paths(state_paths);
+    original_exeps.clear();
+  }
+  statuses[len] = '\0';
+  temp_dfa = dfaBuild(statuses);
+  result_dfa = dfaProject(temp_dfa, (unsigned) var); //var is the index of the extra bit
+  dfaFree(temp_dfa);
+  temp_dfa = result_dfa;
+  result_dfa = dfaMinimize(temp_dfa);
+  dfaFree(temp_dfa);
+
+  result_auto = new StringAutomaton(result_dfa);
+  delete[] indices;
+  delete[] statuses;
+  DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->closure()";
+  return result_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::kleeneClosure() {
@@ -3141,6 +3216,99 @@ StringAutomaton_ptr StringAutomaton::removeReservedWords() {
   DVLOG(VLOG_LEVEL) << string_auto->id << " = [" << this->id << "]->removeReservedWords()";
 
   return string_auto;
+}
+
+/*
+ * DFA OPERATIONS FROM LIBSTRANGER
+ */
+
+DFA_ptr StringAutomaton::dfaStringAutomatonL1toL2(int start, int end) {
+  int i, number_of_states;
+  int var = DEFAULT_NUM_OF_VARIABLES;
+  char *statuses;
+  int* indices = getIndices(var);
+  DFA *result=nullptr;
+  std::vector<char> sharp0,sharp1;
+  sharp0 = getBinaryFormat(SHARP0,var);
+  sharp1 = getBinaryFormat(SHARP1,var);
+
+  if (start <= -1 && end <= -1) {
+    result = Automaton::makePhi(var, indices);
+    delete[] indices;
+    return result;
+  }
+
+  if ( start <= -1 ) {
+    start = 0; // -1 means no lower bound, zero is the minimum lower bound
+  }
+
+  if(end <= -1) { //accept everything after l1 steps
+
+    number_of_states = start + 2; // add one sink state
+    statuses = new char[number_of_states+1];
+    dfaSetup(number_of_states, var, indices);
+
+    //the 0 to start - 1 states(unaccepted)
+    for( i = 0; i < start; i++){
+      dfaAllocExceptions(2);
+      //char 255; //reserve word for sharp1
+      dfaStoreException(number_of_states - 1, &sharp1[0]); // sink state is the number_of_states - 1
+      //char 254;
+      dfaStoreException(number_of_states - 1, &sharp0[0]); // sink state is the number_of_states - 1
+
+      dfaStoreState(i + 1);
+      statuses[i] = '-';
+
+
+    }
+    // the start state
+    dfaAllocExceptions(2);
+    //char 255; //reserve word for sharp1
+    dfaStoreException(number_of_states - 1, &sharp1[0]); // sink state is the number_of_states - 1
+    //char 254;
+    dfaStoreException(number_of_states - 1, &sharp0[0]); // sink state is the number_of_states - 1
+
+    dfaStoreState(i);     // i == start
+    statuses[i] = '+';    // i == start
+    i++;
+
+  } else {
+    assert( end >= start);
+
+    number_of_states = end + 2; // add one sink state
+    statuses=(char *)malloc( (number_of_states + 1)*sizeof(char) );
+    dfaSetup(number_of_states, var, indices);
+
+    //the start to end states(accepted)
+    for( i = 0; i <= end; i++){
+      dfaAllocExceptions(2);
+      //char 255; //reserve word for sharp1
+      dfaStoreException(number_of_states - 1, &sharp1[0]); // sink state is the number_of_states - 1
+      //char 254;
+      dfaStoreException(number_of_states - 1, &sharp0[0]); // sink state is the number_of_states - 1
+
+      dfaStoreState(i + 1);
+      if(i >= start) {
+        statuses[i] = '+';
+      } else {
+        statuses[i] = '-';
+      }
+    }
+  }
+
+  //the sink state
+  dfaAllocExceptions(0);
+  dfaStoreState(number_of_states - 1);  // sink state
+  statuses[number_of_states - 1] = '-';   // i == end + 1 == number_of_states - 1
+  statuses[number_of_states] = '\0';    // number_of_states == end + 2
+
+  result=dfaBuild(statuses);
+  delete[] statuses;
+  delete[] indices;
+  if(start == 0) result->f[result->s] = 1;
+  DFA *tmp = dfaMinimize(result);
+  dfaFree(result);
+  return tmp;
 }
 
 } /* namespace Theory */
