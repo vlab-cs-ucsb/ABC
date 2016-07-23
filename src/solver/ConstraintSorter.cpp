@@ -19,6 +19,14 @@ ConstraintSorter::ConstraintSorter(Script_ptr script, SymbolTable_ptr symbol_tab
 }
 
 ConstraintSorter::~ConstraintSorter() {
+  for(auto it = variable_nodes.cbegin(); it != variable_nodes.cend(); it++) {
+    delete variable_nodes[it->first];
+    variable_nodes[it->first] = nullptr;
+  }
+  if(term_node != nullptr) {
+    delete term_node;
+    term_node = nullptr;
+  }
 }
 
 void ConstraintSorter::start() {
@@ -33,6 +41,7 @@ void ConstraintSorter::start() {
 }
 
 void ConstraintSorter::end() {
+
 //  if (VLOG_IS_ON(VLOG_LEVEL)) {
 //    DVLOG(VLOG_LEVEL) << "global dependency info: " << root;
 //    for (auto& node : dependency_node_list) {
@@ -116,8 +125,9 @@ void ConstraintSorter::visitAnd(And_ptr and_term) {
   }
 
   and_term->term_list->clear();
-  for (auto& term_node : local_dependency_node_list) {
-    and_term->term_list->push_back(term_node->getNode());
+  for(auto it = local_dependency_node_list.cbegin(); it != local_dependency_node_list.cend(); it++) {
+    and_term->term_list->push_back((*it)->getNode());
+    delete *it;
   }
 }
 
@@ -160,6 +170,7 @@ void ConstraintSorter::visitPlus(Plus_ptr plus_term) {
       result_node->shiftToRight();
     } else if (term_node != nullptr) {
       result_node->addVariableNodes(term_node->getAllNodes(), false);
+      delete term_node;
     }
   }
   term_node = result_node;
@@ -175,6 +186,7 @@ void ConstraintSorter::visitTimes(Times_ptr times_term) {
       result_node->shiftToRight();
     } else if (term_node != nullptr) {
       result_node->addVariableNodes(term_node->getAllNodes(), false);
+      delete term_node;
     }
   }
   term_node = result_node;
@@ -257,6 +269,7 @@ void ConstraintSorter::visitConcat(Concat_ptr concat_term) {
       result_node->shiftToRight();
     } else if (term_node != nullptr) {
       result_node->addVariableNodes(term_node->getAllNodes(), false);
+      delete term_node;
     }
   }
   term_node = result_node;
@@ -532,7 +545,6 @@ void ConstraintSorter::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   Variable_ptr variable = symbol_table->getVariable(qi_term->getVarName());
   if (not variable->isLocalLetVar()) {
     VariableNode_ptr variable_node = get_variable_node(variable);
-
     term_node = new TermNode();
     term_node->addVariableNode(variable_node, false);
   }

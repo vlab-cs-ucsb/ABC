@@ -56,6 +56,13 @@ IntAutomaton_ptr IntAutomaton::clone() const {
   return cloned_auto;
 }
 
+void IntAutomaton::release_default_indices() {
+  delete[] DEFAULT_VARIABLE_INDICES;
+  DEFAULT_VARIABLE_INDICES = nullptr;
+  delete[] DEFAULT_UNSIGNED_VARIABLE_INDICES;
+  DEFAULT_UNSIGNED_VARIABLE_INDICES = nullptr;
+}
+
 IntAutomaton_ptr IntAutomaton::makePhi(int num_of_variables, int* variable_indices) {
   DFA_ptr non_accepting_int_dfa = nullptr;
   IntAutomaton_ptr non_acception_int_auto = nullptr;

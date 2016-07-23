@@ -69,11 +69,10 @@ public:
   bool update_variable_value(SMT::Variable_ptr variable, Value_ptr value);
 
 protected:
-
   SymbolTable_ptr symbol_table_;
   ConstraintInformation_ptr constraint_information_;
   StringRelationGenerator string_relation_generator_;
-
+  SMT::Term_ptr current_term_;
 private:
   static const int VLOG_LEVEL;
 

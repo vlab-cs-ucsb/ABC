@@ -36,6 +36,8 @@ public:
 
   virtual IntAutomaton_ptr clone() const;
 
+  static void release_default_indices();
+
   static IntAutomaton_ptr makePhi(int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES,
             int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
   static IntAutomaton_ptr makeZero(int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES,

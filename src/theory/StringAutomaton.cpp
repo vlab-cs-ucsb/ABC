@@ -43,6 +43,16 @@ StringAutomaton_ptr StringAutomaton::clone() const {
   return cloned_auto;
 }
 
+/*
+ * TO BE CALLED ONLY WHEN DONE SOLVING
+ */
+void StringAutomaton::release_default_indices() {
+  delete[] DEFAULT_VARIABLE_INDICES;
+  DEFAULT_VARIABLE_INDICES = nullptr;
+  delete[] DEFAULT_UNSIGNED_VARIABLE_INDICES;
+  DEFAULT_UNSIGNED_VARIABLE_INDICES = nullptr;
+}
+
 /**
  * Creates an automaton that accepts nothing
  */
@@ -363,9 +373,11 @@ StringAutomaton_ptr StringAutomaton::makeLengthEqual(int length, int num_of_vari
     length_auto = StringAutomaton::makeEmptyString();
   }
   else{
+    int* default_indices = Automaton::getIndices(StringAutomaton::DEFAULT_NUM_OF_VARIABLES, 1);
     DFA_ptr length_dfa = dfaStringAutomatonL1toL2(length, length,
-             StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
+             StringAutomaton::DEFAULT_NUM_OF_VARIABLES, default_indices);
          length_auto = new StringAutomaton(length_dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+    delete[] default_indices;
   }
 
   DVLOG(VLOG_LEVEL) << length_auto->id << " = makeLength(" << length <<  ")";
@@ -383,9 +395,11 @@ StringAutomaton_ptr StringAutomaton::makeLengthLessThan(int length, int num_of_v
      length_auto = StringAutomaton::makePhi();
    }
    else{
+     int* default_indices = Automaton::getIndices(StringAutomaton::DEFAULT_NUM_OF_VARIABLES, 1);
      DFA_ptr length_dfa = dfaStringAutomatonL1toL2(0, length-1,
-         StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
+         StringAutomaton::DEFAULT_NUM_OF_VARIABLES, default_indices);
      length_auto = new StringAutomaton(length_dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+     delete[] default_indices;
    }
 
    DVLOG(VLOG_LEVEL) << length_auto->id << " = makeLengthLessThan(" << length <<  ")";
@@ -407,10 +421,11 @@ StringAutomaton_ptr StringAutomaton::makeLengthLessThanEqual(int length, int num
   }
   else{
 //    length_auto = anyChar_auto->repeat(0,length);
-
+    int* default_indices = Automaton::getIndices(StringAutomaton::DEFAULT_NUM_OF_VARIABLES, 1);
     DFA_ptr length_dfa = dfaStringAutomatonL1toL2(0, length,
-             StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
+             StringAutomaton::DEFAULT_NUM_OF_VARIABLES, default_indices);
          length_auto = new StringAutomaton(length_dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+    delete[] default_indices;
   }
 
   delete anyChar_auto;
@@ -422,13 +437,15 @@ StringAutomaton_ptr StringAutomaton::makeLengthLessThanEqual(int length, int num
 }
 
 StringAutomaton_ptr StringAutomaton::makeLengthGreaterThan(int length, int num_of_variables, int* variable_indices){
-  StringAutomaton_ptr length_auto = nullptr;
+  StringAutomaton_ptr length_auto = nullptr, temp_auto = nullptr;
 
   if(length < 0){
     length_auto = StringAutomaton::makeAnyString();
   }
   else{
-    length_auto = StringAutomaton::makeLengthLessThanEqual(length)->complement();
+    temp_auto = StringAutomaton::makeLengthLessThanEqual(length);
+    length_auto = temp_auto->complement();
+    delete temp_auto;
   }
 
   DVLOG(VLOG_LEVEL) << length_auto->id << " = makeLengthGreaterThan(" << length <<  ")";
@@ -437,13 +454,15 @@ StringAutomaton_ptr StringAutomaton::makeLengthGreaterThan(int length, int num_o
 }
 
 StringAutomaton_ptr StringAutomaton::makeLengthGreaterThanEqual(int length, int num_of_variables, int* variable_indices){
-  StringAutomaton_ptr length_auto = nullptr;
+  StringAutomaton_ptr length_auto = nullptr, temp_auto = nullptr;
 
   if(length < 0){
     length_auto = StringAutomaton::makeAnyString();
   }
   else{
-    length_auto = StringAutomaton::makeLengthLessThan(length)->complement();
+    temp_auto = StringAutomaton::makeLengthLessThan(length);
+    length_auto = temp_auto->complement();
+    delete temp_auto;
   }
 
   DVLOG(VLOG_LEVEL) << length_auto->id << " = makeLengthGreaterThanEqual(" << length <<  ")";
@@ -861,9 +880,11 @@ StringAutomaton_ptr StringAutomaton::closure() {
   DFA_ptr closure_dfa = nullptr;
   StringAutomaton_ptr closure_auto = nullptr;
 
+  int* default_indices = Automaton::getIndices(StringAutomaton::DEFAULT_NUM_OF_VARIABLES, 1);
   closure_dfa = dfa_closure_extrabit(dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
-          StringAutomaton::DEFAULT_VARIABLE_INDICES);
+          default_indices);
   closure_auto = new StringAutomaton(closure_dfa, num_of_variables);
+  delete[] default_indices;
 
   DVLOG(VLOG_LEVEL) << closure_auto->id << " = [" << this->id << "]->closure()";
 
@@ -1724,6 +1745,7 @@ StringAutomaton_ptr StringAutomaton::ends(StringAutomaton_ptr search_auto) {
 StringAutomaton_ptr StringAutomaton::toUpperCase() {
   DFA_ptr upper_case_dfa = nullptr;
   StringAutomaton_ptr upper_case_auto = nullptr;
+
 
   upper_case_dfa = dfaToUpperCase(dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
   upper_case_auto = new StringAutomaton(upper_case_dfa, num_of_variables);

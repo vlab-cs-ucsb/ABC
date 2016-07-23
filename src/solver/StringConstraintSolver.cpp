@@ -94,7 +94,7 @@ void StringConstraintSolver::setCallbacks() {
             delete result_auto;
 
             trackmap_handle->erase(name);
-            multi_auto->setRelation(relation);
+            multi_auto->setRelation(relation->clone());
             delete temp_relation;
           } else if(right->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
             DVLOG(VLOG_LEVEL) << "Concat on right side!";
@@ -120,7 +120,7 @@ void StringConstraintSolver::setCallbacks() {
             delete result_auto;
 
             trackmap_handle->erase(name);
-            multi_auto->setRelation(relation);
+            multi_auto->setRelation(relation->clone());
             delete temp_relation;
           } else {
             DVLOG(VLOG_LEVEL) << "No concat!";
@@ -131,6 +131,7 @@ void StringConstraintSolver::setCallbacks() {
           std::string group_name = string_relation_generator_.get_term_group_name(term);
           symbol_table_->updateValue(group_name,val);
           DVLOG(VLOG_LEVEL) << "Updating group name: " << group_name;
+          delete val;
           break;
         }
         default:
@@ -163,6 +164,7 @@ void StringConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
 void StringConstraintSolver::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
+  current_term_ = and_term;
 
   if (not constraint_information_->is_component(and_term)) {
     visit_children_of(and_term);
@@ -180,9 +182,8 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
       visit(term);
       param = get_term_value(term);
       is_satisfiable = is_satisfiable and param->isSatisfiable();
-      if(is_satisfiable) {
-        continue;
-      } else {
+      string_relation_generator_.delete_term_relation(term);
+      if(!is_satisfiable) {
         result = new Value(MultiTrackAutomaton::makePhi(relation->get_num_tracks()));
         break;
       }
@@ -192,6 +193,7 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
 
 void StringConstraintSolver::visitOr(Or_ptr or_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *or_term;
+  current_term_ = or_term;
   for (auto& term : *(or_term->term_list)) {
     symbol_table_->push_scope(term);
     visit(term);
@@ -286,7 +288,7 @@ Value_ptr StringConstraintSolver::get_variable_value(Variable_ptr variable) {
   StringAutomaton_ptr variable_auto = nullptr;
   StringRelation_ptr variable_relation = nullptr;
   Value_ptr relation_value = nullptr;
-  std::string group_name = string_relation_generator_.get_variable_group_name(variable);
+  std::string group_name = string_relation_generator_.get_variable_group_name(current_term_,variable);
   if(group_name.empty()) {
     return nullptr;
   }
@@ -304,7 +306,7 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
   StringAutomaton_ptr variable_auto = nullptr;
   Value_ptr relation_value = nullptr;
   StringRelation_ptr variable_relation = nullptr;
-  std::string group_name = string_relation_generator_.get_variable_group_name(variable);
+  std::string group_name = string_relation_generator_.get_variable_group_name(current_term_,variable);
   if(group_name.empty()) {
     LOG(FATAL) << "Empty group name!";
   }
@@ -320,7 +322,9 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
                                        variable_relation->get_num_tracks());
   variable_multi_auto->setRelation(variable_relation->clone());
 
-  symbol_table_->updateValue(group_name,new Value(variable_multi_auto));
+  Value_ptr val = new Value(variable_multi_auto);
+  symbol_table_->updateValue(group_name,val);
+  delete val;
   return true;
 }
 

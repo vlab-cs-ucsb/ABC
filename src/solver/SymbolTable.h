@@ -49,6 +49,7 @@ public:
   void addVariable(SMT::Variable_ptr);
   SMT::Variable_ptr getVariable(std::string name);
   SMT::Variable_ptr getVariable(SMT::Term_ptr);
+  SMT::Variable_ptr get_variable_unsafe(std::string name);
   VariableMap& getVariables();
   SMT::Variable_ptr getSymbolicVariable();
   int get_num_of_variables(SMT::Variable::Type type);

@@ -124,6 +124,13 @@ Variable_ptr SymbolTable::getVariable(Term_ptr term_ptr) {
   return nullptr;
 }
 
+SMT::Variable_ptr SymbolTable::get_variable_unsafe(std::string name) {
+  if(variables.find(name) != variables.end()) {
+    return variables[name];
+  }
+  return nullptr;
+}
+
 VariableMap& SymbolTable::getVariables() {
   return variables;
 }
