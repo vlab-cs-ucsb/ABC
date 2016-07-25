@@ -570,9 +570,7 @@ StringAutomaton_ptr StringAutomaton::difference(StringAutomaton_ptr other_auto) 
  *TODO Fix empty string bug that happens in case (concat /.{0,1}/ /{1,1}/)
  */
 StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
-
   StringAutomaton_ptr left_auto = this, right_auto = other_auto;
-
 
   if (left_auto->isEmptyLanguage() or right_auto->isEmptyLanguage()) {
     return StringAutomaton::makePhi();

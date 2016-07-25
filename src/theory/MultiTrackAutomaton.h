@@ -29,6 +29,8 @@ class MultiTrackAutomaton: public Automaton {
 virtual ~MultiTrackAutomaton();
 	virtual MultiTrackAutomaton_ptr clone() const;
 
+	static MultiTrackAutomaton_ptr makePrefixSuffix(int left_track, int prefix_track, int suffix_track, int num_tracks);
+
 	static MultiTrackAutomaton_ptr makePhi(int ntracks);
 	static MultiTrackAutomaton_ptr makeAuto(StringRelation_ptr relation);
 	static MultiTrackAutomaton_ptr makeBegins(StringRelation_ptr relation);
@@ -63,10 +65,16 @@ virtual ~MultiTrackAutomaton();
 	static char* getLambda(int);
 	static DFA_ptr getLambdaStar(int, int*);
 	static bool checkLambda(std::string,int track_num,int num_tracks,int var);
+	static bool isCharIncluded(std::vector<char>, std::vector<char>, int var);
+	static bool isCharEqual(std::vector<char>, std::vector<char>, int var);
 	static DFA_ptr removeLambdaSuffix(DFA_ptr dfa, int num_vars);
 	static const TransitionVector& generate_transitions_for_relation(StringRelation::Type type, int bits_per_var);
 	static DFA_ptr make_binary_relation_dfa(StringRelation::Type type, int bits_per_var, int num_tracks, int left_track, int right_track);
 	static DFA_ptr make_binary_aligned_dfa(int left_track, int right_track, int total_tracks);
+
+	static std::vector<std::vector<char>> extractValidTransitions(std::vector<char> exep, std::vector<char> trim_set, int var);
+	static StringAutomaton_ptr trimPrefix(StringAutomaton_ptr string_auto, std::vector<char> trim_set, int var);
+	static StringAutomaton_ptr trimSuffix(StringAutomaton_ptr string_auto, std::vector<char> trim_set, int var);
 
 	static const int VAR_PER_TRACK = 8;
 	int num_of_tracks;

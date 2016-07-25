@@ -29,13 +29,13 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_track
 	DFA_ptr M = dfa, temp = nullptr, result = nullptr;
 	trace_descr tp;
 	paths state_paths, pp;
-	std::vector<std::pair<std::string,int>> state_exeps;
+	std::vector<std::pair<std::vector<char>,int>> state_exeps;
 	int sink;
 	char* statuses;
 	int* mindices;
 	int len;
-	len = num_tracks * VAR_PER_TRACK;
-	mindices = getIndices(num_tracks*VAR_PER_TRACK);
+	len = num_tracks * VAR_PER_TRACK+1;
+	mindices = getIndices(len);
 	statuses = new char[M->ns+1+1];
 	sink = find_sink(M);
 	// begin dfa building process
@@ -43,17 +43,19 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_track
 	for(unsigned i = 0; i < M->ns; i++) {
 		state_paths = pp = make_paths(M->bddm, M->q[i]);
 
-		while(pp) {
-			if(M->f[i] == 1) {
-				std::string curr(len,'X');
-				for(int j = 0; j < VAR_PER_TRACK; j++) {
-				  curr[i_track+num_tracks*j] = '1';
-				}
-				state_exeps.push_back(std::make_pair(curr,M->ns));
-			}
+		if(M->f[i] == 1) {
+      std::vector<char> curr(len-1,'X');
+      for(int j = 0; j < VAR_PER_TRACK; j++) {
+        curr[i_track+num_tracks*j] = '1';
+      }
+      curr.push_back('1');
+      curr.push_back('\0');
+      state_exeps.push_back(std::make_pair(curr,M->ns));
+    }
 
+		while(pp) {
 			if(pp->to != sink) {
-				std::string curr = std::string(len,'X');
+			  std::vector<char> curr(len-1,'X');
 				for(unsigned j = 0; j < VAR_PER_TRACK; j++) {
 					for(tp = pp->trace; tp && (tp->index != mindices[j]); tp = tp->next);
 					if(tp) {
@@ -63,6 +65,8 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_track
 					else
 						curr[i_track+num_tracks*j] = 'X';
 				}
+				curr.push_back('0');
+				curr.push_back('\0');
 				state_exeps.push_back(std::make_pair(curr,pp->to));
 			}
 			pp = pp->next;
@@ -71,9 +75,7 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_track
 
 		dfaAllocExceptions(state_exeps.size());
 		for(unsigned k = 0; k < state_exeps.size(); ++k) {
-			std::vector<char> v = std::vector<char>(state_exeps[k].first.begin(), state_exeps[k].first.end());
-			v.push_back('\0');
-			dfaStoreException(state_exeps[k].second,&v[0]);
+			dfaStoreException(state_exeps[k].second,&state_exeps[k].first[0]);
 		}
 		dfaStoreState(sink);
 		state_exeps.clear();
@@ -82,10 +84,11 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_track
 	}
 
 	dfaAllocExceptions(1);
-  std::vector<char> str(len,'X');
+  std::vector<char> str(len-1,'X');
   for(int j = 0; j < VAR_PER_TRACK; j++) {
     str[i_track+num_tracks*j] = '1';
   }
+  str.push_back('1');
   str.push_back('\0');
   dfaStoreException(M->ns,&str[0]);
   dfaStoreState(sink);
@@ -93,8 +96,13 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_track
 	statuses[M->ns] = '+';
 	statuses[M->ns+1] = '\0';
 	temp = dfaBuild(statuses);
-	result = dfaMinimize(temp);
+
+	result = dfaProject(temp,len-1);
 	dfaFree(temp);
+	temp = dfaMinimize(result);
+	dfaFree(result);
+	result = temp;
+
 	delete[] statuses;
 	delete[] mindices;
 	this->dfa = result;
@@ -113,6 +121,96 @@ MultiTrackAutomaton::~MultiTrackAutomaton() {
 MultiTrackAutomaton_ptr MultiTrackAutomaton::clone() const {
 	MultiTrackAutomaton_ptr cloned_auto = new MultiTrackAutomaton(*this);
 	return cloned_auto;
+}
+
+MultiTrackAutomaton_ptr MultiTrackAutomaton::makePrefixSuffix(int left_track, int prefix_track, int suffix_track, int num_tracks) {
+	MultiTrackAutomaton_ptr result_auto = nullptr;
+	DFA_ptr temp_dfa, result_dfa;
+	TransitionVector tv;
+
+	int var = VAR_PER_TRACK;
+	int len = num_tracks * var;
+	int *mindices = getIndices(num_tracks*var);
+	int nump = 1 << var;
+	std::vector<char> exep_lambda = getBinaryFormat(nump-1,var);
+	tv = generate_transitions_for_relation(StringRelation::Type::EQ_NO_LAMBDA,var);
+
+	dfaSetup(4,len,mindices);
+	dfaAllocExceptions(2*tv.size() + 1); // 1 extra for lambda stuff below
+	for(int i = 0; i < tv.size(); i++) {
+		std::vector<char> str(len,'X');
+		for(int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = tv[i].first[k];
+			str[prefix_track+num_tracks*k] = tv[i].first[k];
+			str[suffix_track+num_tracks*k] = exep_lambda[k];
+		}
+		str.push_back('\0');
+		dfaStoreException(0,&str[0]);
+	}
+
+	// if prefix is lambda, left  and suffix same
+	for(int i = 0; i < tv.size(); i++) {
+		std::vector<char> str(len,'X');
+		for (int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = tv[i].first[k];
+			str[prefix_track+num_tracks*k] = exep_lambda[k];
+			str[suffix_track+num_tracks*k] = tv[i].first[k];
+		}
+		str.push_back('\0');
+		dfaStoreException(1,&str[0]);
+	}
+
+	// if all 3 are lambda, go to next state
+	std::vector<char> str(len,'X');
+	str = std::vector<char>(len,'X');
+	for(int k = 0; k < var; k++) {
+		str[left_track+num_tracks*k] = exep_lambda[k];
+		str[prefix_track+num_tracks*k] = exep_lambda[k];
+		str[suffix_track+num_tracks*k] = exep_lambda[k];
+	}
+	str.push_back('\0');
+	dfaStoreException(2,&str[0]);
+	dfaStoreState(3);
+
+	// left = suffix, prefix lambda, loop back here
+	dfaAllocExceptions(nump);
+	for(int i = 0; i < tv.size(); i++) {
+		std::vector<char> str(len,'X');
+		for (int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = tv[i].first[k];
+			str[prefix_track+num_tracks*k] = exep_lambda[k];
+			str[suffix_track+num_tracks*k] = tv[i].first[k];
+		}
+		str.push_back('\0');
+		dfaStoreException(1,&str[0]);
+	}
+	// if all 3 lambda, goto 2
+	str = std::vector<char>(len,'X');
+	for(int k = 0; k < var; k++) {
+		str[left_track+num_tracks*k] = exep_lambda[k];
+		str[prefix_track+num_tracks*k] = exep_lambda[k];
+		str[suffix_track+num_tracks*k] = exep_lambda[k];
+	}
+	str.push_back('\0');
+	dfaStoreException(2,&str[0]);
+	dfaStoreState(3);
+
+	// lambda/lambda state, loop back on lambda
+	dfaAllocExceptions(1);
+	dfaStoreException(2,&str[0]);
+	dfaStoreState(3);
+
+	// sink
+	dfaAllocExceptions(0);
+	dfaStoreState(3);
+
+	temp_dfa = dfaBuild("--+-");
+	result_dfa = dfaMinimize(temp_dfa);
+	dfaFree(temp_dfa);
+	result_auto = new MultiTrackAutomaton(result_dfa,num_tracks);
+
+	delete[] mindices;
+	return result_auto;
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makePhi(int ntracks) {
@@ -174,6 +272,93 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAuto(StringRelation_ptr relatio
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeBegins(StringRelation_ptr relation) {
+
+LOG(INFO) << "------ BEGIN TEST -------";
+/*
+  std::string s1,s2,s3,r;
+  s1 = "abcdefg";
+  s2 = "aabaafg";
+  s3 = "(d|g)hc";
+  StringAutomaton_ptr string1_auto, string2_auto, string3_auto,res1,res2,res3;
+  string1_auto = StringAutomaton::makeString(s1);
+  string2_auto = StringAutomaton::makeString(s2);
+  string3_auto = StringAutomaton::makeRegexAuto(s3);
+
+  std::vector<char> trim_chars;
+  trim_chars.push_back('g');
+  trim_chars.push_back('h');
+
+  LOG(INFO) << "s1: " << s1;
+  res1 = MultiTrackAutomaton::trimPrefix(string1_auto,trim_chars,VAR_PER_TRACK);
+  r = res1->getAnAcceptingString();
+  LOG(INFO) << "s1 : " << s1 << " -> " << r;
+
+  LOG(INFO) << "s2: " << s2;
+  res2 = MultiTrackAutomaton::trimPrefix(string2_auto,trim_chars,VAR_PER_TRACK);
+  r = res2->getAnAcceptingString();
+  LOG(INFO) << "s2 : " << s2 << " -> " << r;
+
+  LOG(INFO) << "s3: " << s3;
+  res3 = MultiTrackAutomaton::trimPrefix(string3_auto,trim_chars,VAR_PER_TRACK);
+  r = res3->getAnAcceptingString();
+  LOG(INFO) << "s3 : " << s3 << " -> " << r;
+*/
+
+  std::string s1,s2,s3,r;
+  s1 = "abcdefg";
+  s2 = "aabaafg";
+  s3 = "(d|g)hc";
+  StringAutomaton_ptr string1_auto, string2_auto, string3_auto,res1,res2,res3;
+  string1_auto = StringAutomaton::makeString(s1);
+  string2_auto = StringAutomaton::makeString(s2);
+  string3_auto = StringAutomaton::makeRegexAuto(s3);
+
+  std::vector<char> trim_chars;
+  trim_chars.push_back('g');
+  trim_chars.push_back('h');
+
+  LOG(INFO) << "s1: " << s1;
+  res1 = MultiTrackAutomaton::trimSuffix(string1_auto,trim_chars,VAR_PER_TRACK);
+  r = res1->getAnAcceptingString();
+  LOG(INFO) << "s1 : " << s1 << " -> " << r;
+
+  LOG(INFO) << "s2: " << s2;
+  res2 = MultiTrackAutomaton::trimSuffix(string2_auto,trim_chars,VAR_PER_TRACK);
+  r = res2->getAnAcceptingString();
+  LOG(INFO) << "s2 : " << s2 << " -> " << r;
+
+  LOG(INFO) << "s3: " << s3;
+  res3 = MultiTrackAutomaton::trimSuffix(string3_auto,trim_chars,VAR_PER_TRACK);
+  r = res3->getAnAcceptingString();
+  LOG(INFO) << "s3 : " << s3 << " -> " << r;
+
+
+  MultiTrackAutomaton_ptr m1,m2,m3,m4;
+  m1 = makePrefixSuffix(0,1,2,3);
+  m2 = new MultiTrackAutomaton(string3_auto->getDFA(),0,3);
+  s3 = "c*";
+  string3_auto = StringAutomaton::makeRegexAuto(s3);
+  string1_auto = string3_auto->complement();
+  int var2 = 8;
+  int *indices2 = getIndices(8);
+  string2_auto = new StringAutomaton(getLambdaStar(var2,indices2));
+  string2_auto = string2_auto->concat(string3_auto);
+
+  LOG(INFO) << "weeee?";
+  m3 = new MultiTrackAutomaton(string2_auto->getDFA(),2,3);
+  LOG(INFO) << "weee!";
+  m4 = m1->intersect(m2);
+  LOG(INFO) << "weee/";
+  m4 = m4->intersect(m3);
+  string1_auto = m4->getKTrack(1);
+
+  LOG(INFO) << string1_auto->isEmptyLanguage();
+  LOG(INFO) << string1_auto->getAnAcceptingString();
+
+LOG(INFO) << "------ END TEST -------";
+  std::cin.get();
+
+
 	MultiTrackAutomaton_ptr result_auto = nullptr;
 	DFA_ptr temp_dfa, result_dfa;
 	int num_tracks = relation->get_num_tracks(),
@@ -959,7 +1144,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::intersect(MultiTrackAutomaton_ptr o
 	intersect_auto = new MultiTrackAutomaton(minimized_dfa, this->num_of_tracks);
 
 	if(this->relation == nullptr && other_auto->relation == nullptr) {
-		LOG(FATAL) << "No relation set for either multitrack during intersection";
+		//LOG(FATAL) << "No relation set for either multitrack during intersection";
 	} else if(other_auto->relation == nullptr) {
 		intersect_relation = this->relation->clone();
 	} else if(this->relation == nullptr) {
@@ -1207,6 +1392,22 @@ DFA_ptr MultiTrackAutomaton::getLambdaStar(int var, int* indices) {
 	delete[] lambda;
 
 	return dfaBuild("++-");
+}
+
+bool MultiTrackAutomaton::isCharIncluded(std::vector<char> exep, std::vector<char> c, int var) {
+	for(int i = 0; i < var; i++) {
+		if(exep[i] != 'X' && exep[i] != c[i])
+			return false;
+	}
+	return true;
+}
+
+bool MultiTrackAutomaton::isCharEqual(std::vector<char> exep, std::vector<char> c, int var) {
+	for(int i = 0; i < var; i++) {
+		if(exep[i] != c[i])
+			return false;
+	}
+	return true;
 }
 
 bool MultiTrackAutomaton::checkLambda(std::string exeps, int track_num, int num_tracks, int var) {
@@ -1779,6 +1980,376 @@ StringAutomaton_ptr MultiTrackAutomaton::get_reverse_auto(StringAutomaton_ptr st
 	}
 	return new StringAutomaton(temp);
 }
+
+StringAutomaton_ptr MultiTrackAutomaton::trimPrefix(StringAutomaton_ptr string_auto, std::vector<char> trim_set, int var) {
+	DFA_ptr result_dfa = nullptr, temp_dfa = nullptr, original_dfa = string_auto->getDFA();
+	paths state_paths, pp;
+	trace_descr tp;
+	char* statuses;
+	int *indices = Automaton::getIndices(var);
+	int sink = find_sink(original_dfa);
+  bool initial_accepting = false;
+  CHECK_GT(sink,-1);
+	// start at start-state
+	// if transition is lambda, we need to add that "to" state to the
+	// pool of possible start states
+	std::vector<bool> states_visited(original_dfa->ns,false);
+	std::vector<int> reachable;
+	std::queue<int> states_to_visit;
+
+	states_to_visit.push(original_dfa->s);
+	states_visited[original_dfa->s] = true;
+	reachable.push_back(original_dfa->s);
+
+	while(!states_to_visit.empty()) {
+		int state = states_to_visit.front();
+		states_to_visit.pop();
+
+		state_paths = pp = make_paths(original_dfa->bddm, original_dfa->q[state]);
+		std::vector<char> exep(var,'X');
+		while(pp) {
+			if(pp->to == sink) {
+				pp = pp->next;
+				continue;
+			}
+
+			for(int j = 0; j < var; j++) {
+				for (tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
+				if (tp) {
+					if (tp->value) exep[j] = '1';
+					else exep[j] = '0';
+				}
+				else
+					exep[j] = 'X';
+			}
+
+      for(int j = 0; j < trim_set.size(); j++) {
+			  if (MultiTrackAutomaton::isCharIncluded(exep, Automaton::getBinaryFormat((int)trim_set[j],var), var)) {
+				  if(states_visited[pp->to]) {
+            continue;
+          }
+				  states_to_visit.push(pp->to);
+				  states_visited[pp->to] = true;
+				  reachable.push_back(pp->to);
+			  }
+			}
+			pp = pp->next;
+		}
+		kill_paths(state_paths);
+	}
+	delete[] indices;
+
+	int num_initial = reachable.size();
+	int num_bits = std::ceil(std::log2(num_initial));
+  int len = var + num_bits;
+
+	// one new "initial" state, which encompasses all reachable states
+	// by characters to be trimmed.
+	int num_states = original_dfa->ns+1;
+  std::vector<std::pair<std::vector<char>,int>> state_exeps;
+	indices = Automaton::getIndices(len);
+	statuses = new char[num_states+1];
+
+  // if any of the reachable states are final, then the new
+  // initial state is final
+  statuses[0] = '-';
+	for(int i = 0; i < reachable.size(); i++) {
+	  if(original_dfa->f[reachable[i]] == 1) {
+	    statuses[0] = '+';
+	  }
+	}
+
+	dfaSetup(num_states,len,indices);
+	// setup new "initial" state first
+	for(int i = 0; i < reachable.size(); i++) {
+	  state_paths = pp = make_paths(original_dfa->bddm, original_dfa->q[reachable[i]]);
+    std::vector<char> exep(var,'X');
+	  while(pp) {
+	    if(pp->to == sink) {
+	      pp = pp->next;
+	      continue;
+	    }
+	    for(int j = 0; j < var; j++) {
+	      for(tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
+	      if(tp) {
+	        if(tp->value) {
+	          exep[j] = '1';
+	        } else {
+	          exep[j] = '0';
+	        }
+	      } else {
+	        exep[j] = 'X';
+	      }
+	    }
+
+      // NOTE: here we just assume every transition could be potentially bad
+      // might be better if we're only trimming one transition, to just check
+      // inclusion first
+      std::vector<std::vector<char>> valid_transitions = MultiTrackAutomaton::extractValidTransitions(exep, trim_set,var);
+      std::vector<char> extra_bit_value = getBinaryFormat(i,num_bits); // i = current state
+      for(int j = 0; j < valid_transitions.size(); j++) {
+        std::vector<char> v = valid_transitions[j];
+        v.insert(v.end(),extra_bit_value.begin(),extra_bit_value.end());
+        state_exeps.push_back(std::make_pair(v,pp->to+1));
+      }
+	    pp = pp->next;
+	  }
+	  kill_paths(state_paths);
+	}
+
+	dfaAllocExceptions(state_exeps.size());
+	for(int i = 0; i < state_exeps.size(); i++) {
+	  dfaStoreException(state_exeps[i].second,&state_exeps[i].first[0]);
+	}
+	dfaStoreState(sink+1);
+	state_exeps.clear();
+
+	// continue with rest of states
+	// add num_bits '0's for extra bits/nondeterminism from above
+	std::vector<char> exep(var,'X');
+	for(int i = 0; i < num_bits; i++) {
+	  exep.push_back('0');
+	}
+	exep.push_back('\0');
+
+	for(int i = 0; i < original_dfa->ns; i++) {
+	  state_paths = pp = make_paths(original_dfa->bddm, original_dfa->q[i]);
+
+	  while(pp) {
+      if (pp->to == sink) {
+        pp = pp->next;
+        continue;
+      }
+
+      for (int j = 0; j < var; j++) {
+        for (tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
+        if (tp) {
+          if (tp->value) exep[j] = '1';
+          else exep[j] = '0';
+        }
+        else
+          exep[j] = 'X';
+      }
+      state_exeps.push_back(std::make_pair(exep,pp->to+1));
+      pp = pp->next;
+    }
+    kill_paths(state_paths);
+
+    dfaAllocExceptions(state_exeps.size());
+    for(int j = 0; j < state_exeps.size(); j++) {
+      dfaStoreException(state_exeps[j].second, &state_exeps[j].first[0]);
+    }
+    dfaStoreState(sink+1);
+    state_exeps.clear();
+
+    if(original_dfa->f[i] == 1) {
+      statuses[i+1] = '+';
+    } else {
+      statuses[i+1] = '-';
+    }
+	}
+
+	statuses[num_states] = '\0';
+	result_dfa = dfaBuild(statuses);
+	// project away the extra bits
+	for(int i = 0; i < num_bits; i++) {
+	  int bit = len-i-1;
+	  temp_dfa = dfaProject(result_dfa,(unsigned)bit);
+	  dfaFree(result_dfa);
+	  result_dfa = dfaMinimize(temp_dfa);
+	  dfaFree(temp_dfa);
+	}
+
+	delete[] statuses;
+	delete[] indices;
+	StringAutomaton_ptr result_auto = new StringAutomaton(result_dfa);
+
+  return result_auto;
+}
+
+StringAutomaton_ptr MultiTrackAutomaton::trimSuffix(StringAutomaton_ptr string_auto, std::vector<char> trim_set, int var) {
+  DFA_ptr result_dfa = nullptr, temp_dfa = nullptr, original_dfa = string_auto->getDFA();
+	paths state_paths, pp;
+	trace_descr tp;
+	char* statuses;
+	int len = var+1;
+	int *indices = Automaton::getIndices(len);
+	int sink = find_sink(original_dfa);
+  CHECK_GT(sink,-1);
+	// build reverse transition matrix for getting all reverse transitions
+  std::vector<std::map<std::vector<char>,int>> transition_matrix(original_dfa->ns);
+  std::queue<int> states_to_visit;
+  std::vector<bool> reachable(original_dfa->ns,false);
+  std::vector<bool> visited(original_dfa->ns,false);
+  std::vector<std::pair<std::vector<char>,int>> state_exeps;
+  for(int i = 0; i < original_dfa->ns; i++) {
+    state_paths = pp = make_paths(original_dfa->bddm, original_dfa->q[i]);
+    std::vector<char> exep(var,'X');
+    while (pp) {
+      if (pp->to == sink) {
+        pp = pp->next;
+        continue;
+      }
+
+      for (int j = 0; j < var; j++) {
+        for (tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
+        if (tp) {
+          if (tp->value) exep[j] = '1';
+          else exep[j] = '0';
+        }
+        else
+          exep[j] = 'X';
+      }
+
+      transition_matrix[pp->to][exep] = i;
+      pp = pp->next;
+    }
+    kill_paths(state_paths);
+    if(original_dfa->f[i] == 1) {
+      visited[i] = true;
+      states_to_visit.push(i);
+      reachable[i] = true;
+    }
+  }
+
+  // if no final states, then return nothing
+  if(states_to_visit.size() <= 0) {
+    return StringAutomaton::makePhi();
+  }
+
+  // backtrack on final states using the above transition matrix, finding
+  // all possible states that can reach any final states using only
+  // characters from trim_set
+  while(!states_to_visit.empty()) {
+    int state = states_to_visit.front();
+    states_to_visit.pop();
+
+    for(auto& map_iter : transition_matrix[state]) {
+      for(int i = 0; i < trim_set.size(); i++) {
+        if (MultiTrackAutomaton::isCharIncluded(map_iter.first, Automaton::getBinaryFormat((int)trim_set[i],var), var)) {
+				  if(visited[map_iter.second]) {
+            continue;
+          }
+				  states_to_visit.push(map_iter.second);
+				  visited[map_iter.second] = true;
+				  reachable[map_iter.second] = true;
+			  }
+      }
+    }
+    // FIX PROBLEM WHEN NO STATES "REACHABLE", which means no change should occur
+  }
+
+  int num_states = original_dfa->ns+1; // +1 for new final state
+  int final_state = num_states-1;
+  statuses = new char[num_states+1];
+  dfaSetup(num_states,len,indices);
+	for(int i = 0; i < num_states-1; i++) {
+	  state_paths = pp = make_paths(original_dfa->bddm, original_dfa->q[i]);
+    std::vector<char> exep(var,'X');
+	  while(pp) {
+	    if(pp->to == sink) {
+	      pp = pp->next;
+	      continue;
+	    }
+	    for(int j = 0; j < var; j++) {
+	      for(tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
+	      if(tp) {
+	        if(tp->value) {
+	          exep[j] = '1';
+	        } else {
+	          exep[j] = '0';
+	        }
+	      } else {
+	        exep[j] = 'X';
+	      }
+	    }
+
+      // reachable or not, add original transition, but with extra bit
+      std::vector<char> original_exep(exep.begin(),exep.end());
+      original_exep.push_back('0');
+      original_exep.push_back('\0');
+      state_exeps.push_back(std::make_pair(original_exep,pp->to));
+
+      if(reachable[pp->to]) {
+        // NOTE: here we just assume every transition could be potentially bad
+        // might be better if we're only trimming one transition to just check inclusion first
+        std::vector<std::vector<char>> valid_transitions = MultiTrackAutomaton::extractValidTransitions(exep, trim_set,var);
+        // since pp->to is reachable, transition goes to new final state
+        for (int j = 0; j < valid_transitions.size(); j++) {
+          std::vector<char> v = valid_transitions[j];
+          v.push_back('1'); // extrabit for nondeterminism
+          v.push_back('\0');
+          state_exeps.push_back(std::make_pair(v, final_state));
+        }
+      }
+	    pp = pp->next;
+	  }
+	  kill_paths(state_paths);
+
+	  dfaAllocExceptions(state_exeps.size());
+    for(int i = 0; i < state_exeps.size(); i++) {
+      dfaStoreException(state_exeps[i].second,&state_exeps[i].first[0]);
+    }
+    dfaStoreState(sink);
+    state_exeps.clear();
+    statuses[i] = '-';
+	}
+
+	// build the new final state
+	dfaAllocExceptions(0);
+	dfaStoreState(sink);
+	statuses[final_state] = '+';
+  statuses[num_states] = '\0';
+  result_dfa = dfaBuild(statuses);
+  // project the extra bit from adding new state
+  temp_dfa = dfaProject(result_dfa,var);
+  dfaFree(result_dfa);
+  result_dfa = dfaMinimize(temp_dfa);
+  dfaFree(temp_dfa);
+  delete[] statuses;
+  delete[] indices;
+
+  return new StringAutomaton(result_dfa);
+}
+
+// Add better heuristic...
+std::vector<std::vector<char>> MultiTrackAutomaton::extractValidTransitions(std::vector<char> exep, std::vector<char> trim_set, int var) {
+  std::set<std::string> transitions;
+  std::queue<std::string> exeps_to_process;
+  int pos = 0;
+  std::string temp(exep.begin(),exep.end());
+  exeps_to_process.push(temp);
+  // while there is an 'X' in an exception, create two identical
+  // exceptions, but with a '0' and '1' each, respectively
+  while(!exeps_to_process.empty()) {
+    std::string ex = exeps_to_process.front();
+    exeps_to_process.pop();
+    pos = ex.find_first_of('X');
+    if(pos == std::string::npos) {
+      transitions.insert(ex);
+    } else {
+      ex[pos] = '0';
+      exeps_to_process.push(ex);
+      ex[pos] = '1';
+      exeps_to_process.push(ex);
+    }
+  }
+
+  // remove each trim transition from the set of valid transitions
+  for(int i = 0; i < trim_set.size(); i++) {
+    std::vector<char> trim_exep = getBinaryFormat((int)trim_set[i],var);
+    std::string trim_str(trim_exep.begin(),trim_exep.end()-1); // -1 for null terminating char added by getBinaryFormat
+    transitions.erase(trim_str);
+  }
+
+  // convert valid string transitions to character form for MONA stuff
+  std::vector<std::vector<char>> valid_transitions;
+  for(auto& it : transitions) {
+    valid_transitions.push_back(std::vector<char>(it.begin(),it.end()));
+  }
+  return valid_transitions;
+}
+
 
 } /* namespace Vlab */
 } /* namespace Theory */
