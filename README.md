@@ -12,7 +12,7 @@ use it as a static or dynamic lib or you can run it from command line. This guid
   
   ```
   $ cd <your home directory or a preferred directory>
-  $ git clone --recursive ssh://git@phab-isstac.isis.vanderbilt.edu/diffusion/ABC/abc.git ABC
+  $ git clone --recursive git@github.com:vlab-cs-ucsb/ABC.git ABC // or use https://github.com/vlab-cs-ucsb/ABC.git
   $ cd ABC/build
   $ ./install-build-deps.py
   ```
@@ -114,7 +114,7 @@ use it as a static or dynamic lib or you can run it from command line. This guid
 
   ```
     $ cd <your home directory or a preferred directory>
-    $ git clone --recursive ssh://git@phab-isstac.isis.vanderbilt.edu/diffusion/ABC/abc.git ABC
+    $ git clone --recursive git@github.com:vlab-cs-ucsb/ABC.git ABC // or use https://github.com/vlab-cs-ucsb/ABC.git
     $ cd ABC
     $ ./autogen.sh
     $ ./configure
