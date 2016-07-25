@@ -192,7 +192,7 @@ int main(const int argc, const char **argv) {
           case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
             LOG(INFO) << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"";
             if (model_count) {
-              LOG(INFO) << "var: " << variable_entry.first->getName() << " count          : " << driver.Count(variable_entry.first->getName(), bound, false);
+              LOG(INFO) << "var: " << variable_entry.first->getName() << " count          : " << driver.Count(variable_entry.first->getName(), bound, true);
 //              LOG(INFO) << "symbolic count : " << driver.SymbolicCount(variable_entry.first->getName(), bound);
             }
             break;
@@ -212,7 +212,7 @@ int main(const int argc, const char **argv) {
           case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {
             LOG(INFO) << "Insert multitrack sat var struff here";
             if (model_count) {
-              LOG(INFO) << "var: " << variable_entry.first->getName() << " count          : " << driver.Count(variable_entry.first->getName(), bound, false);
+              LOG(INFO) << "var: " << variable_entry.first->getName() << " count          : " << driver.Count(variable_entry.first->getName(), bound, true);
             }
             break;
           }
