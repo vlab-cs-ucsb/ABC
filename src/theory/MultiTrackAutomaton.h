@@ -62,19 +62,23 @@ virtual ~MultiTrackAutomaton();
 
  protected:
 
-	static char* getLambda(int);
-	static DFA_ptr getLambdaStar(int, int*);
-	static bool checkLambda(std::string,int track_num,int num_tracks,int var);
-	static bool isCharIncluded(std::vector<char>, std::vector<char>, int var);
-	static bool isCharEqual(std::vector<char>, std::vector<char>, int var);
-	static DFA_ptr removeLambdaSuffix(DFA_ptr dfa, int num_vars);
 	static const TransitionVector& generate_transitions_for_relation(StringRelation::Type type, int bits_per_var);
 	static DFA_ptr make_binary_relation_dfa(StringRelation::Type type, int bits_per_var, int num_tracks, int left_track, int right_track);
 	static DFA_ptr make_binary_aligned_dfa(int left_track, int right_track, int total_tracks);
 
-	static std::vector<std::vector<char>> extractValidTransitions(std::vector<char> exep, std::vector<char> trim_set, int var);
-	static StringAutomaton_ptr trimPrefix(StringAutomaton_ptr string_auto, std::vector<char> trim_set, int var);
-	static StringAutomaton_ptr trimSuffix(StringAutomaton_ptr string_auto, std::vector<char> trim_set, int var);
+	static bool is_exep_equal_char(std::vector<char> exep, std::vector<char> cvec, int var);
+	static bool is_exep_include_char(std::vector<char> exep, std::vector<char> cvec, int var);
+
+	static DFA_ptr prepend_lambda(DFA_ptr dfa, int var);
+	static DFA_ptr append_lambda(DFA_ptr dfa, int var);
+	static DFA_ptr trim_lambda_prefix(DFA_ptr dfa, int var);
+	static DFA_ptr trim_lambda_suffix(DFA_ptr dfa, int var);
+	static DFA_ptr trim_prefix(DFA_ptr subject_dfa, DFA_ptr trim_dfa, int var);
+	static DFA_ptr trim_suffix(DFA_ptr subject_dfa, DFA_ptr trim_dfa, int var);
+	static DFA_ptr concat(DFA_ptr prefix_dfa, DFA_ptr suffix_dfa, int var);
+
+	static DFA_ptr pre_concat_prefix(DFA_ptr concat_dfa, DFA_ptr suffix_dfa, int var);
+	static DFA_ptr pre_concat_suffix(DFA_ptr concat_dfa, DFA_ptr prefix_dfa, int var);
 
 	static const int VAR_PER_TRACK = 8;
 	int num_of_tracks;
