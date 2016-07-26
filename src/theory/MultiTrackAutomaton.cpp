@@ -6,10 +6,6 @@
 *
 */
 
-// TODO: getLambdaStar does not accept empty string, so it now functions like getLambdaPlus
-// 			this is due to issue in string concat from libstranger
-
-
 #include "MultiTrackAutomaton.h"
 namespace Vlab {
 namespace Theory {

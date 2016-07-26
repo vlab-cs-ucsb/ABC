@@ -177,8 +177,18 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     }
     clearTermValuesAndLocalLetVars();
   }
+
   Value_ptr result = new Value(is_satisfiable);
   setTermValue(and_term, result);
+
+  if (Option::Solver::LIA_ENGINE_ENABLED && constraint_information_->is_component(and_term)) {
+    Value_ptr val = arithmetic_constraint_solver_.getTermValue(and_term);
+    if(val != nullptr) {
+      std::string name = arithmetic_constraint_solver_.get_int_variable_name(and_term);
+      symbol_table_->setValue(name,val);
+    }
+  }
+
   if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA && constraint_information_->is_component(and_term)) {
     // put the relational variables into the symbol table
     for (auto &term : *(and_term->term_list)) {

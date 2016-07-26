@@ -161,24 +161,6 @@ int main(const int argc, const char **argv) {
       unsigned index = 0;
       for(auto& variable_entry : driver.getSatisfyingVariables()) {
 
-        /*
-         * PROBLEM
-         *
-         * if x,y are relational variables, they have no value in the symbol table.
-         * the string_multitrack is in the table, akin to binaryint.
-         *
-         * to fix, insert null check here for variable_entry.second, which will happen if
-         * the variable is relational. then, we can do whatever stuffs.
-         */
-        if(variable_entry.second == nullptr) {
-          // check to make sure its actually relational first... otherwise, we got probs
-          // if(relational)
-          LOG(INFO) << "var: " << variable_entry.first->str() << " : relational!";
-          // else
-          // BAAAAD
-          continue;
-        }
-
         std::stringstream ss;
         ss << output_root << "/result_" << index++ << ".dot";
         std::string out_file = ss.str();
@@ -204,7 +186,7 @@ int main(const int argc, const char **argv) {
             }
 
             if (model_count) {
-              LOG(INFO) << "count          : " << driver.Count(bound, false);
+              LOG(INFO) << "count          : " << driver.Count(variable_entry.first->getName(), bound, false);
 //              LOG(INFO) << "symbolic count : " << driver.SymbolicCount(bound, false);
             }
             break;

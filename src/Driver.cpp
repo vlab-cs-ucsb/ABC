@@ -191,12 +191,14 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
 /**
  * Binary Integer Automaton Count
  */
+/*
 boost::multiprecision::cpp_int Driver::Count(const int bound, bool count_less_than_or_equal_to_bound) {
   LOG(FATAL) << "update counting for integers";
   std::string var_name;
   //  std::string var_name(Solver::SymbolTable::ARITHMETIC);
   return Count(var_name, bound, count_less_than_or_equal_to_bound);
 }
+*/
 
 boost::multiprecision::cpp_int Driver::SymbolicCount(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound) {
   boost::multiprecision::cpp_int result;
