@@ -96,11 +96,11 @@ void StringRelationGenerator::visitAnd(And_ptr and_term) {
       }
       std::string group_name = get_variable_group_name(current_term_,symbol_table_->getVariable(term_relation->variables[0]));
       term_group_map[term] = group_name;
-      VariableTrackMap_ptr trackmap = get_group_trackmap(group_name);
+      VariableTrackMap trackmap = get_group_trackmap(group_name);
       term_relation->set_variable_trackmap(trackmap);
       if(symbol_table_->get_variable_unsafe(group_name) == nullptr) {
         symbol_table_->addVariable(new Variable(group_name,Variable::Type::STRING));
-        symbol_table_->setValue(group_name,new Value(MultiTrackAutomaton::makeAnyAutoUnaligned(trackmap->size())));
+        symbol_table_->setValue(group_name,new Value(MultiTrackAutomaton::makeAnyAutoUnaligned(trackmap.size())));
       }
     }
   }
@@ -162,7 +162,7 @@ void StringRelationGenerator::visitEq(Eq_ptr eq_term) {
                                 left_relation->clone(),
                                 right_relation->clone(),
                                 "",
-                                nullptr);
+                                VariableTrackMap());
   std::vector<std::string> vars;
   if (left_relation->get_type() == StringRelation::Type::STRING_VAR) {
     Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
@@ -220,7 +220,7 @@ void StringRelationGenerator::visitNotEq(NotEq_ptr not_eq_term) {
                                 left_relation->clone(),
                                 right_relation->clone(),
                                 "",
-                                nullptr);
+                                VariableTrackMap());
   std::vector<std::string> vars;
   if (left_relation->get_type() == StringRelation::Type::STRING_VAR) {
     Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
@@ -264,7 +264,7 @@ void StringRelationGenerator::visitGt(Gt_ptr gt_term) {
                                 left_relation->clone(),
                                 right_relation->clone(),
                                 "",
-                                nullptr);
+                                VariableTrackMap());
   std::vector<std::string> vars;
   if (left_relation->get_type() == StringRelation::Type::STRING_VAR) {
     Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
@@ -308,7 +308,7 @@ void StringRelationGenerator::visitGe(Ge_ptr ge_term) {
                                 left_relation->clone(),
                                 right_relation->clone(),
                                 "",
-                                nullptr);
+                                VariableTrackMap());
   std::vector<std::string> vars;
   if (left_relation->get_type() == StringRelation::Type::STRING_VAR) {
     Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
@@ -352,7 +352,7 @@ void StringRelationGenerator::visitLt(Lt_ptr lt_term) {
                                 left_relation->clone(),
                                 right_relation->clone(),
                                 "",
-                                nullptr);
+                                VariableTrackMap());
   std::vector<std::string> vars;
   if (left_relation->get_type() == StringRelation::Type::STRING_VAR) {
     Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
@@ -398,7 +398,7 @@ void StringRelationGenerator::visitLe(Le_ptr le_term) {
                                 left_relation->clone(),
                                 right_relation->clone(),
                                 "",
-                                nullptr);
+                                VariableTrackMap());
   std::vector<std::string> vars;
   if (left_relation->get_type() == StringRelation::Type::STRING_VAR) {
     Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
@@ -447,7 +447,7 @@ void StringRelationGenerator::visitConcat(Concat_ptr concat_term) {
                                 left_relation->clone(),
                                 right_relation->clone(),
                                 "",
-                                nullptr);
+                                VariableTrackMap());
   delete_term_relation(concat_term->term_list->at(0));
   delete_term_relation(concat_term->term_list->at(1));
   set_term_relation(concat_term, relation);
@@ -492,7 +492,7 @@ void StringRelationGenerator::visitBegins(Begins_ptr begins_term) {
                                 left_relation->clone(),
                                 right_relation->clone(),
                                 "",
-                                nullptr);
+                                VariableTrackMap());
 
   std::vector<std::string> vars;
   Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
@@ -527,7 +527,7 @@ void StringRelationGenerator::visitNotBegins(NotBegins_ptr not_begins_term) {
                                 left_relation->clone(),
                                 right_relation->clone(),
                                 "",
-                                nullptr);
+                                VariableTrackMap());
   std::vector<std::string> vars;
   Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
   vars.push_back(var->getName());
@@ -636,7 +636,7 @@ void StringRelationGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term) {
                                   nullptr,
                                   nullptr,
                                   variable->getName(),
-                                  nullptr);
+                                  VariableTrackMap());
       break;
     default:
       break;
@@ -782,12 +782,12 @@ std::string StringRelationGenerator::generate_group_name(SMT::Term_ptr term, std
   return group_name;
 }
 
-VariableTrackMap_ptr StringRelationGenerator::get_group_trackmap(std::string name) {
+VariableTrackMap StringRelationGenerator::get_group_trackmap(std::string name) {
   if(group_variables_map_.find(name) == group_variables_map_.end()) {
     DVLOG(VLOG_LEVEL) << "no trackmap for group: " << name;
-    return nullptr;
+    return VariableTrackMap();
   }
-  return &group_variables_map_[name];
+  return group_variables_map_[name];
 }
 
 } /* namespace Solver */

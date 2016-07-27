@@ -562,8 +562,8 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeEquality(StringRelation_ptr relation) {
 	MultiTrackAutomaton_ptr result_auto = nullptr;
 	DFA_ptr result_dfa = nullptr;
-	std::map<std::string,int>* trackmap = relation->get_variable_trackmap();
-	int num_tracks = trackmap->size(),
+	std::map<std::string,int> trackmap = relation->get_variable_trackmap();
+	int num_tracks = trackmap.size(),
 			left_track,right_track;
 	StringRelation_ptr left_relation = relation->get_left(),
 		                 right_relation = relation->get_right();
@@ -585,8 +585,8 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeEquality(StringRelation_ptr rel
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeNotEquality(StringRelation_ptr relation) {
 	MultiTrackAutomaton_ptr result_auto = nullptr;
 	DFA_ptr result_dfa = nullptr;
-	std::map<std::string,int>* trackmap = relation->get_variable_trackmap();
-	int num_tracks = trackmap->size(),
+	std::map<std::string,int> trackmap = relation->get_variable_trackmap();
+	int num_tracks = trackmap.size(),
 			left_track,right_track;
 	StringRelation_ptr left_relation = relation->get_left(),
 		                 right_relation = relation->get_right();
@@ -609,8 +609,8 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr rel
 	StringAutomaton_ptr constant_string_auto = nullptr;
 	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
 
-	std::map<std::string,int>* trackmap = relation->get_variable_trackmap();
-	int num_tracks = trackmap->size(),
+	std::map<std::string,int> trackmap = relation->get_variable_trackmap();
+	int num_tracks = trackmap.size(),
 			left_track,right_track;
 	StringRelation_ptr left_relation = relation->get_left(),
 		                 right_relation = relation->get_right();
@@ -625,7 +625,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr rel
 		num_tracks++;
 		constant_string_auto = StringAutomaton::makeString(left_data);
 	} else {
-  	left_track = (*trackmap)[left_data];
+  	left_track = trackmap[left_data];
 	}
 	if(right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	right_track = num_tracks;
@@ -636,7 +636,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr rel
 		num_tracks++;
 		constant_string_auto = StringAutomaton::makeRegexAuto(right_data);
 	} else {
-  	right_track = (*trackmap)[right_data];
+  	right_track = trackmap[right_data];
 	}
 	result_dfa = make_binary_relation_dfa(StringRelation::Type::LT,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	result_auto = new MultiTrackAutomaton(result_dfa,num_tracks);
@@ -663,8 +663,8 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThanOrEqual(StringRelation_
   MultiTrackAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
 	StringAutomaton_ptr constant_string_auto = nullptr;
 	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
-	std::map<std::string,int>* trackmap = relation->get_variable_trackmap();
-	int num_tracks = trackmap->size(),
+	std::map<std::string,int> trackmap = relation->get_variable_trackmap();
+	int num_tracks = trackmap.size(),
 			left_track,right_track;
 
 	StringRelation_ptr left_relation = relation->get_left(),
@@ -681,7 +681,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThanOrEqual(StringRelation_
 		num_tracks++;
 		constant_string_auto = StringAutomaton::makeString(left_data);
 	} else {
-  	left_track = (*trackmap)[left_data];
+  	left_track = trackmap[left_data];
 	}
 
 	if(right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
@@ -693,7 +693,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThanOrEqual(StringRelation_
 		num_tracks++;
 		constant_string_auto = StringAutomaton::makeRegexAuto(right_data);
 	} else {
-  	right_track = (*trackmap)[right_data];
+  	right_track = trackmap[right_data];
 	}
 
 	result_dfa = make_binary_relation_dfa(StringRelation::Type::LE,VAR_PER_TRACK,num_tracks,left_track,right_track);
@@ -721,8 +721,8 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThan(StringRelation_ptr 
   MultiTrackAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
 	StringAutomaton_ptr constant_string_auto = nullptr;
 	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
-	std::map<std::string,int>* trackmap = relation->get_variable_trackmap();
-	int num_tracks = trackmap->size(),
+	std::map<std::string,int> trackmap = relation->get_variable_trackmap();
+	int num_tracks = trackmap.size(),
 			left_track,right_track;
 
 	StringRelation_ptr left_relation = relation->get_left(),
@@ -739,7 +739,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThan(StringRelation_ptr 
 		num_tracks++;
 		constant_string_auto = StringAutomaton::makeString(left_data);
 	} else {
-  	left_track = (*trackmap)[left_data];
+  	left_track = trackmap[left_data];
 	}
 
 	if(right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
@@ -751,7 +751,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThan(StringRelation_ptr 
 		num_tracks++;
 		constant_string_auto = StringAutomaton::makeRegexAuto(right_data);
 	} else {
-  	right_track = (*trackmap)[right_data];
+  	right_track = trackmap[right_data];
 	}
 
 	result_dfa = make_binary_relation_dfa(StringRelation::Type::GT,VAR_PER_TRACK,num_tracks,left_track,right_track);
@@ -780,8 +780,8 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThanOrEqual(StringRelati
 	MultiTrackAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
 	StringAutomaton_ptr constant_string_auto = nullptr;
 	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
-	std::map<std::string,int>* trackmap = relation->get_variable_trackmap();
-	int num_tracks = trackmap->size(),
+	std::map<std::string,int> trackmap = relation->get_variable_trackmap();
+	int num_tracks = trackmap.size(),
 			left_track,right_track;
 
 	StringRelation_ptr left_relation = relation->get_left(),
@@ -798,7 +798,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThanOrEqual(StringRelati
 		num_tracks++;
 		constant_string_auto = StringAutomaton::makeString(left_data);
 	} else {
-  	left_track = (*trackmap)[left_data];
+  	left_track = trackmap[left_data];
 	}
 
 	if(right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
@@ -810,7 +810,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThanOrEqual(StringRelati
 		num_tracks++;
 		constant_string_auto = StringAutomaton::makeRegexAuto(right_data);
 	} else {
-  	right_track = (*trackmap)[right_data];
+  	right_track = trackmap[right_data];
 	}
 
 	result_dfa = make_binary_relation_dfa(StringRelation::Type::GE,VAR_PER_TRACK,num_tracks,left_track,right_track);
@@ -1134,7 +1134,6 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
 	boost::multiprecision::cpp_int ret = Automaton::Count(bound+1, count_less_than_or_equal_to_bound, true);
   this->dfa = original_dfa;
   dfaFree(trimmed_dfa);
-  LOG(INFO) << "Got its!";
   return ret;
 }
 

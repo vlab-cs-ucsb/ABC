@@ -50,6 +50,7 @@ void SymbolTable::setScopeSatisfiability(bool value) {
  */
 void SymbolTable::UnionValuesOfVariables(Script_ptr script) {
   if (scopes.size() < 2) {
+    LOG(INFO) << "NOT ENUFF SCOPES";
     return;
   } else if (variable_value_table[script].size() > 0) { // a union operation is done before
     return;
@@ -92,6 +93,8 @@ void SymbolTable::UnionValuesOfVariables(Script_ptr script) {
 void SymbolTable::clearLetScopes() {
   for (auto sit = scopes.begin(); sit != scopes.end(); ) {
     if (dynamic_cast<Let_ptr>(*sit) not_eq nullptr) {
+
+      LOG(INFO) << "HAHAHAHAHAHAHA";
       for (auto it = variable_value_table[*sit].begin(); it != variable_value_table[*sit].end(); ) {
         delete it->second; it->second = nullptr;
         it = variable_value_table[*sit].erase(it);
@@ -368,6 +371,7 @@ bool SymbolTable::updateValue(Variable_ptr variable, Value_ptr value) {
   } else {
     setValue(variable, variable_new_value);
   }
+
 
   return true;
 }

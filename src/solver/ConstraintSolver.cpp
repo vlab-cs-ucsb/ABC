@@ -189,6 +189,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     }
   }
 
+/*
   if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA && constraint_information_->is_component(and_term)) {
     // put the relational variables into the symbol table
     for (auto &term : *(and_term->term_list)) {
@@ -213,6 +214,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       }
     }
   }
+*/
 }
 
 void ConstraintSolver::visitOr(Or_ptr or_term) {

@@ -147,11 +147,7 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
 
   Vlab::Solver::Value_ptr var_value = symbol_table_->getValue(var_name);
 
-  if(Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA) {
-    if(var_value->getType() == Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON) {
-      LOG(INFO) << "var to count is RELATIONAL";
-    }
-  }
+
   symbol_table_->pop_scope();
   boost::multiprecision::cpp_int result;
   switch (var_value->getType()) {
@@ -177,7 +173,15 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
     break;
   }
   case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {
-    LOG(INFO) << "getting relational count";
+    LOG(INFO) << "Name: " << var_name;
+    auto multi_auto = var_value->getMultiTrackAutomaton();
+    auto multi_relation = multi_auto->getRelation();
+    auto variables = multi_relation->get_variable_trackmap();
+    for(auto& var: variables) {
+      auto val = multi_auto->getKTrack(var.second);
+      LOG(INFO) << var.first << " : " << val->Count(bound,count_less_than_or_equal_to_bound,true);
+      delete val;
+    }
     result = var_value->getMultiTrackAutomaton()->Count(bound, count_less_than_or_equal_to_bound, true);
     break;
   }

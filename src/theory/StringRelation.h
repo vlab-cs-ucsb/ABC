@@ -46,7 +46,7 @@ class StringRelation {
 
   StringRelation();
   StringRelation(Type t, StringRelation_ptr left, StringRelation_ptr right,
-                  std::string data, std::map<std::string, int>* trackmap);
+                  std::string data, std::map<std::string, int> trackmap);
   virtual ~StringRelation();
 
   StringRelation(const StringRelation&);
@@ -69,8 +69,8 @@ class StringRelation {
 
   bool has_same_trackmap(StringRelation_ptr other_relation);
 
-  std::map<std::string, int>* get_variable_trackmap();
-  void set_variable_trackmap(std::map<std::string, int>* trackmap);
+  std::map<std::string, int> get_variable_trackmap();
+  void set_variable_trackmap(std::map<std::string, int> trackmap);
 
   int get_num_tracks();
 
@@ -80,7 +80,7 @@ class StringRelation {
   StringRelation_ptr left_;
   StringRelation_ptr right_;
   std::string data_;
-  std::map<std::string, int>* trackmap_handle_;
+  std::map<std::string, int> trackmap_handle_;
 
 
  private:
