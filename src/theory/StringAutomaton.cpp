@@ -6,6 +6,7 @@
  */
 
 #include "StringAutomaton.h"
+#include "MultiTrackAutomaton.h"
 
 namespace Vlab {
 namespace Theory {
@@ -570,6 +571,13 @@ StringAutomaton_ptr StringAutomaton::difference(StringAutomaton_ptr other_auto) 
  *TODO Fix empty string bug that happens in case (concat /.{0,1}/ /{1,1}/)
  */
 StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
+
+  DFA_ptr d1,d2,d3;
+  d1 = this->dfa;
+  d2 = other_auto->getDFA();
+  d3 = MultiTrackAutomaton::concat(d1,d2,8);
+  return new StringAutomaton(d3);
+
   StringAutomaton_ptr left_auto = this, right_auto = other_auto;
 
   if (left_auto->isEmptyLanguage() or right_auto->isEmptyLanguage()) {
@@ -2346,6 +2354,13 @@ StringAutomaton_ptr StringAutomaton::preTrim(StringAutomaton_ptr rangeAuto) {
 }
 
 StringAutomaton_ptr StringAutomaton::preConcatLeft(StringAutomaton_ptr right_auto) {
+
+  DFA_ptr d1,d2,d3;
+  d1 = this->dfa;
+  d2 = right_auto->getDFA();
+  d3 = MultiTrackAutomaton::pre_concat_prefix(d1,d2,8);
+  return new StringAutomaton(d3);
+
   DFA_ptr result_dfa = nullptr;
   StringAutomaton_ptr result_auto = nullptr;
 
@@ -2379,8 +2394,17 @@ StringAutomaton_ptr StringAutomaton::preConcatLeft(StringAutomaton_ptr right_aut
  * Fix preconcat issue for rectangle start state representation in to dot
  */
 StringAutomaton_ptr StringAutomaton::preConcatRight(StringAutomaton_ptr left_auto) {
+
+  DFA_ptr d1,d2,d3;
+  d1 = this->dfa;
+  d2 = left_auto->getDFA();
+  d3 = MultiTrackAutomaton::pre_concat_suffix(d1,d2,8);
+  return new StringAutomaton(d3);
+
+
   DFA_ptr result_dfa = nullptr;
   StringAutomaton_ptr result_auto = nullptr;
+
 
   if (left_auto->isAcceptingSingleString()) {
     std::string string_value = left_auto->getAnAcceptingString();

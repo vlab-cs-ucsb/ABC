@@ -60,7 +60,7 @@ virtual ~MultiTrackAutomaton();
 	StringRelation_ptr getRelation();
 	bool setRelation(StringRelation_ptr relation);
 
- protected:
+
 
 	static const TransitionVector& generate_transitions_for_relation(StringRelation::Type type, int bits_per_var);
 	static DFA_ptr make_binary_relation_dfa(StringRelation::Type type, int bits_per_var, int num_tracks, int left_track, int right_track);

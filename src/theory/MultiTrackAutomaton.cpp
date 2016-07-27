@@ -272,6 +272,39 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAuto(StringRelation_ptr relatio
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeBegins(StringRelation_ptr relation) {
+
+/*
+  LOG(INFO) << "------BEGNI TEST---------";
+
+  std::string r1,r2,r3;
+
+  r1 = "alpha(um|you)";
+  r2 = "f*boo+twelve";
+  StringAutomaton_ptr reg1,reg2, con1, con2,a,b,c;
+
+  reg1 = StringAutomaton::makeRegexAuto(r1);
+  reg2 = StringAutomaton::makeRegexAuto(r2);
+  con1 = reg1->concat(reg2);
+  r3 = con1->getAnAcceptingString();
+  LOG(INFO) << "from his: " << r3;
+  a = StringAutomaton::makeString(r3);
+
+  con2 = new StringAutomaton(MultiTrackAutomaton::concat(reg1->getDFA(),reg2->getDFA(),VAR_PER_TRACK));
+  r3 = con2->getAnAcceptingString();
+  LOG(INFO) << "from mine: " << r3;
+
+  b = StringAutomaton::makeString(r3);
+
+  c = con2->intersect(a);
+  LOG(INFO) << "good? " << c->isEmptyLanguage();
+
+  c = con2->intersect(b);
+  LOG(INFO) << "good? " << c->isEmptyLanguage();
+
+  LOG(INFO) << "------END TEST---------";
+
+	std::cin.get();
+*/
 	MultiTrackAutomaton_ptr result_auto = nullptr;
 	DFA_ptr temp_dfa, result_dfa;
 	int num_tracks = relation->get_num_tracks(),
