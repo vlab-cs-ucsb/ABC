@@ -287,7 +287,7 @@ bool StringConstraintSolver::set_term_value(Term_ptr term, Value_ptr value) {
   return false;
 }
 
-Value_ptr StringConstraintSolver::get_variable_value(Variable_ptr variable) {
+Value_ptr StringConstraintSolver::get_variable_value(Variable_ptr variable, bool multi_val) {
   MultiTrackAutomaton_ptr relation_auto = nullptr;
   StringAutomaton_ptr variable_auto = nullptr;
   StringRelation_ptr variable_relation = nullptr;
@@ -298,6 +298,10 @@ Value_ptr StringConstraintSolver::get_variable_value(Variable_ptr variable) {
   }
   DVLOG(VLOG_LEVEL) << "VARIABLE: " << variable->str() << " is part of GROUP: " << group_name;
   relation_value = symbol_table_->getValue(group_name);
+
+  if(multi_val) {
+    return relation_value->clone();
+  }
 
   relation_auto = relation_value->getMultiTrackAutomaton();
   variable_relation = relation_auto->getRelation();

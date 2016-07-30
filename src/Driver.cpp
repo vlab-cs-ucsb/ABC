@@ -145,6 +145,10 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
   symbol_table_->UnionValuesOfVariables(script_);
   symbol_table_->push_scope(script_);
 
+
+  // before getting value from symbol table, check to see if its
+  // relational. If so, 2 counts: multitrack, and singletrack after
+  // projecting all else away. Return whichever count is lower.
   Vlab::Solver::Value_ptr var_value = symbol_table_->getValue(var_name);
 
 
@@ -152,7 +156,7 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
   boost::multiprecision::cpp_int result;
   switch (var_value->getType()) {
   case Vlab::Solver::Value::Type::STRING_AUTOMATON:
-    result = var_value->getStringAutomaton()->Count(bound, count_less_than_or_equal_to_bound);
+    result = var_value->getStringAutomaton()->Count(bound, count_less_than_or_equal_to_bound,true);
     break;
   case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
     auto binary_auto = var_value->getBinaryIntAutomaton();
@@ -173,16 +177,33 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
     break;
   }
   case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {
-    LOG(INFO) << "Name: " << var_name;
     auto multi_auto = var_value->getMultiTrackAutomaton();
     auto multi_relation = multi_auto->getRelation();
     auto variables = multi_relation->get_variable_trackmap();
-    for(auto& var: variables) {
-      auto val = multi_auto->getKTrack(var.second);
-      LOG(INFO) << var.first << " : " << val->Count(bound,count_less_than_or_equal_to_bound,true);
-      delete val;
+    boost::multiprecision::cpp_int temp;
+
+    result = multi_auto->Count(bound, count_less_than_or_equal_to_bound,true);
+    LOG(INFO) << "MULTITRACK, " << var_name << " tuple count : " << result;//boost::multiprecision::logb(result,2);
+    auto count_var = symbol_table_->getSymbolicVariable();
+
+    // if var_name is the group name for the multitrack, just return the tuple count.
+    if(multi_relation->get_variable_index(count_var->getName()) < 0) {
+      for(auto& vartrack : variables) {
+        LOG(INFO) << vartrack.first << "," << vartrack.second;
+      }
+      break;
     }
-    result = var_value->getMultiTrackAutomaton()->Count(bound, count_less_than_or_equal_to_bound, true);
+
+    // return the track with the lowest count, or simply return the tuple count, if lower.
+    for(auto& vartrack : variables) {
+
+      auto single_var = multi_auto->getKTrack(vartrack.second);
+      temp = single_var->Count(bound,count_less_than_or_equal_to_bound,true);
+      LOG(INFO) << "SINGLE TRACK, " << vartrack.first << ", count = " << temp;
+      if(temp < result) {
+        result = temp;
+      }
+    }
     break;
   }
   default:
@@ -191,18 +212,6 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
 
   return result;
 }
-
-/**
- * Binary Integer Automaton Count
- */
-/*
-boost::multiprecision::cpp_int Driver::Count(const int bound, bool count_less_than_or_equal_to_bound) {
-  LOG(FATAL) << "update counting for integers";
-  std::string var_name;
-  //  std::string var_name(Solver::SymbolTable::ARITHMETIC);
-  return Count(var_name, bound, count_less_than_or_equal_to_bound);
-}
-*/
 
 boost::multiprecision::cpp_int Driver::SymbolicCount(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound) {
   boost::multiprecision::cpp_int result;

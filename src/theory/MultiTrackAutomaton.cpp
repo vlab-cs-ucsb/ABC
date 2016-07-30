@@ -583,6 +583,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeEquality(StringRelation_ptr rel
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeNotEquality(StringRelation_ptr relation) {
+
 	MultiTrackAutomaton_ptr result_auto = nullptr;
 	DFA_ptr result_dfa = nullptr;
 	std::map<std::string,int> trackmap = relation->get_variable_trackmap();
@@ -955,7 +956,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::intersect(MultiTrackAutomaton_ptr o
 	intersect_auto = new MultiTrackAutomaton(minimized_dfa, this->num_of_tracks);
 
 	if(this->relation == nullptr && other_auto->relation == nullptr) {
-		LOG(FATAL) << "No relation set for either multitrack during intersection";
+		//LOG(FATAL) << "No relation set for either multitrack during intersection";
 	} else if(other_auto->relation == nullptr) {
 		intersect_relation = this->relation->clone();
 	} else if(this->relation == nullptr) {
@@ -1059,6 +1060,7 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 }
 
 boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_less_than_or_equal_to_bound, bool count_reserved_words) {
+
   // remove last lambda loop
   DFA_ptr original_dfa = nullptr, temp_dfa = nullptr,trimmed_dfa = nullptr;
 	original_dfa = this->dfa;
@@ -1073,8 +1075,10 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
   int* mindices = getIndices(len);
   char* statuses = new char[original_dfa->ns+1];
 	std::vector<std::pair<std::vector<char>,int>> state_exeps;
+	std::vector<bool> lambda_states(original_dfa->ns,false);
   dfaSetup(original_dfa->ns,len,mindices);
   for(int i = 0; i < original_dfa->ns; i++) {
+  	statuses[i] = '-';
   	state_paths = pp = make_paths(original_dfa->bddm, original_dfa->q[i]);
   	while(pp) {
   		if(pp->to == sink) {
@@ -1095,16 +1099,21 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
   		// if lambda and loops back, dont add it
   		bool is_lambda = true;
   		for(int k = 0; k < len; k++) {
-  			if(exep[k] != '1') {
+  			if(exep[k] != '1' && exep[k] != 'X') {
   				is_lambda = false;
   				break;
   			}
   		}
 
-  		if(!is_lambda || pp->to != i || original_dfa->f[i] != 1) {
-  			exep.push_back('\0');
-  			state_exeps.push_back(std::make_pair(exep,pp->to));
-  		}
+			if(is_lambda) {
+				lambda_states[pp->to] = true;
+				if(!lambda_states[i]) {
+					statuses[i] = '+';
+				}
+			}
+
+
+  		state_exeps.push_back(std::make_pair(exep,pp->to));
 			pp = pp->next;
   	}
   	kill_paths(state_paths);
@@ -1113,14 +1122,6 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
   		dfaStoreException(state_exeps[k].second, &state_exeps[k].first[0]);
   	}
   	dfaStoreState(sink);
-
-  	if(original_dfa->f[i] == 1)
-  		statuses[i] = '+';
-		else if(original_dfa->f[i] == -1)
-			statuses[i] = '-';
-		else
-			statuses[i] = '0';
-
 		state_exeps.clear();
   }
   statuses[original_dfa->ns] = '\0';
@@ -1131,7 +1132,7 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
   delete[] statuses;
 
   this->dfa = trimmed_dfa;
-	boost::multiprecision::cpp_int ret = Automaton::Count(bound+1, count_less_than_or_equal_to_bound, true);
+	boost::multiprecision::cpp_int ret = Automaton::Count(bound, count_less_than_or_equal_to_bound, count_reserved_words);
   this->dfa = original_dfa;
   dfaFree(trimmed_dfa);
   return ret;
@@ -1219,8 +1220,10 @@ DFA_ptr MultiTrackAutomaton::removeLambdaSuffix(DFA_ptr dfa, int num_vars) {
 	char* statuses;
 	int *indices;
 	int sink;
+	int var = num_vars;
+	int len = var+1;
 	std::string symbol;
-	std::vector<std::pair<std::string,int>> state_exeps;
+	std::vector<std::pair<std::vector<char>,int>> state_exeps;
 	indices = Automaton::getIndices(num_vars);
 	sink = find_sink(dfa);
 	dfaSetup(dfa->ns, num_vars, indices);
@@ -1244,11 +1247,33 @@ DFA_ptr MultiTrackAutomaton::removeLambdaSuffix(DFA_ptr dfa, int num_vars) {
 					else
 						symbol += 'X';
 				}
-				if (MultiTrackAutomaton::checkLambda(symbol, 0, 1, num_vars)) {
-					statuses[i] = '+';
+
+				bool is_lambda = true;
+				for(int k = 0; k < num_vars; k++) {
+					if(symbol[k] != '1' && symbol[k] != 'X') {
+						is_lambda = false;
+						break;
+					}
 				}
-				else {
-					state_exeps.push_back(std::make_pair(symbol, pp->to));
+
+				if(is_lambda) {
+					std::vector<char> trim_set;
+					trim_set.push_back(255);
+					std::vector<char> exep(symbol.begin(), symbol.end());
+					std::vector<std::vector<char>> valid_transitions = MultiTrackAutomaton::extractValidTransitions(exep,
+																																																					trim_set,
+																																																					var);
+
+					for (int j = 0; j < valid_transitions.size(); j++) {
+						std::vector<char> v = valid_transitions[j];
+						v.push_back('\0');
+						state_exeps.push_back(std::make_pair(v, pp->to));
+					}
+					statuses[i] = '+';
+				} else {
+					std::vector<char> v(symbol.begin(),symbol.end());
+					v.push_back('\0');
+					state_exeps.push_back(std::make_pair(v, pp->to));
 				}
 				symbol = "";
 			}
@@ -1259,7 +1284,6 @@ DFA_ptr MultiTrackAutomaton::removeLambdaSuffix(DFA_ptr dfa, int num_vars) {
 		dfaAllocExceptions(state_exeps.size());
 		for (unsigned k = 0; k < state_exeps.size(); k++) {
 			std::vector<char> v = std::vector<char>(state_exeps[k].first.begin(), state_exeps[k].first.end());
-			v.push_back('\0');
 			dfaStoreException(state_exeps[k].second,&v[0]);
 		}
 		dfaStoreState(sink);
@@ -1774,6 +1798,42 @@ StringAutomaton_ptr MultiTrackAutomaton::get_reverse_auto(StringAutomaton_ptr st
 	}
 	return new StringAutomaton(temp);
 }
+
+std::vector<std::vector<char>> MultiTrackAutomaton::extractValidTransitions(std::vector<char> exep, std::vector<char> trim_set, int var) {
+  std::set<std::string> transitions;
+  std::queue<std::string> exeps_to_process;
+  int pos = 0;
+  std::string temp(exep.begin(),exep.end());
+  exeps_to_process.push(temp);
+  // while there is an 'X' in an exception, create two identical
+  // exceptions, but with a '0' and '1' each, respectively
+  while(!exeps_to_process.empty()) {
+    std::string ex = exeps_to_process.front();
+    exeps_to_process.pop();
+    pos = ex.find_first_of('X');
+    if(pos == std::string::npos) {
+      transitions.insert(ex);
+    } else {
+      ex[pos] = '0';
+      exeps_to_process.push(ex);
+      ex[pos] = '1';
+      exeps_to_process.push(ex);
+    }
+  }
+  // remove each trim transition from the set of valid transitions
+  for(int i = 0; i < trim_set.size(); i++) {
+    std::vector<char> trim_exep = getBinaryFormat((int)trim_set[i],var);
+    std::string trim_str(trim_exep.begin(),trim_exep.end()-1); // -1 for null terminating char added by getBinaryFormat
+    transitions.erase(trim_str);
+  }
+  // convert valid string transitions to character form for MONA stuff
+  std::vector<std::vector<char>> valid_transitions;
+  for(auto& it : transitions) {
+    valid_transitions.push_back(std::vector<char>(it.begin(),it.end()));
+  }
+  return valid_transitions;
+}
+
 
 } /* namespace Vlab */
 } /* namespace Theory */

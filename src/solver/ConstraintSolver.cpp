@@ -189,32 +189,24 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     }
   }
 
-/*
   if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA && constraint_information_->is_component(and_term)) {
-    // put the relational variables into the symbol table
-    for (auto &term : *(and_term->term_list)) {
-      Value_ptr val = string_constraint_solver_.get_term_value(term);
-      if (val != nullptr) {
+    Variable_ptr var = symbol_table_->getSymbolicVariable();
+    Variable_ptr rep_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),var);
+    if(rep_var != nullptr) {
+      LOG(INFO) << "Var,rep_var = " << var->getName() << "," << rep_var->getName();
+      Value_ptr val = string_constraint_solver_.get_variable_value(rep_var,true);
+      if(val != nullptr) {
+        // If symbolic variable is not actually represented, but instead
+        // substituted for another variable, then we need to
+        // account for that when putting the resulting value back into the symbol table
         StringRelation_ptr relation = val->getMultiTrackAutomaton()->getRelation();
-        if (relation == nullptr) {
-          LOG(INFO) << val->str();
-          LOG(FATAL) << "Relation should not be null if putting in symbol table";
-        }
-        if (relation->get_variable_trackmap() == nullptr) {
-          DVLOG(VLOG_LEVEL) << "Got a relation, but no trackmap!?";
-          LOG(FATAL) << "BAAAAD";
-        }
-        for (auto &var_track : *relation->get_variable_trackmap()) {
-          Variable_ptr v = symbol_table_->getVariable(var_track.first);
-          if(v->isSymbolic()) {
-            DVLOG(VLOG_LEVEL) << "Setting value for symbolic var " << v->getName() << " with track number: " << val->getMultiTrackAutomaton()->getKTrack(var_track.second);
-            symbol_table_->setValue(var_track.first,new Value(val->getMultiTrackAutomaton()->getKTrack(var_track.second)));
-          }
-        }
+        VariableTrackMap trackmap = relation->get_variable_trackmap();
+        trackmap[var->getName()] = trackmap[rep_var->getName()];
+        relation->set_variable_trackmap(trackmap);
+        symbol_table_->setValue(rep_var, val);
       }
     }
   }
-*/
 }
 
 void ConstraintSolver::visitOr(Or_ptr or_term) {

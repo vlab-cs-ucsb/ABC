@@ -65,7 +65,7 @@ public:
   bool set_term_value(SMT::Term_ptr term, Value_ptr value);
   void clear_term_value(SMT::Term_ptr term);
 
-  Value_ptr get_variable_value(SMT::Variable_ptr variable);
+  Value_ptr get_variable_value(SMT::Variable_ptr variable, bool multi_val = false);
   bool update_variable_value(SMT::Variable_ptr variable, Value_ptr value);
 
 protected:
