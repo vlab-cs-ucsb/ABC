@@ -18,6 +18,10 @@
 #include <chrono>
 #include <ratio>
 
+#include <mona/mem.h>
+#include <mona/bdd_external.h>
+#include <mona/bdd_dump.h>
+#include <mona/dfa.h>
 #include <glog/logging.h>
 #include <Driver.h>
 

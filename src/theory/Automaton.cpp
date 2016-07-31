@@ -99,22 +99,39 @@ int* Automaton::getVariableIndices() {
  * especially in libstranger function calls
  */
 bool Automaton::checkEquivalence(Automaton_ptr other_auto) {
-  DFA *M[4];
-  int result, i;
+  DFA_ptr temp1 = nullptr, temp2 = nullptr, temp3 = nullptr;
+  bool result = false;
 
-  M[0] = dfaProduct(this->dfa, other_auto->dfa, dfaIMPL);
-  M[1] = dfaProduct(other_auto->dfa, this->dfa, dfaIMPL);
-  M[2] = dfa_intersect(M[0], M[1]);
-  dfaFree(M[0]);
-  M[0] = nullptr;
-  dfaFree(M[1]);
-  M[1] = nullptr;
-  M[3] = dfa_negate(M[2], num_of_variables, variable_indices);
-  result = check_emptiness(M[3], num_of_variables, variable_indices);
-  dfaFree(M[2]);
-  M[2] = nullptr;
-  dfaFree(M[3]);
-  M[3] = nullptr;
+
+  temp1 = dfaProduct(this->dfa, other_auto->dfa, dfaIMPL);
+  temp2 = dfaProduct(other_auto->dfa, this->dfa, dfaIMPL);
+  temp3 = dfaProduct(temp1,temp2,dfaAND);
+  dfaFree(temp1);
+  dfaFree(temp2);
+
+  dfaNegation(temp3);
+
+  if (temp3->f[temp3->s] == 1) {
+    dfaFree(temp3);
+    return false;
+  }
+
+  if (temp3->ns == 1 && temp3->f[temp3->s] == -1) {
+    dfaFree(temp3);
+    return true;
+  }
+
+  char *satisfyingexample = nullptr;
+  unsigned *indices = getIndices((unsigned)num_of_variables);
+
+  satisfyingexample = dfaMakeExample(temp3, 1, num_of_variables, indices);
+
+  result = (satisfyingexample == NULL) ? true : false;
+  if(satisfyingexample != nullptr) {
+    free(satisfyingexample);
+  }
+  dfaFree(temp3);
+  delete[] indices;
 
   return result;
 }
@@ -570,6 +587,23 @@ bool Automaton::isAcceptingState(int state_id) {
 int Automaton::getSinkState() {
   for (int i = 0; i < this->dfa->ns; i++) {
     if (isSinkState(i)) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+int Automaton::find_sink(DFA_ptr dfa) {
+  if(dfa == nullptr) {
+    LOG(FATAL) << "Null dfa? Really?";
+  }
+
+  for (int i = 0; i < dfa->ns; i++) {
+    int state_id = i;
+    if ((bdd_is_leaf(dfa->bddm, dfa->q[state_id])
+          and (bdd_leaf_value(dfa->bddm, dfa->q[state_id]) == (unsigned) state_id)
+          and dfa->f[state_id] == -1)) {
       return i;
     }
   }
@@ -1131,11 +1165,10 @@ void Automaton::preProcessAdjacencyList(AdjacencyList& adjaceny_count_list) {
   adjaceny_count_list = new_list;
 }
 
-/**
- * TODO Refactor lib functions
- *  - find_sink
- *  - ....
- */
+
+
+
+
 void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
   paths state_paths, pp;
   trace_descr tp;
@@ -1445,7 +1478,7 @@ void Automaton::toBDD(std::ostream& out) {
 
   /* build table of tuples (idx,lo,hi) */
   for (int i = 0; i < this->dfa->ns; i++) {
-    __export(this->dfa->bddm, this->dfa->q[i], table);
+    _export(this->dfa->bddm, this->dfa->q[i], table);
   }
 
   /* renumber lo/hi pointers to new table ordering */
@@ -1560,6 +1593,280 @@ int Automaton::inspectBDD() {
   return std::system(dot_cmd.c_str());
 }
 
+void Automaton::getTransitionCharsHelper(pCharPair result[], char* transitions, int* indexInResult, int currentBit, int var){
+  int i;
+  boolean allX;
+  if (transitions[currentBit] == 'X')
+  {
+    allX = TRUE;
+    for (i = currentBit + 1; i < var; i++){
+      if (transitions[i] != 'X'){
+        allX = FALSE;
+        break;
+      }
+    }
+    if (allX == FALSE){
+      transitions[currentBit] = '0';
+      getTransitionCharsHelper(result, transitions, indexInResult, currentBit, var);
+      transitions[currentBit] = '1';
+      getTransitionCharsHelper(result, transitions, indexInResult, currentBit, var);
+      transitions[currentBit] = 'X';
+    }
+    else {
+      // convert to a char range (c1,cn)
+      pCharPair charPairPtr = (pCharPair) malloc(sizeof(CharPair));
+      char* firstBin = (char*) malloc((var+1)*(sizeof (char)));
+      char* lastBin = (char*) malloc((var+1)*(sizeof (char)));
+      // fill up prev bits
+      for (i = 0; i < currentBit; i++){
+        lastBin[i] = firstBin[i] = transitions[i];
+      }
+      // fill up first with 0's and last with 1's
+      for (i = currentBit; i < var; i++){
+        firstBin[i] = '0';
+        lastBin[i] = '1';
+      }
+      lastBin[var] = firstBin[var] = '\0';
+      char firstChar = strtobin(firstBin, var);
+      char lastChar = strtobin(lastBin, var);
+      charPairPtr->first = firstChar;
+      charPairPtr->last = lastChar;
+      result[*indexInResult] = charPairPtr;
+      (*indexInResult)++;
+      free(firstBin);
+      free(lastBin);
+    }
+
+  }
+
+  else if (currentBit == (var - 1))
+  {
+    // convert into a single char pair (c,c)
+    pCharPair charPairPtr = (pCharPair) malloc(sizeof(CharPair));
+    char* firstBin = (char*) malloc((var+1)*(sizeof (char)));
+    // fill up prev bits
+    for (i = 0; i <= currentBit; i++){
+      firstBin[i] = transitions[i];
+    }
+    unsigned char char_ = strtobin(firstBin, var);
+    charPairPtr->first = charPairPtr->last = char_;
+    result[*indexInResult] = charPairPtr;
+    (*indexInResult)++;
+    free(firstBin);
+  }
+
+  else {
+    if (currentBit < (var - 1))
+      getTransitionCharsHelper(result, transitions, indexInResult, currentBit + 1, var);
+  }
+
+}
+
+/**
+ * Given a mona char in 'transitions', returns in 'result' a set of CharPairs representing all ASCII chars/ranges included in this char
+ * where *pSize is the number of these ranges.
+ * Note that a CharPair is a pair of char values (each of type char).
+ * Example: input="0XXX000X"  ==> output=(NUL,SOH), (DLE,DC1), (\s,!), (0,1), (@,A), (P,Q), (`,a), (p,q) , *pSize=8
+ * Example: input="00000000"  ==> output=(NUL,NUL), *pSize=1
+ * Example: input="XXXXXXXX"  ==> output=(NUL,255), *pSize=1
+ */
+void Automaton::getTransitionChars(char* transitions, int var, pCharPair result[], int* pSize){
+  assert(strlen(transitions) == var);
+  char* trans = (char*) malloc((var + 1)* sizeof(char));
+  strcpy(trans, transitions);
+  int indexInResult = 0;
+  getTransitionCharsHelper(result, trans, &indexInResult, 0, var);
+  *pSize = indexInResult;
+  free(trans);
+}
+
+/* Given a list of CharPairs in 'charRanges', returns a list of STRINGS representing all ASCII chars/ranges included in the
+ * input list after merging them where *pSize is the number of these ranges
+ * Note values in input are of type char while values of output are the char value (of type char) converted into a string (of type char*)
+ * For non printable chars, either its name in ASCII chart (NUL, SOH, CR, LF, ...etc) or its Decimal value is output
+ * Example: input=(NUL,SOH), (DLE,DC1), (\s,!), (0,1), (@,A), (P,Q), (`,a), (p,q)  ==> output="[NUL-SOH]", "[DLE-DC1]", "[\s - ! ]", "[ 0 - 1 ]", "[ @ - A ]", "[ P - Q ]", "[ ` - a ]", "[ p - q ]" , *pSize=8
+ * Example: input=(NUL,US), (!,!), (",#), ($,'), ((,/), (0,?), (@,DEL), (128, 255)  ==> output="[NUL-US]", "[!-255]", *pSize=1
+ * Example: input=(NUL,NUL)  ==> output="NUL", *pSize=1
+ * Example: input=(255,255)  ==> output="255", *pSize=1
+ * Example: input=(NUL,255)  ==> output="[NUL-255]", *pSize=1
+ */
+char** Automaton::mergeCharRanges(pCharPair charRanges[], int* p_size){
+  int size = *p_size;
+  int i, k, newSize;
+  char newFirst, newLast;
+
+  if (size == 0)
+    return NULL;
+  newSize = 0;
+  char** ranges = (char**)malloc(sizeof(char*) * size);
+  for (i = 0; i < size; i = k + 1){
+    k = i;
+    while(k < (size - 1)){
+      if (((charRanges[k]->last) + 1) != charRanges[k + 1]->first)
+        break;
+      else
+        k++;
+    }
+    newFirst = charRanges[i]->first;
+    newLast = charRanges[k]->last;
+    if (newFirst == newLast){
+      ranges[newSize] = (char*)malloc(4 * sizeof(char));
+      charToAscii(ranges[newSize], newFirst);
+    }
+    else{
+      ranges[newSize] = (char*)malloc(10 * sizeof(char));
+      fillOutCharRange(ranges[newSize], newFirst, newLast);
+    }
+    newSize++;
+  }
+  *p_size = newSize;
+  return ranges;
+}
+
+/**
+ * Given char ci, fills s with ASCII decimal value of n as a
+ * string.
+ * s: must not be null, allocated before to be of size >= 4
+ */
+void Automaton::charToAsciiDigits(unsigned char ci, char s[])
+{
+    int i, j;
+    unsigned char c;
+    assert(s != NULL);
+    i = 0;
+    do {       /* generate digits in reverse order */
+        s[i++] = ci % 10 + '0';   /* get next digit */
+    } while ((ci /= 10) > 0);     /* delete it */
+
+    s[i] = '\0';
+  for (i = 0, j = (int)strlen(s)-1; i<j; i++, j--) {
+    c = s[i];
+    s[i] = s[j];
+    s[j] = c;
+  }
+}
+
+/**
+ * give a char c, returns its ASCII value in asciiVal
+ * as a string of length <= 3. For non printable chars
+ * it returns their ascii chart value according to ascii table or
+ * their decimal value if above 126.
+ * asciiVal must be allocated before with size >= 4
+ */
+void Automaton::charToAscii(char* asciiVal, unsigned char c){
+  int i = 0;
+  assert(asciiVal != NULL);
+  char* charName[] = {"NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL", "BS ", "HT ", "LF ", "VT ", "FF ", "CR ", "SO ", "SI ", "DLE",
+      "DC1", "DC2", "CD3", "DC4", "NAK", "SYN", "ETB", "CAN", "EM ", "SUB", "ESC", "FS ", "GS ", "RS ", "US "};
+  if (c < 32){
+    strcpy(asciiVal, charName[(int)c]);
+    return;
+  }
+  else if (c > 126){
+    charToAsciiDigits(c, asciiVal);
+    assert(strlen(asciiVal) == 3);
+    return;
+  }
+  else {
+    switch(c){
+      case ' ': // ' ' -> \\s
+        asciiVal[i++] = '\\';
+        asciiVal[i++] = '\\';
+        asciiVal[i++] = 's';
+        break;
+      case '\t': // ' ' -> \\t
+        asciiVal[i++] = '\\';
+        asciiVal[i++] = '\\';//needed to escape first back slash for dot file parser
+        asciiVal[i++] = 't';
+        break;
+      case '"':
+        asciiVal[i++] = '\\';//needed to escape double quote for dot file parser
+        asciiVal[i++] = '"';
+        break;
+      case '\\':
+        asciiVal[i++] = '\\';
+        asciiVal[i++] = '\\';//needed to escape first back slash for dot file parser
+        break;
+      default:
+        asciiVal[i++] = c;
+    }
+    asciiVal[i] = '\0';
+    return;
+  }
+
+}
+
+/**
+ * given two characters returns a string (char*) range == "[firstChar-lastChar]"
+ */
+void Automaton::fillOutCharRange(char* range, char firstChar, char lastChar){
+  int i = 0;
+  if (firstChar == lastChar){
+    charToAscii(range, firstChar);
+    assert(strlen(range) <= 3);
+    return;
+  }
+
+  char* char1 = (char*)(malloc ((4) * (sizeof(char))));
+  char* char2 = (char*)(malloc ((4) * (sizeof(char))));
+  //[firstChar-lastChar]
+  range[i++] = '[';
+
+  //put first char in range
+  charToAscii(char1, firstChar);
+  assert(strlen(char1) <= 3);
+  strncpy(range+i, char1, strlen(char1));
+  i += strlen(char1);
+  range[i++] = '-';
+  //put second char in range
+  charToAscii(char2, lastChar);
+  assert(strlen(char2) <= 3);
+  strncpy(range+i, char2, strlen(char2));
+  i += strlen(char2);
+
+  range[i++] = ']';
+
+  range[i] = '\0';
+  assert(strlen(range) <= 9);
+
+  free(char1);
+  free(char2);
+}
+
+char* Automaton::bintostr(unsigned long n, int k) {
+  char *str;
+
+  // no extra bit
+  str = (char *) malloc(k + 1);
+  str[k] = '\0';
+
+  for (k--; k >= 0; k--) {
+    if (n & 1)
+      str[k] = '1';
+    else
+      str[k] = '0';
+    if (n > 0)
+      n >>= 1;
+  }
+  //printf("String:%s\n", str);
+  return str;
+}
+
+unsigned char Automaton::strtobin(char* binChar, int var){
+  // no extra bit
+  char* str = binChar;
+  int k = var;
+  unsigned char c = 0;
+  for (k = 0; k < var; k++) {
+    if (str[k] == '1')
+      c |= 1;
+    else
+      c |= 0;
+    if (k < (var-1))
+      c <<= 1;
+  }
+  return c;
+}
 
 } /* namespace Theory */
 } /* namespace Vlab */

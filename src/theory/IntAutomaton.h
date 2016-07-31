@@ -13,7 +13,8 @@
 
 #include "Automaton.h"
 #include "UnaryAutomaton.h"
-
+#include "StringAutomaton.h"
+#include "MultiTrackAutomaton.h"
 
 namespace Vlab {
 namespace Theory {

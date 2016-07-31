@@ -134,8 +134,7 @@ IntAutomaton_ptr IntAutomaton::makeInt(int value, int num_of_variables, int* var
     int_auto = IntAutomaton::makeZero();
   }
   else{
-    int_dfa = dfaStringAutomatonL1toL2(value, value,
-             IntAutomaton::DEFAULT_NUM_OF_VARIABLES, IntAutomaton::DEFAULT_VARIABLE_INDICES);
+    int_dfa = StringAutomaton::dfaStringAutomatonL1toL2(value, value);
          int_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
   }
 
@@ -156,8 +155,7 @@ IntAutomaton_ptr IntAutomaton::makeIntLessThan(int value, int num_of_variables, 
      int_auto->has_negative_1 = true;
    }
    else{
-     int_dfa = dfaStringAutomatonL1toL2(0, value - 1,
-         IntAutomaton::DEFAULT_NUM_OF_VARIABLES, IntAutomaton::DEFAULT_VARIABLE_INDICES);
+     int_dfa = StringAutomaton::dfaStringAutomatonL1toL2(0, value - 1);
      int_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
    }
 
@@ -179,8 +177,7 @@ IntAutomaton_ptr IntAutomaton::makeIntLessThanOrEqual(int value, int num_of_vari
     int_auto->has_negative_1 = true;
   }
   else{
-    int_dfa = dfaStringAutomatonL1toL2(0, value,
-             IntAutomaton::DEFAULT_NUM_OF_VARIABLES, IntAutomaton::DEFAULT_VARIABLE_INDICES);
+    int_dfa = StringAutomaton::dfaStringAutomatonL1toL2(0, value);
          int_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
   }
 
@@ -227,8 +224,7 @@ IntAutomaton_ptr IntAutomaton::makeIntRange(int start, int end, int num_of_varia
   DFA_ptr int_dfa = nullptr;
   IntAutomaton_ptr range_auto = nullptr;
 
-  int_dfa = dfaStringAutomatonL1toL2(start, end,
-           IntAutomaton::DEFAULT_NUM_OF_VARIABLES, IntAutomaton::DEFAULT_VARIABLE_INDICES);
+  int_dfa = StringAutomaton::dfaStringAutomatonL1toL2(start, end);
   range_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   DVLOG(VLOG_LEVEL) << range_auto->id << " = makeIntRange(" << start << "," << end <<  ")";
@@ -913,6 +909,13 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
  * Should be same as string concat
  */
 IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
+
+  DFA_ptr d1,d2,d3;
+  d1 = this->dfa;
+  d2 = other_auto->getDFA();
+  d3 = MultiTrackAutomaton::concat(d1,d2,num_of_variables);
+  return new IntAutomaton(d3);
+/*
   DFA_ptr concat_dfa = nullptr, tmp_dfa = nullptr;
   IntAutomaton_ptr concat_auto = nullptr, to_union_auto = nullptr;
 
@@ -1185,6 +1188,7 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
   DVLOG(VLOG_LEVEL) << concat_auto->id << " = [" << this->id << "]->__plus(" << other_auto->id << ")";
 
   return concat_auto;
+*/
 }
 
 /**
@@ -1194,7 +1198,7 @@ IntAutomaton_ptr IntAutomaton::__minus(IntAutomaton_ptr other_auto) {
   DFA_ptr result_dfa = nullptr;
   IntAutomaton_ptr result_auto = nullptr;
 
-  result_dfa = dfa_pre_concat(this->dfa, other_auto->dfa, 1, num_of_variables, variable_indices);
+  result_dfa = MultiTrackAutomaton::pre_concat_prefix(this->dfa, other_auto->dfa,num_of_variables);
 
   result_auto = new IntAutomaton(result_dfa, num_of_variables);
 

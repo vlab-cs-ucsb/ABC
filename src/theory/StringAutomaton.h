@@ -158,7 +158,10 @@ public:
   std::string getAnAcceptingString();
 
   bool has_sharp_bit() { return sharp_bit; }
-
+  /*
+   * string dfa operations from LIBSTRANGER
+   */
+  static DFA_ptr dfaStringAutomatonL1toL2(int start, int end);
 protected:
 
   static StringAutomaton_ptr makeRegexAuto(Util::RegularExpression_ptr regular_expression);
@@ -177,11 +180,6 @@ protected:
   StringAutomaton_ptr search(StringAutomaton_ptr search_auto, bool use_extra_bit = false);
   StringAutomaton_ptr removeReservedWords();
 
-
-  /*
-   * string dfa operations from LIBSTRANGER
-   */
-  static DFA_ptr dfaStringAutomatonL1toL2(int start, int end);
 
   static int DEFAULT_NUM_OF_VARIABLES;
   static int* DEFAULT_VARIABLE_INDICES;

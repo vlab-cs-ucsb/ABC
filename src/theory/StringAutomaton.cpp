@@ -12,8 +12,6 @@ namespace Vlab {
 namespace Theory {
 
 const int StringAutomaton::VLOG_LEVEL = 8;
-//const int StringAutomaton::SHARP0 = 254;
-//const int StringAutomaton::SHARP1 = 255;
 
 int StringAutomaton::name_counter = 0;
 
@@ -558,7 +556,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
   DFA_ptr d1,d2,d3;
   d1 = this->dfa;
   d2 = other_auto->getDFA();
-  d3 = MultiTrackAutomaton::concat(d1,d2,8);
+  d3 = MultiTrackAutomaton::concat(d1,d2,num_of_variables);
   return new StringAutomaton(d3);
 }
 
@@ -1067,29 +1065,6 @@ StringAutomaton_ptr StringAutomaton::subStrings() {
   return sub_strings_auto;
 }
 
-/**
- * Implemented based on Java semantics,
- * Other language semantics should be considered by user
- */
-//StringAutomaton_ptr StringAutomaton::charAt(int index) {
-//  auto suffixes_auto = this->suffixesAtIndex(index);
-//  auto char_at_auto = suffixes_auto->prefixesAtIndex(0);
-//  delete suffixes_auto;
-//
-//  // 1- programming languages never return empty char for index > 0
-//  // or never return empty char when string is not an empty string
-//  // 2- Returning empty string at charAt[0] causes problems. If charAt[0]
-//  // is an empty string in some language, it means string is empty and empty string check
-//  // should be done with other ways to do it.
-//  if (char_at_auto->hasEmptyString()) {
-//    // char at auto always has length one without any cycles, it is safe to
-//    // set initial state to non-accepting state
-//    char_at_auto->dfa->f[char_at_auto->dfa->s] = -1;
-//  }
-//  DVLOG(VLOG_LEVEL) << char_at_auto->id << " = [" << this->id << "]->charAt(" << index << ")";
-//  return char_at_auto;
-//}
-
 StringAutomaton_ptr StringAutomaton::charAt(int index) {
 
   if (this->isEmptyLanguage()) {
@@ -1492,64 +1467,78 @@ StringAutomaton_ptr StringAutomaton::ends(StringAutomaton_ptr search_auto) {
 }
 
 StringAutomaton_ptr StringAutomaton::toUpperCase() {
+  LOG(FATAL) << "NO toUPPERCASE";
+
   DFA_ptr upper_case_dfa = nullptr;
   StringAutomaton_ptr upper_case_auto = nullptr;
-
+/*
 
   upper_case_dfa = dfaToUpperCase(dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
   upper_case_auto = new StringAutomaton(upper_case_dfa, num_of_variables);
 
   DVLOG(VLOG_LEVEL) << upper_case_auto->id << " = [" << this->id << "]->toUpperCase()";
-
+*/
   return upper_case_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::toLowerCase() {
+  LOG(FATAL) << "NO toLOWERCASE";
+
   DFA_ptr lower_case_dfa = nullptr;
   StringAutomaton_ptr lower_case_auto = nullptr;
-
+/*
   lower_case_dfa = dfaToLowerCase(dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
   lower_case_auto = new StringAutomaton(lower_case_dfa, num_of_variables);
 
   DVLOG(VLOG_LEVEL) << lower_case_auto->id << " = [" << this->id << "]->toLowerCase()";
-
+*/
   return lower_case_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::trim() {
+
+  LOG(FATAL) << "NO TRIM";
+
   DFA_ptr trimmed_dfa = nullptr;
   StringAutomaton_ptr trimmed_auto = nullptr;
-
+/*
   trimmed_dfa = dfaTrim(dfa, ' ', StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
   trimmed_auto = new StringAutomaton(trimmed_dfa, num_of_variables);
 
   DVLOG(VLOG_LEVEL) << trimmed_auto->id << " = [" << this->id << "]->trim()";
-
+*/
   return trimmed_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::replace(StringAutomaton_ptr search_auto, StringAutomaton_ptr replace_auto) {
+  LOG(FATAL) << "NO REPLACE";
+
   DFA_ptr result_dfa = nullptr;
   StringAutomaton_ptr result_auto = nullptr;
-
+/*
   result_dfa = dfa_general_replace_extrabit(dfa, search_auto->dfa, replace_auto->dfa,
           StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
 
   result_auto = new StringAutomaton(result_dfa, num_of_variables);
 
   DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->repeat(" << search_auto->id << ", " << replace_auto->id << ")";
-
+*/
   return result_auto;
+
 }
 
 DFA_ptr StringAutomaton::unaryLength() {
-  DFA_ptr unary_dfa = nullptr;
 
+  LOG(FATAL) << "NO unaryLENGTH";
+
+  DFA_ptr unary_dfa = nullptr;
+/*
   unary_dfa = dfa_string_to_unaryDFA(this->dfa, num_of_variables, variable_indices);
 
   DVLOG(VLOG_LEVEL) << "?" << " = [" << this->id << "]->unaryLength()";
 
   return unary_dfa;
+*/
 }
 
 UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
@@ -1967,9 +1956,12 @@ StringAutomaton_ptr StringAutomaton::restrictAtIndexTo(IntAutomaton_ptr index_au
  */
 
 StringAutomaton_ptr StringAutomaton::preToUpperCase(StringAutomaton_ptr rangeAuto) {
+
+  LOG(FATAL) << "NO preTOUPPERCASE";
+
   DFA_ptr result_dfa = nullptr;
   StringAutomaton_ptr result_auto = nullptr;
-
+/*
   result_dfa = dfaPreToUpperCase(dfa,
       StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
   result_auto = new StringAutomaton(result_dfa, num_of_variables);
@@ -1981,14 +1973,17 @@ StringAutomaton_ptr StringAutomaton::preToUpperCase(StringAutomaton_ptr rangeAut
   }
 
   DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->preToUpperCase()";
-
+*/
   return result_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::preToLowerCase(StringAutomaton_ptr rangeAuto) {
+
+  LOG(FATAL) << "NO preTOLOWERCASE";
+
   DFA_ptr result_dfa = nullptr;
   StringAutomaton_ptr result_auto = nullptr;
-
+/*
   result_dfa = dfaPreToLowerCase(dfa,
       StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
   result_auto = new StringAutomaton(result_dfa, num_of_variables);
@@ -2002,12 +1997,16 @@ StringAutomaton_ptr StringAutomaton::preToLowerCase(StringAutomaton_ptr rangeAut
   DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->preToLowerCase()";
 
   return result_auto;
+*/
 }
 
 StringAutomaton_ptr StringAutomaton::preTrim(StringAutomaton_ptr rangeAuto) {
+
+  LOG(FATAL) << "NO PRETRIM";
+
   DFA_ptr result_dfa = nullptr;
   StringAutomaton_ptr result_auto = nullptr;
-
+/*
   result_dfa = dfaPreTrim(dfa, ' ',
       StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
   result_auto = new StringAutomaton(result_dfa, num_of_variables);
@@ -2019,7 +2018,7 @@ StringAutomaton_ptr StringAutomaton::preTrim(StringAutomaton_ptr rangeAuto) {
   }
 
   DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->preTrim()";
-
+*/
   return result_auto;
 }
 
@@ -2030,7 +2029,7 @@ StringAutomaton_ptr StringAutomaton::preConcatLeft(StringAutomaton_ptr right_aut
   d2 = right_auto->getDFA();
   d3 = MultiTrackAutomaton::pre_concat_prefix(d1,d2,8);
   return new StringAutomaton(d3);
-
+/*
   DFA_ptr result_dfa = nullptr;
   StringAutomaton_ptr result_auto = nullptr;
 
@@ -2058,6 +2057,8 @@ StringAutomaton_ptr StringAutomaton::preConcatLeft(StringAutomaton_ptr right_aut
   DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->preLeftConcat(" << right_auto->id << ")";
 
   return result_auto;
+
+*/
 }
 
 /**
@@ -2071,7 +2072,7 @@ StringAutomaton_ptr StringAutomaton::preConcatRight(StringAutomaton_ptr left_aut
   d3 = MultiTrackAutomaton::pre_concat_suffix(d1,d2,8);
   return new StringAutomaton(d3);
 
-
+/*
   DFA_ptr result_dfa = nullptr;
   StringAutomaton_ptr result_auto = nullptr;
 
@@ -2103,11 +2104,15 @@ StringAutomaton_ptr StringAutomaton::preConcatRight(StringAutomaton_ptr left_aut
   DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->preConcatRight(" << left_auto->id << ")";
 
   return result_auto;
+*/
 }
 
 StringAutomaton_ptr StringAutomaton::preReplace(StringAutomaton_ptr searchAuto, std::string replaceString, StringAutomaton_ptr rangeAuto) {
   DFA_ptr result_dfa = nullptr;
   StringAutomaton_ptr result_auto = nullptr;
+
+  LOG(FATAL) << "NO preREPLACE";
+/*
   std::vector<char> replaceStringVector(replaceString.begin(), replaceString.end());
   replaceStringVector.push_back('\0');
 
@@ -2122,7 +2127,7 @@ StringAutomaton_ptr StringAutomaton::preReplace(StringAutomaton_ptr searchAuto, 
   }
 
   DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->preReplace(" << searchAuto->id << ", " << replaceString << ")";
-
+*/
   return result_auto;
 }
 

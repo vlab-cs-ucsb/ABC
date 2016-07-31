@@ -24,12 +24,12 @@
 #include <boost/multiprecision/cpp_int.hpp>
 
 #include <glog/logging.h>
-#include "stranger/stranger.h"
-#include "stranger/stranger_lib_internal.h"
-//#include <mona/mem.h>
-//#include <mona/bdd_external.h>
-//#include <mona/bdd_dump.h>
-//#include <mona/dfa.h>
+//#include "stranger/stranger.h"
+//#include "stranger/stranger_lib_internal.h"
+#include "mona/mem.h"
+#include "mona/bdd_external.h"
+#include "mona/bdd_dump.h"
+#include "mona/dfa.h"
 
 #include "options/Theory.h"
 #include "utils/RegularExpression.h"
@@ -52,6 +52,12 @@ using AdjacencyList = std::vector<NodeVector>;
 using CountVector = std::vector<boost::multiprecision::cpp_int>;
 using CountMatrix = std::vector<CountVector>;
 using NextState = std::pair<int, std::vector<bool>>;
+
+// for toDotAscii from libstranger
+typedef struct CharPair_ {
+	unsigned char first;
+	unsigned char last;
+} CharPair, *pCharPair;
 
 class Automaton {
 public:
@@ -127,6 +133,7 @@ protected:
   bool isSinkState(int state_id);
   bool isAcceptingState(int state_id);
   int getSinkState();
+  static int find_sink(DFA_ptr dfa);
   bool hasIncomingTransition(int state);
   bool isStartStateReachableFromAnAcceptingState();
   bool hasNextState(int state, int search);
@@ -151,6 +158,14 @@ protected:
   /*
    * Operations from LIBSTRANGER
    */
+  void getTransitionCharsHelper(pCharPair result[], char* transitions, int* indexInResult, int currentBit, int var);
+  void getTransitionChars(char* transitions, int var, pCharPair result[], int* pSize);
+  char** mergeCharRanges(pCharPair charRanges[], int* p_size);
+  void charToAsciiDigits(unsigned char ci, char s[]);
+  void charToAscii(char* asciiVal, unsigned char c);
+  void fillOutCharRange(char* range, char firstChar, char lastChar);
+  char* bintostr(unsigned long, int k);
+  unsigned char strtobin(char* binChar, int var);
 
 
   const Automaton::Type type;
