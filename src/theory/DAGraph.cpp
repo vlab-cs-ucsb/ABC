@@ -5,7 +5,6 @@
  *      Author: baki
  */
 
-#include <stack>
 #include "DAGraph.h"
 
 namespace Vlab {

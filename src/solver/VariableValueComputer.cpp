@@ -172,11 +172,6 @@ void VariableValueComputer::visitUMinus(UMinus_ptr u_minus_term) {
     }
     break;
   }
-  case Value::Type::INTBOOL_AUTOMATON: {
-    // do minus operation on automaton
-    LOG(FATAL) << "implement me";
-    break;
-  }
   default:
   break;
   }

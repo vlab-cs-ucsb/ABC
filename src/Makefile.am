@@ -1,4 +1,7 @@
-SUBDIRS = parser theory model_counter
+SUBDIRS = parser theory
+
+AM_YFLAGS = -d
+
 AM_CXXFLAGS = \
 	-I$(top_srcdir)/src \
 	-g
@@ -11,9 +14,9 @@ ABC_JNI_HEADER_FILES = vlab_cs_ucsb_edu_DriverProxy.h
 endif
 
 AM_LDFLAGS = \
-  -L$(top_srcdir)/src/.libs \
-	$(LIBGLOG) 
-	
+  -L$(top_srcdir)/src/.libs -L/usr/local/lib \
+  $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBGLOG)	
+
 lib_LTLIBRARIES = libabc.la
 libabc_la_SOURCES = \
   ./solver/AstTraverser.cpp \
@@ -73,24 +76,15 @@ libabc_la_SOURCES = \
 	Driver.cpp \
 	Driver.h $(ABC_JNI_SORUCE_FILES)
 
-libabc_la_LDFLAGS = -version-info 0:1:0
+libabc_la_LDFLAGS = -version-info 0:1:0 
 
 libabc_la_LIBADD = \
-	$(LIBGLOG) \
+	$(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBGLOG) \
 	./parser/libabcparser.la \
-	./theory/libabcautomaton.la \
-	./model_counter/libabcmodelcounter.la 
+	./theory/libabcautomaton.la 
 
 libabc_ladir = $(includedir)/abc
 libabc_la_HEADERS = Driver.h $(ABC_JNI_HEADER_FILES)
-
-bin_PROGRAMS = abc
-abc_SOURCES = \
-	main.cpp 
-	
-abc_LDADD = \
-	$(LIBGLOG) \
-	-labc
 
 test-local:
 	@echo src, $(srcdir), $(top_srcdir)

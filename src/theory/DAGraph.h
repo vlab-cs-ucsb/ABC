@@ -12,9 +12,10 @@
 #include <sstream>
 #include <fstream>
 #include <map>
+#include <stack>
 
-#include "DAGraphNode.h"
-#include "Graph.h"
+#include "theory/DAGraphNode.h"
+#include "theory/Graph.h"
 
 namespace Vlab {
 namespace Theory {

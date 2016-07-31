@@ -14,10 +14,10 @@
 #include <vector>
 #include <map>
 
-#include "Automaton.h"
-#include "SemilinearSet.h"
-#include "BinaryState.h"
-#include "ArithmeticFormula.h"
+#include "theory/Automaton.h"
+#include "theory/SemilinearSet.h"
+#include "theory/BinaryState.h"
+#include "theory/ArithmeticFormula.h"
 
 namespace Vlab {
 namespace Theory {

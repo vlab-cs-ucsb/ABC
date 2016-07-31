@@ -14,14 +14,32 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <cmath>
+#include <cstdbool>
+#include <cstdlib>
+#include <iostream>
+#include <iterator>
+#include <sstream>
+#include <stack>
+#include <unordered_map>
+#include <utility>
 
 #include <boost/multiprecision/cpp_int.hpp>
 
-#include "ArithmeticFormula.h"
-#include "Automaton.h"
-#include "BinaryState.h"
-#include "SemilinearSet.h"
-#include "UnaryAutomaton.h"
+#include <boost/multiprecision/number.hpp>
+#include <glog/logging.h>
+#include <mona/bdd.h>
+#include <mona/dfa.h>
+
+#include "options/Theory.h"
+#include "utils/Math.h"
+#include "utils/List.h"
+#include "theory/ArithmeticFormula.h"
+#include "theory/Automaton.h"
+#include "theory/BinaryState.h"
+#include "theory/SemilinearSet.h"
+#include "theory/UnaryAutomaton.h"
 
 namespace Vlab {
 namespace Theory {

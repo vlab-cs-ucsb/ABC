@@ -9,9 +9,9 @@
  */
 
 #include "UnaryAutomaton.h"
-#include "IntAutomaton.h"
-#include "BinaryIntAutomaton.h"
-#include "StringAutomaton.h"
+#include "theory/IntAutomaton.h"
+#include "theory/BinaryIntAutomaton.h"
+#include "theory/StringAutomaton.h"
 
 namespace Vlab {
 namespace Theory {

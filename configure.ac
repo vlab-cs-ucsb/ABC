@@ -65,14 +65,13 @@ AC_SUBST([LIBMONABDD])
 AC_CHECK_LIB([monamem], [mem_alloc], [LIBMONAMEM=-lmonamem], AC_MSG_ERROR(MONA MEM library not found))
 AC_SUBST([LIBMONAMEM])
 
-#AX_BOOST_BASE([1.54],, [AC_MSG_ERROR([This program needs Boost, but it was not found in your system])])
 AC_CHECK_HEADERS([boost/multiprecision/cpp_int.hpp], [], [AC_MSG_ERROR([Please install boost multiprecision headers])], [])
 
-AC_CHECK_LIB([m], [floor],[LIBM=-lm], AC_MSG_ERROR(c math library m not found))
-AC_SUBST([LIBM])
+#AC_CHECK_LIB([m], [floor],[LIBM=-lm], AC_MSG_ERROR(c math library m not found))
+#AC_SUBST([LIBM])
 
-AC_HAVE_LIBRARY([stranger], [LIBSTRANGER=-lstranger], AC_MSG_ERROR(LibStranger string analysis library not found))
-AC_SUBST([LIBSTRANGER])
+#AC_HAVE_LIBRARY([stranger], [LIBSTRANGER=-lstranger], AC_MSG_ERROR(LibStranger string analysis library not found))
+#AC_SUBST([LIBSTRANGER])
 
 
 
@@ -106,12 +105,12 @@ AC_SUBST([ABC_CXXFLAGS])
 # Check for headers
 
 # Check for functions
-AC_DEFUN([FUNCTION_MISSING], [AC_MSG_ERROR(required library function not found)])
+#AC_DEFUN([FUNCTION_MISSING], [AC_MSG_ERROR(required library function not found)])
 
-AC_FUNC_MALLOC
-AC_FUNC_MEMCMP
-AC_FUNC_MMAP
-AC_CHECK_FUNCS(memset localeconv,,FUNCTION_MISSING)
+#AC_FUNC_MALLOC
+#AC_FUNC_MEMCMP
+#AC_FUNC_MMAP
+#AC_CHECK_FUNCS(memset localeconv,,FUNCTION_MISSING)
 
 # Check for environment variables
 AC_MSG_CHECKING([if JAVA_HOME environment variable is set])
@@ -124,7 +123,7 @@ AM_COND_IF([JAVA_HOME_VALID],
 # set global compiler options
 
 # Create Makefile files
-AC_CONFIG_FILES([Makefile src/Makefile src/parser/Makefile src/theory/Makefile src/model_counter/Makefile test/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/parser/Makefile src/theory/Makefile test/Makefile])
 #AC_CONFIG_SUBDIRS([lib/googletest/googletest lib/googletest/googlemock])
 #AC_CONFIG_SUBDIRS([external/glog external/LibStranger])
 AC_OUTPUT

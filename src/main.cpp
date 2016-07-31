@@ -18,12 +18,8 @@
 #include <chrono>
 #include <ratio>
 
-#include <mona/mem.h>
-#include <mona/bdd_external.h>
-#include <mona/bdd_dump.h>
-#include <mona/dfa.h>
 #include <glog/logging.h>
-#include <Driver.h>
+#include "Driver.h"
 
 static const std::string get_default_output_dir();
 static const std::string get_default_log_dir();

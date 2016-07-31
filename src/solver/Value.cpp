@@ -18,7 +18,6 @@ const std::string Value::Name::INT_CONSTANT = "Int Constant";
 const std::string Value::Name::STRING_CONSTANT = "String Constant";
 const std::string Value::Name::BOOL_AUTOMATON = "Bool Automaton";
 const std::string Value::Name::INT_AUTOMATON = "Int Automaton";
-const std::string Value::Name::INTBOOL_AUTOMATON = "IntBool Automaton";
 const std::string Value::Name::BINARYINT_AUTOMATON = "Binary Int Automaton";
 const std::string Value::Name::STRING_AUTOMATON = "String Automaton";
 const std::string Value::Name::MULTITRACK_AUTOMATON = "MultiTrack Automaton";
@@ -45,11 +44,6 @@ Value::Value(Theory::BoolAutomaton_ptr data)
 Value::Value(Theory::IntAutomaton_ptr data)
     : type(Type::INT_AUTOMATON),
       int_automaton(data) {
-}
-
-Value::Value(Theory::IntBoolAutomaton_ptr data)
-    : type(Type::INTBOOL_AUTOMATON),
-      intbool_automaton(data) {
 }
 
 Value::Value(Theory::BinaryIntAutomaton_ptr data)
@@ -84,9 +78,6 @@ Value::Value(const Value& other)
     case Type::INT_AUTOMATON:
       int_automaton = other.int_automaton->clone();
       break;
-    case Type::INTBOOL_AUTOMATON:
-      intbool_automaton = other.intbool_automaton->clone();
-      break;
     case Type::BINARYINT_AUTOMATON:
       binaryint_automaton = other.binaryint_automaton->clone();
       break;
@@ -115,10 +106,6 @@ Value::~Value() {
     case Type::INT_AUTOMATON:
       delete int_automaton;
       int_automaton = nullptr;
-      break;
-    case Type::INTBOOL_AUTOMATON:
-      delete intbool_automaton;
-      intbool_automaton = nullptr;
       break;
     case Type::BINARYINT_AUTOMATON:
       delete binaryint_automaton;
@@ -155,9 +142,6 @@ std::string Value::str() const {
       break;
     case Type::INT_AUTOMATON:
       ss << Name::INT_AUTOMATON << " : " << " please print automaton";
-      break;
-    case Type::INTBOOL_AUTOMATON:
-      ss << Name::INTBOOL_AUTOMATON << " : " << " please print automaton";
       break;
     case Type::BINARYINT_AUTOMATON:
       ss << Name::BINARYINT_AUTOMATON << " : " << "please print automaton";
@@ -200,10 +184,6 @@ void Value::setData(Theory::IntAutomaton_ptr data) {
   int_automaton = data;
 }
 
-void Value::setData(Theory::IntBoolAutomaton_ptr data) {
-  intbool_automaton = data;
-}
-
 void Value::setData(Theory::StringAutomaton_ptr data) {
   string_automaton = data;
 }
@@ -226,10 +206,6 @@ Theory::BoolAutomaton_ptr Value::getBoolAutomaton() const {
 
 Theory::IntAutomaton_ptr Value::getIntAutomaton() const {
   return int_automaton;
-}
-
-Theory::IntBoolAutomaton_ptr Value::getIntBoolAutomaton() const {
-  return intbool_automaton;
 }
 
 Theory::BinaryIntAutomaton_ptr Value::getBinaryIntAutomaton() const {
@@ -514,9 +490,6 @@ bool Value::isSatisfiable() {
       case Type::INT_AUTOMATON:
       is_satisfiable = not int_automaton->isEmptyLanguage();
       break;
-      case Type::INTBOOL_AUTOMATON:
-      LOG(FATAL) << "implement me";
-      break;
       case Type::BINARYINT_AUTOMATON:
       is_satisfiable = not binaryint_automaton->isEmptyLanguage();
       break;
@@ -547,9 +520,6 @@ bool Value::isSingleValue() {
       break;
       case Type::INT_AUTOMATON:
       is_single_value = int_automaton->isAcceptingSingleInt();
-      break;
-      case Type::INTBOOL_AUTOMATON:
-      LOG(FATAL) << "implement me";
       break;
       case Type::BINARYINT_AUTOMATON:
       LOG(FATAL) << "implement me";
@@ -584,9 +554,6 @@ std::string Value::getASatisfyingExample() {
       break;
       case Type::INT_AUTOMATON:
       ss << int_automaton->getAnAcceptingInt();
-      break;
-      case Type::INTBOOL_AUTOMATON:
-      LOG(ERROR) << "implement me";
       break;
       case Type::BINARYINT_AUTOMATON:
       LOG(ERROR) << "implement me";

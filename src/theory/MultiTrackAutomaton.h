@@ -8,9 +8,10 @@
 #ifndef THEORY_MULTITRACKAUTOMATON_H_
 #define THEORY_MULTITRACKAUTOMATON_H_
 
-#include "StringAutomaton.h"
 #include <glog/logging.h>
-#include "StringRelation.h"
+
+#include "theory/StringAutomaton.h"
+#include "theory/StringRelation.h"
 
 namespace Vlab {
 namespace Theory {
