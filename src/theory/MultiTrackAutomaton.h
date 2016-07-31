@@ -24,7 +24,7 @@ class MultiTrackAutomaton: public Automaton {
 
  public:
 	MultiTrackAutomaton(DFA_ptr dfa, int num_tracks);
-	MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_tracks);
+	MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_tracks, int in_num_vars = DEFAULT_NUM_VAR);
 	MultiTrackAutomaton(const MultiTrackAutomaton&);
 virtual ~MultiTrackAutomaton();
 	virtual MultiTrackAutomaton_ptr clone() const;
@@ -44,7 +44,6 @@ virtual ~MultiTrackAutomaton();
 	static MultiTrackAutomaton_ptr makeGreaterThanOrEqual(StringRelation_ptr relation);
 	static MultiTrackAutomaton_ptr makeAnyAutoUnaligned(int num_tracks);
 	static MultiTrackAutomaton_ptr makeAnyAutoAligned(int num_tracks);
-	static StringAutomaton_ptr get_reverse_auto(StringAutomaton_ptr string_auto);
 
 	MultiTrackAutomaton_ptr complement();
 	MultiTrackAutomaton_ptr union_(MultiTrackAutomaton_ptr other_auto);
@@ -80,7 +79,8 @@ virtual ~MultiTrackAutomaton();
 	static DFA_ptr pre_concat_prefix(DFA_ptr concat_dfa, DFA_ptr suffix_dfa, int var);
 	static DFA_ptr pre_concat_suffix(DFA_ptr concat_dfa, DFA_ptr prefix_dfa, int var);
 
-	static const int VAR_PER_TRACK = 8;
+	static const int DEFAULT_NUM_VAR = 8;
+	static const int VAR_PER_TRACK = 9;
 	int num_of_tracks;
 
  private:

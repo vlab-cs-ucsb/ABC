@@ -12,8 +12,8 @@ namespace Vlab {
 namespace Theory {
 
 const int StringAutomaton::VLOG_LEVEL = 8;
-const int StringAutomaton::SHARP0 = 254;
-const int StringAutomaton::SHARP1 = 255;
+//const int StringAutomaton::SHARP0 = 254;
+//const int StringAutomaton::SHARP1 = 255;
 
 int StringAutomaton::name_counter = 0;
 
@@ -27,14 +27,17 @@ unsigned* StringAutomaton::DEFAULT_UNSIGNED_VARIABLE_INDICES = Automaton::getInd
 
 StringAutomaton::StringAutomaton(DFA_ptr dfa)
         : Automaton(Automaton::Type::STRING, dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES) {
+  sharp_bit = false;
 }
 
 StringAutomaton::StringAutomaton(DFA_ptr dfa, int num_of_variables)
         : Automaton(Automaton::Type::STRING, dfa, num_of_variables) {
+  sharp_bit = false;
 }
 
 StringAutomaton::StringAutomaton(const StringAutomaton& other)
         : Automaton(other) {
+  sharp_bit = false;
 }
 
 StringAutomaton::~StringAutomaton() {
@@ -129,26 +132,17 @@ StringAutomaton_ptr StringAutomaton::makeString(std::string str, int num_of_vari
 }
 
 /**
- * Returns Sigma* except two reserved words (11111111, 11111110)
+ * Returns Sigma*
  *
  */
 StringAutomaton_ptr StringAutomaton::makeAnyString(int num_of_variables, int* variable_indices) {
   DFA_ptr any_string_dfa = nullptr;
   StringAutomaton_ptr any_string = nullptr;
-  char statuses[2] { '+', '-' };
-  std::vector<char> reserved_1 = Automaton::getReservedWord('1', num_of_variables);
-  std::vector<char> reserved_2 = Automaton::getReservedWord('0', num_of_variables);
-  char* sharp1 = &*reserved_1.begin();
-  char* sharp0 = &*reserved_2.begin();
+  char statuses[1] { '+' };
 
-  dfaSetup(2, num_of_variables, variable_indices);
-  dfaAllocExceptions(2);
-  dfaStoreException(1, sharp1); // word 11111111
-  dfaStoreException(1, sharp0); // word 11111110
-  dfaStoreState(0);
-
+  dfaSetup(1, num_of_variables, variable_indices);
   dfaAllocExceptions(0);
-  dfaStoreState(1);
+  dfaStoreState(0);
 
   any_string_dfa = dfaBuild(statuses);
   any_string = new StringAutomaton(any_string_dfa, num_of_variables);
@@ -227,18 +221,12 @@ StringAutomaton_ptr StringAutomaton::makeCharRange(char from, char to, int num_o
  */
 StringAutomaton_ptr StringAutomaton::makeAnyChar(int num_of_variables, int* variable_indices) {
   char statuses[3] { '-', '+', '-' };
-  std::vector<char> reserved_1 = Automaton::getReservedWord('1', num_of_variables);
-  std::vector<char> reserved_2 = Automaton::getReservedWord('0', num_of_variables);
-  char* sharp1 = &*reserved_1.begin();
-  char* sharp0 = &*reserved_2.begin();
   DFA_ptr dot_dfa = nullptr;
   StringAutomaton_ptr dot_auto = nullptr;
 
   dfaSetup(3, num_of_variables, variable_indices);
 
-  dfaAllocExceptions(2);
-  dfaStoreException(2, sharp1); // word 11111111
-  dfaStoreException(2, sharp0); // word 11111110
+  dfaAllocExceptions(0);
   dfaStoreState(1);
   dfaAllocExceptions(0);
   dfaStoreState(2);
@@ -566,298 +554,12 @@ StringAutomaton_ptr StringAutomaton::difference(StringAutomaton_ptr other_auto) 
   return difference_auto;
 }
 
-/**
- * Initial Re-implementation of  'dfa_concat_extrabit' in LibStranger
- *TODO Fix empty string bug that happens in case (concat /.{0,1}/ /{1,1}/)
- */
 StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
-
   DFA_ptr d1,d2,d3;
   d1 = this->dfa;
   d2 = other_auto->getDFA();
   d3 = MultiTrackAutomaton::concat(d1,d2,8);
   return new StringAutomaton(d3);
-
-  StringAutomaton_ptr left_auto = this, right_auto = other_auto;
-
-  if (left_auto->isEmptyLanguage() or right_auto->isEmptyLanguage()) {
-    return StringAutomaton::makePhi();
-  } else if (left_auto->isEmptyString()) {
-    return right_auto->clone();
-  } else if (right_auto->isEmptyString()) {
-    return left_auto->clone();
-  }
-
-  bool left_hand_side_has_emtpy_string = left_auto->hasEmptyString();
-  bool right_hand_side_has_empty_string = right_auto->hasEmptyString();
-
-  if (left_hand_side_has_emtpy_string or right_hand_side_has_empty_string) {
-    auto any_string_other_than_empty = StringAutomaton::makeLengthGreaterThan(0);
-    if (left_hand_side_has_emtpy_string) {
-      left_auto = left_auto->intersect(any_string_other_than_empty);
-    }
-
-    if (right_hand_side_has_empty_string) {
-      right_auto = right_auto->intersect(any_string_other_than_empty);
-    }
-    delete any_string_other_than_empty;
-  }
-
-  int var = left_auto->num_of_variables;
-  int* indices = left_auto->variable_indices;
-  int tmp_num_of_variables,
-      state_id_shift_amount,
-      expected_num_of_states,
-      sink_state_left_auto,
-      sink_state_right_auto,
-      to_state = 0,
-      loc,
-      i = 0,
-      j = 0;
-
-  bool is_start_state_reachable;
-  paths state_paths = nullptr, pp = nullptr;
-  trace_descr tp = nullptr;
-
-  std::map<std::vector<char>*, int> exceptions_left_auto;
-  std::map<std::vector<char>*, int> exceptions_right_auto;
-  std::map<std::vector<char>*, int> exceptions_fix;
-  std::vector<char>* current_exception = nullptr;
-  char* statuses = nullptr;
-
-  // variable initializations
-  sink_state_left_auto = left_auto->getSinkState();
-  sink_state_right_auto = right_auto->getSinkState();
-
-  CHECK_GT(sink_state_left_auto, -1);
-  CHECK_GT(sink_state_right_auto, -1);
-
-  tmp_num_of_variables = left_auto->num_of_variables + 1; // add one extra bit
-  state_id_shift_amount = left_auto->dfa->ns;
-
-  expected_num_of_states = left_auto->dfa->ns + right_auto->dfa->ns - 1; // -1 is for to remove one of the sink states
-  is_start_state_reachable = right_auto->isStartStateReachableFromAnAcceptingState();
-  if (not is_start_state_reachable) {
-    expected_num_of_states = expected_num_of_states  - 1; // if start state is reachable from an accepting state, it will be merge with accepting states of left hand side
-  }
-
-  statuses = new char[expected_num_of_states + 1];
-  int* concat_indices = getIndices(tmp_num_of_variables);
-
-  dfaSetup(expected_num_of_states, tmp_num_of_variables, concat_indices); //sink states are merged
-  state_paths = pp = make_paths(right_auto->dfa->bddm, right_auto->dfa->q[right_auto->dfa->s]);
-  while (pp) {
-    if ( pp->to != (unsigned)sink_state_right_auto ) {
-      to_state = pp->to + state_id_shift_amount;
-      // if there is a self loop keep it
-      if ( pp->to == (unsigned)right_auto->dfa->s ) {
-        to_state -= 2;
-      } else {
-        if ( sink_state_right_auto >= 0 && pp->to > (unsigned)sink_state_right_auto ) {
-          to_state--; //to new state, sink state will be eliminated and hence need -1
-        }
-        if ((not is_start_state_reachable) && pp->to > (unsigned)right_auto->dfa->s) {
-          to_state--; // to new state, init state will be eliminated if init is not reachable
-        }
-      }
-
-      current_exception = new std::vector<char>();
-      for (j = 0; j < right_auto->num_of_variables; j++) {
-        //the following for loop can be avoided if the indices are in order
-        for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
-        if (tp) {
-          if (tp->value) {
-            current_exception->push_back('1');
-          }
-          else {
-            current_exception->push_back('0');
-          }
-        }
-        else {
-          current_exception->push_back('X');
-        }
-      }
-
-      current_exception->push_back('1'); // new path
-      current_exception->push_back('\0');
-      exceptions_right_auto[current_exception] = to_state;
-    }
-    current_exception = nullptr;
-    tp = nullptr;
-    pp = pp->next;
-  }
-
-  kill_paths(state_paths);
-  state_paths = pp = nullptr;
-
-  for (i = 0; i < left_auto->dfa->ns; i++) {
-    state_paths = pp = make_paths(left_auto->dfa->bddm, left_auto->dfa->q[i]);
-    while (pp) {
-      if (pp->to == (unsigned)sink_state_left_auto) {
-        pp = pp->next;
-        continue;
-      }
-      to_state = pp->to;
-      current_exception = new std::vector<char>();
-      for (j = 0; j < left_auto->num_of_variables; j++) {
-        for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
-        if (tp) {
-          if (tp->value) {
-            current_exception->push_back('1');
-          } else {
-            current_exception->push_back('0');
-          }
-        } else {
-          current_exception->push_back('X');
-        }
-      }
-
-      current_exception->push_back('0'); // add extra bit, '0' is used for the exceptions coming from left auto
-      current_exception->push_back('\0');
-      exceptions_left_auto[current_exception] = to_state;
-      tp = nullptr;
-      pp = pp->next;
-    }
-    current_exception = nullptr;
-    // generate concat automaton
-    if (left_auto->isAcceptingState(i)) {
-      dfaAllocExceptions(exceptions_left_auto.size() + exceptions_right_auto.size());
-      for (auto it = exceptions_left_auto.begin(); it != exceptions_left_auto.end();) {
-        dfaStoreException(it->second, &*it->first->begin());
-        current_exception = it->first;
-        it = exceptions_left_auto.erase(it);
-        delete current_exception;
-      }
-      for (auto it = exceptions_right_auto.begin(); it != exceptions_right_auto.end();) {
-        dfaStoreException(it->second, &*it->first->begin());
-        current_exception = it->first;
-        it = exceptions_right_auto.erase(it);
-        delete current_exception;
-      }
-
-      dfaStoreState(sink_state_left_auto);
-      if (right_auto->isAcceptingState(0)) {
-        statuses[i]='+';
-      }
-      else {
-        statuses[i]='-';
-      }
-    } else {
-      dfaAllocExceptions(exceptions_left_auto.size());
-      for (auto it = exceptions_left_auto.begin(); it != exceptions_left_auto.end();) {
-        dfaStoreException(it->second, &*it->first->begin());
-        current_exception = it->first;
-        it = exceptions_left_auto.erase(it);
-        delete current_exception;
-      }
-      dfaStoreState(sink_state_left_auto);
-      statuses[i] = '-';
-    }
-    current_exception = nullptr;
-    kill_paths(state_paths);
-    state_paths = pp = nullptr;
-  }
-
-  //  initflag is 1 iff init is reached by some state. In this case,
-  for (i = 0; i < right_auto->dfa->ns; i++) {
-    if ( i != sink_state_right_auto ) {
-      if ( i != right_auto->dfa->s || is_start_state_reachable) {
-        state_paths = pp = make_paths(right_auto->dfa->bddm, right_auto->dfa->q[i]);
-        while (pp) {
-          if ( pp->to != (unsigned)sink_state_right_auto) {
-            to_state = pp->to + state_id_shift_amount;
-
-            if ( sink_state_right_auto >= 0 && pp->to > (unsigned)sink_state_right_auto) {
-              to_state--; //to new state, sink state will be eliminated and hence need -1
-            }
-
-            if ( (not is_start_state_reachable) && pp->to > (unsigned)right_auto->dfa->s) {
-              to_state--; // to new state, init state will be eliminated if init is not reachable
-            }
-
-            current_exception = new std::vector<char>();
-            for (j = 0; j < var; j++) {
-              for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp =tp->next);
-              if (tp) {
-                if (tp->value){
-                  current_exception->push_back('1');
-                }
-                else {
-                  current_exception->push_back('0');
-                }
-              }
-              else {
-                current_exception->push_back('X');
-              }
-            }
-            current_exception->push_back('0'); // old value
-            current_exception->push_back('\0');
-            exceptions_fix[current_exception] = to_state;
-            tp = nullptr;
-            current_exception = nullptr;
-          }
-          pp = pp->next;
-        }
-
-        dfaAllocExceptions(exceptions_fix.size());
-        for (auto it = exceptions_fix.begin(); it != exceptions_fix.end();) {
-          dfaStoreException(it->second, &*it->first->begin());
-          current_exception = it->first;
-          it = exceptions_fix.erase(it);
-          delete current_exception;
-        }
-
-        dfaStoreState(sink_state_left_auto);
-
-        loc = state_id_shift_amount + i;
-        if ( (not is_start_state_reachable) && i > right_auto->dfa->s) {
-          loc--;
-        }
-        if ( sink_state_right_auto >= 0 && i > sink_state_right_auto) {
-          loc--;
-        }
-
-        if ( right_auto->isAcceptingState(i)) {
-          statuses[loc]='+';
-        } else {
-          statuses[loc]='-';
-        }
-
-        kill_paths(state_paths);
-        state_paths = pp = nullptr;
-      }
-    }
-  }
-
-  statuses[expected_num_of_states]='\0';
-
-  DFA_ptr concat_dfa = dfaBuild(statuses);
-  delete[] statuses; statuses = nullptr;
-  delete[] concat_indices; concat_indices = nullptr;
-  DFA_ptr tmp_dfa = dfaProject(concat_dfa, (unsigned) var);
-  dfaFree(concat_dfa);
-  concat_dfa = dfaMinimize(tmp_dfa);
-  dfaFree(tmp_dfa); tmp_dfa = nullptr;
-
-  auto concat_auto = new StringAutomaton(concat_dfa, num_of_variables);
-
-  if (left_hand_side_has_emtpy_string) {
-    auto tmp_auto = concat_auto;
-    concat_auto = tmp_auto->union_(other_auto);
-    delete tmp_auto;
-    delete left_auto; left_auto = nullptr;
-  }
-
-  if (right_hand_side_has_empty_string) {
-    auto tmp_auto = concat_auto;
-    concat_auto = tmp_auto->union_(this);
-    delete tmp_auto;
-    delete right_auto; right_auto = nullptr;
-  }
-
-  DVLOG(VLOG_LEVEL) << concat_auto->id << " = [" << this->id << "]->concat(" << other_auto->id << ")";
-
-  return concat_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::optional() {
@@ -1321,31 +1023,6 @@ StringAutomaton_ptr StringAutomaton::prefixes(){
   return prefix_auto;
 }
 
-/**
- * old lib stranger implementation, it corresponds to suffixesAt in the new code
- */
-//StringAutomaton_ptr StringAutomaton::suffixesFromIndex(int start){
-//  DFA_ptr suffix_dfa = nullptr;
-//  DFA_ptr current_dfa = nullptr;
-//  StringAutomaton_ptr suffix_auto = nullptr;
-//
-//  if(start <= 0){
-//    suffix_dfa = dfaCopy(dfa);
-//  }
-//  else{
-//    DFA_ptr stranger_suffix_dfa = dfa_Suffix(dfa,start,start,StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
-//            StringAutomaton::DEFAULT_VARIABLE_INDICES);
-//    suffix_dfa = dfaMinimize(stranger_suffix_dfa);
-//    dfaFree(stranger_suffix_dfa); stranger_suffix_dfa = nullptr;
-//  }
-//
-//  suffix_auto = new StringAutomaton(suffix_dfa, num_of_variables);
-//
-//  DVLOG(VLOG_LEVEL) << suffix_auto->id << " = [" << this->id << "]->suffixesFromIndex()";
-//
-//  return suffix_auto;
-//}
-
 StringAutomaton_ptr StringAutomaton::prefixesUntilIndex(int index){
   StringAutomaton_ptr prefixes_auto = nullptr;
   StringAutomaton_ptr length_auto = nullptr;
@@ -1666,14 +1343,12 @@ IntAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
 
   bool has_negative_1 = false;
   bool search_has_empty_string = false;
-
   if (search_param_auto->hasEmptyString()) {
     StringAutomaton_ptr non_empty_string = makeLengthGreaterThan(0);
     search_param_auto = search_param_auto->intersect(non_empty_string);
     delete non_empty_string; non_empty_string = nullptr;
     search_has_empty_string = true;
   }
-
   contains_auto = this->contains(search_param_auto);
   if (contains_auto->isEmptyLanguage()) {
     delete contains_auto;
@@ -1689,13 +1364,11 @@ IntAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
     DVLOG(VLOG_LEVEL) << length_auto->getId() << " = [" << this->id << "]->indexOf(" << search_auto->id  << ")";
     return length_auto;
   }
-
   difference_auto = this->difference(contains_auto);
   if (not difference_auto->isEmptyLanguage()) {
     has_negative_1 = true;
   }
   delete difference_auto;
-
   index_of_auto = contains_auto->indexOfHelper(search_param_auto);
   delete contains_auto; contains_auto = nullptr;
 
@@ -1758,11 +1431,9 @@ IntAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto) {
 
   last_index_of_auto = contains_auto->lastIndexOfHelper(search_param_auto);
   delete contains_auto; contains_auto = nullptr;
-
   length_auto = last_index_of_auto->length();
   length_auto->setMinus1(has_negative_1);
   delete last_index_of_auto; last_index_of_auto = nullptr;
-
   // if search has empty string lastIndexOf also returns all string lengths
   if (search_has_empty_string) {
     IntAutomaton_ptr string_lengths = this->length();
@@ -1772,7 +1443,6 @@ IntAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto) {
     delete tmp; tmp = nullptr;
     delete search_param_auto; search_param_auto = nullptr; // search_param_auto auto is not the parameter search auto, it is updated, delete it
   }
-
   DVLOG(VLOG_LEVEL) << length_auto->getId() << " = [" << this->id << "]->lastIndexOf(" << search_auto->id << ")";
 
   return length_auto;
@@ -1781,7 +1451,6 @@ IntAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto) {
 StringAutomaton_ptr StringAutomaton::contains(StringAutomaton_ptr search_auto) {
   StringAutomaton_ptr contains_auto = nullptr, any_string_auto = nullptr,
           tmp_auto_1 = nullptr, tmp_auto_2 = nullptr;
-
   any_string_auto = StringAutomaton::makeAnyString();
   tmp_auto_1 = any_string_auto->concat(search_auto);
   tmp_auto_2 = tmp_auto_1->concat(any_string_auto);
@@ -1789,7 +1458,6 @@ StringAutomaton_ptr StringAutomaton::contains(StringAutomaton_ptr search_auto) {
   contains_auto = this->intersect(tmp_auto_2);
   delete any_string_auto;
   delete tmp_auto_1; delete tmp_auto_2;
-
   DVLOG(VLOG_LEVEL) << contains_auto->id << " = [" << this->id << "]->contains(" << search_auto->id << ")";
 
   return contains_auto;
@@ -1874,7 +1542,6 @@ StringAutomaton_ptr StringAutomaton::replace(StringAutomaton_ptr search_auto, St
   return result_auto;
 }
 
-
 DFA_ptr StringAutomaton::unaryLength() {
   DFA_ptr unary_dfa = nullptr;
 
@@ -1886,14 +1553,17 @@ DFA_ptr StringAutomaton::unaryLength() {
 }
 
 UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
+
   UnaryAutomaton_ptr unary_auto = nullptr;
   DFA_ptr unary_dfa = nullptr, tmp_dfa = nullptr;
 
   int sink_state = this->getSinkState(),
           number_of_variables = this->getNumberOfVariables() + 1, // one extra bit
           to_state = 0;
+  CHECK_GT(sink_state, -1);
+  int original_num_states = dfa->ns;
   int* indices = getIndices(number_of_variables);
-  char* statuses = new char[this->dfa->ns + 1];
+  char* statuses = new char[original_num_states + 1];
   std::map<std::vector<char>*, int> exceptions;
   std::vector<char>* current_exception = nullptr;
 
@@ -1901,10 +1571,9 @@ UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
   trace_descr tp = nullptr;
 
 
-  dfaSetup(dfa->ns, number_of_variables, indices);
+  dfaSetup(original_num_states, number_of_variables, indices);
 
-  for (int i = 0; i < dfa->ns; i++) {
-
+  for (int i = 0; i < original_num_states; i++) {
     state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
     while (pp) {
       if (pp->to != (unsigned)sink_state) {
@@ -2065,11 +1734,14 @@ IntAutomaton_ptr StringAutomaton::parseToIntAutomaton() {
 
 IntAutomaton_ptr StringAutomaton::length() {
   IntAutomaton_ptr length_auto = nullptr;
+
   if (this->isEmptyLanguage()) {
     length_auto = IntAutomaton::makePhi(num_of_variables);
   } else if (this->isAcceptingSingleString()) {
     std::string example = this->getAnAcceptingString();
     length_auto = IntAutomaton::makeInt(example.length(), num_of_variables);
+  } else if(getSinkState() < 0) {
+    length_auto = IntAutomaton::makeIntGreaterThanOrEqual(0);
   } else {
     UnaryAutomaton_ptr unary_auto = this->toUnaryAutomaton();
     length_auto = unary_auto->toIntAutomaton(num_of_variables);
@@ -2080,8 +1752,6 @@ IntAutomaton_ptr StringAutomaton::length() {
 
   return length_auto;
 }
-
-
 
 StringAutomaton_ptr StringAutomaton::restrictLengthTo(int length) {
   StringAutomaton_ptr restricted_auto = nullptr;
@@ -2507,6 +2177,7 @@ std::string StringAutomaton::getAnAcceptingString() {
   return ss.str();
 }
 
+/*
 StringAutomaton_ptr StringAutomaton::dfaSharpStringWithExtraBit(int num_of_variables, int* variable_indices) {
   DFA_ptr sharp_string_dfa = nullptr;
   StringAutomaton_ptr sharp_string_extra_bit = nullptr;
@@ -2530,6 +2201,7 @@ StringAutomaton_ptr StringAutomaton::dfaSharpStringWithExtraBit(int num_of_varia
 
   return sharp_string_extra_bit;
 }
+*/
 
 /**
  * @returns true if state has the given exception to a state that is not sink
@@ -2575,13 +2247,17 @@ StringAutomaton_ptr StringAutomaton::getAnyStringNotContainsMe() {
  */
 StringAutomaton_ptr StringAutomaton::indexOfHelper(StringAutomaton_ptr search_auto, bool use_extra_bit) {
   StringAutomaton_ptr index_of_auto = nullptr;
-
+LOG(INFO) << "A";
   index_of_auto = this->search(search_auto, use_extra_bit);
+LOG(INFO) << "B";
+  if(!index_of_auto->has_sharp_bit() || index_of_auto->num_of_variables < 9) {
+    LOG(FATAL) << "NO SHARP BT!";
+  }
   int sink_state = index_of_auto->getSinkState();
-
+LOG(INFO) << "C";
   int current_state = -1;
   int next_state = -1;
-  std::vector<char> flag = {'1', '1', '1', '1', '1', '1', '1', '1'}; // 255
+  std::vector<char> flag = {'1', '1', '1', '1', '1', '1', '1', '1', '1'}; // 255
   std::set<int> next_states;
   std::stack<int> state_work_list;
   std::map<int, bool> visited;
@@ -2608,7 +2284,7 @@ StringAutomaton_ptr StringAutomaton::indexOfHelper(StringAutomaton_ptr search_au
       }
     }
   }
-
+LOG(INFO) << "D";
   index_of_auto->minimize();
 
   DVLOG(VLOG_LEVEL) << index_of_auto->id << " = [" << this->id << "]->indexOfHelper(" << search_auto->id  << ")";
@@ -2625,10 +2301,13 @@ StringAutomaton_ptr StringAutomaton::lastIndexOfHelper(StringAutomaton_ptr searc
   DFA_ptr lastIndexOf_dfa = nullptr, minimized_dfa = nullptr;
 
   search_result_auto = this->search(search_auto, use_extra_bit);
+  if(!search_result_auto->has_sharp_bit() || search_result_auto->num_of_variables < 9) {
+    LOG(FATAL) << "not enuff sharp bits!";
+  }
 
   Graph_ptr graph = search_result_auto->toGraph();
   // Mark start state of a match
-  std::vector<char> flag_1_exception = {'1', '1', '1', '1', '1', '1', '1', '1'}; // 255
+  std::vector<char> flag_1_exception = {'1', '1', '1', '1', '1', '1', '1', '1', '1'}; // 255
   GraphNode_ptr node = nullptr;
   int sink_state = search_result_auto->getSinkState();
   int next_state = -1;
@@ -2665,7 +2344,6 @@ StringAutomaton_ptr StringAutomaton::lastIndexOfHelper(StringAutomaton_ptr searc
   graph->resetFinalNodesToFlag(3);
 
   // BEGIN generate automaton
-  int* indices = getIndices(StringAutomaton::DEFAULT_NUM_OF_VARIABLES, 1);
   for (int s = 0; s < search_result_auto->dfa->ns; s++) {
     GraphNode_ptr node = graph->getNode(s);
     if (graph->isFinalNode(node)) {
@@ -2678,7 +2356,6 @@ StringAutomaton_ptr StringAutomaton::lastIndexOfHelper(StringAutomaton_ptr searc
   search_result_auto->minimize();
 
   lastIndexOf_auto = search_result_auto->removeReservedWords();
-  delete[] indices;
   delete search_result_auto;
 
   DVLOG(VLOG_LEVEL) << lastIndexOf_auto->id << " = [" << this->id << "]->lastIndexOf(" << search_auto->id << ")";
@@ -2693,39 +2370,40 @@ StringAutomaton_ptr StringAutomaton::lastIndexOfHelper(StringAutomaton_ptr searc
  * Output M so that L(M)={w|w=x0#1\bar{x1}#2.., where x0x1... \in L(M1)} (usage with extra bit)
  * @param use_extra_bit decides on whether to use extra bit or not.
  */
-StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton(bool use_extra_bit ) {
+StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton(bool use_extra_bit) {
   StringAutomaton_ptr duplicated_auto = nullptr;
   DFA_ptr result_dfa = nullptr;
   paths state_paths = nullptr, pp = nullptr;
   trace_descr tp = nullptr;
 
-  std::vector<char> sharp1 = Automaton::getReservedWord('1', num_of_variables); // 255 if num_of_variables == 8
-  std::vector<char> sharp0 = Automaton::getReservedWord('0', num_of_variables); // 254 if num_of_variables == 8
-
-  int number_of_variables = this->num_of_variables,
-          number_of_states = 2 * this->dfa->ns - 1, // sink state is not duplicated
+  // sharp1: 1111 1111 1
+  // sharp0: 1111 1110 1
+  std::vector<char> sharp1 = Automaton::getReservedWord('1', num_of_variables, true);
+  std::vector<char> sharp0 = Automaton::getReservedWord('0', num_of_variables, true);
+  bool has_sink = true;
+  int number_of_variables = this->num_of_variables + 1,
           sink_state = this->getSinkState(),
           to_state = 0,
           to_duplicate_state = 0,
           mapped_state_id = 0,
           duplicated_state_id = 0;
 
-  // update special words and number of variables if extra bit is needed
-  if (use_extra_bit) {
-    number_of_variables += 1;
-    sharp1[num_of_variables] = '1'; sharp1.push_back('\0');
-    sharp0[num_of_variables] = '0'; sharp0.push_back('\0');
+  // take precautions as there might not be a sink state...
+  int original_num_states = this->dfa->ns;
+  if(sink_state < 0) {
+    sink_state = this->dfa->ns;
+    original_num_states++;
   }
+  int number_of_states = original_num_states*2 - 1; // no duplicate sink state
 
   int* indices = getIndices(number_of_variables);
-
   std::map<std::vector<char>*, int> exceptions;
   std::vector<char>* current_exception = nullptr;
   char *statuses = new char[number_of_states + 1];
   bool sink_state_allocated = false;
 
   dfaSetup(number_of_states, number_of_variables, indices);
-  for (int s = 0; s < this->dfa->ns; s++) {
+  for (int s = 0; s < original_num_states; s++) {
     if (s != sink_state) {
       state_paths = pp = make_paths(this->dfa->bddm, this->dfa->q[s]);
       while (pp) {
@@ -2752,9 +2430,7 @@ StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton(bool use_extra_b
               current_exception->push_back('X');
             }
           }
-          if (use_extra_bit) {
-            current_exception->push_back('0'); // save old value, will be updated to 1 when necessary
-          }
+          current_exception->push_back('0'); // sharpbit 0 for non-sharp uses
           current_exception->push_back('\0');
           exceptions[current_exception] = to_state;
         }
@@ -2762,7 +2438,6 @@ StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton(bool use_extra_b
         tp = nullptr;
         pp = pp->next;
       }
-
       // figure out new state id for the current state, duplicate state will id will be new_state_id + 1 ( + 2 in case it is a sink)
       mapped_state_id = 2 * s;
       if (s > sink_state) {
@@ -2775,7 +2450,7 @@ StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton(bool use_extra_b
       if (duplicated_state_id == sink_state) {
         duplicated_state_id++;
       }
-
+LOG(INFO) << 10;
       // do allocation for current states
       dfaAllocExceptions(exceptions.size() + 1);
       for (auto entry : exceptions) {
@@ -2783,7 +2458,7 @@ StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton(bool use_extra_b
       }
       dfaStoreException(duplicated_state_id, &*sharp1.begin()); // to duplicated state
       dfaStoreState(sink_state);
-
+LOG(INFO) << 11;
       // sink state id is between map_state_id and duplicate_state_id allocate sink state first;
       if ((not sink_state_allocated) and (duplicated_state_id - 1) == sink_state ) {
         dfaAllocExceptions(0);
@@ -2791,13 +2466,10 @@ StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton(bool use_extra_b
         statuses[sink_state] = '-';
         sink_state_allocated = true;
       }
-
+LOG(INFO) << 12;
       // do allocation for duplicated states
       dfaAllocExceptions(exceptions.size() + 1);
       for (auto it = exceptions.begin(); it != exceptions.end();) {
-        if (use_extra_bit) {
-          (*(it->first))[number_of_variables - 1] = '1'; // bar value, extra bit is set to 1
-        }
         to_duplicate_state = it->second + 1;
         if (to_duplicate_state == sink_state) {
           to_duplicate_state++;
@@ -2809,7 +2481,7 @@ StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton(bool use_extra_b
       }
       dfaStoreException(mapped_state_id, &*sharp0.begin()); // to original state
       dfaStoreState(sink_state);
-
+LOG(INFO) << 13;
       // update final states
       if (this->dfa->f[s] == 1) {
         statuses[mapped_state_id] = '+';
@@ -2831,16 +2503,18 @@ StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton(bool use_extra_b
       statuses[sink_state] = '-';
       sink_state_allocated = true;
     }
+    LOG(INFO) << 14;
   }
+
   statuses[number_of_states] = '\0';
   result_dfa = dfaBuild(statuses);
 
   duplicated_auto = new StringAutomaton(result_dfa, number_of_variables);
+  duplicated_auto->sharp_bit = true;
   delete[] statuses;
   delete[] indices;
 
   DVLOG(VLOG_LEVEL) << duplicated_auto->id << " = [" << this->id << "]->getDuplicateStateAutomaton(" << std::boolalpha << use_extra_bit << ")";
-
   return duplicated_auto;
 }
 
@@ -2863,22 +2537,17 @@ StringAutomaton_ptr StringAutomaton::toQueryAutomaton(bool use_extra_bit) {
   paths state_paths = nullptr, pp = nullptr;
   trace_descr tp = nullptr;
 
-  std::vector<char> sharp1 = Automaton::getReservedWord('1', num_of_variables);
-  std::vector<char> sharp0 = Automaton::getReservedWord('0', num_of_variables);
+  // sharp1: 1111 1111 1
+  // sharp0: 1111 1110 1
+  std::vector<char> sharp1 = Automaton::getReservedWord('1', num_of_variables, true);
+  std::vector<char> sharp0 = Automaton::getReservedWord('0', num_of_variables, true);
 
-  int number_of_variables = num_of_variables,
+  int number_of_variables = num_of_variables + 1,
           shift = 0,
           number_of_states = 0,
           sink_state = this->getSinkState(),
           not_contains_sink_state = -1,
           to_state = 0;
-
-  // update special words and number of variables if extra bit is needed
-  if (use_extra_bit) {
-    number_of_variables += 1;
-    sharp1[num_of_variables] = '1'; sharp1.push_back('\0');
-    sharp0[num_of_variables] = '0'; sharp0.push_back('\0');
-  }
 
   int* indices = getIndices(number_of_variables);
 
@@ -2934,9 +2603,7 @@ StringAutomaton_ptr StringAutomaton::toQueryAutomaton(bool use_extra_bit) {
               current_exception->push_back('X');
             }
           }
-          if (use_extra_bit) {
-            current_exception->push_back('0'); // original value
-          }
+          current_exception->push_back('0'); // sharpbit 0
           current_exception->push_back('\0');
           exceptions[current_exception] = to_state;
         }
@@ -2986,7 +2653,7 @@ StringAutomaton_ptr StringAutomaton::toQueryAutomaton(bool use_extra_bit) {
         if (pp->to != (unsigned)(sink_state - shift)) {
           to_state = pp->to + shift;
           current_exception = new std::vector<char>();
-          for (int j = 0; j < number_of_variables; j++) {
+          for (int j = 0; j < number_of_variables-1; j++) {
             for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
             if (tp) {
               if (tp->value) {
@@ -2998,9 +2665,7 @@ StringAutomaton_ptr StringAutomaton::toQueryAutomaton(bool use_extra_bit) {
               current_exception->push_back('X');
             }
           }
-          if (use_extra_bit) {
-            current_exception->push_back('1'); // bar value
-          }
+          current_exception->push_back('0'); // sharpbit 0
           current_exception->push_back('\0');
           exceptions[current_exception] = to_state;
         }
@@ -3047,7 +2712,7 @@ StringAutomaton_ptr StringAutomaton::toQueryAutomaton(bool use_extra_bit) {
   delete[] indices;
 
   query_auto = new StringAutomaton(result_dfa, number_of_variables);
-
+  query_auto->sharp_bit = true;
   DVLOG(VLOG_LEVEL) << query_auto->id << " = [" << this->id << "]->toQueryAutomaton(" << std::boolalpha << use_extra_bit << ")";
 
   return query_auto;
@@ -3061,12 +2726,19 @@ StringAutomaton_ptr StringAutomaton::search(StringAutomaton_ptr search_auto,  bo
   StringAutomaton_ptr search_result_auto = nullptr, duplicate_auto = nullptr,
           search_query_auto = nullptr;
 
+LOG(INFO) << 1;
   duplicate_auto = this->getDuplicateStateAutomaton(use_extra_bit);
+LOG(INFO) << 2;
   search_query_auto = search_auto->toQueryAutomaton(use_extra_bit);
+LOG(INFO) << 3;
   search_result_auto = duplicate_auto->intersect(search_query_auto);
+LOG(INFO) << 4;
   delete duplicate_auto; duplicate_auto = nullptr;
   delete search_query_auto; search_query_auto = nullptr;
-
+  search_result_auto->sharp_bit = true;
+  if(search_result_auto->num_of_variables != 9) {
+    LOG(FATAL) << "Nut unuff buts";
+  }
   DVLOG(VLOG_LEVEL) << search_result_auto->id << " = [" << this->id << "]->search(" << search_auto->id << ", " << std::boolalpha << use_extra_bit << ")";
 
   return search_result_auto;
@@ -3077,13 +2749,16 @@ StringAutomaton_ptr StringAutomaton::search(StringAutomaton_ptr search_auto,  bo
  * Can be generalize to general replace algorithm
  */
 StringAutomaton_ptr StringAutomaton::removeReservedWords() {
+  if(!sharp_bit || this->num_of_variables < 9) {
+    LOG(FATAL) << "can't remove reserved words without first having sharp bit";
+  }
   StringAutomaton_ptr string_auto = nullptr;
   DFA_ptr result_dfa = nullptr;
   paths state_paths = nullptr, pp = nullptr;
   trace_descr tp = nullptr;
 
-  std::vector<char> flag_1 = {'1', '1', '1', '1', '1', '1', '1', '1'}; // 255
-  std::vector<char> flag_2 = {'1', '1', '1', '1', '1', '1', '1', '0'}; // 254
+  std::vector<char> flag_1 = {'1', '1', '1', '1', '1', '1', '1', '1', '1'}; // 255
+  std::vector<char> flag_2 = {'1', '1', '1', '1', '1', '1', '1', '0', '1'}; // 254
 
   std::map<int, std::set<int>> merged_states_via_reserved_words;
   std::map<int, int> state_id_map;
@@ -3229,6 +2904,8 @@ StringAutomaton_ptr StringAutomaton::removeReservedWords() {
   string_auto = new StringAutomaton(dfaMinimize(result_dfa), number_of_variables);
   dfaFree(result_dfa); result_dfa = nullptr;
 
+  // +1 bit project for sharp bit
+  number_of_extra_bits_needed++;
   while (number_of_extra_bits_needed > 0) {
     string_auto->project((unsigned)(string_auto->num_of_variables - 1));
     string_auto->minimize();
@@ -3237,6 +2914,10 @@ StringAutomaton_ptr StringAutomaton::removeReservedWords() {
 
   DVLOG(VLOG_LEVEL) << string_auto->id << " = [" << this->id << "]->removeReservedWords()";
 
+  string_auto->sharp_bit = false;
+  if(string_auto->num_of_variables != 8) {
+    LOG(FATAL) << "still has sharp bit...";
+  }
   return string_auto;
 }
 
@@ -3250,9 +2931,6 @@ DFA_ptr StringAutomaton::dfaStringAutomatonL1toL2(int start, int end) {
   char *statuses;
   int* indices = getIndices(var);
   DFA *result=nullptr;
-  std::vector<char> sharp0,sharp1;
-  sharp0 = getBinaryFormat(SHARP0,var);
-  sharp1 = getBinaryFormat(SHARP1,var);
 
   if (start <= -1 && end <= -1) {
     result = Automaton::makePhi(var, indices);
@@ -3272,24 +2950,12 @@ DFA_ptr StringAutomaton::dfaStringAutomatonL1toL2(int start, int end) {
 
     //the 0 to start - 1 states(unaccepted)
     for( i = 0; i < start; i++){
-      dfaAllocExceptions(2);
-      //char 255; //reserve word for sharp1
-      dfaStoreException(number_of_states - 1, &sharp1[0]); // sink state is the number_of_states - 1
-      //char 254;
-      dfaStoreException(number_of_states - 1, &sharp0[0]); // sink state is the number_of_states - 1
-
+      dfaAllocExceptions(0);
       dfaStoreState(i + 1);
       statuses[i] = '-';
-
-
     }
     // the start state
-    dfaAllocExceptions(2);
-    //char 255; //reserve word for sharp1
-    dfaStoreException(number_of_states - 1, &sharp1[0]); // sink state is the number_of_states - 1
-    //char 254;
-    dfaStoreException(number_of_states - 1, &sharp0[0]); // sink state is the number_of_states - 1
-
+    dfaAllocExceptions(0);
     dfaStoreState(i);     // i == start
     statuses[i] = '+';    // i == start
     i++;
@@ -3303,12 +2969,7 @@ DFA_ptr StringAutomaton::dfaStringAutomatonL1toL2(int start, int end) {
 
     //the start to end states(accepted)
     for( i = 0; i <= end; i++){
-      dfaAllocExceptions(2);
-      //char 255; //reserve word for sharp1
-      dfaStoreException(number_of_states - 1, &sharp1[0]); // sink state is the number_of_states - 1
-      //char 254;
-      dfaStoreException(number_of_states - 1, &sharp0[0]); // sink state is the number_of_states - 1
-
+      dfaAllocExceptions(0);
       dfaStoreState(i + 1);
       if(i >= start) {
         statuses[i] = '+';

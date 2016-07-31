@@ -508,10 +508,12 @@ std::vector<char> Automaton::getReservedWord(char last_char, int length, bool ex
   for (i = 0; i < length - 1; i++) {
     reserved_word.push_back('1');
   }
+  reserved_word.push_back(last_char);
+
   if (extra_bit) {
     reserved_word.push_back('1');
   }
-  reserved_word.push_back(last_char);
+
   reserved_word.push_back('\0');
 
   return reserved_word;

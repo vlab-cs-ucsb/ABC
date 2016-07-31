@@ -157,13 +157,15 @@ public:
   bool isAcceptingSingleString();
   std::string getAnAcceptingString();
 
+  bool has_sharp_bit() { return sharp_bit; }
+
 protected:
 
   static StringAutomaton_ptr makeRegexAuto(Util::RegularExpression_ptr regular_expression);
 
   // TODO figure out better name
-  static StringAutomaton_ptr dfaSharpStringWithExtraBit(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
-      int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  //static StringAutomaton_ptr dfaSharpStringWithExtraBit(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
+  //    int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
 
   bool hasExceptionToValidStateFrom(int state, std::vector<char>& exception);
   std::vector<int> getAcceptingStates();
@@ -188,9 +190,9 @@ protected:
 private:
   static int name_counter;
   static const int VLOG_LEVEL;
-
-  static const int SHARP0;
-  static const int SHARP1;
+  bool sharp_bit;
+  //static const int SHARP0;
+  //static const int SHARP1;
 };
 
 } /* namespace Theory */

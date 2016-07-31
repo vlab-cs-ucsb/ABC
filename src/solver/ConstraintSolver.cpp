@@ -776,8 +776,9 @@ void ConstraintSolver::visitIndexOf(IndexOf_ptr index_of_term) {
 
   Value_ptr result = nullptr, param_left = getTermValue(index_of_term->subject_term), param_right = getTermValue(
       index_of_term->search_term);
-
+  LOG(INFO) << "Before";
   Theory::IntAutomaton_ptr index_of_auto = param_left->getStringAutomaton()->indexOf(param_right->getStringAutomaton());
+  LOG(INFO) << "After";
   if (index_of_auto->isAcceptingSingleInt()) {
     result = new Value(index_of_auto->getAnAcceptingInt());
     delete index_of_auto;
@@ -922,73 +923,6 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
         LOG(FATAL)<< "Undefined subString semantic";
       }
 
-      StringAutomaton_ptr original, reversed, prefixes, temp, result_value;
-      Value_ptr start_index_value, ss_length_value;
-      IntAutomaton_ptr start_index_auto, ss_length_auto, original_length, temp_length;
-
-      DVLOG(VLOG_LEVEL) << "------- WORRYING BEGINS --------";
-
-
-      start_index_value = getTermValue(sub_string_term->start_index_term);
-      ss_length_value = getTermValue(sub_string_term->end_index_term);
-
-      if(start_index_value->getType() == Value::Type::INT_CONSTANT) {
-        start_index_auto = IntAutomaton::makeInt(start_index_value->getIntConstant());
-      } else if(start_index_value->getType() == Value::Type::INT_AUTOMATON) {
-        start_index_auto = start_index_value->getIntAutomaton();
-      } else {
-        LOG(FATAL) << "Bad value type for start_index_value, substring";
-      }
-
-      if(ss_length_value->getType() == Value::Type::INT_CONSTANT) {
-        ss_length_auto = IntAutomaton::makeInt(ss_length_value->getIntConstant());
-      } else if(ss_length_value->getType() == Value::Type::INT_AUTOMATON) {
-        ss_length_auto = ss_length_value->getIntAutomaton();
-      } else {
-        LOG(FATAL) << "Bad value type for ss_length_value, substring";
-      }
-
-      DVLOG(VLOG_LEVEL) << ">>>>>>>> WORRYING INTENSIFIES >>>>>>>>";
-
-      DVLOG(VLOG_LEVEL) << 1;
-      original = param_subject->getStringAutomaton();
-      DVLOG(VLOG_LEVEL) << 2;
-      original_length = original->length();
-      DVLOG(VLOG_LEVEL) << 3;
-      DVLOG(VLOG_LEVEL) << start_index_value->str() << "," << ss_length_value->str();
-      temp_length = original_length->minus(start_index_auto);
-      DVLOG(VLOG_LEVEL) << 4;
-      delete original_length;
-
-      DVLOG(VLOG_LEVEL) << "<<<<<<<<< WORRYING MORE HARDER >>>>>>>>>";
-
-      reversed = MultiTrackAutomaton::get_reverse_auto(original);
-      DVLOG(VLOG_LEVEL) << 1;
-      prefixes = reversed->prefixes();
-      DVLOG(VLOG_LEVEL) << 2;
-      delete reversed;
-      DVLOG(VLOG_LEVEL) << 3;
-      temp = prefixes->restrictLengthTo(temp_length);
-      DVLOG(VLOG_LEVEL) << 4;
-      delete prefixes;
-      delete temp_length;
-
-      DVLOG(VLOG_LEVEL) << "     i ded       ";
-
-      original = MultiTrackAutomaton::get_reverse_auto(temp);
-      delete temp;
-      temp = original->prefixes();
-      delete original;
-      result_value = temp->restrictLengthTo(ss_length_auto);
-      result = new Value(StringAutomaton::makeAnyString());
-      delete temp;
-      DVLOG(VLOG_LEVEL) << "   !!!  we dunnit !!! ";
-      //DVLOG(VLOG_LEVEL) << "Hope for the best: " << result->isEmptyLanguage();
-      //DVLOG(VLOG_LEVEL) << result->getAnAcceptingString();
-      //DVLOG(VLOG_LEVEL) << "original length: " << original_length->getAnAcceptingInt();
-      //DVLOG(VLOG_LEVEL) << "start index : " << start_index_auto->getAnAcceptingInt();
-      //DVLOG(VLOG_LEVEL) << "length ss: " << ss_length_auto->getAnAcceptingInt();
-      //DVLOG(VLOG_LEVEL) << "temp_len: " << temp_length->getAnAcceptingInt();
 
 
       break;
