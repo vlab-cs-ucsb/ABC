@@ -87,11 +87,11 @@ void ImplicationRunner::visitOr(Or_ptr or_term) {
 void ImplicationRunner::visitEq(Eq_ptr eq_term) {
   if (Concat_ptr left_id = dynamic_cast<Concat_ptr>(eq_term->left_term)) {
     if (Concat_ptr right_id = dynamic_cast<Concat_ptr>(eq_term->right_term)) {
-      Term_ptr implication_term = new Eq(get_length(left_id), get_length(right_id));
-      current_and_->term_list->push_back(implication_term);
+      //Term_ptr implication_term = new Eq(get_length(left_id), get_length(right_id));
+      //current_and_->term_list->push_back(implication_term);
     } else if (!is_precise(left_id) or !dynamic_cast<QualIdentifier_ptr>(eq_term->right_term)) {
-      Term_ptr implication_term = new Eq(get_length(left_id), get_length(eq_term->right_term));
-      current_and_->term_list->push_back(implication_term);
+      //Term_ptr implication_term = new Eq(get_length(left_id), get_length(eq_term->right_term));
+      //current_and_->term_list->push_back(implication_term);
       if (QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->right_term)) {
         if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA) {
           Term_ptr implication_term_begins = new Begins(right_variable->clone(), left_id->term_list->front()->clone());

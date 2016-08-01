@@ -745,8 +745,11 @@ StringAutomaton_ptr StringAutomaton::suffixes() {
   if (sink_state != -1) {
     max = max - 1;
   } else {
+
+    return this->clone();
     sink_state = number_of_states;
     number_of_states++;
+    max++;
   }
 
 
@@ -1557,11 +1560,10 @@ UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
   int sink_state = this->getSinkState(),
           number_of_variables = this->getNumberOfVariables() + 1, // one extra bit
           to_state = 0;
-  //CHECK_GT(sink_state, -1)
+
   int original_num_states = dfa->ns;
   if(sink_state < 0) {
-    sink_state = original_num_states;
-    original_num_states++;
+    sink_state = dfa->ns-1;
   }
 
   int* indices = getIndices(number_of_variables);
@@ -1576,13 +1578,6 @@ UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
   dfaSetup(original_num_states, number_of_variables, indices);
 
   for (int i = 0; i < original_num_states; i++) {
-
-    if(i == sink_state) {
-      dfaAllocExceptions(0);
-      dfaStoreState(sink_state);
-      statuses[i] = '-';
-      continue;
-    }
 
     state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
     while (pp) {

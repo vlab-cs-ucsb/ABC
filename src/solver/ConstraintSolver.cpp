@@ -388,6 +388,10 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
       eq_term->right_term);
 
 
+  param_left->getStringAutomaton()->inspectAuto();
+  param_right->getStringAutomaton()->inspectAuto();
+  std::cin.get();
+
 
   if (Value::Type::BOOl_CONSTANT == param_left->getType() and Value::Type::BOOl_CONSTANT == param_right->getType()) {
     result = new Value(param_left->getBoolConstant() == param_right->getBoolConstant());
@@ -570,6 +574,8 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
   }
   path_trace_.pop_back();
   DVLOG(VLOG_LEVEL) << "------ checking result " << result->isSatisfiable();
+  result->getStringAutomaton()->inspectAuto();
+  std::cin.get();
   setTermValue(concat_term, result);
 }
 
@@ -1060,6 +1066,7 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *qi_term;
 
   Variable_ptr variable = symbol_table_->getVariable(qi_term->getVarName());
+  LOG(INFO) << "variable: " << *variable;
   // check if variable is relational first. if so, since we're storing
   // multitrack values in the string constraint solver, get the variable's value
   // from there and clone it into the symbol table, so the variable value computer has
@@ -1080,7 +1087,6 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
     variable_value = symbol_table_->getValue(variable);
   }
   Value_ptr result = variable_value->clone();
-
   setTermValue(qi_term, result);
   setVariablePath(qi_term);
 }
@@ -1287,9 +1293,14 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
   IntAutomaton_ptr updated_int_auto = nullptr;
   bool has_minus_one = false;
   int number_of_variables_for_int_auto;
+
+LOG(INFO) << "HERE WE GO!";
+
   for (auto& string_term : arithmetic_constraint_solver_.getStringTermsIn(term)) {
     visit(string_term);
+
     string_term_result = getTermValue(string_term);
+
     std::string string_term_var_name = symbol_table_->get_var_name_for_expression(string_term, Variable::Type::INT);
 
     if (Value::Type::INT_AUTOMATON == string_term_result->getType()) {
@@ -1303,6 +1314,8 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
 
       string_term_binary_auto = string_term_unary_auto->toBinaryIntAutomaton(
           string_term_var_name, result->getBinaryIntAutomaton()->getFormula()->clone(), has_minus_one);
+
+
       delete string_term_unary_auto;
       string_term_unary_auto = nullptr;
     } else if (Value::Type::INT_CONSTANT == string_term_result->getType()) {
@@ -1314,7 +1327,6 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     } else {
       LOG(FATAL)<< "unexpected type";
     }
-
     updated_arith_auto = result->getBinaryIntAutomaton()->intersect(string_term_binary_auto);
     delete string_term_binary_auto;
     string_term_binary_auto = nullptr;
