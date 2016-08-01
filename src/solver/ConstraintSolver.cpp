@@ -572,7 +572,6 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
     }
   }
   path_trace_.pop_back();
-  DVLOG(VLOG_LEVEL) << "------ checking result " << result->isSatisfiable();
   setTermValue(concat_term, result);
 }
 

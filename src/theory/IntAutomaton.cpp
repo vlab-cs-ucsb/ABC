@@ -94,25 +94,16 @@ IntAutomaton_ptr IntAutomaton::makeZero(int num_of_variables, int* variable_indi
 
 /**
  *
- * Returns Sigma* except two reserved words (11111111, 11111110)
+ * Returns Sigma*
  */
 IntAutomaton_ptr IntAutomaton::makeAnyInt(int num_of_variables, int* variable_indices) {
   DFA_ptr any_int_dfa = nullptr;
   IntAutomaton_ptr any_int = nullptr;
-  char statuses[2] { '+', '-' };
-  std::vector<char> reserved_1 = Automaton::getReservedWord('1', num_of_variables);
-  std::vector<char> reserved_2 = Automaton::getReservedWord('0', num_of_variables);
-  char* sharp1 = &*reserved_1.begin();
-  char* sharp0 = &*reserved_2.begin();
+  char statuses[1] { '+' };
 
-  dfaSetup(2, num_of_variables, variable_indices);
-  dfaAllocExceptions(2);
-  dfaStoreException(1, sharp1); // word 11111111
-  dfaStoreException(1, sharp0); // word 11111110
-  dfaStoreState(0);
-
+  dfaSetup(1, num_of_variables, variable_indices);
   dfaAllocExceptions(0);
-  dfaStoreState(1);
+  dfaStoreState(0);
 
   any_int_dfa = dfaBuild(statuses);
   any_int = new IntAutomaton(any_int_dfa, true, num_of_variables);

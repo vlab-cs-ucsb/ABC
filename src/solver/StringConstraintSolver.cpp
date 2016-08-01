@@ -68,15 +68,40 @@ void StringConstraintSolver::setCallbacks() {
             temp_relation = right;
             relation->set_right(left);
             relation->set_left(temp_relation);
-            multi_auto = MultiTrackAutomaton::makeConcatExtraTrack(relation);
-          } else if(right->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
-            multi_auto = MultiTrackAutomaton::makeConcatExtraTrack(relation);
+          }
+
+          if(right->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
+            std::map<std::string, int>* trackmap_handle = relation->get_variable_trackmap();
+            std::string name = symbol_table_->get_var_name_for_node(term, Variable::Type::STRING);
+            int id = trackmap_handle->size();
+            (*trackmap_handle)[name] = id;
+
+            temp_relation = new StringRelation();
+            temp_relation->set_type(StringRelation::Type::STRING_VAR);
+            temp_relation->set_data(name);
+
+            relation->set_right(temp_relation);
+            relation->set_variable_trackmap(trackmap_handle);
+            temp_auto = MultiTrackAutomaton::makeAuto(relation);
+            relation->set_right(right);
+
+            right->set_variable_trackmap(trackmap_handle);
+            multi_auto = MultiTrackAutomaton::makeConcatExtraTrack(right);
+            result_auto = temp_auto->intersect(multi_auto);
+            delete temp_auto;
+            delete multi_auto;
+            multi_auto = result_auto->projectKTrack(id);
+            delete result_auto;
+
+            trackmap_handle->erase(name);
+            relation->set_variable_trackmap(trackmap_handle);
+            multi_auto->setRelation(relation->clone());
+            delete temp_relation;
           } else {
             DVLOG(VLOG_LEVEL) << "No concat!";
             multi_auto = MultiTrackAutomaton::makeAuto(relation);
           }
 
-          multi_auto->inspectAuto();
           Value_ptr val = new Value(multi_auto);
           std::string group_name = string_relation_generator_.get_term_group_name(term);
           symbol_table_->updateValue(group_name,val);
