@@ -566,10 +566,10 @@ void VariableValueComputer::visitConcat(Concat_ptr concat_term) {
     visit(child_term);
     return;
   }
-
+LOG(INFO) << 1;
   Value_ptr term_value = getTermPreImage(concat_term);
   Value_ptr child_post_value = getTermPostImage(child_term);
-
+LOG(INFO) << 2;
   // Figure out position of the variable in concat list
   Theory::StringAutomaton_ptr left_of_child = nullptr;
   Theory::StringAutomaton_ptr right_of_child = nullptr;
@@ -589,29 +589,35 @@ void VariableValueComputer::visitConcat(Concat_ptr concat_term) {
       }
     }
   }
+LOG(INFO) << 3;
   right_of_child = current_auto;
   // do the preconcat operations
   Theory::StringAutomaton_ptr tmp_parent_auto = term_value->getStringAutomaton();
   Theory::StringAutomaton_ptr child_result_auto = nullptr;
-
+LOG(INFO) << 4;
   if (left_of_child != nullptr) {
     child_result_auto = tmp_parent_auto->preConcatRight(left_of_child);
     tmp_parent_auto = child_result_auto;
   }
+LOG(INFO) << 5;
   if (right_of_child != nullptr) {
     if (left_of_child != nullptr) { // that means our variable is in between some other variables, make the preconcat precise (this can be avoided if preconcat works perfect)
+      LOG(INFO) << "A";
       Theory::StringAutomaton_ptr tmp_2 = child_post_value->getStringAutomaton()->concat(right_of_child);
       Theory::StringAutomaton_ptr tmp_3 = tmp_parent_auto;
+      LOG(INFO) << "B";
       tmp_parent_auto = tmp_3->intersect(tmp_2);
       child_result_auto = tmp_parent_auto;
       delete tmp_2; tmp_2 = nullptr;
       delete tmp_3; tmp_3 = nullptr;
     }
     Theory::StringAutomaton_ptr  tmp = child_result_auto;
+    LOG(INFO) << "before";
     child_result_auto = tmp_parent_auto->preConcatLeft(right_of_child);
+    LOG(INFO) << "AFTER";
     delete tmp; tmp = nullptr;
   }
-
+LOG(INFO) << 6;
   delete left_of_child; left_of_child = nullptr;
   delete right_of_child; right_of_child = nullptr;
 

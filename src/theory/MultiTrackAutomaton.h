@@ -70,8 +70,8 @@ virtual ~MultiTrackAutomaton();
 
 	static DFA_ptr prepend_lambda(DFA_ptr dfa, int var);
 	static DFA_ptr append_lambda(DFA_ptr dfa, int var);
-	static DFA_ptr trim_lambda_prefix(DFA_ptr dfa, int var);
-	static DFA_ptr trim_lambda_suffix(DFA_ptr dfa, int var);
+	static DFA_ptr trim_lambda_prefix(DFA_ptr dfa, int var, bool project_bit = true);
+	static DFA_ptr trim_lambda_suffix(DFA_ptr dfa, int var, bool project_bit = true);
 	static DFA_ptr trim_prefix(DFA_ptr subject_dfa, DFA_ptr trim_dfa, int var);
 	static DFA_ptr trim_suffix(DFA_ptr subject_dfa, DFA_ptr trim_dfa, int var);
 	static DFA_ptr concat(DFA_ptr prefix_dfa, DFA_ptr suffix_dfa, int var);

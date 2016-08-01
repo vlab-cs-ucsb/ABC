@@ -32,19 +32,23 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_track
 	int* mindices;
 	bool has_sink = true;
 	int num_states = M->ns+1; // lambda state
+	int lambda_state = num_states-1;
 	int var = VAR_PER_TRACK;
 	int len = (num_tracks * var)+1; // extrabit for nondeterminism
 	mindices = getIndices(len);
-	statuses = new char[M->ns+1+1];
+
 	sink = find_sink(M);
 	if(sink < 0) {
 		has_sink = false;
 		sink = num_states;
 		num_states++;
 	}
+
+	statuses = new char[num_states+1];
 	// begin dfa building process
 	// old transitions end in '0'
 	// new transitions end in '1' (lambda transitions)
+
 	dfaSetup(num_states, len, mindices);
 	for(unsigned i = 0; i < M->ns; i++) {
 		state_paths = pp = make_paths(M->bddm, M->q[i]);
@@ -52,12 +56,12 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_track
 		// if state is final, add lambda transition to lambda state
 		if(M->f[i] == 1) {
       std::vector<char> curr(len,'X');
-      for(int i = 0; i < var; i++) {
-      	curr[i_track+num_tracks*i] = '1';
+      for(int k = 0; k < var; k++) {
+      	curr[i_track+num_tracks*k] = '1';
       }
       curr[len-1] = '1'; // new transition, end with '1'
       curr.push_back('\0');
-      state_exeps.push_back(std::make_pair(curr,M->ns));
+      state_exeps.push_back(std::make_pair(curr,lambda_state));
     }
 
 		while(pp) {
@@ -100,19 +104,23 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_track
   for(int i = 0; i < var; i++) {
   	str[i_track+num_tracks*i] = '1';
   }
+  str[len-1] = '1';
   str.push_back('\0');
-  dfaStoreException(M->ns,&str[0]);
+  dfaStoreException(lambda_state,&str[0]);
   dfaStoreState(sink);
+  statuses[lambda_state] = '+';
 
 	// extra sink state, if needed
 	if(!has_sink) {
 		dfaAllocExceptions(0);
 		dfaStoreState(sink);
+		statuses[sink] = '-';
 	}
 
-	statuses[M->ns] = '+';
-	statuses[M->ns+1] = '\0';
-	temp = dfaBuild(statuses);
+	statuses[num_states] = '\0';
+	result = dfaBuild(statuses);
+	temp = dfaMinimize(result);
+	dfaFree(result);
 	// project away the extra bit
 	result = dfaProject(temp,len-1);
 	dfaFree(temp);
@@ -564,38 +572,79 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 			left_track,right_track;
 	StringRelation_ptr left_relation = relation->get_left(),
 		                 right_relation = relation->get_right();
-	std::string var_data,const_data;
+
+	if(right_relation->get_type() != StringRelation::Type::CONCAT_VAR_CONSTANT) {
+		LOG(FATAL) << "BAD concat extratrack!";
+	}
+	std::string left_var_data, right_var_data,const_data;
 	std::vector<std::pair<std::vector<char>,int>> state_exeps;
 
 	// "left relation" is variable, "right relation" is constant
 	// the real left is actually just the last track
-	var_data = left_relation->get_data();
-	const_data = right_relation->get_data();
-	left_track = num_tracks-1;
-	right_track = relation->get_variable_index(var_data);
+	left_var_data = left_relation->get_data();
+	right_var_data = right_relation->get_left()->get_data();
+	const_data = right_relation->get_right()->get_data();
 
-	DVLOG(VLOG_LEVEL) << var_data << "," << const_data;
+	left_track = relation->get_variable_index(left_var_data);
+	right_track = relation->get_variable_index(right_var_data);
+
+	DVLOG(VLOG_LEVEL) << left_var_data << " = " << right_var_data << "," << const_data;
 	if(right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
 		const_string_auto = StringAutomaton::makeString(const_data);
 	} else {
 		const_string_auto = StringAutomaton::makeRegexAuto(const_data);
 	}
 
+  MultiTrackAutomaton_ptr temp_multi = nullptr, prefix_multi = nullptr,
+                          suffix_multi = nullptr, intersect_multi = nullptr;
+  StringAutomaton_ptr any_string = StringAutomaton::makeAnyString();
+
+  temp_dfa = prepend_lambda(const_string_auto->getDFA(),DEFAULT_NUM_VAR);
+  temp_multi = makePrefixSuffix(left_track,right_track,num_tracks,num_tracks+1);
+  prefix_multi = new MultiTrackAutomaton(any_string->getDFA(),right_track,num_tracks+1,DEFAULT_NUM_VAR);
+  suffix_multi = new MultiTrackAutomaton(temp_dfa,num_tracks,num_tracks+1,VAR_PER_TRACK);
+  dfaFree(temp_dfa);
+
+  intersect_multi = temp_multi->intersect(prefix_multi);
+  delete temp_multi;
+  delete prefix_multi;
+
+  temp_multi = intersect_multi;
+  intersect_multi = temp_multi->intersect(suffix_multi);
+  delete temp_multi;
+  delete suffix_multi;
+
+  result_auto = intersect_multi->projectKTrack(num_tracks);
+  delete intersect_multi;
+  delete any_string;
+  delete const_string_auto;
+  result_auto->setRelation(relation->clone());
+  return result_auto;
+/*
 	trace_descr tp;
 	paths state_paths, pp;
 	temp_dfa = const_string_auto->getDFA();
+	int num_states = temp_dfa->ns+1+1; // new initial state, new lambda state
+	int lambda_state = num_states-1;
+	bool has_sink = true;
 	int sink = find_sink(temp_dfa);
+
+	if(sink < 0) {
+		has_sink = false;
+		sink = num_states;
+		num_states++;
+	}
 
 	int var = VAR_PER_TRACK;
 	int len = num_tracks * var;
 	int *mindices = getIndices(len);
-	char* statuses = new char[temp_dfa->ns+2];
+	char* statuses = new char[num_states+1];
 	int nump = 1 << (var-1);
 
 	// left,right tracks equal till right is lambda
 	for(int i = 0; i < nump; i++) {
 		std::vector<char> exep = getBinaryFormat(i, var-1);
-		exep[var-1] = '0';
+		exep.push_back('0');
 		std::vector<char> str(len, 'X');
 		for (int k = 0; k < var; k++) {
 			str[left_track+num_tracks*k] = exep[k];
@@ -605,9 +654,52 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 		state_exeps.push_back(std::make_pair(str,0));
 	}
 
-	// if state for const_string_auto is accepting, then add
-	// a lambda,lambda transition to extra state
-	dfaSetup(temp_dfa->ns+1,len,mindices);
+	// initial state stuff
+	state_paths = pp = make_paths(temp_dfa->bddm, temp_dfa->q[0]);
+	while(pp) {
+		if(pp->to == sink) {
+			pp = pp->next;
+			continue;
+		}
+
+		std::vector<char> str(len, 'X');
+		for(int j = 0; j < DEFAULT_NUM_VAR; j++) {
+			for(tp = pp->trace; tp && tp->index != mindices[j]; tp = tp->next);
+			if(tp) {
+				if(tp->value) str[left_track+num_tracks*j] = '1';
+				else str[left_track+num_tracks*j] = '0';
+			}
+			else str[left_track+num_tracks*j] = 'X';
+			// make right track lambda
+			str[right_track+num_tracks*j] = '1';
+		}
+		str[left_track+num_tracks*(DEFAULT_NUM_VAR)] = '0';
+		str[right_track+num_tracks*(DEFAULT_NUM_VAR)] = '1';
+		str.push_back('\0');
+		state_exeps.push_back(std::make_pair(str,pp->to+1));
+		pp = pp->next;
+	}
+	kill_paths(state_paths);
+
+	// if initial is accepting, add lambda/lambda transition
+	if(temp_dfa->f[0] == 1) {
+		std::vector<char> str(len, 'X');
+		for (int k = 0; k < var; k++) {
+			str[left_track + num_tracks * k] = '1';
+			str[right_track + num_tracks * k] = '1';
+		}
+		str.push_back('\0');
+		state_exeps.push_back(std::make_pair(str, lambda_state));
+	}
+
+	dfaSetup(num_states,len,mindices);
+	dfaAllocExceptions(state_exeps.size());
+	for(int k = 0; k < state_exeps.size(); k++) {
+		dfaStoreException(state_exeps[k].second, &state_exeps[k].first[0]);
+	}
+	dfaStoreState(sink);
+	statuses[0] = '-';
+
 	for(int i = 0; i < temp_dfa->ns; i++) {
 		state_paths = pp = make_paths(temp_dfa->bddm, temp_dfa->q[i]);
 		while(pp) {
@@ -615,6 +707,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 				pp = pp->next;
 				continue;
 			}
+
 			std::vector<char> str(len, 'X');
 			for(int j = 0; j < DEFAULT_NUM_VAR; j++) {
 				for(tp = pp->trace; tp && tp->index != mindices[j]; tp = tp->next);
@@ -642,7 +735,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 				str[right_track+num_tracks*k] = '1';
 			}
 			str.push_back('\0');
-			state_exeps.push_back(std::make_pair(str,temp_dfa->ns));
+			state_exeps.push_back(std::make_pair(str,lambda_state));
 		}
 		dfaAllocExceptions(state_exeps.size());
 		for(int k = 0; k < state_exeps.size(); k++) {
@@ -662,21 +755,31 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 	}
 	str.push_back('\0');
 	dfaStoreException(temp_dfa->ns,&str[0]);
-	statuses[temp_dfa->ns] = '+';
+	statuses[lambda_state] = '+';
 	dfaStoreState(sink);
 
-	statuses[temp_dfa->ns+1] = '\0';
+	// possible that no sink from constant auto... take this into account
+	if(!has_sink) {
+		dfaAllocExceptions(0);
+		dfaStoreState(sink);
+		statuses[sink] = '-';
+	}
+
+	statuses[num_states] = '\0';
 	result_dfa = dfaBuild(statuses);
 	temp_dfa = dfaMinimize(result_dfa);
 	dfaFree(result_dfa);
 
 	result_auto = new MultiTrackAutomaton(temp_dfa,num_tracks);
+	result_auto->inspectAuto();
+	std::cin.get();
 	result_auto->setRelation(relation->clone());
 	delete[] mindices;
 	delete[] statuses;
 	delete const_string_auto;
 
 	return result_auto;
+ */
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeEquality(StringRelation_ptr relation) {
@@ -696,6 +799,8 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeEquality(StringRelation_ptr rel
 
 	result_dfa = make_binary_relation_dfa(StringRelation::Type::EQ,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	result_auto = new MultiTrackAutomaton(result_dfa,num_tracks);
+	result_auto->inspectAuto();
+	std::cin.get();
 	result_auto->setRelation(relation->clone());
 
 	return result_auto;
@@ -1164,8 +1269,84 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 	}
 	dfaReplaceIndices(result,map);
 	delete[] map;
+
 	if(find_sink(result) != -1) {
-		temp = trim_lambda_suffix(result, VAR_PER_TRACK);
+
+/*
+		paths state_paths,pp;
+		trace_descr tp;
+		int *indices = getIndices(VAR_PER_TRACK);
+		int var = VAR_PER_TRACK;
+
+
+		for(int i = 0; i < result->ns; i++) {
+			LOG(INFO) << "state:" << i;
+			if(result->f[i] == 1)
+				LOG(INFO) << "accepting!";
+			else
+				LOG(INFO) << "NOT accepting!";
+			state_paths = pp = make_paths(result->bddm, result->q[i]);
+			while (pp) {
+				std::vector<char> exep(var, 'X');
+				for (unsigned j = 0; j < var; j++) {
+					for (tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
+
+					if (tp) {
+						if (tp->value) exep[j] = '1';
+						else exep[j] = '0';
+					}
+					else
+						exep[j] = 'X';
+				}
+				exep.push_back('\0');
+				LOG(INFO) << &exep[0] << " -> " << pp->to;
+				pp = pp->next;
+			}
+			kill_paths(state_paths);
+		}
+
+		LOG(INFO) << "-----------------------";
+*/
+
+		// trim prefix first, then suffix
+		temp = trim_lambda_suffix(result,VAR_PER_TRACK,false);
+		dfaFree(result);
+		result = temp;
+
+
+/*
+
+		for(int i = 0; i < result->ns; i++) {
+			LOG(INFO) << "state:" << i;
+			if(result->f[i] == 1)
+				LOG(INFO) << "accepting!";
+			else
+				LOG(INFO) << "NOT accepting!";
+			state_paths = pp = make_paths(result->bddm, result->q[i]);
+			while (pp) {
+				std::vector<char> exep(var, 'X');
+				for (unsigned j = 0; j < var; j++) {
+					for (tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
+
+					if (tp) {
+						if (tp->value) exep[j] = '1';
+						else exep[j] = '0';
+					}
+					else
+						exep[j] = 'X';
+				}
+				exep.push_back('\0');
+				LOG(INFO) << &exep[0] << " -> " << pp->to;
+				pp = pp->next;
+			}
+			kill_paths(state_paths);
+		}
+		StringAutomaton_ptr s = new StringAutomaton(result,VAR_PER_TRACK);
+		s->inspectAuto();
+		std::cin.get();
+*/
+
+		temp = trim_lambda_prefix(result, VAR_PER_TRACK);
 		dfaFree(result);
 		result = temp;
 		result_auto = new StringAutomaton(result);
@@ -1340,7 +1521,7 @@ const MultiTrackAutomaton::TransitionVector& MultiTrackAutomaton::generate_trans
 			break;
 	}
 
-	std::vector<std::map<std::string,int>> states(6);
+	std::vector<std::map<std::string,int>> states(3);
 	states[0]["00"] = 0;
 	states[0]["01"] = 1;
 	states[0]["10"] = 2;
@@ -1454,6 +1635,33 @@ DFA_ptr MultiTrackAutomaton::make_binary_relation_dfa(StringRelation::Type type,
 		exeps.push_back(std::make_pair(str,right));
 	}
 
+	LOG(INFO) << "Before";
+
+	std::vector<char> str(len,'X');
+	for(int k = 0; k < var; k++) {
+		str[left_track+num_tracks*k] = '1';
+		str[right_track+num_tracks*k] = '1';
+	}
+	str.push_back('\0');
+	exeps.push_back(std::make_pair(str,eq));
+
+	for(int k = 0; k < var-1; k++) {
+		str[left_track + num_tracks * k] = 'X';
+		str[right_track+ num_tracks * k] = '1';
+	}
+	str[left_track+num_tracks*(var-1)] = '0';
+	str[right_track+num_tracks*(var-1)] = '1';
+	exeps.push_back(std::make_pair(str,right));
+
+	for(int k = 0; k < var-1; k++) {
+		str[left_track + num_tracks * k] = '1';
+		str[right_track+ num_tracks * k] = 'X';
+	}
+	str[left_track+num_tracks*(var-1)] = '1';
+	str[right_track+num_tracks*(var-1)] = '0';
+	exeps.push_back(std::make_pair(str,left));
+
+
 	dfaSetup(4,len,mindices);
 	dfaAllocExceptions(exeps.size());
 	for(int i = 0; i < exeps.size(); i++) {
@@ -1476,8 +1684,9 @@ DFA_ptr MultiTrackAutomaton::make_binary_relation_dfa(StringRelation::Type type,
 	temp_dfa = dfaBuild(statuses);
 	result_dfa = dfaMinimize(temp_dfa);
 	dfaFree(temp_dfa);
-
+LOG(INFO) << "Befor2";
 	aligned_dfa = make_binary_aligned_dfa(left_track,right_track,num_tracks);
+LOG(INFO) << "after";
 	temp_dfa = dfaProduct(result_dfa,aligned_dfa,dfaAND);
 	dfaFree(result_dfa);
 	result_dfa = dfaMinimize(temp_dfa);
@@ -1621,21 +1830,32 @@ DFA_ptr MultiTrackAutomaton::prepend_lambda(DFA_ptr dfa, int var) {
 	trace_descr tp;
 	paths state_paths, pp;
 	std::vector<std::pair<std::vector<char>,int>> state_exeps;
-	int sink;
+	int num_states = M->ns+1;
+	int sink = find_sink(M);
+	bool has_sink = true;
+
+	if(sink < 0) {
+		has_sink = false;
+		sink = num_states;
+		num_states++;
+	} else {
+		sink++; // +1 for new state
+	}
+
 	char* statuses;
 	int* mindices;
 	int len = VAR_PER_TRACK; // 1 more than default_num_var
 
 	mindices = getIndices(len);
-	statuses = new char[M->ns+1+1];
-	sink = find_sink(M);
+	statuses = new char[num_states+1];
+
 	// begin dfa building process
-	dfaSetup(M->ns+1, len, mindices);
+	dfaSetup(num_states, len, mindices);
 
 	// setup for initial state
 	state_paths = pp = make_paths(M->bddm, M->q[0]);
 	while(pp) {
-		if(pp->to != sink) {
+		if(pp->to != sink-1) {
 			std::vector<char> curr(len,'0');
 			for(unsigned j = 0; j < var; j++) {
 				for(tp = pp->trace; tp && (tp->index != mindices[j]); tp = tp->next);
@@ -1661,7 +1881,8 @@ DFA_ptr MultiTrackAutomaton::prepend_lambda(DFA_ptr dfa, int var) {
   for(unsigned k = 0; k < state_exeps.size(); ++k) {
 		dfaStoreException(state_exeps[k].second,&state_exeps[k].first[0]);
 	}
-  dfaStoreState(sink+1);
+  dfaStoreState(sink);
+
 	state_exeps.clear();
 	if(M->f[0] == 1) {
 		statuses[0] = '+';
@@ -1674,9 +1895,9 @@ DFA_ptr MultiTrackAutomaton::prepend_lambda(DFA_ptr dfa, int var) {
 		state_paths = pp = make_paths(M->bddm, M->q[i]);
 
 		while(pp) {
-			if(pp->to != sink) {
+			if(pp->to != sink-1) {
 			  std::vector<char> curr(len,'0');
-				for(unsigned j = 0; j < VAR_PER_TRACK; j++) {
+				for(unsigned j = 0; j < var; j++) {
 					for(tp = pp->trace; tp && (tp->index != mindices[j]); tp = tp->next);
 					if(tp) {
 						if(tp->value) curr[j] = '1';
@@ -1696,7 +1917,7 @@ DFA_ptr MultiTrackAutomaton::prepend_lambda(DFA_ptr dfa, int var) {
 		for(unsigned k = 0; k < state_exeps.size(); ++k) {
 			dfaStoreException(state_exeps[k].second,&state_exeps[k].first[0]);
 		}
-		dfaStoreState(sink+1);
+		dfaStoreState(sink);
 		state_exeps.clear();
 
 		if(M->f[i] == 1) {
@@ -1708,7 +1929,13 @@ DFA_ptr MultiTrackAutomaton::prepend_lambda(DFA_ptr dfa, int var) {
 		}
 	}
 
-	statuses[M->ns+1] = '\0';
+	if(!has_sink) {
+		dfaAllocExceptions(0);
+		dfaStoreState(sink);
+		statuses[sink] = '-';
+	}
+
+	statuses[num_states] = '\0';
 	temp = dfaBuild(statuses);
 	result = dfaMinimize(temp);
 	dfaFree(temp);
@@ -1721,7 +1948,7 @@ DFA_ptr MultiTrackAutomaton::prepend_lambda(DFA_ptr dfa, int var) {
 
 // incoming dfa has extrabit for lambda
 // remove lambda transitions and project away extra bit
-DFA_ptr MultiTrackAutomaton::trim_lambda_prefix(DFA_ptr dfa, int var) {
+DFA_ptr MultiTrackAutomaton::trim_lambda_prefix(DFA_ptr dfa, int var, bool project_bit) {
 	if(var != VAR_PER_TRACK) {
 		LOG(FATAL) << "not correct var";
 	}
@@ -1747,7 +1974,6 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_prefix(DFA_ptr dfa, int var) {
 	while(!states_to_visit.empty()) {
 		int state = states_to_visit.front();
 		states_to_visit.pop();
-
 		state_paths = pp = make_paths(dfa->bddm, dfa->q[state]);
 		std::vector<char> exep(var,'X');
 		while(pp) {
@@ -1766,8 +1992,9 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_prefix(DFA_ptr dfa, int var) {
 					exep[j] = 'X';
 			}
 
-      if (is_exep_equal_char(exep, lambda_vec,var)) {
+      if (is_exep_equal_char(exep, lambda_vec,var) ) {
         if(states_visited[pp->to]) {
+        	pp = pp->next;
           continue;
         }
         states_to_visit.push(pp->to);
@@ -1823,10 +2050,12 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_prefix(DFA_ptr dfa, int var) {
 	      }
 	    }
 
-      std::vector<char> extra_bit_value = getBinaryFormat(i,num_bits); // i = current state
-      std::vector<char> v = exep;
-      v.insert(v.end(),extra_bit_value.begin(),extra_bit_value.end());
-      state_exeps.push_back(std::make_pair(v,pp->to+1));
+			if (!is_exep_equal_char(exep, lambda_vec,var)) {
+				std::vector<char> extra_bit_value = getBinaryFormat(i, num_bits); // i = current state
+				std::vector<char> v = exep;
+				v.insert(v.end(), extra_bit_value.begin(), extra_bit_value.end());
+				state_exeps.push_back(std::make_pair(v, pp->to + 1));
+			}
 	    pp = pp->next;
 	  }
 	  kill_paths(state_paths);
@@ -1842,8 +2071,6 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_prefix(DFA_ptr dfa, int var) {
 	// continue with rest of states
 	for(int i = 0; i < dfa->ns; i++) {
 	  state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
-
-
 	  while(pp) {
       if (pp->to == sink) {
         pp = pp->next;
@@ -1861,7 +2088,7 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_prefix(DFA_ptr dfa, int var) {
       }
       // if not lambda, then add transition, with 0s padded on end
       if (!is_exep_equal_char(exep, lambda_vec,var)) {
-				for (int k = 0; i < num_bits; k++) {
+				for (int k = 0; k < num_bits; k++) {
 					exep.push_back('0');
 				}
 				exep.push_back('\0');
@@ -1886,10 +2113,16 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_prefix(DFA_ptr dfa, int var) {
 	}
 
 	statuses[num_states] = '\0';
-	result_dfa = dfaBuild(statuses);
-	// project away the extra bits, including lambda bit
-	// should be 8 bits afterwards
-	for(int i = 0; i < num_bits+1; i++) {
+
+	temp_dfa = dfaBuild(statuses);
+	result_dfa = dfaMinimize(temp_dfa);
+	dfaFree(temp_dfa);
+	if(project_bit) {
+		// project away the last bit as well
+		num_bits++;
+	}
+
+	for(int i = 0; i < num_bits; i++) {
 	  int bit = len-i-1;
 	  temp_dfa = dfaProject(result_dfa,(unsigned)bit);
 	  dfaFree(result_dfa);
@@ -1904,10 +2137,11 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_prefix(DFA_ptr dfa, int var) {
 }
 
 // var should be 9
-DFA_ptr MultiTrackAutomaton::trim_lambda_suffix(DFA_ptr dfa, int var) {
+DFA_ptr MultiTrackAutomaton::trim_lambda_suffix(DFA_ptr dfa, int var, bool project_bit) {
 	if(var != VAR_PER_TRACK) {
 		LOG(FATAL) << "Bad nuber o bits!";
 	}
+
 	DFA_ptr result_dfa = nullptr, temp = nullptr;
 	paths state_paths, pp;
 	trace_descr tp;
@@ -1961,24 +2195,52 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_suffix(DFA_ptr dfa, int var) {
 	result_dfa = dfaMinimize(temp);
 	dfaFree(temp);
 
-	// project away extra bit
-	temp = dfaProject(result_dfa,var-1);
-	dfaFree(result_dfa);
-	result_dfa = dfaMinimize(temp);
-	dfaFree(temp);
+	if(project_bit) {
+		// project away extra bit
+		temp = dfaProject(result_dfa, var - 1);
+		dfaFree(result_dfa);
+		result_dfa = dfaMinimize(temp);
+		dfaFree(temp);
+/*
+		state_paths = pp = make_paths(result_dfa->bddm, result_dfa->q[0]);
+
+		while (pp) {
+			std::vector<char> exep(var-1, 'X');
+			for (unsigned j = 0; j < var-1; j++) {
+				for (tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
+
+				if (tp) {
+					if (tp->value) exep[j] = '1';
+					else exep[j] = '0';
+				}
+				else
+					exep[j] = 'X';
+			}
+			exep.push_back('\0');
+			LOG(INFO) << &exep[0] << " -> " << pp->to;
+			pp = pp->next;
+		}
+		kill_paths(state_paths);
+
+
+		// make sure no states that aren't reachable, because of above
+		StringAutomaton_ptr any_string_auto = StringAutomaton::makeAnyString();
+		any_string_auto->inspectAuto();
+		StringAutomaton_ptr temp_string_auto = new StringAutomaton(result_dfa);
+		temp_string_auto->inspectAuto();
+		StringAutomaton_ptr result_string_auto = temp_string_auto->intersect(any_string_auto);
+		result_string_auto->inspectAuto();
+		std::cin.get();
+		delete any_string_auto;
+		delete temp_string_auto;
+
+		result_dfa = dfaCopy(result_string_auto->getDFA());
+		delete result_string_auto;
+*/
+	}
 
 	delete[] statuses;
 	delete[] indices;
-
-	// make sure no states that aren't reachable, because of above
-	StringAutomaton_ptr any_string_auto = StringAutomaton::makeAnyString();
-	StringAutomaton_ptr temp_string_auto = new StringAutomaton(result_dfa);
-	StringAutomaton_ptr result_string_auto = temp_string_auto->intersect(any_string_auto);
-	delete any_string_auto;
-	delete temp_string_auto;
-
-	result_dfa = dfaCopy(result_string_auto->getDFA());
-	delete result_string_auto;
 
 	return result_dfa;
 }
@@ -1992,8 +2254,8 @@ DFA_ptr MultiTrackAutomaton::trim_prefix(DFA_ptr subject_dfa, DFA_ptr trim_dfa, 
   // (x,x,lambda) until track 2 is lambda
   // (x,lambda,x) until end
   temp_multi = makePrefixSuffix(0,1,2,3);
-  subject_multi = new MultiTrackAutomaton(subject_dfa,0,3);
-  trim_multi = new MultiTrackAutomaton(trim_dfa,1,3);
+  subject_multi = new MultiTrackAutomaton(subject_dfa,0,3, DEFAULT_NUM_VAR);
+  trim_multi = new MultiTrackAutomaton(trim_dfa,1,3, DEFAULT_NUM_VAR);
 
   intersect_multi = temp_multi->intersect(subject_multi);
   delete temp_multi;
@@ -2004,9 +2266,9 @@ DFA_ptr MultiTrackAutomaton::trim_prefix(DFA_ptr subject_dfa, DFA_ptr trim_dfa, 
   delete temp_multi;
   delete trim_multi;
 
-  // 3rd track has lambda prefix, so get it, then remove the lambdas
+  // 3rd track has lambda prefix, so get it (automatically removes lambda prefix/suffix)
   result_string_auto = intersect_multi->getKTrack(2);
-  result_dfa = trim_lambda_prefix(result_string_auto->getDFA(),var);
+  result_dfa = dfaCopy(result_string_auto->getDFA());
   delete intersect_multi;
   delete result_string_auto;
 
@@ -2022,11 +2284,11 @@ DFA_ptr MultiTrackAutomaton::trim_suffix(DFA_ptr subject_dfa, DFA_ptr trim_dfa, 
   // (x,x,lambda) until track 2 is lambda
   // (x,lambda,x) until end
   temp_multi = makePrefixSuffix(0,1,2,3);
-  subject_multi = new MultiTrackAutomaton(subject_dfa,0,3);
+  subject_multi = new MultiTrackAutomaton(subject_dfa,0,3,DEFAULT_NUM_VAR);
   // gotta prepend trim_dfa first, to go on track 3
   temp_dfa = prepend_lambda(trim_dfa,var);
-  trim_multi = new MultiTrackAutomaton(temp_dfa,2,3);
-  delete temp_dfa;
+  trim_multi = new MultiTrackAutomaton(temp_dfa,2,3,VAR_PER_TRACK);
+  dfaFree(temp_dfa);
 
   intersect_multi = temp_multi->intersect(subject_multi);
   delete temp_multi;
@@ -2058,8 +2320,7 @@ DFA_ptr MultiTrackAutomaton::concat(DFA_ptr prefix_dfa, DFA_ptr suffix_dfa, int 
   prefix_multi = new MultiTrackAutomaton(prefix_dfa,1,3,DEFAULT_NUM_VAR);
   temp_dfa = prepend_lambda(suffix_dfa,var);
   suffix_multi = new MultiTrackAutomaton(temp_dfa,2,3,VAR_PER_TRACK);
-
-  delete temp_dfa;
+  dfaFree(temp_dfa);
 
   intersect_multi = temp_multi->intersect(prefix_multi);
   delete temp_multi;
@@ -2071,6 +2332,8 @@ DFA_ptr MultiTrackAutomaton::concat(DFA_ptr prefix_dfa, DFA_ptr suffix_dfa, int 
   delete suffix_multi;
 
   result_string_auto = intersect_multi->getKTrack(0);
+  //result_string_auto->inspectAuto();
+	//std::cin.get();
   result_dfa = dfaCopy(result_string_auto->getDFA());
   delete intersect_multi;
   delete result_string_auto;

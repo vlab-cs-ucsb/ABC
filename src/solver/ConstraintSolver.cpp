@@ -198,7 +198,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         }
         for (auto &var_track : *relation->get_variable_trackmap()) {
           Variable_ptr v = symbol_table_->getVariable(var_track.first);
-          symbol_table_->setValue(var_track.first,val);
+          symbol_table_->setValue(var_track.first,val->clone());
           /*
           if(v->isSymbolic()) {
             DVLOG(VLOG_LEVEL) << "Setting value for symbolic var " << v->getName() << " with track number: " << val->getMultiTrackAutomaton()->getKTrack(var_track.second);
@@ -209,9 +209,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       }
     }
   }
-  DVLOG(VLOG_LEVEL) << "Done constraint solving, releasing default indices";
-  //Vlab::Theory::StringAutomaton::release_default_indices();
-  //Vlab::Theory::IntAutomaton::release_default_indices();
+
 }
 
 void ConstraintSolver::visitOr(Or_ptr or_term) {
@@ -389,6 +387,9 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
   Value_ptr result = nullptr, param_left = getTermValue(eq_term->left_term), param_right = getTermValue(
       eq_term->right_term);
 
+  //param_left->getStringAutomaton()->inspectAuto();
+  //param_right->getStringAutomaton()->inspectAuto();
+  //std::cin.get();
 
 
   if (Value::Type::BOOl_CONSTANT == param_left->getType() and Value::Type::BOOl_CONSTANT == param_right->getType()) {

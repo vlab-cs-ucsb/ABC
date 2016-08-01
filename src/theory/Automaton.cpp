@@ -569,7 +569,6 @@ int Automaton::find_sink(DFA_ptr dfa) {
   if(dfa == nullptr) {
     LOG(FATAL) << "Null dfa? Really?";
   }
-
   for (int i = 0; i < dfa->ns; i++) {
     int state_id = i;
     if ((bdd_is_leaf(dfa->bddm, dfa->q[state_id])

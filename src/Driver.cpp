@@ -108,7 +108,7 @@ void Driver::initializeSolver() {
   syntactic_optimizer.start();
 
   // TODO dependency slicer should work on no dnf version
-/*
+
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
   dependency_slicer.start();
 
@@ -128,7 +128,7 @@ void Driver::initializeSolver() {
 
   Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
   constraint_sorter.start();
-*/
+
 }
 
 void Driver::solve() {
