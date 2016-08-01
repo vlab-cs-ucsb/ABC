@@ -826,6 +826,7 @@ CountMatrix Automaton::GetAdjacencyCountMatrix(bool count_reserved_words) {
     }
   }
 
+/*
   // TODO use extra bit instead of reserved words, so that we do not need counting trick.
   if (count_reserved_words) {
     for (int s = 0; s < this->dfa->ns; ++s) {
@@ -833,7 +834,7 @@ CountMatrix Automaton::GetAdjacencyCountMatrix(bool count_reserved_words) {
       *max_transition += 2; // add two reserved words
     }
   }
-
+*/
   // make transitions to sink count 0
   int sink_state = this->getSinkState();
   if (sink_state > -1) {
