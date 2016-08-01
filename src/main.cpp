@@ -206,16 +206,15 @@ int main(const int argc, const char **argv) {
           }
           case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {
             ss << "relationalstring" << ".dot";
-            LOG(INFO) << "---Relational String variables---";
+            LOG(INFO) << "";
+            LOG(INFO) << *variable_entry.first;
             Vlab::Theory::StringRelation_ptr rel = variable_entry.second->getMultiTrackAutomaton()->getRelation();
             if(rel == nullptr) {
               LOG(FATAL) << "Cannot get multitrack values, no relation";
             }
-            for(auto var: rel->get_variable_trackmap()) {
-              LOG(INFO) << var.first << "," << var.second;
-            }
+
             if (model_count) {
-              LOG(INFO) << "tuple count: " << variable_entry.first->getName() << " count          : " << driver.Count(variable_entry.first->getName(), bound, true);
+              LOG(INFO) << "count          : " << driver.Count(variable_entry.first->getName(), bound, true);
             }
             break;
           }

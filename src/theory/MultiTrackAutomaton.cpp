@@ -955,7 +955,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::intersect(MultiTrackAutomaton_ptr o
 	intersect_auto = new MultiTrackAutomaton(minimized_dfa, this->num_of_tracks);
 
 	if(this->relation == nullptr && other_auto->relation == nullptr) {
-		LOG(FATAL) << "No relation set for either multitrack during intersection";
+		LOG(INFO) << "No relation set for either multitrack during intersection";
 	} else if(other_auto->relation == nullptr) {
 		intersect_relation = this->relation->clone();
 	} else if(this->relation == nullptr) {
