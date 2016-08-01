@@ -71,10 +71,10 @@ void StringConstraintSolver::setCallbacks() {
           }
 
           if(right->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
-            std::map<std::string, int>* trackmap_handle = relation->get_variable_trackmap();
+            std::map<std::string, int> trackmap_handle = relation->get_variable_trackmap();
             std::string name = symbol_table_->get_var_name_for_node(term, Variable::Type::STRING);
-            int id = trackmap_handle->size();
-            (*trackmap_handle)[name] = id;
+            int id = trackmap_handle.size();
+            trackmap_handle[name] = id;
 
             temp_relation = new StringRelation();
             temp_relation->set_type(StringRelation::Type::STRING_VAR);
@@ -93,7 +93,7 @@ void StringConstraintSolver::setCallbacks() {
             multi_auto = result_auto->projectKTrack(id);
             delete result_auto;
 
-            trackmap_handle->erase(name);
+            trackmap_handle.erase(name);
             relation->set_variable_trackmap(trackmap_handle);
             multi_auto->setRelation(relation->clone());
             delete temp_relation;
@@ -258,7 +258,7 @@ bool StringConstraintSolver::set_term_value(Term_ptr term, Value_ptr value) {
   return false;
 }
 
-Value_ptr StringConstraintSolver::get_variable_value(Variable_ptr variable) {
+Value_ptr StringConstraintSolver::get_variable_value(Variable_ptr variable, bool multi_val) {
   MultiTrackAutomaton_ptr relation_auto = nullptr;
   StringAutomaton_ptr variable_auto = nullptr;
   StringRelation_ptr variable_relation = nullptr;
@@ -269,6 +269,10 @@ Value_ptr StringConstraintSolver::get_variable_value(Variable_ptr variable) {
   }
   DVLOG(VLOG_LEVEL) << "VARIABLE: " << variable->str() << " is part of GROUP: " << group_name;
   relation_value = symbol_table_->getValue(group_name);
+
+  if(multi_val) {
+    return relation_value->clone();
+  }
 
   relation_auto = relation_value->getMultiTrackAutomaton();
   variable_relation = relation_auto->getRelation();

@@ -13,12 +13,11 @@ StringRelation::StringRelation()
     : type_(Type::NONE),
       left_(nullptr),
       right_(nullptr),
-      data_(""),
-      trackmap_handle_(nullptr) {
+      data_("") {
 }
 
 StringRelation::StringRelation(Type t, StringRelation_ptr left, StringRelation_ptr right,
-                std::string data, std::map<std::string, int>* trackmap)
+                std::string data, std::map<std::string, int> trackmap)
     : type_(t),
       left_(left),
       right_(right),
@@ -126,12 +125,12 @@ std::string StringRelation::get_data() {
 }
 
 int StringRelation::get_variable_index(std::string name) {
-  if(trackmap_handle_ == nullptr) {
+  if(trackmap_handle_.size() == 0) {
     LOG(FATAL) << "Cannot get variable index: no trackmap set in relation for variable: " << name;
   }
 
-  auto iter = trackmap_handle_->find(name);
-  if (iter == trackmap_handle_->end()) {
+  auto iter = trackmap_handle_.find(name);
+  if (iter == trackmap_handle_.end()) {
     return -1;
   }
   return iter->second;
@@ -145,19 +144,16 @@ bool StringRelation::has_same_trackmap(StringRelation_ptr other_relation) {
   return true;
 }
 
-std::map<std::string, int>* StringRelation::get_variable_trackmap() {
+std::map<std::string, int> StringRelation::get_variable_trackmap() {
   return this->trackmap_handle_;
 }
 
-void StringRelation::set_variable_trackmap(std::map<std::string, int>* trackmap) {
+void StringRelation::set_variable_trackmap(std::map<std::string, int> trackmap) {
   this->trackmap_handle_ = trackmap;
 }
 
 int StringRelation::get_num_tracks() {
-  if(trackmap_handle_ == nullptr) {
-    return 0;
-  }
-  return trackmap_handle_->size();
+  return trackmap_handle_.size();
 }
 
 std::ostream& operator<<(std::ostream& os, const StringRelation& relation) {

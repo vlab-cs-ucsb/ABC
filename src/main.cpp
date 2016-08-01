@@ -18,10 +18,6 @@
 #include <chrono>
 #include <ratio>
 
-#include <mona/mem.h>
-#include <mona/bdd_external.h>
-#include <mona/bdd_dump.h>
-#include <mona/dfa.h>
 #include <glog/logging.h>
 #include <Driver.h>
 
@@ -159,72 +155,80 @@ int main(const int argc, const char **argv) {
   driver.solve();
   auto end = std::chrono::steady_clock::now();
   auto solving_time = end - start;
-
+  LOG(INFO) << "";
+  LOG(INFO) << "Done solving";
+  LOG(INFO) << "";
   if (driver.isSatisfiable()) {
     if (VLOG_IS_ON(30)) {
       unsigned index = 0;
+
       for(auto& variable_entry : driver.getSatisfyingVariables()) {
 
-        /*
-         * PROBLEM
-         *
-         * if x,y are relational variables, they have no value in the symbol table.
-         * the string_multitrack is in the table, akin to binaryint.
-         *
-         * to fix, insert null check here for variable_entry.second, which will happen if
-         * the variable is relational. then, we can do whatever stuffs.
-         */
         if(variable_entry.second == nullptr) {
-          // check to make sure its actually relational first... otherwise, we got probs
-          // if(relational)
-          LOG(INFO) << "var: " << variable_entry.first->str() << " : relational!";
-          // else
-          // BAAAAD
+          // part of multitrack/binaryint
           continue;
         }
 
         std::stringstream ss;
-        ss << output_root << "/result_" << index++ << ".dot";
-        std::string out_file = ss.str();
-//        driver.inspectResult(variable_entry.second, out_file);
+        ss << output_root << "/result_";
+
 
         switch (variable_entry.second->getType()) {
           case Vlab::Solver::Value::Type::INT_AUTOMATON: {
+            LOG(INFO) << "---Int variable---";
             LOG(INFO) << variable_entry.first->getName() << " : " << variable_entry.second->getASatisfyingExample();
+            ss << "int_" << variable_entry.first->getName() << ".dot";
             break;
           }
           case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
+            LOG(INFO) << "---String variable---";
             LOG(INFO) << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"";
+            ss << "string_" << variable_entry.first->getName() << ".dot";
             if (model_count) {
-              LOG(INFO) << "var: " << variable_entry.first->getName() << " count          : " << driver.Count(variable_entry.first->getName(), bound, false);
+              LOG(INFO) << "var: " << variable_entry.first->getName() << " count          : " << driver.Count(variable_entry.first->getName(), bound, true);
 //              LOG(INFO) << "symbolic count : " << driver.SymbolicCount(variable_entry.first->getName(), bound);
             }
             break;
           }
           case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
             std::map<std::string, int> values = variable_entry.second->getBinaryIntAutomaton()->getAnAcceptingIntForEachVar();
+            ss << "binaryint" << ".dot";
+            LOG(INFO) << "---Binary int variables---";
             for (auto& entry : values) {
               LOG(INFO) << entry.first << " : " << entry.second;
             }
 
             if (model_count) {
-              LOG(INFO) << "count          : " << driver.Count(bound, false);
+              LOG(INFO) << "count          : " << driver.Count(variable_entry.first->getName(), bound, false);
 //              LOG(INFO) << "symbolic count : " << driver.SymbolicCount(bound, false);
             }
             break;
           }
           case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {
-            LOG(INFO) << "Insert multitrack sat var struff here";
-            variable_entry.second->getMultiTrackAutomaton()->inspectAuto();
+            ss << "relationalstring" << ".dot";
+            LOG(INFO) << "";
+            LOG(INFO) << *variable_entry.first;
+            Vlab::Theory::StringRelation_ptr rel = variable_entry.second->getMultiTrackAutomaton()->getRelation();
+            if(rel == nullptr) {
+              LOG(FATAL) << "Cannot get multitrack values, no relation";
+            }
 
             if (model_count) {
-              LOG(INFO) << "var: " << variable_entry.first->getName() << " count          : " << driver.Count(variable_entry.first->getName(), bound, false);
+              LOG(INFO) << "count          : " << driver.Count(variable_entry.first->getName(), bound, true);
             }
             break;
           }
           default:
           break;
         }
+
+        std::string out_file = ss.str();
+        std::ofstream outfile(out_file.c_str());
+        if (!outfile.good()) {
+          std::cout << "cannot open file: " << file_name << std::endl;
+          exit(2);
+        }
+        driver.printResult(variable_entry.second, outfile);
       }
     }
 

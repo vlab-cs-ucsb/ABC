@@ -114,7 +114,7 @@ class StringRelationGenerator : public SMT::Visitor {
   void add_string_variables(SMT::Term_ptr term, std::vector<std::string> variables);
   std::string generate_group_name(SMT::Term_ptr term, std::string var_name);
 
-  VariableTrackMap_ptr get_group_trackmap(std::string name);
+  VariableTrackMap get_group_trackmap(std::string name);
 
   SMT::Script_ptr root_;
   SymbolTable_ptr symbol_table_;

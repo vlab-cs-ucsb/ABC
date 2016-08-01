@@ -177,39 +177,36 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     }
     clearTermValuesAndLocalLetVars();
   }
+
   Value_ptr result = new Value(is_satisfiable);
   setTermValue(and_term, result);
-  if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA && constraint_information_->is_component(and_term)) {
-    // put the relational variables into the symbol table
-    for (auto &term : *(and_term->term_list)) {
-      Value_ptr val = string_constraint_solver_.get_term_value(term);
-      if (val != nullptr) {
-        StringRelation_ptr relation = val->getMultiTrackAutomaton()->getRelation();
 
-        //val->getMultiTrackAutomaton()->inspectAuto();
-
-        if (relation == nullptr) {
-          LOG(INFO) << val->str();
-          LOG(FATAL) << "Relation should not be null if putting in symbol table";
-        }
-        if (relation->get_variable_trackmap() == nullptr) {
-          DVLOG(VLOG_LEVEL) << "Got a relation, but no trackmap!?";
-          LOG(FATAL) << "BAAAAD";
-        }
-        for (auto &var_track : *relation->get_variable_trackmap()) {
-          Variable_ptr v = symbol_table_->getVariable(var_track.first);
-          symbol_table_->setValue(var_track.first,val->clone());
-          /*
-          if(v->isSymbolic()) {
-            DVLOG(VLOG_LEVEL) << "Setting value for symbolic var " << v->getName() << " with track number: " << val->getMultiTrackAutomaton()->getKTrack(var_track.second);
-            symbol_table_->setValue(var_track.first,new Value(val->getMultiTrackAutomaton()->getKTrack(var_track.second)));
-          }
-           */
-        }
-      }
+  if (Option::Solver::LIA_ENGINE_ENABLED && constraint_information_->is_component(and_term)) {
+    Value_ptr val = arithmetic_constraint_solver_.getTermValue(and_term);
+    if(val != nullptr) {
+      std::string name = arithmetic_constraint_solver_.get_int_variable_name(and_term);
+      symbol_table_->setValue(name,val);
     }
   }
 
+  if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA && constraint_information_->is_component(and_term)) {
+    Variable_ptr var = symbol_table_->getSymbolicVariable();
+    Variable_ptr rep_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),var);
+    if(rep_var != nullptr) {
+      LOG(INFO) << "Var,rep_var = " << var->getName() << "," << rep_var->getName();
+      Value_ptr val = string_constraint_solver_.get_variable_value(rep_var,true);
+      if(val != nullptr) {
+        // If symbolic variable is not actually represented, but instead
+        // substituted for another variable, then we need to
+        // account for that when putting the resulting value back into the symbol table
+        StringRelation_ptr relation = val->getMultiTrackAutomaton()->getRelation();
+        VariableTrackMap trackmap = relation->get_variable_trackmap();
+        trackmap[var->getName()] = trackmap[rep_var->getName()];
+        relation->set_variable_trackmap(trackmap);
+        symbol_table_->setValue(rep_var, val);
+      }
+    }
+  }
 }
 
 void ConstraintSolver::visitOr(Or_ptr or_term) {
@@ -387,9 +384,6 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
   Value_ptr result = nullptr, param_left = getTermValue(eq_term->left_term), param_right = getTermValue(
       eq_term->right_term);
 
-  //param_left->getStringAutomaton()->inspectAuto();
-  //param_right->getStringAutomaton()->inspectAuto();
-  //std::cin.get();
 
 
   if (Value::Type::BOOl_CONSTANT == param_left->getType() and Value::Type::BOOl_CONSTANT == param_right->getType()) {
@@ -572,6 +566,7 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
     }
   }
   path_trace_.pop_back();
+  DVLOG(VLOG_LEVEL) << "------ checking result " << result->isSatisfiable();
   setTermValue(concat_term, result);
 }
 
@@ -776,9 +771,8 @@ void ConstraintSolver::visitIndexOf(IndexOf_ptr index_of_term) {
 
   Value_ptr result = nullptr, param_left = getTermValue(index_of_term->subject_term), param_right = getTermValue(
       index_of_term->search_term);
-  LOG(INFO) << "Before";
+
   Theory::IntAutomaton_ptr index_of_auto = param_left->getStringAutomaton()->indexOf(param_right->getStringAutomaton());
-  LOG(INFO) << "After";
   if (index_of_auto->isAcceptingSingleInt()) {
     result = new Value(index_of_auto->getAnAcceptingInt());
     delete index_of_auto;
@@ -922,8 +916,6 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
         LOG(INFO) << sub_string_term->end_index_term->str();
         LOG(FATAL)<< "Undefined subString semantic";
       }
-
-
 
       break;
     }
