@@ -15,7 +15,8 @@
 #include <string>
 
 #include <glog/logging.h>
-#include "smt/ast.h"
+
+#include "../smt/ast.h"
 
 namespace Vlab {
 namespace Solver {

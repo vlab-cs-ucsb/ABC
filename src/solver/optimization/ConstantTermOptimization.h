@@ -17,8 +17,9 @@
 #include <iomanip>
 
 #include <glog/logging.h>
-#include "smt/ast.h"
-#include "utils/RegularExpression.h"
+
+#include "../../smt/ast.h"
+#include "../../utils/RegularExpression.h"
 
 namespace Vlab {
 namespace Solver {

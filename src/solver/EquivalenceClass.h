@@ -16,7 +16,7 @@
 #include <string>
 #include <sstream>
 
-#include "smt/ast.h"
+#include "../smt/ast.h"
 
 namespace Vlab {
 namespace Solver {

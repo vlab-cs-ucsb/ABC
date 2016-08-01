@@ -14,8 +14,8 @@
 #include <map>
 #include <stack>
 
-#include "theory/DAGraphNode.h"
-#include "theory/Graph.h"
+#include "DAGraphNode.h"
+#include "Graph.h"
 
 namespace Vlab {
 namespace Theory {

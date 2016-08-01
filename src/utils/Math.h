@@ -10,6 +10,7 @@
 
 #include <cstdlib>
 #include <vector>
+
 #include <boost/multiprecision/cpp_int.hpp>
 
 namespace Vlab {

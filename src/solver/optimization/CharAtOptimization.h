@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "solver/optimization/ConstantTermChecker.h"
-#include "smt/ast.h"
+#include "../../smt/ast.h"
+#include "ConstantTermChecker.h"
 
 namespace Vlab {
 namespace Solver {

@@ -9,7 +9,8 @@
 #define SOLVER_COUNTER_H_
 
 #include <glog/logging.h>
-#include "smt/ast.h"
+
+#include "../smt/ast.h"
 #include "SymbolTable.h"
 #include "AstTraverser.h"
 

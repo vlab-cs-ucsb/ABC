@@ -11,14 +11,29 @@
 #include <cstdbool>
 #include <map>
 #include <vector>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <utility>
 
+#include <glog/logging.h>
 
-#include "smt/typedefs.h"
-#include "solver/ArithmeticConstraintSolver.h"
-#include "solver/ConstraintInformation.h"
-#include "solver/SymbolTable.h"
-#include "solver/Value.h"
-#include "solver/StringConstraintSolver.h"
+#include "../smt/typedefs.h"
+#include "../smt/ast.h"
+#include "../smt/Visitor.h"
+#include "../theory/ArithmeticFormula.h"
+#include "../theory/BinaryIntAutomaton.h"
+#include "../theory/IntAutomaton.h"
+#include "../theory/StringAutomaton.h"
+#include "../theory/UnaryAutomaton.h"
+#include "../options/Solver.h"
+#include "Ast2Dot.h"
+#include "VariableValueComputer.h"
+#include "ArithmeticConstraintSolver.h"
+#include "ConstraintInformation.h"
+#include "SymbolTable.h"
+#include "Value.h"
+#include "StringConstraintSolver.h"
 
 
 namespace Vlab {

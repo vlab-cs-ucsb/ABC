@@ -8,8 +8,15 @@
 #ifndef THEORY_AUTOMATON_H_
 #define THEORY_AUTOMATON_H_
 
+#include <__bit_reference>
+#include <algorithm>
+#include <cstdlib>
+#include <cstring>
+#include <initializer_list>
+#include <iterator>
 #include <string>
 #include <sstream>
+#include <utility>
 #include <iostream>
 #include <fstream>
 #include <array>
@@ -21,21 +28,22 @@
 #include <queue>
 #include <cmath>
 #include <functional>
-#include <boost/multiprecision/cpp_int.hpp>
 
 #include <glog/logging.h>
+#include <boost/multiprecision/cpp_int.hpp>
 #include <mona/mem.h>
 #include <mona/bdd_external.h>
 #include <mona/bdd_dump.h>
 #include <mona/dfa.h>
 
-#include "options/Theory.h"
-#include "utils/RegularExpression.h"
-#include "utils/Cmd.h"
-#include "utils/Math.h"
-#include "theory/Graph.h"
-#include "theory/DAGraph.h"
-#include "theory/SemilinearSet.h"
+#include "../options/Theory.h"
+#include "../utils/RegularExpression.h"
+#include "../utils/Cmd.h"
+#include "../utils/Math.h"
+#include "GraphNode.h"
+#include "Graph.h"
+#include "DAGraph.h"
+#include "SemilinearSet.h"
 
 namespace Vlab {
 namespace Theory {

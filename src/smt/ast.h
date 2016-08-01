@@ -14,11 +14,14 @@
 #include <cstdint>
 #include <vector>
 #include <stdexcept>
+#include <stdarg.h>
 
 #include <glog/logging.h>
+
 #include "typedefs.h"
 #include "Visitable.h"
 #include "Visitor.h"
+
 
 namespace Vlab {
 namespace SMT {

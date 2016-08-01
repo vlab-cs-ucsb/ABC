@@ -11,10 +11,10 @@
 #include <vector>
 #include <algorithm>
 
-#include "theory/Automaton.h"
-#include "theory/UnaryAutomaton.h"
-#include "theory/StringAutomaton.h"
-#include "theory/MultiTrackAutomaton.h"
+#include "Automaton.h"
+#include "UnaryAutomaton.h"
+#include "StringAutomaton.h"
+#include "MultiTrackAutomaton.h"
 
 namespace Vlab {
 namespace Theory {

@@ -6,7 +6,6 @@
  */
 
 #include "ast.h"
-#include <stdarg.h>
 
 namespace Vlab {
 namespace SMT {

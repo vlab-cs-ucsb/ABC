@@ -18,12 +18,13 @@
 #include <string>
 
 #include <glog/logging.h>
-#include "smt/ast.h"
-#include "theory/StringAutomaton.h"
-#include "solver/Value.h"
-#include "solver/SymbolTable.h"
-#include "solver/EquivalenceClass.h"
-#include "solver/SyntacticOptimizer.h"
+
+#include "../smt/ast.h"
+#include "../theory/StringAutomaton.h"
+#include "Value.h"
+#include "SymbolTable.h"
+#include "EquivalenceClass.h"
+#include "SyntacticOptimizer.h"
 
 namespace Vlab {
 namespace Solver {

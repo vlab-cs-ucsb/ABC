@@ -26,20 +26,19 @@
 #include <utility>
 
 #include <boost/multiprecision/cpp_int.hpp>
-
 #include <boost/multiprecision/number.hpp>
 #include <glog/logging.h>
 #include <mona/bdd.h>
 #include <mona/dfa.h>
 
-#include "options/Theory.h"
-#include "utils/Math.h"
-#include "utils/List.h"
-#include "theory/ArithmeticFormula.h"
-#include "theory/Automaton.h"
-#include "theory/BinaryState.h"
-#include "theory/SemilinearSet.h"
-#include "theory/UnaryAutomaton.h"
+#include "../options/Theory.h"
+#include "../utils/Math.h"
+#include "../utils/List.h"
+#include "ArithmeticFormula.h"
+#include "Automaton.h"
+#include "BinaryState.h"
+#include "SemilinearSet.h"
+#include "UnaryAutomaton.h"
 
 namespace Vlab {
 namespace Theory {

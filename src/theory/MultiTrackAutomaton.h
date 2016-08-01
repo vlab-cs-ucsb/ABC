@@ -10,8 +10,8 @@
 
 #include <glog/logging.h>
 
-#include "theory/StringAutomaton.h"
-#include "theory/StringRelation.h"
+#include "StringAutomaton.h"
+#include "StringRelation.h"
 
 namespace Vlab {
 namespace Theory {

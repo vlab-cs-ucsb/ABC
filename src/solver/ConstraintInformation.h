@@ -14,7 +14,7 @@
 #include <cstdbool>
 #include <set>
 
-#include "smt/typedefs.h"
+#include "../smt/typedefs.h"
 
 namespace Vlab {
 namespace Solver {

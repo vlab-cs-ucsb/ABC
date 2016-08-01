@@ -9,15 +9,15 @@
 
 #include <glog/logging.h>
 
-#include "theory/MultiTrackAutomaton.h"
-#include "theory/StringAutomaton.h"
+#include "../smt/typedefs.h"
+#include "../smt/ast.h"
+#include "../theory/MultiTrackAutomaton.h"
+#include "../theory/StringAutomaton.h"
 #include "StringRelationGenerator.h"
 #include "ConstraintInformation.h"
 #include "AstTraverser.h"
-#include "smt/ast.h"
 #include "SymbolTable.h"
 #include "Value.h"
-#include "smt/typedefs.h"
 
 namespace Vlab {
 namespace Solver {

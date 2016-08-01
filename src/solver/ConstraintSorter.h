@@ -17,7 +17,8 @@
 #include <algorithm>
 
 #include <glog/logging.h>
-#include "smt/ast.h"
+
+#include "../smt/ast.h"
 #include "SymbolTable.h"
 #include "Counter.h"
 

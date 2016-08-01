@@ -20,7 +20,8 @@
 #include <cmath>
 
 #include <glog/logging.h>
-#include "utils/RegularExpression.h"
+
+#include "../utils/RegularExpression.h"
 #include "Graph.h"
 #include "DAGraph.h"
 #include "Automaton.h"

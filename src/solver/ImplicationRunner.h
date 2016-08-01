@@ -11,10 +11,21 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <cstdbool>
+#include <iostream>
+#include <iterator>
+#include <string>
+#include <utility>
+
+#include <glog/logging.h>
+#include <glog/vlog_is_on.h>
 
 #include "../smt/typedefs.h"
-#include "solver/AstTraverser.h"
-#include "solver/SymbolTable.h"
+#include "../smt/ast.h"
+#include "../smt/Visitor.h"
+#include "../utils/List.h"
+#include "AstTraverser.h"
+#include "SymbolTable.h"
 
 namespace Vlab {
 namespace Solver {

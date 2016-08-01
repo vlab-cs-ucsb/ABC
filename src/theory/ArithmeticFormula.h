@@ -8,14 +8,18 @@
 #ifndef SRC_THEORY_ARITHMETICFORMULA_H_
 #define SRC_THEORY_ARITHMETICFORMULA_H_
 
-#include <vector>
+#include <__locale>
+#include <cmath>
+#include <cstdlib>
 #include <map>
 #include <string>
 #include <sstream>
-#include <cmath>
+#include <utility>
+#include <vector>
 
 #include <glog/logging.h>
-#include "utils/Math.h"
+
+#include "../utils/Math.h"
 
 namespace Vlab {
 namespace Theory {

@@ -14,18 +14,26 @@
 #include <functional>
 #include <string>
 #include <regex>
+#include <cstdbool>
+#include <iterator>
+#include <string>
+#include <utility>
+#include <vector>
+#include <algorithm>
 
 #include <glog/logging.h>
-#include "smt/ast.h"
+
+#include "../smt/typedefs.h"
+#include "../smt/Visitor.h"
+#include "../smt/ast.h"
+#include "../utils/RegularExpression.h"
 #include "options/Solver.h"
-#include "Ast2Dot.h"
-#include "SymbolTable.h"
 #include "optimization/CharAtOptimization.h"
 #include "optimization/SubstringOptimization.h"
-#include "utils/RegularExpression.h"
 #include "optimization/ConstantTermChecker.h"
 #include "optimization/ConstantTermOptimization.h"
-
+#include "Ast2Dot.h"
+#include "SymbolTable.h"
 
 namespace Vlab {
 namespace Solver {

@@ -12,11 +12,12 @@
 #include <sstream>
 
 #include <glog/logging.h>
-#include "theory/BoolAutomaton.h"
-#include "theory/IntAutomaton.h"
-#include "theory/BinaryIntAutomaton.h"
-#include "theory/StringAutomaton.h"
-#include "theory/MultiTrackAutomaton.h"
+
+#include "../theory/BoolAutomaton.h"
+#include "../theory/IntAutomaton.h"
+#include "../theory/BinaryIntAutomaton.h"
+#include "../theory/StringAutomaton.h"
+#include "../theory/MultiTrackAutomaton.h"
 
 namespace Vlab {
 namespace Solver {

@@ -23,8 +23,8 @@
 #undef YY_DECL
 #define YY_DECL Vlab::SMT::Parser::symbol_type Vlab::SMT::Scanner::yylex_next_symbol()
 
-#include "parser/parser.hpp"
-#include "parser/location.hh"
+#include "parser.hpp"
+#include "location.hh"
 
 namespace Vlab {
 namespace SMT {

@@ -7,23 +7,6 @@
 
 #include "ConstraintSolver.h"
 
-#include <glog/logging.h>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <utility>
-
-#include "options/Solver.h"
-#include "smt/ast.h"
-#include "smt/Visitor.h"
-#include "theory/ArithmeticFormula.h"
-#include "theory/BinaryIntAutomaton.h"
-#include "theory/IntAutomaton.h"
-#include "theory/StringAutomaton.h"
-#include "theory/UnaryAutomaton.h"
-#include "Ast2Dot.h"
-#include "VariableValueComputer.h"
-
 namespace Vlab {
 namespace Solver {
 

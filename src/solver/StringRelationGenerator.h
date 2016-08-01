@@ -14,9 +14,14 @@
 #include <map>
 #include <memory>
 #include <unordered_set>
+#include <iostream>
+#include <utility>
+#include <vector>
 
-#include "smt/ast.h"
-#include "theory/StringRelation.h"
+#include <glog/logging.h>
+
+#include "../smt/ast.h"
+#include "../theory/StringRelation.h"
 #include "SymbolTable.h"
 #include "ConstraintInformation.h"
 

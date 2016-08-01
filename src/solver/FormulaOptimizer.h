@@ -16,7 +16,8 @@
 #include <functional>
 
 #include <glog/logging.h>
-#include "smt/ast.h"
+
+#include "../smt/ast.h"
 #include "Ast2Dot.h"
 #include "SymbolTable.h"
 #include "AstTraverser.h"

@@ -16,9 +16,10 @@
 #include <sstream>
 
 #include <glog/logging.h>
-#include "smt/ast.h"
+
+#include "../smt/ast.h"
+#include "../theory/ArithmeticFormula.h"
 #include "SymbolTable.h"
-#include "theory/ArithmeticFormula.h"
 #include "Ast2Dot.h"
 
 namespace Vlab {

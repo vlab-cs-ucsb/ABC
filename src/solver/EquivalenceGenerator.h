@@ -20,13 +20,14 @@
 #include <utility>
 
 #include <glog/logging.h>
-#include "smt/ast.h"
-#include "solver/AstTraverser.h"
-#include "solver/EquivalenceClass.h"
-#include "solver/SymbolTable.h"
-#include "solver/Counter.h"
-#include "solver/EquivClassRuleRunner.h"
-#include "solver/optimization/ConstantTermChecker.h"
+
+#include "../smt/ast.h"
+#include "AstTraverser.h"
+#include "EquivalenceClass.h"
+#include "SymbolTable.h"
+#include "Counter.h"
+#include "EquivClassRuleRunner.h"
+#include "optimization/ConstantTermChecker.h"
 
 namespace Vlab {
 namespace Solver {

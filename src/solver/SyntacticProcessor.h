@@ -13,9 +13,9 @@
 
 #include <sstream>
 
-#include "AstTraverser.h"
-#include "smt/ast.h"
+#include "../smt/ast.h"
 #include "options/Solver.h"
+#include "AstTraverser.h"
 
 namespace Vlab {
 namespace Solver {

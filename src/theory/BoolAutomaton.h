@@ -11,7 +11,8 @@
 #include <array>
 
 #include <glog/logging.h>
-#include "theory/Automaton.h"
+
+#include "Automaton.h"
 
 namespace Vlab {
 namespace Theory {

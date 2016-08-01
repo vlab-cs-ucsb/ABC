@@ -16,8 +16,8 @@
 #include <sstream>
 #include <vector>
 
-#include "utils/List.h"
-#include "utils/Math.h"
+#include "../utils/List.h"
+#include "../utils/Math.h"
 
 namespace Vlab {
 namespace Theory {

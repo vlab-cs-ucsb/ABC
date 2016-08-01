@@ -11,7 +11,8 @@
 #include <stack>
 
 #include<glog/logging.h>
-#include "smt/ast.h"
+
+#include "../smt/ast.h"
 #include "SymbolTable.h"
 #include "options/Solver.h"
 

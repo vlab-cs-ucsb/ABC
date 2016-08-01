@@ -17,10 +17,11 @@
 #include <sstream>
 
 #include <glog/logging.h>
-#include "smt/ast.h"
-#include "solver/Ast2Dot.h"
-#include "solver/Value.h"
-#include "solver/EquivalenceClass.h"
+
+#include "../smt/ast.h"
+#include "Ast2Dot.h"
+#include "Value.h"
+#include "EquivalenceClass.h"
 
 namespace Vlab {
 namespace Solver {
