@@ -798,15 +798,12 @@ void VariableValueComputer::visitEnds(Ends_ptr ends_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *ends_term;
   popTerm(ends_term);
   Term_ptr child_term = current_path->back();
-
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
     return;
   }
-
   Value_ptr term_value = getTermPreImage(ends_term);
-
   if (child_term == ends_term->subject_term) {
     child_value = term_value->clone();
   } else {
@@ -815,7 +812,6 @@ void VariableValueComputer::visitEnds(Ends_ptr ends_term) {
     child_value = new Value(child_post_value->getStringAutomaton()->intersect(suffixes_auto));
     delete suffixes_auto; suffixes_auto = nullptr;
   }
-
   setTermPreImage(child_term, child_value);
   visit(child_term);
 }

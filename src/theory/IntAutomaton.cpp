@@ -499,7 +499,9 @@ int IntAutomaton::getMaxAcceptedInt() {
   AdjacencyList adjacency_count_list = this->getAdjacencyCountList();
   adjacency_count_list[this->getSinkState()] = NodeVector(0);
 
+
   const int n = adjacency_count_list.size();
+
   int y;
   int * u = new int[n];
   int * v = new int[n];
@@ -861,11 +863,23 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
   DFA_ptr unary_dfa = nullptr;
   int number_of_variables = 1;
   int* indices = getIndices(number_of_variables);
-  const int number_of_states = this->dfa->ns;
+  int number_of_states = this->dfa->ns;
   int to_state, sink_state = getSinkState();
+
+  if(sink_state < 0) {
+    sink_state = number_of_states;
+    number_of_states++;
+  }
+
   std::vector<char> unary_exception = {'1'};
   char* statuses = new char[number_of_states + 1];
   std::vector<char> exception = {'0', '0', '0', '0', '0', '0', '0', '0'};
+
+
+  LOG(INFO) << "Number of states: " << number_of_states;
+  LOG(INFO) << "Sink: " << sink_state;
+
+
 
   dfaSetup(number_of_states, number_of_variables, indices);
 
@@ -885,6 +899,7 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
   statuses[number_of_states] = '\0';
   dfaAllocExceptions(0);
   dfaStoreState(sink_state);
+  statuses[sink_state] = '-';
 
   unary_dfa = dfaBuild(statuses);
 

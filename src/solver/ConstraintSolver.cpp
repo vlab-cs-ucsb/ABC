@@ -185,12 +185,15 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     Value_ptr val = arithmetic_constraint_solver_.getTermValue(and_term);
     if(val != nullptr) {
       std::string name = arithmetic_constraint_solver_.get_int_variable_name(and_term);
-      symbol_table_->setValue(name,val);
+      symbol_table_->setValue(name,val->clone());
     }
   }
 
   if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA && constraint_information_->is_component(and_term)) {
     Variable_ptr var = symbol_table_->getSymbolicVariable();
+    if(var == nullptr) {
+      return;
+    }
     Variable_ptr rep_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),var);
     if(rep_var != nullptr) {
       LOG(INFO) << "Var,rep_var = " << var->getName() << "," << rep_var->getName();
@@ -615,6 +618,8 @@ void ConstraintSolver::visitLen(Len_ptr len_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *len_term;
 
   Value_ptr result = nullptr, param = getTermValue(len_term->term);
+
+
 
   Theory::IntAutomaton_ptr int_auto = param->getStringAutomaton()->length();
 

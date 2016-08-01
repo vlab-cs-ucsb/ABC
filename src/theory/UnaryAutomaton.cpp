@@ -123,7 +123,8 @@ SemilinearSet_ptr UnaryAutomaton::getSemilinearSet() {
           current_state = this->dfa->s,
           sink_state = this->getSinkState();
 
-  CHECK_NE(-1, sink_state);
+  LOG(INFO) << "Current state: " << current_state;
+  CHECK_NE(-1,sink_state);
 
   std::vector<int> states;
   std::map<int, int> values;

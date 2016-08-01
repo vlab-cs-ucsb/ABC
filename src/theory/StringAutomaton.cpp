@@ -744,7 +744,12 @@ StringAutomaton_ptr StringAutomaton::suffixes() {
   unsigned max = number_of_states;
   if (sink_state != -1) {
     max = max - 1;
+  } else {
+    sink_state = number_of_states;
+    number_of_states++;
   }
+
+
 
   // if number of variables are too large for mona, implement an algorithm that find suffixes by finding
   // sub suffixes and union them
