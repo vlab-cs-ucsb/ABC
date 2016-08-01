@@ -1260,6 +1260,7 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
   delete[] statuses;
 
   this->dfa = trimmed_dfa;
+
 	boost::multiprecision::cpp_int ret = Automaton::Count(bound, count_less_than_or_equal_to_bound, count_reserved_words);
   this->dfa = original_dfa;
   dfaFree(trimmed_dfa);
@@ -1462,8 +1463,6 @@ DFA_ptr MultiTrackAutomaton::make_binary_relation_dfa(StringRelation::Type type,
 		str.push_back('\0');
 		exeps.push_back(std::make_pair(str,right));
 	}
-
-	LOG(INFO) << "Before";
 
 	std::vector<char> str(len,'X');
 	for(int k = 0; k < var; k++) {

@@ -912,10 +912,11 @@ AdjacencyList Automaton::getAdjacencyCountList(bool count_reserved_words) {
     }
   }
 
+/*
   if (count_reserved_words) {
     addReservedWordsToCount(adjacency_count_list);
   }
-
+*/
 //  for (int i = 0; i < adjacency_count_list.size(); i++) {
 //    std::cout << i << " : ";
 //    for (int j = 0; j < adjacency_count_list[i].size(); j++) {

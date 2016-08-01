@@ -123,8 +123,7 @@ SemilinearSet_ptr UnaryAutomaton::getSemilinearSet() {
           current_state = this->dfa->s,
           sink_state = this->getSinkState();
 
-  LOG(INFO) << "Current state: " << current_state;
-  CHECK_NE(-1,sink_state);
+  //CHECK_NE(-1,sink_state);
 
   std::vector<int> states;
   std::map<int, int> values;
@@ -134,7 +133,8 @@ SemilinearSet_ptr UnaryAutomaton::getSemilinearSet() {
   }
 
   // loop over all states except for sink state
-  for (int s = 0; (s < this->dfa->ns - 1); s++) {
+  for (int s = 0; s < this->dfa->ns; s++) {
+    if(s == sink_state) continue;
     values[current_state] = s;
     states.push_back(current_state);
 
@@ -190,8 +190,16 @@ IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool ad
   IntAutomaton_ptr int_auto = nullptr;
   DFA_ptr int_dfa = nullptr;
   int* indices = getIndices(number_of_variables);
-  const int number_of_states = this->dfa->ns;
+  int number_of_states = this->dfa->ns;
   int to_state, sink_state = getSinkState();
+
+  bool has_sink = true;
+  if(sink_state < 0) {
+    has_sink = false;
+    sink_state = number_of_states;
+    number_of_states++;
+  }
+
   std::vector<char> unary_exception = {'1'};
   char* statuses = new char[number_of_states + 1];
   std::vector< std::vector<char> > exceptions = {
@@ -218,6 +226,12 @@ IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool ad
     } else {
       statuses[s] = '-';
     }
+  }
+
+  if(!has_sink) {
+    dfaAllocExceptions(0);
+    dfaStoreState(sink_state);
+    statuses[sink_state] = '-';
   }
   statuses[number_of_states] = '\0';
   dfaAllocExceptions(0);

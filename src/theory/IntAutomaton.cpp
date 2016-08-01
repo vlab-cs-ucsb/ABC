@@ -866,6 +866,7 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
   int number_of_states = this->dfa->ns;
   int to_state, sink_state = getSinkState();
 
+  // is this right?
   if(sink_state < 0) {
     sink_state = number_of_states;
     number_of_states++;
@@ -874,11 +875,6 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
   std::vector<char> unary_exception = {'1'};
   char* statuses = new char[number_of_states + 1];
   std::vector<char> exception = {'0', '0', '0', '0', '0', '0', '0', '0'};
-
-
-  LOG(INFO) << "Number of states: " << number_of_states;
-  LOG(INFO) << "Sink: " << sink_state;
-
 
 
   dfaSetup(number_of_states, number_of_variables, indices);

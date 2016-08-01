@@ -1557,8 +1557,13 @@ UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
   int sink_state = this->getSinkState(),
           number_of_variables = this->getNumberOfVariables() + 1, // one extra bit
           to_state = 0;
-  CHECK_GT(sink_state, -1);
+  //CHECK_GT(sink_state, -1)
   int original_num_states = dfa->ns;
+  if(sink_state < 0) {
+    sink_state = original_num_states;
+    original_num_states++;
+  }
+
   int* indices = getIndices(number_of_variables);
   char* statuses = new char[original_num_states + 1];
   std::map<std::vector<char>*, int> exceptions;
@@ -1571,6 +1576,14 @@ UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
   dfaSetup(original_num_states, number_of_variables, indices);
 
   for (int i = 0; i < original_num_states; i++) {
+
+    if(i == sink_state) {
+      dfaAllocExceptions(0);
+      dfaStoreState(sink_state);
+      statuses[i] = '-';
+      continue;
+    }
+
     state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
     while (pp) {
       if (pp->to != (unsigned)sink_state) {
@@ -1737,8 +1750,6 @@ IntAutomaton_ptr StringAutomaton::length() {
   } else if (this->isAcceptingSingleString()) {
     std::string example = this->getAnAcceptingString();
     length_auto = IntAutomaton::makeInt(example.length(), num_of_variables);
-  } else if(getSinkState() < 0) {
-    length_auto = IntAutomaton::makeIntGreaterThanOrEqual(0);
   } else {
     UnaryAutomaton_ptr unary_auto = this->toUnaryAutomaton();
     length_auto = unary_auto->toIntAutomaton(num_of_variables);
