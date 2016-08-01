@@ -20,7 +20,6 @@ const std::string Automaton::Name::NONE = "none";
 const std::string Automaton::Name::BOOL = "BoolAutomaton";
 const std::string Automaton::Name::UNARY = "UnaryAutomaton";
 const std::string Automaton::Name::INT = "IntAutomaton";
-const std::string Automaton::Name::INTBOOl = "IntBoolAutomaton";
 const std::string Automaton::Name::STRING = "StringAutomaton";
 const std::string Automaton::Name::BINARYINT = "BinaryIntAutomaton";
 
@@ -62,8 +61,6 @@ std::string Automaton::str() const {
     return Automaton::Name::UNARY;
   case Automaton::Type::INT:
     return Automaton::Name::INT;
-  case Automaton::Type::INTBOOl:
-    return Automaton::Name::INTBOOl;
   case Automaton::Type::STRING:
     return Automaton::Name::STRING;
   case Automaton::Type::BINARYINT:
@@ -465,32 +462,6 @@ unsigned* Automaton::getIndices(unsigned num_of_variables, unsigned extra_num_of
 
   return indices;
 }
-
-/**
- * Implementation for LibStranger's bintostr function
- */
-//char* Automaton::binaryFormat(unsigned long number, int bit_length) {
-//  char* binary_str = nullptr;
-//  int index = bit_length;
-//  unsigned long subject = number;
-//
-//  // no extra bit
-//  binary_str = new char[bit_length + 1];
-//  binary_str[bit_length] = '\0';
-//
-//  for (index--; index >= 0; index--) {
-//    if (subject & 1) {
-//      binary_str[index] = '1';
-//    } else {
-//      binary_str[index] = '0';
-//    }
-//    if (subject > 0) {
-//      subject >>= 1;
-//    }
-//  }
-//
-//  return binary_str;
-//}
 
 std::vector<char> Automaton::getBinaryFormat(unsigned long number, int bit_length) {
   int index = bit_length;
@@ -1478,7 +1449,7 @@ void Automaton::toBDD(std::ostream& out) {
 
   /* build table of tuples (idx,lo,hi) */
   for (int i = 0; i < this->dfa->ns; i++) {
-    _export(this->dfa->bddm, this->dfa->q[i], table);
+    __export(this->dfa->bddm, this->dfa->q[i], table);
   }
 
   /* renumber lo/hi pointers to new table ordering */

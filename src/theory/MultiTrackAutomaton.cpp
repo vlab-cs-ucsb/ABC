@@ -148,7 +148,6 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makePrefixSuffix(int left_track, in
 	int var = VAR_PER_TRACK;
 	int len = num_tracks * var;
 	int *mindices = getIndices(num_tracks*var);
-	int nump = 1 << (var-1);
 	std::vector<char> exep_lambda(var,'1');
 	tv = generate_transitions_for_relation(StringRelation::Type::EQ,var);
 
@@ -594,7 +593,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 	int nump = 1 << (var-1);
 
 	// left,right tracks equal till right is lambda
-	for(int i = 0; i < nump-1; i++) {
+	for(int i = 0; i < nump; i++) {
 		std::vector<char> exep = getBinaryFormat(i, var-1);
 		exep[var-1] = '0';
 		std::vector<char> str(len, 'X');
@@ -2089,8 +2088,7 @@ DFA_ptr MultiTrackAutomaton::pre_concat_suffix(DFA_ptr concat_dfa, DFA_ptr prefi
 
 
 /*
-
-
+ *
 std::vector<std::vector<char>> MultiTrackAutomaton::extractValidTransitions(std::vector<char> exep, std::vector<char> trim_set, int var) {
   std::set<std::string> transitions;
   std::queue<std::string> exeps_to_process;

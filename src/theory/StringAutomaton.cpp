@@ -1496,17 +1496,20 @@ StringAutomaton_ptr StringAutomaton::toLowerCase() {
 }
 
 StringAutomaton_ptr StringAutomaton::trim() {
+  DFA_ptr trimmed_prefix_dfa = nullptr, trimmed_dfa = nullptr;
+  StringAutomaton_ptr trimmed_auto = nullptr, trim_auto = nullptr;
 
-  LOG(FATAL) << "NO TRIM";
+  std::string trim_regex = "' '*";
+  trim_auto = StringAutomaton::makeRegexAuto(trim_regex);
+  trimmed_prefix_dfa = MultiTrackAutomaton::trim_prefix(this->dfa,trim_auto->getDFA(),num_of_variables);
+  trimmed_dfa = MultiTrackAutomaton::trim_suffix(trimmed_prefix_dfa, trim_auto->getDFA(), num_of_variables);
+  delete trim_auto;
+  dfaFree(trimmed_prefix_dfa);
 
-  DFA_ptr trimmed_dfa = nullptr;
-  StringAutomaton_ptr trimmed_auto = nullptr;
-/*
-  trimmed_dfa = dfaTrim(dfa, ' ', StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
   trimmed_auto = new StringAutomaton(trimmed_dfa, num_of_variables);
 
   DVLOG(VLOG_LEVEL) << trimmed_auto->id << " = [" << this->id << "]->trim()";
-*/
+
   return trimmed_auto;
 }
 
@@ -2000,12 +2003,25 @@ StringAutomaton_ptr StringAutomaton::preToLowerCase(StringAutomaton_ptr rangeAut
 */
 }
 
+// CHECK WITH BAKI
+// may be wrong
 StringAutomaton_ptr StringAutomaton::preTrim(StringAutomaton_ptr rangeAuto) {
+  StringAutomaton_ptr result_auto = nullptr, trim_auto = nullptr, temp_auto = nullptr;
 
-  LOG(FATAL) << "NO PRETRIM";
+  std::string trim_regex = "' '*";
+  trim_auto = StringAutomaton::makeRegexAuto(trim_regex);
 
-  DFA_ptr result_dfa = nullptr;
-  StringAutomaton_ptr result_auto = nullptr;
+  result_auto = this->concat(trim_auto);
+  temp_auto = trim_auto->concat(result_auto);
+  delete result_auto;
+  result_auto = temp_auto->intersect(rangeAuto);
+  delete trim_auto;
+  delete temp_auto;
+
+  DVLOG(VLOG_LEVEL) << result_auto->id << " = [" << this->id << "]->preTrim()";
+
+  return result_auto;
+
 /*
   result_dfa = dfaPreTrim(dfa, ' ',
       StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
@@ -2262,7 +2278,7 @@ LOG(INFO) << "B";
 LOG(INFO) << "C";
   int current_state = -1;
   int next_state = -1;
-  std::vector<char> flag = {'1', '1', '1', '1', '1', '1', '1', '1', '1'}; // 255
+  std::vector<char> flag = {'1', '1', '1', '1', '1', '1', '1', '1', '1'}; // 255 (+1 extrabit)
   std::set<int> next_states;
   std::stack<int> state_work_list;
   std::map<int, bool> visited;
@@ -2731,13 +2747,9 @@ StringAutomaton_ptr StringAutomaton::search(StringAutomaton_ptr search_auto,  bo
   StringAutomaton_ptr search_result_auto = nullptr, duplicate_auto = nullptr,
           search_query_auto = nullptr;
 
-LOG(INFO) << 1;
   duplicate_auto = this->getDuplicateStateAutomaton(use_extra_bit);
-LOG(INFO) << 2;
   search_query_auto = search_auto->toQueryAutomaton(use_extra_bit);
-LOG(INFO) << 3;
   search_result_auto = duplicate_auto->intersect(search_query_auto);
-LOG(INFO) << 4;
   delete duplicate_auto; duplicate_auto = nullptr;
   delete search_query_auto; search_query_auto = nullptr;
   search_result_auto->sharp_bit = true;

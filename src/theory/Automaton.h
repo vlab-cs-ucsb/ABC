@@ -24,12 +24,12 @@
 #include <boost/multiprecision/cpp_int.hpp>
 
 #include <glog/logging.h>
-//#include "stranger/stranger.h"
-//#include "stranger/stranger_lib_internal.h"
-#include "mona/mem.h"
-#include "mona/bdd_external.h"
-#include "mona/bdd_dump.h"
-#include "mona/dfa.h"
+#include "stranger/stranger.h"
+#include "stranger/stranger_lib_internal.h"
+//#include "mona/mem.h"
+//#include "mona/bdd_external.h"
+//#include "mona/bdd_dump.h"
+//#include "mona/dfa.h"
 
 #include "options/Theory.h"
 #include "utils/RegularExpression.h"
