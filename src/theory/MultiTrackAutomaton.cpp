@@ -1100,82 +1100,11 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 	delete[] map;
 
 	if(find_sink(result) != -1) {
-
-/*
-		paths state_paths,pp;
-		trace_descr tp;
-		int *indices = getIndices(VAR_PER_TRACK);
-		int var = VAR_PER_TRACK;
-
-
-		for(int i = 0; i < result->ns; i++) {
-			LOG(INFO) << "state:" << i;
-			if(result->f[i] == 1)
-				LOG(INFO) << "accepting!";
-			else
-				LOG(INFO) << "NOT accepting!";
-			state_paths = pp = make_paths(result->bddm, result->q[i]);
-			while (pp) {
-				std::vector<char> exep(var, 'X');
-				for (unsigned j = 0; j < var; j++) {
-					for (tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
-
-					if (tp) {
-						if (tp->value) exep[j] = '1';
-						else exep[j] = '0';
-					}
-					else
-						exep[j] = 'X';
-				}
-				exep.push_back('\0');
-				LOG(INFO) << &exep[0] << " -> " << pp->to;
-				pp = pp->next;
-			}
-			kill_paths(state_paths);
-		}
-
-		LOG(INFO) << "-----------------------";
-
-*/
 		// trim prefix first, then suffix
 		temp = trim_lambda_suffix(result,VAR_PER_TRACK,false);
 		dfaFree(result);
 		result = temp;
 
-/*
-
-
-		for(int i = 0; i < result->ns; i++) {
-			LOG(INFO) << "state:" << i;
-			if(result->f[i] == 1)
-				LOG(INFO) << "accepting!";
-			else
-				LOG(INFO) << "NOT accepting!";
-			state_paths = pp = make_paths(result->bddm, result->q[i]);
-			while (pp) {
-				std::vector<char> exep(var, 'X');
-				for (unsigned j = 0; j < var; j++) {
-					for (tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
-
-					if (tp) {
-						if (tp->value) exep[j] = '1';
-						else exep[j] = '0';
-					}
-					else
-						exep[j] = 'X';
-				}
-				exep.push_back('\0');
-				LOG(INFO) << &exep[0] << " -> " << pp->to;
-				pp = pp->next;
-			}
-			kill_paths(state_paths);
-		}
-		StringAutomaton_ptr s = new StringAutomaton(result,VAR_PER_TRACK);
-		s->inspectAuto();
-		std::cin.get();
-
-
- */
 		temp = trim_lambda_prefix(result, VAR_PER_TRACK);
 		dfaFree(result);
 		result = temp;

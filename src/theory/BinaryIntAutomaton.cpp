@@ -1090,14 +1090,11 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
   }
 
   const int constant = formula->get_constant();
+  int min = 0, max = 0;
 
-  std::vector<int> coeffs = formula->get_coefficients();
-  int min = 0, max = 0, num_zero = 0;
-  for (int c : coeffs) {
+  for (int& c : formula->get_coefficients()) {
     if (c > 0) {
       max += c;
-    } else if (c == 0) {
-      num_zero++;
     } else {
       min += c;
     }
@@ -1123,12 +1120,11 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
   int next_index = 0;
   int next_label = constant;
 
-  const int total_num_variables = formula->get_coefficients().size();
-  const int num_variables = total_num_variables - num_zero;
-  int* indices = getIndices(total_num_variables);
-  unsigned long transitions = 1 << num_variables; //number of transitions from each state
+  const int num_of_variables = formula->get_coefficients().size();
+  int* indices = getIndices(num_of_variables);
+  unsigned long transitions = 1 << num_of_variables; //number of transitions from each state
 
-  dfaSetup(num_of_states, total_num_variables, indices);
+  dfaSetup(num_of_states, num_of_variables, indices);
 
   int count = 0;
   while (next_label < max + 1) { //there is a state to expand (excuding sink)
@@ -1141,31 +1137,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
     dfaAllocExceptions(transitions / 2);
     int result, target;
     for (unsigned long j = 0; j < transitions; j++) {
-
-      int ones = 0;
-      unsigned long n = j;
-      for (auto& c : coeffs) {
-        // variables with 0 coeff don't matter.
-        if (c == 0) {
-          continue;
-        }
-        if (n & 1) {
-          ones += c;
-        }
-        n >>= 1;
-      }
-
-      result = next_label + ones;
-      std::vector<char> bin_num = getBinaryFormat(j,num_variables);
-      std::vector<char> exep(total_num_variables,'X');
-      exep.push_back('\0');
-      // only care about positions where nonzero coeff
-      for(int i = 0, k = 0; i < total_num_variables; i++) {
-        if(coeffs[i] != 0) {
-          exep[i] = bin_num[k++];
-        }
-      }
-
+      result = next_label + formula->CountOnes(j);
       if ( not (result & 1) ) {
         target = result / 2;
         if (target == next_label) {
@@ -1174,14 +1146,14 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
             next_index++;
             carry_map[target].i = next_index;
           }
-          dfaStoreException(carry_map[target].i, &exep[0]);
+          dfaStoreException(carry_map[target].i, &*(getBinaryFormat(j, num_of_variables)).begin());
         } else {
           if (carry_map[target].sr == 0) {
             carry_map[target].sr = 1;
             next_index++;
             carry_map[target].ir = next_index;
           }
-          dfaStoreException(carry_map[target].ir, &exep[0]);
+          dfaStoreException(carry_map[target].ir, &*(getBinaryFormat(j, num_of_variables)).begin());
         }
       }
     }
@@ -1202,7 +1174,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
   }
 
   //define accepting and rejecting states
-  char *statuses = new char[num_of_states + 1];
+  char *statuses = new char[num_of_states];
   for (int i = 0; i < num_of_states; i++) {
     statuses[i] = '-';
   }
@@ -1212,7 +1184,6 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
       statuses[carry_map[next_label].i] = '+';
     }
   }
-  statuses[num_of_states] = '\0';
 
   DFA_ptr tmp_dfa = dfaBuild(statuses);
   DFA_ptr equality_dfa = dfaMinimize(tmp_dfa);
@@ -1220,7 +1191,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
   delete[] indices;
   delete[] statuses;
 
-  equality_auto = new BinaryIntAutomaton(equality_dfa, total_num_variables, false);
+  equality_auto = new BinaryIntAutomaton(equality_dfa, num_of_variables, false);
   equality_auto->setFormula(formula);
 
   DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeIntEquality(" << *formula << ")";
@@ -1238,14 +1209,11 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberEquality(ArithmeticF
   }
 
   const int constant = formula->get_constant();
-  std::vector<int> coeffs = formula->get_coefficients();
-  int min = 0, max = 0, num_zero = 0;
+  int min = 0, max = 0;
 
-  for (int c : coeffs) {
+  for (int& c : formula->get_coefficients()) {
     if (c > 0) {
       max += c;
-    } else if (c == 0) {
-      num_zero++;
     } else {
       min += c;
     }
@@ -1270,13 +1238,12 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberEquality(ArithmeticF
   int next_index = 0,
           next_label = constant;
 
-  const int total_num_variables = formula->get_coefficients().size();
-  const int num_variables = total_num_variables - num_zero;
-  int* indices = getIndices(total_num_variables);
-  unsigned long transitions = 1 << num_variables; //number of transitions from each state
+  const int num_of_variables = formula->get_coefficients().size();
+  int* indices = getIndices(num_of_variables);
+  unsigned long transitions = 1 << num_of_variables; //number of transitions from each state
 
 
-  dfaSetup(num_of_states, total_num_variables, indices);
+  dfaSetup(num_of_states, num_of_variables, indices);
 
   int count = 0;
   while (next_label < max + 1) { //there is a state to expand (excuding sink)
@@ -1284,30 +1251,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberEquality(ArithmeticF
     dfaAllocExceptions(transitions / 2);
     int result, target;
     for (unsigned long j = 0; j < transitions; ++j) {
-      int ones = 0;
-      unsigned long n = j;
-      for (auto& c : coeffs) {
-        // variables with 0 coeff don't matter.
-        if (c == 0) {
-          continue;
-        }
-        if (n & 1) {
-          ones += c;
-        }
-        n >>= 1;
-      }
-
-      result = next_label + ones;
-      std::vector<char> bin_num = getBinaryFormat(j,num_variables);
-      std::vector<char> exep(total_num_variables,'X');
-      exep.push_back('\0');
-      // only care about positions where nonzero coeff
-      for(int i = 0, k = 0; i < total_num_variables; i++) {
-        if(coeffs[i] != 0) {
-          exep[i] = bin_num[k++];
-        }
-      }
-
+      result = next_label + formula->CountOnes(j);
       if ( not (result & 1) ) {
         target = result / 2;
         if (carry_map[target].s == 0) {
@@ -1315,14 +1259,13 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberEquality(ArithmeticF
           ++next_index;
           carry_map[target].i = next_index;
         }
-        dfaStoreException(carry_map[target].i, &exep[0]);
+        dfaStoreException(carry_map[target].i, &*(getBinaryFormat(j, num_of_variables)).begin());
       }
     }
 
     dfaStoreState(num_of_states - 1);
 
     ++count;
-
 
     //find next state to expand
     for (next_label = min; (next_label <= max) and
@@ -1352,7 +1295,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberEquality(ArithmeticF
   delete[] indices;
   delete[] statuses;
 
-  equality_auto = new BinaryIntAutomaton(equality_dfa, total_num_variables, true);
+  equality_auto = new BinaryIntAutomaton(equality_dfa, num_of_variables, true);
   equality_auto->setFormula(formula);
   DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeNaturalNumberEquality(" << *formula << ")";
 
@@ -1360,7 +1303,6 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberEquality(ArithmeticF
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNotEquality(ArithmeticFormula_ptr formula, bool is_natural_number) {
-
   BinaryIntAutomaton_ptr not_equal_auto = nullptr, tmp_auto = nullptr;
 
   formula->set_type(ArithmeticFormula::Type::EQ);
@@ -1383,15 +1325,12 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThan(ArithmeticFormula_ptr fo
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntLessThan(ArithmeticFormula_ptr formula) {
   formula->Simplify();
 
-  std::vector<int> coeffs = formula->get_coefficients();
-  int min = 0, max = 0, num_zero = 0;
-  for (int c : coeffs) {
+  int min = 0, max = 0;
+  for (int& c : formula->get_coefficients()) {
     if (c > 0) {
-      max += c;
-    } else if (c == 0) {
-      num_zero++;
+     max += c;
     } else {
-      min += c;
+     min += c;
     }
   }
 
@@ -1402,15 +1341,14 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntLessThan(ArithmeticFormula_ptr
    min = constant;
   }
 
-  const int total_num_variables = formula->get_coefficients().size();
-  const int num_variables = total_num_variables - num_zero;
+  const int num_of_variables = formula->get_coefficients().size();
   int num_of_states = 2 * (max - min + 1);
   unsigned max_states_allowed = 0x80000000;
   unsigned mona_check = 8 * num_of_states;
   CHECK_LE(mona_check, max_states_allowed);
 
-  int* indices = getIndices(total_num_variables);
-  dfaSetup(num_of_states, total_num_variables, indices);
+  int* indices = getIndices(num_of_variables);
+  dfaSetup(num_of_states, num_of_variables, indices);
   delete[] indices;
 
   int next_index = 0, next_label = constant, result, target;
@@ -1421,8 +1359,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntLessThan(ArithmeticFormula_ptr
   carry_map[constant].i = -1;
   carry_map[constant].ir = 0;
 
-  CHECK_LT(num_variables, 64);
-  unsigned long transitions = 1 << num_variables; //number of transitions from each state
+  CHECK_LT(num_of_variables, 64);
+  unsigned long transitions = 1 << num_of_variables; //number of transitions from each state
   int count = 0;
   while (next_label < max + 1) { //there is a state to expand (excuding sink)
    if (carry_map[next_label].i == count) {
@@ -1435,29 +1373,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntLessThan(ArithmeticFormula_ptr
    dfaAllocExceptions(transitions);
 
    for (unsigned long j = 0; j < transitions; j++) {
-     int ones = 0;
-      unsigned long n = j;
-      for (auto& c : coeffs) {
-        // variables with 0 coeff don't matter.
-        if (c == 0) {
-          continue;
-        }
-        if (n & 1) {
-          ones += c;
-        }
-        n >>= 1;
-      }
-
-      result = next_label + ones;
-      std::vector<char> bin_num = getBinaryFormat(j,num_variables);
-      std::vector<char> exep(total_num_variables,'X');
-      exep.push_back('\0');
-      // only care about positions where nonzero coeff
-      for(int i = 0, k = 0; i < total_num_variables; i++) {
-        if(coeffs[i] != 0) {
-          exep[i] = bin_num[k++];
-        }
-      }
+     int num_of_ones = formula->CountOnes(j);
+     result = next_label + num_of_ones;
 
      if (result >= 0) {
        target = result / 2;
@@ -1471,7 +1388,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntLessThan(ArithmeticFormula_ptr
 
      while (label1 != label2) {
        label1 = label2;
-       result = label1 + ones;
+       result = label1 + num_of_ones;
        if (result >= 0) {
          label2 = result / 2;
        } else {
@@ -1486,14 +1403,16 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntLessThan(ArithmeticFormula_ptr
          next_index++;
          carry_map[target].i = next_index;
        }
-       dfaStoreException(carry_map[target].i, &exep[0]);
+//       std::cout << count << " -> " << carry_map[target].i << " : " << &*getBinaryFormat(j, num_of_variables).begin() << std::endl;
+       dfaStoreException(carry_map[target].i, &*(getBinaryFormat(j, num_of_variables)).begin());
      } else {
        if (carry_map[target].sr == 0) {
          carry_map[target].sr = 1;
          next_index++;
          carry_map[target].ir = next_index;
        }
-       dfaStoreException(carry_map[target].ir, &exep[0]);
+//       std::cout << count << " -> " << carry_map[target].i << " : " << &*getBinaryFormat(j, num_of_variables).begin() << std::endl;
+       dfaStoreException(carry_map[target].ir, &*(getBinaryFormat(j, num_of_variables)).begin());
      }
    }
 
@@ -1531,26 +1450,23 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntLessThan(ArithmeticFormula_ptr
   DFA_ptr less_than_dfa = dfaMinimize(tmp_dfa);
   dfaFree(tmp_dfa);
 
-  BinaryIntAutomaton_ptr less_than_auto = new BinaryIntAutomaton(less_than_dfa, total_num_variables, false);
+  BinaryIntAutomaton_ptr less_than_auto = new BinaryIntAutomaton(less_than_dfa, num_of_variables, false);
   less_than_auto->setFormula(formula);
 
   DVLOG(VLOG_LEVEL) << less_than_auto->id << " = makeLessThan(" << *formula << ")";
-  delete[] statuses;
+
   return less_than_auto;
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticFormula_ptr formula) {
   formula->Simplify();
 
-  std::vector<int> coeffs = formula->get_coefficients();
-  int min = 0, max = 0, num_zero = 0;
-  for (int c : coeffs) {
+  int min = 0, max = 0;
+  for (int& c : formula->get_coefficients()) {
     if (c > 0) {
-      max += c;
-    } else if (c == 0) {
-      num_zero++;
+     max += c;
     } else {
-      min += c;
+     min += c;
     }
   }
 
@@ -1569,20 +1485,19 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticF
           next_label = constant;
 
 
-  const int total_num_variables = formula->get_coefficients().size();
-  const int num_variables = total_num_variables - num_zero;
-  CHECK_LT(num_variables, 64);
+  const int num_of_variables = formula->get_coefficients().size();
+  CHECK_LT(num_of_variables, 64);
   int num_of_states = max - min + 1;
   unsigned max_states_allowed = 0x80000000;
   unsigned mona_check = 8 * num_of_states;
   CHECK_LE(mona_check, max_states_allowed);
 
-  int* indices = getIndices(total_num_variables);
-  dfaSetup(num_of_states, total_num_variables, indices);
+  int* indices = getIndices(num_of_variables);
+  dfaSetup(num_of_states, num_of_variables, indices);
   delete[] indices;
 
   // TODO instead of allocating that many of transitions, try to reduce them with a preprocessing
-  unsigned long transitions = 1 << num_variables; //number of transitions from each state
+  unsigned long transitions = 1 << num_of_variables; //number of transitions from each state
   int count = 0;
   while (next_label < max + 1) { //there is a state to expand (excuding sink)
    carry_map[next_label].s = 2;
@@ -1591,29 +1506,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticF
 
    int result, target;
    for (unsigned long j = 0; j < transitions; ++j) {
-     int ones = 0;
-      unsigned long n = j;
-      for (auto& c : coeffs) {
-        // variables with 0 coeff don't matter.
-        if (c == 0) {
-          continue;
-        }
-        if (n & 1) {
-          ones += c;
-        }
-        n >>= 1;
-      }
-
-      result = next_label + ones;
-      std::vector<char> bin_num = getBinaryFormat(j,num_variables);
-      std::vector<char> exep(total_num_variables,'X');
-      exep.push_back('\0');
-      // only care about positions where nonzero coeff
-      for(int i = 0, k = 0; i < total_num_variables; i++) {
-        if(coeffs[i] != 0) {
-          exep[i] = bin_num[k++];
-        }
-      }
+     int num_of_ones = formula->CountOnes(j);
+     result = next_label + num_of_ones;
 
      if (result >= 0) {
        target = result / 2;
@@ -1627,7 +1521,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticF
        carry_map[target].i = next_index;
      }
 
-     dfaStoreException(carry_map[target].i, &exep[0]);
+     dfaStoreException(carry_map[target].i, &*(getBinaryFormat(j, num_of_variables)).begin());
    }
 
    dfaStoreState(count);
@@ -1663,7 +1557,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticF
   DFA_ptr less_than_dfa = dfaMinimize(tmp_dfa);
   dfaFree(tmp_dfa);
 
-  BinaryIntAutomaton_ptr less_than_auto = new BinaryIntAutomaton(less_than_dfa, total_num_variables, true);
+  BinaryIntAutomaton_ptr less_than_auto = new BinaryIntAutomaton(less_than_dfa, num_of_variables, true);
   less_than_auto->setFormula(formula);
   DVLOG(VLOG_LEVEL) << less_than_auto->id << " = makeNaturalNumberLessThan(" << *formula << ")";
 
