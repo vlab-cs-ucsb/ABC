@@ -8,7 +8,6 @@
 #ifndef THEORY_AUTOMATON_H_
 #define THEORY_AUTOMATON_H_
 
-#include <__bit_reference>
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>

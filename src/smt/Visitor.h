@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "typedefs.h"
+#include "Visitable.h"
 
 namespace Vlab {
 namespace SMT {

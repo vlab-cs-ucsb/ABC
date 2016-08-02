@@ -8,7 +8,6 @@
 #ifndef SRC_THEORY_ARITHMETICFORMULA_H_
 #define SRC_THEORY_ARITHMETICFORMULA_H_
 
-#include <__locale>
 #include <cmath>
 #include <cstdlib>
 #include <map>
