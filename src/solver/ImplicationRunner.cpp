@@ -97,8 +97,8 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
           Term_ptr implication_term_begins = new Begins(right_variable->clone(), left_id->term_list->front()->clone());
           current_and_->term_list->push_back(implication_term_begins);
         }
-        //Term_ptr implication_term_ends = new Ends(right_variable->clone(), left_id->term_list->back()->clone());
-        //current_and_->term_list->push_back(implication_term_ends);
+        Term_ptr implication_term_ends = new Ends(right_variable->clone(), left_id->term_list->back()->clone());
+        current_and_->term_list->push_back(implication_term_ends);
       }
     }
   } else if (Concat_ptr right_id = dynamic_cast<Concat_ptr>(eq_term->right_term)) {
@@ -110,28 +110,36 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
           Term_ptr implication_term_begins = new Begins(left_variable->clone(), right_id->term_list->front()->clone());
           current_and_->term_list->push_back(implication_term_begins);
         }
-        //Term_ptr implication_term_ends = new Ends(left_variable->clone(), right_id->term_list->back()->clone());
-        //current_and_->term_list->push_back(implication_term_ends);
+        Term_ptr implication_term_ends = new Ends(left_variable->clone(), right_id->term_list->back()->clone());
+        current_and_->term_list->push_back(implication_term_ends);
       }
     }
   }
 }
 
+
 void ImplicationRunner::visitContains(Contains_ptr contains) {
-  Term_ptr subject_length = get_length(contains->subject_term);
-  Term_ptr search_length = get_length(contains->search_term);
-  Term_ptr implication_term = new Ge(subject_length, search_length);
-  current_and_->term_list->push_back(implication_term);
+  if (Option::Solver::LIA_ENGINE_ENABLED) {
+    Term_ptr subject_length = get_length(contains->subject_term);
+    Term_ptr search_length = get_length(contains->search_term);
+    Term_ptr implication_term = new Ge(subject_length, search_length);
+    current_and_->term_list->push_back(implication_term);
+  }
 }
+
 
 
 void ImplicationRunner::visitEnds(Ends_ptr ends) {
-  Term_ptr subject_length = get_length(ends->subject_term);
-  Term_ptr search_length = get_length(ends->search_term);
-  Term_ptr implication_term = new Ge(subject_length, search_length);
-  current_and_->term_list->push_back(implication_term);
+  if (Option::Solver::LIA_ENGINE_ENABLED) {
 
+    Term_ptr subject_length = get_length(ends->subject_term);
+    Term_ptr search_length = get_length(ends->search_term);
+    Term_ptr implication_term = new Ge(subject_length, search_length);
+    current_and_->term_list->push_back(implication_term);
+
+  }
 }
+
 
 
 void ImplicationRunner::visitNotContains(NotContains_ptr not_contains) {

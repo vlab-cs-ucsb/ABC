@@ -1133,6 +1133,7 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
   char* statuses = new char[original_dfa->ns+1];
 	std::vector<std::pair<std::vector<char>,int>> state_exeps;
 	std::vector<bool> lambda_states(original_dfa->ns,false);
+LOG(INFO) << "BEFORE";
   dfaSetup(original_dfa->ns,len,mindices);
   for(int i = 0; i < original_dfa->ns; i++) {
   	statuses[i] = '-';
@@ -1164,13 +1165,13 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
 
 			if(is_lambda) {
 				lambda_states[pp->to] = true;
-				if(!lambda_states[i]) {
+				if(!lambda_states[i] || i == pp->to) {
 					statuses[i] = '+';
 				}
+			} else {
+				exep.push_back('\0');
+  			state_exeps.push_back(std::make_pair(exep,pp->to));
 			}
-
-
-  		state_exeps.push_back(std::make_pair(exep,pp->to));
 			pp = pp->next;
   	}
   	kill_paths(state_paths);
@@ -1181,6 +1182,7 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
   	dfaStoreState(sink);
 		state_exeps.clear();
   }
+LOG(INFO) << "AFTER";
   statuses[original_dfa->ns] = '\0';
   temp_dfa = dfaBuild(statuses);
   trimmed_dfa = dfaMinimize(temp_dfa);
@@ -1189,7 +1191,7 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
   delete[] statuses;
 
   this->dfa = trimmed_dfa;
-
+LOG(INFO) << "CONT...";
 	boost::multiprecision::cpp_int ret = Automaton::Count(bound, count_less_than_or_equal_to_bound, count_reserved_words);
   this->dfa = original_dfa;
   dfaFree(trimmed_dfa);

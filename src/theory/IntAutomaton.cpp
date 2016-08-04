@@ -865,9 +865,10 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
   int* indices = getIndices(number_of_variables);
   int number_of_states = this->dfa->ns;
   int to_state, sink_state = getSinkState();
-
+  bool has_sink = true;
   // is this right?
   if(sink_state < 0) {
+    has_sink = false;
     sink_state = number_of_states;
     number_of_states++;
   }
@@ -893,16 +894,28 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
     }
   }
   statuses[number_of_states] = '\0';
-  dfaAllocExceptions(0);
-  dfaStoreState(sink_state);
-  statuses[sink_state] = '-';
+
+  if(!has_sink) {
+    dfaAllocExceptions(0);
+    dfaStoreState(sink_state);
+    statuses[sink_state] = '-';
+  }
 
   unary_dfa = dfaBuild(statuses);
+
+  if(!has_sink) {
+    for(int i = 0; i < unary_dfa->ns; i++) {
+      if(unary_dfa->f[i] == 0) {
+        unary_dfa->f[i] = -1;
+      }
+    }
+  }
 
   delete[] indices; indices = nullptr;
   delete[] statuses;
 
   unary_auto = new UnaryAutomaton(unary_dfa);
+
   DVLOG(VLOG_LEVEL) << unary_auto->getId() << " = [" << this->id << "]->toUnaryAutomaton()";
   return unary_auto;
 }

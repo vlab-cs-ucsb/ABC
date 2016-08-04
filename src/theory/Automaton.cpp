@@ -1468,9 +1468,9 @@ void Automaton::toBDD(std::ostream& out) {
           "  node [shape=record];\n"
           "   s1 [shape=record,label=\"";
 
-  for (int i = 0; i < this->dfa->ns; i++) {
+  for (unsigned i = 0; i < this->dfa->ns; i++) {
     out << "{" << this->dfa->f[i] << "|<" << i << "> " << i << "}";
-    if ((unsigned) (i + 1) < table->noelems) {
+    if (i + 1 < this->dfa->ns) {
       out << "|";
     }
   }

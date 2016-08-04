@@ -746,7 +746,7 @@ StringAutomaton_ptr StringAutomaton::suffixes() {
     max = max - 1;
   } else {
 
-    return this->clone();
+    //return this->clone();
     sink_state = number_of_states;
     number_of_states++;
     max++;
@@ -1563,7 +1563,8 @@ UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
 
   int original_num_states = dfa->ns;
   if(sink_state < 0) {
-    sink_state = dfa->ns-1;
+    sink_state = original_num_states;
+    original_num_states++;
   }
 
   int* indices = getIndices(number_of_variables);
@@ -1578,6 +1579,13 @@ UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
   dfaSetup(original_num_states, number_of_variables, indices);
 
   for (int i = 0; i < original_num_states; i++) {
+
+    if(i == sink_state) {
+      dfaAllocExceptions(0);
+      dfaStoreState(sink_state);
+      statuses[sink_state] = '-';
+      continue;
+    }
 
     state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
     while (pp) {
@@ -1648,6 +1656,13 @@ UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
   indices_map[number_of_variables - 1] = 0;
   dfaReplaceIndices(unary_dfa, indices_map);
   delete[] indices_map;
+
+  // make sure no "dont care" states
+  for(int i = 0; i < unary_dfa->ns; i++) {
+    if(unary_dfa->f[i] == 0) {
+      unary_dfa->f[i] = -1;
+    }
+  }
 
   unary_auto = new UnaryAutomaton(unary_dfa);
   DVLOG(VLOG_LEVEL) << unary_auto->getId() << " = [" << this->id << "]->toUnaryAutomaton()";
