@@ -22,6 +22,9 @@ bool Solver::LIA_NATURAL_NUMBERS_ONLY   = false;
 bool Solver::ENABLE_RELATIONAL_STRING_AUTOMATA = true;
 bool Solver::FORCE_DNF_FORMULA = false;
 bool Solver::ENABLE_IMPLICATIONS = false;
+bool Solver::ENABLE_DEPENDENCY = true; 
+bool Solver::ENABLE_SORTING = true; 
+bool Solver::ENABLE_EQUIVALENCE = true; 
 
 } /* namespace Option */
 } /* namespace Vlab */

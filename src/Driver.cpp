@@ -108,13 +108,17 @@ void Driver::initializeSolver() {
   syntactic_optimizer.start();
 
   // TODO dependency slicer should work on no dnf version
-  Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
-  dependency_slicer.start();
+  if (Option::Solver::ENABLE_DEPENDENCY) {
+    Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
+    dependency_slicer.start();
+  }
 
-  Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
-  do {
-    equivalence_generator.start();
-  } while (equivalence_generator.has_constant_substitution());
+  if (Option::Solver::ENABLE_EQUIVALENCE) {
+    Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
+    do {
+      equivalence_generator.start();
+    } while (equivalence_generator.has_constant_substitution());
+  }
 
   Solver::FormulaOptimizer formula_optimizer(script_, symbol_table_);
   formula_optimizer.start();
@@ -125,8 +129,10 @@ void Driver::initializeSolver() {
     implication_runner.start();
   }
 
-  Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
-  constraint_sorter.start();
+  if (Option::Solver::ENABLE_SORTING) {
+    Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
+    constraint_sorter.start();
+  }
 
 }
 
@@ -338,6 +344,15 @@ void Driver::setOption(Option::Name option, bool value) {
     break;
   case Option::Name::ENABLE_IMPLICATIONS:
     Option::Solver::ENABLE_IMPLICATIONS = value;
+    break;
+  case Option::Name::ENABLE_DEPENDENCY:
+    Option::Solver::ENABLE_DEPENDENCY = value;
+    break;
+  case Option::Name::ENABLE_SORTING:
+    Option::Solver::ENABLE_SORTING = value;
+    break;
+  case Option::Name::ENABLE_EQUIVALENCE:
+    Option::Solver::ENABLE_EQUIVALENCE = value;
     break;
   default:
     LOG(ERROR) << "option not recognized: " << static_cast<int>(option) << " -> " << value;
