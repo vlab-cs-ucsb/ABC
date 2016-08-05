@@ -111,6 +111,7 @@ void Driver::initializeSolver() {
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
   dependency_slicer.start();
 
+
   Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
   do {
     equivalence_generator.start();

@@ -1276,9 +1276,7 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
 
   for (auto& string_term : arithmetic_constraint_solver_.getStringTermsIn(term)) {
     visit(string_term);
-
     string_term_result = getTermValue(string_term);
-
     std::string string_term_var_name = symbol_table_->get_var_name_for_expression(string_term, Variable::Type::INT);
 
 
@@ -1310,16 +1308,13 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     string_term_binary_auto = nullptr;
     delete result;
     result = nullptr;
-
     result = new Value(updated_arith_auto);
     if (not result->isSatisfiable()) {
       break;
     }
-
     // 2- update string term result, since we first update binary binary automaton it may only contain
     // numbers >= -1 (values a string constraint can return as an integer)
     string_term_binary_auto = updated_arith_auto->getBinaryAutomatonFor(string_term_var_name);
-
     if (has_minus_one) {
       has_minus_one = string_term_binary_auto->hasNegative1();
       BinaryIntAutomaton_ptr positive_values_auto = string_term_binary_auto->getPositiveValuesFor(string_term_var_name);
@@ -1328,16 +1323,13 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     }
 
     string_term_unary_auto = string_term_binary_auto->toUnaryAutomaton();
-
     delete string_term_binary_auto;
     string_term_binary_auto = nullptr;
     updated_int_auto = string_term_unary_auto->toIntAutomaton(number_of_variables_for_int_auto, has_minus_one);
 
-
     clearTermValue(string_term);
     string_term_result = new Value(updated_int_auto);
     setTermValue(string_term, string_term_result);
-
     // 3 - update variables involved in string term
     update_variables();
   }

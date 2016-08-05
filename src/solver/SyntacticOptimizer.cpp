@@ -369,7 +369,7 @@ void SyntacticOptimizer::visitMinus(Minus_ptr minus_term) {
       };
     }
   } else if (Term::Type::TERMCONSTANT == minus_term->left_term->type()) {
-    TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(minus_term->right_term);
+    TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(minus_term->left_term);
     if (term_constant->getValue() == "0") {
       DVLOG(VLOG_LEVEL) << "Transforming operation: (- 0 l) to (- l)";
       callback_ = [minus_term](Term_ptr & term) mutable {
