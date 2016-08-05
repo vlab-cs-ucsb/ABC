@@ -1277,6 +1277,7 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
   for (auto& string_term : arithmetic_constraint_solver_.getStringTermsIn(term)) {
     visit(string_term);
     string_term_result = getTermValue(string_term);
+
     std::string string_term_var_name = symbol_table_->get_var_name_for_expression(string_term, Variable::Type::INT);
 
 

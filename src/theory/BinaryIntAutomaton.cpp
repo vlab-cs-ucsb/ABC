@@ -155,7 +155,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(SemilinearSet_ptr semil
         ArithmeticFormula_ptr formula, bool add_leading_zeros) {
   BinaryIntAutomaton_ptr binary_auto = nullptr;
   DFA_ptr binary_dfa = nullptr, tmp_dfa = nullptr;
-  int var_index = formula->get_number_of_variables() - formula->get_variable_index(var_name) - 1;
+  //int var_index = formula->get_number_of_variables() - formula->get_variable_index(var_name) - 1;
+  int var_index = formula->get_variable_index(var_name);
   int number_of_variables = formula->get_number_of_variables(),
           leading_zero_state = 0,
           sink_state = 0,
@@ -346,7 +347,8 @@ bool BinaryIntAutomaton::hasNegative1() {
 
 // bdd vars are ordered in the reverse order of coefficients
 int BinaryIntAutomaton::getBddVarIndex(std::string var_name) {
-  return num_of_variables - formula->get_variable_index(var_name) - 1;
+  return formula->get_variable_index(var_name);
+  //return num_of_variables - formula->get_variable_index(var_name) - 1;
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::complement() {
@@ -896,340 +898,16 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntGraterThanOrEqualToZero(std::v
   return postivie_numbers_auto;
 }
 
+/*
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeEquality(ArithmeticFormula_ptr formula, bool is_natural_number) {
-
   if (is_natural_number) {
     return makeNaturalNumberEquality(formula);
   } else {
     return makeIntEquality(formula);
   }
-/*
-  BinaryIntAutomaton_ptr equality_auto = nullptr;
-
-  if ( not formula->Simplify() ) {
-    equality_auto = BinaryIntAutomaton::makePhi(formula, true);
-    DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeIntEquality(" << *formula << ")";
-    return equality_auto;
-  }
-
-  const int constant = formula->get_constant();
-  std::vector<int> coeffs = formula->get_coefficients();
-  int min = 0, max = 0, num_zero = 0;
-
-  for (int c : coeffs) {
-    if (c > 0) {
-      max += c;
-    } else if (c == 0) {
-      num_zero++;
-    } else {
-      min += c;
-    }
-  }
-
-  if ( max < constant) {
-    max = constant;
-  } else if (min > constant) {
-    min = constant;
-  }
-
-  int num_of_states;
-  std::map<int , StateIndices> carry_map; // maps carries to state indices
-  if(is_natural_number) {
-    num_of_states = max - min + 2;
-    carry_map[constant].s = 1;
-    carry_map[constant].i = 0;
-  } else {
-    num_of_states = 2 * max - 2 * min + 3;
-    carry_map[constant].sr = 1;
-    carry_map[constant].i = -1;
-    carry_map[constant].ir = 0;
-  }
-
-
-  unsigned max_states_allowed = 0x80000000;
-  unsigned mona_check = 8 * num_of_states;
-  CHECK_LE(mona_check, max_states_allowed);
-
-  int next_index = 0;
-  int next_label = constant;
-
-  const int total_num_variables = formula->get_coefficients().size();
-  const int num_variables = total_num_variables - num_zero;
-  int* indices = getIndices(total_num_variables);
-  unsigned long transitions = 1 << num_variables; //number of transitions from each state
-
-
-  dfaSetup(num_of_states, total_num_variables, indices);
-
-  int count = 0;
-  while (next_label < max + 1) { //there is a state to expand (excuding sink)
-    if(is_natural_number) {
-      carry_map[next_label].s = 2;
-    } else {
-      if (carry_map[next_label].i == count) {
-        carry_map[next_label].s = 2;
-      } else {
-        carry_map[next_label].sr = 2;
-      }
-    }
-
-    dfaAllocExceptions(transitions / 2);
-    int result, target;
-    for (unsigned long j = 0; j < transitions; ++j) {
-      int ones = 0;
-      unsigned long n = j;
-      for (auto& c : coeffs) {
-        // variables with 0 coeff don't matter.
-        if (c == 0) {
-          continue;
-        }
-        if (n & 1) {
-          ones += c;
-        }
-        n >>= 1;
-      }
-
-      result = next_label + ones;
-      std::vector<char> bin_num = getBinaryFormat(j,num_variables);
-      std::vector<char> exep(total_num_variables,'X');
-      exep.push_back('\0');
-      // only care about positions where nonzero coeff
-      for(int i = 0, k = 0; i < total_num_variables; i++) {
-        if(coeffs[i] != 0) {
-          exep[i] = bin_num[k++];
-        }
-      }
-
-      if ( not (result & 1) ) {
-        target = result / 2;
-        if(is_natural_number) {
-          if (carry_map[target].s == 0) {
-            carry_map[target].s = 1;
-            ++next_index;
-            carry_map[target].i = next_index;
-          }
-          dfaStoreException(carry_map[target].i, &exep[0]);
-        } else {
-          if (target == next_label) {
-            if (carry_map[target].s == 0) {
-              carry_map[target].s = 1;
-              next_index++;
-              carry_map[target].i = next_index;
-            }
-            dfaStoreException(carry_map[target].i, &exep[0]);
-          } else {
-            if (carry_map[target].sr == 0) {
-              carry_map[target].sr = 1;
-              next_index++;
-              carry_map[target].ir = next_index;
-            }
-            dfaStoreException(carry_map[target].ir, &exep[0]);
-          }
-        }
-      }
-    }
-
-    dfaStoreState(num_of_states - 1);
-
-    ++count;
-
-    //find next state to expand
-    if(is_natural_number) {
-      for (next_label = min; (next_label <= max) and
-        (carry_map[next_label].i != count) and
-        (carry_map[next_label].ir != count); next_label++) { }
-    } else {
-      for (next_label = min; (next_label <= max) and
-        (carry_map[next_label].i != count); ++next_label) { }
-    }
-  }
-
-  for (; count < num_of_states; ++count) {
-    dfaAllocExceptions(0);
-    dfaStoreState(num_of_states - 1);
-  }
-
-  //define accepting and rejecting states
-  char *statuses = new char[num_of_states + 1];
-  for (int i = 0; i < num_of_states; i++) {
-    statuses[i] = '-';
-  }
-
-  if(is_natural_number) {
-    for (next_label = min; next_label <= max; next_label++) {
-      if (carry_map[next_label].s == 2) {
-        statuses[carry_map[next_label].i] = '+';
-      }
-    }
-  } else {
-    if (carry_map[0].s == 2) {
-      statuses[carry_map[0].i] = '+';
-    }
-  }
-
-  statuses[num_of_states] = '\0';
-
-  DFA_ptr tmp_dfa = dfaBuild(statuses);
-  DFA_ptr equality_dfa = dfaMinimize(tmp_dfa);
-  dfaFree(tmp_dfa);
-  delete[] indices;
-  delete[] statuses;
-
-  equality_auto = new BinaryIntAutomaton(equality_dfa, total_num_variables, is_natural_number);
-  equality_auto->setFormula(formula);
-  DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeNaturalNumberEquality(" << *formula << ")";
-
-  return equality_auto;
-  */
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr formula) {
-
-  BinaryIntAutomaton_ptr equality_auto = nullptr;
-
-  if ( not formula->Simplify() ) {
-    equality_auto = BinaryIntAutomaton::makePhi(formula, false);
-    DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeIntEquality(" << *formula << ")";
-    return equality_auto;
-  }
-
-  const int constant = formula->get_constant();
-
-  std::vector<int> coeffs = formula->get_coefficients();
-  std::vector<int> nonzero_coeffs;
-  int min = 0, max = 0, num_zero = 0;
-  for (int c : coeffs) {
-    if (c > 0) {
-      max += c;
-      nonzero_coeffs.push_back(c);
-    } else if (c == 0) {
-      num_zero++;
-    } else {
-      min += c;
-      nonzero_coeffs.push_back(c);
-    }
-  }
-
-  if ( max < constant) {
-    max = constant;
-  } else if (min > constant) {
-    min = constant;
-  }
-
-  int num_of_states = 2 * max - 2 * min + 3;
-
-  unsigned max_states_allowed = 0x80000000;
-  unsigned mona_check = 8 * num_of_states;
-  CHECK_LE(mona_check, max_states_allowed);
-
-  std::map<int , StateIndices> carry_map; // maps carries to state indices
-  carry_map[constant].sr = 1;
-  carry_map[constant].i = -1;
-  carry_map[constant].ir = 0;
-
-  int next_index = 0;
-  int next_label = constant;
-
-  const int total_num_variables = formula->get_coefficients().size();
-  const int num_variables = nonzero_coeffs.size();
-  int* indices = getIndices(total_num_variables);
-  unsigned long transitions = 1 << num_variables; //number of transitions from each state
-
-  dfaSetup(num_of_states, total_num_variables, indices);
-
-  int count = 0;
-  while (next_label < max + 1) { //there is a state to expand (excuding sink)
-    if (carry_map[next_label].i == count) {
-      carry_map[next_label].s = 2;
-    } else {
-      carry_map[next_label].sr = 2;
-    }
-
-    dfaAllocExceptions(transitions / 2);
-    int result, target;
-    for (unsigned long j = 0; j < transitions; j++) {
-
-      int ones = 0;
-      unsigned long n = j;
-      for (auto& c : nonzero_coeffs) {
-        if (n & 1) {
-          ones += c;
-        }
-        n >>= 1;
-      }
-
-      result = next_label + ones;
-      std::vector<char> bin_num = getBinaryFormat(j,num_variables);
-      std::vector<char> exep(total_num_variables,'X');
-      exep.push_back('\0');
-      // only care about positions where nonzero coeff
-      for(int i = 0, k = 0; i < total_num_variables; i++) {
-        if(coeffs[i] != 0) {
-          exep[i] = bin_num[k++];
-        }
-      }
-
-      if ( not (result & 1) ) {
-        target = result / 2;
-        if (target == next_label) {
-          if (carry_map[target].s == 0) {
-            carry_map[target].s = 1;
-            next_index++;
-            carry_map[target].i = next_index;
-          }
-          dfaStoreException(carry_map[target].i, &exep[0]);
-        } else {
-          if (carry_map[target].sr == 0) {
-            carry_map[target].sr = 1;
-            next_index++;
-            carry_map[target].ir = next_index;
-          }
-          dfaStoreException(carry_map[target].ir, &exep[0]);
-        }
-      }
-    }
-
-    dfaStoreState(num_of_states - 1);
-
-    count++;
-
-    //find next state to expand
-    for (next_label = min; (next_label <= max) and
-        (carry_map[next_label].i != count) and
-        (carry_map[next_label].ir != count); next_label++) { }
-  }
-
-  for (; count < num_of_states; count++) {
-    dfaAllocExceptions(0);
-    dfaStoreState(num_of_states - 1);
-  }
-
-  //define accepting and rejecting states
-  char *statuses = new char[num_of_states+1];
-  for (int i = 0; i < num_of_states; i++) {
-    statuses[i] = '-';
-  }
-
-  for (next_label = min; next_label <= max; next_label++) {
-    if (carry_map[next_label].s == 2) {
-      statuses[carry_map[next_label].i] = '+';
-    }
-  }
-  statuses[num_of_states] = '\0';
-  DFA_ptr tmp_dfa = dfaBuild(statuses);
-  DFA_ptr equality_dfa = dfaMinimize(tmp_dfa);
-  dfaFree(tmp_dfa);
-  delete[] indices;
-  delete[] statuses;
-
-  equality_auto = new BinaryIntAutomaton(equality_dfa, total_num_variables, false);
-  equality_auto->setFormula(formula);
-
-  DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeIntEquality(" << *formula << ")";
-
-  return equality_auto;
-
-/*
   BinaryIntAutomaton_ptr equality_auto = nullptr;
 
   if ( not formula->Simplify() ) {
@@ -1346,138 +1024,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
   DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeIntEquality(" << *formula << ")";
 
   return equality_auto;
-*/
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberEquality(ArithmeticFormula_ptr formula) {
-  BinaryIntAutomaton_ptr equality_auto = nullptr;
-
-  if ( not formula->Simplify() ) {
-    equality_auto = BinaryIntAutomaton::makePhi(formula, true);
-    DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeNaturalNumberEquality(" << *formula << ")";
-    return equality_auto;
-  }
-
-  const int constant = formula->get_constant();
-  std::vector<int> coeffs = formula->get_coefficients();
-  std::vector<int> nonzero_coeffs;
-  int min = 0, max = 0, num_zero = 0;
-
-  for (int c : coeffs) {
-    if (c > 0) {
-      max += c;
-      nonzero_coeffs.push_back(c);
-    } else if (c == 0) {
-      num_zero++;
-    } else {
-      min += c;
-      nonzero_coeffs.push_back(c);
-    }
-  }
-
-  if ( max < constant) {
-    max = constant;
-  } else if (min > constant) {
-    min = constant;
-  }
-
-  int num_of_states = max - min + 2;
-
-  unsigned max_states_allowed = 0x80000000;
-  unsigned mona_check = 8 * num_of_states;
-  CHECK_LE(mona_check, max_states_allowed);
-
-  std::map<int , StateIndices> carry_map; // maps carries to state indices
-  carry_map[constant].s = 1;
-  carry_map[constant].i = 0;
-
-  int next_index = 0,
-          next_label = constant;
-
-  const int total_num_variables = formula->get_coefficients().size();
-  const int num_variables = nonzero_coeffs.size();
-  int* indices = getIndices(total_num_variables);
-  unsigned long transitions = 1 << num_variables; //number of transitions from each state
-
-
-  dfaSetup(num_of_states, total_num_variables, indices);
-
-  int count = 0;
-  while (next_label < max + 1) { //there is a state to expand (excuding sink)
-    carry_map[next_label].s = 2;
-    dfaAllocExceptions(transitions / 2);
-    int result, target;
-    for (unsigned long j = 0; j < transitions; ++j) {
-      int ones = 0;
-      unsigned long n = j;
-      for (auto& c : nonzero_coeffs) {
-        if (n & 1) {
-          ones += c;
-        }
-        n >>= 1;
-      }
-
-      result = next_label + ones;
-      std::vector<char> bin_num = getBinaryFormat(j,num_variables);
-      std::vector<char> exep(total_num_variables,'X');
-      exep.push_back('\0');
-      // only care about positions where nonzero coeff
-      for(int i = 0, k = 0; i < total_num_variables; i++) {
-        if(coeffs[i] != 0) {
-          exep[i] = bin_num[k++];
-        }
-      }
-
-      if ( not (result & 1) ) {
-        target = result / 2;
-        if (carry_map[target].s == 0) {
-          carry_map[target].s = 1;
-          ++next_index;
-          carry_map[target].i = next_index;
-        }
-        dfaStoreException(carry_map[target].i, &exep[0]);
-      }
-    }
-
-    dfaStoreState(num_of_states - 1);
-
-    ++count;
-
-    //find next state to expand
-    for (next_label = min; (next_label <= max) and
-        (carry_map[next_label].i != count); ++next_label) { }
-
-  }
-
-  for (; count < num_of_states; ++count) {
-    dfaAllocExceptions(0);
-    dfaStoreState(num_of_states - 1);
-  }
-
-  //define accepting and rejecting states
-  char *statuses = new char[num_of_states + 1];
-  for (int i = 0; i < num_of_states; i++) {
-    statuses[i] = '-';
-  }
-
-  if (carry_map[0].s == 2) {
-    statuses[carry_map[0].i] = '+';
-  }
-  statuses[num_of_states] = '\0';
-
-  DFA_ptr tmp_dfa = dfaBuild(statuses);
-  DFA_ptr equality_dfa = dfaMinimize(tmp_dfa);
-  dfaFree(tmp_dfa);
-  delete[] indices;
-  delete[] statuses;
-
-  equality_auto = new BinaryIntAutomaton(equality_dfa, total_num_variables, true);
-  equality_auto->setFormula(formula);
-  DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeNaturalNumberEquality(" << *formula << ")";
-
-  return equality_auto;
-
-/*
   BinaryIntAutomaton_ptr equality_auto = nullptr;
 
   if ( not formula->Simplify() ) {
@@ -1578,7 +1127,6 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberEquality(ArithmeticF
   DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeNaturalNumberEquality(" << *formula << ")";
 
   return equality_auto;
-*/
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNotEquality(ArithmeticFormula_ptr formula, bool is_natural_number) {
@@ -1738,7 +1286,581 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntLessThan(ArithmeticFormula_ptr
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticFormula_ptr formula) {
-/*
+  formula->Simplify();
+
+  int min = 0, max = 0;
+  for (int& c : formula->get_coefficients()) {
+    if (c > 0) {
+     max += c;
+    } else {
+     min += c;
+    }
+  }
+
+  const int constant = formula->get_constant();
+  if ( max < constant) {
+   max = constant;
+  } else if (min > constant) {
+   min = constant;
+  }
+
+  std::map<int, StateIndices> carry_map; // maps carries to state indices
+  carry_map[constant].s = 1;
+  carry_map[constant].i = 0;
+
+  int next_index = 0,
+          next_label = constant;
+
+
+  const int num_of_variables = formula->get_coefficients().size();
+  CHECK_LT(num_of_variables, 64);
+  int num_of_states = max - min + 1;
+  unsigned max_states_allowed = 0x80000000;
+  unsigned mona_check = 8 * num_of_states;
+  CHECK_LE(mona_check, max_states_allowed);
+
+  int* indices = getIndices(num_of_variables);
+  dfaSetup(num_of_states, num_of_variables, indices);
+  delete[] indices;
+
+  // TODO instead of allocating that many of transitions, try to reduce them with a preprocessing
+  unsigned long transitions = 1 << num_of_variables; //number of transitions from each state
+  int count = 0;
+  while (next_label < max + 1) { //there is a state to expand (excuding sink)
+   carry_map[next_label].s = 2;
+
+   dfaAllocExceptions(transitions);
+
+   int result, target;
+   for (unsigned long j = 0; j < transitions; ++j) {
+     int num_of_ones = formula->CountOnes(j);
+     result = next_label + num_of_ones;
+
+     if (result >= 0) {
+       target = result / 2;
+     } else {
+       target = (result - 1) / 2;
+     }
+
+     if (carry_map[target].s == 0) {
+       carry_map[target].s = 1;
+       ++next_index;
+       carry_map[target].i = next_index;
+     }
+
+     dfaStoreException(carry_map[target].i, &*(getBinaryFormat(j, num_of_variables)).begin());
+   }
+
+   dfaStoreState(count);
+   ++count;
+
+   //find next state to expand
+   for (next_label = min; (next_label <= max) and
+       (carry_map[next_label].i != count); ++next_label) { }
+
+  }
+
+  for (int i = count; i < num_of_states; ++i) {
+   dfaAllocExceptions(0);
+   dfaStoreState(i);
+  }
+
+  //define accepting and rejecting states
+  char *statuses = new char[num_of_states + 1];
+  for (int i = 0; i < num_of_states; ++i) {
+   statuses[i] = '-';
+  }
+
+  for (int i = min; i < 0; ++i) {
+   if (carry_map[i].s == 2) {
+     statuses[carry_map[i].i] = '+';
+   }
+  }
+  statuses[num_of_states] = '\0';
+
+  DFA_ptr tmp_dfa = dfaBuild(statuses);
+  delete[] statuses;
+  tmp_dfa->ns = tmp_dfa->ns - (num_of_states - count);
+  DFA_ptr less_than_dfa = dfaMinimize(tmp_dfa);
+  dfaFree(tmp_dfa);
+
+  BinaryIntAutomaton_ptr less_than_auto = new BinaryIntAutomaton(less_than_dfa, num_of_variables, true);
+  less_than_auto->setFormula(formula);
+  DVLOG(VLOG_LEVEL) << less_than_auto->id << " = makeNaturalNumberLessThan(" << *formula << ")";
+
+  return less_than_auto;
+}
+*/
+
+
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeEquality(ArithmeticFormula_ptr formula, bool is_natural_number) {
+  if (is_natural_number) {
+    return makeNaturalNumberEquality(formula);
+  } else {
+    return makeIntEquality(formula);
+  }
+}
+
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr formula) {
+  BinaryIntAutomaton_ptr equality_auto = nullptr;
+
+  if ( not formula->Simplify() ) {
+    equality_auto = BinaryIntAutomaton::makePhi(formula, false);
+    DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeIntEquality(" << *formula << ")";
+    return equality_auto;
+  }
+
+  const int constant = formula->get_constant();
+
+  std::vector<int> coeffs = formula->get_coefficients();
+  int min = 0, max = 0, num_zero = 0;
+  for (int c : coeffs) {
+    if (c > 0) {
+      max += c;
+    } else if (c == 0) {
+      num_zero++;
+    } else {
+      min += c;
+    }
+  }
+
+
+
+  if ( max < constant) {
+    max = constant;
+  } else if (min > constant) {
+    min = constant;
+  }
+
+  int num_of_states = 2 * max - 2 * min + 3;
+
+  unsigned max_states_allowed = 0x80000000;
+  unsigned mona_check = 8 * num_of_states;
+  CHECK_LE(mona_check, max_states_allowed);
+
+  std::map<int , StateIndices> carry_map; // maps carries to state indices
+  carry_map[constant].sr = 1;
+  carry_map[constant].i = -1;
+  carry_map[constant].ir = 0;
+
+  int next_index = 0;
+  int next_label = constant;
+
+  const int total_num_variables = formula->get_coefficients().size();
+  const int num_variables = total_num_variables - num_zero;
+  int* indices = getIndices(total_num_variables);
+  unsigned long transitions = 1 << num_variables; //number of transitions from each state
+
+  dfaSetup(num_of_states, total_num_variables, indices);
+
+  int count = 0;
+  while (next_label < max + 1) { //there is a state to expand (excuding sink)
+    if (carry_map[next_label].i == count) {
+      carry_map[next_label].s = 2;
+    } else {
+      carry_map[next_label].sr = 2;
+    }
+
+    dfaAllocExceptions(transitions / 2);
+    int result, target;
+    for (unsigned long j = 0; j < transitions; j++) {
+
+      int ones = 0;
+      unsigned long n = j;
+      for (auto& c : coeffs) {
+        // variables with 0 coeff don't matter.
+        if (c == 0) {
+          continue;
+        }
+        if (n & 1) {
+          ones += c;
+        }
+        n >>= 1;
+      }
+
+      result = next_label + ones;
+      std::vector<char> bin_num = getBinaryFormat(j,num_variables);
+      std::vector<char> exep(total_num_variables,'X');
+      exep.push_back('\0');
+      // only care about positions where nonzero coeff
+      for(int i = 0, k = 0; i < total_num_variables; i++) {
+        if(coeffs[i] != 0) {
+          exep[i] = bin_num[k++];
+        }
+      }
+
+      if ( not (result & 1) ) {
+        target = result / 2;
+        if (target == next_label) {
+          if (carry_map[target].s == 0) {
+            carry_map[target].s = 1;
+            next_index++;
+            carry_map[target].i = next_index;
+          }
+          dfaStoreException(carry_map[target].i, &exep[0]);
+        } else {
+          if (carry_map[target].sr == 0) {
+            carry_map[target].sr = 1;
+            next_index++;
+            carry_map[target].ir = next_index;
+          }
+          dfaStoreException(carry_map[target].ir, &exep[0]);
+        }
+      }
+    }
+
+    dfaStoreState(num_of_states - 1);
+
+    count++;
+
+    //find next state to expand
+    for (next_label = min; (next_label <= max) and
+        (carry_map[next_label].i != count) and
+        (carry_map[next_label].ir != count); next_label++) { }
+  }
+
+  for (; count < num_of_states; count++) {
+    dfaAllocExceptions(0);
+    dfaStoreState(num_of_states - 1);
+  }
+
+  //define accepting and rejecting states
+  char *statuses = new char[num_of_states+1];
+  for (int i = 0; i < num_of_states; i++) {
+    statuses[i] = '-';
+  }
+
+  for (next_label = min; next_label <= max; next_label++) {
+    if (carry_map[next_label].s == 2) {
+      statuses[carry_map[next_label].i] = '+';
+    }
+  }
+
+  statuses[num_of_states] = '\0';
+  DFA_ptr tmp_dfa = dfaBuild(statuses);
+  DFA_ptr equality_dfa = dfaMinimize(tmp_dfa);
+  dfaFree(tmp_dfa);
+  delete[] indices;
+  delete[] statuses;
+
+  equality_auto = new BinaryIntAutomaton(equality_dfa, total_num_variables, false);
+  equality_auto->setFormula(formula);
+
+  DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeIntEquality(" << *formula << ")";
+
+  return equality_auto;
+}
+
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberEquality(ArithmeticFormula_ptr formula) {
+  BinaryIntAutomaton_ptr equality_auto = nullptr;
+
+  if ( not formula->Simplify() ) {
+    equality_auto = BinaryIntAutomaton::makePhi(formula, true);
+    DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeNaturalNumberEquality(" << *formula << ")";
+    return equality_auto;
+  }
+
+  const int constant = formula->get_constant();
+  std::vector<int> coeffs = formula->get_coefficients();
+  int min = 0, max = 0, num_zero = 0;
+
+  for (int c : coeffs) {
+    if (c > 0) {
+      max += c;
+    } else if (c == 0) {
+      num_zero++;
+    } else {
+      min += c;
+    }
+  }
+
+  if ( max < constant) {
+    max = constant;
+  } else if (min > constant) {
+    min = constant;
+  }
+
+  int num_of_states = max - min + 2;
+
+  unsigned max_states_allowed = 0x80000000;
+  unsigned mona_check = 8 * num_of_states;
+  CHECK_LE(mona_check, max_states_allowed);
+
+  std::map<int , StateIndices> carry_map; // maps carries to state indices
+  carry_map[constant].s = 1;
+  carry_map[constant].i = 0;
+
+  int next_index = 0,
+          next_label = constant;
+
+  const int total_num_variables = formula->get_coefficients().size();
+  const int num_variables = total_num_variables - num_zero;
+  int* indices = getIndices(total_num_variables);
+  unsigned long transitions = 1 << num_variables; //number of transitions from each state
+
+
+  dfaSetup(num_of_states, total_num_variables, indices);
+
+  int count = 0;
+  while (next_label < max + 1) { //there is a state to expand (excuding sink)
+    carry_map[next_label].s = 2;
+    dfaAllocExceptions(transitions / 2);
+    int result, target;
+    for (unsigned long j = 0; j < transitions; ++j) {
+      int ones = 0;
+      unsigned long n = j;
+      for (auto& c : coeffs) {
+        // variables with 0 coeff don't matter.
+        if (c == 0) {
+          continue;
+        }
+        if (n & 1) {
+          ones += c;
+        }
+        n >>= 1;
+      }
+
+      result = next_label + ones;
+      std::vector<char> bin_num = getBinaryFormat(j,num_variables);
+      std::vector<char> exep(total_num_variables,'X');
+      exep.push_back('\0');
+      // only care about positions where nonzero coeff
+      for(int i = 0, k = 0; i < total_num_variables; i++) {
+        if(coeffs[i] != 0) {
+          exep[i] = bin_num[k++];
+        }
+      }
+
+      if ( not (result & 1) ) {
+        target = result / 2;
+        if (carry_map[target].s == 0) {
+          carry_map[target].s = 1;
+          ++next_index;
+          carry_map[target].i = next_index;
+        }
+        dfaStoreException(carry_map[target].i, &exep[0]);
+      }
+    }
+
+    dfaStoreState(num_of_states - 1);
+
+    ++count;
+
+    //find next state to expand
+    for (next_label = min; (next_label <= max) and
+        (carry_map[next_label].i != count); ++next_label) { }
+
+  }
+
+  for (; count < num_of_states; ++count) {
+    dfaAllocExceptions(0);
+    dfaStoreState(num_of_states - 1);
+  }
+
+  //define accepting and rejecting states
+  char *statuses = new char[num_of_states + 1];
+  for (int i = 0; i < num_of_states; i++) {
+    statuses[i] = '-';
+  }
+
+  if (carry_map[0].s == 2) {
+    statuses[carry_map[0].i] = '+';
+  }
+  statuses[num_of_states] = '\0';
+
+  DFA_ptr tmp_dfa = dfaBuild(statuses);
+  DFA_ptr equality_dfa = dfaMinimize(tmp_dfa);
+  dfaFree(tmp_dfa);
+  delete[] indices;
+  delete[] statuses;
+
+  equality_auto = new BinaryIntAutomaton(equality_dfa, total_num_variables, true);
+  equality_auto->setFormula(formula);
+  DVLOG(VLOG_LEVEL) << equality_auto->id << " = makeNaturalNumberEquality(" << *formula << ")";
+
+  return equality_auto;
+}
+
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNotEquality(ArithmeticFormula_ptr formula, bool is_natural_number) {
+  BinaryIntAutomaton_ptr not_equal_auto = nullptr, tmp_auto = nullptr;
+
+  formula->set_type(ArithmeticFormula::Type::EQ);
+  tmp_auto = BinaryIntAutomaton::makeEquality(formula, is_natural_number);
+  not_equal_auto = tmp_auto->complement();
+  delete tmp_auto; tmp_auto = nullptr;
+
+  DVLOG(VLOG_LEVEL) << not_equal_auto->id << " = makeNotEquality(" << *not_equal_auto->getFormula() << ")";
+  return not_equal_auto;
+}
+
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThan(ArithmeticFormula_ptr formula, bool is_natural_number) {
+  if (is_natural_number) {
+    return makeNaturalNumberLessThan(formula);
+  } else {
+    return makeIntLessThan(formula);
+  }
+}
+
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntLessThan(ArithmeticFormula_ptr formula) {
+  formula->Simplify();
+
+  std::vector<int> coeffs = formula->get_coefficients();
+  int min = 0, max = 0, num_zero = 0;
+  for (int c : coeffs) {
+    if (c > 0) {
+      max += c;
+    } else if (c == 0) {
+      num_zero++;
+    } else {
+      min += c;
+    }
+  }
+
+  const int constant = formula->get_constant();
+  if ( max < constant) {
+   max = constant;
+  } else if (min > constant) {
+   min = constant;
+  }
+
+  const int total_num_variables = formula->get_coefficients().size();
+  const int num_variables = total_num_variables - num_zero;
+  int num_of_states = 2 * (max - min + 1);
+  unsigned max_states_allowed = 0x80000000;
+  unsigned mona_check = 8 * num_of_states;
+  CHECK_LE(mona_check, max_states_allowed);
+
+  int* indices = getIndices(total_num_variables);
+  dfaSetup(num_of_states, total_num_variables, indices);
+  delete[] indices;
+
+  int next_index = 0, next_label = constant, result, target;
+  int write1, label1, label2;
+  std::map<int, StateIndices> carry_map; // maps carries to state indices
+
+  carry_map[constant].sr = 1;
+  carry_map[constant].i = -1;
+  carry_map[constant].ir = 0;
+
+  CHECK_LT(num_variables, 64);
+  unsigned long transitions = 1 << num_variables; //number of transitions from each state
+  int count = 0;
+  while (next_label < max + 1) { //there is a state to expand (excuding sink)
+   if (carry_map[next_label].i == count) {
+     carry_map[next_label].s = 2;
+   } else {
+     carry_map[next_label].sr = 2;
+   }
+
+   // TODO instead of allocating that many of transitions, try to reduce them with a preprocessing
+   dfaAllocExceptions(transitions);
+
+   for (unsigned long j = 0; j < transitions; j++) {
+     int ones = 0;
+      unsigned long n = j;
+      for (auto& c : coeffs) {
+        // variables with 0 coeff don't matter.
+        if (c == 0) {
+          continue;
+        }
+        if (n & 1) {
+          ones += c;
+        }
+        n >>= 1;
+      }
+
+      result = next_label + ones;
+      std::vector<char> bin_num = getBinaryFormat(j,num_variables);
+      std::vector<char> exep(total_num_variables,'X');
+      exep.push_back('\0');
+      // only care about positions where nonzero coeff
+      for(int i = 0, k = 0; i < total_num_variables; i++) {
+        if(coeffs[i] != 0) {
+          exep[i] = bin_num[k++];
+        }
+      }
+
+     if (result >= 0) {
+       target = result / 2;
+     } else {
+       target = (result - 1) / 2;
+     }
+
+     write1 = result & 1;
+     label1 = next_label;
+     label2 = target;
+
+     while (label1 != label2) {
+       label1 = label2;
+       result = label1 + ones;
+       if (result >= 0) {
+         label2 = result / 2;
+       } else {
+         label2 = (result - 1) / 2;
+       }
+       write1 = result & 1;
+     }
+
+     if (write1) {
+       if (carry_map[target].s == 0) {
+         carry_map[target].s = 1;
+         next_index++;
+         carry_map[target].i = next_index;
+       }
+       dfaStoreException(carry_map[target].i, &exep[0]);
+     } else {
+       if (carry_map[target].sr == 0) {
+         carry_map[target].sr = 1;
+         next_index++;
+         carry_map[target].ir = next_index;
+       }
+       dfaStoreException(carry_map[target].ir, &exep[0]);
+     }
+   }
+
+   dfaStoreState(count);
+
+   count++;
+
+   //find next state to expand
+   for (next_label = min; (next_label <= max) and
+       (carry_map[next_label].i != count) and
+       (carry_map[next_label].ir != count); next_label++) { }
+
+  }
+
+  for (int i = count; i < num_of_states; i++) {
+   dfaAllocExceptions(0);
+   dfaStoreState(i);
+  }
+
+  //define accepting and rejecting states
+  char *statuses = new char[num_of_states + 1];
+  for (int i = 0; i < num_of_states; i++) {
+   statuses[i] = '-';
+  }
+
+  for (next_label = min; next_label <= max; next_label++) {
+   if (carry_map[next_label].s == 2) {
+     statuses[carry_map[next_label].i] = '+';
+   }
+  }
+  statuses[num_of_states] = '\0';
+
+  DFA_ptr tmp_dfa = dfaBuild(statuses);
+  tmp_dfa->ns = tmp_dfa->ns - (num_of_states - count);
+  DFA_ptr less_than_dfa = dfaMinimize(tmp_dfa);
+  dfaFree(tmp_dfa);
+
+  BinaryIntAutomaton_ptr less_than_auto = new BinaryIntAutomaton(less_than_dfa, total_num_variables, false);
+  less_than_auto->setFormula(formula);
+
+  DVLOG(VLOG_LEVEL) << less_than_auto->id << " = makeLessThan(" << *formula << ")";
+  delete[] statuses;
+  return less_than_auto;
+}
+
+BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticFormula_ptr formula) {
   formula->Simplify();
 
   std::vector<int> coeffs = formula->get_coefficients();
@@ -1867,111 +1989,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticF
   DVLOG(VLOG_LEVEL) << less_than_auto->id << " = makeNaturalNumberLessThan(" << *formula << ")";
 
   return less_than_auto;
-*/
-  formula->Simplify();
-
-  int min = 0, max = 0;
-  for (int& c : formula->get_coefficients()) {
-    if (c > 0) {
-     max += c;
-    } else {
-     min += c;
-    }
-  }
-
-  const int constant = formula->get_constant();
-  if ( max < constant) {
-   max = constant;
-  } else if (min > constant) {
-   min = constant;
-  }
-
-  std::map<int, StateIndices> carry_map; // maps carries to state indices
-  carry_map[constant].s = 1;
-  carry_map[constant].i = 0;
-
-  int next_index = 0,
-          next_label = constant;
-
-
-  const int num_of_variables = formula->get_coefficients().size();
-  CHECK_LT(num_of_variables, 64);
-  int num_of_states = max - min + 1;
-  unsigned max_states_allowed = 0x80000000;
-  unsigned mona_check = 8 * num_of_states;
-  CHECK_LE(mona_check, max_states_allowed);
-
-  int* indices = getIndices(num_of_variables);
-  dfaSetup(num_of_states, num_of_variables, indices);
-  delete[] indices;
-
-  // TODO instead of allocating that many of transitions, try to reduce them with a preprocessing
-  unsigned long transitions = 1 << num_of_variables; //number of transitions from each state
-  int count = 0;
-  while (next_label < max + 1) { //there is a state to expand (excuding sink)
-   carry_map[next_label].s = 2;
-
-   dfaAllocExceptions(transitions);
-
-   int result, target;
-   for (unsigned long j = 0; j < transitions; ++j) {
-     int num_of_ones = formula->CountOnes(j);
-     result = next_label + num_of_ones;
-
-     if (result >= 0) {
-       target = result / 2;
-     } else {
-       target = (result - 1) / 2;
-     }
-
-     if (carry_map[target].s == 0) {
-       carry_map[target].s = 1;
-       ++next_index;
-       carry_map[target].i = next_index;
-     }
-
-     dfaStoreException(carry_map[target].i, &*(getBinaryFormat(j, num_of_variables)).begin());
-   }
-
-   dfaStoreState(count);
-   ++count;
-
-   //find next state to expand
-   for (next_label = min; (next_label <= max) and
-       (carry_map[next_label].i != count); ++next_label) { }
-
-  }
-
-  for (int i = count; i < num_of_states; ++i) {
-   dfaAllocExceptions(0);
-   dfaStoreState(i);
-  }
-
-  //define accepting and rejecting states
-  char *statuses = new char[num_of_states + 1];
-  for (int i = 0; i < num_of_states; ++i) {
-   statuses[i] = '-';
-  }
-
-  for (int i = min; i < 0; ++i) {
-   if (carry_map[i].s == 2) {
-     statuses[carry_map[i].i] = '+';
-   }
-  }
-  statuses[num_of_states] = '\0';
-
-  DFA_ptr tmp_dfa = dfaBuild(statuses);
-  delete[] statuses;
-  tmp_dfa->ns = tmp_dfa->ns - (num_of_states - count);
-  DFA_ptr less_than_dfa = dfaMinimize(tmp_dfa);
-  dfaFree(tmp_dfa);
-
-  BinaryIntAutomaton_ptr less_than_auto = new BinaryIntAutomaton(less_than_dfa, num_of_variables, true);
-  less_than_auto->setFormula(formula);
-  DVLOG(VLOG_LEVEL) << less_than_auto->id << " = makeNaturalNumberLessThan(" << *formula << ")";
-
-  return less_than_auto;
 }
+
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThanOrEqual(ArithmeticFormula_ptr formula, bool is_natural_number) {
   BinaryIntAutomaton_ptr less_than_or_equal_auto = nullptr;
