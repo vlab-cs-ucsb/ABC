@@ -346,6 +346,7 @@ void ConstraintSolver::visitPlus(Plus_ptr plus_term) {
   path_trace_.push_back(plus_term);
   for (auto& term_ptr : *(plus_term->term_list)) {
     visit(term_ptr);
+
     param = getTermValue(term_ptr);
     if (result == nullptr) {
       result = param->clone();
@@ -386,7 +387,6 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
 
   Value_ptr result = nullptr, param_left = getTermValue(eq_term->left_term), param_right = getTermValue(
       eq_term->right_term);
-
 
   if (Value::Type::BOOl_CONSTANT == param_left->getType() and Value::Type::BOOl_CONSTANT == param_right->getType()) {
     result = new Value(param_left->getBoolConstant() == param_right->getBoolConstant());
@@ -567,6 +567,7 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
       result = concat_value;
     }
   }
+
   path_trace_.pop_back();
   setTermValue(concat_term, result);
 }
@@ -617,7 +618,6 @@ void ConstraintSolver::visitLen(Len_ptr len_term) {
 
   Value_ptr result = nullptr, param = getTermValue(len_term->term);
   Theory::IntAutomaton_ptr int_auto = param->getStringAutomaton()->length();
-
   if (int_auto->isAcceptingSingleInt()) {
     result = new Value(int_auto->getAnAcceptingInt());
     delete int_auto;
@@ -1273,19 +1273,19 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
   IntAutomaton_ptr updated_int_auto = nullptr;
   bool has_minus_one = false;
   int number_of_variables_for_int_auto;
-
   for (auto& string_term : arithmetic_constraint_solver_.getStringTermsIn(term)) {
     visit(string_term);
+
     string_term_result = getTermValue(string_term);
 
     std::string string_term_var_name = symbol_table_->get_var_name_for_expression(string_term, Variable::Type::INT);
-
 
     if (Value::Type::INT_AUTOMATON == string_term_result->getType()) {
       has_minus_one = string_term_result->getIntAutomaton()->hasNegative1();
       number_of_variables_for_int_auto = string_term_result->getIntAutomaton()->getNumberOfVariables();
       //          result->getBinaryIntAutomaton()->inspectAuto();
       // 1- update arithmetic automaton
+
       string_term_unary_auto = string_term_result->getIntAutomaton()->toUnaryAutomaton();
 
       string_term_binary_auto = string_term_unary_auto->toBinaryIntAutomaton(
@@ -1297,14 +1297,16 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     } else if (Value::Type::INT_CONSTANT == string_term_result->getType()) {
       int value = string_term_result->getIntConstant();
       has_minus_one = (value < 0);
+
       string_term_binary_auto = Theory::BinaryIntAutomaton::makeAutomaton(
           value, string_term_var_name, result->getBinaryIntAutomaton()->getFormula()->clone(), true);
+
       number_of_variables_for_int_auto = Theory::IntAutomaton::DEFAULT_NUM_OF_VARIABLES;
     } else {
       LOG(FATAL)<< "unexpected type";
     }
-    updated_arith_auto = result->getBinaryIntAutomaton()->intersect(string_term_binary_auto);
 
+    updated_arith_auto = result->getBinaryIntAutomaton()->intersect(string_term_binary_auto);
     delete string_term_binary_auto;
     string_term_binary_auto = nullptr;
     delete result;

@@ -392,6 +392,7 @@ IntAutomaton_ptr IntAutomaton::plus(int value) {
 }
 
 IntAutomaton_ptr IntAutomaton::plus(IntAutomaton_ptr other_auto) {
+
   IntAutomaton_ptr plus_auto = nullptr, add_minus_auto = nullptr,
           left_auto = this, right_auto = other_auto;
   if (has_negative_1) {
@@ -921,7 +922,7 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
 }
 
 /**
- * Should be same as string concat
+ * TODO WILL: Don't use multitrack for this, too much work
  */
 IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
 

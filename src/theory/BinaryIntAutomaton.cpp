@@ -155,8 +155,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(SemilinearSet_ptr semil
         ArithmeticFormula_ptr formula, bool add_leading_zeros) {
   BinaryIntAutomaton_ptr binary_auto = nullptr;
   DFA_ptr binary_dfa = nullptr, tmp_dfa = nullptr;
-  //int var_index = formula->get_number_of_variables() - formula->get_variable_index(var_name) - 1;
-  int var_index = formula->get_variable_index(var_name);
+  int var_index = formula->get_number_of_variables() - formula->get_variable_index(var_name) - 1;
+  //int var_index = formula->get_variable_index(var_name);
   int number_of_variables = formula->get_number_of_variables(),
           leading_zero_state = 0,
           sink_state = 0,
@@ -347,8 +347,8 @@ bool BinaryIntAutomaton::hasNegative1() {
 
 // bdd vars are ordered in the reverse order of coefficients
 int BinaryIntAutomaton::getBddVarIndex(std::string var_name) {
-  return formula->get_variable_index(var_name);
-  //return num_of_variables - formula->get_variable_index(var_name) - 1;
+  //return formula->get_variable_index(var_name);
+  return num_of_variables - formula->get_variable_index(var_name) - 1;
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::complement() {
@@ -479,6 +479,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::getPositiveValuesFor(std::string var_
 
   std::vector<int> indexes;
   int var_index = formula->get_number_of_variables() - formula->get_variable_index(var_name) - 1;
+  //int var_index = formula->get_variable_index(var_name);
   indexes.push_back(var_index);
 
   greater_than_or_equalt_to_zero_auto = BinaryIntAutomaton::makeIntGraterThanOrEqualToZero(indexes, formula->get_number_of_variables());
@@ -898,7 +899,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntGraterThanOrEqualToZero(std::v
   return postivie_numbers_auto;
 }
 
-/*
+
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeEquality(ArithmeticFormula_ptr formula, bool is_natural_number) {
   if (is_natural_number) {
     return makeNaturalNumberEquality(formula);
@@ -1390,9 +1391,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticF
 
   return less_than_auto;
 }
-*/
 
 
+/*
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeEquality(ArithmeticFormula_ptr formula, bool is_natural_number) {
   if (is_natural_number) {
     return makeNaturalNumberEquality(formula);
@@ -1990,8 +1991,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticF
 
   return less_than_auto;
 }
-
-
+*/
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThanOrEqual(ArithmeticFormula_ptr formula, bool is_natural_number) {
   BinaryIntAutomaton_ptr less_than_or_equal_auto = nullptr;
 

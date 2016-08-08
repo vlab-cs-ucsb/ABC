@@ -531,7 +531,6 @@ void ArithmeticFormulaGenerator::visitTermConstant(TermConstant_ptr term_constan
   DVLOG(VLOG_LEVEL) << "visit: " << *term_constant;
 
   ArithmeticFormula_ptr formula = nullptr;
-
   switch (term_constant->getValueType()) {
     case Primitive::Type::NUMERAL: {
       int constant = std::stoi(term_constant->getValue());

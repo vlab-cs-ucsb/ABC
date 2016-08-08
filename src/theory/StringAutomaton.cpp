@@ -736,6 +736,7 @@ StringAutomaton_ptr StringAutomaton::suffixes() {
     return suffixes_auto;
   }
 
+  bool has_sink = true;
   int number_of_variables = this->num_of_variables,
           number_of_states = this->dfa->ns,
           sink_state = this->getSinkState(),
@@ -745,11 +746,8 @@ StringAutomaton_ptr StringAutomaton::suffixes() {
   if (sink_state != -1) {
     max = max - 1;
   } else {
-
-    //return this->clone();
-    sink_state = number_of_states;
-    number_of_states++;
-    max++;
+    has_sink = false;
+    sink_state = 0;
   }
 
 
@@ -769,11 +767,11 @@ StringAutomaton_ptr StringAutomaton::suffixes() {
   trace_descr tp = nullptr;
 
   for (int s = 0; s < number_of_states; s++) {
-    if (s != sink_state) {
+    if (!has_sink || s != sink_state) {
       exception_map[s]; // initialize map entry
       state_paths = pp = make_paths(this->dfa->bddm, this->dfa->q[s]);
       while (pp) {
-        if (pp->to != (unsigned)sink_state) {
+        if (!has_sink || pp->to != (unsigned)sink_state) {
           current_exception = new std::vector<char>();
           for (int j = 0; j < this->num_of_variables; j++) {
             for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
@@ -829,7 +827,7 @@ StringAutomaton_ptr StringAutomaton::suffixes() {
   dfaSetup(number_of_states, number_of_variables, indices);
   for (int s = 0; s < number_of_states; s++) {
     statuses[s] = '-';
-    if (s != sink_state) {
+    if (!has_sink || s != sink_state) {
       statuses[s] = '-'; // initially
       dfaAllocExceptions(exception_map[s].size());
       for (auto it = exception_map[s].begin(); it != exception_map[s].end();) {
@@ -840,10 +838,10 @@ StringAutomaton_ptr StringAutomaton::suffixes() {
       }
       dfaStoreState(sink_state);
       current_exception = nullptr;
-      if (isAcceptingState(s)) {
+      if (isAcceptingState(s) || s == 0) {
         statuses[s] = '+';
       }
-    } else {
+    } else if(has_sink){
       dfaAllocExceptions(0);
       dfaStoreState(s);
     }
@@ -1560,11 +1558,11 @@ UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
   int sink_state = this->getSinkState(),
           number_of_variables = this->getNumberOfVariables() + 1, // one extra bit
           to_state = 0;
-
+  bool has_sink = true;
   int original_num_states = dfa->ns;
   if(sink_state < 0) {
-    sink_state = original_num_states;
-    original_num_states++;
+    has_sink = false;
+    sink_state = 0;
   }
 
   int* indices = getIndices(number_of_variables);
@@ -1580,7 +1578,7 @@ UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
 
   for (int i = 0; i < original_num_states; i++) {
 
-    if(i == sink_state) {
+    if(i == sink_state && has_sink) {
       dfaAllocExceptions(0);
       dfaStoreState(sink_state);
       statuses[sink_state] = '-';
@@ -1589,7 +1587,7 @@ UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
 
     state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
     while (pp) {
-      if (pp->to != (unsigned)sink_state) {
+      if (!has_sink || pp->to != (unsigned)sink_state) {
         to_state = pp->to;
         current_exception = new std::vector<char>();
         for (int j = 0; j < number_of_variables - 1; j++) {
@@ -1756,12 +1754,18 @@ IntAutomaton_ptr StringAutomaton::length() {
   IntAutomaton_ptr length_auto = nullptr;
 
   if (this->isEmptyLanguage()) {
+    inspectAuto();
+    inspectBDD();
+    std::cin.get();
     length_auto = IntAutomaton::makePhi(num_of_variables);
   } else if (this->isAcceptingSingleString()) {
     std::string example = this->getAnAcceptingString();
     length_auto = IntAutomaton::makeInt(example.length(), num_of_variables);
   } else {
     UnaryAutomaton_ptr unary_auto = this->toUnaryAutomaton();
+    //unary_auto->inspectAuto();
+    //unary_auto->inspectBDD();
+
     length_auto = unary_auto->toIntAutomaton(num_of_variables);
     delete unary_auto; unary_auto = nullptr;
   }
@@ -2294,14 +2298,11 @@ StringAutomaton_ptr StringAutomaton::getAnyStringNotContainsMe() {
  */
 StringAutomaton_ptr StringAutomaton::indexOfHelper(StringAutomaton_ptr search_auto, bool use_extra_bit) {
   StringAutomaton_ptr index_of_auto = nullptr;
-LOG(INFO) << "A";
   index_of_auto = this->search(search_auto, use_extra_bit);
-LOG(INFO) << "B";
   if(!index_of_auto->has_sharp_bit() || index_of_auto->num_of_variables < 9) {
     LOG(FATAL) << "NO SHARP BT!";
   }
   int sink_state = index_of_auto->getSinkState();
-LOG(INFO) << "C";
   int current_state = -1;
   int next_state = -1;
   std::vector<char> flag = {'1', '1', '1', '1', '1', '1', '1', '1', '1'}; // 255 (+1 extrabit)
@@ -2331,7 +2332,6 @@ LOG(INFO) << "C";
       }
     }
   }
-LOG(INFO) << "D";
   index_of_auto->minimize();
 
   DVLOG(VLOG_LEVEL) << index_of_auto->id << " = [" << this->id << "]->indexOfHelper(" << search_auto->id  << ")";
@@ -2497,7 +2497,6 @@ StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton(bool use_extra_b
       if (duplicated_state_id == sink_state) {
         duplicated_state_id++;
       }
-LOG(INFO) << 10;
       // do allocation for current states
       dfaAllocExceptions(exceptions.size() + 1);
       for (auto entry : exceptions) {
@@ -2505,7 +2504,6 @@ LOG(INFO) << 10;
       }
       dfaStoreException(duplicated_state_id, &*sharp1.begin()); // to duplicated state
       dfaStoreState(sink_state);
-LOG(INFO) << 11;
       // sink state id is between map_state_id and duplicate_state_id allocate sink state first;
       if ((not sink_state_allocated) and (duplicated_state_id - 1) == sink_state ) {
         dfaAllocExceptions(0);
@@ -2513,7 +2511,6 @@ LOG(INFO) << 11;
         statuses[sink_state] = '-';
         sink_state_allocated = true;
       }
-LOG(INFO) << 12;
       // do allocation for duplicated states
       dfaAllocExceptions(exceptions.size() + 1);
       for (auto it = exceptions.begin(); it != exceptions.end();) {
@@ -2528,7 +2525,6 @@ LOG(INFO) << 12;
       }
       dfaStoreException(mapped_state_id, &*sharp0.begin()); // to original state
       dfaStoreState(sink_state);
-LOG(INFO) << 13;
       // update final states
       if (this->dfa->f[s] == 1) {
         statuses[mapped_state_id] = '+';
@@ -2550,7 +2546,6 @@ LOG(INFO) << 13;
       statuses[sink_state] = '-';
       sink_state_allocated = true;
     }
-    LOG(INFO) << 14;
   }
 
   statuses[number_of_states] = '\0';

@@ -1056,7 +1056,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::projectKTrack(int k_track) {
 }
 
 StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
-	DFA_ptr result = this->dfa, temp;
+	DFA_ptr result = dfaCopy(this->dfa), temp;
 	StringAutomaton_ptr result_auto = nullptr;
 	int flag = 0;
 
@@ -1068,9 +1068,11 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
     result_auto = new StringAutomaton(result);
 		return result_auto;
 	}
+
     // k_track needs to be mapped to indices 0-VAR_PER_TRACK
     // while all others need to be pushed back by VAR_PER_TRACK, then
     // interleaved with 1 less than current number of tracks
+
 	int* map = getIndices(this->num_of_tracks*VAR_PER_TRACK);
 	for(int i = 0; i < this->num_of_tracks; i++) {
 		if(i == k_track) {
@@ -1083,11 +1085,12 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 			}
 		}
 	}
+
 	// project away all but the kth track
 	for(int i = this->num_of_tracks-1; i >= 0; --i) {
 		if(i != k_track) {
-			for(int j = VAR_PER_TRACK-1; j>=0; --j) {
-				temp = dfaProject(result,i+this->num_of_tracks*j);
+			for(int j = 0; j < VAR_PER_TRACK; ++j) {
+				temp = dfaProject(result,(unsigned)(i+this->num_of_tracks*j));
 				if(flag)
 					dfaFree(result);
 				result = dfaMinimize(temp);
@@ -1102,6 +1105,7 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 	if(find_sink(result) != -1) {
 		// trim prefix first, then suffix
 		temp = trim_lambda_suffix(result,VAR_PER_TRACK,false);
+
 		dfaFree(result);
 		result = temp;
 
@@ -1133,7 +1137,6 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
   char* statuses = new char[original_dfa->ns+1];
 	std::vector<std::pair<std::vector<char>,int>> state_exeps;
 	std::vector<bool> lambda_states(original_dfa->ns,false);
-LOG(INFO) << "BEFORE";
   dfaSetup(original_dfa->ns,len,mindices);
   for(int i = 0; i < original_dfa->ns; i++) {
   	statuses[i] = '-';
@@ -1182,7 +1185,6 @@ LOG(INFO) << "BEFORE";
   	dfaStoreState(sink);
 		state_exeps.clear();
   }
-LOG(INFO) << "AFTER";
   statuses[original_dfa->ns] = '\0';
   temp_dfa = dfaBuild(statuses);
   trimmed_dfa = dfaMinimize(temp_dfa);
@@ -1191,7 +1193,6 @@ LOG(INFO) << "AFTER";
   delete[] statuses;
 
   this->dfa = trimmed_dfa;
-LOG(INFO) << "CONT...";
 	boost::multiprecision::cpp_int ret = Automaton::Count(bound, count_less_than_or_equal_to_bound, count_reserved_words);
   this->dfa = original_dfa;
   dfaFree(trimmed_dfa);
@@ -1832,6 +1833,7 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_prefix(DFA_ptr dfa, int var, bool proje
 
 	// continue with rest of states
 	for(int i = 0; i < dfa->ns; i++) {
+	  statuses[i+1] = '-';
 	  state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
 	  while(pp) {
       if (pp->to == sink) {
@@ -1855,6 +1857,8 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_prefix(DFA_ptr dfa, int var, bool proje
 				}
 				exep.push_back('\0');
 				state_exeps.push_back(std::make_pair(exep,pp->to+1));
+			} else if(dfa->f[pp->to == 1]) {
+			  statuses[i+1] = '+';
 			}
       pp = pp->next;
     }
@@ -1869,8 +1873,6 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_prefix(DFA_ptr dfa, int var, bool proje
 
     if(dfa->f[i] == 1) {
       statuses[i+1] = '+';
-    } else {
-      statuses[i+1] = '-';
     }
 	}
 
@@ -1916,9 +1918,8 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_suffix(DFA_ptr dfa, int var, bool proje
   std::vector<char> lambda_vec(var,'1');
 	dfaSetup(dfa->ns, var, indices);
 	for(int i = 0; i < dfa->ns; i++) {
-		statuses[i] = '-';
 		state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
-
+		statuses[i] = '-';
 		while (pp) {
 			if (pp->to != sink) {
 				std::vector<char> exep(var,'X');
@@ -1935,12 +1936,12 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_suffix(DFA_ptr dfa, int var, bool proje
 
 				bool is_lam = is_exep_equal_char(exep,lambda_vec,var);
 				if (is_lam && i == pp->to) {
-					statuses[i] = '+';
+
 				}
 				else {
 					state_exeps.push_back(std::make_pair(exep, pp->to));
 					exep.push_back('\0');
-					if(is_lam) {
+					if(is_lam && dfa->f[pp->to] == 1) {
 						statuses[i] = '+';
 					}
 				}
@@ -2083,27 +2084,21 @@ DFA_ptr MultiTrackAutomaton::concat(DFA_ptr prefix_dfa, DFA_ptr suffix_dfa, int 
   // (x,lambda,x) until end
 
   temp_multi = makePrefixSuffix(0,1,2,3);
-  prefix_multi = new MultiTrackAutomaton(prefix_dfa,1,3,DEFAULT_NUM_VAR);
+  prefix_multi = new MultiTrackAutomaton(prefix_dfa,1,3,var);
   temp_dfa = prepend_lambda(suffix_dfa,var);
   suffix_multi = new MultiTrackAutomaton(temp_dfa,2,3,VAR_PER_TRACK);
   dfaFree(temp_dfa);
-
   intersect_multi = temp_multi->intersect(prefix_multi);
   delete temp_multi;
   delete prefix_multi;
-
   temp_multi = intersect_multi;
   intersect_multi = temp_multi->intersect(suffix_multi);
   delete temp_multi;
   delete suffix_multi;
-
   result_string_auto = intersect_multi->getKTrack(0);
-  //result_string_auto->inspectAuto();
-	//std::cin.get();
   result_dfa = dfaCopy(result_string_auto->getDFA());
   delete intersect_multi;
   delete result_string_auto;
-
   return result_dfa;
 }
 

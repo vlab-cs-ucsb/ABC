@@ -36,11 +36,10 @@ void VariableValueComputer::start() {
   for (auto it = variable_path_table.rbegin(); it != variable_path_table.rend(); it++) {
     current_path = &(*it);
     root_term = current_path->back();
-
     initial_value = getTermPreImage(root_term);
     if (initial_value not_eq nullptr) {
       visit(root_term);
-      return;
+      break;
     }
 
     initial_value = getTermPostImage(root_term);
@@ -51,6 +50,7 @@ void VariableValueComputer::start() {
 }
 
 void VariableValueComputer::end() {
+  DVLOG(VLOG_LEVEL) << "end variable value computation";
   current_path = nullptr;
 }
 
@@ -568,6 +568,7 @@ void VariableValueComputer::visitConcat(Concat_ptr concat_term) {
   }
   Value_ptr term_value = getTermPreImage(concat_term);
   Value_ptr child_post_value = getTermPostImage(child_term);
+
   // Figure out position of the variable in concat list
   Theory::StringAutomaton_ptr left_of_child = nullptr;
   Theory::StringAutomaton_ptr right_of_child = nullptr;
@@ -593,6 +594,10 @@ void VariableValueComputer::visitConcat(Concat_ptr concat_term) {
   Theory::StringAutomaton_ptr child_result_auto = nullptr;
   if (left_of_child != nullptr) {
     child_result_auto = tmp_parent_auto->preConcatRight(left_of_child);
+    //tmp_parent_auto->inspectAuto();
+    //left_of_child->inspectAuto();
+    //child_result_auto->inspectAuto();
+    //std::cin.get();
     tmp_parent_auto = child_result_auto;
   }
   if (right_of_child != nullptr) {
@@ -606,6 +611,10 @@ void VariableValueComputer::visitConcat(Concat_ptr concat_term) {
     }
     Theory::StringAutomaton_ptr  tmp = child_result_auto;
     child_result_auto = tmp_parent_auto->preConcatLeft(right_of_child);
+    //tmp_parent_auto->inspectAuto();
+    //right_of_child->inspectAuto();
+    //child_result_auto->inspectAuto();
+    //std::cin.get();
     delete tmp; tmp = nullptr;
   }
   delete left_of_child; left_of_child = nullptr;
@@ -677,6 +686,7 @@ void VariableValueComputer::visitLen(Len_ptr len_term) {
   } else {
     child_value = new Value(child_post_value->getStringAutomaton()->restrictLengthTo(term_value->getIntAutomaton()));
   }
+
 
   setTermPreImage(child_term, child_value);
   visit(child_term);
@@ -1270,6 +1280,12 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   popTerm(qi_term);
 
   Value_ptr term_pre_value = getTermPreImage(qi_term);
+
+  //Value_ptr pre = symbol_table->getValue(qi_term->getVarName());
+  //pre->getStringAutomaton()->inspectAuto();
+  //term_pre_value->getStringAutomaton()->inspectAuto();
+  //std::cin.get();
+
   symbol_table->updateValue(qi_term->getVarName(), term_pre_value);
 }
 

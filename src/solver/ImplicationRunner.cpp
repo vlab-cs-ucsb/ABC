@@ -119,23 +119,27 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
 
 
 void ImplicationRunner::visitContains(Contains_ptr contains) {
+
   if (Option::Solver::LIA_ENGINE_ENABLED) {
     Term_ptr subject_length = get_length(contains->subject_term);
     Term_ptr search_length = get_length(contains->search_term);
     Term_ptr implication_term = new Ge(subject_length, search_length);
     current_and_->term_list->push_back(implication_term);
   }
+
 }
 
 
 
 void ImplicationRunner::visitEnds(Ends_ptr ends) {
+
   if (Option::Solver::LIA_ENGINE_ENABLED) {
     Term_ptr subject_length = get_length(ends->subject_term);
     Term_ptr search_length = get_length(ends->search_term);
     Term_ptr implication_term = new Ge(subject_length, search_length);
     current_and_->term_list->push_back(implication_term);
   }
+
 }
 
 
@@ -161,7 +165,6 @@ void ImplicationRunner::visitNotEnds(NotEnds_ptr not_ends) {
       }
     }
   }
-
 }
 
 Term_ptr ImplicationRunner::get_length(Term_ptr term) {

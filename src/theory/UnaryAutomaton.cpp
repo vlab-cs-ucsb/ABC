@@ -197,8 +197,9 @@ IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool ad
 
   if(sink_state < 0) {
     has_sink = false;
-    sink_state = number_of_states;
-    number_of_states++;
+    sink_state = 0;
+    //sink_state = number_of_states;
+    //number_of_states++;
   }
 
   std::vector<char> unary_exception = {'1'};
@@ -210,7 +211,7 @@ IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool ad
   dfaSetup(number_of_states, number_of_variables, indices);
 
   for (int s = 0; s < this->dfa->ns; s++) {
-    if (s != sink_state) {
+    if (s != sink_state || !has_sink) {
       to_state = getNextState(s, unary_exception);
       dfaAllocExceptions(exceptions.size());
       for (auto& exception : exceptions) {
@@ -227,11 +228,6 @@ IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool ad
     } else {
       statuses[s] = '-';
     }
-  }
-
-  if(!has_sink) {
-    dfaAllocExceptions(0);
-    dfaStoreState(sink_state);
   }
 
   statuses[number_of_states] = '\0';
