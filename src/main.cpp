@@ -214,7 +214,6 @@ int main(const int argc, const char **argv) {
             LOG(INFO) << "count          : " << driver.Count(variable_entry.first->getName(), bound, false);
 //              LOG(INFO) << "symbolic count : " << driver.SymbolicCount(bound, false);
           }
-
           break;
         }
         case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {
