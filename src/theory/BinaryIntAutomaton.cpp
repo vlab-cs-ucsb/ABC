@@ -913,8 +913,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
   const int constant = formula->get_constant();
 
   std::vector<int> coeffs = formula->get_coefficients();
+  std::vector<int> rcoeffs(coeffs.rbegin(),coeffs.rend());
   int min = 0, max = 0, num_zero = 0;
-  for (int c : coeffs) {
+  for (int c : rcoeffs) {
     if (c > 0) {
       max += c;
     } else if (c == 0) {
@@ -923,6 +924,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
       min += c;
     }
   }
+
+
 
   if ( max < constant) {
     max = constant;
@@ -965,7 +968,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
 
       int ones = 0;
       unsigned long n = j;
-      for (auto& c : coeffs) {
+      for (auto& c : rcoeffs) {
         // variables with 0 coeff don't matter.
         if (c == 0) {
           continue;
@@ -978,12 +981,16 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
 
       result = next_label + ones;
       std::vector<char> bin_num = getBinaryFormat(j,num_variables);
+      std::vector<char> rbin_num;
+      for(int i = bin_num.size()-2; i >= 0; --i) {
+        rbin_num.push_back(bin_num[i]);
+      }
       std::vector<char> exep(total_num_variables,'X');
       exep.push_back('\0');
       // only care about positions where nonzero coeff
       for(int i = 0, k = 0; i < total_num_variables; i++) {
-        if(coeffs[i] != 0) {
-          exep[i] = bin_num[k++];
+        if(rcoeffs[i] != 0) {
+          exep[i] = rbin_num[k++];
         }
       }
 
@@ -1023,7 +1030,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
   }
 
   //define accepting and rejecting states
-  char *statuses = new char[num_of_states];
+  char *statuses = new char[num_of_states+1];
   for (int i = 0; i < num_of_states; i++) {
     statuses[i] = '-';
   }
@@ -1034,6 +1041,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntEquality(ArithmeticFormula_ptr
     }
   }
 
+  statuses[num_of_states] = '\0';
   DFA_ptr tmp_dfa = dfaBuild(statuses);
   DFA_ptr equality_dfa = dfaMinimize(tmp_dfa);
   dfaFree(tmp_dfa);
@@ -1059,9 +1067,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberEquality(ArithmeticF
 
   const int constant = formula->get_constant();
   std::vector<int> coeffs = formula->get_coefficients();
+  std::vector<int> rcoeffs(coeffs.rbegin(),coeffs.rend());
   int min = 0, max = 0, num_zero = 0;
 
-  for (int c : coeffs) {
+  for (int c : rcoeffs) {
     if (c > 0) {
       max += c;
     } else if (c == 0) {
@@ -1106,7 +1115,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberEquality(ArithmeticF
     for (unsigned long j = 0; j < transitions; ++j) {
       int ones = 0;
       unsigned long n = j;
-      for (auto& c : coeffs) {
+      for (auto& c : rcoeffs) {
         // variables with 0 coeff don't matter.
         if (c == 0) {
           continue;
@@ -1119,12 +1128,16 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberEquality(ArithmeticF
 
       result = next_label + ones;
       std::vector<char> bin_num = getBinaryFormat(j,num_variables);
+      std::vector<char> rbin_num;
+      for(int i = bin_num.size()-2; i >= 0; --i) {
+        rbin_num.push_back(bin_num[i]);
+      }
       std::vector<char> exep(total_num_variables,'X');
       exep.push_back('\0');
       // only care about positions where nonzero coeff
       for(int i = 0, k = 0; i < total_num_variables; i++) {
-        if(coeffs[i] != 0) {
-          exep[i] = bin_num[k++];
+        if(rcoeffs[i] != 0) {
+          exep[i] = rbin_num[k++];
         }
       }
 
@@ -1202,8 +1215,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntLessThan(ArithmeticFormula_ptr
   formula->Simplify();
 
   std::vector<int> coeffs = formula->get_coefficients();
+  std::vector<int> rcoeffs(coeffs.rbegin(),coeffs.rend());
   int min = 0, max = 0, num_zero = 0;
-  for (int c : coeffs) {
+  for (int c : rcoeffs) {
     if (c > 0) {
       max += c;
     } else if (c == 0) {
@@ -1255,7 +1269,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntLessThan(ArithmeticFormula_ptr
    for (unsigned long j = 0; j < transitions; j++) {
      int ones = 0;
       unsigned long n = j;
-      for (auto& c : coeffs) {
+      for (auto& c : rcoeffs) {
         // variables with 0 coeff don't matter.
         if (c == 0) {
           continue;
@@ -1268,12 +1282,16 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeIntLessThan(ArithmeticFormula_ptr
 
       result = next_label + ones;
       std::vector<char> bin_num = getBinaryFormat(j,num_variables);
+      std::vector<char> rbin_num;
+      for(int i = bin_num.size()-2; i >= 0; --i) {
+        rbin_num.push_back(bin_num[i]);
+      }
       std::vector<char> exep(total_num_variables,'X');
       exep.push_back('\0');
       // only care about positions where nonzero coeff
       for(int i = 0, k = 0; i < total_num_variables; i++) {
-        if(coeffs[i] != 0) {
-          exep[i] = bin_num[k++];
+        if(rcoeffs[i] != 0) {
+          exep[i] = rbin_num[k++];
         }
       }
 
@@ -1361,8 +1379,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticF
   formula->Simplify();
 
   std::vector<int> coeffs = formula->get_coefficients();
+  std::vector<int> rcoeffs(coeffs.rbegin(),coeffs.rend());
   int min = 0, max = 0, num_zero = 0;
-  for (int c : coeffs) {
+  for (int c : rcoeffs) {
     if (c > 0) {
       max += c;
     } else if (c == 0) {
@@ -1411,7 +1430,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticF
    for (unsigned long j = 0; j < transitions; ++j) {
      int ones = 0;
       unsigned long n = j;
-      for (auto& c : coeffs) {
+      for (auto& c : rcoeffs) {
         // variables with 0 coeff don't matter.
         if (c == 0) {
           continue;
@@ -1424,12 +1443,16 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticF
 
       result = next_label + ones;
       std::vector<char> bin_num = getBinaryFormat(j,num_variables);
+      std::vector<char> rbin_num;
+      for(int i = bin_num.size()-2; i >= 0; --i) {
+        rbin_num.push_back(bin_num[i]);
+      }
       std::vector<char> exep(total_num_variables,'X');
       exep.push_back('\0');
       // only care about positions where nonzero coeff
       for(int i = 0, k = 0; i < total_num_variables; i++) {
-        if(coeffs[i] != 0) {
-          exep[i] = bin_num[k++];
+        if(rcoeffs[i] != 0) {
+          exep[i] = rbin_num[k++];
         }
       }
 
@@ -1487,7 +1510,6 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeNaturalNumberLessThan(ArithmeticF
 
   return less_than_auto;
 }
-
 BinaryIntAutomaton_ptr BinaryIntAutomaton::makeLessThanOrEqual(ArithmeticFormula_ptr formula, bool is_natural_number) {
   BinaryIntAutomaton_ptr less_than_or_equal_auto = nullptr;
 
