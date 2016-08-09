@@ -1280,12 +1280,6 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   popTerm(qi_term);
 
   Value_ptr term_pre_value = getTermPreImage(qi_term);
-
-  //Value_ptr pre = symbol_table->getValue(qi_term->getVarName());
-  //pre->getStringAutomaton()->inspectAuto();
-  //term_pre_value->getStringAutomaton()->inspectAuto();
-  //std::cin.get();
-
   symbol_table->updateValue(qi_term->getVarName(), term_pre_value);
 }
 

@@ -133,8 +133,8 @@ SemilinearSet_ptr UnaryAutomaton::getSemilinearSet() {
   }
 
   // loop over all states except for sink state
-  for (int s = 0; s < this->dfa->ns; s++) {
-    if(s == sink_state) continue;
+  for (int s = 0; (s < this->dfa->ns - 1); s++) {
+    //if(s == sink_state) continue;
 
     values[current_state] = s;
     states.push_back(current_state);

@@ -111,7 +111,7 @@ void Driver::initializeSolver() {
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
   dependency_slicer.start();
 
-/*
+
   Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
   do {
     equivalence_generator.start();
@@ -119,7 +119,7 @@ void Driver::initializeSolver() {
 
   Solver::FormulaOptimizer formula_optimizer(script_, symbol_table_);
   formula_optimizer.start();
-*/
+
 
   if (Option::Solver::ENABLE_IMPLICATIONS) {
     Solver::ImplicationRunner implication_runner(script_, symbol_table_);

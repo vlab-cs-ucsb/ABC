@@ -618,6 +618,8 @@ void ConstraintSolver::visitLen(Len_ptr len_term) {
 
   Value_ptr result = nullptr, param = getTermValue(len_term->term);
   Theory::IntAutomaton_ptr int_auto = param->getStringAutomaton()->length();
+
+
   if (int_auto->isAcceptingSingleInt()) {
     result = new Value(int_auto->getAnAcceptingInt());
     delete int_auto;
@@ -1288,9 +1290,10 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
 
       string_term_unary_auto = string_term_result->getIntAutomaton()->toUnaryAutomaton();
 
+
+
       string_term_binary_auto = string_term_unary_auto->toBinaryIntAutomaton(
           string_term_var_name, result->getBinaryIntAutomaton()->getFormula()->clone(), has_minus_one);
-
 
       delete string_term_unary_auto;
       string_term_unary_auto = nullptr;
@@ -1325,11 +1328,11 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
       string_term_binary_auto = positive_values_auto;
     }
 
+
     string_term_unary_auto = string_term_binary_auto->toUnaryAutomaton();
     delete string_term_binary_auto;
     string_term_binary_auto = nullptr;
     updated_int_auto = string_term_unary_auto->toIntAutomaton(number_of_variables_for_int_auto, has_minus_one);
-
     clearTermValue(string_term);
     string_term_result = new Value(updated_int_auto);
     setTermValue(string_term, string_term_result);

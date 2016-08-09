@@ -1754,18 +1754,12 @@ IntAutomaton_ptr StringAutomaton::length() {
   IntAutomaton_ptr length_auto = nullptr;
 
   if (this->isEmptyLanguage()) {
-    inspectAuto();
-    inspectBDD();
-    std::cin.get();
     length_auto = IntAutomaton::makePhi(num_of_variables);
   } else if (this->isAcceptingSingleString()) {
     std::string example = this->getAnAcceptingString();
     length_auto = IntAutomaton::makeInt(example.length(), num_of_variables);
   } else {
     UnaryAutomaton_ptr unary_auto = this->toUnaryAutomaton();
-    //unary_auto->inspectAuto();
-    //unary_auto->inspectBDD();
-
     length_auto = unary_auto->toIntAutomaton(num_of_variables);
     delete unary_auto; unary_auto = nullptr;
   }
