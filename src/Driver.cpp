@@ -190,26 +190,7 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
 
     result = multi_auto->Count(bound, count_less_than_or_equal_to_bound,true);
     LOG(INFO) << "MULTITRACK, " << var_name << " tuple count : " << result;//boost::multiprecision::logb(result,2);
-    auto count_var = symbol_table_->getSymbolicVariable();
 
-    // if var_name is the group name for the multitrack, just return the tuple count.
-    if(multi_relation->get_variable_index(count_var->getName()) < 0) {
-      for(auto& vartrack : variables) {
-        LOG(INFO) << vartrack.first << "," << vartrack.second;
-      }
-      break;
-    }
-
-    // return the track with the lowest count, or simply return the tuple count, if lower.
-    for(auto& vartrack : variables) {
-
-      auto single_var = multi_auto->getKTrack(vartrack.second);
-      temp = single_var->Count(bound,count_less_than_or_equal_to_bound,true);
-      LOG(INFO) << "SINGLE TRACK, " << vartrack.first << ", count = " << temp;
-      if(temp < result) {
-        result = temp;
-      }
-    }
     break;
   }
   default:
