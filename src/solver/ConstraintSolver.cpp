@@ -191,6 +191,9 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
   if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA && constraint_information_->is_component(and_term)) {
     Variable_ptr var = symbol_table_->getSymbolicVariable();
+    if(var == nullptr) {
+      return;
+    }
     Variable_ptr rep_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),var);
     if(rep_var != nullptr) {
       LOG(INFO) << "Var,rep_var = " << var->getName() << "," << rep_var->getName();

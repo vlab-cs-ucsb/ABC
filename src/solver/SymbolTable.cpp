@@ -153,7 +153,7 @@ Variable_ptr SymbolTable::getSymbolicVariable() {
   if (it != variables.end()) {
     return it->second;
   }
-  LOG(FATAL) << "no symbolic variable found";
+  LOG(INFO) << "no symbolic variable found";
   return nullptr;
 }
 
