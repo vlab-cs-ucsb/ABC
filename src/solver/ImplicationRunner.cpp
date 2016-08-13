@@ -67,6 +67,7 @@ void ImplicationRunner::visitAssert(Assert_ptr assert_command) {
 }
 
 void ImplicationRunner::visitAnd(And_ptr and_term) {
+  count = 0;
   int i = 0;
   while(i < and_term->term_list->size()) {
     current_and_ = and_term;
@@ -87,31 +88,37 @@ void ImplicationRunner::visitOr(Or_ptr or_term) {
 void ImplicationRunner::visitEq(Eq_ptr eq_term) {
   if (Concat_ptr left_id = dynamic_cast<Concat_ptr>(eq_term->left_term)) {
     if (Concat_ptr right_id = dynamic_cast<Concat_ptr>(eq_term->right_term)) {
-      Term_ptr implication_term = new Eq(get_length(left_id), get_length(right_id));
-      current_and_->term_list->push_back(implication_term);
+      //Term_ptr implication_term = new Eq(get_length(left_id), get_length(right_id));
+      //current_and_->term_list->push_back(implication_term);
     } else if (!is_precise(left_id) or !dynamic_cast<QualIdentifier_ptr>(eq_term->right_term)) {
-      Term_ptr implication_term = new Eq(get_length(left_id), get_length(eq_term->right_term));
-      current_and_->term_list->push_back(implication_term);
+      //Term_ptr implication_term = new Eq(get_length(left_id), get_length(eq_term->right_term));
+      //current_and_->term_list->push_back(implication_term);
       if (QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->right_term)) {
         if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA) {
           Term_ptr implication_term_begins = new Begins(right_variable->clone(), left_id->term_list->front()->clone());
           current_and_->term_list->push_back(implication_term_begins);
         }
-        Term_ptr implication_term_ends = new Ends(right_variable->clone(), left_id->term_list->back()->clone());
-        current_and_->term_list->push_back(implication_term_ends);
+        if(count < 20) {
+          count++;
+          Term_ptr implication_term_ends = new Ends(right_variable->clone(), left_id->term_list->back()->clone());
+          current_and_->term_list->push_back(implication_term_ends);
+        }
       }
     }
   } else if (Concat_ptr right_id = dynamic_cast<Concat_ptr>(eq_term->right_term)) {
     if (!is_precise(right_id) or !dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {
-      Term_ptr implication_term = new Eq(get_length(eq_term->left_term), get_length(right_id));
-      current_and_->term_list->push_back(implication_term);
+      //Term_ptr implication_term = new Eq(get_length(eq_term->left_term), get_length(right_id));
+      //current_and_->term_list->push_back(implication_term);
       if (QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {
         if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA) {
           Term_ptr implication_term_begins = new Begins(left_variable->clone(), right_id->term_list->front()->clone());
           current_and_->term_list->push_back(implication_term_begins);
         }
-        Term_ptr implication_term_ends = new Ends(left_variable->clone(), right_id->term_list->back()->clone());
-        current_and_->term_list->push_back(implication_term_ends);
+        if(count < 20) {
+          count++;
+          Term_ptr implication_term_ends = new Ends(left_variable->clone(), right_id->term_list->back()->clone());
+          current_and_->term_list->push_back(implication_term_ends);
+        }
       }
     }
   }
@@ -132,14 +139,14 @@ void ImplicationRunner::visitContains(Contains_ptr contains) {
 
 
 void ImplicationRunner::visitEnds(Ends_ptr ends) {
-
+/*
   if (Option::Solver::LIA_ENGINE_ENABLED) {
     Term_ptr subject_length = get_length(ends->subject_term);
     Term_ptr search_length = get_length(ends->search_term);
     Term_ptr implication_term = new Ge(subject_length, search_length);
     current_and_->term_list->push_back(implication_term);
   }
-
+*/
 }
 
 

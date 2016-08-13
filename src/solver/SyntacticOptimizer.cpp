@@ -325,11 +325,11 @@ void SyntacticOptimizer::visitUMinus(UMinus_ptr u_minus_term) {
       } else {
         term_constant->primitive->setData("-" + data);
       }
+
       callback_ = [u_minus_term](Term_ptr & term) mutable {
-        UMinus_ptr child_u_minus = dynamic_cast<UMinus_ptr>(u_minus_term->term);
-        term = child_u_minus->term;
-        child_u_minus->term = nullptr;
-        delete u_minus_term;
+        TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(u_minus_term->term);
+        term = term_constant;
+        //delete u_minus_term;
       };
     }
   }

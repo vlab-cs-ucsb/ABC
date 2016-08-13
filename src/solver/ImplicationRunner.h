@@ -49,6 +49,7 @@ class ImplicationRunner : public AstTraverser {
 
 
  private:
+  int count;
   static const int VLOG_LEVEL;
 };
 
