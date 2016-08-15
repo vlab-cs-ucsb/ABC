@@ -13,6 +13,7 @@
 #include <string>
 #include <sstream>
 #include <cmath>
+#include <boost/multiprecision/cpp_int.hpp>
 
 #include <glog/logging.h>
 #include "utils/Math.h"
@@ -30,7 +31,6 @@ public:
             NONE = 0, EQ, NOTEQ, GT, GE, LT, LE, INTERSECT, UNION, VAR
           };
   ArithmeticFormula();
-  ArithmeticFormula(std::map<std::string, int>& coeff_map, std::vector<int>& coeffs);
   virtual ~ArithmeticFormula();
 
   ArithmeticFormula(const ArithmeticFormula&);
@@ -40,33 +40,36 @@ public:
   void set_type(Type type);
   ArithmeticFormula::Type get_type() const;
   int get_number_of_variables() const;
-  std::vector<int>& get_coefficients();
-  std::map<std::string, int>& get_coefficient_index_map();
-  int get_variable_index(std::string);
+  std::map<std::string, int>& get_var_coeff_map();
+  int get_variable_index(std::string) const;
   int get_variable_coefficient(std::string);
   void set_variable_coefficient(std::string, int coeff);
   int get_constant();
   void set_constant(int constant);
   bool is_constant();
-  bool IsVariableOrderingSame(ArithmeticFormula_ptr other_formula);
-  void MergeCoefficients(ArithmeticFormula_ptr other_formula);
   void reset_coefficients(int value = 0);
 
-  ArithmeticFormula_ptr Substract(ArithmeticFormula_ptr);
+  void add_variable(std::string, int);
+  std::map<std::string, int> get_variable_trackmap();
+  void set_variable_trackmap(std::map<std::string, int> trackmap);
+  void create_coeff_vec();
+  std::vector<int> get_coefficients();
+
+  ArithmeticFormula_ptr Subtract(ArithmeticFormula_ptr);
   ArithmeticFormula_ptr NegateOperation();
   ArithmeticFormula_ptr Multiply(int value);
   ArithmeticFormula_ptr Add(ArithmeticFormula_ptr);
 
   bool Simplify();
-  int CountOnes(unsigned long n);
 
   friend std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula);
 
 protected:
   ArithmeticFormula::Type type_;
   int constant_;
-  std::map<std::string, int> coeff_index_map_;
   std::vector<int> coefficients_;
+  std::map<std::string, int> var_coeff_map_;
+  std::map<std::string, int> trackmap_handle_;
 
 private:
   static const int VLOG_LEVEL;

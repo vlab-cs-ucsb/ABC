@@ -17,22 +17,15 @@ ArithmeticFormula::ArithmeticFormula()
       constant_(0) {
 }
 
-ArithmeticFormula::ArithmeticFormula(std::map<std::string, int>& coeff_map, std::vector<int>& coeffs)
-    : type_(Type::NONE),
-      constant_(0) {
-  coeff_index_map_ = coeff_map;
-  coefficients_ = coeffs;
-}
-
 ArithmeticFormula::~ArithmeticFormula() {
 }
 
 ArithmeticFormula::ArithmeticFormula(const ArithmeticFormula& other)
     : type_(other.type_),
-      constant_(other.constant_),
-      coeff_index_map_(other.coeff_index_map_),
-      coefficients_(other.coefficients_) {
-
+      constant_(other.constant_) {
+  this->trackmap_handle_ = other.trackmap_handle_;
+  this->var_coeff_map_ = other.var_coeff_map_;
+  this->coefficients_ = other.coefficients_;
 }
 
 ArithmeticFormula_ptr ArithmeticFormula::clone() const {
@@ -41,22 +34,23 @@ ArithmeticFormula_ptr ArithmeticFormula::clone() const {
 
 std::string ArithmeticFormula::str() const {
   std::stringstream ss;
-  std::vector<std::string> variable_names(coefficients_.size());
+  std::vector<std::string> variable_names(trackmap_handle_.size(),"");
 
   auto char_remover = []( char ch ) {
     return std::isspace<char>( ch, std::locale::classic() ) or ch == '"' or ch == ';';
   };
 
-  for (auto& pair : coeff_index_map_) {
+  for (auto& pair : var_coeff_map_) {
     std::string name = pair.first;
     if (pair.first.find("len") != std::string::npos) {
       name = "len_term";
     } else if (pair.first.find("lastIndexOf") != std::string::npos or pair.first.find("indexOf") != std::string::npos) {
       name = "index_term";
     }
-    variable_names[pair.second] = name;
+    variable_names[get_variable_index(name)] = name;
   }
   bool print_sign = false;
+
   for (unsigned i = 0; i < coefficients_.size(); i++) {
     if (coefficients_[i] > 0) {
       if (i > 0 and print_sign) {
@@ -90,7 +84,7 @@ std::string ArithmeticFormula::str() const {
 
   if (type_ == Type::INTERSECT or type_ == Type::UNION) {
     std::string separator = "";
-    for (auto& pair : coeff_index_map_) {
+    for (auto& pair : var_coeff_map_) {
       ss << separator << pair.first;
       separator = ", ";
     }
@@ -146,20 +140,16 @@ ArithmeticFormula::Type ArithmeticFormula::get_type() const {
 }
 
 int ArithmeticFormula::get_number_of_variables() const {
-  return coeff_index_map_.size();
+  return trackmap_handle_.size();
 }
 
-std::vector<int>& ArithmeticFormula::get_coefficients() {
-  return coefficients_;
+std::map<std::string, int>& ArithmeticFormula::get_var_coeff_map() {
+  return var_coeff_map_;
 }
 
-std::map<std::string, int>& ArithmeticFormula::get_coefficient_index_map() {
-  return coeff_index_map_;
-}
-
-int ArithmeticFormula::get_variable_index(std::string variable_name) {
-  auto it = coeff_index_map_.find(variable_name);
-  if (it != coeff_index_map_.end()) {
+int ArithmeticFormula::get_variable_index(std::string variable_name) const {
+  auto it = trackmap_handle_.find(variable_name);
+  if (it != trackmap_handle_.end()) {
     return it->second;
   }
   LOG(FATAL)<< "Variable '" << variable_name << "' is not in formula: " << *this;
@@ -167,21 +157,15 @@ int ArithmeticFormula::get_variable_index(std::string variable_name) {
 }
 
 int ArithmeticFormula::get_variable_coefficient(std::string variable_name) {
-  auto iter = coeff_index_map_.find(variable_name);
-  if (iter == coeff_index_map_.end()) {
+  auto iter = var_coeff_map_.find(variable_name);
+  if (iter == var_coeff_map_.end()) {
     return 0;
   }
-  return coefficients_[iter->second];
+  return iter->second;
 }
 
 void ArithmeticFormula::set_variable_coefficient(std::string variable_name, int coeff) {
-  auto it = coeff_index_map_.find(variable_name);
-  if (it == coeff_index_map_.end()) {
-    coefficients_.push_back(coeff);
-    coeff_index_map_[variable_name] = coefficients_.size() - 1;
-  } else {
-    coefficients_[coeff_index_map_[variable_name]] = coeff;
-  }
+  var_coeff_map_[variable_name] = coeff;
 }
 
 int ArithmeticFormula::get_constant() {
@@ -193,68 +177,58 @@ void ArithmeticFormula::set_constant(int constant) {
 }
 
 bool ArithmeticFormula::is_constant() {
-  for (auto& coeff : coefficients_) {
-    if (coeff != 0) {
+  for (auto& coeff : var_coeff_map_) {
+    if (coeff.second != 0) {
       return false;
     }
   }
   return true;
-}
-
-bool ArithmeticFormula::IsVariableOrderingSame(ArithmeticFormula_ptr other_formula) {
-  if (coeff_index_map_.size() not_eq other_formula->coeff_index_map_.size()) {
-    return false;
-  }
-
-  for (auto& pair : coeff_index_map_) {
-    auto other_pair = other_formula->coeff_index_map_.find(pair.first);
-    if (other_pair == other_formula->coeff_index_map_.end()) {
-      return false;
-    } else if (pair.second != other_pair->second) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-/**
- * Updates coefficients and coefficient map based on other formula
- */
-void ArithmeticFormula::MergeCoefficients(ArithmeticFormula_ptr other_formula) {
-  std::map<std::string, int> merged_coeff_index_map = other_formula->coeff_index_map_;
-  std::vector<int> merged_coefficients(merged_coeff_index_map.size());  // all zeros
-
-  for (auto& pair : coeff_index_map_) {
-    auto it = merged_coeff_index_map.find(pair.first);
-    if (it == merged_coeff_index_map.end()) {
-      merged_coefficients.push_back(coefficients_[pair.second]);
-      merged_coeff_index_map[pair.first] = merged_coefficients.size() - 1;
-    } else {
-      merged_coefficients[it->second] = coefficients_[pair.second];
-    }
-  }
-
-  coeff_index_map_ = merged_coeff_index_map;
-  coefficients_ = merged_coefficients;
 }
 
 void ArithmeticFormula::reset_coefficients(int value) {
-  for (auto& c : coefficients_) {
-    c = value;
+  for (auto& c : var_coeff_map_) {
+    c.second = value;
+  }
+  create_coeff_vec();
+}
+
+void ArithmeticFormula::add_variable(std::string name, int coefficient) {
+  if(var_coeff_map_.find(name) != var_coeff_map_.end()) {
+    LOG(FATAL) << "Variable has already been added yo!";
+  }
+  var_coeff_map_[name] = coefficient;
+}
+
+std::map<std::string, int> ArithmeticFormula::get_variable_trackmap() {
+  return this->trackmap_handle_;
+}
+
+void ArithmeticFormula::set_variable_trackmap(std::map<std::string, int> trackmap) {
+  this->trackmap_handle_ = trackmap;
+  create_coeff_vec();
+}
+
+void ArithmeticFormula::create_coeff_vec() {
+  coefficients_ = std::vector<int>(trackmap_handle_.size(),0);
+  for(auto it : var_coeff_map_) {
+    int track = trackmap_handle_[it.first];
+    coefficients_[track] = it.second;
   }
 }
 
-ArithmeticFormula_ptr ArithmeticFormula::Substract(ArithmeticFormula_ptr other_formula) {
-  ArithmeticFormula_ptr result = new ArithmeticFormula(*this);
-  if (not result->IsVariableOrderingSame(other_formula)) {
-    result->MergeCoefficients(other_formula);
-  }
+std::vector<int> ArithmeticFormula::get_coefficients() {
+  return coefficients_;
+}
 
-  for (auto& pair : other_formula->coeff_index_map_) {
-    auto it = result->coeff_index_map_.find(pair.first);
-    if (it != result->coeff_index_map_.end()) {
-      result->coefficients_[it->second] = result->coefficients_[it->second] - other_formula->coefficients_[pair.second];
+ArithmeticFormula_ptr ArithmeticFormula::Subtract(ArithmeticFormula_ptr other_formula) {
+  ArithmeticFormula_ptr result = new ArithmeticFormula(*this);
+
+  for (auto& pair : other_formula->var_coeff_map_) {
+    auto it = result->var_coeff_map_.find(pair.first);
+    if (it != result->var_coeff_map_.end()) {
+      result->var_coeff_map_[it->first] = result->var_coeff_map_[it->first] - other_formula->var_coeff_map_[pair.first];
+    } else {
+      result->var_coeff_map_[pair.first] = -1 * pair.second;
     }
   }
   result->constant_ = result->constant_ - other_formula->constant_;
@@ -290,8 +264,8 @@ ArithmeticFormula_ptr ArithmeticFormula::NegateOperation() {
 
 ArithmeticFormula_ptr ArithmeticFormula::Multiply(int value) {
   ArithmeticFormula_ptr result = new ArithmeticFormula(*this);
-  for (auto& coeff : result->coefficients_) {
-    coeff = value * coeff;
+  for (auto& coeff : result->var_coeff_map_) {
+    coeff.second = value * coeff.second;
   }
   result->constant_ = value * constant_;
   return result;
@@ -300,14 +274,12 @@ ArithmeticFormula_ptr ArithmeticFormula::Multiply(int value) {
 ArithmeticFormula_ptr ArithmeticFormula::Add(ArithmeticFormula_ptr other_formula) {
   ArithmeticFormula_ptr result = new ArithmeticFormula(*this);
 
-  if (not result->IsVariableOrderingSame(other_formula)) {
-    result->MergeCoefficients(other_formula);
-  }
-
-  for (auto& pair : other_formula->coeff_index_map_) {
-    auto it = result->coeff_index_map_.find(pair.first);
-    if (it != result->coeff_index_map_.end()) {
-      result->coefficients_[it->second] = result->coefficients_[it->second] + other_formula->coefficients_[pair.second];
+  for (auto& pair : other_formula->var_coeff_map_) {
+    auto it = result->var_coeff_map_.find(pair.first);
+    if (it != result->var_coeff_map_.end()) {
+      result->var_coeff_map_[it->first] = result->var_coeff_map_[it->first] + other_formula->var_coeff_map_[pair.first];
+    } else {
+      result->var_coeff_map_.insert(pair);
     }
   }
   result->constant_ = result->constant_ + other_formula->constant_;
@@ -318,14 +290,15 @@ ArithmeticFormula_ptr ArithmeticFormula::Add(ArithmeticFormula_ptr other_formula
  * @returns false if formula is not satisfiable and catched by simplification
  */
 bool ArithmeticFormula::Simplify() {
-  if (coefficients_.size() == 0) {
+  if (var_coeff_map_.size() == 0) {
+    LOG(INFO) << "Returning!";
     return true;
   }
 
-  int gcd_value = coefficients_[0];
+  int gcd_value = var_coeff_map_.begin()->second;
 
-  for (int c : coefficients_) {
-    gcd_value = Util::Math::gcd(gcd_value, c);
+  for (auto c : var_coeff_map_) {
+    gcd_value = Util::Math::gcd(gcd_value, c.second);
   }
 
   if (gcd_value == 0) {
@@ -352,24 +325,15 @@ bool ArithmeticFormula::Simplify() {
     default:
       LOG(FATAL)<< "Simplification is only done after converting into '=' or '<' equation";
       break;
-    }
-
-  for (int& c : coefficients_) {
-    c = c / gcd_value;
   }
+
+  for (auto& c : var_coeff_map_) {
+    c.second = c.second / gcd_value;
+  }
+
+  create_coeff_vec();
 
   return true;
-}
-
-int ArithmeticFormula::CountOnes(unsigned long n) {
-  int ones = 0;
-  for (auto& c : coefficients_) {
-    if (n & 1) {
-      ones += c;
-    }
-    n >>= 1;
-  }
-  return ones;
 }
 
 std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula) {
