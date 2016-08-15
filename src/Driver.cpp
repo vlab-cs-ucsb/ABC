@@ -145,11 +145,6 @@ bool Driver::isSatisfiable() {
 boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound) {
   symbol_table_->UnionValuesOfVariables(script_);
   symbol_table_->push_scope(script_);
-
-
-  // before getting value from symbol table, check to see if its
-  // relational. If so, 2 counts: multitrack, and singletrack after
-  // projecting all else away. Return whichever count is lower.
   Vlab::Solver::Value_ptr var_value = symbol_table_->getValue(var_name);
 
 
@@ -162,6 +157,8 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
   case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
     auto binary_auto = var_value->getBinaryIntAutomaton();
     result = binary_auto->Count(bound, count_less_than_or_equal_to_bound);
+
+    /*
     int number_of_int_variables = symbol_table_->get_num_of_variables(SMT::Variable::Type::INT);
     int number_of_substituted_int_variables = symbol_table_->get_num_of_substituted_variables(script_, SMT::Variable::Type::INT);
     int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables
@@ -175,6 +172,7 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
                * boost::multiprecision::pow(boost::multiprecision::cpp_int(2),
                                             (number_of_untracked_int_variables * static_cast<int>(exponent)));
     }
+    */
     break;
   }
   case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {
@@ -284,7 +282,13 @@ void Driver::printResult(Solver::Value_ptr value, std::ostream& out) {
 
 std::map<SMT::Variable_ptr, Solver::Value_ptr> Driver::getSatisfyingVariables() {
   symbol_table_->UnionValuesOfVariables(script_);
-  return symbol_table_->getValuesAtScope(script_);
+  auto sat_vars = symbol_table_->getValuesAtScope(script_);
+  for(auto& var : sat_vars) {
+    if(var.second == nullptr) {
+      LOG(INFO) << "Found nullptr in getSatisfyingVariables: " << var.first << " has nullptr value";
+    }
+  }
+  return sat_vars;
 }
 
 std::map<std::string, std::string> Driver::getSatisfyingExamples() {
@@ -354,6 +358,10 @@ void Driver::setOption(Option::Name option, std::string value) {
 
 SMT::Variable_ptr Driver::get_smc_query_variable() {
   return symbol_table_->getSymbolicVariable();
+}
+
+int Driver::get_num_variables(SMT::Variable::Type type) {
+  return symbol_table_->get_num_of_variables(type);
 }
 
 void Driver::test() {

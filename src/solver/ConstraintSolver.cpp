@@ -119,13 +119,6 @@ void ConstraintSolver::visitLet(Let_ptr let_term) {
     path_trace_.pop_back();
     param = getTermValue(var_binding->term);
     symbol_table_->setValue(var_binding->symbol->getData(), param->clone());
-
-    // TEST: inspect params
-//    if (param->getType() == Value::Type::STRING_AUTOMATON) {
-//      param->getStringAutomaton()->inspectAuto();
-//    } else {
-//      param->getIntAutomaton()->inspectAuto();
-//    }
   }
 
   path_trace_.push_back(let_term);
@@ -136,9 +129,6 @@ void ConstraintSolver::visitLet(Let_ptr let_term) {
 
   Value_ptr result = param->clone();
   setTermValue(let_term, result);
-//  result->getStringAutomaton()->inspectAuto();
-
-//  LOG(FATAL) << "I am here" << std::endl;
 }
 
 /**

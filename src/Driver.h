@@ -61,6 +61,8 @@ public:
   void setOption(Option::Name option, std::string value);
 
   SMT::Variable_ptr get_smc_query_variable();
+  int get_num_variables(SMT::Variable::Type type);
+
   void test();
 
   SMT::Script_ptr script_;

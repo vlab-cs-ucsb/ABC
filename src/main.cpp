@@ -86,17 +86,6 @@ int main(const int argc, const char **argv) {
 
 
   google::InitGoogleLogging(argv[0]);
-
-  /* log test start */
-//  DLOG(INFO)<< "debug log start";
-//  LOG(INFO)<< "production log";
-//  DVLOG(1) << "vlog log";
-
-  if (VLOG_IS_ON(1)) {
-    //std::cout << "yaaay" << std::endl;
-  }
-  /* log test end */
-
   if (not in->good()) {
     LOG(FATAL)<< "Cannot find input: ";
   }
@@ -153,19 +142,20 @@ int main(const int argc, const char **argv) {
   }
 
   driver.solve();
+
   auto end = std::chrono::steady_clock::now();
   auto solving_time = end - start;
-  LOG(INFO) << "";
-  LOG(INFO) << "Done solving";
-  LOG(INFO) << "";
   if (driver.isSatisfiable()) {
     if (VLOG_IS_ON(30)) {
+      LOG(INFO) << "";
+      LOG(INFO) << "Constraint solving completed successfully.";
+      LOG(INFO) << "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
+      LOG(INFO) << "";
       unsigned index = 0;
 
       for(auto& variable_entry : driver.getSatisfyingVariables()) {
 
         if(variable_entry.second == nullptr) {
-          // part of multitrack/binaryint
           continue;
         }
 
@@ -175,51 +165,49 @@ int main(const int argc, const char **argv) {
 
         switch (variable_entry.second->getType()) {
           case Vlab::Solver::Value::Type::INT_AUTOMATON: {
-            LOG(INFO) << "---Int variable---";
-            LOG(INFO) << variable_entry.first->getName() << " : " << variable_entry.second->getASatisfyingExample();
+            LOG(INFO) << "Type=SINGLE INT: " << variable_entry.first->getName() << " : " << variable_entry.second->getASatisfyingExample();
             ss << "int_" << variable_entry.first->getName() << ".dot";
             break;
           }
           case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
-            LOG(INFO) << "---String variable---";
-            LOG(INFO) << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"";
+            LOG(INFO) << "Type=SINGLE STRING: " << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"";
             ss << "string_" << variable_entry.first->getName() << ".dot";
             if (model_count) {
               LOG(INFO) << "var: " << variable_entry.first->getName() << " count          : " << driver.Count(variable_entry.first->getName(), bound, true);
-//              LOG(INFO) << "symbolic count : " << driver.SymbolicCount(variable_entry.first->getName(), bound);
             }
             break;
           }
           case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
             std::map<std::string, int> values = variable_entry.second->getBinaryIntAutomaton()->getAnAcceptingIntForEachVar();
             ss << "binaryint" << ".dot";
-            LOG(INFO) << "---Binary int variables---";
+            LOG(INFO) << "Name=" << variable_entry.first->getName() << ", Type=BINARYINT, Values=(";
             for (auto& entry : values) {
-              LOG(INFO) << entry.first << " : " << entry.second;
+              LOG(INFO) << "  " << entry.first;
             }
-
+            LOG(INFO) << ")";
             if (model_count) {
-              LOG(INFO) << "count          : " << driver.Count(variable_entry.first->getName(), bound, false);
-//              LOG(INFO) << "symbolic count : " << driver.SymbolicCount(bound, false);
+              LOG(INFO) << "Count= " << driver.Count(variable_entry.first->getName(), bound, false); // Shouldn't this be false?
             }
             break;
           }
           case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {
             ss << "relationalstring" << ".dot";
-            LOG(INFO) << "";
-            LOG(INFO) << *variable_entry.first;
+            LOG(INFO) << "Name=" << variable_entry.first->getName() << ", Type=MULTISTRING, Values=(";
             Vlab::Theory::StringRelation_ptr rel = variable_entry.second->getMultiTrackAutomaton()->getRelation();
             if(rel == nullptr) {
               LOG(FATAL) << "Cannot get multitrack values, no relation";
             }
-
+            for(auto& entry : rel->get_variable_trackmap()) {
+              LOG(INFO) << "  " << entry.first;
+            }
+            LOG(INFO) << ")";
             if (model_count) {
               LOG(INFO) << "count          : " << driver.Count(variable_entry.first->getName(), bound, true);
             }
             break;
           }
           default:
-          break;
+            break;
         }
 
         std::string out_file = ss.str();
@@ -232,16 +220,53 @@ int main(const int argc, const char **argv) {
       }
     }
 
-    LOG(INFO)<< "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
     if (experiment_mode) {
+      LOG(INFO)<< "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
       auto query_variable = driver.get_smc_query_variable();
-      LOG(INFO)<< "report var: " << query_variable->getName();
-      for (auto b : bounds) {
-        start = std::chrono::steady_clock::now();
-        auto count_result = driver.Count(query_variable->getName(), b, true);
-        end = std::chrono::steady_clock::now();
-        auto count_time = end - start;
-        LOG(INFO)<< "report bound: " << b << " count: " << count_result  << " time: " << std::chrono::duration <long double, std::milli> (count_time).count() << " ms";
+      // if query_variable, report that count
+      // otherwise, count up binary int
+      if(query_variable != nullptr) {
+        LOG(INFO) << "report var: " << query_variable->getName();
+        for (auto b : bounds) {
+          start = std::chrono::steady_clock::now();
+          auto count_result = driver.Count(query_variable->getName(), b, true);
+          end = std::chrono::steady_clock::now();
+          auto count_time = end - start;
+          LOG(INFO) << "report bound: " << b << " count: " << count_result << " time: "
+                    << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+        }
+      } else {
+        LOG(INFO) << "No query variable found. Counting Binary Integers instead.";
+        boost::multiprecision::cpp_int result(0);
+        auto sat_vars = driver.getSatisfyingVariables();
+
+        // TODO (Will; talk with baki first):
+        // INSERT TRACKED/SUBSTITUED VAR STUFF FROM DRIVER HERE
+
+
+        for (auto b : bounds) {
+          result = 0;
+          start = std::chrono::steady_clock::now();
+          // possibly multiple binary integer autos. Get em all and multiply their counts
+          for (auto &variable_entry : sat_vars) {
+            // only count binary int values
+            // and nullptr check for sanity
+            if (variable_entry.second == nullptr
+                   || variable_entry.second->getType() != Vlab::Solver::Value::Type::BINARYINT_AUTOMATON) {
+              continue;
+            }
+            auto count = driver.Count(variable_entry.first->getName(), bound, true);
+            if (result == 0) {
+              result = count;
+            } else {
+              result = result * count;
+            }
+          }
+          end = std::chrono::steady_clock::now();
+          auto count_time = end - start;
+          LOG(INFO) << "report bound: " << b << " count: " << result << " time: "
+                    << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+        }
       }
     }
   } else {
