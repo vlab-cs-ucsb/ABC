@@ -615,6 +615,36 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
   visit_and_callback(not_eq_term->left_term);
   visit_and_callback(not_eq_term->right_term);
 
+  Optimization::ConstantTermChecker constant_term_checker_left;
+  Optimization::ConstantTermChecker constant_term_checker_right;
+
+  constant_term_checker_left.start(not_eq_term->left_term, Optimization::ConstantTermChecker::Mode::FULL);
+  constant_term_checker_right.start(not_eq_term->right_term, Optimization::ConstantTermChecker::Mode::FULL);
+
+  if (constant_term_checker_left.is_constant() && constant_term_checker_right.is_constant()) {
+    if (constant_term_checker_left.is_constant_bool() && constant_term_checker_right.is_constant_bool()) {
+      if (constant_term_checker_left.get_constant_bool() != constant_term_checker_right.get_constant_bool()) {
+        add_callback_to_replace_with_bool(not_eq_term, "true");
+      } else {
+        add_callback_to_replace_with_bool(not_eq_term, "false");
+      }
+    } else if (constant_term_checker_left.is_constant_int() && constant_term_checker_right.is_constant_int()) {
+      if (constant_term_checker_left.get_constant_int() != constant_term_checker_right.get_constant_int()) {
+        add_callback_to_replace_with_bool(not_eq_term, "true");
+      } else {
+        add_callback_to_replace_with_bool(not_eq_term, "false");
+      }
+    } else if (constant_term_checker_left.is_constant_string() && constant_term_checker_right.is_constant_string()) {
+      if (constant_term_checker_left.get_constant_string() != constant_term_checker_right.get_constant_string()) {
+        add_callback_to_replace_with_bool(not_eq_term, "true");
+      } else {
+        add_callback_to_replace_with_bool(not_eq_term, "false");
+      }
+    } else {
+      LOG(FATAL) << "TYPE ERROR: Left,Right types uncomparable";
+    }
+  }
+
   if (Ast2Dot::isEquivalent(not_eq_term->left_term, not_eq_term->right_term)) {
     add_callback_to_replace_with_bool(not_eq_term, "false");
   } else if (check_and_process_len_transformation(not_eq_term, not_eq_term->left_term, not_eq_term->right_term)) {
@@ -649,6 +679,30 @@ void SyntacticOptimizer::visitGt(Gt_ptr gt_term) {
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *gt_term << "@" << gt_term;
 
+  Optimization::ConstantTermChecker constant_term_checker_left;
+  Optimization::ConstantTermChecker constant_term_checker_right;
+
+  constant_term_checker_left.start(gt_term->left_term, Optimization::ConstantTermChecker::Mode::FULL);
+  constant_term_checker_right.start(gt_term->right_term, Optimization::ConstantTermChecker::Mode::FULL);
+
+  if (constant_term_checker_left.is_constant() && constant_term_checker_right.is_constant()) {
+    if (constant_term_checker_left.is_constant_int() && constant_term_checker_right.is_constant_int()) {
+      if (constant_term_checker_left.get_constant_int() > constant_term_checker_right.get_constant_int()) {
+        add_callback_to_replace_with_bool(gt_term, "true");
+      } else {
+        add_callback_to_replace_with_bool(gt_term, "false");
+      }
+    } else if (constant_term_checker_left.is_constant_string() && constant_term_checker_right.is_constant_string()) {
+      if (constant_term_checker_left.get_constant_string() > constant_term_checker_right.get_constant_string()) {
+        add_callback_to_replace_with_bool(gt_term, "true");
+      } else {
+        add_callback_to_replace_with_bool(gt_term, "false");
+      }
+    } else {
+      LOG(FATAL) << "TYPE ERROR: Left,Right types uncomparable";
+    }
+  }
+
   if (Ast2Dot::isEquivalent(gt_term->left_term, gt_term->right_term)) {
     add_callback_to_replace_with_bool(gt_term, "false");
   } else if (check_and_process_len_transformation(gt_term, gt_term->left_term, gt_term->right_term)) {
@@ -681,6 +735,30 @@ void SyntacticOptimizer::visitGe(Ge_ptr ge_term) {
   visit_and_callback(ge_term->right_term);
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *ge_term << "@" << ge_term;
+
+  Optimization::ConstantTermChecker constant_term_checker_left;
+  Optimization::ConstantTermChecker constant_term_checker_right;
+
+  constant_term_checker_left.start(ge_term->left_term, Optimization::ConstantTermChecker::Mode::FULL);
+  constant_term_checker_right.start(ge_term->right_term, Optimization::ConstantTermChecker::Mode::FULL);
+
+  if (constant_term_checker_left.is_constant() && constant_term_checker_right.is_constant()) {
+    if (constant_term_checker_left.is_constant_int() && constant_term_checker_right.is_constant_int()) {
+      if (constant_term_checker_left.get_constant_int() >= constant_term_checker_right.get_constant_int()) {
+        add_callback_to_replace_with_bool(ge_term, "true");
+      } else {
+        add_callback_to_replace_with_bool(ge_term, "false");
+      }
+    } else if (constant_term_checker_left.is_constant_string() && constant_term_checker_right.is_constant_string()) {
+      if (constant_term_checker_left.get_constant_string() >= constant_term_checker_right.get_constant_string()) {
+        add_callback_to_replace_with_bool(ge_term, "true");
+      } else {
+        add_callback_to_replace_with_bool(ge_term, "false");
+      }
+    } else {
+      LOG(FATAL) << "TYPE ERROR: Left,Right types uncomparable";
+    }
+  }
 
   if (Ast2Dot::isEquivalent(ge_term->left_term, ge_term->right_term)) {
     add_callback_to_replace_with_bool(ge_term, "true");
@@ -715,6 +793,30 @@ void SyntacticOptimizer::visitLt(Lt_ptr lt_term) {
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *lt_term << "@" << lt_term;
 
+  Optimization::ConstantTermChecker constant_term_checker_left;
+  Optimization::ConstantTermChecker constant_term_checker_right;
+
+  constant_term_checker_left.start(lt_term->left_term, Optimization::ConstantTermChecker::Mode::FULL);
+  constant_term_checker_right.start(lt_term->right_term, Optimization::ConstantTermChecker::Mode::FULL);
+
+  if (constant_term_checker_left.is_constant() && constant_term_checker_right.is_constant()) {
+    if (constant_term_checker_left.is_constant_int() && constant_term_checker_right.is_constant_int()) {
+      if (constant_term_checker_left.get_constant_int() < constant_term_checker_right.get_constant_int()) {
+        add_callback_to_replace_with_bool(lt_term, "true");
+      } else {
+        add_callback_to_replace_with_bool(lt_term, "false");
+      }
+    } else if (constant_term_checker_left.is_constant_string() && constant_term_checker_right.is_constant_string()) {
+      if (constant_term_checker_left.get_constant_string() < constant_term_checker_right.get_constant_string()) {
+        add_callback_to_replace_with_bool(lt_term, "true");
+      } else {
+        add_callback_to_replace_with_bool(lt_term, "false");
+      }
+    } else {
+      LOG(FATAL) << "TYPE ERROR: Left,Right types uncomparable";
+    }
+  }
+
   if (Ast2Dot::isEquivalent(lt_term->left_term, lt_term->right_term)) {
     add_callback_to_replace_with_bool(lt_term, "false");
   } else if (check_and_process_len_transformation(lt_term, lt_term->left_term, lt_term->right_term)) {
@@ -747,6 +849,30 @@ void SyntacticOptimizer::visitLe(Le_ptr le_term) {
   visit_and_callback(le_term->right_term);
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *le_term << "@" << le_term;
+
+  Optimization::ConstantTermChecker constant_term_checker_left;
+  Optimization::ConstantTermChecker constant_term_checker_right;
+
+  constant_term_checker_left.start(le_term->left_term, Optimization::ConstantTermChecker::Mode::FULL);
+  constant_term_checker_right.start(le_term->right_term, Optimization::ConstantTermChecker::Mode::FULL);
+
+  if (constant_term_checker_left.is_constant() && constant_term_checker_right.is_constant()) {
+    if (constant_term_checker_left.is_constant_int() && constant_term_checker_right.is_constant_int()) {
+      if (constant_term_checker_left.get_constant_int() <= constant_term_checker_right.get_constant_int()) {
+        add_callback_to_replace_with_bool(le_term, "true");
+      } else {
+        add_callback_to_replace_with_bool(le_term, "false");
+      }
+    } else if (constant_term_checker_left.is_constant_string() && constant_term_checker_right.is_constant_string()) {
+      if (constant_term_checker_left.get_constant_string() <= constant_term_checker_right.get_constant_string()) {
+        add_callback_to_replace_with_bool(le_term, "true");
+      } else {
+        add_callback_to_replace_with_bool(le_term, "false");
+      }
+    } else {
+      LOG(FATAL) << "TYPE ERROR: Left,Right types uncomparable";
+    }
+  }
 
   if (Ast2Dot::isEquivalent(le_term->left_term, le_term->right_term)) {
     add_callback_to_replace_with_bool(le_term, "true");
