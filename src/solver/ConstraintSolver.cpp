@@ -372,6 +372,8 @@ void ConstraintSolver::visitTimes(Times_ptr times_term) {
 void ConstraintSolver::visitEq(Eq_ptr eq_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *eq_term;
 
+
+
   visit_children_of(eq_term);
 
   Value_ptr result = nullptr, param_left = getTermValue(eq_term->left_term), param_right = getTermValue(
@@ -385,6 +387,11 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
   } else {
     result = param_left->intersect(param_right);
   }
+
+  if(QualIdentifier_ptr v = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {
+    symbol_table_->updateValue(v->getVarName(),result);
+  }
+
   setTermValue(eq_term, result);
 }
 
@@ -407,6 +414,13 @@ void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
     Value_ptr intersection = param_left->intersect(param_right);
     if (not intersection->isSatisfiable()) {
       result = new Value(true);
+
+      if(QualIdentifier_ptr v = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term)) {
+        Value_ptr param_neg = param_right->complement();
+        symbol_table_->updateValue(v->getVarName(),param_neg);
+        delete param_neg;
+      }
+
       delete intersection;
     } else {
       result = intersection;
@@ -594,6 +608,9 @@ void ConstraintSolver::visitNotIn(NotIn_ptr not_in_term) {
   if (Value::Type::STRING_AUTOMATON == param_left->getType()
       and Value::Type::STRING_AUTOMATON == param_right->getType()) {
     result = param_left->difference(param_right);
+    if(QualIdentifier_ptr v = dynamic_cast<QualIdentifier_ptr>(not_in_term->left_term)) {
+      symbol_table_->updateValue(v->getVarName(),result);
+    }
   } else {
     LOG(FATAL)<< "unexpected parameter(s) of '" << *not_in_term << "' term";  // handle cases in a better way
   }
@@ -668,6 +685,7 @@ void ConstraintSolver::visitNotContains(NotContains_ptr not_contains_term) {
 }
 
 void ConstraintSolver::visitBegins(Begins_ptr begins_term) {
+
   visit_children_of(begins_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *begins_term;
 

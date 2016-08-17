@@ -103,12 +103,18 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
     }
   } else if (Concat_ptr right_id = dynamic_cast<Concat_ptr>(eq_term->right_term)) {
     if (!is_precise(right_id) or !dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {
-//      Term_ptr implication_term = new Eq(get_length(eq_term->left_term), get_length(right_id));
-//      current_and_->term_list->push_back(implication_term);
+      //Term_ptr implication_term = new Eq(get_length(eq_term->left_term), get_length(right_id));
+      //current_and_->term_list->push_back(implication_term);
       if (QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {
         if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA) {
           Term_ptr implication_term_begins = new Begins(left_variable->clone(), right_id->term_list->front()->clone());
           current_and_->term_list->push_back(implication_term_begins);
+        }
+
+        if(count < 20) {
+          count++;
+          Term_ptr implication_term_ends = new Ends(left_variable->clone(), right_id->term_list->back()->clone());
+          current_and_->term_list->push_back(implication_term_ends);
         }
       }
     }

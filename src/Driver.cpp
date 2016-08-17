@@ -128,7 +128,6 @@ void Driver::initializeSolver() {
 
   Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
   constraint_sorter.start();
-
 }
 
 void Driver::solve() {

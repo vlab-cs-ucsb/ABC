@@ -365,7 +365,13 @@ void VariableValueComputer::visitTimes(Times_ptr times_term) {
 void VariableValueComputer::visitEq(Eq_ptr eq_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *eq_term;
   popTerm(eq_term);
+
   Term_ptr child_term = current_path->back();
+
+  if(QualIdentifier_ptr v = dynamic_cast<QualIdentifier_ptr>(child_term)) {
+    LOG(INFO) << "CHILD TERM: " << v->getVarName();
+  }
+
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -387,6 +393,9 @@ void VariableValueComputer::visitEq(Eq_ptr eq_term) {
 
 void VariableValueComputer::visitNotEq(NotEq_ptr not_eq_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *not_eq_term;
+
+
+
   popTerm(not_eq_term);
   Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
@@ -394,6 +403,7 @@ void VariableValueComputer::visitNotEq(NotEq_ptr not_eq_term) {
     visit(child_term);
     return;
   }
+
 
   Value_ptr term_value = getTermPreImage(not_eq_term);
 
@@ -561,6 +571,7 @@ void VariableValueComputer::visitConcat(Concat_ptr concat_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *concat_term;
   popTerm(concat_term);
   Term_ptr child_term = current_path->back();
+
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -634,6 +645,7 @@ void VariableValueComputer::visitIn(In_ptr in_term) {
   }
 
   Value_ptr term_value = getTermPreImage(in_term);
+
   child_value = term_value->clone();
   setTermPreImage(child_term, child_value);
   visit(child_term);
@@ -1273,6 +1285,10 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 
   Value_ptr term_pre_value = getTermPreImage(qi_term);
   symbol_table->updateValue(qi_term->getVarName(), term_pre_value);
+
+
+  pre_images[qi_term] = symbol_table->getValue(qi_term->getVarName())->clone();
+  delete term_pre_value;
 }
 
 void VariableValueComputer::visitTermConstant(TermConstant_ptr term_constant) {
