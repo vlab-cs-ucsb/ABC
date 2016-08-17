@@ -135,9 +135,8 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 
   bool is_satisfiable = true;
   ArithmeticFormula_ptr formula = nullptr;
-  Value_ptr automaton_result = nullptr, param = nullptr, and_value = nullptr;
+  Value_ptr param = nullptr, and_value = nullptr;
 
-  automaton_result = new Value(true);
   for (auto& term : *(and_term->term_list)) {
     formula = arithmetic_formula_generator_.get_term_formula(term);
     if (formula != nullptr) {

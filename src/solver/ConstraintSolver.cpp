@@ -87,7 +87,6 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
   symbol_table_->updateSatisfiability(is_satisfiable);
   symbol_table_->setScopeSatisfiability(is_satisfiable);
   if ((Term::Type::OR not_eq assert_command->term->type()) and (Term::Type::AND not_eq assert_command->term->type())) {
-
     if (is_satisfiable) {
       update_variables();
     }
@@ -1319,6 +1318,7 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     string_term_unary_auto = string_term_binary_auto->toUnaryAutomaton();
     delete string_term_binary_auto; string_term_binary_auto = nullptr;
     updated_int_auto = string_term_unary_auto->toIntAutomaton(number_of_variables_for_int_auto, has_minus_one);
+    delete string_term_unary_auto; string_term_unary_auto = nullptr;
     clearTermValue(string_term);
     string_term_result = new Value(updated_int_auto);
     setTermValue(string_term, string_term_result);

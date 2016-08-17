@@ -1056,7 +1056,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::projectKTrack(int k_track) {
 }
 
 StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
-	DFA_ptr result = dfaCopy(this->dfa), temp;
+	DFA_ptr result = this->dfa, temp;
 	StringAutomaton_ptr result_auto = nullptr;
 	int flag = 0;
 
@@ -1939,8 +1939,8 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_suffix(DFA_ptr dfa, int var, bool proje
 
 				}
 				else {
-					state_exeps.push_back(std::make_pair(exep, pp->to));
 					exep.push_back('\0');
+					state_exeps.push_back(std::make_pair(exep, pp->to));
 					if(is_lam && dfa->f[pp->to] == 1) {
 						statuses[i] = '+';
 					}

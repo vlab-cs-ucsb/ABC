@@ -860,6 +860,10 @@ void RegularExpression::parse() {
   exp1_ = e->exp1_;
   exp2_ = e->exp2_;
   string_ = e->string_;
+
+  e->exp1_ = nullptr;
+  e->exp2_ = nullptr;
+  delete e; e = nullptr;
 }
 
 bool RegularExpression::peek(std::string s) {

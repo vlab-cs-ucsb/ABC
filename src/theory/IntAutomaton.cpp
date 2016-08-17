@@ -875,6 +875,7 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
   }
 
   std::vector<char> unary_exception = {'1'};
+  unary_exception.push_back('\0');
   char* statuses = new char[number_of_states + 1];
   std::vector<char> exception = {'0', '0', '0', '0', '0', '0', '0', '0'};
 

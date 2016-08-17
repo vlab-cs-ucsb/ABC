@@ -311,7 +311,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(SemilinearSet_ptr semil
     trim_helper_auto->setFormula(formula->clone());
     tmp_auto = binary_auto;
     binary_auto = binary_auto->intersect(trim_helper_auto);
+    ArithmeticFormula_ptr f = binary_auto->getFormula();
     binary_auto->setFormula(formula);
+    if(f) delete f;
     delete trim_helper_auto; trim_helper_auto = nullptr;
     tmp_auto->setFormula(nullptr);
     delete tmp_auto; tmp_auto = nullptr;
@@ -735,10 +737,12 @@ SemilinearSet_ptr BinaryIntAutomaton::getSemilinearSet() {
     bases.clear();
   }
 
+  delete subject_auto;subject_auto = nullptr;
+
   semilinear_set = new SemilinearSet();
   for (auto s : semilinears) {
     tmp_set = semilinear_set;
-    semilinear_set = semilinear_set->merge(s);
+    semilinear_set = tmp_set->merge(s);
     delete tmp_set;
     delete s;
   }

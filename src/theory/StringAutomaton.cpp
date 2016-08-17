@@ -657,7 +657,7 @@ StringAutomaton_ptr StringAutomaton::closure() {
     kill_paths(state_paths);
     original_exeps.clear();
   }
-  statuses[len] = '\0';
+  statuses[dfa->ns] = '\0';
   temp_dfa = dfaBuild(statuses);
   result_dfa = dfaProject(temp_dfa, (unsigned) var); //var is the index of the extra bit
   dfaFree(temp_dfa);
@@ -2996,7 +2996,7 @@ DFA_ptr StringAutomaton::dfaStringAutomatonL1toL2(int start, int end) {
     assert( end >= start);
 
     number_of_states = end + 2; // add one sink state
-    statuses=(char *)malloc( (number_of_states + 1)*sizeof(char) );
+    statuses = new char[number_of_states+1];
     dfaSetup(number_of_states, var, indices);
 
     //the start to end states(accepted)

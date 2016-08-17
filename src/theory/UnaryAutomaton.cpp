@@ -198,8 +198,6 @@ IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool ad
   if(sink_state < 0) {
     has_sink = false;
     sink_state = 0;
-    //sink_state = number_of_states;
-    //number_of_states++;
   }
 
   std::vector<char> unary_exception = {'1'};
@@ -207,6 +205,10 @@ IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool ad
   std::vector< std::vector<char> > exceptions = {
           {'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'}
   };
+
+  for (auto& exception : exceptions) {
+    exception.push_back('\0');
+  }
 
   dfaSetup(number_of_states, number_of_variables, indices);
 
@@ -259,6 +261,7 @@ BinaryIntAutomaton_ptr UnaryAutomaton::toBinaryIntAutomaton(std::string var_name
   SemilinearSet_ptr semilinear_set = getSemilinearSet();
 
   binary_auto = BinaryIntAutomaton::makeAutomaton(semilinear_set, var_name, formula, true);
+  delete semilinear_set; semilinear_set = nullptr;
 
   if (add_minus_one) {
     BinaryIntAutomaton_ptr minus_one_auto = nullptr, tmp_auto = nullptr;

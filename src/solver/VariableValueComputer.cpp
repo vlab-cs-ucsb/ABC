@@ -594,10 +594,6 @@ void VariableValueComputer::visitConcat(Concat_ptr concat_term) {
   Theory::StringAutomaton_ptr child_result_auto = nullptr;
   if (left_of_child != nullptr) {
     child_result_auto = tmp_parent_auto->preConcatRight(left_of_child);
-    //tmp_parent_auto->inspectAuto();
-    //left_of_child->inspectAuto();
-    //child_result_auto->inspectAuto();
-    //std::cin.get();
     tmp_parent_auto = child_result_auto;
   }
   if (right_of_child != nullptr) {
@@ -611,10 +607,6 @@ void VariableValueComputer::visitConcat(Concat_ptr concat_term) {
     }
     Theory::StringAutomaton_ptr  tmp = child_result_auto;
     child_result_auto = tmp_parent_auto->preConcatLeft(right_of_child);
-    //tmp_parent_auto->inspectAuto();
-    //right_of_child->inspectAuto();
-    //child_result_auto->inspectAuto();
-    //std::cin.get();
     delete tmp; tmp = nullptr;
   }
   delete left_of_child; left_of_child = nullptr;
