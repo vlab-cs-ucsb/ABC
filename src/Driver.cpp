@@ -191,6 +191,18 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
     result = multi_auto->Count(bound, count_less_than_or_equal_to_bound,true);
     LOG(INFO) << "MULTITRACK, " << var_name << " tuple count : " << result;//boost::multiprecision::logb(result,2);
 
+    if(multi_relation->get_variable_index(var_name) >= 0) {
+      LOG(INFO) << "--got var---";
+      auto single_var = multi_auto->getKTrack(multi_relation->get_variable_index(var_name));
+      temp = single_var->Count(bound,count_less_than_or_equal_to_bound,true);
+
+      if(temp < result) {
+        LOG(INFO) << "SINGLE VAR LOWER";
+        result = temp;
+      } else {
+        LOG(INFO) << "MUlTI-TUPLE LOWER";
+      }
+    }
     break;
   }
   default:

@@ -40,9 +40,9 @@ namespace Util {
 
 const int RegularExpression::VLOG_LEVEL = 10;
 
-const int RegularExpression::INTERSECTION = 0x0001;
+const int RegularExpression::INTERSECTION = 0x0000;//1;
 const int RegularExpression::COMPLEMENT = 0x0002;
-const int RegularExpression::EMPTY = 0x0004;
+const int RegularExpression::EMPTY = 0x0000;//4;
 const int RegularExpression::ANYSTRING = 0x0008;
 const int RegularExpression::AUTOMATON = 0x0010;
 const int RegularExpression::INTERVAL = 0x0020;
@@ -584,7 +584,7 @@ RegularExpression_ptr RegularExpression::parseUnionExp() {
 
 RegularExpression_ptr RegularExpression::parseInterExp() {
   RegularExpression_ptr regex = parseConcatExp();
-  if (check(INTERSECTION) and match('&')) {
+  if (check(INTERSECTION) and match('|')) {
     regex = makeIntersection(regex, parseInterExp());
   }
   return regex;
@@ -592,7 +592,7 @@ RegularExpression_ptr RegularExpression::parseInterExp() {
 
 RegularExpression_ptr RegularExpression::parseConcatExp() {
   RegularExpression_ptr regex = parseRepeatExp();
-  if (more() and !peek(")&|")) {
+  if (more() and !peek(")|")) {
     regex = makeConcatenation(regex, parseConcatExp());
   }
   return regex;
@@ -699,7 +699,7 @@ RegularExpression_ptr RegularExpression::parseCharClass() {
 RegularExpression_ptr RegularExpression::parseSimpleExp() {
   if (match('.')) {
     return makeAnyChar();
-  } else if (check(EMPTY) and match('#')) {
+  } else if (check(EMPTY) and match('|')) {
     return makeEmpty();
   } else if (check(ANYSTRING) and match('@')) {
     return makeAnyString();
@@ -860,6 +860,10 @@ void RegularExpression::parse() {
   exp1_ = e->exp1_;
   exp2_ = e->exp2_;
   string_ = e->string_;
+
+  e->exp1_ = nullptr;
+  e->exp2_ = nullptr;
+  delete e; e = nullptr;
 }
 
 bool RegularExpression::peek(std::string s) {

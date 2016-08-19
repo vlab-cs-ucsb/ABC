@@ -33,24 +33,27 @@ void VariableValueComputer::start() {
 
   // update variables starting from right side of the ast tree of the term
   // this is especially important for let terms
-  for (auto it = variable_path_table.rbegin(); it != variable_path_table.rend(); it++) {
+
+  for (auto it = variable_path_table.rbegin(); it != variable_path_table.rend(); ++it) {
     current_path = &(*it);
     root_term = current_path->back();
 
     initial_value = getTermPreImage(root_term);
     if (initial_value not_eq nullptr) {
       visit(root_term);
-      return;
+      continue;
     }
 
     initial_value = getTermPostImage(root_term);
     setTermPreImage(root_term, initial_value->clone());
     visit(root_term);
   }
+
   end();
 }
 
 void VariableValueComputer::end() {
+  DVLOG(VLOG_LEVEL) << "end variable value computation";
   current_path = nullptr;
 }
 
@@ -365,7 +368,9 @@ void VariableValueComputer::visitTimes(Times_ptr times_term) {
 void VariableValueComputer::visitEq(Eq_ptr eq_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *eq_term;
   popTerm(eq_term);
+
   Term_ptr child_term = current_path->back();
+
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
@@ -387,6 +392,9 @@ void VariableValueComputer::visitEq(Eq_ptr eq_term) {
 
 void VariableValueComputer::visitNotEq(NotEq_ptr not_eq_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *not_eq_term;
+
+
+
   popTerm(not_eq_term);
   Term_ptr child_term = current_path->back();
   Value_ptr child_value = getTermPreImage(child_term);
@@ -394,6 +402,7 @@ void VariableValueComputer::visitNotEq(NotEq_ptr not_eq_term) {
     visit(child_term);
     return;
   }
+
 
   Value_ptr term_value = getTermPreImage(not_eq_term);
 
@@ -561,12 +570,12 @@ void VariableValueComputer::visitConcat(Concat_ptr concat_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *concat_term;
   popTerm(concat_term);
   Term_ptr child_term = current_path->back();
+
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
     return;
   }
-
   Value_ptr term_value = getTermPreImage(concat_term);
   Value_ptr child_post_value = getTermPostImage(child_term);
 
@@ -593,7 +602,6 @@ void VariableValueComputer::visitConcat(Concat_ptr concat_term) {
   // do the preconcat operations
   Theory::StringAutomaton_ptr tmp_parent_auto = term_value->getStringAutomaton();
   Theory::StringAutomaton_ptr child_result_auto = nullptr;
-
   if (left_of_child != nullptr) {
     child_result_auto = tmp_parent_auto->preConcatRight(left_of_child);
     tmp_parent_auto = child_result_auto;
@@ -611,13 +619,11 @@ void VariableValueComputer::visitConcat(Concat_ptr concat_term) {
     child_result_auto = tmp_parent_auto->preConcatLeft(right_of_child);
     delete tmp; tmp = nullptr;
   }
-
   delete left_of_child; left_of_child = nullptr;
   delete right_of_child; right_of_child = nullptr;
 
   child_value = new Value(child_post_value->getStringAutomaton()->intersect(child_result_auto));
   delete child_result_auto; child_result_auto = nullptr;
-
   setTermPreImage(child_term, child_value);
   visit(child_term);
 }
@@ -638,6 +644,7 @@ void VariableValueComputer::visitIn(In_ptr in_term) {
   }
 
   Value_ptr term_value = getTermPreImage(in_term);
+
   child_value = term_value->clone();
   setTermPreImage(child_term, child_value);
   visit(child_term);
@@ -682,6 +689,7 @@ void VariableValueComputer::visitLen(Len_ptr len_term) {
   } else {
     child_value = new Value(child_post_value->getStringAutomaton()->restrictLengthTo(term_value->getIntAutomaton()));
   }
+
 
   setTermPreImage(child_term, child_value);
   visit(child_term);
@@ -803,15 +811,12 @@ void VariableValueComputer::visitEnds(Ends_ptr ends_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *ends_term;
   popTerm(ends_term);
   Term_ptr child_term = current_path->back();
-
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
     visit(child_term);
     return;
   }
-
   Value_ptr term_value = getTermPreImage(ends_term);
-
   if (child_term == ends_term->subject_term) {
     child_value = term_value->clone();
   } else {
@@ -820,7 +825,6 @@ void VariableValueComputer::visitEnds(Ends_ptr ends_term) {
     child_value = new Value(child_post_value->getStringAutomaton()->intersect(suffixes_auto));
     delete suffixes_auto; suffixes_auto = nullptr;
   }
-
   setTermPreImage(child_term, child_value);
   visit(child_term);
 }
@@ -1280,6 +1284,7 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 
   Value_ptr term_pre_value = getTermPreImage(qi_term);
   symbol_table->updateValue(qi_term->getVarName(), term_pre_value);
+
 }
 
 void VariableValueComputer::visitTermConstant(TermConstant_ptr term_constant) {
