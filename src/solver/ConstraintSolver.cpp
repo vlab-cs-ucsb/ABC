@@ -186,7 +186,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     Variable_ptr rep_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),var);
     if(rep_var != nullptr) {
       LOG(INFO) << "Var,rep_var = " << var->getName() << "," << rep_var->getName();
-      Value_ptr val = string_constraint_solver_.get_variable_value(rep_var,true);
+      Value_ptr val = string_constraint_solver_.get_variable_value(var,true);
       if(val != nullptr) {
         // If symbolic variable is not actually represented, but instead
         // substituted for another variable, then we need to
@@ -195,7 +195,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         VariableTrackMap trackmap = relation->get_variable_trackmap();
         trackmap[var->getName()] = trackmap[rep_var->getName()];
         relation->set_variable_trackmap(trackmap);
-        symbol_table_->setValue(rep_var, val);
+        symbol_table_->setValue(var, val);
       }
     }
   }
@@ -372,8 +372,6 @@ void ConstraintSolver::visitTimes(Times_ptr times_term) {
 void ConstraintSolver::visitEq(Eq_ptr eq_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *eq_term;
 
-
-
   visit_children_of(eq_term);
 
   Value_ptr result = nullptr, param_left = getTermValue(eq_term->left_term), param_right = getTermValue(
@@ -386,10 +384,6 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
     result = new Value(param_left->getIntConstant() == param_right->getIntConstant());
   } else {
     result = param_left->intersect(param_right);
-  }
-
-  if(QualIdentifier_ptr v = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {
-    symbol_table_->updateValue(v->getVarName(),result);
   }
 
   setTermValue(eq_term, result);
@@ -414,16 +408,10 @@ void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
     Value_ptr intersection = param_left->intersect(param_right);
     if (not intersection->isSatisfiable()) {
       result = new Value(true);
-
-      if(QualIdentifier_ptr v = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term)) {
-        Value_ptr param_neg = param_right->complement();
-        symbol_table_->updateValue(v->getVarName(),param_neg);
-        delete param_neg;
-      }
-
       delete intersection;
     } else {
       result = intersection;
+
     }
   }
 

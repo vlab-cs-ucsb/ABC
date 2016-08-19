@@ -33,19 +33,22 @@ void VariableValueComputer::start() {
 
   // update variables starting from right side of the ast tree of the term
   // this is especially important for let terms
-  for (auto it = variable_path_table.rbegin(); it != variable_path_table.rend(); it++) {
+
+  for (auto it = variable_path_table.rbegin(); it != variable_path_table.rend(); ++it) {
     current_path = &(*it);
     root_term = current_path->back();
+
     initial_value = getTermPreImage(root_term);
     if (initial_value not_eq nullptr) {
       visit(root_term);
-      break;
+      continue;
     }
 
     initial_value = getTermPostImage(root_term);
     setTermPreImage(root_term, initial_value->clone());
     visit(root_term);
   }
+
   end();
 }
 
@@ -367,10 +370,6 @@ void VariableValueComputer::visitEq(Eq_ptr eq_term) {
   popTerm(eq_term);
 
   Term_ptr child_term = current_path->back();
-
-  if(QualIdentifier_ptr v = dynamic_cast<QualIdentifier_ptr>(child_term)) {
-    LOG(INFO) << "CHILD TERM: " << v->getVarName();
-  }
 
   Value_ptr child_value = getTermPreImage(child_term);
   if (child_value not_eq nullptr) {
@@ -1286,9 +1285,6 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   Value_ptr term_pre_value = getTermPreImage(qi_term);
   symbol_table->updateValue(qi_term->getVarName(), term_pre_value);
 
-
-  pre_images[qi_term] = symbol_table->getValue(qi_term->getVarName())->clone();
-  delete term_pre_value;
 }
 
 void VariableValueComputer::visitTermConstant(TermConstant_ptr term_constant) {
