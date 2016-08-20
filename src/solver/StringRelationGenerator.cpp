@@ -100,7 +100,7 @@ void StringRelationGenerator::visitAnd(And_ptr and_term) {
       term_relation->set_variable_trackmap(trackmap);
       if(symbol_table_->get_variable_unsafe(group_name) == nullptr) {
         symbol_table_->addVariable(new Variable(group_name,Variable::Type::STRING));
-        symbol_table_->setValue(group_name,new Value(MultiTrackAutomaton::makeAnyAutoAligned(trackmap.size())));
+        symbol_table_->setValue(group_name,new Value(MultiTrackAutomaton::makeAnyAutoUnaligned(trackmap.size())));
       }
     }
   }

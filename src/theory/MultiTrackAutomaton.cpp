@@ -1968,42 +1968,6 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_suffix(DFA_ptr dfa, int var, bool proje
 		dfaFree(result_dfa);
 		result_dfa = dfaMinimize(temp);
 		dfaFree(temp);
-/*
-		state_paths = pp = make_paths(result_dfa->bddm, result_dfa->q[0]);
-
-		while (pp) {
-			std::vector<char> exep(var-1, 'X');
-			for (unsigned j = 0; j < var-1; j++) {
-				for (tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
-
-				if (tp) {
-					if (tp->value) exep[j] = '1';
-					else exep[j] = '0';
-				}
-				else
-					exep[j] = 'X';
-			}
-			exep.push_back('\0');
-			LOG(INFO) << &exep[0] << " -> " << pp->to;
-			pp = pp->next;
-		}
-		kill_paths(state_paths);
-
-
-		// make sure no states that aren't reachable, because of above
-		StringAutomaton_ptr any_string_auto = StringAutomaton::makeAnyString();
-		any_string_auto->inspectAuto();
-		StringAutomaton_ptr temp_string_auto = new StringAutomaton(result_dfa);
-		temp_string_auto->inspectAuto();
-		StringAutomaton_ptr result_string_auto = temp_string_auto->intersect(any_string_auto);
-		result_string_auto->inspectAuto();
-		std::cin.get();
-		delete any_string_auto;
-		delete temp_string_auto;
-
-		result_dfa = dfaCopy(result_string_auto->getDFA());
-		delete result_string_auto;
-*/
 	}
 
 	delete[] statuses;
