@@ -1,10 +1,3 @@
-AM_YFLAGS = -d
-
-AM_CXXFLAGS = \
-	-I$(top_srcdir)/src -I$(includedir)
-
-AM_LDFLAGS = \
-	$(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBGLOG)
 
 noinst_LTLIBRARIES = libabcautomaton.la
 libabcautomaton_la_SOURCES = \
@@ -49,10 +42,17 @@ libabcautomaton_la_SOURCES = \
 	StringRelation.cpp \
 	StringRelation.h
 
-libabcautomaton_la_LDFLAGS = -version-info 0:1:0
-	
+libabcautomaton_la_CXXFLAGS = -I$(includedir)
+libabcautomaton_la_LDFLAGS = -version-info 0:1:0 \
+  -L$(libdir)
 libabcautomaton_la_LIBADD = \
-  $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBGLOG)
+  $(LIBGLOG) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM)
+
+MAINTAINERCLEANFILES = \
+  Makefile \
+  Makefile.in \
+  .deps \
+  .libs
 	
 test-local: 
-	@echo parser, $(srcdir), $(top_srcdir)	
+	@echo parser, $(srcdir), $(top_srcdir),$(LIBMONADFA) $(LIBGLOG)	

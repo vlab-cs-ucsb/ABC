@@ -52,7 +52,6 @@ AC_PROG_YACC
 #LT_INIT([disable-shared])
 LT_INIT
 
-
 AC_HAVE_LIBRARY([glog], [LIBGLOG=-lglog], AC_MSG_ERROR(Glog logging library not found))
 AC_SUBST([LIBGLOG])
 
@@ -67,8 +66,8 @@ AC_SUBST([LIBMONAMEM])
 
 AC_CHECK_HEADERS([boost/multiprecision/cpp_int.hpp], [], [AC_MSG_ERROR([Please install boost multiprecision headers])], [])
 
-#AC_CHECK_LIB([m], [floor],[LIBM=-lm], AC_MSG_ERROR(c math library m not found))
-#AC_SUBST([LIBM])
+AC_CHECK_LIB([m], [floor],[LIBM=-lm], AC_MSG_ERROR(c math library m not found))
+AC_SUBST([LIBM])
 
 #AC_HAVE_LIBRARY([stranger], [LIBSTRANGER=-lstranger], AC_MSG_ERROR(LibStranger string analysis library not found))
 #AC_SUBST([LIBSTRANGER])

@@ -1,7 +1,5 @@
 AM_YFLAGS = -d
 
-AM_CXXFLAGS = -I$(top_srcdir)/src
-AM_LDFLAGS = $(LIBGLOG)
 noinst_LTLIBRARIES = libabcparser.la
 libabcparser_la_SOURCES = \
 	../smt/ast.cpp \
@@ -14,8 +12,9 @@ libabcparser_la_SOURCES = \
 	Scanner.h \
 	lexer.lpp
 
-libabcparser_la_LDFLAGS = -version-info 0:1:0
-
+libabcparser_la_CXXFLAGS = -I$(includedir)
+libabcparser_la_LDFLAGS = -version-info 0:1:0 \
+  -L$(libdir) 
 libabcparser_la_LIBADD = $(LIBGLOG)
 
 CLEANFILES = \
@@ -25,6 +24,11 @@ CLEANFILES = \
 	parser.cpp \
 	position.hh \
 	stack.hh
-	
+
+MAINTAINERCLEANFILES = \
+  Makefile \
+  Makefile.in \
+  .deps \
+  .libs	
 test-local: 
 	@echo parser, $(srcdir), $(top_srcdir)	
