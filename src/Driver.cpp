@@ -148,6 +148,10 @@ bool Driver::isSatisfiable() {
 }
 
 boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound) {
+
+  /* HACK: change jpf driver instead. */
+  if(var_name.compare("__VLAB_CS_ARITHMETIC__") == 0) return Count(bound, count_less_than_or_equal_to_bound);
+
   symbol_table_->UnionValuesOfVariables(script_);
   symbol_table_->push_scope(script_);
 
@@ -257,6 +261,9 @@ boost::multiprecision::cpp_int Driver::Count(const double bound, bool count_less
 }
 
 boost::multiprecision::cpp_int Driver::SymbolicCount(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound) {
+  /* HACK: change jpf driver instead. */
+  if(var_name.compare("__VLAB_CS_ARITHMETIC__") == 0) return SymbolicCount(bound, count_less_than_or_equal_to_bound);
+
   boost::multiprecision::cpp_int result;
   symbol_table_->UnionValuesOfVariables(script_);
   symbol_table_->push_scope(script_);
