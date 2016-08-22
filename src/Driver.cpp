@@ -155,9 +155,7 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
     break;
   case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
     auto binary_auto = var_value->getBinaryIntAutomaton();
-    result = binary_auto->Count(bound, count_less_than_or_equal_to_bound);
-
-    /*
+    result = binary_auto->SymbolicCount(bound, count_less_than_or_equal_to_bound);
     int number_of_int_variables = symbol_table_->get_num_of_variables(SMT::Variable::Type::INT);
     int number_of_substituted_int_variables = symbol_table_->get_num_of_substituted_variables(script_, SMT::Variable::Type::INT);
     int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables
@@ -170,8 +168,6 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
       result = result
                * boost::multiprecision::pow(boost::multiprecision::cpp_int(2),
                                             (number_of_untracked_int_variables * static_cast<int>(exponent)));
-    }
-    */
     break;
   }
   case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {

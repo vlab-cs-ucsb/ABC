@@ -185,8 +185,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     }
     Variable_ptr rep_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),var);
     if(rep_var != nullptr) {
-      LOG(INFO) << "Var,rep_var = " << var->getName() << "," << rep_var->getName();
-      Value_ptr val = string_constraint_solver_.get_variable_value(var,true);
+      Value_ptr val = string_constraint_solver_.get_variable_value(rep_var,true);
       if(val != nullptr) {
         // If symbolic variable is not actually represented, but instead
         // substituted for another variable, then we need to
@@ -195,7 +194,8 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         VariableTrackMap trackmap = relation->get_variable_trackmap();
         trackmap[var->getName()] = trackmap[rep_var->getName()];
         relation->set_variable_trackmap(trackmap);
-        symbol_table_->setValue(var, val);
+        symbol_table_->setValue(rep_var, val);
+        symbol_table_->setValue(var,val->clone());
       }
     }
   }
