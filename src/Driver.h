@@ -45,7 +45,7 @@ public:
   void solve();
   bool isSatisfiable();
   boost::multiprecision::cpp_int Count(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound = true);
-  boost::multiprecision::cpp_int Count(const int bound, bool count_less_than_or_equal_to_bound = true);
+  boost::multiprecision::cpp_int Count(const double bound, bool count_less_than_or_equal_to_bound = true);
   boost::multiprecision::cpp_int SymbolicCount(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound = true);
   boost::multiprecision::cpp_int SymbolicCount(const int bound, bool count_less_than_or_equal_to_bound = true);
 

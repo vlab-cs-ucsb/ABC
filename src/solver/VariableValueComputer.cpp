@@ -39,13 +39,12 @@ void VariableValueComputer::start() {
     root_term = current_path->back();
 
     initial_value = getTermPreImage(root_term);
-    if (initial_value not_eq nullptr) {
-      visit(root_term);
-      continue;
+
+    if (initial_value == nullptr) {
+      initial_value = getTermPostImage(root_term);
+      setTermPreImage(root_term, initial_value->clone());
     }
 
-    initial_value = getTermPostImage(root_term);
-    setTermPreImage(root_term, initial_value->clone());
     visit(root_term);
   }
 

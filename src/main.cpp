@@ -242,16 +242,33 @@ int main(const int argc, const char **argv) {
       }
     }
 
-    LOG(INFO) << "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
     if (experiment_mode) {
+      LOG(INFO)<< "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
       auto query_variable = driver.get_smc_query_variable();
-      LOG(INFO) << "report var: " << query_variable->getName();
-      for (auto b : bounds) {
-        start = std::chrono::steady_clock::now();
-        auto count_result = driver.Count(query_variable->getName(), b, true);
-        end = std::chrono::steady_clock::now();
-        auto count_time = end - start;
-        LOG(INFO) << "report bound: " << b << " count: " << count_result  << " time: " << std::chrono::duration <long double, std::milli> (count_time).count() << " ms";
+      // if query_variable, report that count
+      // otherwise, count up binary int
+      if(query_variable != nullptr) {
+        LOG(INFO) << "report var: " << query_variable->getName();
+        for (auto b : bounds) {
+          start = std::chrono::steady_clock::now();
+          auto count_result = driver.Count(query_variable->getName(), b, true);
+          end = std::chrono::steady_clock::now();
+          auto count_time = end - start;
+          LOG(INFO) << "report bound: " << b << " count: " << count_result << " time: "
+                    << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+        }
+      } else {
+        LOG(INFO) << "No query variable found. Counting Binary Integers instead.";
+        auto sat_vars = driver.getSatisfyingVariables();
+
+        for (auto b : bounds) {
+          start = std::chrono::steady_clock::now();
+          auto count = driver.Count(bound, false);
+          end = std::chrono::steady_clock::now();
+          auto count_time = end - start;
+          LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
+                    << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+        }
       }
     }
   } else {

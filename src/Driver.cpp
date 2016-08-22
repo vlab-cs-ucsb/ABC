@@ -212,6 +212,50 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
   return result;
 }
 
+boost::multiprecision::cpp_int Driver::Count(const double bound, bool count_less_than_or_equal_to_bound) {
+
+  boost::multiprecision::cpp_int result(0),count;
+  int num_bin_auto = 0;
+  int num_bin_var = 0;
+  for (auto &variable_entry : getSatisfyingVariables()) {
+    if (variable_entry.second == nullptr
+                   || variable_entry.second->getType() != Vlab::Solver::Value::Type::BINARYINT_AUTOMATON) {
+      continue;
+    }
+
+    auto binary_auto = variable_entry.second->getBinaryIntAutomaton();
+    auto formula = binary_auto->getFormula();
+    for(auto it : formula->get_coefficient_index_map()) {
+      if(symbol_table_->get_variable_unsafe(it.first) != nullptr) {
+        num_bin_var++;
+      }
+    }
+    count = binary_auto->Count(bound, count_less_than_or_equal_to_bound);
+    if (result == 0) {
+      result = count;
+    } else {
+      result = result * count;
+    }
+    num_bin_auto++;
+  }
+
+  int number_of_int_variables = symbol_table_->get_num_of_variables(SMT::Variable::Type::INT) - num_bin_auto;
+  int number_of_substituted_int_variables = symbol_table_->get_num_of_substituted_variables(script_,
+                                                                                            SMT::Variable::Type::INT);
+  int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables - num_bin_var;
+  if (number_of_untracked_int_variables > 0) {
+    int exponent = bound;
+    if (Option::Solver::LIA_NATURAL_NUMBERS_ONLY) {
+      --exponent;
+    }
+    result = result
+             * boost::multiprecision::pow(boost::multiprecision::cpp_int(2),
+                                          (number_of_untracked_int_variables * static_cast<int>(exponent)));
+  }
+
+  return result;
+}
+
 boost::multiprecision::cpp_int Driver::SymbolicCount(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound) {
   boost::multiprecision::cpp_int result;
   symbol_table_->UnionValuesOfVariables(script_);
