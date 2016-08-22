@@ -152,11 +152,12 @@ void ArithmeticFormulaGenerator::visitNot(Not_ptr not_term) {
 
   child_formula = get_term_formula(not_term->term);
 
-  if (child_formula not_eq nullptr) {
+  if (child_formula not_eq nullptr and child_formula->get_number_of_variables() > 0) {
     formula = child_formula->NegateOperation();
-    delete_term_formula(not_term->term);
     set_term_formula(not_term, formula);
   }
+
+  delete_term_formula(not_term->term); // safe to call even there is no formula set
 
   if (string_terms_.size() > 0) {
     string_terms_map_[not_term] = string_terms_;
@@ -258,9 +259,11 @@ void ArithmeticFormulaGenerator::visitEq(Eq_ptr eq_term) {
     formula->set_type(ArithmeticFormula::Type::EQ);
     delete_term_formula(eq_term->left_term);
     delete_term_formula(eq_term->right_term);
-    set_term_formula(eq_term, formula);
-    if (string_terms_.size() > 0) {
-      string_terms_map_[eq_term] = string_terms_;
+    if (formula->get_number_of_variables() > 0) {
+      set_term_formula(eq_term, formula);
+      if (string_terms_.size() > 0) {
+        string_terms_map_[eq_term] = string_terms_;
+      }
     }
   }
   string_terms_.clear();
@@ -280,9 +283,11 @@ void ArithmeticFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
     formula->set_type(ArithmeticFormula::Type::NOTEQ);
     delete_term_formula(not_eq_term->left_term);
     delete_term_formula(not_eq_term->right_term);
-    set_term_formula(not_eq_term, formula);
-    if (string_terms_.size() > 0) {
-      string_terms_map_[not_eq_term] = string_terms_;
+    if (formula->get_number_of_variables() > 0) {
+      set_term_formula(not_eq_term, formula);
+      if (string_terms_.size() > 0) {
+        string_terms_map_[not_eq_term] = string_terms_;
+      }
     }
   }
   string_terms_.clear();
@@ -301,11 +306,12 @@ void ArithmeticFormulaGenerator::visitGt(Gt_ptr gt_term) {
   delete_term_formula(gt_term->left_term);
   delete_term_formula(gt_term->right_term);
 
-  set_term_formula(gt_term, formula);
-
-  if (string_terms_.size() > 0) {
-    string_terms_map_[gt_term] = string_terms_;
-    string_terms_.clear();
+  if (formula->get_number_of_variables() > 0) {
+    set_term_formula(gt_term, formula);
+    if (string_terms_.size() > 0) {
+      string_terms_map_[gt_term] = string_terms_;
+      string_terms_.clear();
+    }
   }
 }
 
@@ -322,11 +328,12 @@ void ArithmeticFormulaGenerator::visitGe(Ge_ptr ge_term) {
   delete_term_formula(ge_term->left_term);
   delete_term_formula(ge_term->right_term);
 
-  set_term_formula(ge_term, formula);
-
-  if (string_terms_.size() > 0) {
-    string_terms_map_[ge_term] = string_terms_;
-    string_terms_.clear();
+  if (formula->get_number_of_variables() > 0) {
+    set_term_formula(ge_term, formula);
+    if (string_terms_.size() > 0) {
+      string_terms_map_[ge_term] = string_terms_;
+      string_terms_.clear();
+    }
   }
 }
 
@@ -343,11 +350,12 @@ void ArithmeticFormulaGenerator::visitLt(Lt_ptr lt_term) {
   delete_term_formula(lt_term->left_term);
   delete_term_formula(lt_term->right_term);
 
-  set_term_formula(lt_term, formula);
-
-  if (string_terms_.size() > 0) {
-    string_terms_map_[lt_term] = string_terms_;
-    string_terms_.clear();
+  if (formula->get_number_of_variables() > 0) {
+    set_term_formula(lt_term, formula);
+    if (string_terms_.size() > 0) {
+      string_terms_map_[lt_term] = string_terms_;
+      string_terms_.clear();
+    }
   }
 }
 
@@ -364,11 +372,12 @@ void ArithmeticFormulaGenerator::visitLe(Le_ptr le_term) {
   delete_term_formula(le_term->left_term);
   delete_term_formula(le_term->right_term);
 
-  set_term_formula(le_term, formula);
-
-  if (string_terms_.size() > 0) {
-    string_terms_map_[le_term] = string_terms_;
-    string_terms_.clear();
+  if (formula->get_number_of_variables() > 0) {
+    set_term_formula(le_term, formula);
+    if (string_terms_.size() > 0) {
+      string_terms_map_[le_term] = string_terms_;
+      string_terms_.clear();
+    }
   }
 }
 
@@ -532,10 +541,13 @@ void ArithmeticFormulaGenerator::visitTermConstant(TermConstant_ptr term_constan
 
   ArithmeticFormula_ptr formula = nullptr;
 
+  // Use fresh coeff maps for constants
   switch (term_constant->getValueType()) {
     case Primitive::Type::NUMERAL: {
       int constant = std::stoi(term_constant->getValue());
-      formula = new ArithmeticFormula(coeff_index_map_, coefficients_);
+      std::map<std::string, int> coeff_index_map;
+      std::vector<int> coefficients;
+      formula = new ArithmeticFormula(coeff_index_map, coefficients);
       formula->set_constant(constant);
       break;
     }

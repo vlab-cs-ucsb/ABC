@@ -214,29 +214,54 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
 
 boost::multiprecision::cpp_int Driver::Count(const double bound, bool count_less_than_or_equal_to_bound) {
 
-  boost::multiprecision::cpp_int result(0),count;
+  boost::multiprecision::cpp_int result(-1),count(0);
   int num_bin_auto = 0;
   int num_bin_var = 0;
   for (auto &variable_entry : getSatisfyingVariables()) {
-    if (variable_entry.second == nullptr
-                   || variable_entry.second->getType() != Vlab::Solver::Value::Type::BINARYINT_AUTOMATON) {
+    if (variable_entry.second == nullptr) {
       continue;
     }
 
-    auto binary_auto = variable_entry.second->getBinaryIntAutomaton();
-    auto formula = binary_auto->getFormula();
-    for(auto it : formula->get_coefficient_index_map()) {
-      if(symbol_table_->get_variable_unsafe(it.first) != nullptr) {
-        num_bin_var++;
+    switch (variable_entry.second->getType()) {
+      case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
+        auto binary_auto = variable_entry.second->getBinaryIntAutomaton();
+        auto formula = binary_auto->getFormula();
+        for(auto it : formula->get_coefficient_index_map()) {
+          if(symbol_table_->get_variable_unsafe(it.first) != nullptr) {
+            num_bin_var++;
+          }
+        }
+        count = binary_auto->Count(bound, count_less_than_or_equal_to_bound);
+        num_bin_auto++;
       }
+      break;
+      case Vlab::Solver::Value::Type::INT_CONSTANT: {
+        boost::multiprecision::cpp_int value (variable_entry.second->getIntConstant());
+        boost::multiprecision::cpp_int base(1);
+        boost::multiprecision::cpp_int base2(-1);
+        int up_shift = (int)bound - 1;
+        int low_shift = (int)bound;
+
+        auto upper_bound = base << up_shift;
+        auto lower_bound = (base2 << low_shift) + base;
+        if (value <= upper_bound and value >= lower_bound) {
+          count = boost::multiprecision::cpp_int(1);
+        } else {
+          count = boost::multiprecision::cpp_int(0);
+        }
+      }
+      break;
+      default:
+        LOG(FATAL) << "Please update me for the types not handled";
+        break;
     }
-    count = binary_auto->Count(bound, count_less_than_or_equal_to_bound);
-    if (result == 0) {
+
+    if (result == -1) {
       result = count;
     } else {
       result = result * count;
     }
-    num_bin_auto++;
+
   }
 
   int number_of_int_variables = symbol_table_->get_num_of_variables(SMT::Variable::Type::INT) - num_bin_auto;
