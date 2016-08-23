@@ -107,10 +107,8 @@ void Driver::initializeSolver() {
   syntactic_optimizer.start();
 
   // TODO dependency slicer should work on no dnf version
-  if (Option::Solver::ENABLE_DEPENDENCY) {
-    Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
-    dependency_slicer.start();
-  }
+  Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
+  dependency_slicer.start();
 
   if (Option::Solver::ENABLE_EQUIVALENCE) {
     Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
@@ -186,6 +184,7 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
     auto multi_relation = multi_auto->getRelation();
     auto variables = multi_relation->get_variable_trackmap();
     boost::multiprecision::cpp_int temp;
+
 
     result = multi_auto->Count(bound, count_less_than_or_equal_to_bound,true);
     LOG(INFO) << "MULTITRACK, " << var_name << " tuple count : " << result;//boost::multiprecision::logb(result,2);

@@ -9,6 +9,7 @@
  */
 
 #include "ArithmeticFormulaGenerator.h"
+#include "options/Solver.h"
 
 namespace Vlab {
 namespace Solver {
@@ -620,33 +621,45 @@ std::string ArithmeticFormulaGenerator::get_term_group_name(SMT::Term_ptr term) 
 }
 
 void ArithmeticFormulaGenerator::add_int_variables(Term_ptr term, std::map<std::string,int> variables) {
-  std::string start_group;
-  // get a starting group from the variable list
-  for(auto& var : variables) {
-    if(variable_group_table_[term].find(var.first) != variable_group_table_[term].end()) {
-      start_group = variable_group_table_[term][var.first];
-      break;
-    }
-  }
-  // if no group is found at all, create new one
-  if(start_group.empty()) {
-    start_group = generate_group_name(term, variables.begin()->first);
-  }
-  // merge each variable's groups together into start_group
-  for(auto& var : variables) {
-    if(variable_group_table_[term].find(var.first) == variable_group_table_[term].end()) {
-      variable_group_table_[term][var.first] = start_group;
-      int track = group_variables_map_[start_group].size();
-      group_variables_map_[start_group][var.first] = track;
-    } else if(variable_group_table_[term][var.first] != start_group) {
-      // merge the two groups
-      std::string var_group = variable_group_table_[term][var.first];
-      for(auto& iter : group_variables_map_[var_group]) {
-        variable_group_table_[term][iter.first] = start_group;
-        int track = group_variables_map_[start_group].size();
-        group_variables_map_[start_group][iter.first] = track;
+  if (Option::Solver::ENABLE_DEPENDENCY) {
+    std::string start_group;
+    // get a starting group from the variable list
+    for (auto &var : variables) {
+      if (variable_group_table_[term].find(var.first) != variable_group_table_[term].end()) {
+        start_group = variable_group_table_[term][var.first];
+        break;
       }
-      group_variables_map_.erase(var_group);
+    }
+    // if no group is found at all, create new one
+    if (start_group.empty()) {
+      start_group = generate_group_name(term, variables.begin()->first);
+    }
+
+    // merge each variable's groups together into start_group
+    for (auto &var : variables) {
+      if (variable_group_table_[term].find(var.first) == variable_group_table_[term].end()) {
+        variable_group_table_[term][var.first] = start_group;
+        int track = group_variables_map_[start_group].size();
+        group_variables_map_[start_group][var.first] = track;
+      } else if (variable_group_table_[term][var.first] != start_group) {
+        // merge the two groups
+        std::string var_group = variable_group_table_[term][var.first];
+        for (auto &iter : group_variables_map_[var_group]) {
+          variable_group_table_[term][iter.first] = start_group;
+          int track = group_variables_map_[start_group].size();
+          group_variables_map_[start_group][iter.first] = track;
+        }
+        group_variables_map_.erase(var_group);
+      }
+    }
+  } else {
+    std::string start_group = "NYWAH";
+    for(auto& var : variables) {
+      if(variable_group_table_[term].find(var.first) == variable_group_table_[term].end()) {
+        variable_group_table_[term][var.first] = start_group;
+        int track = group_variables_map_[start_group].size();
+        group_variables_map_[start_group][var.first] = track;
+      }
     }
   }
 }
