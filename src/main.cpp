@@ -184,18 +184,18 @@ int main(const int argc, const char **argv) {
         std::stringstream ss;
         ss << output_root << "/result_";
 
-
+        bool print_auto = true;
         switch (variable_entry.second->getType()) {
         case Vlab::Solver::Value::Type::INT_AUTOMATON: {
           LOG(INFO) << "---Int variable---";
           LOG(INFO) << variable_entry.first->getName() << " : " << variable_entry.second->getASatisfyingExample();
-          ss << "int_" << variable_entry.first->getName() << ".dot";
+          ss << "int_" << index++ << variable_entry.first->getName() << ".dot";
           break;
         }
         case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
           LOG(INFO) << "---String variable---";
           LOG(INFO) << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"";
-          ss << "string_" << variable_entry.first->getName() << ".dot";
+          ss << "string_" << index++  << variable_entry.first->getName() << ".dot";
           if (model_count) {
             LOG(INFO) << "var: " << variable_entry.first->getName() << " count          : " << driver.Count(variable_entry.first->getName(), bound, true);
 //              LOG(INFO) << "symbolic count : " << driver.SymbolicCount(variable_entry.first->getName(), bound);
@@ -204,7 +204,7 @@ int main(const int argc, const char **argv) {
         }
         case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
           std::map<std::string, int> values = variable_entry.second->getBinaryIntAutomaton()->getAnAcceptingIntForEachVar();
-          ss << "binaryint" << ".dot";
+          ss << "binaryint" << index++  << ".dot";
           LOG(INFO) << "---Binary int variables---";
           for (auto& entry : values) {
             LOG(INFO) << entry.first << " : " << entry.second;
@@ -217,7 +217,7 @@ int main(const int argc, const char **argv) {
           break;
         }
         case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {
-          ss << "relationalstring" << ".dot";
+          ss << "relationalstring" << index++  << ".dot";
           LOG(INFO) << "";
           LOG(INFO) << *variable_entry.first;
           Vlab::Theory::StringRelation_ptr rel = variable_entry.second->getMultiTrackAutomaton()->getRelation();
@@ -229,16 +229,26 @@ int main(const int argc, const char **argv) {
           }
           break;
         }
+        case Vlab::Solver::Value::Type::INT_CONSTANT: {
+          LOG(INFO) << "---Int variable---";
+          LOG(INFO) << variable_entry.first->getName() << " : " << variable_entry.second->getASatisfyingExample();
+          print_auto = false;
+        }
+        break;
         default:
+          print_auto = false;
           break;
         }
-        std::string out_file = ss.str();
-        std::ofstream outfile(out_file.c_str());
-        if (!outfile.good()) {
-          std::cout << "cannot open file: " << file_name << std::endl;
-          exit(2);
+
+        if (print_auto) {
+          std::string out_file = ss.str();
+          std::ofstream outfile(out_file.c_str());
+          if (!outfile.good()) {
+            std::cout << "cannot open file: " << file_name << std::endl;
+            exit(2);
+          }
+          driver.printResult(variable_entry.second, outfile);
         }
-        driver.printResult(variable_entry.second, outfile);
       }
     }
 

@@ -41,12 +41,11 @@ class ArithmeticConstraintSolver : public AstTraverser {
   std::string get_int_variable_name(SMT::Term_ptr);
   Value_ptr getTermValue(SMT::Term_ptr term);
   bool setTermValue(SMT::Term_ptr term, Value_ptr value);
-  bool update_term_value_pointer(SMT::Term_ptr term, Value_ptr value);
+  bool updateTermValue(SMT::Term_ptr term, Value_ptr value);
   void clearTermValue(SMT::Term_ptr term);
-  void clearTermValues();bool hasStringTerms(SMT::Term_ptr term);
+  void clearTermValues();
+  bool hasStringTerms(SMT::Term_ptr term);
   SMT::TermList& getStringTermsIn(SMT::Term_ptr term);
-  std::map<SMT::Term_ptr, SMT::Term_ptr>& getTermValueIndex();
-  TermValueMap& getTermValues();
   std::map<SMT::Term_ptr, SMT::TermList>& getStringTermsMap();
   void assign(std::map<SMT::Term_ptr, SMT::Term_ptr>& term_value_index, TermValueMap& term_values,
               std::map<SMT::Term_ptr, SMT::TermList>& string_terms_map);
