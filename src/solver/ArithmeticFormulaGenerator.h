@@ -18,15 +18,21 @@
 #include <glog/logging.h>
 #include "smt/ast.h"
 #include "SymbolTable.h"
+#include "ConstraintInformation.h"
 #include "theory/ArithmeticFormula.h"
 #include "Ast2Dot.h"
 
 namespace Vlab {
 namespace Solver {
 
+using VariableTrackMap = std::map<std::string, int>;
+using VariableTrackMap_ptr = VariableTrackMap*;
+using VariableGroupMap = std::map<std::string,std::string>;
+using VariableGroupTable = std::map<SMT::Term_ptr,VariableGroupMap>;
+
 class ArithmeticFormulaGenerator: public SMT::Visitor {
 public:
-  ArithmeticFormulaGenerator(SMT::Script_ptr, SymbolTable_ptr);
+  ArithmeticFormulaGenerator(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr);
   virtual ~ArithmeticFormulaGenerator();
 
   void start(SMT::Visitable_ptr);
@@ -104,21 +110,34 @@ public:
   std::map<SMT::Term_ptr, SMT::TermList> get_string_terms_map();
   SMT::TermList& get_string_terms_in(SMT::Term_ptr term);
   void clear_term_formulas();
+
+  std::string get_variable_group_name(SMT::Term_ptr term,SMT::Variable_ptr variable);
+  std::string get_variable_group_name(SMT::Term_ptr term,std::string var_name);
+  std::string get_term_group_name(SMT::Term_ptr term);
+
 protected:
+  void add_int_variables(SMT::Term_ptr term, std::map<std::string,int> variables);
+  std::string generate_group_name(SMT::Term_ptr term, std::string var_name);
+  VariableTrackMap get_group_trackmap(std::string name);
+
   bool set_term_formula(SMT::Term_ptr term, Theory::ArithmeticFormula_ptr formula);
   void delete_term_formula(SMT::Term_ptr);
-  void add_int_variable(std::string name);
-  void reset_variable_coefficient_maps();
 
   SMT::Script_ptr root_;
   SymbolTable_ptr symbol_table_;
-  std::map<std::string, int> coeff_index_map_;
-  std::vector<int> coefficients_;
+  ConstraintInformation_ptr constraint_information_;
+
   std::map<SMT::Term_ptr, Theory::ArithmeticFormula_ptr> formulas_;
   SMT::TermList string_terms_;
   std::map<SMT::Term_ptr, SMT::TermList> string_terms_map_;
 
+  // for partitioning
+  VariableGroupTable variable_group_table_;
+  std::map<std::string,VariableTrackMap> group_variables_map_;
+  std::map<SMT::Term_ptr, std::string> term_group_map;
+
 private:
+  SMT::Term_ptr current_term_;
   static const int VLOG_LEVEL;
 };
 
