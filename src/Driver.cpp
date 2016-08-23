@@ -225,7 +225,7 @@ boost::multiprecision::cpp_int Driver::Count(const double bound, bool count_less
 
     auto binary_auto = variable_entry.second->getBinaryIntAutomaton();
     auto formula = binary_auto->getFormula();
-    for(auto it : formula->get_coefficient_index_map()) {
+    for(auto it : formula->get_var_coeff_map()) {
       if(symbol_table_->get_variable_unsafe(it.first) != nullptr) {
         num_bin_var++;
       }

@@ -185,7 +185,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     Value_ptr val = arithmetic_constraint_solver_.getTermValue(and_term);
     if(val != nullptr) {
       std::string name = arithmetic_constraint_solver_.get_int_variable_name(and_term);
-      symbol_table_->setValue(name,val);
+      symbol_table_->setValue(name,val->clone());
     }
   }
 
@@ -196,7 +196,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     }
     Variable_ptr rep_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),var);
     if(rep_var != nullptr) {
-      LOG(INFO) << "Var,rep_var = " << var->getName() << "," << rep_var->getName();
       Value_ptr val = string_constraint_solver_.get_variable_value(rep_var,true);
       if(val != nullptr) {
         // If symbolic variable is not actually represented, but instead
@@ -207,10 +206,12 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         trackmap[var->getName()] = trackmap[rep_var->getName()];
         relation->set_variable_trackmap(trackmap);
         symbol_table_->setValue(rep_var, val);
+        symbol_table_->setValue(var,val->clone());
       }
     }
   }
 }
+
 
 void ConstraintSolver::visitOr(Or_ptr or_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *or_term;
@@ -1296,21 +1297,17 @@ void ConstraintSolver::update_variables() {
   variable_path_table_.clear();
   // update any relational variables tagged prior to variable value computer
   // and update any changes in satisfiability
-  DVLOG(VLOG_LEVEL) << "Begin updating!";
   for (auto& var : tagged_variables) {
     Value_ptr value = symbol_table_->getValue(var);
     if (value == nullptr) {
       DVLOG(VLOG_LEVEL) << "Inconsistent value for variable: " << var->getName();
       continue;
     }
-    DVLOG(VLOG_LEVEL) << "Updating variable: " << var->getName();
     string_constraint_solver_.update_variable_value(var, value);
-    DVLOG(VLOG_LEVEL) << "..........";
     still_sat_ = still_sat_ and value->isSatisfiable();
     delete value;
     symbol_table_->setValue(var, nullptr);
   }
-  DVLOG(VLOG_LEVEL) << "Done updating!";
   tagged_variables.clear();
 
 }
@@ -1326,18 +1323,17 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
 
     Value_ptr result = getTermValue(term);
     if (result != nullptr) {
+      if (arithmetic_constraint_solver_.hasStringTerms(term) and result->isSatisfiable()) {
+        DVLOG(VLOG_LEVEL) << "Mixed Linear Arithmetic Constraint";
+        process_mixed_integer_string_constraints_in(term);
+        result = getTermValue(term);  // get updated result
+        setTermValue(term, new Value(result->isSatisfiable()));
+      }
       if (string_constraint_solver_.get_term_value(term) != nullptr) {
         DVLOG(VLOG_LEVEL) << "Mixed Multi- and Single- Track String Automata Constraint";
         result = string_constraint_solver_.get_term_value(term);
         setTermValue(term, new Value(result->isSatisfiable()));
       }
-      if (arithmetic_constraint_solver_.hasStringTerms(term) and result->isSatisfiable()) {
-        DVLOG(VLOG_LEVEL) << "Mixed Linear Arithmetic Constraint";
-        process_mixed_integer_string_constraints_in(term);
-        result = getTermValue(term);  // get updated result
-        symbol_table_->setValue(arithmetic_constraint_solver_.get_int_variable_name(term), result);
-      }
-
       return false;
     }
   }
@@ -1347,7 +1343,7 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
 }
 
 void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term) {
-  Value_ptr result = getTermValue(term);
+  Value_ptr result = nullptr;
   Value_ptr string_term_result = nullptr;
   UnaryAutomaton_ptr string_term_unary_auto = nullptr;
   BinaryIntAutomaton_ptr string_term_binary_auto = nullptr, updated_arith_auto = nullptr;
@@ -1355,49 +1351,49 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
   bool has_minus_one = false;
   int number_of_variables_for_int_auto;
   for (auto& string_term : arithmetic_constraint_solver_.getStringTermsIn(term)) {
+    result = getTermValue(term);
     visit(string_term);
     string_term_result = getTermValue(string_term);
+
+
     std::string string_term_var_name = symbol_table_->get_var_name_for_expression(string_term, Variable::Type::INT);
 
     if (Value::Type::INT_AUTOMATON == string_term_result->getType()) {
       has_minus_one = string_term_result->getIntAutomaton()->hasNegative1();
       number_of_variables_for_int_auto = string_term_result->getIntAutomaton()->getNumberOfVariables();
-      //          result->getBinaryIntAutomaton()->inspectAuto();
-      // 1- update arithmetic automaton
+
+      // first convert integer result to unary, then unary to binary
       string_term_unary_auto = string_term_result->getIntAutomaton()->toUnaryAutomaton();
-
-//            string_term_unary_auto->inspectAuto(false);
-
       string_term_binary_auto = string_term_unary_auto->toBinaryIntAutomaton(
-          string_term_var_name, result->getBinaryIntAutomaton()->getFormula()->clone(), has_minus_one);
-      delete string_term_unary_auto;
-      string_term_unary_auto = nullptr;
+                                string_term_var_name, result->getBinaryIntAutomaton()->getFormula()->clone(), has_minus_one);
+
+
+      delete string_term_unary_auto; string_term_unary_auto = nullptr;
     } else if (Value::Type::INT_CONSTANT == string_term_result->getType()) {
       int value = string_term_result->getIntConstant();
       has_minus_one = (value < 0);
-      string_term_binary_auto = Theory::BinaryIntAutomaton::makeAutomaton(
-          value, string_term_var_name, result->getBinaryIntAutomaton()->getFormula()->clone(), true);
       number_of_variables_for_int_auto = Theory::IntAutomaton::DEFAULT_NUM_OF_VARIABLES;
+      string_term_binary_auto = Theory::BinaryIntAutomaton::makeAutomaton(
+                                value, string_term_var_name, result->getBinaryIntAutomaton()->getFormula()->clone(), true);
     } else {
       LOG(FATAL)<< "unexpected type";
     }
 
+    // update the stored binary int auto with new string term results
     updated_arith_auto = result->getBinaryIntAutomaton()->intersect(string_term_binary_auto);
-    delete string_term_binary_auto;
-    string_term_binary_auto = nullptr;
-    delete result;
-    result = nullptr;
+    delete string_term_binary_auto; string_term_binary_auto = nullptr;
 
     result = new Value(updated_arith_auto);
+    arithmetic_constraint_solver_.updateTermValue(term, result); // in turn, updates internal term_value
     if (not result->isSatisfiable()) {
+      delete result; result = nullptr;
       break;
     }
-
-//          updated_arith_auto->inspectAuto();
 
     // 2- update string term result, since we first update binary binary automaton it may only contain
     // numbers >= -1 (values a string constraint can return as an integer)
     string_term_binary_auto = updated_arith_auto->getBinaryAutomatonFor(string_term_var_name);
+
 
     if (has_minus_one) {
       has_minus_one = string_term_binary_auto->hasNegative1();
@@ -1407,17 +1403,21 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     }
 
     string_term_unary_auto = string_term_binary_auto->toUnaryAutomaton();
-    delete string_term_binary_auto;
-    string_term_binary_auto = nullptr;
+    delete string_term_binary_auto; string_term_binary_auto = nullptr;
     updated_int_auto = string_term_unary_auto->toIntAutomaton(number_of_variables_for_int_auto, has_minus_one);
+    delete string_term_unary_auto; string_term_unary_auto = nullptr;
     clearTermValue(string_term);
     string_term_result = new Value(updated_int_auto);
     setTermValue(string_term, string_term_result);
 
+    // delete result, a copy of which is already stored
+    // since result encompasses updated_arith_auto, it is also deleted
+    delete result; result = nullptr;
+
     // 3 - update variables involved in string term
     update_variables();
+
   }
-  arithmetic_constraint_solver_.update_term_value_pointer(term, result);
 }
 
 } /* namespace Solver */
