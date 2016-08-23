@@ -14,7 +14,6 @@
 #include <map>
 #include <string>
 
-
 #include "options/Solver.h"
 #include "smt/typedefs.h"
 #include "solver/ConstraintInformation.h"
@@ -46,7 +45,7 @@ public:
   void solve();
   bool isSatisfiable();
   boost::multiprecision::cpp_int Count(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound = true);
-  boost::multiprecision::cpp_int Count(const int bound, bool count_less_than_or_equal_to_bound = true);
+  boost::multiprecision::cpp_int Count(const double bound, bool count_less_than_or_equal_to_bound = true);
   boost::multiprecision::cpp_int SymbolicCount(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound = true);
   boost::multiprecision::cpp_int SymbolicCount(const int bound, bool count_less_than_or_equal_to_bound = true);
 
@@ -61,8 +60,6 @@ public:
   void setOption(Option::Name option, std::string value);
 
   SMT::Variable_ptr get_smc_query_variable();
-  int get_num_variables(SMT::Variable::Type type);
-
   void test();
 
   SMT::Script_ptr script_;

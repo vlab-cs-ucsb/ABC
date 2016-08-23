@@ -44,6 +44,9 @@ int main(const int argc, const char **argv) {
   bool force_dnf_formula = false;
   bool experiment_mode = false;
   bool enable_implications = true;
+  bool enable_dependency = true;
+  bool enable_sorting = true;
+  bool enable_equivalence = true;
 
   std::string bound_string = "50";
   for (int i = 1; i < argc; ++i) {
@@ -79,15 +82,31 @@ int main(const int argc, const char **argv) {
       enable_implications = true;
     } else if (argv[i] == std::string("--disable-implications")) {
       enable_implications = false;
+    } else if (argv[i] == std::string("--disable-dependency")) {
+      enable_dependency = false;
+    } else if (argv[i] == std::string("--disable-sorting")) {
+      enable_sorting = false;
+    } else if (argv[i] == std::string("--disable-equivalence")) {
+      enable_equivalence = false;
     } else {
-
     }
   }
 
 
   google::InitGoogleLogging(argv[0]);
+
+  /* log test start */
+//  DLOG(INFO)<< "debug log start";
+//  LOG(INFO)<< "production log";
+//  DVLOG(1) << "vlog log";
+
+  if (VLOG_IS_ON(1)) {
+    //std::cout << "yaaay" << std::endl;
+  }
+  /* log test end */
+
   if (not in->good()) {
-    LOG(FATAL)<< "Cannot find input: ";
+    LOG(FATAL) << "Cannot find input: ";
   }
 
   /**
@@ -126,6 +145,10 @@ int main(const int argc, const char **argv) {
   driver.setOption(Vlab::Option::Name::ENABLE_RELATIONAL_STRING_AUTOMATA, enable_relational_string_automata);
   driver.setOption(Vlab::Option::Name::FORCE_DNF_FORMULA, force_dnf_formula);
   driver.setOption(Vlab::Option::Name::ENABLE_IMPLICATIONS, enable_implications);
+  driver.setOption(Vlab::Option::Name::ENABLE_DEPENDENCY, enable_dependency);
+  driver.setOption(Vlab::Option::Name::ENABLE_SORTING, enable_sorting);
+  driver.setOption(Vlab::Option::Name::ENABLE_EQUIVALENCE, enable_equivalence);
+
   Vlab::Util::RegularExpression::DEFAULT = 0x000e;
 
   driver.test();
@@ -142,81 +165,90 @@ int main(const int argc, const char **argv) {
   }
 
   driver.solve();
-
   auto end = std::chrono::steady_clock::now();
   auto solving_time = end - start;
+  LOG(INFO) << "";
+  LOG(INFO) << "Done solving";
+  LOG(INFO) << "";
   if (driver.isSatisfiable()) {
     if (VLOG_IS_ON(30)) {
-      LOG(INFO) << "";
-      LOG(INFO) << "Constraint solving completed successfully.";
-      LOG(INFO) << "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
-      LOG(INFO) << "";
       unsigned index = 0;
 
-      for(auto& variable_entry : driver.getSatisfyingVariables()) {
+      for (auto& variable_entry : driver.getSatisfyingVariables()) {
 
-        if(variable_entry.second == nullptr) {
+        if (variable_entry.second == nullptr) {
+          // part of multitrack/binaryint
           continue;
         }
 
         std::stringstream ss;
         ss << output_root << "/result_";
 
-
+        bool print_auto = true;
         switch (variable_entry.second->getType()) {
-          case Vlab::Solver::Value::Type::INT_AUTOMATON: {
-            LOG(INFO) << "Type=SINGLE INT: " << variable_entry.first->getName() << " : " << variable_entry.second->getASatisfyingExample();
-            ss << "int_" << variable_entry.first->getName() << ".dot";
-            break;
+        case Vlab::Solver::Value::Type::INT_AUTOMATON: {
+          LOG(INFO) << "---Int variable---";
+          LOG(INFO) << variable_entry.first->getName() << " : " << variable_entry.second->getASatisfyingExample();
+          ss << "int_" << index++ << variable_entry.first->getName() << ".dot";
+          break;
+        }
+        case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
+          LOG(INFO) << "---String variable---";
+          LOG(INFO) << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"";
+          ss << "string_" << index++  << variable_entry.first->getName() << ".dot";
+          if (model_count) {
+            LOG(INFO) << "var: " << variable_entry.first->getName() << " count          : " << driver.Count(variable_entry.first->getName(), bound, true);
+//              LOG(INFO) << "symbolic count : " << driver.SymbolicCount(variable_entry.first->getName(), bound);
           }
-          case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
-            LOG(INFO) << "Type=SINGLE STRING: " << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"";
-            ss << "string_" << variable_entry.first->getName() << ".dot";
-            if (model_count) {
-              LOG(INFO) << "var: " << variable_entry.first->getName() << " count          : " << driver.Count(variable_entry.first->getName(), bound, true);
-            }
-            break;
+          break;
+        }
+        case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
+          std::map<std::string, int> values = variable_entry.second->getBinaryIntAutomaton()->getAnAcceptingIntForEachVar();
+          ss << "binaryint" << index++  << ".dot";
+          LOG(INFO) << "---Binary int variables---";
+          for (auto& entry : values) {
+            LOG(INFO) << entry.first << " : " << entry.second;
           }
-          case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
-            std::map<std::string, int> values = variable_entry.second->getBinaryIntAutomaton()->getAnAcceptingIntForEachVar();
-            ss << "binaryint" << ".dot";
-            LOG(INFO) << "Name=" << variable_entry.first->getName() << ", Type=BINARYINT, Values=(";
-            for (auto& entry : values) {
-              LOG(INFO) << "  " << entry.first;
-            }
-            LOG(INFO) << ")";
-            if (model_count) {
-              LOG(INFO) << "Count= " << driver.Count(variable_entry.first->getName(), bound, false); // Shouldn't this be false?
-            }
-            break;
+
+          if (model_count) {
+            LOG(INFO) << "count          : " << driver.Count(variable_entry.first->getName(), bound, false);
+//              LOG(INFO) << "symbolic count : " << driver.SymbolicCount(bound, false);
           }
-          case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {
-            ss << "relationalstring" << ".dot";
-            LOG(INFO) << "Name=" << variable_entry.first->getName() << ", Type=MULTISTRING, Values=(";
-            Vlab::Theory::StringRelation_ptr rel = variable_entry.second->getMultiTrackAutomaton()->getRelation();
-            if(rel == nullptr) {
-              LOG(FATAL) << "Cannot get multitrack values, no relation";
-            }
-            for(auto& entry : rel->get_variable_trackmap()) {
-              LOG(INFO) << "  " << entry.first;
-            }
-            LOG(INFO) << ")";
-            if (model_count) {
-              LOG(INFO) << "count          : " << driver.Count(variable_entry.first->getName(), bound, true);
-            }
-            break;
+          break;
+        }
+        case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {
+          ss << "relationalstring" << index++  << ".dot";
+          LOG(INFO) << "";
+          LOG(INFO) << *variable_entry.first;
+          Vlab::Theory::StringRelation_ptr rel = variable_entry.second->getMultiTrackAutomaton()->getRelation();
+          if (rel == nullptr) {
+            LOG(FATAL) << "Cannot get multitrack values, no relation";
           }
-          default:
-            break;
+          if (model_count) {
+            LOG(INFO) << "count          : " << driver.Count(variable_entry.first->getName(), bound, true);
+          }
+          break;
+        }
+        case Vlab::Solver::Value::Type::INT_CONSTANT: {
+          LOG(INFO) << "---Int variable---";
+          LOG(INFO) << variable_entry.first->getName() << " : " << variable_entry.second->getASatisfyingExample();
+          print_auto = false;
+        }
+        break;
+        default:
+          print_auto = false;
+          break;
         }
 
-        std::string out_file = ss.str();
-        std::ofstream outfile(out_file.c_str());
-        if (!outfile.good()) {
-          std::cout << "cannot open file: " << file_name << std::endl;
-          exit(2);
+        if (print_auto) {
+          std::string out_file = ss.str();
+          std::ofstream outfile(out_file.c_str());
+          if (!outfile.good()) {
+            std::cout << "cannot open file: " << file_name << std::endl;
+            exit(2);
+          }
+          driver.printResult(variable_entry.second, outfile);
         }
-        driver.printResult(variable_entry.second, outfile);
       }
     }
 
@@ -237,34 +269,14 @@ int main(const int argc, const char **argv) {
         }
       } else {
         LOG(INFO) << "No query variable found. Counting Binary Integers instead.";
-        boost::multiprecision::cpp_int result(0);
         auto sat_vars = driver.getSatisfyingVariables();
 
-        // TODO (Will; talk with baki first):
-        // INSERT TRACKED/SUBSTITUED VAR STUFF FROM DRIVER HERE
-
-
         for (auto b : bounds) {
-          result = 0;
           start = std::chrono::steady_clock::now();
-          // possibly multiple binary integer autos. Get em all and multiply their counts
-          for (auto &variable_entry : sat_vars) {
-            // only count binary int values
-            // and nullptr check for sanity
-            if (variable_entry.second == nullptr
-                   || variable_entry.second->getType() != Vlab::Solver::Value::Type::BINARYINT_AUTOMATON) {
-              continue;
-            }
-            auto count = driver.Count(variable_entry.first->getName(), bound, true);
-            if (result == 0) {
-              result = count;
-            } else {
-              result = result * count;
-            }
-          }
+          auto count = driver.Count(bound, false);
           end = std::chrono::steady_clock::now();
           auto count_time = end - start;
-          LOG(INFO) << "report bound: " << b << " count: " << result << " time: "
+          LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
                     << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
         }
       }
@@ -275,8 +287,8 @@ int main(const int argc, const char **argv) {
       LOG(INFO) << "report count: 0 time: 0";
     }
   }
-  LOG(INFO)<< "done.";
-  if(file != nullptr)
+  LOG(INFO) << "done.";
+  if (file != nullptr)
     delete file;
   return 0;
 }

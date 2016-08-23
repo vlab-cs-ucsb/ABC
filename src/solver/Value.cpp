@@ -246,7 +246,9 @@ Theory::MultiTrackAutomaton_ptr Value::getMultiTrackAutomaton() const {
 
 Value_ptr Value::union_(Value_ptr other_value) const {
   Value_ptr union_value = nullptr;
-  if (Type::STRING_AUTOMATON == type and Type::STRING_AUTOMATON == other_value->type) {
+  if(other_value == nullptr) {
+    union_value = this->clone();
+  } else if (Type::STRING_AUTOMATON == type and Type::STRING_AUTOMATON == other_value->type) {
     union_value = new Value(string_automaton->union_(other_value->string_automaton));
   } else if (Type::MULTITRACK_AUTOMATON == type and Type::MULTITRACK_AUTOMATON == other_value->type) {
     union_value = new Value(multitrack_automaton->union_(other_value->multitrack_automaton));
