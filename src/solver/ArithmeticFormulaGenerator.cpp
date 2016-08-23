@@ -132,7 +132,6 @@ void ArithmeticFormulaGenerator::visitNot(Not_ptr not_term) {
 
   if (child_formula not_eq nullptr and child_formula->get_number_of_variables() > 0) {
     formula = child_formula->NegateOperation();
-    delete_term_formula(not_term->term);
     set_term_formula(not_term, formula);
   }
 
@@ -289,12 +288,12 @@ void ArithmeticFormulaGenerator::visitGt(Gt_ptr gt_term) {
 
   if (formula->get_number_of_variables() > 0) {
     set_term_formula(gt_term, formula);
+    add_int_variables(current_term_,formula->get_var_coeff_map());
     if (string_terms_.size() > 0) {
       string_terms_map_[gt_term] = string_terms_;
       string_terms_.clear();
     }
   }
-  add_int_variables(current_term_,formula->get_var_coeff_map());
 }
 
 void ArithmeticFormulaGenerator::visitGe(Ge_ptr ge_term) {
@@ -312,13 +311,12 @@ void ArithmeticFormulaGenerator::visitGe(Ge_ptr ge_term) {
 
   if (formula->get_number_of_variables() > 0) {
     set_term_formula(ge_term, formula);
+    add_int_variables(current_term_,formula->get_var_coeff_map());
     if (string_terms_.size() > 0) {
       string_terms_map_[ge_term] = string_terms_;
       string_terms_.clear();
     }
   }
-
-  add_int_variables(current_term_,formula->get_var_coeff_map());
 }
 
 void ArithmeticFormulaGenerator::visitLt(Lt_ptr lt_term) {
@@ -336,13 +334,12 @@ void ArithmeticFormulaGenerator::visitLt(Lt_ptr lt_term) {
 
   if (formula->get_number_of_variables() > 0) {
     set_term_formula(lt_term, formula);
+    add_int_variables(current_term_,formula->get_var_coeff_map());
     if (string_terms_.size() > 0) {
       string_terms_map_[lt_term] = string_terms_;
       string_terms_.clear();
     }
   }
-
-  add_int_variables(current_term_,formula->get_var_coeff_map());
 }
 
 void ArithmeticFormulaGenerator::visitLe(Le_ptr le_term) {
@@ -360,13 +357,12 @@ void ArithmeticFormulaGenerator::visitLe(Le_ptr le_term) {
 
   if (formula->get_number_of_variables() > 0) {
     set_term_formula(le_term, formula);
+    add_int_variables(current_term_,formula->get_var_coeff_map());
     if (string_terms_.size() > 0) {
       string_terms_map_[le_term] = string_terms_;
       string_terms_.clear();
     }
   }
-
-  add_int_variables(current_term_,formula->get_var_coeff_map());
 }
 
 void ArithmeticFormulaGenerator::visitConcat(Concat_ptr concat_term) {
@@ -521,6 +517,7 @@ void ArithmeticFormulaGenerator::visitTermConstant(TermConstant_ptr term_constan
 
   ArithmeticFormula_ptr formula = nullptr;
 
+  // Use fresh coeff maps for constants
   switch (term_constant->getValueType()) {
     case Primitive::Type::NUMERAL: {
       int constant = std::stoi(term_constant->getValue());
