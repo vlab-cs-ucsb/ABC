@@ -126,7 +126,7 @@ Variable_ptr SymbolTable::getVariable(Term_ptr term_ptr) {
 }
 
 SMT::Variable_ptr SymbolTable::get_variable_unsafe(std::string name) {
-  if(variables.find(name) != variables.end()) {
+  if (variables.find(name) != variables.end()) {
     return variables[name];
   }
   return nullptr;
@@ -219,15 +219,19 @@ void SymbolTable::reset_count() {
 int SymbolTable::get_num_of_substituted_variables(Visitable_ptr scope, Variable::Type type) {
   int count = 0;
   int num_of_var = 0;
+  std::set<EquivalenceClass_ptr> unique_ones;
   for (auto& equiv_entry : variable_equivalence_table[scope]) {
-      if (equiv_entry.second->get_type() == type) {
-        num_of_var = equiv_entry.second->get_number_of_variables();
-        if (num_of_var > 1) {
-          count = count + num_of_var - 1;
-        } else {
-          count = count + 1;
-        }
+    unique_ones.insert(equiv_entry.second);
+  }
+  for (auto& equiv_class : unique_ones) {
+    if (equiv_class->get_type() == type) {
+      num_of_var = equiv_class->get_number_of_variables();
+      if (num_of_var > 1 and !equiv_class->has_constant()) {
+        count = count + num_of_var - 1;
+      } else {
+        count = count + num_of_var;
       }
+    }
   }
   return count;
 }
