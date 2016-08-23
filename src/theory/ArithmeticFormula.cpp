@@ -140,7 +140,11 @@ ArithmeticFormula::Type ArithmeticFormula::get_type() const {
 }
 
 int ArithmeticFormula::get_number_of_variables() const {
-  return trackmap_handle_.size();
+  if(trackmap_handle_.empty()) {
+    return var_coeff_map_.size();
+  } else {
+    return trackmap_handle_.size();
+  }
 }
 
 std::map<std::string, int>& ArithmeticFormula::get_var_coeff_map() {
