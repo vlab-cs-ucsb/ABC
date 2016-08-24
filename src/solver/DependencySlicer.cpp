@@ -7,6 +7,7 @@
 #include <iterator>
 #include <string>
 #include <utility>
+#include "options/Solver.h"
 
 #include "smt/ast.h"
 #include "smt/Visitor.h"
@@ -84,19 +85,21 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
 
   constraint_information_->add_component(and_term);
 
-  auto components = GetComponentsFor(and_term->term_list);
-  if (components.size() > 1) { // and term breaks into multiple components
-    and_term->term_list->clear();
-    constraint_information_->remove_component(and_term);
-    for (auto sub_term_list : components) {
-      And_ptr and_component = new And(sub_term_list);
-      constraint_information_->add_component(and_component);
-      and_term->term_list->push_back(and_component);
+  if (Option::Solver::ENABLE_DEPENDENCY) {
+    auto components = GetComponentsFor(and_term->term_list);
+    if (components.size() > 1) { // and term breaks into multiple components
+      and_term->term_list->clear();
+      constraint_information_->remove_component(and_term);
+      for (auto sub_term_list : components) {
+        And_ptr and_component = new And(sub_term_list);
+        constraint_information_->add_component(and_component);
+        and_term->term_list->push_back(and_component);
+      }
+    } else if (components.size() == 1) {
+      // deallocate term list to avoid memory leak
+      components[0]->clear();
+      delete components[0];
     }
-  } else if (components.size() == 1) {
-    // deallocate term list to avoid memory leak
-    components[0]->clear();
-    delete components[0];
   }
 
   // reset data
@@ -114,21 +117,22 @@ void DependencySlicer::visitOr(Or_ptr or_term) {
 
   constraint_information_->add_component(or_term);
 
-  auto components = GetComponentsFor(or_term->term_list);
-  if (components.size() > 1) { // and term breaks into multiple components
-    or_term->term_list->clear();
-    constraint_information_->remove_component(or_term);
-    for (auto sub_term_list : components) {
-      Or_ptr or_component = new Or(sub_term_list);
-      constraint_information_->add_component(or_component);
-      or_term->term_list->push_back(or_component);
+  if (Option::Solver::ENABLE_DEPENDENCY) {
+    auto components = GetComponentsFor(or_term->term_list);
+    if (components.size() > 1) { // and term breaks into multiple components
+      or_term->term_list->clear();
+      constraint_information_->remove_component(or_term);
+      for (auto sub_term_list : components) {
+        Or_ptr or_component = new Or(sub_term_list);
+        constraint_information_->add_component(or_component);
+        or_term->term_list->push_back(or_component);
+      }
+    } else if (components.size() == 1) {
+      // deallocate term list to avoid memory leak
+      components[0]->clear();
+      delete components[0];
     }
-  } else if (components.size() == 1) {
-    // deallocate term list to avoid memory leak
-    components[0]->clear();
-    delete components[0];
   }
-
   // reset data
   clear_mappings();
 }

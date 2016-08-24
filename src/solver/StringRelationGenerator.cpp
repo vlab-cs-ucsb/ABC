@@ -8,6 +8,8 @@
 #include <iostream>
 #include <utility>
 #include <vector>
+#include "options/Solver.h"
+
 
 namespace Vlab {
 namespace Solver {
@@ -745,33 +747,45 @@ std::string StringRelationGenerator::get_term_group_name(SMT::Term_ptr term) {
 }
 
 void StringRelationGenerator::add_string_variables(Term_ptr term, std::vector<std::string> variables) {
-  std::string start_group;
-  // get a starting group from the variable list
-  for(auto& var : variables) {
-    if(variable_group_table_[term].find(var) != variable_group_table_[term].end()) {
-      start_group = variable_group_table_[term][var];
-      break;
-    }
-  }
-  // if no group is found at all, create new one
-  if(start_group.empty()) {
-    start_group = generate_group_name(term, variables[0]);
-  }
-  // merge each variable's groups together into start_group
-  for(auto& var : variables) {
-    if(variable_group_table_[term].find(var) == variable_group_table_[term].end()) {
-      variable_group_table_[term][var] = start_group;
-      int track = group_variables_map_[start_group].size();
-      group_variables_map_[start_group][var] = track;
-    } else if(variable_group_table_[term][var] != start_group) {
-      // merge the two groups
-      std::string var_group = variable_group_table_[term][var];
-      for(auto& iter : group_variables_map_[var_group]) {
-        variable_group_table_[term][iter.first] = start_group;
-        int track = group_variables_map_[start_group].size();
-        group_variables_map_[start_group][iter.first] = track;
+  if (Option::Solver::ENABLE_DEPENDENCY) {
+    std::string start_group;
+    // get a starting group from the variable list
+    for (auto &var : variables) {
+      if (variable_group_table_[term].find(var) != variable_group_table_[term].end()) {
+        start_group = variable_group_table_[term][var];
+        break;
       }
-      group_variables_map_.erase(var_group);
+    }
+    // if no group is found at all, create new one
+    if (start_group.empty()) {
+      start_group = generate_group_name(term, variables[0]);
+    }
+
+    // merge each variable's groups together into start_group
+    for (auto &var : variables) {
+      if (variable_group_table_[term].find(var) == variable_group_table_[term].end()) {
+        variable_group_table_[term][var] = start_group;
+        int track = group_variables_map_[start_group].size();
+        group_variables_map_[start_group][var] = track;
+      } else if (variable_group_table_[term][var] != start_group) {
+        // merge the two groups
+        std::string var_group = variable_group_table_[term][var];
+        for (auto &iter : group_variables_map_[var_group]) {
+          variable_group_table_[term][iter.first] = start_group;
+          int track = group_variables_map_[start_group].size();
+          group_variables_map_[start_group][iter.first] = track;
+        }
+        group_variables_map_.erase(var_group);
+      }
+    }
+  } else {
+    std::string start_group = "BAIL";
+    for(auto& var : variables) {
+      if(variable_group_table_[term].find(var) == variable_group_table_[term].end()) {
+        variable_group_table_[term][var] = start_group;
+        int track = group_variables_map_[start_group].size();
+        group_variables_map_[start_group][var] = track;
+      }
     }
   }
 }
