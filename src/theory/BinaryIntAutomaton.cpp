@@ -816,8 +816,8 @@ std::map<std::string, int> BinaryIntAutomaton::getAnAcceptingIntForEachVar() {
 }
 
 boost::multiprecision::cpp_int BinaryIntAutomaton::Count(int bound, bool count_less_than_or_equal_to_bound, bool count_reserved_words) {
-  if (is_natural_number) {
-    --bound; // no sign bit
+  if (not is_natural_number) {
+    ++bound; // consider sign bit
   }
   return Automaton::Count(bound, count_less_than_or_equal_to_bound, count_reserved_words);
 }
