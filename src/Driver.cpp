@@ -266,13 +266,9 @@ boost::multiprecision::cpp_int Driver::Count(const double bound, bool count_less
 	int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables - num_bin_var;
 
 	if (number_of_untracked_int_variables > 0) {
-		int exponent = bound;
-		if (Option::Solver::LIA_NATURAL_NUMBERS_ONLY) {
-			--exponent;
-		}
 		result = result
 		         * boost::multiprecision::pow(boost::multiprecision::cpp_int(2),
-		                                      (number_of_untracked_int_variables * static_cast<int>(exponent)));
+		                                      (number_of_untracked_int_variables * static_cast<int>(bound)));
 	}
 
 	return result;
