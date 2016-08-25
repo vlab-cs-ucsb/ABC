@@ -756,7 +756,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
 
   //  initflag is 1 iff init is reached by some state. In this case,
   for (i = 0; i < right_auto->dfa->ns; i++) {
-    if ( i != sink_state_right_auto ) {
+    if (!right_sink || i != sink_state_right_auto ) {
       if ( i != right_auto->dfa->s || is_start_state_reachable) {
         state_paths = pp = make_paths(right_auto->dfa->bddm, right_auto->dfa->q[i]);
         while (pp) {
