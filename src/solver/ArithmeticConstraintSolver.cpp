@@ -61,6 +61,9 @@ void ArithmeticConstraintSolver::end() {
   arithmetic_formula_generator_.end();
 }
 
+/**
+ * TODO move group updating inside AND and OR
+ */
 void ArithmeticConstraintSolver::setCallbacks() {
   auto term_callback =
       [this] (Term_ptr term) -> bool {
