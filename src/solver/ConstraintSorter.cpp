@@ -617,6 +617,35 @@ ConstraintSorter::TermNode_ptr ConstraintSorter::process_child_nodes(TermNode_pt
 }
 
 void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
+
+  std::vector<TermNode_ptr> sorted_term_node_list;
+
+  for (auto it = term_node_list.begin(); it != term_node_list.end(); ) {
+    if ((*it)->numOfTotalVars() == 0) {
+      sorted_term_node_list.push_back((*it));
+      it = term_node_list.erase(it);
+    } else {
+      it++;
+    }
+  }
+
+  std::sort(term_node_list.begin(), term_node_list.end(),
+          [](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
+            return (left_node->numOfTotalVars() < right_node->numOfTotalVars());
+          });
+
+  for (auto it = term_node_list.begin(); it != term_node_list.end(); ) {
+    if (not (*it)->hasSymbolicVar()) {
+      sorted_term_node_list.push_back((*it));
+      it = term_node_list.erase(it);
+    } else {
+      it++;
+    }
+  }
+
+  term_node_list.insert(term_node_list.begin(), sorted_term_node_list.begin(), sorted_term_node_list.end());
+
+/*
   std::vector<TermNode_ptr> sorted_term_node_list;
   std::vector<TermNode_ptr> concat_node_list;
 
@@ -648,7 +677,7 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
 
   term_node_list.insert(term_node_list.begin(), concat_node_list.begin(), concat_node_list.end());
   term_node_list.insert(term_node_list.begin(), sorted_term_node_list.begin(), sorted_term_node_list.end());
-
+*/
   DVLOG(VLOG_LEVEL) << "node list sorted";
 }
 
