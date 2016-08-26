@@ -185,6 +185,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     }
     Variable_ptr rep_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),var);
     if(rep_var != nullptr) {
+
       Value_ptr val = string_constraint_solver_.get_variable_value(rep_var,true);
       if(val != nullptr) {
         // If symbolic variable is not actually represented, but instead

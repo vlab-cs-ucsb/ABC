@@ -619,23 +619,25 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
   sink_state_left_auto = left_auto->getSinkState();
   sink_state_right_auto = right_auto->getSinkState();
 
-  bool left_sink = true, right_sink = true;
+  LOG(INFO) << sink_state_left_auto;
+  LOG(INFO) << sink_state_right_auto;
+  std::cin.get();
 
-  if(sink_state_left_auto < 0 && sink_state_right_auto < 0) {
+  bool left_sink = true, right_sink = true;
+  int sink = sink_state_left_auto;
+
+  if(sink_state_left_auto < 0 && sink_state_right_auto) {
     left_sink = right_sink = false;
-    sink_state_left_auto = sink_state_right_auto = expected_num_of_states;
+    sink = expected_num_of_states;
     expected_num_of_states++;
   } else if(sink_state_left_auto < 0) {
-    sink_state_left_auto = sink_state_right_auto;
     left_sink = false;
+    sink = sink_state_right_auto + state_id_shift_amount;
   } else if(sink_state_right_auto < 0) {
-    sink_state_right_auto = sink_state_left_auto;
     right_sink = false;
   } else {
     expected_num_of_states--;
   }
-
-
 
   statuses = new char[expected_num_of_states + 1];
   int* concat_indices = getIndices(tmp_num_of_variables);
@@ -646,10 +648,10 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
     if (!right_sink || pp->to != sink_state_right_auto ) {
       to_state = pp->to + state_id_shift_amount;
       // if there is a self loop keep it
-      if ( pp->to == (unsigned)right_auto->dfa->s ) {
+      if (pp->to == (unsigned)right_auto->dfa->s ) {
         to_state -= 2;
       } else {
-        if ( right_sink && left_sink && pp->to > (unsigned)sink_state_right_auto ) {
+        if (left_sink && right_sink && pp->to > (unsigned)sink_state_right_auto ) {
           to_state--; //to new state, sink state will be eliminated and hence need -1
         }
         if ((not is_start_state_reachable) && pp->to > (unsigned)right_auto->dfa->s) {
@@ -731,7 +733,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
         delete current_exception;
       }
 
-      dfaStoreState(sink_state_left_auto);
+      dfaStoreState(sink);
       if (right_auto->isAcceptingState(0)) {
         statuses[i]='+';
       }
@@ -746,7 +748,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
         it = exceptions_left_auto.erase(it);
         delete current_exception;
       }
-      dfaStoreState(sink_state_left_auto);
+      dfaStoreState(sink);
       statuses[i] = '-';
     }
     current_exception = nullptr;
@@ -756,7 +758,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
 
   //  initflag is 1 iff init is reached by some state. In this case,
   for (i = 0; i < right_auto->dfa->ns; i++) {
-    if (!right_sink || i != sink_state_right_auto ) {
+    if (i != sink_state_right_auto ) {
       if ( i != right_auto->dfa->s || is_start_state_reachable) {
         state_paths = pp = make_paths(right_auto->dfa->bddm, right_auto->dfa->q[i]);
         while (pp) {
@@ -803,13 +805,13 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
           delete current_exception;
         }
 
-        dfaStoreState(sink_state_left_auto);
+        dfaStoreState(sink);
 
         loc = state_id_shift_amount + i;
         if ( (not is_start_state_reachable) && i > right_auto->dfa->s) {
           loc--;
         }
-        if (left_sink && right_sink && sink_state_right_auto >= 0 && i > sink_state_right_auto) {
+        if (left_sink && right_sink && i > sink_state_right_auto) {
           loc--;
         }
 
@@ -824,15 +826,15 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
       }
     } else if(!left_sink && right_sink) {
       dfaAllocExceptions(0);
-      dfaStoreState(sink_state_right_auto);
-      statuses[sink_state_right_auto] = '-';
+      dfaStoreState(sink);
+      statuses[sink] = '-';
     }
   }
 
   if(!right_sink && !left_sink) {
     dfaAllocExceptions(0);
-    dfaStoreState(sink_state_right_auto);
-    statuses[sink_state_right_auto] = '-';
+    dfaStoreState(sink);
+    statuses[sink] = '-';
   }
 
   statuses[expected_num_of_states]='\0';
@@ -849,7 +851,10 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
 
   if (left_hand_side_has_emtpy_string) {
     auto tmp_auto = concat_auto;
+    concat_auto->inspectAuto();
     concat_auto = tmp_auto->union_(other_auto);
+    concat_auto->inspectAuto();
+    std::cin.get();
     delete tmp_auto;
     delete left_auto; left_auto = nullptr;
   }
@@ -860,6 +865,12 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
     delete tmp_auto;
     delete right_auto; right_auto = nullptr;
   }
+
+
+  inspectAuto();
+  other_auto->inspectAuto();
+  concat_auto->inspectAuto();
+  std::cin.get();
 
   DVLOG(VLOG_LEVEL) << concat_auto->id << " = [" << this->id << "]->concat(" << other_auto->id << ")";
 
