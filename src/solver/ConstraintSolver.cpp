@@ -196,6 +196,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         trackmap[var->getName()] = trackmap[rep_var->getName()];
         relation->set_variable_trackmap(trackmap);
         symbol_table_->setValue(rep_var, val);
+        symbol_table_->setValue(var, val->clone());
       }
     }
   }
@@ -376,6 +377,7 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
 
   Value_ptr result = nullptr, param_left = getTermValue(eq_term->left_term), param_right = getTermValue(
       eq_term->right_term);
+
 
   if (Value::Type::BOOl_CONSTANT == param_left->getType() and Value::Type::BOOl_CONSTANT == param_right->getType()) {
     result = new Value(param_left->getBoolConstant() == param_right->getBoolConstant());
@@ -1091,6 +1093,7 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   // the most recent value
   Value_ptr variable_value = nullptr;
   if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA) {
+
     variable_value = string_constraint_solver_.get_variable_value(variable);
   }
   if (variable_value != nullptr) {

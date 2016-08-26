@@ -564,6 +564,8 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
 
   StringAutomaton_ptr left_auto = this, right_auto = other_auto;
 
+
+
   if (left_auto->isEmptyLanguage() or right_auto->isEmptyLanguage()) {
     return StringAutomaton::makePhi();
   } else if (left_auto->isEmptyString()) {
