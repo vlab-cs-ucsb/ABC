@@ -624,7 +624,7 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
     if ((*it)->numOfTotalVars() == 0) {
       sorted_term_node_list.push_back((*it));
       it = term_node_list.erase(it);
-    } else if((*it)->numOfTotalVars() == 3 && not (*it)->hasSymbolicVar()) {
+    } else if(not (*it)->hasSymbolicVar()) {
       concat_node_list.push_back((*it));
       it = term_node_list.erase(it);
     } else {

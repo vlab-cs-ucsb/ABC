@@ -287,7 +287,8 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
   StringRelation_ptr variable_relation = nullptr;
   std::string group_name = string_relation_generator_.get_variable_group_name(current_term_,variable);
   if(group_name.empty()) {
-    LOG(FATAL) << "Empty group name!";
+    DVLOG(VLOG_LEVEL) << "Empty group name!";
+    return false;
   }
   relation_value = symbol_table_->getValue(group_name);
   DVLOG(VLOG_LEVEL) << "VARIABLE: " << variable->str() << " is part of GROUP: " << group_name;

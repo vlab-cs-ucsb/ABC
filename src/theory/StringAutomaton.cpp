@@ -475,6 +475,8 @@ StringAutomaton_ptr StringAutomaton::makeLengthRange(int start, int end, int num
  *
  */
 StringAutomaton_ptr StringAutomaton::complement() {
+
+
   DFA_ptr complement_dfa = nullptr, minimized_dfa = nullptr, current_dfa = dfaCopy(dfa);
   StringAutomaton_ptr complement_auto = nullptr;
   StringAutomaton_ptr any_string = StringAutomaton::makeAnyString();

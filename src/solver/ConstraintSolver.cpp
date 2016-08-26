@@ -392,6 +392,23 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
 void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *not_eq_term;
 
+  if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term)) {
+    if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term)) {
+      Variable_ptr var = symbol_table_->getVariable(left_var);
+      StringAutomaton_ptr temp,con;
+      temp = StringAutomaton::makeString(right_constant->getValue());
+      con = temp->complement();
+      delete temp;
+      Value_ptr val = new Value(con);
+      bool v = string_constraint_solver_.update_variable_value(var,val);
+
+      if(v) {
+        setTermValue(not_eq_term,val);
+        return;
+      }
+    }
+  }
+
   visit_children_of(not_eq_term);
 
   Value_ptr result = nullptr, param_left = getTermValue(not_eq_term->left_term), param_right = getTermValue(
@@ -564,6 +581,23 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
 }
 
 void ConstraintSolver::visitIn(In_ptr in_term) {
+
+  if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(in_term->left_term)) {
+    if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(in_term->right_term)) {
+      Variable_ptr var = symbol_table_->getVariable(left_var);
+      StringAutomaton_ptr con;
+      con = StringAutomaton::makeRegexAuto(right_constant->getValue());
+
+      Value_ptr val = new Value(con);
+      bool v = string_constraint_solver_.update_variable_value(var,val);
+
+      if(v) {
+        setTermValue(in_term,val);
+        return;
+      }
+    }
+  }
+
   visit_children_of(in_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *in_term;
 
