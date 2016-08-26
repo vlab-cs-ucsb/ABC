@@ -560,7 +560,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
 //  d3 = MultiTrackAutomaton::concat(d1,d2,num_of_variables);
 //  return new StringAutomaton(d3);
 
-  StringAutomaton_ptr left_auto = this->clone(), right_auto = other_auto->clone();
+  StringAutomaton_ptr left_auto = this, right_auto = other_auto;
 
   if (left_auto->isEmptyLanguage() or right_auto->isEmptyLanguage()) {
     return StringAutomaton::makePhi();
