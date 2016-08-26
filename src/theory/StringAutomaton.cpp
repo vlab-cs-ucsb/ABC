@@ -562,7 +562,6 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
 
   StringAutomaton_ptr left_auto = this->clone(), right_auto = other_auto->clone();
 
-
   if (left_auto->isEmptyLanguage() or right_auto->isEmptyLanguage()) {
     return StringAutomaton::makePhi();
   } else if (left_auto->isEmptyString()) {
@@ -619,20 +618,19 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
   sink_state_left_auto = left_auto->getSinkState();
   sink_state_right_auto = right_auto->getSinkState();
 
-  LOG(INFO) << sink_state_left_auto;
-  LOG(INFO) << sink_state_right_auto;
-  std::cin.get();
-
   bool left_sink = true, right_sink = true;
   int sink = sink_state_left_auto;
 
-  if(sink_state_left_auto < 0 && sink_state_right_auto) {
+  if(sink_state_left_auto < 0 && sink_state_right_auto < 0) {
     left_sink = right_sink = false;
     sink = expected_num_of_states;
     expected_num_of_states++;
   } else if(sink_state_left_auto < 0) {
     left_sink = false;
     sink = sink_state_right_auto + state_id_shift_amount;
+    if(not is_start_state_reachable) {
+      sink--;
+    }
   } else if(sink_state_right_auto < 0) {
     right_sink = false;
   } else {
@@ -851,10 +849,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
 
   if (left_hand_side_has_emtpy_string) {
     auto tmp_auto = concat_auto;
-    concat_auto->inspectAuto();
     concat_auto = tmp_auto->union_(other_auto);
-    concat_auto->inspectAuto();
-    std::cin.get();
     delete tmp_auto;
     delete left_auto; left_auto = nullptr;
   }
@@ -865,12 +860,6 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
     delete tmp_auto;
     delete right_auto; right_auto = nullptr;
   }
-
-
-  inspectAuto();
-  other_auto->inspectAuto();
-  concat_auto->inspectAuto();
-  std::cin.get();
 
   DVLOG(VLOG_LEVEL) << concat_auto->id << " = [" << this->id << "]->concat(" << other_auto->id << ")";
 
