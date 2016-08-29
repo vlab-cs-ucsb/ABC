@@ -617,7 +617,6 @@ ConstraintSorter::TermNode_ptr ConstraintSorter::process_child_nodes(TermNode_pt
 }
 
 void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
-
   std::vector<TermNode_ptr> sorted_term_node_list;
 
   for (auto it = term_node_list.begin(); it != term_node_list.end(); ) {
@@ -645,39 +644,32 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
 
   term_node_list.insert(term_node_list.begin(), sorted_term_node_list.begin(), sorted_term_node_list.end());
 
-/*
-  std::vector<TermNode_ptr> sorted_term_node_list;
-  std::vector<TermNode_ptr> concat_node_list;
+/**
+ * TODO Apply better heuristic to break dependency cycles
+ * while term node list is not empty do that again and again
+ */
+//  int num_of_variable_counter = 1;
+//  while (not term_node_list.empty()) {
+//
+//    std::queue<TermNode_ptr> work_list;
+//    for (auto it = term_node_list.begin(); it != term_node_list.end(); ) {
+//      if ((*it)->numOfTotalVars() == num_of_variable_counter) {
+//        work_list.push(*it);
+//        it = term_node_list.erase(it);
+//      } else {
+//        it++;
+//      }
+//
+//      while (not work_list.empty()) {
+//        TermNode_ptr curr_term_node = work_list.front(); work_list.pop();
+//
+//      }
+//    }
+//
+//
+//    num_of_variable_counter++;
+//  }
 
-  for (auto it = term_node_list.begin(); it != term_node_list.end(); ) {
-    if ((*it)->numOfTotalVars() == 0) {
-      sorted_term_node_list.push_back((*it));
-      it = term_node_list.erase(it);
-    } else if((*it)->numOfTotalVars() == 3 && not (*it)->hasSymbolicVar()) {
-      concat_node_list.push_back((*it));
-      it = term_node_list.erase(it);
-    } else {
-      it++;
-    }
-  }
-
-  std::sort(term_node_list.begin(), term_node_list.end(),
-          [](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
-            return (left_node->numOfTotalVars() < right_node->numOfTotalVars());
-          });
-
-  for (auto it = term_node_list.begin(); it != term_node_list.end(); ) {
-    if (not (*it)->hasSymbolicVar()) {
-      sorted_term_node_list.push_back((*it));
-      it = term_node_list.erase(it);
-    } else {
-      it++;
-    }
-  }
-
-  term_node_list.insert(term_node_list.begin(), concat_node_list.begin(), concat_node_list.end());
-  term_node_list.insert(term_node_list.begin(), sorted_term_node_list.begin(), sorted_term_node_list.end());
-*/
   DVLOG(VLOG_LEVEL) << "node list sorted";
 }
 
