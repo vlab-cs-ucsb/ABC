@@ -1,14 +1,11 @@
 AM_YFLAGS = -d
 
-AM_CXXFLAGS = -I$(top_srcdir)/src
-AM_LDFLAGS = $(LIBGLOG)
+# AM_LDFLAGS = $(LIBGLOG)
+
+AM_CXXFLAGS = -g
+
 noinst_LTLIBRARIES = libabcparser.la
 libabcparser_la_SOURCES = \
-	../smt/ast.cpp \
-	../smt/ast.h \
-	../smt/typedefs.h \
-	../smt/Visitable.h \
-	../smt/Visitor.h \
 	parser.ypp \
 	Scanner.cpp \
 	Scanner.h \
@@ -16,7 +13,9 @@ libabcparser_la_SOURCES = \
 
 libabcparser_la_LDFLAGS = -version-info 0:1:0
 
-libabcparser_la_LIBADD = $(LIBGLOG)
+libabcparser_la_LIBADD = \
+	../smt/libabcsmt.la \
+	$(LIBGLOG)
 
 CLEANFILES = \
 	lexer.cpp \

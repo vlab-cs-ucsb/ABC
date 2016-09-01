@@ -124,7 +124,7 @@ AM_COND_IF([JAVA_HOME_VALID],
 # set global compiler options
 
 # Create Makefile files
-AC_CONFIG_FILES([Makefile src/Makefile src/parser/Makefile src/theory/Makefile src/model_counter/Makefile test/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/smt/Makefile src/parser/Makefile src/utils/Makefile src/theory/Makefile test/Makefile])
 #AC_CONFIG_SUBDIRS([lib/googletest/googletest lib/googletest/googlemock])
 #AC_CONFIG_SUBDIRS([external/glog external/LibStranger])
 AC_OUTPUT

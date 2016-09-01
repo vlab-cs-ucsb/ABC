@@ -9,16 +9,19 @@
 #define SMT_AST_H_
 
 #include <iostream>
-#include <string>
+#include <stdio.h>
 #include <sstream>
-#include <cstdint>
-#include <vector>
+#include <stdarg.h>
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 #include <glog/logging.h>
+
 #include "typedefs.h"
 #include "Visitable.h"
 #include "Visitor.h"
+
 
 namespace Vlab {
 namespace SMT {

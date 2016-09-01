@@ -1,4 +1,4 @@
-SUBDIRS = parser theory model_counter
+SUBDIRS = smt parser utils theory 
 AM_CXXFLAGS = \
 	-I$(top_srcdir)/src \
 	-g
@@ -78,8 +78,7 @@ libabc_la_LDFLAGS = -version-info 0:1:0
 libabc_la_LIBADD = \
 	$(LIBGLOG) \
 	./parser/libabcparser.la \
-	./theory/libabcautomaton.la \
-	./model_counter/libabcmodelcounter.la 
+	./theory/libabcautomaton.la 
 
 libabc_ladir = $(includedir)/abc
 libabc_la_HEADERS = Driver.h $(ABC_JNI_HEADER_FILES)

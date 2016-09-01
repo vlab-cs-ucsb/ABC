@@ -1,23 +1,10 @@
-AM_YFLAGS = -d
-
-AM_CXXFLAGS = \
-	-I$(top_srcdir)/src 
+AM_CXXFLAGS = -I$(top_srcdir)/src 
 
 AM_LDFLAGS = \
 	$(LIBGLOG) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) $(LIBSTRANGER)
 
 noinst_LTLIBRARIES = libabcautomaton.la
 libabcautomaton_la_SOURCES = \
-	../utils/RegularExpression.cpp \
-	../utils/RegularExpression.h \
-	../utils/Math.cpp \
-	../utils/Math.h \
-	../utils/List.cpp \
-	../utils/List.h \
-	../utils/Cmd.cpp \
-	../utils/Cmd.h \
-	../utils/Program.cpp \
-	../utils/Program.h \
 	../options/Theory.cpp \
 	../options/Theory.h \
 	GraphNode.cpp \
@@ -56,6 +43,7 @@ libabcautomaton_la_SOURCES = \
 libabcautomaton_la_LDFLAGS = -version-info 0:1:0
 	
 libabcautomaton_la_LIBADD = \
+	../utils/libabcutils.la \
 	$(LIBGLOG) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) $(LIBSTRANGER)
 	
 test-local: 

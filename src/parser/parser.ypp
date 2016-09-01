@@ -14,7 +14,7 @@
 #include <string>
 #include <cstdlib>
 
-#include "smt/ast.h"
+#include "../smt/ast.h"
   namespace Vlab  {
     namespace SMT {
       class Scanner;
