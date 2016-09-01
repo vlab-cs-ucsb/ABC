@@ -11,16 +11,21 @@
 #ifndef SOLVER_ARITHMETICFORMULAGENERATOR_H_
 #define SOLVER_ARITHMETICFORMULAGENERATOR_H_
 
-#include <vector>
 #include <map>
-#include <sstream>
+#include <iostream>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include <glog/logging.h>
-#include "smt/ast.h"
-#include "SymbolTable.h"
+
+#include "../options/Solver.h"
+#include "../smt/ast.h"
+#include "../smt/typedefs.h"
+#include "../smt/Visitor.h"
+#include "../theory/ArithmeticFormula.h"
 #include "ConstraintInformation.h"
-#include "theory/ArithmeticFormula.h"
-#include "Ast2Dot.h"
+#include "SymbolTable.h"
 
 namespace Vlab {
 namespace Solver {

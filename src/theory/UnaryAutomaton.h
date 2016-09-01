@@ -11,13 +11,19 @@
 #ifndef THEORY_UNARYAUTOMATON_H_
 #define THEORY_UNARYAUTOMATON_H_
 
-#include <vector>
+#include <iostream>
+#include <iterator>
 #include <map>
+#include <string>
+#include <queue>
+#include <vector>
 
+#include <glog/logging.h>
+//#include <mona/dfa.h>
+
+#include "ArithmeticFormula.h"
 #include "Automaton.h"
 #include "SemilinearSet.h"
-#include "BinaryState.h"
-#include "ArithmeticFormula.h"
 
 namespace Vlab {
 namespace Theory {

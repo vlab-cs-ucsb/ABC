@@ -8,18 +8,31 @@
  ============================================================================
  */
 
+#include <chrono>
+#include <cstdlib>
+#include <iostream>
+#include <map>
+#include <ratio>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include <boost/multiprecision/number.hpp>
+#include <glog/logging.h>
+#include <glog/vlog_is_on.h>
+
+#include "Driver.h"
+#include "options/Solver.h"
+#include "smt/ast.h"
+#include "solver/Value.h"
+#include "theory/BinaryIntAutomaton.h"
+#include "theory/MultiTrackAutomaton.h"
+#include "theory/StringRelation.h"
+#include "utils/RegularExpression.h"
+
 #define NDEBUG
 
-#include <iostream>
-#include <string>
-#include <sstream>
-#include <cstdlib>
-#include <vector>
-#include <chrono>
-#include <ratio>
-
-#include <glog/logging.h>
-#include <Driver.h>
 
 static const std::string get_default_output_dir();
 static const std::string get_default_log_dir();

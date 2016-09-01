@@ -8,23 +8,27 @@
 #ifndef SOLVER_SYNTACTICOPTIMIZER_H_
 #define SOLVER_SYNTACTICOPTIMIZER_H_
 
-#include <iostream>
-#include <sstream>
-#include <queue>
+#include <algorithm>
+#include <cctype>
 #include <functional>
+#include <initializer_list>
+#include <iterator>
+#include <sstream>
 #include <string>
-#include <regex>
+#include <vector>
 
 #include <glog/logging.h>
-#include "smt/ast.h"
-#include "options/Solver.h"
+
+#include "../smt/ast.h"
+#include "../smt/typedefs.h"
+#include "../smt/Visitor.h"
+#include "../utils/RegularExpression.h"
 #include "Ast2Dot.h"
-#include "SymbolTable.h"
 #include "optimization/CharAtOptimization.h"
-#include "optimization/SubstringOptimization.h"
-#include "utils/RegularExpression.h"
 #include "optimization/ConstantTermChecker.h"
 #include "optimization/ConstantTermOptimization.h"
+#include "optimization/SubstringOptimization.h"
+#include "SymbolTable.h"
 
 
 namespace Vlab {

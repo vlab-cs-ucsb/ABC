@@ -10,26 +10,6 @@
 
 #include "BinaryIntAutomaton.h"
 
-#include <algorithm>
-#include <cmath>
-#include <cstdbool>
-#include <cstdlib>
-#include <iostream>
-#include <iterator>
-#include <sstream>
-#include <stack>
-#include <unordered_map>
-#include <utility>
-
-#include <boost/multiprecision/number.hpp>
-#include <glog/logging.h>
-#include <mona/bdd.h>
-#include <mona/dfa.h>
-
-#include "options/Theory.h"
-#include "utils/Math.h"
-#include "utils/List.h"
-
 namespace Vlab {
 namespace Theory {
 

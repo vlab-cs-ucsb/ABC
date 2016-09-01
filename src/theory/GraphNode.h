@@ -8,8 +8,9 @@
 #ifndef THEORY_GRAPHNODE_H_
 #define THEORY_GRAPHNODE_H_
 
-#include <set>
 #include <map>
+#include <set>
+#include <utility>
 
 namespace Vlab {
 namespace Theory {

@@ -4,13 +4,6 @@
 
 #include "StringRelationGenerator.h"
 
-#include <glog/logging.h>
-#include <iostream>
-#include <utility>
-#include <vector>
-#include "options/Solver.h"
-
-
 namespace Vlab {
 namespace Solver {
 

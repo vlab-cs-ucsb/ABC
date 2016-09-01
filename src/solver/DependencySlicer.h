@@ -8,14 +8,21 @@
 #ifndef SOLVER_DEPENDENCYSLICER_H_
 #define SOLVER_DEPENDENCYSLICER_H_
 
+#include <iostream>
 #include <map>
+#include <queue>
 #include <set>
+#include <utility>
 #include <vector>
+#include <glog/logging.h>
 
+#include "../options/Solver.h"
+#include "../smt/ast.h"
 #include "../smt/typedefs.h"
-#include "solver/AstTraverser.h"
-#include "solver/ConstraintInformation.h"
-#include "solver/SymbolTable.h"
+#include "../smt/Visitor.h"
+#include "AstTraverser.h"
+#include "ConstraintInformation.h"
+#include "SymbolTable.h"
 
 namespace Vlab {
 namespace Solver {

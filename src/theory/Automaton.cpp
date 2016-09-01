@@ -20,7 +20,6 @@ const std::string Automaton::Name::NONE = "none";
 const std::string Automaton::Name::BOOL = "BoolAutomaton";
 const std::string Automaton::Name::UNARY = "UnaryAutomaton";
 const std::string Automaton::Name::INT = "IntAutomaton";
-const std::string Automaton::Name::INTBOOl = "IntBoolAutomaton";
 const std::string Automaton::Name::STRING = "StringAutomaton";
 const std::string Automaton::Name::BINARYINT = "BinaryIntAutomaton";
 
@@ -62,8 +61,6 @@ std::string Automaton::str() const {
     return Automaton::Name::UNARY;
   case Automaton::Type::INT:
     return Automaton::Name::INT;
-  case Automaton::Type::INTBOOl:
-    return Automaton::Name::INTBOOl;
   case Automaton::Type::STRING:
     return Automaton::Name::STRING;
   case Automaton::Type::BINARYINT:

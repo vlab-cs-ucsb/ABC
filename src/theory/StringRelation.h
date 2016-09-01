@@ -5,10 +5,12 @@
 #ifndef SRC_STRINGRELATION_H_
 #define SRC_STRINGRELATION_H_
 
-#include <string>
+#include <iostream>
 #include <map>
+#include <sstream>
+#include <string>
 #include <vector>
-#include <memory>
+
 #include <glog/logging.h>
 
 namespace Vlab {

@@ -8,25 +8,23 @@
 #ifndef SOLVER_VARIABLEVALUECOMPUTER_H_
 #define SOLVER_VARIABLEVALUECOMPUTER_H_
 
-#include <cstdbool>
-#include <iostream>
-#include <iterator>
 #include <map>
+#include <iterator>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include <glog/logging.h>
-#include "smt/ast.h"
-#include "smt/typedefs.h"
-#include "smt/Visitor.h"
+
+#include "../smt/ast.h"
+#include "../smt/typedefs.h"
+#include "../smt/Visitor.h"
+#include "../theory/IntAutomaton.h"
+#include "../theory/StringAutomaton.h"
+#include "../theory/UnaryAutomaton.h"
 #include "SymbolTable.h"
 #include "Value.h"
-#include "theory/UnaryAutomaton.h"
-#include "theory/IntAutomaton.h"
-#include "theory/ArithmeticFormula.h"
-#include "theory/BinaryIntAutomaton.h"
-#include "theory/StringAutomaton.h"
 
 
 namespace Vlab {

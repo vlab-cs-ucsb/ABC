@@ -8,14 +8,19 @@
  */
 
 #include <algorithm>
-#include <string>
-#include <sstream>
 #include <cctype>
+#include <iostream>
+#include <iterator>
+#include <stddef.h>
+#include <string>
+#include <vector>
 
 #include <glog/logging.h>
 
+#include "../../smt/ast.h"
+#include "../../smt/typedefs.h"
+#include "../../smt/Visitor.h"
 #include "ConstantTermChecker.h"
-#include "smt/ast.h"
 
 #ifndef SRC_SOLVER_OPTIMIZATION_SUBSTRINGOPTIMIZATION_H_
 #define SRC_SOLVER_OPTIMIZATION_SUBSTRINGOPTIMIZATION_H_

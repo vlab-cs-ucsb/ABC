@@ -11,12 +11,27 @@
 #ifndef THEORY_BINARYINTAUTOMATON_H_
 #define THEORY_BINARYINTAUTOMATON_H_
 
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
+#include <iostream>
+#include <iterator>
 #include <map>
+#include <sstream>
+#include <stack>
 #include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
+#include <glog/logging.h>
+//#include <mona/bdd.h>
+//#include <mona/dfa.h>
 #include <boost/multiprecision/cpp_int.hpp>
 
+#include "../options/Theory.h"
+#include "../utils/Cmd.h"
+#include "../utils/List.h"
 #include "ArithmeticFormula.h"
 #include "Automaton.h"
 #include "BinaryState.h"

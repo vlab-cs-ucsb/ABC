@@ -11,22 +11,22 @@
 #ifndef SOLVER_EQUIVALENCEGENERATOR_H_
 #define SOLVER_EQUIVALENCEGENERATOR_H_
 
-#include <cstdbool>
-#include <map>
+#include <iostream>
 #include <set>
 #include <string>
-#include <vector>
-#include <iostream>
 #include <utility>
+#include <vector>
 
 #include <glog/logging.h>
-#include "smt/ast.h"
-#include "solver/AstTraverser.h"
-#include "solver/EquivalenceClass.h"
-#include "solver/SymbolTable.h"
-#include "solver/Counter.h"
-#include "solver/EquivClassRuleRunner.h"
-#include "solver/optimization/ConstantTermChecker.h"
+#include <glog/vlog_is_on.h>
+
+#include "../smt/ast.h"
+#include "../smt/typedefs.h"
+#include "AstTraverser.h"
+#include "EquivalenceClass.h"
+#include "EquivClassRuleRunner.h"
+#include "optimization/ConstantTermChecker.h"
+#include "SymbolTable.h"
 
 namespace Vlab {
 namespace Solver {

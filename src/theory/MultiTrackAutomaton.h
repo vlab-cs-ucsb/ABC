@@ -8,8 +8,22 @@
 #ifndef THEORY_MULTITRACKAUTOMATON_H_
 #define THEORY_MULTITRACKAUTOMATON_H_
 
+#include <cmath>
+#include <iostream>
+#include <iterator>
+#include <map>
+#include <queue>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include <boost/multiprecision/cpp_int.hpp>
+//#include <mona/bdd.h>
+//#include <mona/dfa.h>
+
+#include "Automaton.h"
 #include "StringAutomaton.h"
-#include <glog/logging.h>
 #include "StringRelation.h"
 
 namespace Vlab {

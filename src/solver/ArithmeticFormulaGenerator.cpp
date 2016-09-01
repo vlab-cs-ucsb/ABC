@@ -9,7 +9,6 @@
  */
 
 #include "ArithmeticFormulaGenerator.h"
-#include "options/Solver.h"
 
 namespace Vlab {
 namespace Solver {

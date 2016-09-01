@@ -8,7 +8,9 @@
 #ifndef THEORY_DAGRAPHNODE_H_
 #define THEORY_DAGRAPHNODE_H_
 
+#include <map>
 #include <set>
+#include <utility>
 
 #include "GraphNode.h"
 

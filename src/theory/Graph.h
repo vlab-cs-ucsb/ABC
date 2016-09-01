@@ -8,12 +8,16 @@
 #ifndef THEORY_GRAPH_H_
 #define THEORY_GRAPH_H_
 
-#include <iostream>
-#include <sstream>
-#include <fstream>
-#include <map>
-#include <stack>
+#include <cstdlib>
 #include <functional>
+#include <iostream>
+#include <map>
+#include <fstream>
+#include <set>
+#include <stack>
+#include <sstream>
+#include <string>
+#include <utility>
 
 #include "GraphNode.h"
 

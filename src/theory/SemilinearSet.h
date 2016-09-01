@@ -11,13 +11,14 @@
 #ifndef THEORY_SEMILINEARSET_H_
 #define THEORY_SEMILINEARSET_H_
 
+#include <algorithm>
 #include <iostream>
-#include <ostream>
 #include <sstream>
+#include <string>
 #include <vector>
 
-#include "utils/List.h"
-#include "utils/Math.h"
+#include "../utils/List.h"
+#include "../utils/Math.h"
 
 namespace Vlab {
 namespace Theory {

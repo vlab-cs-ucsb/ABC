@@ -8,14 +8,18 @@
 #ifndef SOLVER_ImplicationRunner_H_
 #define SOLVER_ImplicationRunner_H_
 
-#include <map>
-#include <set>
+#include <iostream>
+#include <string>
 #include <vector>
 
+#include <glog/logging.h>
+
+#include "../options/Solver.h"
+#include "../smt/ast.h"
+#include "../smt/Visitor.h"
 #include "../smt/typedefs.h"
-#include "options/Solver.h"
-#include "solver/AstTraverser.h"
-#include "solver/SymbolTable.h"
+#include "AstTraverser.h"
+#include "SymbolTable.h"
 
 namespace Vlab {
 namespace Solver {

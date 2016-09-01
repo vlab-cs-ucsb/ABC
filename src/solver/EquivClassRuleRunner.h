@@ -11,19 +11,20 @@
 #ifndef SOLVER_EQUIVCLASSRULERUNNER_H_
 #define SOLVER_EQUIVCLASSRULERUNNER_H_
 
-#include <cstdbool>
 #include <iostream>
 #include <map>
-#include <sstream>
 #include <string>
 
 #include <glog/logging.h>
-#include "smt/ast.h"
-#include "theory/StringAutomaton.h"
-#include "solver/Value.h"
-#include "solver/SymbolTable.h"
-#include "solver/EquivalenceClass.h"
-#include "solver/SyntacticOptimizer.h"
+
+#include "../smt/ast.h"
+#include "../smt/typedefs.h"
+#include "../smt/Visitor.h"
+#include "../theory/StringAutomaton.h"
+#include "EquivalenceClass.h"
+#include "SymbolTable.h"
+#include "SyntacticOptimizer.h"
+#include "Value.h"
 
 namespace Vlab {
 namespace Solver {

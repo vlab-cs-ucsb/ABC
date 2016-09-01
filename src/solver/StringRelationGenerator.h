@@ -10,15 +10,23 @@
 #ifndef SRC_STRINGRELATIONGENERATOR_H
 #define SRC_STRINGRELATIONGENERATOR_H
 
-#include <cstdbool>
+#include <iostream>
 #include <map>
-#include <memory>
-#include <unordered_set>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include "smt/ast.h"
-#include "theory/StringRelation.h"
-#include "SymbolTable.h"
+#include <glog/logging.h>
+
+#include "../smt/ast.h"
+#include "../smt/typedefs.h"
+#include "../smt/Visitor.h"
+#include "../options/Solver.h"
+#include "../theory/MultiTrackAutomaton.h"
+#include "../theory/StringRelation.h"
 #include "ConstraintInformation.h"
+#include "SymbolTable.h"
+#include "Value.h"
 
 namespace Vlab {
 namespace Solver {

@@ -7,15 +7,6 @@
 
 #include "ArithmeticConstraintSolver.h"
 
-#include <glog/logging.h>
-#include <iostream>
-#include <utility>
-
-#include "smt/ast.h"
-#include "smt/Visitor.h"
-#include "theory/ArithmeticFormula.h"
-#include "theory/BinaryIntAutomaton.h"
-
 namespace Vlab {
 namespace Solver {
 

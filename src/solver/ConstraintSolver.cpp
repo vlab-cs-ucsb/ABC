@@ -7,23 +7,6 @@
 
 #include "ConstraintSolver.h"
 
-#include <glog/logging.h>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <utility>
-
-#include "options/Solver.h"
-#include "smt/ast.h"
-#include "smt/Visitor.h"
-#include "theory/ArithmeticFormula.h"
-#include "theory/BinaryIntAutomaton.h"
-#include "theory/IntAutomaton.h"
-#include "theory/StringAutomaton.h"
-#include "theory/UnaryAutomaton.h"
-#include "Ast2Dot.h"
-#include "VariableValueComputer.h"
-
 namespace Vlab {
 namespace Solver {
 
@@ -271,12 +254,6 @@ void ConstraintSolver::visitNot(Not_ptr not_term) {
       }
       break;
     }
-    case Value::Type::INTBOOL_AUTOMATON: {
-      // 1- if singleton do not
-      // 2- else over-approximate
-      LOG(FATAL) << "implement me";
-      break;
-    }
     case Value::Type::STRING_AUTOMATON: {
       // TODO multi-track automaton solves over-approximation problem in most cases
       if (param->getStringAutomaton()->isAcceptingSingleString()) {
@@ -313,11 +290,6 @@ void ConstraintSolver::visitUMinus(UMinus_ptr u_minus_term) {
       } else {
         result = new Value(param->getIntAutomaton()->uminus());
       }
-      break;
-    }
-    case Value::Type::INTBOOL_AUTOMATON: {
-      // do minus operation on automaton
-      LOG(FATAL)<< "implement me";
       break;
     }
     default:

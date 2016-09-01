@@ -8,8 +8,17 @@
 #ifndef THEORY_INTAUTOMATON_H_
 #define THEORY_INTAUTOMATON_H_
 
-#include <vector>
 #include <algorithm>
+#include <iostream>
+#include <iterator>
+#include <map>
+#include <set>
+#include <stack>
+#include <vector>
+
+#include <glog/logging.h>
+//#include <mona/bdd.h>
+//#include <mona/dfa.h>
 
 #include "Automaton.h"
 #include "UnaryAutomaton.h"

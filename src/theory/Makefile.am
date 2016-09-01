@@ -1,7 +1,6 @@
-AM_CXXFLAGS = -I$(top_srcdir)/src 
+AM_CXXFLAGS = -g
 
-AM_LDFLAGS = \
-	$(LIBGLOG) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) $(LIBSTRANGER)
+#AM_LDFLAGS = $(LIBGLOG) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) $(LIBSTRANGER)
 
 noinst_LTLIBRARIES = libabcautomaton.la
 libabcautomaton_la_SOURCES = \
@@ -29,8 +28,6 @@ libabcautomaton_la_SOURCES = \
 	UnaryAutomaton.h \
 	IntAutomaton.cpp \
 	IntAutomaton.h \
-	IntBoolAutomaton.cpp \
-	IntBoolAutomaton.h \
 	StringAutomaton.cpp \
 	StringAutomaton.h \
 	BinaryIntAutomaton.cpp \
@@ -44,7 +41,7 @@ libabcautomaton_la_LDFLAGS = -version-info 0:1:0
 	
 libabcautomaton_la_LIBADD = \
 	../utils/libabcutils.la \
-	$(LIBGLOG) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) $(LIBSTRANGER)
+	$(LIBGLOG) $(LIBSTRANGER) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) 
 	
 test-local: 
 	@echo parser, $(srcdir), $(top_srcdir)	

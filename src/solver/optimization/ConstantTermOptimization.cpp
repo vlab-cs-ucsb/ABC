@@ -19,7 +19,8 @@ using namespace SMT;
 const int ConstantTermOptimization::VLOG_LEVEL = 18;
 
 ConstantTermOptimization::ConstantTermOptimization()
-  : mode_ (ConstantTermOptimization::Mode::PREFIX) {
+  : mode_ (ConstantTermOptimization::Mode::PREFIX),
+    length_{0} {
   DVLOG(VLOG_LEVEL) << "'ConstantTermOptimization' initizalized...";
 }
 

@@ -8,19 +8,21 @@
 #ifndef SRC_SOLVER_FORMULAOPTIMIZER_H_
 #define SRC_SOLVER_FORMULAOPTIMIZER_H_
 
-#include <iostream>
-#include <sstream>
-#include <queue>
-#include <vector>
+#include <iterator>
 #include <map>
 #include <functional>
+#include <set>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include <glog/logging.h>
-#include "smt/ast.h"
-#include "Ast2Dot.h"
-#include "SymbolTable.h"
+
+#include "../smt/ast.h"
+#include "../smt/typedefs.h"
 #include "AstTraverser.h"
-#include "SyntacticOptimizer.h"
+#include "SymbolTable.h"
 
 namespace Vlab {
 namespace Solver {

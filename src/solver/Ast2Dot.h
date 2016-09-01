@@ -8,14 +8,17 @@
 #ifndef SOLVER_AST2DOT_H_
 #define SOLVER_AST2DOT_H_
 
+#include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <stack>
-#include <fstream>
-#include <sstream>
 #include <string>
+#include <sstream>
+#include <sys/types.h>
 
-#include <glog/logging.h>
-#include "smt/ast.h"
+#include "../smt/ast.h"
+#include "../smt/typedefs.h"
+#include "../smt/Visitor.h"
 
 namespace Vlab {
 namespace Solver {

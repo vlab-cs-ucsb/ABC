@@ -11,14 +11,14 @@
 #ifndef SRC_SOLVER_OPTIMIZATION_CONSTANTTERMOPTIMIZATION_H_
 #define SRC_SOLVER_OPTIMIZATION_CONSTANTTERMOPTIMIZATION_H_
 
-#include <algorithm>
 #include <string>
-#include <sstream>
-#include <iomanip>
+#include <vector>
 
 #include <glog/logging.h>
-#include "smt/ast.h"
-#include "utils/RegularExpression.h"
+
+#include "../../smt/ast.h"
+#include "../../smt/typedefs.h"
+#include "../../smt/Visitor.h"
 
 namespace Vlab {
 namespace Solver {

@@ -8,37 +8,36 @@
 #ifndef THEORY_AUTOMATON_H_
 #define THEORY_AUTOMATON_H_
 
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <fstream>
+#include <algorithm>
 #include <array>
-#include <vector>
-#include <map>
-#include <unordered_map>
-#include <set>
-#include <stack>
-#include <queue>
 #include <cmath>
+#include <cstdlib>
+#include <cstring>
 #include <functional>
-#include <boost/multiprecision/cpp_int.hpp>
+#include <iostream>
+#include <iterator>
+#include <map>
+#include <set>
+#include <sstream>
+#include <stack>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include <glog/logging.h>
-//#include <mona/config.h>
-//#include <mona/mem.h>
 //#include <mona/bdd.h>
 //#include <mona/bdd_external.h>
-//#include <mona/bdd_dump.h>
 //#include <mona/dfa.h>
+//#include <mona/mem.h>
 #include <stranger/stranger.h>
 #include <stranger/stranger_lib_internal.h>
-#include "options/Theory.h"
-#include "utils/RegularExpression.h"
-#include "utils/Cmd.h"
-#include "utils/Math.h"
+#include <boost/multiprecision/cpp_int.hpp>
+
+#include "../options/Theory.h"
+#include "../utils/Cmd.h"
+#include "../utils/Math.h"
 #include "Graph.h"
-#include "DAGraph.h"
-#include "SemilinearSet.h"
+#include "GraphNode.h"
 
 namespace Vlab {
 namespace Theory {
@@ -58,7 +57,7 @@ class Automaton {
 public:
   enum class Type
     : int {
-      NONE = 0, BOOL, UNARY, INT, INTBOOl, BINARYINT, STRING, MULTITRACK
+      NONE = 0, BOOL, UNARY, INT, BINARYINT, STRING, MULTITRACK
   };
 
   Automaton(Automaton::Type type);
@@ -80,7 +79,6 @@ public:
     static const std::string BOOL;
     static const std::string UNARY;
     static const std::string INT;
-    static const std::string INTBOOl;
     static const std::string STRING;
     static const std::string BINARYINT;
   };

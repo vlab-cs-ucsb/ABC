@@ -11,10 +11,11 @@
 #ifndef SRC_SOLVER_CONSTRAINTINFORMATION_H_
 #define SRC_SOLVER_CONSTRAINTINFORMATION_H_
 
-#include <cstdbool>
+#include <map>
 #include <set>
+#include <utility>
 
-#include "smt/typedefs.h"
+#include "../smt/typedefs.h"
 
 namespace Vlab {
 namespace Solver {

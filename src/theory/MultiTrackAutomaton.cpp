@@ -7,6 +7,7 @@
 */
 
 #include "MultiTrackAutomaton.h"
+
 namespace Vlab {
 namespace Theory {
 

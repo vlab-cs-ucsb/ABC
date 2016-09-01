@@ -11,10 +11,9 @@
 #include <functional>
 #include <stack>
 
-#include <glog/logging.h>
-#include "smt/Visitable.h"
-#include "smt/Visitor.h"
-#include "smt/ast.h"
+#include "../smt/ast.h"
+#include "../smt/typedefs.h"
+#include "../smt/Visitor.h"
 
 namespace Vlab {
 namespace Solver {

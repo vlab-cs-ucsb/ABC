@@ -8,12 +8,22 @@
 #ifndef SOLVER_INITIALIZER_H_
 #define SOLVER_INITIALIZER_H_
 
-#include <stack>
 
-#include<glog/logging.h>
-#include "smt/ast.h"
+#include <iostream>
+#include <iterator>
+#include <map>
+#include <stack>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include <glog/logging.h>
+#include <glog/vlog_is_on.h>
+
+#include "../smt/ast.h"
+#include "../smt/typedefs.h"
+#include "../smt/Visitor.h"
 #include "SymbolTable.h"
-#include "options/Solver.h"
 
 namespace Vlab {
 namespace Solver {

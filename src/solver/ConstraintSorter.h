@@ -8,18 +8,22 @@
 #ifndef SOLVER_CONSTRAINTSORTER_H_
 #define SOLVER_CONSTRAINTSORTER_H_
 
-#include <iostream>
-#include <sstream>
-#include <vector>
-#include <queue>
-#include <stack>
-#include <map>
 #include <algorithm>
+#include <iterator>
+#include <map>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include <glog/logging.h>
-#include "smt/ast.h"
-#include "SymbolTable.h"
+#include <glog/vlog_is_on.h>
+
+#include "../smt/ast.h"
+#include "../smt/typedefs.h"
+#include "../smt/Visitor.h"
 #include "Counter.h"
+#include "SymbolTable.h"
 
 namespace Vlab {
 namespace Solver {

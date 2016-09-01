@@ -9,7 +9,7 @@
 #define SRC_THEORY_BINARYSTATE_H_
 
 #include <sstream>
-#include <ostream>
+#include <string>
 
 namespace Vlab {
 namespace Theory {

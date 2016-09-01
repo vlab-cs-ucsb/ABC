@@ -1,18 +1,5 @@
 #include "DependencySlicer.h"
 
-#include <glog/logging.h>
-#include <glog/vlog_is_on.h>
-#include <cstdbool>
-#include <iostream>
-#include <iterator>
-#include <string>
-#include <utility>
-#include "options/Solver.h"
-
-#include "smt/ast.h"
-#include "smt/Visitor.h"
-#include "utils/List.h"
-
 namespace Vlab {
 namespace Solver {
 

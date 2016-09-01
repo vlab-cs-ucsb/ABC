@@ -11,11 +11,18 @@
 #ifndef SRC_SOLVER_SYNTACTICPROCESSOR_H_
 #define SRC_SOLVER_SYNTACTICPROCESSOR_H_
 
+#include <iterator>
 #include <sstream>
+#include <string>
+#include <vector>
 
+#include <glog/logging.h>
+
+#include "../options/Solver.h"
+#include "../smt/ast.h"
+#include "../smt/Visitor.h"
+#include "../smt/typedefs.h"
 #include "AstTraverser.h"
-#include "smt/ast.h"
-#include "options/Solver.h"
 
 namespace Vlab {
 namespace Solver {

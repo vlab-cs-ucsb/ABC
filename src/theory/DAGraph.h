@@ -8,13 +8,18 @@
 #ifndef THEORY_DAGRAPH_H_
 #define THEORY_DAGRAPH_H_
 
+#include <algorithm>
+#include <cstdlib>
 #include <iostream>
-#include <sstream>
-#include <fstream>
 #include <map>
+#include <set>
+#include <stack>
+#include <string>
+#include <utility>
 
 #include "DAGraphNode.h"
 #include "Graph.h"
+#include "GraphNode.h"
 
 namespace Vlab {
 namespace Theory {

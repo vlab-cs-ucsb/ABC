@@ -8,16 +8,16 @@
 #ifndef SOLVER_VALUE_H_
 #define SOLVER_VALUE_H_
 
-#include <string>
 #include <sstream>
+#include <string>
 
 #include <glog/logging.h>
-#include "theory/BoolAutomaton.h"
-#include "theory/IntAutomaton.h"
-#include "theory/IntBoolAutomaton.h"
-#include "theory/BinaryIntAutomaton.h"
-#include "theory/StringAutomaton.h"
-#include "theory/MultiTrackAutomaton.h"
+
+#include "../theory/BinaryIntAutomaton.h"
+#include "../theory/BoolAutomaton.h"
+#include "../theory/IntAutomaton.h"
+#include "../theory/MultiTrackAutomaton.h"
+#include "../theory/StringAutomaton.h"
 
 namespace Vlab {
 namespace Solver {
@@ -35,7 +35,6 @@ class Value {
     STRING_CONSTANT,  // not represented here as a data, can refer to singleton automaton
     BOOL_AUTOMATON,
     INT_AUTOMATON,
-    INTBOOL_AUTOMATON,
     BINARYINT_AUTOMATON,
     STRING_AUTOMATON,
     MULTITRACK_AUTOMATON
@@ -46,7 +45,6 @@ class Value {
   Value(int data);
   Value(Theory::BoolAutomaton_ptr data);
   Value(Theory::IntAutomaton_ptr data);
-  Value(Theory::IntBoolAutomaton_ptr data);
   Value(Theory::BinaryIntAutomaton_ptr data);
   Value(Theory::StringAutomaton_ptr data);
   Value(Theory::MultiTrackAutomaton_ptr data);
@@ -62,7 +60,6 @@ class Value {
   void setData(int data);
   void setData(Theory::BoolAutomaton_ptr data);
   void setData(Theory::IntAutomaton_ptr data);
-  void setData(Theory::IntBoolAutomaton_ptr data);
   void setData(Theory::BinaryIntAutomaton_ptr data);
   void setData(Theory::StringAutomaton_ptr data);
   void setData(Theory::MultiTrackAutomaton_ptr data);
@@ -71,7 +68,6 @@ class Value {
   int getIntConstant() const;
   Theory::BoolAutomaton_ptr getBoolAutomaton() const;
   Theory::IntAutomaton_ptr getIntAutomaton() const;
-  Theory::IntBoolAutomaton_ptr getIntBoolAutomaton() const;
   Theory::BinaryIntAutomaton_ptr getBinaryIntAutomaton() const;
   Theory::StringAutomaton_ptr getStringAutomaton() const;
   Theory::MultiTrackAutomaton_ptr getMultiTrackAutomaton() const;
@@ -97,7 +93,6 @@ class Value {
     static const std::string STRING_CONSTANT;
     static const std::string BOOL_AUTOMATON;
     static const std::string INT_AUTOMATON;
-    static const std::string INTBOOL_AUTOMATON;
     static const std::string BINARYINT_AUTOMATON;
     static const std::string STRING_AUTOMATON;
     static const std::string MULTITRACK_AUTOMATON;
@@ -112,7 +107,6 @@ class Value {
     int int_constant;
     Theory::BoolAutomaton_ptr bool_automaton;
     Theory::IntAutomaton_ptr int_automaton;
-    Theory::IntBoolAutomaton_ptr intbool_automaton;
     Theory::BinaryIntAutomaton_ptr binaryint_automaton;
     Theory::StringAutomaton_ptr string_automaton;
     Theory::MultiTrackAutomaton_ptr multitrack_automaton;

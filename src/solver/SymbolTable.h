@@ -8,19 +8,24 @@
 #ifndef SOLVER_SYMBOLTABLE_H_
 #define SOLVER_SYMBOLTABLE_H_
 
-#include <vector>
+#include <algorithm>
+#include <bits/functional_hash.h>
+#include <iterator>
 #include <map>
 #include <set>
-#include <algorithm>
-#include <functional>
-#include <string>
 #include <sstream>
-
+#include <string>
+#include <utility>
+#include <vector>
 #include <glog/logging.h>
-#include "smt/ast.h"
-#include "solver/Ast2Dot.h"
-#include "solver/Value.h"
-#include "solver/EquivalenceClass.h"
+
+#include "../smt/ast.h"
+#include "../smt/typedefs.h"
+#include "../theory/IntAutomaton.h"
+#include "../theory/StringAutomaton.h"
+#include "Ast2Dot.h"
+#include "EquivalenceClass.h"
+#include "Value.h"
 
 namespace Vlab {
 namespace Solver {

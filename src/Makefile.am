@@ -1,7 +1,5 @@
 SUBDIRS = smt parser utils theory 
-AM_CXXFLAGS = \
-	-I$(top_srcdir)/src \
-	-g
+AM_CXXFLAGS = -g
 
 
 if JAVA_HOME_VALID
@@ -10,9 +8,7 @@ ABC_JNI_SORUCE_FILES = vlab_cs_ucsb_edu_DriverProxy.cpp vlab_cs_ucsb_edu_DriverP
 ABC_JNI_HEADER_FILES = vlab_cs_ucsb_edu_DriverProxy.h
 endif
 
-AM_LDFLAGS = \
-  -L$(top_srcdir)/src/.libs \
-	$(LIBGLOG) 
+#AM_LDFLAGS = -L$(top_srcdir)/src/.libs
 	
 lib_LTLIBRARIES = libabc.la
 libabc_la_SOURCES = \
@@ -76,20 +72,22 @@ libabc_la_SOURCES = \
 libabc_la_LDFLAGS = -version-info 0:1:0
 
 libabc_la_LIBADD = \
-	$(LIBGLOG) \
 	./parser/libabcparser.la \
-	./theory/libabcautomaton.la 
+	./theory/libabcautomaton.la \
+	$(LIBGLOG) $(LIBSTRANGER) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) 
 
 libabc_ladir = $(includedir)/abc
 libabc_la_HEADERS = Driver.h $(ABC_JNI_HEADER_FILES)
 
 bin_PROGRAMS = abc
+abc_LDFLAGS = -L$(top_srcdir)/src/.libs
+
 abc_SOURCES = \
 	main.cpp 
 	
 abc_LDADD = \
-	$(LIBGLOG) \
-	-labc
+	-labc \
+	$(LIBGLOG) $(LIBSTRANGER) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) 
 
 test-local:
 	@echo src, $(srcdir), $(top_srcdir)

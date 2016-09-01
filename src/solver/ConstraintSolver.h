@@ -8,18 +8,32 @@
 #ifndef SOLVER_CONSTRAINTSOLVER_H_
 #define SOLVER_CONSTRAINTSOLVER_H_
 
-#include <cstdbool>
 #include <map>
+#include <sstream>
+#include <string>
+#include <utility>
 #include <vector>
 
+#include <glog/logging.h>
 
-#include "smt/typedefs.h"
-#include "solver/ArithmeticConstraintSolver.h"
-#include "solver/ConstraintInformation.h"
-#include "solver/SymbolTable.h"
-#include "solver/Value.h"
-#include "solver/StringConstraintSolver.h"
-
+#include "../options/Solver.h"
+#include "../smt/ast.h"
+#include "../smt/typedefs.h"
+#include "../smt/Visitor.h"
+#include "../theory/ArithmeticFormula.h"
+#include "../theory/BinaryIntAutomaton.h"
+#include "../theory/IntAutomaton.h"
+#include "../theory/MultiTrackAutomaton.h"
+#include "../theory/StringAutomaton.h"
+#include "../theory/StringRelation.h"
+#include "../theory/UnaryAutomaton.h"
+#include "ArithmeticConstraintSolver.h"
+#include "ConstraintInformation.h"
+#include "StringRelationGenerator.h"
+#include "StringConstraintSolver.h"
+#include "SymbolTable.h"
+#include "Value.h"
+#include "VariableValueComputer.h"
 
 namespace Vlab {
 namespace Solver {

@@ -8,24 +8,27 @@
 #ifndef THEORY_STRINGAUTOMATON_H_
 #define THEORY_STRINGAUTOMATON_H_
 
-#include <sstream>
-#include <iostream>
-#include <fstream>
-#include <array>
-#include <vector>
+#include <cmath>
+#include <cstring>
+#include <iterator>
 #include <map>
 #include <set>
+#include <sstream>
 #include <stack>
-#include <queue>
-#include <cmath>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include <glog/logging.h>
-#include "utils/RegularExpression.h"
-#include "Graph.h"
-#include "DAGraph.h"
+//#include <mona/bdd.h>
+//#include <mona/dfa.h>
+
+#include "../utils/RegularExpression.h"
 #include "Automaton.h"
-#include "IntAutomaton.h"
 #include "UnaryAutomaton.h"
+#include "Graph.h"
+#include "GraphNode.h"
+#include "IntAutomaton.h"
 
 namespace Vlab {
 namespace Theory {

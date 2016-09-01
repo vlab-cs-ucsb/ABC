@@ -11,15 +11,17 @@
 #ifndef SRC_SOLVER_OPTIMIZATION_CHARATOPTIMIZATION_H_
 #define SRC_SOLVER_OPTIMIZATION_CHARATOPTIMIZATION_H_
 
-#include <algorithm>
+#include <iterator>
+#include <stddef.h>
 #include <string>
-#include <sstream>
-#include <cctype>
+#include <vector>
 
 #include <glog/logging.h>
 
+#include "../../smt/ast.h"
+#include "../../smt/typedefs.h"
+#include "../../smt/Visitor.h"
 #include "ConstantTermChecker.h"
-#include "smt/ast.h"
 
 namespace Vlab {
 namespace Solver {

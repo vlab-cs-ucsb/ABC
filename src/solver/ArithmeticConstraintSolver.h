@@ -8,15 +8,23 @@
 #ifndef SOLVER_ARITHMETICCONSTRAINTSOLVER_H_
 #define SOLVER_ARITHMETICCONSTRAINTSOLVER_H_
 
-#include <cstdbool>
+#include <iostream>
 #include <map>
+#include <string>
+#include <utility>
 
-#include "smt/typedefs.h"
-#include "solver/ArithmeticFormulaGenerator.h"
-#include "solver/AstTraverser.h"
-#include "solver/ConstraintInformation.h"
-#include "solver/SymbolTable.h"
-#include "solver/Value.h"
+#include <glog/logging.h>
+
+#include "../smt/ast.h"
+#include "../smt/Visitor.h"
+#include "../smt/typedefs.h"
+#include "../theory/ArithmeticFormula.h"
+#include "../theory/BinaryIntAutomaton.h"
+#include "ArithmeticFormulaGenerator.h"
+#include "AstTraverser.h"
+#include "ConstraintInformation.h"
+#include "SymbolTable.h"
+#include "Value.h"
 
 namespace Vlab {
 namespace Solver {

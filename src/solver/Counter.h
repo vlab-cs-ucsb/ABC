@@ -8,10 +8,17 @@
 #ifndef SOLVER_COUNTER_H_
 #define SOLVER_COUNTER_H_
 
+#include <iostream>
+#include <string>
+#include <utility>
+
 #include <glog/logging.h>
-#include "smt/ast.h"
-#include "SymbolTable.h"
+#include <glog/vlog_is_on.h>
+
+#include "../smt/ast.h"
+#include "../smt/typedefs.h"
 #include "AstTraverser.h"
+#include "SymbolTable.h"
 
 namespace Vlab {
 namespace Solver {

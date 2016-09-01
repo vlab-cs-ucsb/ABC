@@ -13,10 +13,15 @@
 
 #include <iostream>
 #include <set>
-#include <string>
 #include <sstream>
+#include <string>
+#include <map>
+#include <utility>
 
-#include "smt/ast.h"
+#include <glog/logging.h>
+
+#include "../smt/ast.h"
+#include "../smt/typedefs.h"
 
 namespace Vlab {
 namespace Solver {

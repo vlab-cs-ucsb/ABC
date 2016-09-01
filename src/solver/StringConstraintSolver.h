@@ -5,19 +5,23 @@
 #ifndef SRC_STRINGCONSTRAINTSOLVER_H
 #define SRC_STRINGCONSTRAINTSOLVER_H
 
+#include <iostream>
 #include <map>
+#include <string>
 
 #include <glog/logging.h>
 
-#include "theory/MultiTrackAutomaton.h"
-#include "theory/StringAutomaton.h"
-#include "StringRelationGenerator.h"
-#include "ConstraintInformation.h"
+#include "../smt/ast.h"
+#include "../smt/typedefs.h"
+#include "../smt/Visitor.h"
+#include "../theory/MultiTrackAutomaton.h"
+#include "../theory/StringAutomaton.h"
+#include "../theory/StringRelation.h"
 #include "AstTraverser.h"
-#include "smt/ast.h"
+#include "ConstraintInformation.h"
+#include "StringRelationGenerator.h"
 #include "SymbolTable.h"
 #include "Value.h"
-#include "smt/typedefs.h"
 
 namespace Vlab {
 namespace Solver {

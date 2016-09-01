@@ -7,16 +7,6 @@
 
 #include "SyntacticOptimizer.h"
 
-#include <cstdbool>
-#include <iterator>
-#include <string>
-#include <utility>
-#include <vector>
-#include <algorithm>
-
-#include "smt/typedefs.h"
-#include "smt/Visitor.h"
-
 namespace Vlab {
 namespace Solver {
 
