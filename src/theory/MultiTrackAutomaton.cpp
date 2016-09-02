@@ -1186,7 +1186,9 @@ bool MultiTrackAutomaton::setRelation(StringRelation_ptr relation) {
 }
 
 char* MultiTrackAutomaton::getLambda(int var) {
-	return getSharp1(var); //11111111
+  LOG(FATAL) << "implement me";
+  return "111111111";
+//	return getSharp1(var); //11111111
 }
 
 DFA_ptr MultiTrackAutomaton::getLambdaStar(int var, int* indices) {
@@ -1226,7 +1228,8 @@ DFA_ptr MultiTrackAutomaton::removeLambdaSuffix(DFA_ptr dfa, int num_vars) {
 	std::string symbol;
 	std::vector<std::pair<std::vector<char>,int>> state_exeps;
 	indices = Automaton::getIndices(num_vars);
-	sink = find_sink(dfa);
+	LOG(FATAL) << "implement me find sink";
+	//	sink = find_sink(dfa);
 	dfaSetup(dfa->ns, num_vars, indices);
 	statuses = new char[dfa->ns+1];
 	for(int i = 0; i < dfa->ns; i++) {
@@ -1629,7 +1632,7 @@ StringAutomaton_ptr MultiTrackAutomaton::get_reverse_auto(StringAutomaton_ptr st
 	paths state_paths = nullptr, pp = nullptr;
 	trace_descr tp = nullptr;
 	int* indices = getIndices(VAR_PER_TRACK);
-	int sink = find_sink(other);
+	int sink = string_auto->getSinkState();
 	// initialize array of reversed exceptions, for new reversed DFA
 	//std::vector<std::vector<Exception>*> statepaths(other->ns+1);
 	std::vector<std::vector<std::pair<std::string,int>>> state_exeps(other->ns+1);
@@ -1833,6 +1836,19 @@ std::vector<std::vector<char>> MultiTrackAutomaton::extractValidTransitions(std:
     valid_transitions.push_back(std::vector<char>(it.begin(),it.end()));
   }
   return valid_transitions;
+}
+
+int MultiTrackAutomaton::find_sink(DFA *M) {
+  int i;
+  for (i = 0; i < M->ns; i++) {
+    //printf("Enter find_sink\n");
+    //leaf, nowhere, reject
+    if (bdd_is_leaf(M->bddm, M->q[i]) && (bdd_leaf_value(M->bddm, M->q[i])
+        == i) && (M->f[i] == -1))
+      return i;
+  }
+  //printf("Exit(find sink)\n");
+  return -1;
 }
 
 

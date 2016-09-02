@@ -92,28 +92,25 @@ int* Automaton::getVariableIndices() {
 }
 
 /**
- * TODO Needs complete refactoring, has a lot of room for improvements
- * especially in libstranger function calls
+ * TODO write test cases
  */
-bool Automaton::checkEquivalence(Automaton_ptr other_auto) {
-  DFA *M[4];
-  int result, i;
+bool Automaton::IsEqual(Automaton_ptr other_auto) {
 
-  M[0] = dfaProduct(this->dfa, other_auto->dfa, dfaIMPL);
-  M[1] = dfaProduct(other_auto->dfa, this->dfa, dfaIMPL);
-  M[2] = dfa_intersect(M[0], M[1]);
-  dfaFree(M[0]);
-  M[0] = nullptr;
-  dfaFree(M[1]);
-  M[1] = nullptr;
-  M[3] = dfa_negate(M[2], num_of_variables, variable_indices);
-  result = check_emptiness(M[3], num_of_variables, variable_indices);
-  dfaFree(M[2]);
-  M[2] = nullptr;
-  dfaFree(M[3]);
-  M[3] = nullptr;
+  auto impl_1 = dfaProduct(this->dfa, other_auto->dfa, dfaIMPL);
+  auto impl_2 = dfaProduct(other_auto->dfa, this->dfa, dfaIMPL);
+  auto result_dfa = dfaProduct(impl_1,impl_2,dfaAND);
+  dfaFree(impl_1);
+  dfaFree(impl_2);
 
-  return result;
+  dfaNegation(result_dfa);
+
+  auto minimized_dfa = dfaMinimize(result_dfa);
+  dfaFree(result_dfa);
+
+  bool is_empty_language = (minimized_dfa->ns == 1 && minimized_dfa->f[minimized_dfa->s] == -1)? true : false;
+  dfaFree(minimized_dfa);
+
+  return is_empty_language;
 }
 
 /**
@@ -1121,23 +1118,13 @@ void Automaton::preProcessAdjacencyList(AdjacencyList& adjaceny_count_list) {
 }
 
 /**
- * TODO Refactor lib functions
- *  - find_sink
- *  - ....
+ * TODO Reimplement
+ *
  */
 void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
-  paths state_paths, pp;
-  trace_descr tp;
-
-  int i, j, k, l, size, maxexp, sink;
-  pCharPair *buffer; //array of charpairs references
-  char *character;
-  pCharPair **toTrans; //array for all states, each entry is an array of charpair references
-  int *toTransIndecies;
-  char** ranges;
 
   print_sink = print_sink || (dfa->ns == 1 and dfa->f[0] == -1);
-  sink = find_sink(dfa);
+  int sink_state = getSinkState();
 
   out << "digraph MONA_DFA {\n"
           " rankdir = LR;\n "
@@ -1147,7 +1134,7 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
           " node [height = .5, width = .5];\n"
           " node [shape = doublecircle];";
 
-  for (i = 0; i < dfa->ns; i++) {
+  for (int i = 0; i < dfa->ns; i++) {
     if (dfa->f[i] == 1) {
       out << " " << i << ";";
     }
@@ -1155,9 +1142,9 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
 
   out << "\n node [shape = circle];";
 
-  for (i = 0; i < dfa->ns; i++) {
+  for (int i = 0; i < dfa->ns; i++) {
     if (dfa->f[i] == -1) {
-      if (i != sink || print_sink) {
+      if (i != sink_state || print_sink) {
         out << " " << i << ";";
       }
     }
@@ -1165,7 +1152,7 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
 
   out << "\n node [shape = box];";
 
-  for (i = 0; i < dfa->ns; i++) {
+  for (int i = 0; i < dfa->ns; i++) {
     if (dfa->f[i] == 0) {
       out << " " << i << ";";
     }
@@ -1173,130 +1160,108 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
 
   out << "\n init [shape = plaintext, label = \"\"];\n" << " init -> " << dfa->s << ";\n";
 
-  maxexp = 1 << num_of_variables;
-  //TODO convert into c++ style memory management
-  buffer = (pCharPair*) malloc(sizeof(pCharPair) * maxexp); //max no of chars from Si to Sj = 2^num_of_variables
-  character = (char*) malloc((num_of_variables + 1) * sizeof(char));
-  toTrans = (pCharPair**) malloc(sizeof(pCharPair*) * dfa->ns); //need this to gather all edges out to state Sj from Si
-  for (i = 0; i < dfa->ns; i++) {
-    toTrans[i] = (pCharPair*) malloc(maxexp * sizeof(pCharPair));
-  }
-  toTransIndecies = (int*) malloc(dfa->ns * sizeof(int)); //for a state Si, how many edges out to each state Sj
-
-  for (i = 0; i < dfa->ns; i++) {
-    //get transitions out from state i
-    state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
-
-    //init buffer
-    for (j = 0; j < dfa->ns; j++) {
-      toTransIndecies[j] = 0;
-    }
-
-    for (j = 0; j < maxexp; j++) {
-      for (k = 0; k < dfa->ns; k++) {
-        toTrans[k][j] = 0;
-      }
-      buffer[j] = 0;
-    }
-
-    //gather transitions out from state i
-    //for each transition pp out from state i
-    while (pp) {
-      if (pp->to == (unsigned) sink && not print_sink) {
-        pp = pp->next;
-        continue;
-      }
-      //get mona character on transition pp
-      for (j = 0; j < num_of_variables; j++) {
-        for (tp = pp->trace; tp && (tp->index != (unsigned) variable_indices[j]); tp = tp->next)
-          ;
-
-        if (tp) {
-          if (tp->value)
-            character[j] = '1';
-          else
-            character[j] = '0';
-        } else
-          character[j] = 'X';
-      }
-      character[j] = '\0';
-      if (num_of_variables == 8) {
-        //break mona character into ranges of ascii chars (example: "0XXX000X" -> [\s-!], [0-1], [@-A], [P-Q])
-        size = 0;
-        getTransitionChars(character, num_of_variables, buffer, &size);
-        //get current index
-        k = toTransIndecies[pp->to];
-        //print ranges
-        for (l = 0; l < size; l++) {
-          toTrans[pp->to][k++] = buffer[l];
-          buffer[l] = 0;    //do not free just detach
-        }
-        toTransIndecies[pp->to] = k;
-      } else {
+  LOG(FATAL) << "Reimplement toDotAscii";
+//  paths state_paths, pp;
+//  trace_descr tp;
+//
+//  for (int i = 0; i < dfa->ns; i++) {
+//    state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
+//    while (pp) {
+//      if ((int)pp->to == sink_state && not print_sink) {
+//        pp = pp->next;
+//        continue;
+//      }
+//
+//      for (j = 0; j < num_of_variables; j++) {
+//        for (tp = pp->trace; tp && (tp->index != (unsigned) variable_indices[j]); tp = tp->next)
+//          ;
+//
+//        if (tp) {
+//          if (tp->value)
+//            character[j] = '1';
+//          else
+//            character[j] = '0';
+//        } else
+//          character[j] = 'X';
+//      }
+//      character[j] = '\0';
+//      if (num_of_variables == 8) {
+//        //break mona character into ranges of ascii chars (example: "0XXX000X" -> [\s-!], [0-1], [@-A], [P-Q])
+//        size = 0;
+//        getTransitionChars(character, num_of_variables, buffer, &size);
+//        //get current index
 //        k = toTransIndecies[pp->to];
-//        toTrans[pp->to][k] = (char*) malloc(sizeof(char) * (strlen(character) + 1));
-//        strcpy(toTrans[pp->to][k], character);
-//        toTransIndecies[pp->to] = k + 1;
-      }
-      pp = pp->next;
-    }
-
-    //print transitions out of state i
-    for (j = 0; j < dfa->ns; j++) {
-      size = toTransIndecies[j];
-      if (size == 0 || (sink == j && not print_sink)) {
-        continue;
-      }
-      ranges = mergeCharRanges(toTrans[j], &size);
-      //print edge from i to j
-      out << " " << i << " -> " << j << " [label=\"";
-      bool print_label = (j != sink || print_sink);
-      l = 0;    //to help breaking into new line
-      //for each trans k on char/range from i to j
-      for (k = 0; k < size; k++) {
-        //print char/range
-        if (print_label) {
-          out << " " << ranges[k];
-        }
-        l += strlen(ranges[k]);
-        if (l > 18) {
-          if (print_label) {
-            out << "\\n";
-          }
-          l = 0;
-        } else if (k < (size - 1)) {
-          if (print_label) {
-            out << ",";
-          }
-        }
-        free(ranges[k]);
-      }      //for
-      out << "\"];\n";
-      if (size > 0)
-        free(ranges);
-    }
-    //for each state free charRange
-    //merge with loop above for better performance
-    for (j = 0; j < dfa->ns; j++) {
-      if (j == sink && not print_sink) {
-        continue;
-      }
-      size = toTransIndecies[j];
-      for (k = 0; k < size; k++) {
-        free(toTrans[j][k]);
-      }
-    }
-
-    kill_paths(state_paths);
-  }    //end for each state
-
-  free(character);
-  free(buffer);
-  for (i = 0; i < dfa->ns; i++) {
-    free(toTrans[i]);
-  }
-  free(toTrans);
-  free(toTransIndecies);
+//        //print ranges
+//        for (l = 0; l < size; l++) {
+//          toTrans[pp->to][k++] = buffer[l];
+//          buffer[l] = 0;    //do not free just detach
+//        }
+//        toTransIndecies[pp->to] = k;
+//      } else {
+////        k = toTransIndecies[pp->to];
+////        toTrans[pp->to][k] = (char*) malloc(sizeof(char) * (strlen(character) + 1));
+////        strcpy(toTrans[pp->to][k], character);
+////        toTransIndecies[pp->to] = k + 1;
+//      }
+//      pp = pp->next;
+//    }
+//
+//    //print transitions out of state i
+//    for (j = 0; j < dfa->ns; j++) {
+//      size = toTransIndecies[j];
+//      if (size == 0 || (sink_state == j && not print_sink)) {
+//        continue;
+//      }
+//      ranges = mergeCharRanges(toTrans[j], &size);
+//      //print edge from i to j
+//      out << " " << i << " -> " << j << " [label=\"";
+//      bool print_label = (j != sink_state || print_sink);
+//      l = 0;    //to help breaking into new line
+//      //for each trans k on char/range from i to j
+//      for (k = 0; k < size; k++) {
+//        //print char/range
+//        if (print_label) {
+//          out << " " << ranges[k];
+//        }
+//        l += strlen(ranges[k]);
+//        if (l > 18) {
+//          if (print_label) {
+//            out << "\\n";
+//          }
+//          l = 0;
+//        } else if (k < (size - 1)) {
+//          if (print_label) {
+//            out << ",";
+//          }
+//        }
+//        free(ranges[k]);
+//      }      //for
+//      out << "\"];\n";
+//      if (size > 0)
+//        free(ranges);
+//    }
+//    //for each state free charRange
+//    //merge with loop above for better performance
+//    for (j = 0; j < dfa->ns; j++) {
+//      if (j == sink_state && not print_sink) {
+//        continue;
+//      }
+//      size = toTransIndecies[j];
+//      for (k = 0; k < size; k++) {
+//        free(toTrans[j][k]);
+//      }
+//    }
+//
+//    kill_paths(state_paths);
+//  }    //end for each state
+//
+//  free(character);
+//  free(buffer);
+//  for (i = 0; i < dfa->ns; i++) {
+//    free(toTrans[i]);
+//  }
+//  free(toTrans);
+//  free(toTransIndecies);
 
   out << "}" << std::endl;
 }
@@ -1434,7 +1399,7 @@ void Automaton::toBDD(std::ostream& out) {
 
   /* build table of tuples (idx,lo,hi) */
   for (int i = 0; i < this->dfa->ns; i++) {
-    __export(this->dfa->bddm, this->dfa->q[i], table);
+    _export(this->dfa->bddm, this->dfa->q[i], table);
   }
 
   /* renumber lo/hi pointers to new table ordering */

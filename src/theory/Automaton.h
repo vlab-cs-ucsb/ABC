@@ -25,12 +25,10 @@
 #include <vector>
 
 #include <glog/logging.h>
-//#include <mona/bdd.h>
-//#include <mona/bdd_external.h>
-//#include <mona/dfa.h>
-//#include <mona/mem.h>
-#include <stranger/stranger.h>
-#include <stranger/stranger_lib_internal.h>
+#include <mona/bdd.h>
+#include <mona/bdd_external.h>
+#include <mona/dfa.h>
+#include <mona/mem.h>
 #include <boost/multiprecision/cpp_int.hpp>
 
 #include "../options/Theory.h"
@@ -83,7 +81,7 @@ public:
     static const std::string BINARYINT;
   };
 
-  bool checkEquivalence(Automaton_ptr other_auto);
+  bool IsEqual(Automaton_ptr other_auto);
   bool isEmptyLanguage();
   bool isInitialStateAccepting();
   bool isOnlyInitialStateAccepting();
@@ -104,6 +102,8 @@ public:
   DFA_ptr importDFA(std::string file_name);
   int inspectAuto(bool print_sink = false, bool force_mona_format = false);
   int inspectBDD();
+
+  int getSinkState();
 
   friend std::ostream& operator<<(std::ostream& os, const Automaton& automaton);
 protected:
@@ -126,7 +126,7 @@ protected:
   bool isStartState(int state_id);
   bool isSinkState(int state_id);
   bool isAcceptingState(int state_id);
-  int getSinkState();
+
   bool hasIncomingTransition(int state);
   bool isStartStateReachableFromAnAcceptingState();
   bool hasNextState(int state, int search);

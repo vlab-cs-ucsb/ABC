@@ -73,7 +73,6 @@ virtual ~MultiTrackAutomaton();
 	bool setRelation(StringRelation_ptr relation);
 
  protected:
-
 	static char* getLambda(int);
 	static DFA_ptr getLambdaStar(int, int*);
 	static bool checkLambda(std::string,int track_num,int num_tracks,int var);
@@ -83,6 +82,7 @@ virtual ~MultiTrackAutomaton();
 	static DFA_ptr make_binary_aligned_dfa(int left_track, int right_track, int total_tracks);
 	static std::vector<std::vector<char>> extractValidTransitions(std::vector<char> exep, std::vector<char> trim_set, int var);
 
+	static int find_sink(DFA *M);
 	static const int VAR_PER_TRACK = 8;
 	int num_of_tracks;
 

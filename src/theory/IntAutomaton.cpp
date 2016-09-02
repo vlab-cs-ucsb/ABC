@@ -134,9 +134,10 @@ IntAutomaton_ptr IntAutomaton::makeInt(int value, int num_of_variables, int* var
     int_auto = IntAutomaton::makeZero();
   }
   else{
-    int_dfa = dfaStringAutomatonL1toL2(value, value,
-             IntAutomaton::DEFAULT_NUM_OF_VARIABLES, IntAutomaton::DEFAULT_VARIABLE_INDICES);
-         int_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+    LOG(FATAL) << "implement me";
+    //    int_dfa = dfaStringAutomatonL1toL2(value, value,
+//             IntAutomaton::DEFAULT_NUM_OF_VARIABLES, IntAutomaton::DEFAULT_VARIABLE_INDICES);
+//         int_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
   }
 
   DVLOG(VLOG_LEVEL) << int_auto->id << " = makeInt(" << value <<  ")";
@@ -156,9 +157,10 @@ IntAutomaton_ptr IntAutomaton::makeIntLessThan(int value, int num_of_variables, 
      int_auto->has_negative_1 = true;
    }
    else{
-     int_dfa = dfaStringAutomatonL1toL2(0, value - 1,
-         IntAutomaton::DEFAULT_NUM_OF_VARIABLES, IntAutomaton::DEFAULT_VARIABLE_INDICES);
-     int_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+     LOG(FATAL) << "implement me";
+//     int_dfa = dfaStringAutomatonL1toL2(0, value - 1,
+//         IntAutomaton::DEFAULT_NUM_OF_VARIABLES, IntAutomaton::DEFAULT_VARIABLE_INDICES);
+//     int_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
    }
 
    DVLOG(VLOG_LEVEL) << int_auto->id << " = makeIntLessThan(" << value <<  ")";
@@ -179,9 +181,10 @@ IntAutomaton_ptr IntAutomaton::makeIntLessThanOrEqual(int value, int num_of_vari
     int_auto->has_negative_1 = true;
   }
   else{
-    int_dfa = dfaStringAutomatonL1toL2(0, value,
-             IntAutomaton::DEFAULT_NUM_OF_VARIABLES, IntAutomaton::DEFAULT_VARIABLE_INDICES);
-         int_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+    LOG(FATAL) << "implement me";
+//    int_dfa = dfaStringAutomatonL1toL2(0, value,
+//             IntAutomaton::DEFAULT_NUM_OF_VARIABLES, IntAutomaton::DEFAULT_VARIABLE_INDICES);
+//         int_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
   }
 
   DVLOG(VLOG_LEVEL) << int_auto->id << " = makeIntLessThanEqual(" << value <<  ")";
@@ -226,10 +229,10 @@ IntAutomaton_ptr IntAutomaton::makeIntGreaterThanOrEqual(int value, int num_of_v
 IntAutomaton_ptr IntAutomaton::makeIntRange(int start, int end, int num_of_variables, int* variable_indices){
   DFA_ptr int_dfa = nullptr;
   IntAutomaton_ptr range_auto = nullptr;
-
-  int_dfa = dfaStringAutomatonL1toL2(start, end,
-           IntAutomaton::DEFAULT_NUM_OF_VARIABLES, IntAutomaton::DEFAULT_VARIABLE_INDICES);
-  range_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  LOG(FATAL) << "implement me";
+//  int_dfa = dfaStringAutomatonL1toL2(start, end,
+//           IntAutomaton::DEFAULT_NUM_OF_VARIABLES, IntAutomaton::DEFAULT_VARIABLE_INDICES);
+//  range_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   DVLOG(VLOG_LEVEL) << range_auto->id << " = makeIntRange(" << start << "," << end <<  ")";
 
@@ -790,7 +793,7 @@ IntAutomaton_ptr IntAutomaton::restrictLessThanOrEqualTo(IntAutomaton_ptr other_
 }
 
 bool IntAutomaton::checkEquivalance(IntAutomaton_ptr other_auto) {
-  return (Automaton::checkEquivalence(other_auto) and (has_negative_1 == other_auto->has_negative_1));
+  return (Automaton::IsEqual(other_auto) and (has_negative_1 == other_auto->has_negative_1));
 }
 
 bool IntAutomaton::isEmptyLanguage() {
@@ -929,10 +932,11 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
 
 
   if (has_empty_string and other_auto->hasIncomingTransition(other_auto->dfa->s)) {
-    DFA_ptr shifted_dfa = dfa_shift_empty_M(other_auto->dfa, other_auto->num_of_variables, other_auto->variable_indices);
-    IntAutomaton_ptr shifted_auto = new IntAutomaton(shifted_dfa, other_auto->num_of_variables);
-    other_auto = shifted_auto;
-    delete_other_auto = true;
+    LOG(FATAL) << "implement me";
+//    DFA_ptr shifted_dfa = dfa_shift_empty_M(other_auto->dfa, other_auto->num_of_variables, other_auto->variable_indices);
+//    IntAutomaton_ptr shifted_auto = new IntAutomaton(shifted_dfa, other_auto->num_of_variables);
+//    other_auto = shifted_auto;
+//    delete_other_auto = true;
   }
 
   int var = num_of_variables;
@@ -1194,7 +1198,8 @@ IntAutomaton_ptr IntAutomaton::__minus(IntAutomaton_ptr other_auto) {
   DFA_ptr result_dfa = nullptr;
   IntAutomaton_ptr result_auto = nullptr;
 
-  result_dfa = dfa_pre_concat(this->dfa, other_auto->dfa, 1, num_of_variables, variable_indices);
+  LOG(FATAL) << "implement me";
+//  result_dfa = dfa_pre_concat(this->dfa, other_auto->dfa, 1, num_of_variables, variable_indices);
 
   result_auto = new IntAutomaton(result_dfa, num_of_variables);
 
