@@ -1,4 +1,4 @@
-SUBDIRS = smt parser utils theory 
+SUBDIRS = solver 
 AM_CXXFLAGS = -g
 
 
@@ -8,64 +8,10 @@ ABC_JNI_SORUCE_FILES = vlab_cs_ucsb_edu_DriverProxy.cpp vlab_cs_ucsb_edu_DriverP
 ABC_JNI_HEADER_FILES = vlab_cs_ucsb_edu_DriverProxy.h
 endif
 
-#AM_LDFLAGS = -L$(top_srcdir)/src/.libs
+#AM_LDFLAGS = 
 	
 lib_LTLIBRARIES = libabc.la
 libabc_la_SOURCES = \
-  ./solver/options/Solver.cpp \
-  ./solver/options/Solver.h \
-  ./solver/AstTraverser.cpp \
-  ./solver/AstTraverser.h \
-  ./solver/Ast2Dot.cpp \
-  ./solver/Ast2Dot.h \
-  ./solver/Value.cpp \
-  ./solver/Value.h \
-  ./solver/SymbolTable.cpp \
-  ./solver/SymbolTable.h \
-  ./solver/Initializer.cpp \
-  ./solver/Initializer.h \
-  ./solver/SyntacticProcessor.cpp \
-  ./solver/SyntacticProcessor.h \
-  ./solver/optimization/ConstantTermChecker.cpp \
-  ./solver/optimization/ConstantTermChecker.h \
-  ./solver/optimization/ConstantTermOptimization.cpp \
-  ./solver/optimization/ConstantTermOptimization.h \
-  ./solver/optimization/CharAtOptimization.cpp \
-  ./solver/optimization/CharAtOptimization.h \
-  ./solver/optimization/SubstringOptimization.cpp \
-  ./solver/optimization/SubstringOptimization.h \
-  ./solver/SyntacticOptimizer.cpp \
-  ./solver/SyntacticOptimizer.h \
-  ./solver/Counter.cpp \
-  ./solver/Counter.h \
-  ./solver/ConstraintInformation.cpp \
-  ./solver/ConstraintInformation.h \
-  ./solver/DependencySlicer.cpp \
-  ./solver/DependencySlicer.h \
-  ./solver/EquivalenceClass.cpp \
-  ./solver/EquivalenceClass.h \
-  ./solver/EquivalenceGenerator.h \
-  ./solver/EquivalenceGenerator.cpp \
-  ./solver/EquivClassRuleRunner.cpp \
-  ./solver/EquivClassRuleRunner.h \
-  ./solver/FormulaOptimizer.cpp \
-  ./solver/FormulaOptimizer.h \
-  ./solver/ImplicationRunner.h \
-  ./solver/ImplicationRunner.cpp \
-  ./solver/ConstraintSorter.cpp \
-  ./solver/ConstraintSorter.h \
-  ./solver/VariableValueComputer.cpp \
-  ./solver/VariableValueComputer.h \
-  ./solver/ArithmeticFormulaGenerator.cpp \
-  ./solver/ArithmeticFormulaGenerator.h \
-  ./solver/ArithmeticConstraintSolver.cpp \
-  ./solver/ArithmeticConstraintSolver.h \
-  ./solver/StringRelationGenerator.cpp \
-  ./solver/StringRelationGenerator.h \
-  ./solver/StringConstraintSolver.cpp \
-  ./solver/StringConstraintSolver.h \
-  ./solver/ConstraintSolver.cpp \
-  ./solver/ConstraintSolver.h \
   Driver.cpp \
   Driver.h \
   $(ABC_JNI_SORUCE_FILES)
@@ -73,8 +19,7 @@ libabc_la_SOURCES = \
 libabc_la_LDFLAGS = -version-info 0:1:0
 
 libabc_la_LIBADD = \
-	./parser/libabcparser.la \
-	./theory/libabcautomaton.la \
+	solver/libabcsolver.la \
 	$(LIBGLOG) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) 
 
 libabc_ladir = $(includedir)/abc

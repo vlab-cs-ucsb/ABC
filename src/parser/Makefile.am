@@ -1,3 +1,4 @@
+SUBDIRS = ../smt
 AM_YFLAGS = -d
 
 # AM_LDFLAGS = $(LIBGLOG)
