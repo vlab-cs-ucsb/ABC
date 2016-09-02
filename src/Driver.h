@@ -8,17 +8,47 @@
 #ifndef SRC_DRIVER_H_
 #define SRC_DRIVER_H_
 
-#include <boost/multiprecision/cpp_int.hpp>
-#include <cstdbool>
 #include <iostream>
 #include <map>
 #include <string>
+#include <cstdlib>
+#include <fstream>
+#include <utility>
 
-#include "options/Solver.h"
+#include <boost/multiprecision/cpp_int.hpp>
+#include <boost/multiprecision/detail/default_ops.hpp>
+#include <boost/multiprecision/detail/et_ops.hpp>
+#include <boost/multiprecision/detail/number_base.hpp>
+#include <boost/multiprecision/detail/number_compare.hpp>
+#include <boost/multiprecision/number.hpp>
+#include <glog/logging.h>
+
+#include "parser/location.hh"
+#include "parser/parser.hpp"
+#include "parser/Scanner.h"
+#include "smt/ast.h"
 #include "smt/typedefs.h"
+#include "solver/Ast2Dot.h"
 #include "solver/ConstraintInformation.h"
+#include "solver/ConstraintSolver.h"
+#include "solver/ConstraintSorter.h"
+#include "solver/DependencySlicer.h"
+#include "solver/EquivalenceGenerator.h"
+#include "solver/FormulaOptimizer.h"
+#include "solver/ImplicationRunner.h"
+#include "solver/Initializer.h"
+#include "solver/options/Solver.h"
 #include "solver/SymbolTable.h"
+#include "solver/SyntacticOptimizer.h"
+#include "solver/SyntacticProcessor.h"
 #include "solver/Value.h"
+#include "theory/ArithmeticFormula.h"
+#include "theory/BinaryIntAutomaton.h"
+#include "theory/IntAutomaton.h"
+#include "theory/MultiTrackAutomaton.h"
+#include "theory/options/Theory.h"
+#include "theory/StringAutomaton.h"
+#include "theory/StringRelation.h"
 
 namespace Vlab {
 namespace SMT {

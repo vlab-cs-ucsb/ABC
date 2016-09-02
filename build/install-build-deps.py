@@ -125,16 +125,6 @@ _project_dep = (
      'install'  : True
  },
  {
-     'name'     : 'LibStranger',
-     'url'      : 'https://github.com/vlab-cs-ucsb/LibStranger.git',
-     'checkout' : False,     
-     'patch'    : False,
-     'path'     : os.path.abspath(os.path.join(TMP_PATH, 'LibStranger')),
-     'autogen'  : True,
-     'autotools': True,
-     'install'  : True
- },
- {
      'name'     : 'googlemock',
      'submodule': True,
      'url'      : False,

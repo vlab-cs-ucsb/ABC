@@ -12,6 +12,8 @@ endif
 	
 lib_LTLIBRARIES = libabc.la
 libabc_la_SOURCES = \
+  ./solver/options/Solver.cpp \
+  ./solver/options/Solver.h \
   ./solver/AstTraverser.cpp \
   ./solver/AstTraverser.h \
   ./solver/Ast2Dot.cpp \
@@ -63,18 +65,17 @@ libabc_la_SOURCES = \
   ./solver/StringConstraintSolver.cpp \
   ./solver/StringConstraintSolver.h \
   ./solver/ConstraintSolver.cpp \
-	./solver/ConstraintSolver.h \
-	./options/Solver.cpp \
-	./options/Solver.h \
-	Driver.cpp \
-	Driver.h $(ABC_JNI_SORUCE_FILES)
+  ./solver/ConstraintSolver.h \
+  Driver.cpp \
+  Driver.h \
+  $(ABC_JNI_SORUCE_FILES)
 
 libabc_la_LDFLAGS = -version-info 0:1:0
 
 libabc_la_LIBADD = \
 	./parser/libabcparser.la \
 	./theory/libabcautomaton.la \
-	$(LIBGLOG) $(LIBSTRANGER) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) 
+	$(LIBGLOG) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) 
 
 libabc_ladir = $(includedir)/abc
 libabc_la_HEADERS = Driver.h $(ABC_JNI_HEADER_FILES)
@@ -87,7 +88,7 @@ abc_SOURCES = \
 	
 abc_LDADD = \
 	-labc \
-	$(LIBGLOG) $(LIBSTRANGER) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) 
+	$(LIBGLOG) 
 
 test-local:
 	@echo src, $(srcdir), $(top_srcdir)

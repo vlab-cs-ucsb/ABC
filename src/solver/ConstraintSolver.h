@@ -16,7 +16,6 @@
 
 #include <glog/logging.h>
 
-#include "../options/Solver.h"
 #include "../smt/ast.h"
 #include "../smt/typedefs.h"
 #include "../smt/Visitor.h"
@@ -29,6 +28,7 @@
 #include "../theory/UnaryAutomaton.h"
 #include "ArithmeticConstraintSolver.h"
 #include "ConstraintInformation.h"
+#include "options/Solver.h"
 #include "StringRelationGenerator.h"
 #include "StringConstraintSolver.h"
 #include "SymbolTable.h"

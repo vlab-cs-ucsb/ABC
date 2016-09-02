@@ -21,10 +21,10 @@
 #include "../smt/ast.h"
 #include "../smt/typedefs.h"
 #include "../smt/Visitor.h"
-#include "../options/Solver.h"
 #include "../theory/MultiTrackAutomaton.h"
 #include "../theory/StringRelation.h"
 #include "ConstraintInformation.h"
+#include "options/Solver.h"
 #include "SymbolTable.h"
 #include "Value.h"
 

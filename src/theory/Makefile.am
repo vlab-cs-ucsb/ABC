@@ -1,11 +1,11 @@
 AM_CXXFLAGS = -g
 
-#AM_LDFLAGS = $(LIBGLOG) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) $(LIBSTRANGER)
+#AM_LDFLAGS = 
 
 noinst_LTLIBRARIES = libabcautomaton.la
 libabcautomaton_la_SOURCES = \
-	../options/Theory.cpp \
-	../options/Theory.h \
+	options/Theory.cpp \
+	options/Theory.h \
 	GraphNode.cpp \
 	GraphNode.h \
 	Graph.cpp \
@@ -41,7 +41,7 @@ libabcautomaton_la_LDFLAGS = -version-info 0:1:0
 	
 libabcautomaton_la_LIBADD = \
 	../utils/libabcutils.la \
-	$(LIBGLOG) $(LIBSTRANGER) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) 
+	$(LIBGLOG) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) 
 	
 test-local: 
 	@echo parser, $(srcdir), $(top_srcdir)	

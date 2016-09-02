@@ -23,7 +23,7 @@
 #include <glog/vlog_is_on.h>
 
 #include "Driver.h"
-#include "options/Solver.h"
+#include "solver/options/Solver.h"
 #include "smt/ast.h"
 #include "solver/Value.h"
 #include "theory/BinaryIntAutomaton.h"

@@ -19,12 +19,12 @@
 
 #include <glog/logging.h>
 
-#include "../options/Solver.h"
 #include "../smt/ast.h"
 #include "../smt/typedefs.h"
 #include "../smt/Visitor.h"
 #include "../theory/ArithmeticFormula.h"
 #include "ConstraintInformation.h"
+#include "options/Solver.h"
 #include "SymbolTable.h"
 
 namespace Vlab {

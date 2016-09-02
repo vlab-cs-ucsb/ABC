@@ -18,11 +18,11 @@
 
 #include <glog/logging.h>
 
-#include "../options/Solver.h"
 #include "../smt/ast.h"
 #include "../smt/Visitor.h"
 #include "../smt/typedefs.h"
 #include "AstTraverser.h"
+#include "options/Solver.h"
 
 namespace Vlab {
 namespace Solver {

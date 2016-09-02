@@ -7,35 +7,6 @@
 
 #include "Driver.h"
 
-#include <boost/multiprecision/detail/default_ops.hpp>
-#include <boost/multiprecision/detail/et_ops.hpp>
-#include <boost/multiprecision/detail/number_base.hpp>
-#include <boost/multiprecision/number.hpp>
-#include <glog/logging.h>
-#include <cstdlib>
-#include <fstream>
-#include <utility>
-
-#include "options/Theory.h"
-#include "parser/location.hh"
-#include "parser/parser.hpp"
-#include "parser/Scanner.h"
-#include "smt/ast.h"
-#include "solver/Ast2Dot.h"
-#include "solver/ConstraintSolver.h"
-#include "solver/ConstraintSorter.h"
-#include "solver/DependencySlicer.h"
-#include "solver/EquivalenceGenerator.h"
-#include "solver/FormulaOptimizer.h"
-#include "solver/Initializer.h"
-#include "solver/SyntacticOptimizer.h"
-#include "solver/SyntacticProcessor.h"
-#include "solver/ImplicationRunner.h"
-#include "theory/BinaryIntAutomaton.h"
-#include "theory/IntAutomaton.h"
-#include "theory/StringAutomaton.h"
-#include "theory/MultiTrackAutomaton.h"
-
 namespace Vlab {
 
 //const Log::Level Driver::TAG = Log::DRIVER;

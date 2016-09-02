@@ -93,21 +93,7 @@ use it as a static or dynamic lib or you can run it from command line. This guid
   
   You should have mona libraries installed at */usr/local/lib* and headers installed at */usr/local/include/mona/* after running above commands. 
 
-  - [LibStranger](https://github.com/vlab-cs-ucsb/LibStranger) is an Automata-Based Symbolic String Analysis Library.
-  
-  ```
-  $ cd <your home directory or a preferred directory>
-  $ git clone https://github.com/vlab-cs-ucsb/LibStranger.git
-  $ cd LibStranger
-  $ ./autogen.sh
-  $ ./configure
-  $ make all
-  $ sudo make install
-  $ sudo ldconfig
-  ```
-  
-  You should have LibStranger libraries installed at */usr/local/lib* and headers installed at */usr/local/include/stranger/* after running above commands.
-  
+
 ####ABC Installation
 
   - [ABC](https://vlab.cs.ucsb.edu/ABC/).

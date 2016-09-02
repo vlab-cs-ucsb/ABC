@@ -29,12 +29,12 @@
 //#include <mona/dfa.h>
 #include <boost/multiprecision/cpp_int.hpp>
 
-#include "../options/Theory.h"
 #include "../utils/Cmd.h"
 #include "../utils/List.h"
 #include "ArithmeticFormula.h"
 #include "Automaton.h"
 #include "BinaryState.h"
+#include "options/Theory.h"
 #include "SemilinearSet.h"
 #include "UnaryAutomaton.h"
 

@@ -31,11 +31,11 @@
 #include <mona/mem.h>
 #include <boost/multiprecision/cpp_int.hpp>
 
-#include "../options/Theory.h"
 #include "../utils/Cmd.h"
 #include "../utils/Math.h"
 #include "Graph.h"
 #include "GraphNode.h"
+#include "options/Theory.h"
 
 namespace Vlab {
 namespace Theory {

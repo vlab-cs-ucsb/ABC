@@ -71,10 +71,6 @@ AC_CHECK_HEADERS([boost/multiprecision/cpp_int.hpp], [], [AC_MSG_ERROR([Please i
 AC_CHECK_LIB([m], [floor],[LIBM=-lm], AC_MSG_ERROR(c math library m not found))
 AC_SUBST([LIBM])
 
-AC_HAVE_LIBRARY([stranger], [LIBSTRANGER=-lstranger], AC_MSG_ERROR(LibStranger string analysis library not found))
-AC_SUBST([LIBSTRANGER])
-
-
 
 # Define gmock variables 
 GMOCK_VERSION="1.7.0"
