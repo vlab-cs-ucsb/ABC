@@ -44,25 +44,22 @@ public:
   void set_type(Type type);
   ArithmeticFormula::Type get_type() const;
   int get_number_of_variables() const;
-  std::map<std::string, int>& get_var_coeff_map();
-  int get_variable_index(std::string) const;
-  int get_variable_coefficient(std::string);
+  std::map<std::string, int> get_variable_coefficient_map() const;
+  void set_variable_coefficient_map(std::map<std::string, int>& coefficient_map);
+  int get_variable_coefficient(std::string) const;
   void set_variable_coefficient(std::string, int coeff);
-  int get_constant();
-  void set_constant(int constant);
-  bool is_constant();
-  void reset_coefficients(int value = 0);
-
   void add_variable(std::string, int);
-  std::map<std::string, int> get_variable_trackmap();
-  void set_variable_trackmap(std::map<std::string, int> trackmap);
-  void create_coeff_vec();
-  std::vector<int> get_coefficients();
+  std::vector<int> get_coefficients() const;
+  int get_constant() const;
+  void set_constant(int constant);
+  bool is_constant() const;
+  void reset_coefficients(int value = 0);
+  int get_variable_index(std::string) const;
 
-  ArithmeticFormula_ptr Subtract(ArithmeticFormula_ptr);
-  ArithmeticFormula_ptr NegateOperation();
-  ArithmeticFormula_ptr Multiply(int value);
   ArithmeticFormula_ptr Add(ArithmeticFormula_ptr);
+  ArithmeticFormula_ptr Subtract(ArithmeticFormula_ptr);
+  ArithmeticFormula_ptr Multiply(int value);
+  ArithmeticFormula_ptr negate();
 
   bool Simplify();
 
@@ -71,9 +68,7 @@ public:
 protected:
   ArithmeticFormula::Type type_;
   int constant_;
-  std::vector<int> coefficients_;
-  std::map<std::string, int> var_coeff_map_;
-  std::map<std::string, int> trackmap_handle_;
+  std::map<std::string, int> variable_coefficient_map_;
 
 private:
   static const int VLOG_LEVEL;

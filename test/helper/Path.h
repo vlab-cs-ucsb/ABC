@@ -8,6 +8,8 @@
 #ifndef TEST_HELPER_PATH_H_
 #define TEST_HELPER_PATH_H_
 
+#include <string>
+
 #define PP_STRINGIZE(text) #text
 #define STRINGIZE(text) PP_STRINGIZE(text)
 

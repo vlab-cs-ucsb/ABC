@@ -21,14 +21,12 @@ namespace Vlab {
 namespace Theory {
 namespace Test {
 
-
 class ArithmeticFormulaTest : public ::testing::Test {
 protected:
   virtual void SetUp();
   virtual void TearDown();
 
-  std::map<std::string, int> coeff_index_map;
-  std::vector<int> coefficients;
+  std::map<std::string, int> variable_coefficient_map_;
 };
 
 } /* namespace Test */

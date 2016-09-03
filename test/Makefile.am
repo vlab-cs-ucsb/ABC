@@ -1,3 +1,8 @@
+check:
+
+#SUBDIRS = helper mock
+SUBDIRS = helper
+
 AM_CXXFLAGS = \
 	-isystem $(top_srcdir)/lib/googletest/googletest/include \
 	-isystem $(top_srcdir)/lib/googletest/googlemock/include \
@@ -6,11 +11,10 @@ AM_CXXFLAGS = \
 	$(ABC_CXXFLAGS)
 
 AM_LDFLAGS = \
-	$(GMOCK_LDFLAGS) $(GMOCK_LIBS) \
-		$(top_srcdir)/lib/googletest/googletest/lib/libgtest.la \
-	$(top_srcdir)/lib/googletest/googlemock/lib/libgmock_main.la \
-	$(top_srcdir)/lib/googletest/googlemock/lib/libgmock.la \
-	-L$(top_srcdir)/src/.libs
+	$(GMOCK_LDFLAGS) \
+	-L$(top_srcdir)/src/.libs \
+	-L$(top_srcdir)/lib/googletest/googletest/lib/.libs \
+	-L$(top_srcdir)/lib/googletest/googlemock/lib/.libs 
 
 # TESTS -- Programs run automatically by "make check"
 # check_PROGRAMS -- Programs built by "make check" but not necessarily run
@@ -24,15 +28,26 @@ check_PROGRAMS += \
 	abctest
 
 
+#abctest_SOURCES = \
+#	./mock/theory/MockBinaryIntAutomaton.cpp \
+#	./mock/theory/MockBinaryIntAutmaton.h \
+#	./theory/ArithmeticFormulaTest.cpp \
+#	./theory/ArithmeticFormulaTest.h \
+#	./theory/BinaryIntAutomatonTest.cpp \
+#	./theory/BinaryIntAutomatonTest.h
+	
 abctest_SOURCES = \
-	./helper/Path.h \
-	./helper/FileHelper.cpp \
-	./helper/FileHelper.h \
-	./mock/theory/MockBinaryIntAutomaton.cpp \
-	./mock/theory/MockBinaryIntAutmaton.h \
 	./theory/ArithmeticFormulaTest.cpp \
-	./theory/ArithmeticFormulaTest.h \
-	./theory/BinaryIntAutomatonTest.cpp \
-	./theory/BinaryIntAutomatonTest.h
+	./theory/ArithmeticFormulaTest.h 
 
-abctest_LDADD = $(top_srcdir)/src/libabc.la
+abctest_LDADD = \
+	helper/libabctesthelper.la \
+	$(top_srcdir)/src/theory/libabcautomaton.la \
+	$(LIBGMOCKMAIN) \
+	$(LIBGMOCK) \
+	$(LIBGTEST) \
+	$(GMOCK_LIBS) 
+	
+
+test-local:
+	@echo src, $(srcdir), $(top_srcdir)

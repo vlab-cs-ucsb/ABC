@@ -90,6 +90,12 @@ AC_SUBST([GMOCK_CPPFLAGS])
 AC_SUBST([GMOCK_CXXFLAGS])
 AC_SUBST([GMOCK_LDFLAGS])
 AC_SUBST([GMOCK_LIBS])
+LIBGTEST=-lgtest
+LIBGMOCK=-lgmock
+LIBGMOCKMAIN=-lgmock_main
+AC_SUBST([LIBGTEST])
+AC_SUBST([LIBGMOCK])
+AC_SUBST([LIBGMOCKMAIN])
 
 # Define Paths
 ABC_PATH=`readlink -f $srcdir`
@@ -120,7 +126,16 @@ AM_COND_IF([JAVA_HOME_VALID],
 # set global compiler options
 
 # Create Makefile files
-AC_CONFIG_FILES([Makefile src/Makefile src/smt/Makefile src/parser/Makefile src/utils/Makefile src/theory/Makefile src/solver/Makefile test/Makefile])
+AC_CONFIG_FILES([ \
+    Makefile \
+    src/Makefile \
+    src/smt/Makefile \
+    src/parser/Makefile \
+    src/utils/Makefile \
+    src/theory/Makefile \
+    src/solver/Makefile \
+    test/Makefile \
+    test/helper/Makefile])
 #AC_CONFIG_SUBDIRS([lib/googletest/googletest lib/googletest/googlemock])
 #AC_CONFIG_SUBDIRS([external/glog external/LibStranger])
 AC_OUTPUT

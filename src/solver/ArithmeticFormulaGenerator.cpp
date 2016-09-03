@@ -100,9 +100,9 @@ void ArithmeticFormulaGenerator::visitAnd(And_ptr and_term) {
       }
 
       // POSSIBLE SOURCE OF ERROR FOR NON-DNF VERSIONS!!!
-      std::string group_name = get_variable_group_name(current_term_,param_formula->get_var_coeff_map().begin()->first);
+      std::string group_name = get_variable_group_name(current_term_,param_formula->get_variable_coefficient_map().begin()->first);
       if(group_name.empty()) {
-        std::string group_name = get_variable_group_name(current_term_, symbol_table_->getVariable(param_formula->get_var_coeff_map().begin()->first));
+        std::string group_name = get_variable_group_name(current_term_, symbol_table_->getVariable(param_formula->get_variable_coefficient_map().begin()->first));
       }
       term_group_map[term] = group_name;
       VariableTrackMap trackmap = get_group_trackmap(group_name);
@@ -131,7 +131,7 @@ void ArithmeticFormulaGenerator::visitNot(Not_ptr not_term) {
   child_formula = get_term_formula(not_term->term);
 
   if (child_formula not_eq nullptr and child_formula->get_number_of_variables() > 0) {
-    formula = child_formula->NegateOperation();
+    formula = child_formula->negate();
     set_term_formula(not_term, formula);
   }
 
@@ -239,7 +239,7 @@ void ArithmeticFormulaGenerator::visitEq(Eq_ptr eq_term) {
     delete_term_formula(eq_term->right_term);
     if (formula->get_number_of_variables() > 0) {
       set_term_formula(eq_term, formula);
-      add_int_variables(current_term_,formula->get_var_coeff_map());
+      add_int_variables(current_term_,formula->get_variable_coefficient_map());
       if (string_terms_.size() > 0) {
         string_terms_map_[eq_term] = string_terms_;
       }
@@ -264,7 +264,7 @@ void ArithmeticFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
     delete_term_formula(not_eq_term->right_term);
     if (formula->get_number_of_variables() > 0) {
       set_term_formula(not_eq_term, formula);
-      add_int_variables(current_term_,formula->get_var_coeff_map());
+      add_int_variables(current_term_,formula->get_variable_coefficient_map());
       if (string_terms_.size() > 0) {
         string_terms_map_[not_eq_term] = string_terms_;
       }
@@ -288,7 +288,7 @@ void ArithmeticFormulaGenerator::visitGt(Gt_ptr gt_term) {
 
   if (formula->get_number_of_variables() > 0) {
     set_term_formula(gt_term, formula);
-    add_int_variables(current_term_,formula->get_var_coeff_map());
+    add_int_variables(current_term_,formula->get_variable_coefficient_map());
     if (string_terms_.size() > 0) {
       string_terms_map_[gt_term] = string_terms_;
       string_terms_.clear();
@@ -311,7 +311,7 @@ void ArithmeticFormulaGenerator::visitGe(Ge_ptr ge_term) {
 
   if (formula->get_number_of_variables() > 0) {
     set_term_formula(ge_term, formula);
-    add_int_variables(current_term_,formula->get_var_coeff_map());
+    add_int_variables(current_term_,formula->get_variable_coefficient_map());
     if (string_terms_.size() > 0) {
       string_terms_map_[ge_term] = string_terms_;
       string_terms_.clear();
@@ -334,7 +334,7 @@ void ArithmeticFormulaGenerator::visitLt(Lt_ptr lt_term) {
 
   if (formula->get_number_of_variables() > 0) {
     set_term_formula(lt_term, formula);
-    add_int_variables(current_term_,formula->get_var_coeff_map());
+    add_int_variables(current_term_,formula->get_variable_coefficient_map());
     if (string_terms_.size() > 0) {
       string_terms_map_[lt_term] = string_terms_;
       string_terms_.clear();
@@ -357,7 +357,7 @@ void ArithmeticFormulaGenerator::visitLe(Le_ptr le_term) {
 
   if (formula->get_number_of_variables() > 0) {
     set_term_formula(le_term, formula);
-    add_int_variables(current_term_,formula->get_var_coeff_map());
+    add_int_variables(current_term_,formula->get_variable_coefficient_map());
     if (string_terms_.size() > 0) {
       string_terms_map_[le_term] = string_terms_;
       string_terms_.clear();

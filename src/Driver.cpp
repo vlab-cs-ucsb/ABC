@@ -409,9 +409,19 @@ SMT::Variable_ptr Driver::get_smc_query_variable() {
 }
 
 void Driver::test() {
-	return;
+//	return;
 
+  LOG(INFO) << "DRIVER TEST METHOD";
+  std::map<std::string, int> test = {{"a", 6}, {"b", 7}, {"c", 8}, {"d", 9}, {"e", 10}, {"f", 11}};
+  auto f1 = test.find("b");
+  std::cout << "b index: " << std::distance(test.begin(), f1)<< std::endl;
 
+  auto f2 = test.find("a");
+  auto f3 = test.find("f");
+  auto f4 = test.find("z");
+  std::cout << "f index: " << std::distance(f2,f3) << std::endl;
+  std::cout << "z index: " << std::distance(f2, f4) << std::endl;
+  std::cout << "a index: " << std::distance(f2,f3) << std::endl;
 //    int indices[4] = {0,1,2,3};
 //    Theory::StringAutomaton_ptr test = Theory::StringAutomaton::makeAnyString(4, indices);
 //    test->inspectAuto(true, true);

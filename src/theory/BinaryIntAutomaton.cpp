@@ -122,7 +122,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::makeAutomaton(int value, std::string 
   ArithmeticFormula_ptr constant_value_formula = formula->clone();
   constant_value_formula->reset_coefficients();
   constant_value_formula->set_variable_coefficient(var_name, 1);
-  constant_value_formula->create_coeff_vec();
+  LOG(FATAL) << "uncomment and fix me";
+//  constant_value_formula->create_coeff_vec();
   constant_value_formula->set_constant(-value);
   constant_value_formula->set_type(ArithmeticFormula::Type::EQ);
   BinaryIntAutomaton_ptr binary_auto = BinaryIntAutomaton::makeAutomaton(constant_value_formula, not add_leading_zeros);
@@ -349,7 +350,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::complement() {
   delete tmp_auto;
   auto formula = complement_auto->getFormula();
   delete formula;
-  complement_auto->setFormula(this->formula->NegateOperation());
+  complement_auto->setFormula(this->formula->negate());
 
   DVLOG(VLOG_LEVEL) << complement_auto->id << " = [" << this->id << "]->complement()";
   return complement_auto;
@@ -445,7 +446,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::getBinaryAutomatonFor(std::string var
   single_var_formula->set_variable_coefficient(var_name, 1);
   std::map<std::string,int> trackmap;
   trackmap[var_name] = 0;
-  single_var_formula->set_variable_trackmap(trackmap);
+  LOG(FATAL) << "uncomment and fix me";
+//  single_var_formula->set_variable_trackmap(trackmap);
   single_var_auto->setFormula(single_var_formula);
 
   DVLOG(VLOG_LEVEL) << single_var_auto->id << " = [" << this->id << "]->getBinaryAutomatonOf(" << var_name << ")";
@@ -562,7 +564,7 @@ SemilinearSet_ptr BinaryIntAutomaton::getSemilinearSet() {
           tmp_1_auto = nullptr, tmp_2_auto = nullptr,
           diff_auto = nullptr;
   std::vector<SemilinearSet_ptr> semilinears;
-  std::string var_name = this->formula->get_var_coeff_map().begin()->first;
+  std::string var_name = this->formula->get_variable_coefficient_map().begin()->first;
   int current_state = this->dfa->s,
           sink_state = this->getSinkState();
   std::vector<int> constants, bases;
@@ -783,7 +785,7 @@ std::map<std::string, int> BinaryIntAutomaton::getAnAcceptingIntForEachVar() {
 
   int var_index;
   std::string var_name;
-  for (auto& var_entry : formula->get_var_coeff_map()) {
+  for (auto& var_entry : formula->get_variable_coefficient_map()) {
     var_name = var_entry.first;
     var_index = getBddVarIndex(var_name);
     if (var_name.length() > 10) {

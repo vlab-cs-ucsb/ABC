@@ -11,10 +11,10 @@
 #ifndef HELPER_FILEHELPER_H_
 #define HELPER_FILEHELPER_H_
 
-#include <iostream>
-#include <string>
 #include <fstream>
-#include <streambuf>
+#include <iostream>
+#include <iterator>
+#include <string>
 
 #include "Path.h"
 
