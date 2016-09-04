@@ -119,6 +119,7 @@ protected:
   //  void getBaseConstants2(std::vector<int>& constants);
   //  void getBaseConstants(int state, bool *is_stack_member, std::vector<bool>& path, std::vector<int>& constants);
 
+  void add_print_label(std::ostream& out) override;
   struct StateIndices {
     // r suffixes are for the rejecting clone
     int i, ir; // state index

@@ -126,17 +126,17 @@ bool Automaton::isEmptyLanguage() {
   return result;
 }
 
-bool Automaton::isInitialStateAccepting() {
-  return (this->dfa_->f[this->dfa_->s] == 1);
+bool Automaton::is_initial_state_accepting() {
+  return is_accepting_state(this->dfa_->s);
 }
 
 bool Automaton::isOnlyInitialStateAccepting() {
-  if (not isInitialStateAccepting()) {
+  if (not is_initial_state_accepting()) {
     return false;
   }
 
   for (int s = 0; s < this->dfa_->ns; s++) {
-    if (s != this->dfa_->s and isAcceptingState(s)) {
+    if (s != this->dfa_->s and is_accepting_state(s)) {
       return false;
     } else if (hasNextState(s, this->dfa_->s)) {
       return false;
@@ -274,7 +274,7 @@ Graph_ptr Automaton::toGraph() {
 
     if (this->isSinkState(s)) {
       graph->setSinkNode(node);
-    } else if (this->isAcceptingState(s)) {
+    } else if (this->is_accepting_state(s)) {
       graph->addFinalNode(node);
     } else {
       graph->addNode(node);
@@ -308,7 +308,7 @@ bool Automaton::isAcceptingSingleWord() {
   int bit_counter = 0;
 
   for (int s = 0; s < this->dfa_->ns; s++) {
-    is_final_state = isAcceptingState(s);
+    is_final_state = is_accepting_state(s);
     p = this->dfa_->q[s];
     nodes.push_back(p);
     bit_stack.push_back(0);
@@ -387,7 +387,7 @@ bool Automaton::getAnAcceptingWord(NextState& state, std::map<int, bool>& is_sta
   is_stack_member[state.first] = true;
   path.insert(path.end(), state.second.begin(), state.second.end());
 
-  if (this->isAcceptingState(state.first)) {
+  if (this->is_accepting_state(state.first)) {
     return true;
   }
 
@@ -634,7 +634,7 @@ bool Automaton::isSinkState(int state_id) {
           and this->dfa_->f[state_id] == -1);
 }
 
-bool Automaton::isAcceptingState(int state_id) {
+bool Automaton::is_accepting_state(int state_id) {
   return (this->dfa_->f[state_id] == 1);
 }
 
@@ -666,7 +666,7 @@ bool Automaton::hasIncomingTransition(int state) {
 bool Automaton::isStartStateReachableFromAnAcceptingState() {
   paths state_paths, pp;
   for (int i = 0; i < this->dfa_->ns; i++) {
-    if (isAcceptingState(i)) {
+    if (is_accepting_state(i)) {
       state_paths = pp = make_paths(this->dfa_->bddm, this->dfa_->q[i]);
       while (pp) {
         if (pp->to == (unsigned) this->dfa_->s) {
@@ -891,7 +891,7 @@ CountMatrix Automaton::GetAdjacencyCountMatrix(bool count_reserved_words) {
     }
 
     // combine all accepting states into one artifical accepting state
-    if (isAcceptingState(s)) {
+    if (is_accepting_state(s)) {
       count_matrix[s][this->dfa_->ns] = 1;
     }
   }
@@ -1048,7 +1048,7 @@ void Automaton::generateGFScript(int bound, std::ostream& out, bool count_less_t
   }
 
   for (int i = 0; (unsigned)i < node_size; i++) {
-    if (isAcceptingState(i)) {
+    if (is_accepting_state(i)) {
       artificial.first = i;
       artificial.second = 1;
       adjacency_count_list[node_size].push_back(artificial);
@@ -1123,7 +1123,7 @@ void Automaton::generateMatrixScript(int bound, std::ostream& out, bool count_le
   }
 
   for (int i = 0; (unsigned)i < node_size; i++) {
-    if (isAcceptingState(i)) {
+    if (is_accepting_state(i)) {
       artificial.first = i;
       artificial.second = 1;
       adjacency_count_list[node_size].push_back(artificial);
@@ -1171,7 +1171,7 @@ void Automaton::preProcessAdjacencyList(AdjacencyList& adjaceny_count_list) {
   adjaceny_count_list[node_size].push_back(artificial);
 
   for (int i = 0; (unsigned)i < node_size; i++) {
-    if (isAcceptingState(i)) {
+    if (is_accepting_state(i)) {
       artificial.first = i;
       artificial.second = 1;
       adjaceny_count_list[node_size + 1].push_back(artificial);
@@ -1354,7 +1354,7 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
   out << "}" << std::endl;
 }
 
-void Automaton::toDot(std::ostream& out, bool print_sink) {
+void Automaton::ToDot(std::ostream& out, bool print_sink) {
   paths state_paths, pp;
   trace_descr tp;
   int i, j, k, l;
@@ -1475,8 +1475,12 @@ void Automaton::toDot(std::ostream& out, bool print_sink) {
   mem_free(used);
   mem_free(buffer);
   delete[] offsets;
-
+  add_print_label(out);
   out << "}" << std::endl;
+}
+
+void Automaton::add_print_label(std::ostream& out) {
+  return;
 }
 
 void Automaton::toBDD(std::ostream& out) {
@@ -1577,12 +1581,12 @@ int Automaton::inspectAuto(bool print_sink, bool force_mona_format) {
   }
   if (Automaton::Type::INT == type_ or Automaton::Type::STRING == type_) {
     if (force_mona_format) {
-      toDot(outfile, print_sink);
+      ToDot(outfile, print_sink);
     } else {
       toDotAscii(print_sink, outfile);
     }
   } else {
-    toDot(outfile, print_sink);
+    ToDot(outfile, print_sink);
   }
   std::string dot_cmd("xdot " + file + " &");
   return std::system(dot_cmd.c_str());

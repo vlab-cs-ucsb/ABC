@@ -83,7 +83,7 @@ public:
 
   bool IsEqual(Automaton_ptr other_auto);
   bool isEmptyLanguage();
-  bool isInitialStateAccepting();
+  bool is_initial_state_accepting();
   bool isOnlyInitialStateAccepting();
   bool isCyclic();
   bool isInCycle(int state);
@@ -96,7 +96,7 @@ public:
 
   void toDotAscii(bool print_sink = false, std::ostream& out = std::cout);
   // TODO merge toDot methods into one with options
-  void toDot(std::ostream& out = std::cout, bool print_sink = false);
+  void ToDot(std::ostream& out = std::cout, bool print_sink = false);
   void toBDD(std::ostream& out = std::cout);
   void exportDfa(std::string file_name);
   DFA_ptr importDFA(std::string file_name);
@@ -120,6 +120,7 @@ protected:
   // TODO update it to work for non-accepting inputs
   std::vector<bool>* getAnAcceptingWord(std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
   std::vector<char> decodeException(std::vector<char>& exception);
+  virtual void add_print_label(std::ostream& out);
 
   static int* getIndices(int num_of_variables, int extra_num_of_variables = 0);
   static unsigned* getIndices(unsigned num_of_variables, unsigned extra_num_of_variables = 0);
@@ -133,7 +134,7 @@ protected:
 
   bool isStartState(int state_id);
   bool isSinkState(int state_id);
-  bool isAcceptingState(int state_id);
+  bool is_accepting_state(int state_id);
 
   bool hasIncomingTransition(int state);
   bool isStartStateReachableFromAnAcceptingState();

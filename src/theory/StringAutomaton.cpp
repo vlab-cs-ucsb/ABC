@@ -724,7 +724,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
     }
     current_exception = nullptr;
     // generate concat automaton
-    if (left_auto->isAcceptingState(i)) {
+    if (left_auto->is_accepting_state(i)) {
       dfaAllocExceptions(exceptions_left_auto.size() + exceptions_right_auto.size());
       for (auto it = exceptions_left_auto.begin(); it != exceptions_left_auto.end();) {
         dfaStoreException(it->second, &*it->first->begin());
@@ -740,7 +740,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
       }
 
       dfaStoreState(sink_state_left_auto);
-      if (right_auto->isAcceptingState(0)) {
+      if (right_auto->is_accepting_state(0)) {
         statuses[i]='+';
       }
       else {
@@ -821,7 +821,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
           loc--;
         }
 
-        if ( right_auto->isAcceptingState(i)) {
+        if ( right_auto->is_accepting_state(i)) {
           statuses[loc]='+';
         } else {
           statuses[loc]='-';
@@ -1056,7 +1056,7 @@ StringAutomaton_ptr StringAutomaton::suffixes() {
       }
       dfaStoreState(sink_state);
       current_exception = nullptr;
-      if (isAcceptingState(s)) {
+      if (is_accepting_state(s)) {
         statuses[s] = '+';
       }
     } else {
@@ -1203,7 +1203,7 @@ StringAutomaton_ptr StringAutomaton::suffixesFromTo(int start, int end) {
       }
       dfaStoreState(sink_state);
       current_exception = nullptr;
-      if (old_state > -1 and isAcceptingState(old_state)) {
+      if (old_state > -1 and is_accepting_state(old_state)) {
         statuses[s] = '+';
       }
     } else {
@@ -1929,7 +1929,7 @@ IntAutomaton_ptr StringAutomaton::parseToIntAutomaton() {
     std::vector<char> decoded_exception;
     std::vector<int> int_values;
 
-    if (isAcceptingState(this->dfa_->s)) {
+    if (is_accepting_state(this->dfa_->s)) {
       int_values.push_back(0);
     }
 
@@ -1967,7 +1967,7 @@ IntAutomaton_ptr StringAutomaton::parseToIntAutomaton() {
       }
 
       for (auto& entry : current_paths_to_state) {
-        if (isAcceptingState(entry.first)) {
+        if (is_accepting_state(entry.first)) {
           for (auto str_value : entry.second) {
             int_values.push_back(std::stoi(str_value));
           }
@@ -2365,7 +2365,7 @@ StringAutomaton_ptr StringAutomaton::preReplace(StringAutomaton_ptr searchAuto, 
 }
 
 bool StringAutomaton::hasEmptyString() {
-  return isInitialStateAccepting();
+  return is_initial_state_accepting();
 }
 
 bool StringAutomaton::isEmptyString() {
@@ -2453,7 +2453,7 @@ bool StringAutomaton::hasExceptionToValidStateFrom(int state, std::vector<char>&
 std::vector<int> StringAutomaton::getAcceptingStates() {
   std::vector<int> final_states;
   for (int s = 0; s < this->dfa_->ns; s++) {
-    if (this->isAcceptingState(s)) {
+    if (this->is_accepting_state(s)) {
       final_states.push_back(s);
     }
   }
@@ -3102,7 +3102,7 @@ StringAutomaton_ptr StringAutomaton::removeReservedWords() {
           pp = pp->next;
         }
 
-        if (this->isAcceptingState(merge_state)) {
+        if (this->is_accepting_state(merge_state)) {
           statuses[s] = '+';
         }
 

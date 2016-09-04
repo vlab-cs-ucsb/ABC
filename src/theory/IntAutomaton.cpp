@@ -523,7 +523,7 @@ int IntAutomaton::getMaxAcceptedInt() {
   std::vector<int> final_states;
 
   for(int j = 0; j < this->dfa_->ns; j++) {
-    if (isAcceptingState(j)) {
+    if (is_accepting_state(j)) {
       final_states.push_back(j);
     }
   }
@@ -580,7 +580,7 @@ int IntAutomaton::getMinAcceptedInt() {
   std::vector<int> final_states;
 
   for(int j = 0; j < this->dfa_->ns; j++) {
-    if (isAcceptingState(j)) {
+    if (is_accepting_state(j)) {
       final_states.push_back(j);
     }
   }
@@ -804,7 +804,7 @@ bool IntAutomaton::isEmptyLanguage() {
 }
 
 bool IntAutomaton::hasZero() {
-  return Automaton::isInitialStateAccepting();
+  return Automaton::is_initial_state_accepting();
 }
 
 bool IntAutomaton::isZero() {
@@ -821,7 +821,7 @@ bool IntAutomaton::isAcceptingSingleInt() {
   state_path.push(this->dfa_->s);
   while (not state_path.empty()) {
     curr_state = state_path.top(); state_path.pop();
-    if (this->isAcceptingState(curr_state)) {
+    if (this->is_accepting_state(curr_state)) {
       ++num_of_accepting_paths;
     }
     if (num_of_accepting_paths > 1) {
@@ -854,7 +854,7 @@ int IntAutomaton::getAnAcceptingInt() {
   while (not state_path.empty()) {
     curr_state = state_path.top(); state_path.pop();
     path_length = path_length_stack.top(); path_length_stack.pop();
-    if (this->isAcceptingState(curr_state)) {
+    if (this->is_accepting_state(curr_state)) {
       return path_length;
     }
     next_states = this->getNextStates(curr_state);
@@ -892,7 +892,7 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
 
     dfaStoreState(sink_state);
 
-    if (isAcceptingState(s)) {
+    if (is_accepting_state(s)) {
       statuses[s] = '+';
     } else {
       statuses[s] = '-';
@@ -1056,7 +1056,7 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
     }
     current_exception = nullptr;
     // generate concat automaton
-    if (this->isAcceptingState(i)) {
+    if (this->is_accepting_state(i)) {
       dfaAllocExceptions(exceptions_left_auto.size() + exceptions_right_auto.size());
       for (auto it = exceptions_left_auto.begin(); it != exceptions_left_auto.end();) {
         dfaStoreException(it->second, &*it->first->begin());
@@ -1072,7 +1072,7 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
       }
 
       dfaStoreState(sink_state_left_auto);
-      if (other_auto->isAcceptingState(0)) {
+      if (other_auto->is_accepting_state(0)) {
         statuses[i]='+';
       }
       else {
@@ -1153,7 +1153,7 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
           loc--;
         }
 
-        if ( other_auto->isAcceptingState(i)) {
+        if ( other_auto->is_accepting_state(i)) {
           statuses[loc]='+';
         } else {
           statuses[loc]='-';

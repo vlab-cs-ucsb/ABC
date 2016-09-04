@@ -310,7 +310,7 @@ bool BinaryIntAutomaton::HasNegative1() {
   while (not is_visited[current_state]) {
     is_visited[current_state] = true;
     current_state = getNextState(current_state, exception);
-    if (current_state > -1 and isAcceptingState(current_state)) {
+    if (current_state > -1 and is_accepting_state(current_state)) {
       return true;
     }
   }
@@ -427,7 +427,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::TrimLeadingZeros() {
     if ((sink_state not_eq next_state) and (i not_eq next_state)) {
       possible_final_states[next_state].push_back(i);
     }
-    if (isAcceptingState(i)) {
+    if (is_accepting_state(i)) {
       final_states.push(i);
     }
   }
@@ -435,7 +435,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::TrimLeadingZeros() {
   while (not final_states.empty()) {
     next_state = final_states.top(); final_states.pop();
     for (auto s : possible_final_states[next_state]) {
-      if (not tmp_auto->isAcceptingState(s)) {
+      if (not tmp_auto->is_accepting_state(s)) {
         tmp_auto->dfa_->f[s] = 1;
         final_states.push(s);
       }
@@ -753,7 +753,7 @@ boost::multiprecision::cpp_int BinaryIntAutomaton::SymbolicCount(double bound, b
     exit(2);
   }
 
-  this->toDot(outfile, false);
+  this->ToDot(outfile, false);
 
   cmd << "math -script " << math_script_path << " " << tmp_result_file << " ";
 
@@ -853,6 +853,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
   }
 
   const int num_of_states = 2 * (max - min) + 3;
+  const int sink_state = num_of_states - 1;
 
   unsigned max_states_allowed = 0x80000000;
   unsigned mona_check = 8 * num_of_states;
@@ -872,10 +873,12 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
   carry_map[constant].i = -1;
   carry_map[constant].ir = 0;
 
-  int next_index = 0, next_label = constant, count = 0;
+  int next_index = 0,
+      next_label = constant,
+      current_state = 0;
 
   while (next_label < max + 1) {  //there is a state to expand (excuding sink)
-    if (carry_map[next_label].i == count) {
+    if (carry_map[next_label].i == current_state) {
       carry_map[next_label].s = 2;
     } else {
       carry_map[next_label].sr = 2;
@@ -914,20 +917,20 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
       }
     }
 
-    dfaStoreState(num_of_states - 1);
+    dfaStoreState(sink_state);
 
-    ++count;
+    ++current_state;
 
     //find next state to expand
     for (next_label = min;
-        (next_label <= max) and (carry_map[next_label].i != count) and (carry_map[next_label].ir != count);
+        (next_label <= max) and (carry_map[next_label].i != current_state) and (carry_map[next_label].ir != current_state);
         ++next_label) {
     }
   }
 
-  for (; count < num_of_states; ++count) {
+  for (; current_state < num_of_states; ++current_state) {
     dfaAllocExceptions(0);
-    dfaStoreState(num_of_states - 1);
+    dfaStoreState(sink_state);
   }
 
   //define accepting and rejecting states
@@ -950,6 +953,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
   delete[] statuses;
 
   auto equality_auto = new BinaryIntAutomaton(equality_dfa, formula, false);
+  CHECK_EQ(false, equality_auto->is_initial_state_accepting());
 
   DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeIntEquality(" << *formula << ")";
   return equality_auto;
@@ -998,13 +1002,15 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticF
   int* indices = getIndices(total_num_variables);
   dfaSetup(num_of_states, total_num_variables, indices);
 
+  std::map<std::vector<char>, int> transitions_from_initial_state; // populated if initial state is in cycle and accepting
+
   std::map<int, StateIndices> carry_map;  // maps carries to state indices
   carry_map[constant].s = 1;
   carry_map[constant].i = 0;
 
-  int next_index = 0, next_label = constant, count = 0;
-
-  std::map<std::vector<char>, int> transitions_from_initial_state; // populated if initial state is in cycle and accepting
+  int next_index = 0,
+      next_label = constant,
+      current_state = 0;
 
   while (next_label < max + 1) {  //there is a state to expand (excuding sink)
     carry_map[next_label].s = 2;
@@ -1014,6 +1020,13 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticF
     for (unsigned long j = 0; j < transitions; ++j) {
       result = next_label + formula->CountOnes(j);
       if (not (result & 1)) {
+        target = result / 2;
+        if (carry_map[target].s == 0) {
+          carry_map[target].s = 1;
+          ++next_index;
+          carry_map[target].i = next_index;
+        }
+
         std::vector<char> binary_string = GetReversedBinaryFormat(j, active_num_variables);
         std::vector<char> current_exception(total_num_variables, 'X');
         current_exception.push_back('\0');
@@ -1023,20 +1036,13 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticF
             ++k;
           }
         }
-        target = result / 2;
-        if (carry_map[target].s == 0) {
-          carry_map[target].s = 1;
-          ++next_index;
-          carry_map[target].i = next_index;
-        }
-
         // hack to avoid an accepting initial state
         int to_state = carry_map[target].i;
         if (constant == 0) { // initial state is accepting, shift it
           if (to_state == 0) {
             to_state = shifted_initial_state;
           }
-          if (count == 0) { // save transition for shifted initial start
+          if (current_state == 0) { // save transition for shifted initial start
             transitions_from_initial_state[current_exception] = to_state;
           }
         }
@@ -1047,18 +1053,18 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticF
 
     dfaStoreState(sink_state);
 
-    ++count;
+    ++current_state;
 
     //find next state to expand
     for (next_label = min;
-        (next_label <= max) and (carry_map[next_label].i != count);
+        (next_label <= max) and (carry_map[next_label].i != current_state);
         ++next_label) {
     }
 
   }
 
-  for (; count < num_of_states; ++count) {
-    if (count == shifted_initial_state) {
+  for (; current_state < num_of_states; ++current_state) {
+    if (current_state == shifted_initial_state) {
       dfaAllocExceptions(transitions_from_initial_state.size());
       for (auto& el : transitions_from_initial_state) {
         auto excep = el.first;
@@ -1093,8 +1099,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticF
   delete[] statuses;
 
   auto equality_auto = new BinaryIntAutomaton(equality_dfa, formula, true);
-  DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeNaturalNumberEquality(" << *formula << ")";
+  CHECK_EQ(false, equality_auto->is_initial_state_accepting());
 
+  DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeNaturalNumberEquality(" << *formula << ")";
   return equality_auto;
 }
 
@@ -1162,10 +1169,12 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntLessThan(ArithmeticFormula_ptr
   carry_map[constant].i = -1;
   carry_map[constant].ir = 0;
 
-  int next_index = 0, next_label = constant, count = 0;
+  int next_index = 0,
+      next_label = constant,
+      current_state = 0;
 
   while (next_label < max + 1) {  //there is a state to expand (excuding sink)
-    if (carry_map[next_label].i == count) {
+    if (carry_map[next_label].i == current_state) {
       carry_map[next_label].s = 2;
     } else {
       carry_map[next_label].sr = 2;
@@ -1225,21 +1234,21 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntLessThan(ArithmeticFormula_ptr
       }
     }
 
-    dfaStoreState(count);
+    dfaStoreState(current_state);
 
-    ++count;
+    ++current_state;
 
     //find next state to expand
     for (next_label = min;
-        (next_label <= max) and (carry_map[next_label].i != count) and (carry_map[next_label].ir != count);
+        (next_label <= max) and (carry_map[next_label].i != current_state) and (carry_map[next_label].ir != current_state);
         ++next_label) {
     }
 
   }
 
-  for (int i = count; i < num_of_states; ++i) {
+  for (; current_state < num_of_states; ++current_state) {
     dfaAllocExceptions(0);
-    dfaStoreState(i);
+    dfaStoreState(current_state);
   }
 
   //define accepting and rejecting states
@@ -1256,13 +1265,13 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntLessThan(ArithmeticFormula_ptr
   statuses[num_of_states] = '\0';
 
   auto tmp_dfa = dfaBuild(statuses);
-  tmp_dfa->ns = tmp_dfa->ns - (num_of_states - count);
   auto less_than_dfa = dfaMinimize(tmp_dfa);
   dfaFree(tmp_dfa);
   delete[] indices;
   delete[] statuses;
 
   auto less_than_auto = new BinaryIntAutomaton(less_than_dfa, formula, false);
+  CHECK_EQ(false, less_than_auto->is_initial_state_accepting());
 
   DVLOG(VLOG_LEVEL) << less_than_auto->id_ << " = MakeIntLessThan(" << *formula << ")";
   return less_than_auto;
@@ -1290,7 +1299,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberLessThan(ArithmeticF
     min = constant;
   }
 
-  const int num_of_states = max - min + 1;
+  const int num_of_states = max - min + 2;
+  const int shifted_initial_state = num_of_states - 1;
 
   unsigned max_states_allowed = 0x80000000;
   unsigned mona_check = 8 * num_of_states;
@@ -1305,13 +1315,16 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberLessThan(ArithmeticF
   int* indices = getIndices(total_num_variables);
   dfaSetup(num_of_states, total_num_variables, indices);
 
+  std::map<std::vector<char>, int> transitions_from_initial_state; // populated if initial state is in cycle and accepting
+  bool is_initial_state_in_cycle = false;
+
   std::map<int, StateIndices> carry_map;  // maps carries to state indices
   carry_map[constant].s = 1;
   carry_map[constant].i = 0;
 
   int next_index = 0,
       next_label = constant,
-      count = 0;
+      current_state = 0;
 
   while (next_label < max + 1) {  //there is a state to expand (excuding sink)
     carry_map[next_label].s = 2;
@@ -1342,23 +1355,43 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberLessThan(ArithmeticF
           ++k;
         }
       }
-      dfaStoreException(carry_map[target].i, &current_exception[0]);
+
+      // hack to avoid an accepting initial state
+      int to_state = carry_map[target].i;
+
+      if (to_state == 0) {
+        to_state = shifted_initial_state;
+        is_initial_state_in_cycle = true;
+      }
+      if (current_state == 0 and is_initial_state_in_cycle) { // save transition for shifted initial start
+        transitions_from_initial_state[current_exception] = to_state;
+      }
+      dfaStoreException(to_state, &current_exception[0]);
     }
 
-    dfaStoreState(count);
-    ++count;
+    dfaStoreState(current_state);
+    ++current_state;
 
     //find next state to expand
     for (next_label = min;
-        (next_label <= max) and (carry_map[next_label].i != count);
+        (next_label <= max) and (carry_map[next_label].i != current_state);
         ++next_label) {
     }
 
   }
 
-  for (int i = count; i < num_of_states; ++i) {
-    dfaAllocExceptions(0);
-    dfaStoreState(i);
+  for (; current_state < num_of_states; ++current_state) {
+    if (is_initial_state_in_cycle and current_state == shifted_initial_state) {
+      dfaAllocExceptions(transitions_from_initial_state.size());
+      for (auto& el : transitions_from_initial_state) {
+        auto excep = el.first;
+        dfaStoreException(el.second, &excep[0]);
+      }
+      dfaStoreState(current_state);
+    } else {
+      dfaAllocExceptions(0);
+      dfaStoreState(current_state);
+    }
   }
 
   //define accepting and rejecting states
@@ -1369,32 +1402,24 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberLessThan(ArithmeticF
 
   for (int i = min; i < 0; ++i) {
     if (carry_map[i].s == 2) {
-      statuses[carry_map[i].i] = '+';
+      if (carry_map[i].i == 0 ) {
+        if (is_initial_state_in_cycle) {
+          statuses[shifted_initial_state] = '+';
+        }
+      } else {
+        statuses[carry_map[i].i] = '+';
+      }
     }
   }
   statuses[num_of_states] = '\0';
-
   auto tmp_dfa = dfaBuild(statuses);
-  tmp_dfa->ns = tmp_dfa->ns - (num_of_states - count);
   auto less_than_dfa = dfaMinimize(tmp_dfa);
   dfaFree(tmp_dfa);
   delete[] indices;
   delete[] statuses;
 
   auto less_than_auto = new BinaryIntAutomaton(less_than_dfa, formula, true);
-  if (less_than_auto->isInitialStateAccepting()) { // initial state should not accept
-    if (less_than_auto->isInCycle(less_than_auto->dfa_->s)) {
-      auto any_number = BinaryIntAutomaton::MakeAnyInt(formula->clone(), true);
-      auto tmp_auto = less_than_auto;
-      less_than_auto = tmp_auto->Intersect(any_number);
-      delete less_than_auto->formula_;
-      less_than_auto->set_formula(tmp_auto->get_formula()->clone()); // make the formula original formula
-      delete any_number;
-      delete tmp_auto;
-    } else {
-      less_than_auto->dfa_->f[less_than_auto->dfa_->s] = -1;
-    }
-  }
+  CHECK_EQ(false, less_than_auto->is_initial_state_accepting());
 
   DVLOG(VLOG_LEVEL) << less_than_auto->id_ << " = MakeNaturalNumberLessThan(" << *formula << ")";
   return less_than_auto;
@@ -1706,7 +1731,7 @@ void BinaryIntAutomaton::GetConstants(int state, std::map<int, bool>& cycle_stat
 
     if ((not isSinkState(next_state))) {
       path.push_back(b == 1);
-      if (isAcceptingState(next_state)) {
+      if (is_accepting_state(next_state)) {
         unsigned c = 0;
         for (unsigned i = 0; i < path.size(); i++) {
           if (path[i]) {
@@ -1844,7 +1869,7 @@ void BinaryIntAutomaton::GetBaseConstants(int state, unsigned char *is_visited, 
     return;
   }
 
-  if (isAcceptingState(state)) {
+  if (is_accepting_state(state)) {
     unsigned c = 0;
     for (unsigned i = 0; i < path.size(); i++) {
       if (path[i]) {
@@ -1940,6 +1965,18 @@ void BinaryIntAutomaton::GetBaseConstants(int state, unsigned char *is_visited, 
 //  }
 //  is_stack_member[state] = false;
 //}
+
+void BinaryIntAutomaton::add_print_label(std::ostream& out) {
+  out << " subgraph cluster_0 {\n";
+  out << "  style = invis;\n  center = true;\n  margin = 0;\n";
+  out << "  node[shape=plaintext];\n";
+  out << " \"\"[label=\"";
+  for (auto& el : formula_->get_variable_coefficient_map()) {
+    out << el.first << "\n";
+  }
+  out << "\"]\n";
+  out << " }";
+}
 
 } /* namespace Theory */
 } /* namespace Vlab */

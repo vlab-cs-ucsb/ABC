@@ -315,10 +315,10 @@ void Driver::printResult(Solver::Value_ptr value, std::ostream& out) {
 		value->getIntAutomaton()->toDotAscii(false, out);
 		break;
 	case Solver::Value::Type::BINARYINT_AUTOMATON:
-		value->getBinaryIntAutomaton()->toDot(out, false);
+		value->getBinaryIntAutomaton()->ToDot(out, false);
 		break;
 	case Solver::Value::Type::MULTITRACK_AUTOMATON:
-		value->getMultiTrackAutomaton()->toDot(out, false);
+		value->getMultiTrackAutomaton()->ToDot(out, false);
 		break;
 	default:
 		break;
@@ -409,21 +409,24 @@ SMT::Variable_ptr Driver::get_smc_query_variable() {
 }
 
 void Driver::test() {
-//	return;
-  LOG(INFO) << "DRIVER TEST METHOD";
-  using namespace Theory;
-
-  auto formula = new ArithmeticFormula();
-  formula->set_type(ArithmeticFormula::Type::EQ);
-  formula->set_constant(0);
-  formula->add_variable("x", 1);
-  formula->add_variable("y", 1);
-
-//  auto t1 = BinaryIntAutomaton::MakeAutomaton(formula, false);
-//  t1->inspectAuto();
-
-  auto t2 = BinaryIntAutomaton::MakeAutomaton(formula->clone(), true);
-  t2->inspectAuto();
+	return;
+//  LOG(INFO) << "DRIVER TEST METHOD";
+//  using namespace Theory;
+//
+//  auto formula = new ArithmeticFormula();
+//  formula->set_type(ArithmeticFormula::Type::LT);
+//  formula->set_constant(-5);
+//  formula->add_variable("x", 1);
+//  formula->add_variable("y", 1);
+//
+////  auto t1 = BinaryIntAutomaton::MakeAutomaton(formula, false);
+////  t1->inspectAuto();
+//
+//  auto t2 = BinaryIntAutomaton::MakeAutomaton(formula->clone(), true);
+//  t2->inspectAuto(false);
+//  for (auto& el : t2->GetAnAcceptingIntForEachVar()) {
+//    std::cout << el.first << " : " << el.second << std::endl;
+//  }
 
 //    int indices[4] = {0,1,2,3};
 //    Theory::StringAutomaton_ptr test = Theory::StringAutomaton::makeAnyString(4, indices);
