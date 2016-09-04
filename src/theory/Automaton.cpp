@@ -24,26 +24,29 @@ const std::string Automaton::Name::STRING = "StringAutomaton";
 const std::string Automaton::Name::BINARYINT = "BinaryIntAutomaton";
 
 Automaton::Automaton(Automaton::Type type)
-        : type(type), is_count_matrix_cached_{false}, dfa(nullptr), num_of_variables(0), variable_indices(nullptr), id(Automaton::trace_id++) {
+        : type_(type), is_count_matrix_cached_{false}, dfa_(nullptr), num_of_variables_(0), variable_indices_(nullptr), id_(Automaton::trace_id++) {
 }
 
 Automaton::Automaton(Automaton::Type type, DFA_ptr dfa, int num_of_variables)
-        : type(type), is_count_matrix_cached_{false}, dfa(dfa), num_of_variables(num_of_variables), id(Automaton::trace_id++) {
-  variable_indices = getIndices(num_of_variables, 1); // make indices one more to be safe
+        : type_(type), is_count_matrix_cached_{false}, dfa_(dfa), num_of_variables_(num_of_variables), id_(Automaton::trace_id++) {
+  variable_indices_ = getIndices(num_of_variables, 1); // make indices one more to be safe
 }
 
 Automaton::Automaton(const Automaton& other)
-        : type(other.type), is_count_matrix_cached_{false}, dfa(dfaCopy(other.dfa)), num_of_variables(other.num_of_variables), id(Automaton::trace_id++) {
-  variable_indices = getIndices(num_of_variables, 1); // make indices one more to be safe
+        : type_(other.type_), is_count_matrix_cached_{false}, dfa_(nullptr), num_of_variables_(other.num_of_variables_), id_(Automaton::trace_id++) {
+          if (other.dfa_) {
+            dfa_ = dfaCopy(other.dfa_);
+          }
+          variable_indices_ = getIndices(num_of_variables_, 1); // make indices one more to be safe
 }
 
 Automaton::~Automaton() {
-  if (dfa) {
-    dfaFree(dfa);
-    dfa = nullptr;
+  if (dfa_) {
+    dfaFree(dfa_);
+    dfa_ = nullptr;
   }
-  delete[] variable_indices;
-  variable_indices = nullptr;
+  delete[] variable_indices_;
+  variable_indices_ = nullptr;
   //  DVLOG(VLOG_LEVEL) << "delete " << " [" << this->id << "]";
 }
 
@@ -52,7 +55,7 @@ Automaton::~Automaton() {
 //}
 
 std::string Automaton::str() const {
-  switch (type) {
+  switch (type_) {
   case Automaton::Type::NONE:
     return Automaton::Name::NONE;
   case Automaton::Type::BOOL:
@@ -72,23 +75,23 @@ std::string Automaton::str() const {
 }
 
 Automaton::Type Automaton::getType() const {
-  return type;
+  return type_;
 }
 
 unsigned long Automaton::getId() {
-  return id;
+  return id_;
 }
 
 DFA_ptr Automaton::getDFA() {
-  return dfa;
+  return dfa_;
 }
 
 int Automaton::getNumberOfVariables() {
-  return num_of_variables;
+  return num_of_variables_;
 }
 
 int* Automaton::getVariableIndices() {
-  return variable_indices;
+  return variable_indices_;
 }
 
 /**
@@ -96,8 +99,8 @@ int* Automaton::getVariableIndices() {
  */
 bool Automaton::IsEqual(Automaton_ptr other_auto) {
 
-  auto impl_1 = dfaProduct(this->dfa, other_auto->dfa, dfaIMPL);
-  auto impl_2 = dfaProduct(other_auto->dfa, this->dfa, dfaIMPL);
+  auto impl_1 = dfaProduct(this->dfa_, other_auto->dfa_, dfaIMPL);
+  auto impl_2 = dfaProduct(other_auto->dfa_, this->dfa_, dfaIMPL);
   auto result_dfa = dfaProduct(impl_1,impl_2,dfaAND);
   dfaFree(impl_1);
   dfaFree(impl_2);
@@ -118,13 +121,13 @@ bool Automaton::IsEqual(Automaton_ptr other_auto) {
  * (For a non-minimized automaton need to check reachability of an accepting state)
  */
 bool Automaton::isEmptyLanguage() {
-  bool result = (dfa->ns == 1 && dfa->f[dfa->s] == -1)? true : false;
-  DVLOG(VLOG_LEVEL) << "[" << this->id << "]->isEmptyLanguage? " << std::boolalpha << result;
+  bool result = (dfa_->ns == 1 && dfa_->f[dfa_->s] == -1)? true : false;
+  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->isEmptyLanguage? " << std::boolalpha << result;
   return result;
 }
 
 bool Automaton::isInitialStateAccepting() {
-  return (this->dfa->f[this->dfa->s] == 1);
+  return (this->dfa_->f[this->dfa_->s] == 1);
 }
 
 bool Automaton::isOnlyInitialStateAccepting() {
@@ -132,10 +135,10 @@ bool Automaton::isOnlyInitialStateAccepting() {
     return false;
   }
 
-  for (int s = 0; s < this->dfa->ns; s++) {
-    if (s != this->dfa->s and isAcceptingState(s)) {
+  for (int s = 0; s < this->dfa_->ns; s++) {
+    if (s != this->dfa_->s and isAcceptingState(s)) {
       return false;
-    } else if (hasNextState(s, this->dfa->s)) {
+    } else if (hasNextState(s, this->dfa_->s)) {
       return false;
     }
   }
@@ -149,8 +152,8 @@ bool Automaton::isCyclic() {
   int sink_state = getSinkState();
   is_discovered[sink_state] = true; // avoid sink state
 
-  result = isCyclic(this->dfa->s, is_discovered, is_stack_member);
-  DVLOG(VLOG_LEVEL) << "[" << this->id << "]->isCyclic() ? " << std::boolalpha << result;
+  result = isCyclic(this->dfa_->s, is_discovered, is_stack_member);
+  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->isCyclic() ? " << std::boolalpha << result;
   return result;
 }
 
@@ -168,18 +171,18 @@ boost::multiprecision::cpp_int Automaton::Count(int bound, bool count_less_than_
 
   auto x = GetAdjacencyCountMatrix(count_reserved_words);
   if (count_less_than_or_equal_to_bound) {
-    x[this->dfa->ns][this->dfa->ns] = 1;
+    x[this->dfa_->ns][this->dfa_->ns] = 1;
   }
 
   int power = bound + 1; // matrix exponentiation is off by 1
 
   if (power == 1) {
-    auto result = x[this->dfa->s][this->dfa->ns];
-    DVLOG(VLOG_LEVEL) << "[" << this->id << "]->count(" << bound << ") : " << result;
+    auto result = x[this->dfa_->s][this->dfa_->ns];
+    DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->count(" << bound << ") : " << result;
     return result;
   }
 
-  CountMatrix y (this->dfa->ns + 1, CountVector(this->dfa->ns + 1, 0));
+  CountMatrix y (this->dfa_->ns + 1, CountVector(this->dfa_->ns + 1, 0));
   for (unsigned i = 0; i < y.size(); ++i) {
     y[i][i] = 1;
   }
@@ -197,8 +200,8 @@ boost::multiprecision::cpp_int Automaton::Count(int bound, bool count_less_than_
 
   x = Util::Math::multiply_matrix(x, y);
 
-  auto result = x[this->dfa->s][this->dfa->ns];
-  DVLOG(VLOG_LEVEL) << "[" << this->id << "]->count(" << bound << ") : " << result;
+  auto result = x[this->dfa_->s][this->dfa_->ns];
+  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->count(" << bound << ") : " << result;
   return result;
 }
 
@@ -245,10 +248,10 @@ bool Automaton::isStateReachableFrom(int search_state, int from_state, std::map<
   is_stack_member[from_state] = true;
 
   for (auto next_state : getNextStates(from_state)) {
-    if ((not is_stack_member[next_state]) and (not isSinkState(next_state)) and
-            isStateReachableFrom(search_state, next_state, is_stack_member)) {
+    if (next_state == search_state) {
       return true;
-    } else if (next_state == search_state) {
+    } else if ((not is_stack_member[next_state]) and (not isSinkState(next_state)) and
+      isStateReachableFrom(search_state, next_state, is_stack_member)) {
       return true;
     }
   }
@@ -263,7 +266,7 @@ bool Automaton::isStateReachableFrom(int search_state, int from_state, std::map<
 Graph_ptr Automaton::toGraph() {
   Graph_ptr graph = new Graph();
   GraphNode_ptr node = nullptr, next_node = nullptr;
-  for (int s = 0; s < this->dfa->ns; s++) {
+  for (int s = 0; s < this->dfa_->ns; s++) {
     node = new GraphNode(s);
     if (s == 0) {
       graph->setStartNode(node);
@@ -304,9 +307,9 @@ bool Automaton::isAcceptingSingleWord() {
   bool is_final_state = false;
   int bit_counter = 0;
 
-  for (int s = 0; s < this->dfa->ns; s++) {
+  for (int s = 0; s < this->dfa_->ns; s++) {
     is_final_state = isAcceptingState(s);
-    p = this->dfa->q[s];
+    p = this->dfa_->q[s];
     nodes.push_back(p);
     bit_stack.push_back(0);
     while (not nodes.empty()) {
@@ -314,11 +317,11 @@ bool Automaton::isAcceptingSingleWord() {
       nodes.pop_back();
       bit_counter = bit_stack.back();
       bit_stack.pop_back();
-      LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
+      LOAD_lri(&this->dfa_->bddm->node_table[p], l, r, index);
       if (index == BDD_LEAF_INDEX) {
         if (sink_state != l) {
           next_states[l]++;
-          if (bit_counter != num_of_variables or (next_states[l] > 1) or (next_states.size() > 1) or is_final_state) {
+          if (bit_counter != num_of_variables_ or (next_states[l] > 1) or (next_states.size() > 1) or is_final_state) {
             is_accepting_single_word = false;
             break;
           }
@@ -347,7 +350,7 @@ bool Automaton::isAcceptingSingleWord() {
 
 std::vector<bool>* Automaton::getAnAcceptingWord(std::function<bool(unsigned& index)> next_node_heuristic) {
   int sink_state = getSinkState();
-  NextState start_state = std::make_pair(this->dfa->s, std::vector<bool>());
+  NextState start_state = std::make_pair(this->dfa_->s, std::vector<bool>());
   std::vector<bool>* bit_vector = new std::vector<bool>();
   std::map<int, bool> is_stack_member;
   is_stack_member[sink_state] = true;
@@ -402,32 +405,103 @@ bool Automaton::getAnAcceptingWord(NextState& state, std::map<int, bool>& is_sta
 }
 
 char* Automaton::getAnExample(bool accepting) {
-  return dfaMakeExample(this->dfa, 1, num_of_variables, getIndices((unsigned) num_of_variables));
+  return dfaMakeExample(this->dfa_, 1, num_of_variables_, getIndices((unsigned) num_of_variables_));
 }
 
 std::ostream& operator<<(std::ostream& os, const Automaton& automaton) {
   return os << automaton.str();
 }
 
-DFA_ptr Automaton::makePhi(int num_of_variables, int* variable_indices) {
-  DFA_ptr non_accepting_dfa = nullptr;
-  std::array<char, 1> statuses { '-' };
+/**
+ * If variable indices is nullptr, default indices are created
+ */
+DFA_ptr Automaton::DfaMakePhi(int num_of_variables, int* variable_indices) {
+  if (variable_indices == nullptr) {
+    variable_indices = getIndices(num_of_variables);
+  }
+  char statuses[1] {'-'};
   dfaSetup(1, num_of_variables, variable_indices);
   dfaAllocExceptions(0);
   dfaStoreState(0);
-  non_accepting_dfa = dfaBuild(&*statuses.begin());
+  delete[] variable_indices;
+  auto non_accepting_dfa = dfaBuild(statuses);
   return non_accepting_dfa;
 }
 
-int* Automaton::getIndices(int num_of_variables, int extra_num_of_variables) {
-  int* indices = nullptr;
-  int size = num_of_variables + extra_num_of_variables;
+DFA_ptr Automaton::DfaMakeAny(int num_of_variables, int* variable_indices) {
+  if (variable_indices == nullptr) {
+    variable_indices = getIndices(num_of_variables);
+  }
+  char statuses[1] {'+'};
+  dfaSetup(1, num_of_variables, variable_indices);
+  dfaAllocExceptions(0);
+  dfaStoreState(0);
+  delete[] variable_indices;
+  auto non_accepting_dfa = dfaBuild(statuses);
+  return non_accepting_dfa;
+}
 
-  indices = new int[size];
+DFA_ptr Automaton::DfaMakeAnyButNotEmpty(int num_of_variables, int* variable_indices) {
+  if (variable_indices == nullptr) {
+    variable_indices = getIndices(num_of_variables);
+  }
+  char statuses[2] { '-', '+' };
+  dfaSetup(2, num_of_variables, variable_indices);
+  dfaAllocExceptions(0);
+  dfaStoreState(1);
+  dfaAllocExceptions(0);
+  dfaStoreState(1);
+  delete[] variable_indices;
+  auto any_dfa = dfaBuild(statuses);
+  return any_dfa;
+}
+
+DFA_ptr Automaton::DfaIntersect(DFA_ptr dfa1, DFA_ptr dfa2) {
+  auto intersect_dfa = dfaProduct(dfa1, dfa2, dfaAND);
+  auto minimized_dfa = dfaMinimize(intersect_dfa);
+  dfaFree(intersect_dfa);
+  return minimized_dfa;
+}
+
+DFA_ptr Automaton::DfaUnion(DFA_ptr dfa1, DFA_ptr dfa2) {
+  auto union_dfa = dfaProduct(dfa1, dfa2, dfaOR);
+  auto minimized_dfa = dfaMinimize(union_dfa);
+  dfaFree(union_dfa);
+  return minimized_dfa;
+}
+
+DFA_ptr Automaton::DFAProjectAway(int index, DFA_ptr dfa) {
+  auto result_dfa = dfaProject(dfa, (unsigned)index);
+  auto tmp_dfa = result_dfa;
+  result_dfa = dfaMinimize(tmp_dfa);
+  dfaFree(tmp_dfa);
+  return result_dfa;
+}
+
+DFA_ptr Automaton::DFAProjectTo(int index, int num_of_variables, DFA_ptr dfa) {
+  auto result_dfa = dfaCopy(dfa);
+  for (int i = 0 ; i < num_of_variables; ++i) {
+    if (i != index) {
+      auto tmp_dfa = result_dfa;
+      result_dfa = Automaton::DFAProjectAway(i, tmp_dfa);
+      dfaFree(tmp_dfa);
+    }
+  }
+
+  int* indices_map = getIndices(num_of_variables);
+  indices_map[index] = 0;
+  indices_map[0] = index;
+  dfaReplaceIndices(result_dfa, indices_map);
+  delete[] indices_map;
+  return result_dfa;
+}
+
+int* Automaton::getIndices(int num_of_variables, int extra_num_of_variables) {
+  int size = num_of_variables + extra_num_of_variables;
+  int* indices = new int[size];
   for (int i = 0; i < size; i++) {
     indices[i] = i;
   }
-
   return indices;
 }
 
@@ -444,13 +518,27 @@ unsigned* Automaton::getIndices(unsigned num_of_variables, unsigned extra_num_of
 }
 
 
-std::vector<char> Automaton::getBinaryFormat(unsigned long number, int bit_length) {
-  int index = bit_length;
+std::vector<char> Automaton::GetBinaryFormat(unsigned long number, int bit_length) {
   unsigned subject = number;
-  std::vector<char> binary_str (bit_length + 1);
-  binary_str[bit_length] = '\0';
+  std::vector<char> binary_str (bit_length + 1, '\0');
+  for (int index = bit_length - 1; index >= 0; --index) {
+    if (subject & 1) {
+      binary_str[index] = '1';
+    } else {
+      binary_str[index] = '0';
+    }
+    if (subject > 0) {
+      subject >>= 1;
+    }
+  }
 
-  for (index--; index >= 0; index--) {
+  return binary_str;
+}
+
+std::vector<char> Automaton::GetReversedBinaryFormat(unsigned long number, int bit_length) {
+  unsigned subject = number;
+  std::vector<char> binary_str (bit_length + 1, '\0');
+  for (int index = 0; index < bit_length; ++index) {
     if (subject & 1) {
       binary_str[index] = '1';
     } else {
@@ -506,55 +594,55 @@ std::vector<char> Automaton::getReservedWord(char last_char, int length, bool ex
 }
 
 void Automaton::minimize() {
-  DFA_ptr tmp = this->dfa;
-  this->dfa = dfaMinimize(tmp);
+  DFA_ptr tmp = this->dfa_;
+  this->dfa_ = dfaMinimize(tmp);
   dfaFree(tmp);
-  DVLOG(VLOG_LEVEL) << this->id << " = [" << this->id << "]->minimize()";
+  DVLOG(VLOG_LEVEL) << this->id_ << " = [" << this->id_ << "]->minimize()";
 }
 
 void Automaton::project(unsigned index) {
-  DFA_ptr tmp = this->dfa;
-  this->dfa = dfaProject(tmp, index);
+  DFA_ptr tmp = this->dfa_;
+  this->dfa_ = dfaProject(tmp, index);
   dfaFree(tmp);
 
-  if (index < (unsigned)(this->num_of_variables - 1)) {
-    int* indices_map = new int[this->num_of_variables];
-    for (int i = 0, j = 0; i < this->num_of_variables; i++) {
+  if (index < (unsigned)(this->num_of_variables_ - 1)) {
+    int* indices_map = new int[this->num_of_variables_];
+    for (int i = 0, j = 0; i < this->num_of_variables_; i++) {
       if ((unsigned)i != index) {
         indices_map[i] = j;
         j++;
       }
     }
-    dfaReplaceIndices(this->dfa, indices_map);
+    dfaReplaceIndices(this->dfa_, indices_map);
     delete[] indices_map;
   }
 
-  this->num_of_variables = this->num_of_variables - 1;
+  this->num_of_variables_ = this->num_of_variables_ - 1;
 
-  delete this->variable_indices;
-  this->variable_indices = getIndices(num_of_variables);
-  DVLOG(VLOG_LEVEL) << this->id << " = [" << this->id << "]->project(" << index << ")";
+  delete this->variable_indices_;
+  this->variable_indices_ = getIndices(num_of_variables_);
+  DVLOG(VLOG_LEVEL) << this->id_ << " = [" << this->id_ << "]->project(" << index << ")";
 }
 
 bool Automaton::isStartState(int state_id) {
-  return (this->dfa->s == state_id);
+  return (this->dfa_->s == state_id);
 }
 
 bool Automaton::isSinkState(int state_id) {
-  return (bdd_is_leaf(this->dfa->bddm, this->dfa->q[state_id])
-          and (bdd_leaf_value(this->dfa->bddm, this->dfa->q[state_id]) == (unsigned) state_id)
-          and this->dfa->f[state_id] == -1);
+  return (bdd_is_leaf(this->dfa_->bddm, this->dfa_->q[state_id])
+          and (bdd_leaf_value(this->dfa_->bddm, this->dfa_->q[state_id]) == (unsigned) state_id)
+          and this->dfa_->f[state_id] == -1);
 }
 
 bool Automaton::isAcceptingState(int state_id) {
-  return (this->dfa->f[state_id] == 1);
+  return (this->dfa_->f[state_id] == 1);
 }
 
 /**
  * @returns sink state number if exists, -1 otherwise
  */
 int Automaton::getSinkState() {
-  for (int i = 0; i < this->dfa->ns; i++) {
+  for (int i = 0; i < this->dfa_->ns; i++) {
     if (isSinkState(i)) {
       return i;
     }
@@ -564,7 +652,7 @@ int Automaton::getSinkState() {
 }
 
 bool Automaton::hasIncomingTransition(int state) {
-  for (int i = 0; i < this->dfa->ns; i++) {
+  for (int i = 0; i < this->dfa_->ns; i++) {
     if (hasNextState(i, state)) {
       return true;
     }
@@ -577,11 +665,11 @@ bool Automaton::hasIncomingTransition(int state) {
  */
 bool Automaton::isStartStateReachableFromAnAcceptingState() {
   paths state_paths, pp;
-  for (int i = 0; i < this->dfa->ns; i++) {
+  for (int i = 0; i < this->dfa_->ns; i++) {
     if (isAcceptingState(i)) {
-      state_paths = pp = make_paths(this->dfa->bddm, this->dfa->q[i]);
+      state_paths = pp = make_paths(this->dfa_->bddm, this->dfa_->q[i]);
       while (pp) {
-        if (pp->to == (unsigned) this->dfa->s) {
+        if (pp->to == (unsigned) this->dfa_->s) {
           kill_paths(state_paths);
           return true;
         }
@@ -597,12 +685,12 @@ bool Automaton::hasNextState(int state, int search) {
   unsigned p, l, r, index; // BDD traversal variables
   std::stack<unsigned> nodes;
 
-  p = this->dfa->q[state];
+  p = this->dfa_->q[state];
   nodes.push(p);
   while (not nodes.empty()) {
     p = nodes.top();
     nodes.pop();
-    LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
+    LOAD_lri(&this->dfa_->bddm->node_table[p], l, r, index);
     if (index == BDD_LEAF_INDEX) {
       if (l == (unsigned) search) {
         return true;
@@ -622,12 +710,12 @@ int Automaton::getNextState(int state, std::vector<char>& exception) {
   int next_state = -1; // only for initialization
    unsigned p, l, r, index = 0; // BDD traversal variables
 
-   CHECK_EQ(num_of_variables, exception.size());
+   CHECK_EQ(num_of_variables_, exception.size());
 
-   p = this->dfa->q[state];
+   p = this->dfa_->q[state];
 
-   for (int i = 0; i < num_of_variables; i++) {
-     LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
+   for (int i = 0; i < num_of_variables_; i++) {
+     LOAD_lri(&this->dfa_->bddm->node_table[p], l, r, index);
      if (index == BDD_LEAF_INDEX) {
        next_state = l;
        break;
@@ -641,7 +729,7 @@ int Automaton::getNextState(int state, std::vector<char>& exception) {
    }
 
    if (index != BDD_LEAF_INDEX) {
-     LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
+     LOAD_lri(&this->dfa_->bddm->node_table[p], l, r, index);
      if (index == BDD_LEAF_INDEX) {
        next_state = l;
      } else {
@@ -660,12 +748,12 @@ std::set<int> Automaton::getNextStates(int state) {
   std::set<int> next_states;
   std::stack<unsigned> nodes;
 
-  p = this->dfa->q[state];
+  p = this->dfa_->q[state];
   nodes.push(p);
   while (not nodes.empty()) {
     p = nodes.top();
     nodes.pop();
-    LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
+    LOAD_lri(&this->dfa_->bddm->node_table[p], l, r, index);
     if (index == BDD_LEAF_INDEX) {
       next_states.insert(l);
     } else {
@@ -688,7 +776,7 @@ std::vector<NextState> Automaton::getNextStatesOrdered(int state, std::function<
 
 
   unsigned p, l, r, index; // BDD traversal variables
-  p = this->dfa->q[state];
+  p = this->dfa_->q[state];
   nodes.push_back(p);
   transition_stack.push_back(std::vector<bool>());
   while (not nodes.empty()) {
@@ -696,13 +784,13 @@ std::vector<NextState> Automaton::getNextStatesOrdered(int state, std::function<
     nodes.pop_back();
     current_transition = transition_stack.back();
     transition_stack.pop_back();
-    LOAD_lri(&this->dfa->bddm->node_table[p], l, r, index);
+    LOAD_lri(&this->dfa_->bddm->node_table[p], l, r, index);
     if (index == BDD_LEAF_INDEX) {
       if (visited[l]) {
         // avoid cycles
       } else {
         state = l;
-        while (current_transition.size() < (unsigned) num_of_variables) {
+        while (current_transition.size() < (unsigned) num_of_variables_) {
           unsigned i = current_transition.size();
           if (next_node_heuristic and next_node_heuristic(i)) {
             current_transition.push_back(1); // add 1 for don't cares
@@ -753,8 +841,8 @@ std::set<int> Automaton::getStatesReachableBy(int min_walk, int max_walk) {
 
   std::stack<std::pair<int, int>> state_stack;
   int sink_state = getSinkState();
-  if (sink_state != this->dfa->s) {
-    state_stack.push(std::make_pair(this->dfa->s, 0));
+  if (sink_state != this->dfa_->s) {
+    state_stack.push(std::make_pair(this->dfa_->s, 0));
   }
   while (not state_stack.empty()) {
     auto current = state_stack.top(); state_stack.pop();
@@ -779,19 +867,19 @@ CountMatrix Automaton::GetAdjacencyCountMatrix(bool count_reserved_words) {
     return count_matrix_;
   }
 
-  CountMatrix count_matrix (this->dfa->ns + 1, CountVector(this->dfa->ns + 1, 0));
+  CountMatrix count_matrix (this->dfa_->ns + 1, CountVector(this->dfa_->ns + 1, 0));
 
   unsigned left, right, index;
-  for (int s = 0; s < this->dfa->ns; ++s) {
+  for (int s = 0; s < this->dfa_->ns; ++s) {
     // pair<sbdd_node_id, bdd_depth>
-    Node current_bdd_node {dfa->q[s], 0}, left_node, right_node;
+    Node current_bdd_node {dfa_->q[s], 0}, left_node, right_node;
     std::stack<Node> bdd_node_stack;
     bdd_node_stack.push(current_bdd_node);
     while (not bdd_node_stack.empty()) {
       current_bdd_node = bdd_node_stack.top(); bdd_node_stack.pop();
-      LOAD_lri(&dfa->bddm->node_table[current_bdd_node.first], left, right, index);
+      LOAD_lri(&dfa_->bddm->node_table[current_bdd_node.first], left, right, index);
       if (index == BDD_LEAF_INDEX) {
-        count_matrix[s][left] += static_cast<int>(std::pow(2, (num_of_variables - current_bdd_node.second)));
+        count_matrix[s][left] += static_cast<int>(std::pow(2, (num_of_variables_ - current_bdd_node.second)));
       } else {
         left_node.first = left;
         left_node.second = current_bdd_node.second + 1;
@@ -804,13 +892,13 @@ CountMatrix Automaton::GetAdjacencyCountMatrix(bool count_reserved_words) {
 
     // combine all accepting states into one artifical accepting state
     if (isAcceptingState(s)) {
-      count_matrix[s][this->dfa->ns] = 1;
+      count_matrix[s][this->dfa_->ns] = 1;
     }
   }
 
   // TODO use extra bit instead of reserved words, so that we do not need counting trick.
   if (count_reserved_words) {
-    for (int s = 0; s < this->dfa->ns; ++s) {
+    for (int s = 0; s < this->dfa_->ns; ++s) {
       auto max_transition = std::max_element(count_matrix[s].begin(), count_matrix[s].end());
       *max_transition += 2; // add two reserved words
     }
@@ -819,7 +907,7 @@ CountMatrix Automaton::GetAdjacencyCountMatrix(bool count_reserved_words) {
   // make transitions to sink count 0
   int sink_state = this->getSinkState();
   if (sink_state > -1) {
-    for (int s = 0; s < this->dfa->ns; ++s) {
+    for (int s = 0; s < this->dfa_->ns; ++s) {
       count_matrix[s][sink_state] = 0;
     }
   }
@@ -842,35 +930,35 @@ AdjacencyList Automaton::getAdjacencyCountList(bool count_reserved_words) {
   unsigned l, r, index;
   Node current_node, top, lo_node, hi_node, entry;
   std::stack<Node> node_stack;
-  AdjacencyList adjacency_count_list(this->dfa->ns);
-  std::vector<int> transition_count(dfa->ns, 0);
-  std::vector<int> reachable_states(dfa->ns, 0);
+  AdjacencyList adjacency_count_list(this->dfa_->ns, NodeVector());
+  std::vector<int> transition_count(dfa_->ns, 0);
+  std::vector<int> reachable_states(dfa_->ns, 0);
 
   // process each state and run a dfs
-  for (int i = 0; i < this->dfa->ns; i++) {
+  for (int i = 0; i < this->dfa_->ns; i++) {
     // keep a list of reachable states for optimization purposes
     for (int j = 0; j < leaf_count; j++) {
       reachable_states[j] = 0;
     }
 
     leaf_count = 0;
-    for (int j = 0; j < this->dfa->ns; j++) {
+    for (int j = 0; j < this->dfa_->ns; j++) {
       transition_count[j] = 0;
     }
 
-    LOAD_lri(&dfa->bddm->node_table[i], l, r, index);
+    LOAD_lri(&dfa_->bddm->node_table[i], l, r, index);
     // keep track of t and id as pair<id,t> in stack
     current_node.second = 0;
-    current_node.first = dfa->q[i];
+    current_node.first = dfa_->q[i];
 
     node_stack.push(current_node);
 
     while (not node_stack.empty()) {
       top = node_stack.top();
       node_stack.pop();
-      LOAD_lri(&this->dfa->bddm->node_table[top.first], l, r, index);
+      LOAD_lri(&this->dfa_->bddm->node_table[top.first], l, r, index);
       if (index == BDD_LEAF_INDEX) {
-        num_of_transitions = std::pow(2, (num_of_variables - top.second));
+        num_of_transitions = std::pow(2, (num_of_variables_ - top.second));
         if (!transition_count[l]) {
           reachable_states[leaf_count] = l;
           leaf_count++;
@@ -915,9 +1003,9 @@ AdjacencyList Automaton::getAdjacencyCountList(bool count_reserved_words) {
  */
 void Automaton::addReservedWordsToCount(AdjacencyList& adjaceny_count_list) {
   unsigned node_size = adjaceny_count_list.size();
-  std::vector<int> max_transition_count(node_size);
-  std::vector<int> max_transition_id(node_size);
-  std::vector<int> max_transition_index(node_size);
+  std::vector<int> max_transition_count(node_size, 0);
+  std::vector<int> max_transition_id(node_size, 0);
+  std::vector<int> max_transition_index(node_size, 0);
   int sink_state = getSinkState();
 
   for (unsigned i = 0; i < node_size; i++) {
@@ -1060,7 +1148,7 @@ void Automaton::generateMatrixScript(int bound, std::ostream& out, bool count_le
   }
   out << "}];\n";
   // state indexes are off by one
-  out << "numPaths = MatrixPower[A, " << bound + 2 << "][[" << this->dfa->s + 1 << ", " << this->dfa->ns + 1 << "]];\n";
+  out << "numPaths = MatrixPower[A, " << bound + 2 << "][[" << this->dfa_->s + 1 << ", " << this->dfa_->ns + 1 << "]];\n";
   out << "Print[N[numPaths]];";
   out << std::endl;
 }
@@ -1079,7 +1167,7 @@ void Automaton::preProcessAdjacencyList(AdjacencyList& adjaceny_count_list) {
   artificial.first = node_size;
   artificial.second = 1;
 
-  adjaceny_count_list[this->dfa->s].push_back(artificial);
+  adjaceny_count_list[this->dfa_->s].push_back(artificial);
   adjaceny_count_list[node_size].push_back(artificial);
 
   for (int i = 0; (unsigned)i < node_size; i++) {
@@ -1102,7 +1190,7 @@ void Automaton::preProcessAdjacencyList(AdjacencyList& adjaceny_count_list) {
     j++;
   }
 
-  AdjacencyList new_list(updated_node_size);
+  AdjacencyList new_list(updated_node_size, NodeVector());
   for (unsigned i = 0; i < updated_node_size; i++) {
     if (is_useful_state[i]) {
       for (unsigned j = 0; j < adjaceny_count_list[i].size(); j++) {
@@ -1123,7 +1211,7 @@ void Automaton::preProcessAdjacencyList(AdjacencyList& adjaceny_count_list) {
  */
 void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
 
-  print_sink = print_sink || (dfa->ns == 1 and dfa->f[0] == -1);
+  print_sink = print_sink || (dfa_->ns == 1 and dfa_->f[0] == -1);
   int sink_state = getSinkState();
 
   out << "digraph MONA_DFA {\n"
@@ -1134,16 +1222,16 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
           " node [height = .5, width = .5];\n"
           " node [shape = doublecircle];";
 
-  for (int i = 0; i < dfa->ns; i++) {
-    if (dfa->f[i] == 1) {
+  for (int i = 0; i < dfa_->ns; i++) {
+    if (dfa_->f[i] == 1) {
       out << " " << i << ";";
     }
   }
 
   out << "\n node [shape = circle];";
 
-  for (int i = 0; i < dfa->ns; i++) {
-    if (dfa->f[i] == -1) {
+  for (int i = 0; i < dfa_->ns; i++) {
+    if (dfa_->f[i] == -1) {
       if (i != sink_state || print_sink) {
         out << " " << i << ";";
       }
@@ -1152,13 +1240,13 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
 
   out << "\n node [shape = box];";
 
-  for (int i = 0; i < dfa->ns; i++) {
-    if (dfa->f[i] == 0) {
+  for (int i = 0; i < dfa_->ns; i++) {
+    if (dfa_->f[i] == 0) {
       out << " " << i << ";";
     }
   }
 
-  out << "\n init [shape = plaintext, label = \"\"];\n" << " init -> " << dfa->s << ";\n";
+  out << "\n init [shape = plaintext, label = \"\"];\n" << " init -> " << dfa_->s << ";\n";
 
   LOG(FATAL) << "Reimplement toDotAscii";
 //  paths state_paths, pp;
@@ -1272,12 +1360,12 @@ void Automaton::toDot(std::ostream& out, bool print_sink) {
   int i, j, k, l;
   char **buffer;
   int *used, *allocated;
-  unsigned* offsets = getIndices((unsigned) num_of_variables);
-  int no_free_vars = num_of_variables;
-  DFA_ptr a = this->dfa;
+  unsigned* offsets = getIndices((unsigned) num_of_variables_);
+  int no_free_vars = num_of_variables_;
+  DFA_ptr a = this->dfa_;
   int sink = getSinkState();
 
-  print_sink = print_sink || (dfa->ns == 1 and dfa->f[0] == -1);
+  print_sink = print_sink || (dfa_->ns == 1 and dfa_->f[0] == -1);
 
   out << "digraph MONA_DFA {\n"
           " rankdir = LR;\n"
@@ -1395,18 +1483,18 @@ void Automaton::toBDD(std::ostream& out) {
   Table *table = tableInit();
 
   /* remove all marks in a->bddm */
-  bdd_prepare_apply1(this->dfa->bddm);
+  bdd_prepare_apply1(this->dfa_->bddm);
 
   /* build table of tuples (idx,lo,hi) */
-  for (int i = 0; i < this->dfa->ns; i++) {
-    _export(this->dfa->bddm, this->dfa->q[i], table);
+  for (int i = 0; i < this->dfa_->ns; i++) {
+    _export(this->dfa_->bddm, this->dfa_->q[i], table);
   }
 
   /* renumber lo/hi pointers to new table ordering */
   for (unsigned i = 0; i < table->noelems; i++) {
     if (table->elms[i].idx != -1) {
-      table->elms[i].lo = bdd_mark(this->dfa->bddm, table->elms[i].lo) - 1;
-      table->elms[i].hi = bdd_mark(this->dfa->bddm, table->elms[i].hi) - 1;
+      table->elms[i].lo = bdd_mark(this->dfa_->bddm, table->elms[i].lo) - 1;
+      table->elms[i].hi = bdd_mark(this->dfa_->bddm, table->elms[i].hi) - 1;
     }
   }
 
@@ -1417,8 +1505,8 @@ void Automaton::toBDD(std::ostream& out) {
           "  node [shape=record];\n"
           "   s1 [shape=record,label=\"";
 
-  for (int i = 0; i < this->dfa->ns; i++) {
-    out << "{" << this->dfa->f[i] << "|<" << i << "> " << i << "}";
+  for (int i = 0; i < this->dfa_->ns; i++) {
+    out << "{" << this->dfa_->f[i] << "|<" << i << "> " << i << "}";
     if ((unsigned) (i + 1) < table->noelems) {
       out << "|";
     }
@@ -1440,8 +1528,8 @@ void Automaton::toBDD(std::ostream& out) {
   }
   out << std::endl;
 
-  for (int i = 0; i < this->dfa->ns; i++) {
-    out << " s1:" << i << " -> " << bdd_mark(this->dfa->bddm, this->dfa->q[i]) - 1 << " [style=bold];\n";
+  for (int i = 0; i < this->dfa_->ns; i++) {
+    out << " s1:" << i << " -> " << bdd_mark(this->dfa_->bddm, this->dfa_->q[i]) - 1 << " [style=bold];\n";
   }
 
   for (unsigned i = 0; i < table->noelems; i++) {
@@ -1461,20 +1549,20 @@ void Automaton::exportDfa(std::string file_name) {
   // order 0 for boolean variables
   // we dont care about variable names but they are used in
   // MONA DFA file format with dfaExport()
-  char **names = new char*[this->num_of_variables];
-  char *orders = new char[this->num_of_variables];
+  char **names = new char*[this->num_of_variables_];
+  char *orders = new char[this->num_of_variables_];
   std::string name = "a";
-  for (int i = 0; i < this->num_of_variables; i++) {
+  for (int i = 0; i < this->num_of_variables_; i++) {
     orders[i] = i;
     names[0] = &*name.begin();
   }
 
-  dfaExport(this->dfa, file_name_ptr, this->num_of_variables, names, orders);
+  dfaExport(this->dfa_, nullptr, this->num_of_variables_, names, orders);
 }
 
 DFA_ptr Automaton::importDFA(std::string file_name) {
-  char **names = new char*[this->num_of_variables];
-  int ** orders = new int*[this->num_of_variables];
+  char **names = new char*[this->num_of_variables_];
+  int ** orders = new int*[this->num_of_variables_];
   return dfaImport(&*file_name.begin(), &names, orders);
 }
 
@@ -1487,7 +1575,7 @@ int Automaton::inspectAuto(bool print_sink, bool force_mona_format) {
     std::cout << "cannot open file: " << file << std::endl;
     exit(2);
   }
-  if (Automaton::Type::INT == type or Automaton::Type::STRING == type) {
+  if (Automaton::Type::INT == type_ or Automaton::Type::STRING == type_) {
     if (force_mona_format) {
       toDot(outfile, print_sink);
     } else {

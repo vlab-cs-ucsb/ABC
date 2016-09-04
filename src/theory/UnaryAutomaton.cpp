@@ -30,7 +30,7 @@ UnaryAutomaton::~UnaryAutomaton() {
 
 UnaryAutomaton_ptr UnaryAutomaton::clone() const {
   UnaryAutomaton_ptr cloned_auto = new UnaryAutomaton(*this);
-  DVLOG(VLOG_LEVEL) << cloned_auto->id << " = [" << this->id << "]->clone()";
+  DVLOG(VLOG_LEVEL) << cloned_auto->id_ << " = [" << this->id_ << "]->clone()";
   return cloned_auto;
 }
 
@@ -38,7 +38,7 @@ UnaryAutomaton_ptr UnaryAutomaton::makePhi() {
   DFA_ptr non_accepting_unary_dfa = nullptr;
   UnaryAutomaton_ptr non_acception_unary_auto = nullptr;
   int a[1] = {0};
-  non_accepting_unary_dfa = Automaton::makePhi(1, a);
+  non_accepting_unary_dfa = Automaton::DfaMakePhi(1, a);
   non_acception_unary_auto = new UnaryAutomaton(non_accepting_unary_dfa);
 
   DVLOG(VLOG_LEVEL) << non_acception_unary_auto->getId() << " = makePhi()";
@@ -112,8 +112,8 @@ UnaryAutomaton_ptr UnaryAutomaton::makeAutomaton(SemilinearSet_ptr semilinear_se
 
   unary_auto = new UnaryAutomaton(unary_dfa);
 
-  DVLOG(VLOG_LEVEL) << unary_auto->id << " = " << *semilinear_set;
-  DVLOG(VLOG_LEVEL) << unary_auto->id << " = UnaryAutomaton::makeAutomaton(<semilinear set>)";
+  DVLOG(VLOG_LEVEL) << unary_auto->id_ << " = " << *semilinear_set;
+  DVLOG(VLOG_LEVEL) << unary_auto->id_ << " = UnaryAutomaton::makeAutomaton(<semilinear set>)";
   return unary_auto;
 }
 
@@ -121,7 +121,7 @@ SemilinearSet_ptr UnaryAutomaton::getSemilinearSet() {
   SemilinearSet_ptr semilinear_set = nullptr;
 
   int cycle_head_state = -1,
-          current_state = this->dfa->s,
+          current_state = this->dfa_->s,
           sink_state = this->getSinkState();
 
   CHECK_NE(-1, sink_state);
@@ -134,7 +134,7 @@ SemilinearSet_ptr UnaryAutomaton::getSemilinearSet() {
   }
 
   // loop over all states except for sink state
-  for (int s = 0; (s < this->dfa->ns - 1); s++) {
+  for (int s = 0; (s < this->dfa_->ns - 1); s++) {
     values[current_state] = s;
     states.push_back(current_state);
 
@@ -181,7 +181,7 @@ SemilinearSet_ptr UnaryAutomaton::getSemilinearSet() {
   int period = (cycle_head_state == -1) ? 0 : values[states.back()] - cycle_head_value + 1;
   semilinear_set->setPeriod(period);
 
-  DVLOG(VLOG_LEVEL) << "semilinear set = [" << this->id << "]->getSemilinearSet()";
+  DVLOG(VLOG_LEVEL) << "semilinear set = [" << this->id_ << "]->getSemilinearSet()";
 
   return semilinear_set;
 }
@@ -190,7 +190,7 @@ IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool ad
   IntAutomaton_ptr int_auto = nullptr;
   DFA_ptr int_dfa = nullptr;
   int* indices = getIndices(number_of_variables);
-  const int number_of_states = this->dfa->ns;
+  const int number_of_states = this->dfa_->ns;
   int to_state, sink_state = getSinkState();
   std::vector<char> unary_exception = {'1'};
   char* statuses = new char[number_of_states + 1];
@@ -206,7 +206,7 @@ IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool ad
 
   dfaSetup(number_of_states, number_of_variables, indices);
 
-  for (int s = 0; s < this->dfa->ns; s++) {
+  for (int s = 0; s < this->dfa_->ns; s++) {
     if (s != sink_state) {
       to_state = getNextState(s, unary_exception);
       dfaAllocExceptions(7);
@@ -236,7 +236,7 @@ IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool ad
   int_auto->setMinus1(add_minus_one);
   delete[] indices; indices = nullptr;
 
-  DVLOG(VLOG_LEVEL)  << int_auto->getId() << " = [" << this->id << "]->toIntAutomaton(" << number_of_variables << ", " << add_minus_one << ")";
+  DVLOG(VLOG_LEVEL)  << int_auto->getId() << " = [" << this->id_ << "]->toIntAutomaton(" << number_of_variables << ", " << add_minus_one << ")";
 
   return int_auto;
 }
@@ -245,7 +245,7 @@ BinaryIntAutomaton_ptr UnaryAutomaton::toBinaryIntAutomaton(std::string var_name
   BinaryIntAutomaton_ptr binary_auto = nullptr;
   SemilinearSet_ptr semilinear_set = getSemilinearSet();
 
-  binary_auto = BinaryIntAutomaton::makeAutomaton(semilinear_set, var_name, formula, true);
+  binary_auto = BinaryIntAutomaton::MakeAutomaton(semilinear_set, var_name, formula, true);
 
   if (add_minus_one) {
     BinaryIntAutomaton_ptr minus_one_auto = nullptr, tmp_auto = nullptr;
@@ -254,14 +254,14 @@ BinaryIntAutomaton_ptr UnaryAutomaton::toBinaryIntAutomaton(std::string var_name
     minus_one_formula->set_variable_coefficient(var_name, 1);
     minus_one_formula->set_constant(1);
     minus_one_formula->set_type(ArithmeticFormula::Type::EQ);
-    minus_one_auto = BinaryIntAutomaton::makeAutomaton(minus_one_formula, false);
+    minus_one_auto = BinaryIntAutomaton::MakeAutomaton(minus_one_formula, false);
     tmp_auto = binary_auto;
-    binary_auto = tmp_auto->union_(minus_one_auto);
+    binary_auto = tmp_auto->Union(minus_one_auto);
     delete tmp_auto; tmp_auto = nullptr;
     delete minus_one_auto; minus_one_auto = nullptr;
   }
 
-  DVLOG(VLOG_LEVEL)  << binary_auto->getId() << " = [" << this->id << "]->toBinaryIntAutomaton(" << var_name << ", " << *binary_auto->getFormula() << ", " << add_minus_one << ")";
+  DVLOG(VLOG_LEVEL)  << binary_auto->getId() << " = [" << this->id_ << "]->toBinaryIntAutomaton(" << var_name << ", " << *binary_auto->get_formula() << ", " << add_minus_one << ")";
 
   return binary_auto;
 }
@@ -272,7 +272,7 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
           tmp_2_auto = nullptr;
 
   int sink_state = this->getSinkState();
-  int curr_state {this->dfa->s};
+  int curr_state {this->dfa_->s};
 
   std::map<int, bool> is_visited;
   std::queue<int> work_list;
@@ -310,7 +310,7 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
     }
   }
 
-  DVLOG(VLOG_LEVEL)  << result_auto->getId() << " = [" << this->id << "]->toStringAutomaton()";
+  DVLOG(VLOG_LEVEL)  << result_auto->getId() << " = [" << this->id_ << "]->toStringAutomaton()";
   return result_auto;
 }
 

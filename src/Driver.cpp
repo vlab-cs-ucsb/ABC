@@ -197,9 +197,9 @@ boost::multiprecision::cpp_int Driver::Count(const double bound, bool count_less
 		switch (variable_entry.second->getType()) {
 		case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
 			auto binary_auto = variable_entry.second->getBinaryIntAutomaton();
-			auto formula = binary_auto->getFormula();
-			for (auto it : formula->get_variable_trackmap()) {
-				if (symbol_table_->get_variable_unsafe(it.first) != nullptr) {
+			auto formula = binary_auto->get_formula();
+			for (auto& el : formula->get_variable_coefficient_map()) {
+				if (symbol_table_->get_variable_unsafe(el.first) != nullptr) {
 					++num_bin_var;
 				}
 			}
@@ -334,7 +334,7 @@ std::map<std::string, std::string> Driver::getSatisfyingExamples() {
 	std::map<std::string, std::string> results;
 	for (auto& variable_entry : getSatisfyingVariables()) {
 		if (Solver::Value::Type::BINARYINT_AUTOMATON == variable_entry.second->getType()) {
-			std::map<std::string, int> values = variable_entry.second->getBinaryIntAutomaton()->getAnAcceptingIntForEachVar();
+			std::map<std::string, int> values = variable_entry.second->getBinaryIntAutomaton()->GetAnAcceptingIntForEachVar();
 			for (auto& entry : values) {
 				results[entry.first] = std::to_string(entry.second);
 			}
@@ -410,18 +410,21 @@ SMT::Variable_ptr Driver::get_smc_query_variable() {
 
 void Driver::test() {
 //	return;
-
   LOG(INFO) << "DRIVER TEST METHOD";
-  std::map<std::string, int> test = {{"a", 6}, {"b", 7}, {"c", 8}, {"d", 9}, {"e", 10}, {"f", 11}};
-  auto f1 = test.find("b");
-  std::cout << "b index: " << std::distance(test.begin(), f1)<< std::endl;
+  using namespace Theory;
 
-  auto f2 = test.find("a");
-  auto f3 = test.find("f");
-  auto f4 = test.find("z");
-  std::cout << "f index: " << std::distance(f2,f3) << std::endl;
-  std::cout << "z index: " << std::distance(f2, f4) << std::endl;
-  std::cout << "a index: " << std::distance(f2,f3) << std::endl;
+  auto formula = new ArithmeticFormula();
+  formula->set_type(ArithmeticFormula::Type::EQ);
+  formula->set_constant(0);
+  formula->add_variable("x", 1);
+  formula->add_variable("y", 1);
+
+//  auto t1 = BinaryIntAutomaton::MakeAutomaton(formula, false);
+//  t1->inspectAuto();
+
+  auto t2 = BinaryIntAutomaton::MakeAutomaton(formula->clone(), true);
+  t2->inspectAuto();
+
 //    int indices[4] = {0,1,2,3};
 //    Theory::StringAutomaton_ptr test = Theory::StringAutomaton::makeAnyString(4, indices);
 //    test->inspectAuto(true, true);

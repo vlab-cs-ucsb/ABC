@@ -15,7 +15,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "helper/FileHelper.h"
-#include "mock/theory/MockBinaryIntAutomaton.h"
+//#include "theory/mock/MockBinaryIntAutomaton.h"
 #include "theory/BinaryIntAutomaton.h"
 
 namespace Vlab {
@@ -27,7 +27,6 @@ protected:
   virtual void SetUp();
   virtual void TearDown();
 
-  ArithmeticFormula_ptr formula;
 };
 
 } /* namespace Test */

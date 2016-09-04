@@ -107,7 +107,14 @@ public:
 
   friend std::ostream& operator<<(std::ostream& os, const Automaton& automaton);
 protected:
-  static DFA_ptr makePhi(int num_of_variables, int* variable_indices);
+  static DFA_ptr DfaMakePhi(int num_of_variables, int* variable_indices = nullptr);
+  static DFA_ptr DfaMakeAny(int num_of_variables, int* variable_indices = nullptr);
+  static DFA_ptr DfaMakeAnyButNotEmpty(int num_of_variables, int* variable_indices = nullptr);
+  static DFA_ptr DfaIntersect(DFA_ptr dfa1, DFA_ptr dfa2);
+  static DFA_ptr DfaUnion(DFA_ptr dfa1, DFA_ptr dfa2);
+  static DFA_ptr DFAProjectAway(int index, DFA_ptr dfa);
+//  static DFA_ptr DFAProjectAway(std::vector<int> index, int num_of_variables, DFA_ptr dfa);
+  static DFA_ptr DFAProjectTo(int index, int num_of_variables, DFA_ptr dfa);
 
   bool isAcceptingSingleWord();
   // TODO update it to work for non-accepting inputs
@@ -117,7 +124,8 @@ protected:
   static int* getIndices(int num_of_variables, int extra_num_of_variables = 0);
   static unsigned* getIndices(unsigned num_of_variables, unsigned extra_num_of_variables = 0);
   // TODO remove vector<char> version of binary format
-  static std::vector<char> getBinaryFormat(unsigned long n, int bit_length);
+  static std::vector<char> GetBinaryFormat(unsigned long n, int bit_length);
+  static std::vector<char> GetReversedBinaryFormat(unsigned long n, int bit_length);
   static std::string getBinaryString(unsigned long n, int bit_length);
   static std::vector<char> getReservedWord(char last_char, int length, bool extra_bit = false);
   void minimize();
@@ -147,12 +155,12 @@ protected:
   bool isCyclic(int state, std::map<int, bool>& is_discovered, std::map<int, bool>& is_stack_member);
   bool isStateReachableFrom(int search_state, int from_state, std::map<int, bool>& is_stack_member);
 
-  const Automaton::Type type;
+  const Automaton::Type type_;
   bool is_count_matrix_cached_;
-  DFA_ptr dfa;
-  int num_of_variables;
-  int* variable_indices;
-  unsigned long id;
+  DFA_ptr dfa_;
+  int num_of_variables_;
+  int* variable_indices_;
+  unsigned long id_;
   static unsigned long trace_id;
   CountMatrix count_matrix_;
 private:

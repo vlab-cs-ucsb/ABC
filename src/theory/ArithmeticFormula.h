@@ -62,6 +62,7 @@ public:
   ArithmeticFormula_ptr negate();
 
   bool Simplify();
+  int CountOnes(unsigned long n);
 
   friend std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula);
 

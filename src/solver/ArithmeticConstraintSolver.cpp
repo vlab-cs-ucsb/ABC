@@ -74,7 +74,7 @@ void ArithmeticConstraintSolver::setCallbacks() {
             }
 
             DVLOG(VLOG_LEVEL) << "Linear Arithmetic Equation: " << *formula;
-            BinaryIntAutomaton_ptr binary_int_auto = BinaryIntAutomaton::makeAutomaton(formula->clone(), is_natural_numbers_only_);
+            BinaryIntAutomaton_ptr binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), is_natural_numbers_only_);
             Value_ptr result = new Value(binary_int_auto);
 
             std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);

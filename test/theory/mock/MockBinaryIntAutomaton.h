@@ -29,7 +29,7 @@ public:
 class TestableBinaryIntAutomaton : public BinaryIntAutomaton, public BinaryIntAutomatonInterface {
 
  public:
-  using BinaryIntAutomaton::makeIntEquality; // changes access rights
+  using BinaryIntAutomaton::MakeIntEquality; // changes access rights
   using BinaryIntAutomaton::makeNotEquality; // changes access rights
   using BinaryIntAutomaton::makeLessThan;
   using BinaryIntAutomaton::makeLessThanOrEqual;
@@ -41,7 +41,7 @@ class TestableBinaryIntAutomaton : public BinaryIntAutomaton, public BinaryIntAu
   }
 
   virtual BinaryIntAutomaton_ptr makeEquality(ArithmeticFormula_ptr formula) {
-    return BinaryIntAutomaton::makeIntEquality(formula);
+    return BinaryIntAutomaton::MakeIntEquality(formula);
   }
 
 

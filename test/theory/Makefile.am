@@ -1,14 +1,14 @@
 check:
 
-#SUBDIRS = helper mock
-SUBDIRS = helper
+#SUBDIRS = 
 
 AM_CXXFLAGS = \
 	-isystem $(top_srcdir)/lib/googletest/googletest/include \
 	-isystem $(top_srcdir)/lib/googletest/googlemock/include \
 	-I$(top_srcdir)/src \
 	$(GMOCK_CXXFLAGS) \
-	$(ABC_CXXFLAGS)
+	$(ABC_CXXFLAGS) \
+	-g
 
 AM_LDFLAGS = \
 	$(GMOCK_LDFLAGS) \
@@ -16,27 +16,17 @@ AM_LDFLAGS = \
 	-L$(top_srcdir)/lib/googletest/googletest/lib/.libs \
 	-L$(top_srcdir)/lib/googletest/googlemock/lib/.libs 
 
-# TESTS -- Programs run automatically by "make check"
-# check_PROGRAMS -- Programs built by "make check" but not necessarily run
-TESTS = 
-check_PROGRAMS = 
+noinst_LTLIBRARIES = libabctesttheory.la
 
-TESTS += \
-	abctest
+libabctesttheory_la_SOURCES = \
+	ArithmeticFormulaTest.cpp \
+	ArithmeticFormulaTest.h 
 	
-check_PROGRAMS += \
-	abctest
-	
-abctest_SOURCES = \
-	theory/ArithmeticFormulaTest.cpp \
-	theory/ArithmeticFormulaTest.h \
-	theory/BinaryIntAutomatonTest.cpp \
-	thory/BinaryIntAutomatonTest.h
+libabctesttheory_la_LDFLAGS = -version-info 0:1:0
 
-abctest_LDADD = \
-	helper/libabctesthelper.la \
+libabctesttheory_la_LIBADD = \
+	../helper/libabctesthelper.la \
 	$(top_srcdir)/src/theory/libabcautomaton.la \
-	$(LIBGMOCKMAIN) \
 	$(LIBGMOCK) \
 	$(LIBGTEST) \
 	$(GMOCK_LIBS) 

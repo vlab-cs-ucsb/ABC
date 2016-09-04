@@ -216,7 +216,7 @@ int main(const int argc, const char **argv) {
           break;
         }
         case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
-          std::map<std::string, int> values = variable_entry.second->getBinaryIntAutomaton()->getAnAcceptingIntForEachVar();
+          std::map<std::string, int> values = variable_entry.second->getBinaryIntAutomaton()->GetAnAcceptingIntForEachVar();
           ss << "binaryint" << index++  << ".dot";
           LOG(INFO) << "---Binary int variables---";
           for (auto& entry : values) {

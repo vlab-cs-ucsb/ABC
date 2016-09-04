@@ -94,7 +94,7 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_track
 	dfaFree(temp);
 	delete[] statuses;
 	delete[] mindices;
-	this->dfa = result;
+	this->dfa_ = result;
 }
 
 MultiTrackAutomaton::MultiTrackAutomaton(const MultiTrackAutomaton& other)
@@ -117,7 +117,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makePhi(int ntracks) {
 	MultiTrackAutomaton_ptr non_accepting_auto = nullptr;
 	int *indices = getIndices(ntracks*VAR_PER_TRACK);
 
-	non_accepting_dfa = Automaton::makePhi(ntracks*VAR_PER_TRACK, indices);
+	non_accepting_dfa = Automaton::DfaMakePhi(ntracks*VAR_PER_TRACK, indices);
 	delete[] indices; indices = nullptr;
 	non_accepting_auto = new MultiTrackAutomaton(non_accepting_dfa, ntracks);
 	non_accepting_auto->setRelation(nullptr);
@@ -190,7 +190,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeBegins(StringRelation_ptr relat
 	int len = num_tracks * var;
 	int *mindices = getIndices(num_tracks*var);
 	int nump = 1 << var;
-	std::vector<char> exep_lambda = getBinaryFormat(nump-1,var);
+	std::vector<char> exep_lambda = GetBinaryFormat(nump-1,var);
 	tv = generate_transitions_for_relation(StringRelation::Type::EQ_NO_LAMBDA,var);
 	dfaSetup(4,len,mindices);
 	dfaAllocExceptions(2*tv.size() + 1); // 1 extra for lambda stuff below
@@ -288,7 +288,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeNotBegins(StringRelation_ptr re
 	int len = num_tracks * var;
 	int *mindices = getIndices(num_tracks*var);
 	int nump = 1 << var;
-	std::vector<char> exep_lambda = getBinaryFormat(nump-1,var);
+	std::vector<char> exep_lambda = GetBinaryFormat(nump-1,var);
 	tv = generate_transitions_for_relation(StringRelation::Type::EQ_NO_LAMBDA,var);
 
 	dfaSetup(6,len,mindices);
@@ -478,7 +478,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 
 	// left,right tracks equal till right is lambda
 	for(int i = 0; i < nump-1; i++) {
-		std::vector<char> exep = getBinaryFormat(i, var);
+		std::vector<char> exep = GetBinaryFormat(i, var);
 		std::vector<char> str(len, 'X');
 		for (int k = 0; k < var; k++) {
 			str[left_track+num_tracks*k] = exep[k];
@@ -873,7 +873,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAnyAutoAligned(int num_tracks) 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::complement() {
   DFA_ptr complement_dfa = nullptr;
   MultiTrackAutomaton_ptr temp_auto = nullptr, complement_auto = nullptr, aligned_universe_auto = nullptr;
-	complement_dfa = dfaCopy(this->dfa);
+	complement_dfa = dfaCopy(this->dfa_);
 	dfaNegation(complement_dfa);
 	temp_auto = new MultiTrackAutomaton(complement_dfa,this->num_of_tracks);
 	aligned_universe_auto = makeAnyAutoAligned(this->num_of_tracks);
@@ -894,7 +894,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::union_(MultiTrackAutomaton_ptr othe
   DFA_ptr intersect_dfa, minimized_dfa;
 	MultiTrackAutomaton_ptr union_auto;
 	StringRelation_ptr union_relation = nullptr;
-	intersect_dfa = dfaProduct(this->dfa, other_auto->dfa, dfaOR);
+	intersect_dfa = dfaProduct(this->dfa_, other_auto->dfa_, dfaOR);
 	minimized_dfa = dfaMinimize(intersect_dfa);
 	dfaFree(intersect_dfa);
 	union_auto = new MultiTrackAutomaton(minimized_dfa, this->num_of_tracks);
@@ -951,7 +951,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::intersect(MultiTrackAutomaton_ptr o
 		LOG(ERROR) << this->num_of_tracks << " != " << other_auto->num_of_tracks;
 		return this->clone();
 	}
-	intersect_dfa = dfaProduct(this->dfa, other_auto->dfa, dfaAND);
+	intersect_dfa = dfaProduct(this->dfa_, other_auto->dfa_, dfaAND);
 	minimized_dfa = dfaMinimize(intersect_dfa);
   dfaFree(intersect_dfa);
 	intersect_auto = new MultiTrackAutomaton(minimized_dfa, this->num_of_tracks);
@@ -975,10 +975,10 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::intersect(MultiTrackAutomaton_ptr o
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::projectKTrack(int k_track) {
 	MultiTrackAutomaton_ptr result_auto;
-	DFA_ptr temp,result_dfa = this->dfa;
+	DFA_ptr temp,result_dfa = this->dfa_;
 	int flag = 0;
 	int *map = getIndices(this->num_of_tracks*VAR_PER_TRACK);
-	for(int i = 0,k=0,l=0; i < this->num_of_variables; i++) {
+	for(int i = 0,k=0,l=0; i < this->num_of_variables_; i++) {
 	    if(i == k_track+l*this->num_of_tracks) {
 	        map[i] = (this->num_of_tracks-1)*VAR_PER_TRACK+l;
 	        l++;
@@ -1004,7 +1004,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::projectKTrack(int k_track) {
 }
 
 StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
-	DFA_ptr result = this->dfa, temp;
+	DFA_ptr result = this->dfa_, temp;
 	StringAutomaton_ptr result_auto = nullptr;
 	int flag = 0;
 
@@ -1012,7 +1012,7 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 		LOG(FATAL) << "error in MultiTrackAutomaton::getKTrack; k_track,num_tracks = " << k_track << "," << this->num_of_tracks;
 	} else if(this->num_of_tracks == 1) {
 	  DVLOG(VLOG_LEVEL) << "   getKTrack, but only 1 track";
-    result= removeLambdaSuffix(this->dfa,VAR_PER_TRACK);
+    result= removeLambdaSuffix(this->dfa_,VAR_PER_TRACK);
     result_auto = new StringAutomaton(result);
 		return result_auto;
 	}
@@ -1064,7 +1064,7 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
 
   // remove last lambda loop
   DFA_ptr original_dfa = nullptr, temp_dfa = nullptr,trimmed_dfa = nullptr;
-	original_dfa = this->dfa;
+	original_dfa = this->dfa_;
   trace_descr tp;
   paths state_paths,pp;
   int sink = find_sink(original_dfa);
@@ -1132,9 +1132,9 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
   delete[] mindices;
   delete[] statuses;
 
-  this->dfa = trimmed_dfa;
+  this->dfa_ = trimmed_dfa;
 	boost::multiprecision::cpp_int ret = Automaton::Count(bound, count_less_than_or_equal_to_bound, count_reserved_words);
-  this->dfa = original_dfa;
+  this->dfa_ = original_dfa;
   dfaFree(trimmed_dfa);
   return ret;
 }
@@ -1143,12 +1143,12 @@ std::vector<std::string> MultiTrackAutomaton::getAnAcceptingStringForEachTrack()
   std::vector<std::string> strings(num_of_tracks, "");
   std::vector<bool>* example = getAnAcceptingWord();
   unsigned char c = 0;
-  unsigned num_transitions = example->size() / num_of_variables;
+  unsigned num_transitions = example->size() / num_of_variables_;
   bool bit;
   unsigned sharp1 = 254, sharp2 = 255;
 
   for(int t = 0; t < num_transitions; t++) {
-    unsigned offset = t*num_of_variables;
+    unsigned offset = t*num_of_variables_;
     for (int i = 0; i < num_of_tracks; i++) {
       for (int j = 0; j < VAR_PER_TRACK; j++) {
         bit = (*example)[offset+i+num_of_tracks*j];
@@ -1521,7 +1521,7 @@ DFA_ptr MultiTrackAutomaton::make_binary_aligned_dfa(int left_track, int right_t
 	int len = num_tracks * var;
 	int *mindices = getIndices(num_tracks*var);
 	int nump = 1 << var;
-	std::vector<char> exep_lambda = getBinaryFormat(nump-1,var);
+	std::vector<char> exep_lambda = GetBinaryFormat(nump-1,var);
 	tv = generate_transitions_for_relation(StringRelation::Type::EQ_NO_LAMBDA,var);
 
 	dfaSetup(5,len,mindices);
@@ -1734,7 +1734,7 @@ StringAutomaton_ptr MultiTrackAutomaton::get_reverse_auto(StringAutomaton_ptr st
 		if(same_reversed_paths[p] > 0) {
 			//DVLOG(VLOG_LEVEL) << "nextnum[0]: " << nextnum[0];
       //DVLOG(VLOG_LEVEL) << " orrr: " << max - same_reversed_paths[p];
-			binformat = Automaton::getBinaryFormat(max - same_reversed_paths[p],number_of_extra_bits_needed);
+			binformat = Automaton::GetBinaryFormat(max - same_reversed_paths[p],number_of_extra_bits_needed);
 			nextnum[0]++;
 			same_reversed_paths[p]--;
 		} else {
@@ -1770,7 +1770,7 @@ StringAutomaton_ptr MultiTrackAutomaton::get_reverse_auto(StringAutomaton_ptr st
 
 			p = make_pair(std::string(state_exeps[i+1][j].first),i+1);
 			if(same_reversed_paths[p] > 0) {
-				binformat = Automaton::getBinaryFormat(max - same_reversed_paths[p],number_of_extra_bits_needed);
+				binformat = Automaton::GetBinaryFormat(max - same_reversed_paths[p],number_of_extra_bits_needed);
 				nextnum[i+1]++;
 				same_reversed_paths[p]--;
 			} else {
@@ -1826,7 +1826,7 @@ std::vector<std::vector<char>> MultiTrackAutomaton::extractValidTransitions(std:
   }
   // remove each trim transition from the set of valid transitions
   for(int i = 0; i < trim_set.size(); i++) {
-    std::vector<char> trim_exep = getBinaryFormat((int)trim_set[i],var);
+    std::vector<char> trim_exep = GetBinaryFormat((int)trim_set[i],var);
     std::string trim_str(trim_exep.begin(),trim_exep.end()-1); // -1 for null terminating char added by getBinaryFormat
     transitions.erase(trim_str);
   }

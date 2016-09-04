@@ -338,17 +338,27 @@ TEST_F(ArithmeticFormulaTest, Simplify) {
   EXPECT_EQ(1, formula_3.constant_);
 }
 
-//TEST_F(ArithmeticFormulaTest, CountOnes) {
-//  ArithmeticFormula formula_0(variable_coefficient_map_, coefficients);
-//  formula_0.set_type(ArithmeticFormula::Type::LT);
-//  formula_0.set_constant(5);
-//
-//  EXPECT_EQ(6, formula_0.CountOnes(15));
-//  EXPECT_EQ(6, formula_0.CountOnes(7));
-//  EXPECT_EQ(3, formula_0.CountOnes(3));
-//  EXPECT_EQ(4, formula_0.CountOnes(5));
-//}
-//
+TEST_F(ArithmeticFormulaTest, CountOnes) {
+  PublicArithmeticFormula formula_0;
+  formula_0.variable_coefficient_map_ = {{"x", 1}, {"y", 2}, {"z", 3}};
+  formula_0.constant_ = 5;
+  formula_0.type_ = ArithmeticFormula::Type::LT;
+
+  EXPECT_EQ(6, formula_0.CountOnes(15));
+  EXPECT_EQ(6, formula_0.CountOnes(7));
+  EXPECT_EQ(3, formula_0.CountOnes(3));
+  EXPECT_EQ(4, formula_0.CountOnes(5));
+
+  formula_0.variable_coefficient_map_["xx"] = 0;
+  formula_0.variable_coefficient_map_["yy"] = 0;
+  formula_0.variable_coefficient_map_["zz"] = 0;
+
+  EXPECT_EQ(6, formula_0.CountOnes(15));
+  EXPECT_EQ(6, formula_0.CountOnes(7));
+  EXPECT_EQ(3, formula_0.CountOnes(3));
+  EXPECT_EQ(4, formula_0.CountOnes(5));
+}
+
 //TEST_F(ArithmeticFormulaTest, IsVariableOrderingSame) {
 //  std::map<std::string ,int> eq_1 = {{"x", 0}, {"z", 1}, {"y", 2}};
 //  std::vector<int> coeff = {1, 2, 3};

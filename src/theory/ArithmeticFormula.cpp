@@ -295,6 +295,19 @@ bool ArithmeticFormula::Simplify() {
   return true;
 }
 
+int ArithmeticFormula::CountOnes(unsigned long n) {
+  int ones = 0;
+  for (auto& el : variable_coefficient_map_) {
+    if (el.second != 0) {
+      if (n & 1) {
+        ones += el.second;
+      }
+      n >>= 1;
+    }
+  }
+  return ones;
+}
+
 std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula) {
   return os << formula.str();
 }

@@ -1337,7 +1337,7 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
       // first convert integer result to unary, then unary to binary
       string_term_unary_auto = string_term_result->getIntAutomaton()->toUnaryAutomaton();
       string_term_binary_auto = string_term_unary_auto->toBinaryIntAutomaton(
-                                string_term_var_name, result->getBinaryIntAutomaton()->getFormula()->clone(), has_minus_one);
+                                string_term_var_name, result->getBinaryIntAutomaton()->get_formula()->clone(), has_minus_one);
 
 
       delete string_term_unary_auto; string_term_unary_auto = nullptr;
@@ -1345,14 +1345,14 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
       int value = string_term_result->getIntConstant();
       has_minus_one = (value < 0);
       number_of_variables_for_int_auto = Theory::IntAutomaton::DEFAULT_NUM_OF_VARIABLES;
-      string_term_binary_auto = Theory::BinaryIntAutomaton::makeAutomaton(
-                                value, string_term_var_name, result->getBinaryIntAutomaton()->getFormula()->clone(), true);
+      string_term_binary_auto = Theory::BinaryIntAutomaton::MakeAutomaton(
+                                value, string_term_var_name, result->getBinaryIntAutomaton()->get_formula()->clone(), true);
     } else {
       LOG(FATAL)<< "unexpected type";
     }
 
     // update the stored binary int auto with new string term results
-    updated_arith_auto = result->getBinaryIntAutomaton()->intersect(string_term_binary_auto);
+    updated_arith_auto = result->getBinaryIntAutomaton()->Intersect(string_term_binary_auto);
     delete string_term_binary_auto; string_term_binary_auto = nullptr;
 
     result = new Value(updated_arith_auto);
@@ -1364,17 +1364,17 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
 
     // 2- update string term result, since we first update binary binary automaton it may only contain
     // numbers >= -1 (values a string constraint can return as an integer)
-    string_term_binary_auto = updated_arith_auto->getBinaryAutomatonFor(string_term_var_name);
+    string_term_binary_auto = updated_arith_auto->GetBinaryAutomatonFor(string_term_var_name);
 
 
     if (has_minus_one) {
-      has_minus_one = string_term_binary_auto->hasNegative1();
-      BinaryIntAutomaton_ptr positive_values_auto = string_term_binary_auto->getPositiveValuesFor(string_term_var_name);
+      has_minus_one = string_term_binary_auto->HasNegative1();
+      BinaryIntAutomaton_ptr positive_values_auto = string_term_binary_auto->GetPositiveValuesFor(string_term_var_name);
       delete string_term_binary_auto;
       string_term_binary_auto = positive_values_auto;
     }
 
-    string_term_unary_auto = string_term_binary_auto->toUnaryAutomaton();
+    string_term_unary_auto = string_term_binary_auto->ToUnaryAutomaton();
     delete string_term_binary_auto; string_term_binary_auto = nullptr;
     updated_int_auto = string_term_unary_auto->toIntAutomaton(number_of_variables_for_int_auto, has_minus_one);
     delete string_term_unary_auto; string_term_unary_auto = nullptr;

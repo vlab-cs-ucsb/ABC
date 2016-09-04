@@ -106,7 +106,8 @@ void ArithmeticFormulaGenerator::visitAnd(And_ptr and_term) {
       }
       term_group_map[term] = group_name;
       VariableTrackMap trackmap = get_group_trackmap(group_name);
-      param_formula->set_variable_trackmap(trackmap);
+      LOG(FATAL) << "fix me";
+//      param_formula->set_variable_trackmap(trackmap);
     }
   }
 }
