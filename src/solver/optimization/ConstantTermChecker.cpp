@@ -202,9 +202,17 @@ void ConstantTermChecker::visitTrim(Trim_ptr trim_term) {
 }
 
 void ConstantTermChecker::visitToString(ToString_ptr to_string_term) {
+  visit_children_of(to_string_term);
+    if (term_constant_ not_eq nullptr) {
+      term_constant_->primitive->setType(Primitive::Type::STRING);
+    }
 }
 
 void ConstantTermChecker::visitToInt(ToInt_ptr to_int_term) {
+  visit_children_of(to_int_term);
+  if (term_constant_ not_eq nullptr) {
+    term_constant_->primitive->setType(Primitive::Type::NUMERAL);
+  }
 }
 
 void ConstantTermChecker::visitReplace(Replace_ptr replace_term) {

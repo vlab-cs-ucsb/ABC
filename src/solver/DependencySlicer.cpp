@@ -106,7 +106,7 @@ void DependencySlicer::visitOr(Or_ptr or_term) {
 
   if (Option::Solver::ENABLE_DEPENDENCY) {
     auto components = GetComponentsFor(or_term->term_list);
-    if (components.size() > 1) { // and term breaks into multiple components
+    if (components.size() > 1) { // or term breaks into multiple components
       or_term->term_list->clear();
       constraint_information_->remove_component(or_term);
       for (auto sub_term_list : components) {
