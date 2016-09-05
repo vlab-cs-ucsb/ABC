@@ -413,18 +413,27 @@ void Driver::test() {
 //  LOG(INFO) << "DRIVER TEST METHOD";
 //  using namespace Theory;
 //
-//  auto formula = new ArithmeticFormula();
-//  formula->set_type(ArithmeticFormula::Type::LT);
-//  formula->set_constant(-5);
-//  formula->add_variable("x", 1);
-//  formula->add_variable("y", 1);
+//  auto f1 = new ArithmeticFormula();
+//  f1->set_type(ArithmeticFormula::Type::EQ);
+//  f1->set_constant(-2);
+//  f1->add_variable("x", 1);
+//  f1->add_variable("y", 0);
 //
-////  auto t1 = BinaryIntAutomaton::MakeAutomaton(formula, false);
-////  t1->inspectAuto();
+//  auto t1 = BinaryIntAutomaton::MakeAutomaton(f1, true);
+//  t1->inspectAuto();
 //
-//  auto t2 = BinaryIntAutomaton::MakeAutomaton(formula->clone(), true);
-//  t2->inspectAuto(false);
-//  for (auto& el : t2->GetAnAcceptingIntForEachVar()) {
+//  auto f2 = new ArithmeticFormula();
+//  f2->set_type(ArithmeticFormula::Type::EQ);
+//  f2->set_constant(-2);
+//  f2->add_variable("x", 0);
+//  f2->add_variable("y", 1);
+//
+//  auto t2 = BinaryIntAutomaton::MakeAutomaton(f2, true);
+//  t2->inspectAuto();
+//
+//  auto t3 = t1->Intersect(t2);
+//  t3->inspectAuto();
+//  for (auto& el : t3->GetAnAcceptingIntForEachVar()) {
 //    std::cout << el.first << " : " << el.second << std::endl;
 //  }
 

@@ -30,10 +30,8 @@
 namespace Vlab {
 namespace Solver {
 
-using VariableTrackMap = std::map<std::string, int>;
-using VariableTrackMap_ptr = VariableTrackMap*;
-using VariableGroupMap = std::map<std::string,std::string>;
-using VariableGroupTable = std::map<SMT::Term_ptr,VariableGroupMap>;
+using VariableGroupMap = std::map<std::string, std::string>;
+using VariableGroupTable = std::map<SMT::Term_ptr, VariableGroupMap>;
 
 class ArithmeticFormulaGenerator: public SMT::Visitor {
 public:
@@ -121,15 +119,16 @@ public:
   std::string get_term_group_name(SMT::Term_ptr term);
 
 protected:
-  void add_int_variables(SMT::Term_ptr term, std::map<std::string,int> variables);
+  void AddIntVariables(SMT::Term_ptr component_term, Theory::ArithmeticFormula_ptr formula);
   std::string generate_group_name(SMT::Term_ptr term, std::string var_name);
-  VariableTrackMap get_group_trackmap(std::string name);
+  std::map<std::string, int> get_group_trackmap(std::string name);
 
   bool set_term_formula(SMT::Term_ptr term, Theory::ArithmeticFormula_ptr formula);
   void delete_term_formula(SMT::Term_ptr);
 
   SMT::Script_ptr root_;
   SymbolTable_ptr symbol_table_;
+  SMT::Term_ptr current_component_;
   ConstraintInformation_ptr constraint_information_;
 
   std::map<SMT::Term_ptr, Theory::ArithmeticFormula_ptr> formulas_;
@@ -138,11 +137,10 @@ protected:
 
   // for partitioning
   VariableGroupTable variable_group_table_;
-  std::map<std::string,VariableTrackMap> group_variables_map_;
-  std::map<SMT::Term_ptr, std::string> term_group_map;
+  std::map<std::string, Theory::ArithmeticFormula_ptr> group_formula_;
+  std::map<SMT::Term_ptr, std::string> term_group_map_;
 
 private:
-  SMT::Term_ptr current_term_;
   static const int VLOG_LEVEL;
 };
 

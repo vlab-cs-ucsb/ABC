@@ -63,6 +63,7 @@ public:
 
   bool Simplify();
   int CountOnes(unsigned long n);
+  void merge_variables(ArithmeticFormula_ptr other);
 
   friend std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula);
 

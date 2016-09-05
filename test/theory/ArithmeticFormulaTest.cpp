@@ -359,51 +359,23 @@ TEST_F(ArithmeticFormulaTest, CountOnes) {
   EXPECT_EQ(4, formula_0.CountOnes(5));
 }
 
-//TEST_F(ArithmeticFormulaTest, IsVariableOrderingSame) {
-//  std::map<std::string ,int> eq_1 = {{"x", 0}, {"z", 1}, {"y", 2}};
-//  std::vector<int> coeff = {1, 2, 3};
-//
-//  ArithmeticFormula formula_1(variable_coefficient_map_, coefficients);
-//  ArithmeticFormula formula_2(eq_1, coeff);
-//
-//  EXPECT_TRUE(formula_1.IsVariableOrderingSame(&formula_1));
-//  EXPECT_FALSE(formula_1.IsVariableOrderingSame(&formula_2));
-//}
-//
-//TEST_F(ArithmeticFormulaTest, MergeCoefficients) {
-//  std::vector<int> coeff_1 = {-1, -2, -3};
-//  std::vector<int> coeff_3 = {-1, 1, 3, 5, 7};
-//  std::map<std::string ,int> eq_1 = {{"x", 0}, {"y", 1}, {"z", 2}};
-//  std::map<std::string ,int> eq_2 = {{"y", 0}, {"z", 1}, {"x", 2}};
-//  std::map<std::string ,int> eq_3 = {{"a", 0}, {"y", 1}, {"b", 2}, {"z", 3}, {"c", 4}};
-//
-//  ArithmeticFormula formula_0(variable_coefficient_map_, coefficients);
-//  ArithmeticFormula formula_1(eq_1, coeff_1);
-//  ArithmeticFormula formula_2(eq_2, coeff_1);
-//  ArithmeticFormula formula_3(eq_3, coeff_3);
-//
-//  formula_0.MergeCoefficients(&formula_1);
-//  EXPECT_THAT(formula_0.get_coefficient_index_map(), UnorderedElementsAre(Pair("x", 0), Pair("y", 1), Pair("z", 2)));
-//  EXPECT_THAT(formula_0.get_coefficients(), ElementsAre(1, 2, 3)); // do not update coefficients
-//
-//  formula_0.MergeCoefficients(&formula_2);
-//  EXPECT_THAT(formula_0.get_coefficient_index_map(), UnorderedElementsAre(Pair("y", 0), Pair("z", 1), Pair("x", 2)));
-//  EXPECT_THAT(formula_0.get_coefficients(), ElementsAre(2, 3, 1)); // do not update coefficients
-//
-//  formula_0.MergeCoefficients(&formula_3);
-//  EXPECT_THAT(formula_0.get_coefficient_index_map(), UnorderedElementsAre(Pair("a", 0), Pair("y", 1), Pair("b", 2), Pair("z", 3), Pair("c", 4), Pair("x", 5)));
-//  EXPECT_THAT(formula_0.get_coefficients(), ElementsAre(0, 2, 0, 3, 0, 1)); // do not update coefficients
-//}
-//
-//TEST_F(ArithmeticFormulaTest, ResetCoefficients) {
-//  ArithmeticFormula formula_0(variable_coefficient_map_, coefficients);
-//  formula_0.reset_coefficients();
-//
-//  EXPECT_THAT(formula_0.get_coefficients(), ElementsAre(0, 0, 0));
-//
-//  formula_0.reset_coefficients(3);
-//  EXPECT_THAT(formula_0.get_coefficients(), ElementsAre(3, 3, 3));
-//}
+TEST_F(ArithmeticFormulaTest, MergeVariables) {
+  PublicArithmeticFormula formula_0;
+  formula_0.variable_coefficient_map_ = variable_coefficient_map_;
+  formula_0.constant_ = 5;
+  formula_0.type_ = ArithmeticFormula::Type::INTERSECT;
+
+  PublicArithmeticFormula formula_1;
+  formula_1.variable_coefficient_map_ = {{"a", 3}, {"x", 9}, {"zz", 5}};
+  formula_1.type_ = ArithmeticFormula::Type::EQ;
+
+  formula_0.merge_variables(&formula_1);
+  EXPECT_THAT(formula_0.variable_coefficient_map_, ElementsAre(Pair("a", 0), Pair("x", 1), Pair("y", 2), Pair("z", 1), Pair("zz", 0)));
+  formula_1.merge_variables(&formula_0);
+  EXPECT_THAT(formula_1.variable_coefficient_map_, ElementsAre(Pair("a", 3), Pair("x", 9), Pair("y", 0), Pair("z", 0), Pair("zz", 5)));
+
+}
+
 
 
 } /* namespace Test */

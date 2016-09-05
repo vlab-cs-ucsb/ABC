@@ -22,8 +22,12 @@ const int ArithmeticFormulaGenerator::VLOG_LEVEL = 12;
  * Generates a coefficient vector for all int and str->int terms that are in same component
  *
  */
-ArithmeticFormulaGenerator::ArithmeticFormulaGenerator( Script_ptr script, SymbolTable_ptr symbol_table, ConstraintInformation_ptr constraint_information) :
-        root_ (script), symbol_table_ (symbol_table), constraint_information_(constraint_information) {
+ArithmeticFormulaGenerator::ArithmeticFormulaGenerator(Script_ptr script, SymbolTable_ptr symbol_table,
+                                                       ConstraintInformation_ptr constraint_information)
+    : root_(script),
+      symbol_table_(symbol_table),
+      current_component_ { nullptr },
+      constraint_information_(constraint_information) {
 
 }
 
@@ -77,114 +81,118 @@ void ArithmeticFormulaGenerator::visitLet(Let_ptr let_term) {
 
 }
 
-/**
- * Right most formula that contains arithmetic constraint has all variable coefficients,
- * update others based on that
- */
 void ArithmeticFormulaGenerator::visitAnd(And_ptr and_term) {
-  current_term_ = and_term;
-  visit_children_of(and_term);
-  DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
+  DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
+  for (auto& term : * (and_term->term_list)) {
+    current_component_ = and_term;
+    visit(term);
+  }
+  DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 
+  current_component_ = nullptr;
   if (not constraint_information_->is_component(and_term)) {
     return;
   }
 
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *and_term << "@" << and_term;
+
   ArithmeticFormula_ptr param_formula = nullptr;
-  for (auto& term : *(and_term->term_list)) {
+  for (const auto term : *(and_term->term_list)) {
     param_formula = get_term_formula(term);
     if (param_formula not_eq nullptr) {
-      if(term->type() == Term::Type::QUALIDENTIFIER) {
-        delete_term_formula(term);
-        continue;
-      }
-
+      // TODO instead of term parameters now work on groups
       // POSSIBLE SOURCE OF ERROR FOR NON-DNF VERSIONS!!!
-      std::string group_name = get_variable_group_name(current_term_,param_formula->get_variable_coefficient_map().begin()->first);
-      if(group_name.empty()) {
-        std::string group_name = get_variable_group_name(current_term_, symbol_table_->getVariable(param_formula->get_variable_coefficient_map().begin()->first));
+      std::string group_name = get_variable_group_name(and_term,
+                                                       param_formula->get_variable_coefficient_map().begin()->first);
+      if (group_name.empty()) {
+        std::string group_name = get_variable_group_name(
+            and_term, symbol_table_->getVariable(param_formula->get_variable_coefficient_map().begin()->first));
       }
-      term_group_map[term] = group_name;
-      VariableTrackMap trackmap = get_group_trackmap(group_name);
-      LOG(FATAL) << "fix me";
-//      param_formula->set_variable_trackmap(trackmap);
+      term_group_map_[term] = group_name;
+
     }
   }
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *and_term << "@" << and_term;
 }
 
-/**
- * Right most formula that contains arithmetic constraint has all variable coefficients,
- * update others based on that
- */
+
 void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
-  current_term_ = or_term;
-  for (auto &term : *(or_term->term_list)) {
+  DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
+  for (auto& term : * (or_term->term_list)) {
+    current_component_ = or_term;
     visit(term);
   }
-  DVLOG(VLOG_LEVEL) << "visit: " << *or_term;
+  DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
+
+  current_component_ = nullptr;
+  if (not constraint_information_->is_component(or_term)) {
+    return;
+  }
+
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *or_term << "@" << or_term;
+
+
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *or_term << "@" << or_term;
 }
 
 void ArithmeticFormulaGenerator::visitNot(Not_ptr not_term) {
   visit_children_of(not_term);
-  DVLOG(VLOG_LEVEL) << "visit: " << *not_term;
-  ArithmeticFormula_ptr formula = nullptr, child_formula = nullptr;
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *not_term << "@" << not_term;
 
-  child_formula = get_term_formula(not_term->term);
+  auto child_formula = get_term_formula(not_term->term);
 
-  if (child_formula not_eq nullptr and child_formula->get_number_of_variables() > 0) {
-    formula = child_formula->negate();
+  if (child_formula not_eq nullptr) {
+    auto formula = child_formula->negate();
     set_term_formula(not_term, formula);
-  }
 
-  delete_term_formula(not_term->term); // safe to call even there is no formula set
-
-  if (string_terms_.size() > 0) {
-    string_terms_map_[not_term] = string_terms_;
-    string_terms_.clear();
-  } else {
-    auto it = string_terms_map_.find(not_term->term);
-    if (it not_eq string_terms_map_.end()) {
-      string_terms_map_[not_term] = it->second;
-      string_terms_map_.erase(it);
+    if (string_terms_.size() > 0) {
+      string_terms_map_[not_term] = string_terms_;
+      string_terms_.clear();
+    } else {
+      auto it = string_terms_map_.find(not_term->term);
+      if (it not_eq string_terms_map_.end()) {
+        string_terms_map_[not_term] = it->second;
+        string_terms_map_.erase(it);
+      }
     }
+    delete_term_formula(not_term->term);  // safe to call even there is no formula set
   }
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *not_term << "@" << not_term;
 }
 
 void ArithmeticFormulaGenerator::visitUMinus(UMinus_ptr u_minus_term) {
   visit_children_of(u_minus_term);
-  DVLOG(VLOG_LEVEL) << "visit: " << *u_minus_term;
-  ArithmeticFormula_ptr formula = nullptr, child_formula = nullptr;
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *u_minus_term << "@" << u_minus_term;
 
-  child_formula = get_term_formula(u_minus_term->term);
+  auto child_formula = get_term_formula(u_minus_term->term);
+  auto formula = child_formula->Multiply(-1);
+  delete_term_formula(u_minus_term->term);
+  set_term_formula(u_minus_term, formula);
 
-  if (child_formula not_eq nullptr) {
-    formula = child_formula->Multiply(-1);
-    delete_term_formula(u_minus_term->term);
-    set_term_formula(u_minus_term, formula);
-  }
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *u_minus_term << "@" << u_minus_term;
 }
 
 void ArithmeticFormulaGenerator::visitMinus(Minus_ptr minus_term) {
   visit_children_of(minus_term);
-  DVLOG(VLOG_LEVEL) << "visit: " << *minus_term;
-  ArithmeticFormula_ptr formula = nullptr, left_formula = nullptr, right_formula = nullptr;
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *minus_term << "@" << minus_term;
 
-  left_formula = get_term_formula(minus_term->left_term);
-  right_formula = get_term_formula(minus_term->right_term);
+  auto left_formula = get_term_formula(minus_term->left_term);
+  auto right_formula = get_term_formula(minus_term->right_term);
+  auto formula = left_formula->Subtract(right_formula);
+  formula->set_type(ArithmeticFormula::Type::EQ);
+  delete_term_formula(minus_term->left_term);
+  delete_term_formula(minus_term->right_term);
+  set_term_formula(minus_term, formula);
 
-  if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
-    formula = left_formula->Subtract(right_formula);
-    formula->set_type(ArithmeticFormula::Type::EQ);
-    delete_term_formula(minus_term->left_term);
-    delete_term_formula(minus_term->right_term);
-    set_term_formula(minus_term, formula);
-  }
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *minus_term << "@" << minus_term;
 }
 
 void ArithmeticFormulaGenerator::visitPlus(Plus_ptr plus_term) {
-  DVLOG(VLOG_LEVEL) << "visit: " << *plus_term;
-  ArithmeticFormula_ptr formula = nullptr, plus_formula = nullptr, param_formula = nullptr;
-  for (auto& term_ptr : *(plus_term->term_list)) {
+  DVLOG(VLOG_LEVEL) << "visit children start: " << *plus_term << "@" << plus_term;
+  ArithmeticFormula_ptr formula = nullptr,
+      plus_formula = nullptr,
+      param_formula = nullptr;
+  for (auto term_ptr : *(plus_term->term_list)) {
     visit(term_ptr);
     param_formula = get_term_formula(term_ptr);
     if (formula == nullptr) {
@@ -196,20 +204,21 @@ void ArithmeticFormulaGenerator::visitPlus(Plus_ptr plus_term) {
     }
     delete_term_formula(term_ptr);
   }
-
   set_term_formula(plus_term, formula);
+
+  DVLOG(VLOG_LEVEL) << "visit children end: " << *plus_term << "@" << plus_term;
 }
 
 /**
  * All the parameters must be a constant integer except one.
  */
 void ArithmeticFormulaGenerator::visitTimes(Times_ptr times_term) {
-  DVLOG(VLOG_LEVEL) << "visit: " << *times_term;
+  DVLOG(VLOG_LEVEL) << "visit children start: " << *times_term << "@" << times_term;
   int multiplicant = 1;
-  ArithmeticFormula_ptr formula = nullptr, times_formula = nullptr, param_formula = nullptr;
-  for (auto& term_ptr : *(times_term->term_list)) {
+  ArithmeticFormula_ptr times_formula = nullptr;
+  for (auto term_ptr : *(times_term->term_list)) {
     visit(term_ptr);
-    param_formula = get_term_formula(term_ptr);
+    auto param_formula = get_term_formula(term_ptr);
     if (param_formula->is_constant()) {
       multiplicant = multiplicant * param_formula->get_constant();
     } else if (times_formula == nullptr) {
@@ -219,172 +228,163 @@ void ArithmeticFormulaGenerator::visitTimes(Times_ptr times_term) {
     }
     delete_term_formula(term_ptr);
   }
-
-  formula = times_formula->Multiply(multiplicant);
-  delete times_formula; times_formula = nullptr;
+  auto formula = times_formula->Multiply(multiplicant);
+  delete times_formula;
   set_term_formula(times_term, formula);
+
+  DVLOG(VLOG_LEVEL) << "visit children end: " << *times_term << "@" << times_term;
 }
 
 void ArithmeticFormulaGenerator::visitEq(Eq_ptr eq_term) {
   visit_children_of(eq_term);
-  DVLOG(VLOG_LEVEL) << "visit: " << *eq_term;
-  ArithmeticFormula_ptr formula = nullptr, left_formula = nullptr, right_formula = nullptr;
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *eq_term << "@" << eq_term;
 
-  left_formula = get_term_formula(eq_term->left_term);
-  right_formula = get_term_formula(eq_term->right_term);
+  auto left_formula = get_term_formula(eq_term->left_term);
+  auto right_formula = get_term_formula(eq_term->right_term);
 
   if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
-    formula = left_formula->Subtract(right_formula);
+    auto formula = left_formula->Subtract(right_formula);
     formula->set_type(ArithmeticFormula::Type::EQ);
     delete_term_formula(eq_term->left_term);
     delete_term_formula(eq_term->right_term);
-    if (formula->get_number_of_variables() > 0) {
-      set_term_formula(eq_term, formula);
-      add_int_variables(current_term_,formula->get_variable_coefficient_map());
-      if (string_terms_.size() > 0) {
-        string_terms_map_[eq_term] = string_terms_;
-      }
+    set_term_formula(eq_term, formula);
+    AddIntVariables(current_component_, formula);
+    if (string_terms_.size() > 0) {
+      string_terms_map_[eq_term] = string_terms_;
+      string_terms_.clear();
     }
   }
-  string_terms_.clear();
-}
 
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *eq_term << "@" << eq_term;
+}
 
 void ArithmeticFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
   visit_children_of(not_eq_term);
-  DVLOG(VLOG_LEVEL) << "visit: " << *not_eq_term;
-  ArithmeticFormula_ptr formula = nullptr, left_formula = nullptr, right_formula = nullptr;
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *not_eq_term << "@" << not_eq_term;
 
-  left_formula = get_term_formula(not_eq_term->left_term);
-  right_formula = get_term_formula(not_eq_term->right_term);
+  auto left_formula = get_term_formula(not_eq_term->left_term);
+  auto right_formula = get_term_formula(not_eq_term->right_term);
 
   if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
-    formula = left_formula->Subtract(right_formula);
+    auto formula = left_formula->Subtract(right_formula);
     formula->set_type(ArithmeticFormula::Type::NOTEQ);
     delete_term_formula(not_eq_term->left_term);
     delete_term_formula(not_eq_term->right_term);
-    if (formula->get_number_of_variables() > 0) {
-      set_term_formula(not_eq_term, formula);
-      add_int_variables(current_term_,formula->get_variable_coefficient_map());
-      if (string_terms_.size() > 0) {
-        string_terms_map_[not_eq_term] = string_terms_;
-      }
+    set_term_formula(not_eq_term, formula);
+    AddIntVariables(current_component_, formula);
+    if (string_terms_.size() > 0) {
+      string_terms_map_[not_eq_term] = string_terms_;
+      string_terms_.clear();
     }
   }
-  string_terms_.clear();
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *not_eq_term << "@" << not_eq_term;
 }
 
 void ArithmeticFormulaGenerator::visitGt(Gt_ptr gt_term) {
   visit_children_of(gt_term);
-  DVLOG(VLOG_LEVEL) << "visit: " << *gt_term;
-  ArithmeticFormula_ptr formula = nullptr, left_formula = nullptr, right_formula = nullptr;
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *gt_term << "@" << gt_term;
 
-  left_formula = get_term_formula(gt_term->left_term);
-  right_formula = get_term_formula(gt_term->right_term);
+  auto left_formula = get_term_formula(gt_term->left_term);
+  auto right_formula = get_term_formula(gt_term->right_term);
 
-  formula = left_formula->Subtract(right_formula);
-  formula->set_type(ArithmeticFormula::Type::GT);
-  delete_term_formula(gt_term->left_term);
-  delete_term_formula(gt_term->right_term);
-
-  if (formula->get_number_of_variables() > 0) {
+  if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
+    auto formula = left_formula->Subtract(right_formula);
+    formula->set_type(ArithmeticFormula::Type::GT);
+    delete_term_formula(gt_term->left_term);
+    delete_term_formula(gt_term->right_term);
     set_term_formula(gt_term, formula);
-    add_int_variables(current_term_,formula->get_variable_coefficient_map());
+    AddIntVariables(current_component_, formula);
     if (string_terms_.size() > 0) {
       string_terms_map_[gt_term] = string_terms_;
       string_terms_.clear();
     }
   }
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *gt_term << "@" << gt_term;
 }
 
 void ArithmeticFormulaGenerator::visitGe(Ge_ptr ge_term) {
   visit_children_of(ge_term);
-  DVLOG(VLOG_LEVEL) << "visit: " << *ge_term;
-  ArithmeticFormula_ptr formula = nullptr, left_formula = nullptr, right_formula = nullptr;
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *ge_term << "@" << ge_term;
 
-  left_formula = get_term_formula(ge_term->left_term);
-  right_formula = get_term_formula(ge_term->right_term);
+  auto left_formula = get_term_formula(ge_term->left_term);
+  auto right_formula = get_term_formula(ge_term->right_term);
 
-  formula = left_formula->Subtract(right_formula);
-  formula->set_type(ArithmeticFormula::Type::GE);
-  delete_term_formula(ge_term->left_term);
-  delete_term_formula(ge_term->right_term);
-
-  if (formula->get_number_of_variables() > 0) {
+  if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
+    auto formula = left_formula->Subtract(right_formula);
+    formula->set_type(ArithmeticFormula::Type::GE);
+    delete_term_formula(ge_term->left_term);
+    delete_term_formula(ge_term->right_term);
     set_term_formula(ge_term, formula);
-    add_int_variables(current_term_,formula->get_variable_coefficient_map());
+    AddIntVariables(current_component_, formula);
     if (string_terms_.size() > 0) {
       string_terms_map_[ge_term] = string_terms_;
       string_terms_.clear();
     }
   }
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *ge_term << "@" << ge_term;
 }
 
 void ArithmeticFormulaGenerator::visitLt(Lt_ptr lt_term) {
   visit_children_of(lt_term);
-  DVLOG(VLOG_LEVEL) << "visit: " << *lt_term;
-  ArithmeticFormula_ptr formula = nullptr, left_formula = nullptr, right_formula = nullptr;
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *lt_term << "@" << lt_term;
 
-  left_formula = get_term_formula(lt_term->left_term);
-  right_formula = get_term_formula(lt_term->right_term);
+  auto left_formula = get_term_formula(lt_term->left_term);
+  auto right_formula = get_term_formula(lt_term->right_term);
 
-  formula = left_formula->Subtract(right_formula);
-  formula->set_type(ArithmeticFormula::Type::LT);
-  delete_term_formula(lt_term->left_term);
-  delete_term_formula(lt_term->right_term);
-
-  if (formula->get_number_of_variables() > 0) {
+  if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
+    auto formula = left_formula->Subtract(right_formula);
+    formula->set_type(ArithmeticFormula::Type::LT);
+    delete_term_formula(lt_term->left_term);
+    delete_term_formula(lt_term->right_term);
     set_term_formula(lt_term, formula);
-    add_int_variables(current_term_,formula->get_variable_coefficient_map());
+    AddIntVariables(current_component_, formula);
     if (string_terms_.size() > 0) {
       string_terms_map_[lt_term] = string_terms_;
       string_terms_.clear();
     }
   }
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *lt_term << "@" << lt_term;
 }
 
 void ArithmeticFormulaGenerator::visitLe(Le_ptr le_term) {
   visit_children_of(le_term);
-  DVLOG(VLOG_LEVEL) << "visit: " << *le_term;
-  ArithmeticFormula_ptr formula = nullptr, left_formula = nullptr, right_formula = nullptr;
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *le_term << "@" << le_term;
 
-  left_formula = get_term_formula(le_term->left_term);
-  right_formula = get_term_formula(le_term->right_term);
+  auto left_formula = get_term_formula(le_term->left_term);
+  auto right_formula = get_term_formula(le_term->right_term);
 
-  formula = left_formula->Subtract(right_formula);
-  formula->set_type(ArithmeticFormula::Type::LE);
-  delete_term_formula(le_term->left_term);
-  delete_term_formula(le_term->right_term);
-
-  if (formula->get_number_of_variables() > 0) {
+  if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
+    auto formula = left_formula->Subtract(right_formula);
+    formula->set_type(ArithmeticFormula::Type::LE);
+    delete_term_formula(le_term->left_term);
+    delete_term_formula(le_term->right_term);
     set_term_formula(le_term, formula);
-    add_int_variables(current_term_,formula->get_variable_coefficient_map());
+    AddIntVariables(current_component_, formula);
     if (string_terms_.size() > 0) {
       string_terms_map_[le_term] = string_terms_;
       string_terms_.clear();
     }
   }
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *le_term << "@" << le_term;
 }
 
 void ArithmeticFormulaGenerator::visitConcat(Concat_ptr concat_term) {
 }
 
-// TODO add membership operation for integers
+
 void ArithmeticFormulaGenerator::visitIn(In_ptr in_term) {
 }
 
-// TODO add non-membership operation for integers
+
 void ArithmeticFormulaGenerator::visitNotIn(NotIn_ptr not_in_term) {
 }
 
 void ArithmeticFormulaGenerator::visitLen(Len_ptr len_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *len_term;
 
-  ArithmeticFormula_ptr formula = nullptr;
-
   std::string name = symbol_table_->get_var_name_for_expression(len_term, Variable::Type::INT);
 
-  formula = new ArithmeticFormula();
+  auto formula = new ArithmeticFormula();
   formula->add_variable(name, 1);
 
   set_term_formula(len_term, formula);
@@ -413,11 +413,9 @@ void ArithmeticFormulaGenerator::visitNotEnds(NotEnds_ptr not_ends_term) {
 void ArithmeticFormulaGenerator::visitIndexOf(IndexOf_ptr index_of_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *index_of_term;
 
-  ArithmeticFormula_ptr formula = nullptr;
-
   std::string name = symbol_table_->get_var_name_for_expression(index_of_term, Variable::Type::INT);
 
-  formula = new ArithmeticFormula();
+  auto formula = new ArithmeticFormula();
   formula->add_variable(name, 1);
 
   set_term_formula(index_of_term, formula);
@@ -428,11 +426,9 @@ void ArithmeticFormulaGenerator::visitIndexOf(IndexOf_ptr index_of_term) {
 void ArithmeticFormulaGenerator::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *last_index_of_term;
 
-  ArithmeticFormula_ptr formula = nullptr;
-
   std::string name = symbol_table_->get_var_name_for_expression(last_index_of_term, Variable::Type::INT);
 
-  formula = new ArithmeticFormula();
+  auto formula = new ArithmeticFormula();
   formula->add_variable(name, 1);
 
   set_term_formula(last_index_of_term, formula);
@@ -459,13 +455,22 @@ void ArithmeticFormulaGenerator::visitToString(ToString_ptr to_string_term) {
 }
 
 void ArithmeticFormulaGenerator::visitToInt(ToInt_ptr to_int_term) {
+  DVLOG(VLOG_LEVEL) << "visit: " << *to_int_term;
+
+  std::string name = symbol_table_->get_var_name_for_expression(to_int_term, Variable::Type::INT);
+
+  auto formula = new ArithmeticFormula();
+  formula->add_variable(name, 1);
+
+  set_term_formula(to_int_term, formula);
+
+  string_terms_.push_back(to_int_term);
 }
 
 void ArithmeticFormulaGenerator::visitReplace(Replace_ptr replace_term) {
 }
 
 void ArithmeticFormulaGenerator::visitCount(Count_ptr count_term) {
-  LOG(FATAL) << "implement me";
 }
 
 void ArithmeticFormulaGenerator::visitIte(Ite_ptr ite_term) {
@@ -501,36 +506,29 @@ void ArithmeticFormulaGenerator::visitAsQualIdentifier(AsQualIdentifier_ptr as_q
 void ArithmeticFormulaGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *qi_term;
 
-  ArithmeticFormula_ptr formula = nullptr;
-
   Variable_ptr variable = symbol_table_->getVariable(qi_term->getVarName());
   if (Variable::Type::INT == variable->getType()) {
-    formula = new ArithmeticFormula();
-    formula->add_variable(variable->getName(),1);
+    auto formula = new ArithmeticFormula();
+    formula->add_variable(variable->getName(), 1);
     formula->set_type(ArithmeticFormula::Type::VAR);
+    set_term_formula(qi_term, formula);
   }
-
-  set_term_formula(qi_term, formula);
 }
 
 void ArithmeticFormulaGenerator::visitTermConstant(TermConstant_ptr term_constant) {
   DVLOG(VLOG_LEVEL) << "visit: " << *term_constant;
 
-  ArithmeticFormula_ptr formula = nullptr;
-
-  // Use fresh coeff maps for constants
   switch (term_constant->getValueType()) {
     case Primitive::Type::NUMERAL: {
       int constant = std::stoi(term_constant->getValue());
-      formula = new ArithmeticFormula();
+      auto formula = new ArithmeticFormula();
       formula->set_constant(constant);
+      set_term_formula(term_constant, formula);
       break;
     }
     default:
       break;
   }
-
-  set_term_formula(term_constant, formula);
 }
 
 void ArithmeticFormulaGenerator::visitIdentifier(Identifier_ptr identifier) {
@@ -593,17 +591,12 @@ void ArithmeticFormulaGenerator::clear_term_formulas() {
   formulas_.clear();
 }
 
-std::string ArithmeticFormulaGenerator::get_variable_group_name(Term_ptr term,Variable_ptr variable) {
-  std::string var_name = variable->getName();
-  if(variable_group_table_[term].find(var_name) == variable_group_table_[term].end()) {
-    DVLOG(VLOG_LEVEL) << var_name << " has no group";
-    return "";
-  }
-  return variable_group_table_[term][var_name];
+std::string ArithmeticFormulaGenerator::get_variable_group_name(Term_ptr term, Variable_ptr variable) {
+  return get_variable_group_name(term, variable->getName());
 }
 
-std::string ArithmeticFormulaGenerator::get_variable_group_name(Term_ptr term,std::string var_name) {
-  if(variable_group_table_[term].find(var_name) == variable_group_table_[term].end()) {
+std::string ArithmeticFormulaGenerator::get_variable_group_name(Term_ptr term, std::string var_name) {
+  if (variable_group_table_[term].find(var_name) == variable_group_table_[term].end()) {
     DVLOG(VLOG_LEVEL) << var_name << " has no group";
     return "";
   }
@@ -611,69 +604,66 @@ std::string ArithmeticFormulaGenerator::get_variable_group_name(Term_ptr term,st
 }
 
 std::string ArithmeticFormulaGenerator::get_term_group_name(SMT::Term_ptr term) {
-  if(term_group_map.find(term) == term_group_map.end()) {
+  if (term_group_map_.find(term) == term_group_map_.end()) {
     return "";
   }
-  return term_group_map[term];
+  return term_group_map_[term];
 }
 
-void ArithmeticFormulaGenerator::add_int_variables(Term_ptr term, std::map<std::string,int> variables) {
-  if (Option::Solver::ENABLE_DEPENDENCY) {
-    std::string start_group;
-    // get a starting group from the variable list
-    for (auto &var : variables) {
-      if (variable_group_table_[term].find(var.first) != variable_group_table_[term].end()) {
-        start_group = variable_group_table_[term][var.first];
-        break;
-      }
-    }
-    // if no group is found at all, create new one
-    if (start_group.empty()) {
-      start_group = generate_group_name(term, variables.begin()->first);
-    }
+void ArithmeticFormulaGenerator::AddIntVariables(Term_ptr component_term, ArithmeticFormula_ptr formula) {
+  std::string group_name;
 
-    // merge each variable's groups together into start_group
-    for (auto &var : variables) {
-      if (variable_group_table_[term].find(var.first) == variable_group_table_[term].end()) {
-        variable_group_table_[term][var.first] = start_group;
-        int track = group_variables_map_[start_group].size();
-        group_variables_map_[start_group][var.first] = track;
-      } else if (variable_group_table_[term][var.first] != start_group) {
-        // merge the two groups
-        std::string var_group = variable_group_table_[term][var.first];
-        for (auto &iter : group_variables_map_[var_group]) {
-          variable_group_table_[term][iter.first] = start_group;
-          int track = group_variables_map_[start_group].size();
-          group_variables_map_[start_group][iter.first] = track;
-        }
-        group_variables_map_.erase(var_group);
-      }
-    }
-  } else {
-    std::string start_group = "NYWAH";
-    for(auto& var : variables) {
-      if(variable_group_table_[term].find(var.first) == variable_group_table_[term].end()) {
-        variable_group_table_[term][var.first] = start_group;
-        int track = group_variables_map_[start_group].size();
-        group_variables_map_[start_group][var.first] = track;
-      }
-    }
+  variable_group_table_[component_term]; // make sure we have the entry
+  auto term_table_entry = variable_group_table_.find(component_term); // optimize multiple access
+  auto& variable_group_map = term_table_entry->second; // optimize map entry access for given term
 
+  auto variable_coefficient_map = formula->get_variable_coefficient_map();
+  for (const auto& el : variable_coefficient_map) {
+    auto it = variable_group_map.find(el.first);
+    if (it != variable_group_map.end()) {
+      group_name = it->second;
+      break;
+    }
+  }
+
+  // if no group is found at all, create new one
+  if (group_name.empty()) {
+    group_name = generate_group_name(component_term, variable_coefficient_map.begin()->first);
+    group_formula_[group_name] = new ArithmeticFormula();
+  }
+
+  auto current_group_formula = group_formula_[group_name];
+  // merge each variable's groups together into group_name
+  for (const auto& el : variable_coefficient_map) {
+    auto it = variable_group_map.find(el.first);
+    if (it == variable_group_map.end()) {
+      variable_group_map[el.first] = group_name;
+      current_group_formula->merge_variables(formula);
+    } else if (group_name not_eq it->second) {
+      // merge the two groups
+      auto other_group_formula = group_formula_[it->second];
+      current_group_formula->merge_variables(other_group_formula);
+      for (const auto& el : other_group_formula->get_variable_coefficient_map()) {
+        variable_group_map[el.first] = group_name;
+      }
+      group_formula_.erase(it->second);
+      delete other_group_formula;
+    }
   }
 }
 
 std::string ArithmeticFormulaGenerator::generate_group_name(SMT::Term_ptr term, std::string var_name) {
-  std::string group_name = symbol_table_->get_var_name_for_node(term,SMT::Variable::Type::INT);
+  std::string group_name = symbol_table_->get_var_name_for_node(term, SMT::Variable::Type::INT);
   group_name += var_name;
   return group_name;
 }
 
-VariableTrackMap ArithmeticFormulaGenerator::get_group_trackmap(std::string name) {
-  if(group_variables_map_.find(name) == group_variables_map_.end()) {
+std::map<std::string, int> ArithmeticFormulaGenerator::get_group_trackmap(std::string name) {
+  if (group_formula_.find(name) == group_formula_.end()) {
     DVLOG(VLOG_LEVEL) << "no trackmap for group: " << name;
-    return VariableTrackMap();
+    return std::map<std::string, int>();
   }
-  return group_variables_map_[name];
+  return std::map<std::string, int>();
 }
 
 bool ArithmeticFormulaGenerator::set_term_formula(Term_ptr term, ArithmeticFormula_ptr formula) {
@@ -691,7 +681,6 @@ void ArithmeticFormulaGenerator::delete_term_formula(Term_ptr term) {
     formulas_.erase(term);
   }
 }
-
 
 } /* namespace Solver */
 } /* namespace Vlab */

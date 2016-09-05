@@ -98,7 +98,7 @@ TEST_F(BinaryIntAutomatonTest, MakePhi) {
 
   EXPECT_NE(nullptr, presult->dfa_);
   EXPECT_EQ(1, presult->dfa_->ns);
-  EXPECT_NE(-1, presult->dfa_->f[0]);
+  EXPECT_EQ(-1, presult->dfa_->f[0]);
   // TODO add an automaton check wrt a expectation
 }
 

@@ -6,11 +6,12 @@ namespace Solver {
 using namespace SMT;
 const int DependencySlicer::VLOG_LEVEL = 20;
 
-DependencySlicer::DependencySlicer(Script_ptr script, SymbolTable_ptr symbol_table, ConstraintInformation_ptr constraint_information)
-  : AstTraverser(script),
-    symbol_table_(symbol_table),
-    constraint_information_ (constraint_information),
-    current_term_(nullptr) {
+DependencySlicer::DependencySlicer(Script_ptr script, SymbolTable_ptr symbol_table,
+                                   ConstraintInformation_ptr constraint_information)
+    : AstTraverser(script),
+      symbol_table_(symbol_table),
+      constraint_information_(constraint_information),
+      current_term_(nullptr) {
   setCallbacks();
 }
 
@@ -29,21 +30,21 @@ void DependencySlicer::start() {
 
 void DependencySlicer::end() {
   /*if (VLOG_IS_ON(VLOG_LEVEL)) {
-    for (auto& c : constraint_information_->get_components()){
-      DVLOG(VLOG_LEVEL) << c;
-      DVLOG(VLOG_LEVEL) <<  dynamic_cast<And_ptr>(c)->term_list->size();
-    }
+   for (auto& c : constraint_information_->get_components()){
+   DVLOG(VLOG_LEVEL) << c;
+   DVLOG(VLOG_LEVEL) <<  dynamic_cast<And_ptr>(c)->term_list->size();
+   }
 
-  }*/
+   }*/
 }
 
 void DependencySlicer::setCallbacks() {
   auto term_callback = [this] (Term_ptr term) -> bool {
     switch (term->type()) {
-    case Term::Type::TERMCONSTANT: {
-      return false;
-    }
-    default:
+      case Term::Type::TERMCONSTANT: {
+        return false;
+      }
+      default:
       return true;
     }
   };
@@ -64,7 +65,7 @@ void DependencySlicer::visitAssert(Assert_ptr assert_command) {
 }
 
 void DependencySlicer::visitAnd(And_ptr and_term) {
-  for (auto& term : * (and_term->term_list)) {
+  for (auto& term : *(and_term->term_list)) {
     current_term_ = term;
     visit(term);
     current_term_ = nullptr;
@@ -74,7 +75,7 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
 
   if (Option::Solver::ENABLE_DEPENDENCY) {
     auto components = GetComponentsFor(and_term->term_list);
-    if (components.size() > 1) { // and term breaks into multiple components
+    if (components.size() > 1) {  // and term breaks into multiple components
       and_term->term_list->clear();
       constraint_information_->remove_component(and_term);
       for (auto sub_term_list : components) {
@@ -89,12 +90,27 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
     }
   }
 
-  // reset data
-  clear_mappings();
+  /**
+   * If we and_term is under a disjunction, and_term must be component.
+   * Wwe can still do dependency analysis but, we must treat and_term as a component.
+   * During automata construction we watch for the case.
+   * This enable us to reduce the size of automaton in case one of the sub component is unsat
+   */
+  if (Option::Solver::ENABLE_DEPENDENCY and symbol_table_->top_scope() != root) {
+    constraint_information_->add_component(and_term);
+    map_everything_to(and_term);
+  } else {
+    // reset data
+    clear_mappings();
+  }
 }
 
+/**
+ * Dependency analysis on disjunctions are limited
+ * Please see comments inside method
+ */
 void DependencySlicer::visitOr(Or_ptr or_term) {
-  for (auto& term : * (or_term->term_list)) {
+  for (auto& term : *(or_term->term_list)) {
     symbol_table_->push_scope(term, false);
     current_term_ = term;
     visit(term);
@@ -104,9 +120,16 @@ void DependencySlicer::visitOr(Or_ptr or_term) {
 
   constraint_information_->add_component(or_term);
 
-  if (Option::Solver::ENABLE_DEPENDENCY) {
+  /**
+   * We can only use dependency analysis for a disjuction if:
+   * 1- we are in DNF mode
+   * 2- we are not model counting
+   * It is because in any other case we need all solution pairs
+   */
+  if (Option::Solver::FORCE_DNF_FORMULA and Option::Solver::ENABLE_DEPENDENCY
+      and (not Option::Solver::MODEL_COUNTER_ENABLED)) {
     auto components = GetComponentsFor(or_term->term_list);
-    if (components.size() > 1) { // or term breaks into multiple components
+    if (components.size() > 1) {  // or term breaks into multiple components
       or_term->term_list->clear();
       constraint_information_->remove_component(or_term);
       for (auto sub_term_list : components) {
@@ -119,9 +142,11 @@ void DependencySlicer::visitOr(Or_ptr or_term) {
       components[0]->clear();
       delete components[0];
     }
+    // reset data
+    clear_mappings();
+  } else {
+    map_everything_to(or_term);
   }
-  // reset data
-  clear_mappings();
 }
 
 /**
@@ -140,6 +165,17 @@ void DependencySlicer::add_variable_current_term_mapping(Variable_ptr variable) 
 void DependencySlicer::clear_mappings() {
   term_variable_map_.clear();
   variable_term_map_.clear();
+}
+
+void DependencySlicer::map_everything_to(Term_ptr term) {
+  term_variable_map_.clear();
+  term_variable_map_[term];
+  auto it = term_variable_map_.find(term);
+  for (auto& el : variable_term_map_) {
+    el.second.clear();
+    el.second.insert(term);
+    it->second.insert(el.first);
+  }
 }
 
 /**
@@ -167,7 +203,8 @@ std::vector<TermList_ptr> DependencySlicer::GetComponentsFor(TermList_ptr term_l
 
       // Figure out all dependent terms
       while (not worklist.empty()) {
-        auto variable = worklist.front(); worklist.pop();
+        auto variable = worklist.front();
+        worklist.pop();
         for (auto variable_term : variable_term_map_[variable]) {
           if (not term_processed[variable_term]) {
             term_processed[variable_term] = true;

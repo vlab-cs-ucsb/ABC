@@ -127,7 +127,6 @@ int ArithmeticFormula::get_variable_coefficient(std::string variable_name) const
   return it->second;
 }
 
-
 void ArithmeticFormula::set_variable_coefficient(std::string variable_name, int coeff) {
   auto it = variable_coefficient_map_.find(variable_name);
   if (it == variable_coefficient_map_.end()) {
@@ -160,8 +159,8 @@ void ArithmeticFormula::reset_coefficients(int value) {
 }
 
 void ArithmeticFormula::add_variable(std::string name, int coefficient) {
-  if(variable_coefficient_map_.find(name) != variable_coefficient_map_.end()) {
-    LOG(FATAL) << "Variable has already been added! : " << name;
+  if (variable_coefficient_map_.find(name) != variable_coefficient_map_.end()) {
+    LOG(FATAL)<< "Variable has already been added! : " << name;
   }
   variable_coefficient_map_[name] = coefficient;
 }
@@ -286,7 +285,7 @@ bool ArithmeticFormula::Simplify() {
     default:
       LOG(FATAL)<< "Simplification is only done after converting into '=' or '<' equation";
       break;
-  }
+    }
 
   for (auto& c : variable_coefficient_map_) {
     c.second = c.second / gcd_value;
@@ -306,6 +305,14 @@ int ArithmeticFormula::CountOnes(unsigned long n) {
     }
   }
   return ones;
+}
+
+void ArithmeticFormula::merge_variables(const ArithmeticFormula_ptr other) {
+  for (auto& el : other->variable_coefficient_map_) {
+    if (variable_coefficient_map_.find(el.first) == variable_coefficient_map_.end()) {
+      variable_coefficient_map_[el.first] = 0;
+    }
+  }
 }
 
 std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula) {
