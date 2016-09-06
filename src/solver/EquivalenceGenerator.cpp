@@ -156,8 +156,8 @@ bool EquivalenceGenerator::has_constant_substitution() {
 bool EquivalenceGenerator::is_equiv_of_variables(SMT::Term_ptr left_term, SMT::Term_ptr right_term) {
   if (QualIdentifier_ptr left_id = dynamic_cast<QualIdentifier_ptr>(left_term)) {
     if (QualIdentifier_ptr right_id = dynamic_cast<QualIdentifier_ptr>(right_term)) {
-      left_variable_ = symbol_table_->getVariable(left_id->getVarName());
-      right_variable_ = symbol_table_->getVariable(right_id->getVarName());
+      left_variable_ = symbol_table_->get_variable(left_id->getVarName());
+      right_variable_ = symbol_table_->get_variable(right_id->getVarName());
       if(left_variable_->isSymbolic()) {
         right_variable_->setSymbolic(true);
       } else if(right_variable_->isSymbolic()) {
@@ -178,7 +178,7 @@ bool EquivalenceGenerator::is_equiv_of_variable_and_constant(SMT::Term_ptr left_
   if (QualIdentifier_ptr left_id = dynamic_cast<QualIdentifier_ptr>(left_term)) {
     constant_term_checker.start(right_term, Optimization::ConstantTermChecker::Mode::ONLY_TERM_CONSTANT);
     if (constant_term_checker.is_constant()) {
-      left_variable_ = symbol_table_->getVariable(left_id->getVarName());
+      left_variable_ = symbol_table_->get_variable(left_id->getVarName());
       term_constant_ = constant_term_checker.get_term_constant();
       DVLOG(VLOG_LEVEL)<< "variable to constant equivalence: " << left_variable_->getName() << " = " << term_constant_->getValue();
       return true;
@@ -186,7 +186,7 @@ bool EquivalenceGenerator::is_equiv_of_variable_and_constant(SMT::Term_ptr left_
   } else if (QualIdentifier_ptr right_id = dynamic_cast<QualIdentifier_ptr>(right_term)) {
     constant_term_checker.start(left_term, Optimization::ConstantTermChecker::Mode::ONLY_TERM_CONSTANT);
     if (constant_term_checker.is_constant()) {
-      left_variable_ = symbol_table_->getVariable(right_id->getVarName()); // we use @left_variable_ member in that case
+      left_variable_ = symbol_table_->get_variable(right_id->getVarName()); // we use @left_variable_ member in that case
       term_constant_ = constant_term_checker.get_term_constant();
       DVLOG(VLOG_LEVEL)<< "variable to constant equivalence: " << left_variable_->getName() << " = " << term_constant_->getValue();
       return true;
@@ -201,7 +201,7 @@ bool EquivalenceGenerator::is_equiv_of_variable_and_constant(SMT::Term_ptr left_
  */
 bool EquivalenceGenerator::is_equiv_of_bool_var_and_term(SMT::Term_ptr left_term, SMT::Term_ptr right_term) {
   if (QualIdentifier_ptr left_id = dynamic_cast<QualIdentifier_ptr>(left_term)) {
-    auto variable = symbol_table_->getVariable(left_id->getVarName());
+    auto variable = symbol_table_->get_variable(left_id->getVarName());
     if (Variable::Type::BOOL == variable->getType()) {
       left_variable_ = variable;
       unclassified_term_ = right_term;
@@ -209,7 +209,7 @@ bool EquivalenceGenerator::is_equiv_of_bool_var_and_term(SMT::Term_ptr left_term
       return true;
     }
   } else if (QualIdentifier_ptr right_id = dynamic_cast<QualIdentifier_ptr>(right_term)) {
-    auto variable = symbol_table_->getVariable(right_id->getVarName());
+    auto variable = symbol_table_->get_variable(right_id->getVarName());
     if (Variable::Type::BOOL == variable->getType()) {
       left_variable_ = variable; // we use @left_variable_ member in that case
       unclassified_term_ = left_term;

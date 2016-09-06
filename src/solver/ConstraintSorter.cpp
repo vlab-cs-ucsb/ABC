@@ -542,7 +542,7 @@ void ConstraintSorter::visitAsQualIdentifier(AsQualIdentifier_ptr as_qid_term) {
 }
 
 void ConstraintSorter::visitQualIdentifier(QualIdentifier_ptr qi_term) {
-  Variable_ptr variable = symbol_table->getVariable(qi_term->getVarName());
+  Variable_ptr variable = symbol_table->get_variable(qi_term->getVarName());
   if (not variable->isLocalLetVar()) {
     VariableNode_ptr variable_node = get_variable_node(variable);
     term_node = new TermNode();

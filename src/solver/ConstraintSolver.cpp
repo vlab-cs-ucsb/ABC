@@ -101,7 +101,7 @@ void ConstraintSolver::visitLet(Let_ptr let_term) {
     check_and_visit(var_binding->term);
     path_trace_.pop_back();
     param = getTermValue(var_binding->term);
-    symbol_table_->setValue(var_binding->symbol->getData(), param->clone());
+    symbol_table_->set_value(var_binding->symbol->getData(), param->clone());
 
     // TEST: inspect params
 //    if (param->getType() == Value::Type::STRING_AUTOMATON) {
@@ -168,12 +168,12 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     Value_ptr val = arithmetic_constraint_solver_.getTermValue(and_term);
     if(val != nullptr) {
       std::string name = arithmetic_constraint_solver_.get_int_variable_name(and_term);
-      symbol_table_->setValue(name,val->clone());
+      symbol_table_->set_value(name,val->clone());
     }
   }
 
   if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA && constraint_information_->is_component(and_term)) {
-    Variable_ptr var = symbol_table_->getSymbolicVariable();
+    Variable_ptr var = symbol_table_->get_symbolic_target_variable();
     if(var == nullptr) {
       return;
     }
@@ -188,8 +188,8 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         VariableTrackMap trackmap = relation->get_variable_trackmap();
         trackmap[var->getName()] = trackmap[rep_var->getName()];
         relation->set_variable_trackmap(trackmap);
-        symbol_table_->setValue(rep_var, val);
-        symbol_table_->setValue(var,val->clone());
+        symbol_table_->set_value(rep_var, val);
+        symbol_table_->set_value(var,val->clone());
       }
     }
   }
@@ -1099,7 +1099,7 @@ void ConstraintSolver::visitAsQualIdentifier(AsQualIdentifier_ptr as_qid_term) {
 void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *qi_term;
 
-  Variable_ptr variable = symbol_table_->getVariable(qi_term->getVarName());
+  Variable_ptr variable = symbol_table_->get_variable(qi_term->getVarName());
   // check if variable is relational first. if so, since we're storing
   // multitrack values in the string constraint solver, get the variable's value
   // from there and clone it into the symbol table, so the variable value computer has
@@ -1113,11 +1113,11 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   if (variable_value != nullptr) {
     DVLOG(VLOG_LEVEL) << "Relational variable: " << *variable;
     // variable relational, put in symbol table and tag for later update
-    symbol_table_->setValue(variable, variable_value);
+    symbol_table_->set_value(variable, variable_value);
     tagged_variables.push_back(variable);
   } else {
     // variable not relational, just get normally from symbol table
-    variable_value = symbol_table_->getValue(variable);
+    variable_value = symbol_table_->get_value(variable);
   }
   Value_ptr result = variable_value->clone();
 
@@ -1270,7 +1270,7 @@ void ConstraintSolver::update_variables() {
   // update any relational variables tagged prior to variable value computer
   // and update any changes in satisfiability
   for (auto& var : tagged_variables) {
-    Value_ptr value = symbol_table_->getValue(var);
+    Value_ptr value = symbol_table_->get_value(var);
     if (value == nullptr) {
       DVLOG(VLOG_LEVEL) << "Inconsistent value for variable: " << var->getName();
       continue;
@@ -1278,7 +1278,7 @@ void ConstraintSolver::update_variables() {
     string_constraint_solver_.update_variable_value(var, value);
     still_sat_ = still_sat_ and value->isSatisfiable();
     delete value;
-    symbol_table_->setValue(var, nullptr);
+    symbol_table_->set_value(var, nullptr);
   }
   tagged_variables.clear();
 

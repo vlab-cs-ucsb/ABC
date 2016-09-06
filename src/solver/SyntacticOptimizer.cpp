@@ -2334,7 +2334,7 @@ Variable_ptr SyntacticOptimizer::generate_local_var(Variable::Type type) {
   std::stringstream local_var_name;
   local_var_name << Variable::LOCAL_VAR_PREFIX << name_counter++;
   variable = new Variable(local_var_name.str(), type);
-  symbol_table_->addVariable(variable);
+  symbol_table_->add_variable(variable);
   return variable;
 }
 

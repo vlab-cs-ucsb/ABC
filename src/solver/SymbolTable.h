@@ -51,16 +51,16 @@ public:
   void UnionValuesOfVariables(SMT::Script_ptr script);
   void clearLetScopes();
 
-  void addVariable(SMT::Variable_ptr);
-  SMT::Variable_ptr getVariable(std::string name);
-  SMT::Variable_ptr getVariable(SMT::Term_ptr);
+  void add_variable(SMT::Variable_ptr);
+  SMT::Variable_ptr get_variable(std::string name);
+  SMT::Variable_ptr get_variable(SMT::Term_ptr);
   SMT::Variable_ptr get_variable_unsafe(std::string name);
-  VariableMap& getVariables();
-  SMT::Variable_ptr getSymbolicVariable();
+  VariableMap& get_variables();
+  SMT::Variable_ptr get_symbolic_target_variable();
   int get_num_of_variables(SMT::Variable::Type type);
 
-  void setBound(int bound);
-  int getBound();
+  void set_bound(int bound);
+  int get_bound();
 
   void push_scope(SMT::Visitable_ptr, bool save_scope = true);
   SMT::Visitable_ptr top_scope();
@@ -89,14 +89,14 @@ public:
   SMT::Variable_ptr get_representative_variable_of_at_scope(SMT::Visitable_ptr scope, SMT::Variable_ptr);
 
 
-  Value_ptr getValue(std::string var_name);
-  Value_ptr getValue(SMT::Variable_ptr variable);
+  Value_ptr get_value(std::string var_name);
+  Value_ptr get_value(SMT::Variable_ptr variable);
   Value_ptr get_value_at_scope(SMT::Visitable_ptr scope, SMT::Variable_ptr variable);
-  VariableValueMap& getValuesAtScope(SMT::Visitable_ptr scope);
-  bool setValue(std::string var_name, Value_ptr value);
-  bool setValue(SMT::Variable_ptr variable, Value_ptr value);
-  bool updateValue(std::string var_name, Value_ptr value);
-  bool updateValue(SMT::Variable_ptr variable, Value_ptr value);
+  VariableValueMap& get_values_at_Scope(SMT::Visitable_ptr scope);
+  bool set_value(std::string var_name, Value_ptr value);
+  bool set_value(SMT::Variable_ptr variable, Value_ptr value);
+  bool UpdateValue(std::string var_name, Value_ptr value);
+  bool UpdateValue(SMT::Variable_ptr variable, Value_ptr value);
 
   std::string get_var_name_for_expression(SMT::Visitable_ptr, SMT::Variable::Type);
   std::string get_var_name_for_node(SMT::Visitable_ptr, SMT::Variable::Type);

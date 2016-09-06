@@ -153,7 +153,7 @@ void DependencySlicer::visitOr(Or_ptr or_term) {
  * TODO handle local scopes
  */
 void DependencySlicer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
-  Variable_ptr variable = symbol_table_->getVariable(qi_term->getVarName());
+  Variable_ptr variable = symbol_table_->get_variable(qi_term->getVarName());
   add_variable_current_term_mapping(variable);
 }
 

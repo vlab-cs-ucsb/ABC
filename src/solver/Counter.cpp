@@ -32,7 +32,7 @@ void Counter::start() {
 
 void Counter::end() {
   if (VLOG_IS_ON(VLOG_LEVEL)) {
-    for (auto& pair : symbol_table->getVariables()) {
+    for (auto& pair : symbol_table->get_variables()) {
       DVLOG(VLOG_LEVEL) << pair.first << " : " << symbol_table->get_total_count(pair.second);
     }
   }
@@ -70,7 +70,7 @@ void Counter::visitOr(Or_ptr or_term) {
 }
 
 void Counter::visitQualIdentifier(QualIdentifier_ptr qi_term) {
-  symbol_table->increment_count(symbol_table->getVariable(qi_term->getVarName()));
+  symbol_table->increment_count(symbol_table->get_variable(qi_term->getVarName()));
 }
 
 void Counter::visitUnknownTerm(SMT::Unknown_ptr unknown_term) {

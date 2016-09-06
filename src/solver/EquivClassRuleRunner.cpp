@@ -359,7 +359,7 @@ bool EquivClassRuleRunner::has_optimization_rules() {
 
 bool EquivClassRuleRunner::check_and_substitute_var(Term_ptr& term) {
   if (Term::Type::QUALIDENTIFIER == term->type()) {
-    Variable_ptr variable = symbol_table_->getVariable(term);
+    Variable_ptr variable = symbol_table_->get_variable(term);
     auto equiv = symbol_table_->get_equivalence_class_of(variable);
     if (equiv) {
       Term_ptr subs_term = equiv->get_representative_term();
@@ -401,7 +401,7 @@ void EquivClassRuleRunner::set_variable_value(Variable_ptr variable, TermConstan
       LOG(FATAL)<< "constant is not supported for substitution: " << term_constant->getValue();
       break;
   }
-  symbol_table_->setValue(variable, result);
+  symbol_table_->set_value(variable, result);
   DVLOG(VLOG_LEVEL)<< "value updated for variable: " << *variable << " -> " << *result;
 }
 

@@ -127,7 +127,7 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
   // before getting value from symbol table, check to see if its
   // relational. If so, 2 counts: multitrack, and singletrack after
   // projecting all else away. Return whichever count is lower.
-  Vlab::Solver::Value_ptr var_value = symbol_table_->getValue(var_name);
+  Vlab::Solver::Value_ptr var_value = symbol_table_->get_value(var_name);
 
 
   symbol_table_->pop_scope();
@@ -251,7 +251,7 @@ boost::multiprecision::cpp_int Driver::SymbolicCount(std::string var_name, const
   boost::multiprecision::cpp_int result;
   symbol_table_->UnionValuesOfVariables(script_);
   symbol_table_->push_scope(script_);
-  Vlab::Solver::Value_ptr var_value = symbol_table_->getValue(var_name);
+  Vlab::Solver::Value_ptr var_value = symbol_table_->get_value(var_name);
   symbol_table_->pop_scope();
   switch (var_value->getType()) {
   case Vlab::Solver::Value::Type::STRING_AUTOMATON:
@@ -327,7 +327,7 @@ void Driver::printResult(Solver::Value_ptr value, std::ostream& out) {
 
 std::map<SMT::Variable_ptr, Solver::Value_ptr> Driver::getSatisfyingVariables() {
 	symbol_table_->UnionValuesOfVariables(script_);
-	return symbol_table_->getValuesAtScope(script_);
+	return symbol_table_->get_values_at_Scope(script_);
 }
 
 std::map<std::string, std::string> Driver::getSatisfyingExamples() {
@@ -405,7 +405,7 @@ void Driver::setOption(Option::Name option, std::string value) {
 }
 
 SMT::Variable_ptr Driver::get_smc_query_variable() {
-	return symbol_table_->getSymbolicVariable();
+	return symbol_table_->get_symbolic_target_variable();
 }
 
 void Driver::test() {

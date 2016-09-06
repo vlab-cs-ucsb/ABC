@@ -80,7 +80,7 @@ void SymbolTable::UnionValuesOfVariables(Script_ptr script) {
       }
     }
     if (value) {
-      setValue(variable_entry.second, value);
+      set_value(variable_entry.second, value);
     }
   }
   pop_scope();
@@ -105,22 +105,22 @@ void SymbolTable::clearLetScopes() {
   }
 }
 
-void SymbolTable::addVariable(Variable_ptr variable) {
+void SymbolTable::add_variable(Variable_ptr variable) {
   auto result = variables.insert(std::make_pair(variable->getName(), variable));
   if (not result.second) {
     LOG(FATAL) << "Duplicate variable definition: " << *variable;
   }
 }
 
-Variable_ptr SymbolTable::getVariable(std::string name) {
+Variable_ptr SymbolTable::get_variable(std::string name) {
   auto it = variables.find(name);
   CHECK(it != variables.end()) << "Variable is not found: " << name;
   return it->second;
 }
 
-Variable_ptr SymbolTable::getVariable(Term_ptr term_ptr) {
+Variable_ptr SymbolTable::get_variable(Term_ptr term_ptr) {
   if (QualIdentifier_ptr variable_identifier = dynamic_cast<QualIdentifier_ptr>(term_ptr)) {
-    return getVariable(variable_identifier->getVarName());
+    return get_variable(variable_identifier->getVarName());
   }
   return nullptr;
 }
@@ -132,7 +132,7 @@ SMT::Variable_ptr SymbolTable::get_variable_unsafe(std::string name) {
   return nullptr;
 }
 
-VariableMap& SymbolTable::getVariables() {
+VariableMap& SymbolTable::get_variables() {
   return variables;
 }
 
@@ -145,7 +145,7 @@ void SymbolTable::incrementReuse(){
 }*/
 
 
-Variable_ptr SymbolTable::getSymbolicVariable() {
+Variable_ptr SymbolTable::get_symbolic_target_variable() {
   auto it = std::find_if(variables.begin(), variables.end(),
   [](std::pair<std::string, Variable_ptr> entry) -> bool {
     return entry.second->isSymbolic();
@@ -168,11 +168,11 @@ int SymbolTable::get_num_of_variables(Variable::Type type) {
   return count;
 }
 
-void SymbolTable::setBound(int bound) {
+void SymbolTable::set_bound(int bound) {
   this->bound = bound;
 }
 
-int SymbolTable::getBound() {
+int SymbolTable::get_bound() {
   return bound;
 }
 
@@ -285,11 +285,11 @@ Variable_ptr SymbolTable::get_representative_variable_of_at_scope(Visitable_ptr 
   return variable;
 }
 
-Value_ptr SymbolTable::getValue(std::string var_name) {
-  return getValue(getVariable(var_name));
+Value_ptr SymbolTable::get_value(std::string var_name) {
+  return get_value(get_variable(var_name));
 }
 
-Value_ptr SymbolTable::getValue(Variable_ptr variable) {
+Value_ptr SymbolTable::get_value(Variable_ptr variable) {
 
   for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); it++) {
     auto representative_variable = get_representative_variable_of_at_scope((*it), variable);
@@ -317,7 +317,7 @@ Value_ptr SymbolTable::getValue(Variable_ptr variable) {
     LOG(FATAL) << "unknown variable type" << *variable;
     break;
   }
-  setValue(variable, result);
+  set_value(variable, result);
   return result;
 }
 
@@ -329,15 +329,15 @@ Value_ptr SymbolTable::get_value_at_scope(Visitable_ptr scope, Variable_ptr vari
   return nullptr;
 }
 
-VariableValueMap& SymbolTable::getValuesAtScope(Visitable_ptr scope) {
+VariableValueMap& SymbolTable::get_values_at_Scope(Visitable_ptr scope) {
   return variable_value_table[scope];
 }
 
-bool SymbolTable::setValue(std::string var_name, Value_ptr value) {
-  return setValue(getVariable(var_name), value);
+bool SymbolTable::set_value(std::string var_name, Value_ptr value) {
+  return set_value(get_variable(var_name), value);
 }
 
-bool SymbolTable::setValue(Variable_ptr variable, Value_ptr value) {
+bool SymbolTable::set_value(Variable_ptr variable, Value_ptr value) {
   variable_value_table[scope_stack.back()][variable] = value;
   return true;
 }
@@ -346,8 +346,8 @@ bool SymbolTable::setValue(Variable_ptr variable, Value_ptr value) {
  * Intersect old value of the variable with new value and sets the
  * intersection as newest value.
  */
-bool SymbolTable::updateValue(std::string var_name, Value_ptr value) {
-  return updateValue(getVariable(var_name), value);
+bool SymbolTable::UpdateValue(std::string var_name, Value_ptr value) {
+  return UpdateValue(get_variable(var_name), value);
 }
 
 /**
@@ -355,15 +355,15 @@ bool SymbolTable::updateValue(std::string var_name, Value_ptr value) {
  * intersection as newest value.
  * Deletes old value if it is read from same scope
  */
-bool SymbolTable::updateValue(Variable_ptr variable, Value_ptr value) {
-  Value_ptr variable_old_value = getValue(variable);
+bool SymbolTable::UpdateValue(Variable_ptr variable, Value_ptr value) {
+  Value_ptr variable_old_value = get_value(variable);
   Value_ptr variable_new_value = variable_old_value->intersect(value);
 
   if (variable_value_table[scope_stack.back()][variable] == variable_old_value) {
-    setValue(variable, variable_new_value);
+    set_value(variable, variable_new_value);
     delete variable_old_value; variable_old_value = nullptr;
   } else {
-    setValue(variable, variable_new_value);
+    set_value(variable, variable_new_value);
   }
 
 

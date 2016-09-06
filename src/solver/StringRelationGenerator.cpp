@@ -92,13 +92,13 @@ void StringRelationGenerator::visitAnd(And_ptr and_term) {
         delete_term_relation(term);
         continue;
       }
-      std::string group_name = get_variable_group_name(current_term_,symbol_table_->getVariable(term_relation->variables[0]));
+      std::string group_name = get_variable_group_name(current_term_,symbol_table_->get_variable(term_relation->variables[0]));
       term_group_map[term] = group_name;
       VariableTrackMap trackmap = get_group_trackmap(group_name);
       term_relation->set_variable_trackmap(trackmap);
       if(symbol_table_->get_variable_unsafe(group_name) == nullptr) {
-        symbol_table_->addVariable(new Variable(group_name,Variable::Type::STRING));
-        symbol_table_->setValue(group_name,new Value(MultiTrackAutomaton::makeAnyAutoAligned(trackmap.size())));
+        symbol_table_->add_variable(new Variable(group_name,Variable::Type::STRING));
+        symbol_table_->set_value(group_name,new Value(MultiTrackAutomaton::makeAnyAutoAligned(trackmap.size())));
       }
       has_string_formula_ = true;
     }
@@ -164,18 +164,18 @@ void StringRelationGenerator::visitEq(Eq_ptr eq_term) {
                                 VariableTrackMap());
   std::vector<std::string> vars;
   if (left_relation->get_type() == StringRelation::Type::STRING_VAR) {
-    Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
+    Variable_ptr var = symbol_table_->get_variable(left_relation->get_data());
     vars.push_back(var->getName());
   } else if(left_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
-    Variable_ptr var = symbol_table_->getVariable(left_relation->get_left()->get_data());
+    Variable_ptr var = symbol_table_->get_variable(left_relation->get_left()->get_data());
     vars.push_back(var->getName());
   }
 
   if (right_relation->get_type() == StringRelation::Type::STRING_VAR) {
-    Variable_ptr var = symbol_table_->getVariable(right_relation->get_data());
+    Variable_ptr var = symbol_table_->get_variable(right_relation->get_data());
     vars.push_back(var->getName());
   } else if(right_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
-    Variable_ptr var = symbol_table_->getVariable(right_relation->get_left()->get_data());
+    Variable_ptr var = symbol_table_->get_variable(right_relation->get_left()->get_data());
     vars.push_back(var->getName());
   }
   relation->variables = vars;
@@ -223,18 +223,18 @@ void StringRelationGenerator::visitNotEq(NotEq_ptr not_eq_term) {
                                 VariableTrackMap());
   std::vector<std::string> vars;
   if (left_relation->get_type() == StringRelation::Type::STRING_VAR) {
-    Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
+    Variable_ptr var = symbol_table_->get_variable(left_relation->get_data());
     vars.push_back(var->getName());
   } else if(left_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
-    Variable_ptr var = symbol_table_->getVariable(left_relation->get_left()->get_data());
+    Variable_ptr var = symbol_table_->get_variable(left_relation->get_left()->get_data());
     vars.push_back(var->getName());
   }
 
   if (right_relation->get_type() == StringRelation::Type::STRING_VAR) {
-    Variable_ptr var = symbol_table_->getVariable(right_relation->get_data());
+    Variable_ptr var = symbol_table_->get_variable(right_relation->get_data());
     vars.push_back(var->getName());
   } else if(right_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
-    Variable_ptr var = symbol_table_->getVariable(right_relation->get_left()->get_data());
+    Variable_ptr var = symbol_table_->get_variable(right_relation->get_left()->get_data());
     vars.push_back(var->getName());
   }
   relation->variables = vars;
@@ -268,18 +268,18 @@ void StringRelationGenerator::visitGt(Gt_ptr gt_term) {
                                 VariableTrackMap());
   std::vector<std::string> vars;
   if (left_relation->get_type() == StringRelation::Type::STRING_VAR) {
-    Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
+    Variable_ptr var = symbol_table_->get_variable(left_relation->get_data());
     vars.push_back(var->getName());
   } else if(left_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
-    Variable_ptr var = symbol_table_->getVariable(left_relation->get_left()->get_data());
+    Variable_ptr var = symbol_table_->get_variable(left_relation->get_left()->get_data());
     vars.push_back(var->getName());
   }
 
   if (right_relation->get_type() == StringRelation::Type::STRING_VAR) {
-    Variable_ptr var = symbol_table_->getVariable(right_relation->get_data());
+    Variable_ptr var = symbol_table_->get_variable(right_relation->get_data());
     vars.push_back(var->getName());
   } else if(right_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
-    Variable_ptr var = symbol_table_->getVariable(right_relation->get_left()->get_data());
+    Variable_ptr var = symbol_table_->get_variable(right_relation->get_left()->get_data());
     vars.push_back(var->getName());
   }
   relation->variables = vars;
@@ -313,18 +313,18 @@ void StringRelationGenerator::visitGe(Ge_ptr ge_term) {
                                 VariableTrackMap());
   std::vector<std::string> vars;
   if (left_relation->get_type() == StringRelation::Type::STRING_VAR) {
-    Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
+    Variable_ptr var = symbol_table_->get_variable(left_relation->get_data());
     vars.push_back(var->getName());
   } else if(left_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
-    Variable_ptr var = symbol_table_->getVariable(left_relation->get_left()->get_data());
+    Variable_ptr var = symbol_table_->get_variable(left_relation->get_left()->get_data());
     vars.push_back(var->getName());
   }
 
   if (right_relation->get_type() == StringRelation::Type::STRING_VAR) {
-    Variable_ptr var = symbol_table_->getVariable(right_relation->get_data());
+    Variable_ptr var = symbol_table_->get_variable(right_relation->get_data());
     vars.push_back(var->getName());
   } else if(right_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
-    Variable_ptr var = symbol_table_->getVariable(right_relation->get_left()->get_data());
+    Variable_ptr var = symbol_table_->get_variable(right_relation->get_left()->get_data());
     vars.push_back(var->getName());
   }
   relation->variables = vars;
@@ -358,18 +358,18 @@ void StringRelationGenerator::visitLt(Lt_ptr lt_term) {
                                 VariableTrackMap());
   std::vector<std::string> vars;
   if (left_relation->get_type() == StringRelation::Type::STRING_VAR) {
-    Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
+    Variable_ptr var = symbol_table_->get_variable(left_relation->get_data());
     vars.push_back(var->getName());
   } else if(left_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
-    Variable_ptr var = symbol_table_->getVariable(left_relation->get_left()->get_data());
+    Variable_ptr var = symbol_table_->get_variable(left_relation->get_left()->get_data());
     vars.push_back(var->getName());
   }
 
   if (right_relation->get_type() == StringRelation::Type::STRING_VAR) {
-    Variable_ptr var = symbol_table_->getVariable(right_relation->get_data());
+    Variable_ptr var = symbol_table_->get_variable(right_relation->get_data());
     vars.push_back(var->getName());
   } else if(right_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
-    Variable_ptr var = symbol_table_->getVariable(right_relation->get_left()->get_data());
+    Variable_ptr var = symbol_table_->get_variable(right_relation->get_left()->get_data());
     vars.push_back(var->getName());
   }
   relation->variables = vars;
@@ -405,18 +405,18 @@ void StringRelationGenerator::visitLe(Le_ptr le_term) {
                                 VariableTrackMap());
   std::vector<std::string> vars;
   if (left_relation->get_type() == StringRelation::Type::STRING_VAR) {
-    Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
+    Variable_ptr var = symbol_table_->get_variable(left_relation->get_data());
     vars.push_back(var->getName());
   } else if(left_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
-    Variable_ptr var = symbol_table_->getVariable(left_relation->get_left()->get_data());
+    Variable_ptr var = symbol_table_->get_variable(left_relation->get_left()->get_data());
     vars.push_back(var->getName());
   }
 
   if (right_relation->get_type() == StringRelation::Type::STRING_VAR) {
-    Variable_ptr var = symbol_table_->getVariable(right_relation->get_data());
+    Variable_ptr var = symbol_table_->get_variable(right_relation->get_data());
     vars.push_back(var->getName());
   } else if(right_relation->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
-    Variable_ptr var = symbol_table_->getVariable(right_relation->get_left()->get_data());
+    Variable_ptr var = symbol_table_->get_variable(right_relation->get_left()->get_data());
     vars.push_back(var->getName());
   }
   relation->variables = vars;
@@ -500,9 +500,9 @@ void StringRelationGenerator::visitBegins(Begins_ptr begins_term) {
                                 VariableTrackMap());
 
   std::vector<std::string> vars;
-  Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
+  Variable_ptr var = symbol_table_->get_variable(left_relation->get_data());
   vars.push_back(var->getName());
-  var = symbol_table_->getVariable(right_relation->get_data());
+  var = symbol_table_->get_variable(right_relation->get_data());
   vars.push_back(var->getName());
 
   relation->variables = vars;
@@ -535,9 +535,9 @@ void StringRelationGenerator::visitNotBegins(NotBegins_ptr not_begins_term) {
                                 "",
                                 VariableTrackMap());
   std::vector<std::string> vars;
-  Variable_ptr var = symbol_table_->getVariable(left_relation->get_data());
+  Variable_ptr var = symbol_table_->get_variable(left_relation->get_data());
   vars.push_back(var->getName());
-  var = symbol_table_->getVariable(right_relation->get_data());
+  var = symbol_table_->get_variable(right_relation->get_data());
   vars.push_back(var->getName());
 
   relation->variables = vars;
@@ -635,7 +635,7 @@ void StringRelationGenerator::visitAsQualIdentifier(AsQualIdentifier_ptr as_qual
 void StringRelationGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *qi_term;
   StringRelation_ptr str_rel = nullptr;
-  Variable_ptr variable = symbol_table_->getVariable(qi_term->getVarName());
+  Variable_ptr variable = symbol_table_->get_variable(qi_term->getVarName());
   DVLOG(VLOG_LEVEL) << "-->variable name: " << variable->getName();
   switch(variable->getType()) {
     case Variable::Type::STRING:

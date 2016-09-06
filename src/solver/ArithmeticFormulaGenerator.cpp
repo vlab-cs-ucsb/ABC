@@ -544,7 +544,7 @@ void ArithmeticFormulaGenerator::visitAsQualIdentifier(AsQualIdentifier_ptr as_q
 void ArithmeticFormulaGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *qi_term;
 
-  Variable_ptr variable = symbol_table_->getVariable(qi_term->getVarName());
+  Variable_ptr variable = symbol_table_->get_variable(qi_term->getVarName());
   if (Variable::Type::INT == variable->getType()) {
     auto formula = new ArithmeticFormula();
     formula->add_variable(variable->getName(), 1);

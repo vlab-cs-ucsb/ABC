@@ -29,7 +29,7 @@ void Initializer::start() {
 
 void Initializer::end() {
   if (VLOG_IS_ON(19)) {
-    for (auto& pair : symbol_table_->getVariables()) {
+    for (auto& pair : symbol_table_->get_variables()) {
       DVLOG(VLOG_LEVEL) << *pair.second;
     }
   }
@@ -68,7 +68,7 @@ void Initializer::visitCommand(Command_ptr command) {
       LOG(FATAL) << "Type is not supported: " << primitive->getData() << "<" << sort->identifier->getName() << ">";
     }
     Variable_ptr variable = new Variable(primitive, sort->var_type->getType());
-    symbol_table_->addVariable(variable);
+    symbol_table_->add_variable(variable);
 
     break;
   }
@@ -77,7 +77,7 @@ void Initializer::visitCommand(Command_ptr command) {
     if (primitives_.size() == 1) {
       Primitive_ptr primitive = primitives_.top();
       primitives_.pop();
-      Variable_ptr variable = symbol_table_->getVariable(primitive->getData());
+      Variable_ptr variable = symbol_table_->get_variable(primitive->getData());
       variable->setSymbolic(true);
       DVLOG(VLOG_LEVEL) << *variable << " is changed to a symbolic var.";
     }
@@ -90,18 +90,18 @@ void Initializer::visitCommand(Command_ptr command) {
       Primitive_ptr primitive = primitives_.top();
       primitives_.pop();
       int bound = std::stoi(primitive->getData());
-      symbol_table_->setBound(bound);
+      symbol_table_->set_bound(bound);
       DVLOG(VLOG_LEVEL) << "Model count bound: " << bound;
     } else if (primitives_.size() == 2) {
       Primitive_ptr primitive = primitives_.top();
       primitives_.pop();
-      Variable_ptr variable = symbol_table_->getVariable(primitive->getData());
+      Variable_ptr variable = symbol_table_->get_variable(primitive->getData());
       variable->setSymbolic(true);
       DVLOG(VLOG_LEVEL) << *variable << " is changed to a symbolic var.";
       primitive = primitives_.top();
       primitives_.pop();
       int bound = std::stoi(primitive->getData());
-      symbol_table_->setBound(bound);
+      symbol_table_->set_bound(bound);
       DVLOG(VLOG_LEVEL) << "Model count bound: " << bound;
     }
     CHECK_EQ(0, primitives_.size())<< "unexpected primitive left.";
@@ -311,7 +311,7 @@ void Initializer::visitVarBinding(VarBinding_ptr var_binding) {
 
 void Initializer::verifyVariableDefinitions() {
   bool is_symbolic = false;
-  VariableMap variable_map = symbol_table_->getVariables();
+  VariableMap variable_map = symbol_table_->get_variables();
   Variable_ptr variable = variable_map.begin()->second;
   for (auto& pair : variable_map) {
     is_symbolic = pair.second->isSymbolic();

@@ -92,7 +92,7 @@ void VariableValueComputer::visitLet(Let_ptr let_term) {
   Value_ptr term_value = getTermPreImage(let_term);
   Value_ptr child_post_value = getTermPostImage(child_term);
 
-  Variable_ptr variable_to_update = symbol_table->getVariable( *(current_path->begin()) );
+  Variable_ptr variable_to_update = symbol_table->get_variable( *(current_path->begin()) );
   Value_ptr value_to_move_upper_scope = nullptr;
 
   symbol_table->push_scope(let_term);
@@ -102,7 +102,7 @@ void VariableValueComputer::visitLet(Let_ptr let_term) {
   } else {
     for (auto var_bind : *let_term->var_binding_list) {
       if (child_term == var_bind->term) {
-        Value_ptr local_var_value = symbol_table->getValue(var_bind->symbol->getData());
+        Value_ptr local_var_value = symbol_table->get_value(var_bind->symbol->getData());
         child_value = local_var_value->clone();
         break;
       }
@@ -113,13 +113,13 @@ void VariableValueComputer::visitLet(Let_ptr let_term) {
   visit(child_term);
 
   if (not variable_to_update->isLocalLetVar()) {
-    value_to_move_upper_scope = symbol_table->getValue(variable_to_update);
+    value_to_move_upper_scope = symbol_table->get_value(variable_to_update);
   }
 
   symbol_table->pop_scope();
 
   if (value_to_move_upper_scope) {
-    symbol_table->updateValue(variable_to_update, value_to_move_upper_scope);
+    symbol_table->UpdateValue(variable_to_update, value_to_move_upper_scope);
   }
 
 }
@@ -1277,7 +1277,7 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   popTerm(qi_term);
 
   Value_ptr term_pre_value = getTermPreImage(qi_term);
-  symbol_table->updateValue(qi_term->getVarName(), term_pre_value);
+  symbol_table->UpdateValue(qi_term->getVarName(), term_pre_value);
 
 }
 

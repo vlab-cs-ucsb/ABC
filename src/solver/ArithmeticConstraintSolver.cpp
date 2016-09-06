@@ -83,10 +83,10 @@ void ArithmeticConstraintSolver::setCallbacks() {
 
             std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
             if(symbol_table_->get_variable_unsafe(group_name) == nullptr) {
-              symbol_table_->addVariable(new Variable(group_name, Variable::Type::INT));
-              symbol_table_->setValue(group_name,result->clone());
+              symbol_table_->add_variable(new Variable(group_name, Variable::Type::INT));
+              symbol_table_->set_value(group_name,result->clone());
             } else {
-              symbol_table_->updateValue(group_name, result);
+              symbol_table_->UpdateValue(group_name, result);
             }
             delete result;
             break;
@@ -170,7 +170,7 @@ std::string ArithmeticConstraintSolver::get_int_variable_name(SMT::Term_ptr term
 Value_ptr ArithmeticConstraintSolver::getTermValue(Term_ptr term) {
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
   if(!group_name.empty()) {
-    return symbol_table_->getValue(group_name);
+    return symbol_table_->get_value(group_name);
   }
   return nullptr;
 }
@@ -178,7 +178,7 @@ Value_ptr ArithmeticConstraintSolver::getTermValue(Term_ptr term) {
 bool ArithmeticConstraintSolver::setTermValue(Term_ptr term, Value_ptr value) {
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
   if(!group_name.empty()) {
-    symbol_table_->setValue(group_name,value);
+    symbol_table_->set_value(group_name,value);
     return true;
   }
   return false;
@@ -187,7 +187,7 @@ bool ArithmeticConstraintSolver::setTermValue(Term_ptr term, Value_ptr value) {
 bool ArithmeticConstraintSolver::updateTermValue(Term_ptr term, Value_ptr value) {
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
   if(!group_name.empty()) {
-    symbol_table_->updateValue(group_name,value);
+    symbol_table_->UpdateValue(group_name,value);
     return true;
   }
   return false;

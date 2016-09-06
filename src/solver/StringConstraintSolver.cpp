@@ -137,7 +137,7 @@ void StringConstraintSolver::setCallbacks() {
 
           Value_ptr val = new Value(multi_auto);
           std::string group_name = string_relation_generator_.get_term_group_name(term);
-          symbol_table_->updateValue(group_name,val);
+          symbol_table_->UpdateValue(group_name,val);
           DVLOG(VLOG_LEVEL) << "Updating group name: " << group_name;
           delete val;
           break;
@@ -277,7 +277,7 @@ std::string StringConstraintSolver::get_string_variable_name(Term_ptr term) {
 Value_ptr StringConstraintSolver::get_term_value(Term_ptr term) {
   std::string group_name = string_relation_generator_.get_term_group_name(term);
   if(!group_name.empty()) {
-    return symbol_table_->getValue(group_name);
+    return symbol_table_->get_value(group_name);
   }
   return nullptr;
 }
@@ -285,7 +285,7 @@ Value_ptr StringConstraintSolver::get_term_value(Term_ptr term) {
 bool StringConstraintSolver::set_term_value(Term_ptr term, Value_ptr value) {
   std::string group_name = string_relation_generator_.get_term_group_name(term);
   if(!group_name.empty()) {
-    symbol_table_->setValue(group_name,value);
+    symbol_table_->set_value(group_name,value);
     return true;
   }
   return false;
@@ -301,7 +301,7 @@ Value_ptr StringConstraintSolver::get_variable_value(Variable_ptr variable, bool
     return nullptr;
   }
   DVLOG(VLOG_LEVEL) << "VARIABLE: " << variable->str() << " is part of GROUP: " << group_name;
-  relation_value = symbol_table_->getValue(group_name);
+  relation_value = symbol_table_->get_value(group_name);
 
   if(multi_val) {
     return relation_value->clone();
@@ -322,7 +322,7 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
   if(group_name.empty()) {
     LOG(FATAL) << "Empty group name!";
   }
-  relation_value = symbol_table_->getValue(group_name);
+  relation_value = symbol_table_->get_value(group_name);
   DVLOG(VLOG_LEVEL) << "VARIABLE: " << variable->str() << " is part of GROUP: " << group_name;
   variable_auto = value->getStringAutomaton();
 
@@ -335,7 +335,7 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
   variable_multi_auto->setRelation(variable_relation->clone());
 
   Value_ptr val = new Value(variable_multi_auto);
-  symbol_table_->updateValue(group_name,val);
+  symbol_table_->UpdateValue(group_name,val);
   delete val;
   return true;
 }
