@@ -35,16 +35,20 @@ ArithmeticConstraintSolver::~ArithmeticConstraintSolver() {
 void ArithmeticConstraintSolver::start(Visitable_ptr node) {
   DVLOG(VLOG_LEVEL) << "Arithmetic constraint solving starts at node: " << node;
   arithmetic_formula_generator_.start(node);
-  string_terms_map_ = arithmetic_formula_generator_.get_string_terms_map();
-  this->Visitor::visit(node);
+  if (arithmetic_formula_generator_.has_arithmetic_formula()) {
+    string_terms_map_ = arithmetic_formula_generator_.get_string_terms_map();
+    this->Visitor::visit(node);
+  }
   end();
 }
 
 void ArithmeticConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "Arithmetic constraint solving starts at root";
   arithmetic_formula_generator_.start();
-  string_terms_map_ = arithmetic_formula_generator_.get_string_terms_map();
-  visitScript(root);
+  if (arithmetic_formula_generator_.has_arithmetic_formula()) {
+    string_terms_map_ = arithmetic_formula_generator_.get_string_terms_map();
+    visitScript(root);
+  }
   end();
 }
 

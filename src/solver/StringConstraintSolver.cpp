@@ -26,13 +26,17 @@ StringConstraintSolver::~StringConstraintSolver() {
 
 void StringConstraintSolver::start() {
   string_relation_generator_.start(root);
-  visitScript(root);
+  if (string_relation_generator_.has_string_formula()) {
+    visitScript(root);
+  }
   end();
 }
 
 void StringConstraintSolver::start(SMT::Visitable_ptr node) {
   string_relation_generator_.start(node);
-  this->Visitor::visit(node);
+  if (string_relation_generator_.has_string_formula()) {
+    this->Visitor::visit(node);
+  }
   end();
 }
 

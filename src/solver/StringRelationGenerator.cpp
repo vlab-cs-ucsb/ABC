@@ -15,8 +15,9 @@ const int StringRelationGenerator::VLOG_LEVEL = 14;
 StringRelationGenerator::StringRelationGenerator(Script_ptr script, SymbolTable_ptr symbol_table, ConstraintInformation_ptr constraint_information)
     : root_(script),
       symbol_table_(symbol_table),
-      constraint_information_(constraint_information) {
-  current_term_ = nullptr;
+      constraint_information_(constraint_information),
+      has_string_formula_{false},
+      current_term_{nullptr} {
 }
 
 StringRelationGenerator::~StringRelationGenerator() {
@@ -31,12 +32,14 @@ StringRelationGenerator::~StringRelationGenerator() {
 
 void StringRelationGenerator::start(Visitable_ptr node) {
   DVLOG(VLOG_LEVEL) << "String relation extraction starts at node: " << node;
+  has_string_formula_ = false;
   visit(node);
   end();
 }
 
 void StringRelationGenerator::start() {
   DVLOG(VLOG_LEVEL) << "String relation extraction starts at root";
+  has_string_formula_ = false;
   visit(root_);
   end();
 }
@@ -97,6 +100,7 @@ void StringRelationGenerator::visitAnd(And_ptr and_term) {
         symbol_table_->addVariable(new Variable(group_name,Variable::Type::STRING));
         symbol_table_->setValue(group_name,new Value(MultiTrackAutomaton::makeAnyAutoAligned(trackmap.size())));
       }
+      has_string_formula_ = true;
     }
   }
 }
@@ -180,6 +184,7 @@ void StringRelationGenerator::visitEq(Eq_ptr eq_term) {
   delete_term_relation(eq_term->left_term);
   delete_term_relation(eq_term->right_term);
   set_term_relation(eq_term, relation);
+  has_string_formula_ = true;
 }
 
 void StringRelationGenerator::visitNotEq(NotEq_ptr not_eq_term) {
@@ -238,6 +243,7 @@ void StringRelationGenerator::visitNotEq(NotEq_ptr not_eq_term) {
   delete_term_relation(not_eq_term->left_term);
   delete_term_relation(not_eq_term->right_term);
   set_term_relation(not_eq_term, relation);
+  has_string_formula_ = true;
 }
 
 void StringRelationGenerator::visitGt(Gt_ptr gt_term) {
@@ -282,6 +288,7 @@ void StringRelationGenerator::visitGt(Gt_ptr gt_term) {
   delete_term_relation(gt_term->left_term);
   delete_term_relation(gt_term->right_term);
   set_term_relation(gt_term, relation);
+  has_string_formula_ = true;
 }
 
 void StringRelationGenerator::visitGe(Ge_ptr ge_term) {
@@ -326,6 +333,7 @@ void StringRelationGenerator::visitGe(Ge_ptr ge_term) {
   delete_term_relation(ge_term->left_term);
   delete_term_relation(ge_term->right_term);
   set_term_relation(ge_term, relation);
+  has_string_formula_ = true;
 }
 
 void StringRelationGenerator::visitLt(Lt_ptr lt_term) {
@@ -370,6 +378,7 @@ void StringRelationGenerator::visitLt(Lt_ptr lt_term) {
   delete_term_relation(lt_term->left_term);
   delete_term_relation(lt_term->right_term);
   set_term_relation(lt_term, relation);
+  has_string_formula_ = true;
 }
 
 void StringRelationGenerator::visitLe(Le_ptr le_term) {
@@ -416,6 +425,7 @@ void StringRelationGenerator::visitLe(Le_ptr le_term) {
   delete_term_relation(le_term->left_term);
   delete_term_relation(le_term->right_term);
   set_term_relation(le_term, relation);
+  has_string_formula_ = true;
 }
 
 void StringRelationGenerator::visitConcat(Concat_ptr concat_term) {
@@ -446,7 +456,7 @@ void StringRelationGenerator::visitConcat(Concat_ptr concat_term) {
   delete_term_relation(concat_term->term_list->at(0));
   delete_term_relation(concat_term->term_list->at(1));
   set_term_relation(concat_term, relation);
-
+  has_string_formula_ = true;
 }
 
 void StringRelationGenerator::visitIn(In_ptr in_term) {
@@ -501,6 +511,7 @@ void StringRelationGenerator::visitBegins(Begins_ptr begins_term) {
   delete_term_relation(begins_term->subject_term);
   delete_term_relation(begins_term->search_term);
   set_term_relation(begins_term, relation);
+  has_string_formula_ = true;
 }
 
 void StringRelationGenerator::visitNotBegins(NotBegins_ptr not_begins_term) {
@@ -535,6 +546,7 @@ void StringRelationGenerator::visitNotBegins(NotBegins_ptr not_begins_term) {
   delete_term_relation(not_begins_term->subject_term);
   delete_term_relation(not_begins_term->search_term);
   set_term_relation(not_begins_term, relation);
+  has_string_formula_ = true;
 }
 
 void StringRelationGenerator::visitEnds(Ends_ptr ends_term) {
@@ -697,6 +709,10 @@ void StringRelationGenerator::visitPrimitive(Primitive_ptr prim_term) {
 }
 
 void StringRelationGenerator::visitVariable(Variable_ptr var_term) {
+}
+
+bool StringRelationGenerator::has_string_formula() {
+  return has_string_formula_;
 }
 
 StringRelation_ptr StringRelationGenerator::get_term_relation(Term_ptr term) {

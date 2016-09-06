@@ -92,7 +92,7 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
 
   /**
    * If we and_term is under a disjunction, and_term must be component.
-   * Wwe can still do dependency analysis but, we must treat and_term as a component.
+   * We can still do dependency analysis but, we must treat and_term as a component.
    * During automata construction we watch for the case.
    * This enable us to reduce the size of automaton in case one of the sub component is unsat
    */

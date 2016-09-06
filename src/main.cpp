@@ -52,7 +52,7 @@ int main(const int argc, const char **argv) {
   bool model_count_only = false;
   bool enable_lia_engine = true;
   bool use_natural_numbers = false;
-  bool model_count = false;
+  bool model_count = true;
   bool enable_relational_string_automata = true;
   bool force_dnf_formula = false;
   bool experiment_mode = false;
@@ -67,7 +67,6 @@ int main(const int argc, const char **argv) {
       model_count_only = true;
     } else if (argv[i] == std::string("-b")) {
       bound_string = argv[i + 1];
-      model_count = true;
       ++i;
     } else if (argv[i] == std::string("-f")) {
       file_name = argv[i + 1];
@@ -85,9 +84,9 @@ int main(const int argc, const char **argv) {
       use_natural_numbers = true;
     } else if (argv[i] == std::string("-d")) {
       force_dnf_formula = true;
-    } else if (argv[i] == std::string("-r")) {
+    } else if (argv[i] == std::string("-r") or argv[i] == std::string("--enable-relational-string")) {
       enable_relational_string_automata = true;
-    } else if (argv[i] == std::string("-s")) {
+    } else if (argv[i] == std::string("-s") or argv[i] == std::string("--disable-relational-string")) {
       enable_relational_string_automata = false;
     } else if (argv[i] == std::string("-e")) {
       experiment_mode = true;

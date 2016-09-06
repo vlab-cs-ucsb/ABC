@@ -111,6 +111,7 @@ class StringRelationGenerator : public SMT::Visitor {
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
 
+  bool has_string_formula();
   Theory::StringRelation_ptr get_term_relation(SMT::Term_ptr term);
   bool set_term_relation(SMT::Term_ptr term, Theory::StringRelation_ptr str_rel);
   void delete_term_relation(SMT::Term_ptr term);
@@ -127,6 +128,8 @@ class StringRelationGenerator : public SMT::Visitor {
   SMT::Script_ptr root_;
   SymbolTable_ptr symbol_table_;
   ConstraintInformation_ptr constraint_information_;
+  bool has_string_formula_;
+  SMT::Term_ptr current_term_;
 
   std::map<SMT::Term_ptr, Theory::StringRelation_ptr> relations_;
 
@@ -136,7 +139,6 @@ class StringRelationGenerator : public SMT::Visitor {
   std::map<SMT::Term_ptr, std::string> term_group_map;
 
  private:
-  SMT::Term_ptr current_term_;
   static const int VLOG_LEVEL;
 
 };

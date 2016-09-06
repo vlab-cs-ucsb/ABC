@@ -108,6 +108,7 @@ public:
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
 
+  bool has_arithmetic_formula();
   Theory::ArithmeticFormula_ptr get_term_formula(SMT::Term_ptr term);
   bool has_string_terms(SMT::Term_ptr term);
   std::map<SMT::Term_ptr, SMT::TermList> get_string_terms_map();
@@ -128,8 +129,9 @@ protected:
 
   SMT::Script_ptr root_;
   SymbolTable_ptr symbol_table_;
-  SMT::Term_ptr current_component_;
   ConstraintInformation_ptr constraint_information_;
+  bool has_arithmetic_formula_;
+  SMT::Term_ptr current_component_;
 
   std::map<SMT::Term_ptr, Theory::ArithmeticFormula_ptr> formulas_;
   SMT::TermList string_terms_;
