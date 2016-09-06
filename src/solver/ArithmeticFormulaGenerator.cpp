@@ -107,6 +107,7 @@ void ArithmeticFormulaGenerator::visitAnd(And_ptr and_term) {
         std::string group_name = get_variable_group_name(and_term, param_formula->get_variable_coefficient_map().begin()->first);
         param_formula->merge_variables(group_formula_[group_name]);
         term_group_map_[term] = group_name;
+        add_group_to_component(group_name, and_term);
       }
       has_arithmetic_constraint = true;
     }
@@ -149,6 +150,7 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
         std::string group_name = get_variable_group_name(or_term, param_formula->get_variable_coefficient_map().begin()->first);
         param_formula->merge_variables(group_formula_[group_name]);
         term_group_map_[term] = group_name;
+        add_group_to_component(group_name, or_term);
       }
       has_arithmetic_constraint = true;
     }
@@ -651,6 +653,14 @@ std::string ArithmeticFormulaGenerator::get_term_group_name(SMT::Term_ptr term) 
   return term_group_map_[term];
 }
 
+void ArithmeticFormulaGenerator::add_group_to_component(std::string group_name, SMT::Term_ptr term) {
+  component_groups_[term].insert(group_name);
+}
+
+std::set<std::string> ArithmeticFormulaGenerator::get_groups_in_component(SMT::Term_ptr term) {
+  return component_groups_[term];
+}
+
 void ArithmeticFormulaGenerator::AddIntVariables(Term_ptr component_term, ArithmeticFormula_ptr formula) {
   std::string group_name;
 
@@ -697,14 +707,6 @@ std::string ArithmeticFormulaGenerator::generate_group_name(SMT::Term_ptr term, 
   std::string group_name = symbol_table_->get_var_name_for_node(term, SMT::Variable::Type::INT);
   group_name += var_name;
   return group_name;
-}
-
-std::map<std::string, int> ArithmeticFormulaGenerator::get_group_trackmap(std::string name) {
-  if (group_formula_.find(name) == group_formula_.end()) {
-    DVLOG(VLOG_LEVEL) << "no trackmap for group: " << name;
-    return std::map<std::string, int>();
-  }
-  return std::map<std::string, int>();
 }
 
 bool ArithmeticFormulaGenerator::set_term_formula(Term_ptr term, ArithmeticFormula_ptr formula) {

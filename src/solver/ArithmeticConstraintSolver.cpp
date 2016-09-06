@@ -81,6 +81,9 @@ void ArithmeticConstraintSolver::setCallbacks() {
             BinaryIntAutomaton_ptr binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), is_natural_numbers_only_);
             Value_ptr result = new Value(binary_int_auto);
 
+            // TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            // move grouping value computation into and or based on operation
+            // below code only works with intersection not correct
             std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
             if(symbol_table_->get_variable_unsafe(group_name) == nullptr) {
               symbol_table_->add_variable(new Variable(group_name, Variable::Type::INT));
@@ -132,14 +135,12 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
   }
 
   bool is_satisfiable = true;
-  ArithmeticFormula_ptr formula = nullptr;
-  Value_ptr param = nullptr, and_value = nullptr;
 
   for (auto& term : *(and_term->term_list)) {
-    formula = arithmetic_formula_generator_.get_term_formula(term);
+    auto formula = arithmetic_formula_generator_.get_term_formula(term);
     if (formula != nullptr) {
       visit(term);
-      param = getTermValue(term);
+      auto param = get_term_value(term);
       is_satisfiable = is_satisfiable and param->isSatisfiable();
       if (!is_satisfiable) {
         break;
@@ -167,15 +168,17 @@ std::string ArithmeticConstraintSolver::get_int_variable_name(SMT::Term_ptr term
   return symbol_table_->get_var_name_for_node(key, Variable::Type::INT);
 }
 
-Value_ptr ArithmeticConstraintSolver::getTermValue(Term_ptr term) {
+Value_ptr ArithmeticConstraintSolver::get_term_value(Term_ptr term) {
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
   if(!group_name.empty()) {
     return symbol_table_->get_value(group_name);
+  } else {
+
   }
   return nullptr;
 }
 
-bool ArithmeticConstraintSolver::setTermValue(Term_ptr term, Value_ptr value) {
+bool ArithmeticConstraintSolver::set_term_value(Term_ptr term, Value_ptr value) {
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
   if(!group_name.empty()) {
     symbol_table_->set_value(group_name,value);
@@ -184,7 +187,7 @@ bool ArithmeticConstraintSolver::setTermValue(Term_ptr term, Value_ptr value) {
   return false;
 }
 
-bool ArithmeticConstraintSolver::updateTermValue(Term_ptr term, Value_ptr value) {
+bool ArithmeticConstraintSolver::UpdateTermValue(Term_ptr term, Value_ptr value) {
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
   if(!group_name.empty()) {
     symbol_table_->UpdateValue(group_name,value);
@@ -193,7 +196,7 @@ bool ArithmeticConstraintSolver::updateTermValue(Term_ptr term, Value_ptr value)
   return false;
 }
 
-void ArithmeticConstraintSolver::clearTermValues() {
+void ArithmeticConstraintSolver::clear_term_values() {
   for (auto& entry : term_values_) {
     delete entry.second;
   }
@@ -201,7 +204,7 @@ void ArithmeticConstraintSolver::clearTermValues() {
   term_values_.clear();
 }
 
-void ArithmeticConstraintSolver::clearTermValue(Term_ptr term) {
+void ArithmeticConstraintSolver::clear_term_value(Term_ptr term) {
   auto it = term_values_.find(term);
   if (it != term_values_.end()) {
     delete it->second;
@@ -209,15 +212,15 @@ void ArithmeticConstraintSolver::clearTermValue(Term_ptr term) {
   }
 }
 
-bool ArithmeticConstraintSolver::hasStringTerms(Term_ptr term) {
+bool ArithmeticConstraintSolver::has_string_terms(Term_ptr term) {
   return (string_terms_map_.find(term) != string_terms_map_.end());
 }
 
-TermList& ArithmeticConstraintSolver::getStringTermsIn(Term_ptr term) {
+TermList& ArithmeticConstraintSolver::get_string_terms_in(Term_ptr term) {
   return string_terms_map_[term];
 }
 
-std::map<SMT::Term_ptr, SMT::TermList>& ArithmeticConstraintSolver::getStringTermsMap() {
+std::map<SMT::Term_ptr, SMT::TermList>& ArithmeticConstraintSolver::get_string_terms_map() {
   return string_terms_map_;
 }
 

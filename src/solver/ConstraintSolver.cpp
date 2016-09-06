@@ -165,7 +165,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   setTermValue(and_term, result);
 
   if (Option::Solver::LIA_ENGINE_ENABLED && constraint_information_->is_component(and_term)) {
-    Value_ptr val = arithmetic_constraint_solver_.getTermValue(and_term);
+    Value_ptr val = arithmetic_constraint_solver_.get_term_value(and_term);
     if(val != nullptr) {
       std::string name = arithmetic_constraint_solver_.get_int_variable_name(and_term);
       symbol_table_->set_value(name,val->clone());
@@ -1208,7 +1208,7 @@ Value_ptr ConstraintSolver::getTermValue(Term_ptr term) {
   // we do not need binary automaton value for them, term_values will return
   // satisfiability result for them
   if ((not dynamic_cast<And_ptr>(term)) and (not dynamic_cast<Or_ptr>(term))) {
-    Value_ptr value = arithmetic_constraint_solver_.getTermValue(term);
+    Value_ptr value = arithmetic_constraint_solver_.get_term_value(term);
     if (value != nullptr) {
       return value;
     }
@@ -1295,7 +1295,7 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
 
     Value_ptr result = getTermValue(term);
     if (result != nullptr) {
-      if (arithmetic_constraint_solver_.hasStringTerms(term) and result->isSatisfiable()) {
+      if (arithmetic_constraint_solver_.has_string_terms(term) and result->isSatisfiable()) {
         DVLOG(VLOG_LEVEL) << "Mixed Linear Arithmetic Constraint";
         process_mixed_integer_string_constraints_in(term);
         result = getTermValue(term);  // get updated result
@@ -1322,7 +1322,7 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
   IntAutomaton_ptr updated_int_auto = nullptr;
   bool has_minus_one = false;
   int number_of_variables_for_int_auto;
-  for (auto& string_term : arithmetic_constraint_solver_.getStringTermsIn(term)) {
+  for (auto& string_term : arithmetic_constraint_solver_.get_string_terms_in(term)) {
     result = getTermValue(term);
     visit(string_term);
     string_term_result = getTermValue(string_term);
@@ -1356,7 +1356,7 @@ void ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     delete string_term_binary_auto; string_term_binary_auto = nullptr;
 
     result = new Value(updated_arith_auto);
-    arithmetic_constraint_solver_.updateTermValue(term, result); // in turn, updates internal term_value
+    arithmetic_constraint_solver_.UpdateTermValue(term, result); // in turn, updates internal term_value
     if (not result->isSatisfiable()) {
       delete result; result = nullptr;
       break;

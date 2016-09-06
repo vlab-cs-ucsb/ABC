@@ -119,10 +119,12 @@ public:
   std::string get_variable_group_name(SMT::Term_ptr term,std::string var_name);
   std::string get_term_group_name(SMT::Term_ptr term);
 
+  void add_group_to_component(std::string group_name, SMT::Term_ptr term);
+  std::set<std::string> get_groups_in_component(SMT::Term_ptr term);
+
 protected:
   void AddIntVariables(SMT::Term_ptr component_term, Theory::ArithmeticFormula_ptr formula);
   std::string generate_group_name(SMT::Term_ptr term, std::string var_name);
-  std::map<std::string, int> get_group_trackmap(std::string name);
 
   bool set_term_formula(SMT::Term_ptr term, Theory::ArithmeticFormula_ptr formula);
   void delete_term_formula(SMT::Term_ptr);
@@ -139,8 +141,11 @@ protected:
 
   // for partitioning
   VariableGroupTable variable_group_table_;
-  std::map<std::string, Theory::ArithmeticFormula_ptr> group_formula_;
+  std::map<SMT::Term_ptr, std::set<std::string>> component_groups_; // a mapping from a component to groups inside component
   std::map<SMT::Term_ptr, std::string> term_group_map_;
+  std::map<std::string, Theory::ArithmeticFormula_ptr> group_formula_;
+
+
 
 private:
   static const int VLOG_LEVEL;
