@@ -110,6 +110,7 @@ public:
 
   bool has_arithmetic_formula();
   Theory::ArithmeticFormula_ptr get_term_formula(SMT::Term_ptr term);
+  Theory::ArithmeticFormula_ptr get_group_formula(std::string group_name);
   bool has_string_terms(SMT::Term_ptr term);
   std::map<SMT::Term_ptr, SMT::TermList> get_string_terms_map();
   SMT::TermList& get_string_terms_in(SMT::Term_ptr term);
@@ -122,6 +123,7 @@ public:
   void add_group_to_component(std::string group_name, SMT::Term_ptr term);
   std::set<std::string> get_groups_in_component(SMT::Term_ptr term);
 
+  std::string generate_group_for_component(SMT::Term_ptr term);
 protected:
   void AddIntVariables(SMT::Term_ptr component_term, Theory::ArithmeticFormula_ptr formula);
   std::string generate_group_name(SMT::Term_ptr term, std::string var_name);
@@ -135,7 +137,7 @@ protected:
   bool has_arithmetic_formula_;
   SMT::Term_ptr current_component_;
 
-  std::map<SMT::Term_ptr, Theory::ArithmeticFormula_ptr> formulas_;
+  std::map<SMT::Term_ptr, Theory::ArithmeticFormula_ptr> term_formula_;
   SMT::TermList string_terms_;
   std::map<SMT::Term_ptr, SMT::TermList> string_terms_map_;
 

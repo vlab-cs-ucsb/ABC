@@ -71,27 +71,13 @@ void ArithmeticConstraintSolver::setCallbacks() {
           case Term::Type::LT:
           case Term::Type::LE:
           case Term::Type::QUALIDENTIFIER: {
-            DVLOG(VLOG_LEVEL) << "visit: " << *term;
-            ArithmeticFormula_ptr formula = arithmetic_formula_generator_.get_term_formula(term);
-            if (formula == nullptr) {
-              return false;
+            auto formula = arithmetic_formula_generator_.get_term_formula(term);
+            if (formula != nullptr) {
+              DVLOG(VLOG_LEVEL) << "Linear Arithmetic Equation: " << *formula << "@" << term;
+              auto binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), is_natural_numbers_only_);
+              auto result = new Value(binary_int_auto);
+              set_term_value(term, result);
             }
-
-            DVLOG(VLOG_LEVEL) << "Linear Arithmetic Equation: " << *formula;
-            BinaryIntAutomaton_ptr binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), is_natural_numbers_only_);
-            Value_ptr result = new Value(binary_int_auto);
-
-            // TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            // move grouping value computation into and or based on operation
-            // below code only works with intersection not correct
-            std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
-            if(symbol_table_->get_variable_unsafe(group_name) == nullptr) {
-              symbol_table_->add_variable(new Variable(group_name, Variable::Type::INT));
-              symbol_table_->set_value(group_name,result->clone());
-            } else {
-              symbol_table_->UpdateValue(group_name, result);
-            }
-            delete result;
             break;
           }
           default:
@@ -142,15 +128,56 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
       visit(term);
       auto param = get_term_value(term);
       is_satisfiable = is_satisfiable and param->isSatisfiable();
-      if (!is_satisfiable) {
+      std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
+      IntersectGroupValue(group_name, param->clone());
+      clear_term_value(term);
+      arithmetic_formula_generator_.add_group_to_component(group_name, and_term);
+      if (not is_satisfiable) {
         break;
       }
     }
+  }
+
+  /**
+   * We may need to compute an automaton for the and_term that combines all groups
+   */
+  if (symbol_table_->top_scope() != root) {
+    LOG(FATAL)<< "implement me";
+    std::string group_name = arithmetic_formula_generator_.generate_group_for_component(and_term);
+    auto groups = arithmetic_formula_generator_.get_groups_in_component(and_term);
+    LOG(FATAL)<< "Remap all groups to one";
+    LOG(FATAL)<< "In case of mixed constraints may need to keep original automata";
+    // if there is a one group replace it with new group
+    // if there is more combine them into one
+    if (is_satisfiable) {
+      auto it = groups.begin();
+      set_group_value(group_name, symbol_table_->get_value(*it)->clone());
+      while (++it != groups.end()) {
+        LOG(FATAL) << "this intersection require updates on automaton tracks";
+        IntersectGroupValue(group_name, symbol_table_->get_value(*it)->clone());
+      }
+    } else {
+      auto formula = arithmetic_formula_generator_.get_group_formula(group_name);
+      auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(formula, is_natural_numbers_only_));
+      set_group_value(group_name, value);
+    }
+
+  } else {
+    // Update all group automaton
+    if (not is_satisfiable) {
+      for (const auto& group_name : arithmetic_formula_generator_.get_groups_in_component(and_term)) {
+        auto formula = arithmetic_formula_generator_.get_group_formula(group_name);
+        auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(formula, is_natural_numbers_only_));
+        set_group_value(group_name, value);
+      }
+    }
+    set_term_value(and_term, new Value(is_satisfiable));
   }
 }
 
 void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *or_term;
+  LOG(FATAL) << "implement me";
   for (auto& term : *(or_term->term_list)) {
     symbol_table_->push_scope(term);
     visit(term);
@@ -169,30 +196,39 @@ std::string ArithmeticConstraintSolver::get_int_variable_name(SMT::Term_ptr term
 }
 
 Value_ptr ArithmeticConstraintSolver::get_term_value(Term_ptr term) {
-  std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
-  if(!group_name.empty()) {
-    return symbol_table_->get_value(group_name);
-  } else {
-
+  auto it = term_values_.find(term);
+  if (it != term_values_.end()) {
+    return it->second;
   }
+//  std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
+//  if(!group_name.empty()) {
+//    return symbol_table_->get_value(group_name);
+//  } else {
+//
+//  }
   return nullptr;
 }
 
 bool ArithmeticConstraintSolver::set_term_value(Term_ptr term, Value_ptr value) {
-  std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
-  if(!group_name.empty()) {
-    symbol_table_->set_value(group_name,value);
-    return true;
+  auto result = term_values_.insert({term, value});
+  if (result.second == false) {
+    LOG(FATAL) << "Term automaton is already computed: " << *term << "@" << term;
   }
-  return false;
+//  std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
+//  if(!group_name.empty()) {
+//    symbol_table_->set_value(group_name,value);
+//    return true;
+//  }
+  return result.second;
 }
 
 bool ArithmeticConstraintSolver::UpdateTermValue(Term_ptr term, Value_ptr value) {
-  std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
-  if(!group_name.empty()) {
-    symbol_table_->UpdateValue(group_name,value);
-    return true;
-  }
+LOG(FATAL) << "fix me";
+//  std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
+//  if(!group_name.empty()) {
+//    symbol_table_->UpdateValue(group_name,value);
+//    return true;
+//  }
   return false;
 }
 
@@ -230,6 +266,40 @@ void ArithmeticConstraintSolver::assign(std::map<SMT::Term_ptr, SMT::Term_ptr>& 
   term_value_index = this->term_value_index_;
   term_values = this->term_values_;
   string_terms_map = this->string_terms_map_;
+}
+
+bool ArithmeticConstraintSolver::set_group_value(std::string group_name, Value_ptr value) {
+  if (symbol_table_->get_variable_unsafe(group_name) == nullptr) {
+    symbol_table_->add_variable(new Variable(group_name, Variable::Type::INT));
+    return symbol_table_->set_value(group_name, value);
+  } else {
+    auto old_value = symbol_table_->get_value(group_name);
+    auto result = symbol_table_->set_value(group_name, value);
+    delete old_value;
+    return result;
+  }
+}
+
+bool ArithmeticConstraintSolver::IntersectGroupValue(std::string group_name, Value_ptr value) {
+  if (symbol_table_->get_variable_unsafe(group_name) == nullptr) {
+    symbol_table_->add_variable(new Variable(group_name, Variable::Type::INT));
+    return symbol_table_->set_value(group_name, value);
+  } else {
+    auto result = symbol_table_->IntersectValue(group_name, value);
+    delete value;
+    return result;
+  }
+}
+
+bool ArithmeticConstraintSolver::UnionGroupValue(std::string group_name, Value_ptr value) {
+  if (symbol_table_->get_variable_unsafe(group_name) == nullptr) {
+    symbol_table_->add_variable(new Variable(group_name, Variable::Type::INT));
+    return symbol_table_->set_value(group_name, value);
+  } else {
+    auto result = symbol_table_->UnionValue(group_name, value);
+    delete value;
+    return result;
+  }
 }
 
 } /* namespace Solver */

@@ -33,7 +33,7 @@ ArithmeticFormulaGenerator::ArithmeticFormulaGenerator(Script_ptr script, Symbol
 }
 
 ArithmeticFormulaGenerator::~ArithmeticFormulaGenerator() {
-  for (auto& pair : formulas_) {
+  for (auto& pair : term_formula_) {
     delete pair.second;
     pair.second = nullptr;
   }
@@ -107,7 +107,6 @@ void ArithmeticFormulaGenerator::visitAnd(And_ptr and_term) {
         std::string group_name = get_variable_group_name(and_term, param_formula->get_variable_coefficient_map().begin()->first);
         param_formula->merge_variables(group_formula_[group_name]);
         term_group_map_[term] = group_name;
-        add_group_to_component(group_name, and_term);
       }
       has_arithmetic_constraint = true;
     }
@@ -115,7 +114,8 @@ void ArithmeticFormulaGenerator::visitAnd(And_ptr and_term) {
 
   /**
    * If that component is under disjunction we will need to create an automaton for all variables appearing in this term
-   * Create a formula for the term and decide on group and variables appear in formula during automata construction
+   * Create a formula
+   * Refine group details and formula details (variables) during automata construction
    */
   if (has_arithmetic_constraint) {
     auto and_formula = new ArithmeticFormula();
@@ -150,7 +150,6 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
         std::string group_name = get_variable_group_name(or_term, param_formula->get_variable_coefficient_map().begin()->first);
         param_formula->merge_variables(group_formula_[group_name]);
         term_group_map_[term] = group_name;
-        add_group_to_component(group_name, or_term);
       }
       has_arithmetic_constraint = true;
     }
@@ -609,18 +608,26 @@ bool ArithmeticFormulaGenerator::has_arithmetic_formula() {
 }
 
 ArithmeticFormula_ptr ArithmeticFormulaGenerator::get_term_formula(Term_ptr term) {
-  auto iter = formulas_.find(term);
-  if (iter == formulas_.end()) {
+  auto it = term_formula_.find(term);
+  if (it == term_formula_.end()) {
     return nullptr;
   }
-  return iter->second;
+  return it->second;
+}
+
+ArithmeticFormula_ptr ArithmeticFormulaGenerator::get_group_formula(std::string group_name) {
+  auto it = group_formula_.find(group_name);
+  if (it == group_formula_.end()) {
+    return nullptr;
+  }
+  return it->second;
 }
 
 bool ArithmeticFormulaGenerator::has_string_terms(Term_ptr term) {
   return (string_terms_map_.find(term) not_eq string_terms_map_.end());
 }
 
-std::map<SMT::Term_ptr, SMT::TermList> ArithmeticFormulaGenerator::get_string_terms_map() {
+std::map<Term_ptr, TermList> ArithmeticFormulaGenerator::get_string_terms_map() {
   return string_terms_map_;
 }
 
@@ -629,10 +636,10 @@ TermList& ArithmeticFormulaGenerator::get_string_terms_in(Term_ptr term) {
 }
 
 void ArithmeticFormulaGenerator::clear_term_formulas() {
-  for (auto& pair : formulas_) {
+  for (auto& pair : term_formula_) {
     delete pair.second;
   }
-  formulas_.clear();
+  term_formula_.clear();
 }
 
 std::string ArithmeticFormulaGenerator::get_variable_group_name(Term_ptr term, Variable_ptr variable) {
@@ -646,19 +653,31 @@ std::string ArithmeticFormulaGenerator::get_variable_group_name(Term_ptr term, s
   return variable_group_table_[term][var_name];
 }
 
-std::string ArithmeticFormulaGenerator::get_term_group_name(SMT::Term_ptr term) {
+std::string ArithmeticFormulaGenerator::get_term_group_name(Term_ptr term) {
   if (term_group_map_.find(term) == term_group_map_.end()) {
-    return "";
+    LOG(FATAL)<< "Term must have a group";
   }
   return term_group_map_[term];
 }
 
-void ArithmeticFormulaGenerator::add_group_to_component(std::string group_name, SMT::Term_ptr term) {
+void ArithmeticFormulaGenerator::add_group_to_component(std::string group_name, Term_ptr term) {
   component_groups_[term].insert(group_name);
 }
 
-std::set<std::string> ArithmeticFormulaGenerator::get_groups_in_component(SMT::Term_ptr term) {
+std::set<std::string> ArithmeticFormulaGenerator::get_groups_in_component(Term_ptr term) {
   return component_groups_[term];
+}
+
+std::string ArithmeticFormulaGenerator::generate_group_for_component(Term_ptr term) {
+  auto formula = get_term_formula(term);
+  for (const auto& group : get_groups_in_component(term)) {
+    auto group_formula = get_group_formula(group);
+    formula->merge_variables(group_formula);
+  }
+  std::string group_name = generate_group_name(term, "");
+  group_formula_[group_name] = formula->clone();
+  term_group_map_[term] = group_name;
+  return group_name;
 }
 
 void ArithmeticFormulaGenerator::AddIntVariables(Term_ptr component_term, ArithmeticFormula_ptr formula) {
@@ -703,14 +722,14 @@ void ArithmeticFormulaGenerator::AddIntVariables(Term_ptr component_term, Arithm
   }
 }
 
-std::string ArithmeticFormulaGenerator::generate_group_name(SMT::Term_ptr term, std::string var_name) {
-  std::string group_name = symbol_table_->get_var_name_for_node(term, SMT::Variable::Type::INT);
+std::string ArithmeticFormulaGenerator::generate_group_name(Term_ptr term, std::string var_name) {
+  std::string group_name = symbol_table_->get_var_name_for_node(term, Variable::Type::INT);
   group_name += var_name;
   return group_name;
 }
 
 bool ArithmeticFormulaGenerator::set_term_formula(Term_ptr term, ArithmeticFormula_ptr formula) {
-  auto result = formulas_.insert(std::make_pair(term, formula));
+  auto result = term_formula_.insert(std::make_pair(term, formula));
   if (result.second == false) {
     LOG(FATAL)<< "formula is already computed for term: " << *term;
   }
@@ -721,7 +740,7 @@ void ArithmeticFormulaGenerator::delete_term_formula(Term_ptr term) {
   auto formula = get_term_formula(term);
   if (formula not_eq nullptr) {
     delete formula;
-    formulas_.erase(term);
+    term_formula_.erase(term);
   }
 }
 

@@ -95,8 +95,10 @@ public:
   VariableValueMap& get_values_at_Scope(SMT::Visitable_ptr scope);
   bool set_value(std::string var_name, Value_ptr value);
   bool set_value(SMT::Variable_ptr variable, Value_ptr value);
-  bool UpdateValue(std::string var_name, Value_ptr value);
-  bool UpdateValue(SMT::Variable_ptr variable, Value_ptr value);
+  bool IntersectValue(std::string var_name, Value_ptr value);
+  bool IntersectValue(SMT::Variable_ptr variable, Value_ptr value);
+  bool UnionValue(std::string var_name, Value_ptr value);
+  bool UnionValue(SMT::Variable_ptr variable, Value_ptr value);
 
   std::string get_var_name_for_expression(SMT::Visitable_ptr, SMT::Variable::Type);
   std::string get_var_name_for_node(SMT::Visitable_ptr, SMT::Variable::Type);

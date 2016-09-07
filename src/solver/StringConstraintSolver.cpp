@@ -137,7 +137,7 @@ void StringConstraintSolver::setCallbacks() {
 
           Value_ptr val = new Value(multi_auto);
           std::string group_name = string_relation_generator_.get_term_group_name(term);
-          symbol_table_->UpdateValue(group_name,val);
+          symbol_table_->IntersectValue(group_name,val);
           DVLOG(VLOG_LEVEL) << "Updating group name: " << group_name;
           delete val;
           break;
@@ -335,7 +335,7 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
   variable_multi_auto->setRelation(variable_relation->clone());
 
   Value_ptr val = new Value(variable_multi_auto);
-  symbol_table_->UpdateValue(group_name,val);
+  symbol_table_->IntersectValue(group_name,val);
   delete val;
   return true;
 }

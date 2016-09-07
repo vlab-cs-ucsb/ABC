@@ -119,7 +119,7 @@ void VariableValueComputer::visitLet(Let_ptr let_term) {
   symbol_table->pop_scope();
 
   if (value_to_move_upper_scope) {
-    symbol_table->UpdateValue(variable_to_update, value_to_move_upper_scope);
+    symbol_table->IntersectValue(variable_to_update, value_to_move_upper_scope);
   }
 
 }
@@ -1277,7 +1277,7 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   popTerm(qi_term);
 
   Value_ptr term_pre_value = getTermPreImage(qi_term);
-  symbol_table->UpdateValue(qi_term->getVarName(), term_pre_value);
+  symbol_table->IntersectValue(qi_term->getVarName(), term_pre_value);
 
 }
 

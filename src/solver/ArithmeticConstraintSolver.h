@@ -58,6 +58,10 @@ class ArithmeticConstraintSolver : public AstTraverser {
   void assign(std::map<SMT::Term_ptr, SMT::Term_ptr>& term_value_index, TermValueMap& term_values,
               std::map<SMT::Term_ptr, SMT::TermList>& string_terms_map);
 
+  bool set_group_value(std::string group_name, Value_ptr value);
+  bool IntersectGroupValue(std::string group_name, Value_ptr value);
+  bool UnionGroupValue(std::string group_name, Value_ptr value);
+
  protected:
   bool is_natural_numbers_only_;
   SymbolTable_ptr symbol_table_;

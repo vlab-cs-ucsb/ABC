@@ -346,8 +346,8 @@ bool SymbolTable::set_value(Variable_ptr variable, Value_ptr value) {
  * Intersect old value of the variable with new value and sets the
  * intersection as newest value.
  */
-bool SymbolTable::UpdateValue(std::string var_name, Value_ptr value) {
-  return UpdateValue(get_variable(var_name), value);
+bool SymbolTable::IntersectValue(std::string var_name, Value_ptr value) {
+  return IntersectValue(get_variable(var_name), value);
 }
 
 /**
@@ -355,7 +355,7 @@ bool SymbolTable::UpdateValue(std::string var_name, Value_ptr value) {
  * intersection as newest value.
  * Deletes old value if it is read from same scope
  */
-bool SymbolTable::UpdateValue(Variable_ptr variable, Value_ptr value) {
+bool SymbolTable::IntersectValue(Variable_ptr variable, Value_ptr value) {
   Value_ptr variable_old_value = get_value(variable);
   Value_ptr variable_new_value = variable_old_value->intersect(value);
 
@@ -365,8 +365,23 @@ bool SymbolTable::UpdateValue(Variable_ptr variable, Value_ptr value) {
   } else {
     set_value(variable, variable_new_value);
   }
+  return true;
+}
 
+bool SymbolTable::UnionValue(std::string var_name, Value_ptr value) {
+  return UnionValue(get_variable(var_name), value);
+}
 
+bool SymbolTable::UnionValue(Variable_ptr variable, Value_ptr value) {
+  Value_ptr variable_old_value = get_value(variable);
+  Value_ptr variable_new_value = variable_old_value->union_(value);
+
+  if (variable_value_table[scope_stack.back()][variable] == variable_old_value) {
+    set_value(variable, variable_new_value);
+    delete variable_old_value; variable_old_value = nullptr;
+  } else {
+    set_value(variable, variable_new_value);
+  }
   return true;
 }
 
