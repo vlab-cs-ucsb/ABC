@@ -62,7 +62,7 @@ public:
   ArithmeticFormula_ptr negate();
 
   bool Simplify();
-  int CountOnes(unsigned long n);
+  int CountOnes(unsigned long n) const;
   void merge_variables(ArithmeticFormula_ptr other);
 
   friend std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula);

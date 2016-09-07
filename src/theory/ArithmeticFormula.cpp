@@ -294,9 +294,9 @@ bool ArithmeticFormula::Simplify() {
   return true;
 }
 
-int ArithmeticFormula::CountOnes(unsigned long n) {
+int ArithmeticFormula::CountOnes(unsigned long n) const {
   int ones = 0;
-  for (auto& el : variable_coefficient_map_) {
+  for (const auto& el : variable_coefficient_map_) {
     if (el.second != 0) {
       if (n & 1) {
         ones += el.second;

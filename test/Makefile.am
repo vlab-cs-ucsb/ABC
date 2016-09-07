@@ -31,7 +31,7 @@ abctest_SOURCES = \
 	theory/ArithmeticFormulaTest.cpp \
 	theory/ArithmeticFormulaTest.h \
 	theory/BinaryIntAutomatonTest.cpp \
-	thory/BinaryIntAutomatonTest.h
+	theory/BinaryIntAutomatonTest.h
 
 abctest_LDADD = \
 	helper/libabctesthelper.la \
