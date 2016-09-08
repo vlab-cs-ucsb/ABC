@@ -27,15 +27,17 @@ ArithmeticFormulaGenerator::ArithmeticFormulaGenerator(Script_ptr script, Symbol
     : root_(script),
       symbol_table_(symbol_table),
       constraint_information_(constraint_information),
-      has_arithmetic_formula_{false},
-      current_component_ { nullptr } {
+      has_arithmetic_formula_{false} {
 
 }
 
 ArithmeticFormulaGenerator::~ArithmeticFormulaGenerator() {
-  for (auto& pair : term_formula_) {
-    delete pair.second;
-    pair.second = nullptr;
+  for (auto& el : term_formula_) {
+    delete el.second;
+  }
+
+  for (auto& el : group_formula_) {
+    delete el.second;
   }
 }
 
@@ -43,6 +45,7 @@ void ArithmeticFormulaGenerator::start(Visitable_ptr node) {
   DVLOG(VLOG_LEVEL) << "Arithmetic constraint extraction starts at node: " << node;
   has_arithmetic_formula_ = false;
   visit(node);
+  set_group_mappings();
   end();
 }
 
@@ -50,6 +53,7 @@ void ArithmeticFormulaGenerator::start() {
   DVLOG(VLOG_LEVEL) << "Arithmetic constraint extraction starts at root";
   has_arithmetic_formula_ = false;
   visit(root_);
+  set_group_mappings();
   end();
 }
 
@@ -86,41 +90,25 @@ void ArithmeticFormulaGenerator::visitLet(Let_ptr let_term) {
 
 void ArithmeticFormulaGenerator::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
-  for (auto& term : * (and_term->term_list)) {
-    current_component_ = and_term;
-    visit(term);
+  if (constraint_information_->is_component(and_term) and current_group_.empty()) {
+    current_group_ = symbol_table_->get_var_name_for_node(and_term, Variable::Type::INT);
   }
+  visit_children_of(and_term);
   DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 
-  current_component_ = nullptr;
   if (not constraint_information_->is_component(and_term)) {
+    current_group_ = "";
     return;
   }
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *and_term << "@" << and_term;
 
-  bool has_arithmetic_constraint = false;
-  for (const auto term : *(and_term->term_list)) {
-    auto param_formula = get_term_formula(term);
-    if (param_formula not_eq nullptr) {
-      if (param_formula->get_number_of_variables() > 0) {
-        std::string group_name = get_variable_group_name(and_term, param_formula->get_variable_coefficient_map().begin()->first);
-        param_formula->merge_variables(group_formula_[group_name]);
-        term_group_map_[term] = group_name;
-      }
-      has_arithmetic_constraint = true;
-    }
-  }
-
-  /**
-   * If that component is under disjunction we will need to create an automaton for all variables appearing in this term
-   * Create a formula
-   * Refine group details and formula details (variables) during automata construction
-   */
-  if (has_arithmetic_constraint) {
-    auto and_formula = new ArithmeticFormula();
-    and_formula->set_type(ArithmeticFormula::Type::INTERSECT);
-    set_term_formula(and_term, and_formula);
+  auto group_formula = get_group_formula(current_group_);
+  if (group_formula not_eq nullptr and group_formula->get_number_of_variables() > 0) {
+    auto formula = group_formula->clone();
+    formula->set_type(ArithmeticFormula::Type::INTERSECT);
+    set_term_formula(and_term, formula);
+    term_group_map_[and_term] = current_group_;
   }
 
   DVLOG(VLOG_LEVEL) << "post visit end: " << *and_term << "@" << and_term;
@@ -129,42 +117,25 @@ void ArithmeticFormulaGenerator::visitAnd(And_ptr and_term) {
 
 void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
-  for (auto& term : * (or_term->term_list)) {
-    current_component_ = or_term;
-    visit(term);
+  if (constraint_information_->is_component(or_term) and current_group_.empty()) {
+    current_group_ = symbol_table_->get_var_name_for_node(or_term, Variable::Type::INT);
   }
+  visit_children_of(or_term);
   DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
 
-  current_component_ = nullptr;
   if (not constraint_information_->is_component(or_term)) { // a rare case, see dependency slicer
+    current_group_ = "";
     return;
   }
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *or_term << "@" << or_term;
-
-  bool has_arithmetic_constraint = false;
-  for (const auto term : *(or_term->term_list)) {
-    auto param_formula = get_term_formula(term);
-    if (param_formula not_eq nullptr) {
-      if (param_formula->get_number_of_variables() > 0) {
-        std::string group_name = get_variable_group_name(or_term, param_formula->get_variable_coefficient_map().begin()->first);
-        param_formula->merge_variables(group_formula_[group_name]);
-        term_group_map_[term] = group_name;
-      }
-      has_arithmetic_constraint = true;
-    }
+  auto group_formula = get_group_formula(current_group_);
+  if (group_formula not_eq nullptr and group_formula->get_number_of_variables() > 0) {
+    auto formula = group_formula->clone();
+    formula->set_type(ArithmeticFormula::Type::UNION);
+    set_term_formula(or_term, formula);
+    term_group_map_[or_term] = current_group_;
   }
-
-  /**
-   * If that component is under disjunction we will need to create an automaton for all variables appearing in this term
-   * Create a formula for the term and decide on group and variables appear in formula during automata construction
-   */
-  if (has_arithmetic_constraint) {
-    auto and_formula = new ArithmeticFormula();
-    and_formula->set_type(ArithmeticFormula::Type::UNION);
-    set_term_formula(or_term, and_formula);
-  }
-
   DVLOG(VLOG_LEVEL) << "post visit end: " << *or_term << "@" << or_term;
 }
 
@@ -177,7 +148,7 @@ void ArithmeticFormulaGenerator::visitNot(Not_ptr not_term) {
   if (child_formula not_eq nullptr) {
     auto formula = child_formula->negate();
     set_term_formula(not_term, formula);
-
+    term_group_map_[not_term] = current_group_;
     if (string_terms_.size() > 0) {
       string_terms_map_[not_term] = string_terms_;
       string_terms_.clear();
@@ -188,6 +159,7 @@ void ArithmeticFormulaGenerator::visitNot(Not_ptr not_term) {
         string_terms_map_.erase(it);
       }
     }
+    term_group_map_.erase(not_term->term);
     delete_term_formula(not_term->term);  // safe to call even there is no formula set
   }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *not_term << "@" << not_term;
@@ -281,7 +253,7 @@ void ArithmeticFormulaGenerator::visitEq(Eq_ptr eq_term) {
     delete_term_formula(eq_term->left_term);
     delete_term_formula(eq_term->right_term);
     set_term_formula(eq_term, formula);
-    AddIntVariables(current_component_, formula);
+    add_int_variables(current_group_, eq_term);
     if (string_terms_.size() > 0) {
       string_terms_map_[eq_term] = string_terms_;
       string_terms_.clear();
@@ -305,7 +277,7 @@ void ArithmeticFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
     delete_term_formula(not_eq_term->left_term);
     delete_term_formula(not_eq_term->right_term);
     set_term_formula(not_eq_term, formula);
-    AddIntVariables(current_component_, formula);
+    add_int_variables(current_group_, not_eq_term);
     if (string_terms_.size() > 0) {
       string_terms_map_[not_eq_term] = string_terms_;
       string_terms_.clear();
@@ -328,7 +300,7 @@ void ArithmeticFormulaGenerator::visitGt(Gt_ptr gt_term) {
     delete_term_formula(gt_term->left_term);
     delete_term_formula(gt_term->right_term);
     set_term_formula(gt_term, formula);
-    AddIntVariables(current_component_, formula);
+    add_int_variables(current_group_, gt_term);
     if (string_terms_.size() > 0) {
       string_terms_map_[gt_term] = string_terms_;
       string_terms_.clear();
@@ -351,7 +323,7 @@ void ArithmeticFormulaGenerator::visitGe(Ge_ptr ge_term) {
     delete_term_formula(ge_term->left_term);
     delete_term_formula(ge_term->right_term);
     set_term_formula(ge_term, formula);
-    AddIntVariables(current_component_, formula);
+    add_int_variables(current_group_, ge_term);
     if (string_terms_.size() > 0) {
       string_terms_map_[ge_term] = string_terms_;
       string_terms_.clear();
@@ -374,7 +346,7 @@ void ArithmeticFormulaGenerator::visitLt(Lt_ptr lt_term) {
     delete_term_formula(lt_term->left_term);
     delete_term_formula(lt_term->right_term);
     set_term_formula(lt_term, formula);
-    AddIntVariables(current_component_, formula);
+    add_int_variables(current_group_, lt_term);
     if (string_terms_.size() > 0) {
       string_terms_map_[lt_term] = string_terms_;
       string_terms_.clear();
@@ -397,7 +369,7 @@ void ArithmeticFormulaGenerator::visitLe(Le_ptr le_term) {
     delete_term_formula(le_term->left_term);
     delete_term_formula(le_term->right_term);
     set_term_formula(le_term, formula);
-    AddIntVariables(current_component_, formula);
+    add_int_variables(current_group_, le_term);
     if (string_terms_.size() > 0) {
       string_terms_map_[le_term] = string_terms_;
       string_terms_.clear();
@@ -642,90 +614,34 @@ void ArithmeticFormulaGenerator::clear_term_formulas() {
   term_formula_.clear();
 }
 
-std::string ArithmeticFormulaGenerator::get_variable_group_name(Term_ptr term, Variable_ptr variable) {
-  return get_variable_group_name(term, variable->getName());
+std::string ArithmeticFormulaGenerator::get_variable_group_name(Variable_ptr variable) {
+  return get_variable_group_name(variable->getName());
 }
 
-std::string ArithmeticFormulaGenerator::get_variable_group_name(Term_ptr term, std::string var_name) {
-  if (variable_group_table_[term].find(var_name) == variable_group_table_[term].end()) {
-    LOG(FATAL)<< "Variable must have a group";
-  }
-  return variable_group_table_[term][var_name];
+std::string ArithmeticFormulaGenerator::get_variable_group_name(std::string var_name) {
+  return variable_group_map_[var_name];
 }
 
 std::string ArithmeticFormulaGenerator::get_term_group_name(Term_ptr term) {
-  if (term_group_map_.find(term) == term_group_map_.end()) {
-    LOG(FATAL)<< "Term must have a group";
+  auto it = term_group_map_.find(term);
+  if (it not_eq term_group_map_.end()) {
+    return it->second;
   }
-  return term_group_map_[term];
+  return "";
 }
 
-void ArithmeticFormulaGenerator::add_group_to_component(std::string group_name, Term_ptr term) {
-  component_groups_[term].insert(group_name);
-}
-
-std::set<std::string> ArithmeticFormulaGenerator::get_groups_in_component(Term_ptr term) {
-  return component_groups_[term];
-}
-
-std::string ArithmeticFormulaGenerator::generate_group_for_component(Term_ptr term) {
+void ArithmeticFormulaGenerator::add_int_variables(std::string group_name, Term_ptr term) {
+  ArithmeticFormula_ptr group_formula = nullptr;
+  auto it = group_formula_.find(group_name);
+  if (it == group_formula_.end()) {
+    group_formula = new ArithmeticFormula();
+    group_formula_[group_name] = group_formula;
+  } else {
+    group_formula = it->second;
+  }
   auto formula = get_term_formula(term);
-  for (const auto& group : get_groups_in_component(term)) {
-    auto group_formula = get_group_formula(group);
-    formula->merge_variables(group_formula);
-  }
-  std::string group_name = generate_group_name(term, "");
-  group_formula_[group_name] = formula->clone();
+  group_formula->merge_variables(formula);
   term_group_map_[term] = group_name;
-  return group_name;
-}
-
-void ArithmeticFormulaGenerator::AddIntVariables(Term_ptr component_term, ArithmeticFormula_ptr formula) {
-  std::string group_name;
-
-  variable_group_table_[component_term]; // make sure we have the entry
-  auto term_table_entry = variable_group_table_.find(component_term); // optimize multiple access
-  auto& variable_group_map = term_table_entry->second; // optimize map entry access for given term
-
-  auto variable_coefficient_map = formula->get_variable_coefficient_map();
-  for (const auto& el : variable_coefficient_map) {
-    auto it = variable_group_map.find(el.first);
-    if (it != variable_group_map.end()) {
-      group_name = it->second;
-      break;
-    }
-  }
-
-  // if no group is found at all, create new one
-  if (group_name.empty()) {
-    group_name = generate_group_name(component_term, variable_coefficient_map.begin()->first);
-    group_formula_[group_name] = new ArithmeticFormula();
-  }
-
-  auto current_group_formula = group_formula_[group_name];
-  // merge each variable's groups together into group_name
-  for (const auto& el : variable_coefficient_map) {
-    auto it = variable_group_map.find(el.first);
-    if (it == variable_group_map.end()) {
-      variable_group_map[el.first] = group_name;
-      current_group_formula->merge_variables(formula);
-    } else if (group_name not_eq it->second) {
-      // merge the two groups
-      auto other_group_formula = group_formula_[it->second];
-      current_group_formula->merge_variables(other_group_formula);
-      for (const auto& el : other_group_formula->get_variable_coefficient_map()) {
-        variable_group_map[el.first] = group_name;
-      }
-      group_formula_.erase(it->second);
-      delete other_group_formula;
-    }
-  }
-}
-
-std::string ArithmeticFormulaGenerator::generate_group_name(Term_ptr term, std::string var_name) {
-  std::string group_name = symbol_table_->get_var_name_for_node(term, Variable::Type::INT);
-  group_name += var_name;
-  return group_name;
 }
 
 bool ArithmeticFormulaGenerator::set_term_formula(Term_ptr term, ArithmeticFormula_ptr formula) {
@@ -742,6 +658,22 @@ void ArithmeticFormulaGenerator::delete_term_formula(Term_ptr term) {
     delete formula;
     term_formula_.erase(term);
   }
+}
+
+void ArithmeticFormulaGenerator::set_group_mappings() {
+  DVLOG(VLOG_LEVEL)<< "start setting int group for components";
+  for (auto& el : term_group_map_) {
+    term_formula_[el.first]->merge_variables(group_formula_[el.second]);
+  }
+  // add a variable entry to symbol table for each group
+  // define a variable mapping for a group
+  for (auto& el : group_formula_) {
+    symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
+    for (const auto& var_entry : el.second->get_variable_coefficient_map()) {
+      variable_group_map_[var_entry.first] = el.first;
+    }
+  }
+  DVLOG(VLOG_LEVEL)<< "end setting int group for components";
 }
 
 } /* namespace Solver */

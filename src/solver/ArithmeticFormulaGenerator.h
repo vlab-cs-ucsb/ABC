@@ -30,9 +30,6 @@
 namespace Vlab {
 namespace Solver {
 
-using VariableGroupMap = std::map<std::string, std::string>;
-using VariableGroupTable = std::map<SMT::Term_ptr, VariableGroupMap>;
-
 class ArithmeticFormulaGenerator: public SMT::Visitor {
 public:
   ArithmeticFormulaGenerator(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr);
@@ -116,34 +113,28 @@ public:
   SMT::TermList& get_string_terms_in(SMT::Term_ptr term);
   void clear_term_formulas();
 
-  std::string get_variable_group_name(SMT::Term_ptr term,SMT::Variable_ptr variable);
-  std::string get_variable_group_name(SMT::Term_ptr term,std::string var_name);
+  std::string get_variable_group_name(SMT::Variable_ptr variable);
+  std::string get_variable_group_name(std::string var_name);
   std::string get_term_group_name(SMT::Term_ptr term);
 
-  void add_group_to_component(std::string group_name, SMT::Term_ptr term);
-  std::set<std::string> get_groups_in_component(SMT::Term_ptr term);
-
-  std::string generate_group_for_component(SMT::Term_ptr term);
 protected:
-  void AddIntVariables(SMT::Term_ptr component_term, Theory::ArithmeticFormula_ptr formula);
-  std::string generate_group_name(SMT::Term_ptr term, std::string var_name);
+  void add_int_variables(std::string group_name, SMT::Term_ptr term);
 
   bool set_term_formula(SMT::Term_ptr term, Theory::ArithmeticFormula_ptr formula);
   void delete_term_formula(SMT::Term_ptr);
+  void set_group_mappings();
 
   SMT::Script_ptr root_;
   SymbolTable_ptr symbol_table_;
   ConstraintInformation_ptr constraint_information_;
   bool has_arithmetic_formula_;
-  SMT::Term_ptr current_component_;
+  std::string current_group_;
 
   std::map<SMT::Term_ptr, Theory::ArithmeticFormula_ptr> term_formula_;
   SMT::TermList string_terms_;
   std::map<SMT::Term_ptr, SMT::TermList> string_terms_map_;
 
-  // for partitioning
-  VariableGroupTable variable_group_table_;
-  std::map<SMT::Term_ptr, std::set<std::string>> component_groups_; // a mapping from a component to groups inside component
+  std::map<std::string, std::string> variable_group_map_; // May be inside symbol table
   std::map<SMT::Term_ptr, std::string> term_group_map_;
   std::map<std::string, Theory::ArithmeticFormula_ptr> group_formula_;
 

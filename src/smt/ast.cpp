@@ -2303,11 +2303,6 @@ std::ostream& operator<<(std::ostream& os, const Primitive& primitive) {
   return os << primitive.str();
 }
 
-const std::string TVariable::Name::NONE = "none";
-const std::string TVariable::Name::BOOL = "Bool";
-const std::string TVariable::Name::INT = "Int";
-const std::string TVariable::Name::STRING = "String";
-
 TVariable::TVariable(TVariable::Type type)
     : type(type) {
 }
@@ -2323,13 +2318,13 @@ TVariable::~TVariable() {
 std::string TVariable::str() const {
   switch (type) {
     case TVariable::Type::NONE:
-      return TVariable::Name::NONE;
+      return "none";
     case TVariable::Type::BOOL:
-      return TVariable::Name::BOOL;
+      return "Bool";
     case TVariable::Type::INT:
-      return TVariable::Name::INT;
+      return "Int";
     case TVariable::Type::STRING:
-      return TVariable::Name::STRING;
+      return "String";
     default:
       LOG(FATAL)<< "Unknown variable type!";
       return "";
