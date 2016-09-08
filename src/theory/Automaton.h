@@ -51,6 +51,12 @@ using CountVector = std::vector<boost::multiprecision::cpp_int>;
 using CountMatrix = std::vector<CountVector>;
 using NextState = std::pair<int, std::vector<bool>>;
 
+// for toDotAscii from libstranger
+typedef struct CharPair_ {
+	unsigned char first;
+	unsigned char last;
+} CharPair, *pCharPair;
+
 class Automaton {
 public:
   enum class Type
@@ -106,6 +112,7 @@ public:
   int getSinkState();
 
   friend std::ostream& operator<<(std::ostream& os, const Automaton& automaton);
+
 protected:
   static DFA_ptr DfaMakePhi(int num_of_variables, int* variable_indices = nullptr);
   static DFA_ptr DfaMakeAny(int num_of_variables, int* variable_indices = nullptr);
@@ -115,6 +122,7 @@ protected:
   static DFA_ptr DFAProjectAway(int index, DFA_ptr dfa);
 //  static DFA_ptr DFAProjectAway(std::vector<int> index, int num_of_variables, DFA_ptr dfa);
   static DFA_ptr DFAProjectTo(int index, int num_of_variables, DFA_ptr dfa);
+  static DFA_ptr DfaL1ToL2(int start, int end, int num_of_variables, int* variable_indices = nullptr);
 
   bool isAcceptingSingleWord();
   // TODO update it to work for non-accepting inputs
@@ -155,6 +163,19 @@ protected:
 
   bool isCyclic(int state, std::map<int, bool>& is_discovered, std::map<int, bool>& is_stack_member);
   bool isStateReachableFrom(int search_state, int from_state, std::map<int, bool>& is_stack_member);
+
+  /*
+   * Operations from LIBSTRANGER
+   */
+  void getTransitionCharsHelper(pCharPair result[], char* transitions, int* indexInResult, int currentBit, int var);
+  void getTransitionChars(char* transitions, int var, pCharPair result[], int* pSize);
+  char** mergeCharRanges(pCharPair charRanges[], int* p_size);
+  void charToAsciiDigits(unsigned char ci, char s[]);
+  void charToAscii(char* asciiVal, unsigned char c);
+  void fillOutCharRange(char* range, char firstChar, char lastChar);
+  char* bintostr(unsigned long, int k);
+  unsigned char strtobin(char* binChar, int var);
+  static int find_sink(DFA_ptr dfa);
 
   const Automaton::Type type_;
   bool is_count_matrix_cached_;
