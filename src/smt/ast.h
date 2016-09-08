@@ -1132,14 +1132,6 @@ class TVariable : public Visitable {
   virtual void accept(Visitor_ptr) override;
   virtual void visit_children(Visitor_ptr) override;
 
-  class Name {
-   public:
-    static const std::string NONE;
-    static const std::string BOOL;
-    static const std::string INT;
-    static const std::string STRING;
-  };
-
   friend std::ostream& operator<<(std::ostream& os, const TVariable& t_variable);
  protected:
   const TVariable::Type type;
@@ -1271,6 +1263,7 @@ class Variable : public TVariable {
   void setSymbolic(bool is_symbolic);
   bool isLocalLetVar() const;
   void setLocalLetVar(bool is_local_let_var);
+  void set_group_var(bool is_group_var);
 
   virtual void accept(Visitor_ptr) override;
   virtual void visit_children(Visitor_ptr) override;

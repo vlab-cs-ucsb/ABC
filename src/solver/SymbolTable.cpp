@@ -290,7 +290,6 @@ Value_ptr SymbolTable::get_value(std::string var_name) {
 }
 
 Value_ptr SymbolTable::get_value(Variable_ptr variable) {
-
   for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); it++) {
     auto representative_variable = get_representative_variable_of_at_scope((*it), variable);
     auto entry = variable_value_table[(*it)].find(representative_variable);
@@ -313,10 +312,14 @@ Value_ptr SymbolTable::get_value(Variable_ptr variable) {
     result = new Value(Theory::StringAutomaton::makeAnyString());
     DVLOG(VLOG_LEVEL) << "initialized variable as any string: " << *variable;
     break;
+  case Variable::Type::NONE:
+    return nullptr;
+    break;
   default:
     LOG(FATAL) << "unknown variable type" << *variable;
     break;
   }
+
   set_value(variable, result);
   return result;
 }
@@ -338,8 +341,15 @@ bool SymbolTable::set_value(std::string var_name, Value_ptr value) {
 }
 
 bool SymbolTable::set_value(Variable_ptr variable, Value_ptr value) {
-  variable_value_table[scope_stack.back()][variable] = value;
-  return true;
+  auto& current_scope_values = variable_value_table[top_scope()];
+  auto it = current_scope_values.find(variable);
+  if (it not_eq current_scope_values.end()) {
+    delete it->second;
+    it->second = value;
+  } else {
+    current_scope_values[variable] = value;
+  }
+  return value->isSatisfiable();
 }
 
 /**
@@ -357,15 +367,13 @@ bool SymbolTable::IntersectValue(std::string var_name, Value_ptr value) {
  */
 bool SymbolTable::IntersectValue(Variable_ptr variable, Value_ptr value) {
   Value_ptr variable_old_value = get_value(variable);
-  Value_ptr variable_new_value = variable_old_value->intersect(value);
-
-  if (variable_value_table[scope_stack.back()][variable] == variable_old_value) {
-    set_value(variable, variable_new_value);
-    delete variable_old_value; variable_old_value = nullptr;
+  Value_ptr variable_new_value = nullptr;
+  if (variable_old_value not_eq nullptr) {
+    variable_new_value = variable_old_value->intersect(value);
   } else {
-    set_value(variable, variable_new_value);
+    variable_new_value = value;
   }
-  return true;
+  return set_value(variable, variable_new_value);
 }
 
 bool SymbolTable::UnionValue(std::string var_name, Value_ptr value) {
@@ -374,15 +382,17 @@ bool SymbolTable::UnionValue(std::string var_name, Value_ptr value) {
 
 bool SymbolTable::UnionValue(Variable_ptr variable, Value_ptr value) {
   Value_ptr variable_old_value = get_value(variable);
-  Value_ptr variable_new_value = variable_old_value->union_(value);
-
-  if (variable_value_table[scope_stack.back()][variable] == variable_old_value) {
-    set_value(variable, variable_new_value);
-    delete variable_old_value; variable_old_value = nullptr;
+  Value_ptr variable_new_value = nullptr;
+  if (variable_old_value not_eq nullptr) {
+    variable_new_value = variable_old_value->union_(value);
+    auto it = variable_value_table[top_scope()].find(variable);
+    if (it != variable_value_table[top_scope()].end() and it->second == variable_old_value) {
+      delete variable_old_value;
+    }
   } else {
-    set_value(variable, variable_new_value);
+    variable_new_value = value;
   }
-  return true;
+  return set_value(variable, variable_new_value);
 }
 
 /**
