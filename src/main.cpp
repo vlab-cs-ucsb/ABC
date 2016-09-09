@@ -31,9 +31,6 @@
 #include "theory/StringRelation.h"
 #include "utils/RegularExpression.h"
 
-#define NDEBUG
-
-
 static const std::string get_default_output_dir();
 static const std::string get_default_log_dir();
 
@@ -300,6 +297,7 @@ int main(const int argc, const char **argv) {
     }
   }
   LOG(INFO) << "done.";
+  DVLOG(1) << "Ndebug test";
   if (file != nullptr)
     delete file;
   return 0;

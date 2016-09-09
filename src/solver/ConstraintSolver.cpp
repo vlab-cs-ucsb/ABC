@@ -70,8 +70,7 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
   Value_ptr result = getTermValue(assert_command->term);
   bool is_satisfiable = result->is_satisfiable();
-  symbol_table_->updateSatisfiability(is_satisfiable);
-  symbol_table_->setScopeSatisfiability(is_satisfiable);
+  symbol_table_->update_satisfiability_result(is_satisfiable);
   if ((Term::Type::OR not_eq assert_command->term->type()) and (Term::Type::AND not_eq assert_command->term->type())) {
 
     if (is_satisfiable) {
@@ -225,7 +224,6 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
         clearTermValuesAndLocalLetVars();
       }
 
-      symbol_table_->setScopeSatisfiability(is_scope_satisfiable);
       is_satisfiable = is_satisfiable or is_scope_satisfiable;
 
       symbol_table_->pop_scope();
@@ -240,6 +238,44 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
   // 2- if possible call visitOr function of string solver
   // 3- implement visitOr for mixed (single track string) operations, union all variables that appear under or_term
   LOG(FATAL)<< "implement me";
+  // semantics will be similar to below
+//  void SymbolTable::UnionValuesOfVariables(Script_ptr script) {
+//    if (scopes.size() < 2) {
+//      return;
+//    } else if (variable_value_table[script].size() > 0) { // a union operation is done before
+//      return;
+//    }
+//
+//    push_scope(script);
+//    for (auto variable_entry : variables) {
+//      Value_ptr value = nullptr;
+//      for (auto scope : scopes) { // dnf form
+//        // union values
+//        if (is_scope_satisfiable[scope]) {
+//          auto variable = variable_entry.second;
+//          auto top_equiv_class = get_equivalence_class_of(variable);
+//          auto local_equiv_class = get_equivalence_class_of_at_scope(scope, variable);
+//          Value_ptr scope_var_value = nullptr;
+//          if (top_equiv_class or local_equiv_class) {
+//            variable = local_equiv_class->get_representative_variable();
+//          }
+//          scope_var_value = get_value_at_scope(scope, variable);
+//
+//          if (value) {
+//            Value_ptr tmp = value;
+//            value = tmp->union_(scope_var_value);
+//            delete tmp;
+//          } else {
+//            value = scope_var_value->clone();
+//          }
+//        }
+//      }
+//      if (value) {
+//        set_value(variable_entry.second, value);
+//      }
+//    }
+//    pop_scope();
+//  }
 
   Value_ptr result = new Value(is_satisfiable);
   setTermValue(or_term, result);

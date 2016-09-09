@@ -35,55 +35,8 @@ bool SymbolTable::isSatisfiable() {
   return global_assertion_result;
 }
 
-void SymbolTable::updateSatisfiability(bool value) {
+void SymbolTable::update_satisfiability_result(bool value) {
   global_assertion_result = global_assertion_result and value;
-}
-
-void SymbolTable::setScopeSatisfiability(bool value) {
-  is_scope_satisfiable[scope_stack.back()] = value;
-}
-
-/**
- * Unions values of variables if there is disjunction in DNF form
- * (May need a fix when doing union for binary int automaton)
- *
- */
-void SymbolTable::UnionValuesOfVariables(Script_ptr script) {
-  if (scopes.size() < 2) {
-    return;
-  } else if (variable_value_table[script].size() > 0) { // a union operation is done before
-    return;
-  }
-
-  push_scope(script);
-  for (auto variable_entry : variables) {
-    Value_ptr value = nullptr;
-    for (auto scope : scopes) { // dnf form
-      // union values
-      if (is_scope_satisfiable[scope]) {
-        auto variable = variable_entry.second;
-        auto top_equiv_class = get_equivalence_class_of(variable);
-        auto local_equiv_class = get_equivalence_class_of_at_scope(scope, variable);
-        Value_ptr scope_var_value = nullptr;
-        if (top_equiv_class or local_equiv_class) {
-          variable = local_equiv_class->get_representative_variable();
-        }
-        scope_var_value = get_value_at_scope(scope, variable);
-
-        if (value) {
-          Value_ptr tmp = value;
-          value = tmp->union_(scope_var_value);
-          delete tmp;
-        } else {
-          value = scope_var_value->clone();
-        }
-      }
-    }
-    if (value) {
-      set_value(variable_entry.second, value);
-    }
-  }
-  pop_scope();
 }
 
 /**

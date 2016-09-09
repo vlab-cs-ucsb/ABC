@@ -108,12 +108,18 @@ void ArithmeticConstraintSolver::visitAssert(Assert_ptr assert_command) {
  * 2- Second visit 'or' terms if there is any
  */
 void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
-  DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
   if (not constraint_information_->is_component(and_term)) {
+    DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
     visit_children_of(and_term);
     DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
     return;
   }
+
+  if (not constraint_information_->has_arithmetic_constraint(and_term)) {
+    return;
+  }
+
+  DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
 
   bool is_satisfiable = true;
   bool has_arithmetic_formula = false;
@@ -192,22 +198,24 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
  * 2) Update result (union of scopes) after all
  */
 void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
-  DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
   if (not constraint_information_->is_component(or_term)) {  // a rare case, see dependency slicer
+    DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
     visit_children_of(or_term);
     DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
     return;
   }
-  DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
 
+  if (not constraint_information_->has_arithmetic_constraint(or_term)) {
+    return;
+  }
+
+  DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
   bool is_satisfiable = false;
-  bool has_arithmetic_formula = false;
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(or_term);
   Value_ptr or_value = nullptr;
   for (auto term : *(or_term->term_list)) {
     auto formula = arithmetic_formula_generator_.get_term_formula(term);
     if (formula != nullptr) {
-      has_arithmetic_formula = true;
       symbol_table_->push_scope(term);
       visit(term);
       auto param = get_term_value(term);
@@ -233,15 +241,18 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
   DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *or_term << "@" << or_term;
-  if (has_arithmetic_formula) {
+  if (constraint_information_->has_arithmetic_constraint(or_term)) {
     if (is_satisfiable) {
-      symbol_table_->IntersectValue(group_name, or_value);  // update value for union, this is upper scope
+      // scope already reads value from upper scope
+      // implicit intersection is already done
+//      symbol_table_->IntersectValue(group_name, or_value);  // update value for union, this is upper scope
+        symbol_table_->set_value(group_name, or_value);
     } else {
       auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
       auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(group_formula, is_natural_numbers_only_));
       symbol_table_->set_value(group_name, value);
+      delete or_value; // nullptr safe
     }
-    delete or_value; // nullptr safe
   }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *or_term << "@" << or_term;
 }

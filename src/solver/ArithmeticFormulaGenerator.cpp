@@ -26,7 +26,8 @@ ArithmeticFormulaGenerator::ArithmeticFormulaGenerator(Script_ptr script, Symbol
                                                        ConstraintInformation_ptr constraint_information)
     : root_(script),
       symbol_table_(symbol_table),
-      constraint_information_(constraint_information) {
+      constraint_information_(constraint_information),
+      has_mixed_constraint_{false} {
 
 }
 
@@ -93,12 +94,14 @@ void ArithmeticFormulaGenerator::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
   if (constraint_information_->is_component(and_term) and current_group_.empty()) {
     current_group_ = symbol_table_->get_var_name_for_node(and_term, Variable::Type::INT);
+    has_mixed_constraint_ = false;
   }
   visit_children_of(and_term);
   DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 
   if (not constraint_information_->is_component(and_term)) {
     current_group_ = "";
+    has_mixed_constraint_ = false;
     return;
   }
 
@@ -111,6 +114,9 @@ void ArithmeticFormulaGenerator::visitAnd(And_ptr and_term) {
     set_term_formula(and_term, formula);
     term_group_map_[and_term] = current_group_;
     constraint_information_->add_arithmetic_constraint(and_term);
+    if (has_mixed_constraint_) {
+      constraint_information_->add_mixed_constraint(and_term);
+    }
   }
 
   DVLOG(VLOG_LEVEL) << "post visit end: " << *and_term << "@" << and_term;
@@ -121,12 +127,14 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
   if (constraint_information_->is_component(or_term) and current_group_.empty()) {
     current_group_ = symbol_table_->get_var_name_for_node(or_term, Variable::Type::INT);
+    has_mixed_constraint_ = false;
   }
   visit_children_of(or_term);
   DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
 
   if (not constraint_information_->is_component(or_term)) { // a rare case, see dependency slicer
     current_group_ = "";
+    has_mixed_constraint_ = false;
     return;
   }
 
@@ -138,6 +146,9 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
     set_term_formula(or_term, formula);
     term_group_map_[or_term] = current_group_;
     constraint_information_->add_arithmetic_constraint(or_term);
+    if (has_mixed_constraint_) {
+      constraint_information_->add_mixed_constraint(or_term);
+    }
   }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *or_term << "@" << or_term;
 }
@@ -156,6 +167,7 @@ void ArithmeticFormulaGenerator::visitNot(Not_ptr not_term) {
       string_terms_map_[not_term] = string_terms_;
       string_terms_.clear();
       constraint_information_->add_mixed_constraint(not_term);
+      has_mixed_constraint_ = true;
     } else {
       auto it = string_terms_map_.find(not_term->term);
       if (it not_eq string_terms_map_.end()) {
@@ -263,6 +275,7 @@ void ArithmeticFormulaGenerator::visitEq(Eq_ptr eq_term) {
       string_terms_map_[eq_term] = string_terms_;
       string_terms_.clear();
       constraint_information_->add_mixed_constraint(eq_term);
+      has_mixed_constraint_ = true;
     }
     constraint_information_->add_arithmetic_constraint(eq_term);
   }
@@ -288,6 +301,7 @@ void ArithmeticFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
       string_terms_map_[not_eq_term] = string_terms_;
       string_terms_.clear();
       constraint_information_->add_mixed_constraint(not_eq_term);
+      has_mixed_constraint_ = true;
     }
     constraint_information_->add_arithmetic_constraint(not_eq_term);
   }
@@ -312,6 +326,7 @@ void ArithmeticFormulaGenerator::visitGt(Gt_ptr gt_term) {
       string_terms_map_[gt_term] = string_terms_;
       string_terms_.clear();
       constraint_information_->add_mixed_constraint(gt_term);
+      has_mixed_constraint_ = true;
     }
     constraint_information_->add_arithmetic_constraint(gt_term);
   }
@@ -336,6 +351,7 @@ void ArithmeticFormulaGenerator::visitGe(Ge_ptr ge_term) {
       string_terms_map_[ge_term] = string_terms_;
       string_terms_.clear();
       constraint_information_->add_mixed_constraint(ge_term);
+      has_mixed_constraint_ = true;
     }
     constraint_information_->add_arithmetic_constraint(ge_term);
   }
@@ -360,6 +376,7 @@ void ArithmeticFormulaGenerator::visitLt(Lt_ptr lt_term) {
       string_terms_map_[lt_term] = string_terms_;
       string_terms_.clear();
       constraint_information_->add_mixed_constraint(lt_term);
+      has_mixed_constraint_ = true;
     }
     constraint_information_->add_arithmetic_constraint(lt_term);
   }
@@ -384,6 +401,7 @@ void ArithmeticFormulaGenerator::visitLe(Le_ptr le_term) {
       string_terms_map_[le_term] = string_terms_;
       string_terms_.clear();
       constraint_information_->add_mixed_constraint(le_term);
+      has_mixed_constraint_ = true;
     }
     constraint_information_->add_arithmetic_constraint(le_term);
   }

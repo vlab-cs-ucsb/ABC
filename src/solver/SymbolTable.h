@@ -46,9 +46,7 @@ public:
   virtual ~SymbolTable();
 
   bool isSatisfiable();
-  void updateSatisfiability(bool value);
-  void setScopeSatisfiability(bool value);
-  void UnionValuesOfVariables(SMT::Script_ptr script);
+  void update_satisfiability_result(bool value);
   void clearLetScopes();
 
   void add_variable(SMT::Variable_ptr);
@@ -119,11 +117,6 @@ private:
    */
   std::vector<SMT::Visitable_ptr> scope_stack;
   std::set<SMT::Visitable_ptr> scopes;
-
-  /**
-   * For each scope keep satisfiability result
-   */
-  std::map<SMT::Visitable_ptr, bool> is_scope_satisfiable;
 
   /**
    * Number of usages of variables
