@@ -41,8 +41,23 @@ AC_SUBST([JAVA_HEADERS])
 AC_LANG([C++])
 AC_PROG_CXX
 AX_CXX_COMPILE_STDCXX_14([noext])
-AX_CHECK_COMPILE_FLAG([-Wall -Wextra -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter],\
-    [CXXFLAGS="$CXXFLAGS -Wall -Wextra -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter"])
+AX_CHECK_COMPILE_FLAG([-Wall -Wextra -Wno-uninitialized -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter],\
+    [CXXFLAGS="$CXXFLAGS -Wall -Wextra -Wno-uninitialized -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter"])
+
+# Check for NDEBUG flag
+AC_MSG_CHECKING([whether to build with debug information])
+AC_ARG_ENABLE([debug],
+    [AS_HELP_STRING([--enable-debug],
+        [enable debug data generation (defult=yes)])],
+    [debugit="$enableval"],
+    [debugit=yes])
+AC_MSG_RESULT([$debugit])
+
+if test x"$debugit" = x"yes"; then
+    AC_DEFINE([DEBUG],[],[Debug Mode])
+else
+    AC_DEFINE([NDEBUG],[],[No-debug Mode])
+fi
 
 
 AM_PROG_LEX

@@ -1,5 +1,5 @@
 SUBDIRS = ../utils
-AM_CXXFLAGS = -g
+AM_CXXFLAGS =
 
 #AM_LDFLAGS = 
 

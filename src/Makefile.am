@@ -1,5 +1,5 @@
 SUBDIRS = solver 
-AM_CXXFLAGS = -g
+AM_CXXFLAGS =
 
 
 if JAVA_HOME_VALID

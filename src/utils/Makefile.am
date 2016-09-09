@@ -1,6 +1,6 @@
 # AM_LDFLAGS = $(LIBGLOG)
 
-AM_CXXFLAGS = -g
+AM_CXXFLAGS =
 
 noinst_LTLIBRARIES = libabcutils.la
 
