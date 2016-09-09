@@ -38,7 +38,7 @@ void ArithmeticConstraintSolver::start(Visitable_ptr node) {
 
 void ArithmeticConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "Arithmetic constraint solving starts at root";
-  visitScript(root);
+  visitScript(root_);
   end();
 }
 
@@ -123,40 +123,17 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 
   bool is_satisfiable = true;
   bool has_arithmetic_formula = false;
-  std::vector<Term_ptr> or_terms;
+
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(and_term);
   Value_ptr and_value = nullptr;
+  /**
+   * Assuming disjunctions are placed correctly based on the context
+   * by default syntactic processor placed them to end
+   */
   for (auto term : *(and_term->term_list)) {
     auto formula = arithmetic_formula_generator_.get_term_formula(term);
     if (formula != nullptr) {
       has_arithmetic_formula = true;
-      if (dynamic_cast<Or_ptr>(term)) {
-        or_terms.push_back(term);  // process disjunction later (important for mixed constraints)
-      } else {
-        visit(term);
-        auto param = get_term_value(term);
-        is_satisfiable = param->is_satisfiable();
-        if (is_satisfiable) {
-          if (and_value == nullptr) {
-            and_value = param;
-            term_values_[term] = nullptr;  // to avoid seg fault
-          } else {
-            auto old_value = and_value;
-            and_value = and_value->intersect(param);
-            delete old_value;
-            is_satisfiable = and_value->is_satisfiable();
-          }
-        }
-        clear_term_value(term);
-        if (not is_satisfiable) {
-          break;
-        }
-      }
-    }
-  }
-
-  if (is_satisfiable and has_arithmetic_formula) {
-    for (auto term : or_terms) {  // handle disjunctions (important to have them after)
       visit(term);
       auto param = get_term_value(term);
       is_satisfiable = param->is_satisfiable();
@@ -177,6 +154,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
       }
     }
   }
+
   DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *and_term << "@" << and_term;
@@ -185,7 +163,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
       symbol_table_->IntersectValue(group_name, and_value);  // update value
     } else {
       auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
-      auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(group_formula, is_natural_numbers_only_));
+      auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(group_formula->clone(), is_natural_numbers_only_));
       symbol_table_->set_value(group_name, value);
     }
     delete and_value;
@@ -249,7 +227,7 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
         symbol_table_->set_value(group_name, or_value);
     } else {
       auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
-      auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(group_formula, is_natural_numbers_only_));
+      auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(group_formula->clone(), is_natural_numbers_only_));
       symbol_table_->set_value(group_name, value);
       delete or_value; // nullptr safe
     }
