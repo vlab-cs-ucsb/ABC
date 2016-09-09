@@ -349,7 +349,7 @@ bool SymbolTable::set_value(Variable_ptr variable, Value_ptr value) {
   } else {
     current_scope_values[variable] = value;
   }
-  return value->isSatisfiable();
+  return value->is_satisfiable();
 }
 
 /**
@@ -371,7 +371,7 @@ bool SymbolTable::IntersectValue(Variable_ptr variable, Value_ptr value) {
   if (variable_old_value not_eq nullptr) {
     variable_new_value = variable_old_value->intersect(value);
   } else {
-    variable_new_value = value;
+    variable_new_value = value->clone();
   }
   return set_value(variable, variable_new_value);
 }
@@ -390,7 +390,7 @@ bool SymbolTable::UnionValue(Variable_ptr variable, Value_ptr value) {
       delete variable_old_value;
     }
   } else {
-    variable_new_value = value;
+    variable_new_value = value->clone();
   }
   return set_value(variable, variable_new_value);
 }

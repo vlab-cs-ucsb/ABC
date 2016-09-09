@@ -127,7 +127,6 @@ protected:
   SMT::Script_ptr root_;
   SymbolTable_ptr symbol_table_;
   ConstraintInformation_ptr constraint_information_;
-  bool has_arithmetic_formula_;
   std::string current_group_;
 
   std::map<SMT::Term_ptr, Theory::ArithmeticFormula_ptr> term_formula_;

@@ -25,14 +25,21 @@ class ConstraintInformation {
   ConstraintInformation();
   virtual ~ConstraintInformation();
 
-  bool is_component(SMT::Visitable_ptr);
-  void add_component(SMT::Visitable_ptr);
-  void remove_component(SMT::Visitable_ptr);
-
-  std::set<SMT::Visitable_ptr> get_components();
+  bool is_component(const SMT::Visitable_ptr) const;
+  void add_component(const SMT::Visitable_ptr);
+  void remove_component(const SMT::Visitable_ptr);
+  const std::set<SMT::Visitable_ptr> get_components() const;
   
+  bool has_arithmetic_constraint(const SMT::Visitable_ptr) const;
+  void add_arithmetic_constraint(const SMT::Visitable_ptr);
+
+  bool has_string_constraint(const SMT::Visitable_ptr) const;
+  void add_string_constraint(const SMT::Visitable_ptr);
+
  private:
   std::set<SMT::Visitable_ptr> components_;
+  std::set<SMT::Visitable_ptr> arithmetic_constraints_;
+  std::set<SMT::Visitable_ptr> string_constraints_;
 };
 
 using ConstraintInformation_ptr = ConstraintInformation*;

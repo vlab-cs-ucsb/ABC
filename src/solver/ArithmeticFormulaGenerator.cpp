@@ -26,8 +26,7 @@ ArithmeticFormulaGenerator::ArithmeticFormulaGenerator(Script_ptr script, Symbol
                                                        ConstraintInformation_ptr constraint_information)
     : root_(script),
       symbol_table_(symbol_table),
-      constraint_information_(constraint_information),
-      has_arithmetic_formula_{false} {
+      constraint_information_(constraint_information) {
 
 }
 
@@ -42,19 +41,21 @@ ArithmeticFormulaGenerator::~ArithmeticFormulaGenerator() {
 }
 
 void ArithmeticFormulaGenerator::start(Visitable_ptr node) {
-  DVLOG(VLOG_LEVEL) << "Arithmetic constraint extraction starts at node: " << node;
-  has_arithmetic_formula_ = false;
-  visit(node);
-  set_group_mappings();
-  end();
+  if (Option::Solver::LIA_ENGINE_ENABLED) {
+    DVLOG(VLOG_LEVEL) << "Arithmetic constraint extraction starts at node: " << node;
+    visit(node);
+    set_group_mappings();
+    end();
+  }
 }
 
 void ArithmeticFormulaGenerator::start() {
-  DVLOG(VLOG_LEVEL) << "Arithmetic constraint extraction starts at root";
-  has_arithmetic_formula_ = false;
-  visit(root_);
-  set_group_mappings();
-  end();
+  if (Option::Solver::LIA_ENGINE_ENABLED) {
+    DVLOG(VLOG_LEVEL) << "Arithmetic constraint extraction starts at root";
+    visit(root_);
+    set_group_mappings();
+    end();
+  }
 }
 
 void ArithmeticFormulaGenerator::end() {
@@ -109,6 +110,7 @@ void ArithmeticFormulaGenerator::visitAnd(And_ptr and_term) {
     formula->set_type(ArithmeticFormula::Type::INTERSECT);
     set_term_formula(and_term, formula);
     term_group_map_[and_term] = current_group_;
+    constraint_information_->add_arithmetic_constraint(and_term);
   }
 
   DVLOG(VLOG_LEVEL) << "post visit end: " << *and_term << "@" << and_term;
@@ -135,6 +137,7 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
     formula->set_type(ArithmeticFormula::Type::UNION);
     set_term_formula(or_term, formula);
     term_group_map_[or_term] = current_group_;
+    constraint_information_->add_arithmetic_constraint(or_term);
   }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *or_term << "@" << or_term;
 }
@@ -159,6 +162,7 @@ void ArithmeticFormulaGenerator::visitNot(Not_ptr not_term) {
         string_terms_map_.erase(it);
       }
     }
+    constraint_information_->add_arithmetic_constraint(not_term);
     term_group_map_.erase(not_term->term);
     delete_term_formula(not_term->term);  // safe to call even there is no formula set
   }
@@ -258,7 +262,7 @@ void ArithmeticFormulaGenerator::visitEq(Eq_ptr eq_term) {
       string_terms_map_[eq_term] = string_terms_;
       string_terms_.clear();
     }
-    has_arithmetic_formula_ = true;
+    constraint_information_->add_arithmetic_constraint(eq_term);
   }
 
   DVLOG(VLOG_LEVEL) << "post visit end: " << *eq_term << "@" << eq_term;
@@ -282,7 +286,7 @@ void ArithmeticFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
       string_terms_map_[not_eq_term] = string_terms_;
       string_terms_.clear();
     }
-    has_arithmetic_formula_ = true;
+    constraint_information_->add_arithmetic_constraint(not_eq_term);
   }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *not_eq_term << "@" << not_eq_term;
 }
@@ -305,7 +309,7 @@ void ArithmeticFormulaGenerator::visitGt(Gt_ptr gt_term) {
       string_terms_map_[gt_term] = string_terms_;
       string_terms_.clear();
     }
-    has_arithmetic_formula_ = true;
+    constraint_information_->add_arithmetic_constraint(gt_term);
   }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *gt_term << "@" << gt_term;
 }
@@ -328,7 +332,7 @@ void ArithmeticFormulaGenerator::visitGe(Ge_ptr ge_term) {
       string_terms_map_[ge_term] = string_terms_;
       string_terms_.clear();
     }
-    has_arithmetic_formula_ = true;
+    constraint_information_->add_arithmetic_constraint(ge_term);
   }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *ge_term << "@" << ge_term;
 }
@@ -351,7 +355,7 @@ void ArithmeticFormulaGenerator::visitLt(Lt_ptr lt_term) {
       string_terms_map_[lt_term] = string_terms_;
       string_terms_.clear();
     }
-    has_arithmetic_formula_ = true;
+    constraint_information_->add_arithmetic_constraint(lt_term);
   }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *lt_term << "@" << lt_term;
 }
@@ -374,7 +378,7 @@ void ArithmeticFormulaGenerator::visitLe(Le_ptr le_term) {
       string_terms_map_[le_term] = string_terms_;
       string_terms_.clear();
     }
-    has_arithmetic_formula_ = true;
+    constraint_information_->add_arithmetic_constraint(le_term);
   }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *le_term << "@" << le_term;
 }
@@ -576,7 +580,7 @@ void ArithmeticFormulaGenerator::visitVarBinding(VarBinding_ptr var_binding) {
 }
 
 bool ArithmeticFormulaGenerator::has_arithmetic_formula() {
-  return has_arithmetic_formula_;
+  return false;
 }
 
 ArithmeticFormula_ptr ArithmeticFormulaGenerator::get_term_formula(Term_ptr term) {

@@ -189,7 +189,7 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
     if(relation != nullptr) {
       visit(term);
       param = get_term_value(term);
-      is_satisfiable = is_satisfiable and param->isSatisfiable();
+      is_satisfiable = is_satisfiable and param->is_satisfiable();
       string_relation_generator_.delete_term_relation(term);
       if(!is_satisfiable) {
         result = new Value(MultiTrackAutomaton::makePhi(relation->get_num_tracks()));

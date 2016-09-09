@@ -38,6 +38,7 @@ class ArithmeticConstraintSolver : public AstTraverser {
   void start(SMT::Visitable_ptr);
   void start();
   void end();
+  void collect_arithmetic_constraint_info();
 
   void setCallbacks();
 
@@ -49,14 +50,12 @@ class ArithmeticConstraintSolver : public AstTraverser {
   std::string get_int_variable_name(SMT::Term_ptr);
   Value_ptr get_term_value(SMT::Term_ptr term);
   bool set_term_value(SMT::Term_ptr term, Value_ptr value);
-  bool UpdateTermValue(SMT::Term_ptr term, Value_ptr value);
+  bool set_group_value(SMT::Term_ptr term, Value_ptr value);
   void clear_term_value(SMT::Term_ptr term);
   void clear_term_values();
   bool has_string_terms(SMT::Term_ptr term);
   SMT::TermList& get_string_terms_in(SMT::Term_ptr term);
   std::map<SMT::Term_ptr, SMT::TermList>& get_string_terms_map();
-  void assign(std::map<SMT::Term_ptr, SMT::Term_ptr>& term_value_index, TermValueMap& term_values,
-              std::map<SMT::Term_ptr, SMT::TermList>& string_terms_map);
 
  protected:
   bool is_natural_numbers_only_;

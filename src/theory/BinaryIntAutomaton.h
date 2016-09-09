@@ -65,6 +65,7 @@ public:
 
   ArithmeticFormula_ptr get_formula();
   void set_formula(ArithmeticFormula_ptr formula);
+  bool is_natural_number();
   bool HasNegative1();
   BinaryIntAutomaton_ptr Complement();
   BinaryIntAutomaton_ptr Intersect(BinaryIntAutomaton_ptr);

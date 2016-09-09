@@ -297,6 +297,10 @@ void BinaryIntAutomaton::set_formula(ArithmeticFormula_ptr formula) {
   this->formula_ = formula;
 }
 
+bool BinaryIntAutomaton::is_natural_number() {
+  return is_natural_number_;
+}
+
 bool BinaryIntAutomaton::HasNegative1() {
   CHECK_EQ(1, num_of_variables_)<< "implemented for single track binary automaton";
 

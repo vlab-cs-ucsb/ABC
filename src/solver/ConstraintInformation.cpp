@@ -24,23 +24,38 @@ ConstraintInformation::~ConstraintInformation() {
   // TODO Auto-generated destructor stub
 }
 
-bool ConstraintInformation::is_component(Visitable_ptr node) {
-  auto entry = components_.find(node);
-  return (entry not_eq components_.end());
+bool ConstraintInformation::is_component(const Visitable_ptr node) const {
+  return (components_.find(node) not_eq components_.end());
 }
 
-void ConstraintInformation::add_component(Visitable_ptr node) {
+void ConstraintInformation::add_component(const Visitable_ptr node) {
   components_.insert(node);
 }
 
-void ConstraintInformation::remove_component(Visitable_ptr node) {
+void ConstraintInformation::remove_component(const Visitable_ptr node) {
   components_.erase(node);
 }
 
-std::set<Visitable_ptr> ConstraintInformation::get_components(){
+const std::set<Visitable_ptr> ConstraintInformation::get_components() const {
 	return components_;
 }
 
+bool ConstraintInformation::has_arithmetic_constraint(const Visitable_ptr node) const {
+  return (arithmetic_constraints_.find(node) not_eq arithmetic_constraints_.end());
+}
+
+void ConstraintInformation::add_arithmetic_constraint(const Visitable_ptr node) {
+  arithmetic_constraints_.insert(node);
+}
+
+bool ConstraintInformation::has_string_constraint(const Visitable_ptr node) const {
+  return (string_constraints_.find(node) not_eq string_constraints_.end());
+}
+
+void ConstraintInformation::add_string_constraint(const Visitable_ptr node) {
+  string_constraints_.insert(node);
+}
 
 } /* namespace Solver */
 } /* namespace Vlab */
+

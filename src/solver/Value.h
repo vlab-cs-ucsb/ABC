@@ -19,6 +19,9 @@
 #include "../theory/MultiTrackAutomaton.h"
 #include "../theory/StringAutomaton.h"
 
+/**
+ * TODO replace value with Automaton class to benifit from polym.
+ */
 namespace Vlab {
 namespace Solver {
 
@@ -82,7 +85,7 @@ class Value {
   Value_ptr times(Value_ptr other_value) const;
   Value_ptr minus(Value_ptr other_value) const;
 
-  bool isSatisfiable();bool isSingleValue();
+  bool is_satisfiable();bool isSingleValue();
   std::string getASatisfyingExample();
 
   class Name {

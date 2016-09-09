@@ -473,7 +473,7 @@ Value_ptr Value::minus(Value_ptr other_value) const {
   return result;
 }
 
-bool Value::isSatisfiable() {
+bool Value::is_satisfiable() {
   bool is_satisfiable = false;
   switch (type) {
     case Type::NONE:

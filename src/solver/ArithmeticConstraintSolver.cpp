@@ -29,26 +29,16 @@ ArithmeticConstraintSolver::ArithmeticConstraintSolver(Script_ptr script, Symbol
 ArithmeticConstraintSolver::~ArithmeticConstraintSolver() {
 }
 
-/**
- * Used to solve local arithmetic constraints
- */
+
 void ArithmeticConstraintSolver::start(Visitable_ptr node) {
   DVLOG(VLOG_LEVEL) << "Arithmetic constraint solving starts at node: " << node;
-  arithmetic_formula_generator_.start(node);
-  if (arithmetic_formula_generator_.has_arithmetic_formula()) {
-    string_terms_map_ = arithmetic_formula_generator_.get_string_terms_map();
-    this->Visitor::visit(node);
-  }
+  this->Visitor::visit(node);
   end();
 }
 
 void ArithmeticConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "Arithmetic constraint solving starts at root";
-  arithmetic_formula_generator_.start();
-  if (arithmetic_formula_generator_.has_arithmetic_formula()) {
-    string_terms_map_ = arithmetic_formula_generator_.get_string_terms_map();
-    visitScript(root);
-  }
+  visitScript(root);
   end();
 }
 
@@ -56,35 +46,39 @@ void ArithmeticConstraintSolver::end() {
   arithmetic_formula_generator_.end();
 }
 
+void ArithmeticConstraintSolver::collect_arithmetic_constraint_info() {
+  arithmetic_formula_generator_.start();
+  string_terms_map_ = arithmetic_formula_generator_.get_string_terms_map();
+}
+
 /**
  * TODO move group updating inside AND and OR
  */
 void ArithmeticConstraintSolver::setCallbacks() {
-  auto term_callback =
-      [this] (Term_ptr term) -> bool {
-        switch (term->type()) {
-          case Term::Type::NOT:
-          case Term::Type::EQ:
-          case Term::Type::NOTEQ:
-          case Term::Type::GT:
-          case Term::Type::GE:
-          case Term::Type::LT:
-          case Term::Type::LE:
-          case Term::Type::QUALIDENTIFIER: {
-            auto formula = arithmetic_formula_generator_.get_term_formula(term);
-            if (formula != nullptr) {
-              DVLOG(VLOG_LEVEL) << "Linear Arithmetic Equation: " << *formula << "@" << term;
-              auto binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), is_natural_numbers_only_);
-              auto result = new Value(binary_int_auto);
-              set_term_value(term, result);
-            }
-            break;
-          }
-          default:
-          break;
+  auto term_callback = [this] (Term_ptr term) -> bool {
+    switch (term->type()) {
+      case Term::Type::NOT:
+      case Term::Type::EQ:
+      case Term::Type::NOTEQ:
+      case Term::Type::GT:
+      case Term::Type::GE:
+      case Term::Type::LT:
+      case Term::Type::LE:
+      case Term::Type::QUALIDENTIFIER: {
+        auto formula = arithmetic_formula_generator_.get_term_formula(term);
+        if (formula != nullptr) {
+          DVLOG(VLOG_LEVEL) << "Linear Arithmetic Equation: " << *formula << "@" << term;
+          auto binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), is_natural_numbers_only_);
+          auto result = new Value(binary_int_auto);
+          set_term_value(term, result);
         }
-        return false;
-      };
+        break;
+      }
+      default:
+      break;
+    }
+    return false;
+  };
 
   auto command_callback = [](Command_ptr command) -> bool {
     if (Command::Type::ASSERT == command->getType()) {
@@ -110,15 +104,14 @@ void ArithmeticConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
 /**
  * For mixed constraints:
- * 1- solve first arithmetic expressions
- * 2- then visit 'or' terms if there is any
+ * 1- First solve arithmetic expressions
+ * 2- Second visit 'or' terms if there is any
  */
 void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
-  DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
-
-  //if this is not a component descent into children and do not create result automaton
+  DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
   if (not constraint_information_->is_component(and_term)) {
     visit_children_of(and_term);
+    DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
     return;
   }
 
@@ -132,20 +125,20 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
     if (formula != nullptr) {
       has_arithmetic_formula = true;
       if (dynamic_cast<Or_ptr>(term)) {
-        or_terms.push_back(term); // process disjunction later (important for mixed constraints)
+        or_terms.push_back(term);  // process disjunction later (important for mixed constraints)
       } else {
         visit(term);
         auto param = get_term_value(term);
-        is_satisfiable = param->isSatisfiable();
+        is_satisfiable = param->is_satisfiable();
         if (is_satisfiable) {
           if (and_value == nullptr) {
             and_value = param;
-            term_values_[term] = nullptr; // to avoid seg fault
+            term_values_[term] = nullptr;  // to avoid seg fault
           } else {
             auto old_value = and_value;
             and_value = and_value->intersect(param);
             delete old_value;
-            is_satisfiable = and_value->isSatisfiable();
+            is_satisfiable = and_value->is_satisfiable();
           }
         }
         clear_term_value(term);
@@ -157,19 +150,19 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
   }
 
   if (is_satisfiable and has_arithmetic_formula) {
-    for (auto term : or_terms) { // handle disjunctions (important to have them after)
+    for (auto term : or_terms) {  // handle disjunctions (important to have them after)
       visit(term);
       auto param = get_term_value(term);
-      is_satisfiable = param->isSatisfiable();
+      is_satisfiable = param->is_satisfiable();
       if (is_satisfiable) {
         if (and_value == nullptr) {
           and_value = param;
-          term_values_[term] = nullptr; // to avoid seg fault
+          term_values_[term] = nullptr;  // to avoid seg fault
         } else {
           auto old_value = and_value;
           and_value = and_value->intersect(param);
           delete old_value;
-          is_satisfiable = and_value->isSatisfiable();
+          is_satisfiable = and_value->is_satisfiable();
         }
       }
       clear_term_value(term);
@@ -178,26 +171,79 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
       }
     }
   }
+  DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *and_term << "@" << and_term;
   if (has_arithmetic_formula) {
     if (is_satisfiable) {
-      symbol_table_->IntersectValue(group_name, and_value); // update value
+      symbol_table_->IntersectValue(group_name, and_value);  // update value
     } else {
-      auto formula = arithmetic_formula_generator_.get_group_formula(group_name);
-      auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(formula, is_natural_numbers_only_));
+      auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
+      auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(group_formula, is_natural_numbers_only_));
       symbol_table_->set_value(group_name, value);
     }
+    delete and_value;
   }
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *and_term << "@" << and_term;
 }
 
+/**
+ * 1) Update group value at each scope
+ * 2) Update result (union of scopes) after all
+ */
 void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
-  DVLOG(VLOG_LEVEL) << "visit: " << *or_term;
-  LOG(FATAL) << "implement me";
-  for (auto& term : *(or_term->term_list)) {
-    symbol_table_->push_scope(term);
-    visit(term);
-    symbol_table_->pop_scope();
+  DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
+  if (not constraint_information_->is_component(or_term)) {  // a rare case, see dependency slicer
+    visit_children_of(or_term);
+    DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
+    return;
   }
+  DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
+
+  bool is_satisfiable = false;
+  bool has_arithmetic_formula = false;
+  std::string group_name = arithmetic_formula_generator_.get_term_group_name(or_term);
+  Value_ptr or_value = nullptr;
+  for (auto term : *(or_term->term_list)) {
+    auto formula = arithmetic_formula_generator_.get_term_formula(term);
+    if (formula != nullptr) {
+      has_arithmetic_formula = true;
+      symbol_table_->push_scope(term);
+      visit(term);
+      auto param = get_term_value(term);
+      is_satisfiable = param->is_satisfiable() or is_satisfiable;
+      if (is_satisfiable) {
+        if (or_value == nullptr) {
+          or_value = param;
+          term_values_[term] = nullptr;  // to avoid seg fault
+        } else {
+          auto old_value = or_value;
+          or_value = or_value->union_(param);
+          delete old_value;
+        }
+        symbol_table_->IntersectValue(group_name, param);  // update value for this scope
+      } else {
+        symbol_table_->set_value(group_name, param); // set value (which is not satisfiable)
+      }
+      clear_term_value(term);
+      symbol_table_->pop_scope();
+    }
+  }
+
+  DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
+
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *or_term << "@" << or_term;
+  if (has_arithmetic_formula) {
+    if (is_satisfiable) {
+      symbol_table_->IntersectValue(group_name, or_value);  // update value for union, this is upper scope
+    } else {
+      auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
+      auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(group_formula, is_natural_numbers_only_));
+      symbol_table_->set_value(group_name, value);
+    }
+    delete or_value; // nullptr safe
+  }
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *or_term << "@" << or_term;
 }
 
 std::string ArithmeticConstraintSolver::get_int_variable_name(SMT::Term_ptr term) {
@@ -217,7 +263,7 @@ Value_ptr ArithmeticConstraintSolver::get_term_value(Term_ptr term) {
   }
 
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
-  if(not group_name.empty()) {
+  if (not group_name.empty()) {
     return symbol_table_->get_value(group_name);
   }
 
@@ -225,9 +271,9 @@ Value_ptr ArithmeticConstraintSolver::get_term_value(Term_ptr term) {
 }
 
 bool ArithmeticConstraintSolver::set_term_value(Term_ptr term, Value_ptr value) {
-  auto result = term_values_.insert({term, value});
+  auto result = term_values_.insert( { term, value });
   if (result.second == false) {
-    LOG(FATAL) << "Term automaton is already computed: " << *term << "@" << term;
+    LOG(FATAL)<< "Term automaton is already computed: " << *term << "@" << term;
   }
 //  std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
 //  if(!group_name.empty()) {
@@ -237,14 +283,9 @@ bool ArithmeticConstraintSolver::set_term_value(Term_ptr term, Value_ptr value) 
   return result.second;
 }
 
-bool ArithmeticConstraintSolver::UpdateTermValue(Term_ptr term, Value_ptr value) {
-LOG(FATAL) << "fix me";
-//  std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
-//  if(!group_name.empty()) {
-//    symbol_table_->UpdateValue(group_name,value);
-//    return true;
-//  }
-  return false;
+bool ArithmeticConstraintSolver::set_group_value(Term_ptr term, Value_ptr value) {
+  std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
+  return symbol_table_->set_value(group_name, value);
 }
 
 void ArithmeticConstraintSolver::clear_term_values() {
@@ -273,14 +314,6 @@ TermList& ArithmeticConstraintSolver::get_string_terms_in(Term_ptr term) {
 
 std::map<SMT::Term_ptr, SMT::TermList>& ArithmeticConstraintSolver::get_string_terms_map() {
   return string_terms_map_;
-}
-
-void ArithmeticConstraintSolver::assign(std::map<SMT::Term_ptr, SMT::Term_ptr>& term_value_index,
-                                        TermValueMap& term_values,
-                                        std::map<SMT::Term_ptr, SMT::TermList>& string_terms_map) {
-  term_value_index = this->term_value_index_;
-  term_values = this->term_values_;
-  string_terms_map = this->string_terms_map_;
 }
 
 } /* namespace Solver */
