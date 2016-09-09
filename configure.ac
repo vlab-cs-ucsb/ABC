@@ -11,12 +11,18 @@ AM_MAINTAINER_MODE([enable])
 AC_MSG_CHECKING([whether to build with debug information])
 AC_ARG_ENABLE([debug],
     [AS_HELP_STRING([--enable-debug],
-        [enable debug data generation (defult=yes)])],
+    [enable debug data generation (defult=yes)])],
     [debugit="$enableval"],
     [debugit=yes])
 AC_MSG_RESULT([$debugit])
 
-AX_CHECK_ENABLE_DEBUG(,,,[$debugit])
+AX_CHECK_ENABLE_DEBUG([$debugit],,,)
+
+#if test x"$debugit" = x"yes"; then
+#    AX_CHECK_ENABLE_DEBUG(,,,[$debugit])
+#else
+#    AX_CHECK_ENABLE_DEBUG(,,,[$debugit])
+#fi
 
 # lib building
 AC_ENABLE_SHARED
