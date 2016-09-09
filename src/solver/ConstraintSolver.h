@@ -121,12 +121,11 @@ class ConstraintSolver: public SMT::Visitor {
   void clearTermValue(SMT::Term_ptr term);
   void clearTermValuesAndLocalLetVars();
   void setVariablePath(SMT::QualIdentifier_ptr qi_term);
-  void update_variables();
+  bool update_variables();
   void visit_children_of(SMT::Term_ptr term);
   bool check_and_visit(SMT::Term_ptr term);
   bool process_mixed_integer_string_constraints_in(SMT::Term_ptr term);
 
-  bool still_sat_;
   int iteration_count_;
   SMT::Script_ptr root_;
   SymbolTable_ptr symbol_table_;

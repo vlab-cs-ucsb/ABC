@@ -17,8 +17,7 @@ const int ConstraintSolver::VLOG_LEVEL = 11;
 
 ConstraintSolver::ConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_table,
                                    ConstraintInformation_ptr constraint_information)
-    : still_sat_ { false },
-      iteration_count_ {0},
+    : iteration_count_ {0},
       root_(script),
       symbol_table_(symbol_table),
       constraint_information_(constraint_information),
@@ -34,7 +33,7 @@ ConstraintSolver::~ConstraintSolver() {
 void ConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "start";
   arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
-  // multi track solver collect info
+  // TODO string solver collect info
   visit(root_);
 
   end();
@@ -134,7 +133,6 @@ void ConstraintSolver::visitLet(Let_ptr let_term) {
 * 3) Solve single-track strings and mixed constraints
 */
 void ConstraintSolver::visitAnd(And_ptr and_term) {
-  DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
   bool is_satisfiable = true;
 
   if (constraint_information_->is_component(and_term) and iteration_count_ == 0) {
@@ -149,87 +147,106 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     }
   }
 
-  if (not is_satisfiable) {
-    // TODO update string values to empty language
-    Value_ptr result = new Value(is_satisfiable);
-    setTermValue(and_term, result);
-    return;
+  DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
+
+  if (is_satisfiable and constraint_information_->has_mixed_constraint(and_term)) {
+    LOG(FATAL) << "need to visit terms that are not disjunct first";
+    for (auto& term : *(and_term->term_list)) {
+      is_satisfiable = check_and_visit(term) and is_satisfiable;
+      if (is_satisfiable) {
+        is_satisfiable = update_variables();
+      }
+      clearTermValuesAndLocalLetVars();
+      if (not is_satisfiable) {
+        break;
+      }
+    }
   }
 
-
-  for (auto& term : *(and_term->term_list)) {
-    is_satisfiable = check_and_visit(term) and is_satisfiable;
-    if (is_satisfiable) {
-      // update variables, but if any relational variables were updated, we need to
-      // reupdate satisfiability, as it may change
-      still_sat_ = true;
-      update_variables();
-      is_satisfiable = is_satisfiable and still_sat_;
-    }
-    clearTermValuesAndLocalLetVars();
-    if (not is_satisfiable) {
-      break;
-    }
+  if (not is_satisfiable) {
+    // TODO decide if we need to do set values of variables to empty automaton at this scope
   }
 
   Value_ptr result = new Value(is_satisfiable);
   setTermValue(and_term, result);
 
-  if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA && constraint_information_->is_component(and_term)) {
-    Variable_ptr var = symbol_table_->get_symbolic_target_variable();
-    if(var == nullptr) {
-      return;
-    }
-    Variable_ptr rep_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),var);
-    if(rep_var != nullptr) {
-      Value_ptr val = string_constraint_solver_.get_variable_value(rep_var,true);
-      if(val != nullptr) {
-        // If symbolic variable is not actually represented, but instead
-        // substituted for another variable, then we need to
-        // account for that when putting the resulting value back into the symbol table
-        StringRelation_ptr relation = val->getMultiTrackAutomaton()->getRelation();
-        VariableTrackMap trackmap = relation->get_variable_trackmap();
-        trackmap[var->getName()] = trackmap[rep_var->getName()];
-        relation->set_variable_trackmap(trackmap);
-        symbol_table_->set_value(rep_var, val);
-        symbol_table_->set_value(var,val->clone());
-      }
-    }
-  }
+  // Kaluza Data Hack to project onto one variable (this is what they did)
+//  if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA && constraint_information_->is_component(and_term)) {
+//    Variable_ptr var = symbol_table_->get_symbolic_target_variable();
+//    if(var == nullptr) {
+//      return;
+//    }
+//    Variable_ptr rep_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),var);
+//    if(rep_var != nullptr) {
+//      Value_ptr val = string_constraint_solver_.get_variable_value(rep_var,true);
+//      if(val != nullptr) {
+//        // If symbolic variable is not actually represented, but instead
+//        // substituted for another variable, then we need to
+//        // account for that when putting the resulting value back into the symbol table
+//        StringRelation_ptr relation = val->getMultiTrackAutomaton()->getRelation();
+//        VariableTrackMap trackmap = relation->get_variable_trackmap();
+//        trackmap[var->getName()] = trackmap[rep_var->getName()];
+//        relation->set_variable_trackmap(trackmap);
+//        symbol_table_->set_value(rep_var, val);
+//        symbol_table_->set_value(var,val->clone());
+//      }
+//    }
+//  }
+  DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 }
 
 
 void ConstraintSolver::visitOr(Or_ptr or_term) {
-  DVLOG(VLOG_LEVEL) << "visit: " << *or_term;
-
   bool is_satisfiable = false;
-  Value_ptr param = nullptr;
 
-  for (auto& term : *(or_term->term_list)) {
-    symbol_table_->push_scope(term);
-    check_and_visit(term);
+  // TODO check for component
 
-    param = getTermValue(term);
-    bool is_scope_satisfiable = param->is_satisfiable();
+  if (not constraint_information_->has_mixed_constraint(or_term)) {
+    is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+    // below return is a tmp solution for just only arithmetic constraints
+    Value_ptr result = new Value(is_satisfiable);
+    setTermValue(or_term, result);
+    return;
+  }
 
-    if (Term::Type::AND not_eq term->type()) {
-      if (is_scope_satisfiable) {
-        update_variables();
+  // TODO call arithmetic constraint solver and check result
+  // TODO call string constraint solver and check result
+
+  // TODO go over each disjunct and compute values for each mixed or single track
+  if (constraint_information_->has_mixed_constraint(or_term)) {
+    for (auto& term : *(or_term->term_list)) {
+      symbol_table_->push_scope(term);
+      bool is_scope_satisfiable = check_and_visit(term);
+
+      if (Term::Type::AND not_eq term->type()) {
+        if (is_scope_satisfiable) {
+          update_variables();
+        }
+        clearTermValuesAndLocalLetVars();
       }
-      clearTermValuesAndLocalLetVars();
-    }
 
-    symbol_table_->setScopeSatisfiability(is_scope_satisfiable);
-    is_satisfiable = is_satisfiable or is_scope_satisfiable;
+      symbol_table_->setScopeSatisfiability(is_scope_satisfiable);
+      is_satisfiable = is_satisfiable or is_scope_satisfiable;
 
-    symbol_table_->pop_scope();
-    if (is_satisfiable and (not Option::Solver::MODEL_COUNTER_ENABLED)) {
-      break;
+      symbol_table_->pop_scope();
+      if (is_satisfiable and (not Option::Solver::MODEL_COUNTER_ENABLED)) {
+        break;
+      }
     }
   }
 
+  // TODO union automata for all type of variables
+  // 1- if possible call visitOr function of arithmetic solver
+  // 2- if possible call visitOr function of string solver
+  // 3- implement visitOr for mixed (single track string) operations, union all variables that appear under or_term
+  LOG(FATAL)<< "implement me";
+
   Value_ptr result = new Value(is_satisfiable);
   setTermValue(or_term, result);
+
+  DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
+
+  DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
 }
 
 void ConstraintSolver::visitNot(Not_ptr not_term) {
@@ -1213,23 +1230,6 @@ Value_ptr ConstraintSolver::getTermValue(Term_ptr term) {
     return iter->second;
   }
 
-  // never read values for and_term and or_term from arithmetic automaton
-  // we do not need binary automaton value for them, term_values will return
-  // satisfiability result for them
-  if ((not dynamic_cast<And_ptr>(term)) and (not dynamic_cast<Or_ptr>(term))) {
-    if (constraint_information_->has_arithmetic_constraint(term)) {
-      auto value = arithmetic_constraint_solver_.get_term_value(term);
-      if (value != nullptr) {
-        return value;
-      }
-    }
-
-    auto value = string_constraint_solver_.get_term_value(term);
-    if (value != nullptr) {
-      return value;
-    }
-  }
-
   DVLOG(VLOG_LEVEL) << "value is not computed for term: " << *term;
   return nullptr;
 }
@@ -1266,14 +1266,18 @@ void ConstraintSolver::setVariablePath(QualIdentifier_ptr qi_term) {
   path_trace_.pop_back();
 }
 
-void ConstraintSolver::update_variables() {
+bool ConstraintSolver::update_variables() {
   if (variable_path_table_.size() == 0) {
-    return;
+    return true;
   }
 
   VariableValueComputer value_updater(symbol_table_, variable_path_table_, term_values_);
   value_updater.start();
+  auto is_satisfiable = value_updater.is_satisfiable();
   variable_path_table_.clear();
+  // TODO should we delete term_values ???
+
+  // TODO refactor relation - single interaction
   // update any relational variables tagged prior to variable value computer
   // and update any changes in satisfiability
   for (auto& var : tagged_variables) {
@@ -1283,12 +1287,12 @@ void ConstraintSolver::update_variables() {
       continue;
     }
     string_constraint_solver_.update_variable_value(var, value);
-    still_sat_ = still_sat_ and value->is_satisfiable();
+    is_satisfiable = is_satisfiable and value->is_satisfiable();
     delete value;
     symbol_table_->set_value(var, nullptr);
   }
   tagged_variables.clear();
-
+  return is_satisfiable;
 }
 
 void ConstraintSolver::visit_children_of(Term_ptr term) {
@@ -1308,10 +1312,9 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
       return is_satisfiable;
     } else if(constraint_information_->has_string_constraint(term)) {
       DVLOG(VLOG_LEVEL) << "Mixed Multi- and Single- Track String Automata Constraint";
-      return true; // should already check for that
+      return true; // should be checked already
     }
   }
-
   visit(term);
   auto param = getTermValue(term);
   return param->is_satisfiable();

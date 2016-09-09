@@ -105,12 +105,15 @@ public:
   void visitIdentifier(SMT::Identifier_ptr) override;
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
+
+  bool is_satisfiable();
 protected:
   Value_ptr getTermPostImage(SMT::Term_ptr term);
   Value_ptr getTermPreImage(SMT::Term_ptr term);
   bool setTermPreImage(SMT::Term_ptr term, Value_ptr value);
   void popTerm(SMT::Term_ptr);
 
+  bool is_satisfiable_;
   SymbolTable_ptr symbol_table;
   VariablePathTable& variable_path_table;
   const TermValueMap& post_images;

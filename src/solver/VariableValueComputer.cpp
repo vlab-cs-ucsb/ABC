@@ -15,15 +15,11 @@ using namespace SMT;
 const int VariableValueComputer::VLOG_LEVEL = 12;
 // TODO intersect with result post
 VariableValueComputer::VariableValueComputer(SymbolTable_ptr symbol_table, VariablePathTable& variable_path_table, const TermValueMap& post_images)
-        : symbol_table(symbol_table), variable_path_table (variable_path_table),
+        : is_satisfiable_{true}, symbol_table(symbol_table), variable_path_table (variable_path_table),
           post_images (post_images), current_path (nullptr) {
 }
 
 VariableValueComputer::~VariableValueComputer() {
-  for (auto entry : pre_images) {
-    delete entry.second;
-  }
-  pre_images.clear();
 }
 
 void VariableValueComputer::start() {
@@ -46,6 +42,9 @@ void VariableValueComputer::start() {
     }
 
     visit(root_term);
+    if (not is_satisfiable_) {
+      break;
+    }
   }
 
   end();
@@ -54,6 +53,10 @@ void VariableValueComputer::start() {
 void VariableValueComputer::end() {
   DVLOG(VLOG_LEVEL) << "end variable value computation";
   current_path = nullptr;
+  for (auto entry : pre_images) {
+    delete entry.second;
+  }
+  pre_images.clear();
 }
 
 void VariableValueComputer::visitScript(Script_ptr script) {
@@ -1277,7 +1280,7 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   popTerm(qi_term);
 
   Value_ptr term_pre_value = getTermPreImage(qi_term);
-  symbol_table->IntersectValue(qi_term->getVarName(), term_pre_value);
+  is_satisfiable_ = symbol_table->IntersectValue(qi_term->getVarName(), term_pre_value) and is_satisfiable_;
 
 }
 
@@ -1315,6 +1318,10 @@ void VariableValueComputer::visitSortedVar(SortedVar_ptr sorted_var) {
 }
 
 void VariableValueComputer::visitVarBinding(VarBinding_ptr var_binding) {
+}
+
+bool VariableValueComputer::is_satisfiable() {
+  return is_satisfiable_;
 }
 
 Value_ptr VariableValueComputer::getTermPostImage(Term_ptr term) {

@@ -36,10 +36,14 @@ class ConstraintInformation {
   bool has_string_constraint(const SMT::Visitable_ptr) const;
   void add_string_constraint(const SMT::Visitable_ptr);
 
+  bool has_mixed_constraint(const SMT::Visitable_ptr) const;
+  void add_mixed_constraint(const SMT::Visitable_ptr);
+
  private:
   std::set<SMT::Visitable_ptr> components_;
   std::set<SMT::Visitable_ptr> arithmetic_constraints_;
   std::set<SMT::Visitable_ptr> string_constraints_;
+  std::set<SMT::Visitable_ptr> mixed_constraints_;
 };
 
 using ConstraintInformation_ptr = ConstraintInformation*;

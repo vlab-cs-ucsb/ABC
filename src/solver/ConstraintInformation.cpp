@@ -56,6 +56,14 @@ void ConstraintInformation::add_string_constraint(const Visitable_ptr node) {
   string_constraints_.insert(node);
 }
 
+bool ConstraintInformation::has_mixed_constraint(const SMT::Visitable_ptr node) const {
+  return (mixed_constraints_.find(node) not_eq mixed_constraints_.end());
+}
+
+void ConstraintInformation::add_mixed_constraint(const SMT::Visitable_ptr node) {
+  mixed_constraints_.insert(node);
+}
+
 } /* namespace Solver */
 } /* namespace Vlab */
 

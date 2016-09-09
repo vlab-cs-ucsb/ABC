@@ -155,6 +155,7 @@ void ArithmeticFormulaGenerator::visitNot(Not_ptr not_term) {
     if (string_terms_.size() > 0) {
       string_terms_map_[not_term] = string_terms_;
       string_terms_.clear();
+      constraint_information_->add_mixed_constraint(not_term);
     } else {
       auto it = string_terms_map_.find(not_term->term);
       if (it not_eq string_terms_map_.end()) {
@@ -261,6 +262,7 @@ void ArithmeticFormulaGenerator::visitEq(Eq_ptr eq_term) {
     if (string_terms_.size() > 0) {
       string_terms_map_[eq_term] = string_terms_;
       string_terms_.clear();
+      constraint_information_->add_mixed_constraint(eq_term);
     }
     constraint_information_->add_arithmetic_constraint(eq_term);
   }
@@ -285,6 +287,7 @@ void ArithmeticFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
     if (string_terms_.size() > 0) {
       string_terms_map_[not_eq_term] = string_terms_;
       string_terms_.clear();
+      constraint_information_->add_mixed_constraint(not_eq_term);
     }
     constraint_information_->add_arithmetic_constraint(not_eq_term);
   }
@@ -308,6 +311,7 @@ void ArithmeticFormulaGenerator::visitGt(Gt_ptr gt_term) {
     if (string_terms_.size() > 0) {
       string_terms_map_[gt_term] = string_terms_;
       string_terms_.clear();
+      constraint_information_->add_mixed_constraint(gt_term);
     }
     constraint_information_->add_arithmetic_constraint(gt_term);
   }
@@ -331,6 +335,7 @@ void ArithmeticFormulaGenerator::visitGe(Ge_ptr ge_term) {
     if (string_terms_.size() > 0) {
       string_terms_map_[ge_term] = string_terms_;
       string_terms_.clear();
+      constraint_information_->add_mixed_constraint(ge_term);
     }
     constraint_information_->add_arithmetic_constraint(ge_term);
   }
@@ -354,6 +359,7 @@ void ArithmeticFormulaGenerator::visitLt(Lt_ptr lt_term) {
     if (string_terms_.size() > 0) {
       string_terms_map_[lt_term] = string_terms_;
       string_terms_.clear();
+      constraint_information_->add_mixed_constraint(lt_term);
     }
     constraint_information_->add_arithmetic_constraint(lt_term);
   }
@@ -377,6 +383,7 @@ void ArithmeticFormulaGenerator::visitLe(Le_ptr le_term) {
     if (string_terms_.size() > 0) {
       string_terms_map_[le_term] = string_terms_;
       string_terms_.clear();
+      constraint_information_->add_mixed_constraint(le_term);
     }
     constraint_information_->add_arithmetic_constraint(le_term);
   }
