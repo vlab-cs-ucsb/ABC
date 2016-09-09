@@ -16,12 +16,6 @@ const int IntAutomaton::VLOG_LEVEL = 9;
 
 int IntAutomaton::DEFAULT_NUM_OF_VARIABLES = 8;
 
-int* IntAutomaton::DEFAULT_VARIABLE_INDICES = Automaton::getIndices(
-        IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
-
-unsigned* IntAutomaton::DEFAULT_UNSIGNED_VARIABLE_INDICES = Automaton::getIndices(
-        (unsigned)IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
-
 IntAutomaton::IntAutomaton(DFA_ptr dfa) :
         Automaton(Automaton::Type::INT, dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES),
         has_negative_1(false) {
@@ -56,17 +50,10 @@ IntAutomaton_ptr IntAutomaton::clone() const {
   return cloned_auto;
 }
 
-void IntAutomaton::release_default_indices() {
-  delete[] DEFAULT_VARIABLE_INDICES;
-  DEFAULT_VARIABLE_INDICES = nullptr;
-  delete[] DEFAULT_UNSIGNED_VARIABLE_INDICES;
-  DEFAULT_UNSIGNED_VARIABLE_INDICES = nullptr;
-}
-
-IntAutomaton_ptr IntAutomaton::makePhi(int num_of_variables, int* variable_indices) {
+IntAutomaton_ptr IntAutomaton::makePhi(int num_of_variables) {
   DFA_ptr non_accepting_int_dfa = nullptr;
   IntAutomaton_ptr non_acception_int_auto = nullptr;
-  non_accepting_int_dfa = Automaton::DfaMakePhi(num_of_variables, variable_indices);
+  non_accepting_int_dfa = Automaton::DfaMakePhi(num_of_variables);
   non_acception_int_auto = new IntAutomaton(non_accepting_int_dfa, num_of_variables);
 
   DVLOG(VLOG_LEVEL) << non_acception_int_auto->id_ << " = makePhi()";
@@ -74,10 +61,11 @@ IntAutomaton_ptr IntAutomaton::makePhi(int num_of_variables, int* variable_indic
   return non_acception_int_auto;
 }
 
-IntAutomaton_ptr IntAutomaton::makeZero(int num_of_variables, int* variable_indices) {
+IntAutomaton_ptr IntAutomaton::makeZero(int num_of_variables) {
   DFA_ptr zero_int_dfa = nullptr;
   IntAutomaton_ptr zero_int = nullptr;
   char statuses[2] { '+', '-' };
+  int* variable_indices = getIndices(num_of_variables);
 
   dfaSetup(2, num_of_variables, variable_indices);
   dfaAllocExceptions(0);
@@ -86,6 +74,7 @@ IntAutomaton_ptr IntAutomaton::makeZero(int num_of_variables, int* variable_indi
   dfaStoreState(1);
   zero_int_dfa = dfaBuild(statuses);
   zero_int = new IntAutomaton(zero_int_dfa, num_of_variables);
+  delete[] variable_indices;
 
   DVLOG(VLOG_LEVEL) << zero_int->id_ << " = makeZero()";
 
@@ -94,35 +83,27 @@ IntAutomaton_ptr IntAutomaton::makeZero(int num_of_variables, int* variable_indi
 
 /**
  *
- * Returns Sigma* except two reserved words (11111111, 11111110)
  */
-IntAutomaton_ptr IntAutomaton::makeAnyInt(int num_of_variables, int* variable_indices) {
+IntAutomaton_ptr IntAutomaton::makeAnyInt(int num_of_variables) {
   DFA_ptr any_int_dfa = nullptr;
   IntAutomaton_ptr any_int = nullptr;
-  char statuses[2] { '+', '-' };
-  std::vector<char> reserved_1 = Automaton::getReservedWord('1', num_of_variables);
-  std::vector<char> reserved_2 = Automaton::getReservedWord('0', num_of_variables);
-  char* sharp1 = &*reserved_1.begin();
-  char* sharp0 = &*reserved_2.begin();
+  char statuses[1] { '+' };
+  int* variable_indices = getIndices(num_of_variables);
 
-  dfaSetup(2, num_of_variables, variable_indices);
-  dfaAllocExceptions(2);
-  dfaStoreException(1, sharp1); // word 11111111
-  dfaStoreException(1, sharp0); // word 11111110
-  dfaStoreState(0);
-
+  dfaSetup(1, num_of_variables, variable_indices);
   dfaAllocExceptions(0);
-  dfaStoreState(1);
+  dfaStoreState(0);
 
   any_int_dfa = dfaBuild(statuses);
   any_int = new IntAutomaton(any_int_dfa, true, num_of_variables);
+  delete[] variable_indices;
 
   DVLOG(VLOG_LEVEL) << any_int->id_ << " = makeAnyInt()";
 
   return any_int;
 }
 
-IntAutomaton_ptr IntAutomaton::makeInt(int value, int num_of_variables, int* variable_indices){
+IntAutomaton_ptr IntAutomaton::makeInt(int value, int num_of_variables){
   DFA_ptr int_dfa = nullptr;
   IntAutomaton_ptr int_auto = nullptr;
 
@@ -134,18 +115,15 @@ IntAutomaton_ptr IntAutomaton::makeInt(int value, int num_of_variables, int* var
     int_auto = IntAutomaton::makeZero();
   }
   else{
-    LOG(FATAL) << "implement me";
-    //    int_dfa = dfaStringAutomatonL1toL2(value, value,
-//             IntAutomaton::DEFAULT_NUM_OF_VARIABLES, IntAutomaton::DEFAULT_VARIABLE_INDICES);
-//         int_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+    int_dfa = Automaton::DfaL1ToL2(value, value,num_of_variables);
+    int_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
   }
 
   DVLOG(VLOG_LEVEL) << int_auto->id_ << " = makeInt(" << value <<  ")";
 
-  return int_auto;
 }
 
-IntAutomaton_ptr IntAutomaton::makeIntLessThan(int value, int num_of_variables, int* variable_indices){
+IntAutomaton_ptr IntAutomaton::makeIntLessThan(int value, int num_of_variables){
   DFA_ptr int_dfa = nullptr;
   IntAutomaton_ptr int_auto = nullptr;
 
@@ -157,10 +135,8 @@ IntAutomaton_ptr IntAutomaton::makeIntLessThan(int value, int num_of_variables, 
      int_auto->has_negative_1 = true;
    }
    else{
-     LOG(FATAL) << "implement me";
-//     int_dfa = dfaStringAutomatonL1toL2(0, value - 1,
-//         IntAutomaton::DEFAULT_NUM_OF_VARIABLES, IntAutomaton::DEFAULT_VARIABLE_INDICES);
-//     int_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+     int_dfa = Automaton::DfaL1ToL2(0, value - 1,IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+     int_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
    }
 
    DVLOG(VLOG_LEVEL) << int_auto->id_ << " = makeIntLessThan(" << value <<  ")";
@@ -168,7 +144,7 @@ IntAutomaton_ptr IntAutomaton::makeIntLessThan(int value, int num_of_variables, 
    return int_auto;
 }
 
-IntAutomaton_ptr IntAutomaton::makeIntLessThanOrEqual(int value, int num_of_variables, int* variable_indices){
+IntAutomaton_ptr IntAutomaton::makeIntLessThanOrEqual(int value, int num_of_variables){
   DFA_ptr int_dfa = nullptr;
   IntAutomaton_ptr int_auto = nullptr;
 
@@ -181,10 +157,8 @@ IntAutomaton_ptr IntAutomaton::makeIntLessThanOrEqual(int value, int num_of_vari
     int_auto->has_negative_1 = true;
   }
   else{
-    LOG(FATAL) << "implement me";
-//    int_dfa = dfaStringAutomatonL1toL2(0, value,
-//             IntAutomaton::DEFAULT_NUM_OF_VARIABLES, IntAutomaton::DEFAULT_VARIABLE_INDICES);
-//         int_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+    int_dfa = Automaton::DfaL1ToL2(0, value, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+    int_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
   }
 
   DVLOG(VLOG_LEVEL) << int_auto->id_ << " = makeIntLessThanEqual(" << value <<  ")";
@@ -192,7 +166,7 @@ IntAutomaton_ptr IntAutomaton::makeIntLessThanOrEqual(int value, int num_of_vari
   return int_auto;
 }
 
-IntAutomaton_ptr IntAutomaton::makeIntGreaterThan(int value, int num_of_variables, int* variable_indices){
+IntAutomaton_ptr IntAutomaton::makeIntGreaterThan(int value, int num_of_variables){
   IntAutomaton_ptr int_auto = nullptr;
 
   if(value < -1){
@@ -209,7 +183,7 @@ IntAutomaton_ptr IntAutomaton::makeIntGreaterThan(int value, int num_of_variable
   return int_auto;
 }
 
-IntAutomaton_ptr IntAutomaton::makeIntGreaterThanOrEqual(int value, int num_of_variables, int* variable_indices){
+IntAutomaton_ptr IntAutomaton::makeIntGreaterThanOrEqual(int value, int num_of_variables){
   IntAutomaton_ptr int_auto = nullptr;
 
   if(value < -1){
@@ -226,25 +200,23 @@ IntAutomaton_ptr IntAutomaton::makeIntGreaterThanOrEqual(int value, int num_of_v
   return int_auto;
 }
 
-IntAutomaton_ptr IntAutomaton::makeIntRange(int start, int end, int num_of_variables, int* variable_indices){
+IntAutomaton_ptr IntAutomaton::makeIntRange(int start, int end, int num_of_variables){
   DFA_ptr int_dfa = nullptr;
   IntAutomaton_ptr range_auto = nullptr;
-  LOG(FATAL) << "implement me";
-//  int_dfa = dfaStringAutomatonL1toL2(start, end,
-//           IntAutomaton::DEFAULT_NUM_OF_VARIABLES, IntAutomaton::DEFAULT_VARIABLE_INDICES);
-//  range_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  int_dfa = Automaton::DfaL1ToL2(start, end,IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  range_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   DVLOG(VLOG_LEVEL) << range_auto->id_ << " = makeIntRange(" << start << "," << end <<  ")";
 
   return range_auto;
 }
 
-IntAutomaton_ptr IntAutomaton::makeInts(std::vector<int> values, int num_of_variables, int* variable_indices) {
+IntAutomaton_ptr IntAutomaton::makeInts(std::vector<int> values, int num_of_variables) {
   IntAutomaton_ptr int_auto = nullptr;
   if (values.size() > 0) {
     auto max = std::max_element(values.begin(), values.end());
 
-    int_auto = IntAutomaton::makeInt(*max, num_of_variables, variable_indices);
+    int_auto = IntAutomaton::makeInt(*max, num_of_variables);
 
     for (int i : values) {
       if (i < 0) {
@@ -254,7 +226,7 @@ IntAutomaton_ptr IntAutomaton::makeInts(std::vector<int> values, int num_of_vari
       }
     }
   } else {
-    int_auto = IntAutomaton::makePhi(num_of_variables, variable_indices);
+    int_auto = IntAutomaton::makePhi(num_of_variables);
   }
 
   DVLOG(VLOG_LEVEL) << int_auto->id_ << " = makeInts({...})";
@@ -308,15 +280,12 @@ IntAutomaton_ptr IntAutomaton::union_(int value) {
 }
 
 IntAutomaton_ptr IntAutomaton::union_(IntAutomaton_ptr other_auto) {
-  DFA_ptr union_dfa = nullptr, minimized_dfa = nullptr;
+  DFA_ptr union_dfa = nullptr;
   IntAutomaton_ptr union_auto = nullptr;
 
-  union_dfa = dfaProduct(this->dfa_, other_auto->dfa_, dfaOR);
-  minimized_dfa = dfaMinimize(union_dfa);
-  dfaFree(union_dfa);
-  union_dfa = nullptr;
+  union_dfa = DfaUnion(this->dfa_, other_auto->dfa_);
 
-  union_auto = new IntAutomaton(minimized_dfa, num_of_variables_);
+  union_auto = new IntAutomaton(union_dfa, num_of_variables_);
   union_auto->has_negative_1 = this->has_negative_1 or other_auto->has_negative_1;
 
   DVLOG(VLOG_LEVEL) << union_auto->id_ << " = [" << this->id_ << "]->union(" << other_auto->id_ << ")";
@@ -333,15 +302,12 @@ IntAutomaton_ptr IntAutomaton::intersect(int value) {
 }
 
 IntAutomaton_ptr IntAutomaton::intersect(IntAutomaton_ptr other_auto) {
-  DFA_ptr intersect_dfa = nullptr, minimized_dfa = nullptr;
+  DFA_ptr intersect_dfa = nullptr;
   IntAutomaton_ptr intersect_auto = nullptr;
 
-  intersect_dfa = dfaProduct(this->dfa_, other_auto->dfa_, dfaAND);
-  minimized_dfa = dfaMinimize(intersect_dfa);
-  dfaFree(intersect_dfa);
-  intersect_dfa = nullptr;
+  intersect_dfa = DfaIntersect(this->dfa_, other_auto->dfa_);
 
-  intersect_auto = new IntAutomaton(minimized_dfa, num_of_variables_);
+  intersect_auto = new IntAutomaton(intersect_dfa, num_of_variables_);
   intersect_auto->has_negative_1 = this->has_negative_1 and other_auto->has_negative_1;
 
   DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->intersect(" << other_auto->id_ << ")";
@@ -877,8 +843,16 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
   DFA_ptr unary_dfa = nullptr;
   int number_of_variables = 1;
   int* indices = getIndices(number_of_variables);
-  const int number_of_states = this->dfa_->ns;
+  int number_of_states = this->dfa_->ns;
   int to_state, sink_state = getSinkState();
+  bool has_sink = true;
+  // is this right?
+  if(sink_state < 0) {
+    has_sink = false;
+    sink_state = number_of_states;
+    number_of_states++;
+  }
+
   std::vector<char> unary_exception = {'1'};
   char* statuses = new char[number_of_states + 1];
   std::vector<char> exception = {'0', '0', '0', '0', '0', '0', '0', '0'};
@@ -899,10 +873,22 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
     }
   }
   statuses[number_of_states] = '\0';
-  dfaAllocExceptions(0);
-  dfaStoreState(sink_state);
+
+  if(!has_sink) {
+    dfaAllocExceptions(0);
+    dfaStoreState(sink_state);
+    statuses[sink_state] = '-';
+  }
 
   unary_dfa = dfaBuild(statuses);
+
+  if(!has_sink) {
+    for(int i = 0; i < unary_dfa->ns; i++) {
+      if(unary_dfa->f[i] == 0) {
+        unary_dfa->f[i] = -1;
+      }
+    }
+  }
 
   delete[] indices; indices = nullptr;
   delete[] statuses;
@@ -913,12 +899,18 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
 }
 
 /**
- * Should be same as string concat
+ * TODO WILL: Don't use multitrack for this, too much work
  */
 IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
+
+  DFA_ptr d1,d2,d3;
+  d1 = this->dfa_;
+  d2 = other_auto->getDFA();
+  d3 = MultiTrackAutomaton::concat(d1,d2,num_of_variables_);
+  return new IntAutomaton(d3);
+/*
   DFA_ptr concat_dfa = nullptr, tmp_dfa = nullptr;
   IntAutomaton_ptr concat_auto = nullptr, to_union_auto = nullptr;
-
   if (this->isEmptyLanguage() or other_auto->isEmptyLanguage()) {
     return IntAutomaton::makePhi();
   } else if (this->isZero()) {
@@ -926,21 +918,16 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
   } else if (other_auto->isZero()) {
     return this->clone();
   }
-
   bool has_empty_string = other_auto->hasZero();
   bool delete_other_auto = false;
-
-
-  if (has_empty_string and other_auto->hasIncomingTransition(other_auto->dfa_->s)) {
-    LOG(FATAL) << "implement me";
-//    DFA_ptr shifted_dfa = dfa_shift_empty_M(other_auto->dfa, other_auto->num_of_variables, other_auto->variable_indices);
-//    IntAutomaton_ptr shifted_auto = new IntAutomaton(shifted_dfa, other_auto->num_of_variables);
-//    other_auto = shifted_auto;
-//    delete_other_auto = true;
+  if (has_empty_string and other_auto->hasIncomingTransition(other_auto->dfa->s)) {
+    DFA_ptr shifted_dfa = dfa_shift_empty_M(other_auto->dfa, other_auto->num_of_variables, other_auto->variable_indices);
+    IntAutomaton_ptr shifted_auto = new IntAutomaton(shifted_dfa, other_auto->num_of_variables);
+    other_auto = shifted_auto;
+    delete_other_auto = true;
   }
-
-  int var = num_of_variables_;
-  int* indices = variable_indices_;
+  int var = num_of_variables;
+  int* indices = variable_indices;
   int tmp_num_of_variables,
       state_id_shift_amount,
       expected_num_of_states,
@@ -950,55 +937,46 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
       loc,
       i = 0,
       j = 0;
-
   bool is_start_state_reachable;
   paths state_paths = nullptr, pp = nullptr;
   trace_descr tp = nullptr;
-
   std::map<std::vector<char>*, int> exceptions_left_auto;
   std::map<std::vector<char>*, int> exceptions_right_auto;
   std::map<std::vector<char>*, int> exceptions_fix;
   std::vector<char>* current_exception = nullptr;
   char* statuses = nullptr;
-
   // variable initializations
   sink_state_left_auto = this->getSinkState();
   sink_state_right_auto = other_auto->getSinkState();
-
   CHECK_GT(sink_state_left_auto, -1);
   CHECK_GT(sink_state_right_auto, -1);
-
-  tmp_num_of_variables = this->num_of_variables_ + 1; // add one extra bit
-  state_id_shift_amount = this->dfa_->ns;
-
-  expected_num_of_states = this->dfa_->ns + other_auto->dfa_->ns - 1; // -1 is for to remove one of the sink states
+  tmp_num_of_variables = this->num_of_variables + 1; // add one extra bit
+  state_id_shift_amount = this->dfa->ns;
+  expected_num_of_states = this->dfa->ns + other_auto->dfa->ns - 1; // -1 is for to remove one of the sink states
   is_start_state_reachable = other_auto->isStartStateReachableFromAnAcceptingState();
   if (not is_start_state_reachable) {
     expected_num_of_states = expected_num_of_states  - 1; // if start state is reachable from an accepting state, it will be merge with accepting states of left hand side
   }
-
   statuses = new char[expected_num_of_states + 1];
   int* concat_indices = getIndices(tmp_num_of_variables);
-
   dfaSetup(expected_num_of_states, tmp_num_of_variables, concat_indices); //sink states are merged
-  state_paths = pp = make_paths(other_auto->dfa_->bddm, other_auto->dfa_->q[other_auto->dfa_->s]);
+  state_paths = pp = make_paths(other_auto->dfa->bddm, other_auto->dfa->q[other_auto->dfa->s]);
   while (pp) {
     if ( pp->to != (unsigned)sink_state_right_auto ) {
       to_state = pp->to + state_id_shift_amount;
       // if there is a self loop keep it
-      if ( pp->to == (unsigned)other_auto->dfa_->s ) {
+      if ( pp->to == (unsigned)other_auto->dfa->s ) {
         to_state -= 2;
       } else {
         if ( sink_state_right_auto >= 0 && pp->to > (unsigned)sink_state_right_auto ) {
           to_state--; //to new state, sink state will be eliminated and hence need -1
         }
-        if ((not is_start_state_reachable) && pp->to > (unsigned)other_auto->dfa_->s) {
+        if ((not is_start_state_reachable) && pp->to > (unsigned)other_auto->dfa->s) {
           to_state--; // to new state, init state will be eliminated if init is not reachable
         }
       }
-
       current_exception = new std::vector<char>();
-      for (j = 0; j < other_auto->num_of_variables_; j++) {
+      for (j = 0; j < other_auto->num_of_variables; j++) {
         //the following for loop can be avoided if the indices are in order
         for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
         if (tp) {
@@ -1013,7 +991,6 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
           current_exception->push_back('X');
         }
       }
-
       current_exception->push_back('1'); // new path
       current_exception->push_back('\0');
       exceptions_right_auto[current_exception] = to_state;
@@ -1022,12 +999,10 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
     tp = nullptr;
     pp = pp->next;
   }
-
   kill_paths(state_paths);
   state_paths = pp = nullptr;
-
-  for (i = 0; i < this->dfa_->ns; i++) {
-    state_paths = pp = make_paths(this->dfa_->bddm, this->dfa_->q[i]);
+  for (i = 0; i < this->dfa->ns; i++) {
+    state_paths = pp = make_paths(this->dfa->bddm, this->dfa->q[i]);
     while (pp) {
       if (pp->to == (unsigned)sink_state_left_auto) {
         pp = pp->next;
@@ -1035,7 +1010,7 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
       }
       to_state = pp->to;
       current_exception = new std::vector<char>();
-      for (j = 0; j < this->num_of_variables_; j++) {
+      for (j = 0; j < this->num_of_variables; j++) {
         for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
         if (tp) {
           if (tp->value) {
@@ -1047,7 +1022,6 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
           current_exception->push_back('X');
         }
       }
-
       current_exception->push_back('0'); // add extra bit, '0' is used for the exceptions coming from left auto
       current_exception->push_back('\0');
       exceptions_left_auto[current_exception] = to_state;
@@ -1056,7 +1030,7 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
     }
     current_exception = nullptr;
     // generate concat automaton
-    if (this->is_accepting_state(i)) {
+    if (this->isAcceptingState(i)) {
       dfaAllocExceptions(exceptions_left_auto.size() + exceptions_right_auto.size());
       for (auto it = exceptions_left_auto.begin(); it != exceptions_left_auto.end();) {
         dfaStoreException(it->second, &*it->first->begin());
@@ -1070,9 +1044,8 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
         it = exceptions_right_auto.erase(it);
         delete current_exception;
       }
-
       dfaStoreState(sink_state_left_auto);
-      if (other_auto->is_accepting_state(0)) {
+      if (other_auto->isAcceptingState(0)) {
         statuses[i]='+';
       }
       else {
@@ -1093,24 +1066,20 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
     kill_paths(state_paths);
     state_paths = pp = nullptr;
   }
-
   //  initflag is 1 iff init is reached by some state. In this case,
-  for (i = 0; i < other_auto->dfa_->ns; i++) {
+  for (i = 0; i < other_auto->dfa->ns; i++) {
     if ( i != sink_state_right_auto ) {
-      if ( i != other_auto->dfa_->s || is_start_state_reachable) {
-        state_paths = pp = make_paths(other_auto->dfa_->bddm, other_auto->dfa_->q[i]);
+      if ( i != other_auto->dfa->s || is_start_state_reachable) {
+        state_paths = pp = make_paths(other_auto->dfa->bddm, other_auto->dfa->q[i]);
         while (pp) {
           if ( pp->to != (unsigned)sink_state_right_auto) {
             to_state = pp->to + state_id_shift_amount;
-
             if ( sink_state_right_auto >= 0 && pp->to > (unsigned)sink_state_right_auto) {
               to_state--; //to new state, sink state will be eliminated and hence need -1
             }
-
-            if ( (not is_start_state_reachable) && pp->to > (unsigned)other_auto->dfa_->s) {
+            if ( (not is_start_state_reachable) && pp->to > (unsigned)other_auto->dfa->s) {
               to_state--; // to new state, init state will be eliminated if init is not reachable
             }
-
             current_exception = new std::vector<char>();
             for (j = 0; j < var; j++) {
               for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp =tp->next);
@@ -1134,7 +1103,6 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
           }
           pp = pp->next;
         }
-
         dfaAllocExceptions(exceptions_fix.size());
         for (auto it = exceptions_fix.begin(); it != exceptions_fix.end();) {
           dfaStoreException(it->second, &*it->first->begin());
@@ -1142,31 +1110,25 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
           it = exceptions_fix.erase(it);
           delete current_exception;
         }
-
         dfaStoreState(sink_state_left_auto);
-
         loc = state_id_shift_amount + i;
-        if ( (not is_start_state_reachable) && i > other_auto->dfa_->s) {
+        if ( (not is_start_state_reachable) && i > other_auto->dfa->s) {
           loc--;
         }
         if ( sink_state_right_auto >= 0 && i > sink_state_right_auto) {
           loc--;
         }
-
-        if ( other_auto->is_accepting_state(i)) {
+        if ( other_auto->isAcceptingState(i)) {
           statuses[loc]='+';
         } else {
           statuses[loc]='-';
         }
-
         kill_paths(state_paths);
         state_paths = pp = nullptr;
       }
     }
   }
-
   statuses[expected_num_of_states]='\0';
-
   concat_dfa = dfaBuild(statuses);
   delete[] statuses; statuses = nullptr;
   delete[] concat_indices; concat_indices = nullptr;
@@ -1174,9 +1136,7 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
   dfaFree(concat_dfa);
   concat_dfa = dfaMinimize(tmp_dfa);
   dfaFree(tmp_dfa); tmp_dfa = nullptr;
-
-  concat_auto = new IntAutomaton(concat_dfa, num_of_variables_);
-
+  concat_auto = new IntAutomaton(concat_dfa, num_of_variables);
   if (has_empty_string) {
     IntAutomaton_ptr tmp_auto = concat_auto;
     concat_auto = tmp_auto->union_(this);
@@ -1185,10 +1145,9 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
       delete other_auto;
     }
   }
-
-  DVLOG(VLOG_LEVEL) << concat_auto->id_ << " = [" << this->id_ << "]->__plus(" << other_auto->id_ << ")";
-
+  DVLOG(VLOG_LEVEL) << concat_auto->id << " = [" << this->id << "]->__plus(" << other_auto->id << ")";
   return concat_auto;
+*/
 }
 
 /**
@@ -1198,8 +1157,7 @@ IntAutomaton_ptr IntAutomaton::__minus(IntAutomaton_ptr other_auto) {
   DFA_ptr result_dfa = nullptr;
   IntAutomaton_ptr result_auto = nullptr;
 
-  LOG(FATAL) << "implement me";
-//  result_dfa = dfa_pre_concat(this->dfa, other_auto->dfa, 1, num_of_variables, variable_indices);
+  result_dfa = MultiTrackAutomaton::pre_concat_prefix(this->dfa_, other_auto->dfa_,num_of_variables_);
 
   result_auto = new IntAutomaton(result_dfa, num_of_variables_);
 

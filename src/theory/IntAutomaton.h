@@ -22,6 +22,7 @@
 
 #include "Automaton.h"
 #include "UnaryAutomaton.h"
+#include "MultiTrackAutomaton.h"
 
 
 namespace Vlab {
@@ -32,7 +33,6 @@ typedef IntAutomaton* IntAutomaton_ptr;
 
 /**
  * A compatible version with string automaton
- * (A string automaton with Sigma - {reserved words} transitions
  */
 class IntAutomaton: public Automaton {
 public:
@@ -45,28 +45,16 @@ public:
 
   virtual IntAutomaton_ptr clone() const;
 
-  static void release_default_indices();
-
-  static IntAutomaton_ptr makePhi(int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES,
-            int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
-  static IntAutomaton_ptr makeZero(int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES,
-            int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
-  static IntAutomaton_ptr makeAnyInt(int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES,
-            int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
-  static IntAutomaton_ptr makeInt(int value, int num_of_variables =
-            IntAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
-  static IntAutomaton_ptr makeIntLessThan(int value, int num_of_variables =
-            IntAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
-  static IntAutomaton_ptr makeIntLessThanOrEqual(int value, int num_of_variables =
-            IntAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
-  static IntAutomaton_ptr makeIntGreaterThan(int value, int num_of_variables =
-            IntAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
-  static IntAutomaton_ptr makeIntGreaterThanOrEqual(int value, int num_of_variables =
-            IntAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
-  static IntAutomaton_ptr makeIntRange(int start, int end, int num_of_variables =
-            IntAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
-  static IntAutomaton_ptr makeInts(std::vector<int> values, int num_of_variables =
-              IntAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = IntAutomaton::DEFAULT_VARIABLE_INDICES);
+  static IntAutomaton_ptr makePhi(int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static IntAutomaton_ptr makeZero(int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static IntAutomaton_ptr makeAnyInt(int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static IntAutomaton_ptr makeInt(int value, int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static IntAutomaton_ptr makeIntLessThan(int value, int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static IntAutomaton_ptr makeIntLessThanOrEqual(int value, int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static IntAutomaton_ptr makeIntGreaterThan(int value, int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static IntAutomaton_ptr makeIntGreaterThanOrEqual(int value, int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static IntAutomaton_ptr makeIntRange(int start, int end, int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static IntAutomaton_ptr makeInts(std::vector<int> values, int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   void setMinus1(bool has_minus_one);
   bool hasNegative1();
@@ -125,10 +113,6 @@ protected:
 
 
   bool has_negative_1;
-//  bool is_only_minus_1;
-//  static int DEFAULT_NUM_OF_VARIABLES;
-  static int* DEFAULT_VARIABLE_INDICES;
-  static unsigned* DEFAULT_UNSIGNED_VARIABLE_INDICES;
 private:
   static const int VLOG_LEVEL;
 };

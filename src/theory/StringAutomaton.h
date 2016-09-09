@@ -29,6 +29,7 @@
 #include "Graph.h"
 #include "GraphNode.h"
 #include "IntAutomaton.h"
+#include "MultiTrackAutomaton.h"
 
 namespace Vlab {
 namespace Theory {
@@ -50,36 +51,21 @@ public:
 
   virtual StringAutomaton_ptr clone() const;
 
-  static StringAutomaton_ptr makePhi(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
-          int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeEmptyString(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
-          int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeString(std::string str, int num_of_variables =
-          StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeAnyString(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
-          int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeAnyStringOtherThan(std::string str, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
-            int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeChar(char c, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
-          int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeCharRange(char from, char to, int num_of_variables =
-          StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeAnyChar(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
-          int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeRegexAuto(std::string regex, int num_of_variables =
-          StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeLengthEqual(int length, int num_of_variables =
-            StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeLengthLessThan(int length, int num_of_variables =
-              StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeLengthLessThanEqual(int length, int num_of_variables =
-                StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeLengthGreaterThan(int length, int num_of_variables =
-                  StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeLengthGreaterThanEqual(int length, int num_of_variables =
-                    StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-  static StringAutomaton_ptr makeLengthRange(int start, int end, int num_of_variables =
-            StringAutomaton::DEFAULT_NUM_OF_VARIABLES, int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  static StringAutomaton_ptr makePhi(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr makeEmptyString(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr makeString(std::string str, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr makeAnyString(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr makeAnyStringOtherThan(std::string str, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr makeChar(char c, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr makeCharRange(char from, char to, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr makeAnyChar(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr makeRegexAuto(std::string regex, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr makeLengthEqual(int length, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr makeLengthLessThan(int length, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr makeLengthLessThanEqual(int length, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr makeLengthGreaterThan(int length, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr makeLengthGreaterThanEqual(int length, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr makeLengthRange(int start, int end, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   static void release_default_indices();
 
@@ -159,14 +145,15 @@ public:
   bool isEmptyString();
   bool isAcceptingSingleString();
   std::string getAnAcceptingString();
+  bool has_sharp_bit() const {return sharp_bit_;}
 
 protected:
 
   static StringAutomaton_ptr makeRegexAuto(Util::RegularExpression_ptr regular_expression);
 
   // TODO figure out better name
-  static StringAutomaton_ptr dfaSharpStringWithExtraBit(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
-      int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
+//  static StringAutomaton_ptr dfaSharpStringWithExtraBit(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
+//      int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
 
   bool hasExceptionToValidStateFrom(int state, std::vector<char>& exception);
   std::vector<int> getAcceptingStates();
@@ -179,8 +166,7 @@ protected:
   StringAutomaton_ptr removeReservedWords();
 
   static int DEFAULT_NUM_OF_VARIABLES;
-  static int* DEFAULT_VARIABLE_INDICES;
-  static unsigned* DEFAULT_UNSIGNED_VARIABLE_INDICES;
+  bool sharp_bit_;
 
 private:
   static int name_counter;

@@ -192,24 +192,29 @@ IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool ad
   int* indices = getIndices(number_of_variables);
   const int number_of_states = this->dfa_->ns;
   int to_state, sink_state = getSinkState();
+  bool has_sink = true;
+
+  if(sink_state < 0) {
+    has_sink = false;
+    sink_state = 0;
+  }
+
   std::vector<char> unary_exception = {'1'};
   char* statuses = new char[number_of_states + 1];
   std::vector< std::vector<char> > exceptions = {
-          {'0', 'X', 'X', 'X', 'X', 'X', 'X', 'X'},
-          {'1', '0', 'X', 'X', 'X', 'X', 'X', 'X'},
-          {'1', '1', '0', 'X', 'X', 'X', 'X', 'X'},
-          {'1', '1', '1', '0', 'X', 'X', 'X', 'X'},
-          {'1', '1', '1', '1', '0', 'X', 'X', 'X'},
-          {'1', '1', '1', '1', '1', '0', 'X', 'X'},
-          {'1', '1', '1', '1', '1', '1', '0', 'X'}
+          {'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'}
   };
+
+  for (auto& exception : exceptions) {
+    exception.push_back('\0');
+  }
 
   dfaSetup(number_of_states, number_of_variables, indices);
 
   for (int s = 0; s < this->dfa_->ns; s++) {
-    if (s != sink_state) {
+    if (s != sink_state || !has_sink) {
       to_state = getNextState(s, unary_exception);
-      dfaAllocExceptions(7);
+      dfaAllocExceptions(exceptions.size());
       for (auto& exception : exceptions) {
         dfaStoreException(to_state, &*exception.begin());
       }
@@ -225,17 +230,26 @@ IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool ad
       statuses[s] = '-';
     }
   }
-  statuses[number_of_states] = '\0';
-  dfaAllocExceptions(0);
-  dfaStoreState(sink_state);
 
-  int_dfa = dfaBuild(statuses);
+  statuses[number_of_states] = '\0';
+
+  DFA_ptr temp_dfa = dfaBuild(statuses);
+  int_dfa = dfaMinimize(temp_dfa);
+  dfaFree(temp_dfa);
 
   int_auto = new IntAutomaton(int_dfa, number_of_variables);
 
+  if(!has_sink) {
+    for(int i = 0; i < int_dfa->ns; i++) {
+      if(int_dfa->f[i] == 0) {
+        int_dfa->f[i] = -1;
+      }
+    }
+  }
+
   int_auto->setMinus1(add_minus_one);
   delete[] indices; indices = nullptr;
-
+  delete[] statuses; statuses = nullptr;
   DVLOG(VLOG_LEVEL)  << int_auto->getId() << " = [" << this->id_ << "]->toIntAutomaton(" << number_of_variables << ", " << add_minus_one << ")";
 
   return int_auto;
