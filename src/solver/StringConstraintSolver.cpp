@@ -25,9 +25,9 @@ StringConstraintSolver::~StringConstraintSolver() {
 }
 
 void StringConstraintSolver::start() {
-  string_relation_generator_.start(root);
+  string_relation_generator_.start(root_);
   if (string_relation_generator_.has_string_formula()) {
-    visitScript(root);
+    visitScript(root_);
   }
   end();
 }

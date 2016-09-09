@@ -21,8 +21,8 @@ DependencySlicer::~DependencySlicer() {
 void DependencySlicer::start() {
   DVLOG(VLOG_LEVEL) << "Starting the Dependency Slicer";
 
-  symbol_table_->push_scope(root, false);
-  visitScript(root);
+  symbol_table_->push_scope(root_, false);
+  visitScript(root_);
   symbol_table_->pop_scope();
 
   end();
@@ -73,9 +73,10 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
 
   constraint_information_->add_component(and_term);
 
-  if (Option::Solver::ENABLE_DEPENDENCY) {
+  if (Option::Solver::ENABLE_DEPENDENCY and symbol_table_->top_scope() == root_) {
     auto components = GetComponentsFor(and_term->term_list);
     if (components.size() > 1) {  // and term breaks into multiple components
+      DVLOG(VLOG_LEVEL) << "Dividing into components: " << *and_term << "@" << and_term;
       and_term->term_list->clear();
       constraint_information_->remove_component(and_term);
       for (auto sub_term_list : components) {
@@ -91,14 +92,14 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
   }
 
   /**
-   * If we and_term is under a disjunction, and_term must be component.
+   * If and_term is under a disjunction, and_term must be component.
    * We can still do dependency analysis but, we must treat and_term as a component.
    * During automata construction we watch for the case.
    * This enable us to reduce the size of automaton in case one of the sub component is unsat
    */
-  if (Option::Solver::ENABLE_DEPENDENCY and symbol_table_->top_scope() != root) {
+  if (Option::Solver::ENABLE_DEPENDENCY and symbol_table_->top_scope() != root_) {
     constraint_information_->add_component(and_term);
-    map_everything_to(and_term);
+    ReMapTerms(and_term->term_list, and_term);
   } else {
     // reset data
     clear_mappings();
@@ -110,6 +111,8 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
  * Please see comments inside method
  */
 void DependencySlicer::visitOr(Or_ptr or_term) {
+  term_variable_map_[or_term];
+  auto it = term_variable_map_.find(or_term);
   for (auto& term : *(or_term->term_list)) {
     symbol_table_->push_scope(term, false);
     current_term_ = term;
@@ -145,7 +148,7 @@ void DependencySlicer::visitOr(Or_ptr or_term) {
     // reset data
     clear_mappings();
   } else {
-    map_everything_to(or_term);
+    ReMapTerms(or_term->term_list, or_term);
   }
 }
 
@@ -167,14 +170,17 @@ void DependencySlicer::clear_mappings() {
   variable_term_map_.clear();
 }
 
-void DependencySlicer::map_everything_to(Term_ptr term) {
-  term_variable_map_.clear();
-  term_variable_map_[term];
-  auto it = term_variable_map_.find(term);
-  for (auto& el : variable_term_map_) {
-    el.second.clear();
-    el.second.insert(term);
-    it->second.insert(el.first);
+void DependencySlicer::ReMapTerms(TermList_ptr term_list, Term_ptr target_term) {
+  DVLOG(VLOG_LEVEL)<< "re-mapping child terms to: " << *target_term << "@" << target_term;
+  auto& target_variable_set = term_variable_map_[target_term];
+  for (const auto term : *term_list) {
+    for (const auto variable : term_variable_map_[term]) {
+      target_variable_set.insert(variable);
+      auto& variable_map = variable_term_map_[variable];
+      variable_map.erase(term);
+      variable_map.insert(target_term);
+    }
+    term_variable_map_.erase(term);
   }
 }
 
@@ -183,21 +189,20 @@ void DependencySlicer::map_everything_to(Term_ptr term) {
  */
 std::vector<TermList_ptr> DependencySlicer::GetComponentsFor(TermList_ptr term_list) {
   std::map<Term_ptr, bool> term_processed;
-  std::map<Variable_ptr, bool> is_in_queue;
+  std::map<Variable_ptr, bool> is_queued;
   std::vector<TermList_ptr> components;
   for (auto term : *term_list) {
     if (not term_processed[term]) {
       term_processed[term] = true;
-
       std::set<Term_ptr> dependent_terms;
       dependent_terms.insert(term);
 
       // Get initial work list
       std::queue<Variable_ptr> worklist;
       for (auto variable : term_variable_map_[term]) {
-        if (not is_in_queue[variable]) {
+        if (not is_queued[variable]) {
           worklist.push(variable);
-          is_in_queue[variable] = true;
+          is_queued[variable] = true;
         }
       }
 
@@ -209,10 +214,11 @@ std::vector<TermList_ptr> DependencySlicer::GetComponentsFor(TermList_ptr term_l
           if (not term_processed[variable_term]) {
             term_processed[variable_term] = true;
             dependent_terms.insert(variable_term);
+            std::cout << "adding term: " << *term << std::endl;
             for (auto next_variable : term_variable_map_[variable_term]) {
-              if (not is_in_queue[next_variable]) {
+              if (not is_queued[next_variable]) {
                 worklist.push(next_variable);
-                is_in_queue[next_variable] = true;
+                is_queued[next_variable] = true;
               }
             }
           }

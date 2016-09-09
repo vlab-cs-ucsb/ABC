@@ -23,7 +23,7 @@ SyntacticProcessor::~SyntacticProcessor() {
 
 void SyntacticProcessor::start() {
   convertAssertsToAnd();
-  visitScript(root);
+  visitScript(root_);
 }
 
 void SyntacticProcessor::end() {
@@ -52,7 +52,7 @@ void SyntacticProcessor::setCallbacks() {
 }
 
 void SyntacticProcessor::convertAssertsToAnd() {
-  CommandList_ptr commands = root->command_list;
+  CommandList_ptr commands = root_->command_list;
   Assert_ptr current_assert = nullptr;
   And_ptr and_term = nullptr;
   TermList_ptr term_list = nullptr;
@@ -91,6 +91,7 @@ void SyntacticProcessor::visitAnd(And_ptr and_term) {
   if (not converted_into_dnf) {
     DVLOG(VLOG_LEVEL) << "Check and apply associativity: " << *and_term;
     int pos = 0;
+    TermList or_terms;
     for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
       if (And_ptr sub_and_term = dynamic_cast<And_ptr>(*iter)) { // Associativity
         and_term->term_list->erase(iter);
@@ -98,10 +99,15 @@ void SyntacticProcessor::visitAnd(And_ptr and_term) {
         sub_and_term->term_list->clear();
         delete sub_and_term;
         iter = and_term->term_list->begin() + pos; // insertion invalidates iter, reset it
-        continue;
+      } else if (Or_ptr sub_or_term = dynamic_cast<Or_ptr>(*iter)) { // push or terms to the end
+        or_terms.push_back(*iter);
+        iter = and_term->term_list->erase(iter);
+      } else {
+        iter++; pos++;
       }
-      iter++; pos++;
     }
+
+    and_term->term_list->insert(and_term->term_list->end(), or_terms.begin(), or_terms.end());
   }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *and_term << "@" << and_term;
 }

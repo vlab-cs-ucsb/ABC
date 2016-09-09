@@ -23,7 +23,7 @@ FormulaOptimizer::~FormulaOptimizer() {
 }
 
 void FormulaOptimizer::start() {
-  visitScript(root);
+  visitScript(root_);
   end();
 }
 

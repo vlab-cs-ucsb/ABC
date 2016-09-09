@@ -24,8 +24,8 @@ Counter::~Counter() {
 
 void Counter::start() {
   symbol_table->reset_count();
-  symbol_table->push_scope(root, false);
-  visitScript(root);
+  symbol_table->push_scope(root_, false);
+  visitScript(root_);
   symbol_table->pop_scope();
   end();
 }

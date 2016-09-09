@@ -43,7 +43,7 @@ class DependencySlicer : public AstTraverser {
  protected:
   void add_variable_current_term_mapping(SMT::Variable_ptr);
   void clear_mappings();
-  void map_everything_to(SMT::Term_ptr term);
+  void ReMapTerms(SMT::TermList_ptr term_list, SMT::Term_ptr target_term);
   std::vector<SMT::TermList_ptr> GetComponentsFor(SMT::TermList_ptr);
 
   SymbolTable_ptr symbol_table_;

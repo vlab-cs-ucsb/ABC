@@ -102,13 +102,13 @@ public:
   void visit(SMT::Term_ptr& term);
   void visit_term_list(SMT::TermList_ptr term_list);
 protected:
-  SMT::Script_ptr root;
+  SMT::Script_ptr root_;
   std::stack<SMT::Term_ptr*> term_ptr_ref_stack_;
 
-  std::function<bool (SMT::Command_ptr)> command_pre_callback;
-  std::function<bool (SMT::Term_ptr)> term_pre_callback;
-  std::function<bool (SMT::Command_ptr)> command_post_callback;
-  std::function<bool (SMT::Term_ptr)> term_post_callback;
+  std::function<bool (SMT::Command_ptr)> command_pre_callback_;
+  std::function<bool (SMT::Term_ptr)> term_pre_callback_;
+  std::function<bool (SMT::Command_ptr)> command_post_callback_;
+  std::function<bool (SMT::Term_ptr)> term_post_callback_;
 };
 
 } /* namespace Solver */

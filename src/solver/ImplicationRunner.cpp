@@ -18,8 +18,8 @@ ImplicationRunner::~ImplicationRunner() {
 void ImplicationRunner::start() {
   DVLOG(VLOG_LEVEL) << "Starting the Implication Runner";
 
-  symbol_table_->push_scope(root, false);
-  visitScript(root);
+  symbol_table_->push_scope(root_, false);
+  visitScript(root_);
   symbol_table_->pop_scope();
 
   end();

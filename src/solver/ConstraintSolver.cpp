@@ -17,7 +17,7 @@ const int ConstraintSolver::VLOG_LEVEL = 11;
 
 ConstraintSolver::ConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_table,
                                    ConstraintInformation_ptr constraint_information)
-    : iteration_count_ {0},
+    : iteration_count_ { 0 },
       root_(script),
       symbol_table_(symbol_table),
       constraint_information_(constraint_information),
@@ -127,19 +127,19 @@ void ConstraintSolver::visitLet(Let_ptr let_term) {
 }
 
 /**
-* 1) Solve arithmetic constraints
-* 2) Solve relational string constraints
-* 3) Solve single-track strings and mixed constraints
-*/
+ * 1) Solve arithmetic constraints
+ * 2) Solve relational string constraints
+ * 3) Solve single-track strings and mixed constraints
+ */
 void ConstraintSolver::visitAnd(And_ptr and_term) {
   bool is_satisfiable = true;
+  bool is_component = constraint_information_->is_component(and_term);
 
-  if (constraint_information_->is_component(and_term) and iteration_count_ == 0) {
+  if (is_component and iteration_count_ == 0) {
     if (constraint_information_->has_arithmetic_constraint(and_term)) {
       arithmetic_constraint_solver_.start(and_term);
       is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
     }
-
     if (is_satisfiable and constraint_information_->has_string_constraint(and_term)) {
       string_constraint_solver_.start(and_term);
 //      is_satisfiable = // check string constraint solver part is satisfiable
@@ -148,8 +148,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
   DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
 
-  if (is_satisfiable and constraint_information_->has_mixed_constraint(and_term)) {
-    LOG(FATAL) << "need to visit terms that are not disjunct first";
+  if (is_satisfiable and (constraint_information_->has_mixed_constraint(and_term) or (not is_component))) {
     for (auto& term : *(and_term->term_list)) {
       is_satisfiable = check_and_visit(term) and is_satisfiable;
       if (is_satisfiable) {
@@ -193,7 +192,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 //  }
   DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 }
-
 
 void ConstraintSolver::visitOr(Or_ptr or_term) {
   bool is_satisfiable = false;
@@ -349,9 +347,9 @@ void ConstraintSolver::visitUMinus(UMinus_ptr u_minus_term) {
       break;
     }
     default:
-    LOG(FATAL) << "unary minus term child is not computed properly: " << *(u_minus_term->term);
-    break;
-  }
+      LOG(FATAL)<< "unary minus term child is not computed properly: " << *(u_minus_term->term);
+      break;
+    }
 
   setTermValue(u_minus_term, result);
 }
@@ -415,8 +413,6 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
 
   Value_ptr result = nullptr, param_left = getTermValue(eq_term->left_term), param_right = getTermValue(
       eq_term->right_term);
-
-
 
   if (Value::Type::BOOl_CONSTANT == param_left->getType() and Value::Type::BOOl_CONSTANT == param_right->getType()) {
     result = new Value(param_left->getBoolConstant() == param_right->getBoolConstant());
@@ -1260,16 +1256,16 @@ void ConstraintSolver::visit_children_of(Term_ptr term) {
 
 bool ConstraintSolver::check_and_visit(Term_ptr term) {
   if ((Term::Type::OR not_eq term->type()) and (Term::Type::AND not_eq term->type())) {
-    if (constraint_information_->has_arithmetic_constraint(term)) { // if arithmetic constraint and has string terms
+    if (constraint_information_->has_arithmetic_constraint(term)) {  // if arithmetic constraint and has string terms
       auto is_satisfiable = true;
       if (arithmetic_constraint_solver_.has_string_terms(term)) {
         DVLOG(VLOG_LEVEL) << "Mixed Linear Arithmetic Constraint";
         is_satisfiable = process_mixed_integer_string_constraints_in(term);
       }
       return is_satisfiable;
-    } else if(constraint_information_->has_string_constraint(term)) {
+    } else if (constraint_information_->has_string_constraint(term)) {
       DVLOG(VLOG_LEVEL) << "Mixed Multi- and Single- Track String Automata Constraint";
-      return true; // should be checked already
+      return true;  // should be checked already
     }
   }
   visit(term);
@@ -1293,7 +1289,8 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
 
     if (not is_satisfiable) {
       auto binary_auto = arithmetic_result->getBinaryIntAutomaton();
-      arithmetic_result = new Value(BinaryIntAutomaton::MakePhi(binary_auto->get_formula()->clone(), binary_auto->is_natural_number()));
+      arithmetic_result = new Value(
+          BinaryIntAutomaton::MakePhi(binary_auto->get_formula()->clone(), binary_auto->is_natural_number()));
       arithmetic_constraint_solver_.set_group_value(term, arithmetic_result);
       break;
     }
@@ -1306,24 +1303,26 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
       // first convert integer result to unary, then unary to binary
       string_term_unary_auto = string_term_result->getIntAutomaton()->toUnaryAutomaton();
       string_term_binary_auto = string_term_unary_auto->toBinaryIntAutomaton(
-                                string_term_var_name, arithmetic_result->getBinaryIntAutomaton()->get_formula()->clone(), has_minus_one);
-      delete string_term_unary_auto; string_term_unary_auto = nullptr;
+          string_term_var_name, arithmetic_result->getBinaryIntAutomaton()->get_formula()->clone(), has_minus_one);
+      delete string_term_unary_auto;
+      string_term_unary_auto = nullptr;
     } else if (Value::Type::INT_CONSTANT == string_term_result->getType()) {
       int value = string_term_result->getIntConstant();
       has_minus_one = (value < 0);
       number_of_variables_for_int_auto = Theory::IntAutomaton::DEFAULT_NUM_OF_VARIABLES;
       string_term_binary_auto = Theory::BinaryIntAutomaton::MakeAutomaton(
-                                value, string_term_var_name, arithmetic_result->getBinaryIntAutomaton()->get_formula()->clone(), true);
+          value, string_term_var_name, arithmetic_result->getBinaryIntAutomaton()->get_formula()->clone(), true);
     } else {
       LOG(FATAL)<< "unexpected type";
     }
 
     // update the stored binary int auto with new string term results
     updated_arith_auto = arithmetic_result->getBinaryIntAutomaton()->Intersect(string_term_binary_auto);
-    delete string_term_binary_auto; string_term_binary_auto = nullptr;
+    delete string_term_binary_auto;
+    string_term_binary_auto = nullptr;
 
     arithmetic_result = new Value(updated_arith_auto);
-    is_satisfiable = arithmetic_constraint_solver_.set_group_value(term, arithmetic_result); // in turn, update group variable
+    is_satisfiable = arithmetic_constraint_solver_.set_group_value(term, arithmetic_result);  // in turn, update group variable
     if (not is_satisfiable) {
       break;
     }
@@ -1340,20 +1339,23 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     }
 
     string_term_unary_auto = string_term_binary_auto->ToUnaryAutomaton();
-    delete string_term_binary_auto; string_term_binary_auto = nullptr;
+    delete string_term_binary_auto;
+    string_term_binary_auto = nullptr;
     updated_int_auto = string_term_unary_auto->toIntAutomaton(number_of_variables_for_int_auto, has_minus_one);
-    delete string_term_unary_auto; string_term_unary_auto = nullptr;
+    delete string_term_unary_auto;
+    string_term_unary_auto = nullptr;
     clearTermValue(string_term);
     string_term_result = new Value(updated_int_auto);
     setTermValue(string_term, string_term_result);
 
     // 3 - update variables involved in string term
-    LOG(FATAL) << "update variables function should return true/false based on satisfiability";
+    LOG(FATAL)<< "update variables function should return true/false based on satisfiability";
 //    is_satisfiable = update_variables();
     update_variables();
     if (not is_satisfiable) {
       auto binary_auto = arithmetic_result->getBinaryIntAutomaton();
-      arithmetic_result = new Value(BinaryIntAutomaton::MakePhi(binary_auto->get_formula()->clone(), binary_auto->is_natural_number()));
+      arithmetic_result = new Value(
+          BinaryIntAutomaton::MakePhi(binary_auto->get_formula()->clone(), binary_auto->is_natural_number()));
       arithmetic_constraint_solver_.set_group_value(term, arithmetic_result);
       break;
     }

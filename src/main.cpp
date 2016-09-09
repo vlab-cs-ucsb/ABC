@@ -109,9 +109,9 @@ int main(const int argc, const char **argv) {
 //  LOG(INFO)<< "production log";
 //  DVLOG(1) << "vlog log";
 
-  if (VLOG_IS_ON(1)) {
+//  if (VLOG_IS_ON(1)) {
     //std::cout << "yaaay" << std::endl;
-  }
+//  }
   /* log test end */
 
   if (not in->good()) {
@@ -184,7 +184,7 @@ int main(const int argc, const char **argv) {
       unsigned index = 0;
 
       for (auto& variable_entry : driver.getSatisfyingVariables()) {
-
+        std::cout << "var: " << variable_entry.first->getName() << std::endl;
         if (variable_entry.second == nullptr) {
           // part of multitrack/binaryint
           continue;
@@ -297,7 +297,6 @@ int main(const int argc, const char **argv) {
     }
   }
   LOG(INFO) << "done.";
-  DVLOG(1) << "Ndebug test";
   if (file != nullptr)
     delete file;
   return 0;
