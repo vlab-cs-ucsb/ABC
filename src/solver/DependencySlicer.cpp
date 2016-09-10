@@ -214,7 +214,6 @@ std::vector<TermList_ptr> DependencySlicer::GetComponentsFor(TermList_ptr term_l
           if (not term_processed[variable_term]) {
             term_processed[variable_term] = true;
             dependent_terms.insert(variable_term);
-            std::cout << "adding term: " << *term << std::endl;
             for (auto next_variable : term_variable_map_[variable_term]) {
               if (not is_queued[next_variable]) {
                 worklist.push(next_variable);

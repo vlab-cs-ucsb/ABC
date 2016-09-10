@@ -1112,7 +1112,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticF
 //TODO fix me, avoid complement it is expensive, construct directly from equality if possible
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNotEquality(ArithmeticFormula_ptr formula, bool is_natural_number) {
   BinaryIntAutomaton_ptr not_equal_auto = nullptr, tmp_auto = nullptr;
-  LOG(FATAL)<< "Fix me ";
+//  LOG(FATAL)<< "Fix me ";
   formula->set_type(ArithmeticFormula::Type::EQ);
   tmp_auto = BinaryIntAutomaton::MakeEquality(formula, is_natural_number);
   not_equal_auto = tmp_auto->Complement();

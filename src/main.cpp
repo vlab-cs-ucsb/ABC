@@ -40,8 +40,12 @@ int main(const int argc, const char **argv) {
   std::ifstream* file = nullptr;
   std::string file_name;
 
-  std::string output_root = get_default_output_dir();
-  std::string log_root = get_default_log_dir();
+//  std::string output_root = get_default_output_dir();
+//  std::string log_root = get_default_log_dir();
+
+  std::string output_root {"./output"};
+  std::string log_root {"./log"};
+
   FLAGS_log_dir = log_root;
   FLAGS_v = 30;
   FLAGS_logtostderr = 1;
@@ -184,7 +188,6 @@ int main(const int argc, const char **argv) {
       unsigned index = 0;
 
       for (auto& variable_entry : driver.getSatisfyingVariables()) {
-        std::cout << "var: " << variable_entry.first->getName() << std::endl;
         if (variable_entry.second == nullptr) {
           // part of multitrack/binaryint
           continue;
