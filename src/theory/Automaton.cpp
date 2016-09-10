@@ -174,7 +174,7 @@ boost::multiprecision::cpp_int Automaton::Count(int bound, bool count_less_than_
     x[this->dfa_->ns][this->dfa_->ns] = 1;
   }
 
-  int power = bound + 1; // matrix exponentiation is off by 1
+  int power = bound + 1; // matrix exponentiation is off by 1 because of artificial accepting state
 
   if (power == 1) {
     auto result = x[this->dfa_->s][this->dfa_->ns];
@@ -189,16 +189,16 @@ boost::multiprecision::cpp_int Automaton::Count(int bound, bool count_less_than_
 
   while (power > 1) {
     if (power % 2 == 0) {
-      x = Util::Math::multiply_matrix(x, x);
+      x = Util::Math::multiply_matrix_multi_thread(x, x);
       power = power / 2;
     } else {
-      y = Util::Math::multiply_matrix(x, y);
-      x = Util::Math::multiply_matrix(x, x);
+      y = Util::Math::multiply_matrix_multi_thread(x, y);
+      x = Util::Math::multiply_matrix_multi_thread(x, x);
       power = (power - 1) / 2;
     }
   }
 
-  x = Util::Math::multiply_matrix(x, y);
+  x = Util::Math::multiply_matrix_multi_thread(x, y);
 
   auto result = x[this->dfa_->s][this->dfa_->ns];
   DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->count(" << bound << ") : " << result;
