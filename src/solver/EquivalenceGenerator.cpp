@@ -41,6 +41,7 @@ void EquivalenceGenerator::start() {
 }
 
 void EquivalenceGenerator::end() {
+#ifndef NDEBUG
   if (VLOG_IS_ON(VLOG_LEVEL)) {
     for(auto& table_entry : symbol_table_->get_equivalance_class_table()) {
       DVLOG(VLOG_LEVEL) << " equivalence scope: " << "@" << table_entry.first;
@@ -53,6 +54,7 @@ void EquivalenceGenerator::end() {
       }
     }
   }
+#endif
 
   EquivClassRuleRunner rule_runner(root_, symbol_table_);
   rule_runner.start();

@@ -29,6 +29,7 @@ void DependencySlicer::start() {
 }
 
 void DependencySlicer::end() {
+#ifndef NDEBUG
   /*if (VLOG_IS_ON(VLOG_LEVEL)) {
    for (auto& c : constraint_information_->get_components()){
    DVLOG(VLOG_LEVEL) << c;
@@ -36,6 +37,7 @@ void DependencySlicer::end() {
    }
 
    }*/
+#endif
 }
 
 void DependencySlicer::setCallbacks() {

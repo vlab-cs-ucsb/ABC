@@ -31,11 +31,13 @@ void Counter::start() {
 }
 
 void Counter::end() {
+#ifndef NDEBUG
   if (VLOG_IS_ON(VLOG_LEVEL)) {
     for (auto& pair : symbol_table->get_variables()) {
       DVLOG(VLOG_LEVEL) << pair.first << " : " << symbol_table->get_total_count(pair.second);
     }
   }
+#endif
 }
 
 void Counter::setCallbacks() {

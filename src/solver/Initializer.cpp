@@ -28,11 +28,13 @@ void Initializer::start() {
 }
 
 void Initializer::end() {
+#ifndef NDEBUG
   if (VLOG_IS_ON(19)) {
     for (auto& pair : symbol_table_->get_variables()) {
       DVLOG(VLOG_LEVEL) << *pair.second;
     }
   }
+#endif
 }
 
 void Initializer::visitScript(Script_ptr script) {

@@ -41,7 +41,7 @@ void ConstraintSorter::start() {
 }
 
 void ConstraintSorter::end() {
-
+#ifndef NDEBUG
 //  if (VLOG_IS_ON(VLOG_LEVEL)) {
 //    DVLOG(VLOG_LEVEL) << "global dependency info: " << root;
 //    for (auto& node : dependency_node_list) {
@@ -52,6 +52,7 @@ void ConstraintSorter::end() {
 //      DVLOG(VLOG_LEVEL) << node.second->str();
 //    }
 //  }
+#endif
 }
 
 void ConstraintSorter::visitScript(Script_ptr script) {
@@ -113,7 +114,7 @@ void ConstraintSorter::visitAnd(And_ptr and_term) {
   term_node = nullptr;
 
   sort_terms(local_dependency_node_list);
-
+#ifndef NDEBUG
   if (VLOG_IS_ON(VLOG_LEVEL)) {
     for (auto& node : local_dependency_node_list) {
       DVLOG(VLOG_LEVEL) << node->str();
@@ -123,6 +124,7 @@ void ConstraintSorter::visitAnd(And_ptr and_term) {
       DVLOG(VLOG_LEVEL) << node.second->str();
     }
   }
+#endif
 
   and_term->term_list->clear();
   for(auto it = local_dependency_node_list.cbegin(); it != local_dependency_node_list.cend(); it++) {

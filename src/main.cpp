@@ -166,16 +166,21 @@ int main(const int argc, const char **argv) {
 
   driver.test();
   driver.parse(in);
+
+#ifndef NDEBUG
   if (VLOG_IS_ON(30)) {
     driver.ast2dot(output_root + "/parser_out.dot");
   }
+#endif
 
   auto start = std::chrono::steady_clock::now();
   driver.initializeSolver();
 
+#ifndef NDEBUG
   if (VLOG_IS_ON(30)) {
     driver.ast2dot(output_root + "/optimized.dot");
   }
+#endif
 
   driver.solve();
   auto end = std::chrono::steady_clock::now();
@@ -183,6 +188,7 @@ int main(const int argc, const char **argv) {
   LOG(INFO) << "";
   LOG(INFO) << "Done solving";
   LOG(INFO) << "";
+
   if (driver.isSatisfiable()) {
     if (VLOG_IS_ON(30)) {
       unsigned index = 0;
