@@ -91,7 +91,6 @@ protected:
   static BinaryIntAutomaton_ptr MakeEquality(ArithmeticFormula_ptr, bool is_natural_number);
   static BinaryIntAutomaton_ptr MakeIntEquality(ArithmeticFormula_ptr);
   static BinaryIntAutomaton_ptr MakeNaturalNumberEquality(ArithmeticFormula_ptr);
-  static BinaryIntAutomaton_ptr MakeNotEquality(ArithmeticFormula_ptr, bool is_natural_number);
   static BinaryIntAutomaton_ptr MakeLessThan(ArithmeticFormula_ptr, bool is_natural_number);
   static BinaryIntAutomaton_ptr MakeIntLessThan(ArithmeticFormula_ptr);
   static BinaryIntAutomaton_ptr MakeNaturalNumberLessThan(ArithmeticFormula_ptr);

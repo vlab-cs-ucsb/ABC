@@ -79,7 +79,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(ArithmeticFormula_ptr f
       break;
     }
     case ArithmeticFormula::Type::NOTEQ: {
-      result_auto = BinaryIntAutomaton::MakeNotEquality(formula, is_natural_number);
+      result_auto = BinaryIntAutomaton::MakeEquality(formula, is_natural_number);
       break;
     }
     case ArithmeticFormula::Type::GT: {
@@ -328,7 +328,6 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Complement() {
   dfaNegation(complement_dfa);
 
   auto tmp_auto = new BinaryIntAutomaton(complement_dfa, this->formula_->clone(), is_natural_number_);
-
   // a complemented auto may have initial state accepting, we should be safely avoided from that
   auto any_int_auto = BinaryIntAutomaton::MakeAnyInt(this->formula_->clone(), is_natural_number_);
   auto complement_auto = any_int_auto->Intersect(tmp_auto);
@@ -856,8 +855,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
     min = constant;
   }
 
-  const int num_of_states = 2 * (max - min) + 3;
-  const int sink_state = num_of_states - 1;
+  const int num_of_states = 2 * (max - min + 2);
+  const int sink_state = num_of_states - 2;
+  const int shifted_initial_state = num_of_states - 1;
 
   unsigned max_states_allowed = 0x80000000;
   unsigned mona_check = 8 * num_of_states;
@@ -872,10 +872,16 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
   int* indices = getIndices(total_num_variables);
   dfaSetup(num_of_states, total_num_variables, indices);
 
+  std::map<std::vector<char>, int> transitions_from_initial_state; // populated if initial state is in cycle and accepting
+
   std::map<int, StateIndices> carry_map;  // maps carries to state indices
   carry_map[constant].sr = 1;
   carry_map[constant].i = -1;
   carry_map[constant].ir = 0;
+
+  const bool is_equality = (ArithmeticFormula::Type::EQ == formula->get_type());
+  const bool needs_shift_state = (not is_equality);
+  bool is_initial_state_shifted = false;
 
   int next_index = 0,
       next_label = constant,
@@ -903,21 +909,33 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
           }
         }
         target = result / 2;
+        int to_state;
         if (target == next_label) {
           if (carry_map[target].s == 0) {
             carry_map[target].s = 1;
             ++next_index;
             carry_map[target].i = next_index;
           }
-          dfaStoreException(carry_map[target].i, &current_exception[0]);
+          to_state = carry_map[target].i;
         } else {
           if (carry_map[target].sr == 0) {
             carry_map[target].sr = 1;
             ++next_index;
             carry_map[target].ir = next_index;
           }
-          dfaStoreException(carry_map[target].ir, &current_exception[0]);
+          to_state = carry_map[target].ir;
         }
+
+        if (needs_shift_state) {
+          if (to_state == 0) {
+            to_state = shifted_initial_state;
+            is_initial_state_shifted = true;
+          }
+          if (current_state == 0) { // save transition for shifted initial start
+            transitions_from_initial_state[current_exception] = to_state;
+          }
+        }
+        dfaStoreException(to_state, &current_exception[0]);
       }
     }
 
@@ -933,19 +951,41 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
   }
 
   for (; current_state < num_of_states; ++current_state) {
-    dfaAllocExceptions(0);
-    dfaStoreState(sink_state);
+    if (is_initial_state_shifted and current_state == shifted_initial_state) {
+      dfaAllocExceptions(transitions_from_initial_state.size());
+      for (auto& el : transitions_from_initial_state) {
+        auto excep = el.first;
+        dfaStoreException(el.second, &excep[0]);
+      }
+      dfaStoreState(sink_state);
+    } else {
+      dfaAllocExceptions(0);
+      dfaStoreState(sink_state);
+    }
+  }
+
+  //define accepting and rejecting states
+  char initial_status = '-';
+  char target_status = '+';
+  if (not is_equality) {
+    initial_status = '+';
+    target_status = '-';
   }
 
   //define accepting and rejecting states
   char *statuses = new char[num_of_states + 1];
-  for (int i = 0; i < num_of_states; ++i) {
-    statuses[i] = '-';
+  statuses[0] = '-';
+  for (int i = 1; i < num_of_states; ++i) {
+    statuses[i] = initial_status;
   }
 
   for (next_label = min; next_label <= max; ++next_label) {
     if (carry_map[next_label].s == 2) {
-      statuses[carry_map[next_label].i] = '+';
+      if (carry_map[next_label].i == 0 and is_initial_state_shifted) {
+        statuses[shifted_initial_state] = target_status;
+      } else {
+        statuses[carry_map[next_label].i] = target_status;
+      }
     }
   }
 
@@ -1012,6 +1052,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticF
   carry_map[constant].s = 1;
   carry_map[constant].i = 0;
 
+  const bool is_equality = (ArithmeticFormula::Type::EQ == formula->get_type());
+  const bool needs_shift_state = ((is_equality and constant == 0) or ((not is_equality) and constant != 0));
+  bool is_initial_state_shifted = false;
+
   int next_index = 0,
       next_label = constant,
       current_state = 0;
@@ -1042,15 +1086,15 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticF
         }
         // hack to avoid an accepting initial state
         int to_state = carry_map[target].i;
-        if (constant == 0) { // initial state is accepting, shift it
+        if (needs_shift_state) { // initial state is accepting, shift it
           if (to_state == 0) {
             to_state = shifted_initial_state;
+            is_initial_state_shifted = true;
           }
           if (current_state == 0) { // save transition for shifted initial start
             transitions_from_initial_state[current_exception] = to_state;
           }
         }
-
         dfaStoreException(to_state, &current_exception[0]);
       }
     }
@@ -1068,7 +1112,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticF
   }
 
   for (; current_state < num_of_states; ++current_state) {
-    if (current_state == shifted_initial_state) {
+    if (is_initial_state_shifted and current_state == shifted_initial_state) {
       dfaAllocExceptions(transitions_from_initial_state.size());
       for (auto& el : transitions_from_initial_state) {
         auto excep = el.first;
@@ -1082,18 +1126,27 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticF
   }
 
   //define accepting and rejecting states
+  char initial_status = '-';
+  char target_status = '+';
+  if (not is_equality) {
+    initial_status = '+';
+    target_status = '-';
+  }
+
   char *statuses = new char[num_of_states + 1];
-  for (int i = 0; i < num_of_states; i++) {
-    statuses[i] = '-';
+  statuses[0] = '-';
+  for (int i = 1; i < num_of_states; i++) {
+    statuses[i] = initial_status;
   }
 
   if (carry_map[0].s == 2) {
-    if (carry_map[0].i == 0) {
-      statuses[shifted_initial_state] = '+';
+    if (carry_map[0].i == 0 and is_initial_state_shifted) {
+      statuses[shifted_initial_state] = target_status;
     } else {
-      statuses[carry_map[0].i] = '+';
+      statuses[carry_map[0].i] = target_status;
     }
   }
+
   statuses[num_of_states] = '\0';
 
   auto tmp_dfa = dfaBuild(statuses);
@@ -1107,20 +1160,6 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticF
 
   DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeNaturalNumberEquality(" << *formula << ")";
   return equality_auto;
-}
-
-//TODO fix me, avoid complement it is expensive, construct directly from equality if possible
-BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNotEquality(ArithmeticFormula_ptr formula, bool is_natural_number) {
-  BinaryIntAutomaton_ptr not_equal_auto = nullptr, tmp_auto = nullptr;
-//  LOG(FATAL)<< "Fix me ";
-  formula->set_type(ArithmeticFormula::Type::EQ);
-  tmp_auto = BinaryIntAutomaton::MakeEquality(formula, is_natural_number);
-  not_equal_auto = tmp_auto->Complement();
-  delete tmp_auto;
-  tmp_auto = nullptr;
-
-  DVLOG(VLOG_LEVEL) << not_equal_auto->id_ << " = MakeNotEquality(" << *not_equal_auto->get_formula() << ")";
-  return not_equal_auto;
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeLessThan(ArithmeticFormula_ptr formula, bool is_natural_number) {

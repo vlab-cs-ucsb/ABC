@@ -266,7 +266,8 @@ bool ArithmeticFormula::Simplify() {
   }
 
   switch (type_) {
-    case Type::EQ: {
+    case Type::EQ:
+    case Type::NOTEQ: {
       if (constant_ % gcd_value == 0) {
         constant_ = constant_ / gcd_value;
       } else {
@@ -283,7 +284,7 @@ bool ArithmeticFormula::Simplify() {
       break;
     }
     default:
-      LOG(FATAL)<< "Simplification is only done after converting into '=' or '<' equation";
+      LOG(FATAL)<< "Simplification is only done after converting into '=', '!=', or '<' equation";
       break;
     }
 
