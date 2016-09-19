@@ -478,52 +478,8 @@ int IntAutomaton::getMaxAcceptedInt() {
     return this->getAnAcceptingInt();
   }
 
-  AdjacencyList adjacency_count_list = this->getAdjacencyCountList();
-  adjacency_count_list[this->getSinkState()] = NodeVector(0);
-
-  const int n = adjacency_count_list.size();
-  int y;
-  int * u = new int[n];
-  int * v = new int[n];
-  int max_int = 0;
-  std::vector<int> final_states;
-
-  for(int j = 0; j < this->dfa_->ns; j++) {
-    if (is_accepting_state(j)) {
-      final_states.push_back(j);
-    }
-  }
-
-  for(int j = 0; j < n; j++) {
-    v[j] = 0; u[j] = 0;
-  }
-
-  v[this->dfa_->s] = 1;
-
-  for (int col = 0; col < n; col++) {
-    int c = 0;
-    for (int j = 0; j < n; j ++) {
-      u[j] = 0;
-    }
-    for (int ii = 0; ii < n; ii++) {
-      for(int jj = 0; jj < (int)adjacency_count_list[ii].size(); jj++) {
-          y = adjacency_count_list[ii][jj].first;
-          u[c] |= v[y];
-      }
-      c++;
-    }
-    for (int d = 0; d < (int)final_states.size(); d++) {
-      if (v[final_states[d]]) {
-        max_int = col;
-      }
-    }
-    for (int b = 0; b < n; b++) {
-      v[b] = u[b];
-    }
-  }
-  delete[] u;
-  delete[] v;
-  return max_int;
+  LOG(FATAL) << "implement me";
+  return 0;
 }
 
 int IntAutomaton::getMinAcceptedInt() {
@@ -533,55 +489,8 @@ int IntAutomaton::getMinAcceptedInt() {
     return this->getAnAcceptingInt();
   }
 
-  AdjacencyList adjacency_count_list = this->getAdjacencyCountList();
-  adjacency_count_list[this->getSinkState()] = NodeVector(0);
-
-  const int n = adjacency_count_list.size();
-  int j, col;
-  int y;
-  int * u = new int[n];
-  int * v = new int[n];
-  int min_int = 0;
-  bool min_int_found = false;
-  std::vector<int> final_states;
-
-  for(int j = 0; j < this->dfa_->ns; j++) {
-    if (is_accepting_state(j)) {
-      final_states.push_back(j);
-    }
-  }
-
-  for (int j = 0; j < n; j++) {
-    v[j] = 0; u[j] = 0;
-  }
-
-  v[this->dfa_->s] = 1;
-
-  for (int col = 0; (col < n) and (not min_int_found); col++) {
-    int c = 0;
-    for(int j = 0; j < n; j ++) {
-      u[j] = 0;
-    }
-    for (int ii = 0; ii < n; ii++){
-      for(int jj = 0; jj < (int)adjacency_count_list[ii].size(); jj++){
-          y = adjacency_count_list[ii][jj].first;
-          u[c] |= v[y];
-      }
-      c++;
-    }
-    for (int d = 0; (not min_int_found) and (d < (int)final_states.size()); d++) {
-      if (v[final_states[d]]) {
-        min_int = col;
-        min_int_found = true;
-      }
-    }
-    for (int b = 0; b < n; b++) {
-      v[b] = u[b];
-    }
-  }
-  delete[] u;
-  delete[] v;
-  return min_int;
+  LOG(FATAL) << "implement me";
+  return 0;
 }
 
 bool IntAutomaton::isGreaterThan(int value) {

@@ -167,9 +167,9 @@ bool Automaton::isStateReachableFrom(int search_state, int from_state) {
   return isStateReachableFrom(search_state, from_state, is_stack_member);
 }
 
-boost::multiprecision::cpp_int Automaton::Count(int bound, bool count_less_than_or_equal_to_bound, bool count_reserved_words) {
+mpz_class Automaton::Count(int bound, bool count_less_than_or_equal_to_bound) {
 
-  auto x = GetAdjacencyCountMatrix(count_reserved_words);
+  auto x = GetAdjacencyCountMatrix();
   if (count_less_than_or_equal_to_bound) {
     x[this->dfa_->ns][this->dfa_->ns] = 1;
   }
@@ -205,7 +205,7 @@ boost::multiprecision::cpp_int Automaton::Count(int bound, bool count_less_than_
   return result;
 }
 
-boost::multiprecision::cpp_int Automaton::SymbolicCount(int bound, bool count_less_than_or_equal_to_bound) {
+mpz_class Automaton::SymbolicCount(int bound, bool count_less_than_or_equal_to_bound) {
   std::stringstream cmd;
   std::string str_result;
   std::string tmp_math_file = Option::Theory::TMP_PATH + "/math_script.m";
@@ -221,10 +221,10 @@ boost::multiprecision::cpp_int Automaton::SymbolicCount(int bound, bool count_le
     LOG(ERROR) << e;
   }
 
-  return boost::multiprecision::cpp_int (str_result);
+  return mpz_class (str_result);
 }
 
-boost::multiprecision::cpp_int Automaton::SymbolicCount(double bound, bool count_less_than_or_equal_to_bound) {
+mpz_class Automaton::SymbolicCount(double bound, bool count_less_than_or_equal_to_bound) {
   return SymbolicCount(static_cast<int>(bound), count_less_than_or_equal_to_bound);
 }
 
@@ -528,7 +528,7 @@ DFA_ptr Automaton::DfaL1ToL2(int start, int end, int num_of_variables, int *vari
     statuses[i] = '+';    // i == start
     i++;
   } else {
-    assert( end >= start);
+    CHECK( end >= start);
     number_of_states = end + 2; // add one sink state
     statuses = new char[number_of_states+1];
     dfaSetup(number_of_states, num_of_variables, variable_indices);
@@ -928,7 +928,7 @@ std::set<int> Automaton::getStatesReachableBy(int min_walk, int max_walk) {
   return states;
 }
 
-CountMatrix Automaton::GetAdjacencyCountMatrix(bool count_reserved_words) {
+CountMatrix Automaton::GetAdjacencyCountMatrix() {
   if (is_count_matrix_cached_) {
     return count_matrix_;
   }
@@ -945,6 +945,7 @@ CountMatrix Automaton::GetAdjacencyCountMatrix(bool count_reserved_words) {
       current_bdd_node = bdd_node_stack.top(); bdd_node_stack.pop();
       LOAD_lri(&dfa_->bddm->node_table[current_bdd_node.first], left, right, index);
       if (index == BDD_LEAF_INDEX) {
+        // TODO possible source of overflow if the number of variables are large
         count_matrix[s][left] += static_cast<int>(std::pow(2, (num_of_variables_ - current_bdd_node.second)));
       } else {
         left_node.first = left;
@@ -962,14 +963,6 @@ CountMatrix Automaton::GetAdjacencyCountMatrix(bool count_reserved_words) {
     }
   }
 
-  // TODO use extra bit instead of reserved words, so that we do not need counting trick.
-//  if (count_reserved_words) {
-//    for (int s = 0; s < this->dfa_->ns; ++s) {
-//      auto max_transition = std::max_element(count_matrix[s].begin(), count_matrix[s].end());
-//      *max_transition += 2; // add two reserved words
-//    }
-//  }
-
   // make transitions to sink count 0
   int sink_state = this->getSinkState();
   if (sink_state > -1) {
@@ -985,290 +978,132 @@ CountMatrix Automaton::GetAdjacencyCountMatrix(bool count_reserved_words) {
 //    }
 //    std::cout << std::endl;
 //  }
-  count_matrix_ = count_matrix;
+  count_matrix_ = std::move(count_matrix);
   is_count_matrix_cached_ = true;
-  return count_matrix;
-}
-
-AdjacencyList Automaton::getAdjacencyCountList(bool count_reserved_words) {
-  int num_of_transitions;
-  int leaf_count = 0;
-  unsigned l, r, index;
-  Node current_node, top, lo_node, hi_node, entry;
-  std::stack<Node> node_stack;
-  AdjacencyList adjacency_count_list(this->dfa_->ns, NodeVector());
-  std::vector<int> transition_count(dfa_->ns, 0);
-  std::vector<int> reachable_states(dfa_->ns, 0);
-
-  // process each state and run a dfs
-  for (int i = 0; i < this->dfa_->ns; i++) {
-    // keep a list of reachable states for optimization purposes
-    for (int j = 0; j < leaf_count; j++) {
-      reachable_states[j] = 0;
-    }
-
-    leaf_count = 0;
-    for (int j = 0; j < this->dfa_->ns; j++) {
-      transition_count[j] = 0;
-    }
-
-    LOAD_lri(&dfa_->bddm->node_table[i], l, r, index);
-    // keep track of t and id as pair<id,t> in stack
-    current_node.second = 0;
-    current_node.first = dfa_->q[i];
-
-    node_stack.push(current_node);
-
-    while (not node_stack.empty()) {
-      top = node_stack.top();
-      node_stack.pop();
-      LOAD_lri(&this->dfa_->bddm->node_table[top.first], l, r, index);
-      if (index == BDD_LEAF_INDEX) {
-        num_of_transitions = std::pow(2, (num_of_variables_ - top.second));
-        if (!transition_count[l]) {
-          reachable_states[leaf_count] = l;
-          leaf_count++;
-        }
-        transition_count[l] += num_of_transitions;
-      } else {
-        lo_node.first = l;
-        lo_node.second = top.second + 1;
-        hi_node.first = r;
-        hi_node.second = top.second + 1;
-        node_stack.push(lo_node);
-        node_stack.push(hi_node);
-      }
-    }
-
-    for (int j = 0; j < leaf_count; j++) {
-      entry.first = i;
-      entry.second = transition_count[reachable_states[j]];
-      adjacency_count_list[reachable_states[j]].push_back(entry);
-    }
-  }
-
-  if (count_reserved_words) {
-    addReservedWordsToCount(adjacency_count_list);
-  }
-
-//  for (int i = 0; i < adjacency_count_list.size(); i++) {
-//    std::cout << i << " : ";
-//    for (int j = 0; j < adjacency_count_list[i].size(); j++) {
-//      std::cout << "{" << adjacency_count_list[i][j].first << ", " << adjacency_count_list[i][j].second << "} ";
-//    }
-//    std::cout << std::endl;
-//  }
-
-  return adjacency_count_list;
-}
-
-/**
- * This is an unsound hack to count reserved words
- * To have sound count with reserved words, get rid of reserved words
- * by using extra-bit instead
- */
-void Automaton::addReservedWordsToCount(AdjacencyList& adjaceny_count_list) {
-  unsigned node_size = adjaceny_count_list.size();
-  std::vector<int> max_transition_count(node_size, 0);
-  std::vector<int> max_transition_id(node_size, 0);
-  std::vector<int> max_transition_index(node_size, 0);
-  int sink_state = getSinkState();
-
-  for (unsigned i = 0; i < node_size; i++) {
-    max_transition_count[i] = -1;
-  }
-
-  for (unsigned i = 0; i < node_size; i++) {
-    for (unsigned j = 0; j < adjaceny_count_list[i].size(); j++) {
-      if (adjaceny_count_list[i][j].second > max_transition_count[adjaceny_count_list[i][j].first]) {
-        max_transition_count[adjaceny_count_list[i][j].first] = adjaceny_count_list[i][j].second;
-        max_transition_id[adjaceny_count_list[i][j].first] = i;
-        max_transition_index[adjaceny_count_list[i][j].first] = j;
-      }
-    }
-  }
-
-  for (unsigned i = 0; i < node_size; i ++) {
-    if (sink_state > -1 and i != (unsigned)sink_state) {
-      adjaceny_count_list[max_transition_id[i]][max_transition_index[i]].second += 2;
-    }
-  }
-  if (sink_state > -1) {
-    adjaceny_count_list[sink_state] = std::vector<Node>(0);
-  }
+  return count_matrix_;
 }
 
 void Automaton::generateGFScript(int bound, std::ostream& out, bool count_less_than_or_equal_to_bound) {
-  AdjacencyList adjacency_count_list = getAdjacencyCountList(true);
-  unsigned node_size = adjacency_count_list.size();
-  unsigned updated_node_size = node_size + 1;
-  adjacency_count_list.resize(updated_node_size);
-
-  Node artificial;
-
-  // add a self-loop if we count up to bound (bound inclusive)
-  if (count_less_than_or_equal_to_bound) {
-    artificial.first = node_size;
-    artificial.second = 1;
-    adjacency_count_list[node_size].push_back(artificial);
-  }
-
-  for (int i = 0; (unsigned)i < node_size; i++) {
-    if (is_accepting_state(i)) {
-      artificial.first = i;
-      artificial.second = 1;
-      adjacency_count_list[node_size].push_back(artificial);
-    }
-  }
-
-  out << "bound = " << bound + 2 << ";\n";
-  out << "ID = IdentityMatrix[" << updated_node_size << "];\n\n";
-  out << "A = SparseArray[ { ";
-  std::string row_seperator = "";
-  std::string col_seperator = "";
-  int c = 0;
-  for (auto& transitions : adjacency_count_list) {
-    out << row_seperator;
-    row_seperator = "";
-    col_seperator = "";
-    for(auto& node : transitions) {
-      out << col_seperator;
-      out << "{" << node.first + 1 << ", " << c + 1 << "} -> " << node.second;
-      col_seperator = ", ";
-      row_seperator = ", ";
-    }
-    c++;
-  }
-  out << "}];\n\n";
-  out << "X = ID - A t;\n\n";
-  out << "Xsubmatrix = X[[ {";
-  std::string seperator = "";
-  for(unsigned i = 1; i < updated_node_size; i++) {
-    out << seperator << i;
-    seperator = ",";
-  }
-  out << "},{";
-  for(unsigned i = 1; i < updated_node_size - 1; i++){
-    out << i << ",";
-  }
-
-  out << updated_node_size << "}";
-
-  out << "]];\n";
-
-  out << "b = CoefficientList[-Det[Xsubmatrix],t];\n";
-  out << "c = CoefficientList[Det[X],t];\n";
-  out << "maxLen = Max[Map[Length, {b,c}]]\n";
-  out << "bPadLen = Max[0, maxLen - Length[b]];\n";
-  out << "cPadLen = Max[0, maxLen - Length[c]];\n";
-  out << "b = ArrayPad[b, {0, bPadLen}];\n";
-  out << "c = ArrayPad[c, {0, cPadLen}];\n";
-  out << "p = -c[[ Range[2,maxLen] ]] / c[[1]];\n";
-  out << "a = Table[0,{maxLen}];\n";
-  out << "a[[1]] = b[[1]]/c[[1]];\n";
-  out << "For[ i = 2, i <= maxLen, i++, a[[i]] = (b[[i]] - Total[c[[2;;i]]*a[[i-1;;1;;-1]]]) / c[[1]] ];\n";
-  out << "numPaths = LinearRecurrence[p,a,{bound,bound}][[1]];\n";
-  out << "Print[N[numPaths]];";
-
-  out << std::endl;
+  LOG(FATAL) << "Refactor me with CountMatrix or add SparseCountMatrix";
+//  AdjacencyList adjacency_count_list = getAdjacencyCountList();
+//  unsigned node_size = adjacency_count_list.size();
+//  unsigned updated_node_size = node_size + 1;
+//  adjacency_count_list.resize(updated_node_size);
+//
+//  Node artificial;
+//
+//  // add a self-loop if we count up to bound (bound inclusive)
+//  if (count_less_than_or_equal_to_bound) {
+//    artificial.first = node_size;
+//    artificial.second = 1;
+//    adjacency_count_list[node_size].push_back(artificial);
+//  }
+//
+//  for (int i = 0; (unsigned)i < node_size; i++) {
+//    if (is_accepting_state(i)) {
+//      artificial.first = i;
+//      artificial.second = 1;
+//      adjacency_count_list[node_size].push_back(artificial);
+//    }
+//  }
+//
+//  out << "bound = " << bound + 2 << ";\n";
+//  out << "ID = IdentityMatrix[" << updated_node_size << "];\n\n";
+//  out << "A = SparseArray[ { ";
+//  std::string row_seperator = "";
+//  std::string col_seperator = "";
+//  int c = 0;
+//  for (auto& transitions : adjacency_count_list) {
+//    out << row_seperator;
+//    row_seperator = "";
+//    col_seperator = "";
+//    for(auto& node : transitions) {
+//      out << col_seperator;
+//      out << "{" << node.first + 1 << ", " << c + 1 << "} -> " << node.second;
+//      col_seperator = ", ";
+//      row_seperator = ", ";
+//    }
+//    c++;
+//  }
+//  out << "}];\n\n";
+//  out << "X = ID - A t;\n\n";
+//  out << "Xsubmatrix = X[[ {";
+//  std::string seperator = "";
+//  for(unsigned i = 1; i < updated_node_size; i++) {
+//    out << seperator << i;
+//    seperator = ",";
+//  }
+//  out << "},{";
+//  for(unsigned i = 1; i < updated_node_size - 1; i++){
+//    out << i << ",";
+//  }
+//
+//  out << updated_node_size << "}";
+//
+//  out << "]];\n";
+//
+//  out << "b = CoefficientList[-Det[Xsubmatrix],t];\n";
+//  out << "c = CoefficientList[Det[X],t];\n";
+//  out << "maxLen = Max[Map[Length, {b,c}]]\n";
+//  out << "bPadLen = Max[0, maxLen - Length[b]];\n";
+//  out << "cPadLen = Max[0, maxLen - Length[c]];\n";
+//  out << "b = ArrayPad[b, {0, bPadLen}];\n";
+//  out << "c = ArrayPad[c, {0, cPadLen}];\n";
+//  out << "p = -c[[ Range[2,maxLen] ]] / c[[1]];\n";
+//  out << "a = Table[0,{maxLen}];\n";
+//  out << "a[[1]] = b[[1]]/c[[1]];\n";
+//  out << "For[ i = 2, i <= maxLen, i++, a[[i]] = (b[[i]] - Total[c[[2;;i]]*a[[i-1;;1;;-1]]]) / c[[1]] ];\n";
+//  out << "numPaths = LinearRecurrence[p,a,{bound,bound}][[1]];\n";
+//  out << "Print[N[numPaths]];";
+//
+//  out << std::endl;
 }
 
 void Automaton::generateMatrixScript(int bound, std::ostream& out, bool count_less_than_or_equal_to_bound) {
-  AdjacencyList adjacency_count_list = getAdjacencyCountList(true);
-  unsigned node_size = adjacency_count_list.size();
-  unsigned updated_node_size = node_size + 1;
-  adjacency_count_list.resize(updated_node_size);
-
-  Node artificial;
-
-  // add a self-loop if we count up to bound (bound inclusive)
-  if (count_less_than_or_equal_to_bound) {
-    artificial.first = node_size;
-    artificial.second = 1;
-    adjacency_count_list[node_size].push_back(artificial);
-  }
-
-  for (int i = 0; (unsigned)i < node_size; i++) {
-    if (is_accepting_state(i)) {
-      artificial.first = i;
-      artificial.second = 1;
-      adjacency_count_list[node_size].push_back(artificial);
-    }
-  }
-
-  out << "A = SparseArray[{";
-  std::string row_seperator = "";
-  std::string col_seperator = "";
-  int c = 0;
-  for (auto& transitions : adjacency_count_list) {
-    out << row_seperator;
-    row_seperator = "";
-    col_seperator = "";
-    for(auto& node : transitions) {
-      out << col_seperator;
-      out << "{" << node.first + 1 << ", " << c + 1 << "} -> " << node.second;
-      col_seperator = ", ";
-      row_seperator = ", ";
-    }
-    c++;
-  }
-  out << "}];\n";
-  // state indexes are off by one
-  out << "numPaths = MatrixPower[A, " << bound + 2 << "][[" << this->dfa_->s + 1 << ", " << this->dfa_->ns + 1 << "]];\n";
-  out << "Print[N[numPaths]];";
-  out << std::endl;
-}
-
-/**
- * Adds artificial source and final state
- * Prepares for model counting
- */
-void Automaton::preProcessAdjacencyList(AdjacencyList& adjaceny_count_list) {
-  unsigned node_size = adjaceny_count_list.size();
-  unsigned updated_node_size = node_size + 2;
-  std::map<int, bool> is_useful_state;
-  adjaceny_count_list.resize(updated_node_size);
-
-  Node artificial;
-  artificial.first = node_size;
-  artificial.second = 1;
-
-  adjaceny_count_list[this->dfa_->s].push_back(artificial);
-  adjaceny_count_list[node_size].push_back(artificial);
-
-  for (int i = 0; (unsigned)i < node_size; i++) {
-    if (is_accepting_state(i)) {
-      artificial.first = i;
-      artificial.second = 1;
-      adjaceny_count_list[node_size + 1].push_back(artificial);
-    }
-  }
-
-  is_useful_state[node_size + 1] = true;
-
-  for ( unsigned i = 0; i < updated_node_size; i++) {
-    unsigned j = 0;
-    for (auto& adjacency : adjaceny_count_list) {
-      for (auto& node : adjacency) {
-        is_useful_state[node.first] |= is_useful_state[j];
-      }
-    }
-    j++;
-  }
-
-  AdjacencyList new_list(updated_node_size, NodeVector());
-  for (unsigned i = 0; i < updated_node_size; i++) {
-    if (is_useful_state[i]) {
-      for (unsigned j = 0; j < adjaceny_count_list[i].size(); j++) {
-        if (is_useful_state[adjaceny_count_list[i][j].first]) {
-          new_list[i].push_back(adjaceny_count_list[i][j]);
-        }
-      }
-    }
-  }
-
-  adjaceny_count_list.clear();
-  adjaceny_count_list = new_list;
+  LOG(FATAL) << "Refactor me with CountMatrix or add SparseCountMatrix";
+//  AdjacencyList adjacency_count_list = getAdjacencyCountList();
+//  unsigned node_size = adjacency_count_list.size();
+//  unsigned updated_node_size = node_size + 1;
+//  adjacency_count_list.resize(updated_node_size);
+//
+//  Node artificial;
+//
+//  // add a self-loop if we count up to bound (bound inclusive)
+//  if (count_less_than_or_equal_to_bound) {
+//    artificial.first = node_size;
+//    artificial.second = 1;
+//    adjacency_count_list[node_size].push_back(artificial);
+//  }
+//
+//  for (int i = 0; (unsigned)i < node_size; i++) {
+//    if (is_accepting_state(i)) {
+//      artificial.first = i;
+//      artificial.second = 1;
+//      adjacency_count_list[node_size].push_back(artificial);
+//    }
+//  }
+//
+//  out << "A = SparseArray[{";
+//  std::string row_seperator = "";
+//  std::string col_seperator = "";
+//  int c = 0;
+//  for (auto& transitions : adjacency_count_list) {
+//    out << row_seperator;
+//    row_seperator = "";
+//    col_seperator = "";
+//    for(auto& node : transitions) {
+//      out << col_seperator;
+//      out << "{" << node.first + 1 << ", " << c + 1 << "} -> " << node.second;
+//      col_seperator = ", ";
+//      row_seperator = ", ";
+//    }
+//    c++;
+//  }
+//  out << "}];\n";
+//  // state indexes are off by one
+//  out << "numPaths = MatrixPower[A, " << bound + 2 << "][[" << this->dfa_->s + 1 << ", " << this->dfa_->ns + 1 << "]];\n";
+//  out << "Print[N[numPaths]];";
+//  out << std::endl;
 }
 
 /**
@@ -1750,7 +1585,7 @@ void Automaton::getTransitionCharsHelper(pCharPair result[], char* transitions, 
  * Example: input="XXXXXXXX"  ==> output=(NUL,255), *pSize=1
  */
 void Automaton::getTransitionChars(char* transitions, int var, pCharPair result[], int* pSize){
-  assert(strlen(transitions) == var);
+  CHECK(strlen(transitions) == var);
   char* trans = (char*) malloc((var + 1)* sizeof(char));
   strcpy(trans, transitions);
   int indexInResult = 0;
@@ -1811,7 +1646,7 @@ void Automaton::charToAsciiDigits(unsigned char ci, char s[])
 {
     int i, j;
     unsigned char c;
-    assert(s != NULL);
+    CHECK(s != NULL);
     i = 0;
     do {       /* generate digits in reverse order */
         s[i++] = ci % 10 + '0';   /* get next digit */
@@ -1834,7 +1669,7 @@ void Automaton::charToAsciiDigits(unsigned char ci, char s[])
  */
 void Automaton::charToAscii(char* asciiVal, unsigned char c){
   int i = 0;
-  assert(asciiVal != NULL);
+  CHECK(asciiVal != NULL);
   char* charName[] = {"NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL", "BS ", "HT ", "LF ", "VT ", "FF ", "CR ", "SO ", "SI ", "DLE",
       "DC1", "DC2", "CD3", "DC4", "NAK", "SYN", "ETB", "CAN", "EM ", "SUB", "ESC", "FS ", "GS ", "RS ", "US "};
   if (c < 32){
@@ -1843,7 +1678,7 @@ void Automaton::charToAscii(char* asciiVal, unsigned char c){
   }
   else if (c > 126){
     charToAsciiDigits(c, asciiVal);
-    assert(strlen(asciiVal) == 3);
+    CHECK(strlen(asciiVal) == 3);
     return;
   }
   else {
@@ -1882,7 +1717,7 @@ void Automaton::fillOutCharRange(char* range, char firstChar, char lastChar){
   int i = 0;
   if (firstChar == lastChar){
     charToAscii(range, firstChar);
-    assert(strlen(range) <= 3);
+    CHECK(strlen(range) <= 3);
     return;
   }
 
@@ -1893,20 +1728,20 @@ void Automaton::fillOutCharRange(char* range, char firstChar, char lastChar){
 
   //put first char in range
   charToAscii(char1, firstChar);
-  assert(strlen(char1) <= 3);
+  CHECK(strlen(char1) <= 3);
   strncpy(range+i, char1, strlen(char1));
   i += strlen(char1);
   range[i++] = '-';
   //put second char in range
   charToAscii(char2, lastChar);
-  assert(strlen(char2) <= 3);
+  CHECK(strlen(char2) <= 3);
   strncpy(range+i, char2, strlen(char2));
   i += strlen(char2);
 
   range[i++] = ']';
 
   range[i] = '\0';
-  assert(strlen(range) <= 9);
+  CHECK(strlen(range) <= 9);
 
   free(char1);
   free(char2);

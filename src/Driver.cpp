@@ -117,7 +117,7 @@ bool Driver::isSatisfiable() {
   return symbol_table_->isSatisfiable();
 }
 
-boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double bound,
+mpz_class Driver::Count(std::string var_name, const double bound,
                                              bool count_less_than_or_equal_to_bound) {
   /* HACK: change jpf driver instead. */
   if (var_name.compare("__VLAB_CS_ARITHMETIC__") == 0)
@@ -131,10 +131,10 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
   Vlab::Solver::Value_ptr var_value = symbol_table_->get_value(var_name);
 
   symbol_table_->pop_scope();
-  boost::multiprecision::cpp_int result;
+  mpz_class result;
   switch (var_value->getType()) {
     case Vlab::Solver::Value::Type::STRING_AUTOMATON:
-      result = var_value->getStringAutomaton()->Count(bound, count_less_than_or_equal_to_bound, true);
+      result = var_value->getStringAutomaton()->Count(bound, count_less_than_or_equal_to_bound);
       break;
     case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
       auto binary_auto = var_value->getBinaryIntAutomaton();
@@ -149,9 +149,9 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
         if (Option::Solver::LIA_NATURAL_NUMBERS_ONLY) {
           --exponent;
         }
-        result = result
-            * boost::multiprecision::pow(boost::multiprecision::cpp_int(2),
-                                         (number_of_untracked_int_variables * static_cast<int>(exponent)));
+        mpz_t untracked_result;
+        mpz_ui_pow_ui(untracked_result, 2, (number_of_untracked_int_variables * static_cast<int>(exponent)));
+        result = result * mpz_class(untracked_result);
       }
       break;
     }
@@ -159,15 +159,14 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
       auto multi_auto = var_value->getMultiTrackAutomaton();
       auto multi_relation = multi_auto->getRelation();
       auto variables = multi_relation->get_variable_trackmap();
-      boost::multiprecision::cpp_int temp;
+      mpz_class temp;
 
-      result = multi_auto->Count(bound, count_less_than_or_equal_to_bound, true);
-      LOG(INFO)<< "MULTITRACK, " << var_name << " tuple count : " << result;  //boost::multiprecision::logb(result,2);
-
+      result = multi_auto->Count(bound, count_less_than_or_equal_to_bound);
+      LOG(INFO)<< "MULTITRACK, " << var_name << " tuple count : " << result;
       if (multi_relation->get_variable_index(var_name) >= 0) {
         LOG(INFO)<< "--got var---";
         auto single_var = multi_auto->getKTrack(multi_relation->get_variable_index(var_name));
-        temp = single_var->Count(bound,count_less_than_or_equal_to_bound,true);
+        temp = single_var->Count(bound,count_less_than_or_equal_to_bound);
 
         if(temp < result) {
           LOG(INFO) << "SINGLE VAR LOWER";
@@ -185,9 +184,9 @@ boost::multiprecision::cpp_int Driver::Count(std::string var_name, const double 
   return result;
 }
 
-boost::multiprecision::cpp_int Driver::Count(const double bound, bool count_less_than_or_equal_to_bound) {
+mpz_class Driver::Count(const double bound, bool count_less_than_or_equal_to_bound) {
 
-  boost::multiprecision::cpp_int result(1), count(0);
+  mpz_class result(1), count(0);
   int num_bin_var = 0;
   for (auto &variable_entry : getSatisfyingVariables()) {
     if (variable_entry.second == nullptr) {
@@ -207,18 +206,18 @@ boost::multiprecision::cpp_int Driver::Count(const double bound, bool count_less
       }
         break;
       case Vlab::Solver::Value::Type::INT_CONSTANT: {
-        boost::multiprecision::cpp_int value(variable_entry.second->getIntConstant());
-        boost::multiprecision::cpp_int base(1);
-        boost::multiprecision::cpp_int base2(-1);
+        mpz_class value(variable_entry.second->getIntConstant());
+        mpz_class base(1);
+        mpz_class base2(-1);
         int up_shift = (int) bound - 1;
         int low_shift = (int) bound;
 
         auto upper_bound = base << up_shift;
         auto lower_bound = (base2 << low_shift) + base;
         if (value <= upper_bound and value >= lower_bound) {
-          count = boost::multiprecision::cpp_int(1);
+          count = 1;
         } else {
-          count = boost::multiprecision::cpp_int(0);
+          count = 0;
         }
       }
         break;
@@ -236,21 +235,21 @@ boost::multiprecision::cpp_int Driver::Count(const double bound, bool count_less
   int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables - num_bin_var;
 
   if (number_of_untracked_int_variables > 0) {
-    result = result
-        * boost::multiprecision::pow(boost::multiprecision::cpp_int(2),
-                                     (number_of_untracked_int_variables * static_cast<int>(bound)));
+    mpz_t untracked_result;
+    mpz_ui_pow_ui(untracked_result, 2, (number_of_untracked_int_variables * static_cast<int>(bound)));
+    result = result * mpz_class(untracked_result);
   }
 
   return result;
 }
 
-boost::multiprecision::cpp_int Driver::SymbolicCount(std::string var_name, const double bound,
+mpz_class Driver::SymbolicCount(std::string var_name, const double bound,
                                                      bool count_less_than_or_equal_to_bound) {
   /* HACK: change jpf driver instead. */
   if (var_name.compare("__VLAB_CS_ARITHMETIC__") == 0)
     return SymbolicCount(bound, count_less_than_or_equal_to_bound);
 
-  boost::multiprecision::cpp_int result;
+  mpz_class result;
   symbol_table_->push_scope(script_);
   Vlab::Solver::Value_ptr var_value = symbol_table_->get_value(var_name);
   symbol_table_->pop_scope();
@@ -271,9 +270,9 @@ boost::multiprecision::cpp_int Driver::SymbolicCount(std::string var_name, const
         if (Option::Solver::LIA_NATURAL_NUMBERS_ONLY) {
           --exponent;
         }
-        result = result
-            * boost::multiprecision::pow(boost::multiprecision::cpp_int(2),
-                                         (number_of_untracked_int_variables * static_cast<int>(exponent)));
+        mpz_t untracked_result;
+        mpz_ui_pow_ui(untracked_result, 2, (number_of_untracked_int_variables * static_cast<int>(exponent)));
+        result = result * mpz_class(untracked_result);
       }
       break;
     }
@@ -284,7 +283,7 @@ boost::multiprecision::cpp_int Driver::SymbolicCount(std::string var_name, const
   return result;
 }
 
-boost::multiprecision::cpp_int Driver::SymbolicCount(const int bound, bool count_less_than_or_equal_to_bound) {
+mpz_class Driver::SymbolicCount(const int bound, bool count_less_than_or_equal_to_bound) {
   LOG(FATAL)<< "update counting for integers";
   std::string var_name;
   //  std::string var_name(Solver::SymbolTable::ARITHMETIC);

@@ -15,12 +15,8 @@
 #include <fstream>
 #include <utility>
 
-#include <boost/multiprecision/cpp_int.hpp>
-#include <boost/multiprecision/detail/default_ops.hpp>
-#include <boost/multiprecision/detail/et_ops.hpp>
-#include <boost/multiprecision/detail/number_base.hpp>
-#include <boost/multiprecision/detail/number_compare.hpp>
-#include <boost/multiprecision/number.hpp>
+#include <gmpxx.h>
+#include <gmp.h>
 #include <glog/logging.h>
 
 #include "parser/location.hh"
@@ -74,10 +70,10 @@ public:
   void initializeSolver();
   void solve();
   bool isSatisfiable();
-  boost::multiprecision::cpp_int Count(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound = true);
-  boost::multiprecision::cpp_int Count(const double bound, bool count_less_than_or_equal_to_bound = true);
-  boost::multiprecision::cpp_int SymbolicCount(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound = true);
-  boost::multiprecision::cpp_int SymbolicCount(const int bound, bool count_less_than_or_equal_to_bound = true);
+  mpz_class Count(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound = true);
+  mpz_class Count(const double bound, bool count_less_than_or_equal_to_bound = true);
+  mpz_class SymbolicCount(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound = true);
+  mpz_class SymbolicCount(const int bound, bool count_less_than_or_equal_to_bound = true);
 
   void printResult(Solver::Value_ptr value, std::ostream& out);
   void inspectResult(Solver::Value_ptr value, std::string file_name);

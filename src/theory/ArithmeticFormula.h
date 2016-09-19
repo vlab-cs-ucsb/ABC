@@ -18,7 +18,6 @@
 #include <utility>
 
 #include <glog/logging.h>
-#include <boost/multiprecision/cpp_int.hpp>
 
 #include "../utils/Math.h"
 

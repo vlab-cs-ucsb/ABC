@@ -89,8 +89,18 @@ AC_SUBST([LIBMONABDD])
 AC_CHECK_LIB([monamem], [mem_alloc], [LIBMONAMEM=-lmonamem], AC_MSG_ERROR(MONA MEM library not found))
 AC_SUBST([LIBMONAMEM])
 
-#AX_BOOST_BASE([1.54],, [AC_MSG_ERROR([This program needs Boost, but it was not found in your system])])
-AC_CHECK_HEADERS([boost/multiprecision/cpp_int.hpp], [], [AC_MSG_ERROR([Please install boost multiprecision headers])], [])
+AC_CHECK_LIB([gmp], [__gmpz_init], [LIBGMP=-lgmp], AC_MSG_ERROR(GMP C library not found))
+AC_SUBST([LIBGMP])
+
+SAVED_LIBS=$LIBS
+LIBS="$LIBS -lgmpxx -lgmp"
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM([#include <gmpxx.h>], 
+    [mpz_class dummy])],
+  [LIBGMPXX=-lgmpxx], 
+  [AC_MSG_ERROR([GMP CXX library not found; configure GMP C lib with cxx flags])])
+LIBS=$SAVED_LIBS
+AC_SUBST([LIBGMPXX])
 
 AC_CHECK_LIB([m], [floor],[LIBM=-lm], AC_MSG_ERROR(c math library m not found))
 AC_SUBST([LIBM])

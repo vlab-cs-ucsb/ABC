@@ -1121,7 +1121,7 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 	return result_auto;
 }
 
-boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_less_than_or_equal_to_bound, bool count_reserved_words) {
+mpz_class MultiTrackAutomaton::Count(int bound, bool count_less_than_or_equal_to_bound) {
   // remove last lambda loop
   DFA_ptr original_dfa = nullptr, temp_dfa = nullptr,trimmed_dfa = nullptr;
 	original_dfa = this->dfa_;
@@ -1193,7 +1193,7 @@ boost::multiprecision::cpp_int MultiTrackAutomaton::Count(int bound, bool count_
   delete[] statuses;
 
   this->dfa_ = trimmed_dfa;
-	boost::multiprecision::cpp_int ret = Automaton::Count(bound, count_less_than_or_equal_to_bound, count_reserved_words);
+	mpz_class ret = Automaton::Count(bound, count_less_than_or_equal_to_bound);
   this->dfa_ = original_dfa;
   dfaFree(trimmed_dfa);
   return ret;

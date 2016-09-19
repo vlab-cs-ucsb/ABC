@@ -18,7 +18,8 @@
 #include <utility>
 #include <vector>
 
-#include <boost/multiprecision/number.hpp>
+#include <gmpxx.h>
+#include <gmp.h>
 #include <glog/logging.h>
 #include <glog/vlog_is_on.h>
 

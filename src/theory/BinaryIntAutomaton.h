@@ -27,7 +27,7 @@
 #include <glog/logging.h>
 #include <mona/bdd.h>
 #include <mona/dfa.h>
-#include <boost/multiprecision/cpp_int.hpp>
+#include <gmpxx.h>
 
 #include "../utils/Cmd.h"
 #include "../utils/List.h"
@@ -82,8 +82,8 @@ public:
 
   std::map<std::string, int> GetAnAcceptingIntForEachVar();
 
-  boost::multiprecision::cpp_int Count(int bound, bool count_less_than_or_equal_to_bound = false, bool count_reserved_words = false) override;
-  boost::multiprecision::cpp_int SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true) override;
+  mpz_class Count(int bound, bool count_less_than_or_equal_to_bound = false) override;
+  mpz_class SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = false) override;
 
 protected:
   BinaryIntAutomaton(ArithmeticFormula_ptr formula);

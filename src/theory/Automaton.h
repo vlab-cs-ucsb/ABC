@@ -29,7 +29,7 @@
 #include <mona/bdd_external.h>
 #include <mona/dfa.h>
 #include <mona/mem.h>
-#include <boost/multiprecision/cpp_int.hpp>
+#include <gmpxx.h>
 
 #include "../utils/Cmd.h"
 #include "../utils/Math.h"
@@ -45,9 +45,7 @@ using Automaton_ptr = Automaton*;
 using DFA_ptr = DFA*;
 
 using Node = std::pair<int ,int>; // pair.first = node id, pair.second node data
-using NodeVector = std::vector<Node>;
-using AdjacencyList = std::vector<NodeVector>;
-using CountVector = std::vector<boost::multiprecision::cpp_int>;
+using CountVector = std::vector<mpz_class>;
 using CountMatrix = std::vector<CountVector>;
 using NextState = std::pair<int, std::vector<bool>>;
 
@@ -94,9 +92,9 @@ public:
   bool isCyclic();
   bool isInCycle(int state);
   bool isStateReachableFrom(int search_state, int from_state);
-  virtual boost::multiprecision::cpp_int Count(int bound, bool count_less_than_or_equal_to_bound = true, bool count_reserved_words = true);
-  virtual boost::multiprecision::cpp_int SymbolicCount(int bound, bool count_less_than_or_equal_to_bound = true);
-  virtual boost::multiprecision::cpp_int SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true);
+  virtual mpz_class Count(int bound, bool count_less_than_or_equal_to_bound = true);
+  virtual mpz_class SymbolicCount(int bound, bool count_less_than_or_equal_to_bound = true);
+  virtual mpz_class SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true);
 
   Graph_ptr toGraph();
 
@@ -153,12 +151,9 @@ protected:
   std::set<int> getStatesReachableBy(int walk);
   std::set<int> getStatesReachableBy(int min_walk, int max_walk);
   bool getAnAcceptingWord(NextState& state, std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
-  CountMatrix GetAdjacencyCountMatrix(bool count_reserved_words = true);
-  AdjacencyList getAdjacencyCountList(bool count_reserved_words = true);
-  void addReservedWordsToCount(AdjacencyList& adjaceny_count_list);
+  CountMatrix GetAdjacencyCountMatrix();
   void generateGFScript(int bound, std::ostream& out = std::cout, bool count_less_than_or_equal_to_bound = true);
   void generateMatrixScript(int bound, std::ostream& out = std::cout, bool count_less_than_or_equal_to_bound = true);
-  void preProcessAdjacencyList(AdjacencyList& adjaceny_count_list);
 
 
   bool isCyclic(int state, std::map<int, bool>& is_discovered, std::map<int, bool>& is_stack_member);
