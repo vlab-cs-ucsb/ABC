@@ -186,9 +186,7 @@ int main(const int argc, const char **argv) {
   driver.solve();
   auto end = std::chrono::steady_clock::now();
   auto solving_time = end - start;
-  LOG(INFO) << "";
   LOG(INFO) << "Done solving";
-  LOG(INFO) << "";
 
   if (driver.isSatisfiable()) {
     if (VLOG_IS_ON(30)) {

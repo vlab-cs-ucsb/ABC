@@ -189,16 +189,20 @@ mpz_class Automaton::Count(int bound, bool count_less_than_or_equal_to_bound) {
 
   while (power > 1) {
     if (power % 2 == 0) {
-      x = Util::Math::multiply_matrix_multi_thread(x, x);
+//      x = Util::Math::multiply_matrix_multi_thread(x, x);
+      x = Util::Math::multiply_matrix(x, x);
       power = power / 2;
     } else {
-      y = Util::Math::multiply_matrix_multi_thread(x, y);
-      x = Util::Math::multiply_matrix_multi_thread(x, x);
+//      y = Util::Math::multiply_matrix_multi_thread(x, y);
+//      x = Util::Math::multiply_matrix_multi_thread(x, x);
+      y = Util::Math::multiply_matrix(x, y);
+      x = Util::Math::multiply_matrix(x, x);
       power = (power - 1) / 2;
     }
   }
 
-  x = Util::Math::multiply_matrix_multi_thread(x, y);
+//  x = Util::Math::multiply_matrix_multi_thread(x, y);
+  x = Util::Math::multiply_matrix(x, y);
 
   auto result = x[this->dfa_->s][this->dfa_->ns];
   DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->count(" << bound << ") : " << result;
