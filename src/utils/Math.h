@@ -30,8 +30,8 @@ Matrix<T> multiply_matrix(const Matrix<T>& x, const Matrix<T>& y) {
 
   Matrix<T> result(r, std::vector<T> (c, 0));
   for (unsigned i = 0; i < r; ++i) {
-    for (unsigned j = 0; j < c; ++j) {
-      for (unsigned k = 0; k < r; ++k) {
+    for (unsigned k = 0; k < r; ++k) {
+      for (unsigned j = 0; j < c; ++j) {
         result[i][j] += x[i][k] * y[k][j];
       }
     }
