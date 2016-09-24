@@ -42,7 +42,7 @@ libabcautomaton_la_LDFLAGS = -version-info 0:1:0
 	
 libabcautomaton_la_LIBADD = \
 	../utils/libabcutils.la \
-	$(LIBGLOG) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBGMPXX) $(LIBGMP) $(LIBM) 
+	$(LIBGLOG) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) 
 	
 test-local: 
 	@echo parser, $(srcdir), $(top_srcdir)	

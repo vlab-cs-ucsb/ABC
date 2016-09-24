@@ -117,8 +117,7 @@ bool Driver::isSatisfiable() {
   return symbol_table_->isSatisfiable();
 }
 
-mpz_class Driver::Count(std::string var_name, const double bound,
-                                             bool count_less_than_or_equal_to_bound) {
+Theory::BigInteger Driver::Count(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound) {
   /* HACK: change jpf driver instead. */
   if (var_name.compare("__VLAB_CS_ARITHMETIC__") == 0)
     return Count(bound, count_less_than_or_equal_to_bound);
@@ -131,7 +130,7 @@ mpz_class Driver::Count(std::string var_name, const double bound,
   Vlab::Solver::Value_ptr var_value = symbol_table_->get_value(var_name);
 
   symbol_table_->pop_scope();
-  mpz_class result;
+  Theory::BigInteger result;
   switch (var_value->getType()) {
     case Vlab::Solver::Value::Type::STRING_AUTOMATON:
       result = var_value->getStringAutomaton()->Count(bound, count_less_than_or_equal_to_bound);
@@ -145,13 +144,9 @@ mpz_class Driver::Count(std::string var_name, const double bound,
       int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables
           - binary_auto->getNumberOfVariables();
       if (number_of_untracked_int_variables > 0) {
-        int exponent = bound;
-        if (Option::Solver::LIA_NATURAL_NUMBERS_ONLY) {
-          --exponent;
-        }
-        mpz_t untracked_result;
-        mpz_ui_pow_ui(untracked_result, 2, (number_of_untracked_int_variables * static_cast<int>(exponent)));
-        result = result * mpz_class(untracked_result);
+        result = result
+            * boost::multiprecision::pow(boost::multiprecision::cpp_int(2),
+                                         (number_of_untracked_int_variables * static_cast<int>(bound)));
       }
       break;
     }
@@ -159,14 +154,13 @@ mpz_class Driver::Count(std::string var_name, const double bound,
       auto multi_auto = var_value->getMultiTrackAutomaton();
       auto multi_relation = multi_auto->getRelation();
       auto variables = multi_relation->get_variable_trackmap();
-      mpz_class temp;
 
       result = multi_auto->Count(bound, count_less_than_or_equal_to_bound);
       LOG(INFO)<< "MULTITRACK, " << var_name << " tuple count : " << result;
       if (multi_relation->get_variable_index(var_name) >= 0) {
         LOG(INFO)<< "--got var---";
         auto single_var = multi_auto->getKTrack(multi_relation->get_variable_index(var_name));
-        temp = single_var->Count(bound,count_less_than_or_equal_to_bound);
+        auto temp = single_var->Count(bound,count_less_than_or_equal_to_bound);
 
         if(temp < result) {
           LOG(INFO) << "SINGLE VAR LOWER";
@@ -184,9 +178,9 @@ mpz_class Driver::Count(std::string var_name, const double bound,
   return result;
 }
 
-mpz_class Driver::Count(const double bound, bool count_less_than_or_equal_to_bound) {
+Theory::BigInteger Driver::Count(const double bound, bool count_less_than_or_equal_to_bound) {
 
-  mpz_class result(1), count(0);
+  Theory::BigInteger result(1), count(0);
   int num_bin_var = 0;
   for (auto &variable_entry : getSatisfyingVariables()) {
     if (variable_entry.second == nullptr) {
@@ -206,9 +200,9 @@ mpz_class Driver::Count(const double bound, bool count_less_than_or_equal_to_bou
       }
         break;
       case Vlab::Solver::Value::Type::INT_CONSTANT: {
-        mpz_class value(variable_entry.second->getIntConstant());
-        mpz_class base(1);
-        mpz_class base2(-1);
+        Theory::BigInteger value(variable_entry.second->getIntConstant());
+        Theory::BigInteger base(1);
+        Theory::BigInteger base2(-1);
         int up_shift = (int) bound - 1;
         int low_shift = (int) bound;
 
@@ -235,21 +229,21 @@ mpz_class Driver::Count(const double bound, bool count_less_than_or_equal_to_bou
   int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables - num_bin_var;
 
   if (number_of_untracked_int_variables > 0) {
-    mpz_t untracked_result;
-    mpz_ui_pow_ui(untracked_result, 2, (number_of_untracked_int_variables * static_cast<int>(bound)));
-    result = result * mpz_class(untracked_result);
+    result = result
+        * boost::multiprecision::pow(boost::multiprecision::cpp_int(2),
+                                     (number_of_untracked_int_variables * static_cast<int>(bound)));
   }
 
   return result;
 }
 
-mpz_class Driver::SymbolicCount(std::string var_name, const double bound,
-                                                     bool count_less_than_or_equal_to_bound) {
+Theory::BigInteger Driver::SymbolicCount(std::string var_name, const double bound,
+                                         bool count_less_than_or_equal_to_bound) {
   /* HACK: change jpf driver instead. */
   if (var_name.compare("__VLAB_CS_ARITHMETIC__") == 0)
     return SymbolicCount(bound, count_less_than_or_equal_to_bound);
 
-  mpz_class result;
+  Theory::BigInteger result;
   symbol_table_->push_scope(script_);
   Vlab::Solver::Value_ptr var_value = symbol_table_->get_value(var_name);
   symbol_table_->pop_scope();
@@ -266,13 +260,9 @@ mpz_class Driver::SymbolicCount(std::string var_name, const double bound,
       int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables
           - binary_auto->getNumberOfVariables();
       if (number_of_untracked_int_variables > 0) {
-        int exponent = bound;
-        if (Option::Solver::LIA_NATURAL_NUMBERS_ONLY) {
-          --exponent;
-        }
-        mpz_t untracked_result;
-        mpz_ui_pow_ui(untracked_result, 2, (number_of_untracked_int_variables * static_cast<int>(exponent)));
-        result = result * mpz_class(untracked_result);
+        result = result
+            * boost::multiprecision::pow(boost::multiprecision::cpp_int(2),
+                                         (number_of_untracked_int_variables * static_cast<int>(bound)));
       }
       break;
     }
@@ -283,7 +273,7 @@ mpz_class Driver::SymbolicCount(std::string var_name, const double bound,
   return result;
 }
 
-mpz_class Driver::SymbolicCount(const int bound, bool count_less_than_or_equal_to_bound) {
+Theory::BigInteger Driver::SymbolicCount(const int bound, bool count_less_than_or_equal_to_bound) {
   LOG(FATAL)<< "update counting for integers";
   std::string var_name;
   //  std::string var_name(Solver::SymbolTable::ARITHMETIC);

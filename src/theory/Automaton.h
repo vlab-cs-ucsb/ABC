@@ -24,12 +24,12 @@
 #include <utility>
 #include <vector>
 
+#include <boost/multiprecision/cpp_int.hpp>
 #include <glog/logging.h>
 #include <mona/bdd.h>
 #include <mona/bdd_external.h>
 #include <mona/dfa.h>
 #include <mona/mem.h>
-#include <gmpxx.h>
 
 #include "../utils/Cmd.h"
 #include "../utils/Math.h"
@@ -45,7 +45,8 @@ using Automaton_ptr = Automaton*;
 using DFA_ptr = DFA*;
 
 using Node = std::pair<int ,int>; // pair.first = node id, pair.second node data
-using CountVector = std::vector<mpz_class>;
+using BigInteger = boost::multiprecision::cpp_int;
+using CountVector = std::vector<BigInteger>;
 using CountMatrix = std::vector<CountVector>;
 using NextState = std::pair<int, std::vector<bool>>;
 
@@ -92,9 +93,9 @@ public:
   bool isCyclic();
   bool isInCycle(int state);
   bool isStateReachableFrom(int search_state, int from_state);
-  virtual mpz_class Count(int bound, bool count_less_than_or_equal_to_bound = true);
-  virtual mpz_class SymbolicCount(int bound, bool count_less_than_or_equal_to_bound = true);
-  virtual mpz_class SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true);
+  virtual BigInteger Count(int bound, bool count_less_than_or_equal_to_bound = true);
+  virtual BigInteger SymbolicCount(int bound, bool count_less_than_or_equal_to_bound = true);
+  virtual BigInteger SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true);
 
   Graph_ptr toGraph();
 

@@ -15,8 +15,7 @@
 #include <fstream>
 #include <utility>
 
-#include <gmpxx.h>
-#include <gmp.h>
+#include <boost/multiprecision/cpp_int.hpp>
 #include <glog/logging.h>
 
 #include "parser/location.hh"
@@ -70,10 +69,10 @@ public:
   void initializeSolver();
   void solve();
   bool isSatisfiable();
-  mpz_class Count(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound = true);
-  mpz_class Count(const double bound, bool count_less_than_or_equal_to_bound = true);
-  mpz_class SymbolicCount(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound = true);
-  mpz_class SymbolicCount(const int bound, bool count_less_than_or_equal_to_bound = true);
+  Theory::BigInteger Count(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound = true);
+  Theory::BigInteger Count(const double bound, bool count_less_than_or_equal_to_bound = true);
+  Theory::BigInteger SymbolicCount(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound = true);
+  Theory::BigInteger SymbolicCount(const int bound, bool count_less_than_or_equal_to_bound = true);
 
   void printResult(Solver::Value_ptr value, std::ostream& out);
   void inspectResult(Solver::Value_ptr value, std::string file_name);

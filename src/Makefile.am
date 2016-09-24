@@ -20,7 +20,7 @@ libabc_la_LDFLAGS = -version-info 0:1:0
 
 libabc_la_LIBADD = \
 	solver/libabcsolver.la \
-	$(LIBGLOG) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBGMPXX) $(LIBGMP) $(LIBM) 
+	$(LIBGLOG) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) 
 
 libabc_ladir = $(includedir)/abc
 libabc_la_HEADERS = Driver.h $(ABC_JNI_HEADER_FILES)
@@ -33,7 +33,7 @@ abc_SOURCES = \
 	
 abc_LDADD = \
 	-labc \
-	$(LIBGLOG) $(LIBGMPXX) $(LIBGMP)
+	$(LIBGLOG)
 
 test-local:
 	@echo src, $(srcdir), $(top_srcdir)

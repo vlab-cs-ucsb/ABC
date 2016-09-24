@@ -66,7 +66,7 @@ libabcsolver_la_LDFLAGS = -version-info 0:1:0
 libabcsolver_la_LIBADD = \
 	../parser/libabcparser.la \
 	../theory/libabcautomaton.la \
-	$(LIBGLOG) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBGMPXX) $(LIBGMP) $(LIBM) 
+	$(LIBGLOG) $(LIBMONADFA) $(LIBMONABDD) $(LIBMONAMEM) $(LIBM) 
 
 test-local:
 	@echo src, $(srcdir), $(top_srcdir)

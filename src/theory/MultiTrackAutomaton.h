@@ -52,7 +52,7 @@ class MultiTrackAutomaton: public Automaton {
 
 	MultiTrackAutomaton_ptr projectKTrack(int track);
 	StringAutomaton_ptr getKTrack(int k);
-  mpz_class Count(int bound, bool count_less_than_or_equal_to_bound);
+  BigInteger Count(int bound, bool count_less_than_or_equal_to_bound);
 	std::vector<std::string> getAnAcceptingStringForEachTrack();
 	int getNumTracks() const;
 

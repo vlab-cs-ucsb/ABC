@@ -167,7 +167,7 @@ bool Automaton::isStateReachableFrom(int search_state, int from_state) {
   return isStateReachableFrom(search_state, from_state, is_stack_member);
 }
 
-mpz_class Automaton::Count(int bound, bool count_less_than_or_equal_to_bound) {
+BigInteger Automaton::Count(int bound, bool count_less_than_or_equal_to_bound) {
 
   auto x = GetAdjacencyCountMatrix();
   if (count_less_than_or_equal_to_bound) {
@@ -209,7 +209,7 @@ mpz_class Automaton::Count(int bound, bool count_less_than_or_equal_to_bound) {
   return result;
 }
 
-mpz_class Automaton::SymbolicCount(int bound, bool count_less_than_or_equal_to_bound) {
+BigInteger Automaton::SymbolicCount(int bound, bool count_less_than_or_equal_to_bound) {
   std::stringstream cmd;
   std::string str_result;
   std::string tmp_math_file = Option::Theory::TMP_PATH + "/math_script.m";
@@ -225,10 +225,10 @@ mpz_class Automaton::SymbolicCount(int bound, bool count_less_than_or_equal_to_b
     LOG(ERROR) << e;
   }
 
-  return mpz_class (str_result);
+  return BigInteger (str_result);
 }
 
-mpz_class Automaton::SymbolicCount(double bound, bool count_less_than_or_equal_to_bound) {
+BigInteger Automaton::SymbolicCount(double bound, bool count_less_than_or_equal_to_bound) {
   return SymbolicCount(static_cast<int>(bound), count_less_than_or_equal_to_bound);
 }
 
@@ -949,8 +949,12 @@ CountMatrix Automaton::GetAdjacencyCountMatrix() {
       current_bdd_node = bdd_node_stack.top(); bdd_node_stack.pop();
       LOAD_lri(&dfa_->bddm->node_table[current_bdd_node.first], left, right, index);
       if (index == BDD_LEAF_INDEX) {
-        // TODO possible source of overflow if the number of variables are large
-        count_matrix[s][left] += static_cast<int>(std::pow(2, (num_of_variables_ - current_bdd_node.second)));
+        int exponent = num_of_variables_ - current_bdd_node.second;
+        if (exponent < 31) {
+          count_matrix[s][left] += static_cast<int>(std::pow(2, exponent));
+        } else {
+          count_matrix[s][left] += boost::multiprecision::pow(boost::multiprecision::cpp_int(2), exponent);
+        }
       } else {
         left_node.first = left;
         left_node.second = current_bdd_node.second + 1;

@@ -736,14 +736,14 @@ std::map<std::string, int> BinaryIntAutomaton::GetAnAcceptingIntForEachVar() {
   return var_values;
 }
 
-mpz_class BinaryIntAutomaton::Count(int bound, bool count_less_than_or_equal_to_bound) {
+BigInteger BinaryIntAutomaton::Count(int bound, bool count_less_than_or_equal_to_bound) {
   if (not is_natural_number_) {
     ++bound;  // consider sign bit
   }
   return Automaton::Count(bound, count_less_than_or_equal_to_bound);
 }
 
-mpz_class BinaryIntAutomaton::SymbolicCount(double bound, bool count_less_than_or_equal_to_bound) {
+BigInteger BinaryIntAutomaton::SymbolicCount(double bound, bool count_less_than_or_equal_to_bound) {
   std::stringstream cmd;
   std::string str_result;
   std::string tmp_result_file = Option::Theory::TMP_PATH + "/arith_result.dot";
@@ -776,7 +776,7 @@ mpz_class BinaryIntAutomaton::SymbolicCount(double bound, bool count_less_than_o
     LOG(ERROR)<< e;
   }
 
-  return mpz_class(str_result);
+  return BigInteger(str_result);
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntGraterThanOrEqualToZero(std::vector<int> indexes,

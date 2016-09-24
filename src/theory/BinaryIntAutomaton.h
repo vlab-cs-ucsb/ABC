@@ -27,7 +27,6 @@
 #include <glog/logging.h>
 #include <mona/bdd.h>
 #include <mona/dfa.h>
-#include <gmpxx.h>
 
 #include "../utils/Cmd.h"
 #include "../utils/List.h"
@@ -82,8 +81,8 @@ public:
 
   std::map<std::string, int> GetAnAcceptingIntForEachVar();
 
-  mpz_class Count(int bound, bool count_less_than_or_equal_to_bound = false) override;
-  mpz_class SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = false) override;
+  BigInteger Count(int bound, bool count_less_than_or_equal_to_bound = false) override;
+  BigInteger SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = false) override;
 
 protected:
   BinaryIntAutomaton(ArithmeticFormula_ptr formula);
