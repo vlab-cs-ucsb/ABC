@@ -403,14 +403,35 @@ void Driver::test() {
 //  LOG(INFO) << "DRIVER TEST METHOD";
 //  using namespace Theory;
 //
+//  Eigen::SparseMatrix<BigInteger> test(5,5);
+//
+//  std::cout << test << std::endl;
+//  Eigen::Triplet<BigInteger> in1(2,3, BigInteger(7));
+//  Eigen::Triplet<BigInteger> in2(3,2, BigInteger(7));
+//  std::vector<Eigen::Triplet<BigInteger>> tt;
+//  tt.push_back(in1);
+//  tt.push_back(in2);
+//  test.setFromTriplets(tt.begin(), tt.end());
+//  std::cout << "after triplet insertion" << std::endl;
+//  std::cout << test << std::endl;
+//  std::cout << "multiply" << std::endl;
+//
+//  Eigen::SparseMatrix<BigInteger> result(5,5);
+//  result = test * test;
+//  std::cout << result << std::endl;
+//
 //  auto f1 = new ArithmeticFormula();
 //  f1->set_type(ArithmeticFormula::Type::EQ);
-//  f1->set_constant(-2);
+//  f1->set_constant(-1);
 //  f1->add_variable("x", 1);
 //  f1->add_variable("y", 0);
 //
 //  auto t1 = BinaryIntAutomaton::MakeAutomaton(f1, true);
-//  t1->inspectAuto();
+////  t1->inspectAuto();
+//  t1->Count(2, false);
+//  t1->Count(100, false);
+//  t1->Count(1000, false);
+//  t1->Count(10000, false);
 //
 //  auto f2 = new ArithmeticFormula();
 //  f2->set_type(ArithmeticFormula::Type::EQ);

@@ -18,8 +18,6 @@
 #include <utility>
 #include <vector>
 
-#include <gmpxx.h>
-#include <gmp.h>
 #include <glog/logging.h>
 #include <glog/vlog_is_on.h>
 

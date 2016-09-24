@@ -107,6 +107,7 @@ template<> struct NumTraits<Vlab::Theory::BigInteger> : GenericNumTraits<Vlab::T
   typedef Vlab::Theory::BigInteger Real;
   typedef Vlab::Theory::BigInteger NonInteger;
   typedef Vlab::Theory::BigInteger Nested;
+  typedef Vlab::Theory::BigInteger Literal;
 
   enum {
     IsInteger = 1,

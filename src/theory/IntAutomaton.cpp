@@ -120,7 +120,7 @@ IntAutomaton_ptr IntAutomaton::makeInt(int value, int num_of_variables){
   }
 
   DVLOG(VLOG_LEVEL) << int_auto->id_ << " = makeInt(" << value <<  ")";
-
+  return int_auto;
 }
 
 IntAutomaton_ptr IntAutomaton::makeIntLessThan(int value, int num_of_variables){

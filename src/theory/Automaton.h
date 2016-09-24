@@ -33,6 +33,7 @@
 
 #include "../utils/Cmd.h"
 #include "../utils/Math.h"
+#include "../Eigen/SparseCore"
 #include "Graph.h"
 #include "GraphNode.h"
 #include "options/Theory.h"
@@ -46,8 +47,6 @@ using DFA_ptr = DFA*;
 
 using Node = std::pair<int ,int>; // pair.first = node id, pair.second node data
 using BigInteger = boost::multiprecision::cpp_int;
-using CountVector = std::vector<BigInteger>;
-using CountMatrix = std::vector<CountVector>;
 using NextState = std::pair<int, std::vector<bool>>;
 
 // for toDotAscii from libstranger
@@ -152,7 +151,7 @@ protected:
   std::set<int> getStatesReachableBy(int walk);
   std::set<int> getStatesReachableBy(int min_walk, int max_walk);
   bool getAnAcceptingWord(NextState& state, std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
-  CountMatrix GetAdjacencyCountMatrix();
+  Eigen::SparseMatrix<BigInteger> GetCountMatrix();
   void generateGFScript(int bound, std::ostream& out = std::cout, bool count_less_than_or_equal_to_bound = true);
   void generateMatrixScript(int bound, std::ostream& out = std::cout, bool count_less_than_or_equal_to_bound = true);
 
@@ -180,7 +179,7 @@ protected:
   int* variable_indices_;
   unsigned long id_;
   static unsigned long trace_id;
-  CountMatrix count_matrix_;
+  Eigen::SparseMatrix<BigInteger> count_matrix_;
 private:
   char* getAnExample(bool accepting=true); // MONA version
   static int name_counter;

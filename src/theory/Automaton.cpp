@@ -169,42 +169,42 @@ bool Automaton::isStateReachableFrom(int search_state, int from_state) {
 
 BigInteger Automaton::Count(int bound, bool count_less_than_or_equal_to_bound) {
 
-  auto x = GetAdjacencyCountMatrix();
+  Eigen::SparseMatrix<BigInteger> x = GetCountMatrix();
   if (count_less_than_or_equal_to_bound) {
-    x[this->dfa_->ns][this->dfa_->ns] = 1;
+    x.insert(this->dfa_->ns, this->dfa_->ns) = 1;
   }
 
-  int power = bound + 1; // matrix exponentiation is off by 1 because of artificial accepting state
+  // matrix exponentiation is off by 1 because of artificial accepting state
+  int power = bound + 1;
 
   if (power == 1) {
-    auto result = x[this->dfa_->s][this->dfa_->ns];
+    BigInteger result = x.coeff(this->dfa_->s, this->dfa_->ns);
     DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->count(" << bound << ") : " << result;
     return result;
   }
 
-  CountMatrix y (this->dfa_->ns + 1, CountVector(this->dfa_->ns + 1, 0));
-  for (unsigned i = 0; i < y.size(); ++i) {
-    y[i][i] = 1;
-  }
-
+  Eigen::SparseMatrix<BigInteger> y;
+  bool has_odds = false;
   while (power > 1) {
     if (power % 2 == 0) {
-//      x = Util::Math::multiply_matrix_multi_thread(x, x);
-      x = Util::Math::multiply_matrix(x, x);
       power = power / 2;
     } else {
-//      y = Util::Math::multiply_matrix_multi_thread(x, y);
-//      x = Util::Math::multiply_matrix_multi_thread(x, x);
-      y = Util::Math::multiply_matrix(x, y);
-      x = Util::Math::multiply_matrix(x, x);
       power = (power - 1) / 2;
+      if (not has_odds) {
+        y = x;
+      } else {
+        y = x * y;
+      }
+      has_odds = true;
     }
+    x = x * x;
   }
 
-//  x = Util::Math::multiply_matrix_multi_thread(x, y);
-  x = Util::Math::multiply_matrix(x, y);
+  if (has_odds) {
+    x = x * y;
+  }
 
-  auto result = x[this->dfa_->s][this->dfa_->ns];
+  BigInteger result = x.coeff(this->dfa_->s, this->dfa_->ns);
   DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->count(" << bound << ") : " << result;
   return result;
 }
@@ -932,60 +932,53 @@ std::set<int> Automaton::getStatesReachableBy(int min_walk, int max_walk) {
   return states;
 }
 
-CountMatrix Automaton::GetAdjacencyCountMatrix() {
+Eigen::SparseMatrix<BigInteger> Automaton::GetCountMatrix() {
   if (is_count_matrix_cached_) {
     return count_matrix_;
   }
 
-  CountMatrix count_matrix (this->dfa_->ns + 1, CountVector(this->dfa_->ns + 1, 0));
-
+  std::vector<Eigen::Triplet<BigInteger>> entries;
+  const int sink_state = getSinkState();
   unsigned left, right, index;
   for (int s = 0; s < this->dfa_->ns; ++s) {
-    // pair<sbdd_node_id, bdd_depth>
-    Node current_bdd_node {dfa_->q[s], 0}, left_node, right_node;
-    std::stack<Node> bdd_node_stack;
-    bdd_node_stack.push(current_bdd_node);
-    while (not bdd_node_stack.empty()) {
-      current_bdd_node = bdd_node_stack.top(); bdd_node_stack.pop();
-      LOAD_lri(&dfa_->bddm->node_table[current_bdd_node.first], left, right, index);
-      if (index == BDD_LEAF_INDEX) {
-        int exponent = num_of_variables_ - current_bdd_node.second;
-        if (exponent < 31) {
-          count_matrix[s][left] += static_cast<int>(std::pow(2, exponent));
+    if (sink_state != s) {
+      // Node is a pair<sbdd_node_id, bdd_depth>
+      Node current_bdd_node {dfa_->q[s], 0}, left_node, right_node;
+      std::stack<Node> bdd_node_stack;
+      bdd_node_stack.push(current_bdd_node);
+      while (not bdd_node_stack.empty()) {
+        current_bdd_node = bdd_node_stack.top(); bdd_node_stack.pop();
+        LOAD_lri(&dfa_->bddm->node_table[current_bdd_node.first], left, right, index);
+        if (index == BDD_LEAF_INDEX) {
+          if (sink_state != left) {
+            const int exponent = num_of_variables_ - current_bdd_node.second;
+            if (exponent == 0) {
+              entries.push_back(Eigen::Triplet<BigInteger>(s, left, 1));
+            } else if (exponent < 31) {
+              entries.push_back(Eigen::Triplet<BigInteger>(s, left, static_cast<int>(std::pow(2, exponent))));
+            } else {
+              entries.push_back(Eigen::Triplet<BigInteger>(s, left, boost::multiprecision::pow(boost::multiprecision::cpp_int(2), exponent)));
+            }
+          }
         } else {
-          count_matrix[s][left] += boost::multiprecision::pow(boost::multiprecision::cpp_int(2), exponent);
+          left_node.first = left;
+          left_node.second = current_bdd_node.second + 1;
+          right_node.first = right;
+          right_node.second = current_bdd_node.second + 1;
+          bdd_node_stack.push(left_node);
+          bdd_node_stack.push(right_node);
         }
-      } else {
-        left_node.first = left;
-        left_node.second = current_bdd_node.second + 1;
-        right_node.first = right;
-        right_node.second = current_bdd_node.second + 1;
-        bdd_node_stack.push(left_node);
-        bdd_node_stack.push(right_node);
+      }
+
+      // combine all accepting states into one artifical accepting state
+      if (is_accepting_state(s)) {
+        entries.push_back(Eigen::Triplet<BigInteger>(s, this->dfa_->ns, BigInteger(1)));
       }
     }
-
-    // combine all accepting states into one artifical accepting state
-    if (is_accepting_state(s)) {
-      count_matrix[s][this->dfa_->ns] = 1;
-    }
   }
 
-  // make transitions to sink count 0
-  int sink_state = this->getSinkState();
-  if (sink_state > -1) {
-    for (int s = 0; s < this->dfa_->ns; ++s) {
-      count_matrix[s][sink_state] = 0;
-    }
-  }
-
-//  std::cout << std::endl;
-//  for (auto& row : count_matrix) {
-//    for (auto& col : row) {
-//      std::cout << col << " ";
-//    }
-//    std::cout << std::endl;
-//  }
+  Eigen::SparseMatrix<BigInteger> count_matrix (this->dfa_->ns + 1, this->dfa_->ns + 1);
+  count_matrix.setFromTriplets(entries.begin(), entries.end());
   count_matrix_ = std::move(count_matrix);
   is_count_matrix_cached_ = true;
   return count_matrix_;
