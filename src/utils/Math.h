@@ -13,6 +13,15 @@
 #include <thread>
 #include <vector>
 
+#include <boost/multiprecision/cpp_int.hpp>
+#include "../Eigen/Core"
+
+namespace Vlab {
+namespace Theory {
+using BigInteger = boost::multiprecision::cpp_int;
+}
+}
+
 namespace Vlab {
 namespace Util {
 namespace Math {
@@ -91,5 +100,25 @@ Matrix<T> multiply_matrix_multi_thread(const Matrix<T>& x, const Matrix<T>& y) {
 } /* namespace Math */
 } /* namespace Util */
 } /* namespace Vlab */
+
+namespace Eigen {
+template<> struct NumTraits<Vlab::Theory::BigInteger> : GenericNumTraits<Vlab::Theory::BigInteger> {
+
+  typedef Vlab::Theory::BigInteger Real;
+  typedef Vlab::Theory::BigInteger NonInteger;
+  typedef Vlab::Theory::BigInteger Nested;
+
+  enum {
+    IsInteger = 1,
+    IsSigned = 1,
+    IsComplex = 0,
+    RequireInitialization = 1,
+    ReadCost = 6,
+    AddCost = 20,
+    MulCost = 50
+  };
+
+};
+} /* namespace Eigen */
 
 #endif /* SRC_UTILS_MATH_H_ */
