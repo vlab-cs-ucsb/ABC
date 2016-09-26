@@ -190,12 +190,12 @@ BigInteger Automaton::Count(int bound, bool count_less_than_or_equal_to_bound) {
       power = power / 2;
     } else {
       power = (power - 1) / 2;
-      if (not has_odds) {
-        y = x;
-      } else {
+      if (has_odds) {
         y = x * y;
+      } else {
+        y = x;
+        has_odds = true;
       }
-      has_odds = true;
     }
     x = x * x;
   }
