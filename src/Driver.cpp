@@ -203,11 +203,10 @@ Theory::BigInteger Driver::Count(const double bound, bool count_less_than_or_equ
         Theory::BigInteger value(variable_entry.second->getIntConstant());
         Theory::BigInteger base(1);
         Theory::BigInteger base2(-1);
-        int up_shift = (int) bound - 1;
-        int low_shift = (int) bound;
+        int shift = (int) bound;
 
-        auto upper_bound = base << up_shift;
-        auto lower_bound = (base2 << low_shift) + base;
+        Theory::BigInteger upper_bound = (base << shift) - 1;
+        Theory::BigInteger lower_bound = (base2 << shift) + 1;
         if (value <= upper_bound and value >= lower_bound) {
           count = 1;
         } else {
