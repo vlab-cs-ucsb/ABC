@@ -17,6 +17,7 @@ StringRelationGenerator::StringRelationGenerator(Script_ptr script, SymbolTable_
       symbol_table_(symbol_table),
       constraint_information_(constraint_information),
       has_string_formula_{false},
+      has_mixed_constraint_(false),
       current_term_{nullptr} {
 }
 
@@ -33,6 +34,7 @@ StringRelationGenerator::~StringRelationGenerator() {
 void StringRelationGenerator::start(Visitable_ptr node) {
   DVLOG(VLOG_LEVEL) << "String relation extraction starts at node: " << node;
   has_string_formula_ = false;
+  has_mixed_constraint_ = false;
   visit(node);
   end();
 }
@@ -40,6 +42,7 @@ void StringRelationGenerator::start(Visitable_ptr node) {
 void StringRelationGenerator::start() {
   DVLOG(VLOG_LEVEL) << "String relation extraction starts at root";
   has_string_formula_ = false;
+  has_mixed_constraint_ = false;
   visit(root_);
   end();
 }
@@ -76,13 +79,15 @@ void StringRelationGenerator::visitLet(Let_ptr let_term) {
 }
 
 void StringRelationGenerator::visitAnd(And_ptr and_term) {
+  DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
   current_term_ = and_term;
   visit_children_of(and_term);
-  DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
+  DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 
   if (not constraint_information_->is_component(and_term)) {
     return;
   }
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *and_term << "@" << and_term;
 
   StringRelation_ptr term_relation = nullptr;
   for (auto& term : *(and_term->term_list)) {
@@ -101,8 +106,19 @@ void StringRelationGenerator::visitAnd(And_ptr and_term) {
         symbol_table_->set_value(group_name,new Value(MultiTrackAutomaton::makeAnyAutoAligned(trackmap.size())));
       }
       has_string_formula_ = true;
+    } else {
+      has_mixed_constraint_ = true;
     }
   }
+
+  if(has_string_formula_) {
+    constraint_information_->add_string_constraint(and_term);
+  }
+  if(has_mixed_constraint_) {
+    constraint_information_->add_mixed_constraint(and_term);
+  }
+
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *and_term << "@" << and_term;
 }
 
 void StringRelationGenerator::visitOr(Or_ptr or_term) {

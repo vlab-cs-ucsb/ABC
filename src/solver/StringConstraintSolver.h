@@ -34,8 +34,8 @@ public:
 
   void start();
   void start(SMT::Visitable_ptr);
-
   void end();
+  void collect_string_constraint_info();
 
   void setCallbacks();
 
@@ -77,6 +77,8 @@ protected:
   ConstraintInformation_ptr constraint_information_;
   StringRelationGenerator string_relation_generator_;
   SMT::Term_ptr current_term_;
+
+  TermValueMap term_values_;
 private:
   static const int VLOG_LEVEL;
 

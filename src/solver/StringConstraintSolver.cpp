@@ -25,22 +25,20 @@ StringConstraintSolver::~StringConstraintSolver() {
 }
 
 void StringConstraintSolver::start() {
-  string_relation_generator_.start(root_);
-  if (string_relation_generator_.has_string_formula()) {
-    visitScript(root_);
-  }
+  visitScript(root_);
   end();
 }
 
 void StringConstraintSolver::start(SMT::Visitable_ptr node) {
-  string_relation_generator_.start(node);
-  if (string_relation_generator_.has_string_formula()) {
-    this->Visitor::visit(node);
-  }
+  this->Visitor::visit(node);
   end();
 }
 
 void StringConstraintSolver::end() {
+}
+
+void StringConstraintSolver::collect_string_constraint_info() {
+  string_relation_generator_.start();
 }
 
 void StringConstraintSolver::setCallbacks() {
@@ -136,10 +134,7 @@ void StringConstraintSolver::setCallbacks() {
           }
 
           Value_ptr val = new Value(multi_auto);
-          std::string group_name = string_relation_generator_.get_term_group_name(term);
-          symbol_table_->IntersectValue(group_name,val);
-          DVLOG(VLOG_LEVEL) << "Updating group name: " << group_name;
-          delete val;
+          set_term_value(term,val);
           break;
         }
         default:
@@ -189,8 +184,11 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
     if(relation != nullptr) {
       visit(term);
       param = get_term_value(term);
-      is_satisfiable = is_satisfiable and param->is_satisfiable();
+      std::string group_name = string_relation_generator_.get_term_group_name(term);
+      symbol_table_->IntersectValue(group_name,param);
+      is_satisfiable = is_satisfiable and symbol_table_->get_value(group_name)->is_satisfiable();
       string_relation_generator_.delete_term_relation(term);
+      clear_term_value(term);
       if(!is_satisfiable) {
         result = new Value(MultiTrackAutomaton::makePhi(relation->get_num_tracks()));
         break;
@@ -275,20 +273,25 @@ std::string StringConstraintSolver::get_string_variable_name(Term_ptr term) {
 }
 
 Value_ptr StringConstraintSolver::get_term_value(Term_ptr term) {
-  std::string group_name = string_relation_generator_.get_term_group_name(term);
-  if(!group_name.empty()) {
-    return symbol_table_->get_value(group_name);
+  if(term_values_.find(term) != term_values_.end()) {
+    return term_values_[term];
   }
   return nullptr;
 }
 
 bool StringConstraintSolver::set_term_value(Term_ptr term, Value_ptr value) {
-  std::string group_name = string_relation_generator_.get_term_group_name(term);
-  if(!group_name.empty()) {
-    symbol_table_->set_value(group_name,value);
-    return true;
+  auto result = term_values_.insert( { term, value });
+  if (result.second == false) {
+    LOG(FATAL)<< "Term automaton is already computed: " << *term << "@" << term;
   }
-  return false;
+}
+
+void StringConstraintSolver::clear_term_value(SMT::Term_ptr term) {
+  auto it = term_values_.find(term);
+  if (it != term_values_.end()) {
+    delete it->second;
+    term_values_.erase(it);
+  }
 }
 
 Value_ptr StringConstraintSolver::get_variable_value(Variable_ptr variable, bool multi_val) {

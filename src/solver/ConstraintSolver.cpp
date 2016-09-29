@@ -33,7 +33,7 @@ ConstraintSolver::~ConstraintSolver() {
 void ConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "start";
   arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
-  // TODO string solver collect info
+  string_constraint_solver_.collect_string_constraint_info();
   visit(root_);
 
   end();
@@ -42,7 +42,7 @@ void ConstraintSolver::start() {
 void ConstraintSolver::start(int iteration_count) {
   DVLOG(VLOG_LEVEL) << "start" << iteration_count;
   arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
-  // multi track solver collect info
+  string_constraint_solver_.collect_string_constraint_info();
   iteration_count_ = iteration_count;
   for (iteration_count_ = 0; iteration_count_ < iteration_count; ++iteration_count_) {
     visit(root_);
@@ -140,9 +140,10 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       arithmetic_constraint_solver_.start(and_term);
       is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
     }
+    LOG(INFO) << " >>> " << constraint_information_->has_string_constraint(and_term);
     if (is_satisfiable and constraint_information_->has_string_constraint(and_term)) {
       string_constraint_solver_.start(and_term);
-//      is_satisfiable = // check string constraint solver part is satisfiable
+      is_satisfiable = string_constraint_solver_.get_term_value(and_term)->is_satisfiable();
     }
   }
 
