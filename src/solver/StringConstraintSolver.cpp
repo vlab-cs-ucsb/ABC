@@ -133,8 +133,11 @@ void StringConstraintSolver::setCallbacks() {
             multi_auto = MultiTrackAutomaton::makeAuto(relation);
           }
 
+          LOG(INFO) << " Creating new value ...";
           Value_ptr val = new Value(multi_auto);
+          LOG(INFO) << " Setting new val";
           set_term_value(term,val);
+          LOG(INFO) << " dun..";
           break;
         }
         default:
@@ -178,23 +181,34 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
 
   StringRelation_ptr relation = nullptr;
   Value_ptr result = nullptr, param = nullptr, and_value = nullptr;
-
+  std::string group_name;
   for(auto& term : *and_term->term_list) {
     relation = string_relation_generator_.get_term_relation(term);
     if(relation != nullptr) {
+    LOG(INFO) << 1;
       visit(term);
+    LOG(INFO) << 2;
       param = get_term_value(term);
-      std::string group_name = string_relation_generator_.get_term_group_name(term);
+    LOG(INFO) << 3;
+      group_name = string_relation_generator_.get_term_group_name(term);
+    LOG(INFO) << 4;
+    LOG(INFO) << *param;
+    LOG(INFO) << *symbol_table_->get_variable(group_name);
       symbol_table_->IntersectValue(group_name,param);
+    LOG(INFO) << 5;
+      symbol_table_->get_value(group_name)->getMultiTrackAutomaton()->inspectAuto(true,true);
       is_satisfiable = is_satisfiable and symbol_table_->get_value(group_name)->is_satisfiable();
       string_relation_generator_.delete_term_relation(term);
       clear_term_value(term);
       if(!is_satisfiable) {
-        result = new Value(MultiTrackAutomaton::makePhi(relation->get_num_tracks()));
         break;
       }
     }
   }
+
+  result = new Value(MultiTrackAutomaton::makePhi(relation->get_num_tracks()));
+  result->getMultiTrackAutomaton()->setRelation(relation->clone());
+  symbol_table_->set_value(group_name,result);
 }
 
 void StringConstraintSolver::visitOr(Or_ptr or_term) {

@@ -102,7 +102,7 @@ void StringRelationGenerator::visitAnd(And_ptr and_term) {
       VariableTrackMap trackmap = get_group_trackmap(group_name);
       term_relation->set_variable_trackmap(trackmap);
       if(symbol_table_->get_variable_unsafe(group_name) == nullptr) {
-        symbol_table_->add_variable(new Variable(group_name,Variable::Type::STRING));
+        symbol_table_->add_variable(new Variable(group_name,Variable::Type::NONE));
         symbol_table_->set_value(group_name,new Value(MultiTrackAutomaton::makeAnyAutoAligned(trackmap.size())));
       }
       has_string_formula_ = true;
