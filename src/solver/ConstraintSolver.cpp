@@ -169,27 +169,27 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   setTermValue(and_term, result);
 
   // Kaluza Data Hack to project onto one variable (this is what they did)
-//  if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA && constraint_information_->is_component(and_term)) {
-//    Variable_ptr var = symbol_table_->get_symbolic_target_variable();
-//    if(var == nullptr) {
-//      return;
-//    }
-//    Variable_ptr rep_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),var);
-//    if(rep_var != nullptr) {
-//      Value_ptr val = string_constraint_solver_.get_variable_value(rep_var,true);
-//      if(val != nullptr) {
-//        // If symbolic variable is not actually represented, but instead
-//        // substituted for another variable, then we need to
-//        // account for that when putting the resulting value back into the symbol table
-//        StringRelation_ptr relation = val->getMultiTrackAutomaton()->getRelation();
-//        VariableTrackMap trackmap = relation->get_variable_trackmap();
-//        trackmap[var->getName()] = trackmap[rep_var->getName()];
-//        relation->set_variable_trackmap(trackmap);
-//        symbol_table_->set_value(rep_var, val);
-//        symbol_table_->set_value(var,val->clone());
-//      }
-//    }
-//  }
+  if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA && constraint_information_->is_component(and_term)) {
+    Variable_ptr var = symbol_table_->get_symbolic_target_variable();
+    if(var == nullptr) {
+      return;
+    }
+    Variable_ptr rep_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),var);
+    if(rep_var != nullptr) {
+      Value_ptr val = string_constraint_solver_.get_variable_value(rep_var,true);
+      if(val != nullptr) {
+        // If symbolic variable is not actually represented, but instead
+        // substituted for another variable, then we need to
+        // account for that when putting the resulting value back into the symbol table
+        StringRelation_ptr relation = val->getMultiTrackAutomaton()->getRelation();
+        VariableTrackMap trackmap = relation->get_variable_trackmap();
+        trackmap[var->getName()] = trackmap[rep_var->getName()];
+        relation->set_variable_trackmap(trackmap);
+        symbol_table_->set_value(rep_var, val);
+        symbol_table_->set_value(var,val->clone());
+      }
+    }
+  }
   DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 }
 
@@ -427,6 +427,25 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
 
 void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *not_eq_term;
+
+  if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term)) {
+    if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term)) {
+      Variable_ptr var = symbol_table_->get_variable(left_var);
+      StringAutomaton_ptr temp,con;
+      temp = StringAutomaton::makeString(right_constant->getValue());
+      con = temp->complement();
+      delete temp;
+      Value_ptr val = new Value(con);
+      bool res = val->is_satisfiable();
+      if(string_constraint_solver_.has_variable(var)) {
+        res = res and string_constraint_solver_.update_variable_value(var, val);
+      } else {
+        symbol_table_->set_value(var,val);
+      }
+      setTermValue(not_eq_term, new Value(res));
+      return;
+    }
+  }
 
   visit_children_of(not_eq_term);
 

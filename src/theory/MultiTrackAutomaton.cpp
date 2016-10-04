@@ -939,13 +939,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::union_(MultiTrackAutomaton_ptr othe
 		LOG(ERROR) << "Error in MultiTrackAutomaton::union_, unequal track numbers";
 		return this->clone();
 	}
-  DFA_ptr intersect_dfa, minimized_dfa;
+  DFA_ptr union_dfa;
 	MultiTrackAutomaton_ptr union_auto;
 	StringRelation_ptr union_relation = nullptr;
-	intersect_dfa = dfaProduct(this->dfa_, other_auto->dfa_, dfaOR);
-	minimized_dfa = dfaMinimize(intersect_dfa);
-	dfaFree(intersect_dfa);
-	union_auto = new MultiTrackAutomaton(minimized_dfa, this->num_of_tracks);
+	union_dfa = DfaUnion(this->dfa_,other_auto->dfa_);
+	union_auto = new MultiTrackAutomaton(union_dfa, this->num_of_tracks);
 	if(this->relation == nullptr && other_auto->relation == nullptr) {
 		LOG(FATAL) << "No relation set for either multitrack during union";
 	} else if(other_auto->relation == nullptr) {
@@ -991,18 +989,16 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::difference(MultiTrackAutomaton_ptr 
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::intersect(MultiTrackAutomaton_ptr other_auto) {
-	DFA_ptr intersect_dfa, minimized_dfa = nullptr;
+	DFA_ptr intersect_dfa;
 	MultiTrackAutomaton_ptr intersect_auto = nullptr;
 	StringRelation_ptr intersect_relation = nullptr;
 	if (this->num_of_tracks != other_auto->num_of_tracks) {
-		LOG(ERROR) << "Error in MultiTrackAutomaton::intersect, unequal track numbers";
-		LOG(ERROR) << this->num_of_tracks << " != " << other_auto->num_of_tracks;
-		return this->clone();
+		LOG(FATAL) << "Error in MultiTrackAutomaton::intersect, unequal track numbers\n"
+							 << this->num_of_tracks << " != " << other_auto->num_of_tracks;
 	}
-	intersect_dfa = dfaProduct(this->dfa_, other_auto->dfa_, dfaAND);
-	minimized_dfa = dfaMinimize(intersect_dfa);
-  dfaFree(intersect_dfa);
-	intersect_auto = new MultiTrackAutomaton(minimized_dfa, this->num_of_tracks);
+
+	intersect_dfa = DfaIntersect(this->dfa_,other_auto->dfa_);
+	intersect_auto = new MultiTrackAutomaton(intersect_dfa, this->num_of_tracks);
 
 	if(this->relation == nullptr && other_auto->relation == nullptr) {
 		//LOG(FATAL) << "No relation set for either multitrack during intersection";

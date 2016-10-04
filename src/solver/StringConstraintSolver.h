@@ -72,6 +72,8 @@ public:
   Value_ptr get_variable_value(SMT::Variable_ptr variable, bool multi_val = false);
   bool update_variable_value(SMT::Variable_ptr variable, Value_ptr value);
 
+  bool has_variable(SMT::Variable_ptr variable);
+
 protected:
   SymbolTable_ptr symbol_table_;
   ConstraintInformation_ptr constraint_information_;

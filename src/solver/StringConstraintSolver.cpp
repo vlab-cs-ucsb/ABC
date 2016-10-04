@@ -338,7 +338,8 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
   StringRelation_ptr variable_relation = nullptr;
   std::string group_name = string_relation_generator_.get_variable_group_name(current_term_,variable);
   if(group_name.empty()) {
-    LOG(FATAL) << "Empty group name!";
+    DVLOG(VLOG_LEVEL) << *variable << " has no group";
+    return false;
   }
   relation_value = symbol_table_->get_value(group_name);
   DVLOG(VLOG_LEVEL) << "VARIABLE: " << variable->str() << " is part of GROUP: " << group_name;
@@ -355,6 +356,14 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
   symbol_table_->IntersectValue(group_name,val);
   delete val;
   return symbol_table_->get_value(group_name)->is_satisfiable();
+}
+
+bool StringConstraintSolver::has_variable(Variable_ptr variable) {
+  std::string group_name = string_relation_generator_.get_variable_group_name(current_term_,variable);
+  if(group_name.empty()) {
+    return false;
+  }
+  return true;
 }
 
 } /* namespace Solver */
