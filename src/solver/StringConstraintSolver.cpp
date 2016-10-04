@@ -343,7 +343,6 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
   relation_value = symbol_table_->get_value(group_name);
   DVLOG(VLOG_LEVEL) << "VARIABLE: " << variable->str() << " is part of GROUP: " << group_name;
   variable_auto = value->getStringAutomaton();
-
   relation_auto = relation_value->getMultiTrackAutomaton();
   variable_relation = relation_auto->getRelation();
   // place variable value on multitrack, intersect and update corresonding term value
@@ -355,7 +354,7 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
   Value_ptr val = new Value(variable_multi_auto);
   symbol_table_->IntersectValue(group_name,val);
   delete val;
-  return true;
+  return symbol_table_->get_value(group_name)->is_satisfiable();
 }
 
 } /* namespace Solver */

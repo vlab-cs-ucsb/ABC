@@ -98,6 +98,9 @@ public:
   bool UnionValue(std::string var_name, Value_ptr value);
   bool UnionValue(SMT::Variable_ptr variable, Value_ptr value);
 
+  bool clear_value(std::string var_name, SMT::Visitable_ptr scope);
+  bool clear_value(SMT::Variable_ptr variable, SMT::Visitable_ptr scope);
+
   std::string get_var_name_for_expression(SMT::Visitable_ptr, SMT::Variable::Type);
   std::string get_var_name_for_node(SMT::Visitable_ptr, SMT::Variable::Type);
 

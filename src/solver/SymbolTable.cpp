@@ -348,6 +348,20 @@ bool SymbolTable::UnionValue(Variable_ptr variable, Value_ptr value) {
   return set_value(variable, variable_new_value);
 }
 
+bool SymbolTable::clear_value(std::string var_name, Visitable_ptr scope) {
+  Variable_ptr variable = get_variable(var_name);
+  return clear_value(variable,scope);
+}
+
+bool SymbolTable::clear_value(Variable_ptr variable, Visitable_ptr scope) {
+  auto it = variable_value_table[scope].find(variable);
+  if (it != variable_value_table[scope].end()) {
+    delete it->second;
+    variable_value_table[scope].erase(it);
+  }
+  return true;
+}
+
 /**
  * @returns a name for the expression using its string version
  */

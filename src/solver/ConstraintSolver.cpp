@@ -1239,10 +1239,9 @@ bool ConstraintSolver::update_variables() {
       DVLOG(VLOG_LEVEL) << "Inconsistent value for variable: " << var->getName();
       continue;
     }
-    string_constraint_solver_.update_variable_value(var, value);
-    is_satisfiable = is_satisfiable and value->is_satisfiable();
-    delete value;
-    symbol_table_->set_value(var, nullptr);
+    bool still_good = string_constraint_solver_.update_variable_value(var, value);
+    is_satisfiable = is_satisfiable and still_good;
+    symbol_table_->clear_value(var,symbol_table_->top_scope());
   }
   tagged_variables.clear();
   return is_satisfiable;
