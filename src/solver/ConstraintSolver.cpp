@@ -140,7 +140,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       arithmetic_constraint_solver_.start(and_term);
       is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
     }
-    LOG(INFO) << " >>> " << constraint_information_->has_string_constraint(and_term);
     if (is_satisfiable and constraint_information_->has_string_constraint(and_term)) {
       string_constraint_solver_.start(and_term);
       is_satisfiable = string_constraint_solver_.get_term_value(and_term)->is_satisfiable();

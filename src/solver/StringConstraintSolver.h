@@ -78,7 +78,9 @@ protected:
   StringRelationGenerator string_relation_generator_;
   SMT::Term_ptr current_term_;
 
+  std::map<SMT::Term_ptr, SMT::Term_ptr> term_value_index_;
   TermValueMap term_values_;
+
 private:
   static const int VLOG_LEVEL;
 

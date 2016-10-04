@@ -240,12 +240,8 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makePrefixSuffix(int left_track, in
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makePhi(int ntracks) {
 	DFA_ptr non_accepting_dfa = nullptr;
 	MultiTrackAutomaton_ptr non_accepting_auto = nullptr;
-	int *indices = getIndices(ntracks*VAR_PER_TRACK);
-
-	non_accepting_dfa = Automaton::DfaMakePhi(ntracks*VAR_PER_TRACK, indices);
-	delete[] indices; indices = nullptr;
+	non_accepting_dfa = Automaton::DfaMakePhi(ntracks*VAR_PER_TRACK);
 	non_accepting_auto = new MultiTrackAutomaton(non_accepting_dfa, ntracks);
-	non_accepting_auto->setRelation(nullptr);
 	return non_accepting_auto;
 }
 
