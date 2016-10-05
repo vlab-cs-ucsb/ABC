@@ -440,7 +440,8 @@ void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
       if(string_constraint_solver_.has_variable(var)) {
         res = res and string_constraint_solver_.update_variable_value(var, val);
       } else {
-        symbol_table_->set_value(var,val);
+        symbol_table_->IntersectValue(var,val);
+        res = res and symbol_table_->get_value(var)->is_satisfiable();
       }
       setTermValue(not_eq_term, new Value(res));
       return;
@@ -618,6 +619,25 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
 }
 
 void ConstraintSolver::visitIn(In_ptr in_term) {
+
+  if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(in_term->left_term)) {
+    if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(in_term->right_term)) {
+      Variable_ptr var = symbol_table_->get_variable(left_var);
+      StringAutomaton_ptr con = StringAutomaton::makeRegexAuto(right_constant->getValue());
+      Value_ptr val = new Value(con);
+      bool res = true;
+
+      if(string_constraint_solver_.has_variable(var)) {
+        res = res and string_constraint_solver_.update_variable_value(var, val);
+      } else {
+        symbol_table_->IntersectValue(var,val);
+        res = res and symbol_table_->get_value(var)->is_satisfiable();
+      }
+      setTermValue(in_term,new Value(res));
+      return;
+    }
+  }
+
   visit_children_of(in_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *in_term;
 
