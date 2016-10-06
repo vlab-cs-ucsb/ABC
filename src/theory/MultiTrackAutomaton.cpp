@@ -595,12 +595,14 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 		sink = num_states;
 		num_states++;
 	}
-
-	int shift = 1;
 	paths state_paths, pp;
 	trace_descr tp;
 	std::vector<std::pair<std::vector<char>,int>> state_exeps;
-	std::vector<char> exep_lambda(var,'1');
+	std::vector<char> curr(len,'X');
+	curr.push_back('\0');
+	for(int i = 0; i < var; i++) {
+	  curr[right_track+num_tracks*i] = '1';
+	}
 
 	tv = generate_transitions_for_relation(StringRelation::Type::EQ,var);
 
@@ -612,8 +614,6 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 			pp = pp->next;
 			continue;
 		}
-		std::vector<char> curr(len,'1');
-		curr.push_back('\0');
 		for(int j = 0; j < var-1; j++) {
 			for (tp = pp->trace; tp && tp->index != mindices[j]; tp = tp->next);
 			if(tp) {
@@ -628,12 +628,17 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 		state_exeps.push_back(std::make_pair(curr,pp->to+1));
 		pp = pp->next;
 	}
+	kill_paths(state_paths);
 
 	// if previous initial is final, add lambda,lambda to new final state
 	if(dfa->f[0] == 1) {
-		std::vector<char> curr(len,'1');
-		curr.push_back('\0');
-		state_exeps.push_back(std::make_pair(curr,final_state));
+		std::vector<char> str(len,'X');
+		for(int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = '1';
+			str[right_track+num_tracks*k] = '1';
+		}
+		str.push_back('\0');
+		state_exeps.push_back(std::make_pair(str,final_state));
 	}
 
 	dfaAllocExceptions(tv.size()+state_exeps.size());
@@ -651,7 +656,6 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 		dfaStoreException(state_exeps[i].second, &state_exeps[i].first[0]);
 	}
 	dfaStoreState(sink);
-	kill_paths(state_paths);
 	state_exeps.clear();
 
 	// rest of states
@@ -663,8 +667,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 				pp = pp->next;
 				continue;
 			}
-			std::vector<char> curr(len,'1');
-			curr.push_back('\0');
+
 			for(int j = 0; j < var-1; j++) {
 				for (tp = pp->trace; tp && tp->index != mindices[j]; tp = tp->next);
 				if(tp) {
@@ -679,88 +682,56 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 			state_exeps.push_back(std::make_pair(curr,pp->to+1));
 			pp = pp->next;
 		}
+		kill_paths(state_paths);
 
-		if(dfa->f[i] == 1) {
-			std::vector<char> curr(len,'1');
-			curr.push_back('\0');
-			state_exeps.push_back(std::make_pair(curr,final_state));
-		}
-	}
-
-
-
-
-	dfaAllocExceptions(2*tv.size() + 1); // 1 extra for lambda stuff below
-	for(int i = 0; i < tv.size(); i++) {
 		std::vector<char> str(len,'X');
 		for(int k = 0; k < var; k++) {
-			str[left_track+num_tracks*k] = tv[i].first[k];
-			str[right_track+num_tracks*k] = tv[i].second[k];
+			str[left_track+num_tracks*k] = '1';
+			str[right_track+num_tracks*k] = '1';
 		}
 		str.push_back('\0');
-		dfaStoreException(0,&str[0]);
-	}
+		state_exeps.push_back(std::make_pair(str,final_state));
 
-	// if right is lambda, left can be anything, but go to next state
-	for(int i = 0; i < tv.size(); i++) {
-		std::vector<char> str(len,'X');
-		for (int k = 0; k < var; k++) {
-			str[left_track+num_tracks*k] = tv[i].first[k];
-			str[right_track+num_tracks*k] = exep_lambda[k];
+		dfaAllocExceptions(state_exeps.size());
+		for(int j = 0; j < state_exeps.size(); j++) {
+		  dfaStoreException(state_exeps[j].second,&state_exeps[j].first[0]);
 		}
-		str.push_back('\0');
-		dfaStoreException(1,&str[0]);
+		dfaStoreState(sink);
+		state_exeps.clear();
 	}
 
-	// if both are lambda, go to next state
-	std::vector<char> str(len,'X');
-	str = std::vector<char>(len,'X');
-	for(int k = 0; k < var; k++) {
-		str[left_track+num_tracks*k] = exep_lambda[k];
-		str[right_track+num_tracks*k] = exep_lambda[k];
-	}
-	str.push_back('\0');
-	dfaStoreException(2,&str[0]);
-	dfaStoreState(3);
-
-	// left anything, right lambda, loop back here
-	dfaAllocExceptions(tv.size()+1);
-	for(int i = 0; i < tv.size(); i++) {
-		std::vector<char> str(len,'X');
-		for (int k = 0; k < var; k++) {
-			str[left_track+num_tracks*k] = tv[i].first[k];
-			str[right_track+num_tracks*k] = exep_lambda[k];
-		}
-		str.push_back('\0');
-		dfaStoreException(1,&str[0]);
-	}
-	// if both lambda, goto 2
-	str = std::vector<char>(len,'X');
-	for(int k = 0; k < var; k++) {
-		str[left_track+num_tracks*k] = exep_lambda[k];
-		str[right_track+num_tracks*k] = exep_lambda[k];
-	}
-	str.push_back('\0');
-	dfaStoreException(2,&str[0]);
-	dfaStoreState(3);
-
-	// lambda/lambda state, loop back on lambda
 	dfaAllocExceptions(1);
-	dfaStoreException(2,&str[0]);
-	dfaStoreState(3);
+	for(int i = 0; i < var; i++) {
+	  curr[left_track+num_tracks*i] = '1';
+	  curr[right_track+num_tracks*i] = '1';
+	}
+  dfaStoreException(final_state,&curr[0]);
+  dfaStoreState(sink);
 
-	// sink
-	dfaAllocExceptions(0);
-	dfaStoreState(3);
+  // if true, then must be no sink in 2nd auto; add now
+  if(sink > dfa->ns) {
+    dfaAllocExceptions(0);
+    dfaStoreState(sink);
+  }
 
-	temp_dfa = dfaBuild("--+-");
-	result_dfa = dfaMinimize(temp_dfa);
-	dfaFree(temp_dfa);
-	result_auto = new MultiTrackAutomaton(result_dfa,num_tracks);
-	result_auto->setRelation(relation->clone());
+  char *statuses = new char[num_states+1];
+  for(int i = 0; i < num_states; i++) {
+    statuses[i] = '-';
+  }
+  statuses[final_state] = '+';
+  statuses[num_states] = '\0';
 
-	delete[] mindices;
-	return result_auto;
+  temp_dfa = dfaBuild(statuses);
+  result_dfa = dfaMinimize(temp_dfa);
+  dfaFree(temp_dfa);
+
+  delete[] mindices;
+  delete[] statuses;
+  delete const_string_auto;
+
+  result_auto = new MultiTrackAutomaton(result_dfa,num_tracks);
+  result_auto->setRelation(relation->clone());
+  return result_auto;
 
 //	MultiTrackAutomaton_ptr temp_multi = nullptr, prefix_multi = nullptr,
 //                          suffix_multi = nullptr, intersect_multi = nullptr,

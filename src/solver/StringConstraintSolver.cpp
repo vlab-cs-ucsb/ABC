@@ -77,6 +77,8 @@ void StringConstraintSolver::setCallbacks() {
 
           if(right->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
             multi_auto = MultiTrackAutomaton::makeConcatExtraTrack(relation);
+          } else {
+            multi_auto = MultiTrackAutomaton::makeAuto(relation);
           }
 
 //          if(left->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
