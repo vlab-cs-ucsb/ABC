@@ -195,11 +195,20 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
 void ConstraintSolver::visitOr(Or_ptr or_term) {
   bool is_satisfiable = false;
+  bool is_component = constraint_information_->is_component(or_term);
 
-  // TODO check for component
+  if (is_component and iteration_count_ == 0) {
+    if (constraint_information_->has_arithmetic_constraint(or_term)) {
+      arithmetic_constraint_solver_.start(or_term);
+      is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+    }
+    if (is_satisfiable and constraint_information_->has_string_constraint(or_term)) {
+      string_constraint_solver_.start(or_term);
+//      is_satisfiable = // check string constraint solver part is satisfiable
+    }
+  }
 
   if (not constraint_information_->has_mixed_constraint(or_term)) {
-    is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
     // below return is a tmp solution for just only arithmetic constraints
     Value_ptr result = new Value(is_satisfiable);
     setTermValue(or_term, result);

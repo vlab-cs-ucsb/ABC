@@ -95,6 +95,7 @@ public:
   bool isInCycle(int state);
   bool isStateReachableFrom(int search_state, int from_state);
   virtual BigInteger Count(const int bound, const bool count_less_than_or_equal_to_bound = true);
+  virtual BigInteger CountByMatrixMultiplication(int bound, bool count_less_than_or_equal_to_bound = true);
   virtual BigInteger SymbolicCount(int bound, bool count_less_than_or_equal_to_bound = true);
   virtual BigInteger SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true);
 

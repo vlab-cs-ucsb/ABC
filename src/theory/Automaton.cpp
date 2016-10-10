@@ -188,7 +188,6 @@ BigInteger Automaton::Count(const int bound, const bool count_less_than_or_equal
 
   Eigen::SparseVector<BigInteger> v (this->dfa_->ns + 1);
   v = x.innerVector(this->dfa_->ns);
-
   while (power > 1) {
     v = x * v;
     --power;
@@ -202,48 +201,48 @@ BigInteger Automaton::Count(const int bound, const bool count_less_than_or_equal
 /**
  * Counting with matrix exponentiation by successive squaring
  */
-//BigInteger Automaton::CountByMatrixMultiplication(int bound, bool count_less_than_or_equal_to_bound) {
-//
-//  Eigen::SparseMatrix<BigInteger> x = GetCountMatrix();
-//  if (count_less_than_or_equal_to_bound) {
-//    x.insert(this->dfa_->ns, this->dfa_->ns) = 1;
-//  }
-//
-//  if (bound == 0) {
-//    BigInteger result = x.coeff(this->dfa_->s, this->dfa_->ns);
-//    DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->count(" << bound << ") : " << result;
-//    return result;
-//  }
-//
-//  // matrix exponentiation is off by 1 because of artificial accepting state
-//  int power = bound + 1;
-//
-//  Eigen::SparseMatrix<BigInteger> y;
-//  bool has_odds = false;
-//
-//  while (power > 1) {
-//    if (power % 2 == 0) {
-//      power = power / 2;
-//    } else {
-//      power = (power - 1) / 2;
-//      if (has_odds) {
-//        y = x * y;
-//      } else {
-//        y = x;
-//        has_odds = true;
-//      }
-//    }
-//    x = x * x;
-//  }
-//
-//  if (has_odds) {
-//    x = x * y;
-//  }
-//
-//  BigInteger result = x.coeff(this->dfa_->s, this->dfa_->ns);
-//  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->count(" << bound << ") : " << result;
-//  return result;
-//}
+BigInteger Automaton::CountByMatrixMultiplication(int bound, bool count_less_than_or_equal_to_bound) {
+
+  Eigen::SparseMatrix<BigInteger> x = GetCountMatrix();
+  if (count_less_than_or_equal_to_bound) {
+    x.insert(this->dfa_->ns, this->dfa_->ns) = 1;
+  }
+
+  if (bound == 0) {
+    BigInteger result = x.coeff(this->dfa_->s, this->dfa_->ns);
+    DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->count(" << bound << ") : " << result;
+    return result;
+  }
+
+  // matrix exponentiation is off by 1 because of artificial accepting state
+  int power = bound + 1;
+
+  Eigen::SparseMatrix<BigInteger> y;
+  bool has_odds = false;
+
+  while (power > 1) {
+    if (power % 2 == 0) {
+      power = power / 2;
+    } else {
+      power = (power - 1) / 2;
+      if (has_odds) {
+        y = x * y;
+      } else {
+        y = x;
+        has_odds = true;
+      }
+    }
+    x = x * x;
+  }
+
+  if (has_odds) {
+    x = x * y;
+  }
+
+  BigInteger result = x.coeff(this->dfa_->s, this->dfa_->ns);
+  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->count(" << bound << ") : " << result;
+  return result;
+}
 
 BigInteger Automaton::SymbolicCount(int bound, bool count_less_than_or_equal_to_bound) {
   std::stringstream cmd;
@@ -1012,7 +1011,6 @@ Eigen::SparseMatrix<BigInteger> Automaton::GetCountMatrix() {
       }
     }
   }
-
   Eigen::SparseMatrix<BigInteger> count_matrix (this->dfa_->ns + 1, this->dfa_->ns + 1);
   count_matrix.setFromTriplets(entries.begin(), entries.end());
   count_matrix_ = std::move(count_matrix);
