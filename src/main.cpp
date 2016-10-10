@@ -195,7 +195,6 @@ int main(const int argc, const char **argv) {
           // part of multitrack/binaryint
           continue;
         }
-
         std::stringstream ss;
         ss << output_root << "/result_";
 

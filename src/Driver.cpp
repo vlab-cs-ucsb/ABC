@@ -154,7 +154,7 @@ Theory::BigInteger Driver::Count(std::string var_name, const double bound, bool 
       auto multi_auto = var_value->getMultiTrackAutomaton();
       auto multi_relation = multi_auto->getRelation();
       auto variables = multi_relation->get_variable_trackmap();
-
+      LOG(INFO) << "before COUNT!";
       result = multi_auto->Count(bound, count_less_than_or_equal_to_bound);
       LOG(INFO)<< "MULTITRACK, " << var_name << " tuple count : " << result;
       if (multi_relation->get_variable_index(var_name) >= 0) {

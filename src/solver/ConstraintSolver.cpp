@@ -430,13 +430,13 @@ void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
 
   if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term)) {
     if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term)) {
-      Variable_ptr var = symbol_table_->get_variable(left_var);
       StringAutomaton_ptr temp,con;
+      Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
       temp = StringAutomaton::makeString(right_constant->getValue());
       con = temp->complement();
-      delete temp;
+      bool res = true;
       Value_ptr val = new Value(con);
-      bool res = val->is_satisfiable();
+
       if(string_constraint_solver_.has_variable(var)) {
         res = res and string_constraint_solver_.update_variable_value(var, val);
       } else {
@@ -622,10 +622,11 @@ void ConstraintSolver::visitIn(In_ptr in_term) {
 
   if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(in_term->left_term)) {
     if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(in_term->right_term)) {
-      Variable_ptr var = symbol_table_->get_variable(left_var);
+
+      Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
       StringAutomaton_ptr con = StringAutomaton::makeRegexAuto(right_constant->getValue());
-      Value_ptr val = new Value(con);
       bool res = true;
+      Value_ptr val = new Value(con);
 
       if(string_constraint_solver_.has_variable(var)) {
         res = res and string_constraint_solver_.update_variable_value(var, val);
@@ -633,7 +634,7 @@ void ConstraintSolver::visitIn(In_ptr in_term) {
         symbol_table_->IntersectValue(var,val);
         res = res and symbol_table_->get_value(var)->is_satisfiable();
       }
-      setTermValue(in_term,new Value(res));
+      setTermValue(in_term, new Value(res));
       return;
     }
   }

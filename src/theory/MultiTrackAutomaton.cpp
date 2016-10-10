@@ -560,226 +560,53 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeNotBegins(StringRelation_ptr re
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation_ptr relation) {
-	MultiTrackAutomaton_ptr result_auto = nullptr;
-	DFA_ptr temp_dfa, result_dfa;
-	StringAutomaton_ptr const_string_auto;
+	MultiTrackAutomaton_ptr temp_multi = nullptr, prefix_multi = nullptr,
+                          suffix_multi = nullptr, intersect_multi = nullptr,
+                          result_auto = nullptr;
+  StringAutomaton_ptr any_string = StringAutomaton::makeAnyString(), const_string_auto = nullptr;
+  DFA_ptr temp_dfa = nullptr;
 	int num_tracks = relation->get_num_tracks(),
 			left_track,right_track;
 	StringRelation_ptr left_relation = relation->get_left(),
 		                 right_relation = relation->get_right();
-	std::string left_var_data,right_var_data, right_string;
-	TransitionVector tv;
+
+	std::string left_var_data,const_data;
 
 	left_var_data = left_relation->get_data();
-	right_var_data = right_relation->get_left()->get_data();
-	right_string = right_relation->get_right()->get_data();
+	const_data = right_relation->get_data();
 
-	left_track = relation->get_variable_index(left_var_data);
-	right_track = relation->get_variable_index(right_var_data);
+	// left_track is really just a temp
+	left_track = num_tracks-1;
+	// right_track is var to be concat with, which is actually left_var
+	right_track = relation->get_variable_index(left_var_data);
 
-	if(right_relation->get_right()->get_type() == StringRelation::Type::REGEX) {
-		const_string_auto = StringAutomaton::makeString(right_string);
-	} else if(right_relation->get_right()->get_type() == StringRelation::Type::STRING_CONSTANT) {
-		const_string_auto = StringAutomaton::makeRegexAuto(right_string);
+	if(right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
+		const_string_auto = StringAutomaton::makeString(const_data);
+	} else {
+		const_string_auto = StringAutomaton::makeRegexAuto(const_data);
 	}
 
-	int var = VAR_PER_TRACK;
-	int len = num_tracks * var;
-	int *mindices = getIndices(num_tracks*var);
-
-	DFA_ptr dfa = const_string_auto->getDFA();
-	int sink = find_sink(dfa);
-	int num_states = dfa->ns+2;
-	int final_state = num_states-1;
-	if(sink < 0) {
-		sink = num_states;
-		num_states++;
-	}
-	paths state_paths, pp;
-	trace_descr tp;
-	std::vector<std::pair<std::vector<char>,int>> state_exeps;
-	std::vector<char> curr(len,'X');
-	curr.push_back('\0');
-	for(int i = 0; i < var; i++) {
-	  curr[right_track+num_tracks*i] = '1';
-	}
-
-	tv = generate_transitions_for_relation(StringRelation::Type::EQ,var);
-
-	dfaSetup(num_states,len,mindices);
-	// first add the transitions from previous initial state
-	state_paths = pp = make_paths(dfa->bddm, dfa->q[0]);
-	while(pp) {
-		if(pp->to == sink) {
-			pp = pp->next;
-			continue;
-		}
-		for(int j = 0; j < var-1; j++) {
-			for (tp = pp->trace; tp && tp->index != mindices[j]; tp = tp->next);
-			if(tp) {
-				if(tp->value) curr[left_track+num_tracks*j] = '1';
-				else curr[left_track+num_tracks*j] = '0';
-			}
-			else {
-				curr[left_track+num_tracks*j] = 'X';
-			}
-		}
-		curr[left_track+num_tracks*(var-1)] = '0'; // lambda bit
-		state_exeps.push_back(std::make_pair(curr,pp->to+1));
-		pp = pp->next;
-	}
-	kill_paths(state_paths);
-
-	// if previous initial is final, add lambda,lambda to new final state
-	if(dfa->f[0] == 1) {
-		std::vector<char> str(len,'X');
-		for(int k = 0; k < var; k++) {
-			str[left_track+num_tracks*k] = '1';
-			str[right_track+num_tracks*k] = '1';
-		}
-		str.push_back('\0');
-		state_exeps.push_back(std::make_pair(str,final_state));
-	}
-
-	dfaAllocExceptions(tv.size()+state_exeps.size());
-	for(int i = 0; i < tv.size(); i++) {
-		std::vector<char> str(len,'X');
-		for(int k = 0; k < var; k++) {
-			str[left_track+num_tracks*k] = tv[i].first[k];
-			str[right_track+num_tracks*k] = tv[i].second[k];
-		}
-		str.push_back('\0');
-		dfaStoreException(0,&str[0]);
-	}
-
-	for(int i = 0; i < state_exeps.size(); i++) {
-		dfaStoreException(state_exeps[i].second, &state_exeps[i].first[0]);
-	}
-	dfaStoreState(sink);
-	state_exeps.clear();
-
-	// rest of states
-	for(int i = 0; i < dfa->ns; i++) {
-		state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
-
-		while(pp) {
-			if(pp->to == sink) {
-				pp = pp->next;
-				continue;
-			}
-
-			for(int j = 0; j < var-1; j++) {
-				for (tp = pp->trace; tp && tp->index != mindices[j]; tp = tp->next);
-				if(tp) {
-					if(tp->value) curr[left_track+num_tracks*j] = '1';
-					else curr[left_track+num_tracks*j] = '0';
-				}
-				else {
-					curr[left_track+num_tracks*j] = 'X';
-				}
-			}
-			curr[left_track+num_tracks*(var-1)] = '0'; // lambda bit
-			state_exeps.push_back(std::make_pair(curr,pp->to+1));
-			pp = pp->next;
-		}
-		kill_paths(state_paths);
-
-		std::vector<char> str(len,'X');
-		for(int k = 0; k < var; k++) {
-			str[left_track+num_tracks*k] = '1';
-			str[right_track+num_tracks*k] = '1';
-		}
-		str.push_back('\0');
-		state_exeps.push_back(std::make_pair(str,final_state));
-
-		dfaAllocExceptions(state_exeps.size());
-		for(int j = 0; j < state_exeps.size(); j++) {
-		  dfaStoreException(state_exeps[j].second,&state_exeps[j].first[0]);
-		}
-		dfaStoreState(sink);
-		state_exeps.clear();
-	}
-
-	dfaAllocExceptions(1);
-	for(int i = 0; i < var; i++) {
-	  curr[left_track+num_tracks*i] = '1';
-	  curr[right_track+num_tracks*i] = '1';
-	}
-  dfaStoreException(final_state,&curr[0]);
-  dfaStoreState(sink);
-
-  // if true, then must be no sink in 2nd auto; add now
-  if(sink > dfa->ns) {
-    dfaAllocExceptions(0);
-    dfaStoreState(sink);
-  }
-
-  char *statuses = new char[num_states+1];
-  for(int i = 0; i < num_states; i++) {
-    statuses[i] = '-';
-  }
-  statuses[final_state] = '+';
-  statuses[num_states] = '\0';
-
-  temp_dfa = dfaBuild(statuses);
-  result_dfa = dfaMinimize(temp_dfa);
+  temp_dfa = prepend_lambda(const_string_auto->getDFA(),DEFAULT_NUM_VAR);
+  temp_multi = makePrefixSuffix(left_track,right_track,num_tracks,num_tracks+1);
+  prefix_multi = new MultiTrackAutomaton(any_string->getDFA(),right_track,num_tracks+1,DEFAULT_NUM_VAR);
+  suffix_multi = new MultiTrackAutomaton(temp_dfa,num_tracks,num_tracks+1,VAR_PER_TRACK);
   dfaFree(temp_dfa);
 
-  delete[] mindices;
-  delete[] statuses;
-  delete const_string_auto;
+  intersect_multi = temp_multi->intersect(prefix_multi);
+  delete temp_multi;
+  delete prefix_multi;
 
-  result_auto = new MultiTrackAutomaton(result_dfa,num_tracks);
+  temp_multi = intersect_multi;
+  intersect_multi = temp_multi->intersect(suffix_multi);
+  delete temp_multi;
+  delete suffix_multi;
+
+  result_auto = intersect_multi->projectKTrack(num_tracks);
+  delete intersect_multi;
+  delete any_string;
+  delete const_string_auto;
   result_auto->setRelation(relation->clone());
   return result_auto;
-
-//	MultiTrackAutomaton_ptr temp_multi = nullptr, prefix_multi = nullptr,
-//                          suffix_multi = nullptr, intersect_multi = nullptr,
-//                          result_auto = nullptr;
-//  StringAutomaton_ptr any_string = StringAutomaton::makeAnyString(), const_string_auto = nullptr;
-//  DFA_ptr temp_dfa = nullptr;
-//	int num_tracks = relation->get_num_tracks(),
-//			left_track,right_track;
-//	StringRelation_ptr left_relation = relation->get_left(),
-//		                 right_relation = relation->get_right();
-//
-//	std::string left_var_data,const_data;
-//
-//	left_var_data = left_relation->get_data();
-//	const_data = right_relation->get_data();
-//
-//	// left_track is really just a temp
-//	left_track = num_tracks-1;
-//	// right_track is var to be concat with, which is actually left_var
-//	right_track = relation->get_variable_index(left_var_data);
-//
-//	if(right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
-//		const_string_auto = StringAutomaton::makeString(const_data);
-//	} else {
-//		const_string_auto = StringAutomaton::makeRegexAuto(const_data);
-//	}
-//
-//  temp_dfa = prepend_lambda(const_string_auto->getDFA(),DEFAULT_NUM_VAR);
-//  temp_multi = makePrefixSuffix(left_track,right_track,num_tracks,num_tracks+1);
-//  prefix_multi = new MultiTrackAutomaton(any_string->getDFA(),right_track,num_tracks+1,DEFAULT_NUM_VAR);
-//  suffix_multi = new MultiTrackAutomaton(temp_dfa,num_tracks,num_tracks+1,VAR_PER_TRACK);
-//  dfaFree(temp_dfa);
-//
-//  intersect_multi = temp_multi->intersect(prefix_multi);
-//  delete temp_multi;
-//  delete prefix_multi;
-//
-//  temp_multi = intersect_multi;
-//  intersect_multi = temp_multi->intersect(suffix_multi);
-//  delete temp_multi;
-//  delete suffix_multi;
-//
-//  result_auto = intersect_multi->projectKTrack(num_tracks);
-//  delete intersect_multi;
-//  delete any_string;
-//  delete const_string_auto;
-//  result_auto->setRelation(relation->clone());
-//  return result_auto;
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeEquality(StringRelation_ptr relation) {
@@ -1251,7 +1078,6 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 		}
 	}
 
-	// project away all but the kth track
 	for(int i = this->num_of_tracks-1; i >= 0; --i) {
 		if(i != k_track) {
 			for(int j = 0; j < VAR_PER_TRACK; ++j) {
