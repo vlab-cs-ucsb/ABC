@@ -19,7 +19,6 @@ SymbolTable::SymbolTable()
 }
 
 SymbolTable::~SymbolTable() {
-  LOG(FATAL)<< "fix seg fault";
   for (auto& map_pair : variable_value_table) {
     for (auto& value_pair : map_pair.second) {
       delete value_pair.second;

@@ -139,8 +139,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
       is_satisfiable = param->is_satisfiable();
       if (is_satisfiable) {
         if (and_value == nullptr) {
-          and_value = param;
-          term_values_[term] = nullptr;  // to avoid seg fault
+          and_value = param->clone();
         } else {
           auto old_value = and_value;
           and_value = and_value->intersect(param);
@@ -200,8 +199,7 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
       is_satisfiable = param->is_satisfiable() or is_satisfiable;
       if (is_satisfiable) {
         if (or_value == nullptr) {
-          or_value = param;
-          term_values_[term] = nullptr;  // to avoid seg fault
+          or_value = param->clone();
         } else {
           auto old_value = or_value;
           or_value = or_value->union_(param);
