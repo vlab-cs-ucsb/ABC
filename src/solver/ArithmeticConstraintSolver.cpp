@@ -207,9 +207,6 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
           or_value = or_value->union_(param);
           delete old_value;
         }
-        symbol_table_->IntersectValue(group_name, param);  // update value for this scope
-      } else {
-        symbol_table_->set_value(group_name, param); // set value (which is not satisfiable)
       }
       clear_term_value(term);
       symbol_table_->pop_scope();
@@ -224,7 +221,7 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
       // scope already reads value from upper scope
       // implicit intersection is already done
 //      symbol_table_->IntersectValue(group_name, or_value);  // update value for union, this is upper scope
-        symbol_table_->set_value(group_name, or_value);
+      symbol_table_->set_value(group_name, or_value);
     } else {
       auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
       auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(group_formula->clone(), is_natural_numbers_only_));
@@ -250,7 +247,6 @@ Value_ptr ArithmeticConstraintSolver::get_term_value(Term_ptr term) {
   if (it != term_values_.end()) {
     return it->second;
   }
-
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
   if (not group_name.empty()) {
     return symbol_table_->get_value(group_name);

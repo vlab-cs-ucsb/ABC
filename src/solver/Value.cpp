@@ -126,7 +126,6 @@ Value::~Value() {
 
 std::string Value::str() const {
   std::stringstream ss;
-
   switch (type) {
     case Type::NONE:
       ss << Name::NONE;
@@ -148,6 +147,9 @@ std::string Value::str() const {
       break;
     case Type::MULTITRACK_AUTOMATON:
       ss << Name::MULTITRACK_AUTOMATON << " : " << " please print automaton";
+      break;
+    case Type::BINARYINT_AUTOMATON:
+      ss << Name::BINARYINT_AUTOMATON << " : " << " please print automaton";
       break;
     default:
       LOG(FATAL)<< "value type is not supported";
@@ -237,7 +239,7 @@ Value_ptr Value::union_(Value_ptr other_value) const {
   } else if (Type::INT_AUTOMATON == type and Type::INT_CONSTANT == other_value->type) {
     union_value = new Value(int_automaton->union_(other_value->int_constant));
   } else {
-    LOG(FATAL)<< "cannot intersect types (implement me): " << *this << " & " << *other_value;
+    LOG(FATAL)<< "cannot union_ types (implement me): " << *this << " | " << *other_value;
   }
   return union_value;
 }
