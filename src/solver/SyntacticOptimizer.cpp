@@ -536,7 +536,7 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
   constant_term_checker_left.start(eq_term->left_term, Optimization::ConstantTermChecker::Mode::FULL);
   constant_term_checker_right.start(eq_term->right_term, Optimization::ConstantTermChecker::Mode::FULL);
 
-  if (constant_term_checker_left.is_constant() && constant_term_checker_right.is_constant()) {
+  if (constant_term_checker_left.is_constant() and constant_term_checker_right.is_constant()) {
     bool result = (constant_term_checker_left.get_constant_as_string() == constant_term_checker_right.get_constant_as_string());
     add_callback_to_replace_with_bool(eq_term, result);
     return;
@@ -587,6 +587,18 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
 
   visit_and_callback(not_eq_term->left_term);
   visit_and_callback(not_eq_term->right_term);
+
+  Optimization::ConstantTermChecker constant_term_checker_left;
+  Optimization::ConstantTermChecker constant_term_checker_right;
+
+  constant_term_checker_left.start(not_eq_term->left_term, Optimization::ConstantTermChecker::Mode::FULL);
+  constant_term_checker_right.start(not_eq_term->right_term, Optimization::ConstantTermChecker::Mode::FULL);
+
+  if (constant_term_checker_left.is_constant() and constant_term_checker_right.is_constant()) {
+    bool result = (constant_term_checker_left.get_constant_as_string() != constant_term_checker_right.get_constant_as_string());
+    add_callback_to_replace_with_bool(not_eq_term, result);
+    return;
+  }
 
   if (Ast2Dot::isEquivalent(not_eq_term->left_term, not_eq_term->right_term)) {
     add_callback_to_replace_with_bool(not_eq_term, false);
