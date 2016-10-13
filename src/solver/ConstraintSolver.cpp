@@ -33,7 +33,7 @@ ConstraintSolver::~ConstraintSolver() {
 void ConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "start";
   arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
-  // TODO string solver collect info
+  string_constraint_solver_.collect_string_constraint_info();
   visit(root_);
 
   end();
@@ -42,7 +42,7 @@ void ConstraintSolver::start() {
 void ConstraintSolver::start(int iteration_count) {
   DVLOG(VLOG_LEVEL) << "start" << iteration_count;
   arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
-  // multi track solver collect info
+  string_constraint_solver_.collect_string_constraint_info();
   iteration_count_ = iteration_count;
   for (iteration_count_ = 0; iteration_count_ < iteration_count; ++iteration_count_) {
     visit(root_);
@@ -142,7 +142,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     }
     if (is_satisfiable and constraint_information_->has_string_constraint(and_term)) {
       string_constraint_solver_.start(and_term);
-//      is_satisfiable = // check string constraint solver part is satisfiable
+      is_satisfiable = string_constraint_solver_.get_term_value(and_term)->is_satisfiable();
     }
   }
 
@@ -169,27 +169,27 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   setTermValue(and_term, result);
 
   // Kaluza Data Hack to project onto one variable (this is what they did)
-//  if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA && constraint_information_->is_component(and_term)) {
-//    Variable_ptr var = symbol_table_->get_symbolic_target_variable();
-//    if(var == nullptr) {
-//      return;
-//    }
-//    Variable_ptr rep_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),var);
-//    if(rep_var != nullptr) {
-//      Value_ptr val = string_constraint_solver_.get_variable_value(rep_var,true);
-//      if(val != nullptr) {
-//        // If symbolic variable is not actually represented, but instead
-//        // substituted for another variable, then we need to
-//        // account for that when putting the resulting value back into the symbol table
-//        StringRelation_ptr relation = val->getMultiTrackAutomaton()->getRelation();
-//        VariableTrackMap trackmap = relation->get_variable_trackmap();
-//        trackmap[var->getName()] = trackmap[rep_var->getName()];
-//        relation->set_variable_trackmap(trackmap);
-//        symbol_table_->set_value(rep_var, val);
-//        symbol_table_->set_value(var,val->clone());
-//      }
-//    }
-//  }
+  if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA && constraint_information_->is_component(and_term)) {
+    Variable_ptr var = symbol_table_->get_symbolic_target_variable();
+    if(var == nullptr) {
+      return;
+    }
+    Variable_ptr rep_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),var);
+    if(rep_var != nullptr) {
+      Value_ptr val = string_constraint_solver_.get_variable_value(rep_var,true);
+      if(val != nullptr) {
+        // If symbolic variable is not actually represented, but instead
+        // substituted for another variable, then we need to
+        // account for that when putting the resulting value back into the symbol table
+        StringRelation_ptr relation = val->getMultiTrackAutomaton()->getRelation();
+        VariableTrackMap trackmap = relation->get_variable_trackmap();
+        trackmap[var->getName()] = trackmap[rep_var->getName()];
+        relation->set_variable_trackmap(trackmap);
+        symbol_table_->set_value(rep_var, val);
+        //symbol_table_->set_value(var,val->clone());
+      }
+    }
+  }
   DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 }
 
@@ -437,6 +437,26 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
 void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *not_eq_term;
 
+  if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term)) {
+    if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term)) {
+      StringAutomaton_ptr temp,con;
+      Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
+      temp = StringAutomaton::makeString(right_constant->getValue());
+      con = temp->complement();
+      bool res = true;
+      Value_ptr val = new Value(con);
+
+      if(string_constraint_solver_.has_variable(var)) {
+        res = res and string_constraint_solver_.update_variable_value(var, val);
+      } else {
+        symbol_table_->IntersectValue(var,val);
+        res = res and symbol_table_->get_value(var)->is_satisfiable();
+      }
+      setTermValue(not_eq_term, new Value(res));
+      return;
+    }
+  }
+
   visit_children_of(not_eq_term);
 
   Value_ptr result = nullptr, param_left = getTermValue(not_eq_term->left_term), param_right = getTermValue(
@@ -608,6 +628,26 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
 }
 
 void ConstraintSolver::visitIn(In_ptr in_term) {
+
+  if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(in_term->left_term)) {
+    if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(in_term->right_term)) {
+
+      Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
+      StringAutomaton_ptr con = StringAutomaton::makeRegexAuto(right_constant->getValue());
+      bool res = true;
+      Value_ptr val = new Value(con);
+
+      if(string_constraint_solver_.has_variable(var)) {
+        res = res and string_constraint_solver_.update_variable_value(var, val);
+      } else {
+        symbol_table_->IntersectValue(var,val);
+        res = res and symbol_table_->get_value(var)->is_satisfiable();
+      }
+      setTermValue(in_term, new Value(res));
+      return;
+    }
+  }
+
   visit_children_of(in_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *in_term;
 
@@ -1248,10 +1288,9 @@ bool ConstraintSolver::update_variables() {
       DVLOG(VLOG_LEVEL) << "Inconsistent value for variable: " << var->getName();
       continue;
     }
-    string_constraint_solver_.update_variable_value(var, value);
-    is_satisfiable = is_satisfiable and value->is_satisfiable();
-    delete value;
-    symbol_table_->set_value(var, nullptr);
+    bool still_good = string_constraint_solver_.update_variable_value(var, value);
+    is_satisfiable = is_satisfiable and still_good;
+    symbol_table_->clear_value(var,symbol_table_->top_scope());
   }
   tagged_variables.clear();
   return is_satisfiable;

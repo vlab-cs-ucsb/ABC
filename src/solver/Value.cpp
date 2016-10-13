@@ -265,7 +265,7 @@ Value_ptr Value::intersect(Value_ptr other_value) const {
   } else if (Type::INT_AUTOMATON == type and Type::INT_CONSTANT == other_value->type) {
     intersection_value = new Value(int_automaton->intersect(other_value->int_constant));
   } else if (Type::MULTITRACK_AUTOMATON == type and Type::STRING_AUTOMATON == other_value->type) {
-    LOG(FATAL)<< " multitrack intersect string, implement me " << *this << " & " << *other_value;
+    intersection_value = new Value(multitrack_automaton->intersect(other_value->multitrack_automaton));
   } else if (Type::STRING_AUTOMATON == type and Type::MULTITRACK_AUTOMATON == other_value->type) {
     LOG(FATAL) << " string intersect multitrack, implement me " << *this << " & " << *other_value;
   } else {

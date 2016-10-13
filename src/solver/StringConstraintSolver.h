@@ -34,8 +34,8 @@ public:
 
   void start();
   void start(SMT::Visitable_ptr);
-
   void end();
+  void collect_string_constraint_info();
 
   void setCallbacks();
 
@@ -72,11 +72,17 @@ public:
   Value_ptr get_variable_value(SMT::Variable_ptr variable, bool multi_val = false);
   bool update_variable_value(SMT::Variable_ptr variable, Value_ptr value);
 
+  bool has_variable(SMT::Variable_ptr variable);
+
 protected:
   SymbolTable_ptr symbol_table_;
   ConstraintInformation_ptr constraint_information_;
   StringRelationGenerator string_relation_generator_;
   SMT::Term_ptr current_term_;
+
+  std::map<SMT::Term_ptr, SMT::Term_ptr> term_value_index_;
+  TermValueMap term_values_;
+
 private:
   static const int VLOG_LEVEL;
 

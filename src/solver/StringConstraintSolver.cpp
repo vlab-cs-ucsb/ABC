@@ -25,22 +25,20 @@ StringConstraintSolver::~StringConstraintSolver() {
 }
 
 void StringConstraintSolver::start() {
-  string_relation_generator_.start(root_);
-  if (string_relation_generator_.has_string_formula()) {
-    visitScript(root_);
-  }
+  visitScript(root_);
   end();
 }
 
 void StringConstraintSolver::start(SMT::Visitable_ptr node) {
-  string_relation_generator_.start(node);
-  if (string_relation_generator_.has_string_formula()) {
-    this->Visitor::visit(node);
-  }
+  this->Visitor::visit(node);
   end();
 }
 
 void StringConstraintSolver::end() {
+}
+
+void StringConstraintSolver::collect_string_constraint_info() {
+  string_relation_generator_.start();
 }
 
 void StringConstraintSolver::setCallbacks() {
@@ -70,40 +68,14 @@ void StringConstraintSolver::setCallbacks() {
           /*
            * Xc < Y   =>   Z < Y && Z = Xc
            */
+
           if(left->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
-            DVLOG(VLOG_LEVEL) << "Concat on left side!";
-            // Add temp track for temp variable, Z
-            std::map<std::string,int> trackmap_handle = relation->get_variable_trackmap();
-            std::string name = symbol_table_->get_var_name_for_node(term, Variable::Type::STRING);
-            int id = trackmap_handle.size();
-            trackmap_handle[name] = id;
-            temp_relation = new StringRelation();
-            temp_relation->set_type(StringRelation::Type::STRING_VAR);
-            temp_relation->set_data(name);
-
-
+            temp_relation = right;
+            relation->set_right(left);
             relation->set_left(temp_relation);
-            relation->set_variable_trackmap(trackmap_handle);
-            // Z relation_op Y
-            temp_auto = MultiTrackAutomaton::makeAuto(relation);
-            relation->set_left(left);
+          }
 
-            // Z = Xc (temp var Z on last track)
-            left->set_variable_trackmap(trackmap_handle);
-            multi_auto = MultiTrackAutomaton::makeConcatExtraTrack(left);
-            result_auto = temp_auto->intersect(multi_auto);
-            delete temp_auto;
-            delete multi_auto;
-            // project away temp track/variable Z
-            multi_auto = result_auto->projectKTrack(id);
-            delete result_auto;
-
-            trackmap_handle.erase(name);
-            relation->set_variable_trackmap(trackmap_handle);
-            multi_auto->setRelation(relation->clone());
-            delete temp_relation;
-          } else if(right->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
-            DVLOG(VLOG_LEVEL) << "Concat on right side!";
+          if(right->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
             std::map<std::string, int> trackmap_handle = relation->get_variable_trackmap();
             std::string name = symbol_table_->get_var_name_for_node(term, Variable::Type::STRING);
             int id = trackmap_handle.size();
@@ -136,10 +108,7 @@ void StringConstraintSolver::setCallbacks() {
           }
 
           Value_ptr val = new Value(multi_auto);
-          std::string group_name = string_relation_generator_.get_term_group_name(term);
-          symbol_table_->IntersectValue(group_name,val);
-          DVLOG(VLOG_LEVEL) << "Updating group name: " << group_name;
-          delete val;
+          set_term_value(term,val);
           break;
         }
         default:
@@ -183,20 +152,32 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
 
   StringRelation_ptr relation = nullptr;
   Value_ptr result = nullptr, param = nullptr, and_value = nullptr;
-
+  std::string group_name;
   for(auto& term : *and_term->term_list) {
     relation = string_relation_generator_.get_term_relation(term);
     if(relation != nullptr) {
       visit(term);
       param = get_term_value(term);
-      is_satisfiable = is_satisfiable and param->is_satisfiable();
+      group_name = string_relation_generator_.get_term_group_name(term);
+      symbol_table_->IntersectValue(group_name,param);
+      is_satisfiable = is_satisfiable and symbol_table_->get_value(group_name)->is_satisfiable();
       string_relation_generator_.delete_term_relation(term);
+      clear_term_value(term);
       if(!is_satisfiable) {
-        result = new Value(MultiTrackAutomaton::makePhi(relation->get_num_tracks()));
         break;
       }
     }
   }
+
+  // for now, if sat then just add bool term.
+  // talk with baki about changing this
+  if(is_satisfiable) {
+    result = new Value(true);
+  } else {
+    result = new Value(MultiTrackAutomaton::makePhi(1));
+  }
+  set_term_value(and_term,result);
+
 }
 
 void StringConstraintSolver::visitOr(Or_ptr or_term) {
@@ -275,20 +256,31 @@ std::string StringConstraintSolver::get_string_variable_name(Term_ptr term) {
 }
 
 Value_ptr StringConstraintSolver::get_term_value(Term_ptr term) {
+  auto it = term_values_.find(term);
+  if (it != term_values_.end()) {
+    return it->second;
+  }
+
   std::string group_name = string_relation_generator_.get_term_group_name(term);
-  if(!group_name.empty()) {
+  if (not group_name.empty()) {
     return symbol_table_->get_value(group_name);
   }
   return nullptr;
 }
 
 bool StringConstraintSolver::set_term_value(Term_ptr term, Value_ptr value) {
-  std::string group_name = string_relation_generator_.get_term_group_name(term);
-  if(!group_name.empty()) {
-    symbol_table_->set_value(group_name,value);
-    return true;
+  auto result = term_values_.insert( { term, value });
+  if (result.second == false) {
+    LOG(FATAL)<< "Term automaton is already computed: " << *term << "@" << term;
   }
-  return false;
+}
+
+void StringConstraintSolver::clear_term_value(SMT::Term_ptr term) {
+  auto it = term_values_.find(term);
+  if (it != term_values_.end()) {
+    delete it->second;
+    term_values_.erase(it);
+  }
 }
 
 Value_ptr StringConstraintSolver::get_variable_value(Variable_ptr variable, bool multi_val) {
@@ -320,12 +312,12 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
   StringRelation_ptr variable_relation = nullptr;
   std::string group_name = string_relation_generator_.get_variable_group_name(current_term_,variable);
   if(group_name.empty()) {
-    LOG(FATAL) << "Empty group name!";
+    DVLOG(VLOG_LEVEL) << *variable << " has no group";
+    return false;
   }
   relation_value = symbol_table_->get_value(group_name);
   DVLOG(VLOG_LEVEL) << "VARIABLE: " << variable->str() << " is part of GROUP: " << group_name;
   variable_auto = value->getStringAutomaton();
-
   relation_auto = relation_value->getMultiTrackAutomaton();
   variable_relation = relation_auto->getRelation();
   // place variable value on multitrack, intersect and update corresonding term value
@@ -337,6 +329,14 @@ bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_
   Value_ptr val = new Value(variable_multi_auto);
   symbol_table_->IntersectValue(group_name,val);
   delete val;
+  return symbol_table_->get_value(group_name)->is_satisfiable();
+}
+
+bool StringConstraintSolver::has_variable(Variable_ptr variable) {
+  std::string group_name = string_relation_generator_.get_variable_group_name(current_term_,variable);
+  if(group_name.empty()) {
+    return false;
+  }
   return true;
 }
 

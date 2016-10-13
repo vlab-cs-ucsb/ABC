@@ -811,7 +811,6 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
  * TODO WILL: Don't use multitrack for this, too much work
  */
 IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
-
   DFA_ptr d1,d2,d3;
   d1 = this->dfa_;
   d2 = other_auto->getDFA();

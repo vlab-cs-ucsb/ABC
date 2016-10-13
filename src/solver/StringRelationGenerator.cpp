@@ -17,6 +17,7 @@ StringRelationGenerator::StringRelationGenerator(Script_ptr script, SymbolTable_
       symbol_table_(symbol_table),
       constraint_information_(constraint_information),
       has_string_formula_{false},
+      has_mixed_constraint_(false),
       current_term_{nullptr} {
 }
 
@@ -33,6 +34,7 @@ StringRelationGenerator::~StringRelationGenerator() {
 void StringRelationGenerator::start(Visitable_ptr node) {
   DVLOG(VLOG_LEVEL) << "String relation extraction starts at node: " << node;
   has_string_formula_ = false;
+  has_mixed_constraint_ = false;
   visit(node);
   end();
 }
@@ -40,6 +42,7 @@ void StringRelationGenerator::start(Visitable_ptr node) {
 void StringRelationGenerator::start() {
   DVLOG(VLOG_LEVEL) << "String relation extraction starts at root";
   has_string_formula_ = false;
+  has_mixed_constraint_ = false;
   visit(root_);
   end();
 }
@@ -76,13 +79,16 @@ void StringRelationGenerator::visitLet(Let_ptr let_term) {
 }
 
 void StringRelationGenerator::visitAnd(And_ptr and_term) {
+  DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
   current_term_ = and_term;
   visit_children_of(and_term);
-  DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
+  DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 
   if (not constraint_information_->is_component(and_term)) {
+  current_term_ = nullptr;
     return;
   }
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *and_term << "@" << and_term;
 
   StringRelation_ptr term_relation = nullptr;
   for (auto& term : *(and_term->term_list)) {
@@ -97,12 +103,23 @@ void StringRelationGenerator::visitAnd(And_ptr and_term) {
       VariableTrackMap trackmap = get_group_trackmap(group_name);
       term_relation->set_variable_trackmap(trackmap);
       if(symbol_table_->get_variable_unsafe(group_name) == nullptr) {
-        symbol_table_->add_variable(new Variable(group_name,Variable::Type::STRING));
+        symbol_table_->add_variable(new Variable(group_name,Variable::Type::NONE));
         symbol_table_->set_value(group_name,new Value(MultiTrackAutomaton::makeAnyAutoAligned(trackmap.size())));
       }
       has_string_formula_ = true;
+    } else {
+      has_mixed_constraint_ = true;
     }
   }
+
+  if(has_string_formula_) {
+    constraint_information_->add_string_constraint(and_term);
+  }
+  if(has_mixed_constraint_) {
+    constraint_information_->add_mixed_constraint(and_term);
+  }
+
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *and_term << "@" << and_term;
 }
 
 void StringRelationGenerator::visitOr(Or_ptr or_term) {
@@ -185,6 +202,7 @@ void StringRelationGenerator::visitEq(Eq_ptr eq_term) {
   delete_term_relation(eq_term->right_term);
   set_term_relation(eq_term, relation);
   has_string_formula_ = true;
+  constraint_information_->add_string_constraint(eq_term);
 }
 
 void StringRelationGenerator::visitNotEq(NotEq_ptr not_eq_term) {
@@ -244,6 +262,7 @@ void StringRelationGenerator::visitNotEq(NotEq_ptr not_eq_term) {
   delete_term_relation(not_eq_term->right_term);
   set_term_relation(not_eq_term, relation);
   has_string_formula_ = true;
+  constraint_information_->add_string_constraint(not_eq_term);
 }
 
 void StringRelationGenerator::visitGt(Gt_ptr gt_term) {
@@ -289,6 +308,7 @@ void StringRelationGenerator::visitGt(Gt_ptr gt_term) {
   delete_term_relation(gt_term->right_term);
   set_term_relation(gt_term, relation);
   has_string_formula_ = true;
+  constraint_information_->add_string_constraint(gt_term);
 }
 
 void StringRelationGenerator::visitGe(Ge_ptr ge_term) {
@@ -334,6 +354,7 @@ void StringRelationGenerator::visitGe(Ge_ptr ge_term) {
   delete_term_relation(ge_term->right_term);
   set_term_relation(ge_term, relation);
   has_string_formula_ = true;
+  constraint_information_->add_string_constraint(ge_term);
 }
 
 void StringRelationGenerator::visitLt(Lt_ptr lt_term) {
@@ -379,6 +400,7 @@ void StringRelationGenerator::visitLt(Lt_ptr lt_term) {
   delete_term_relation(lt_term->right_term);
   set_term_relation(lt_term, relation);
   has_string_formula_ = true;
+  constraint_information_->add_string_constraint(lt_term);
 }
 
 void StringRelationGenerator::visitLe(Le_ptr le_term) {
@@ -426,6 +448,7 @@ void StringRelationGenerator::visitLe(Le_ptr le_term) {
   delete_term_relation(le_term->right_term);
   set_term_relation(le_term, relation);
   has_string_formula_ = true;
+  constraint_information_->add_string_constraint(le_term);
 }
 
 void StringRelationGenerator::visitConcat(Concat_ptr concat_term) {
@@ -512,6 +535,7 @@ void StringRelationGenerator::visitBegins(Begins_ptr begins_term) {
   delete_term_relation(begins_term->search_term);
   set_term_relation(begins_term, relation);
   has_string_formula_ = true;
+  constraint_information_->add_string_constraint(begins_term);
 }
 
 void StringRelationGenerator::visitNotBegins(NotBegins_ptr not_begins_term) {
@@ -547,6 +571,7 @@ void StringRelationGenerator::visitNotBegins(NotBegins_ptr not_begins_term) {
   delete_term_relation(not_begins_term->search_term);
   set_term_relation(not_begins_term, relation);
   has_string_formula_ = true;
+  constraint_information_->add_string_constraint(not_begins_term);
 }
 
 void StringRelationGenerator::visitEnds(Ends_ptr ends_term) {

@@ -240,12 +240,8 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makePrefixSuffix(int left_track, in
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makePhi(int ntracks) {
 	DFA_ptr non_accepting_dfa = nullptr;
 	MultiTrackAutomaton_ptr non_accepting_auto = nullptr;
-	int *indices = getIndices(ntracks*VAR_PER_TRACK);
-
-	non_accepting_dfa = Automaton::DfaMakePhi(ntracks*VAR_PER_TRACK, indices);
-	delete[] indices; indices = nullptr;
+	non_accepting_dfa = Automaton::DfaMakePhi(ntracks*VAR_PER_TRACK);
 	non_accepting_auto = new MultiTrackAutomaton(non_accepting_dfa, ntracks);
-	non_accepting_auto->setRelation(nullptr);
 	return non_accepting_auto;
 }
 
@@ -673,11 +669,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr rel
   if(left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
+		constant_string_auto = StringAutomaton::makeString(left_data);
   } else if(left_relation->get_type() == StringRelation::Type::REGEX) {
 		left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(left_data);
+		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
 	} else {
   	left_track = trackmap[left_data];
 	}
@@ -729,11 +725,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThanOrEqual(StringRelation_
   if(left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
+		constant_string_auto = StringAutomaton::makeString(left_data);
   } else if(left_relation->get_type() == StringRelation::Type::REGEX) {
 		left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(left_data);
+		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
 	} else {
   	left_track = trackmap[left_data];
 	}
@@ -787,11 +783,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThan(StringRelation_ptr 
   if(left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
+		constant_string_auto = StringAutomaton::makeString(left_data);
   } else if(left_relation->get_type() == StringRelation::Type::REGEX) {
 		left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(left_data);
+		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
 	} else {
   	left_track = trackmap[left_data];
 	}
@@ -846,11 +842,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThanOrEqual(StringRelati
   if(left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
+		constant_string_auto = StringAutomaton::makeString(left_data);
   } else if(left_relation->get_type() == StringRelation::Type::REGEX) {
 		left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(left_data);
+		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
 	} else {
   	left_track = trackmap[left_data];
 	}
@@ -943,13 +939,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::union_(MultiTrackAutomaton_ptr othe
 		LOG(ERROR) << "Error in MultiTrackAutomaton::union_, unequal track numbers";
 		return this->clone();
 	}
-  DFA_ptr intersect_dfa, minimized_dfa;
+  DFA_ptr union_dfa;
 	MultiTrackAutomaton_ptr union_auto;
 	StringRelation_ptr union_relation = nullptr;
-	intersect_dfa = dfaProduct(this->dfa_, other_auto->dfa_, dfaOR);
-	minimized_dfa = dfaMinimize(intersect_dfa);
-	dfaFree(intersect_dfa);
-	union_auto = new MultiTrackAutomaton(minimized_dfa, this->num_of_tracks);
+	union_dfa = DfaUnion(this->dfa_,other_auto->dfa_);
+	union_auto = new MultiTrackAutomaton(union_dfa, this->num_of_tracks);
 	if(this->relation == nullptr && other_auto->relation == nullptr) {
 		LOG(FATAL) << "No relation set for either multitrack during union";
 	} else if(other_auto->relation == nullptr) {
@@ -995,18 +989,16 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::difference(MultiTrackAutomaton_ptr 
 }
 
 MultiTrackAutomaton_ptr MultiTrackAutomaton::intersect(MultiTrackAutomaton_ptr other_auto) {
-	DFA_ptr intersect_dfa, minimized_dfa = nullptr;
+	DFA_ptr intersect_dfa;
 	MultiTrackAutomaton_ptr intersect_auto = nullptr;
 	StringRelation_ptr intersect_relation = nullptr;
 	if (this->num_of_tracks != other_auto->num_of_tracks) {
-		LOG(ERROR) << "Error in MultiTrackAutomaton::intersect, unequal track numbers";
-		LOG(ERROR) << this->num_of_tracks << " != " << other_auto->num_of_tracks;
-		return this->clone();
+		LOG(FATAL) << "Error in MultiTrackAutomaton::intersect, unequal track numbers\n"
+							 << this->num_of_tracks << " != " << other_auto->num_of_tracks;
 	}
-	intersect_dfa = dfaProduct(this->dfa_, other_auto->dfa_, dfaAND);
-	minimized_dfa = dfaMinimize(intersect_dfa);
-  dfaFree(intersect_dfa);
-	intersect_auto = new MultiTrackAutomaton(minimized_dfa, this->num_of_tracks);
+
+	intersect_dfa = DfaIntersect(this->dfa_,other_auto->dfa_);
+	intersect_auto = new MultiTrackAutomaton(intersect_dfa, this->num_of_tracks);
 
 	if(this->relation == nullptr && other_auto->relation == nullptr) {
 		//LOG(FATAL) << "No relation set for either multitrack during intersection";
@@ -1086,7 +1078,6 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 		}
 	}
 
-	// project away all but the kth track
 	for(int i = this->num_of_tracks-1; i >= 0; --i) {
 		if(i != k_track) {
 			for(int j = 0; j < VAR_PER_TRACK; ++j) {

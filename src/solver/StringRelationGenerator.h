@@ -129,6 +129,7 @@ class StringRelationGenerator : public SMT::Visitor {
   SymbolTable_ptr symbol_table_;
   ConstraintInformation_ptr constraint_information_;
   bool has_string_formula_;
+  bool has_mixed_constraint_;
   SMT::Term_ptr current_term_;
 
   std::map<SMT::Term_ptr, Theory::StringRelation_ptr> relations_;
