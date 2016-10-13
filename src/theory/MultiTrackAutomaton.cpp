@@ -669,11 +669,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr rel
   if(left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
+		constant_string_auto = StringAutomaton::makeString(left_data);
   } else if(left_relation->get_type() == StringRelation::Type::REGEX) {
 		left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(left_data);
+		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
 	} else {
   	left_track = trackmap[left_data];
 	}
@@ -725,11 +725,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThanOrEqual(StringRelation_
   if(left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
+		constant_string_auto = StringAutomaton::makeString(left_data);
   } else if(left_relation->get_type() == StringRelation::Type::REGEX) {
 		left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(left_data);
+		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
 	} else {
   	left_track = trackmap[left_data];
 	}
@@ -783,11 +783,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThan(StringRelation_ptr 
   if(left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
+		constant_string_auto = StringAutomaton::makeString(left_data);
   } else if(left_relation->get_type() == StringRelation::Type::REGEX) {
 		left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(left_data);
+		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
 	} else {
   	left_track = trackmap[left_data];
 	}
@@ -842,11 +842,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThanOrEqual(StringRelati
   if(left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
+		constant_string_auto = StringAutomaton::makeString(left_data);
   } else if(left_relation->get_type() == StringRelation::Type::REGEX) {
 		left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(left_data);
+		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
 	} else {
   	left_track = trackmap[left_data];
 	}

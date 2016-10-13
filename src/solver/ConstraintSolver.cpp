@@ -186,7 +186,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         trackmap[var->getName()] = trackmap[rep_var->getName()];
         relation->set_variable_trackmap(trackmap);
         symbol_table_->set_value(rep_var, val);
-        symbol_table_->set_value(var,val->clone());
+        //symbol_table_->set_value(var,val->clone());
       }
     }
   }
