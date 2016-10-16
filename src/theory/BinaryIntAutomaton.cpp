@@ -128,37 +128,34 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(int value, std::string 
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(SemilinearSet_ptr semilinear_set, std::string var_name,
                                                          ArithmeticFormula_ptr formula, bool add_leading_zeros) {
+  DVLOG(VLOG_LEVEL) << "BinaryIntAutomaton::MakeAutomaton("<< *semilinear_set << ", " << var_name;
 
   int var_index = formula->get_variable_index(var_name);
-  LOG(FATAL)<< "check index correctness";
   int number_of_variables = formula->get_number_of_variables(), lz_index = 0;
   if (add_leading_zeros) {
-    number_of_variables = number_of_variables + 1;
+    ++number_of_variables;
     lz_index = number_of_variables - 1;
   }
 
-  DVLOG(VLOG_LEVEL) << *semilinear_set;
-  std::vector<BinaryState_ptr> binary_states;
-  char* bit_transition = new char[number_of_variables + 1];
-
-  for (int i = 0; i < number_of_variables; i++) {
-    bit_transition[i] = 'X';
-  }
+  std::string bit_transition(number_of_variables + 1, 'X');
   bit_transition[number_of_variables] = '\0';
 
-  ComputeBinaryStates(binary_states, semilinear_set);
+  std::vector<BinaryState_ptr> binary_states;
+  BinaryIntAutomaton::ComputeBinaryStates(binary_states, semilinear_set);
 
   int number_of_binary_states = binary_states.size();
   int number_of_states = number_of_binary_states + 1;
   int leading_zero_state = 0;  // only used if we add leading zeros
   if (add_leading_zeros) {
-    number_of_states = number_of_states + 1;
+    ++number_of_states;
     leading_zero_state = number_of_states - 2;
   }
 
   int sink_state = number_of_states - 1;
   int* indices = getIndices(number_of_variables);
-  char* statuses = new char[number_of_states + 1];
+//  char* statuses = new char[number_of_states + 1];
+  std::string statuses(number_of_states + 1, '-');
+  statuses[number_of_states] = '\0';
   dfaSetup(number_of_states, number_of_variables, indices);
   bool is_final_state = false;
   for (int i = 0; i < number_of_binary_states; i++) {
@@ -169,51 +166,51 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(SemilinearSet_ptr semil
         dfaAllocExceptions(3);
         bit_transition[var_index] = '0';
         bit_transition[lz_index] = '0';
-        dfaStoreException(binary_states[i]->getd0(), bit_transition);
+        dfaStoreException(binary_states[i]->getd0(), &bit_transition[0]);
         bit_transition[var_index] = '1';
         bit_transition[lz_index] = 'X';
-        dfaStoreException(binary_states[i]->getd1(), bit_transition);
+        dfaStoreException(binary_states[i]->getd1(), &bit_transition[0]);
         bit_transition[var_index] = '0';
         bit_transition[lz_index] = '1';
-        dfaStoreException(leading_zero_state, bit_transition);
+        dfaStoreException(leading_zero_state, &bit_transition[0]);
       } else if (binary_states[i]->getd0() >= 0 && binary_states[i]->getd1() < 0) {
         dfaAllocExceptions(2);
         bit_transition[var_index] = '0';
         bit_transition[lz_index] = '0';
-        dfaStoreException(binary_states[i]->getd0(), bit_transition);
+        dfaStoreException(binary_states[i]->getd0(), &bit_transition[0]);
         bit_transition[var_index] = '0';
         bit_transition[lz_index] = '1';
-        dfaStoreException(leading_zero_state, bit_transition);
+        dfaStoreException(leading_zero_state, &bit_transition[0]);
       } else if (binary_states[i]->getd0() < 0 && binary_states[i]->getd1() >= 0) {
         dfaAllocExceptions(2);
         bit_transition[var_index] = '1';
         bit_transition[lz_index] = 'X';
-        dfaStoreException(binary_states[i]->getd1(), bit_transition);
+        dfaStoreException(binary_states[i]->getd1(), &bit_transition[0]);
         bit_transition[var_index] = '0';
         bit_transition[lz_index] = '1';
-        dfaStoreException(leading_zero_state, bit_transition);
+        dfaStoreException(leading_zero_state, &bit_transition[0]);
       } else {
         dfaAllocExceptions(1);
         bit_transition[var_index] = '0';
         bit_transition[lz_index] = '1';
-        dfaStoreException(leading_zero_state, bit_transition);
+        dfaStoreException(leading_zero_state, &bit_transition[0]);
       }
       bit_transition[lz_index] = 'X';
     } else {
       if (binary_states[i]->getd0() >= 0 && binary_states[i]->getd1() >= 0) {
         dfaAllocExceptions(2);
         bit_transition[var_index] = '0';
-        dfaStoreException(binary_states[i]->getd0(), bit_transition);
+        dfaStoreException(binary_states[i]->getd0(), &bit_transition[0]);
         bit_transition[var_index] = '1';
-        dfaStoreException(binary_states[i]->getd1(), bit_transition);
+        dfaStoreException(binary_states[i]->getd1(), &bit_transition[0]);
       } else if (binary_states[i]->getd0() >= 0 && binary_states[i]->getd1() < 0) {
         dfaAllocExceptions(1);
         bit_transition[var_index] = '0';
-        dfaStoreException(binary_states[i]->getd0(), bit_transition);
+        dfaStoreException(binary_states[i]->getd0(), &bit_transition[0]);
       } else if (binary_states[i]->getd0() < 0 && binary_states[i]->getd1() >= 0) {
         dfaAllocExceptions(1);
         bit_transition[var_index] = '1';
-        dfaStoreException(binary_states[i]->getd1(), bit_transition);
+        dfaStoreException(binary_states[i]->getd1(), &bit_transition[0]);
       } else {
         dfaAllocExceptions(0);
       }
@@ -221,12 +218,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(SemilinearSet_ptr semil
 
     dfaStoreState(sink_state);
 
-    if (add_leading_zeros) {
-      statuses[i] = '-';
-    } else if (is_final_state) {
+    if (is_final_state and (not add_leading_zeros)) {
       statuses[i] = '+';
-    } else {
-      statuses[i] = '-';
     }
   }
 
@@ -235,7 +228,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(SemilinearSet_ptr semil
     dfaAllocExceptions(1);
     bit_transition[var_index] = '0';
     bit_transition[lz_index] = '1';
-    dfaStoreException(leading_zero_state, bit_transition);
+    dfaStoreException(leading_zero_state, &bit_transition[0]);
     dfaStoreState(sink_state);
     statuses[leading_zero_state] = '+';
   }
@@ -243,25 +236,20 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(SemilinearSet_ptr semil
   // for the sink state
   dfaAllocExceptions(0);
   dfaStoreState(sink_state);
-  statuses[sink_state] = '-';
 
   int zero_state = binary_states[0]->getd0();  // adding leading zeros makes accepting zero 00, fix here
   if (zero_state > -1 and is_accepting_binary_state(binary_states[zero_state], semilinear_set)) {
     statuses[zero_state] = '+';
   }
 
-  statuses[number_of_states] = '\0';
-  auto binary_dfa = dfaBuild(statuses);
+  auto binary_dfa = dfaBuild(&statuses[0]);
 
   // cleanup
   for (auto bin_state : binary_states) {
     delete bin_state;
   }
   binary_states.clear();
-  delete[] statuses;
   delete[] indices;
-  delete[] bit_transition;
-
   if (add_leading_zeros) {
     auto tmp_dfa = binary_dfa;
     binary_dfa = dfaProject(binary_dfa, (unsigned) (lz_index));
@@ -285,7 +273,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(SemilinearSet_ptr semil
   }
 
   DVLOG(VLOG_LEVEL) << binary_auto->getId() << " = BinaryIntAutomaton::MakeAutomaton(<semilinear_set>, " << var_name
-                    << ", " << *formula << ", " << std::boolalpha << add_leading_zeros << ")";
+                    << ", " << *(binary_auto->formula_) << ", " << std::boolalpha << add_leading_zeros << ")";
   return binary_auto;
 }
 
