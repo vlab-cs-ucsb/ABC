@@ -184,15 +184,27 @@ BigInteger Automaton::Count(const int bound, const bool count_less_than_or_equal
   }
 
   // exponentiation is off by 1 because of artificial accepting state
+
   int power = bound + 1;
 
+  // try to get cached vector
   Eigen::SparseVector<BigInteger> v (this->dfa_->ns + 1);
-  v = x.innerVector(this->dfa_->ns);
+  std::cout << "b: " << bound << " cache b: " << bound_and_initializer_vector_.first << std::endl;
+  if (power > bound_and_initializer_vector_.first) {
+    power = power - bound_and_initializer_vector_.first;
+    v = std::move(bound_and_initializer_vector_.second);
+    std::cout << "getting from cache" << std::endl;
+  } else {
+    v = x.innerVector(this->dfa_->ns);
+    std::cout << "skip vector cache" << std::endl;
+  }
+
   while (power > 1) {
     v = x * v;
     --power;
   }
 
+  bound_and_initializer_vector_ = std::make_pair(bound, v);
   BigInteger result = v.coeff(this->dfa_->s);
   DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->count(" << bound << ") : " << result;
   return result;
@@ -1014,6 +1026,8 @@ Eigen::SparseMatrix<BigInteger> Automaton::GetCountMatrix() {
   Eigen::SparseMatrix<BigInteger> count_matrix (this->dfa_->ns + 1, this->dfa_->ns + 1);
   count_matrix.setFromTriplets(entries.begin(), entries.end());
   count_matrix_ = std::move(count_matrix);
+  bound_and_initializer_vector_ = std::make_pair(0, Eigen::SparseVector<BigInteger> (this->dfa_->ns + 1));
+  bound_and_initializer_vector_.second = count_matrix_.innerVector(this->dfa_->ns);
   is_count_matrix_cached_ = true;
   return count_matrix_;
 }

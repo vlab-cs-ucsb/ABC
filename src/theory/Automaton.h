@@ -155,6 +155,7 @@ protected:
   std::set<int> getStatesReachableBy(int min_walk, int max_walk);
   bool getAnAcceptingWord(NextState& state, std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
   Eigen::SparseMatrix<BigInteger> GetCountMatrix();
+  Eigen::SparseVector<BigInteger> GetInitializationVector(int bound);
   void generateGFScript(int bound, std::ostream& out = std::cout, bool count_less_than_or_equal_to_bound = true);
   void generateMatrixScript(int bound, std::ostream& out = std::cout, bool count_less_than_or_equal_to_bound = true);
 
@@ -183,6 +184,7 @@ protected:
   unsigned long id_;
   static unsigned long trace_id;
   Eigen::SparseMatrix<BigInteger> count_matrix_;
+  std::pair<int, Eigen::SparseVector<BigInteger>> bound_and_initializer_vector_;
 private:
   char* getAnExample(bool accepting=true); // MONA version
   static int name_counter;

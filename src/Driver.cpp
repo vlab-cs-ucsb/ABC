@@ -421,27 +421,38 @@ void Driver::test() {
 //
 //  auto f1 = new ArithmeticFormula();
 //  f1->set_type(ArithmeticFormula::Type::EQ);
-//  f1->set_constant(-1);
+//  f1->set_constant(-2);
 //  f1->add_variable("x", 1);
-//  f1->add_variable("y", 0);
+//  f1->add_variable("y", -1);
 //
-//  auto t1 = BinaryIntAutomaton::MakeAutomaton(f1, true);
-////  t1->inspectAuto();
+//  auto t1 = BinaryIntAutomaton::MakeAutomaton(f1, false);
 //  t1->Count(2, false);
-//  t1->Count(100, false);
-//  t1->Count(1000, false);
-//  t1->Count(10000, false);
+//
+//  auto t2 = BinaryIntAutomaton::MakeAutomaton(f1, false);
+//  t2->Count(10, false);
+//
+//  auto t3 = BinaryIntAutomaton::MakeAutomaton(f1, false);
+//  t3->Count(5, false);
+//
+//  auto t4 = BinaryIntAutomaton::MakeAutomaton(f1, false);
+//  t4->Count(20, false);
+//
+//  auto t5 = BinaryIntAutomaton::MakeAutomaton(f1, false);
+//  t5->Count(2, false);
+//  t5->Count(10, false);
+//  t5->Count(5, false);
+//  t5->Count(20, false);
 //
 //  auto f2 = new ArithmeticFormula();
 //  f2->set_type(ArithmeticFormula::Type::EQ);
-//  f2->set_constant(-2);
-//  f2->add_variable("x", 0);
-//  f2->add_variable("y", 1);
+//  f2->set_constant(0);
+//  f2->add_variable("x", 1);
+//  f2->add_variable("y", 0);
 //
-//  auto t2 = BinaryIntAutomaton::MakeAutomaton(f2, true);
+//  auto t2 = BinaryIntAutomaton::MakeAutomaton(f2, false);
 //  t2->inspectAuto();
 //
-//  auto t3 = t1->Intersect(t2);
+//  auto t3 = t1->Union(t2);
 //  t3->inspectAuto();
 //  for (auto& el : t3->GetAnAcceptingIntForEachVar()) {
 //    std::cout << el.first << " : " << el.second << std::endl;
