@@ -193,10 +193,8 @@ BigInteger Automaton::Count(const int bound, const bool count_less_than_or_equal
   if (power > bound_and_initializer_vector_.first) {
     power = power - bound_and_initializer_vector_.first;
     v = std::move(bound_and_initializer_vector_.second);
-    std::cout << "getting from cache" << std::endl;
   } else {
     v = x.innerVector(this->dfa_->ns);
-    std::cout << "skip vector cache" << std::endl;
   }
 
   while (power > 1) {
