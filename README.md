@@ -46,20 +46,19 @@ ABC testing depends on [googletest and googlemock](https://github.com/google/goo
     ``$ sudo apt install git``
   - ABC is an autotools project, you need to setup autotools in your system. Please make sure you have installed all the tools below.
 
-    ``$ sudo apt-get install build-essential autoconf automake libtool intltool ``
+    ``$ sudo apt install build-essential autoconf automake libtool intltool ``
   - Lex and Yacc. ABC is tested with [Flex 2.6.0](https://www.gnu.org/software/flex/flex.html) and [Bison 3.0.4](https://www.gnu.org/software/bison/).
 
     ``$ sudo apt install flex bison``
 
-  - [Boost Multiprecision](http://www.boost.org/doc/libs/1_62_0/libs/multiprecision/doc/html/index.html). You can get it by install boost math library.
-
-  ``$ sudo apt install libboost-math1.58.0 ``
   - Python (optional). A short installation script is written in pyhton.
     
     ``$ sudo apt install python``
 
 ####Project Dependencies
-  - [Glog](https://github.com/google/glog) logging library for C++. It is an autotools project. Please follow the instructions in their website if the below shortcut doesn't work for you.
+  - [Glog](https://github.com/google/glog) logging library for C++. It is an autotools project. 
+  Please follow the instructions in their website if the below shortcut doesn't work for you. Don't forget to apply patch 
+  as below:
 
   ```
   $ cd <your home directory or a preferred directory>
@@ -75,7 +74,7 @@ ABC testing depends on [googletest and googlemock](https://github.com/google/goo
   ```
   You should have glog libraries installed at */usr/local/lib* and headers installed at */usr/local/include/glog/* after running above commands. 
 
-  - [Mona](http://www.brics.dk/mona/) is used for symbolic representation of automata. 
+  - [Mona](http://www.brics.dk/mona/) is used for symbolic representation of automata. Don't forget to apply patch as below: 
 
   ```sh
     $ cd <your home directory or a preferred directory>

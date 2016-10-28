@@ -24,7 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include <boost/multiprecision/cpp_int.hpp>
 #include <glog/logging.h>
 #include <mona/bdd.h>
 #include <mona/bdd_external.h>
@@ -33,12 +32,11 @@
 
 #include "../utils/Cmd.h"
 #include "../utils/Math.h"
+#include "../boost/multiprecision/cpp_int.hpp"
 #include "../Eigen/SparseCore"
 #include "Graph.h"
 #include "GraphNode.h"
 #include "options/Theory.h"
-
-#include <chrono>
 
 namespace Vlab {
 namespace Theory {
@@ -96,6 +94,7 @@ public:
   bool isStateReachableFrom(int search_state, int from_state);
   virtual BigInteger Count(const int bound, const bool count_less_than_or_equal_to_bound = true);
   virtual BigInteger CountByMatrixMultiplication(int bound, bool count_less_than_or_equal_to_bound = true);
+  Eigen::SparseMatrix<BigInteger> GetCountMatrix();
   virtual BigInteger SymbolicCount(int bound, bool count_less_than_or_equal_to_bound = true);
   virtual BigInteger SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true);
 
@@ -154,8 +153,7 @@ protected:
   std::set<int> getStatesReachableBy(int walk);
   std::set<int> getStatesReachableBy(int min_walk, int max_walk);
   bool getAnAcceptingWord(NextState& state, std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
-  Eigen::SparseMatrix<BigInteger> GetCountMatrix();
-  Eigen::SparseVector<BigInteger> GetInitializationVector(int bound);
+
   void generateGFScript(int bound, std::ostream& out = std::cout, bool count_less_than_or_equal_to_bound = true);
   void generateMatrixScript(int bound, std::ostream& out = std::cout, bool count_less_than_or_equal_to_bound = true);
 

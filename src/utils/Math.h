@@ -13,7 +13,7 @@
 #include <thread>
 #include <vector>
 
-#include <boost/multiprecision/cpp_int.hpp>
+#include "../boost/multiprecision/cpp_int.hpp"
 #include "../Eigen/Core"
 
 namespace Vlab {

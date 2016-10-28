@@ -15,9 +15,10 @@
 #include <fstream>
 #include <utility>
 
-#include <boost/multiprecision/cpp_int.hpp>
 #include <glog/logging.h>
 
+#include "boost/multiprecision/cpp_int.hpp"
+#include "Eigen/SparseCore"
 #include "parser/location.hh"
 #include "parser/parser.hpp"
 #include "parser/Scanner.h"
@@ -71,6 +72,9 @@ public:
   bool isSatisfiable();
   Theory::BigInteger Count(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound = true);
   Theory::BigInteger Count(const double bound, bool count_less_than_or_equal_to_bound = true);
+  std::string SerializeCountMatrixOf(std::string var_name);
+  std::string DeserializeCountMatrixFor(std::string var_name);
+  Theory::BigInteger Count(std::string var_name, std::string matrix, const int bound);
   Theory::BigInteger SymbolicCount(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound = true);
   Theory::BigInteger SymbolicCount(const int bound, bool count_less_than_or_equal_to_bound = true);
 

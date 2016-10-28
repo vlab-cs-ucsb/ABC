@@ -204,6 +204,7 @@ BigInteger Automaton::Count(const int bound, const bool count_less_than_or_equal
 
   bound_and_initializer_vector_ = std::make_pair(bound, v);
   BigInteger result = v.coeff(this->dfa_->s);
+  result.backend().limbs();
   DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->count(" << bound << ") : " << result;
   return result;
 }
@@ -1023,6 +1024,7 @@ Eigen::SparseMatrix<BigInteger> Automaton::GetCountMatrix() {
   }
   Eigen::SparseMatrix<BigInteger> count_matrix (this->dfa_->ns + 1, this->dfa_->ns + 1);
   count_matrix.setFromTriplets(entries.begin(), entries.end());
+  count_matrix.makeCompressed();
   count_matrix_ = std::move(count_matrix);
   bound_and_initializer_vector_ = std::make_pair(0, Eigen::SparseVector<BigInteger> (this->dfa_->ns + 1));
   bound_and_initializer_vector_.second = count_matrix_.innerVector(this->dfa_->ns);

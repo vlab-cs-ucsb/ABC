@@ -236,6 +236,22 @@ Theory::BigInteger Driver::Count(const double bound, bool count_less_than_or_equ
   return result;
 }
 
+std::string Driver::SerializeCountMatrixOf(std::string var_name) {
+
+  LOG(FATAL) << "implement me";
+  return "";
+}
+
+std::string Driver::DeserializeCountMatrixFor(std::string var_name) {
+  LOG(FATAL) << "implement me";
+  return "";
+}
+
+Theory::BigInteger Driver::Count(std::string var_name, std::string matrix, const int bound) {
+  LOG(FATAL) << "implement me";
+  return 0;
+}
+
 Theory::BigInteger Driver::SymbolicCount(std::string var_name, const double bound,
                                          bool count_less_than_or_equal_to_bound) {
   /* HACK: change jpf driver instead. */
