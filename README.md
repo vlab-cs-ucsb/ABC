@@ -1,14 +1,29 @@
 ABC
-========
-The Automata Based Counter ([ABC](https://vlab.cs.ucsb.edu/ABC/)) is a **string constriant** solver and **model counter**. ABC provides solutions to systems of string constraints in the form of a deterministic finite automaton. In addition ABC produces symbolic representation of the number of strings within a length bound, k, that satisfy a set of constraints. ABC can also output the number of satisfying solutions for a specific provided bound.
+============
+The Automata Based Counter ([ABC](https://vlab.cs.ucsb.edu/ABC/)) is a **string and numeric constriant** solver and
+**model counter**. ABC provides solutions to systems of string and numeric constraints in the form of a deterministic
+finite automaton. In addition ABC produces symbolic representation of the number of strings and integers within a length
+bound, k, that satisfy a set of constraints. ABC can also output the number of satisfying solutions given a bound.
+
+Publications 
+============
+###ABC algorithmic details:
+- **TACAS'17** (in submission), [Parameterized Model Counting for String and Numeric Constraints](). Abdulbaki Aydin, Lucas Bang, William Eiers, Tegan Brennan, Miroslav Gavrilov, Tevfik Bultan, and Fang Yu. <br>
+[Download experimental data and results.](https://vlab.cs.ucsb.edu/ABC/tacas_experiments.tar)
+- **CAV'15**, [Automata-based model counting for string constraints](http://www.cs.ucsb.edu/~baki/publications/cav15.pdf). Abdulbaki Aydin, Lucas Bang, and Tevfik Bultan. <br>
+[Download experimental data and results.](https://vlab.cs.ucsb.edu/ABC/)
+
+###ABC use cases:
+- **ICSE'17** (in submission)<!-- , [ISSTAC: Integrated Symbolic Execution for Space-Time Analysis of Code](). Daniel Balasubramanian, Kasper Luckow, Corina Pasareanu, Abdulbaki Aydin, Lucas Bang, Tevfik Bultan, Miroslav Gavrilov, Temesghen Kahsai, Rody Kersten, Dmitriy Kostyuchenko, Quoc-Sang Phan, Zhenkai Zhang and Gabor Karsai. -->
+- **FSE'16** [String Analysis for Side Channels with Segmented Oracles](http://www.cs.ucsb.edu/~baki/publications/fse16.pdf). Lucas Bang, Abdulbaki Aydin, Quoc-Sang Phan, Corina S. Pasareanu, and Tevfik Bultan. 
 
 Setup
 ============
 ABC is a C++ executable and a C++ shared library with JNI interfaces. You can 
-use it as a static or dynamic lib or you can run it from command line. This guide is prepared with the test being done on an Ubuntu 14.04 machine. 
+use it as a static or dynamic lib or you can run it from command line.
 
 ###Easy(Automated) Setup
-  - [ABC](https://vlab.cs.ucsb.edu/ABC/). Clone ABC source and run build script. It automatically tries to install required system packages and dependent projects; [Glog](https://github.com/google/glog), [Mona](http://www.brics.dk/mona/), and [LibStranger](https://github.com/vlab-cs-ucsb/LibStranger). After installing dependencies, it installs ABC. If script does not work please try step-by-step guide or contact us. (That script is tested with Linux machines. You can still use build script in other posix systems if you resolve system dependencies manually.)
+  - [ABC](https://vlab.cs.ucsb.edu/ABC/). Clone ABC source and run build script. It automatically tries to install required system packages and dependent projects; [Glog](https://github.com/google/glog) and [Mona](http://www.brics.dk/mona/). After installing dependencies, it installs ABC. If script does not work please try step-by-step guide or contact us. (That script is tested with Linux machines. You can still use build script in other posix systems if you resolve system dependencies manually.)
   
   ```
   $ cd <your home directory or a preferred directory>
@@ -20,19 +35,23 @@ use it as a static or dynamic lib or you can run it from command line. This guid
 ###Step-by-Step(Semi-automated) Setup
 
 ####System Dependencies
-  - C++ compiler with C++11 support. ABC compilation is tested with g++ 4.8.4 on Ubuntu 14.04.
+  - C++ compiler with C++11 support. Latest ABC compilation is tested with g++ 5.4.0 on Ubuntu 16.04.
   - [Git](https://git-scm.com/)
 
-    ``$ sudo apt-get install git``
+    ``$ sudo apt install git``
   - ABC is an autotools project, you need to setup autotools in your system. Please make sure you have installed all the tools below.
 
     ``$ sudo apt-get install build-essential autoconf automake libtool intltool ``
   - Lex and Yacc. ABC is tested with [Flex 2.5.35](https://www.gnu.org/software/flex/flex.html) and [Bison 3.0.2](https://www.gnu.org/software/bison/).
 
-    ``$ sudo apt-get install flex bison``
+    ``$ sudo apt install flex bison``
+
+  - [Boost Multiprecision](http://www.boost.org/doc/libs/1_62_0/libs/multiprecision/doc/html/index.html). You can get it by install boost math library.
+
+  ``$ sudo apt install libboost-math1.58.0 ``
   - Python (optional). A short installation script is written in pyhton.
     
-    ``$ sudo apt-get install python``
+    ``$ sudo apt install python``
 
 ####Project Dependencies
   - [Glog](https://github.com/google/glog) logging library for C++. It is an autotools project. Please follow the instructions in their website if the below shortcut doesn't work for you.
@@ -63,34 +82,7 @@ use it as a static or dynamic lib or you can run it from command line. This guid
     $ sudo make install
     $ sudo ldconfig
 
-  ```
-  **(!)** Third command above cannot be executed without downloading ABC sources. You can run the mona installation after you downloaded ABC. The patch requires small modifications in three files. Those changes are necessary for ABC to compile and run. You can download ABC by following the commands in the corresponding section and come back here again. Instead of running that command you can manually modify the following files:
-
-  1- *__MONA/DFA/makebasic.c__* as follows:
-  ```c
-  // DFA/makebasic.c
-  #define MAX_EXCEPTION 50   /* LINE 27: change this to 1048576. */
-  #define MAX_VARIABLES 10   /* LINE 28: change this to 2000    */
-```
-  You can set above declarations to larger values whenever you need and reinstall mona. (In case you get an *invariant violation error* message in makefile.c by MONA)
-
-  2- *__MONA/BDD/bdd_external.h__* as follows:
-  ```c
-  \#ifndef __BDD_EXTERNAL_H
-  \#define __BDD_EXTERNAL_H  /* LINE 22                                                    */
-
-  \#define export _export   /* Put that line here to avoid c++ keyword 'export' collision  */
-  
-  \#include "bdd.h"          /* LINE 24                                                    */
-  ```
-  
-  3- *__MONA/BDD/makefile.am__* as follows:
-  ```c
-  mona_HEADERS = bdd.h       /* LINE 9  change this line to: mona_HEADERS = bdd.h bdd_external.h bdd_dump.h  */
-  ```
-  
-  If you choose to modify files manually, please go back and complete MONA compilation and installation. 
-  
+  ``` 
   You should have mona libraries installed at */usr/local/lib* and headers installed at */usr/local/include/mona/* after running above commands. 
 
 
@@ -115,7 +107,6 @@ use it as a static or dynamic lib or you can run it from command line. This guid
   At this point you should have all necessary libraries installed at *__/usr/local/lib__* directory. You should also have all necessary header files at  
   *__/usr/local/include/glog__*,  
   *__/usr/local/include/mona__*,  
-  *__/usr/local/include/stranger__*,  
   *__/usr/local/include/abc__*  
   directories.
 
