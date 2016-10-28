@@ -22,20 +22,25 @@ Setup
 ABC is a C++ executable and a C++ shared library with JNI interfaces. You can 
 use it as a static or dynamic lib or you can run it from command line.
 
+###Download
+  
+```
+$ cd <your home directory or a preferred directory>
+$ git clone --recursive git@github.com:vlab-cs-ucsb/ABC.git ABC # or use https://github.com/vlab-cs-ucsb/ABC.git
+```
+ABC testing depends on [googletest and googlemock](https://github.com/google/googletest) as subprojects. It is important to clone with ``--recursive`` option.
+
 ###Easy(Automated) Setup
   - [ABC](https://vlab.cs.ucsb.edu/ABC/). Clone ABC source and run build script. It automatically tries to install required system packages and dependent projects; [Glog](https://github.com/google/glog) and [Mona](http://www.brics.dk/mona/). After installing dependencies, it installs ABC. If script does not work please try step-by-step guide or contact us. (That script is tested with Linux machines. You can still use build script in other posix systems if you resolve system dependencies manually.)
   
   ```
-  $ cd <your home directory or a preferred directory>
-  $ git clone --recursive git@github.com:vlab-cs-ucsb/ABC.git ABC // or use https://github.com/vlab-cs-ucsb/ABC.git
   $ cd ABC/build
   $ ./install-build-deps.py
   ```
 
 ###Step-by-Step(Semi-automated) Setup
-
 ####System Dependencies
-  - C++ compiler with C++11 support. Latest ABC compilation is tested with g++ 5.4.0 on Ubuntu 16.04.
+  - C++ compiler with C++14 support. Latest ABC compilation is tested with g++ 5.4.0 on Ubuntu 16.04.
   - [Git](https://git-scm.com/)
 
     ``$ sudo apt install git``
