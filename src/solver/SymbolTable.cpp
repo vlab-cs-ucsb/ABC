@@ -278,7 +278,8 @@ Value_ptr SymbolTable::get_value(Variable_ptr variable) {
 }
 
 Value_ptr SymbolTable::get_value_at_scope(Visitable_ptr scope, Variable_ptr variable) {
-  auto it = variable_value_table[scope].find(variable);
+  auto representative_variable = get_representative_variable_of_at_scope(scope, variable);
+  auto it = variable_value_table[scope].find(representative_variable);
   if (it != variable_value_table[scope].end()) {
     return it->second;
   }

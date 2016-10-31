@@ -211,7 +211,7 @@ int main(const int argc, const char **argv) {
           LOG(INFO) << variable_entry.first->getName() << " : \"" << variable_entry.second->getASatisfyingExample() << "\"";
           ss << "string_" << index++  << variable_entry.first->getName() << ".dot";
           if (model_count) {
-            LOG(INFO) << "var: " << variable_entry.first->getName() << " count          : " << driver.Count(variable_entry.first->getName(), bound, true);
+            LOG(INFO) << "var: " << variable_entry.first->getName() << " count          : " << driver.CountVariable(variable_entry.first->getName(), bound, true);
 //              LOG(INFO) << "symbolic count : " << driver.SymbolicCount(variable_entry.first->getName(), bound);
           }
           break;
@@ -225,7 +225,7 @@ int main(const int argc, const char **argv) {
           }
 
           if (model_count) {
-            LOG(INFO) << "count          : " << driver.Count(variable_entry.first->getName(), bound, false);
+            LOG(INFO) << "count          : " << driver.CountVariable(variable_entry.first->getName(), bound, false);
 //              LOG(INFO) << "symbolic count : " << driver.SymbolicCount(bound, false);
           }
           break;
@@ -239,7 +239,7 @@ int main(const int argc, const char **argv) {
             LOG(FATAL) << "Cannot get multitrack values, no relation";
           }
           if (model_count) {
-            LOG(INFO) << "count          : " << driver.Count(variable_entry.first->getName(), bound, true);
+            LOG(INFO) << "count          : " << driver.CountVariable(variable_entry.first->getName(), bound, true);
           }
           break;
         }
@@ -275,7 +275,7 @@ int main(const int argc, const char **argv) {
         LOG(INFO) << "report var: " << query_variable->getName();
         for (auto b : bounds) {
           start = std::chrono::steady_clock::now();
-          auto count_result = driver.Count(query_variable->getName(), b, true);
+          auto count_result = driver.CountVariable(query_variable->getName(), b, true);
           end = std::chrono::steady_clock::now();
           auto count_time = end - start;
           LOG(INFO) << "report bound: " << b << " count: " << count_result << " time: "

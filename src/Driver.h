@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <sstream>
 #include <string>
@@ -73,17 +74,19 @@ public:
   void initializeSolver();
   void solve();
   bool isSatisfiable();
-  Theory::BigInteger Count(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound = true);
-  Theory::BigInteger Count(const double bound, bool count_less_than_or_equal_to_bound = true);
-  std::string SerializeCountMatrixOf(std::string var_name);
-  std::string DeserializeCountMatrixFor(std::string var_name);
-  Theory::BigInteger Count(std::string var_name, std::string matrix, const int bound);
+
+  Theory::BigInteger CountVariable(const std::string var_name, const unsigned long bound, const bool count_less_than_or_equal_to_bound = true) const;
+  Theory::BigInteger CountInts(const unsigned long bound) const;
+  Theory::BigInteger CountStrs(const unsigned long bound) const;
+  Theory::BigInteger Count(const unsigned long int_bound, const unsigned long str_bound) const;
+  Theory::BigInteger Count(const std::string var_name, const Eigen::SparseMatrix<Theory::BigInteger> matrix, const unsigned long bound) const;
+
   Theory::BigInteger SymbolicCount(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound = true);
   Theory::BigInteger SymbolicCount(const int bound, bool count_less_than_or_equal_to_bound = true);
 
   void printResult(Solver::Value_ptr value, std::ostream& out);
   void inspectResult(Solver::Value_ptr value, std::string file_name);
-  std::map<SMT::Variable_ptr, Solver::Value_ptr> getSatisfyingVariables();
+  std::map<SMT::Variable_ptr, Solver::Value_ptr> getSatisfyingVariables() const;
   std::map<std::string, std::string> getSatisfyingExamples();
   void reset();
 //	void solveAst();

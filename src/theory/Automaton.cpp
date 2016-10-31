@@ -189,7 +189,6 @@ BigInteger Automaton::Count(const int bound, const bool count_less_than_or_equal
 
   // try to get cached vector
   Eigen::SparseVector<BigInteger> v (this->dfa_->ns + 1);
-  std::cout << "b: " << bound << " cache b: " << bound_and_initializer_vector_.first << std::endl;
   if (power > bound_and_initializer_vector_.first) {
     power = power - bound_and_initializer_vector_.first;
     v = std::move(bound_and_initializer_vector_.second);
@@ -204,7 +203,6 @@ BigInteger Automaton::Count(const int bound, const bool count_less_than_or_equal
 
   bound_and_initializer_vector_ = std::make_pair(bound, v);
   BigInteger result = v.coeff(this->dfa_->s);
-  result.backend().limbs();
   DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->count(" << bound << ") : " << result;
   return result;
 }
