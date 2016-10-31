@@ -5,6 +5,8 @@ AM_CXXFLAGS =
 #AM_LDFLAGS = 
 	
 noinst_LTLIBRARIES = libabcsolver.la
+libabcsolver_la_LDFLAGS = -version-info 0:1:0
+libabcsolver_la_CXXFLAGS = -I$(top_srcdir)/src
 libabcsolver_la_SOURCES = \
   options/Solver.cpp \
   options/Solver.h \
@@ -60,8 +62,6 @@ libabcsolver_la_SOURCES = \
   StringConstraintSolver.h \
   ConstraintSolver.cpp \
   ConstraintSolver.h 
-
-libabcsolver_la_LDFLAGS = -version-info 0:1:0
 
 libabcsolver_la_LIBADD = \
 	../parser/libabcparser.la \

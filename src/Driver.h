@@ -8,17 +8,19 @@
 #ifndef SRC_DRIVER_H_
 #define SRC_DRIVER_H_
 
-#include <iostream>
-#include <map>
-#include <string>
 #include <cstdlib>
 #include <fstream>
+#include <iostream>
+#include <map>
+#include <sstream>
+#include <string>
 #include <utility>
 
 #include <glog/logging.h>
 
 #include "boost/multiprecision/cpp_int.hpp"
 #include "Eigen/SparseCore"
+#include "cereal/archives/binary.hpp"
 #include "parser/location.hh"
 #include "parser/parser.hpp"
 #include "parser/Scanner.h"
@@ -45,6 +47,7 @@
 #include "theory/options/Theory.h"
 #include "theory/StringAutomaton.h"
 #include "theory/StringRelation.h"
+#include "utils/Program.h"
 
 namespace Vlab {
 namespace SMT {

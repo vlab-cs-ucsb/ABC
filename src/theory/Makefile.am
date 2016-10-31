@@ -4,6 +4,8 @@ AM_CXXFLAGS =
 #AM_LDFLAGS = 
 
 noinst_LTLIBRARIES = libabcautomaton.la
+libabcautomaton_la_LDFLAGS = -version-info 0:1:0
+libabcautomaton_la_CXXFLAGS = -I$(top_srcdir)/src 
 libabcautomaton_la_SOURCES = \
 	options/Theory.cpp \
 	options/Theory.h \
@@ -37,8 +39,6 @@ libabcautomaton_la_SOURCES = \
 	MultiTrackAutomaton.h \
 	StringRelation.cpp \
 	StringRelation.h
-
-libabcautomaton_la_LDFLAGS = -version-info 0:1:0
 	
 libabcautomaton_la_LIBADD = \
 	../utils/libabcutils.la \

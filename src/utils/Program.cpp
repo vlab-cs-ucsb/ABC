@@ -33,14 +33,6 @@ void big_for_loop(std::vector<int> bounds, std::function<void(int& index)> loop_
   }
 }
 
-void serialize(std::ostream& ar, Eigen::SparseMatrix<Theory::BigInteger>& sparse_matrix) {
-
-}
-
-void deserialize(std::istream& ar, Eigen::SparseMatrix<Theory::BigInteger>& sparse_matrix) {
-
-}
-
 } /* namespace Program */
 } /* namespace Util */
 } /* namespace Vlab */

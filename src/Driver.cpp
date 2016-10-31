@@ -417,20 +417,61 @@ void Driver::test() {
   return;
 //  LOG(INFO) << "DRIVER TEST METHOD";
 //  using namespace Theory;
+
+//  Theory::BigInteger m ("4");
+//  std::cout << m << std::endl;
 //
-//  Eigen::SparseMatrix<BigInteger> test(5,5);
+//  std::stringstream os;
 //
-//  std::cout << test << std::endl;
-//  Eigen::Triplet<BigInteger> in1(2,3, BigInteger(7));
-//  Eigen::Triplet<BigInteger> in2(3,2, BigInteger(7));
+//  {
+//    cereal::BinaryOutputArchive ar(os);
+//    Util::Program::save(ar, m);
+//  }
+//
+//  std::cout << os.str() << std::endl;
+//
+//  std::stringstream is (os.str());
+//
+//  Theory::BigInteger n;
+//  std::cout << n << std::endl;
+//  {
+//    cereal::BinaryInputArchive ar(is);
+//    Util::Program::load(ar, n);
+//  }
+//  std::cout << n << std::endl;
+
+
+//  Eigen::SparseMatrix<BigInteger> mm(5,5);
+//  Eigen::SparseMatrix<BigInteger> nn;
+//
+//  Eigen::Triplet<BigInteger> in1(2,3, BigInteger("12345679876543212345678998876655443212345678"));
+//  Eigen::Triplet<BigInteger> in2(3,2, BigInteger(5));
 //  std::vector<Eigen::Triplet<BigInteger>> tt;
 //  tt.push_back(in1);
 //  tt.push_back(in2);
-//  test.setFromTriplets(tt.begin(), tt.end());
-//  std::cout << "after triplet insertion" << std::endl;
-//  std::cout << test << std::endl;
-//  std::cout << "multiply" << std::endl;
+//  mm.setFromTriplets(tt.begin(), tt.end());
+//  std::cout << mm << std::endl;
 //
+//
+//  std::stringstream oss;
+//  {
+//    cereal::BinaryOutputArchive ar(oss);
+//    Util::Program::save(ar, mm);
+//  }
+//
+//  std::cout << oss.str() << std::endl;
+//
+//  std::stringstream iss (oss.str());
+//
+////  std::cout << nn << std::endl;
+//  {
+//    cereal::BinaryInputArchive ar(iss);
+//    Util::Program::load(ar, nn);
+//  }
+//  std::cout << nn << std::endl;
+
+
+//  std::cout << "multiply" << std::endl;
 //  Eigen::SparseMatrix<BigInteger> result(5,5);
 //  result = test * test;
 //  std::cout << result << std::endl;
