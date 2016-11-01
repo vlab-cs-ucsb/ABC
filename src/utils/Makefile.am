@@ -15,7 +15,9 @@ libabcutils_la_SOURCES = \
 	Cmd.cpp \
 	Cmd.h \
 	Program.cpp \
-	Program.h 
+	Program.h \
+	Serialize.cpp \
+	Serialize.h
 	
 libabcutils_la_LIBADD = $(LIBGLOG)
 

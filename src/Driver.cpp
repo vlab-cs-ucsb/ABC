@@ -9,7 +9,6 @@
 
 namespace Vlab {
 
-//const Log::Level Driver::TAG = Log::DRIVER;
 bool Driver::IS_LOGGING_INITIALIZED = false;
 
 Driver::Driver()
@@ -117,19 +116,17 @@ bool Driver::isSatisfiable() {
   return symbol_table_->isSatisfiable();
 }
 
-Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsigned long bound, const bool count_less_than_or_equal_to_bound) const {
-
+Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsigned long bound) const {
   auto variable = symbol_table_->get_variable(var_name);
-  auto var_value = symbol_table_->get_value_at_scope(script_, variable);
+  auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(script_, variable);
+  auto var_value = symbol_table_->get_value_at_scope(script_, representative_variable);
 
   Theory::BigInteger result;
   switch (var_value->getType()) {
     case Vlab::Solver::Value::Type::STRING_AUTOMATON:
-      result = var_value->getStringAutomaton()->Count(bound, count_less_than_or_equal_to_bound);
+      result = var_value->getStringAutomaton()->Count(bound);
       break;
     case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
-      // should project onto variable,
-      // figure out binary int automaton that includes the variable or its representative
       LOG(FATAL) << "fix me";
       result = 0;
       }
@@ -137,15 +134,8 @@ Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsig
     case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {
       auto multi_auto = var_value->getMultiTrackAutomaton();
       auto multi_relation = multi_auto->getRelation();
-      auto variables = multi_relation->get_variable_trackmap();
-      LOG(INFO) << "before COUNT!";
-      result = multi_auto->Count(bound, count_less_than_or_equal_to_bound);
-      LOG(INFO)<< "MULTITRACK, " << var_name << " tuple count : " << result;
-      if (multi_relation->get_variable_index(var_name) >= 0) {
-        LOG(INFO)<< "--got var---";
-        auto single_var = multi_auto->getKTrack(multi_relation->get_variable_index(var_name));
-        auto temp = single_var->Count(bound,count_less_than_or_equal_to_bound);
-      }
+      auto variable_auto = multi_auto->getKTrack(multi_relation->get_variable_index(representative_variable->getName()));
+      result = variable_auto->Count(bound);
     }
       break;
     default:
@@ -187,6 +177,7 @@ Theory::BigInteger Driver::CountInts(const unsigned long bound) const {
             count = 1;
           } else {
             count = 0;
+            return count; // no need to compute anything else
           }
         }
           break;
@@ -226,110 +217,51 @@ Theory::BigInteger Driver::CountStrs(const unsigned long bound) const {
 }
 
 Theory::BigInteger Driver::Count(const unsigned long int_bound, const unsigned long str_bound) const {
+  return CountInts(int_bound) * CountStrs(str_bound);
+}
 
-  Theory::BigInteger result(1), count(0);
-//  int num_bin_var = 0;
-//  for (auto &variable_entry : getSatisfyingVariables()) {
-//    if (variable_entry.second == nullptr) {
-//      continue;
-//    }
-//
-//    switch (variable_entry.second->getType()) {
-//      case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
-//        auto binary_auto = variable_entry.second->getBinaryIntAutomaton();
-//        auto formula = binary_auto->get_formula();
-//        for (auto& el : formula->get_variable_coefficient_map()) {
-//          if (symbol_table_->get_variable_unsafe(el.first) != nullptr) {
-//            ++num_bin_var;
-//          }
-//        }
-//        count = binary_auto->Count(bound);
-//      }
-//        break;
-//      case Vlab::Solver::Value::Type::INT_CONSTANT: {
-//        Theory::BigInteger value(variable_entry.second->getIntConstant());
-//        Theory::BigInteger base(1);
-//        Theory::BigInteger base2(-1);
-//        int shift = (int) bound;
-//
-//        Theory::BigInteger upper_bound = (base << shift) - 1;
-//        Theory::BigInteger lower_bound = (base2 << shift) + 1;
-//        if (value <= upper_bound and value >= lower_bound) {
-//          count = 1;
-//        } else {
-//          count = 0;
-//        }
-//      }
-//        break;
-//      default:
-//        LOG(FATAL)<< "Please update me for the types not handled";
-//        break;
-//      }
-//
-//    result = result * count;
-//  }
-//
-//  int number_of_int_variables = symbol_table_->get_num_of_variables(SMT::Variable::Type::INT);
-//  int number_of_substituted_int_variables = symbol_table_->get_num_of_substituted_variables(script_,
-//                                                                                            SMT::Variable::Type::INT);
-//  int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables - num_bin_var;
-//
-//  if (number_of_untracked_int_variables > 0) {
-//    result = result
-//        * boost::multiprecision::pow(boost::multiprecision::cpp_int(2),
-//                                     (number_of_untracked_int_variables * static_cast<int>(bound)));
-//  }
+Theory::BigInteger Driver::Count(const Eigen::SparseMatrix<Theory::BigInteger> matrix, const unsigned long bound) const {
+  unsigned long power = bound;
 
+  Eigen::SparseVector<Theory::BigInteger> v (matrix.rows());
+  v = matrix.innerVector(matrix.cols() - 1);
+
+  while (power > 0) {
+    v = matrix * v;
+    --power;
+  }
+
+  Theory::BigInteger result = v.coeff(matrix.cols() - 1);
   return result;
 }
 
-Theory::BigInteger Driver::Count(const std::string var_name, const Eigen::SparseMatrix<Theory::BigInteger> matrix, const unsigned long bound) const {
-  LOG(FATAL) << "implement me";
-  return 0;
-}
+Eigen::SparseMatrix<Theory::BigInteger> Driver::GetMatrix(const std::string var_name) const {
+  auto variable = symbol_table_->get_variable(var_name);
+  auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(script_, variable);
+  auto var_value = symbol_table_->get_value_at_scope(script_, representative_variable);
 
-Theory::BigInteger Driver::SymbolicCount(std::string var_name, const double bound,
-                                         bool count_less_than_or_equal_to_bound) {
-  /* HACK: change jpf driver instead. */
-  if (var_name.compare("__VLAB_CS_ARITHMETIC__") == 0)
-    return SymbolicCount(bound, count_less_than_or_equal_to_bound);
-
-  Theory::BigInteger result;
-  symbol_table_->push_scope(script_);
-  Vlab::Solver::Value_ptr var_value = symbol_table_->get_value(var_name);
-  symbol_table_->pop_scope();
   switch (var_value->getType()) {
     case Vlab::Solver::Value::Type::STRING_AUTOMATON:
-      result = var_value->getStringAutomaton()->SymbolicCount(bound, count_less_than_or_equal_to_bound);
+      return var_value->getStringAutomaton()->GetCountMatrix();
       break;
-    case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
-      auto binary_auto = var_value->getBinaryIntAutomaton();
-      result = binary_auto->SymbolicCount(bound, count_less_than_or_equal_to_bound);
-      int number_of_int_variables = symbol_table_->get_num_of_variables(SMT::Variable::Type::INT);
-      int number_of_substituted_int_variables = symbol_table_->get_num_of_substituted_variables(
-          script_, SMT::Variable::Type::INT);
-      int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables
-          - binary_auto->getNumberOfVariables();
-      if (number_of_untracked_int_variables > 0) {
-        result = result
-            * boost::multiprecision::pow(boost::multiprecision::cpp_int(2),
-                                         (number_of_untracked_int_variables * static_cast<int>(bound)));
-      }
-      break;
+//    case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
+//      LOG(FATAL) << "fix me";
+//      }
+//      break;
+    case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {
+      auto multi_auto = var_value->getMultiTrackAutomaton();
+      auto multi_relation = multi_auto->getRelation();
+      auto variable_auto = multi_auto->getKTrack(multi_relation->get_variable_index(representative_variable->getName()));
+      return variable_auto->GetCountMatrix();
     }
+      break;
     default:
       break;
   }
 
-  return result;
+  return Eigen::SparseMatrix<Theory::BigInteger>();
 }
 
-Theory::BigInteger Driver::SymbolicCount(const int bound, bool count_less_than_or_equal_to_bound) {
-  LOG(FATAL)<< "update counting for integers";
-  std::string var_name;
-  //  std::string var_name(Solver::SymbolTable::ARITHMETIC);
-  return SymbolicCount(var_name, bound, count_less_than_or_equal_to_bound);
-}
 
 void Driver::inspectResult(Solver::Value_ptr value, std::string file_name) {
   std::ofstream outfile(file_name.c_str());

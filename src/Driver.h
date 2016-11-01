@@ -75,14 +75,13 @@ public:
   void solve();
   bool isSatisfiable();
 
-  Theory::BigInteger CountVariable(const std::string var_name, const unsigned long bound, const bool count_less_than_or_equal_to_bound = true) const;
+  Theory::BigInteger CountVariable(const std::string var_name, const unsigned long bound) const;
   Theory::BigInteger CountInts(const unsigned long bound) const;
   Theory::BigInteger CountStrs(const unsigned long bound) const;
   Theory::BigInteger Count(const unsigned long int_bound, const unsigned long str_bound) const;
-  Theory::BigInteger Count(const std::string var_name, const Eigen::SparseMatrix<Theory::BigInteger> matrix, const unsigned long bound) const;
+  Theory::BigInteger Count(const Eigen::SparseMatrix<Theory::BigInteger> matrix, const unsigned long bound) const;
 
-  Theory::BigInteger SymbolicCount(std::string var_name, const double bound, bool count_less_than_or_equal_to_bound = true);
-  Theory::BigInteger SymbolicCount(const int bound, bool count_less_than_or_equal_to_bound = true);
+  Eigen::SparseMatrix<Theory::BigInteger> GetMatrix(const std::string var_name) const;
 
   void printResult(Solver::Value_ptr value, std::ostream& out);
   void inspectResult(Solver::Value_ptr value, std::string file_name);

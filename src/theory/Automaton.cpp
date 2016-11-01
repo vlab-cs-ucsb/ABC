@@ -185,7 +185,7 @@ BigInteger Automaton::Count(const int bound, const bool count_less_than_or_equal
 
   // exponentiation is off by 1 because of artificial accepting state
 
-  int power = bound + 1;
+  unsigned long power = bound;
 
   // try to get cached vector
   Eigen::SparseVector<BigInteger> v (this->dfa_->ns + 1);
@@ -196,7 +196,7 @@ BigInteger Automaton::Count(const int bound, const bool count_less_than_or_equal
     v = x.innerVector(this->dfa_->ns);
   }
 
-  while (power > 1) {
+  while (power > 0) {
     v = x * v;
     --power;
   }
