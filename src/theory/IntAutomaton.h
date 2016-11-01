@@ -111,6 +111,8 @@ protected:
   IntAutomaton_ptr __plus(IntAutomaton_ptr other_auto);
   IntAutomaton_ptr __minus(IntAutomaton_ptr other_auto);
 
+  void decide_counting_schema(Eigen::SparseMatrix<BigInteger>& count_matrix) override;
+
 
   bool has_negative_1;
 private:

@@ -122,7 +122,7 @@ SemilinearSet_ptr UnaryAutomaton::getSemilinearSet() {
 
   int cycle_head_state = -1,
           current_state = this->dfa_->s,
-          sink_state = this->getSinkState();
+          sink_state = this->GetSinkState();
 
   CHECK_NE(-1, sink_state);
 
@@ -191,7 +191,7 @@ IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool ad
   DFA_ptr int_dfa = nullptr;
   int* indices = getIndices(number_of_variables);
   const int number_of_states = this->dfa_->ns;
-  int to_state, sink_state = getSinkState();
+  int to_state, sink_state = GetSinkState();
   bool has_sink = true;
 
   if(sink_state < 0) {
@@ -285,7 +285,7 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
           tmp_1_auto = nullptr,
           tmp_2_auto = nullptr;
 
-  int sink_state = this->getSinkState();
+  int sink_state = this->GetSinkState();
   int curr_state {this->dfa_->s};
 
   std::map<int, bool> is_visited;
@@ -326,6 +326,11 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
 
   DVLOG(VLOG_LEVEL)  << result_auto->getId() << " = [" << this->id_ << "]->toStringAutomaton()";
   return result_auto;
+}
+
+void UnaryAutomaton::decide_counting_schema(Eigen::SparseMatrix<BigInteger>& count_matrix) {
+  LOG(FATAL) << "Not tested";
+  counter_.set_type(SymbolicCounter::Type::UNARYINT);
 }
 
 } /* namespace Theory */

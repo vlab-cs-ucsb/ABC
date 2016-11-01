@@ -10,6 +10,8 @@
 namespace Vlab {
 namespace Theory {
 
+const int SymbolicCounter::VLOG_LEVEL = 9;
+
 SymbolicCounter::SymbolicCounter() : type_(SymbolicCounter::Type::STRING), bound_(0) {
 
 }
@@ -75,7 +77,40 @@ BigInteger SymbolicCounter::Count(const unsigned long bound) {
     ++bound_; // handle sign bit
   }
 
+  DVLOG(VLOG_LEVEL) << "Count(" << bound << ") = " << initialization_vector_.coeff(0);
   return initialization_vector_.coeff(0);
+}
+
+BigInteger SymbolicCounter::CountbyMatrixMultiplication(const unsigned long bound) {
+  LOG(FATAL) << "not fixed yet";
+  return 0;
+  //  // matrix exponentiation is off by 1 because of artificial accepting state
+//  int power = bound + 1;
+//
+//  Eigen::SparseMatrix<BigInteger> y;
+//  bool has_odds = false;
+//
+//  while (power > 1) {
+//    if (power % 2 == 0) {
+//      power = power / 2;
+//    } else {
+//      power = (power - 1) / 2;
+//      if (has_odds) {
+//        y = x * y;
+//      } else {
+//        y = x;
+//        has_odds = true;
+//      }
+//    }
+//    x = x * x;
+//  }
+//
+//  if (has_odds) {
+//    x = x * y;
+//  }
+//
+//  BigInteger result = x.coeff(this->dfa_->s, this->dfa_->ns);
+//  return result;
 }
 
 } /* namespace Theory */

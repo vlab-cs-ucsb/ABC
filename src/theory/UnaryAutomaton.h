@@ -57,6 +57,7 @@ public:
   StringAutomaton_ptr toStringAutomaton();
 
 protected:
+  void decide_counting_schema(Eigen::SparseMatrix<BigInteger>& count_matrix) override;
 
 private:
   static const int VLOG_LEVEL;

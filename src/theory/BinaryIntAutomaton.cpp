@@ -410,7 +410,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::TrimLeadingZeros() {
   // identify leading zeros
   std::vector<char> exception = {'0'};
   int next_state = -1;
-  int sink_state = tmp_auto->getSinkState();
+  int sink_state = tmp_auto->GetSinkState();
   std::map<int, std::vector<int>> possible_final_states;
   std::stack<int> final_states;
   for (int i = 0; i < tmp_auto->dfa_->ns; i++) {
@@ -480,7 +480,7 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
   BinaryIntAutomaton_ptr subject_auto = nullptr, tmp_1_auto = nullptr, tmp_2_auto = nullptr, diff_auto = nullptr;
   std::vector<SemilinearSet_ptr> semilinears;
   std::string var_name = this->formula_->get_variable_coefficient_map().begin()->first;
-  int current_state = this->dfa_->s, sink_state = this->getSinkState();
+  int current_state = this->dfa_->s, sink_state = this->GetSinkState();
   std::vector<int> constants, bases;
   bool is_cyclic = false;
   std::map<int, bool> cycle_status;
@@ -724,14 +724,12 @@ std::map<std::string, int> BinaryIntAutomaton::GetAnAcceptingIntForEachVar() {
   return var_values;
 }
 
-BigInteger BinaryIntAutomaton::Count(const unsigned long bound, const bool count_less_than_or_equal_to_bound) {
+void BinaryIntAutomaton::decide_counting_schema(Eigen::SparseMatrix<BigInteger>& count_matrix) {
   if (is_natural_number_) {
     counter_.set_type(SymbolicCounter::Type::BINARYUNSIGNEDINT);
   } else {
     counter_.set_type(SymbolicCounter::Type::BINARYINT);
   }
-
-  return Automaton::Count(bound, count_less_than_or_equal_to_bound);
 }
 
 BigInteger BinaryIntAutomaton::SymbolicCount(double bound, bool count_less_than_or_equal_to_bound) {
@@ -1672,7 +1670,7 @@ bool BinaryIntAutomaton::GetCycleStatus(std::map<int, bool>& cycle_status) {
   std::vector<int> st;
   std::vector<bool> path;
   int time = 0;
-  int sink_state = getSinkState();
+  int sink_state = GetSinkState();
 
   if (sink_state > 0) {
     disc[sink_state] = 0;  // avoid exploring sink state

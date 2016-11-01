@@ -93,11 +93,11 @@ public:
   bool isCyclic();
   bool isInCycle(int state);
   bool isStateReachableFrom(int search_state, int from_state);
-  virtual BigInteger Count(const unsigned long bound, const bool count_less_than_or_equal_to_bound = true);
-  virtual BigInteger CountByMatrixMultiplication(int bound, bool count_less_than_or_equal_to_bound = true);
+  BigInteger Count(const unsigned long bound);
+  BigInteger CountByMatrixMultiplication(const unsigned long bound);
   virtual BigInteger SymbolicCount(int bound, bool count_less_than_or_equal_to_bound = true);
   virtual BigInteger SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true);
-  SymbolicCounter get_counter();
+  SymbolicCounter GetSymbolicCounter();
 
   Graph_ptr toGraph();
 
@@ -110,7 +110,7 @@ public:
   int inspectAuto(bool print_sink = false, bool force_mona_format = false);
   int inspectBDD();
 
-  int getSinkState();
+  int GetSinkState();
 
   friend std::ostream& operator<<(std::ostream& os, const Automaton& automaton);
 
@@ -155,7 +155,8 @@ protected:
   std::set<int> getStatesReachableBy(int min_walk, int max_walk);
   bool getAnAcceptingWord(NextState& state, std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
 
-  Eigen::SparseMatrix<BigInteger> GetCountMatrix();
+  virtual void SetSymbolicCounter();
+  virtual void decide_counting_schema(Eigen::SparseMatrix<BigInteger>& mm);
   void generateGFScript(int bound, std::ostream& out = std::cout, bool count_less_than_or_equal_to_bound = true);
   void generateMatrixScript(int bound, std::ostream& out = std::cout, bool count_less_than_or_equal_to_bound = true);
 

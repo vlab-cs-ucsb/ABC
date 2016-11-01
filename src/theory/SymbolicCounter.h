@@ -8,6 +8,8 @@
 #ifndef SRC_THEORY_SYMBOLICCOUNTER_H_
 #define SRC_THEORY_SYMBOLICCOUNTER_H_
 
+#include <glog/logging.h>
+
 #include "../utils/Math.h"
 #include "../boost/multiprecision/cpp_int.hpp"
 #include "../Eigen/SparseCore"
@@ -34,12 +36,15 @@ class SymbolicCounter {
   void set_transition_count_matrix(const Eigen::SparseMatrix<BigInteger>& transition_count_matrix);
 
   BigInteger Count(const unsigned long bound);
+  BigInteger CountbyMatrixMultiplication(const unsigned long bound);
 
 protected:
   Type type_;
   unsigned long bound_;
   Eigen::SparseVector<BigInteger> initialization_vector_;
   Eigen::SparseMatrix<BigInteger> transition_count_matrix_;
+private:
+  static const int VLOG_LEVEL;
 };
 
 } /* namespace Theory */

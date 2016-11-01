@@ -48,7 +48,8 @@
 #include "theory/options/Theory.h"
 #include "theory/StringAutomaton.h"
 #include "theory/StringRelation.h"
-#include "utils/Program.h"
+#include "theory/SymbolicCounter.h"
+#include "utils/Serialize.h"
 
 namespace Vlab {
 namespace SMT {
@@ -81,7 +82,7 @@ public:
   Theory::BigInteger Count(const unsigned long int_bound, const unsigned long str_bound) const;
   Theory::BigInteger Count(const Eigen::SparseMatrix<Theory::BigInteger> matrix, const unsigned long bound) const;
 
-  Eigen::SparseMatrix<Theory::BigInteger> GetMatrix(const std::string var_name) const;
+  Eigen::SparseMatrix<Theory::BigInteger> GetSymbolicCounter(const std::string var_name) const;
 
   void printResult(Solver::Value_ptr value, std::ostream& out);
   void inspectResult(Solver::Value_ptr value, std::string file_name);

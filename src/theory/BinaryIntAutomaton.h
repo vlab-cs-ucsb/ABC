@@ -81,7 +81,6 @@ public:
 
   std::map<std::string, int> GetAnAcceptingIntForEachVar();
 
-  BigInteger Count(const unsigned long bound, const bool count_less_than_or_equal_to_bound = false) override;
   BigInteger SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = false) override;
 
 protected:
@@ -104,6 +103,8 @@ protected:
   static int AddBinaryState(std::vector<BinaryState_ptr>& binary_states,
           int C, int R, BinaryState::Type t, int v, int b);
   static bool is_accepting_binary_state(BinaryState_ptr binary_state, SemilinearSet_ptr semilinear_set);
+
+  void decide_counting_schema(Eigen::SparseMatrix<BigInteger>& count_matrix) override;
 
   bool GetCycleStatus(std::map<int, bool>& cycle_status);
   void GetCycleStatus(int state, std::map<int, int>& disc, std::map<int, int>& low, std::vector<int>& st,

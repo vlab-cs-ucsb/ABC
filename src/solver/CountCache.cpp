@@ -64,6 +64,13 @@ Theory::BigInteger CountCache::CountStrs(const unsigned long bound) {
       result = result * counter.Count(bound);
     }
   }
+
+  if (unconstraint_str_vars_ > 0) {
+   result = result
+       * boost::multiprecision::pow(boost::multiprecision::cpp_int(256),
+                                    (unconstraint_str_vars_ * bound));
+  }
+
   return result;
 }
 

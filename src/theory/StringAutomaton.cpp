@@ -597,8 +597,8 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
     expected_num_of_states = expected_num_of_states  - 1; // if start state is reachable from an accepting state, it will be merge with accepting states of left hand side
   }
   // variable initializations
-  sink_state_left_auto = left_auto->getSinkState();
-  sink_state_right_auto = right_auto->getSinkState();
+  sink_state_left_auto = left_auto->GetSinkState();
+  sink_state_right_auto = right_auto->GetSinkState();
 
   bool left_sink = true, right_sink = true;
   int sink = sink_state_left_auto;
@@ -870,7 +870,7 @@ StringAutomaton_ptr StringAutomaton::closure() {
   DFA_ptr result_dfa = nullptr, temp_dfa = nullptr;
   paths state_paths, pp;
   trace_descr tp;
-  int sink = getSinkState();
+  int sink = GetSinkState();
   CHECK_GT(sink,-1);
   int var = DEFAULT_NUM_OF_VARIABLES;
   int len = var + 1; //one extra bit
@@ -1031,7 +1031,7 @@ StringAutomaton_ptr StringAutomaton::suffixes() {
 
   int number_of_variables = this->num_of_variables_,
           number_of_states = this->dfa_->ns,
-          sink_state = this->getSinkState(),
+          sink_state = this->GetSinkState(),
           next_state = -1;
 
   unsigned max = number_of_states;
@@ -1182,7 +1182,7 @@ StringAutomaton_ptr StringAutomaton::suffixesFromTo(int start, int end) {
   // sub suffixes and union them
   const int number_of_variables = this->num_of_variables_ + std::ceil(std::log2(max)), // number of variables required
           number_of_states = this->dfa_->ns + 1; // one extra start for the new start state
-  int sink_state = this->getSinkState();
+  int sink_state = this->GetSinkState();
 
   int* indices = getIndices(number_of_variables);
   char* statuses = new char[number_of_states + 1];
@@ -1299,7 +1299,7 @@ StringAutomaton_ptr StringAutomaton::suffixesFromTo(int start, int end) {
 
 StringAutomaton_ptr StringAutomaton::prefixes(){
   StringAutomaton_ptr prefix_auto = this->clone();
-  int sink_state = prefix_auto->getSinkState();
+  int sink_state = prefix_auto->GetSinkState();
 
 
   for (int s = 0; s < prefix_auto->dfa_->ns; s++) {
@@ -1377,7 +1377,7 @@ StringAutomaton_ptr StringAutomaton::charAt(int index) {
   // if number of variables are too large for mona, implement an algorithm that find suffixes by finding
   // sub suffixes and union them
   const int number_of_variables = this->num_of_variables_ + std::ceil(std::log2(max)), // number of variables required
-          sink_state = this->getSinkState();
+          sink_state = this->GetSinkState();
   int* indices = getIndices(number_of_variables);
 
   unsigned extra_bits_value = 0;
@@ -1840,7 +1840,7 @@ UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
   UnaryAutomaton_ptr unary_auto = nullptr;
   DFA_ptr unary_dfa = nullptr, tmp_dfa = nullptr;
 
-  int sink_state = this->getSinkState(),
+  int sink_state = this->GetSinkState(),
           number_of_variables = this->getNumberOfVariables() + 1, // one extra bit
           to_state = 0;
   bool has_sink = true;
@@ -1969,7 +1969,7 @@ IntAutomaton_ptr StringAutomaton::parseToIntAutomaton() {
     paths state_paths = nullptr, pp = nullptr;
     trace_descr tp = nullptr;
     int current_state;
-    int sink_state = this->getSinkState();
+    int sink_state = this->GetSinkState();
 
 
     std::map<int, std::vector<std::string>> current_paths_to_state; // <to state, paths>
@@ -2446,7 +2446,7 @@ std::string StringAutomaton::getAnAcceptingString() {
  * @returns true if state has the given exception to a state that is not sink
  */
 bool StringAutomaton::hasExceptionToValidStateFrom(int state, std::vector<char>& exception) {
-  int sink_state = this->getSinkState();
+  int sink_state = this->GetSinkState();
   return (sink_state != this->getNextState(state, exception));
 }
 
@@ -2490,7 +2490,7 @@ StringAutomaton_ptr StringAutomaton::indexOfHelper(StringAutomaton_ptr search_au
   if(!index_of_auto->has_sharp_bit() || index_of_auto->num_of_variables_ < 9) {
     LOG(FATAL) << "NO SHARP BT!";
   }
-  int sink_state = index_of_auto->getSinkState();
+  int sink_state = index_of_auto->GetSinkState();
   int current_state = -1;
   int next_state = -1;
   std::vector<char> flag = {'1', '1', '1', '1', '1', '1', '1', '1', '1'}; // 255 (+1 extrabit)
@@ -2544,7 +2544,7 @@ StringAutomaton_ptr StringAutomaton::lastIndexOfHelper(StringAutomaton_ptr searc
   // Mark start state of a match
   std::vector<char> flag_1_exception = {'1', '1', '1', '1', '1', '1', '1', '1', '1'}; // 255
   GraphNode_ptr node = nullptr;
-  int sink_state = search_result_auto->getSinkState();
+  int sink_state = search_result_auto->GetSinkState();
   int next_state = -1;
   for (int s = 0; s < search_result_auto->dfa_->ns; s++) {
     node = graph->getNode(s);
@@ -2617,7 +2617,7 @@ StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton(bool use_extra_b
   std::vector<char> sharp0 = Automaton::getReservedWord('0', num_of_variables_, true);
   bool has_sink = true;
   int number_of_variables = this->num_of_variables_ + 1,
-          sink_state = this->getSinkState(),
+          sink_state = this->GetSinkState(),
           to_state = 0,
           to_duplicate_state = 0,
           mapped_state_id = 0,
@@ -2775,7 +2775,7 @@ StringAutomaton_ptr StringAutomaton::toQueryAutomaton(bool use_extra_bit) {
   int number_of_variables = num_of_variables_ + 1,
           shift = 0,
           number_of_states = 0,
-          sink_state = this->getSinkState(),
+          sink_state = this->GetSinkState(),
           not_contains_sink_state = -1,
           to_state = 0;
 
@@ -2795,7 +2795,7 @@ StringAutomaton_ptr StringAutomaton::toQueryAutomaton(bool use_extra_bit) {
   delete empty_string_auto; empty_string_auto = nullptr;
   delete tmp_auto_1; tmp_auto_1 = nullptr;
 
-  not_contains_sink_state = not_contains_auto->getSinkState();
+  not_contains_sink_state = not_contains_auto->GetSinkState();
   if (not_contains_sink_state < 0) {
     shift = not_contains_auto->dfa_->ns;
   } else {
@@ -2992,7 +2992,7 @@ StringAutomaton_ptr StringAutomaton::removeReservedWords() {
 
   int number_of_variables = this->num_of_variables_,
           number_of_states = this->dfa_->ns,
-          sink_state = this->getSinkState(),
+          sink_state = this->GetSinkState(),
           next_state = -1;
 
   // collect information about automaton

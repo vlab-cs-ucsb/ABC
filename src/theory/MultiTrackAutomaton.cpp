@@ -1112,7 +1112,7 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 	return result_auto;
 }
 
-BigInteger MultiTrackAutomaton::Count(int bound, bool count_less_than_or_equal_to_bound) {
+void MultiTrackAutomaton::SetSymbolicCounter() {
   // remove last lambda loop
   DFA_ptr original_dfa = nullptr, temp_dfa = nullptr,trimmed_dfa = nullptr;
 	original_dfa = this->dfa_;
@@ -1184,10 +1184,9 @@ BigInteger MultiTrackAutomaton::Count(int bound, bool count_less_than_or_equal_t
   delete[] statuses;
 
   this->dfa_ = trimmed_dfa;
-	BigInteger ret = Automaton::Count(bound, count_less_than_or_equal_to_bound);
+  Automaton::SetSymbolicCounter();
   this->dfa_ = original_dfa;
   dfaFree(trimmed_dfa);
-  return ret;
 }
 
 std::vector<std::string> MultiTrackAutomaton::getAnAcceptingStringForEachTrack() {
@@ -1273,7 +1272,7 @@ const MultiTrackAutomaton::TransitionVector& MultiTrackAutomaton::generate_trans
 			break;
 	}
 
-	std::vector<std::map<std::string,int>> states(3);
+	std::vector<std::map<std::string,int>> states(3, std::map<std::string, int>());
 	states[0]["00"] = 0;
 	states[0]["01"] = 1;
 	states[0]["10"] = 2;

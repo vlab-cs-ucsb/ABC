@@ -149,7 +149,7 @@ bool Automaton::isCyclic() {
   bool result = false;
   std::map<int, bool> is_discovered;
   std::map<int, bool> is_stack_member;
-  int sink_state = getSinkState();
+  int sink_state = GetSinkState();
   is_discovered[sink_state] = true; // avoid sink state
 
   result = isCyclic(this->dfa_->s, is_discovered, is_stack_member);
@@ -167,73 +167,33 @@ bool Automaton::isStateReachableFrom(int search_state, int from_state) {
   return isStateReachableFrom(search_state, from_state, is_stack_member);
 }
 
-BigInteger Automaton::Count(const unsigned long bound, const bool count_less_than_or_equal_to_bound) {
-  if (is_counter_cached_) {
-    BigInteger result = counter_.Count(bound);
-    DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->count(" << bound << ") : " << result;
-    return result;
+BigInteger Automaton::Count(const unsigned long bound) {
+  if (not is_counter_cached_) {
+    SetSymbolicCounter();
   }
-
-  Eigen::SparseMatrix<BigInteger> mm = GetCountMatrix();
-  if (count_less_than_or_equal_to_bound) {
-    mm.insert(this->dfa_->ns, this->dfa_->ns) = 1;
-  }
-
-  counter_.set_transition_count_matrix(mm);
-  counter_.set_initialization_vector(mm.innerVector(mm.cols()-1));
 
   BigInteger result = counter_.Count(bound);
-  is_counter_cached_ = true;
   DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->count(" << bound << ") : " << result;
   return result;
 }
 
-SymbolicCounter Automaton::get_counter() {
+SymbolicCounter Automaton::GetSymbolicCounter() {
+  if (is_counter_cached_) {
+    return counter_;
+  }
+  SetSymbolicCounter();
   return counter_;
 }
 
 /**
  * Counting with matrix exponentiation by successive squaring
  */
-BigInteger Automaton::CountByMatrixMultiplication(int bound, bool count_less_than_or_equal_to_bound) {
-
-  Eigen::SparseMatrix<BigInteger> x = GetCountMatrix();
-  if (count_less_than_or_equal_to_bound) {
-    x.insert(this->dfa_->ns, this->dfa_->ns) = 1;
+BigInteger Automaton::CountByMatrixMultiplication(unsigned long bound) {
+  if (not is_counter_cached_) {
+    SetSymbolicCounter();
   }
 
-  if (bound == 0) {
-    BigInteger result = x.coeff(this->dfa_->s, this->dfa_->ns);
-    DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->count(" << bound << ") : " << result;
-    return result;
-  }
-
-  // matrix exponentiation is off by 1 because of artificial accepting state
-  int power = bound + 1;
-
-  Eigen::SparseMatrix<BigInteger> y;
-  bool has_odds = false;
-
-  while (power > 1) {
-    if (power % 2 == 0) {
-      power = power / 2;
-    } else {
-      power = (power - 1) / 2;
-      if (has_odds) {
-        y = x * y;
-      } else {
-        y = x;
-        has_odds = true;
-      }
-    }
-    x = x * x;
-  }
-
-  if (has_odds) {
-    x = x * y;
-  }
-
-  BigInteger result = x.coeff(this->dfa_->s, this->dfa_->ns);
+  BigInteger result = counter_.CountbyMatrixMultiplication(bound);
   DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->count(" << bound << ") : " << result;
   return result;
 }
@@ -335,7 +295,7 @@ bool Automaton::isAcceptingSingleWord() {
   std::map<unsigned, unsigned> next_states;
   std::vector<unsigned> nodes;
   std::vector<int> bit_stack;
-  unsigned sink_state = (unsigned) this->getSinkState();
+  unsigned sink_state = (unsigned) this->GetSinkState();
   bool is_accepting_single_word = true;
   bool is_final_state = false;
   int bit_counter = 0;
@@ -382,7 +342,7 @@ bool Automaton::isAcceptingSingleWord() {
 }
 
 std::vector<bool>* Automaton::getAnAcceptingWord(std::function<bool(unsigned& index)> next_node_heuristic) {
-  int sink_state = getSinkState();
+  int sink_state = GetSinkState();
   NextState start_state = std::make_pair(this->dfa_->s, std::vector<bool>());
   std::vector<bool>* bit_vector = new std::vector<bool>();
   std::map<int, bool> is_stack_member;
@@ -740,7 +700,7 @@ bool Automaton::is_accepting_state(int state_id) {
 /**
  * @returns sink state number if exists, -1 otherwise
  */
-int Automaton::getSinkState() {
+int Automaton::GetSinkState() {
   for (int i = 0; i < this->dfa_->ns; i++) {
     if (isSinkState(i)) {
       return i;
@@ -939,7 +899,7 @@ std::set<int> Automaton::getStatesReachableBy(int min_walk, int max_walk) {
   std::set<int> states;
 
   std::stack<std::pair<int, int>> state_stack;
-  int sink_state = getSinkState();
+  int sink_state = GetSinkState();
   if (sink_state != this->dfa_->s) {
     state_stack.push(std::make_pair(this->dfa_->s, 0));
   }
@@ -961,9 +921,9 @@ std::set<int> Automaton::getStatesReachableBy(int min_walk, int max_walk) {
   return states;
 }
 
-Eigen::SparseMatrix<BigInteger> Automaton::GetCountMatrix() {
+void Automaton::SetSymbolicCounter() {
   std::vector<Eigen::Triplet<BigInteger>> entries;
-  const int sink_state = getSinkState();
+  const int sink_state = GetSinkState();
   unsigned left, right, index;
   for (int s = 0; s < this->dfa_->ns; ++s) {
     if (sink_state != s) {
@@ -997,15 +957,26 @@ Eigen::SparseMatrix<BigInteger> Automaton::GetCountMatrix() {
 
       // combine all accepting states into one artifical accepting state
       if (is_accepting_state(s)) {
-        entries.push_back(Eigen::Triplet<BigInteger>(s, this->dfa_->ns, BigInteger(1)));
+        entries.push_back(Eigen::Triplet<BigInteger>(s, this->dfa_->ns, 1));
       }
     }
   }
   Eigen::SparseMatrix<BigInteger> count_matrix (this->dfa_->ns + 1, this->dfa_->ns + 1);
   count_matrix.setFromTriplets(entries.begin(), entries.end());
+  decide_counting_schema(count_matrix);
   count_matrix.makeCompressed();
   count_matrix.finalize();
-  return count_matrix;
+  counter_.set_transition_count_matrix(count_matrix);
+  counter_.set_initialization_vector(count_matrix.innerVector(count_matrix.cols()-1));
+  is_counter_cached_ = true;
+}
+
+/**
+ * Default is set to string variable counting
+ */
+void Automaton::decide_counting_schema(Eigen::SparseMatrix<BigInteger>& count_matrix) {
+  counter_.set_type(SymbolicCounter::Type::STRING);
+  count_matrix.insert(this->dfa_->ns, this->dfa_->ns) = 1; // allows us to count all lengths up to given bound
 }
 
 void Automaton::generateGFScript(int bound, std::ostream& out, bool count_less_than_or_equal_to_bound) {
@@ -1138,7 +1109,7 @@ void Automaton::generateMatrixScript(int bound, std::ostream& out, bool count_le
 void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
 
   print_sink = print_sink || (dfa_->ns == 1 and dfa_->f[0] == -1);
-  int sink_state = getSinkState();
+  int sink_state = GetSinkState();
 
   out << "digraph MONA_DFA {\n"
           " rankdir = LR;\n "
@@ -1289,7 +1260,7 @@ void Automaton::ToDot(std::ostream& out, bool print_sink) {
   unsigned* offsets = getIndices((unsigned) num_of_variables_);
   int no_free_vars = num_of_variables_;
   DFA_ptr a = this->dfa_;
-  int sink = getSinkState();
+  int sink = GetSinkState();
 
   print_sink = print_sink || (dfa_->ns == 1 and dfa_->f[0] == -1);
 

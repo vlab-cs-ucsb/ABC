@@ -234,7 +234,7 @@ Theory::BigInteger Driver::Count(const Eigen::SparseMatrix<Theory::BigInteger> m
   return result;
 }
 
-Eigen::SparseMatrix<Theory::BigInteger> Driver::GetMatrix(const std::string var_name) const {
+Eigen::SparseMatrix<Theory::BigInteger> Driver::GetSymbolicCounter(const std::string var_name) const {
   auto variable = symbol_table_->get_variable(var_name);
   auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(script_, variable);
   auto var_value = symbol_table_->get_value_at_scope(script_, representative_variable);

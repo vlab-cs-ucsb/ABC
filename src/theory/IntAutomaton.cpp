@@ -687,7 +687,7 @@ bool IntAutomaton::isZero() {
 }
 
 bool IntAutomaton::isAcceptingSingleInt() {
-  int sink_state = getSinkState(),
+  int sink_state = GetSinkState(),
       curr_state = -1,
       num_of_accepting_paths = 0;
   std::stack<int> state_path;
@@ -716,7 +716,7 @@ bool IntAutomaton::isAcceptingSingleInt() {
  * TODO update getAnAcceptingWord to generate string in all case except bottom
  */
 int IntAutomaton::getAnAcceptingInt() {
-  int sink_state = getSinkState(),
+  int sink_state = GetSinkState(),
       curr_state = -1,
       num_of_accepting_paths = 0;
   std::stack<int> state_path;
@@ -753,7 +753,7 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
   int number_of_variables = 1;
   int* indices = getIndices(number_of_variables);
   int number_of_states = this->dfa_->ns;
-  int to_state, sink_state = getSinkState();
+  int to_state, sink_state = GetSinkState();
   bool has_sink = true;
   // is this right?
   if(sink_state < 0) {
@@ -1072,6 +1072,11 @@ IntAutomaton_ptr IntAutomaton::__minus(IntAutomaton_ptr other_auto) {
   DVLOG(VLOG_LEVEL) << result_auto->id_ << " = [" << this->id_ << "]->__minus(" << other_auto->id_ << ")";
 
   return result_auto;
+}
+
+void IntAutomaton::decide_counting_schema(Eigen::SparseMatrix<BigInteger>& count_matrix) {
+  LOG(FATAL) << "Length automaton count should be done on unary automaton";
+  counter_.set_type(SymbolicCounter::Type::UNARYINT);
 }
 
 
