@@ -16,6 +16,7 @@
 #include "../boost/multiprecision/cpp_int.hpp"
 #include "../Eigen/SparseCore"
 #include "../cereal/archives/binary.hpp"
+#include "../theory/SymbolicCounter.h"
 #include "../utils/Math.h"
 
 namespace Vlab {
@@ -27,22 +28,16 @@ class CountCache {
   CountCache();
   virtual ~CountCache();
   void add_constant(int c);
-  void add_int_matrix(const Matrix& matrix);
-  void add_unsigned_int_matrix(const Matrix& matrix);
-  void add_unary_int_matrix(const Matrix& matrix);
-  void add_str_matrix(const Matrix& matrix);
+  void add_symbolic_counter(const Theory::SymbolicCounter& counter);
   Theory::BigInteger CountInts(const unsigned long bound);
   Theory::BigInteger CountStrs(const unsigned long bound);
+  Theory::BigInteger Count(const unsigned long int_bound, const unsigned long str_bound);
 
  protected:
   int unconstraint_int_vars_;
   int unconstraint_str_vars_;
   std::vector<int> constant_ints_;
-  std::vector<Matrix> int_matrices_;
-  std::vector<Matrix> unsigned_int_matrices_;
-  std::vector<Matrix> unary_int_matrices_;
-  std::vector<Matrix> str_matrices_;
-
+  std::vector<Theory::SymbolicCounter> symbolic_counters_;
 };
 
 } /* namespace Solver */

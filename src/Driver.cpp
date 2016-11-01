@@ -176,8 +176,7 @@ Theory::BigInteger Driver::CountInts(const unsigned long bound) const {
           if (value <= upper_bound and value >= lower_bound) {
             count = 1;
           } else {
-            count = 0;
-            return count; // no need to compute anything else
+            return 0; // no need to compute anything else
           }
         }
           break;
@@ -242,7 +241,7 @@ Eigen::SparseMatrix<Theory::BigInteger> Driver::GetMatrix(const std::string var_
 
   switch (var_value->getType()) {
     case Vlab::Solver::Value::Type::STRING_AUTOMATON:
-      return var_value->getStringAutomaton()->GetCountMatrix();
+//      return var_value->getStringAutomaton()->GetCountMatrix();
       break;
 //    case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
 //      LOG(FATAL) << "fix me";
@@ -252,7 +251,7 @@ Eigen::SparseMatrix<Theory::BigInteger> Driver::GetMatrix(const std::string var_
       auto multi_auto = var_value->getMultiTrackAutomaton();
       auto multi_relation = multi_auto->getRelation();
       auto variable_auto = multi_auto->getKTrack(multi_relation->get_variable_index(representative_variable->getName()));
-      return variable_auto->GetCountMatrix();
+//      return variable_auto->GetCountMatrix();
     }
       break;
     default:

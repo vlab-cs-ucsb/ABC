@@ -37,6 +37,7 @@
 #include "Graph.h"
 #include "GraphNode.h"
 #include "options/Theory.h"
+#include "SymbolicCounter.h"
 
 namespace Vlab {
 namespace Theory {
@@ -92,11 +93,11 @@ public:
   bool isCyclic();
   bool isInCycle(int state);
   bool isStateReachableFrom(int search_state, int from_state);
-  virtual BigInteger Count(const int bound, const bool count_less_than_or_equal_to_bound = true);
+  virtual BigInteger Count(const unsigned long bound, const bool count_less_than_or_equal_to_bound = true);
   virtual BigInteger CountByMatrixMultiplication(int bound, bool count_less_than_or_equal_to_bound = true);
-  Eigen::SparseMatrix<BigInteger> GetCountMatrix();
   virtual BigInteger SymbolicCount(int bound, bool count_less_than_or_equal_to_bound = true);
   virtual BigInteger SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true);
+  SymbolicCounter get_counter();
 
   Graph_ptr toGraph();
 
@@ -154,6 +155,7 @@ protected:
   std::set<int> getStatesReachableBy(int min_walk, int max_walk);
   bool getAnAcceptingWord(NextState& state, std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
 
+  Eigen::SparseMatrix<BigInteger> GetCountMatrix();
   void generateGFScript(int bound, std::ostream& out = std::cout, bool count_less_than_or_equal_to_bound = true);
   void generateMatrixScript(int bound, std::ostream& out = std::cout, bool count_less_than_or_equal_to_bound = true);
 
@@ -175,14 +177,13 @@ protected:
   static int find_sink(DFA_ptr dfa);
 
   const Automaton::Type type_;
-  bool is_count_matrix_cached_;
+  bool is_counter_cached_;
   DFA_ptr dfa_;
   int num_of_variables_;
   int* variable_indices_;
   unsigned long id_;
   static unsigned long trace_id;
-  Eigen::SparseMatrix<BigInteger> count_matrix_;
-  std::pair<int, Eigen::SparseVector<BigInteger>> bound_and_initializer_vector_;
+  SymbolicCounter counter_;
 private:
   char* getAnExample(bool accepting=true); // MONA version
   static int name_counter;

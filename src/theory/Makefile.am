@@ -38,7 +38,9 @@ libabcautomaton_la_SOURCES = \
 	MultiTrackAutomaton.cpp \
 	MultiTrackAutomaton.h \
 	StringRelation.cpp \
-	StringRelation.h
+	StringRelation.h \
+	SymbolicCounter.cpp \
+	SymbolicCounter.h
 	
 libabcautomaton_la_LIBADD = \
 	../utils/libabcutils.la \

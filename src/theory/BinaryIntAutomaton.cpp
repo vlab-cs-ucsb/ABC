@@ -724,10 +724,13 @@ std::map<std::string, int> BinaryIntAutomaton::GetAnAcceptingIntForEachVar() {
   return var_values;
 }
 
-BigInteger BinaryIntAutomaton::Count(int bound, bool count_less_than_or_equal_to_bound) {
-  if (not is_natural_number_) {
-    ++bound;  // consider sign bit
+BigInteger BinaryIntAutomaton::Count(const unsigned long bound, const bool count_less_than_or_equal_to_bound) {
+  if (is_natural_number_) {
+    counter_.set_type(SymbolicCounter::Type::BINARYUNSIGNEDINT);
+  } else {
+    counter_.set_type(SymbolicCounter::Type::BINARYINT);
   }
+
   return Automaton::Count(bound, count_less_than_or_equal_to_bound);
 }
 

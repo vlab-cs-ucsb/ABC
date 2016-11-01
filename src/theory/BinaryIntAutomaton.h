@@ -81,7 +81,7 @@ public:
 
   std::map<std::string, int> GetAnAcceptingIntForEachVar();
 
-  BigInteger Count(int bound, bool count_less_than_or_equal_to_bound = false) override;
+  BigInteger Count(const unsigned long bound, const bool count_less_than_or_equal_to_bound = false) override;
   BigInteger SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = false) override;
 
 protected:

@@ -24,16 +24,16 @@ const std::string Automaton::Name::STRING = "StringAutomaton";
 const std::string Automaton::Name::BINARYINT = "BinaryIntAutomaton";
 
 Automaton::Automaton(Automaton::Type type)
-        : type_(type), is_count_matrix_cached_{false}, dfa_(nullptr), num_of_variables_(0), variable_indices_(nullptr), id_(Automaton::trace_id++) {
+        : type_(type), is_counter_cached_{false}, dfa_(nullptr), num_of_variables_(0), variable_indices_(nullptr), id_(Automaton::trace_id++) {
 }
 
 Automaton::Automaton(Automaton::Type type, DFA_ptr dfa, int num_of_variables)
-        : type_(type), is_count_matrix_cached_{false}, dfa_(dfa), num_of_variables_(num_of_variables), id_(Automaton::trace_id++) {
+        : type_(type), is_counter_cached_{false}, dfa_(dfa), num_of_variables_(num_of_variables), id_(Automaton::trace_id++) {
   variable_indices_ = getIndices(num_of_variables, 1); // make indices one more to be safe
 }
 
 Automaton::Automaton(const Automaton& other)
-        : type_(other.type_), is_count_matrix_cached_{false}, dfa_(nullptr), num_of_variables_(other.num_of_variables_), id_(Automaton::trace_id++) {
+        : type_(other.type_), is_counter_cached_{false}, dfa_(nullptr), num_of_variables_(other.num_of_variables_), id_(Automaton::trace_id++) {
           if (other.dfa_) {
             dfa_ = dfaCopy(other.dfa_);
           }
@@ -167,44 +167,29 @@ bool Automaton::isStateReachableFrom(int search_state, int from_state) {
   return isStateReachableFrom(search_state, from_state, is_stack_member);
 }
 
-/**
- * Counting by vector products
- */
-BigInteger Automaton::Count(const int bound, const bool count_less_than_or_equal_to_bound) {
-
-  Eigen::SparseMatrix<BigInteger> x = GetCountMatrix();
-  if (count_less_than_or_equal_to_bound) {
-    x.insert(this->dfa_->ns, this->dfa_->ns) = 1;
-  }
-
-  if (bound == 0) {
-    BigInteger result = x.coeff(this->dfa_->s, this->dfa_->ns);
+BigInteger Automaton::Count(const unsigned long bound, const bool count_less_than_or_equal_to_bound) {
+  if (is_counter_cached_) {
+    BigInteger result = counter_.Count(bound);
     DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->count(" << bound << ") : " << result;
     return result;
   }
 
-  // exponentiation is off by 1 because of artificial accepting state
-
-  unsigned long power = bound;
-
-  // try to get cached vector
-  Eigen::SparseVector<BigInteger> v (this->dfa_->ns + 1);
-  if (power > bound_and_initializer_vector_.first) {
-    power = power - bound_and_initializer_vector_.first;
-    v = std::move(bound_and_initializer_vector_.second);
-  } else {
-    v = x.innerVector(this->dfa_->ns);
+  Eigen::SparseMatrix<BigInteger> mm = GetCountMatrix();
+  if (count_less_than_or_equal_to_bound) {
+    mm.insert(this->dfa_->ns, this->dfa_->ns) = 1;
   }
 
-  while (power > 0) {
-    v = x * v;
-    --power;
-  }
+  counter_.set_transition_count_matrix(mm);
+  counter_.set_initialization_vector(mm.innerVector(mm.cols()-1));
 
-  bound_and_initializer_vector_ = std::make_pair(bound, v);
-  BigInteger result = v.coeff(this->dfa_->s);
+  BigInteger result = counter_.Count(bound);
+  is_counter_cached_ = true;
   DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->count(" << bound << ") : " << result;
   return result;
+}
+
+SymbolicCounter Automaton::get_counter() {
+  return counter_;
 }
 
 /**
@@ -977,10 +962,6 @@ std::set<int> Automaton::getStatesReachableBy(int min_walk, int max_walk) {
 }
 
 Eigen::SparseMatrix<BigInteger> Automaton::GetCountMatrix() {
-  if (is_count_matrix_cached_) {
-    return count_matrix_;
-  }
-
   std::vector<Eigen::Triplet<BigInteger>> entries;
   const int sink_state = getSinkState();
   unsigned left, right, index;
@@ -1023,11 +1004,8 @@ Eigen::SparseMatrix<BigInteger> Automaton::GetCountMatrix() {
   Eigen::SparseMatrix<BigInteger> count_matrix (this->dfa_->ns + 1, this->dfa_->ns + 1);
   count_matrix.setFromTriplets(entries.begin(), entries.end());
   count_matrix.makeCompressed();
-  count_matrix_ = std::move(count_matrix);
-  bound_and_initializer_vector_ = std::make_pair(0, Eigen::SparseVector<BigInteger> (this->dfa_->ns + 1));
-  bound_and_initializer_vector_.second = count_matrix_.innerVector(this->dfa_->ns);
-  is_count_matrix_cached_ = true;
-  return count_matrix_;
+  count_matrix.finalize();
+  return count_matrix;
 }
 
 void Automaton::generateGFScript(int bound, std::ostream& out, bool count_less_than_or_equal_to_bound) {
