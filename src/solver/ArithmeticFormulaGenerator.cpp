@@ -42,21 +42,17 @@ ArithmeticFormulaGenerator::~ArithmeticFormulaGenerator() {
 }
 
 void ArithmeticFormulaGenerator::start(Visitable_ptr node) {
-  if (Option::Solver::LIA_ENGINE_ENABLED) {
-    DVLOG(VLOG_LEVEL) << "Arithmetic constraint extraction starts at node: " << node;
-    visit(node);
-    set_group_mappings();
-    end();
-  }
+  DVLOG(VLOG_LEVEL) << "Arithmetic constraint extraction starts at node: " << node;
+  visit(node);
+  set_group_mappings();
+  end();
 }
 
 void ArithmeticFormulaGenerator::start() {
-  if (Option::Solver::LIA_ENGINE_ENABLED) {
-    DVLOG(VLOG_LEVEL) << "Arithmetic constraint extraction starts at root";
-    visit(root_);
-    set_group_mappings();
-    end();
-  }
+  DVLOG(VLOG_LEVEL) << "Arithmetic constraint extraction starts at root";
+  visit(root_);
+  set_group_mappings();
+  end();
 }
 
 void ArithmeticFormulaGenerator::end() {

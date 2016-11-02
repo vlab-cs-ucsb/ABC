@@ -81,7 +81,7 @@ void Driver::initializeSolver() {
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
   dependency_slicer.start();
 
-  if (Option::Solver::ENABLE_EQUIVALENCE) {
+  if (Option::Solver::ENABLE_EQUIVALENCE_CLASSES) {
     Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
     do {
       equivalence_generator.start();
@@ -96,7 +96,7 @@ void Driver::initializeSolver() {
     implication_runner.start();
   }
 
-  if (Option::Solver::ENABLE_SORTING) {
+  if (Option::Solver::ENABLE_SORTING_HEURISTICS) {
     Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
     constraint_sorter.start();
   }
@@ -396,7 +396,7 @@ void Driver::set_option(Option::Name option) {
     case Option::Name::ENABLE_SORTING_HEURISTICS:
       Option::Solver::ENABLE_SORTING_HEURISTICS = true;
       break;
-    case Option::Name::ENABLE_SORTING_HEURISTICS:
+    case Option::Name::DISABLE_SORTING_HEURISTICS:
       Option::Solver::ENABLE_SORTING_HEURISTICS = false;
       break;
     default:

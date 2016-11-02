@@ -17,9 +17,9 @@ const int ArithmeticConstraintSolver::VLOG_LEVEL = 11;
 
 ArithmeticConstraintSolver::ArithmeticConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_table,
                                                        ConstraintInformation_ptr constraint_information,
-                                                       bool is_natural_numbers_only)
+                                                       bool use_signed_integers)
     : AstTraverser(script),
-      is_natural_numbers_only_ { is_natural_numbers_only },
+      use_unsigned_integers_ { not use_signed_integers },
       symbol_table_(symbol_table),
       constraint_information_(constraint_information),
       arithmetic_formula_generator_(script, symbol_table, constraint_information) {
@@ -68,7 +68,7 @@ void ArithmeticConstraintSolver::setCallbacks() {
         auto formula = arithmetic_formula_generator_.get_term_formula(term);
         if (formula != nullptr) {
           DVLOG(VLOG_LEVEL) << "Linear Arithmetic Equation: " << *formula << "@" << term;
-          auto binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), is_natural_numbers_only_);
+          auto binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), use_unsigned_integers_);
           auto result = new Value(binary_int_auto);
           set_term_value(term, result);
         }
@@ -162,7 +162,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
       symbol_table_->IntersectValue(group_name, and_value);  // update value
     } else {
       auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
-      auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(group_formula->clone(), is_natural_numbers_only_));
+      auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(group_formula->clone(), use_unsigned_integers_));
       symbol_table_->set_value(group_name, value);
     }
     delete and_value;
@@ -222,7 +222,7 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
       symbol_table_->set_value(group_name, or_value);
     } else {
       auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
-      auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(group_formula->clone(), is_natural_numbers_only_));
+      auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(group_formula->clone(), use_unsigned_integers_));
       symbol_table_->set_value(group_name, value);
       delete or_value; // nullptr safe
     }

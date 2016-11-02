@@ -32,7 +32,7 @@ namespace Solver {
 class ArithmeticConstraintSolver : public AstTraverser {
   using TermValueMap = std::map<SMT::Term_ptr, Value_ptr>;
  public:
-  ArithmeticConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr, bool is_natural_numbers_only);
+  ArithmeticConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr, bool use_signed_integers);
   virtual ~ArithmeticConstraintSolver();
 
   void start(SMT::Visitable_ptr);
@@ -58,7 +58,7 @@ class ArithmeticConstraintSolver : public AstTraverser {
   std::map<SMT::Term_ptr, SMT::TermList>& get_string_terms_map();
 
  protected:
-  bool is_natural_numbers_only_;
+  bool use_unsigned_integers_;
   SymbolTable_ptr symbol_table_;
   ConstraintInformation_ptr constraint_information_;
   ArithmeticFormulaGenerator arithmetic_formula_generator_;

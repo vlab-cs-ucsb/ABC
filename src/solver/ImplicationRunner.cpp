@@ -55,17 +55,15 @@ void ImplicationRunner::visitAssert(Assert_ptr assert_command) {
 }
 
 void ImplicationRunner::visitAnd(And_ptr and_term) {
-  int i = 0;
-  while(i < and_term->term_list->size()) {
+  for (auto& term : *(and_term->term_list)) {
     current_and_ = and_term;
-    visit(and_term->term_list->at(i));
+    visit(term);
     current_and_ = nullptr;
-    i++;
   }
 }
 
 void ImplicationRunner::visitOr(Or_ptr or_term) {
-  for (auto& term : * (or_term->term_list)) {
+  for (auto& term : *(or_term->term_list)) {
     symbol_table_->push_scope(term, false);
     visit(term);
     symbol_table_->pop_scope();
@@ -81,7 +79,7 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
       //Term_ptr implication_term = new Eq(get_length(left_id), get_length(eq_term->right_term));
       //current_and_->term_list->push_back(implication_term);
       if (QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->right_term)) {
-        if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA) {
+        if (Option::Solver::USE_MULTITRACK_AUTO) {
           Term_ptr implication_term_begins = new Begins(right_variable->clone(), left_id->term_list->front()->clone());
           current_and_->term_list->push_back(implication_term_begins);
         }
@@ -94,7 +92,7 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
       //Term_ptr implication_term = new Eq(get_length(eq_term->left_term), get_length(right_id));
       //current_and_->term_list->push_back(implication_term);
       if (QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {
-        if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA) {
+        if (Option::Solver::USE_MULTITRACK_AUTO) {
           Term_ptr implication_term_begins = new Begins(left_variable->clone(), right_id->term_list->front()->clone());
           current_and_->term_list->push_back(implication_term_begins);
         }
@@ -107,30 +105,24 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
 
 
 void ImplicationRunner::visitContains(Contains_ptr contains) {
-
-  if (Option::Solver::LIA_ENGINE_ENABLED) {
-    Term_ptr subject_length = get_length(contains->subject_term);
-    Term_ptr search_length = get_length(contains->search_term);
-    Term_ptr implication_term = new Ge(subject_length, search_length);
-    current_and_->term_list->push_back(implication_term);
-  }
+  Term_ptr subject_length = get_length(contains->subject_term);
+  Term_ptr search_length = get_length(contains->search_term);
+  Term_ptr implication_term = new Ge(subject_length, search_length);
+  current_and_->term_list->push_back(implication_term);
 }
 
 void ImplicationRunner::visitEnds(Ends_ptr ends) {
-
-  if (Option::Solver::LIA_ENGINE_ENABLED) {
     Term_ptr subject_length = get_length(ends->subject_term);
     Term_ptr search_length = get_length(ends->search_term);
     Term_ptr implication_term = new Ge(subject_length, search_length);
     current_and_->term_list->push_back(implication_term);
-  }
 }
 
 
 void ImplicationRunner::visitNotContains(NotContains_ptr not_contains) {
   if (QualIdentifier_ptr left_id = dynamic_cast<QualIdentifier_ptr>(not_contains->subject_term)) {
     if (QualIdentifier_ptr right_id = dynamic_cast<QualIdentifier_ptr>(not_contains->search_term)) {
-      if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA) {
+      if (Option::Solver::USE_MULTITRACK_AUTO) {
         NotBegins_ptr implication_term = new NotBegins(not_contains->subject_term->clone(), not_contains->search_term->clone());
         current_and_->term_list->push_back(implication_term);
       }
@@ -142,7 +134,7 @@ void ImplicationRunner::visitNotContains(NotContains_ptr not_contains) {
 void ImplicationRunner::visitNotEnds(NotEnds_ptr not_ends) {
   if (QualIdentifier_ptr left_id = dynamic_cast<QualIdentifier_ptr>(not_ends->subject_term)) {
     if (QualIdentifier_ptr right_id = dynamic_cast<QualIdentifier_ptr>(not_ends->search_term)) {
-      if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA) {
+      if (Option::Solver::USE_MULTITRACK_AUTO) {
         NotEq_ptr implication_term = new NotEq(not_ends->subject_term->clone(), not_ends->search_term->clone());
         current_and_->term_list->push_back(implication_term);
       }

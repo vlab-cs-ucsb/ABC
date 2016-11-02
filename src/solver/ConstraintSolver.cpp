@@ -22,7 +22,7 @@ ConstraintSolver::ConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_tab
       symbol_table_(symbol_table),
       constraint_information_(constraint_information),
       arithmetic_constraint_solver_(script, symbol_table, constraint_information,
-                                    Option::Solver::LIA_NATURAL_NUMBERS_ONLY),
+                                    Option::Solver::USE_SIGNED_INTEGERS),
       string_constraint_solver_(script, symbol_table, constraint_information) {
 
 }
@@ -169,7 +169,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   setTermValue(and_term, result);
 
   // Kaluza Data Hack to project onto one variable (this is what they did)
-  if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA && constraint_information_->is_component(and_term)) {
+  if (Option::Solver::USE_MULTITRACK_AUTO && constraint_information_->is_component(and_term)) {
     Variable_ptr var = symbol_table_->get_symbolic_target_variable();
     if(var == nullptr) {
       return;
@@ -234,9 +234,6 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
       is_satisfiable = is_satisfiable or is_scope_satisfiable;
 
       symbol_table_->pop_scope();
-      if (is_satisfiable and (not Option::Solver::MODEL_COUNTER_ENABLED)) {
-        break;
-      }
     }
   }
 
@@ -1127,7 +1124,7 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   // from there and clone it into the symbol table, so the variable value computer has
   // the most recent value
   Value_ptr variable_value = nullptr;
-  if (Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA) {
+  if (Option::Solver::USE_MULTITRACK_AUTO) {
     DVLOG(VLOG_LEVEL) << "Getting var value for " << variable->getName();
     variable_value = string_constraint_solver_.get_variable_value(variable);
     DVLOG(VLOG_LEVEL) << "Got var";

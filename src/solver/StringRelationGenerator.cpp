@@ -781,7 +781,7 @@ std::string StringRelationGenerator::get_term_group_name(SMT::Term_ptr term) {
 }
 
 void StringRelationGenerator::add_string_variables(Term_ptr term, std::vector<std::string> variables) {
-  if (Option::Solver::ENABLE_DEPENDENCY) {
+  if (Option::Solver::ENABLE_DEPENDENCY_ANALYSIS) {
     std::string start_group;
     // get a starting group from the variable list
     for (auto &var : variables) {

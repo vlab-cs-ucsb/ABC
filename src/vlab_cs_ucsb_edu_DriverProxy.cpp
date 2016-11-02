@@ -54,7 +54,7 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_initABC (JNIEnv *env, j
 JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_setOption__IZ (JNIEnv *env, jobject obj, jint option, jboolean value) {
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
   int opt = (int)option;
-  abc_driver->setOption(static_cast<Vlab::Option::Name>(opt), (bool)value);
+  abc_driver->set_option(static_cast<Vlab::Option::Name>(opt));
 }
 
 /*
@@ -67,7 +67,7 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_setOption__ILjava_lang_
   const char* string_value_str = env->GetStringUTFChars(value, JNI_FALSE);
   std::string string_value = string_value_str;
   int opt = (int)option;
-  abc_driver->setOption(static_cast<Vlab::Option::Name>(opt), string_value);
+  abc_driver->set_option(static_cast<Vlab::Option::Name>(opt), string_value);
   env->ReleaseStringUTFChars(value, string_value_str);
 }
 
