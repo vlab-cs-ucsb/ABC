@@ -1,32 +1,40 @@
 /*
- * CountCache.cpp
+ * ModelCounter.cpp
  *
  *  Created on: Oct 31, 2016
  *      Author: baki
  */
 
-#include "CountCache.h"
+#include "ModelCounter.h"
 
 namespace Vlab {
 namespace Solver {
 
-CountCache::CountCache() : unconstraint_int_vars_ {0}, unconstraint_str_vars_ {0} {
+ModelCounter::ModelCounter() : unconstraint_int_vars_ {0}, unconstraint_str_vars_ {0} {
 }
 
-CountCache::~CountCache() {
+ModelCounter::~ModelCounter() {
 }
 
-void CountCache::add_constant(int c) {
+void ModelCounter::set_num_of_unconstraint_int_vars(int n) {
+  unconstraint_int_vars_ = n;
+}
+
+void ModelCounter::set_num_of_unconstraint_str_vars(int n) {
+  unconstraint_str_vars_ = n;
+}
+
+void ModelCounter::add_constant(int c) {
   constant_ints_.push_back(c);
 }
 
 
-void CountCache::add_symbolic_counter(const Theory::SymbolicCounter& counter) {
+void ModelCounter::add_symbolic_counter(const Theory::SymbolicCounter& counter) {
   symbolic_counters_.push_back(counter);
 }
 
 
-Theory::BigInteger CountCache::CountInts(const unsigned long bound) {
+Theory::BigInteger ModelCounter::CountInts(const unsigned long bound) {
   Theory::BigInteger result(1);
 
   for (int i : constant_ints_) {
@@ -57,10 +65,11 @@ Theory::BigInteger CountCache::CountInts(const unsigned long bound) {
   return result;
 }
 
-Theory::BigInteger CountCache::CountStrs(const unsigned long bound) {
+Theory::BigInteger ModelCounter::CountStrs(const unsigned long bound) {
   Theory::BigInteger result(1);
+
   for (Theory::SymbolicCounter& counter : symbolic_counters_) {
-    if (Theory::SymbolicCounter::Type::STRING != counter.type()) {
+    if (Theory::SymbolicCounter::Type::STRING == counter.type()) {
       result = result * counter.Count(bound);
     }
   }
@@ -74,7 +83,7 @@ Theory::BigInteger CountCache::CountStrs(const unsigned long bound) {
   return result;
 }
 
-Theory::BigInteger CountCache::Count(const unsigned long int_bound, const unsigned long str_bound) {
+Theory::BigInteger ModelCounter::Count(const unsigned long int_bound, const unsigned long str_bound) {
   return CountInts(int_bound) * CountStrs(str_bound);
 }
 

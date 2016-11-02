@@ -281,6 +281,43 @@ int main(const int argc, const char **argv) {
           LOG(INFO) << "report bound: " << b << " count: " << count_result << " time: "
                     << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
         }
+
+        auto mc = driver.GetModelCounterForVariable(query_variable->getName());
+        for (auto b : bounds) {
+          start = std::chrono::steady_clock::now();
+          auto count = mc.CountStrs(b);
+          end = std::chrono::steady_clock::now();
+          auto count_time = end - start;
+          LOG(INFO) << "mc report bound: " << b << " count: " << count << " time: "
+                    << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+        }
+
+        std::stringstream os;
+
+        {
+          cereal::BinaryOutputArchive ar(os);
+          mc.save(ar);
+        }
+
+        std::cout << os.str() << std::endl;
+
+        std::stringstream is (os.str());
+
+        Vlab::Solver::ModelCounter mc2;
+        {
+          cereal::BinaryInputArchive ar(is);
+          mc2.load(ar);
+        }
+
+        for (auto b : bounds) {
+          start = std::chrono::steady_clock::now();
+          auto count = mc.CountStrs(b);
+          end = std::chrono::steady_clock::now();
+          auto count_time = end - start;
+          LOG(INFO) << "mc2 report bound: " << b << " count: " << count << " time: "
+                    << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+        }
+
       } else {
         LOG(INFO) << "No query variable found. Counting Binary Integers instead.";
         auto sat_vars = driver.getSatisfyingVariables();

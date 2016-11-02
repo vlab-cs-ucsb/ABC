@@ -10,9 +10,7 @@
 
 #include <glog/logging.h>
 
-#include "../utils/Math.h"
-#include "../boost/multiprecision/cpp_int.hpp"
-#include "../Eigen/SparseCore"
+#include "../utils/Serialize.h"
 
 namespace Vlab {
 namespace Theory {
@@ -37,6 +35,24 @@ class SymbolicCounter {
 
   BigInteger Count(const unsigned long bound);
   BigInteger CountbyMatrixMultiplication(const unsigned long bound);
+
+  template <class Archive>
+  void save(Archive& ar) const {
+    ar(static_cast<int>(type_));
+    ar(bound_);
+    Util::Serialize::save(ar, initialization_vector_);
+    Util::Serialize::save(ar, transition_count_matrix_);
+  }
+
+  template <class Archive>
+  void load(Archive& ar) {
+    int type = 0;
+    ar(type);
+    type_ = static_cast<Type>(type);
+    ar(bound_);
+    Util::Serialize::load(ar, initialization_vector_);
+    Util::Serialize::load(ar, transition_count_matrix_);
+  }
 
 protected:
   Type type_;

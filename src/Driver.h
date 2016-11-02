@@ -36,6 +36,7 @@
 #include "solver/FormulaOptimizer.h"
 #include "solver/ImplicationRunner.h"
 #include "solver/Initializer.h"
+#include "solver/ModelCounter.h"
 #include "solver/options/Solver.h"
 #include "solver/SymbolTable.h"
 #include "solver/SyntacticOptimizer.h"
@@ -80,9 +81,11 @@ public:
   Theory::BigInteger CountInts(const unsigned long bound) const;
   Theory::BigInteger CountStrs(const unsigned long bound) const;
   Theory::BigInteger Count(const unsigned long int_bound, const unsigned long str_bound) const;
-  Theory::BigInteger Count(const Eigen::SparseMatrix<Theory::BigInteger> matrix, const unsigned long bound) const;
 
-  Eigen::SparseMatrix<Theory::BigInteger> GetSymbolicCounter(const std::string var_name) const;
+  Solver::ModelCounter GetModelCounterForVariable(const std::string var_name);
+  Solver::ModelCounter GetModelCounterForInts();
+  Solver::ModelCounter GetModelCounterForStrs();
+  Solver::ModelCounter GetModelCounter();
 
   void printResult(Solver::Value_ptr value, std::ostream& out);
   void inspectResult(Solver::Value_ptr value, std::string file_name);

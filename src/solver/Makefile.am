@@ -62,8 +62,8 @@ libabcsolver_la_SOURCES = \
   StringConstraintSolver.h \
   ConstraintSolver.cpp \
   ConstraintSolver.h \
-  CountCache.cpp \
-  CountCache.h
+  ModelCounter.cpp \
+  ModelCounter.h
 
 libabcsolver_la_LIBADD = \
 	../parser/libabcparser.la \
