@@ -41,15 +41,32 @@ void DependencySlicer::end() {
 }
 
 void DependencySlicer::setCallbacks() {
-  auto term_callback = [this] (Term_ptr term) -> bool {
-    switch (term->type()) {
-      case Term::Type::TERMCONSTANT: {
+  if (Option::Solver::ENABLE_DEPENDENCY_ANALYSIS) {
+    auto term_callback = [this] (Term_ptr term) -> bool {
+      switch (term->type()) {
+        case Term::Type::TERMCONSTANT: {
+          return false;
+        }
+        default:
+        return true;
+      }
+    };
+    setTermPreCallback(term_callback);
+  } else {
+    auto term_callback = [this] (Term_ptr term) -> bool {
+      switch (term->type()) {
+        case Term::Type::AND: {
+          return true;
+        }
+        case Term::Type::OR: {
+          return true;
+        }
+        default:
         return false;
       }
-      default:
-      return true;
-    }
-  };
+    };
+    setTermPreCallback(term_callback);
+  }
 
   auto command_callback = [](Command_ptr command) -> bool {
     if (Command::Type::ASSERT == command->getType()) {
@@ -59,7 +76,6 @@ void DependencySlicer::setCallbacks() {
   };
 
   setCommandPreCallback(command_callback);
-  setTermPreCallback(term_callback);
 }
 
 void DependencySlicer::visitAssert(Assert_ptr assert_command) {
