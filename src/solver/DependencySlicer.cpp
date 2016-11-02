@@ -75,7 +75,7 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
 
   constraint_information_->add_component(and_term);
 
-  if (Option::Solver::ENABLE_DEPENDENCY and symbol_table_->top_scope() == root_) {
+  if (Option::Solver::ENABLE_DEPENDENCY_ANALYSIS and symbol_table_->top_scope() == root_) {
     auto components = GetComponentsFor(and_term->term_list);
     if (components.size() > 1) {  // and term breaks into multiple components
       DVLOG(VLOG_LEVEL) << "Dividing into components: " << *and_term << "@" << and_term;
@@ -99,7 +99,7 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
    * During automata construction we watch for the case.
    * This enable us to reduce the size of automaton in case one of the sub component is unsat
    */
-  if (Option::Solver::ENABLE_DEPENDENCY and symbol_table_->top_scope() != root_) {
+  if (Option::Solver::ENABLE_DEPENDENCY_ANALYSIS and symbol_table_->top_scope() != root_) {
     constraint_information_->add_component(and_term);
     ReMapTerms(and_term->term_list, and_term);
   } else {
@@ -109,8 +109,7 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
 }
 
 /**
- * Dependency analysis on disjunctions are limited
- * Please see comments inside method
+ * No dependency analysis for disjunctions
  */
 void DependencySlicer::visitOr(Or_ptr or_term) {
   term_variable_map_[or_term];
@@ -125,33 +124,7 @@ void DependencySlicer::visitOr(Or_ptr or_term) {
 
   constraint_information_->add_component(or_term);
 
-  /**
-   * We can only use dependency analysis for a disjuction if:
-   * 1- we are in DNF mode
-   * 2- we are not model counting
-   * It is because in any other case we need all solution pairs
-   */
-  if (Option::Solver::FORCE_DNF_FORMULA and Option::Solver::ENABLE_DEPENDENCY
-      and (not Option::Solver::MODEL_COUNTER_ENABLED)) {
-    auto components = GetComponentsFor(or_term->term_list);
-    if (components.size() > 1) {  // or term breaks into multiple components
-      or_term->term_list->clear();
-      constraint_information_->remove_component(or_term);
-      for (auto sub_term_list : components) {
-        Or_ptr or_component = new Or(sub_term_list);
-        constraint_information_->add_component(or_component);
-        or_term->term_list->push_back(or_component);
-      }
-    } else if (components.size() == 1) {
-      // deallocate term list to avoid memory leak
-      components[0]->clear();
-      delete components[0];
-    }
-    // reset data
-    clear_mappings();
-  } else {
-    ReMapTerms(or_term->term_list, or_term);
-  }
+  ReMapTerms(or_term->term_list, or_term);
 }
 
 /**

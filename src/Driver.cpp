@@ -361,42 +361,51 @@ void Driver::reset() {
 //  LOG(INFO) << "Driver reseted.";
 }
 
-void Driver::setOption(Option::Name option, bool value) {
+void Driver::set_option(Option::Name option) {
   switch (option) {
-    case Option::Name::MODEL_COUNTER_ENABLED:
-      Option::Solver::MODEL_COUNTER_ENABLED = value;
+    case Option::Name::USE_SIGNED_INTEGERS:
+      Option::Solver::USE_SIGNED_INTEGERS = true;
       break;
-    case Option::Name::LIA_ENGINE_ENABLED:
-      Option::Solver::LIA_ENGINE_ENABLED = value;
+    case Option::Name::USE_UNSIGNED_INTEGERS:
+      Option::Solver::USE_SIGNED_INTEGERS = false;
       break;
-    case Option::Name::LIA_NATURAL_NUMBERS_ONLY:
-      Option::Solver::LIA_NATURAL_NUMBERS_ONLY = value;
+    case Option::Name::USE_MULTITRACK_AUTO:
+      Option::Solver::USE_MULTITRACK_AUTO = true;
       break;
-    case Option::Name::ENABLE_RELATIONAL_STRING_AUTOMATA:
-      Option::Solver::ENABLE_RELATIONAL_STRING_AUTOMATA = value;
+    case Option::Name::USE_SINGLETRACK_AUTO:
+      Option::Solver::USE_MULTITRACK_AUTO = false;
       break;
-    case Option::Name::FORCE_DNF_FORMULA:
-      Option::Solver::FORCE_DNF_FORMULA = value;
+    case Option::Name::ENABLE_EQUIVALENCE_CLASSES:
+      Option::Solver::ENABLE_EQUIVALENCE_CLASSES = true;
+      break;
+    case Option::Name::DISABLE_EQUIVALENCE_CLASSES:
+      Option::Solver::ENABLE_EQUIVALENCE_CLASSES = false;
+      break;
+    case Option::Name::ENABLE_DEPENDENCY_ANALYSIS:
+      Option::Solver::ENABLE_DEPENDENCY_ANALYSIS = true;
+      break;
+    case Option::Name::DISABLE_DEPENDENCY_ANALYSIS:
+      Option::Solver::ENABLE_DEPENDENCY_ANALYSIS = false;
       break;
     case Option::Name::ENABLE_IMPLICATIONS:
-      Option::Solver::ENABLE_IMPLICATIONS = value;
+      Option::Solver::ENABLE_IMPLICATIONS = true;
       break;
-    case Option::Name::ENABLE_DEPENDENCY:
-      Option::Solver::ENABLE_DEPENDENCY = value;
+    case Option::Name::DISABLE_IMPLICATIONS:
+      Option::Solver::ENABLE_IMPLICATIONS = false;
+    break;
+    case Option::Name::ENABLE_SORTING_HEURISTICS:
+      Option::Solver::ENABLE_SORTING_HEURISTICS = true;
       break;
-    case Option::Name::ENABLE_SORTING:
-      Option::Solver::ENABLE_SORTING = value;
-      break;
-    case Option::Name::ENABLE_EQUIVALENCE:
-      Option::Solver::ENABLE_EQUIVALENCE = value;
+    case Option::Name::ENABLE_SORTING_HEURISTICS:
+      Option::Solver::ENABLE_SORTING_HEURISTICS = false;
       break;
     default:
-      LOG(ERROR)<< "option not recognized: " << static_cast<int>(option) << " -> " << value;
+      LOG(ERROR)<< "option is not recognized: " << static_cast<int>(option);
       break;
     }
-  }
+}
 
-void Driver::setOption(Option::Name option, std::string value) {
+void Driver::set_option(Option::Name option, std::string value) {
   switch (option) {
     case Option::Name::OUTPUT_PATH:
       Option::Solver::OUTPUT_PATH = value;
@@ -407,7 +416,7 @@ void Driver::setOption(Option::Name option, std::string value) {
       Option::Theory::SCRIPT_PATH = value;
       break;
     default:
-      LOG(ERROR)<< "option not recognized: " << static_cast<int>(option) << " -> " << value;
+      LOG(ERROR)<< "option is not recognized: " << static_cast<int>(option) << " -> " << value;
       break;
     }
   }
