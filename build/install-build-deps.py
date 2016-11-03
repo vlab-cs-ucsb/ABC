@@ -98,16 +98,13 @@ elif (CURRENT_OS == OSystem.osx):
      }
     )
 
-_glog_co = 'tags/v0.3.3'
-if CURRENT_OS == OSystem.osx:
-    _glog_co = 'tags/v0.3.4'
-    
+   
 _project_dep = (
  {
      'name'     : 'glog',
      'url'      : 'https://github.com/google/glog.git',
-     'checkout' : _glog_co,     
-     'patch'    : False,
+     'checkout' : False,     
+     'patch'    : os.path.abspath(os.path.join(ABC_PATH, 'external', 'glog', 'glog_abc_autotools.patch')),
      'path'     : os.path.abspath(os.path.join(TMP_PATH, 'glog')),
      'autogen'  : False,
      'autotools': True,
@@ -116,25 +113,13 @@ _project_dep = (
  {
      'name'     : 'MONA',
      'url'      : 'https://github.com/cs-au-dk/MONA.git',
-     'checkout' : '2f382f2111d54de594a5f6187f0a8449d4dd4b34',     
+     'checkout' : False,     
      'patch'    : os.path.abspath(os.path.join(ABC_PATH, 'external', 'mona', 'mona_abc.patch')),
      'path'     : os.path.abspath(os.path.join(TMP_PATH, 'MONA')),
      'commands' : ['autoreconf -fvi'], 
      'autogen'  : False,
      'autotools': True,
      'install'  : True
- },
- {
-     'name'     : 'googlemock',
-     'submodule': True,
-     'url'      : False,
-     'checkout' : False,
-     'patch'    : False,
-     'path'     : os.path.abspath(os.path.join(LIB_PATH, 'googletest', 'googlemock')),
-     'commands' : ['autoreconf -fvi'],     
-     'autogen'  : False,
-     'autotools': True,
-     'install'  : False
  }
 )
 

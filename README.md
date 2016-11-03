@@ -43,17 +43,25 @@ ABC testing depends on [googletest and googlemock](https://github.com/google/goo
   - C++ compiler with C++14 support. Latest ABC compilation is tested with g++ 5.4.0 on Ubuntu 16.04.
   - [Git](https://git-scm.com/)
 
-    ``$ sudo apt install git``
+  ```
+    $ sudo apt install git
+  ```
   - ABC is an autotools project, you need to setup autotools in your system. Please make sure you have installed all the tools below.
 
-    ``$ sudo apt install build-essential autoconf automake libtool intltool ``
+  ```
+    $ sudo apt install build-essential autoconf automake libtool intltool
+  ```
   - Lex and Yacc. ABC is tested with [Flex 2.6.0](https://www.gnu.org/software/flex/flex.html) and [Bison 3.0.4](https://www.gnu.org/software/bison/).
 
-    ``$ sudo apt install flex bison``
+  ```
+    $ sudo apt install flex bison
+  ```
 
   - Python (optional). A short installation script is written in pyhton.
     
-    ``$ sudo apt install python``
+  ```
+    $ sudo apt install python
+  ```
 
 ####Project Dependencies
   - [Glog](https://github.com/google/glog) logging library for C++. It is an autotools project. 
@@ -65,7 +73,7 @@ ABC testing depends on [googletest and googlemock](https://github.com/google/goo
   $ git clone https://github.com/google/glog.git
   $ cd glog
   $ git apply <ABC_ROOT_DIR>/external/glog/glog_abc_autotools.patch
-  $ libtoolize && aclocal && automake --gnu --add-missing && autoreconf -ivf // update autotool files
+  $ libtoolize && aclocal && automake --gnu --add-missing && autoreconf -ivf
   $ ./configure
   $ make all
   $ sudo make install
@@ -80,7 +88,8 @@ ABC testing depends on [googletest and googlemock](https://github.com/google/goo
     $ cd <your home directory or a preferred directory>
     $ git clone https://github.com/cs-au-dk/MONA.git
     $ cd MONA
-    $ git apply <ABC_ROOT_DIR>/external/mona/mona_abc.patch     # Please see below paragraph for details
+    $ git apply <ABC_ROOT_DIR>/external/mona/mona_abc.patch
+    $ libtoolize && aclocal && automake --gnu --add-missing && autoreconf -ivf
     $ ./configure
     $ make all
     $ sudo make install
@@ -120,7 +129,10 @@ Usage
 ####C++
 
   You can link to dynamic library generated in your program. An example executable for *__abc__* is generated for you and install in your system. You can run *__abc__* executable at your home directory as:
-  `` $ abc -f <input constraint file> ``
+  
+    $ abc -i  <input_file_path>
+    $ abc --help #lists available command line options
+  
   You can find example constraints at *__&lt;abc source folder&gt;/test/fixtures__*. 
   
   You can take a look at *__&lt;abc source folder&gt;/src/main.cpp__* to see how *__abc__* is used in a C++ program as a shared library. 
