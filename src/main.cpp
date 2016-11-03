@@ -34,6 +34,8 @@
 //static const std::string get_default_output_dir();
 //static const std::string get_default_log_dir();
 
+std::vector<unsigned long> parse_count_bounds(std::string);
+
 int main(const int argc, const char **argv) {
 
   std::istream* in = &std::cin;
@@ -54,8 +56,10 @@ int main(const int argc, const char **argv) {
   Vlab::Util::RegularExpression::DEFAULT = 0x000e;
 
   bool experiment_mode = false;
-  std::string bound_string {""};
+  std::vector<unsigned long> str_bounds;
+  std::vector<unsigned long> int_bounds;
   std::string count_variable {""};
+
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == std::string("-i") or argv[i] == std::string("--input-file")) {
       file_name = argv[i + 1];
@@ -86,14 +90,18 @@ int main(const int argc, const char **argv) {
       driver.set_option(Vlab::Option::Name::ENABLE_SORTING_HEURISTICS);
     } else if (argv[i] == std::string("--disable-sorting")) {
       driver.set_option(Vlab::Option::Name::DISABLE_SORTING_HEURISTICS);
-    } else if (argv[i] == std::string("-b") or argv[i] == std::string("--bound")) {
-      bound_string = argv[i + 1];
-      ++i;
     } else if (argv[i] == std::string("-bs") or argv[i] == std::string("--bound-str")) {
-      bound_string = argv[i + 1];
+      std::string bounds_str {argv[i + 1]};
+      str_bounds = parse_count_bounds(bounds_str);
       ++i;
     } else if (argv[i] == std::string("-bi") or argv[i] == std::string("--bound-int")) {
-      bound_string = argv[i + 1];
+      std::string bounds_str {argv[i + 1]};
+      int_bounds = parse_count_bounds(bounds_str);
+      ++i;
+    } else if (argv[i] == std::string("-bv") or argv[i] == std::string("--bound-var")) {
+      std::string bounds_str {argv[i + 1]};
+      str_bounds = parse_count_bounds(bounds_str);
+      int_bounds = str_bounds;
       ++i;
     } else if (argv[i] == std::string("--count-variable")) {
       count_variable = argv[i + 1];
@@ -117,6 +125,7 @@ int main(const int argc, const char **argv) {
       std::cout << std::setw(col) << "-i or --input-file <path>" << ": path to input constraint file" << std::endl;
       std::cout << std::setw(col) << "-bs or --bound-str <values>" << ": model count string length bound e.g., -bs 10 or a set of bounds e.g., -bs \"4,8,16\"" << std::endl;
       std::cout << std::setw(col) << "-bi or --bound-int <values>" << ": model count integer bit length bound e.g., -bs 10 or a set of bounds e.g., -bi \"4,8,16\"" << std::endl;
+      std::cout << std::setw(col) << "-bv or --bound-var <values>" << ": model count integer bit length bound e.g., -b 10 or a set of bounds e.g., -b \"4,8,16\"" << std::endl;
       std::cout << std::setw(col) << "--count-variable <name>" << ": model counts projected variable instead of tuples e.g., --count-variable x" << std::endl;
       std::cout << std::setw(col) << "--use-unsigned" << ": allows only positive integers" << std::endl;
       std::cout << std::setw(col) << "--use-signed" << ": allows positive and negative integers" << std::endl;
@@ -154,33 +163,6 @@ int main(const int argc, const char **argv) {
 
   if (not in->good()) {
     LOG(FATAL) << "Cannot find input: ";
-  }
-
-  /**
-   * allow multiple counts
-   * example option: -b 10,25,50,100
-   */
-  int bound = 0;
-  std::vector<int> bounds;
-  std::stringstream ss;
-  for (auto c : bound_string) {
-    if (c == ',') {
-      ss >> bound;
-      bounds.push_back(bound);
-      ss.str("");
-      ss.clear();
-    } else {
-      ss << c;
-    }
-  }
-
-  if (ss.str() != "") {
-    ss >> bound;
-    bounds.push_back(bound);
-  }
-
-  if (bounds.size() == 1) {
-    bound = bounds.front();
   }
 
   driver.test();
@@ -286,62 +268,28 @@ int main(const int argc, const char **argv) {
     }
 
     LOG(INFO)<< "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
-    auto query_variable = driver.get_smc_query_variable();
-    // if query_variable, report that count
-    // otherwise, count up binary int
-    if(query_variable != nullptr) {
-      LOG(INFO) << "report var: " << query_variable->getName();
-      for (auto b : bounds) {
+    if(not count_variable.empty()) {
+      LOG(INFO) << "report var: " << count_variable;
+      for (auto b : int_bounds) {
         start = std::chrono::steady_clock::now();
-        auto count_result = driver.CountVariable(query_variable->getName(), b);
+        auto count_result = driver.CountVariable(count_variable, b);
         end = std::chrono::steady_clock::now();
         auto count_time = end - start;
         LOG(INFO) << "report bound: " << b << " count: " << count_result << " time: "
                   << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
       }
-
-//      auto mc = driver.GetModelCounterForVariable(query_variable->getName());
-//      for (auto b : bounds) {
-//        start = std::chrono::steady_clock::now();
-//        auto count = mc.CountStrs(b);
-//        end = std::chrono::steady_clock::now();
-//        auto count_time = end - start;
-//        LOG(INFO) << "mc report bound: " << b << " count: " << count << " time: "
-//                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
-//      }
-//
-//      std::stringstream os;
-//
-//      {
-//        cereal::BinaryOutputArchive ar(os);
-//        mc.save(ar);
-//      }
-//
-//      std::cout << os.str() << std::endl;
-//
-//      std::stringstream is (os.str());
-//
-//      Vlab::Solver::ModelCounter mc2;
-//      {
-//        cereal::BinaryInputArchive ar(is);
-//        mc2.load(ar);
-//      }
-//
-//      for (auto b : bounds) {
-//        start = std::chrono::steady_clock::now();
-//        auto count = mc.CountStrs(b);
-//        end = std::chrono::steady_clock::now();
-//        auto count_time = end - start;
-//        LOG(INFO) << "mc2 report bound: " << b << " count: " << count << " time: "
-//                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
-//      }
     } else {
-      LOG(INFO) << "No query variable found. Counting Binary Integers instead.";
-      auto sat_vars = driver.getSatisfyingVariables();
-
-      for (auto b : bounds) {
+      for (auto b : int_bounds) {
         start = std::chrono::steady_clock::now();
-        auto count = driver.Count(bound, false);
+        auto count = driver.CountInts(b);
+        end = std::chrono::steady_clock::now();
+        auto count_time = end - start;
+        LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
+                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+      }
+      for (auto b : str_bounds) {
+        start = std::chrono::steady_clock::now();
+        auto count = driver.CountStrs(b);
         end = std::chrono::steady_clock::now();
         auto count_time = end - start;
         LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
@@ -358,6 +306,16 @@ int main(const int argc, const char **argv) {
     delete file;
   }
   return 0;
+}
+
+std::vector<unsigned long> parse_count_bounds(std::string bounds_str) {
+  std::vector<unsigned long> bounds;
+  std::stringstream ss(bounds_str);
+  std::string tok;
+  while (getline(ss, tok, ',')) {
+    bounds.push_back(std::stoul(tok));
+  }
+  return bounds;
 }
 
 //static const std::string get_env_value(const char name[]) {
