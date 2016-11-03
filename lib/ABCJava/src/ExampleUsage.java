@@ -3,12 +3,16 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import vlab.cs.ucsb.edu.DriverProxy;
+import vlab.cs.ucsb.edu.DriverProxy.Option;
 
 public class ExampleUsage {
 
   public static void main(String[] args) {
 
     DriverProxy abcDriver = new DriverProxy();
+    
+    abcDriver.setOption(Option.ENABLE_IMPLICATIONS);
+    abcDriver.setOption(Option.USE_SIGNED_INTEGERS);
     
     String constraint = "(set-logic QF_S)\n"
         + "(declare-fun var_abc () String)\n"
@@ -20,7 +24,9 @@ public class ExampleUsage {
     if (result) {
       System.out.println("Satisfiable");
       long bound = 15;
-      BigInteger count = abcDriver.countVariable("var_abc", bound);
+      String func = abcDriver.getModelCounterForVariable("var_abc");
+      System.out.println("func: " + func);
+      BigInteger count = abcDriver.countVariable("adf",bound);
       if (count != null) {
         System.out.println("Number of solutions within bound: " + bound + " is " + count.toString());
       } else {
@@ -44,7 +50,8 @@ public class ExampleUsage {
             + "(check-sat)"; 
 
     result = abcDriver.isSatisfiable(constraint);
-    
+//    String func = abcDriver.getModelCounterForInts();
+//    System.out.println("func: " + func);
     if (result) {
       System.out.println("Satisfiable");
           

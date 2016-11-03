@@ -111,7 +111,7 @@ JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable
  * Method:    countVariable
  * Signature: (Ljava/lang/String;J)Ljava/math/BigInteger;
  */
-JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countVariable
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countVariable__Ljava_lang_String_2J
   (JNIEnv *env, jobject obj, jstring var_name, jlong bound) {
 
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
@@ -130,7 +130,7 @@ JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countVariable
  * Method:    countInts
  * Signature: (J)Ljava/math/BigInteger;
  */
-JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countInts
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countInts__J
   (JNIEnv *env, jobject obj, jlong bound) {
 
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
@@ -146,7 +146,7 @@ JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countInts
  * Method:    countStrs
  * Signature: (J)Ljava/math/BigInteger;
  */
-JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countStrs
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countStrs__J
   (JNIEnv *env, jobject obj, jlong bound) {
 
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
