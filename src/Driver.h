@@ -65,23 +65,26 @@ public:
   Driver();
   ~Driver();
 
-  void initializeABC(int log_level);
+  void InitializeLogger(int log_level);
   // Error handling.
   void error(const Vlab::SMT::location& l, const std::string& m);
   void error(const std::string& m);
-  int parse(std::istream* in = &std::cin);
+  int Parse(std::istream* in = &std::cin);
   void ast2dot(std::string file_name);
   void ast2dot(std::ostream* out);
 //	void collectStatistics();
-  void initializeSolver();
-  void solve();
-  bool isSatisfiable();
+  void InitializeSolver();
+  void Solve();
+  bool is_sat();
 
   Theory::BigInteger CountVariable(const std::string var_name, const unsigned long bound) const;
   Theory::BigInteger CountInts(const unsigned long bound) const;
   Theory::BigInteger CountStrs(const unsigned long bound) const;
   Theory::BigInteger Count(const unsigned long int_bound, const unsigned long str_bound) const;
 
+  /**
+   * TODO Provide SetModelCounter... methods, and use GetModelCounters... for inside Count... functions
+   */
   Solver::ModelCounter GetModelCounterForVariable(const std::string var_name);
   Solver::ModelCounter GetModelCounterForInts();
   Solver::ModelCounter GetModelCounterForStrs();

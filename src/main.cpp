@@ -51,18 +51,6 @@ int main(const int argc, const char **argv) {
   FLAGS_logtostderr = 1;
 
   Vlab::Driver driver;
-//  driver.set_option(Vlab::Option::Name::LIA_ENGINE_ENABLED, enable_lia_engine);
-//  driver.set_option(Vlab::Option::Name::MODEL_COUNTER_ENABLED, true);
-//  driver.set_option(Vlab::Option::Name::OUTPUT_PATH, output_root);
-//  driver.set_option(Vlab::Option::Name::SCRIPT_PATH, std::string("./lib/mathematica"));
-//  driver.set_option(Vlab::Option::Name::LIA_NATURAL_NUMBERS_ONLY, use_natural_numbers);
-//  driver.set_option(Vlab::Option::Name::ENABLE_RELATIONAL_STRING_AUTOMATA, enable_relational_string_automata);
-//  driver.set_option(Vlab::Option::Name::FORCE_DNF_FORMULA, force_dnf_formula);
-//  driver.set_option(Vlab::Option::Name::ENABLE_IMPLICATIONS, enable_implications);
-//  driver.set_option(Vlab::Option::Name::ENABLE_DEPENDENCY, enable_dependency);
-//  driver.set_option(Vlab::Option::Name::ENABLE_SORTING, enable_sorting);
-//  driver.set_option(Vlab::Option::Name::ENABLE_EQUIVALENCE, enable_equivalence);
-
   Vlab::Util::RegularExpression::DEFAULT = 0x000e;
 
   bool experiment_mode = false;
@@ -196,7 +184,7 @@ int main(const int argc, const char **argv) {
   }
 
   driver.test();
-  driver.parse(in);
+  driver.Parse(in);
 
 #ifndef NDEBUG
   if (VLOG_IS_ON(30)) {
@@ -205,7 +193,7 @@ int main(const int argc, const char **argv) {
 #endif
 
   auto start = std::chrono::steady_clock::now();
-  driver.initializeSolver();
+  driver.InitializeSolver();
 
 #ifndef NDEBUG
   if (VLOG_IS_ON(30)) {
@@ -213,12 +201,12 @@ int main(const int argc, const char **argv) {
   }
 #endif
 
-  driver.solve();
+  driver.Solve();
   auto end = std::chrono::steady_clock::now();
   auto solving_time = end - start;
   LOG(INFO) << "Done solving";
 
-  if (driver.isSatisfiable()) {
+  if (driver.is_sat()) {
     if (VLOG_IS_ON(30)) {
 //      unsigned index = 0;
 //      for (auto& variable_entry : driver.getSatisfyingVariables()) {

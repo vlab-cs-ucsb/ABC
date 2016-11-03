@@ -24,8 +24,7 @@ Driver::~Driver() {
   delete constraint_information_;
 }
 
-void Driver::initializeABC(int log_level) {
-//  FLAGS_log_dir = log_root;
+void Driver::InitializeLogger(int log_level) {
   if (!IS_LOGGING_INITIALIZED) {
     FLAGS_v = log_level;
     FLAGS_logtostderr = 1;
@@ -38,7 +37,7 @@ void Driver::error(const std::string& m) {
   LOG(ERROR)<< m;
 }
 
-int Driver::parse(std::istream* in) {
+int Driver::Parse(std::istream* in) {
   SMT::Scanner scanner(in);
   //  scanner.set_debug(trace_scanning);
   SMT::Parser parser(script_, scanner);
@@ -64,7 +63,7 @@ void Driver::ast2dot(std::string file_name) {
   outfile.close();
 }
 
-void Driver::initializeSolver() {
+void Driver::InitializeSolver() {
 
   symbol_table_ = new Solver::SymbolTable();
   constraint_information_ = new Solver::ConstraintInformation();
@@ -102,7 +101,7 @@ void Driver::initializeSolver() {
   }
 }
 
-void Driver::solve() {
+void Driver::Solve() {
 
 //  TODO move arithmetic formula generation and string relation generation here to guide constraint solving better
 //  Solver::ArithmeticFormulaGenerator arithmetic_formula_generator(script_, symbol_table_, constraint_information_);
@@ -113,7 +112,7 @@ void Driver::solve() {
   // TODO iterate to handle over-approximation, solve the part that contributes to over-approximation
 }
 
-bool Driver::isSatisfiable() {
+bool Driver::is_sat() {
   return symbol_table_->isSatisfiable();
 }
 

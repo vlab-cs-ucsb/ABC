@@ -39,10 +39,10 @@ void setHandle(JNIEnv *env, jobject obj, T *t)
  * Method:    initABC
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_initABC (JNIEnv *env, jobject obj, jint log_flag) {
+JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_initABC (JNIEnv *env, jobject obj, jint log_level) {
 
   Vlab::Driver *abc_driver = new Vlab::Driver();
-  abc_driver->initializeABC((int)log_flag);
+  abc_driver->InitializeLogger((int)log_level);
   setHandle(env, obj, abc_driver);
 }
 
@@ -51,10 +51,16 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_initABC (JNIEnv *env, j
  * Method:    setOption
  * Signature: (IZ)V
  */
-JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_setOption__IZ (JNIEnv *env, jobject obj, jint option, jboolean value) {
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    setOption
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_setOption__I
+  (JNIEnv *env, jobject obj, jint option) {
+
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
-  int opt = (int)option;
-  abc_driver->set_option(static_cast<Vlab::Option::Name>(opt));
+  abc_driver->set_option(static_cast<Vlab::Option::Name>(option));
 }
 
 /*
@@ -62,12 +68,13 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_setOption__IZ (JNIEnv *
  * Method:    setOption
  * Signature: (ILjava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_setOption__ILjava_lang_String_2 (JNIEnv *env, jobject obj, jint option, jstring value) {
+JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_setOption__ILjava_lang_String_2
+  (JNIEnv *env, jobject obj, jint option, jstring value) {
+
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
   const char* string_value_str = env->GetStringUTFChars(value, JNI_FALSE);
   std::string string_value = string_value_str;
-  int opt = (int)option;
-  abc_driver->set_option(static_cast<Vlab::Option::Name>(opt), string_value);
+  abc_driver->set_option(static_cast<Vlab::Option::Name>(option), string_value);
   env->ReleaseStringUTFChars(value, string_value_str);
 }
 
@@ -76,35 +83,43 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_setOption__ILjava_lang_
  * Method:    isSatisfiable
  * Signature: (Ljava/lang/String;)Z
  */
-JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable (JNIEnv *env, jobject obj, jstring constraint) {
+JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable
+  (JNIEnv *env, jobject obj, jstring constraint) {
 
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
   std::istringstream input_constraint;
   const char* constraint_str = env->GetStringUTFChars(constraint, JNI_FALSE);
   input_constraint.str(constraint_str);
   abc_driver->reset();
-  abc_driver->parse(&input_constraint);
+  abc_driver->Parse(&input_constraint);
   env->ReleaseStringUTFChars(constraint, constraint_str);
-  abc_driver->initializeSolver();
-  abc_driver->solve();
-  bool result = abc_driver->isSatisfiable();
+  abc_driver->InitializeSolver();
+  abc_driver->Solve();
+  bool result = abc_driver->is_sat();
   return (jboolean)result;
 }
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
- * Method:    countVar
- * Signature: (Ljava/lang/String;DZ)Ljava/lang/String;
+ * Method:    countVariable
+ * Signature: (Ljava/lang/String;J)Ljava/math/BigInteger;
  */
-JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countVar (JNIEnv *env, jobject obj, jstring varName, jdouble bound, jboolean count_less_than_or_equal_bound) {
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countVariable
+  (JNIEnv *env, jobject obj, jstring var_name, jlong bound) {
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
-  const char* var_name_str = env->GetStringUTFChars(varName, JNI_FALSE);
-  std::string var_name = var_name_str;
-  auto result = abc_driver->CountVariable(var_name, static_cast<double>(bound));
+  const char* var_name_arr = env->GetStringUTFChars(var_name, JNI_FALSE);
+  std::string var_name_str = var_name_arr;
+  auto result = abc_driver->CountVariable(var_name_str, bound);
   std::stringstream ss;
   ss << result;
   jstring resultString = env->NewStringUTF(ss.str().c_str());
-  env->ReleaseStringUTFChars(varName, var_name_str);
+  env->ReleaseStringUTFChars(var_name, var_name_arr);
+
+  // TODO make BigInteger object
+  jclass hashMapClass = env->FindClass("java/util/HashMap");
+  jmethodID hashMapCtor = env->GetMethodID(hashMapClass, "<init>", "()V");
+  jobject map = env->NewObject(hashMapClass, hashMapCtor);
+
   return resultString;
 }
 
@@ -123,6 +138,7 @@ JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_symbolicCountVar (JN
   ss << result;
   jstring resultString = env->NewStringUTF(ss.str().c_str());
   env->ReleaseStringUTFChars(varName, var_name_str);
+
   return resultString;
 }
 
@@ -133,7 +149,7 @@ JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_symbolicCountVar (JN
  */
 JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_printResultAutomaton__ (JNIEnv *env, jobject obj) {
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
-  if (abc_driver->isSatisfiable()) {
+  if (abc_driver->is_sat()) {
     int index = 0;
     for(auto& variable_entry : abc_driver->getSatisfyingVariables()) {
       abc_driver->printResult(variable_entry.second, std::cout);
@@ -152,7 +168,7 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_printResultAutomaton__L
   const char* file_path_str = env->GetStringUTFChars(filePath, JNI_FALSE);
   std::string file_path = file_path_str;
 
-  if (abc_driver->isSatisfiable()) {
+  if (abc_driver->is_sat()) {
     int index = 0;
     for(auto& variable_entry : abc_driver->getSatisfyingVariables()) {
       std::stringstream ss;
