@@ -34,6 +34,13 @@ void setHandle(JNIEnv *env, jobject obj, T *t)
     env->SetLongField(obj, getHandleField(env, obj), handle);
 }
 
+jobject newBigInteger(JNIEnv *env, jstring value) {
+  jclass big_integer_class = env->FindClass("java/math/BigInteger");
+  jmethodID big_integer_ctor = env->GetMethodID(big_integer_class, "<init>", "(Ljava/lang/String;)V");
+  jobject big_integer = env->NewObject(big_integer_class, big_integer_ctor, value);
+  return big_integer;
+}
+
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    initABC
@@ -72,10 +79,10 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_setOption__ILjava_lang_
   (JNIEnv *env, jobject obj, jint option, jstring value) {
 
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
-  const char* string_value_str = env->GetStringUTFChars(value, JNI_FALSE);
-  std::string string_value = string_value_str;
-  abc_driver->set_option(static_cast<Vlab::Option::Name>(option), string_value);
-  env->ReleaseStringUTFChars(value, string_value_str);
+  const char* value_arr = env->GetStringUTFChars(value, JNI_FALSE);
+  std::string value_str {value_arr};
+  abc_driver->set_option(static_cast<Vlab::Option::Name>(option), value_str);
+  env->ReleaseStringUTFChars(value, value_arr);
 }
 
 /*
@@ -106,40 +113,239 @@ JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable
  */
 JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countVariable
   (JNIEnv *env, jobject obj, jstring var_name, jlong bound) {
+
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
   const char* var_name_arr = env->GetStringUTFChars(var_name, JNI_FALSE);
-  std::string var_name_str = var_name_arr;
+  std::string var_name_str {var_name_arr};
   auto result = abc_driver->CountVariable(var_name_str, bound);
   std::stringstream ss;
   ss << result;
-  jstring resultString = env->NewStringUTF(ss.str().c_str());
+  jstring result_string = env->NewStringUTF(ss.str().c_str());
   env->ReleaseStringUTFChars(var_name, var_name_arr);
-
-  // TODO make BigInteger object
-  jclass hashMapClass = env->FindClass("java/util/HashMap");
-  jmethodID hashMapCtor = env->GetMethodID(hashMapClass, "<init>", "()V");
-  jobject map = env->NewObject(hashMapClass, hashMapCtor);
-
-  return resultString;
+  return newBigInteger(env, result_string);
 }
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
- * Method:    symbolicCountVar
- * Signature: (Ljava/lang/String;DZ)Ljava/lang/String;
+ * Method:    countInts
+ * Signature: (J)Ljava/math/BigInteger;
  */
-JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_symbolicCountVar (JNIEnv *env, jobject obj, jstring varName, jdouble bound, jboolean count_less_than_or_equal_bound) {
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countInts
+  (JNIEnv *env, jobject obj, jlong bound) {
+
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
-  const char* var_name_str = env->GetStringUTFChars(varName, JNI_FALSE);
-  std::string var_name = var_name_str;
-//  auto result = abc_driver->SymbolicCount(var_name, static_cast<double>(bound), static_cast<bool>(count_less_than_or_equal_bound));
-  std::string result = "123";
+  auto result = abc_driver->CountInts(bound);
   std::stringstream ss;
   ss << result;
-  jstring resultString = env->NewStringUTF(ss.str().c_str());
-  env->ReleaseStringUTFChars(varName, var_name_str);
+  jstring result_string = env->NewStringUTF(ss.str().c_str());
+  return newBigInteger(env, result_string);
+}
 
-  return resultString;
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    countStrs
+ * Signature: (J)Ljava/math/BigInteger;
+ */
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countStrs
+  (JNIEnv *env, jobject obj, jlong bound) {
+
+  Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
+  auto result = abc_driver->CountStrs(bound);
+  std::stringstream ss;
+  ss << result;
+  jstring result_string = env->NewStringUTF(ss.str().c_str());
+  return newBigInteger(env, result_string);
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    count
+ * Signature: (JJ)Ljava/math/BigInteger;
+ */
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_count__JJ
+  (JNIEnv *env, jobject obj, jlong int_bound, jlong str_bound) {
+
+  Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
+  auto result = abc_driver->Count(int_bound, str_bound);
+  std::stringstream ss;
+  ss << result;
+  jstring result_string = env->NewStringUTF(ss.str().c_str());
+  return newBigInteger(env, result_string);
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    getModelCounterForVariable
+ * Signature: (Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounterForVariable
+  (JNIEnv *env, jobject obj, jstring var_name) {
+
+  Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
+  const char* var_name_arr = env->GetStringUTFChars(var_name, JNI_FALSE);
+  std::string var_name_str {var_name_arr};
+  auto mc = abc_driver->GetModelCounterForVariable(var_name_str);
+  std::stringstream os;
+  {
+    cereal::BinaryOutputArchive ar(os);
+    mc.save(ar);
+  }
+  jstring result_string = env->NewStringUTF(os.str().c_str());
+  env->ReleaseStringUTFChars(var_name, var_name_arr);
+  return result_string;
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    getModelCounterForInts
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounterForInts
+  (JNIEnv *env, jobject obj) {
+
+  Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
+  auto mc = abc_driver->GetModelCounterForInts();
+  std::stringstream os;
+  {
+    cereal::BinaryOutputArchive ar(os);
+    mc.save(ar);
+  }
+  jstring result_string = env->NewStringUTF(os.str().c_str());
+  return result_string;
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    getModelCounterForStrs
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounterForStrs
+  (JNIEnv *env, jobject obj) {
+
+  Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
+  auto mc = abc_driver->GetModelCounterForStrs();
+  std::stringstream os;
+  {
+    cereal::BinaryOutputArchive ar(os);
+    mc.save(ar);
+  }
+  jstring result_string = env->NewStringUTF(os.str().c_str());
+  return result_string;
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    getModelCounter
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounter
+  (JNIEnv *env, jobject obj) {
+
+  Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
+  auto mc = abc_driver->GetModelCounter();
+  std::stringstream os;
+  {
+    cereal::BinaryOutputArchive ar(os);
+    mc.save(ar);
+  }
+  jstring result_string = env->NewStringUTF(os.str().c_str());
+  return result_string;
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    countVariable
+ * Signature: (Ljava/lang/String;JLjava/lang/String;)Ljava/math/BigInteger;
+ */
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countVariable__Ljava_lang_String_2JLjava_lang_String_2
+  (JNIEnv *env, jobject obj, jstring var_name, jlong bound, jstring bin_model_counter) {
+
+  const char* bin_model_counter_arr = env->GetStringUTFChars(bin_model_counter, JNI_FALSE);
+  std::string bin_model_counter_str {bin_model_counter_arr};
+  std::stringstream is (bin_model_counter_str);
+  Vlab::Solver::ModelCounter mc;
+  {
+    cereal::BinaryInputArchive ar(is);
+    mc.load(ar);
+  }
+  env->ReleaseStringUTFChars(bin_model_counter, bin_model_counter_arr);
+  auto result = mc.Count(bound, bound);
+  std::stringstream ss;
+  ss << result;
+  jstring result_string = env->NewStringUTF(ss.str().c_str());
+  return newBigInteger(env, result_string);
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    countInts
+ * Signature: (JLjava/lang/String;)Ljava/math/BigInteger;
+ */
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countInts__JLjava_lang_String_2
+  (JNIEnv *env, jobject obj, jlong bound, jstring bin_model_counter) {
+
+  const char* bin_model_counter_arr = env->GetStringUTFChars(bin_model_counter, JNI_FALSE);
+  std::string bin_model_counter_str {bin_model_counter_arr};
+  std::stringstream is (bin_model_counter_str);
+  Vlab::Solver::ModelCounter mc;
+  {
+    cereal::BinaryInputArchive ar(is);
+    mc.load(ar);
+  }
+  env->ReleaseStringUTFChars(bin_model_counter, bin_model_counter_arr);
+  auto result = mc.CountInts(bound);
+  std::stringstream ss;
+  ss << result;
+  jstring result_string = env->NewStringUTF(ss.str().c_str());
+  return newBigInteger(env, result_string);
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    countStrs
+ * Signature: (JLjava/lang/String;)Ljava/math/BigInteger;
+ */
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countStrs__JLjava_lang_String_2
+  (JNIEnv *env, jobject obj, jlong bound, jstring bin_model_counter) {
+
+  const char* bin_model_counter_arr = env->GetStringUTFChars(bin_model_counter, JNI_FALSE);
+  std::string bin_model_counter_str {bin_model_counter_arr};
+  std::stringstream is (bin_model_counter_str);
+  Vlab::Solver::ModelCounter mc;
+  {
+    cereal::BinaryInputArchive ar(is);
+    mc.load(ar);
+  }
+  env->ReleaseStringUTFChars(bin_model_counter, bin_model_counter_arr);
+  auto result = mc.CountStrs(bound);
+  std::stringstream ss;
+  ss << result;
+  jstring result_string = env->NewStringUTF(ss.str().c_str());
+  return newBigInteger(env, result_string);
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    count
+ * Signature: (JJLjava/lang/String;)Ljava/math/BigInteger;
+ */
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_count__JJLjava_lang_String_2
+  (JNIEnv *env, jobject obj, jlong int_bound, jlong str_bound, jstring bin_model_counter) {
+
+  const char* bin_model_counter_arr = env->GetStringUTFChars(bin_model_counter, JNI_FALSE);
+  std::string bin_model_counter_str {bin_model_counter_arr};
+  std::stringstream is (bin_model_counter_str);
+  Vlab::Solver::ModelCounter mc;
+  {
+    cereal::BinaryInputArchive ar(is);
+    mc.load(ar);
+  }
+  env->ReleaseStringUTFChars(bin_model_counter, bin_model_counter_arr);
+  auto result = mc.Count(int_bound, str_bound);
+  std::stringstream ss;
+  ss << result;
+  jstring result_string = env->NewStringUTF(ss.str().c_str());
+  return newBigInteger(env, result_string);
 }
 
 /*
@@ -166,15 +372,14 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_printResultAutomaton__ 
 JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_printResultAutomaton__Ljava_lang_String_2 (JNIEnv *env, jobject obj, jstring filePath) {
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
   const char* file_path_str = env->GetStringUTFChars(filePath, JNI_FALSE);
-  std::string file_path = file_path_str;
+  std::string file_path {file_path_str};
 
   if (abc_driver->is_sat()) {
     int index = 0;
     for(auto& variable_entry : abc_driver->getSatisfyingVariables()) {
       std::stringstream ss;
       ss << file_path << "_" << index << ".dot";
-      std::string out_file = ss.str();
-      abc_driver->inspectResult(variable_entry.second, out_file);
+      abc_driver->inspectResult(variable_entry.second, ss.str());
     }
     std::cout.flush();
   }
@@ -227,6 +432,3 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_dispose (JNIEnv *env, j
   setHandle(env, obj, abc_driver);
   delete tmp;
 }
-
-
-
