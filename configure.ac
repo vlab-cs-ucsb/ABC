@@ -89,11 +89,11 @@ AC_SUBST([LIBMONABDD])
 AC_CHECK_LIB([monamem], [mem_alloc], [LIBMONAMEM=-lmonamem], AC_MSG_ERROR(MONA MEM library not found))
 AC_SUBST([LIBMONAMEM])
 
-AC_LINK_IFELSE(
-  [AC_LANG_PROGRAM([#include <boost/multiprecision/cpp_int.hpp>], 
-    [boost::multiprecision::cpp_int dummy])],
-  [], 
-  [AC_MSG_ERROR([Please install boost multiprecision big number headers])])
+#AC_LINK_IFELSE(
+#  [AC_LANG_PROGRAM([#include <boost/multiprecision/cpp_int.hpp>], 
+#    [boost::multiprecision::cpp_int dummy])],
+#  [], 
+#  [AC_MSG_ERROR([Please install boost multiprecision big number headers])])
 
 AC_CHECK_LIB([m], [floor],[LIBM=-lm], AC_MSG_ERROR(c math library m not found))
 AC_SUBST([LIBM])

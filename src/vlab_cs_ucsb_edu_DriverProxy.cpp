@@ -41,6 +41,18 @@ jobject newBigInteger(JNIEnv *env, jstring value) {
   return big_integer;
 }
 
+void load_model_counter(JNIEnv *env, Vlab::Solver::ModelCounter& mc, jbyteArray model_counter) {
+  jsize length = env->GetArrayLength(model_counter);
+  jbyte* buffer = env->GetByteArrayElements(model_counter, nullptr);
+  std::string bin_model_counter_str (const_cast<char*>(reinterpret_cast<char*>(buffer)), length);
+  std::stringstream is (bin_model_counter_str);
+  {
+    cereal::BinaryInputArchive ar(is);
+    mc.load(ar);
+  }
+  env->ReleaseByteArrayElements(model_counter, buffer, JNI_ABORT);
+}
+
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    initABC
@@ -192,7 +204,6 @@ JNIEXPORT jbyteArray JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounterFo
   }
   env->ReleaseStringUTFChars(var_name, var_name_arr);
   std::string bin_mc = os.str();
-  std::cout << "lenc++: " << bin_mc.size() << std::endl;
   jbyteArray array = env->NewByteArray (bin_mc.size());
   env->SetByteArrayRegion (array, 0, bin_mc.size(), reinterpret_cast<jbyte*>(const_cast<char*>(bin_mc.c_str())));
   return array;
@@ -269,17 +280,8 @@ JNIEXPORT jbyteArray JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounter
 JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countVariable__Ljava_lang_String_2J_3B
   (JNIEnv *env, jobject obj, jstring var_name, jlong bound, jbyteArray model_counter) {
 
-  jbyte* buf = env->GetByteArrayElements(model_counter, JNI_FALSE);
-  std::string bin_model_counter_str {const_cast<char*>(reinterpret_cast<char*>(buf))};
-  std::cout << "c++ bin leng: " << bin_model_counter_str.size() << std::endl;
-
-  std::stringstream is (bin_model_counter_str);
   Vlab::Solver::ModelCounter mc;
-  {
-    cereal::BinaryInputArchive ar(is);
-    mc.load(ar);
-  }
-  delete buf;
+  load_model_counter(env, mc, model_counter);
   auto result = mc.Count(bound, bound);
   std::stringstream ss;
   ss << result;
@@ -295,17 +297,8 @@ JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countVariable__Ljava
 JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countInts__J_3B
   (JNIEnv *env, jobject obj, jlong bound, jbyteArray model_counter) {
 
-  auto size = env->GetArrayLength(model_counter);
-  unsigned char* buf = new unsigned char[size];
-  env->GetByteArrayRegion (model_counter, 0, size, reinterpret_cast<jbyte*>(buf));
-  std::string bin_model_counter_str {reinterpret_cast<char*>(buf)};
-  std::stringstream is (bin_model_counter_str);
   Vlab::Solver::ModelCounter mc;
-  {
-    cereal::BinaryInputArchive ar(is);
-    mc.load(ar);
-  }
-  delete buf;
+  load_model_counter(env, mc, model_counter);
   auto result = mc.CountInts(bound);
   std::stringstream ss;
   ss << result;
@@ -321,17 +314,8 @@ JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countInts__J_3B
 JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countStrs__J_3B
   (JNIEnv *env, jobject obj, jlong bound, jbyteArray model_counter) {
 
-  auto size = env->GetArrayLength(model_counter);
-  unsigned char* buf = new unsigned char[size];
-  env->GetByteArrayRegion (model_counter, 0, size, reinterpret_cast<jbyte*>(buf));
-  std::string bin_model_counter_str {reinterpret_cast<char*>(buf)};
-  std::stringstream is (bin_model_counter_str);
   Vlab::Solver::ModelCounter mc;
-  {
-    cereal::BinaryInputArchive ar(is);
-    mc.load(ar);
-  }
-  delete buf;
+  load_model_counter(env, mc, model_counter);
   auto result = mc.CountStrs(bound);
   std::stringstream ss;
   ss << result;
@@ -347,17 +331,8 @@ JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countStrs__J_3B
 JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_count__JJ_3B
   (JNIEnv *env, jobject obj, jlong int_bound, jlong str_bound, jbyteArray model_counter) {
 
-  auto size = env->GetArrayLength(model_counter);
-  unsigned char* buf = new unsigned char[size];
-  env->GetByteArrayRegion (model_counter, 0, size, reinterpret_cast<jbyte*>(buf));
-  std::string bin_model_counter_str {reinterpret_cast<char*>(buf)};
-  std::stringstream is (bin_model_counter_str);
   Vlab::Solver::ModelCounter mc;
-  {
-    cereal::BinaryInputArchive ar(is);
-    mc.load(ar);
-  }
-  delete buf;
+  load_model_counter(env, mc, model_counter);
   auto result = mc.Count(int_bound, str_bound);
   std::stringstream ss;
   ss << result;

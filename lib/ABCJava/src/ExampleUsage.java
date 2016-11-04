@@ -23,11 +23,9 @@ public class ExampleUsage {
     
     if (result) {
       System.out.println("Satisfiable");
-      long bound = 2;
+      long bound = 30;
       BigInteger count = abcDriver.countVariable("var_abc",bound);
       byte[] func = abcDriver.getModelCounterForVariable("var_abc");
-      System.out.println("len: " + func.length);
-      System.out.println("func: " + func);
       if (count != null) {
         System.out.println("Number of solutions within bound: " + bound + " is " + count.toString());
       } else {
@@ -35,7 +33,6 @@ public class ExampleUsage {
       }
       
       BigInteger count2 = abcDriver.countVariable("var_abc", bound, func);
-      
       System.out.println("cache count: " + count2);
       
 //      abcDriver.printResultAutomaton();
