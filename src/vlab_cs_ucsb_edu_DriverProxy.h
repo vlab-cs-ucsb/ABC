@@ -74,66 +74,66 @@ JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_count__JJ
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    getModelCounterForVariable
- * Signature: (Ljava/lang/String;)Ljava/lang/String;
+ * Signature: (Ljava/lang/String;)[B
  */
-JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounterForVariable
+JNIEXPORT jbyteArray JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounterForVariable
   (JNIEnv *, jobject, jstring);
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    getModelCounterForInts
- * Signature: ()Ljava/lang/String;
+ * Signature: ()[B
  */
-JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounterForInts
+JNIEXPORT jbyteArray JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounterForInts
   (JNIEnv *, jobject);
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    getModelCounterForStrs
- * Signature: ()Ljava/lang/String;
+ * Signature: ()[B
  */
-JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounterForStrs
+JNIEXPORT jbyteArray JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounterForStrs
   (JNIEnv *, jobject);
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    getModelCounter
- * Signature: ()Ljava/lang/String;
+ * Signature: ()[B
  */
-JNIEXPORT jstring JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounter
+JNIEXPORT jbyteArray JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounter
   (JNIEnv *, jobject);
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    countVariable
- * Signature: (Ljava/lang/String;JLjava/lang/String;)Ljava/math/BigInteger;
+ * Signature: (Ljava/lang/String;J[B)Ljava/math/BigInteger;
  */
-JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countVariable__Ljava_lang_String_2JLjava_lang_String_2
-  (JNIEnv *, jobject, jstring, jlong, jstring);
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countVariable__Ljava_lang_String_2J_3B
+  (JNIEnv *, jobject, jstring, jlong, jbyteArray);
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    countInts
- * Signature: (JLjava/lang/String;)Ljava/math/BigInteger;
+ * Signature: (J[B)Ljava/math/BigInteger;
  */
-JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countInts__JLjava_lang_String_2
-  (JNIEnv *, jobject, jlong, jstring);
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countInts__J_3B
+  (JNIEnv *, jobject, jlong, jbyteArray);
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    countStrs
- * Signature: (JLjava/lang/String;)Ljava/math/BigInteger;
+ * Signature: (J[B)Ljava/math/BigInteger;
  */
-JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countStrs__JLjava_lang_String_2
-  (JNIEnv *, jobject, jlong, jstring);
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_countStrs__J_3B
+  (JNIEnv *, jobject, jlong, jbyteArray);
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    count
- * Signature: (JJLjava/lang/String;)Ljava/math/BigInteger;
+ * Signature: (JJ[B)Ljava/math/BigInteger;
  */
-JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_count__JJLjava_lang_String_2
-  (JNIEnv *, jobject, jlong, jlong, jstring);
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_count__JJ_3B
+  (JNIEnv *, jobject, jlong, jlong, jbyteArray);
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy

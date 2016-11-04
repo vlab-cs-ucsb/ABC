@@ -16,22 +16,27 @@ public class ExampleUsage {
     
     String constraint = "(set-logic QF_S)\n"
         + "(declare-fun var_abc () String)\n"
-        + "(assert (= var_abc (concat \"a\" \"b\")))\n"
+        + "(assert (not (= var_abc \"abc\")))\n"
         + "(check-sat)";
     
     boolean result = abcDriver.isSatisfiable(constraint);
     
     if (result) {
       System.out.println("Satisfiable");
-      long bound = 15;
-      String func = abcDriver.getModelCounterForVariable("var_abc");
+      long bound = 2;
+      BigInteger count = abcDriver.countVariable("var_abc",bound);
+      byte[] func = abcDriver.getModelCounterForVariable("var_abc");
+      System.out.println("len: " + func.length);
       System.out.println("func: " + func);
-      BigInteger count = abcDriver.countVariable("adf",bound);
       if (count != null) {
         System.out.println("Number of solutions within bound: " + bound + " is " + count.toString());
       } else {
         System.out.println("An error occured during counting, please contact vlab@cs.ucsb.edu");
       }
+      
+      BigInteger count2 = abcDriver.countVariable("var_abc", bound, func);
+      
+      System.out.println("cache count: " + count2);
       
 //      abcDriver.printResultAutomaton();
       

@@ -1,4 +1,4 @@
 (set-logic QF_S)
-(declare-fun s () String)
-(assert (not (= s "ab")))
-(check-sat s)
+(declare-fun abc () String)
+(assert (not (= abc "abc")))
+(check-sat abc)

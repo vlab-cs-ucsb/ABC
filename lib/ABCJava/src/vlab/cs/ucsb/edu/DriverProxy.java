@@ -78,21 +78,21 @@ public class DriverProxy {
 	
 	public native BigInteger count(final long intBound, final long strBound);
 	
-	public native String getModelCounterForVariable(final String varName);
+	public native byte[] getModelCounterForVariable(final String varName);
 	
-	public native String getModelCounterForInts();
+	public native byte[] getModelCounterForInts();
 	
-	public native String getModelCounterForStrs();
+	public native byte[] getModelCounterForStrs();
 	
-	public native String getModelCounter();
+	public native byte[] getModelCounter();
 
-	public native BigInteger countVariable(final String varName, final long bound, final String binaryModelCounterString);
+	public native BigInteger countVariable(final String varName, final long bound, final byte[] modelCounter);
 	
-	public native BigInteger countInts(final long bound, final String binaryModelCounterString);
+	public native BigInteger countInts(final long bound, final byte[] modelCounter);
 	
-	public native BigInteger countStrs(final long bound, final String binaryModelCounterString);
+	public native BigInteger countStrs(final long bound, final byte[] modelCounter);
 
-	public native BigInteger count(final long intBound, final long strBound, final String binaryModelCounterString);
+	public native BigInteger count(final long intBound, final long strBound, final byte[] modelCounter);
 
 	public native void printResultAutomaton();
 

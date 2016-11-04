@@ -190,7 +190,20 @@ int main(const int argc, const char **argv) {
 
   if (driver.is_sat()) {
     if (VLOG_IS_ON(30)) {
-//      unsigned index = 0;
+
+       auto mc = driver.GetModelCounterForVariable("abc");
+       auto res = driver.CountVariable("abc", 2);
+       auto res2 = mc.CountStrs(2);
+       std::stringstream os;
+       {
+         cereal::BinaryOutputArchive ar(os);
+         mc.save(ar);
+       }
+
+       std::string test = os.str();
+       std::cout << "func++: " << test << std::endl;
+
+       //      unsigned index = 0;
 //      for (auto& variable_entry : driver.getSatisfyingVariables()) {
 //        if (variable_entry.second == nullptr) {
 //          // part of multitrack/binaryint
