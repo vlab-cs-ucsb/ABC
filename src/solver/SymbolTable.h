@@ -25,6 +25,7 @@
 #include "../theory/StringAutomaton.h"
 #include "Ast2Dot.h"
 #include "EquivalenceClass.h"
+#include "options/Solver.h"
 #include "Value.h"
 
 namespace Vlab {
@@ -35,6 +36,7 @@ using VariableCounterMap = std::map<SMT::Variable_ptr, int>;
 using VariableCounterTable = std::map<SMT::Visitable_ptr, VariableCounterMap>;
 using EquivClassMap = std::map<SMT::Variable_ptr, EquivalenceClass_ptr>;
 using EquivClassTable = std::map<SMT::Visitable_ptr, EquivClassMap>;
+using GroupMap = std::map<SMT::Variable_ptr, SMT::Variable_ptr>;
 using VariableValueMap = std::map<SMT::Variable_ptr, Value_ptr>;
 using VariableValueTable = std::map<SMT::Visitable_ptr, VariableValueMap>;
 
@@ -56,9 +58,6 @@ public:
   VariableMap& get_variables();
   SMT::Variable_ptr get_symbolic_target_variable();
   int get_num_of_variables(SMT::Variable::Type type);
-
-  void set_bound(int bound);
-  int get_bound();
 
   void push_scope(SMT::Visitable_ptr, bool save_scope = true);
   SMT::Visitable_ptr top_scope();
@@ -86,11 +85,15 @@ public:
   void add_variable_equiv_class_mapping(SMT::Variable_ptr, EquivalenceClass_ptr);
   SMT::Variable_ptr get_representative_variable_of_at_scope(SMT::Visitable_ptr scope, SMT::Variable_ptr);
 
+  void add_variable_group_mapping(std::string variable_name, std::string group_name);
+  void add_variable_group_mapping(SMT::Variable_ptr, SMT::Variable_ptr);
+  SMT::Variable_ptr get_group_variable_of(SMT::Variable_ptr);
 
   Value_ptr get_value(std::string var_name);
   Value_ptr get_value(SMT::Variable_ptr variable);
   Value_ptr get_value_at_scope(SMT::Visitable_ptr scope, SMT::Variable_ptr variable);
-  VariableValueMap& get_values_at_Scope(SMT::Visitable_ptr scope);
+  Value_ptr get_projected_value_at_scope(SMT::Visitable_ptr scope, SMT::Variable_ptr variable);
+  VariableValueMap& get_values_at_scope(SMT::Visitable_ptr scope);
   bool set_value(std::string var_name, Value_ptr value);
   bool set_value(SMT::Variable_ptr variable, Value_ptr value);
   bool IntersectValue(std::string var_name, Value_ptr value);
@@ -107,34 +110,38 @@ public:
 private:
   std::string generate_internal_name(std::string, SMT::Variable::Type);
 
-  bool global_assertion_result;
-  int bound;
+  bool global_assertion_result_;
   /**
    * Name to variable map
    */
-  VariableMap variables;
+  VariableMap variables_;
 
   /**
    * There is a global scope
    * A new scope is generated when there is a disjuction
    */
-  std::vector<SMT::Visitable_ptr> scope_stack;
-  std::set<SMT::Visitable_ptr> scopes;
+  std::vector<SMT::Visitable_ptr> scope_stack_;
+  std::set<SMT::Visitable_ptr> scopes_;
 
   /**
    * Number of usages of variables
    */
-  VariableCounterTable variable_counts_table;
+  VariableCounterTable variable_counts_table_;
 
   /**
-   * Has a mapping from variable to its corresponding equivalence class if any exists
+   * Has a mapping from a variable to its corresponding equivalence class if any exists
    */
-  EquivClassTable variable_equivalence_table;
+  EquivClassTable variable_equivalence_table_;
+
+  /**
+   * Has a mapping from a variable to its group variable if any; case occurs with multitrack auto
+   */
+  GroupMap variable_group_map_;
 
   /**
    * Values of each variable for each scope
    */
-  VariableValueTable variable_value_table;
+  VariableValueTable variable_value_table_;
 
   static const int VLOG_LEVEL;
   //int reuse; 

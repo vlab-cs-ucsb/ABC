@@ -128,7 +128,7 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
   visit_children_of(or_term);
   DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
 
-  if (not constraint_information_->is_component(or_term)) { // a rare case, see dependency slicer
+  if (not constraint_information_->is_component(or_term)) { // a rare case, @deprecated
     current_group_ = "";
     has_mixed_constraint_ = false;
     return;
@@ -639,14 +639,6 @@ void ArithmeticFormulaGenerator::clear_term_formulas() {
   term_formula_.clear();
 }
 
-std::string ArithmeticFormulaGenerator::get_variable_group_name(Variable_ptr variable) {
-  return get_variable_group_name(variable->getName());
-}
-
-std::string ArithmeticFormulaGenerator::get_variable_group_name(std::string var_name) {
-  return variable_group_map_[var_name];
-}
-
 std::string ArithmeticFormulaGenerator::get_term_group_name(Term_ptr term) {
   auto it = term_group_map_.find(term);
   if (it not_eq term_group_map_.end()) {
@@ -695,7 +687,7 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
   for (auto& el : group_formula_) {
     symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
     for (const auto& var_entry : el.second->get_variable_coefficient_map()) {
-      variable_group_map_[var_entry.first] = el.first;
+      symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
     }
   }
   DVLOG(VLOG_LEVEL)<< "end setting int group for components";

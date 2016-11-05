@@ -113,8 +113,6 @@ public:
   SMT::TermList& get_string_terms_in(SMT::Term_ptr term);
   void clear_term_formulas();
 
-  std::string get_variable_group_name(SMT::Variable_ptr variable);
-  std::string get_variable_group_name(std::string var_name);
   std::string get_term_group_name(SMT::Term_ptr term);
 
 protected:
@@ -134,11 +132,8 @@ protected:
   SMT::TermList string_terms_;
   std::map<SMT::Term_ptr, SMT::TermList> string_terms_map_;
 
-  std::map<std::string, std::string> variable_group_map_; // May be inside symbol table
   std::map<SMT::Term_ptr, std::string> term_group_map_;
   std::map<std::string, Theory::ArithmeticFormula_ptr> group_formula_;
-
-
 
 private:
   static const int VLOG_LEVEL;

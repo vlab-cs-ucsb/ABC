@@ -81,6 +81,7 @@ public:
   Theory::BigInteger CountInts(const unsigned long bound) const;
   Theory::BigInteger CountStrs(const unsigned long bound) const;
   Theory::BigInteger Count(const unsigned long int_bound, const unsigned long str_bound) const;
+  Theory::BigInteger CountIntConstant(const unsigned long bound, const int constant) const;
 
   /**
    * TODO Provide SetModelCounter... methods, and use GetModelCounters... for inside Count... functions

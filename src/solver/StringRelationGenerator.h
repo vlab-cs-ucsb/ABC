@@ -122,6 +122,7 @@ class StringRelationGenerator : public SMT::Visitor {
  protected:
   void add_string_variables(SMT::Term_ptr term, std::vector<std::string> variables);
   std::string generate_group_name(SMT::Term_ptr term, std::string var_name);
+  void set_group_mappings();
 
   VariableTrackMap get_group_trackmap(std::string name);
 

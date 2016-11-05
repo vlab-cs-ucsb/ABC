@@ -36,6 +36,7 @@ void StringRelationGenerator::start(Visitable_ptr node) {
   has_string_formula_ = false;
   has_mixed_constraint_ = false;
   visit(node);
+  set_group_mappings();
   end();
 }
 
@@ -44,6 +45,7 @@ void StringRelationGenerator::start() {
   has_string_formula_ = false;
   has_mixed_constraint_ = false;
   visit(root_);
+  set_group_mappings();
   end();
 }
 
@@ -828,6 +830,14 @@ std::string StringRelationGenerator::generate_group_name(SMT::Term_ptr term, std
   std::string group_name = symbol_table_->get_var_name_for_node(term,SMT::Variable::Type::STRING);
   group_name += var_name;
   return group_name;
+}
+
+void StringRelationGenerator::set_group_mappings() {
+  for (const auto& mel : variable_group_table_) {
+    for (const auto& el : mel.second) {
+      symbol_table_->add_variable_group_mapping(el.first, el.second);
+    }
+  }
 }
 
 VariableTrackMap StringRelationGenerator::get_group_trackmap(std::string name) {

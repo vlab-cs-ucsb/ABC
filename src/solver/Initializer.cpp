@@ -87,13 +87,14 @@ void Initializer::visitCommand(Command_ptr command) {
     break;
   }
   case Command::Type::CHECK_SAT_AND_COUNT: {
+    LOG(FATAL) << "command deprecated: pelase inform for an update";
     visit_children_of(command);
     if (primitives_.size() == 1) {
       Primitive_ptr primitive = primitives_.top();
       primitives_.pop();
       int bound = std::stoi(primitive->getData());
-      symbol_table_->set_bound(bound);
-      DVLOG(VLOG_LEVEL) << "Model count bound: " << bound;
+//      symbol_table_->set_bound(bound);
+//      DVLOG(VLOG_LEVEL) << "Model count bound: " << bound;
     } else if (primitives_.size() == 2) {
       Primitive_ptr primitive = primitives_.top();
       primitives_.pop();
@@ -103,8 +104,8 @@ void Initializer::visitCommand(Command_ptr command) {
       primitive = primitives_.top();
       primitives_.pop();
       int bound = std::stoi(primitive->getData());
-      symbol_table_->set_bound(bound);
-      DVLOG(VLOG_LEVEL) << "Model count bound: " << bound;
+//      symbol_table_->set_bound(bound);
+//      DVLOG(VLOG_LEVEL) << "Model count bound: " << bound;
     }
     CHECK_EQ(0, primitives_.size())<< "unexpected primitive left.";
     break;
