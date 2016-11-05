@@ -211,48 +211,6 @@ JNIEXPORT jbyteArray JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounterFo
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
- * Method:    getModelCounterForInts
- * Signature: ()[B
- */
-JNIEXPORT jbyteArray JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounterForInts
-  (JNIEnv *env, jobject obj) {
-
-  Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
-  auto mc = abc_driver->GetModelCounterForInts();
-  std::stringstream os;
-  {
-    cereal::BinaryOutputArchive ar(os);
-    mc.save(ar);
-  }
-  std::string bin_mc = os.str();
-  jbyteArray array = env->NewByteArray (bin_mc.size());
-  env->SetByteArrayRegion (array, 0, bin_mc.size(), reinterpret_cast<jbyte*>(const_cast<char*>(bin_mc.c_str())));
-  return array;
-}
-
-/*
- * Class:     vlab_cs_ucsb_edu_DriverProxy
- * Method:    getModelCounterForStrs
- * Signature: ()[B
- */
-JNIEXPORT jbyteArray JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounterForStrs
-  (JNIEnv *env, jobject obj) {
-
-  Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
-  auto mc = abc_driver->GetModelCounterForStrs();
-  std::stringstream os;
-  {
-    cereal::BinaryOutputArchive ar(os);
-    mc.save(ar);
-  }
-  std::string bin_mc = os.str();
-  jbyteArray array = env->NewByteArray (bin_mc.size());
-  env->SetByteArrayRegion (array, 0, bin_mc.size(), reinterpret_cast<jbyte*>(const_cast<char*>(bin_mc.c_str())));
-  return array;
-}
-
-/*
- * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    getModelCounter
  * Signature: ()[B
  */

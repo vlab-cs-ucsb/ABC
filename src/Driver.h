@@ -77,19 +77,13 @@ public:
   void Solve();
   bool is_sat();
 
-  Theory::BigInteger CountVariable(const std::string var_name, const unsigned long bound) const;
-  Theory::BigInteger CountInts(const unsigned long bound) const;
-  Theory::BigInteger CountStrs(const unsigned long bound) const;
-  Theory::BigInteger Count(const unsigned long int_bound, const unsigned long str_bound) const;
-  Theory::BigInteger CountIntConstant(const unsigned long bound, const int constant) const;
+  Theory::BigInteger CountVariable(const std::string var_name, const unsigned long bound);
+  Theory::BigInteger CountInts(const unsigned long bound);
+  Theory::BigInteger CountStrs(const unsigned long bound);
+  Theory::BigInteger Count(const unsigned long int_bound, const unsigned long str_bound);
 
-  /**
-   * TODO Provide SetModelCounter... methods, and use GetModelCounters... for inside Count... functions
-   */
-  Solver::ModelCounter GetModelCounterForVariable(const std::string var_name);
-  Solver::ModelCounter GetModelCounterForInts();
-  Solver::ModelCounter GetModelCounterForStrs();
-  Solver::ModelCounter GetModelCounter();
+  Solver::ModelCounter& GetModelCounterForVariable(const std::string var_name);
+  Solver::ModelCounter& GetModelCounter();
 
   void printResult(Solver::Value_ptr value, std::ostream& out);
   void inspectResult(Solver::Value_ptr value, std::string file_name);
@@ -111,6 +105,17 @@ public:
   int trace_parsing_ = 0;
   int trace_scanning_ = 0;
   std::string file_;
+
+protected:
+  void SetModelCounterForVariable(const std::string var_name);
+  void SetModelCounter();
+
+  bool is_model_counter_cached_;
+  Solver::ModelCounter model_counter_;
+  /**
+   * Keeps projected model counters for a variable
+   */
+  std::map<SMT::Variable_ptr, Solver::ModelCounter> variable_model_counter_;
 
 private:
   static bool IS_LOGGING_INITIALIZED;

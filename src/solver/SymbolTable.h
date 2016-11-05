@@ -139,6 +139,12 @@ private:
   GroupMap variable_group_map_;
 
   /**
+   * Projected values of variables that appear in multitrack automata
+   * Stored only when necessary
+   */
+  VariableValueTable variable_projected_value_table_;
+
+  /**
    * Values of each variable for each scope
    */
   VariableValueTable variable_value_table_;

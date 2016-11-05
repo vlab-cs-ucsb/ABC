@@ -309,11 +309,17 @@ Value_ptr SymbolTable::get_projected_value_at_scope(Visitable_ptr scope, Variabl
     return it->second;
   }
 
-  Value_ptr result = nullptr;
-  // try getting with group name
+  // if projected value is computed return it
+  auto pit = variable_projected_value_table_[scope].find(representative_variable);
+  if (pit != variable_projected_value_table_[scope].end()) {
+    return pit->second;
+  }
+
+  // compute projected value if the variable is in a group
   auto group_variable = get_group_variable_of(representative_variable);
   it = variable_value_table_[scope].find(group_variable);
   if (it != variable_value_table_[scope].end()) {
+    Value_ptr result = nullptr;
     if (Value::Type::BINARYINT_AUTOMATON == it->second->getType()) {
       auto relational_auto = it->second->getBinaryIntAutomaton();
       auto projected_auto = relational_auto->GetBinaryAutomatonFor(representative_variable->getName());
@@ -326,28 +332,11 @@ Value_ptr SymbolTable::get_projected_value_at_scope(Visitable_ptr scope, Variabl
     } else {
       LOG(FATAL) << "Value error, fix me";
     }
-  } else {
-    switch (variable->getType()) {
-    case Variable::Type::INT: {
-      auto formula = new Theory::ArithmeticFormula();
-      formula->add_variable(variable->getName(), 1);
-      result = new Value(Theory::BinaryIntAutomaton::MakeAnyInt(formula, (not Option::Solver::USE_SIGNED_INTEGERS)));
-      DVLOG(VLOG_LEVEL) << "initialized variable as any integer: " << *variable;
-    }
-      break;
-    case Variable::Type::STRING: {
-      result = new Value(Theory::StringAutomaton::makeAnyString());
-      DVLOG(VLOG_LEVEL) << "initialized variable as any string: " << *variable;
-    }
-      break;
-    default:
-      LOG(FATAL) << "variable type not supported here" << *variable;
-      break;
-    }
+    variable_projected_value_table_[scope][representative_variable] = result;
+    return result;
   }
-
-  set_value(representative_variable, result);
-  return result;
+  // unconstraint variable
+  return nullptr;
 }
 
 

@@ -81,22 +81,6 @@ JNIEXPORT jbyteArray JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounterFo
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
- * Method:    getModelCounterForInts
- * Signature: ()[B
- */
-JNIEXPORT jbyteArray JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounterForInts
-  (JNIEnv *, jobject);
-
-/*
- * Class:     vlab_cs_ucsb_edu_DriverProxy
- * Method:    getModelCounterForStrs
- * Signature: ()[B
- */
-JNIEXPORT jbyteArray JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getModelCounterForStrs
-  (JNIEnv *, jobject);
-
-/*
- * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    getModelCounter
  * Signature: ()[B
  */

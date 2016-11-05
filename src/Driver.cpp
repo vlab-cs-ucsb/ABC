@@ -15,7 +15,8 @@ bool Driver::IS_LOGGING_INITIALIZED = false;
 Driver::Driver()
     : script_(nullptr),
       symbol_table_(nullptr),
-      constraint_information_(nullptr) {
+      constraint_information_(nullptr),
+      is_model_counter_cached_{false} {
 }
 
 Driver::~Driver() {
@@ -116,140 +117,80 @@ bool Driver::is_sat() {
   return symbol_table_->isSatisfiable();
 }
 
-Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsigned long bound) const {
-  auto variable = symbol_table_->get_variable(var_name);
-  auto var_value = symbol_table_->get_projected_value_at_scope(script_, variable);
-
-  Theory::BigInteger result;
-  switch (var_value->getType()) {
-    case Vlab::Solver::Value::Type::STRING_AUTOMATON:
-      result = var_value->getStringAutomaton()->Count(bound);
-      break;
-    case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
-      result = var_value->getBinaryIntAutomaton()->Count(bound);
-      }
-      break;
-    case Vlab::Solver::Value::Type::INT_AUTOMATON: {
-      result = var_value->getIntAutomaton()->Count(bound);
-    }
-      break;
-    case Vlab::Solver::Value::Type::INT_CONSTANT: {
-      result = CountIntConstant(bound, var_value->getIntConstant());
-    }
-    break;
-    default:
-      break;
-  }
-
-  return result;
+Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsigned long bound) {
+  return GetModelCounterForVariable(var_name).Count(bound, bound);
 }
 
-Theory::BigInteger Driver::CountInts(const unsigned long bound) const {
-  Theory::BigInteger result(1), count(0);
-  int num_bin_var = 0;
-  for (const auto &variable_entry : getSatisfyingVariables()) {
-    if (variable_entry.second == nullptr) {
-      continue;
-    }
-
-    switch (variable_entry.second->getType()) {
-      case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
-        auto binary_auto = variable_entry.second->getBinaryIntAutomaton();
-        auto formula = binary_auto->get_formula();
-        for (auto& el : formula->get_variable_coefficient_map()) {
-          if (symbol_table_->get_variable_unsafe(el.first) != nullptr) {
-            ++num_bin_var;
-          }
-        }
-        count = binary_auto->Count(bound);
-      }
-        break;
-      case Vlab::Solver::Value::Type::INT_CONSTANT: {
-        count = CountIntConstant(bound, variable_entry.second->getIntConstant());
-      }
-        break;
-      case Vlab::Solver::Value::Type::INT_AUTOMATON: {
-        auto int_auto = variable_entry.second->getIntAutomaton();
-        unsigned long base = 1;
-        auto shift = bound;
-        CHECK_LT(shift, std::numeric_limits<unsigned long>::digits);
-        unsigned long upper_bound = (base << shift) - 1;
-        count = int_auto->Count(upper_bound);
-      }
-        break;
-      default:
-//          LOG(FATAL)<< "Please update me for the types not handled";
-        break;
-      }
-    result = result * count;
-  }
-
-  int number_of_int_variables = symbol_table_->get_num_of_variables(SMT::Variable::Type::INT);
-  int number_of_substituted_int_variables = symbol_table_->get_num_of_substituted_variables(script_,
-                                                                                            SMT::Variable::Type::INT);
-  int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables - num_bin_var;
-
-  if (number_of_untracked_int_variables > 0) {
-    result = result
-        * boost::multiprecision::pow(boost::multiprecision::cpp_int(2),
-                                     (number_of_untracked_int_variables * bound));
-  }
-
-  return result;
+Theory::BigInteger Driver::CountInts(const unsigned long bound) {
+  return GetModelCounter().CountInts(bound);
 }
 
-Theory::BigInteger Driver::CountStrs(const unsigned long bound) const {
-  LOG(FATAL) << "fix me";
-  return Theory::BigInteger();
+Theory::BigInteger Driver::CountStrs(const unsigned long bound) {
+return GetModelCounter().CountStrs(bound);
 }
 
-Theory::BigInteger Driver::Count(const unsigned long int_bound, const unsigned long str_bound) const {
+Theory::BigInteger Driver::Count(const unsigned long int_bound, const unsigned long str_bound) {
   return CountInts(int_bound) * CountStrs(str_bound);
 }
 
-Theory::BigInteger Driver::CountIntConstant(const unsigned long bound, const int constant) const {
-  Theory::BigInteger value(constant);
-  Theory::BigInteger base(1);
-  Theory::BigInteger base2(-1);
-  auto shift = bound;
-
-  Theory::BigInteger upper_bound = (base << shift) - 1;
-  Theory::BigInteger lower_bound = (base2 << shift) + 1;
-  if (value <= upper_bound and value >= lower_bound) {
-    return 1;
-  } else {
-    return 0;
-  }
-}
-
-Solver::ModelCounter Driver::GetModelCounterForVariable(const std::string var_name) {
+Solver::ModelCounter& Driver::GetModelCounterForVariable(const std::string var_name) {
   auto variable = symbol_table_->get_variable(var_name);
-  auto var_value = symbol_table_->get_projected_value_at_scope(script_, variable);
-
-  Solver::ModelCounter mc;
-  switch (var_value->getType()) {
-    case Vlab::Solver::Value::Type::STRING_AUTOMATON:
-      mc.add_symbolic_counter(var_value->getStringAutomaton()->GetSymbolicCounter());
-      break;
-    case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON:
-      mc.add_symbolic_counter(var_value->getBinaryIntAutomaton()->GetSymbolicCounter());
-      break;
-    case Vlab::Solver::Value::Type::INT_AUTOMATON:
-      mc.add_symbolic_counter(var_value->getIntAutomaton()->GetSymbolicCounter());
-      break;
-    case Vlab::Solver::Value::Type::INT_CONSTANT:
-      mc.add_constant(var_value->getIntConstant());
-      break;
-    default:
-      LOG(FATAL) << "add unhandled type";
-      break;
+  auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(script_, variable);
+  auto it = variable_model_counter_.find(representative_variable);
+  if (it == variable_model_counter_.end()) {
+   SetModelCounterForVariable(var_name);
+   it = variable_model_counter_.find(representative_variable);
   }
-  return mc;
+  return it->second;
 }
 
-Solver::ModelCounter Driver::GetModelCounterForInts() {
+Solver::ModelCounter& Driver::GetModelCounter() {
+  if (not is_model_counter_cached_) {
+   SetModelCounter();
+  }
+  return model_counter_;
+}
+
+void Driver::SetModelCounterForVariable(const std::string var_name) {
+  auto variable = symbol_table_->get_variable(var_name);
+  auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(script_, variable);
+  auto var_value = symbol_table_->get_projected_value_at_scope(script_, representative_variable);
+
+  auto& mc = variable_model_counter_[representative_variable];
+  mc.set_use_sign_integers(Option::Solver::USE_SIGNED_INTEGERS);
+  if (var_value == nullptr) {
+    if (SMT::Variable::Type::INT == representative_variable->getType()) {
+      mc.set_num_of_unconstraint_int_vars(1);
+    } else if (SMT::Variable::Type::STRING == representative_variable->getType()) {
+      mc.set_num_of_unconstraint_str_vars(1);
+    }
+  } else {
+    switch (var_value->getType()) {
+      case Vlab::Solver::Value::Type::STRING_AUTOMATON:
+        mc.add_symbolic_counter(var_value->getStringAutomaton()->GetSymbolicCounter());
+        break;
+      case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON:
+        mc.add_symbolic_counter(var_value->getBinaryIntAutomaton()->GetSymbolicCounter());
+        break;
+      case Vlab::Solver::Value::Type::INT_AUTOMATON:
+        mc.add_symbolic_counter(var_value->getIntAutomaton()->GetSymbolicCounter());
+        break;
+      case Vlab::Solver::Value::Type::INT_CONSTANT:
+        mc.add_constant(var_value->getIntConstant());
+        break;
+      default:
+        LOG(FATAL) << "add unhandled type";
+        break;
+    }
+  }
+}
+
+/**
+ * TODO add string part as well
+ */
+void Driver::SetModelCounter() {
+  model_counter_.set_use_sign_integers(Option::Solver::USE_SIGNED_INTEGERS);
   int num_bin_var = 0;
-  Solver::ModelCounter mc;
   for (const auto &variable_entry : getSatisfyingVariables()) {
     if (variable_entry.second == nullptr) {
       continue;
@@ -263,16 +204,16 @@ Solver::ModelCounter Driver::GetModelCounterForInts() {
             ++num_bin_var;
           }
         }
-        mc.add_symbolic_counter(binary_auto->GetSymbolicCounter());
+        model_counter_.add_symbolic_counter(binary_auto->GetSymbolicCounter());
       }
         break;
       case Vlab::Solver::Value::Type::INT_CONSTANT: {
-        mc.add_constant(variable_entry.second->getIntConstant());
+        model_counter_.add_constant(variable_entry.second->getIntConstant());
       }
         break;
       case Vlab::Solver::Value::Type::INT_AUTOMATON: {
         auto int_auto = variable_entry.second->getIntAutomaton();
-        mc.add_symbolic_counter(int_auto->GetSymbolicCounter());
+        model_counter_.add_symbolic_counter(int_auto->GetSymbolicCounter());
       }
         break;
       default:
@@ -284,21 +225,8 @@ Solver::ModelCounter Driver::GetModelCounterForInts() {
   int number_of_substituted_int_variables = symbol_table_->get_num_of_substituted_variables(script_,
                                                                                             SMT::Variable::Type::INT);
   int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables - num_bin_var;
-  mc.set_num_of_unconstraint_int_vars(number_of_untracked_int_variables);
-
-  return mc;
-}
-
-Solver::ModelCounter Driver::GetModelCounterForStrs() {
-  Solver::ModelCounter mc;
-  LOG(FATAL) << "implement me";
-  return mc;
-}
-
-Solver::ModelCounter Driver::GetModelCounter() {
-  Solver::ModelCounter mc;
-  LOG(FATAL) << "implement me";
-  return mc;
+  model_counter_.set_num_of_unconstraint_int_vars(number_of_untracked_int_variables);
+  is_model_counter_cached_ = true;
 }
 
 void Driver::inspectResult(Solver::Value_ptr value, std::string file_name) {
@@ -493,12 +421,13 @@ void Driver::test() {
 //
 //  auto f1 = new ArithmeticFormula();
 //  f1->set_type(ArithmeticFormula::Type::EQ);
-//  f1->set_constant(-2);
 //  f1->add_variable("x", 1);
-//  f1->add_variable("y", -1);
 //
-//  auto t1 = BinaryIntAutomaton::MakeAutomaton(f1, false);
-//  t1->Count(2, false);
+//  auto t1 = BinaryIntAutomaton::MakeAnyInt(f1, false);
+//  t1->Count(4);
+//
+//  auto t2 = BinaryIntAutomaton::MakeAnyInt(f1->clone(), true);
+//  t2->Count(4);
 //
 //  auto t2 = BinaryIntAutomaton::MakeAutomaton(f1, false);
 //  t2->Count(10, false);

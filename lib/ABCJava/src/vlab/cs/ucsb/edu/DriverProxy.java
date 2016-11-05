@@ -80,10 +80,6 @@ public class DriverProxy {
 	
 	public native byte[] getModelCounterForVariable(final String varName);
 	
-	public native byte[] getModelCounterForInts();
-	
-	public native byte[] getModelCounterForStrs();
-	
 	public native byte[] getModelCounter();
 
 	public native BigInteger countVariable(final String varName, final long bound, final byte[] modelCounter);

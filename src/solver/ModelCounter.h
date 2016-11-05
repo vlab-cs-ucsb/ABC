@@ -24,6 +24,7 @@ class ModelCounter {
  public:
   ModelCounter();
   virtual ~ModelCounter();
+  void set_use_sign_integers(bool value);
   void set_num_of_unconstraint_int_vars(int n);
   void set_num_of_unconstraint_str_vars(int n);
   void add_constant(int c);
@@ -34,6 +35,7 @@ class ModelCounter {
 
   template <class Archive>
   void save(Archive& ar) const {
+    ar(use_signed_integers_);
     ar(unconstraint_int_vars_);
     ar(unconstraint_str_vars_);
     ar(constant_ints_);
@@ -42,6 +44,7 @@ class ModelCounter {
 
   template <class Archive>
   void load(Archive& ar) {
+    ar(use_signed_integers_);
     ar(unconstraint_int_vars_);
     ar(unconstraint_str_vars_);
     ar(constant_ints_);
@@ -49,6 +52,7 @@ class ModelCounter {
   }
 
  protected:
+  bool use_signed_integers_;
   int unconstraint_int_vars_;
   int unconstraint_str_vars_;
   std::vector<int> constant_ints_;
