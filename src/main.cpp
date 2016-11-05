@@ -190,19 +190,6 @@ int main(const int argc, const char **argv) {
 
   if (driver.is_sat()) {
     if (VLOG_IS_ON(30)) {
-
-//       auto mc = driver.GetModelCounterForVariable("abc");
-//       auto res = driver.CountVariable("abc", 2);
-//       auto res2 = mc.CountStrs(2);
-//       std::stringstream os;
-//       {
-//         cereal::BinaryOutputArchive ar(os);
-//         mc.save(ar);
-//       }
-//
-//       std::string test = os.str();
-//       std::cout << "func++: " << test << std::endl;
-
        //      unsigned index = 0;
 //      for (auto& variable_entry : driver.getSatisfyingVariables()) {
 //        if (variable_entry.second == nullptr) {
@@ -290,6 +277,26 @@ int main(const int argc, const char **argv) {
         auto count_time = end - start;
         LOG(INFO) << "report bound: " << b << " count: " << count_result << " time: "
                   << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+
+//        auto mc = driver.GetModelCounterForVariable(count_variable);
+//        std::cout << "report mc count: " << mc.Count(b, b) << std::endl;
+//         std::stringstream os;
+//         {
+//           cereal::BinaryOutputArchive ar(os);
+//           mc.save(ar);
+//         }
+//
+//         std::string test = os.str();
+//         std::stringstream is(test);
+//
+//         Vlab::Solver::ModelCounter mcc;
+//
+//         {
+//          cereal::BinaryInputArchive ar(is);
+//          mcc.load(ar);
+//        }
+//
+//        std::cout << "report mmc count: " << mcc.Count(b, b) << std::endl;
       }
     } else {
       for (auto b : int_bounds) {
