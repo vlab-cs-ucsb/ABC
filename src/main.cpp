@@ -279,7 +279,9 @@ int main(const int argc, const char **argv) {
                   << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
 
 //        auto mc = driver.GetModelCounterForVariable(count_variable);
-//        std::cout << "report mc count: " << mc.Count(b, b) << std::endl;
+//
+//        std::cout << std::endl << mc << std::endl;
+//        mc.Count(b, b);
 //         std::stringstream os;
 //         {
 //           cereal::BinaryOutputArchive ar(os);
@@ -292,11 +294,12 @@ int main(const int argc, const char **argv) {
 //         Vlab::Solver::ModelCounter mcc;
 //
 //         {
-//          cereal::BinaryInputArchive ar(is);
-//          mcc.load(ar);
+//          cereal::BinaryInputArchive ar2(is);
+//          mcc.load(ar2);
 //        }
 //
-//        std::cout << "report mmc count: " << mcc.Count(b, b) << std::endl;
+//        std::cout << std::endl << mcc << std::endl;
+//        mcc.Count(b, b);
       }
     } else {
       for (auto b : int_bounds) {
@@ -322,9 +325,11 @@ int main(const int argc, const char **argv) {
   }
 
   LOG(INFO) << "done.";
+
   if (file != nullptr) {
     delete file;
   }
+
   return 0;
 }
 

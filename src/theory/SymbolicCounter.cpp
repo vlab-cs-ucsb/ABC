@@ -113,5 +113,18 @@ BigInteger SymbolicCounter::CountbyMatrixMultiplication(const unsigned long boun
 //  return result;
 }
 
+std::string SymbolicCounter::str() const {
+  std::stringstream ss;
+  ss << "type:       " << static_cast<int>(type_)<< std::endl;
+  ss << "last bound  : " << bound_ << std::endl;
+  ss << "init vector : " << std::endl << initialization_vector_ << std::endl;
+  ss << "symb matrix : " << std::endl << transition_count_matrix_ << std::endl;
+  return ss.str();
+}
+
+std::ostream& operator<<(std::ostream& os, const SymbolicCounter& sc) {
+  return os << sc.str();
+}
+
 } /* namespace Theory */
 } /* namespace Vlab */

@@ -70,6 +70,8 @@ void ImplicationRunner::visitOr(Or_ptr or_term) {
   }
 }
 
+// TODO separate len implications and string implications
+// TODO x = c.y => begins(x,c) implication is not necessary avoid case (c is constant)
 void ImplicationRunner::visitEq(Eq_ptr eq_term) {
   if (Concat_ptr left_id = dynamic_cast<Concat_ptr>(eq_term->left_term)) {
     if (Concat_ptr right_id = dynamic_cast<Concat_ptr>(eq_term->right_term)) {

@@ -8,6 +8,10 @@
 #ifndef SRC_THEORY_SYMBOLICCOUNTER_H_
 #define SRC_THEORY_SYMBOLICCOUNTER_H_
 
+#include <ostream>
+#include <sstream>
+#include <string>
+
 #include <glog/logging.h>
 
 #include "../utils/Serialize.h"
@@ -54,6 +58,8 @@ class SymbolicCounter {
     Util::Serialize::load(ar, transition_count_matrix_);
   }
 
+  std::string str() const;
+  friend std::ostream& operator<<(std::ostream& os, const SymbolicCounter& sc);
 protected:
   Type type_;
   unsigned long bound_;

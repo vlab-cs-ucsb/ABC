@@ -26,6 +26,20 @@ SymbolTable::~SymbolTable() {
   }
   variable_value_table_.clear();
 
+  for (auto& map_pair : variable_projected_value_table_) {
+    for (auto& value_pair : map_pair.second) {
+      delete value_pair.second;
+    }
+  }
+  variable_projected_value_table_.clear();
+
+  for (auto& map_pair : variable_equivalence_table_) {
+    for (auto& value_pair : map_pair.second) {
+      delete value_pair.second;
+    }
+  }
+  variable_projected_value_table_.clear();
+
   for (auto& entry : variables_) {
     delete entry.second;
   }

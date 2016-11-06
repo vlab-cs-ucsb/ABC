@@ -9,6 +9,9 @@
 #define SRC_SOLVER_MODELCOUNTER_H_
 
 #include <functional>
+#include <ostream>
+#include <sstream>
+#include <string>
 #include <vector>
 
 #include <glog/logging.h>
@@ -50,7 +53,8 @@ class ModelCounter {
     ar(constant_ints_);
     ar(symbolic_counters_);
   }
-
+  std::string str() const;
+  friend std::ostream& operator<<(std::ostream& os, const ModelCounter& mc);
  protected:
   bool use_signed_integers_;
   int unconstraint_int_vars_;

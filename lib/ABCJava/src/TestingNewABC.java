@@ -41,7 +41,7 @@ public class TestingNewABC {
 		System.out.println("Creating abc solver");
 		DriverProxy abc = new DriverProxy();
 		
-		String query = query2;
+		String query = query1;
 		long bound = BOUND;
 		
 		System.out.println("Query:\n" + query + "\n");
@@ -64,7 +64,7 @@ public class TestingNewABC {
 		System.out.println("Creating abc solver");
 		DriverProxy abc = new DriverProxy();
 		
-		String query = query2;
+		String query = query1;
 		long bound = BOUND;
 		
 		System.out.println("Query:\n" + query + "\n");

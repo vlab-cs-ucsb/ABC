@@ -106,5 +106,26 @@ Theory::BigInteger ModelCounter::Count(const unsigned long int_bound, const unsi
   return CountInts(int_bound) * CountStrs(str_bound);
 }
 
+std::string ModelCounter::str() const {
+  std::stringstream ss;
+  ss << "use signed integers: " << std::boolalpha << use_signed_integers_ << std::endl;
+  ss << "#unconstraint ints : " << unconstraint_int_vars_ << std::endl;
+  ss << "#unconstraint strs : " << unconstraint_str_vars_ << std::endl;
+  ss << "constant values    : ";
+  for (auto i : constant_ints_) {
+    ss << i << " ";
+  }
+  ss << std::endl;
+  ss << "#symbolic counters : " << symbolic_counters_.size() << std::endl;
+  for (const auto& sc : symbolic_counters_) {
+    ss << std::endl << sc << std::endl;
+  }
+  return ss.str();
+}
+
+std::ostream& operator<<(std::ostream& os, const ModelCounter& mc) {
+  return os << mc.str();
+}
+
 } /* namespace Solver */
 } /* namespace Vlab */
