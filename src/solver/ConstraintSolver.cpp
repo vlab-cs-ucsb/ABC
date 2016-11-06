@@ -620,7 +620,6 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
     }
   }
   path_trace_.pop_back();
-  DVLOG(VLOG_LEVEL) << "------ checking result " << result->is_satisfiable();
   setTermValue(concat_term, result);
 }
 
@@ -1394,9 +1393,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     setTermValue(string_term, string_term_result);
 
     // 3 - update variables involved in string term
-    LOG(FATAL)<< "update variables function should return true/false based on satisfiability";
-//    is_satisfiable = update_variables();
-    update_variables();
+    is_satisfiable = update_variables();
     if (not is_satisfiable) {
       auto binary_auto = arithmetic_result->getBinaryIntAutomaton();
       arithmetic_result = new Value(

@@ -82,11 +82,13 @@ int main(const int argc, const char **argv) {
       driver.set_option(Vlab::Option::Name::ENABLE_DEPENDENCY_ANALYSIS);
     } else if (argv[i] == std::string("--disable-dependency")) {
       driver.set_option(Vlab::Option::Name::DISABLE_DEPENDENCY_ANALYSIS);
-    } else if (argv[i] == std::string("--enable-implication")) {
+    } else if (argv[i] == std::string("--enable-implications")) {
       driver.set_option(Vlab::Option::Name::ENABLE_IMPLICATIONS);
-    } else if (argv[i] == std::string("--disable-implication")) {
+    } else if (argv[i] == std::string("--disable-implications")) {
       driver.set_option(Vlab::Option::Name::DISABLE_IMPLICATIONS);
-    }else if (argv[i] == std::string("--enable-sorting")) {
+    } else if (argv[i] == std::string("--limit-len-implications")) {
+      driver.set_option(Vlab::Option::Name::LIMIT_LEN_IMPLICATIONS);
+    } else if (argv[i] == std::string("--enable-sorting")) {
       driver.set_option(Vlab::Option::Name::ENABLE_SORTING_HEURISTICS);
     } else if (argv[i] == std::string("--disable-sorting")) {
       driver.set_option(Vlab::Option::Name::DISABLE_SORTING_HEURISTICS);
@@ -135,8 +137,9 @@ int main(const int argc, const char **argv) {
       std::cout << std::setw(col) << "--disable-equivalence" << ": disables equivalence class generation" << std::endl;
       std::cout << std::setw(col) << "--enable-dependency" << ": enables dependency analysis" << std::endl;
       std::cout << std::setw(col) << "--disable-dependency" << ": disables dependency analysis" << std::endl;
-      std::cout << std::setw(col) << "--enable-implication" << ": enables adding implications for string constraints" << std::endl;
-      std::cout << std::setw(col) << "--disable-implication" << ": disables adding implications for string constraints" << std::endl;
+      std::cout << std::setw(col) << "--enable-implications" << ": enables adding implications for string constraints" << std::endl;
+      std::cout << std::setw(col) << "--disable-implications" << ": disables adding implications for string constraints" << std::endl;
+      std::cout << std::setw(col) << "--limit-len-implications" << ": disables length implications for word equations" << std::endl;
       std::cout << std::setw(col) << "--enable-sorting" << ": enables sorting heuristics for string constraints" << std::endl;
       std::cout << std::setw(col) << "--disable-sorting" << ": disables sorting heuristics for string constraints" << std::endl;
       std::cout << std::setw(col) << "--output-dir <dir>" << ": used for debugging outputs" << std::endl;

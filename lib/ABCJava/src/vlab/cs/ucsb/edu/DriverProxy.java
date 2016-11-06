@@ -23,11 +23,12 @@ public class DriverProxy {
 		ENABLE_DEPENDENCY_ANALYSIS(6), 		// default option
 		DISABLE_DEPENDENCY_ANALYSIS(7), 
 		ENABLE_IMPLICATIONS(8), 			// default option
-		DISABLE_IMPLICATIONS(9), 
-		ENABLE_SORTING_HEURISTICS(10), 		// default option
-		DISABLE_SORTING_HEURISTICS(11), 
-		OUTPUT_PATH(12), 					// not actively used through Java
-		SCRIPT_PATH(13);					// not actively used
+		DISABLE_IMPLICATIONS(9),
+		LIMIT_LEN_IMPLICATIONS(10),
+		ENABLE_SORTING_HEURISTICS(11), 		// default option
+		DISABLE_SORTING_HEURISTICS(12), 
+		OUTPUT_PATH(13), 					// not actively used through Java
+		SCRIPT_PATH(14);					// not actively used
 
 		private final int value;
 

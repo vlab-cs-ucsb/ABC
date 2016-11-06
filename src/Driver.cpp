@@ -323,7 +323,10 @@ void Driver::set_option(Option::Name option) {
       break;
     case Option::Name::DISABLE_IMPLICATIONS:
       Option::Solver::ENABLE_IMPLICATIONS = false;
-    break;
+      break;
+    case Option::Name::LIMIT_LEN_IMPLICATIONS:
+      Option::Solver::ENABLE_LEN_IMPLICATIONS = false;
+      break;
     case Option::Name::ENABLE_SORTING_HEURISTICS:
       Option::Solver::ENABLE_SORTING_HEURISTICS = true;
       break;
