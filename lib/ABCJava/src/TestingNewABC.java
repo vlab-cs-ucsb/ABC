@@ -33,6 +33,18 @@ public class TestingNewABC {
 			+ "(assert (= z z)) \n"
 			+ "(check-sat)";
 	
+	private static String query5 = // WORKS
+			  "(declare-fun z () String)\n"
+			  + "(assert (= (len z) 0))\n"
+			  + "(check-sat)";
+
+	private static String query6 = // DOESN'T WORK
+			  "(declare-fun z () String)\n"
+			  + "(declare-fun x () String)\n"
+			  + "(assert (= z x))\n"
+			  + "(assert (= (len x) 0))\n"
+			  + "(check-sat)";
+	
 	private static long BOUND = 15;
 	
 
@@ -41,7 +53,7 @@ public class TestingNewABC {
 		System.out.println("Creating abc solver");
 		DriverProxy abc = new DriverProxy();
 		
-		String query = query4;
+		String query = query6;
 		long bound = BOUND;
 		
 		System.out.println("Query:\n" + query + "\n");
@@ -61,28 +73,44 @@ public class TestingNewABC {
 
 	public static void testCountingFunction() {
 
-		System.out.println("Creating abc solver");
-		DriverProxy abc = new DriverProxy();
+		byte[] func = null;
 		
-		String query = query4;
+		System.out.println("Creating first abc solver");
+		DriverProxy abc = new DriverProxy();
+
+		//abc.setOption(Option.ENABLE_IMPLICATIONS);
+		
+		String query = query6;
 		long bound = BOUND;
 		
 		System.out.println("Query:\n" + query + "\n");
 
 		Boolean result = abc.isSatisfiable(query);
 		if(result) {
-			byte[] func = abc.getModelCounterForVariable("z");
+			func = abc.getModelCounterForVariable("z");
 			System.out.println("Counting function: " + func.toString());
 			System.out.println("Counting function size: " + func.length);
-			
-			BigInteger n = abc.countVariable("z", bound, func);
-			System.out.println("Count: " + n.toString());
 		} else {
-			System.out.println("UNSAT!");			
+			System.out.println("UNSAT!");
+			return;
 		}
 		
-		System.out.println("Disposing abc solver");
+		System.out.println("Going to dispose of first abc solver");
 		abc.dispose();
+		System.out.println("Done disposing of first abc solver");
+		
+
+		System.out.println("\nCreating another abc solver");
+		abc = new DriverProxy();
+
+		System.out.println("Counting using the previously obtained function...");
+		System.out.println("Bound size: " + bound);
+		BigInteger n = abc.countVariable("z", bound, func);
+		System.out.println("Count: " + n.toString());
+
+		System.out.println("Going to dispose of second abc solver");
+		abc.dispose();
+		System.out.println("Done disposing of second abc solver");
 		
 	}
 	

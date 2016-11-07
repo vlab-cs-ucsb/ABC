@@ -33,12 +33,17 @@ SymbolTable::~SymbolTable() {
   }
   variable_projected_value_table_.clear();
 
+  std::set<EquivalenceClass_ptr> equivalence_classes;
   for (auto& map_pair : variable_equivalence_table_) {
     for (auto& value_pair : map_pair.second) {
-      delete value_pair.second;
+      equivalence_classes.insert(value_pair.second);
     }
   }
   variable_projected_value_table_.clear();
+  for (auto& eq : equivalence_classes) {
+    delete eq;
+  }
+  equivalence_classes.clear();
 
   for (auto& entry : variables_) {
     delete entry.second;
