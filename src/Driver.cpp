@@ -179,7 +179,7 @@ void Driver::SetModelCounterForVariable(const std::string var_name) {
         mc.add_constant(var_value->getIntConstant());
         break;
       default:
-        LOG(FATAL) << "add unhandled type";
+        LOG(FATAL) << "add unhandled type: " << static_cast<int>(var_value->getType());
         break;
     }
   }

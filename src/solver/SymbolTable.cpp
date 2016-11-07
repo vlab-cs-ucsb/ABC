@@ -358,7 +358,7 @@ Value_ptr SymbolTable::get_projected_value_at_scope(Visitable_ptr scope, Variabl
     variable_projected_value_table_[scope][representative_variable] = result;
     return result;
   }
-  // unconstraint variable
+  // unconstrainted variable
   return nullptr;
 }
 

@@ -27,7 +27,7 @@ Value::Value()
 }
 
 Value::Value(bool data)
-    : type(Type::BOOl_CONSTANT),
+    : type(Type::BOOL_CONSTANT),
       bool_constant(data) {
 }
 
@@ -66,7 +66,7 @@ Value::Value(const Value& other)
   switch (other.type) {
     case Type::NONE:
       break;
-    case Type::BOOl_CONSTANT:
+    case Type::BOOL_CONSTANT:
       bool_constant = other.bool_constant;
       break;
     case Type::INT_CONSTANT:
@@ -130,7 +130,7 @@ std::string Value::str() const {
     case Type::NONE:
       ss << Name::NONE;
       break;
-    case Type::BOOl_CONSTANT:
+    case Type::BOOL_CONSTANT:
       ss << Name::BOOL_CONSTANT << " : " << std::boolalpha << bool_constant;
       break;
     case Type::INT_CONSTANT:
@@ -298,7 +298,7 @@ Value_ptr Value::complement() const {
       delete int_auto;
       break;
     }
-    case Type::BOOl_CONSTANT: {
+    case Type::BOOL_CONSTANT: {
       complement_value = new Value(not bool_constant);
       break;
     }
@@ -480,7 +480,7 @@ bool Value::is_satisfiable() {
   switch (type) {
     case Type::NONE:
       break;
-    case Type::BOOl_CONSTANT:
+    case Type::BOOL_CONSTANT:
       is_satisfiable = bool_constant;
       break;
     case Type::INT_CONSTANT:
@@ -513,7 +513,7 @@ bool Value::isSingleValue() {
   switch (type) {
     case Type::NONE:
       break;
-    case Type::BOOl_CONSTANT:
+    case Type::BOOL_CONSTANT:
     case Type::INT_CONSTANT:
       is_single_value = true;
       break;
@@ -541,7 +541,7 @@ std::string Value::getASatisfyingExample() {
   switch (type) {
     case Type::NONE:
       break;
-    case Type::BOOl_CONSTANT:
+    case Type::BOOL_CONSTANT:
       if (bool_constant) {
         ss << "true";
       } else {

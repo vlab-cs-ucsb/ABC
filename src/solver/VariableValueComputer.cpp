@@ -376,7 +376,7 @@ void VariableValueComputer::visitEq(Eq_ptr eq_term) {
 
   Value_ptr term_value = getTermPreImage(eq_term);
 
-  if (Value::Type::BOOl_CONSTANT == term_value->getType()){
+  if (Value::Type::BOOL_CONSTANT == term_value->getType()){
     child_value = getTermPostImage(child_term)->clone();
   } else {
     child_value = term_value->clone();
@@ -403,7 +403,7 @@ void VariableValueComputer::visitNotEq(NotEq_ptr not_eq_term) {
 
   Value_ptr term_value = getTermPreImage(not_eq_term);
 
-  if (Value::Type::BOOl_CONSTANT == term_value->getType()){
+  if (Value::Type::BOOL_CONSTANT == term_value->getType()){
     CHECK_EQ(true, term_value->getBoolConstant());
     child_value = getTermPostImage(child_term)->clone();
   } else {

@@ -168,28 +168,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   Value_ptr result = new Value(is_satisfiable);
   setTermValue(and_term, result);
 
-  // Kaluza Data Hack to project onto one variable (this is what they did)
-  if (Option::Solver::USE_MULTITRACK_AUTO && constraint_information_->is_component(and_term)) {
-    Variable_ptr var = symbol_table_->get_symbolic_target_variable();
-    if(var == nullptr) {
-      return;
-    }
-    Variable_ptr rep_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),var);
-    if(rep_var != nullptr) {
-      Value_ptr val = string_constraint_solver_.get_variable_value(rep_var,true);
-      if(val != nullptr) {
-        // If symbolic variable is not actually represented, but instead
-        // substituted for another variable, then we need to
-        // account for that when putting the resulting value back into the symbol table
-        StringRelation_ptr relation = val->getMultiTrackAutomaton()->getRelation();
-        VariableTrackMap trackmap = relation->get_variable_trackmap();
-        trackmap[var->getName()] = trackmap[rep_var->getName()];
-        relation->set_variable_trackmap(trackmap);
-        symbol_table_->set_value(rep_var, val);
-        //symbol_table_->set_value(var,val->clone());
-      }
-    }
-  }
   DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 }
 
@@ -296,7 +274,7 @@ void ConstraintSolver::visitNot(Not_ptr not_term) {
   Value_ptr result = nullptr, param = getTermValue(not_term->term);
 
   switch (param->getType()) {
-    case Value::Type::BOOl_CONSTANT: {
+    case Value::Type::BOOL_CONSTANT: {
       result = param->complement();
       break;
     }
@@ -420,7 +398,7 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
   Value_ptr result = nullptr, param_left = getTermValue(eq_term->left_term), param_right = getTermValue(
       eq_term->right_term);
 
-  if (Value::Type::BOOl_CONSTANT == param_left->getType() and Value::Type::BOOl_CONSTANT == param_right->getType()) {
+  if (Value::Type::BOOL_CONSTANT == param_left->getType() and Value::Type::BOOL_CONSTANT == param_right->getType()) {
     result = new Value(param_left->getBoolConstant() == param_right->getBoolConstant());
   } else if (Value::Type::INT_CONSTANT == param_left->getType()
       and Value::Type::INT_CONSTANT == param_right->getType()) {
@@ -459,7 +437,7 @@ void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
   Value_ptr result = nullptr, param_left = getTermValue(not_eq_term->left_term), param_right = getTermValue(
       not_eq_term->right_term);
 
-  if (Value::Type::BOOl_CONSTANT == param_left->getType() and Value::Type::BOOl_CONSTANT == param_right->getType()) {
+  if (Value::Type::BOOL_CONSTANT == param_left->getType() and Value::Type::BOOL_CONSTANT == param_right->getType()) {
     result = new Value(param_left->getBoolConstant() not_eq param_right->getBoolConstant());
   } else if (Value::Type::INT_CONSTANT == param_left->getType()
       and Value::Type::INT_CONSTANT == param_right->getType()) {
@@ -1118,6 +1096,8 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *qi_term;
 
   Variable_ptr variable = symbol_table_->get_variable(qi_term->getVarName());
+
+  //  TODO Fix that case of handling with projected value table...
   // check if variable is relational first. if so, since we're storing
   // multitrack values in the string constraint solver, get the variable's value
   // from there and clone it into the symbol table, so the variable value computer has

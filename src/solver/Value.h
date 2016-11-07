@@ -33,7 +33,7 @@ class Value {
   enum class Type
     : int {
       NONE = 0,
-    BOOl_CONSTANT,
+    BOOL_CONSTANT,
     INT_CONSTANT,
     STRING_CONSTANT,  // not represented here as a data, can refer to singleton automaton
     BOOL_AUTOMATON,
