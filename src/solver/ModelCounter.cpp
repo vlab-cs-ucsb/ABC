@@ -94,9 +94,12 @@ Theory::BigInteger ModelCounter::CountStrs(const unsigned long bound) {
   }
 
   if (unconstraint_str_vars_ > 0) {
+    Theory::BigInteger single_unconstraint_str_count = (boost::multiprecision::pow(
+        boost::multiprecision::cpp_int(256), (bound + 1)) - 1)
+            / 255;
    result = result
-       * boost::multiprecision::pow(boost::multiprecision::cpp_int(256),
-                                    (unconstraint_str_vars_ * bound));
+       * boost::multiprecision::pow(single_unconstraint_str_count,
+                                    unconstraint_str_vars_);
   }
 
   return result;
