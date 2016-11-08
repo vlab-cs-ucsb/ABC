@@ -88,13 +88,13 @@ void Driver::InitializeSolver() {
     } while (equivalence_generator.has_constant_substitution());
   }
 
-  Solver::FormulaOptimizer formula_optimizer(script_, symbol_table_);
-  formula_optimizer.start();
-
   if (Option::Solver::ENABLE_IMPLICATIONS) {
     Solver::ImplicationRunner implication_runner(script_, symbol_table_);
     implication_runner.start();
   }
+
+  Solver::FormulaOptimizer formula_optimizer(script_, symbol_table_);
+  formula_optimizer.start();
 
   if (Option::Solver::ENABLE_SORTING_HEURISTICS) {
     Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);

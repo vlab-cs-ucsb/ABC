@@ -21,6 +21,7 @@
 
 #include "../smt/ast.h"
 #include "../smt/typedefs.h"
+#include "Ast2Dot.h"
 #include "AstTraverser.h"
 #include "SymbolTable.h"
 
@@ -54,29 +55,8 @@ public:
   void visitNotEnds(SMT::NotEnds_ptr) override;
 
 protected:
-  bool check_term(SMT::Term_ptr);
-  void reset_sets();
-  void visit_and_callback(SMT::Term_ptr&);
-
   SymbolTable_ptr symbol_table_;
-  bool delete_term_;
-
-  std::set<std::string> and_terms_;
-  std::set<std::string> or_terms_;
-  std::set<std::string> eq_terms_;
-  std::set<std::string> not_eq_terms_;
-  std::set<std::string> in_terms_;
-  std::set<std::string> not_in_terms_;
-  std::set<std::string> contains_terms_;
-  std::set<std::string> not_contains_terms_;
-  std::set<std::string> begins_terms_;
-  std::set<std::string> not_begins_terms_;
-  std::set<std::string> ends_terms_;
-  std::set<std::string> not_ends_terms_;
-  std::set<std::string> gt_terms_;
-  std::set<std::string> ge_terms_;
-  std::set<std::string> lt_terms_;
-  std::set<std::string> le_terms_;
+  std::map<std::string, std::vector<SMT::Term_ptr>> terms_;
 
   std::function<void(SMT::Term_ptr&)> callback_;
 private:

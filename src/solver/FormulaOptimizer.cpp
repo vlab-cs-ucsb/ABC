@@ -15,7 +15,7 @@ using namespace SMT;
 const int FormulaOptimizer::VLOG_LEVEL = 14;
 
 FormulaOptimizer::FormulaOptimizer(Script_ptr script, SymbolTable_ptr symbol_table)
-        : AstTraverser(script), symbol_table_(symbol_table), delete_term_(false) {
+        : AstTraverser(script), symbol_table_(symbol_table) {
   setCallbacks();
 }
 
@@ -28,7 +28,7 @@ void FormulaOptimizer::start() {
 }
 
 void FormulaOptimizer::end() {
-//  SyntacticOptimizer syntactic_optimizer(root, symbol_table);
+//  SyntacticOptimizer syntactic_optimizer(root_, symbol_table_);
 //  syntactic_optimizer.start();
 }
 
@@ -40,142 +40,212 @@ void FormulaOptimizer::setCallbacks() {
 }
 
 void FormulaOptimizer::visitAssert(Assert_ptr assert_command) {
-  visit_and_callback(assert_command->term);
+  visit(assert_command->term);
 }
 
 void FormulaOptimizer::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
-  for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
-    visit_and_callback(*iter);
-    if (delete_term_) {
-      delete (*iter);
-      iter = and_term->term_list->erase(iter);
-    } else {
-      iter++;
-    }
-    delete_term_ = false;
-  }
+  visit_term_list(and_term->term_list);
   DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
-  reset_sets();
-  // add check for and term
+
+  if (and_term->term_list->size() != terms_.size()) {
+    // duplicate constraints remove them
+    and_term->term_list->clear();
+    for (auto& entry : terms_) {
+      and_term->term_list->push_back(entry.second.back());
+      entry.second.pop_back();
+      for(auto term : entry.second) {
+        delete term; // delete duplicate terms
+      }
+    }
+  }
+
+  terms_.clear();
+  // TODO add and term check
 }
 
 void FormulaOptimizer::visitOr(Or_ptr or_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
-  for (auto iter = or_term->term_list->begin(); iter != or_term->term_list->end();) {
-    visit_and_callback(*iter);
-    if (delete_term_) {
-      delete (*iter);
-      iter = or_term->term_list->erase(iter);
-    } else {
-      iter++;
-    }
-    delete_term_ = false;
-  }
+  visit_term_list(or_term->term_list);
   DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
-  reset_sets();
-  // add check for or term
+
+  if (or_term->term_list->size() != terms_.size()) {
+    // duplicate constraints remove them
+    or_term->term_list->clear();
+    for (auto& entry : terms_) {
+      or_term->term_list->push_back(entry.second.back());
+      entry.second.pop_back();
+      for(auto term : entry.second) {
+        delete term; // delete duplicate terms
+      }
+    }
+  }
+
+  terms_.clear();
+  // TODO add or term check
 }
 
 
 void FormulaOptimizer::visitEq(Eq_ptr eq_term) {
-  std::string left_expr = symbol_table_->get_var_name_for_expression(eq_term->left_term, Variable::Type::NONE);
-  std::string right_expr = symbol_table_->get_var_name_for_expression(eq_term->right_term, Variable::Type::NONE);
+  const std::string left_expr = Ast2Dot::toString(eq_term->left_term);
+  const std::string right_expr = Ast2Dot::toString(eq_term->right_term);
+
+  if (right_expr < left_expr) {
+    std::swap(eq_term->left_term, eq_term->right_term);
+  }
 
   std::stringstream ss;
-  ss << left_expr << right_expr;
-  std::string term_expr = ss.str();
-  ss.str("");
-  ss.clear();
+  ss << *eq_term << left_expr << right_expr;
+  const std::string term_expr = ss.str();
 
-  // Dublicate check TODO handle a = b  b = a case
-  if (eq_terms_.find(term_expr) != eq_terms_.end()) {
-    delete_term_ = true;
-  } else {
-    eq_terms_.insert(term_expr);
-  }
+  terms_[term_expr].push_back(eq_term);
 }
 
 void FormulaOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
-  std::string left_expr = symbol_table_->get_var_name_for_expression(not_eq_term->left_term, Variable::Type::NONE);
-  std::string right_expr = symbol_table_->get_var_name_for_expression(not_eq_term->right_term, Variable::Type::NONE);
+  const std::string left_expr = Ast2Dot::toString(not_eq_term->left_term);
+  const std::string right_expr = Ast2Dot::toString(not_eq_term->right_term);
 
-  std::stringstream ss;
-  ss << left_expr << right_expr;
-  std::string term_expr = ss.str();
-  ss.str("");
-  ss.clear();
-
-  // Dublicate check TODO handle a != b  b != a case
-  if (not_eq_terms_.find(term_expr) != not_eq_terms_.end()) {
-    delete_term_ = true;
-  } else {
-    not_eq_terms_.insert(term_expr);
+  if (right_expr < left_expr) {
+    std::swap(not_eq_term->left_term, not_eq_term->right_term);
   }
 
+  std::stringstream ss;
+  ss << *not_eq_term << left_expr << right_expr;
+  const std::string term_expr = ss.str();
+
+  terms_[term_expr].push_back(not_eq_term);
 }
 
 void FormulaOptimizer::visitGt(Gt_ptr gt_term) {
+  const std::string left_expr = Ast2Dot::toString(gt_term->left_term);
+  const std::string right_expr = Ast2Dot::toString(gt_term->right_term);
+
+  std::stringstream ss;
+  ss << *gt_term << left_expr << right_expr;
+  const std::string term_expr = ss.str();
+
+  terms_[term_expr].push_back(gt_term);
 }
 
 void FormulaOptimizer::visitGe(Ge_ptr ge_term) {
+  const std::string left_expr = Ast2Dot::toString(ge_term->left_term);
+  const std::string right_expr = Ast2Dot::toString(ge_term->right_term);
+
+  std::stringstream ss;
+  ss << *ge_term << left_expr << right_expr;
+  const std::string term_expr = ss.str();
+
+  terms_[term_expr].push_back(ge_term);
 }
 
 void FormulaOptimizer::visitLt(Lt_ptr lt_term) {
+  const std::string left_expr = Ast2Dot::toString(lt_term->left_term);
+  const std::string right_expr = Ast2Dot::toString(lt_term->right_term);
+
+  std::stringstream ss;
+  ss << *lt_term << left_expr << right_expr;
+  const std::string term_expr = ss.str();
+
+  terms_[term_expr].push_back(lt_term);
 }
 
 void FormulaOptimizer::visitLe(Le_ptr le_term) {
+  const std::string left_expr = Ast2Dot::toString(le_term->left_term);
+  const std::string right_expr = Ast2Dot::toString(le_term->right_term);
+
+  std::stringstream ss;
+  ss << *le_term << left_expr << right_expr;
+  const std::string term_expr = ss.str();
+
+  terms_[term_expr].push_back(le_term);
 }
 
 void FormulaOptimizer::visitIn(In_ptr in_term) {
+  const std::string left_expr = Ast2Dot::toString(in_term->left_term);
+  const std::string right_expr = Ast2Dot::toString(in_term->right_term);
+
+  std::stringstream ss;
+  ss << *in_term << left_expr << right_expr;
+  const std::string term_expr = ss.str();
+
+  terms_[term_expr].push_back(in_term);
 }
 
 void FormulaOptimizer::visitNotIn(NotIn_ptr not_in_term) {
+  const std::string left_expr = Ast2Dot::toString(not_in_term->left_term);
+  const std::string right_expr = Ast2Dot::toString(not_in_term->right_term);
+
+  std::stringstream ss;
+  ss << *not_in_term << left_expr << right_expr;
+  const std::string term_expr = ss.str();
+
+  terms_[term_expr].push_back(not_in_term);
 }
 
 void FormulaOptimizer::visitContains(Contains_ptr contains_term) {
+  const std::string left_expr = Ast2Dot::toString(contains_term->subject_term);
+  const std::string right_expr = Ast2Dot::toString(contains_term->search_term);
+
+  std::stringstream ss;
+  ss << *contains_term << left_expr << right_expr;
+  const std::string term_expr = ss.str();
+
+  terms_[term_expr].push_back(contains_term);
 }
 
 void FormulaOptimizer::visitNotContains(NotContains_ptr not_contains_term) {
+  const std::string left_expr = Ast2Dot::toString(not_contains_term->subject_term);
+  const std::string right_expr = Ast2Dot::toString(not_contains_term->search_term);
+
+  std::stringstream ss;
+  ss << *not_contains_term << left_expr << right_expr;
+  const std::string term_expr = ss.str();
+
+  terms_[term_expr].push_back(not_contains_term);
 }
 
 void FormulaOptimizer::visitBegins(Begins_ptr begins_term) {
+  const std::string left_expr = Ast2Dot::toString(begins_term->subject_term);
+  const std::string right_expr = Ast2Dot::toString(begins_term->search_term);
+
+  std::stringstream ss;
+  ss << *begins_term << left_expr << right_expr;
+  const std::string term_expr = ss.str();
+
+  terms_[term_expr].push_back(begins_term);
 }
 
 void FormulaOptimizer::visitNotBegins(NotBegins_ptr not_begins_term) {
+  const std::string left_expr = Ast2Dot::toString(not_begins_term->subject_term);
+  const std::string right_expr = Ast2Dot::toString(not_begins_term->search_term);
+
+  std::stringstream ss;
+  ss << *not_begins_term << left_expr << right_expr;
+  const std::string term_expr = ss.str();
+
+  terms_[term_expr].push_back(not_begins_term);
 }
 
 void FormulaOptimizer::visitEnds(Ends_ptr ends_term) {
+  const std::string left_expr = Ast2Dot::toString(ends_term->subject_term);
+  const std::string right_expr = Ast2Dot::toString(ends_term->search_term);
+
+  std::stringstream ss;
+  ss << *ends_term << left_expr << right_expr;
+  const std::string term_expr = ss.str();
+
+  terms_[term_expr].push_back(ends_term);
 }
 
 void FormulaOptimizer::visitNotEnds(NotEnds_ptr not_ends_term) {
-}
+  const std::string left_expr = Ast2Dot::toString(not_ends_term->subject_term);
+  const std::string right_expr = Ast2Dot::toString(not_ends_term->search_term);
 
-void FormulaOptimizer::reset_sets() {
-  and_terms_.clear();
-  or_terms_.clear();
-  eq_terms_.clear();
-  not_eq_terms_.clear();
-  in_terms_.clear();
-  not_in_terms_.clear();
-  contains_terms_.clear();
-  not_contains_terms_.clear();
-  begins_terms_.clear();
-  not_begins_terms_.clear();
-  ends_terms_.clear();
-  not_ends_terms_.clear();
-  gt_terms_.clear();
-  ge_terms_.clear();
-  lt_terms_.clear();
-  le_terms_.clear();
-}
+  std::stringstream ss;
+  ss << *not_ends_term << left_expr << right_expr;
+  const std::string term_expr = ss.str();
 
-void FormulaOptimizer::visit_and_callback(Term_ptr& term) {
-  visit(term);
-  if (callback_) {
-    callback_(term);
-    callback_ = nullptr;
-  }
+  terms_[term_expr].push_back(not_ends_term);
 }
 
 } /* namespace Solver */
