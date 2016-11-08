@@ -1635,16 +1635,15 @@ void SyntacticOptimizer::append_constant(TermConstant_ptr left_constant, TermCon
 }
 
 bool SyntacticOptimizer::check_and_process_constant_string(std::initializer_list<SMT::Term_ptr> terms) {
-  bool is_a_term_string_constant = false;
   Optimization::ConstantTermChecker constant_term_checker;
   for (auto term : terms) {
     constant_term_checker.start(term, Optimization::ConstantTermChecker::Mode::ONLY_TERM_CONSTANT);
     if (constant_term_checker.is_constant()) {
-      is_a_term_string_constant = true;
+      return true;
     }
   }
 
-  return is_a_term_string_constant;
+  return false;
 }
 
 bool SyntacticOptimizer::check_and_process_len_transformation(Term_ptr operation, Term_ptr & left_term,

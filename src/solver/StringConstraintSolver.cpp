@@ -68,7 +68,6 @@ void StringConstraintSolver::setCallbacks() {
           /*
            * Xc < Y   =>   Z < Y && Z = Xc
            */
-
           if(left->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
             temp_relation = right;
             relation->set_right(left);

@@ -59,7 +59,6 @@ void FormulaOptimizer::visitAnd(And_ptr and_term) {
       }
     }
   }
-
   terms_.clear();
   // TODO add and term check
 }
@@ -90,14 +89,18 @@ void FormulaOptimizer::visitEq(Eq_ptr eq_term) {
   const std::string left_expr = Ast2Dot::toString(eq_term->left_term);
   const std::string right_expr = Ast2Dot::toString(eq_term->right_term);
 
+  std::stringstream ss;
+  ss << *eq_term;
   if (right_expr < left_expr) {
-    std::swap(eq_term->left_term, eq_term->right_term);
+//    Term_ptr tmp = eq_term->left_term;
+//    eq_term->left_term = eq_term->right_term;
+//    eq_term->right_term = tmp;
+    ss << right_expr << left_expr;
+  } else {
+    ss << left_expr << right_expr;
   }
 
-  std::stringstream ss;
-  ss << *eq_term << left_expr << right_expr;
   const std::string term_expr = ss.str();
-
   terms_[term_expr].push_back(eq_term);
 }
 
@@ -105,12 +108,18 @@ void FormulaOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
   const std::string left_expr = Ast2Dot::toString(not_eq_term->left_term);
   const std::string right_expr = Ast2Dot::toString(not_eq_term->right_term);
 
+  std::stringstream ss;
+  ss << *not_eq_term;
   if (right_expr < left_expr) {
-    std::swap(not_eq_term->left_term, not_eq_term->right_term);
+//    Term_ptr tmp = not_eq_term->left_term;
+//    not_eq_term->left_term = not_eq_term->right_term;
+//    not_eq_term->right_term = tmp;
+    ss << right_expr << left_expr;
+  } else {
+    ss << left_expr << right_expr;
   }
 
-  std::stringstream ss;
-  ss << *not_eq_term << left_expr << right_expr;
+
   const std::string term_expr = ss.str();
 
   terms_[term_expr].push_back(not_eq_term);

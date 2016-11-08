@@ -617,13 +617,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeEquality(StringRelation_ptr rel
 			left_track,right_track;
 	StringRelation_ptr left_relation = relation->get_left(),
 		                 right_relation = relation->get_right();
-	std::string left_data,right_data;
 
-	left_data = left_relation->get_data();
-	right_data = right_relation->get_data();
+	std::string left_data = left_relation->get_data();
+	std::string right_data = right_relation->get_data();
 	left_track = relation->get_variable_index(left_data);
 	right_track = relation->get_variable_index(right_data);
-
 	result_dfa = make_binary_relation_dfa(StringRelation::Type::EQ,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	result_auto = new MultiTrackAutomaton(result_dfa,num_tracks);
 	result_auto->setRelation(relation->clone());
@@ -1352,7 +1350,7 @@ DFA_ptr MultiTrackAutomaton::make_binary_relation_dfa(StringRelation::Type type,
 			break;
 		default:
 			DVLOG(VLOG_LEVEL) << "Invalid stringrelation type! can't make dfa...";
-			delete[] mindices;
+			delete mindices;
 			return nullptr;
   }
 
@@ -1442,7 +1440,7 @@ DFA_ptr MultiTrackAutomaton::make_binary_relation_dfa(StringRelation::Type type,
 	dfaFree(temp_dfa);
 	dfaFree(aligned_dfa);
 
-	delete[] mindices;
+	delete mindices;
 	return result_dfa;
 }
 

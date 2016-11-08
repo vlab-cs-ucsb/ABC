@@ -126,6 +126,7 @@ public:
   virtual ~RegularExpression();
 
   bool is_constant_string() const;
+  std::string constant_str() const;
   std::string str() const;
   RegularExpression_ptr clone() const;
   static std::string escape_raw_string(std::string input);
