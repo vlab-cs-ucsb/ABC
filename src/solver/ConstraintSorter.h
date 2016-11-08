@@ -110,12 +110,12 @@ protected:
   TermNode_ptr process_child_nodes(TermNode_ptr, TermNode_ptr);
   void sort_terms(std::vector<TermNode_ptr>& term_list);
 
-  SMT::Script_ptr root;
-  SymbolTable_ptr symbol_table;
-  TermNode_ptr term_node;
+  SMT::Script_ptr root_;
+  SymbolTable_ptr symbol_table_;
+  TermNode_ptr term_node_;
 
-  std::vector<TermNode_ptr> dependency_node_list;
-  std::map<SMT::Variable_ptr, VariableNode_ptr> variable_nodes;
+  std::vector<TermNode_ptr> dependency_node_list_;
+  std::map<SMT::Variable_ptr, VariableNode_ptr> variable_nodes_;
 
   class TermNode {
   public:
@@ -137,18 +137,12 @@ protected:
     int numOfTotalVars();
     int numOfLeftVars();
     int numOfRightVars();
-    void updateSymbolicVariableInfo();
-    bool hasSymbolicVarOnLeft();
-    bool hasSymbolicVarOnRight();
-    bool hasSymbolicVar();
   protected:
-    SMT::Term_ptr _node;
-    bool _has_symbolic_var_on_left;
-    bool _has_symbolic_var_on_right;
-    std::vector<SMT::Term_ptr> _next_node_list;
-    std::vector<VariableNode_ptr> _all_child_node_list;
-    std::vector<VariableNode_ptr> _left_child_node_list;
-    std::vector<VariableNode_ptr> _right_child_node_list;
+    SMT::Term_ptr node_;
+    std::vector<SMT::Term_ptr> next_node_list_;
+    std::vector<VariableNode_ptr> all_child_node_list_;
+    std::vector<VariableNode_ptr> left_child_node_list_;
+    std::vector<VariableNode_ptr> right_child_node_list_;
   private:
     void merge_vectors(std::vector<VariableNode_ptr>&, std::vector<VariableNode_ptr>&);
   };
@@ -162,10 +156,10 @@ protected:
     SMT::Variable_ptr getVariable();
     void addTermNode(TermNode_ptr node, bool is_left_side);
   protected:
-    SMT::Variable_ptr variable;
-    std::vector<TermNode_ptr> all_var_appearance_list;
-    std::vector<TermNode_ptr> left_side_var_appearance_list;
-    std::vector<TermNode_ptr> right_side_var_appearance_list;
+    SMT::Variable_ptr variable_;
+    std::vector<TermNode_ptr> all_var_appearance_list_;
+    std::vector<TermNode_ptr> left_side_var_appearance_list_;
+    std::vector<TermNode_ptr> right_side_var_appearance_list_;
   };
 
 private:
