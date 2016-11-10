@@ -46,25 +46,25 @@ void save(Archive& ar, const Eigen::SparseVector<Theory::BigInteger>& sparse_vec
   ar(sparse_vector.size());
   ar(sparse_vector.innerSize());
   ar(sparse_vector.nonZeros());
-  for (Eigen::Index i = 0; i < sparse_vector.nonZeros(); ++i) {
+  for (Eigen::SparseVector<Theory::BigInteger>::Index i = 0; i < sparse_vector.nonZeros(); ++i) {
     Util::Serialize::save(ar, sparse_vector.valuePtr()[i]);
   }
-  ar(cereal::binary_data(sparse_vector.innerIndexPtr(), sparse_vector.nonZeros() * sizeof(int)));
+  ar(cereal::binary_data(sparse_vector.innerIndexPtr(), sparse_vector.nonZeros() * sizeof(Eigen::SparseVector<Theory::BigInteger>::StorageIndex)));
 
 }
 
 template<class Archive>
 void load(Archive& ar, Eigen::SparseVector<Theory::BigInteger>& sparse_vector) {
-  Eigen::Index size = 0, inner_size = 0, non_zeros = 0;
+  Eigen::SparseVector<Theory::BigInteger>::Index size = 0, inner_size = 0, non_zeros = 0;
   ar(size);
   ar(inner_size);
   ar(non_zeros);
   sparse_vector.resize(size);
   sparse_vector.resizeNonZeros(non_zeros);
-  for (Eigen::Index i = 0; i < non_zeros; ++i) {
+  for (Eigen::SparseVector<Theory::BigInteger>::Index i = 0; i < non_zeros; ++i) {
     Util::Serialize::load(ar, sparse_vector.valuePtr()[i]);
   }
-  ar(cereal::binary_data(sparse_vector.innerIndexPtr(), non_zeros * sizeof(int)));
+  ar(cereal::binary_data(sparse_vector.innerIndexPtr(), non_zeros * sizeof(Eigen::SparseVector<Theory::BigInteger>::StorageIndex)));
   sparse_vector.finalize();
 }
 
@@ -75,16 +75,16 @@ void save(Archive& ar, const Eigen::SparseMatrix<Theory::BigInteger>& sparse_mat
   ar(sparse_matrix.outerSize());
   ar(sparse_matrix.innerSize());
   ar(sparse_matrix.nonZeros());
-  for (Eigen::Index i = 0; i < sparse_matrix.nonZeros(); ++i) {
+  for (Eigen::SparseMatrix<Theory::BigInteger>::Index i = 0; i < sparse_matrix.nonZeros(); ++i) {
     Util::Serialize::save(ar, sparse_matrix.valuePtr()[i]);
   }
-  ar(cereal::binary_data(sparse_matrix.outerIndexPtr(), sparse_matrix.outerSize() * sizeof(Eigen::Index)));
-  ar(cereal::binary_data(sparse_matrix.innerIndexPtr(), sparse_matrix.nonZeros() * sizeof(Eigen::Index)));
+  ar(cereal::binary_data(sparse_matrix.outerIndexPtr(), sparse_matrix.outerSize() * sizeof(Eigen::SparseMatrix<Theory::BigInteger>::StorageIndex)));
+  ar(cereal::binary_data(sparse_matrix.innerIndexPtr(), sparse_matrix.nonZeros() * sizeof(Eigen::SparseMatrix<Theory::BigInteger>::StorageIndex)));
 }
 
 template<class Archive>
 void load(Archive& ar, Eigen::SparseMatrix<Theory::BigInteger>& sparse_matrix) {
-  Eigen::Index rows = 0, cols = 0, outer_size = 0, inner_size = 0, non_zeros = 0;
+  Eigen::SparseMatrix<Theory::BigInteger>::Index rows = 0, cols = 0, outer_size = 0, inner_size = 0, non_zeros = 0;
   ar(rows);
   ar(cols);
   ar(outer_size);
@@ -93,11 +93,11 @@ void load(Archive& ar, Eigen::SparseMatrix<Theory::BigInteger>& sparse_matrix) {
   sparse_matrix.resize(rows, cols);
   sparse_matrix.makeCompressed();
   sparse_matrix.resizeNonZeros(non_zeros);
-  for (Eigen::Index i = 0; i < non_zeros; ++i) {
+  for (Eigen::SparseMatrix<Theory::BigInteger>::Index i = 0; i < non_zeros; ++i) {
     Util::Serialize::load(ar, sparse_matrix.valuePtr()[i]);
   }
-  ar(cereal::binary_data(sparse_matrix.outerIndexPtr(), outer_size * sizeof(Eigen::Index)));
-  ar(cereal::binary_data(sparse_matrix.innerIndexPtr(), non_zeros * sizeof(Eigen::Index)));
+  ar(cereal::binary_data(sparse_matrix.outerIndexPtr(), outer_size * sizeof(Eigen::SparseMatrix<Theory::BigInteger>::StorageIndex)));
+  ar(cereal::binary_data(sparse_matrix.innerIndexPtr(), non_zeros * sizeof(Eigen::SparseMatrix<Theory::BigInteger>::StorageIndex)));
   sparse_matrix.finalize();
 }
 
