@@ -92,8 +92,9 @@ public:
   void reset();
 //	void solveAst();
 
-  void set_option(Option::Name option);
-  void set_option(Option::Name option, std::string value);
+  void set_option(const Option::Name option);
+  void set_option(const Option::Name option, const int value);
+  void set_option(const Option::Name option, const std::string value);
 
   SMT::Variable_ptr get_smc_query_variable();
   void test();

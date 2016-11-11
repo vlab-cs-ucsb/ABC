@@ -27,8 +27,9 @@ public class DriverProxy {
 		LIMIT_LEN_IMPLICATIONS(10),
 		ENABLE_SORTING_HEURISTICS(11), 		// default option
 		DISABLE_SORTING_HEURISTICS(12), 
-		OUTPUT_PATH(13), 					// not actively used through Java
-		SCRIPT_PATH(14);					// not actively used
+		REGEX_FLAG(13),
+		OUTPUT_PATH(14), 					// not actively used through Java
+		SCRIPT_PATH(15);					// not actively used
 
 		private final int value;
 
@@ -59,6 +60,10 @@ public class DriverProxy {
 		setOption(option.getValue());
 	}
 
+	public void setOption(final Option option, final int value) {
+		setOption(option.getValue(), value);
+	}
+	
 	public void setOption(final Option option, final String value) {
 		setOption(option.getValue(), value);
 	}
@@ -66,6 +71,8 @@ public class DriverProxy {
 	private native void initABC(final int logFlag);
 
 	private native void setOption(final int option);
+	
+	private native void setOption(final int option, final int value);
 
 	private native void setOption(final int option, final String value);
 

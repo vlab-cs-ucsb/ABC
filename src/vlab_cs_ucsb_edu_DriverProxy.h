@@ -26,6 +26,14 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_setOption__I
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    setOption
+ * Signature: (II)V
+ */
+JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_setOption__II
+  (JNIEnv *, jobject, jint, jint);
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    setOption
  * Signature: (ILjava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_setOption__ILjava_lang_String_2

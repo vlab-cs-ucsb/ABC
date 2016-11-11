@@ -65,11 +65,7 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_initABC (JNIEnv *env, j
   setHandle(env, obj, abc_driver);
 }
 
-/*
- * Class:     vlab_cs_ucsb_edu_DriverProxy
- * Method:    setOption
- * Signature: (IZ)V
- */
+
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    setOption
@@ -80,6 +76,18 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_setOption__I
 
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
   abc_driver->set_option(static_cast<Vlab::Option::Name>(option));
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    setOption
+ * Signature: (II)V
+ */
+JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_setOption__II
+  (JNIEnv *env, jobject obj, jint option, jint value) {
+
+  Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
+  abc_driver->set_option(static_cast<Vlab::Option::Name>(option), value);
 }
 
 /*

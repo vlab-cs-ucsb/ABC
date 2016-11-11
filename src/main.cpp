@@ -53,7 +53,7 @@ int main(const int argc, const char **argv) {
   FLAGS_logtostderr = 1;
 
   Vlab::Driver driver;
-  Vlab::Util::RegularExpression::DEFAULT = 0x000e;
+  driver.set_option(Vlab::Option::Name::REGEX_FLAG, 0x000e);
 
   bool experiment_mode = false;
   std::vector<unsigned long> str_bounds;

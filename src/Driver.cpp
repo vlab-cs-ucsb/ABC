@@ -16,7 +16,7 @@ Driver::Driver()
     : script_(nullptr),
       symbol_table_(nullptr),
       constraint_information_(nullptr),
-      is_model_counter_cached_{false} {
+      is_model_counter_cached_ { false } {
 }
 
 Driver::~Driver() {
@@ -126,7 +126,7 @@ Theory::BigInteger Driver::CountInts(const unsigned long bound) {
 }
 
 Theory::BigInteger Driver::CountStrs(const unsigned long bound) {
-return GetModelCounter().CountStrs(bound);
+  return GetModelCounter().CountStrs(bound);
 }
 
 Theory::BigInteger Driver::Count(const unsigned long int_bound, const unsigned long str_bound) {
@@ -138,15 +138,15 @@ Solver::ModelCounter& Driver::GetModelCounterForVariable(const std::string var_n
   auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(script_, variable);
   auto it = variable_model_counter_.find(representative_variable);
   if (it == variable_model_counter_.end()) {
-   SetModelCounterForVariable(var_name);
-   it = variable_model_counter_.find(representative_variable);
+    SetModelCounterForVariable(var_name);
+    it = variable_model_counter_.find(representative_variable);
   }
   return it->second;
 }
 
 Solver::ModelCounter& Driver::GetModelCounter() {
   if (not is_model_counter_cached_) {
-   SetModelCounter();
+    SetModelCounter();
   }
   return model_counter_;
 }
@@ -179,15 +179,15 @@ void Driver::SetModelCounterForVariable(const std::string var_name) {
         mc.add_constant(var_value->getIntConstant());
         break;
       default:
-        LOG(FATAL) << "add unhandled type: " << static_cast<int>(var_value->getType());
+        LOG(FATAL)<< "add unhandled type: " << static_cast<int>(var_value->getType());
         break;
+      }
     }
   }
-}
 
-/**
- * TODO add string part as well
- */
+  /**
+   * TODO add string part as well
+   */
 void Driver::SetModelCounter() {
   model_counter_.set_use_sign_integers(Option::Solver::USE_SIGNED_INTEGERS);
   int num_bin_var = 0;
@@ -218,7 +218,7 @@ void Driver::SetModelCounter() {
         break;
       default:
         break;
-      }
+    }
   }
 
   int number_of_int_variables = symbol_table_->get_num_of_variables(SMT::Variable::Type::INT);
@@ -292,7 +292,7 @@ void Driver::reset() {
 //  LOG(INFO) << "Driver reseted.";
 }
 
-void Driver::set_option(Option::Name option) {
+void Driver::set_option(const Option::Name option) {
   switch (option) {
     case Option::Name::USE_SIGNED_INTEGERS:
       Option::Solver::USE_SIGNED_INTEGERS = true;
@@ -337,9 +337,20 @@ void Driver::set_option(Option::Name option) {
       LOG(ERROR)<< "option is not recognized: " << static_cast<int>(option);
       break;
     }
+  }
+
+void Driver::set_option(const Option::Name option, const int value) {
+  switch (option) {
+    case Option::Name::REGEX_FLAG:
+      Util::RegularExpression::DEFAULT = value;
+      break;
+    default:
+      LOG(ERROR)<< "option is not recognized: " << static_cast<int>(option) << " -> " << value;
+      break;
+    }
 }
 
-void Driver::set_option(Option::Name option, std::string value) {
+void Driver::set_option(const Option::Name option, const std::string value) {
   switch (option) {
     case Option::Name::OUTPUT_PATH:
       Option::Solver::OUTPUT_PATH = value;
@@ -353,7 +364,7 @@ void Driver::set_option(Option::Name option, std::string value) {
       LOG(ERROR)<< "option is not recognized: " << static_cast<int>(option) << " -> " << value;
       break;
     }
-  }
+}
 
 SMT::Variable_ptr Driver::get_smc_query_variable() {
   return symbol_table_->get_symbolic_target_variable();
@@ -386,7 +397,6 @@ void Driver::test() {
 //  }
 //  std::cout << n << std::endl;
 
-
 //  Eigen::SparseMatrix<BigInteger> mm(5,5);
 //  Eigen::SparseMatrix<BigInteger> nn;
 //
@@ -415,7 +425,6 @@ void Driver::test() {
 //    Util::Program::load(ar, nn);
 //  }
 //  std::cout << nn << std::endl;
-
 
 //  std::cout << "multiply" << std::endl;
 //  Eigen::SparseMatrix<BigInteger> result(5,5);
