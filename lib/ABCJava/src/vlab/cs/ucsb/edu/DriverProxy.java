@@ -40,6 +40,46 @@ public class DriverProxy {
 		public int getValue() {
 			return this.value;
 		}
+		
+		/**
+		 * Syntax flag, enables intersection (<tt>&amp;</tt>).
+		 */
+		public static final int REGEX_FLAG_INTERSECTION = 0x0001;
+
+		/**
+		 * Syntax flag, enables complement (<tt>~</tt>).
+		 */
+		public static final int REGEX_FLAG_COMPLEMENT = 0x0002;
+		
+		/**
+		 * Syntax flag, enables empty language (<tt>#</tt>).
+		 */
+		public static final int REGEX_FLAG_EMPTY = 0x0004;
+		
+		/**
+		 * Syntax flag, enables anystring (<tt>@</tt>).
+		 */
+		public static final int REGEX_FLAG_ANYSTRING = 0x0008;
+		
+		/**
+		 * Syntax flag, enables named automata (<tt>&lt;</tt>identifier<tt>&gt;</tt>).
+		 */
+		public static final int REGEX_FLAG_AUTOMATON = 0x0010;
+		
+		/**
+		 * Syntax flag, enables numerical intervals (<tt>&lt;<i>n</i>-<i>m</i>&gt;</tt>).
+		 */
+		public static final int REGEX_FLAG_INTERVAL = 0x0020;
+		
+		/**
+		 * Syntax flag, enables all optional RegularExpression syntax.
+		 */
+		public static final int REGEX_FLAG_ALL = 0xffff;
+		
+		/**
+		 * Syntax flag, enables no optional RegularExpression syntax.
+		 */
+		public static final int REGEX_FLAG_NONE = 0x0000;
 	}
 
 	private long driverPointer;
