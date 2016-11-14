@@ -56,9 +56,8 @@ public:
 
 protected:
   SymbolTable_ptr symbol_table_;
-  std::map<std::string, std::vector<SMT::Term_ptr>> terms_;
-
-  std::function<void(SMT::Term_ptr&)> callback_;
+  bool delete_term_;
+  std::map<std::string, bool> term_strs_;
 private:
   static const int VLOG_LEVEL;
 };

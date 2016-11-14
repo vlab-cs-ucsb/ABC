@@ -30,13 +30,12 @@ void DependencySlicer::start() {
 
 void DependencySlicer::end() {
 #ifndef NDEBUG
-  /*if (VLOG_IS_ON(VLOG_LEVEL)) {
-   for (auto& c : constraint_information_->get_components()){
-   DVLOG(VLOG_LEVEL) << c;
-   DVLOG(VLOG_LEVEL) <<  dynamic_cast<And_ptr>(c)->term_list->size();
-   }
-
-   }*/
+  if (VLOG_IS_ON(VLOG_LEVEL)) {
+    for (auto& c : constraint_information_->get_components()){
+      DVLOG(VLOG_LEVEL) << c;
+      DVLOG(VLOG_LEVEL) <<  dynamic_cast<And_ptr>(c)->term_list->size();
+    }
+  }
 #endif
 }
 
