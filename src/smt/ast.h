@@ -1259,20 +1259,15 @@ class Variable : public TVariable {
   std::string getName() const;
   Variable::Type getType() const;
 
-  bool isSymbolic() const;
-  void setSymbolic(bool is_symbolic);
   bool isLocalLetVar() const;
   void setLocalLetVar(bool is_local_let_var);
-  void set_group_var(bool is_group_var);
 
   virtual void accept(Visitor_ptr) override;
   virtual void visit_children(Visitor_ptr) override;
 
-  static const std::string SYMBOLIC_VAR_PREFIX;
   static const std::string LOCAL_VAR_PREFIX;
  protected:
   std::string name;
-  bool is_symbolic;
   bool is_local_let_var;
 };
 

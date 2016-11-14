@@ -366,10 +366,6 @@ void Driver::set_option(const Option::Name option, const std::string value) {
     }
 }
 
-SMT::Variable_ptr Driver::get_smc_query_variable() {
-  return symbol_table_->get_symbolic_target_variable();
-}
-
 void Driver::test() {
   return;
 //  LOG(INFO) << "DRIVER TEST METHOD";

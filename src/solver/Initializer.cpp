@@ -80,8 +80,8 @@ void Initializer::visitCommand(Command_ptr command) {
       Primitive_ptr primitive = primitives_.top();
       primitives_.pop();
       Variable_ptr variable = symbol_table_->get_variable(primitive->getData());
-      variable->setSymbolic(true);
-      DVLOG(VLOG_LEVEL) << *variable << " is changed to a symbolic var.";
+      // TODO treat as queary variable
+//      DVLOG(VLOG_LEVEL) << *variable << " is changed to a symbolic var.";
     }
     CHECK_EQ(0, primitives_.size())<< "unexpected primitive left.";
     break;
@@ -99,8 +99,8 @@ void Initializer::visitCommand(Command_ptr command) {
       Primitive_ptr primitive = primitives_.top();
       primitives_.pop();
       Variable_ptr variable = symbol_table_->get_variable(primitive->getData());
-      variable->setSymbolic(true);
-      DVLOG(VLOG_LEVEL) << *variable << " is changed to a symbolic var.";
+      // TODO treat as query variable
+//      DVLOG(VLOG_LEVEL) << *variable << " is changed to a symbolic var.";
       primitive = primitives_.top();
       primitives_.pop();
       int bound = std::stoi(primitive->getData());
@@ -310,43 +310,6 @@ void Initializer::visitSortedVar(SortedVar_ptr sorted_var) {
 }
 
 void Initializer::visitVarBinding(VarBinding_ptr var_binding) {
-}
-
-void Initializer::verifyVariableDefinitions() {
-  bool is_symbolic = false;
-  VariableMap variable_map = symbol_table_->get_variables();
-  Variable_ptr variable = variable_map.begin()->second;
-  for (auto& pair : variable_map) {
-    is_symbolic = pair.second->isSymbolic();
-    if (is_symbolic) {
-      variable = pair.second;
-      break;
-    }
-    switch (variable->getType()) {
-    case Variable::Type::BOOL: {
-      variable = pair.second;
-      break;
-    }
-    case Variable::Type::INT: {
-      if (pair.second->getType() != Variable::Type::BOOL) {
-        variable = pair.second;
-      }
-      break;
-    }
-    case Variable::Type::STRING: {
-      if (pair.second->getType() == Variable::Type::STRING) {
-        variable = pair.second;
-      }
-      break;
-    }
-    default:
-      break;
-    }
-  }
-  if (not is_symbolic) {
-    variable->setSymbolic(true);
-//    LOG(INFO)<<"No target var defined by user; setting target var: " << *variable;
-  }
 }
 
 }

@@ -116,19 +116,6 @@ void SymbolTable::incrementReuse(){
   reuse++;
 }*/
 
-
-Variable_ptr SymbolTable::get_symbolic_target_variable() {
-  auto it = std::find_if(variables_.begin(), variables_.end(),
-  [](std::pair<std::string, Variable_ptr> entry) -> bool {
-    return entry.second->isSymbolic();
-  });
-  if (it != variables_.end()) {
-    return it->second;
-  }
-  DVLOG(VLOG_LEVEL) << "no symbolic variable found";
-  return nullptr;
-}
-
 int SymbolTable::get_num_of_variables(Variable::Type type) {
   int count = 0;
   for (auto entry : variables_) {

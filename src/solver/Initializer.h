@@ -103,8 +103,6 @@ public:
   void visitVariable(SMT::Variable_ptr) override;
 
 protected:
-  void verifyVariableDefinitions();
-
   SMT::Script_ptr root_;
   SymbolTable_ptr symbol_table_;
   std::stack<SMT::Primitive_ptr> primitives_;

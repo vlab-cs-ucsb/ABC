@@ -56,7 +56,6 @@ public:
   SMT::Variable_ptr get_variable(SMT::Term_ptr);
   SMT::Variable_ptr get_variable_unsafe(std::string name);
   VariableMap& get_variables();
-  SMT::Variable_ptr get_symbolic_target_variable();
   int get_num_of_variables(SMT::Variable::Type type);
 
   void push_scope(SMT::Visitable_ptr, bool save_scope = true);

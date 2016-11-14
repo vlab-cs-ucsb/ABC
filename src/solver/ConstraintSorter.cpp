@@ -629,7 +629,7 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
     }
   }
 
-  std::sort(term_node_list.begin(), term_node_list.end(),
+  std::stable_sort(term_node_list.begin(), term_node_list.end(),
           [](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
             return (left_node->numOfTotalVars() < right_node->numOfTotalVars());
           });

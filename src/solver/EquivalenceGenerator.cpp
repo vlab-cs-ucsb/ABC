@@ -160,11 +160,6 @@ bool EquivalenceGenerator::is_equiv_of_variables(SMT::Term_ptr left_term, SMT::T
     if (QualIdentifier_ptr right_id = dynamic_cast<QualIdentifier_ptr>(right_term)) {
       left_variable_ = symbol_table_->get_variable(left_id->getVarName());
       right_variable_ = symbol_table_->get_variable(right_id->getVarName());
-      if(left_variable_->isSymbolic()) {
-        right_variable_->setSymbolic(true);
-      } else if(right_variable_->isSymbolic()) {
-        left_variable_->setSymbolic(true);
-      }
       DVLOG(VLOG_LEVEL)<< "variable equivalence: " << left_variable_->getName() << " = " << right_variable_->getName();
       return true;
     }
