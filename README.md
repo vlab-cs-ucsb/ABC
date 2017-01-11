@@ -8,13 +8,15 @@ bound, k, that satisfy a set of constraints. ABC can also output the number of s
 Publications 
 ============
 ###ABC algorithmic details:
-- **TACAS'17** (in submission), [Parameterized Model Counting for String and Numeric Constraints](). Abdulbaki Aydin, Lucas Bang, William Eiers, Tegan Brennan, Miroslav Gavrilov, Tevfik Bultan, and Fang Yu. <br>
-[Download experimental data and results.](https://vlab.cs.ucsb.edu/ABC/tacas_experiments.tar)
+- A new publication is coming with improvements over CAV'15 version of ABC.
+
+<!-- - (in submission), [Parameterized Model Counting for String and Numeric Constraints](). Abdulbaki Aydin, Lucas Bang, William Eiers, Tegan Brennan, Miroslav Gavrilov, Tevfik Bultan, and Fang Yu. <br>
+[Download experimental data and results.](https://vlab.cs.ucsb.edu/ABC/experimental_data.tar) -->
 - **CAV'15**, [Automata-based model counting for string constraints](http://www.cs.ucsb.edu/~baki/publications/cav15.pdf). Abdulbaki Aydin, Lucas Bang, and Tevfik Bultan. <br>
 [Download experimental data and results.](https://vlab.cs.ucsb.edu/ABC/)
 
 ###ABC use cases:
-- **ICSE'17** (in submission)<!-- , [ISSTAC: Integrated Symbolic Execution for Space-Time Analysis of Code](). Daniel Balasubramanian, Kasper Luckow, Corina Pasareanu, Abdulbaki Aydin, Lucas Bang, Tevfik Bultan, Miroslav Gavrilov, Temesghen Kahsai, Rody Kersten, Dmitriy Kostyuchenko, Quoc-Sang Phan, Zhenkai Zhang and Gabor Karsai. -->
+<!-- - (in submission) , [ISSTAC: Integrated Symbolic Execution for Space-Time Analysis of Code](). Daniel Balasubramanian, Kasper Luckow, Corina Pasareanu, Abdulbaki Aydin, Lucas Bang, Tevfik Bultan, Miroslav Gavrilov, Temesghen Kahsai, Rody Kersten, Dmitriy Kostyuchenko, Quoc-Sang Phan, Zhenkai Zhang and Gabor Karsai. -->
 - **FSE'16** [String Analysis for Side Channels with Segmented Oracles](http://www.cs.ucsb.edu/~baki/publications/fse16.pdf). Lucas Bang, Abdulbaki Aydin, Quoc-Sang Phan, Corina S. Pasareanu, and Tevfik Bultan. 
 
 Setup
