@@ -31,9 +31,10 @@ void DependencySlicer::start() {
 void DependencySlicer::end() {
 #ifndef NDEBUG
   if (VLOG_IS_ON(VLOG_LEVEL)) {
+    DVLOG(VLOG_LEVEL) << "#components: " << constraint_information_->get_components().size();
     for (auto& c : constraint_information_->get_components()){
-      DVLOG(VLOG_LEVEL) << c;
-      DVLOG(VLOG_LEVEL) <<  dynamic_cast<And_ptr>(c)->term_list->size();
+      DVLOG(VLOG_LEVEL) << dynamic_cast<Term*>(c)->str() << "@" << c;
+      // DVLOG(VLOG_LEVEL) <<  dynamic_cast<And*>(c)->term_list->size(); // TODO BUG if it is an or
     }
   }
 #endif
@@ -126,14 +127,13 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
 /**
  * No dependency analysis for disjunctions
  */
-void DependencySlicer::visitOr(Or_ptr or_term) {
+void DependencySlicer::visitOr(Or *or_term) {
   term_variable_map_[or_term];
   auto it = term_variable_map_.find(or_term);
   for (auto& term : *(or_term->term_list)) {
     symbol_table_->push_scope(term, false);
     current_term_ = term;
     visit(term);
-    current_term_ = nullptr;
     symbol_table_->pop_scope();
   }
 

@@ -1118,7 +1118,8 @@ class TVariable : public Visitable {
       NONE = 0,
     BOOL,
     INT,
-    STRING
+    STRING,
+    REGEX
   };
 
   TVariable(TVariable::Type type);
@@ -1166,6 +1167,17 @@ class TString : public TVariable {
   TString(const TString&);
   virtual TString_ptr clone() const override;
   virtual ~TString();
+
+  virtual void accept(Visitor_ptr) override;
+  virtual void visit_children(Visitor_ptr) override;
+};
+
+class TRegExp : public TVariable {
+ public:
+  TRegExp();
+  TRegExp(const TRegExp&);
+  virtual TRegExp_ptr clone() const override;
+  virtual ~TRegExp();
 
   virtual void accept(Visitor_ptr) override;
   virtual void visit_children(Visitor_ptr) override;
