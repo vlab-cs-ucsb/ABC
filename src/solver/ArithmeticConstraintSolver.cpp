@@ -102,11 +102,6 @@ void ArithmeticConstraintSolver::visitAssert(Assert_ptr assert_command) {
   AstTraverser::visit(assert_command->term);
 }
 
-/**
- * For mixed constraints:
- * 1- First solve arithmetic expressions
- * 2- Second visit 'or' terms if there is any
- */
 void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
   if (not constraint_information_->is_component(and_term)) {
     DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
@@ -122,14 +117,16 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
 
   bool is_satisfiable = true;
+  // TODO at this point and must have some arithmetic formula or
+  // it must be under an or term where other terms under or has arithmetic formulae
+  // has_arithmetic_formula check should not be necessary for here
+  // above constraint information check should be sufficient
   bool has_arithmetic_formula = false;
+  bool and_term_formula = (arithmetic_formula_generator_.get_term_formula(and_term) != nullptr);
 
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(and_term);
   Value_ptr and_value = nullptr;
-  /**
-   * Assuming disjunctions are placed correctly based on the context
-   * by default syntactic processor placed them to end
-   */
+
   for (auto term : *(and_term->term_list)) {
     auto formula = arithmetic_formula_generator_.get_term_formula(term);
     if (formula != nullptr) {
@@ -157,6 +154,17 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *and_term << "@" << and_term;
+
+  // TODO remove the variable has_arithmetic_formula safely
+  if (and_value == nullptr and and_term_formula and (not has_arithmetic_formula)) {
+    auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
+    auto value = new Value(Theory::BinaryIntAutomaton::MakeAnyInt(group_formula->clone(), use_unsigned_integers_));
+    symbol_table_->set_value(group_name, value);
+    // TODO merge with below cases
+    DVLOG(VLOG_LEVEL) << "post visit end: " << *and_term << "@" << and_term;
+    return;
+  }
+
   if (has_arithmetic_formula) {
     if (is_satisfiable) {
       symbol_table_->IntersectValue(group_name, and_value);  // update value
@@ -246,6 +254,7 @@ Value_ptr ArithmeticConstraintSolver::get_term_value(Term_ptr term) {
     return it->second;
   }
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
+
   if (not group_name.empty()) {
     return symbol_table_->get_value(group_name);
   }

@@ -34,7 +34,8 @@ void DependencySlicer::end() {
     DVLOG(VLOG_LEVEL) << "#components: " << constraint_information_->get_components().size();
     for (auto& c : constraint_information_->get_components()){
       DVLOG(VLOG_LEVEL) << dynamic_cast<Term*>(c)->str() << "@" << c;
-      // DVLOG(VLOG_LEVEL) <<  dynamic_cast<And*>(c)->term_list->size(); // TODO BUG if it is an or
+      // TODO BUG if it is an or
+      // DVLOG(VLOG_LEVEL) <<  dynamic_cast<And*>(c)->term_list->size();
     }
   }
 #endif
@@ -127,7 +128,7 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
 /**
  * No dependency analysis for disjunctions
  */
-void DependencySlicer::visitOr(Or *or_term) {
+void DependencySlicer::visitOr(Or_ptr or_term) {
   term_variable_map_[or_term];
   auto it = term_variable_map_.find(or_term);
   for (auto& term : *(or_term->term_list)) {

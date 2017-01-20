@@ -103,14 +103,13 @@ void Driver::InitializeSolver() {
 }
 
 void Driver::Solve() {
-
 //  TODO move arithmetic formula generation and string relation generation here to guide constraint solving better
+//
 //  Solver::ArithmeticFormulaGenerator arithmetic_formula_generator(script_, symbol_table_, constraint_information_);
 //  arithmetic_formula_generator.start();
 
   Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
   constraint_solver.start();
-  // TODO iterate to handle over-approximation, solve the part that contributes to over-approximation
 }
 
 bool Driver::is_sat() {
