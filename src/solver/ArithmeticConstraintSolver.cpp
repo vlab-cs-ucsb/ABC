@@ -71,6 +71,10 @@ void ArithmeticConstraintSolver::setCallbacks() {
           auto binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), use_unsigned_integers_);
           auto result = new Value(binary_int_auto);
           set_term_value(term, result);
+          // once we solve an atomic linear integer arithmetic formula, we delete its formula
+          // to avoid solving it again
+          // mixed constraints are handled without checks rely on formula
+          arithmetic_formula_generator_.clear_term_formula(term);
         }
         break;
       }
@@ -104,9 +108,9 @@ void ArithmeticConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
 void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
   if (not constraint_information_->is_component(and_term)) {
-    DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
+    DVLOG(VLOG_LEVEL) << "visit children of non-component start: " << *and_term << "@" << and_term;
     visit_children_of(and_term);
-    DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
+    DVLOG(VLOG_LEVEL) << "visit children of non-component end: " << *and_term << "@" << and_term;
     return;
   }
 
@@ -114,15 +118,10 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
     return;
   }
 
-  DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
+  DVLOG(VLOG_LEVEL) << "visit children of component start: " << *and_term << "@" << and_term;
 
   bool is_satisfiable = true;
-  // TODO at this point and must have some arithmetic formula or
-  // it must be under an or term where other terms under or has arithmetic formulae
-  // has_arithmetic_formula check should not be necessary for here
-  // above constraint information check should be sufficient
   bool has_arithmetic_formula = false;
-  bool and_term_formula = (arithmetic_formula_generator_.get_term_formula(and_term) != nullptr);
 
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(and_term);
   Value_ptr and_value = nullptr;
@@ -151,18 +150,22 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
     }
   }
 
-  DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
+  DVLOG(VLOG_LEVEL) << "visit children of component end: " << *and_term << "@" << and_term;
 
-  DVLOG(VLOG_LEVEL) << "post visit start: " << *and_term << "@" << and_term;
+  DVLOG(VLOG_LEVEL) << "post visit component start: " << *and_term << "@" << and_term;
 
-  // TODO remove the variable has_arithmetic_formula safely
-  if (and_value == nullptr and and_term_formula and (not has_arithmetic_formula)) {
+  /**
+   * If and term does not have arithmetic formula, but we end up being here:
+   * 1) And term is under a disjunction and other disjunctive terms has arithmetic formula.
+   *  Here, variables appearing in arithmetic term will be unconstrained.
+   * 2) We are visited and term second time for some mixed constraints, for this we do an unnecessary
+   *  intersection below with any string, we can avoid that with more checks later!!!
+   */
+  if (and_value == nullptr and (not has_arithmetic_formula)) {
     auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
-    auto value = new Value(Theory::BinaryIntAutomaton::MakeAnyInt(group_formula->clone(), use_unsigned_integers_));
-    symbol_table_->set_value(group_name, value);
-    // TODO merge with below cases
-    DVLOG(VLOG_LEVEL) << "post visit end: " << *and_term << "@" << and_term;
-    return;
+    and_value = new Value(Theory::BinaryIntAutomaton::MakeAnyInt(group_formula->clone(), use_unsigned_integers_));
+    has_arithmetic_formula = true;
+    is_satisfiable = true;
   }
 
   if (has_arithmetic_formula) {
@@ -175,7 +178,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
     }
     delete and_value;
   }
-  DVLOG(VLOG_LEVEL) << "post visit end: " << *and_term << "@" << and_term;
+  DVLOG(VLOG_LEVEL) << "post visit component end: " << *and_term << "@" << and_term;
 }
 
 /**
@@ -183,10 +186,10 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
  * 2) Update result (union of scopes) after all
  */
 void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
-  if (not constraint_information_->is_component(or_term)) {  // a rare case, see dependency slicer
-    DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
+  if (not constraint_information_->is_component(or_term)) {  // a rare case, @deprecated
+    DVLOG(VLOG_LEVEL) << "visit children of non-component start: " << *or_term << "@" << or_term;
     visit_children_of(or_term);
-    DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
+    DVLOG(VLOG_LEVEL) << "visit children of non-component end: " << *or_term << "@" << or_term;
     return;
   }
 
@@ -194,7 +197,7 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
     return;
   }
 
-  DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
+  DVLOG(VLOG_LEVEL) << "visit children of component start: " << *or_term << "@" << or_term;
   bool is_satisfiable = false;
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(or_term);
   Value_ptr or_value = nullptr;
@@ -219,9 +222,10 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
     }
   }
 
-  DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
+  DVLOG(VLOG_LEVEL) << "visit children of component end: " << *or_term << "@" << or_term;
 
-  DVLOG(VLOG_LEVEL) << "post visit start: " << *or_term << "@" << or_term;
+  DVLOG(VLOG_LEVEL) << "post visit component start: " << *or_term << "@" << or_term;
+
   if (constraint_information_->has_arithmetic_constraint(or_term)) {
     if (is_satisfiable) {
       // scope already reads value from upper scope
@@ -235,7 +239,8 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
       delete or_value; // nullptr safe
     }
   }
-  DVLOG(VLOG_LEVEL) << "post visit end: " << *or_term << "@" << or_term;
+
+  DVLOG(VLOG_LEVEL) << "post visit component end: " << *or_term << "@" << or_term;
 }
 
 std::string ArithmeticConstraintSolver::get_int_variable_name(SMT::Term_ptr term) {
@@ -262,6 +267,9 @@ Value_ptr ArithmeticConstraintSolver::get_term_value(Term_ptr term) {
   return nullptr;
 }
 
+/**
+ * Term values are only stored for atomic constraints
+ */
 bool ArithmeticConstraintSolver::set_term_value(Term_ptr term, Value_ptr value) {
   auto result = term_values_.insert( { term, value });
   if (result.second == false) {
@@ -288,6 +296,9 @@ void ArithmeticConstraintSolver::clear_term_values() {
   term_values_.clear();
 }
 
+/**
+ * We don't need an atomic term value ones we compute it.
+ */
 void ArithmeticConstraintSolver::clear_term_value(Term_ptr term) {
   auto it = term_values_.find(term);
   if (it != term_values_.end()) {

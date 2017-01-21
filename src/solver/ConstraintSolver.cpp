@@ -135,7 +135,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   bool is_satisfiable = true;
   bool is_component = constraint_information_->is_component(and_term);
 
-  if (is_component and iteration_count_ == 0) {
+  if (is_component) {
     if (constraint_information_->has_arithmetic_constraint(and_term)) {
       arithmetic_constraint_solver_.start(and_term);
       is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
@@ -158,6 +158,19 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       if (not is_satisfiable) {
         break;
       }
+    }
+
+    //TODO resolve the mixed constraints ?? inside for loop ??
+    if (is_component and is_satisfiable) {
+      if (constraint_information_->has_arithmetic_constraint(and_term)) {
+        arithmetic_constraint_solver_.start(and_term);
+        is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
+      }
+      // TODO make sure string constraint solver does not solve the constraints twice
+//      if (is_satisfiable and constraint_information_->has_string_constraint(and_term)) {
+//        string_constraint_solver_.start(and_term);
+//        is_satisfiable = string_constraint_solver_.get_term_value(and_term)->is_satisfiable();
+//      }
     }
   }
 
@@ -1305,6 +1318,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
   int number_of_variables_for_int_auto;
   bool is_satisfiable = true;
 
+  // get term value returns result from the symbol table (should return)
   auto arithmetic_result = arithmetic_constraint_solver_.get_term_value(term);
   for (auto& string_term : arithmetic_constraint_solver_.get_string_terms_in(term)) {
     visit(string_term);

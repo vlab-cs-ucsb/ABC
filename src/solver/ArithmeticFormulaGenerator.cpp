@@ -128,15 +128,38 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
   visit_children_of(or_term);
   DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
 
-  if (not constraint_information_->is_component(or_term)) { // a rare case, @deprecated
+  // @deprecated check, all or terms must be a component
+  // will be removed after careful testing
+  if (not constraint_information_->is_component(or_term)) {
     current_group_ = "";
     has_mixed_constraint_ = false;
     return;
   }
 
+  /**
+   * If an or term does not have a child that has arithmetic formula, but we end up being here:
+   * If or term does not have a group formula we are fine.
+   * If or term has a group formula, that means or term is under a conjunction where other
+   * conjunctive terms has arithmetic formula. We don't really need to set a formula for this
+   * or term in this case (if has_arithmetic_formula var remains false).
+   * ! Instead we can let it generate a formula for this or term  and handle this case in
+   * Arithmetic constraint solver by generating a Sigma* automaton, but this will be an
+   * unneccessary intersection with other terms.
+   */
+  bool has_arithmetic_formula = false;
+  for (auto term : *or_term->term_list) {
+    has_arithmetic_formula = constraint_information_->has_arithmetic_constraint(term) or has_arithmetic_formula;
+  }
+
+  if (has_arithmetic_formula) {
+    std::cout << "!!!or term has arithmetic formula: " << or_term << std::endl;
+  } else {
+    std::cout << "!!!or term does not have arithmetic formula: " << or_term << std::endl;
+  }
+
   DVLOG(VLOG_LEVEL) << "post visit start: " << *or_term << "@" << or_term;
   auto group_formula = get_group_formula(current_group_);
-  if (group_formula not_eq nullptr and group_formula->get_number_of_variables() > 0) {
+  if (has_arithmetic_formula and group_formula not_eq nullptr and group_formula->get_number_of_variables() > 0) {
     auto formula = group_formula->clone();
     formula->set_type(ArithmeticFormula::Type::UNION);
     set_term_formula(or_term, formula);
@@ -145,6 +168,7 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
     if (has_mixed_constraint_) {
       constraint_information_->add_mixed_constraint(or_term);
     }
+    std::cout << "arithmetic formula added: " << or_term << std::endl;
   }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *or_term << "@" << or_term;
 }
@@ -600,10 +624,6 @@ void ArithmeticFormulaGenerator::visitSortedVar(SortedVar_ptr sorted_var) {
 void ArithmeticFormulaGenerator::visitVarBinding(VarBinding_ptr var_binding) {
 }
 
-bool ArithmeticFormulaGenerator::has_arithmetic_formula() {
-  return false;
-}
-
 ArithmeticFormula_ptr ArithmeticFormulaGenerator::get_term_formula(Term_ptr term) {
   auto it = term_formula_.find(term);
   if (it == term_formula_.end()) {
@@ -630,6 +650,14 @@ std::map<Term_ptr, TermList> ArithmeticFormulaGenerator::get_string_terms_map() 
 
 TermList& ArithmeticFormulaGenerator::get_string_terms_in(Term_ptr term) {
   return string_terms_map_[term];
+}
+
+void ArithmeticFormulaGenerator::clear_term_formula(Term_ptr term) {
+  auto it = term_formula_.find(term);
+  if (it != term_formula_.end()) {
+    delete it->second;
+    term_formula_.erase(it);
+  }
 }
 
 void ArithmeticFormulaGenerator::clear_term_formulas() {

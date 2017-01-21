@@ -105,12 +105,12 @@ public:
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
 
-  bool has_arithmetic_formula();
   Theory::ArithmeticFormula_ptr get_term_formula(SMT::Term_ptr term);
   Theory::ArithmeticFormula_ptr get_group_formula(std::string group_name);
   bool has_string_terms(SMT::Term_ptr term);
   std::map<SMT::Term_ptr, SMT::TermList> get_string_terms_map();
   SMT::TermList& get_string_terms_in(SMT::Term_ptr term);
+  void clear_term_formula(SMT::Term_ptr term);
   void clear_term_formulas();
 
   std::string get_term_group_name(SMT::Term_ptr term);
