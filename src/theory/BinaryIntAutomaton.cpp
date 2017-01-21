@@ -153,7 +153,6 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(SemilinearSet_ptr semil
 
   int sink_state = number_of_states - 1;
   int* indices = getIndices(number_of_variables);
-//  char* statuses = new char[number_of_states + 1];
   std::string statuses(number_of_states + 1, '-');
   statuses[number_of_states] = '\0';
   dfaSetup(number_of_states, number_of_variables, indices);
@@ -239,11 +238,11 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(SemilinearSet_ptr semil
 
   int zero_state = binary_states[0]->getd0();  // adding leading zeros makes accepting zero 00, fix here
   if (zero_state > -1 and is_accepting_binary_state(binary_states[zero_state], semilinear_set)) {
-    statuses[zero_state] = '+';
+    // TODO temporary removal
+    //    statuses[zero_state] = '+';
   }
 
   auto binary_dfa = dfaBuild(&statuses[0]);
-
   // cleanup
   for (auto bin_state : binary_states) {
     delete bin_state;
@@ -263,7 +262,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(SemilinearSet_ptr semil
   binary_dfa = nullptr;
 
   // binary state computation for semilinear sets may have leading zeros, remove them
-  if ((not add_leading_zeros) and (not semilinear_set->hasOnlyConstants())) {
+  if ((not add_leading_zeros) and (not semilinear_set->has_only_constants())) {
     auto trim_helper_auto = BinaryIntAutomaton::MakeTrimHelperAuto(var_index, number_of_variables);
     trim_helper_auto->set_formula(formula->clone());
     auto tmp_auto = binary_auto;
@@ -493,7 +492,7 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
   GetConstants(cycle_status, constants);
   Util::List::sort_and_remove_duplicate(constants);
   cycle_status.clear();
-  semilinear_set->setConstants(constants);
+  semilinear_set->set_constants(constants);
 
   // CASE automaton has only constants
   if (not is_cyclic) {
@@ -508,14 +507,14 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
    * intersection with Ac
    * Delete these numbers from original automaton
    */
-  if (semilinear_set->hasConstants()) {
+  if (semilinear_set->has_constants()) {
 
     int max_constant = constants.back();  // it is already sorted
     constants.clear();
     for (int i = 0; i <= max_constant; i++) {
       constants.push_back(i);
     }
-    semilinear_set->setConstants(constants);
+    semilinear_set->set_constants(constants);
     constants.clear();
     tmp_1_auto = BinaryIntAutomaton::MakeAutomaton(semilinear_set, var_name, formula_->clone(), false);
     semilinear_set->clear();
@@ -526,7 +525,7 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
 
     tmp_2_auto->GetBaseConstants(constants);  // if automaton is acyclic, it will return all constants
     Util::List::sort_and_remove_duplicate(constants);
-    semilinear_set->setConstants(constants);
+    semilinear_set->set_constants(constants);
     constants.clear();
 
     subject_auto = this->Difference(tmp_2_auto);
@@ -542,7 +541,7 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
   int cycle_head = 0;
   std::vector<int> tmp_periods;
   int bound = 0;
-  while (not subject_auto->isEmptyLanguage() and (bound++ < 5)) {
+  while (not subject_auto->is_empty_language() and (bound++ < 5)) {
     i = 0;
     cycle_head = 0;
     tmp_periods.clear();
@@ -557,8 +556,8 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
     }
 
     if (bases.size() == 1) {
-      semilinear_set->setPeriod(bases[0]);
-      semilinear_set->addPeriodicConstant(0);
+      semilinear_set->set_period(bases[0]);
+      semilinear_set->add_periodic_constant(0);
       semilinears.push_back(semilinear_set->clone());
       // no need to verify period
     } else if (bases.size() > 1) {
@@ -580,9 +579,9 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
           }
           if (add_me) {
             current_set = new SemilinearSet();
-            current_set->setCycleHead(cycle_head);
-            current_set->setPeriod(possible_period);
-            current_set->addPeriodicConstant(0);
+            current_set->set_cycle_head(cycle_head);
+            current_set->set_period(possible_period);
+            current_set->add_periodic_constant(0);
 
             tmp_1_auto = BinaryIntAutomaton::MakeAutomaton(current_set, var_name, formula_->clone(), false);
             tmp_2_auto = subject_auto->Intersect(tmp_1_auto);
@@ -591,9 +590,9 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
             tmp_1_auto = nullptr;
             delete tmp_2_auto;
             tmp_2_auto = nullptr;
-            if (diff_auto->isEmptyLanguage()) {
+            if (diff_auto->is_empty_language()) {
               tmp_set = semilinear_set;
-              semilinear_set = tmp_set->merge(current_set);
+              semilinear_set = tmp_set->Merge(current_set);
               delete tmp_set;
               tmp_set = nullptr;
               semilinears.push_back(current_set);
@@ -648,7 +647,7 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
   semilinear_set = new SemilinearSet();
   for (auto s : semilinears) {
     tmp_set = semilinear_set;
-    semilinear_set = tmp_set->merge(s);
+    semilinear_set = tmp_set->Merge(s);
     delete tmp_set;
     delete s;
   }
@@ -1549,10 +1548,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeTrimHelperAuto(int var_index, int
 
 void BinaryIntAutomaton::ComputeBinaryStates(std::vector<BinaryState_ptr>& binary_states,
                                                SemilinearSet_ptr semilinear_set) {
-  if (semilinear_set->getPeriod() == 0) {
-    AddBinaryState(binary_states, semilinear_set->getConstants());
+  if (semilinear_set->get_period() == 0) {
+    AddBinaryState(binary_states, semilinear_set->get_constants());
   } else {
-    AddBinaryState(binary_states, semilinear_set->getCycleHead(), semilinear_set->getPeriod(), BinaryState::Type::VAL,
+    AddBinaryState(binary_states, semilinear_set->get_cycle_head(), semilinear_set->get_period(), BinaryState::Type::VAL,
                      -1, -1);
   }
 }
@@ -1648,14 +1647,14 @@ int BinaryIntAutomaton::AddBinaryState(std::vector<BinaryState_ptr>& binary_stat
 
 bool BinaryIntAutomaton::is_accepting_binary_state(BinaryState_ptr binary_state, SemilinearSet_ptr semilinear_set) {
   if (BinaryState::Type::VAL == binary_state->getType()) {
-    for (auto i : semilinear_set->getConstants()) {
+    for (auto i : semilinear_set->get_constants()) {
       if (i == binary_state->getV()) {
         return true;
       }
     }
   } else if (BinaryState::Type::REMT == binary_state->getType()) {
-    for (auto i : semilinear_set->getPeriodicConstants()) {
-      if (((i + semilinear_set->getCycleHead()) % (semilinear_set->getPeriod())) == binary_state->getV()) {
+    for (auto i : semilinear_set->get_periodic_constants()) {
+      if (((i + semilinear_set->get_cycle_head()) % (semilinear_set->get_period())) == binary_state->getV()) {
         return true;
       }
     }

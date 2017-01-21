@@ -166,13 +166,15 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         arithmetic_constraint_solver_.start(and_term);
         is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
       }
-      // TODO make sure string constraint solver does not solve the constraints twice
+      // TODO make sure string constraint solver does not solve the constraints twice and
+      // uncomment below code
 //      if (is_satisfiable and constraint_information_->has_string_constraint(and_term)) {
 //        string_constraint_solver_.start(and_term);
 //        is_satisfiable = string_constraint_solver_.get_term_value(and_term)->is_satisfiable();
 //      }
     }
   }
+  DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 
   if (not is_satisfiable) {
     // TODO decide if we need to do set values of variables to empty automaton at this scope
@@ -180,8 +182,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
   Value_ptr result = new Value(is_satisfiable);
   setTermValue(and_term, result);
-
-  DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 }
 
 void ConstraintSolver::visitOr(Or_ptr or_term) {
@@ -205,6 +205,8 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
     setTermValue(or_term, result);
     return;
   }
+
+  DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
 
   // TODO call arithmetic constraint solver and check result
   // TODO call string constraint solver and check result
@@ -274,8 +276,6 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
 
   Value_ptr result = new Value(is_satisfiable);
   setTermValue(or_term, result);
-
-  DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
 
   DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
 }
@@ -724,7 +724,7 @@ void ConstraintSolver::visitNotContains(NotContains_ptr not_contains_term) {
     Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->difference(sub_strings_auto);
     delete sub_strings_auto;
     sub_strings_auto = nullptr;
-    if (difference_auto->isEmptyLanguage()) {
+    if (difference_auto->is_empty_language()) {
       result = new Value(Theory::StringAutomaton::makePhi());
     } else {
       result = param_subject->clone();
@@ -770,7 +770,7 @@ void ConstraintSolver::visitNotBegins(NotBegins_ptr not_begins_term) {
     Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->difference(prefixes_auto);
     delete prefixes_auto;
     prefixes_auto = nullptr;
-    if (difference_auto->isEmptyLanguage()) {
+    if (difference_auto->is_empty_language()) {
       result = new Value(Theory::StringAutomaton::makePhi());
     } else {
       result = param_subject->clone();
@@ -814,7 +814,7 @@ void ConstraintSolver::visitNotEnds(NotEnds_ptr not_ends_term) {
     Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->difference(suffixes_auto);
     delete suffixes_auto;
     suffixes_auto = nullptr;
-    if (difference_auto->isEmptyLanguage()) {
+    if (difference_auto->is_empty_language()) {
       result = new Value(Theory::StringAutomaton::makePhi());
     } else {
       result = param_subject->clone();
@@ -1324,7 +1324,6 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     visit(string_term);
     auto string_term_result = getTermValue(string_term);
     is_satisfiable = string_term_result->is_satisfiable();
-
     if (not is_satisfiable) {
       auto binary_auto = arithmetic_result->getBinaryIntAutomaton();
       arithmetic_result = new Value(
@@ -1336,8 +1335,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     std::string string_term_var_name = symbol_table_->get_var_name_for_expression(string_term, Variable::Type::INT);
     if (Value::Type::INT_AUTOMATON == string_term_result->getType()) {
       has_minus_one = string_term_result->getIntAutomaton()->hasNegative1();
-      number_of_variables_for_int_auto = string_term_result->getIntAutomaton()->getNumberOfVariables();
-
+      number_of_variables_for_int_auto = string_term_result->getIntAutomaton()->get_number_of_variables();
       // first convert integer result to unary, then unary to binary
       string_term_unary_auto = string_term_result->getIntAutomaton()->toUnaryAutomaton();
       string_term_binary_auto = string_term_unary_auto->toBinaryIntAutomaton(

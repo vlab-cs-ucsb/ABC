@@ -73,7 +73,7 @@ public:
   virtual Automaton::Type getType() const;
   unsigned long getId();
   DFA_ptr getDFA();
-  int getNumberOfVariables();
+  int get_number_of_variables();
   int* getVariableIndices();
 
   class Name {
@@ -87,7 +87,7 @@ public:
   };
 
   bool IsEqual(Automaton_ptr other_auto);
-  bool isEmptyLanguage();
+  bool is_empty_language();
   bool is_initial_state_accepting();
   bool isOnlyInitialStateAccepting();
   bool isCyclic();
@@ -121,6 +121,7 @@ protected:
   static DFA_ptr DfaIntersect(DFA_ptr dfa1, DFA_ptr dfa2);
   static DFA_ptr DfaUnion(DFA_ptr dfa1, DFA_ptr dfa2);
   static DFA_ptr DFAProjectAway(int index, DFA_ptr dfa);
+  static DFA_ptr DFAProjectAwayAndReMap(int index, int num_of_variables, DFA_ptr dfa);
 //  static DFA_ptr DFAProjectAway(std::vector<int> index, int num_of_variables, DFA_ptr dfa);
   static DFA_ptr DFAProjectTo(int index, int num_of_variables, DFA_ptr dfa);
   static DFA_ptr DfaL1ToL2(int start, int end, int num_of_variables, int* variable_indices = nullptr);

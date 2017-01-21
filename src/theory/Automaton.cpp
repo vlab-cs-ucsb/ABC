@@ -86,7 +86,7 @@ DFA_ptr Automaton::getDFA() {
   return dfa_;
 }
 
-int Automaton::getNumberOfVariables() {
+int Automaton::get_number_of_variables() {
   return num_of_variables_;
 }
 
@@ -120,9 +120,9 @@ bool Automaton::IsEqual(Automaton_ptr other_auto) {
  * Works for minimized automaton,
  * (For a non-minimized automaton need to check reachability of an accepting state)
  */
-bool Automaton::isEmptyLanguage() {
+bool Automaton::is_empty_language() {
   bool result = (dfa_->ns == 1 && dfa_->f[dfa_->s] == -1)? true : false;
-  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->isEmptyLanguage? " << std::boolalpha << result;
+  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->is_empty_language? " << std::boolalpha << result;
   return result;
 }
 
@@ -465,6 +465,25 @@ DFA_ptr Automaton::DfaUnion(DFA_ptr dfa1, DFA_ptr dfa2) {
 
 DFA_ptr Automaton::DFAProjectAway(int index, DFA_ptr dfa) {
   auto result_dfa = dfaProject(dfa, (unsigned)index);
+  auto tmp_dfa = result_dfa;
+  result_dfa = dfaMinimize(tmp_dfa);
+  dfaFree(tmp_dfa);
+  return result_dfa;
+}
+
+DFA_ptr Automaton::DFAProjectAwayAndReMap(int index, int num_of_variables, DFA_ptr dfa) {
+  auto result_dfa = dfaProject(dfa, (unsigned)index);
+  if (index < (unsigned)(num_of_variables - 1)) {
+    int* indices_map = new int[num_of_variables];
+    for (int i = 0, j = 0; i < num_of_variables; i++) {
+      if ((unsigned)i != index) {
+        indices_map[i] = j;
+        j++;
+      }
+    }
+    dfaReplaceIndices(result_dfa, indices_map);
+    delete[] indices_map;
+  }
   auto tmp_dfa = result_dfa;
   result_dfa = dfaMinimize(tmp_dfa);
   dfaFree(tmp_dfa);
@@ -1103,7 +1122,7 @@ void Automaton::generateMatrixScript(int bound, std::ostream& out, bool count_le
 }
 
 /**
- * TODO Reimplement
+ * TODO Reimplement, combine with toDot
  *
  */
 void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
@@ -1149,8 +1168,8 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
 //  paths state_paths, pp;
 //  trace_descr tp;
 //
-//  for (int i = 0; i < dfa->ns; i++) {
-//    state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
+//  for (int i = 0; i < dfa_->ns; i++) {
+//    state_paths = pp = make_paths(dfa_->bddm, dfa_->q[i]);
 //    while (pp) {
 //      if ((int)pp->to == sink_state && not print_sink) {
 //        pp = pp->next;

@@ -366,10 +366,10 @@ void Driver::set_option(const Option::Name option, const std::string value) {
 }
 
 void Driver::test() {
-  return;
-//  LOG(INFO) << "DRIVER TEST METHOD";
-//  using namespace Theory;
-
+//  return;
+  LOG(INFO) << "DRIVER TEST METHOD";
+  using namespace Theory;
+//
 //  Theory::BigInteger m ("4");
 //  std::cout << m << std::endl;
 //
@@ -426,11 +426,24 @@ void Driver::test() {
 //  result = test * test;
 //  std::cout << result << std::endl;
 //
-//  auto f1 = new ArithmeticFormula();
-//  f1->set_type(ArithmeticFormula::Type::EQ);
-//  f1->add_variable("x", 1);
+  auto f1 = new ArithmeticFormula();
+  f1->set_type(ArithmeticFormula::Type::EQ);
+  f1->add_variable("x", 1);
+  f1->add_variable("y", 0);
+  f1->set_constant(0);
 //
-//  auto t1 = BinaryIntAutomaton::MakeAnyInt(f1, false);
+//  auto t1 = BinaryIntAutomaton::MakeAutomaton(f1, false);
+//  t1->inspectAuto();
+
+  SemilinearSet_ptr s1 = new SemilinearSet();
+  s1->set_cycle_head(0);
+  s1->add_periodic_constant(0);
+  s1->set_period(1);
+//  s1->add_constant(0);
+  std::cout << *s1 << std::endl;
+  t1 = BinaryIntAutomaton::MakeAutomaton(s1, "x", f1, true);
+
+
 //  t1->Count(4);
 //
 //  auto t2 = BinaryIntAutomaton::MakeAnyInt(f1->clone(), true);

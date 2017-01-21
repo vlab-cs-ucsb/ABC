@@ -145,7 +145,6 @@ public:
   bool isEmptyString();
   bool isAcceptingSingleString();
   std::string getAnAcceptingString();
-  bool has_sharp_bit() const {return sharp_bit_;}
 
 protected:
 
@@ -158,15 +157,15 @@ protected:
   bool hasExceptionToValidStateFrom(int state, std::vector<char>& exception);
   std::vector<int> getAcceptingStates();
 
-  StringAutomaton_ptr indexOfHelper(StringAutomaton_ptr search_auto, bool use_extra_bit = false);
-  StringAutomaton_ptr lastIndexOfHelper(StringAutomaton_ptr search_auto, bool use_extra_bit = false);
-  StringAutomaton_ptr getDuplicateStateAutomaton(bool use_extra_bit = false);
-  StringAutomaton_ptr toQueryAutomaton(bool use_extra_bit = false);
-  StringAutomaton_ptr search(StringAutomaton_ptr search_auto, bool use_extra_bit = false);
+  StringAutomaton_ptr indexOfHelper(StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr lastIndexOfHelper(StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr getDuplicateStateAutomaton();
+  StringAutomaton_ptr toQueryAutomaton();
+  StringAutomaton_ptr search(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr removeReservedWords();
+  void add_print_label(std::ostream& out) override;
 
   static int DEFAULT_NUM_OF_VARIABLES;
-  bool sharp_bit_;
 
 private:
   static int name_counter;

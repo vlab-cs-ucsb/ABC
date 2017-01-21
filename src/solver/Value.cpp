@@ -493,13 +493,13 @@ bool Value::is_satisfiable() {
       is_satisfiable = not int_automaton->isEmptyLanguage();
       break;
       case Type::BINARYINT_AUTOMATON:
-      is_satisfiable = not binaryint_automaton->isEmptyLanguage();
+      is_satisfiable = not binaryint_automaton->is_empty_language();
       break;
       case Type::STRING_AUTOMATON:
-      is_satisfiable = not string_automaton->isEmptyLanguage();
+      is_satisfiable = not string_automaton->is_empty_language();
       break;
       case Type::MULTITRACK_AUTOMATON:
-      is_satisfiable = not multitrack_automaton->isEmptyLanguage();
+      is_satisfiable = not multitrack_automaton->is_empty_language();
       break;
       default:
       LOG(FATAL) << "value type is not supported";

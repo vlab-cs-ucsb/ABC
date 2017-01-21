@@ -71,9 +71,10 @@ void ArithmeticConstraintSolver::setCallbacks() {
           auto binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), use_unsigned_integers_);
           auto result = new Value(binary_int_auto);
           set_term_value(term, result);
-          // once we solve an atomic linear integer arithmetic formula, we delete its formula
-          // to avoid solving it again
-          // mixed constraints are handled without checks rely on formula
+          // once we solve an atomic linear integer arithmetic constraint,
+          // we delete its formula to avoid solving it again.
+          // Atomic arithmetic constraints solved precisely,
+          // mixed constraints handled without resolving arithmetic part
           arithmetic_formula_generator_.clear_term_formula(term);
         }
         break;

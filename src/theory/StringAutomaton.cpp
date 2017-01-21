@@ -18,17 +18,14 @@ int StringAutomaton::DEFAULT_NUM_OF_VARIABLES = 8;
 
 StringAutomaton::StringAutomaton(DFA_ptr dfa)
         : Automaton(Automaton::Type::STRING, dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES) {
-  sharp_bit_ = false;
 }
 
 StringAutomaton::StringAutomaton(DFA_ptr dfa, int num_of_variables)
         : Automaton(Automaton::Type::STRING, dfa, num_of_variables) {
-  sharp_bit_ = false;
 }
 
 StringAutomaton::StringAutomaton(const StringAutomaton& other)
         : Automaton(other) {
-  sharp_bit_ = false;
 }
 
 StringAutomaton::~StringAutomaton() {
@@ -544,7 +541,7 @@ StringAutomaton_ptr StringAutomaton::difference(StringAutomaton_ptr other_auto) 
 StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
   StringAutomaton_ptr left_auto = this, right_auto = other_auto;
 
-  if (left_auto->isEmptyLanguage() or right_auto->isEmptyLanguage()) {
+  if (left_auto->is_empty_language() or right_auto->is_empty_language()) {
     return StringAutomaton::makePhi();
   } else if (left_auto->isEmptyString()) {
     return right_auto->clone();
@@ -1023,7 +1020,7 @@ StringAutomaton_ptr StringAutomaton::repeat(unsigned min, unsigned max) {
 StringAutomaton_ptr StringAutomaton::suffixes() {
   StringAutomaton_ptr suffixes_auto = nullptr;
 
-  if (this->isEmptyLanguage()) {
+  if (this->is_empty_language()) {
     suffixes_auto = StringAutomaton::makePhi();
     DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->suffixes()";
     return suffixes_auto;
@@ -1162,7 +1159,7 @@ StringAutomaton_ptr StringAutomaton::suffixesFromIndex(int start){
 StringAutomaton_ptr StringAutomaton::suffixesFromTo(int start, int end) {
   StringAutomaton_ptr suffixes_auto = nullptr;
 
-  if (this->isEmptyLanguage()) {
+  if (this->is_empty_language()) {
     suffixes_auto = StringAutomaton::makePhi();
     DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->suffixes(" << start << ", " << end << ")";
     return suffixes_auto;
@@ -1360,7 +1357,7 @@ StringAutomaton_ptr StringAutomaton::subStrings() {
 
 StringAutomaton_ptr StringAutomaton::charAt(int index) {
 
-  if (this->isEmptyLanguage()) {
+  if (this->is_empty_language()) {
     auto charat_auto = StringAutomaton::makePhi();
     DVLOG(VLOG_LEVEL) << charat_auto->id_ << " = [" << this->id_ << "]->charAt(" << index << ")";
     return charat_auto;
@@ -1515,7 +1512,7 @@ StringAutomaton_ptr StringAutomaton::subStringLastOf(StringAutomaton_ptr search_
   }
 
   contains_auto = this->contains(search_param_auto);
-  if (contains_auto->isEmptyLanguage()) {
+  if (contains_auto->is_empty_language()) {
     delete contains_auto; contains_auto = nullptr;
     if (search_has_empty_string) {
       substring_auto = StringAutomaton::makeEmptyString();
@@ -1566,7 +1563,7 @@ StringAutomaton_ptr StringAutomaton::subStringFirstOf(StringAutomaton_ptr search
   }
 
   contains_auto = this->contains(search_param_auto);
-  if (contains_auto->isEmptyLanguage()) {
+  if (contains_auto->is_empty_language()) {
     delete contains_auto; contains_auto = nullptr;
     if (search_has_empty_string) {
       substring_auto = this->clone();
@@ -1620,7 +1617,7 @@ IntAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
   }
 
   contains_auto = this->contains(search_param_auto);
-  if (contains_auto->isEmptyLanguage()) {
+  if (contains_auto->is_empty_language()) {
     delete contains_auto;
     // if search has empty string indexOf also returns 0
     if (search_has_empty_string) {
@@ -1635,12 +1632,12 @@ IntAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
     return length_auto;
   }
 
+  // check for the cases where string does not contain the search char, return -1 in that case
   difference_auto = this->difference(contains_auto);
-  if (not difference_auto->isEmptyLanguage()) {
+  if (not difference_auto->is_empty_language()) {
     has_negative_1 = true;
   }
   delete difference_auto;
-
   index_of_auto = contains_auto->indexOfHelper(search_param_auto);
   delete contains_auto; contains_auto = nullptr;
 
@@ -1682,7 +1679,7 @@ IntAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto) {
   }
 
   contains_auto = this->contains(search_param_auto);
-  if (contains_auto->isEmptyLanguage()) {
+  if (contains_auto->is_empty_language()) {
     delete contains_auto;
     if (search_has_empty_string) {
       length_auto = this->length();
@@ -1696,7 +1693,7 @@ IntAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto) {
   }
 
   difference_auto = this->difference(contains_auto);
-  if (not difference_auto->isEmptyLanguage()) {
+  if (not difference_auto->is_empty_language()) {
     has_negative_1 = true;
   }
   delete difference_auto;
@@ -1841,7 +1838,7 @@ UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
   DFA_ptr unary_dfa = nullptr, tmp_dfa = nullptr;
 
   int sink_state = this->GetSinkState(),
-          number_of_variables = this->getNumberOfVariables() + 1, // one extra bit
+          number_of_variables = this->get_number_of_variables() + 1, // one extra bit
           to_state = 0;
   bool has_sink = true;
   int original_num_states = dfa_->ns;
@@ -1956,7 +1953,7 @@ IntAutomaton_ptr StringAutomaton::parseToIntAutomaton() {
   IntAutomaton_ptr int_auto = nullptr;
   if (this->isCyclic()) {
     int_auto = IntAutomaton::makeIntGreaterThanOrEqual(0);
-  } else if (this->isEmptyLanguage()) {
+  } else if (this->is_empty_language()) {
     int_auto = IntAutomaton::makePhi();
   } else {
     using StatePaths = std::pair<int, std::vector<std::string>>;
@@ -2037,7 +2034,7 @@ IntAutomaton_ptr StringAutomaton::parseToIntAutomaton() {
 
 IntAutomaton_ptr StringAutomaton::length() {
   IntAutomaton_ptr length_auto = nullptr;
-  if (this->isEmptyLanguage()) {
+  if (this->is_empty_language()) {
     length_auto = IntAutomaton::makePhi(num_of_variables_);
   } else if (this->isAcceptingSingleString()) {
     std::string example = this->getAnAcceptingString();
@@ -2484,12 +2481,9 @@ StringAutomaton_ptr StringAutomaton::getAnyStringNotContainsMe() {
  * @param search automaton is an automaton that does not accept empty string
  * @this is an automaton that is known to be contains search automaton
  */
-StringAutomaton_ptr StringAutomaton::indexOfHelper(StringAutomaton_ptr search_auto, bool use_extra_bit) {
+StringAutomaton_ptr StringAutomaton::indexOfHelper(StringAutomaton_ptr search_auto) {
   StringAutomaton_ptr index_of_auto = nullptr;
-  index_of_auto = this->search(search_auto, use_extra_bit);
-  if(!index_of_auto->has_sharp_bit() || index_of_auto->num_of_variables_ < 9) {
-    LOG(FATAL) << "NO SHARP BT!";
-  }
+  index_of_auto = this->search(search_auto);
   int sink_state = index_of_auto->GetSinkState();
   int current_state = -1;
   int next_state = -1;
@@ -2522,6 +2516,10 @@ StringAutomaton_ptr StringAutomaton::indexOfHelper(StringAutomaton_ptr search_au
   }
   index_of_auto->minimize();
 
+  // remove extra bit used
+  index_of_auto->project((unsigned)(index_of_auto->num_of_variables_ - 1));
+  index_of_auto->minimize();
+
   DVLOG(VLOG_LEVEL) << index_of_auto->id_ << " = [" << this->id_ << "]->indexOfHelper(" << search_auto->id_  << ")";
   return index_of_auto;
 }
@@ -2530,15 +2528,12 @@ StringAutomaton_ptr StringAutomaton::indexOfHelper(StringAutomaton_ptr search_au
  * @param search automaton is an automaton that does not accept empty string
  * @this is an automaton that is known to be contains search automaton
  */
-StringAutomaton_ptr StringAutomaton::lastIndexOfHelper(StringAutomaton_ptr search_auto, bool use_extra_bit) {
+StringAutomaton_ptr StringAutomaton::lastIndexOfHelper(StringAutomaton_ptr search_auto) {
   StringAutomaton_ptr lastIndexOf_auto = nullptr, search_result_auto = nullptr;
 
   DFA_ptr lastIndexOf_dfa = nullptr, minimized_dfa = nullptr;
 
-  search_result_auto = this->search(search_auto, use_extra_bit);
-  if(!search_result_auto->has_sharp_bit() || search_result_auto->num_of_variables_ < 9) {
-    LOG(FATAL) << "not enuff sharp bits!";
-  }
+  search_result_auto = this->search(search_auto);
 
   Graph_ptr graph = search_result_auto->toGraph();
   // Mark start state of a match
@@ -2593,6 +2588,10 @@ StringAutomaton_ptr StringAutomaton::lastIndexOfHelper(StringAutomaton_ptr searc
   lastIndexOf_auto = search_result_auto->removeReservedWords();
   delete search_result_auto;
 
+  // remove extra bit
+  lastIndexOf_auto->project((unsigned)(lastIndexOf_auto->num_of_variables_ - 1));
+  lastIndexOf_auto->minimize();
+
   DVLOG(VLOG_LEVEL) << lastIndexOf_auto->id_ << " = [" << this->id_ << "]->lastIndexOf(" << search_auto->id_ << ")";
 
   return lastIndexOf_auto;
@@ -2600,12 +2599,13 @@ StringAutomaton_ptr StringAutomaton::lastIndexOfHelper(StringAutomaton_ptr searc
 
 /**
  * Duplicates each state in the automaton using extra bit,
- * Special words 255, 254 used for the transitions between duplicated states
+ * Special words 1111 1111 1, 1111 11110 1 used for the transitions between duplicated states
  *
  * Output M so that L(M)={w|w=x0#1\bar{x1}#2.., where x0x1... \in L(M1)} (usage with extra bit)
  * @param use_extra_bit decides on whether to use extra bit or not.
+ *
  */
-StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton(bool use_extra_bit) {
+StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton() {
   StringAutomaton_ptr duplicated_auto = nullptr;
   DFA_ptr result_dfa = nullptr;
   paths state_paths = nullptr, pp = nullptr;
@@ -2615,7 +2615,7 @@ StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton(bool use_extra_b
   // sharp0: 1111 1110 1
   std::vector<char> sharp1 = Automaton::getReservedWord('1', num_of_variables_, true);
   std::vector<char> sharp0 = Automaton::getReservedWord('0', num_of_variables_, true);
-  bool has_sink = true;
+
   int number_of_variables = this->num_of_variables_ + 1,
           sink_state = this->GetSinkState(),
           to_state = 0,
@@ -2623,13 +2623,14 @@ StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton(bool use_extra_b
           mapped_state_id = 0,
           duplicated_state_id = 0;
 
+  bool has_sink = (sink_state != -1);
   // take precautions as there might not be a sink state...
   int original_num_states = this->dfa_->ns;
   if(sink_state < 0) {
     sink_state = this->dfa_->ns;
     original_num_states++;
   }
-  int number_of_states = original_num_states*2 - 1; // no duplicate sink state
+  int number_of_states = original_num_states * 2 - 1; // no duplicate sink state
 
   int* indices = getIndices(number_of_variables);
   std::map<std::vector<char>*, int> exceptions;
@@ -2740,11 +2741,10 @@ StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton(bool use_extra_b
   result_dfa = dfaBuild(statuses);
 
   duplicated_auto = new StringAutomaton(result_dfa, number_of_variables);
-  duplicated_auto->sharp_bit_ = true;
   delete[] statuses;
   delete[] indices;
 
-  DVLOG(VLOG_LEVEL) << duplicated_auto->id_ << " = [" << this->id_ << "]->getDuplicateStateAutomaton(" << std::boolalpha << use_extra_bit << ")";
+  DVLOG(VLOG_LEVEL) << duplicated_auto->id_ << " = [" << this->id_ << "]->getDuplicateStateAutomaton()";
   return duplicated_auto;
 }
 
@@ -2755,11 +2755,11 @@ StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton(bool use_extra_b
  * ending in our search query automaton.
  * Generates a contains automaton an complements it,
  * Then connects complemented auto with self using
- * reserved keywords 255, 254.
+ * reserved keywords 1111 1111 1, 1111 1110 1.
  * Output M so that L(M)={w|w=x0#1\bar{x1}#2.., where \bar{x_i} \in L(M), x_i is \in the complement of L(S*MS*)} (usage with extrabit)
  * @param use_extra_bit decides on whether to use extra bit or not.
  */
-StringAutomaton_ptr StringAutomaton::toQueryAutomaton(bool use_extra_bit) {
+StringAutomaton_ptr StringAutomaton::toQueryAutomaton() {
   StringAutomaton_ptr query_auto = nullptr, not_contains_auto = nullptr,
             empty_string_auto = nullptr, tmp_auto_1 = nullptr;
 
@@ -2942,8 +2942,7 @@ StringAutomaton_ptr StringAutomaton::toQueryAutomaton(bool use_extra_bit) {
   delete[] indices;
 
   query_auto = new StringAutomaton(result_dfa, number_of_variables);
-  query_auto->sharp_bit_ = true;
-  DVLOG(VLOG_LEVEL) << query_auto->id_ << " = [" << this->id_ << "]->toQueryAutomaton(" << std::boolalpha << use_extra_bit << ")";
+  DVLOG(VLOG_LEVEL) << query_auto->id_ << " = [" << this->id_ << "]->toQueryAutomaton()";
 
   return query_auto;
 }
@@ -2952,21 +2951,16 @@ StringAutomaton_ptr StringAutomaton::toQueryAutomaton(bool use_extra_bit) {
  * TODO fix the issue when there is empty string accepted by search auto,
  * handle empty string on the caller site
  */
-StringAutomaton_ptr StringAutomaton::search(StringAutomaton_ptr search_auto,  bool use_extra_bit) {
+StringAutomaton_ptr StringAutomaton::search(StringAutomaton_ptr search_auto) {
   StringAutomaton_ptr search_result_auto = nullptr, duplicate_auto = nullptr,
           search_query_auto = nullptr;
 
-  duplicate_auto = this->getDuplicateStateAutomaton(use_extra_bit);
-  search_query_auto = search_auto->toQueryAutomaton(use_extra_bit);
+  duplicate_auto = this->getDuplicateStateAutomaton();
+  search_query_auto = search_auto->toQueryAutomaton();
   search_result_auto = duplicate_auto->intersect(search_query_auto);
   delete duplicate_auto; duplicate_auto = nullptr;
   delete search_query_auto; search_query_auto = nullptr;
-  search_result_auto->sharp_bit_ = true;
-  if(search_result_auto->num_of_variables_ != 9) {
-    LOG(FATAL) << "Nut unuff buts";
-  }
-  DVLOG(VLOG_LEVEL) << search_result_auto->id_ << " = [" << this->id_ << "]->search(" << search_auto->id_ << ", " << std::boolalpha << use_extra_bit << ")";
-
+  DVLOG(VLOG_LEVEL) << search_result_auto->id_ << " = [" << this->id_ << "]->search(" << search_auto->id_ << ")";
   return search_result_auto;
 }
 
@@ -2975,8 +2969,8 @@ StringAutomaton_ptr StringAutomaton::search(StringAutomaton_ptr search_auto,  bo
  * Can be generalize to general replace algorithm
  */
 StringAutomaton_ptr StringAutomaton::removeReservedWords() {
-  if(!sharp_bit_ || this->num_of_variables_ < 9) {
-    LOG(FATAL) << "can't remove reserved words without first having sharp bit";
+  if(this->num_of_variables_ < 9) {
+    LOG(FATAL) << "can't remove reserved words without first having extra bit";
   }
   StringAutomaton_ptr string_auto = nullptr;
   DFA_ptr result_dfa = nullptr;
@@ -3130,8 +3124,6 @@ StringAutomaton_ptr StringAutomaton::removeReservedWords() {
   string_auto = new StringAutomaton(dfaMinimize(result_dfa), number_of_variables);
   dfaFree(result_dfa); result_dfa = nullptr;
 
-  // +1 bit project for sharp bit
-  number_of_extra_bits_needed++;
   while (number_of_extra_bits_needed > 0) {
     string_auto->project((unsigned)(string_auto->num_of_variables_ - 1));
     string_auto->minimize();
@@ -3139,12 +3131,17 @@ StringAutomaton_ptr StringAutomaton::removeReservedWords() {
   }
 
   DVLOG(VLOG_LEVEL) << string_auto->id_ << " = [" << this->id_ << "]->removeReservedWords()";
-
-  string_auto->sharp_bit_ = false;
-  if(string_auto->num_of_variables_ != 8) {
-    LOG(FATAL) << "still has sharp bit...";
-  }
   return string_auto;
+}
+
+void StringAutomaton::add_print_label(std::ostream& out) {
+  out << " subgraph cluster_0 {\n";
+  out << "  style = invis;\n  center = true;\n  margin = 0;\n";
+  out << "  node[shape=plaintext];\n";
+  out << " \"\"[label=\"";
+  out << "str var/term" << "\n";
+  out << "\"]\n";
+  out << " }";
 }
 
 } /* namespace Theory */

@@ -49,22 +49,22 @@ UnaryAutomaton_ptr UnaryAutomaton::makeAutomaton(SemilinearSet_ptr semilinear_se
   UnaryAutomaton_ptr unary_auto = nullptr;
   DFA_ptr unary_dfa = nullptr, tmp_dfa = nullptr;
 
-  const int cycle_head = semilinear_set->getCycleHead();
-  const int period = semilinear_set->getPeriod();
+  const int cycle_head = semilinear_set->get_cycle_head();
+  const int period = semilinear_set->get_period();
   int number_of_variables = 1;
-  int number_of_states = cycle_head + semilinear_set->getPeriod() + 1;
+  int number_of_states = cycle_head + semilinear_set->get_period() + 1;
   int sink_state = number_of_states - 1;
   int* indices = getIndices(number_of_variables);
   char unary_exception[1] = {'1'};
   std::vector<char> statuses;
-  bool has_only_constants = semilinear_set->hasOnlyConstants();
+  bool has_only_constants = semilinear_set->has_only_constants();
 
-  if (semilinear_set->isEmptySet()) {
+  if (semilinear_set->is_empty_set()) {
     return UnaryAutomaton::makePhi();
   } else if (has_only_constants) {
-    number_of_states = semilinear_set->getConstants().back() + 2;
+    number_of_states = semilinear_set->get_constants().back() + 2;
     sink_state = number_of_states - 1;
-    semilinear_set->getPeriodicConstants().clear();
+    semilinear_set->get_periodic_constants().clear();
   }
 
   for (int i = 0; i < number_of_states; i++) {
@@ -94,11 +94,11 @@ UnaryAutomaton_ptr UnaryAutomaton::makeAutomaton(SemilinearSet_ptr semilinear_se
   dfaAllocExceptions(0);
   dfaStoreState(sink_state);
 
-  for (auto c : semilinear_set->getConstants()) {
+  for (auto c : semilinear_set->get_constants()) {
     statuses[c] = '+';
   }
 
-  for (auto r : semilinear_set->getPeriodicConstants()) {
+  for (auto r : semilinear_set->get_periodic_constants()) {
     statuses[cycle_head + r] = '+';
   }
 
@@ -163,23 +163,23 @@ SemilinearSet_ptr UnaryAutomaton::getSemilinearSet() {
         is_in_cycle = true;
         cycle_head_value = values[state];
         if (is_accepting_state(state)) {
-          semilinear_set->addPeriodicConstant(0);
+          semilinear_set->add_periodic_constant(0);
         }
       } else {
         if (is_accepting_state(state)) {
-          semilinear_set->addConstant(values[state]);
+          semilinear_set->add_constant(values[state]);
         }
       }
     } else {
       if (is_accepting_state(state)) {
-        semilinear_set->addPeriodicConstant(values[state] - cycle_head_value);
+        semilinear_set->add_periodic_constant(values[state] - cycle_head_value);
       }
     }
   }
 
-  semilinear_set->setCycleHead(cycle_head_value);
+  semilinear_set->set_cycle_head(cycle_head_value);
   int period = (cycle_head_state == -1) ? 0 : values[states.back()] - cycle_head_value + 1;
-  semilinear_set->setPeriod(period);
+  semilinear_set->set_period(period);
 
   DVLOG(VLOG_LEVEL) << "semilinear set = [" << this->id_ << "]->getSemilinearSet()";
 
@@ -260,6 +260,10 @@ BinaryIntAutomaton_ptr UnaryAutomaton::toBinaryIntAutomaton(std::string var_name
   SemilinearSet_ptr semilinear_set = getSemilinearSet();
 
   binary_auto = BinaryIntAutomaton::MakeAutomaton(semilinear_set, var_name, formula, true);
+//  auto test = BinaryIntAutomaton::MakeAutomaton(semilinear_set, var_name, formula, false);
+//
+//  binary_auto->inspectAuto();
+//  test->inspectAuto();
 
   if (add_minus_one) {
     BinaryIntAutomaton_ptr minus_one_auto = nullptr, tmp_auto = nullptr;
