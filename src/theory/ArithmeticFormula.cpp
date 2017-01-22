@@ -10,6 +10,8 @@
 namespace Vlab {
 namespace Theory {
 
+using namespace SMT;
+
 const int ArithmeticFormula::VLOG_LEVEL = 15;
 
 ArithmeticFormula::ArithmeticFormula()
@@ -24,6 +26,7 @@ ArithmeticFormula::ArithmeticFormula(const ArithmeticFormula& other)
     : type_(other.type_),
       constant_(other.constant_) {
   this->variable_coefficient_map_ = other.variable_coefficient_map_;
+  this->mixed_terms_ = other.mixed_terms_;
 }
 
 ArithmeticFormula_ptr ArithmeticFormula::clone() const {
@@ -182,6 +185,40 @@ int ArithmeticFormula::get_variable_index(std::string variable_name) const {
   return -1;
 }
 
+bool ArithmeticFormula::has_relation_to_mixed_term(const std::string var_name) const {
+  auto it = mixed_terms_.find(var_name);
+  return it != mixed_terms_.end();
+}
+
+void ArithmeticFormula::add_relation_to_mixed_term(const std::string var_name, const ArithmeticFormula::Type relation, const Term_ptr term) {
+  mixed_terms_[var_name] = {relation, term};
+}
+
+std::pair<ArithmeticFormula::Type, Term_ptr> ArithmeticFormula::get_relation_to_mixed_term(const std::string var_name) const {
+  auto it = mixed_terms_.find(var_name);
+  if (it == mixed_terms_.end()) {
+    LOG(FATAL) << "Variable '" << var_name << "' does not have a relation to a mixed term";
+  }
+  return it->second;
+}
+
+bool ArithmeticFormula::UpdateMixedConstraintRelations() {
+  if (mixed_terms_.empty()) {
+    return false;
+  }
+  std::string v1, v2;
+  if (get_var_names_if_equality_of_two_vars(v1, v2)) {
+    auto it = mixed_terms_.find(v1);
+    if (it == mixed_terms_.end()) {
+      mixed_terms_[v1] = mixed_terms_[v2];
+    } else {
+      mixed_terms_[v2] = it->second;
+    }
+    return true;
+  }
+  return false;
+}
+
 ArithmeticFormula_ptr ArithmeticFormula::Add(ArithmeticFormula_ptr other_formula) {
   auto result = new ArithmeticFormula(*this);
 
@@ -194,6 +231,8 @@ ArithmeticFormula_ptr ArithmeticFormula::Add(ArithmeticFormula_ptr other_formula
     }
   }
   result->constant_ = result->constant_ + other_formula->constant_;
+
+  result->mixed_terms_.insert(other_formula->mixed_terms_.begin(), other_formula->mixed_terms_.end());
   return result;
 }
 
@@ -208,6 +247,8 @@ ArithmeticFormula_ptr ArithmeticFormula::Subtract(ArithmeticFormula_ptr other_fo
     }
   }
   result->constant_ = result->constant_ - other_formula->constant_;
+
+  result->mixed_terms_.insert(other_formula->mixed_terms_.begin(), other_formula->mixed_terms_.end());
   return result;
 }
 
@@ -314,6 +355,31 @@ void ArithmeticFormula::merge_variables(const ArithmeticFormula_ptr other) {
       variable_coefficient_map_[el.first] = 0;
     }
   }
+  mixed_terms_.insert(other->mixed_terms_.begin(), other->mixed_terms_.end());
+}
+
+bool ArithmeticFormula::get_var_names_if_equality_of_two_vars(std::string &v1, std::string &v2) {
+  if (type_ not_eq Type::EQ) {
+    return false;
+  }
+  v1.clear();
+  v2.clear();
+  int active_vars = 0;
+  for (auto& el : variable_coefficient_map_) {
+    if (el.second != 0) {
+      ++active_vars;
+      if (el.second == 1) {
+        v1 = el.first;
+      } else if (el.second == -1) {
+        v2 = el.first;
+      }
+      if (active_vars > 2) {
+        return false;
+      }
+    }
+  }
+
+  return ((active_vars == 2) and !v1.empty() and !v2.empty());
 }
 
 std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula) {

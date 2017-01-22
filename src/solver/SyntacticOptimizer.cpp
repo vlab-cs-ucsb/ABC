@@ -1240,17 +1240,19 @@ void SyntacticOptimizer::visitSubString(SubString_ptr sub_string_term) {
     DVLOG(VLOG_LEVEL) << "substring optimization -> re visit term end" << *(sub_string_term->subject_term);
   }
 
-  SubString::Mode mode;
-  if (sub_string_term->end_index_term) {
-    mode = check_and_process_subString(sub_string_term, sub_string_term->start_index_term,
-                                       sub_string_term->end_index_term);
-  } else {
-    mode = check_and_process_subString(sub_string_term, sub_string_term->start_index_term);
-  }
+  // TODO Below code is disabled temporarily, trying to get a better solution
 
-  if (SubString::Mode::NONE != mode) {
-    sub_string_term->setMode(mode);
-  }
+//  SubString::Mode mode;
+//  if (sub_string_term->end_index_term) {
+//    mode = check_and_process_subString(sub_string_term, sub_string_term->start_index_term,
+//                                       sub_string_term->end_index_term);
+//  } else {
+//    mode = check_and_process_subString(sub_string_term, sub_string_term->start_index_term);
+//  }
+//
+//  if (SubString::Mode::NONE != mode) {
+//    sub_string_term->setMode(mode);
+//  }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *sub_string_term << "@" << sub_string_term;
 }
 

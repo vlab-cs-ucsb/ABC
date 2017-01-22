@@ -884,6 +884,11 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
   Value_ptr result = nullptr, param_subject = getTermValue(sub_string_term->subject_term), param_start_index =
       getTermValue(sub_string_term->start_index_term), param_end_index = nullptr;
 
+
+  auto param_substr_length = getTermValue(sub_string_term->end_index_term);
+  param_substr_length->getBinaryIntAutomaton()->inspectAuto();
+  std::cout << "has mixed term variable: " << param_substr_length->getBinaryIntAutomaton()->get_formula()->has_relation_to_mixed_term("v3") << std::endl;
+  LOG(FATAL) << "ahanda geldik buraya";
   switch (sub_string_term->getMode()) {
     case SubString::Mode::FROMINDEX: {
       DVLOG(VLOG_LEVEL) << "subString mode: FROMINDEX";
@@ -1115,21 +1120,29 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   // multitrack values in the string constraint solver, get the variable's value
   // from there and clone it into the symbol table, so the variable value computer has
   // the most recent value
+
+  // TODO Refactor handling of mixed constraints here (multi-track -> single->track)
+
   Value_ptr variable_value = nullptr;
-  if (Option::Solver::USE_MULTITRACK_AUTO) {
+
+  // TODO fix string variable handling here
+  if (Option::Solver::USE_MULTITRACK_AUTO and Variable::Type::STRING == variable->getType()) {
     DVLOG(VLOG_LEVEL) << "Getting var value for " << variable->getName();
     variable_value = string_constraint_solver_.get_variable_value(variable);
     DVLOG(VLOG_LEVEL) << "Got var";
   }
+
   if (variable_value != nullptr) {
     DVLOG(VLOG_LEVEL) << "Relational variable: " << *variable;
     // variable relational, put in symbol table and tag for later update
     symbol_table_->set_value(variable, variable_value);
     tagged_variables.push_back(variable);
   } else {
-    // variable not relational, just get normally from symbol table
+    // variable not relational string, get from symbol table
     variable_value = symbol_table_->get_value(variable);
   }
+
+
   Value_ptr result = variable_value->clone();
 
   setTermValue(qi_term, result);

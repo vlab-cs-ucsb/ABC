@@ -267,9 +267,10 @@ Value_ptr SymbolTable::get_value(std::string var_name) {
 Value_ptr SymbolTable::get_value(Variable_ptr variable) {
   for (auto it = scope_stack_.rbegin(); it != scope_stack_.rend(); it++) {
     auto representative_variable = get_representative_variable_of_at_scope((*it), variable);
-//    auto group_variable = get_group_variable_of(representative_variable);
-//    auto entry = variable_value_table_[(*it)].find(group_variable);
-    auto entry = variable_value_table_[(*it)].find(representative_variable);
+    // TODO !! group variable look up is addd !!! BAKI: make sure to test this
+    auto group_variable = get_group_variable_of(representative_variable);
+    auto entry = variable_value_table_[(*it)].find(group_variable);
+//    auto entry = variable_value_table_[(*it)].find(representative_variable);
     if (entry != variable_value_table_[(*it)].end()) {
       return entry->second;
     }
@@ -303,9 +304,10 @@ Value_ptr SymbolTable::get_value(Variable_ptr variable) {
 
 Value_ptr SymbolTable::get_value_at_scope(Visitable_ptr scope, Variable_ptr variable) {
   auto representative_variable = get_representative_variable_of_at_scope(scope, variable);
-//  auto group_variable = get_group_variable_of(representative_variable);
-//  auto it = variable_value_table_[scope].find(group_variable);
-  auto it = variable_value_table_[scope].find(representative_variable);
+  // TODO !! group variable look up is addd !!! BAKI: make sure to test this
+  auto group_variable = get_group_variable_of(representative_variable);
+  auto it = variable_value_table_[scope].find(group_variable);
+//  auto it = variable_value_table_[scope].find(representative_variable);
   if (it != variable_value_table_[scope].end()) {
     return it->second;
   }
