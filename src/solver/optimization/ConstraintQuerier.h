@@ -1,53 +1,37 @@
 /*
- * ConstraintSolver.h
+ * ConstraintQuerier.h
  *
- *  Created on: Jun 24, 2015
+ *  Created on: Jan 21, 2017
  *      Author: baki
  */
 
-#ifndef SOLVER_CONSTRAINTSOLVER_H_
-#define SOLVER_CONSTRAINTSOLVER_H_
+#ifndef SRC_SOLVER_OPTIMIZATION_CONSTRAINTQUERIER_H_
+#define SRC_SOLVER_OPTIMIZATION_CONSTRAINTQUERIER_H_
 
-#include <map>
-#include <sstream>
+#include <algorithm>
+#include <iostream>
+#include <iterator>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include <glog/logging.h>
 
-#include "../smt/ast.h"
-#include "../smt/typedefs.h"
-#include "../smt/Visitor.h"
-#include "../theory/ArithmeticFormula.h"
-#include "../theory/BinaryIntAutomaton.h"
-#include "../theory/IntAutomaton.h"
-#include "../theory/MultiTrackAutomaton.h"
-#include "../theory/StringAutomaton.h"
-#include "../theory/StringRelation.h"
-#include "../theory/UnaryAutomaton.h"
-#include "optimization/ConstraintQuerier.h"
-#include "ArithmeticConstraintSolver.h"
-#include "ConstraintInformation.h"
-#include "options/Solver.h"
-#include "StringRelationGenerator.h"
-#include "StringConstraintSolver.h"
-#include "SymbolTable.h"
-#include "Value.h"
-#include "VariableValueComputer.h"
+#include "../../smt/ast.h"
+#include "../../smt/Visitor.h"
+#include "../Ast2Dot.h"
 
 namespace Vlab {
 namespace Solver {
+namespace Optimization {
 
-class ConstraintSolver: public SMT::Visitor {
-  typedef std::map<SMT::Term_ptr, Value_ptr> TermValueMap;
-  typedef std::vector<std::vector<SMT::Term_ptr>> VariablePathTable;
+class ConstraintQuerier: public SMT::Visitor {
  public:
-  ConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr);
-  virtual ~ConstraintSolver();
+  enum class Mode : int {QUERY = 0, GET};
+  ConstraintQuerier();
+  virtual ~ConstraintQuerier();
 
-  void start() override;
-  void start(int iteration_count);
+  bool is_param_equal_to(SMT::Term_ptr term_search, SMT::Term_ptr term_subject, int index);
+  SMT::Term_ptr get_parameter(SMT::Term_ptr, int index);
   void end() override;
 
   void visitScript(SMT::Script_ptr) override;
@@ -116,37 +100,19 @@ class ConstraintSolver: public SMT::Visitor {
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
 
- protected:
-  Value_ptr getTermValue(SMT::Term_ptr term);
-  bool setTermValue(SMT::Term_ptr term, Value_ptr value);
-  void clearTermValue(SMT::Term_ptr term);
-  void clearTermValuesAndLocalLetVars();
-  void setVariablePath(SMT::QualIdentifier_ptr qi_term);
-  bool update_variables();
-  void visit_children_of(SMT::Term_ptr term);
-  bool check_and_visit(SMT::Term_ptr term);
-  bool process_mixed_integer_string_constraints_in(SMT::Term_ptr term);
-
-  int iteration_count_;
-  SMT::Script_ptr root_;
-  SymbolTable_ptr symbol_table_;
-  ConstraintInformation_ptr constraint_information_;
-
-  ArithmeticConstraintSolver arithmetic_constraint_solver_;
-  StringConstraintSolver string_constraint_solver_;
-
-  TermValueMap term_values_;
-
-  std::vector<SMT::Term_ptr> path_trace_;
-  VariablePathTable variable_path_table_;
-
-  // for relational variables that need to be updated
-  std::vector<SMT::Variable_ptr> tagged_variables;
- private:
+protected:
+  void start() override;
+  ConstraintQuerier::Mode mode_;
+  bool query_result_;
+  int param_index_;
+  SMT::Term_ptr search_term_;
+private:
   static const int VLOG_LEVEL;
+
 };
 
+} /* namespace Optimization */
 } /* namespace Solver */
 } /* namespace Vlab */
 
-#endif /* SOLVER_CONSTRAINTSOLVER_H_ */
+#endif /* SRC_SOLVER_OPTIMIZATION_CONSTRAINTQUERIER_H_ */

@@ -91,8 +91,13 @@ public:
   StringAutomaton_ptr subStrings();
 
   StringAutomaton_ptr charAt(int index);
-  StringAutomaton_ptr subString(int start);
-  StringAutomaton_ptr subString(const int start, const int end);
+  StringAutomaton_ptr SubString(const int start);
+  /**
+   * TODO decide on substring second param; which one is better:
+   * end index, or length of substring
+   */
+  StringAutomaton_ptr SubString(const int start, const int end);
+  StringAutomaton_ptr SubString(IntAutomaton_ptr length_auto, StringAutomaton_ptr search_auto);
   StringAutomaton_ptr subString(int start, IntAutomaton_ptr end_auto);
   StringAutomaton_ptr subStringLastOf(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr subStringFirstOf(StringAutomaton_ptr search_auto);

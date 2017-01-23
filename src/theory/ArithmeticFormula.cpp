@@ -210,9 +210,13 @@ bool ArithmeticFormula::UpdateMixedConstraintRelations() {
   if (get_var_names_if_equality_of_two_vars(v1, v2)) {
     auto it = mixed_terms_.find(v1);
     if (it == mixed_terms_.end()) {
-      mixed_terms_[v1] = mixed_terms_[v2];
+      auto rel_pair = mixed_terms_[v2];
+      rel_pair.first = Type::EQ;
+      mixed_terms_[v1] = rel_pair;
     } else {
-      mixed_terms_[v2] = it->second;
+      auto rel_pair = it->second;
+      rel_pair.first = Type::EQ;
+      mixed_terms_[v2] = rel_pair;
     }
     return true;
   }

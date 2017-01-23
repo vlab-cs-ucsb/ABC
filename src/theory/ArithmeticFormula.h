@@ -26,7 +26,7 @@ namespace Vlab {
 namespace Theory {
 
 class ArithmeticFormula;
-typedef ArithmeticFormula* ArithmeticFormula_ptr;
+using ArithmeticFormula_ptr = ArithmeticFormula*;
 
 class ArithmeticFormula {
 public:

@@ -1452,7 +1452,7 @@ StringAutomaton_ptr StringAutomaton::charAt(int index) {
   return charat_auto;
 }
 
-StringAutomaton_ptr StringAutomaton::subString(int start){
+StringAutomaton_ptr StringAutomaton::SubString(const int start){
   StringAutomaton_ptr substring_auto = nullptr;
   substring_auto = this->suffixesAtIndex(start);
   DVLOG(VLOG_LEVEL) << substring_auto->id_ << " = [" << this->id_ << "]->subString(" << start << ")";
@@ -1460,9 +1460,11 @@ StringAutomaton_ptr StringAutomaton::subString(int start){
 }
 
 /**
+ * TODO decide on substring second param; which one is better:
+ * end index, or length of substring
  * subString returns empty when start == end, start is inclusive, end is exclusive
  */
-StringAutomaton_ptr StringAutomaton::subString(const int start, const int end){
+StringAutomaton_ptr StringAutomaton::SubString(const int start, const int end){
   if (start == end) {
     auto substring_auto = StringAutomaton::makeEmptyString();
     DVLOG(VLOG_LEVEL) << substring_auto->id_ << " = [" << this->id_ << "]->subString(" << start << "," << end << ")";
@@ -1481,6 +1483,22 @@ StringAutomaton_ptr StringAutomaton::subString(const int start, const int end){
   return substring_auto;
 }
 
+/**
+ * @param length_auto is the length of the substring
+ * @param search_auto is the strings that cannot appear in the result
+ * TODO if search auto contains empty string handle it as a special case
+ */
+StringAutomaton_ptr StringAutomaton::SubString(IntAutomaton_ptr length_auto, StringAutomaton_ptr search_auto) {
+  StringAutomaton_ptr substring_auto = nullptr;
+
+  auto prefix_does_not_contain_search_auto = this->indexOfHelper(search_auto);
+  substring_auto = prefix_does_not_contain_search_auto->restrictLengthTo(length_auto);
+  delete prefix_does_not_contain_search_auto;
+
+  DVLOG(VLOG_LEVEL) << substring_auto->id_ << " = [" << this->id_ << "]->subString(" << length_auto->getId() << "," << search_auto->id_ << ")";
+  return substring_auto;
+}
+
 StringAutomaton_ptr StringAutomaton::subString(int start, IntAutomaton_ptr end_auto) {
   auto valid_indexes = IntAutomaton::makeIntGreaterThan(start);
   auto valid_end_indexes = end_auto->intersect(valid_indexes);
@@ -1488,7 +1506,7 @@ StringAutomaton_ptr StringAutomaton::subString(int start, IntAutomaton_ptr end_a
   if (valid_end_indexes->isEmptyLanguage()) {
     return StringAutomaton::makePhi();
   } else if (valid_end_indexes->isAcceptingSingleInt()) {
-    return subString(start, valid_end_indexes->getAnAcceptingInt());
+    return SubString(start, valid_end_indexes->getAnAcceptingInt());
   }
   LOG (FATAL) << "Fully implement substring with symbolic ints";
   return nullptr;

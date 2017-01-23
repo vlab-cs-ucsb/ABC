@@ -962,6 +962,9 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
 
   if (child_term == sub_string_term->start_index_term or
           child_term == sub_string_term->end_index_term) {
+    // TODO !!! need to implement logic here
+    // assume string is constant and indexes are symbolic??
+    //    LOG(FATAL) << "implement me";
     return; // subString operation does not have any restriction on indexes
   }
 
@@ -971,11 +974,20 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
     return;
   }
 
+  // TODO baki implement the rest of the logic based on the latest results
+  // consider multi-track int and string automata
+  return;
   Theory::StringAutomaton_ptr child_pre_auto = nullptr;
   Value_ptr term_value = getTermPreImage(sub_string_term);
   Value_ptr child_post_value = getTermPostImage(child_term);
   Value_ptr start_index_value = getTermPostImage(sub_string_term->start_index_term);
   Value_ptr end_index_value = nullptr;
+
+  // result of substring
+//  term_value->getStringAutomaton()->inspectAuto(false, true);
+  // subject auto
+//  child_post_value->getStringAutomaton()->inspectAuto(false, true);
+
 
   switch (sub_string_term->getMode()) {
     case SubString::Mode::FROMINDEX: {

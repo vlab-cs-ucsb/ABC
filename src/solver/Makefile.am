@@ -30,6 +30,8 @@ libabcsolver_la_SOURCES = \
   optimization/CharAtOptimization.h \
   optimization/SubstringOptimization.cpp \
   optimization/SubstringOptimization.h \
+  optimization/ConstraintQuerier.cpp \
+  optimization/ConstraintQuerier.h \
   SyntacticOptimizer.cpp \
   SyntacticOptimizer.h \
   Counter.cpp \
