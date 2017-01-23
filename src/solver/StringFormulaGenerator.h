@@ -1,15 +1,12 @@
 /*
- * ArithmeticFormulaGenerator.h
+ * StringFormulaGenerator.h
  *
- *  Created on: Oct 19, 2015
+ *  Created on: Jan 22, 2017
  *      Author: baki
- *   Copyright: Copyright 2015 The ABC Authors. All rights reserved. 
- *              Use of this source code is governed license that can
- *              be found in the COPYING file.
  */
 
-#ifndef SOLVER_ARITHMETICFORMULAGENERATOR_H_
-#define SOLVER_ARITHMETICFORMULAGENERATOR_H_
+#ifndef SRC_SOLVER_STRINGFORMULAGENERATOR_H_
+#define SRC_SOLVER_STRINGFORMULAGENERATOR_H_
 
 #include <map>
 #include <iostream>
@@ -22,7 +19,7 @@
 #include "../smt/ast.h"
 #include "../smt/typedefs.h"
 #include "../smt/Visitor.h"
-#include "../theory/ArithmeticFormula.h"
+#include "../theory/StringFormula.h"
 #include "ConstraintInformation.h"
 #include "options/Solver.h"
 #include "SymbolTable.h"
@@ -30,10 +27,10 @@
 namespace Vlab {
 namespace Solver {
 
-class ArithmeticFormulaGenerator: public SMT::Visitor {
-public:
-  ArithmeticFormulaGenerator(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr);
-  virtual ~ArithmeticFormulaGenerator();
+class StringFormulaGenerator: public SMT::Visitor {
+ public:
+  StringFormulaGenerator(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr);
+  virtual ~StringFormulaGenerator();
 
   void start(SMT::Visitable_ptr);
   void start() override;
@@ -105,20 +102,20 @@ public:
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
 
-  Theory::ArithmeticFormula_ptr get_term_formula(SMT::Term_ptr term);
-  Theory::ArithmeticFormula_ptr get_group_formula(std::string group_name);
-  bool has_string_terms(SMT::Term_ptr term);
-  std::map<SMT::Term_ptr, SMT::TermList> get_string_terms_map();
-  SMT::TermList& get_string_terms_in(SMT::Term_ptr term);
+  Theory::StringFormula_ptr get_term_formula(SMT::Term_ptr term);
+  Theory::StringFormula_ptr get_group_formula(std::string group_name);
+  bool has_integer_terms(SMT::Term_ptr term);
+  std::map<SMT::Term_ptr, SMT::TermList> get_integer_terms_map();
+  SMT::TermList& get_integer_terms_in(SMT::Term_ptr term);
   void clear_term_formula(SMT::Term_ptr term);
   void clear_term_formulas();
 
   std::string get_term_group_name(SMT::Term_ptr term);
 
 protected:
-  void add_int_variables(std::string group_name, SMT::Term_ptr term);
+  void add_string_variables(std::string group_name, SMT::Term_ptr term);
 
-  bool set_term_formula(SMT::Term_ptr term, Theory::ArithmeticFormula_ptr formula);
+  bool set_term_formula(SMT::Term_ptr term, Theory::StringFormula_ptr formula);
   void delete_term_formula(SMT::Term_ptr);
   void set_group_mappings();
 
@@ -128,17 +125,17 @@ protected:
   bool has_mixed_constraint_;
   std::string current_group_;
 
-  std::map<SMT::Term_ptr, Theory::ArithmeticFormula_ptr> term_formula_;
+  std::map<SMT::Term_ptr, Theory::StringFormula_ptr> term_formula_;
 
   /**
    * TODO instead of keeping that maps, add a pre-processing step
    * to have a auxiliary variable for mixed terms
    */
-  SMT::TermList string_terms_;
-  std::map<SMT::Term_ptr, SMT::TermList> string_terms_map_;
+  SMT::TermList integer_terms_;
+  std::map<SMT::Term_ptr, SMT::TermList> integer_terms_map_;
 
   std::map<SMT::Term_ptr, std::string> term_group_map_;
-  std::map<std::string, Theory::ArithmeticFormula_ptr> group_formula_;
+  std::map<std::string, Theory::StringFormula_ptr> group_formula_;
 
 private:
   static const int VLOG_LEVEL;
@@ -147,4 +144,4 @@ private:
 } /* namespace Solver */
 } /* namespace Vlab */
 
-#endif /* SOLVER_ARITHMETICFORMULAGENERATOR_H_ */
+#endif /* SRC_SOLVER_STRINGFORMULAGENERATOR_H_ */

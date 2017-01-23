@@ -23,6 +23,8 @@ libabcautomaton_la_SOURCES = \
 	BinaryState.h \
 	SemilinearSet.cpp \
 	SemilinearSet.h \
+	StringFormula.cpp \
+	StringFormula.h \
 	Automaton.cpp \
 	Automaton.h \
 	BoolAutomaton.cpp \

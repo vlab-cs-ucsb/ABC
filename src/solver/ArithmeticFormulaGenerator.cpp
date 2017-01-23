@@ -151,12 +151,6 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
     has_arithmetic_formula = constraint_information_->has_arithmetic_constraint(term) or has_arithmetic_formula;
   }
 
-  if (has_arithmetic_formula) {
-    std::cout << "!!!or term has arithmetic formula: " << or_term << std::endl;
-  } else {
-    std::cout << "!!!or term does not have arithmetic formula: " << or_term << std::endl;
-  }
-
   DVLOG(VLOG_LEVEL) << "post visit start: " << *or_term << "@" << or_term;
   auto group_formula = get_group_formula(current_group_);
   if (has_arithmetic_formula and group_formula not_eq nullptr and group_formula->get_number_of_variables() > 0) {
@@ -168,7 +162,6 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
     if (has_mixed_constraint_) {
       constraint_information_->add_mixed_constraint(or_term);
     }
-    std::cout << "arithmetic formula added: " << or_term << std::endl;
   }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *or_term << "@" << or_term;
 }
