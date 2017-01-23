@@ -153,92 +153,93 @@ RelationalStringAutomaton_ptr RelationalStringAutomaton::clone() const {
 }
 
 RelationalStringAutomaton_ptr RelationalStringAutomaton::makePrefixSuffix(int left_track, int prefix_track, int suffix_track, int num_tracks) {
-  RelationalStringAutomaton_ptr result_auto = nullptr;
-  DFA_ptr temp_dfa, result_dfa;
-  TransitionVector tv;
-
-  int var = VAR_PER_TRACK;
-  int len = num_tracks * var;
-  int *mindices = getIndices(num_tracks*var);
-  std::vector<char> exep_lambda(var,'1');
-  tv = generate_transitions_for_relation(StringFormula::Type::EQ, var);
-
-  dfaSetup(4,len,mindices);
-  dfaAllocExceptions(2*tv.size() + 1); // 1 extra for lambda stuff below
-  for(int i = 0; i < tv.size(); i++) {
-    std::vector<char> str(len,'X');
-    for(int k = 0; k < var; k++) {
-      str[left_track+num_tracks*k] = tv[i].first[k];
-      str[prefix_track+num_tracks*k] = tv[i].first[k];
-      str[suffix_track+num_tracks*k] = exep_lambda[k];
-    }
-    str.push_back('\0');
-    dfaStoreException(0,&str[0]);
-  }
-
-  // if prefix is lambda, left  and suffix same
-  for(int i = 0; i < tv.size(); i++) {
-    std::vector<char> str(len,'X');
-    for (int k = 0; k < var; k++) {
-      str[left_track+num_tracks*k] = tv[i].first[k];
-      str[prefix_track+num_tracks*k] = exep_lambda[k];
-      str[suffix_track+num_tracks*k] = tv[i].first[k];
-    }
-    str.push_back('\0');
-    dfaStoreException(1,&str[0]);
-  }
-
-  // if all 3 are lambda, go to next state
-  std::vector<char> str(len,'X');
-  str = std::vector<char>(len,'X');
-  for(int k = 0; k < var; k++) {
-    str[left_track+num_tracks*k] = exep_lambda[k];
-    str[prefix_track+num_tracks*k] = exep_lambda[k];
-    str[suffix_track+num_tracks*k] = exep_lambda[k];
-  }
-  str.push_back('\0');
-  dfaStoreException(2,&str[0]);
-  dfaStoreState(3);
-
-  // left = suffix, prefix lambda, loop back here
-  dfaAllocExceptions(tv.size() + 1);
-  for(int i = 0; i < tv.size(); i++) {
-    std::vector<char> str(len,'X');
-    for (int k = 0; k < var; k++) {
-      str[left_track+num_tracks*k] = tv[i].first[k];
-      str[prefix_track+num_tracks*k] = exep_lambda[k];
-      str[suffix_track+num_tracks*k] = tv[i].first[k];
-    }
-    str.push_back('\0');
-    dfaStoreException(1,&str[0]);
-  }
-  // if all 3 lambda, goto 2
-  str = std::vector<char>(len,'X');
-  for(int k = 0; k < var; k++) {
-    str[left_track+num_tracks*k] = exep_lambda[k];
-    str[prefix_track+num_tracks*k] = exep_lambda[k];
-    str[suffix_track+num_tracks*k] = exep_lambda[k];
-  }
-  str.push_back('\0');
-  dfaStoreException(2,&str[0]);
-  dfaStoreState(3);
-
-  // lambda/lambda state, loop back on lambda
-  dfaAllocExceptions(1);
-  dfaStoreException(2,&str[0]);
-  dfaStoreState(3);
-
-  // sink
-  dfaAllocExceptions(0);
-  dfaStoreState(3);
-
-  temp_dfa = dfaBuild("--+-");
-  result_dfa = dfaMinimize(temp_dfa);
-  dfaFree(temp_dfa);
-  result_auto = new RelationalStringAutomaton(result_dfa,num_tracks);
-
-  delete[] mindices;
-  return result_auto;
+//  RelationalStringAutomaton_ptr result_auto = nullptr;
+//  DFA_ptr temp_dfa, result_dfa;
+//  TransitionVector tv;
+//
+//  int var = VAR_PER_TRACK;
+//  int len = num_tracks * var;
+//  int *mindices = getIndices(num_tracks*var);
+//  std::vector<char> exep_lambda(var,'1');
+//  tv = generate_transitions_for_relation(StringFormula::Type::EQ, var);
+//
+//  dfaSetup(4,len,mindices);
+//  dfaAllocExceptions(2*tv.size() + 1); // 1 extra for lambda stuff below
+//  for(int i = 0; i < tv.size(); i++) {
+//    std::vector<char> str(len,'X');
+//    for(int k = 0; k < var; k++) {
+//      str[left_track+num_tracks*k] = tv[i].first[k];
+//      str[prefix_track+num_tracks*k] = tv[i].first[k];
+//      str[suffix_track+num_tracks*k] = exep_lambda[k];
+//    }
+//    str.push_back('\0');
+//    dfaStoreException(0,&str[0]);
+//  }
+//
+//  // if prefix is lambda, left  and suffix same
+//  for(int i = 0; i < tv.size(); i++) {
+//    std::vector<char> str(len,'X');
+//    for (int k = 0; k < var; k++) {
+//      str[left_track+num_tracks*k] = tv[i].first[k];
+//      str[prefix_track+num_tracks*k] = exep_lambda[k];
+//      str[suffix_track+num_tracks*k] = tv[i].first[k];
+//    }
+//    str.push_back('\0');
+//    dfaStoreException(1,&str[0]);
+//  }
+//
+//  // if all 3 are lambda, go to next state
+//  std::vector<char> str(len,'X');
+//  str = std::vector<char>(len,'X');
+//  for(int k = 0; k < var; k++) {
+//    str[left_track+num_tracks*k] = exep_lambda[k];
+//    str[prefix_track+num_tracks*k] = exep_lambda[k];
+//    str[suffix_track+num_tracks*k] = exep_lambda[k];
+//  }
+//  str.push_back('\0');
+//  dfaStoreException(2,&str[0]);
+//  dfaStoreState(3);
+//
+//  // left = suffix, prefix lambda, loop back here
+//  dfaAllocExceptions(tv.size() + 1);
+//  for(int i = 0; i < tv.size(); i++) {
+//    std::vector<char> str(len,'X');
+//    for (int k = 0; k < var; k++) {
+//      str[left_track+num_tracks*k] = tv[i].first[k];
+//      str[prefix_track+num_tracks*k] = exep_lambda[k];
+//      str[suffix_track+num_tracks*k] = tv[i].first[k];
+//    }
+//    str.push_back('\0');
+//    dfaStoreException(1,&str[0]);
+//  }
+//  // if all 3 lambda, goto 2
+//  str = std::vector<char>(len,'X');
+//  for(int k = 0; k < var; k++) {
+//    str[left_track+num_tracks*k] = exep_lambda[k];
+//    str[prefix_track+num_tracks*k] = exep_lambda[k];
+//    str[suffix_track+num_tracks*k] = exep_lambda[k];
+//  }
+//  str.push_back('\0');
+//  dfaStoreException(2,&str[0]);
+//  dfaStoreState(3);
+//
+//  // lambda/lambda state, loop back on lambda
+//  dfaAllocExceptions(1);
+//  dfaStoreException(2,&str[0]);
+//  dfaStoreState(3);
+//
+//  // sink
+//  dfaAllocExceptions(0);
+//  dfaStoreState(3);
+//
+//  temp_dfa = dfaBuild("--+-");
+//  result_dfa = dfaMinimize(temp_dfa);
+//  dfaFree(temp_dfa);
+//  result_auto = new RelationalStringAutomaton(result_dfa,num_tracks);
+//
+//  delete[] mindices;
+//  return result_auto;
+  return nullptr;
 }
 
 RelationalStringAutomaton_ptr RelationalStringAutomaton::MakePhi(StringFormula_ptr formula) {
@@ -858,9 +859,9 @@ RelationalStringAutomaton_ptr RelationalStringAutomaton::MakeGreaterThanOrEqual(
   return nullptr;
 }
 
-RelationalStringAutomaton_ptr RelationalStringAutomaton::MakeAnyAutoUnaligned(int num_tracks) {
+RelationalStringAutomaton_ptr RelationalStringAutomaton::MakeAnyStringUnaligned(StringFormula_ptr formula) {
   DFA_ptr result, temp;
-  int len = VAR_PER_TRACK * num_tracks;
+  int len = VAR_PER_TRACK * formula->get_number_of_variables();
   int *mindices = Automaton::getIndices(len);
 
   dfaSetup(1, len, mindices);
@@ -871,18 +872,18 @@ RelationalStringAutomaton_ptr RelationalStringAutomaton::MakeAnyAutoUnaligned(in
   result = dfaMinimize(temp);
   dfaFree(temp);
   delete[] mindices;
-  return new RelationalStringAutomaton(result,num_tracks);
+  return new RelationalStringAutomaton(result, formula);
 }
 
-RelationalStringAutomaton_ptr RelationalStringAutomaton::MakeAnyAutoAligned(int num_tracks) {
+RelationalStringAutomaton_ptr RelationalStringAutomaton::MakeAnyStringAligned(StringFormula_ptr formula) {
   RelationalStringAutomaton_ptr aligned_auto = nullptr, any_auto = nullptr, temp_auto = nullptr;
   StringAutomaton_ptr any_string_auto = nullptr;
 
-  aligned_auto = MakeAnyAutoUnaligned(num_tracks);
+  aligned_auto = MakeAnyStringUnaligned(formula->clone());
   any_string_auto = StringAutomaton::makeAnyString();
-
-  for(unsigned i = 0; i < num_tracks; i++) {
-    any_auto = new RelationalStringAutomaton(any_string_auto->getDFA(),i,num_tracks);
+  const int number_of_string_vars = formula->get_number_of_variables();
+  for(unsigned i = 0; i < number_of_string_vars; i++) {
+    any_auto = new RelationalStringAutomaton(any_string_auto->getDFA(), i, number_of_string_vars);
     temp_auto = aligned_auto->Intersect(any_auto);
     delete aligned_auto;
     delete any_auto;
@@ -896,7 +897,7 @@ RelationalStringAutomaton_ptr RelationalStringAutomaton::Complement() {
   DFA_ptr complement_dfa = dfaCopy(this->dfa_);
   dfaNegation(complement_dfa);
   auto temp_auto = new RelationalStringAutomaton(complement_dfa, formula_->negate());
-  auto aligned_universe_auto = MakeAnyAutoAligned(this->num_of_tracks_);
+  auto aligned_universe_auto = MakeAnyStringAligned(formula_->clone());
   auto complement_auto = temp_auto->Intersect(aligned_universe_auto);
   delete temp_auto;
   delete aligned_universe_auto;
@@ -911,7 +912,9 @@ RelationalStringAutomaton_ptr RelationalStringAutomaton::Union(RelationalStringA
   }
 
   auto union_dfa = Automaton::DfaUnion(this->dfa_,other_auto->dfa_);
-  auto union_auto = new RelationalStringAutomaton(union_dfa, formula_->clone()->reset_param_orders());
+  auto formula = formula_->clone();
+  formula->reset_param_orders();
+  auto union_auto = new RelationalStringAutomaton(union_dfa, formula);
   DVLOG(VLOG_LEVEL) << union_auto->id_ << " = [" << this->id_ << "]->Union(" << other_auto->id_ << ")";
   return union_auto;
 }
@@ -930,35 +933,34 @@ RelationalStringAutomaton_ptr RelationalStringAutomaton::Difference(RelationalSt
 }
 
 RelationalStringAutomaton_ptr RelationalStringAutomaton::Intersect(RelationalStringAutomaton_ptr other_auto) {
-  DFA_ptr intersect_dfa;
-  RelationalStringAutomaton_ptr intersect_auto = nullptr;
-  StringFormula_ptr intersect_relation = nullptr;
-  if (this->num_of_tracks_ != other_auto->num_of_tracks_) {
-    LOG(FATAL) << "Error in RelationalStringAutomaton::intersect, unequal track numbers\n"
-               << this->num_of_tracks_ << " != " << other_auto->num_of_tracks_;
+  if (this->formula_->get_number_of_variables() != other_auto->formula_->get_number_of_variables()) {
+    LOG(FATAL) << "Number of variables are not equal!";
+    return nullptr;
   }
 
-  intersect_dfa = DfaIntersect(this->dfa_,other_auto->dfa_);
-  intersect_auto = new RelationalStringAutomaton(intersect_dfa, this->num_of_tracks_);
+  auto intersect_dfa = DfaIntersect(this->dfa_,other_auto->dfa_);
+  auto formula = formula_->clone();
+  formula->reset_param_orders();
+  auto intersect_auto = new RelationalStringAutomaton(intersect_dfa, formula);
+  DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << other_auto->id_ << ")";
 
-  if(this->relation == nullptr && other_auto->relation == nullptr) {
-    //LOG(FATAL) << "No relation set for either multitrack during intersection";
-  } else if(other_auto->relation == nullptr) {
-    intersect_relation = this->relation->clone();
-  } else if(this->relation == nullptr) {
-    intersect_relation = other_auto->relation->clone();
-  } else {
-    intersect_relation = new StringFormula();
-    intersect_relation->set_type(StringFormula::Type::INTERSECT);
-    intersect_relation->set_left(this->relation->clone());
-    intersect_relation->set_right(other_auto->relation->clone());
-    intersect_relation->set_variable_trackmap(this->relation->get_variable_trackmap());
-  }
-  intersect_auto->set_formula(intersect_relation);
   return intersect_auto;
 }
 
-RelationalStringAutomaton_ptr RelationalStringAutomaton::projectKTrack(int k_track) {
+/**
+ * TODO be careful with the number of variables in the formula and the number of tracks
+ */
+RelationalStringAutomaton_ptr RelationalStringAutomaton::ProjecAwayVariable(std::string var_name) {
+  int index = formula_->get_variable_index(var_name);
+
+  auto result_auto = ProjectKTrack(index);
+  result_auto->formula_->remove_variable(var_name);
+
+  DVLOG(VLOG_LEVEL) << result_auto->id_ << " = [" << this->id_ << "]->ProjecAwayVariable(" << var_name << ")";
+  return result_auto;
+}
+
+RelationalStringAutomaton_ptr RelationalStringAutomaton::ProjectKTrack(int k_track) {
   RelationalStringAutomaton_ptr result_auto;
   DFA_ptr temp,result_dfa = this->dfa_;
   int flag = 0;
@@ -981,14 +983,20 @@ RelationalStringAutomaton_ptr RelationalStringAutomaton::projectKTrack(int k_tra
   }
   dfaReplaceIndices(result_dfa,map);
   delete[] map;
-  result_auto = new RelationalStringAutomaton(result_dfa,this->num_of_tracks_-1);
-  if(relation != nullptr) {
-    result_auto->set_formula(relation->clone());
-  }
+  result_auto = new RelationalStringAutomaton(result_dfa, formula_->clone());
+  result_auto->num_of_tracks_ = result_auto->num_of_tracks_ - 1;
+  DVLOG(VLOG_LEVEL) << result_auto->id_ << " = [" << this->id_ << "]->ProjectKTrack(" << k_track << ")";
   return result_auto;
 }
 
-StringAutomaton_ptr RelationalStringAutomaton::getKTrack(int k_track) {
+StringAutomaton_ptr RelationalStringAutomaton::GetAutomatonForVariable(std::string var_name) {
+  int index = formula_->get_variable_index(var_name);
+  auto result_auto = GetKTrack(index);
+  DVLOG(VLOG_LEVEL) << result_auto->getId() << " = [" << this->id_ << "]->GetAutomatonForVariable(" << var_name << ")";
+  return result_auto;
+}
+
+StringAutomaton_ptr RelationalStringAutomaton::GetKTrack(int k_track) {
   DFA_ptr result = this->dfa_, temp;
   StringAutomaton_ptr result_auto = nullptr;
   int flag = 0;
@@ -1165,15 +1173,11 @@ int RelationalStringAutomaton::getNumTracks() const {
 }
 
 StringFormula_ptr RelationalStringAutomaton::get_formula() {
-  return this->relation;
+  return formula_;
 }
 
-bool RelationalStringAutomaton::set_formula(StringFormula_ptr relation) {
-  if(this->relation != nullptr) {
-    delete this->relation;
-  }
-  this->relation = relation;
-  return true;
+void RelationalStringAutomaton::set_formula(StringFormula_ptr formula) {
+  this->formula_ = formula;
 }
 
 const RelationalStringAutomaton::TransitionVector& RelationalStringAutomaton::generate_transitions_for_relation(StringFormula::Type type, int bits_per_var) {
@@ -1929,7 +1933,7 @@ DFA_ptr RelationalStringAutomaton::trim_prefix(DFA_ptr subject_dfa, DFA_ptr trim
   delete trim_multi;
 
   // 3rd track has lambda prefix, so get it (automatically removes lambda prefix/suffix)
-  result_string_auto = intersect_multi->getKTrack(2);
+  result_string_auto = intersect_multi->GetKTrack(2);
   result_dfa = dfaCopy(result_string_auto->getDFA());
   delete intersect_multi;
   delete result_string_auto;
@@ -1961,7 +1965,7 @@ DFA_ptr RelationalStringAutomaton::trim_suffix(DFA_ptr subject_dfa, DFA_ptr trim
   delete temp_multi;
   delete trim_multi;
 
-  result_string_auto = intersect_multi->getKTrack(1);
+  result_string_auto = intersect_multi->GetKTrack(1);
   result_dfa = dfaCopy(result_string_auto->getDFA());
   delete intersect_multi;
   delete result_string_auto;
@@ -1990,7 +1994,7 @@ DFA_ptr RelationalStringAutomaton::concat(DFA_ptr prefix_dfa, DFA_ptr suffix_dfa
   intersect_multi = temp_multi->Intersect(suffix_multi);
   delete temp_multi;
   delete suffix_multi;
-  result_string_auto = intersect_multi->getKTrack(0);
+  result_string_auto = intersect_multi->GetKTrack(0);
   result_dfa = dfaCopy(result_string_auto->getDFA());
   delete intersect_multi;
   delete result_string_auto;

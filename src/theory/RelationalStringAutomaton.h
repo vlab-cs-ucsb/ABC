@@ -44,22 +44,24 @@ class RelationalStringAutomaton: public Automaton {
   static RelationalStringAutomaton_ptr MakeLessThanOrEqual(StringFormula_ptr formula);
   static RelationalStringAutomaton_ptr MakeGreaterThan(StringFormula_ptr formula);
   static RelationalStringAutomaton_ptr MakeGreaterThanOrEqual(StringFormula_ptr formula);
-  static RelationalStringAutomaton_ptr MakeAnyAutoUnaligned(int num_tracks);
-  static RelationalStringAutomaton_ptr MakeAnyAutoAligned(int num_tracks);
+  static RelationalStringAutomaton_ptr MakeAnyStringUnaligned(StringFormula_ptr formula);
+  static RelationalStringAutomaton_ptr MakeAnyStringAligned(StringFormula_ptr formula);
 
   RelationalStringAutomaton_ptr Complement();
   RelationalStringAutomaton_ptr Union(RelationalStringAutomaton_ptr other_auto);
   RelationalStringAutomaton_ptr Intersect(RelationalStringAutomaton_ptr other_auto);
   RelationalStringAutomaton_ptr Difference(RelationalStringAutomaton_ptr other_auto);
 
-  RelationalStringAutomaton_ptr projectKTrack(int track);
-  StringAutomaton_ptr getKTrack(int k);
+  RelationalStringAutomaton_ptr ProjecAwayVariable(std::string var_name);
+  RelationalStringAutomaton_ptr ProjectKTrack(int track);
+  StringAutomaton_ptr GetAutomatonForVariable(std::string var_name);
+  StringAutomaton_ptr GetKTrack(int k);
   void SetSymbolicCounter() override;
   std::vector<std::string> getAnAcceptingStringForEachTrack();
   int getNumTracks() const;
 
   StringFormula_ptr get_formula();
-  bool set_formula(StringFormula_ptr formula);
+  void set_formula(StringFormula_ptr formula);
 
 
 

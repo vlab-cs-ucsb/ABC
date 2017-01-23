@@ -16,7 +16,7 @@
 
 #include "../smt/ast.h"
 #include "../smt/Visitor.h"
-#include "../theory/MultiTrackAutomaton.h"
+#include "../theory/RelationalStringAutomaton.h"
 #include "../theory/StringAutomaton.h"
 #include "../theory/StringFormula.h"
 #include "AstTraverser.h"

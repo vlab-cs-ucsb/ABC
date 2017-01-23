@@ -169,6 +169,10 @@ void StringFormula::add_variable(std::string name, int position) {
   variable_order_map_[name] = position;
 }
 
+void StringFormula::remove_variable(std::string var_name) {
+  variable_order_map_.erase(var_name);
+}
+
 std::vector<int> StringFormula::get_coefficients() const {
   std::vector<int> coefficients;
   for (const auto& el : variable_order_map_) {

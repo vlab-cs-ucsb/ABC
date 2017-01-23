@@ -51,6 +51,7 @@ class StringFormula {
   int get_variable_coefficient(std::string) const;
   void set_variable_coefficient(std::string, int coeff);
   void add_variable(std::string, int);
+  void remove_variable(std::string);
   std::vector<int> get_coefficients() const;
   std::string get_constant() const;
   void set_constant(std::string constant);
