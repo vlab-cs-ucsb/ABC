@@ -1,6 +1,9 @@
-//
-// Created by will on 3/4/16.
-//
+/*
+ * StringConstraintSolver.cpp
+ *
+ *  Created on: Jan 22, 2017
+ *      Author: baki
+ */
 
 #include "StringConstraintSolver.h"
 
@@ -12,115 +15,80 @@ using namespace Theory;
 
 const int StringConstraintSolver::VLOG_LEVEL = 13;
 
-StringConstraintSolver::StringConstraintSolver(Script_ptr script, SymbolTable_ptr symb,
-                         ConstraintInformation_ptr constraint_information)
-  : AstTraverser(script), symbol_table_(symb),
-    string_relation_generator_(script, symb, constraint_information),
-    constraint_information_(constraint_information) {
+StringConstraintSolver::StringConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_table,
+                                                       ConstraintInformation_ptr constraint_information)
+    : AstTraverser(script),
+      symbol_table_(symbol_table),
+      constraint_information_(constraint_information),
+      string_formula_generator_(script, symbol_table, constraint_information) {
   setCallbacks();
 }
-
 
 StringConstraintSolver::~StringConstraintSolver() {
 }
 
-void StringConstraintSolver::start() {
-  visitScript(root_);
-  end();
-}
 
-void StringConstraintSolver::start(SMT::Visitable_ptr node) {
+void StringConstraintSolver::start(Visitable_ptr node) {
+  DVLOG(VLOG_LEVEL) << "String constraint solving starts at node: " << node;
   this->Visitor::visit(node);
   end();
 }
 
+void StringConstraintSolver::start() {
+  DVLOG(VLOG_LEVEL) << "String constraint solving starts at root";
+  visitScript(root_);
+  end();
+}
+
 void StringConstraintSolver::end() {
+  string_formula_generator_.end();
 }
 
 void StringConstraintSolver::collect_string_constraint_info() {
-  string_relation_generator_.start();
+  string_formula_generator_.start();
+  integer_terms_map_ = string_formula_generator_.get_integer_terms_map();
 }
 
+/**
+ * TODO move group updating inside AND and OR
+ */
 void StringConstraintSolver::setCallbacks() {
-  auto term_callback = [this](Term_ptr term) -> bool {
-
-      switch (term->type()) {
-        case Term::Type::EQ:
-        case Term::Type::NOTEQ:
-        case Term::Type::GT:
-        case Term::Type::GE:
-        case Term::Type::LT:
-        case Term::Type::LE:
-        case Term::Type::BEGINS:
-        case Term::Type::NOTBEGINS: {
-          DVLOG(VLOG_LEVEL) << "visit: " << *term;
-
-          StringRelation_ptr relation = string_relation_generator_.get_term_relation(term);
-          if(relation == nullptr) {
-            return false;
-          }
-          StringRelation_ptr left = relation->get_left();
-          StringRelation_ptr right = relation->get_right();
-          StringRelation_ptr temp_relation = nullptr;
-          MultiTrackAutomaton_ptr multi_auto = nullptr,
-                                  temp_auto = nullptr,
-                                  result_auto = nullptr;
-          /*
-           * Xc < Y   =>   Z < Y && Z = Xc
-           */
-          if(left->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
-            temp_relation = right;
-            relation->set_right(left);
-            relation->set_left(temp_relation);
-          }
-
-          if(right->get_type() == StringRelation::Type::CONCAT_VAR_CONSTANT) {
-            std::map<std::string, int> trackmap_handle = relation->get_variable_trackmap();
-            std::string name = symbol_table_->get_var_name_for_node(term, Variable::Type::STRING);
-            int id = trackmap_handle.size();
-            trackmap_handle[name] = id;
-
-            temp_relation = new StringRelation();
-            temp_relation->set_type(StringRelation::Type::STRING_VAR);
-            temp_relation->set_data(name);
-
-            relation->set_right(temp_relation);
-            relation->set_variable_trackmap(trackmap_handle);
-            temp_auto = MultiTrackAutomaton::makeAuto(relation);
-            relation->set_right(right);
-
-            right->set_variable_trackmap(trackmap_handle);
-            multi_auto = MultiTrackAutomaton::makeConcatExtraTrack(right);
-            result_auto = temp_auto->intersect(multi_auto);
-            delete temp_auto;
-            delete multi_auto;
-            multi_auto = result_auto->projectKTrack(id);
-            delete result_auto;
-
-            trackmap_handle.erase(name);
-            relation->set_variable_trackmap(trackmap_handle);
-            multi_auto->setRelation(relation->clone());
-            delete temp_relation;
-          } else {
-            DVLOG(VLOG_LEVEL) << "No concat!";
-            multi_auto = MultiTrackAutomaton::makeAuto(relation);
-          }
-
-          Value_ptr val = new Value(multi_auto);
-          set_term_value(term,val);
-          break;
+  auto term_callback = [this] (Term_ptr term) -> bool {
+    switch (term->type()) {
+      case Term::Type::NOT:
+      case Term::Type::EQ:
+      case Term::Type::NOTEQ:
+      case Term::Type::GT:
+      case Term::Type::GE:
+      case Term::Type::LT:
+      case Term::Type::LE:
+      case Term::Type::BEGINS:
+      case Term::Type::NOTBEGINS: {
+        auto formula = string_formula_generator_.get_term_formula(term);
+        if (formula != nullptr) {
+          DVLOG(VLOG_LEVEL) << "Relational String Formula: " << *formula << "@" << term;
+          auto relational_str_auto = MultiTrackAutomaton::MakeAutomaton(formula->clone());
+          auto result = new Value(relational_str_auto);
+          set_term_value(term, result);
+          // once we solve an atomic string constraint,
+          // we delete its formula to avoid solving it again.
+          // Atomic string constraints solved precisely,
+          // mixed constraints handled without resolving this part
+          string_formula_generator_.clear_term_formula(term);
         }
-        default:
-          break;
+        break;
       }
-      return false;
+      default:
+      break;
+    }
+    return false;
   };
 
   auto command_callback = [](Command_ptr command) -> bool {
-      if (Command::Type::ASSERT == command->getType()) {
-        return true;
-      }
-      return false;
+    if (Command::Type::ASSERT == command->getType()) {
+      return true;
+    }
+    return false;
   };
 
   setCommandPreCallback(command_callback);
@@ -130,7 +98,7 @@ void StringConstraintSolver::setCallbacks() {
 void StringConstraintSolver::visitScript(Script_ptr script) {
   symbol_table_->push_scope(script);
   visit_children_of(script);
-  symbol_table_->pop_scope();
+  symbol_table_->pop_scope();  // global scope, it is reachable via script pointer all the time
 }
 
 void StringConstraintSolver::visitAssert(Assert_ptr assert_command) {
@@ -139,119 +107,151 @@ void StringConstraintSolver::visitAssert(Assert_ptr assert_command) {
 }
 
 void StringConstraintSolver::visitAnd(And_ptr and_term) {
-  DVLOG(VLOG_LEVEL) << "visit: " << *and_term;
-  current_term_ = and_term;
-
   if (not constraint_information_->is_component(and_term)) {
+    DVLOG(VLOG_LEVEL) << "visit children of non-component start: " << *and_term << "@" << and_term;
     visit_children_of(and_term);
+    DVLOG(VLOG_LEVEL) << "visit children of non-component end: " << *and_term << "@" << and_term;
     return;
   }
 
-  bool is_satisfiable = true;
+  if (not constraint_information_->has_string_constraint(and_term)) {
+    return;
+  }
 
-  StringRelation_ptr relation = nullptr;
-  Value_ptr result = nullptr, param = nullptr, and_value = nullptr;
-  std::string group_name;
-  for(auto& term : *and_term->term_list) {
-    relation = string_relation_generator_.get_term_relation(term);
-    if(relation != nullptr) {
+  DVLOG(VLOG_LEVEL) << "visit children of component start: " << *and_term << "@" << and_term;
+
+  bool is_satisfiable = true;
+  bool has_string_formula = false;
+
+  std::string group_name = string_formula_generator_.get_term_group_name(and_term);
+  Value_ptr and_value = nullptr;
+
+  for (auto term : *(and_term->term_list)) {
+    auto formula = string_formula_generator_.get_term_formula(term);
+    if (formula != nullptr) {
+      has_string_formula = true;
       visit(term);
-      param = get_term_value(term);
-      group_name = string_relation_generator_.get_term_group_name(term);
-      symbol_table_->IntersectValue(group_name,param);
-      is_satisfiable = is_satisfiable and symbol_table_->get_value(group_name)->is_satisfiable();
-      string_relation_generator_.delete_term_relation(term);
+      auto param = get_term_value(term);
+      is_satisfiable = param->is_satisfiable();
+      if (is_satisfiable) {
+        if (and_value == nullptr) {
+          and_value = param->clone();
+        } else {
+          auto old_value = and_value;
+          and_value = and_value->intersect(param);
+          delete old_value;
+          is_satisfiable = and_value->is_satisfiable();
+        }
+      }
       clear_term_value(term);
-      if(!is_satisfiable) {
+      if (not is_satisfiable) {
         break;
       }
     }
   }
 
-  // for now, if sat then just add bool term.
-  // talk with baki about changing this
-  if(is_satisfiable) {
-    result = new Value(true);
-  } else {
-    result = new Value(MultiTrackAutomaton::makePhi(1));
-  }
-  set_term_value(and_term,result);
+  DVLOG(VLOG_LEVEL) << "visit children of component end: " << *and_term << "@" << and_term;
 
+  DVLOG(VLOG_LEVEL) << "post visit component start: " << *and_term << "@" << and_term;
+
+  /**
+   * TODO Below comment is copied from arithmetic constraint solver, there are different cases
+   * If and term does not have string formula, but we end up being here:
+   * 1) And term is under a disjunction and other disjunctive terms has string formula.
+   *  Here, variables appearing in string term will be unconstrained.
+   * 2) We are visited and term second time for some mixed constraints, for this we do an unnecessary
+   *  intersection below with any string, we can avoid that with more checks later!!!
+   */
+  if (and_value == nullptr and (not has_string_formula)) {
+    auto group_formula = string_formula_generator_.get_group_formula(group_name);
+    and_value = new Value(Theory::BinaryIntAutomaton::MakeAnyInt(group_formula->clone()));
+    has_string_formula = true;
+    is_satisfiable = true;
+  }
+
+  if (has_string_formula) {
+    if (is_satisfiable) {
+      symbol_table_->IntersectValue(group_name, and_value);  // update value
+    } else {
+      auto group_formula = string_formula_generator_.get_group_formula(group_name);
+      auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(group_formula->clone()));
+      symbol_table_->set_value(group_name, value);
+    }
+    delete and_value;
+  }
+  DVLOG(VLOG_LEVEL) << "post visit component end: " << *and_term << "@" << and_term;
 }
 
+/**
+ * 1) Update group value at each scope
+ * 2) Update result (union of scopes) after all
+ */
 void StringConstraintSolver::visitOr(Or_ptr or_term) {
-  DVLOG(VLOG_LEVEL) << "visit: " << *or_term;
-  current_term_ = or_term;
-  for (auto& term : *(or_term->term_list)) {
-    symbol_table_->push_scope(term);
-    visit(term);
-    symbol_table_->pop_scope();
+  if (not constraint_information_->is_component(or_term)) {  // a rare case, @deprecated
+    DVLOG(VLOG_LEVEL) << "visit children of non-component start: " << *or_term << "@" << or_term;
+    visit_children_of(or_term);
+    DVLOG(VLOG_LEVEL) << "visit children of non-component end: " << *or_term << "@" << or_term;
+    return;
   }
+
+  if (not constraint_information_->has_string_constraint(or_term)) {
+    return;
+  }
+
+  DVLOG(VLOG_LEVEL) << "visit children of component start: " << *or_term << "@" << or_term;
+  bool is_satisfiable = false;
+  std::string group_name = string_formula_generator_.get_term_group_name(or_term);
+  Value_ptr or_value = nullptr;
+  for (auto term : *(or_term->term_list)) {
+    auto formula = string_formula_generator_.get_term_formula(term);
+    if (formula != nullptr) {
+      symbol_table_->push_scope(term);
+      visit(term);
+      auto param = get_term_value(term);
+      is_satisfiable = param->is_satisfiable() or is_satisfiable;
+      if (is_satisfiable) {
+        if (or_value == nullptr) {
+          or_value = param->clone();
+        } else {
+          auto old_value = or_value;
+          or_value = or_value->union_(param);
+          delete old_value;
+        }
+      }
+      clear_term_value(term);
+      symbol_table_->pop_scope();
+    }
+  }
+
+  DVLOG(VLOG_LEVEL) << "visit children of component end: " << *or_term << "@" << or_term;
+
+  DVLOG(VLOG_LEVEL) << "post visit component start: " << *or_term << "@" << or_term;
+
+  if (constraint_information_->has_string_constraint(or_term)) {
+    if (is_satisfiable) {
+      // scope already reads value from upper scope
+      // implicit intersection is already done
+//      symbol_table_->IntersectValue(group_name, or_value);  // update value for union, this is upper scope
+      symbol_table_->set_value(group_name, or_value);
+    } else {
+      auto group_formula = string_formula_generator_.get_group_formula(group_name);
+      auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(group_formula->clone()));
+      symbol_table_->set_value(group_name, value);
+      delete or_value; // nullptr safe
+    }
+  }
+
+  DVLOG(VLOG_LEVEL) << "post visit component end: " << *or_term << "@" << or_term;
 }
 
-void StringConstraintSolver::visitConcat(Concat_ptr concat_term) {
-}
+std::string StringConstraintSolver::get_string_variable_name(SMT::Term_ptr term) {
+  Term_ptr key = term;
+  auto it1 = term_value_index_.find(term);
+  if (it1 != term_value_index_.end()) {
+    key = it1->second;
+  }
 
-void StringConstraintSolver::visitIn(In_ptr in_term) {
-}
-
-void StringConstraintSolver::visitNotIn(NotIn_ptr not_in_term) {
-}
-
-void StringConstraintSolver::visitLen(Len_ptr len_term) {
-}
-
-void StringConstraintSolver::visitContains(Contains_ptr contains_term) {
-}
-
-void StringConstraintSolver::visitNotContains(NotContains_ptr not_contains_term) {
-}
-
-void StringConstraintSolver::visitEnds(Ends_ptr ends_term) {
-}
-
-void StringConstraintSolver::visitNotEnds(NotEnds_ptr not_ends_term) {
-}
-
-void StringConstraintSolver::visitIndexOf(IndexOf_ptr index_of_term) {
-}
-
-void StringConstraintSolver::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
-}
-
-void StringConstraintSolver::visitCharAt(CharAt_ptr char_at_term) {
-}
-
-void StringConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
-}
-
-void StringConstraintSolver::visitToUpper(ToUpper_ptr to_upper_term) {
-}
-
-void StringConstraintSolver::visitToLower(ToLower_ptr to_lower_term) {
-}
-
-void StringConstraintSolver::visitTrim(Trim_ptr trim_term) {
-}
-
-void StringConstraintSolver::visitReplace(Replace_ptr replace_term) {
-}
-
-void StringConstraintSolver::visitCount(Count_ptr count_term) {
-}
-
-void StringConstraintSolver::visitIte(Ite_ptr ite_term) {
-}
-
-void StringConstraintSolver::visitReConcat(ReConcat_ptr reconcat_term) {
-}
-
-void StringConstraintSolver::visitToRegex(ToRegex_ptr to_regex_term) {
-}
-
-std::string StringConstraintSolver::get_string_variable_name(Term_ptr term) {
-  std::string group_name = string_relation_generator_.get_term_group_name(term);
-  return group_name;
+  return symbol_table_->get_var_name_for_node(key, Variable::Type::INT);
 }
 
 Value_ptr StringConstraintSolver::get_term_value(Term_ptr term) {
@@ -259,22 +259,48 @@ Value_ptr StringConstraintSolver::get_term_value(Term_ptr term) {
   if (it != term_values_.end()) {
     return it->second;
   }
+  std::string group_name = string_formula_generator_.get_term_group_name(term);
 
-  std::string group_name = string_relation_generator_.get_term_group_name(term);
   if (not group_name.empty()) {
     return symbol_table_->get_value(group_name);
   }
+
   return nullptr;
 }
 
+/**
+ * Term values are only stored for atomic constraints
+ */
 bool StringConstraintSolver::set_term_value(Term_ptr term, Value_ptr value) {
   auto result = term_values_.insert( { term, value });
   if (result.second == false) {
     LOG(FATAL)<< "Term automaton is already computed: " << *term << "@" << term;
   }
+//  std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
+//  if(!group_name.empty()) {
+//    symbol_table_->set_value(group_name,value);
+//    return true;
+//  }
+  return result.second;
 }
 
-void StringConstraintSolver::clear_term_value(SMT::Term_ptr term) {
+bool StringConstraintSolver::set_group_value(Term_ptr term, Value_ptr value) {
+  std::string group_name = string_formula_generator_.get_term_group_name(term);
+  return symbol_table_->set_value(group_name, value);
+}
+
+void StringConstraintSolver::clear_term_values() {
+  for (auto& entry : term_values_) {
+    delete entry.second;
+  }
+
+  term_values_.clear();
+}
+
+/**
+ * We don't need an atomic term value ones we compute it.
+ */
+void StringConstraintSolver::clear_term_value(Term_ptr term) {
   auto it = term_values_.find(term);
   if (it != term_values_.end()) {
     delete it->second;
@@ -282,61 +308,16 @@ void StringConstraintSolver::clear_term_value(SMT::Term_ptr term) {
   }
 }
 
-Value_ptr StringConstraintSolver::get_variable_value(Variable_ptr variable, bool multi_val) {
-  MultiTrackAutomaton_ptr relation_auto = nullptr;
-  StringAutomaton_ptr variable_auto = nullptr;
-  StringRelation_ptr variable_relation = nullptr;
-  Value_ptr relation_value = nullptr;
-  std::string group_name = string_relation_generator_.get_variable_group_name(current_term_,variable);
-  if(group_name.empty()) {
-    return nullptr;
-  }
-  DVLOG(VLOG_LEVEL) << "VARIABLE: " << variable->str() << " is part of GROUP: " << group_name;
-  relation_value = symbol_table_->get_value(group_name);
-
-  if(multi_val) {
-    return relation_value->clone();
-  }
-
-  relation_auto = relation_value->getMultiTrackAutomaton();
-  variable_relation = relation_auto->getRelation();
-  variable_auto = relation_auto->getKTrack(variable_relation->get_variable_index(variable->getName()));
-  return new Value(variable_auto);
+bool StringConstraintSolver::has_integer_terms(Term_ptr term) {
+  return (integer_terms_map_.find(term) != integer_terms_map_.end());
 }
 
-bool StringConstraintSolver::update_variable_value(Variable_ptr variable, Value_ptr value) {
-  MultiTrackAutomaton_ptr relation_auto = nullptr, variable_multi_auto = nullptr,intersect_auto = nullptr;
-  StringAutomaton_ptr variable_auto = nullptr;
-  Value_ptr relation_value = nullptr;
-  StringRelation_ptr variable_relation = nullptr;
-  std::string group_name = string_relation_generator_.get_variable_group_name(current_term_,variable);
-  if(group_name.empty()) {
-    DVLOG(VLOG_LEVEL) << *variable << " has no group";
-    return false;
-  }
-  relation_value = symbol_table_->get_value(group_name);
-  DVLOG(VLOG_LEVEL) << "VARIABLE: " << variable->str() << " is part of GROUP: " << group_name;
-  variable_auto = value->getStringAutomaton();
-  relation_auto = relation_value->getMultiTrackAutomaton();
-  variable_relation = relation_auto->getRelation();
-  // place variable value on multitrack, intersect and update corresonding term value
-  variable_multi_auto = new MultiTrackAutomaton(variable_auto->getDFA(),
-                                       variable_relation->get_variable_index(variable->getName()),
-                                       variable_relation->get_num_tracks());
-  variable_multi_auto->setRelation(variable_relation->clone());
-
-  Value_ptr val = new Value(variable_multi_auto);
-  symbol_table_->IntersectValue(group_name,val);
-  delete val;
-  return symbol_table_->get_value(group_name)->is_satisfiable();
+TermList& StringConstraintSolver::get_integer_terms_in(Term_ptr term) {
+  return integer_terms_map_[term];
 }
 
-bool StringConstraintSolver::has_variable(Variable_ptr variable) {
-  std::string group_name = string_relation_generator_.get_variable_group_name(current_term_,variable);
-  if(group_name.empty()) {
-    return false;
-  }
-  return true;
+std::map<SMT::Term_ptr, SMT::TermList>& StringConstraintSolver::get_integer_terms_map() {
+  return integer_terms_map_;
 }
 
 } /* namespace Solver */

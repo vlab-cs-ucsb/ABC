@@ -37,6 +37,8 @@ libabcautomaton_la_SOURCES = \
 	StringAutomaton.h \
 	BinaryIntAutomaton.cpp \
 	BinaryIntAutomaton.h \
+	RelationalStringAutomaton.cpp \
+	RelationalStringAutomaton.h \
 	MultiTrackAutomaton.cpp \
 	MultiTrackAutomaton.h \
 	StringRelation.cpp \

@@ -55,8 +55,9 @@ class StringFormula {
   std::string get_constant() const;
   void set_constant(std::string constant);
   bool is_constant() const;
-  void reset_coefficients(int value = 0);
-  int get_variable_index(std::string) const;
+  void reset_param_orders(int value = 0);
+  int get_variable_index(const std::string) const;
+  int get_variable_index(const int param_index) const;
 
   bool has_relation_to_mixed_term(const std::string var_name) const;
   void add_relation_to_mixed_term(const std::string var_name, const StringFormula::Type relation, const SMT::Term_ptr term);

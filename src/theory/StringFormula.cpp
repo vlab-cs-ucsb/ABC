@@ -156,7 +156,7 @@ bool StringFormula::is_constant() const {
   return true;
 }
 
-void StringFormula::reset_coefficients(int value) {
+void StringFormula::reset_param_orders(int value) {
   for (auto& el : variable_order_map_) {
     el.second = value;
   }
@@ -177,12 +177,23 @@ std::vector<int> StringFormula::get_coefficients() const {
   return coefficients;
 }
 
-int StringFormula::get_variable_index(std::string variable_name) const {
+int StringFormula::get_variable_index(const std::string variable_name) const {
   auto it = variable_order_map_.find(variable_name);
   if (it != variable_order_map_.end()) {
     return std::distance(variable_order_map_.begin(), it);
   }
   LOG(FATAL)<< "Variable '" << variable_name << "' is not in formula: " << *this;
+  return -1;
+}
+
+int StringFormula::get_variable_index(const int param_index) const {
+  for (auto it = variable_order_map_.begin(); it != variable_order_map_.end(); ++it) {
+    if (it->second == param_index) {
+      return std::distance(variable_order_map_.begin(), it);
+    }
+  }
+
+  LOG(FATAL)<< "Formula does not have param: " << param_index << ", " << *this;
   return -1;
 }
 

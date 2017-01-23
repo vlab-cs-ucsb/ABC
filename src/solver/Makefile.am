@@ -60,10 +60,12 @@ libabcsolver_la_SOURCES = \
   ArithmeticConstraintSolver.h \
   StringFormulaGenerator.cpp \
   StringFormulaGenerator.h \
-  StringRelationGenerator.cpp \
-  StringRelationGenerator.h \
   StringConstraintSolver.cpp \
   StringConstraintSolver.h \
+  StringRelationGenerator.cpp \
+  StringRelationGenerator.h \
+  StringConstraintSolverOld.cpp \
+  StringConstraintSolverOld.h \
   ConstraintSolver.cpp \
   ConstraintSolver.h \
   ModelCounter.cpp \
