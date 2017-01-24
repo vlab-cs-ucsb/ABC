@@ -204,7 +204,7 @@ void StringConstraintSolver::visitOr(Or_ptr or_term) {
   Value_ptr or_value = nullptr;
   for (auto term : *(or_term->term_list)) {
     auto formula = string_formula_generator_.get_term_formula(term);
-    if (formula != nullptr) {
+    if (formula != nullptr and (dynamic_cast<And_ptr>(term) == nullptr)) {
       symbol_table_->push_scope(term);
       visit(term);
       auto param = get_term_value(term);

@@ -155,10 +155,12 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         LOG(FATAL) << "mixed constraint te problem var";
         break;
       }
-      if (is_satisfiable) {
-        is_satisfiable = update_variables();
+      if (dynamic_cast<Or_ptr>(term) == nullptr) {
+        if (is_satisfiable) {
+          update_variables();
+        }
+        clearTermValuesAndLocalLetVars();
       }
-      clearTermValuesAndLocalLetVars();
     }
   }
 
@@ -201,7 +203,7 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
       symbol_table_->push_scope(term);
       bool is_scope_satisfiable = check_and_visit(term);
 
-      if (Term::Type::AND not_eq term->type()) {
+      if (dynamic_cast<And_ptr>(term) == nullptr) {
         if (is_scope_satisfiable) {
           update_variables();
         }
@@ -639,7 +641,6 @@ void ConstraintSolver::visitLen(Len_ptr len_term) {
 }
 
 void ConstraintSolver::visitContains(Contains_ptr contains_term) {
-  LOG(FATAL) << "burdayim lan";
   visit_children_of(contains_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *contains_term;
 

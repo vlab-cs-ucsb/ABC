@@ -1814,8 +1814,8 @@ StringAutomaton_ptr StringAutomaton::trim() {
 
   std::string trim_regex = "' '*";
   trim_auto = StringAutomaton::makeRegexAuto(trim_regex);
-  trimmed_prefix_dfa = MultiTrackAutomaton::trim_prefix(this->dfa_,trim_auto->getDFA(),num_of_variables_);
-  trimmed_dfa = MultiTrackAutomaton::trim_suffix(trimmed_prefix_dfa, trim_auto->getDFA(), num_of_variables_);
+  trimmed_prefix_dfa = RelationalStringAutomaton::trim_prefix(this->dfa_,trim_auto->getDFA(),num_of_variables_);
+  trimmed_dfa = RelationalStringAutomaton::trim_suffix(trimmed_prefix_dfa, trim_auto->getDFA(), num_of_variables_);
   delete trim_auto;
   dfaFree(trimmed_prefix_dfa);
 
@@ -2345,7 +2345,7 @@ StringAutomaton_ptr StringAutomaton::preConcatLeft(StringAutomaton_ptr right_aut
   DFA_ptr d1,d2,d3;
   d1 = this->dfa_;
   d2 = right_auto->getDFA();
-  d3 = MultiTrackAutomaton::pre_concat_prefix(d1,d2,8);
+  d3 = RelationalStringAutomaton::pre_concat_prefix(d1,d2,8);
   return new StringAutomaton(d3);
 }
 
@@ -2357,7 +2357,7 @@ StringAutomaton_ptr StringAutomaton::preConcatRight(StringAutomaton_ptr left_aut
   DFA_ptr d1,d2,d3;
   d1 = this->dfa_;
   d2 = left_auto->getDFA();
-  d3 = MultiTrackAutomaton::pre_concat_suffix(d1,d2,8);
+  d3 = RelationalStringAutomaton::pre_concat_suffix(d1,d2,8);
   return new StringAutomaton(d3);
 }
 

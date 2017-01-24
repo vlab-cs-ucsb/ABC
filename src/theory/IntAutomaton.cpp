@@ -814,7 +814,7 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
   DFA_ptr d1,d2,d3;
   d1 = this->dfa_;
   d2 = other_auto->getDFA();
-  d3 = MultiTrackAutomaton::concat(d1,d2,num_of_variables_);
+  d3 = RelationalStringAutomaton::concat(d1,d2,num_of_variables_);
   return new IntAutomaton(d3);
 /*
   DFA_ptr concat_dfa = nullptr, tmp_dfa = nullptr;
@@ -1065,7 +1065,7 @@ IntAutomaton_ptr IntAutomaton::__minus(IntAutomaton_ptr other_auto) {
   DFA_ptr result_dfa = nullptr;
   IntAutomaton_ptr result_auto = nullptr;
 
-  result_dfa = MultiTrackAutomaton::pre_concat_prefix(this->dfa_, other_auto->dfa_,num_of_variables_);
+  result_dfa = RelationalStringAutomaton::pre_concat_prefix(this->dfa_, other_auto->dfa_,num_of_variables_);
 
   result_auto = new IntAutomaton(result_dfa, num_of_variables_);
 

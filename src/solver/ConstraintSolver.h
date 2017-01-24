@@ -22,7 +22,7 @@
 #include "../theory/ArithmeticFormula.h"
 #include "../theory/BinaryIntAutomaton.h"
 #include "../theory/IntAutomaton.h"
-#include "../theory/MultiTrackAutomaton.h"
+#include "../theory/RelationalStringAutomaton.h"
 #include "../theory/StringAutomaton.h"
 #include "../theory/StringRelation.h"
 #include "../theory/UnaryAutomaton.h"

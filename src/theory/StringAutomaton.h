@@ -29,7 +29,7 @@
 #include "Graph.h"
 #include "GraphNode.h"
 #include "IntAutomaton.h"
-#include "MultiTrackAutomaton.h"
+#include "RelationalStringAutomaton.h"
 
 namespace Vlab {
 namespace Theory {
