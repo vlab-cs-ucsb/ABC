@@ -44,7 +44,9 @@ class StringConstraintSolver: public AstTraverser {
   void visitScript(SMT::Script_ptr);
   void visitAssert(SMT::Assert_ptr);
   void visitAnd(SMT::And_ptr);
-  void visitOr(SMT::Or_ptr);
+
+  void postVisitAnd(SMT::And_ptr);
+  void postVisitOr(SMT::Or_ptr);
 
   std::string get_string_variable_name(SMT::Term_ptr);
   Value_ptr get_term_value(SMT::Term_ptr term);
@@ -57,6 +59,8 @@ class StringConstraintSolver: public AstTraverser {
   std::map<SMT::Term_ptr, SMT::TermList>& get_integer_terms_map();
 
  protected:
+  void visitOr(SMT::Or_ptr);
+
   SymbolTable_ptr symbol_table_;
   ConstraintInformation_ptr constraint_information_;
   StringFormulaGenerator string_formula_generator_;

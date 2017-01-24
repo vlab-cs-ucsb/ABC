@@ -128,7 +128,7 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
 
   for (auto term : *(and_term->term_list)) {
     auto formula = string_formula_generator_.get_term_formula(term);
-    if (formula != nullptr) {
+    if (formula != nullptr and (dynamic_cast<Or_ptr>(term) == nullptr)) {
       has_string_formula = true;
       visit(term);
       auto param = get_term_value(term);
@@ -242,6 +242,83 @@ void StringConstraintSolver::visitOr(Or_ptr or_term) {
   }
 
   DVLOG(VLOG_LEVEL) << "post visit component end: " << *or_term << "@" << or_term;
+}
+
+void StringConstraintSolver::postVisitAnd(And_ptr and_term) {
+  DVLOG(VLOG_LEVEL) << "collect child results start: " << *and_term << "@" << and_term;
+
+  bool is_satisfiable = true;
+  bool has_string_formula = false;
+
+  std::string group_name = string_formula_generator_.get_term_group_name(and_term);
+  Value_ptr and_value = nullptr;
+
+  for (auto term : *(and_term->term_list)) {
+    auto formula = string_formula_generator_.get_term_formula(term);
+    /**
+     * In previous visit, automata for string constraints are created and
+     * formulae for them are deleted.
+     * For sub or terms, constraint solver recurses into and here we don't
+     * need to visit them, a value is already computed for them,
+     * grabs them from symbol table
+     */
+    if (formula != nullptr) {
+      has_string_formula = true;
+      auto param = get_term_value(term);
+      is_satisfiable = param->is_satisfiable();
+      if (is_satisfiable) {
+        if (and_value == nullptr) {
+          and_value = param->clone();
+        } else {
+          auto old_value = and_value;
+          and_value = and_value->intersect(param);
+          delete old_value;
+          is_satisfiable = and_value->is_satisfiable();
+        }
+      }
+      clear_term_value(term);
+      if (not is_satisfiable) {
+        break;
+      }
+    }
+  }
+
+  DVLOG(VLOG_LEVEL) << "collect child results end: " << *and_term << "@" << and_term;
+
+  DVLOG(VLOG_LEVEL) << "update result start: " << *and_term << "@" << and_term;
+
+  /**
+   * TODO Below comment is copied from arithmetic constraint solver, there are different cases
+   * If and term does not have string formula, but we end up being here:
+   * 1) And term is under a disjunction and other disjunctive terms has string formula.
+   *  Here, variables appearing in string term will be unconstrained.
+   * 2) We are visited and term second time for some mixed constraints, for this we do an unnecessary
+   *  intersection below with any string, we can avoid that with more checks later!!!
+   */
+  if (and_value == nullptr and (not has_string_formula)) {
+    auto group_formula = string_formula_generator_.get_group_formula(group_name);
+    and_value = new Value(Theory::RelationalStringAutomaton::MakeAnyStringUnaligned(group_formula->clone()));
+    has_string_formula = true;
+    is_satisfiable = true;
+  }
+
+  if (has_string_formula) {
+    if (is_satisfiable) {
+      symbol_table_->IntersectValue(group_name, and_value);  // update value
+    } else {
+      auto group_formula = string_formula_generator_.get_group_formula(group_name);
+      auto value = new Value(Theory::RelationalStringAutomaton::MakePhi(group_formula->clone()));
+      symbol_table_->set_value(group_name, value);
+    }
+    delete and_value;
+  }
+  DVLOG(VLOG_LEVEL) << "update result end: " << *and_term << "@" << and_term;
+}
+
+void StringConstraintSolver::postVisitOr(Or_ptr or_term) {
+  DVLOG(VLOG_LEVEL) << "collect child results start: " << *or_term << "@" << or_term;
+  visitOr(or_term);
+  DVLOG(VLOG_LEVEL) << "collect child results end: " << *or_term << "@" << or_term;
 }
 
 std::string StringConstraintSolver::get_string_variable_name(SMT::Term_ptr term) {

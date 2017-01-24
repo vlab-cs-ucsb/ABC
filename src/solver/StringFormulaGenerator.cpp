@@ -785,7 +785,11 @@ void StringFormulaGenerator::add_string_variables(std::string group_name, Term_p
   }
   auto formula = get_term_formula(term);
   group_formula->merge_variables(formula);
-  term_group_map_[term] = group_name;
+  if (StringFormula::Type::NONRELATIONAL == formula->get_type()) {
+    clear_term_formula(term);
+  } else {
+    term_group_map_[term] = group_name;
+  }
 }
 
 bool StringFormulaGenerator::set_term_formula(Term_ptr term, StringFormula_ptr formula) {

@@ -129,7 +129,8 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 
   for (auto term : *(and_term->term_list)) {
     auto formula = arithmetic_formula_generator_.get_term_formula(term);
-    if (formula != nullptr) {
+    // Do not visit child or terms here, handle them in POSTVISIT AND
+    if (formula != nullptr and (dynamic_cast<Or_ptr>(term) == nullptr)) {
       has_arithmetic_formula = true;
       visit(term);
       auto param = get_term_value(term);
@@ -242,6 +243,85 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
   }
 
   DVLOG(VLOG_LEVEL) << "post visit component end: " << *or_term << "@" << or_term;
+}
+
+/**
+ * Collects the result of the visitAnd all, does not recurses again
+ */
+void ArithmeticConstraintSolver::postVisitAnd(And_ptr and_term) {
+  DVLOG(VLOG_LEVEL) << "collect child results start: " << *and_term << "@" << and_term;
+
+  bool is_satisfiable = true;
+  bool has_arithmetic_formula = false;
+
+  std::string group_name = arithmetic_formula_generator_.get_term_group_name(and_term);
+  Value_ptr and_value = nullptr;
+
+  for (auto term : *(and_term->term_list)) {
+    auto formula = arithmetic_formula_generator_.get_term_formula(term);
+    /**
+     * In previous visit, automata for arithmetic constraints are created and
+     * formulae for them are deleted.
+     * For sub or terms, constraint solver recurses into and here we don't
+     * need to visit them, a value is already computed for them,
+     * grabs them from symbol table
+     */
+    if (formula != nullptr) {
+      has_arithmetic_formula = true;
+      auto param = get_term_value(term);
+      is_satisfiable = param->is_satisfiable();
+      if (is_satisfiable) {
+        if (and_value == nullptr) {
+          and_value = param->clone();
+        } else {
+          auto old_value = and_value;
+          and_value = and_value->intersect(param);
+          delete old_value;
+          is_satisfiable = and_value->is_satisfiable();
+        }
+      }
+      clear_term_value(term);
+      if (not is_satisfiable) {
+        break;
+      }
+    }
+  }
+
+  DVLOG(VLOG_LEVEL) << "collect child results end: " << *and_term << "@" << and_term;
+
+  DVLOG(VLOG_LEVEL) << "update result start: " << *and_term << "@" << and_term;
+
+  /**
+   * If and term does not have arithmetic formula, but we end up being here:
+   * 1) And term is under a disjunction and other disjunctive terms has arithmetic formula.
+   *  Here, variables appearing in arithmetic term will be unconstrained.
+   * 2) We are visited and term second time for some mixed constraints, for this we do an unnecessary
+   *  intersection below with any string, we can avoid that with more checks later!!!
+   */
+  if (and_value == nullptr and (not has_arithmetic_formula)) {
+    auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
+    and_value = new Value(Theory::BinaryIntAutomaton::MakeAnyInt(group_formula->clone(), use_unsigned_integers_));
+    has_arithmetic_formula = true;
+    is_satisfiable = true;
+  }
+
+  if (has_arithmetic_formula) {
+    if (is_satisfiable) {
+      symbol_table_->IntersectValue(group_name, and_value);  // update value
+    } else {
+      auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
+      auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(group_formula->clone(), use_unsigned_integers_));
+      symbol_table_->set_value(group_name, value);
+    }
+    delete and_value;
+  }
+  DVLOG(VLOG_LEVEL) << "update result end: " << *and_term << "@" << and_term;
+}
+
+void ArithmeticConstraintSolver::postVisitOr(Or_ptr or_term) {
+  DVLOG(VLOG_LEVEL) << "collect child results start: " << *or_term << "@" << or_term;
+  visitOr(or_term);
+  DVLOG(VLOG_LEVEL) << "collect child results end: " << *or_term << "@" << or_term;
 }
 
 std::string ArithmeticConstraintSolver::get_int_variable_name(SMT::Term_ptr term) {

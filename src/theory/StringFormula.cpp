@@ -16,8 +16,7 @@ using namespace SMT;
 const int StringFormula::VLOG_LEVEL = 15;
 
 StringFormula::StringFormula()
-    : type_(Type::NONE),
-      constant_(0) {
+    : type_(Type::NONE) {
 }
 
 StringFormula::~StringFormula() {
@@ -40,32 +39,17 @@ std::string StringFormula::str() const {
   for (auto& el : variable_order_map_) {
     const int coefficient = el.second;
     if (coefficient > 0) {
-      ss << " + ";
-      if (coefficient > 1) {
-        ss << coefficient;
-      }
+      ss << "(";
+      ss << coefficient;
+      ss << ",";
       ss << el.first;
-    } else if (coefficient < 0) {
-      ss << " - ";
-      if (coefficient < -1) {
-        ss << std::abs(coefficient);
-      }
-      ss << el.first;
-    } else {
-      if (type_ == Type::INTERSECT or type_ == Type::UNION) {
-        ss << " " << el.first;
-      }
+      ss << ") ";
+    } else if (type_ == Type::INTERSECT or type_ == Type::UNION) {
+      ss << el.first << " " ;
     }
   }
 
-//  if (constant_ > 0) {
-//    ss << " + " << constant_;
-//  } else if (constant_ < 0) {
-//    ss << " - " << std::abs(constant_);
-//  }
-
-  ss << " ";
-
+  ss << constant_ << " - ";
   switch (type_) {
     case Type::EQ:
       ss << "=";
@@ -85,6 +69,33 @@ std::string StringFormula::str() const {
     case Type::LE:
       ss << "<=";
       break;
+    case Type::DIFFERENCE:
+      ss << "diff";
+      break;
+    case Type::STRING_CONSTANT:
+      ss << "const";
+      break;
+    case Type::REGEX_CONSTANT:
+      ss << "re.const";
+      break;
+    case Type::EQ_NO_LAMBDA:
+      ss << "= no lambda";
+      break;
+    case Type::EQ_ONLY_LAMBDA:
+      ss << "= eq only lambda";
+      break;
+    case Type::BEGINS:
+      ss << "begins";
+      break;
+    case Type::NOTBEGINS:
+      ss << "!begins";
+      break;
+    case Type::CONCAT_VAR_CONSTANT:
+      ss << "concat var const";
+      break;
+    case Type::NONRELATIONAL:
+      ss << "non-relational";
+      break;
     case Type::INTERSECT:
       ss << "&";
       break;
@@ -99,7 +110,7 @@ std::string StringFormula::str() const {
       break;
   }
 
-  ss << " " << 0;
+  ss << ".";
   return ss.str();
 }
 

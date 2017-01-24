@@ -30,7 +30,7 @@
 #include "ArithmeticConstraintSolver.h"
 #include "ConstraintInformation.h"
 #include "options/Solver.h"
-#include "StringConstraintSolverOld.h"
+#include "StringConstraintSolver.h"
 #include "StringRelationGenerator.h"
 #include "SymbolTable.h"
 #include "Value.h"
@@ -133,7 +133,7 @@ class ConstraintSolver: public SMT::Visitor {
   ConstraintInformation_ptr constraint_information_;
 
   ArithmeticConstraintSolver arithmetic_constraint_solver_;
-  StringConstraintSolverOld string_constraint_solver_;
+  StringConstraintSolver string_constraint_solver_;
 
   TermValueMap term_values_;
 

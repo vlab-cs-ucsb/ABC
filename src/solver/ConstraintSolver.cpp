@@ -160,26 +160,20 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       }
       clearTermValuesAndLocalLetVars();
     }
-
-    //TODO resolve the mixed constraints ?? inside for loop ??
-    if (is_component and is_satisfiable) {
-      if (constraint_information_->has_arithmetic_constraint(and_term)) {
-        arithmetic_constraint_solver_.start(and_term);
-        is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
-      }
-      // TODO make sure string constraint solver does not solve the constraints twice and
-      // uncomment below code
-//      if (is_satisfiable and constraint_information_->has_string_constraint(and_term)) {
-//        string_constraint_solver_.start(and_term);
-//        is_satisfiable = string_constraint_solver_.get_term_value(and_term)->is_satisfiable();
-//      }
-    }
   }
+
   DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 
-  if (not is_satisfiable) {
-    LOG(FATAL) << "lan neden neden soyle bana neden";
-    // TODO decide if we need to do set values of variables to empty automaton at this scope
+  if (is_component and is_satisfiable) {
+    if (constraint_information_->has_arithmetic_constraint(and_term)) {
+      arithmetic_constraint_solver_.postVisitAnd(and_term);
+      is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
+    }
+
+    if (is_satisfiable and constraint_information_->has_string_constraint(and_term)) {
+      string_constraint_solver_.postVisitAnd(and_term);
+      is_satisfiable = string_constraint_solver_.get_term_value(and_term)->is_satisfiable();
+    }
   }
 
   Value_ptr result = new Value(is_satisfiable);
@@ -190,17 +184,7 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
   bool is_satisfiable = false;
   bool is_component = constraint_information_->is_component(or_term);
 
-  if (is_component) {
-    if (constraint_information_->has_arithmetic_constraint(or_term)) {
-      arithmetic_constraint_solver_.start(or_term);
-      is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
-    }
-    if (is_satisfiable and constraint_information_->has_string_constraint(or_term)) {
-      LOG(FATAL) << "has string constraints";
-      string_constraint_solver_.start(or_term);
-//      is_satisfiable = // check string constraint solver part is satisfiable
-    }
-  }
+
 
   if (not constraint_information_->has_mixed_constraint(or_term)) {
     // below return is a tmp solution for just only arithmetic constraints
@@ -212,18 +196,10 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
 
   DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
 
-  // TODO call arithmetic constraint solver and check result
-  // TODO call string constraint solver and check result
-
-  // TODO go over each disjunct and compute values for each mixed or single track
-  TermList satisfiable_scopes;
   if (constraint_information_->has_mixed_constraint(or_term)) {
     for (auto& term : *(or_term->term_list)) {
       symbol_table_->push_scope(term);
       bool is_scope_satisfiable = check_and_visit(term);
-      if (is_scope_satisfiable) {
-        satisfiable_scopes.push_back(term);
-      }
 
       if (Term::Type::AND not_eq term->type()) {
         if (is_scope_satisfiable) {
@@ -237,73 +213,16 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
     }
   }
 
-  // TODO union automata for all type of variables
-  // 1- if possible call visitOr function of arithmetic solver
-  // 2- if possible call visitOr function of string solver
-  // 3- implement visitOr for mixed (single track string) operations, union all variables that appear under or_term
-  // 4- even for single track strings, union operation should be done multitrack, try if string variables under
-  // union can fit
-  // 5- try to avoid step 3,4 buy implementing the solution with multi-tracks
-
-  Value_ptr union_value = nullptr;
-  std::string var_name = "ret";
-  for (auto scope : satisfiable_scopes) {
-    symbol_table_->push_scope(scope);
-    if (union_value) {
-      auto old_value = union_value;
-      union_value = old_value->union_(symbol_table_->get_value(var_name));
-      delete old_value;
-    } else {
-      union_value = symbol_table_->get_value(var_name)->clone();
+  if (is_component and is_satisfiable) {
+    if (constraint_information_->has_arithmetic_constraint(or_term)) {
+      arithmetic_constraint_solver_.postVisitOr(or_term);
+      is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
     }
-    symbol_table_->pop_scope();
-  }
 
-  symbol_table_->IntersectValue(var_name, union_value);
-  delete union_value;
-//  symbol_table_->get_value(var_name)->getStringAutomaton()->inspectAuto(false, true);
-//  LOG(FATAL)<< "implement me";
-  // semantics will be similar to below
-//  void SymbolTable::UnionValuesOfVariables(Script_ptr script) {
-//    if (scopes.size() < 2) {
-//      return;
-//    } else if (variable_value_table[script].size() > 0) { // a union operation is done before
-//      return;
-//    }
-//
-//    push_scope(script);
-//    for (auto variable_entry : variables) {
-//      Value_ptr value = nullptr;
-//      for (auto scope : scopes) { // dnf form
-//        // union values
-//        if (is_scope_satisfiable[scope]) {
-//          auto variable = variable_entry.second;
-//          auto top_equiv_class = get_equivalence_class_of(variable);
-//          auto local_equiv_class = get_equivalence_class_of_at_scope(scope, variable);
-//          Value_ptr scope_var_value = nullptr;
-//          if (top_equiv_class or local_equiv_class) {
-//            variable = local_equiv_class->get_representative_variable();
-//          }
-//          scope_var_value = get_value_at_scope(scope, variable);
-//
-//          if (value) {
-//            Value_ptr tmp = value;
-//            value = tmp->union_(scope_var_value);
-//            delete tmp;
-//          } else {
-//            value = scope_var_value->clone();
-//          }
-//        }
-//      }
-//      if (value) {
-//        set_value(variable_entry.second, value);
-//      }
-//    }
-//    pop_scope();
-//  }
-
-  if (not is_satisfiable) {
-    LOG(FATAL) << "ahanda burda kaldim or";
+    if (is_satisfiable and constraint_information_->has_string_constraint(or_term)) {
+      string_constraint_solver_.postVisitOr(or_term);
+      is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+    }
   }
 
   Value_ptr result = new Value(is_satisfiable);
@@ -463,16 +382,10 @@ void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
       Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
       temp = StringAutomaton::makeString(right_constant->getValue());
       con = temp->complement();
-      bool res = true;
       Value_ptr val = new Value(con);
-
-      if(string_constraint_solver_.has_variable(var)) {
-        res = res and string_constraint_solver_.update_variable_value(var, val);
-      } else {
-        symbol_table_->IntersectValue(var,val);
-        res = res and symbol_table_->get_value(var)->is_satisfiable();
-      }
-      setTermValue(not_eq_term, new Value(res));
+      bool result = symbol_table_->IntersectValue(var,val);
+      delete val;
+      setTermValue(not_eq_term, new Value(result));
       return;
     }
   }
@@ -655,13 +568,13 @@ void ConstraintSolver::visitIn(In_ptr in_term) {
       StringAutomaton_ptr con = StringAutomaton::makeRegexAuto(right_constant->getValue());
       bool res = true;
       Value_ptr val = new Value(con);
-
-      if(string_constraint_solver_.has_variable(var)) {
-        res = res and string_constraint_solver_.update_variable_value(var, val);
-      } else {
-        symbol_table_->IntersectValue(var,val);
-        res = res and symbol_table_->get_value(var)->is_satisfiable();
-      }
+      LOG(FATAL) << "fix me";
+//      if(string_constraint_solver_.has_variable(var)) {
+//        res = res and string_constraint_solver_.update_variable_value(var, val);
+//      } else {
+//        symbol_table_->IntersectValue(var,val);
+//        res = res and symbol_table_->get_value(var)->is_satisfiable();
+//      }
       setTermValue(in_term, new Value(res));
       return;
     }
@@ -726,6 +639,7 @@ void ConstraintSolver::visitLen(Len_ptr len_term) {
 }
 
 void ConstraintSolver::visitContains(Contains_ptr contains_term) {
+  LOG(FATAL) << "burdayim lan";
   visit_children_of(contains_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *contains_term;
 
@@ -1132,34 +1046,7 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 
   Variable_ptr variable = symbol_table_->get_variable(qi_term->getVarName());
 
-  //  TODO Fix that case of handling with projected value table...
-  // check if variable is relational first. if so, since we're storing
-  // multitrack values in the string constraint solver, get the variable's value
-  // from there and clone it into the symbol table, so the variable value computer has
-  // the most recent value
-
-  // TODO Refactor handling of mixed constraints here (multi-track -> single->track)
-
-  Value_ptr variable_value = nullptr;
-
-  // TODO fix string variable handling here
-  if (Option::Solver::USE_MULTITRACK_AUTO and Variable::Type::STRING == variable->getType()) {
-    DVLOG(VLOG_LEVEL) << "Getting var value for " << variable->getName();
-    variable_value = string_constraint_solver_.get_variable_value(variable);
-    DVLOG(VLOG_LEVEL) << "Got var";
-  }
-
-  if (variable_value != nullptr) {
-    DVLOG(VLOG_LEVEL) << "Relational variable: " << *variable;
-    // variable relational, put in symbol table and tag for later update
-    symbol_table_->set_value(variable, variable_value);
-    tagged_variables.push_back(variable);
-  } else {
-    // variable not relational string, get from symbol table
-    variable_value = symbol_table_->get_value(variable);
-  }
-
-
+  auto variable_value = symbol_table_->get_value(variable);
   Value_ptr result = variable_value->clone();
 
   setTermValue(qi_term, result);
@@ -1307,7 +1194,7 @@ bool ConstraintSolver::update_variables() {
       DVLOG(VLOG_LEVEL) << "Inconsistent value for variable: " << var->getName();
       continue;
     }
-    bool still_good = string_constraint_solver_.update_variable_value(var, value);
+    bool still_good = symbol_table_->IntersectValue(var, value);
     is_satisfiable = is_satisfiable and still_good;
     symbol_table_->clear_value(var,symbol_table_->top_scope());
   }
@@ -1331,7 +1218,7 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
       }
       return is_satisfiable;
     } else if (constraint_information_->has_string_constraint(term)) {
-      DVLOG(VLOG_LEVEL) << "Mixed Multi- and Single- Track String Automata Constraint";
+      LOG(FATAL) << "Mixed Multi- and Single- Track String Automata Constraint";
       return true;  // should be checked already
     }
   }

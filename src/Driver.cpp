@@ -257,7 +257,7 @@ void Driver::printResult(Solver::Value_ptr value, std::ostream& out) {
       value->getBinaryIntAutomaton()->ToDot(out, false);
       break;
     case Solver::Value::Type::MULTITRACK_AUTOMATON:
-      value->getMultiTrackAutomaton()->ToDot(out, false);
+      value->getRelationalStringAutomaton()->ToDot(out, false);
       break;
     default:
       break;

@@ -298,7 +298,7 @@ Value_ptr StringConstraintSolverOld::get_variable_value(Variable_ptr variable, b
     return relation_value->clone();
   }
 
-  relation_auto = relation_value->getMultiTrackAutomaton();
+  relation_auto = relation_value->getRelationalStringAutomaton();
   variable_relation = relation_auto->getRelation();
   variable_auto = relation_auto->getKTrack(variable_relation->get_variable_index(variable->getName()));
   return new Value(variable_auto);
@@ -317,7 +317,7 @@ bool StringConstraintSolverOld::update_variable_value(Variable_ptr variable, Val
   relation_value = symbol_table_->get_value(group_name);
   DVLOG(VLOG_LEVEL) << "VARIABLE: " << variable->str() << " is part of GROUP: " << group_name;
   variable_auto = value->getStringAutomaton();
-  relation_auto = relation_value->getMultiTrackAutomaton();
+  relation_auto = relation_value->getRelationalStringAutomaton();
   variable_relation = relation_auto->getRelation();
   // place variable value on multitrack, intersect and update corresonding term value
   variable_multi_auto = new MultiTrackAutomaton(variable_auto->getDFA(),

@@ -56,7 +56,7 @@ Value::Value(Theory::StringAutomaton_ptr data)
       string_automaton(data) {
 }
 
-Value::Value(Theory::MultiTrackAutomaton_ptr data)
+Value::Value(Theory::RelationalStringAutomaton_ptr data)
     : type(Type::MULTITRACK_AUTOMATON),
       multitrack_automaton(data) {
 }
@@ -187,7 +187,7 @@ void Value::setData(Theory::StringAutomaton_ptr data) {
   string_automaton = data;
 }
 
-void Value::setData(Theory::MultiTrackAutomaton_ptr data) {
+void Value::setData(Theory::RelationalStringAutomaton_ptr data) {
   multitrack_automaton = data;
 }
 
@@ -215,7 +215,7 @@ Theory::StringAutomaton_ptr Value::getStringAutomaton() const {
   return string_automaton;
 }
 
-Theory::MultiTrackAutomaton_ptr Value::getMultiTrackAutomaton() const {
+Theory::RelationalStringAutomaton_ptr Value::getRelationalStringAutomaton() const {
   return multitrack_automaton;
 }
 
@@ -227,7 +227,7 @@ Value_ptr Value::union_(Value_ptr other_value) const {
   } else if (Type::STRING_AUTOMATON == type and Type::STRING_AUTOMATON == other_value->type) {
     union_value = new Value(string_automaton->union_(other_value->string_automaton));
   } else if (Type::MULTITRACK_AUTOMATON == type and Type::MULTITRACK_AUTOMATON == other_value->type) {
-    union_value = new Value(multitrack_automaton->union_(other_value->multitrack_automaton));
+    union_value = new Value(multitrack_automaton->Union(other_value->multitrack_automaton));
   } else if (Type::BINARYINT_AUTOMATON == type and Type::BINARYINT_AUTOMATON == other_value->type) {
     union_value = new Value(binaryint_automaton->Union(other_value->binaryint_automaton));
   } else if (Type::INT_AUTOMATON == type and Type::INT_AUTOMATON == other_value->type) {
@@ -249,7 +249,7 @@ Value_ptr Value::intersect(Value_ptr other_value) const {
   if (Type::STRING_AUTOMATON == type and Type::STRING_AUTOMATON == other_value->type) {
     intersection_value = new Value(string_automaton->intersect(other_value->string_automaton));
   } else if (Type::MULTITRACK_AUTOMATON == type and Type::MULTITRACK_AUTOMATON == other_value->type) {
-    intersection_value = new Value(multitrack_automaton->intersect(other_value->multitrack_automaton));
+    intersection_value = new Value(multitrack_automaton->Intersect(other_value->multitrack_automaton));
   } else if (Type::BINARYINT_AUTOMATON == type and Type::BINARYINT_AUTOMATON == other_value->type) {
     intersection_value = new Value(binaryint_automaton->Intersect(other_value->binaryint_automaton));
   } else if (Type::INT_AUTOMATON == type and Type::INT_AUTOMATON == other_value->type) {
@@ -265,7 +265,7 @@ Value_ptr Value::intersect(Value_ptr other_value) const {
   } else if (Type::INT_AUTOMATON == type and Type::INT_CONSTANT == other_value->type) {
     intersection_value = new Value(int_automaton->intersect(other_value->int_constant));
   } else if (Type::MULTITRACK_AUTOMATON == type and Type::STRING_AUTOMATON == other_value->type) {
-    intersection_value = new Value(multitrack_automaton->intersect(other_value->multitrack_automaton));
+    intersection_value = new Value(multitrack_automaton->Intersect(other_value->multitrack_automaton));
   } else if (Type::STRING_AUTOMATON == type and Type::MULTITRACK_AUTOMATON == other_value->type) {
     LOG(FATAL) << " string intersect multitrack, implement me " << *this << " & " << *other_value;
   } else {
@@ -282,7 +282,8 @@ Value_ptr Value::complement() const {
       break;
     }
     case Type::MULTITRACK_AUTOMATON: {
-      complement_value = new Value(multitrack_automaton->complement());
+      complement_value = new Value(multitrack_automaton->Complement());
+      break;
     }
     case Type::BINARYINT_AUTOMATON: {
       complement_value = new Value(binaryint_automaton->Complement());
@@ -314,7 +315,7 @@ Value_ptr Value::difference(Value_ptr other_value) const {
   if (Type::STRING_AUTOMATON == type and Type::STRING_AUTOMATON == other_value->type) {
     difference_value = new Value(string_automaton->difference(other_value->string_automaton));
   } else if (Type::MULTITRACK_AUTOMATON == type and Type::MULTITRACK_AUTOMATON == other_value->type) {
-    difference_value = new Value(multitrack_automaton->difference(other_value->multitrack_automaton));
+    difference_value = new Value(multitrack_automaton->Difference(other_value->multitrack_automaton));
   } else if (Type::BINARYINT_AUTOMATON == type and Type::BINARYINT_AUTOMATON == other_value->type) {
     difference_value = new Value(binaryint_automaton->Difference(other_value->binaryint_automaton));
   } else if (Type::INT_AUTOMATON == type and Type::INT_AUTOMATON == other_value->type) {

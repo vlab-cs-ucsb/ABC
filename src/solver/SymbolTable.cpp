@@ -337,7 +337,7 @@ Value_ptr SymbolTable::get_projected_value_at_scope(Visitable_ptr scope, Variabl
       auto projected_auto = relational_auto->GetBinaryAutomatonFor(representative_variable->getName());
       result = new Value(projected_auto);
     } else if (Value::Type::MULTITRACK_AUTOMATON == it->second->getType()) {
-      auto relational_auto = it->second->getMultiTrackAutomaton();
+      auto relational_auto = it->second->getRelationalStringAutomaton();
       auto string_relation = relational_auto->getRelation();
       auto projected_auto = relational_auto->getKTrack(string_relation->get_variable_index(representative_variable->getName()));
       result = new Value(projected_auto);
