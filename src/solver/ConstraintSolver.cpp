@@ -152,7 +152,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     for (auto& term : *(and_term->term_list)) {
       is_satisfiable = check_and_visit(term) and is_satisfiable;
       if (not is_satisfiable) {
-        LOG(FATAL) << "mixed constraint te problem var";
+//        LOG(FATAL) << "mixed constraint te problem var";
         break;
       }
       if (dynamic_cast<Or_ptr>(term) == nullptr) {
