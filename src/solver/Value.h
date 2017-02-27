@@ -41,8 +41,7 @@ class Value {
     INT_AUTOMATON,
     BINARYINT_AUTOMATON,
     STRING_AUTOMATON,
-//    RELATIONALSTRING_AUTOMATON,
-    MULTITRACK_AUTOMATON
+    RELATIONALSTRING_AUTOMATON
   };
 
   Value();
@@ -100,8 +99,7 @@ class Value {
     static const std::string INT_AUTOMATON;
     static const std::string BINARYINT_AUTOMATON;
     static const std::string STRING_AUTOMATON;
-//    static const std::string RELATIONALSTRING_AUTOMATON;
-    static const std::string MULTITRACK_AUTOMATON;
+    static const std::string RELATIONALSTRING_AUTOMATON;
   };
 
   friend std::ostream& operator<<(std::ostream& os, const Value& value);
@@ -115,8 +113,7 @@ class Value {
     Theory::IntAutomaton_ptr int_automaton;
     Theory::BinaryIntAutomaton_ptr binaryint_automaton;
     Theory::StringAutomaton_ptr string_automaton;
-//    Theory::RelationalStringAutomaton_ptr relational_string_automaton;
-    Theory::RelationalStringAutomaton_ptr multitrack_automaton;
+    Theory::RelationalStringAutomaton_ptr relationalstring_automaton;
   };
 
   static const int VLOG_LEVEL;

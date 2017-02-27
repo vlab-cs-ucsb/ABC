@@ -909,7 +909,6 @@ void VariableValueComputer::visitLastIndexOf(LastIndexOf_ptr last_index_of_term)
   if (Value::Type::INT_CONSTANT == term_value->getType()) {
     child_value = new Value(child_post_value->getStringAutomaton()
             ->restrictLastIndexOfTo(term_value->getIntConstant(), param_search->getStringAutomaton()));
-
   } else {
     child_value = new Value(child_post_value->getStringAutomaton()
                 ->restrictLastIndexOfTo(term_value->getIntAutomaton(), param_search->getStringAutomaton()));
@@ -1292,8 +1291,28 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   popTerm(qi_term);
 
   Value_ptr term_pre_value = getTermPreImage(qi_term);
-  is_satisfiable_ = symbol_table->IntersectValue(qi_term->getVarName(), term_pre_value) and is_satisfiable_;
 
+  /**
+   * 1) term automaton is single track, set formula for it
+   * and let automaton side figure out if it is needed to be extended
+   *
+   */
+  if (Value::Type::STRING_AUTOMATON == term_pre_value->getType()) {
+    auto string_auto = term_pre_value->getStringAutomaton();
+    auto formula = string_auto->get_formula();
+    if (formula == nullptr) {
+      formula = new Theory::StringFormula();
+      formula->set_type(Theory::StringFormula::Type::VAR);
+      formula->add_variable(qi_term->getVarName(), 1);
+      string_auto->set_formula(formula);
+    } else if (Theory::StringFormula::Type::VAR != formula->get_type()) {
+      LOG(FATAL) << "fix me";
+    }
+  } else {
+    LOG(FATAL) << "handle case";
+  }
+
+  is_satisfiable_ = symbol_table->IntersectValue(qi_term->getVarName(), term_pre_value) and is_satisfiable_;
 }
 
 void VariableValueComputer::visitTermConstant(TermConstant_ptr term_constant) {

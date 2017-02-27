@@ -17,18 +17,19 @@ int StringAutomaton::name_counter = 0;
 int StringAutomaton::DEFAULT_NUM_OF_VARIABLES = 8;
 
 StringAutomaton::StringAutomaton(DFA_ptr dfa)
-        : Automaton(Automaton::Type::STRING, dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES) {
+        : Automaton(Automaton::Type::STRING, dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES), formula_{nullptr} {
 }
 
 StringAutomaton::StringAutomaton(DFA_ptr dfa, int num_of_variables)
-        : Automaton(Automaton::Type::STRING, dfa, num_of_variables) {
+        : Automaton(Automaton::Type::STRING, dfa, num_of_variables), formula_{nullptr} {
 }
 
 StringAutomaton::StringAutomaton(const StringAutomaton& other)
-        : Automaton(other) {
+        : Automaton(other), formula_{other.formula_} {
 }
 
 StringAutomaton::~StringAutomaton() {
+  delete formula_;
 }
 
 StringAutomaton_ptr StringAutomaton::clone() const {
@@ -2433,6 +2434,14 @@ std::string StringAutomaton::getAnAcceptingString() {
   return ss.str();
 }
 
+StringFormula_ptr StringAutomaton::get_formula() {
+  return formula_;
+}
+
+void StringAutomaton::set_formula(StringFormula_ptr formula) {
+  formula_ = formula;
+}
+
 //StringAutomaton_ptr StringAutomaton::dfaSharpStringWithExtraBit(int num_of_variables, int* variable_indices) {
 //  DFA_ptr sharp_string_dfa = nullptr;
 //  StringAutomaton_ptr sharp_string_extra_bit = nullptr;
@@ -3157,7 +3166,11 @@ void StringAutomaton::add_print_label(std::ostream& out) {
   out << "  style = invis;\n  center = true;\n  margin = 0;\n";
   out << "  node[shape=plaintext];\n";
   out << " \"\"[label=\"";
-  out << "str var/term" << "\n";
+  if (formula_) {
+    out << formula_->get_variable_coefficient_map().begin()->first << "\n";
+  } else {
+    out << "str term" << "\n";
+  }
   out << "\"]\n";
   out << " }";
 }

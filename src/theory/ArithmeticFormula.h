@@ -55,6 +55,7 @@ public:
   bool is_constant() const;
   void reset_coefficients(int value = 0);
   int get_variable_index(std::string) const;
+  std::string get_variable_at_index(const std::size_t index) const;
 
   bool has_relation_to_mixed_term(const std::string var_name) const;
   void add_relation_to_mixed_term(const std::string var_name, const ArithmeticFormula::Type relation, const SMT::Term_ptr term);
@@ -68,7 +69,7 @@ public:
 
   bool Simplify();
   int CountOnes(unsigned long n) const;
-  void merge_variables(ArithmeticFormula_ptr other);
+  void merge_variables(const ArithmeticFormula_ptr other);
 
   friend std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula);
 

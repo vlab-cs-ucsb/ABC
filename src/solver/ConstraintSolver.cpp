@@ -646,7 +646,6 @@ void ConstraintSolver::visitContains(Contains_ptr contains_term) {
 
   Value_ptr result = nullptr, param_subject = getTermValue(contains_term->subject_term), param_search = getTermValue(
       contains_term->search_term);
-
   result = new Value(param_subject->getStringAutomaton()->contains(param_search->getStringAutomaton()));
   setTermValue(contains_term, result);
 }
@@ -871,7 +870,6 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
         auto relation = bin_end_index_auto->get_formula()->get_relation_to_mixed_term(index_var->getVarName());
         if (relation.first == Theory::ArithmeticFormula::Type::EQ and
             query.is_param_equal_to(sub_string_term->subject_term, relation.second, 1)) {
-
           // Refactor below flow into a function
           auto positive_bin_end_index_var_auto = bin_end_index_auto->GetPositiveValuesFor(index_var->getVarName());
           auto bin_end_index_var_auto = positive_bin_end_index_var_auto->GetBinaryAutomatonFor(index_var->getVarName());
@@ -898,7 +896,6 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
           substring_auto = sub_str_start_auto->SubString(string_len_end_index_auto, string_search_term_value->getStringAutomaton());
           delete string_len_end_index_auto;
           string_len_end_index_auto = nullptr;
-
         }
 
       }
@@ -1043,12 +1040,19 @@ void ConstraintSolver::visitAsQualIdentifier(AsQualIdentifier_ptr as_qid_term) {
 }
 
 void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
-  DVLOG(VLOG_LEVEL) << "visit: " << *qi_term;
+  DVLOG(VLOG_LEVEL) << "visit: " << *qi_term << " = " << qi_term->getVarName();
 
   Variable_ptr variable = symbol_table_->get_variable(qi_term->getVarName());
 
   auto variable_value = symbol_table_->get_value(variable);
-  Value_ptr result = variable_value->clone();
+
+  Value_ptr result = nullptr;
+  if (Value::Type::RELATIONALSTRING_AUTOMATON == variable_value->getType()) {
+    result = new Value(variable_value->getRelationalStringAutomaton()->GetAutomatonForVariable(qi_term->getVarName()));
+  } else {
+    result = variable_value->clone();
+  }
+
 
   setTermValue(qi_term, result);
   setVariablePath(qi_term);

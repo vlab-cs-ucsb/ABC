@@ -20,7 +20,7 @@ const std::string Value::Name::BOOL_AUTOMATON = "Bool Automaton";
 const std::string Value::Name::INT_AUTOMATON = "Int Automaton";
 const std::string Value::Name::BINARYINT_AUTOMATON = "Binary Int Automaton";
 const std::string Value::Name::STRING_AUTOMATON = "String Automaton";
-const std::string Value::Name::MULTITRACK_AUTOMATON = "MultiTrack Automaton";
+const std::string Value::Name::RELATIONALSTRING_AUTOMATON = "Relational String Automaton";
 
 Value::Value()
     : type(Type::NONE) {
@@ -57,8 +57,8 @@ Value::Value(Theory::StringAutomaton_ptr data)
 }
 
 Value::Value(Theory::RelationalStringAutomaton_ptr data)
-    : type(Type::MULTITRACK_AUTOMATON),
-      multitrack_automaton(data) {
+    : type(Type::RELATIONALSTRING_AUTOMATON),
+      relationalstring_automaton(data) {
 }
 
 Value::Value(const Value& other)
@@ -84,8 +84,8 @@ Value::Value(const Value& other)
     case Type::STRING_AUTOMATON:
       string_automaton = other.string_automaton->clone();
       break;
-    case Type::MULTITRACK_AUTOMATON:
-      multitrack_automaton = other.multitrack_automaton->clone();
+    case Type::RELATIONALSTRING_AUTOMATON:
+      relationalstring_automaton = other.relationalstring_automaton->clone();
       break;
     default:
       LOG(FATAL)<< "value type is not supported";
@@ -115,9 +115,9 @@ Value::~Value() {
       delete string_automaton;
       string_automaton = nullptr;
       break;
-    case Type::MULTITRACK_AUTOMATON:
-      delete multitrack_automaton;
-      multitrack_automaton = nullptr;
+    case Type::RELATIONALSTRING_AUTOMATON:
+      delete relationalstring_automaton;
+      relationalstring_automaton = nullptr;
       break;
     default:
       break;
@@ -145,8 +145,8 @@ std::string Value::str() const {
     case Type::STRING_AUTOMATON:
       ss << Name::STRING_AUTOMATON << " : " << " please print automaton";
       break;
-    case Type::MULTITRACK_AUTOMATON:
-      ss << Name::MULTITRACK_AUTOMATON << " : " << " please print automaton";
+    case Type::RELATIONALSTRING_AUTOMATON:
+      ss << Name::RELATIONALSTRING_AUTOMATON << " : " << " please print automaton";
       break;
     case Type::BINARYINT_AUTOMATON:
       ss << Name::BINARYINT_AUTOMATON << " : " << " please print automaton";
@@ -188,7 +188,7 @@ void Value::setData(Theory::StringAutomaton_ptr data) {
 }
 
 void Value::setData(Theory::RelationalStringAutomaton_ptr data) {
-  multitrack_automaton = data;
+  relationalstring_automaton = data;
 }
 
 bool Value::getBoolConstant() const {
@@ -216,7 +216,7 @@ Theory::StringAutomaton_ptr Value::getStringAutomaton() const {
 }
 
 Theory::RelationalStringAutomaton_ptr Value::getRelationalStringAutomaton() const {
-  return multitrack_automaton;
+  return relationalstring_automaton;
 }
 
 Value_ptr Value::union_(Value_ptr other_value) const {
@@ -226,8 +226,8 @@ Value_ptr Value::union_(Value_ptr other_value) const {
     union_value = this->clone();
   } else if (Type::STRING_AUTOMATON == type and Type::STRING_AUTOMATON == other_value->type) {
     union_value = new Value(string_automaton->union_(other_value->string_automaton));
-  } else if (Type::MULTITRACK_AUTOMATON == type and Type::MULTITRACK_AUTOMATON == other_value->type) {
-    union_value = new Value(multitrack_automaton->Union(other_value->multitrack_automaton));
+  } else if (Type::RELATIONALSTRING_AUTOMATON == type and Type::RELATIONALSTRING_AUTOMATON == other_value->type) {
+    union_value = new Value(relationalstring_automaton->Union(other_value->relationalstring_automaton));
   } else if (Type::BINARYINT_AUTOMATON == type and Type::BINARYINT_AUTOMATON == other_value->type) {
     union_value = new Value(binaryint_automaton->Union(other_value->binaryint_automaton));
   } else if (Type::INT_AUTOMATON == type and Type::INT_AUTOMATON == other_value->type) {
@@ -248,8 +248,8 @@ Value_ptr Value::intersect(Value_ptr other_value) const {
   Value_ptr intersection_value = nullptr;
   if (Type::STRING_AUTOMATON == type and Type::STRING_AUTOMATON == other_value->type) {
     intersection_value = new Value(string_automaton->intersect(other_value->string_automaton));
-  } else if (Type::MULTITRACK_AUTOMATON == type and Type::MULTITRACK_AUTOMATON == other_value->type) {
-    intersection_value = new Value(multitrack_automaton->Intersect(other_value->multitrack_automaton));
+  } else if (Type::RELATIONALSTRING_AUTOMATON == type and Type::RELATIONALSTRING_AUTOMATON == other_value->type) {
+    intersection_value = new Value(relationalstring_automaton->Intersect(other_value->relationalstring_automaton));
   } else if (Type::BINARYINT_AUTOMATON == type and Type::BINARYINT_AUTOMATON == other_value->type) {
     intersection_value = new Value(binaryint_automaton->Intersect(other_value->binaryint_automaton));
   } else if (Type::INT_AUTOMATON == type and Type::INT_AUTOMATON == other_value->type) {
@@ -264,9 +264,9 @@ Value_ptr Value::intersect(Value_ptr other_value) const {
     intersection_value = new Value(other_value->int_automaton->intersect(int_constant));
   } else if (Type::INT_AUTOMATON == type and Type::INT_CONSTANT == other_value->type) {
     intersection_value = new Value(int_automaton->intersect(other_value->int_constant));
-  } else if (Type::MULTITRACK_AUTOMATON == type and Type::STRING_AUTOMATON == other_value->type) {
-    intersection_value = new Value(multitrack_automaton->Intersect(other_value->multitrack_automaton));
-  } else if (Type::STRING_AUTOMATON == type and Type::MULTITRACK_AUTOMATON == other_value->type) {
+  } else if (Type::RELATIONALSTRING_AUTOMATON == type and Type::STRING_AUTOMATON == other_value->type) {
+    intersection_value = new Value(relationalstring_automaton->Intersect(other_value->string_automaton));
+  } else if (Type::STRING_AUTOMATON == type and Type::RELATIONALSTRING_AUTOMATON == other_value->type) {
     LOG(FATAL) << " string intersect multitrack, implement me " << *this << " & " << *other_value;
   } else {
     LOG(FATAL) << "cannot intersect types (implement me): " << *this << " & " << *other_value;
@@ -281,8 +281,8 @@ Value_ptr Value::complement() const {
       complement_value = new Value(string_automaton->complement());
       break;
     }
-    case Type::MULTITRACK_AUTOMATON: {
-      complement_value = new Value(multitrack_automaton->Complement());
+    case Type::RELATIONALSTRING_AUTOMATON: {
+      complement_value = new Value(relationalstring_automaton->Complement());
       break;
     }
     case Type::BINARYINT_AUTOMATON: {
@@ -314,8 +314,8 @@ Value_ptr Value::difference(Value_ptr other_value) const {
   Value_ptr difference_value = nullptr;
   if (Type::STRING_AUTOMATON == type and Type::STRING_AUTOMATON == other_value->type) {
     difference_value = new Value(string_automaton->difference(other_value->string_automaton));
-  } else if (Type::MULTITRACK_AUTOMATON == type and Type::MULTITRACK_AUTOMATON == other_value->type) {
-    difference_value = new Value(multitrack_automaton->Difference(other_value->multitrack_automaton));
+  } else if (Type::RELATIONALSTRING_AUTOMATON == type and Type::RELATIONALSTRING_AUTOMATON == other_value->type) {
+    difference_value = new Value(relationalstring_automaton->Difference(other_value->relationalstring_automaton));
   } else if (Type::BINARYINT_AUTOMATON == type and Type::BINARYINT_AUTOMATON == other_value->type) {
     difference_value = new Value(binaryint_automaton->Difference(other_value->binaryint_automaton));
   } else if (Type::INT_AUTOMATON == type and Type::INT_AUTOMATON == other_value->type) {
@@ -338,9 +338,9 @@ Value_ptr Value::difference(Value_ptr other_value) const {
     delete intersect_auto;
   } else if (Type::INT_AUTOMATON == type and Type::INT_CONSTANT == other_value->type) {
     int_automaton->difference(other_value->int_constant);
-  } else if (Type::MULTITRACK_AUTOMATON == type and Type::STRING_AUTOMATON == other_value->type) {
+  } else if (Type::RELATIONALSTRING_AUTOMATON == type and Type::STRING_AUTOMATON == other_value->type) {
     LOG(FATAL)<< " multitrack difference string, implement me " << *this << " & " << *other_value;
-  } else if (Type::STRING_AUTOMATON == type and Type::MULTITRACK_AUTOMATON == other_value->type) {
+  } else if (Type::STRING_AUTOMATON == type and Type::RELATIONALSTRING_AUTOMATON == other_value->type) {
     LOG(FATAL) << " string difference multitrack, implement me " << *this << " & " << *other_value;
   } else {
     LOG(FATAL) << "cannot difference types (implement me): " << *this << " & " << *other_value;
@@ -499,8 +499,8 @@ bool Value::is_satisfiable() {
       case Type::STRING_AUTOMATON:
       is_satisfiable = not string_automaton->is_empty_language();
       break;
-      case Type::MULTITRACK_AUTOMATON:
-      is_satisfiable = not multitrack_automaton->is_empty_language();
+      case Type::RELATIONALSTRING_AUTOMATON:
+      is_satisfiable = not relationalstring_automaton->is_empty_language();
       break;
       default:
       LOG(FATAL) << "value type is not supported";

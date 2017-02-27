@@ -947,6 +947,22 @@ RelationalStringAutomaton_ptr RelationalStringAutomaton::Intersect(RelationalStr
   return intersect_auto;
 }
 
+RelationalStringAutomaton_ptr RelationalStringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
+
+  if (other_auto->get_formula() == nullptr) {
+    LOG(FATAL) << "Single track automaton needs to have formula";
+    return nullptr;
+  }
+  std::string var_name = other_auto->get_formula()->get_variable_at_index(0);
+  auto rel_other_auto = new RelationalStringAutomaton(other_auto->getDFA(), formula_->get_variable_index(var_name), formula_->get_number_of_variables());
+  rel_other_auto->formula_ = formula_->clone();
+
+  auto intersect_auto = this->Intersect(rel_other_auto);
+  delete rel_other_auto;
+  //  DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << other_auto->id_ << ")";
+  return intersect_auto;
+}
+
 /**
  * TODO be careful with the number of variables in the formula and the number of tracks
  */
@@ -2007,6 +2023,18 @@ DFA_ptr RelationalStringAutomaton::pre_concat_prefix(DFA_ptr concat_dfa, DFA_ptr
 
 DFA_ptr RelationalStringAutomaton::pre_concat_suffix(DFA_ptr concat_dfa, DFA_ptr prefix_dfa, int var) {
   return trim_prefix(concat_dfa,prefix_dfa,var);
+}
+
+void RelationalStringAutomaton::add_print_label(std::ostream& out) {
+  out << " subgraph cluster_0 {\n";
+  out << "  style = invis;\n  center = true;\n  margin = 0;\n";
+  out << "  node[shape=plaintext];\n";
+  out << " \"\"[label=\"";
+  for (auto& el : formula_->get_variable_coefficient_map()) {
+    out << el.first << "\n";
+  }
+  out << "\"]\n";
+  out << " }";
 }
 
 } /* namespace Theory */

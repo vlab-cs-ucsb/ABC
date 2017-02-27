@@ -185,6 +185,15 @@ int ArithmeticFormula::get_variable_index(std::string variable_name) const {
   return -1;
 }
 
+std::string ArithmeticFormula::get_variable_at_index(const std::size_t index) const {
+  if (index >= variable_coefficient_map_.size()) {
+    LOG(FATAL) << "Index out of range";
+  }
+  auto it = variable_coefficient_map_.begin();
+  std::advance(it, index);
+  return it->first;
+}
+
 bool ArithmeticFormula::has_relation_to_mixed_term(const std::string var_name) const {
   auto it = mixed_terms_.find(var_name);
   return it != mixed_terms_.end();

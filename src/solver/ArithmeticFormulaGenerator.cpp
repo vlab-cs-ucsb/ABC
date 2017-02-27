@@ -712,6 +712,9 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
   DVLOG(VLOG_LEVEL)<< "start setting int group for components";
   for (auto& el : term_group_map_) {
     term_formula_[el.first]->merge_variables(group_formula_[el.second]);
+    // to propagate mixed constraint information, merge onto group formula as well
+    // TODO same integer variable can be assigned into different terms, test case (v = indexof... and v = lastindexof...)
+    group_formula_[el.second]->merge_variables(term_formula_[el.first]);
   }
   // add a variable entry to symbol table for each group
   // define a variable mapping for a group

@@ -201,7 +201,7 @@ int StringFormula::get_variable_index(const std::string variable_name) const {
   return -1;
 }
 
-int StringFormula::get_variable_index(const int param_index) const {
+int StringFormula::get_variable_index(const std::size_t param_index) const {
   for (auto it = variable_order_map_.begin(); it != variable_order_map_.end(); ++it) {
     if (it->second == param_index) {
       return std::distance(variable_order_map_.begin(), it);
@@ -210,6 +210,15 @@ int StringFormula::get_variable_index(const int param_index) const {
 
   LOG(FATAL)<< "Formula does not have param: " << param_index << ", " << *this;
   return -1;
+}
+
+std::string StringFormula::get_variable_at_index(const std::size_t index) const {
+  if (index >= variable_order_map_.size()) {
+    LOG(FATAL) << "Index out of range";
+  }
+  auto it = variable_order_map_.begin();
+  std::advance(it, index);
+  return it->first;
 }
 
 bool StringFormula::has_relation_to_mixed_term(const std::string var_name) const {

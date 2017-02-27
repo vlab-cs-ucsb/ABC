@@ -58,7 +58,8 @@ class StringFormula {
   bool is_constant() const;
   void reset_param_orders(int value = 0);
   int get_variable_index(const std::string) const;
-  int get_variable_index(const int param_index) const;
+  int get_variable_index(const std::size_t param_index) const;
+  std::string get_variable_at_index(const std::size_t index) const;
 
   bool has_relation_to_mixed_term(const std::string var_name) const;
   void add_relation_to_mixed_term(const std::string var_name, const StringFormula::Type relation, const SMT::Term_ptr term);

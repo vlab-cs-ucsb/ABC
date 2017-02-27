@@ -50,6 +50,7 @@ class RelationalStringAutomaton: public Automaton {
   RelationalStringAutomaton_ptr Complement();
   RelationalStringAutomaton_ptr Union(RelationalStringAutomaton_ptr other_auto);
   RelationalStringAutomaton_ptr Intersect(RelationalStringAutomaton_ptr other_auto);
+  RelationalStringAutomaton_ptr Intersect(StringAutomaton_ptr other_auto);
   RelationalStringAutomaton_ptr Difference(RelationalStringAutomaton_ptr other_auto);
 
   RelationalStringAutomaton_ptr ProjecAwayVariable(std::string var_name);
@@ -86,10 +87,13 @@ class RelationalStringAutomaton: public Automaton {
   static const int DEFAULT_NUM_VAR = 8;
   static const int VAR_PER_TRACK = 9;
   int num_of_tracks_;
+protected:
+  void add_print_label(std::ostream& out) override;
 
- private:
   StringFormula_ptr formula_;
   static TransitionTable TRANSITION_TABLE;
+
+ private:
   static const int VLOG_LEVEL;
 
 };

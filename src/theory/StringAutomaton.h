@@ -29,6 +29,7 @@
 #include "Graph.h"
 #include "GraphNode.h"
 #include "IntAutomaton.h"
+#include "StringFormula.h"
 #include "RelationalStringAutomaton.h"
 
 namespace Vlab {
@@ -66,8 +67,6 @@ public:
   static StringAutomaton_ptr makeLengthGreaterThan(int length, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
   static StringAutomaton_ptr makeLengthGreaterThanEqual(int length, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
   static StringAutomaton_ptr makeLengthRange(int start, int end, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-
-  static void release_default_indices();
 
   StringAutomaton_ptr complement();
   StringAutomaton_ptr union_(StringAutomaton_ptr other_auto);
@@ -151,6 +150,9 @@ public:
   bool isAcceptingSingleString();
   std::string getAnAcceptingString();
 
+  StringFormula_ptr get_formula();
+  void set_formula(StringFormula_ptr formula);
+
 protected:
 
   static StringAutomaton_ptr makeRegexAuto(Util::RegularExpression_ptr regular_expression);
@@ -170,6 +172,7 @@ protected:
   StringAutomaton_ptr removeReservedWords();
   void add_print_label(std::ostream& out) override;
 
+  StringFormula_ptr formula_;
   static int DEFAULT_NUM_OF_VARIABLES;
 
 private:
