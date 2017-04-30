@@ -91,6 +91,7 @@ public:
   StringAutomaton_ptr subStrings();
 
   StringAutomaton_ptr charAt(int index);
+  StringAutomaton_ptr charAt(IntAutomaton_ptr index_auto, char c);
   StringAutomaton_ptr subString(int start);
   StringAutomaton_ptr subString(const int start, const int end);
   StringAutomaton_ptr subString(int start, IntAutomaton_ptr end_auto);

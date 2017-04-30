@@ -768,6 +768,8 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
 
   dfaSetup(number_of_states, number_of_variables, indices);
 
+  LOG(INFO) << "num variables in IntAuto: " << this->num_of_variables_;
+
   for (int s = 0; s < this->dfa_->ns; s++) {
     to_state = getNextState(s, exception);
     dfaAllocExceptions(1);

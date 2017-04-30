@@ -1455,6 +1455,21 @@ StringAutomaton_ptr StringAutomaton::charAt(int index) {
   return charat_auto;
 }
 
+// return a string automaton that encompasses all possible character values
+// at index(s) given by index_auto
+StringAutomaton_ptr StringAutomaton::charAt(IntAutomaton_ptr index_auto, char c) {
+    LOG(FATAL) << "Implement me";
+	// build int automaton from unary_tmp, where for each accepting state in
+	// unary_tmp, add transition on given character c to new accepting state, and
+	// add sigma-c transitions to original next state. make previous accepting
+	// states non accepting, and new state be accepting. then intersect with
+	// string auto; result is automaton which accepts all past strings except
+	// those who dont have character c at index i
+
+	std::cin.get();
+	return this;
+}
+
 StringAutomaton_ptr StringAutomaton::subString(int start){
   StringAutomaton_ptr substring_auto = nullptr;
   substring_auto = this->suffixesAtIndex(start);
@@ -1640,6 +1655,7 @@ IntAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
     has_negative_1 = true;
   }
   delete difference_auto;
+
 
   index_of_auto = contains_auto->indexOfHelper(search_param_auto);
   delete contains_auto; contains_auto = nullptr;
@@ -2521,6 +2537,9 @@ StringAutomaton_ptr StringAutomaton::indexOfHelper(StringAutomaton_ptr search_au
     }
   }
   index_of_auto->minimize();
+  StringAutomaton_ptr ret_auto = index_of_auto->removeReservedWords();
+  delete index_of_auto;
+  index_of_auto=ret_auto;
 
   DVLOG(VLOG_LEVEL) << index_of_auto->id_ << " = [" << this->id_ << "]->indexOfHelper(" << search_auto->id_  << ")";
   return index_of_auto;

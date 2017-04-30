@@ -860,8 +860,12 @@ void ConstraintSolver::visitCharAt(CharAt_ptr char_at_term) {
 
   Value_ptr result = nullptr, param_subject = getTermValue(char_at_term->subject_term), param_index = getTermValue(
       char_at_term->index_term);
-  result = new Value(param_subject->getStringAutomaton()->charAt(param_index->getIntConstant()));
-
+  if(param_index->getType() == Solver::Value::Type::INT_AUTOMATON) {
+	  result = nullptr;
+      //result = new Value(param_subject->getStringAutomaton()->charAt(param_index->getIntAutomaton()));
+  } else if(param_index->getType() == Solver::Value::Type::INT_CONSTANT) {
+	  result = new Value(param_subject->getStringAutomaton()->charAt(param_index->getIntConstant()));
+  }
   setTermValue(char_at_term, result);
 }
 

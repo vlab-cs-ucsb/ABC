@@ -216,6 +216,15 @@ void Driver::SetModelCounter() {
         model_counter_.add_symbolic_counter(int_auto->GetSymbolicCounter());
       }
         break;
+      case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
+    	auto string_auto = variable_entry.second->getStringAutomaton();
+    	model_counter_.add_symbolic_counter(string_auto->GetSymbolicCounter());
+      }
+        break;
+      case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {
+    	LOG(FATAL) << "Implement me";
+      }
+        break;
       default:
         break;
     }
@@ -249,10 +258,10 @@ void Driver::inspectResult(Solver::Value_ptr value, std::string file_name) {
 void Driver::printResult(Solver::Value_ptr value, std::ostream& out) {
   switch (value->getType()) {
     case Solver::Value::Type::STRING_AUTOMATON:
-      value->getStringAutomaton()->toDotAscii(false, out);
+      value->getStringAutomaton()->ToDot(out,false);
       break;
     case Solver::Value::Type::INT_AUTOMATON:
-      value->getIntAutomaton()->toDotAscii(false, out);
+      value->getIntAutomaton()->ToDot(out,false);
       break;
     case Solver::Value::Type::BINARYINT_AUTOMATON:
       value->getBinaryIntAutomaton()->ToDot(out, false);

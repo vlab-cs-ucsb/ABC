@@ -1476,15 +1476,16 @@ int Automaton::inspectAuto(bool print_sink, bool force_mona_format) {
     std::cout << "cannot open file: " << file << std::endl;
     exit(2);
   }
-  if (Automaton::Type::INT == type_ or Automaton::Type::STRING == type_) {
-    if (force_mona_format) {
-      ToDot(outfile, print_sink);
-    } else {
-      toDotAscii(print_sink, outfile);
-    }
-  } else {
-    ToDot(outfile, print_sink);
-  }
+  ToDot(outfile,print_sink);
+//  if (Automaton::Type::INT == type_ or Automaton::Type::STRING == type_) {
+//    if (force_mona_format) {
+//      ToDot(outfile, print_sink);
+//    } else {
+//      toDotAscii(print_sink, outfile);
+//    }
+//  } else {
+//    ToDot(outfile, print_sink);
+//  }
   std::string dot_cmd("xdot " + file + " &");
   return std::system(dot_cmd.c_str());
 }
