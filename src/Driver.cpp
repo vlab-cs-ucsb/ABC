@@ -122,6 +122,7 @@ Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsig
 }
 
 Theory::BigInteger Driver::CountInts(const unsigned long bound) {
+	GetModelCounter().set_use_sign_integers(false);
   return GetModelCounter().CountInts(bound);
 }
 
