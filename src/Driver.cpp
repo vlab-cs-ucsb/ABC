@@ -223,7 +223,8 @@ void Driver::SetModelCounter() {
       }
         break;
       case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {
-    	LOG(FATAL) << "Implement me";
+      	auto multi_auto = variable_entry.second->getMultiTrackAutomaton();
+      	model_counter_.add_symbolic_counter(multi_auto->GetSymbolicCounter());
       }
         break;
       default:
