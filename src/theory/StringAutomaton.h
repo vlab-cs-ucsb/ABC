@@ -89,7 +89,8 @@ public:
   StringAutomaton_ptr prefixesAtIndex(int index);
   StringAutomaton_ptr subStrings();
 
-  StringAutomaton_ptr charAt(int index);
+  StringAutomaton_ptr CharAt(const int index);
+  StringAutomaton_ptr CharAt(IntAutomaton_ptr index_auto);
   StringAutomaton_ptr SubString(const int start);
   /**
    * TODO decide on substring second param; which one is better:

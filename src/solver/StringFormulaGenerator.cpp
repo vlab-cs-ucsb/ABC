@@ -270,6 +270,7 @@ void StringFormulaGenerator::visitTimes(Times_ptr times_term) {
 //  DVLOG(VLOG_LEVEL) << "visit children end: " << *times_term << "@" << times_term;
 }
 
+// TODO make decision based on the formula type
 void StringFormulaGenerator::visitEq(Eq_ptr eq_term) {
   visit_children_of(eq_term);
   DVLOG(VLOG_LEVEL) << "post visit start: " << *eq_term << "@" << eq_term;
@@ -575,6 +576,18 @@ void StringFormulaGenerator::visitLastIndexOf(LastIndexOf_ptr last_index_of_term
 }
 
 void StringFormulaGenerator::visitCharAt(CharAt_ptr char_at_term) {
+  visit_children_of(char_at_term);
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *char_at_term << "@" << char_at_term;
+
+  auto left_formula = get_term_formula(char_at_term->subject_term);
+  if (left_formula not_eq nullptr) {
+    auto formula = left_formula->clone();
+    formula->set_type(StringFormula::Type::NONRELATIONAL);
+    delete_term_formula(char_at_term->subject_term);
+    set_term_formula(char_at_term, formula);
+  }
+
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *char_at_term << "@" << char_at_term;
 }
 
 void StringFormulaGenerator::visitSubString(SubString_ptr sub_string_term) {
@@ -785,9 +798,14 @@ void StringFormulaGenerator::add_string_variables(std::string group_name, Term_p
   }
   auto formula = get_term_formula(term);
   group_formula->merge_variables(formula);
+  // TODO if there is an or we need to add single variables into one group, uncomment above
+  // line and remove the same line from else branch.
+  // find a way to optimize that, if all constraints are nonrelational, we only need that
+  // if we have disjunction
   if (StringFormula::Type::NONRELATIONAL == formula->get_type()) {
     clear_term_formula(term);
   } else {
+//    group_formula->merge_variables(formula);
     term_group_map_[term] = group_name;
   }
 }
@@ -809,7 +827,7 @@ void StringFormulaGenerator::delete_term_formula(Term_ptr term) {
 }
 
 void StringFormulaGenerator::set_group_mappings() {
-  DVLOG(VLOG_LEVEL)<< "start setting int group for components";
+  DVLOG(VLOG_LEVEL)<< "start setting string group for components";
   for (auto& el : term_group_map_) {
     term_formula_[el.first]->merge_variables(group_formula_[el.second]);
   }
@@ -821,7 +839,7 @@ void StringFormulaGenerator::set_group_mappings() {
       symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
     }
   }
-  DVLOG(VLOG_LEVEL)<< "end setting int group for components";
+  DVLOG(VLOG_LEVEL)<< "end setting string group for components";
 }
 
 } /* namespace Solver */

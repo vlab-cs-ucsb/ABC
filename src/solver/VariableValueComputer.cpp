@@ -926,6 +926,7 @@ void VariableValueComputer::visitCharAt(CharAt_ptr char_at_term) {
   popTerm(char_at_term);
   Term_ptr child_term = current_path->back();
 
+  LOG(FATAL) << "update int auto";
   if (child_term == char_at_term->index_term) {
     return; // charAt operation does not have any restriction on right hand side
   }

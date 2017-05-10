@@ -535,11 +535,14 @@ void Driver::test() {
 
 //  non_accepting_auto->inspectAuto(true);
 
-//  Theory::StringAutomaton_ptr any_string = Theory::StringAutomaton::makeAnyString();
-//  Theory::StringAutomaton_ptr complement = nullptr;
-  //any_string->toDotAscii(1);
-//  complement = any_string->complement();
-  //complement->toDotAscii(1);
+//  StringAutomaton_ptr any_string = Theory::StringAutomaton::makeAnyString();
+//  StringAutomaton_ptr regex_auto = StringAutomaton::makeRegexAuto("(..)*");
+//  IntAutomaton_ptr len_auto = regex_auto->length();
+//
+//  StringAutomaton_ptr char_at_auto = any_string->CharAt(len_auto);
+//  char_at_auto->inspectAuto(false, true);
+
+
 
 //  Theory::StringAutomaton_ptr a1 = Theory::StringAutomaton::makeString("Hi,");
   //make_string->complement()->toDotAscii();

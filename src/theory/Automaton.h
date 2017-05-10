@@ -125,6 +125,7 @@ protected:
 //  static DFA_ptr DFAProjectAway(std::vector<int> index, int num_of_variables, DFA_ptr dfa);
   static DFA_ptr DFAProjectTo(int index, int num_of_variables, DFA_ptr dfa);
   static DFA_ptr DfaL1ToL2(int start, int end, int num_of_variables, int* variable_indices = nullptr);
+  static std::set<std::string> DFAGetTransitionsFromTo(DFA_ptr dfa, const int from, const int to, const int num_of_variables, const int* variable_indices);
 
   bool isAcceptingSingleWord();
   // TODO update it to work for non-accepting inputs

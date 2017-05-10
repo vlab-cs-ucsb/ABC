@@ -572,6 +572,33 @@ DFA_ptr Automaton::DfaL1ToL2(int start, int end, int num_of_variables, int *vari
   return tmp;
 }
 
+std::set<std::string> Automaton::DFAGetTransitionsFromTo(DFA_ptr dfa, const int from, const int to, const int num_of_variables, const int* variable_indices) {
+  std::set<std::string> transitions;
+  paths pp = make_paths(dfa->bddm, dfa->q[from]);
+  while (pp) {
+    if (pp->to == to) {
+      std::string current_exception;
+      for (int j = 0; j < num_of_variables; ++j) {
+        trace_descr tp = nullptr;
+        for (tp = pp->trace; tp && (tp->index != (unsigned)variable_indices[j]); tp = tp->next);
+        if (tp) {
+          if (tp->value) {
+            current_exception.push_back('1');
+          } else {
+            current_exception.push_back('0');
+          }
+        } else {
+          current_exception.push_back('X');
+        }
+      }
+      current_exception.push_back('\0');
+      transitions.insert(current_exception);
+    }
+    pp = pp->next;
+  }
+  return transitions;
+}
+
 int* Automaton::getIndices(int num_of_variables, int extra_num_of_variables) {
   int size = num_of_variables + extra_num_of_variables;
   int* indices = new int[size];

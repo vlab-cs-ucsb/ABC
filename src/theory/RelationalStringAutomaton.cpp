@@ -1020,9 +1020,20 @@ StringAutomaton_ptr RelationalStringAutomaton::GetKTrack(int k_track) {
   if(k_track >= this->num_of_tracks_) {
     LOG(FATAL) << "error in RelationalStringAutomaton::getKTrack; k_track,num_tracks = " << k_track << "," << this->num_of_tracks_;
   } else if(this->num_of_tracks_ == 1) {
-    DVLOG(VLOG_LEVEL) << "   getKTrack, but only 1 track";
-    result = trim_lambda_suffix(this->dfa_,VAR_PER_TRACK);
+    // TODO baki: better handle this situation where mixed constraint and multi-track really get mixed
+//    DVLOG(VLOG_LEVEL) << "   getKTrack, but only 1 track";
+//    result = trim_lambda_suffix(this->dfa_,this->num_of_variables_);
+
+//    result_auto = new StringAutomaton(result);
+
+
+    // TODO baki: added below for charat example
+    temp = dfaProject(result, this->num_of_variables_ - 1);
+    dfaFree(result);
+    result = dfaMinimize(temp);
+    dfaFree(temp);
     result_auto = new StringAutomaton(result);
+
     return result_auto;
   }
 

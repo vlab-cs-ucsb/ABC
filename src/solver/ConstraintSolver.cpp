@@ -139,11 +139,15 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     if (constraint_information_->has_arithmetic_constraint(and_term)) {
       arithmetic_constraint_solver_.start(and_term);
       is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
+      DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *and_term << "@" << and_term;
     }
     if (is_satisfiable and constraint_information_->has_string_constraint(and_term)) {
       string_constraint_solver_.start(and_term);
       is_satisfiable = string_constraint_solver_.get_term_value(and_term)->is_satisfiable();
+      DVLOG(VLOG_LEVEL) << "String formulae solved: " << *and_term << "@" << and_term;
     }
+
+    DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *and_term << "@" << and_term;
   }
 
   DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
@@ -819,7 +823,12 @@ void ConstraintSolver::visitCharAt(CharAt_ptr char_at_term) {
 
   Value_ptr result = nullptr, param_subject = getTermValue(char_at_term->subject_term), param_index = getTermValue(
       char_at_term->index_term);
-  result = new Value(param_subject->getStringAutomaton()->charAt(param_index->getIntConstant()));
+  if (Value::Type::INT_CONSTANT == param_index->getType()) {
+    result = new Value(param_subject->getStringAutomaton()->CharAt(param_index->getIntConstant()));
+  } else if (Value::Type::INT_AUTOMATON == param_index->getType()) {
+    result = new Value(param_subject->getStringAutomaton()->CharAt(param_index->getIntAutomaton()));
+  } else if (Value::Type::BINARYINT_AUTOMATON == param_index->getType()) {
+  }
 
   setTermValue(char_at_term, result);
 }
@@ -1047,9 +1056,19 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   auto variable_value = symbol_table_->get_value(variable);
 
   Value_ptr result = nullptr;
-  if (Value::Type::RELATIONALSTRING_AUTOMATON == variable_value->getType()) {
+  if (Value::Type::RELATIONALSTRING_AUTOMATON == variable_value->getType())
+  {
     result = new Value(variable_value->getRelationalStringAutomaton()->GetAutomatonForVariable(qi_term->getVarName()));
-  } else {
+  } else if (Value::Type::BINARYINT_AUTOMATON == variable_value->getType())
+  {
+    // TODO baki: added for charat may need to fix it
+    auto var_auto = variable_value->getBinaryIntAutomaton()->GetBinaryAutomatonFor(qi_term->getVarName());
+    auto unary_auto = var_auto->ToUnaryAutomaton();
+    result = new Value(unary_auto->toIntAutomaton(8));
+    delete var_auto;
+    delete unary_auto;
+  } else
+  {
     result = variable_value->clone();
   }
 

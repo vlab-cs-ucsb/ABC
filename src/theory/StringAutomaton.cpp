@@ -1356,7 +1356,7 @@ StringAutomaton_ptr StringAutomaton::subStrings() {
   return sub_strings_auto;
 }
 
-StringAutomaton_ptr StringAutomaton::charAt(int index) {
+StringAutomaton_ptr StringAutomaton::CharAt(const int index) {
 
   if (this->is_empty_language()) {
     auto charat_auto = StringAutomaton::makePhi();
@@ -1449,7 +1449,62 @@ StringAutomaton_ptr StringAutomaton::charAt(int index) {
     charat_auto->minimize();
   }
 
-  DVLOG(VLOG_LEVEL) << charat_auto->id_ << " = [" << this->id_ << "]->charAt(" << index << ")";
+  DVLOG(VLOG_LEVEL) << charat_auto->id_ << " = [" << this->id_ << "]->CharAt(" << index << ")";
+  return charat_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::CharAt(IntAutomaton_ptr index_auto) {
+
+  StringAutomaton_ptr prefixes_auto = this->prefixes();
+  StringAutomaton_ptr string_length_auto = new StringAutomaton(index_auto->getDFA());
+  StringAutomaton_ptr any_char_auto = StringAutomaton::makeAnyChar();
+  StringAutomaton_ptr tmp_length_auto = string_length_auto->concat(any_char_auto);
+  string_length_auto->dfa_ = nullptr; //TODO avoid this in the future by better using unary auto instead of int auto
+  delete string_length_auto;
+  delete any_char_auto;
+  StringAutomaton_ptr charat_indexes_auto = prefixes_auto->intersect(tmp_length_auto);
+  delete prefixes_auto;
+  delete tmp_length_auto;
+
+  const int number_of_variables = charat_indexes_auto->num_of_variables_;
+  int* indices = getIndices(number_of_variables);
+  std::set<std::string> exceptions;
+  for (int s = 0; s < charat_indexes_auto->dfa_->ns; ++s) {
+    for (int next : charat_indexes_auto->getNextStates(s)) {
+      if (charat_indexes_auto->is_accepting_state(next)) {
+        // extract transitions
+        auto transitions = Automaton::DFAGetTransitionsFromTo(charat_indexes_auto->dfa_, s, next, number_of_variables, indices);
+        exceptions.insert(transitions.begin(), transitions.end());
+      }
+    }
+  }
+
+  const int number_of_exceptions = exceptions.size();
+  dfaSetup(3, number_of_variables, indices);
+  char statuses[3] { '-', '+', '-' };
+  //state 0
+  dfaAllocExceptions(number_of_exceptions);
+  for (std::string exception : exceptions) {
+    dfaStoreException(1, &exception[0]);
+  }
+  dfaStoreState(2);
+
+  //state 1
+  dfaAllocExceptions(0);
+  dfaStoreState(2);
+
+  //state 2
+  dfaAllocExceptions(0);
+  dfaStoreState(2);
+
+  DFA_ptr result_dfa = dfaBuild(statuses);
+  delete[] indices;
+
+  StringAutomaton_ptr charat_auto = new StringAutomaton(dfaMinimize(result_dfa), number_of_variables);
+  dfaFree(result_dfa); result_dfa = nullptr;
+
+
+  DVLOG(VLOG_LEVEL) << charat_auto->id_ << " = [" << this->id_ << "]->CharAt(" << index_auto->getId() << ")";
   return charat_auto;
 }
 
