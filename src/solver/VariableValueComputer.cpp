@@ -924,28 +924,43 @@ void VariableValueComputer::visitLastIndexOf(LastIndexOf_ptr last_index_of_term)
 void VariableValueComputer::visitCharAt(CharAt_ptr char_at_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *char_at_term;
   popTerm(char_at_term);
+
   Term_ptr child_term = current_path->back();
-
-  LOG(FATAL) << "update int auto";
-  if (child_term == char_at_term->index_term) {
-    return; // charAt operation does not have any restriction on right hand side
-  }
-
   Value_ptr child_value = getTermPreImage(child_term);
+
   if (child_value not_eq nullptr) {
     visit(child_term);
     return;
   }
 
+
   Value_ptr term_value = getTermPreImage(char_at_term);
   Value_ptr child_post_value = getTermPostImage(child_term);
-  Value_ptr index_value = getTermPostImage(char_at_term->index_term);
-  if (Value::Type::INT_CONSTANT == index_value->getType()) {
-    child_value = new Value(child_post_value->getStringAutomaton()
-            ->restrictAtIndexTo(index_value->getIntConstant(), term_value->getStringAutomaton()));
-  } else {
-    child_value = new Value(child_post_value->getStringAutomaton()
-            ->restrictAtIndexTo(index_value->getIntAutomaton(), term_value->getStringAutomaton()));
+
+  if (child_term == char_at_term->subject_term)
+  {
+    Value_ptr index_value = getTermPostImage(char_at_term->index_term);
+    if (Value::Type::INT_CONSTANT == index_value->getType()) {
+      child_value = new Value(child_post_value->getStringAutomaton()
+              ->restrictAtIndexTo(index_value->getIntConstant(), term_value->getStringAutomaton()));
+    } else {
+      child_value = new Value(child_post_value->getStringAutomaton()
+              ->restrictAtIndexTo(index_value->getIntAutomaton(), term_value->getStringAutomaton()));
+    }
+  }
+  else
+  {
+    Value_ptr subject_value = getTermPostImage(char_at_term->subject_term);
+    Theory::IntAutomaton_ptr indexes_auto = subject_value->getStringAutomaton()->indexOf(subject_value->getStringAutomaton());
+    if (Value::Type::INT_CONSTANT == child_post_value->getType())
+    {
+      child_value = new Value(indexes_auto->intersect(child_post_value->getIntConstant()));
+    }
+    else
+    {
+      child_value = new Value(indexes_auto->intersect(child_post_value->getIntAutomaton()));
+    }
+    delete indexes_auto;
   }
 
   setTermPreImage(child_term, child_value);
@@ -1293,24 +1308,45 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 
   Value_ptr term_pre_value = getTermPreImage(qi_term);
 
+
   /**
    * 1) term automaton is single track, set formula for it
    * and let automaton side figure out if it is needed to be extended
    *
    */
-  if (Value::Type::STRING_AUTOMATON == term_pre_value->getType()) {
-    auto string_auto = term_pre_value->getStringAutomaton();
-    auto formula = string_auto->get_formula();
-    if (formula == nullptr) {
-      formula = new Theory::StringFormula();
-      formula->set_type(Theory::StringFormula::Type::VAR);
-      formula->add_variable(qi_term->getVarName(), 1);
-      string_auto->set_formula(formula);
-    } else if (Theory::StringFormula::Type::VAR != formula->get_type()) {
-      LOG(FATAL) << "fix me";
+  switch (term_pre_value->getType()) {
+    case Value::Type::STRING_AUTOMATON:
+    {
+      auto string_auto = term_pre_value->getStringAutomaton();
+      auto formula = string_auto->get_formula();
+      if (formula == nullptr) {
+        formula = new Theory::StringFormula();
+        formula->set_type(Theory::StringFormula::Type::VAR);
+        formula->add_variable(qi_term->getVarName(), 1);
+        string_auto->set_formula(formula);
+      } else if (Theory::StringFormula::Type::VAR != formula->get_type()) {
+        LOG(FATAL) << "fix me";
+      }
     }
-  } else {
-    LOG(FATAL) << "handle case";
+      break;
+    case Value::Type::INT_AUTOMATON:
+    {
+      //TODO !!!! improve mixing constraints by design
+      auto unary_auto = term_pre_value->getIntAutomaton()->toUnaryAutomaton();
+
+      Variable_ptr variable = symbol_table->get_variable(qi_term->getVarName());
+      auto variable_value = symbol_table->get_value(variable);
+
+      auto term_binary_auto = unary_auto->toBinaryIntAutomaton(qi_term->getVarName(),
+                                                               variable_value->getBinaryIntAutomaton()->get_formula()->clone(),
+                                                               false);
+      delete unary_auto;
+      term_pre_value = new Value(term_binary_auto);
+    }
+      break;
+    default:
+      LOG(FATAL) << "handle case";
+      break;
   }
 
   is_satisfiable_ = symbol_table->IntersectValue(qi_term->getVarName(), term_pre_value) and is_satisfiable_;

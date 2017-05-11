@@ -828,6 +828,7 @@ void ConstraintSolver::visitCharAt(CharAt_ptr char_at_term) {
   } else if (Value::Type::INT_AUTOMATON == param_index->getType()) {
     result = new Value(param_subject->getStringAutomaton()->CharAt(param_index->getIntAutomaton()));
   } else if (Value::Type::BINARYINT_AUTOMATON == param_index->getType()) {
+    LOG(FATAL)<< "Handle this case";
   }
 
   setTermValue(char_at_term, result);
@@ -1053,7 +1054,7 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 
   Variable_ptr variable = symbol_table_->get_variable(qi_term->getVarName());
 
-  auto variable_value = symbol_table_->get_value(variable);
+  Value_ptr variable_value = symbol_table_->get_value(variable);
 
   Value_ptr result = nullptr;
   if (Value::Type::RELATIONALSTRING_AUTOMATON == variable_value->getType())
@@ -1202,27 +1203,12 @@ bool ConstraintSolver::update_variables() {
   if (variable_path_table_.size() == 0) {
     return true;
   }
-
   VariableValueComputer value_updater(symbol_table_, variable_path_table_, term_values_);
   value_updater.start();
   auto is_satisfiable = value_updater.is_satisfiable();
   variable_path_table_.clear();
   // TODO should we delete term_values ???
-
   // TODO refactor relation - single interaction
-  // update any relational variables tagged prior to variable value computer
-  // and update any changes in satisfiability
-  for (auto& var : tagged_variables) {
-    Value_ptr value = symbol_table_->get_value(var);
-    if (value == nullptr) {
-      DVLOG(VLOG_LEVEL) << "Inconsistent value for variable: " << var->getName();
-      continue;
-    }
-    bool still_good = symbol_table_->IntersectValue(var, value);
-    is_satisfiable = is_satisfiable and still_good;
-    symbol_table_->clear_value(var,symbol_table_->top_scope());
-  }
-  tagged_variables.clear();
   return is_satisfiable;
 }
 

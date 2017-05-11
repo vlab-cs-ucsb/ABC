@@ -948,13 +948,12 @@ RelationalStringAutomaton_ptr RelationalStringAutomaton::Intersect(RelationalStr
 }
 
 RelationalStringAutomaton_ptr RelationalStringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
-
   if (other_auto->get_formula() == nullptr) {
     LOG(FATAL) << "Single track automaton needs to have formula";
     return nullptr;
   }
   std::string var_name = other_auto->get_formula()->get_variable_at_index(0);
-  auto rel_other_auto = new RelationalStringAutomaton(other_auto->getDFA(), formula_->get_variable_index(var_name), formula_->get_number_of_variables());
+  auto rel_other_auto = new RelationalStringAutomaton(dfaCopy(other_auto->getDFA()), formula_->get_variable_index(var_name), formula_->get_number_of_variables());
   rel_other_auto->formula_ = formula_->clone();
 
   auto intersect_auto = this->Intersect(rel_other_auto);
@@ -1029,7 +1028,6 @@ StringAutomaton_ptr RelationalStringAutomaton::GetKTrack(int k_track) {
 
     // TODO baki: added below for charat example
     temp = dfaProject(result, this->num_of_variables_ - 1);
-    dfaFree(result);
     result = dfaMinimize(temp);
     dfaFree(temp);
     result_auto = new StringAutomaton(result);

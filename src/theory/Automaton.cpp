@@ -47,7 +47,7 @@ Automaton::~Automaton() {
   }
   delete[] variable_indices_;
   variable_indices_ = nullptr;
-  //  DVLOG(VLOG_LEVEL) << "delete " << " [" << this->id << "]";
+//  DVLOG(VLOG_LEVEL) << "deleted " << " [" << this->id_ << "]";
 }
 
 //Automaton_ptr Automaton::clone() const {
@@ -68,6 +68,8 @@ std::string Automaton::str() const {
     return Automaton::Name::STRING;
   case Automaton::Type::BINARYINT:
     return Automaton::Name::BINARYINT;
+  case Automaton::Type::MULTITRACK:
+    return "Multi-track";
   default:
     LOG(FATAL)<< "Unknown automaton type!";
     return "";
