@@ -192,10 +192,12 @@ static inline void printStackTrace( FILE *out = stderr, unsigned int max_frames 
 std::vector<unsigned long> parse_count_bounds(std::string);
 
 int main(const int argc, const char **argv) {
-  signal( SIGABRT, abortHandler );
-  signal( SIGSEGV, abortHandler );
-  signal( SIGILL,  abortHandler );
-  signal( SIGFPE,  abortHandler );
+
+  google::InstallFailureSignalHandler();
+//  signal( SIGABRT, abortHandler );
+//  signal( SIGSEGV, abortHandler );
+//  signal( SIGILL,  abortHandler );
+//  signal( SIGFPE,  abortHandler );
   std::istream* in = &std::cin;
   std::ifstream* file = nullptr;
   std::string file_name;
@@ -343,7 +345,6 @@ int main(const int argc, const char **argv) {
 //    driver.ast2dot(output_root + "/optimized.dot");
   }
 #endif
-
   driver.Solve();
   auto end = std::chrono::steady_clock::now();
   auto solving_time = end - start;
@@ -351,9 +352,9 @@ int main(const int argc, const char **argv) {
 
   if (driver.is_sat()) {
     if (VLOG_IS_ON(30)) {
-      for (auto& variable_entry : driver.getSatisfyingVariables()) {
-        variable_entry.second->getStringAutomaton()->inspectAuto(false, true);
-      }
+//      for (auto& variable_entry : driver.getSatisfyingVariables()) {
+//        variable_entry.second->getStringAutomaton()->inspectAuto(false, true);
+//      }
       //      unsigned index = 0;
 //      for (auto& variable_entry : driver.getSatisfyingVariables()) {
 //        if (variable_entry.second == nullptr) {
