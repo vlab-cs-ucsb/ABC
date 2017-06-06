@@ -54,7 +54,7 @@ UnaryAutomaton_ptr UnaryAutomaton::makeAutomaton(SemilinearSet_ptr semilinear_se
   int number_of_variables = 1;
   int number_of_states = cycle_head + semilinear_set->get_period() + 1;
   int sink_state = number_of_states - 1;
-  int* indices = getIndices(number_of_variables);
+  int* indices = GetBddVariableIndices(number_of_variables);
   char unary_exception[1] = {'1'};
   std::vector<char> statuses;
   bool has_only_constants = semilinear_set->has_only_constants();
@@ -189,7 +189,7 @@ SemilinearSet_ptr UnaryAutomaton::getSemilinearSet() {
 IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool add_minus_one) {
   IntAutomaton_ptr int_auto = nullptr;
   DFA_ptr int_dfa = nullptr;
-  int* indices = getIndices(number_of_variables);
+  int* indices = GetBddVariableIndices(number_of_variables);
   const int number_of_states = this->dfa_->ns;
   int to_state, sink_state = GetSinkState();
   bool has_sink = true;

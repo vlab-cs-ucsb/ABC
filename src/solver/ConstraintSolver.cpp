@@ -888,7 +888,7 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
           auto unary_end_index_var_auto = bin_end_index_var_auto->ToUnaryAutomaton();
           delete bin_end_index_var_auto;
           bin_end_index_var_auto = nullptr;
-          auto string_len_end_index_auto = unary_end_index_var_auto->toIntAutomaton(param_subject->getStringAutomaton()->get_number_of_variables(), false);
+          auto string_len_end_index_auto = unary_end_index_var_auto->toIntAutomaton(param_subject->getStringAutomaton()->get_number_of_bdd_variables(), false);
           delete unary_end_index_var_auto;
           unary_end_index_var_auto = nullptr;
 
@@ -1262,7 +1262,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     std::string string_term_var_name = symbol_table_->get_var_name_for_expression(string_term, Variable::Type::INT);
     if (Value::Type::INT_AUTOMATON == string_term_result->getType()) {
       has_minus_one = string_term_result->getIntAutomaton()->hasNegative1();
-      number_of_variables_for_int_auto = string_term_result->getIntAutomaton()->get_number_of_variables();
+      number_of_variables_for_int_auto = string_term_result->getIntAutomaton()->get_number_of_bdd_variables();
       // first convert integer result to unary, then unary to binary
       string_term_unary_auto = string_term_result->getIntAutomaton()->toUnaryAutomaton();
       string_term_binary_auto = string_term_unary_auto->toBinaryIntAutomaton(

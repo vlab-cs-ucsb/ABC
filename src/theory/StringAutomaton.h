@@ -20,8 +20,6 @@
 #include <vector>
 
 #include <glog/logging.h>
-//#include <mona/bdd.h>
-//#include <mona/dfa.h>
 
 #include "../utils/RegularExpression.h"
 #include "Automaton.h"

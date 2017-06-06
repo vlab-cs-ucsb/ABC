@@ -21,6 +21,7 @@
 #include <sstream>
 #include <stack>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -72,9 +73,9 @@ public:
   virtual std::string str() const;
   virtual Automaton::Type getType() const;
   unsigned long getId();
+
   DFA_ptr getDFA();
-  int get_number_of_variables();
-  int* getVariableIndices();
+  int get_number_of_bdd_variables();
 
   class Name {
   public:
@@ -133,12 +134,16 @@ protected:
   std::vector<char> decodeException(std::vector<char>& exception);
   virtual void add_print_label(std::ostream& out);
 
-  static int* getIndices(int num_of_variables, int extra_num_of_variables = 0);
-  static unsigned* getIndices(unsigned num_of_variables, unsigned extra_num_of_variables = 0);
+  static int* GetBddVariableIndices(const int number_of_bdd_variables);
+  static int* GenerateBddVariableIndices(const int number_of_bdd_variables);
+
+  static unsigned* getIndices(unsigned num_of_variables, unsigned extra_num_of_variables = 0); // TODO remove
   // TODO remove vector<char> version of binary format
   static std::vector<char> GetBinaryFormat(unsigned long n, int bit_length);
   static std::vector<char> GetReversedBinaryFormat(unsigned long n, int bit_length);
+
   static std::string getBinaryString(unsigned long n, int bit_length);
+
   static std::vector<char> getReservedWord(char last_char, int length, bool extra_bit = false);
   void minimize();
   void project(unsigned index);
@@ -179,16 +184,41 @@ protected:
   unsigned char strtobin(char* binChar, int var);
   static int find_sink(DFA_ptr dfa);
 
-  const Automaton::Type type_;
-  bool is_counter_cached_;
-  DFA_ptr dfa_;
-  int num_of_variables_;
-  int* variable_indices_;
+
+  static unsigned long next_id;
+
+  /**
+   * Bdd variable indices cache used in MONA dfa manipulation
+   */
+  static std::unordered_map<int, int*> bdd_var_indices;
+
+  /**
+   * Automaton id used for debuggin purposes
+   */
   unsigned long id_;
-  static unsigned long trace_id;
+
+  const Automaton::Type type_; // TODO remove type
+
+
+  bool is_counter_cached_;
+
+  /**
+   * Number of bdd variables used in MONA representation
+   */
+  int num_of_bdd_variables_;
+
+  /**
+   * Mona dfa pointer
+   */
+  DFA_ptr dfa_;
+
+  /**
+   * Model counter function
+   */
   SymbolicCounter counter_;
 private:
   char* getAnExample(bool accepting=true); // MONA version
+  // for debugging
   static int name_counter;
   static const int VLOG_LEVEL;
 };

@@ -56,7 +56,7 @@ StringAutomaton_ptr StringAutomaton::makeEmptyString(int num_of_variables) {
   DFA_ptr empty_string_dfa = nullptr;
   StringAutomaton_ptr empty_string = nullptr;
   char statuses[2] { '+', '-' };
-  int *variable_indices = getIndices(num_of_variables);
+  int *variable_indices = GetBddVariableIndices(num_of_variables);
 
   dfaSetup(2, num_of_variables, variable_indices);
   dfaAllocExceptions(0);
@@ -82,7 +82,7 @@ StringAutomaton_ptr StringAutomaton::makeString(std::string str, int num_of_vari
   int str_length = str.length();
   int number_of_states = str_length + 2;
   char* statuses = new char[number_of_states];
-  int *variable_indices = getIndices(num_of_variables);
+  int *variable_indices = GetBddVariableIndices(num_of_variables);
 
   dfaSetup(number_of_states, num_of_variables, variable_indices);
 
@@ -122,7 +122,7 @@ StringAutomaton_ptr StringAutomaton::makeAnyString(int num_of_variables) {
   DFA_ptr any_string_dfa = nullptr;
   StringAutomaton_ptr any_string = nullptr;
   char statuses[2] { '+', '-' };
-  int *variable_indices = getIndices(num_of_variables);
+  int *variable_indices = GetBddVariableIndices(num_of_variables);
 
   dfaSetup(1, num_of_variables, variable_indices);
   dfaAllocExceptions(0);
@@ -164,7 +164,7 @@ StringAutomaton_ptr StringAutomaton::makeCharRange(char from, char to, int num_o
   int index;
   int initial_state;
   char statuses[3] { '-', '+', '-' };
-  int* variable_indices = getIndices(num_of_variables);
+  int* variable_indices = GetBddVariableIndices(num_of_variables);
   DFA_ptr range_dfa = nullptr;
   StringAutomaton_ptr range_auto = nullptr;
 
@@ -210,7 +210,7 @@ StringAutomaton_ptr StringAutomaton::makeAnyChar(int num_of_variables) {
   DFA_ptr dot_dfa = nullptr;
   StringAutomaton_ptr dot_auto = nullptr;
   char statuses[3] { '-', '+', '-' };
-  int* variable_indices = getIndices(num_of_variables);
+  int* variable_indices = GetBddVariableIndices(num_of_variables);
 
   dfaSetup(3, num_of_variables, variable_indices);
 
@@ -477,7 +477,7 @@ StringAutomaton_ptr StringAutomaton::complement() {
   minimized_dfa = dfaMinimize(complement_dfa);
   dfaFree(complement_dfa); complement_dfa = nullptr;
 
-  complement_auto = new StringAutomaton(minimized_dfa, num_of_variables_);
+  complement_auto = new StringAutomaton(minimized_dfa, num_of_bdd_variables_);
 
   DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->makeComplement()";
 
@@ -499,7 +499,7 @@ StringAutomaton_ptr StringAutomaton::union_(StringAutomaton_ptr other_auto) {
   //    result = tmpM;
   //  }
 
-  union_auto = new StringAutomaton(union_dfa, num_of_variables_);
+  union_auto = new StringAutomaton(union_dfa, num_of_bdd_variables_);
 
   DVLOG(VLOG_LEVEL) << union_auto->id_ << " = [" << this->id_ << "]->union(" << other_auto->id_ << ")";
 
@@ -511,7 +511,7 @@ StringAutomaton_ptr StringAutomaton::intersect(StringAutomaton_ptr other_auto) {
   StringAutomaton_ptr intersect_auto = nullptr;
 
   intersect_dfa = Automaton::DfaIntersect(this->dfa_, other_auto->dfa_);
-  intersect_auto = new StringAutomaton(intersect_dfa, num_of_variables_);
+  intersect_auto = new StringAutomaton(intersect_dfa, num_of_bdd_variables_);
 
   DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->intersect(" << other_auto->id_ << ")";
 
@@ -565,8 +565,8 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
     delete any_string_other_than_empty;
   }
 
-  int var = left_auto->num_of_variables_;
-  int* indices = left_auto->variable_indices_;
+  int var = left_auto->num_of_bdd_variables_;
+  int* indices = left_auto->bdd_variable_indices_;
   int tmp_num_of_variables,
       state_id_shift_amount,
       expected_num_of_states,
@@ -586,7 +586,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
   std::map<std::vector<char>*, int> exceptions_fix;
   std::vector<char>* current_exception = nullptr;
   char* statuses = nullptr;
-  tmp_num_of_variables = left_auto->num_of_variables_ + 1; // add one extra bit
+  tmp_num_of_variables = left_auto->num_of_bdd_variables_ + 1; // add one extra bit
   state_id_shift_amount = left_auto->dfa_->ns;
   expected_num_of_states = left_auto->dfa_->ns + right_auto->dfa_->ns;
 
@@ -618,7 +618,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
   }
 
   statuses = new char[expected_num_of_states + 1];
-  int* concat_indices = getIndices(tmp_num_of_variables);
+  int* concat_indices = GetBddVariableIndices(tmp_num_of_variables);
 
   dfaSetup(expected_num_of_states, tmp_num_of_variables, concat_indices); //sink states are merged
   state_paths = pp = make_paths(right_auto->dfa_->bddm, right_auto->dfa_->q[right_auto->dfa_->s]);
@@ -638,7 +638,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
       }
 
       current_exception = new std::vector<char>();
-      for (j = 0; j < right_auto->num_of_variables_; j++) {
+      for (j = 0; j < right_auto->num_of_bdd_variables_; j++) {
         //the following for loop can be avoided if the indices are in order
         for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
         if (tp) {
@@ -675,7 +675,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
       }
       to_state = pp->to;
       current_exception = new std::vector<char>();
-      for (j = 0; j < left_auto->num_of_variables_; j++) {
+      for (j = 0; j < left_auto->num_of_bdd_variables_; j++) {
         for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
         if (tp) {
           if (tp->value) {
@@ -825,7 +825,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
   concat_dfa = dfaMinimize(tmp_dfa);
   dfaFree(tmp_dfa); tmp_dfa = nullptr;
 
-  auto concat_auto = new StringAutomaton(concat_dfa, num_of_variables_);
+  auto concat_auto = new StringAutomaton(concat_dfa, num_of_bdd_variables_);
 
   if (left_hand_side_has_emtpy_string) {
     auto tmp_auto = concat_auto;
@@ -872,7 +872,7 @@ StringAutomaton_ptr StringAutomaton::closure() {
   CHECK_GT(sink,-1);
   int var = DEFAULT_NUM_OF_VARIABLES;
   int len = var + 1; //one extra bit
-  int *indices = getIndices(var,1);
+  int *indices = GetBddVariableIndices(len);
   char *statuses = new char[dfa_->ns+1];
   std::vector<std::pair<int,std::vector<char>>> added_exeps, original_exeps;
   std::vector<char> exep;
@@ -1027,7 +1027,7 @@ StringAutomaton_ptr StringAutomaton::suffixes() {
     return suffixes_auto;
   }
 
-  int number_of_variables = this->num_of_variables_,
+  int number_of_variables = this->num_of_bdd_variables_,
           number_of_states = this->dfa_->ns,
           sink_state = this->GetSinkState(),
           next_state = -1;
@@ -1039,11 +1039,11 @@ StringAutomaton_ptr StringAutomaton::suffixes() {
 
   // if number of variables are too large for mona, implement an algorithm that find suffixes by finding
   // sub suffixes and union them
-  number_of_variables = this->num_of_variables_ + std::ceil(std::log2(max)); // number of variables required
-  int* indices = getIndices(number_of_variables);
+  number_of_variables = this->num_of_bdd_variables_ + std::ceil(std::log2(max)); // number of variables required
+  int* indices = GetBddVariableIndices(number_of_variables);
   char* statuses = new char[number_of_states + 1];
   unsigned extra_bits_value = 0;
-  int number_of_extra_bits_needed = number_of_variables - this->num_of_variables_;
+  int number_of_extra_bits_needed = number_of_variables - this->num_of_bdd_variables_;
 
   std::vector<char>* current_exception = nullptr;
   std::map<int, std::map<std::vector<char>*, int>> exception_map;
@@ -1058,7 +1058,7 @@ StringAutomaton_ptr StringAutomaton::suffixes() {
       while (pp) {
         if (pp->to != (unsigned)sink_state) {
           current_exception = new std::vector<char>();
-          for (int j = 0; j < this->num_of_variables_; j++) {
+          for (int j = 0; j < this->num_of_bdd_variables_; j++) {
             for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
             if (tp) {
               if (tp->value) {
@@ -1140,7 +1140,7 @@ StringAutomaton_ptr StringAutomaton::suffixes() {
   dfaFree(result_dfa); result_dfa = nullptr;
 
   while (number_of_extra_bits_needed > 0) {
-    suffixes_auto->project((unsigned)(suffixes_auto->num_of_variables_ - 1));
+    suffixes_auto->project((unsigned)(suffixes_auto->num_of_bdd_variables_ - 1));
     suffixes_auto->minimize();
     number_of_extra_bits_needed--;
   }
@@ -1178,15 +1178,15 @@ StringAutomaton_ptr StringAutomaton::suffixesFromTo(int start, int end) {
 
   // if number of variables are too large for mona, implement an algorithm that find suffixes by finding
   // sub suffixes and union them
-  const int number_of_variables = this->num_of_variables_ + std::ceil(std::log2(max)), // number of variables required
+  const int number_of_variables = this->num_of_bdd_variables_ + std::ceil(std::log2(max)), // number of variables required
           number_of_states = this->dfa_->ns + 1; // one extra start for the new start state
   int sink_state = this->GetSinkState();
 
-  int* indices = getIndices(number_of_variables);
+  int* indices = GetBddVariableIndices(number_of_variables);
   char* statuses = new char[number_of_states + 1];
   unsigned extra_bits_value = 0;
 
-  const int number_of_extra_bits_needed = number_of_variables - this->num_of_variables_;
+  const int number_of_extra_bits_needed = number_of_variables - this->num_of_bdd_variables_;
 
   std::vector<char>* current_exception = nullptr;
   std::map<int, std::map<std::vector<char>*, int>> exception_map;
@@ -1201,7 +1201,7 @@ StringAutomaton_ptr StringAutomaton::suffixesFromTo(int start, int end) {
       while (pp) {
         if (pp->to != (unsigned)sink_state) {
           current_exception = new std::vector<char>();
-          for (int j = 0; j < this->num_of_variables_; j++) {
+          for (int j = 0; j < this->num_of_bdd_variables_; j++) {
             for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
             if (tp) {
               if (tp->value) {
@@ -1287,7 +1287,7 @@ StringAutomaton_ptr StringAutomaton::suffixesFromTo(int start, int end) {
   dfaFree(result_dfa); result_dfa = nullptr;
 
   for ( int i = 0; i < number_of_extra_bits_needed; ++i) {
-    suffixes_auto->project((unsigned)(suffixes_auto->num_of_variables_ - 1));
+    suffixes_auto->project((unsigned)(suffixes_auto->num_of_bdd_variables_ - 1));
     suffixes_auto->minimize();
   }
 
@@ -1374,13 +1374,13 @@ StringAutomaton_ptr StringAutomaton::CharAt(const int index) {
 
   // if number of variables are too large for mona, implement an algorithm that find suffixes by finding
   // sub suffixes and union them
-  const int number_of_variables = this->num_of_variables_ + std::ceil(std::log2(max)), // number of variables required
+  const int number_of_variables = this->num_of_bdd_variables_ + std::ceil(std::log2(max)), // number of variables required
           sink_state = this->GetSinkState();
-  int* indices = getIndices(number_of_variables);
+  int* indices = GetBddVariableIndices(number_of_variables);
 
   unsigned extra_bits_value = 0;
 
-  const int number_of_extra_bits_needed = number_of_variables - this->num_of_variables_;
+  const int number_of_extra_bits_needed = number_of_variables - this->num_of_bdd_variables_;
 
   std::vector<char>* current_exception = nullptr;
   std::set<std::vector<char>*> exceptions;
@@ -1392,7 +1392,7 @@ StringAutomaton_ptr StringAutomaton::CharAt(const int index) {
     while (pp) {
       if (pp->to != (unsigned)sink_state) {
         current_exception = new std::vector<char>();
-        for (int j = 0; j < this->num_of_variables_; j++) {
+        for (int j = 0; j < this->num_of_bdd_variables_; j++) {
           for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
           if (tp) {
             if (tp->value) {
@@ -1445,7 +1445,7 @@ StringAutomaton_ptr StringAutomaton::CharAt(const int index) {
   dfaFree(result_dfa); result_dfa = nullptr;
 
   for ( int i = 0; i < number_of_extra_bits_needed; ++i) {
-    charat_auto->project((unsigned)(charat_auto->num_of_variables_ - 1));
+    charat_auto->project((unsigned)(charat_auto->num_of_bdd_variables_ - 1));
     charat_auto->minimize();
   }
 
@@ -1466,8 +1466,8 @@ StringAutomaton_ptr StringAutomaton::CharAt(IntAutomaton_ptr index_auto) {
   delete prefixes_auto;
   delete tmp_length_auto;
 
-  const int number_of_variables = charat_indexes_auto->num_of_variables_;
-  int* indices = getIndices(number_of_variables);
+  const int number_of_variables = charat_indexes_auto->num_of_bdd_variables_;
+  int* indices = GetBddVariableIndices(number_of_variables);
   std::set<std::string> exceptions;
   for (int s = 0; s < charat_indexes_auto->dfa_->ns; ++s) {
     for (int next : charat_indexes_auto->getNextStates(s)) {
@@ -1870,12 +1870,12 @@ StringAutomaton_ptr StringAutomaton::trim() {
 
   std::string trim_regex = "' '*";
   trim_auto = StringAutomaton::makeRegexAuto(trim_regex);
-  trimmed_prefix_dfa = RelationalStringAutomaton::trim_prefix(this->dfa_,trim_auto->getDFA(),num_of_variables_);
-  trimmed_dfa = RelationalStringAutomaton::trim_suffix(trimmed_prefix_dfa, trim_auto->getDFA(), num_of_variables_);
+  trimmed_prefix_dfa = RelationalStringAutomaton::trim_prefix(this->dfa_,trim_auto->getDFA(),num_of_bdd_variables_);
+  trimmed_dfa = RelationalStringAutomaton::trim_suffix(trimmed_prefix_dfa, trim_auto->getDFA(), num_of_bdd_variables_);
   delete trim_auto;
   dfaFree(trimmed_prefix_dfa);
 
-  trimmed_auto = new StringAutomaton(trimmed_dfa, num_of_variables_);
+  trimmed_auto = new StringAutomaton(trimmed_dfa, num_of_bdd_variables_);
 
   DVLOG(VLOG_LEVEL) << trimmed_auto->id_ << " = [" << this->id_ << "]->trim()";
 
@@ -1889,7 +1889,7 @@ StringAutomaton_ptr StringAutomaton::replace(StringAutomaton_ptr search_auto, St
 //  result_dfa = dfa_general_replace_extrabit(dfa, search_auto->dfa, replace_auto->dfa,
 //          StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
 
-  result_auto = new StringAutomaton(result_dfa, num_of_variables_);
+  result_auto = new StringAutomaton(result_dfa, num_of_bdd_variables_);
 
   DVLOG(VLOG_LEVEL) << result_auto->id_ << " = [" << this->id_ << "]->repeat(" << search_auto->id_ << ", " << replace_auto->id_ << ")";
 
@@ -1912,7 +1912,7 @@ UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
   DFA_ptr unary_dfa = nullptr, tmp_dfa = nullptr;
 
   int sink_state = this->GetSinkState(),
-          number_of_variables = this->get_number_of_variables() + 1, // one extra bit
+          number_of_variables = this->get_number_of_bdd_variables() + 1, // one extra bit
           to_state = 0;
   bool has_sink = true;
   int original_num_states = dfa_->ns;
@@ -1921,7 +1921,7 @@ UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
     sink_state = 0;
   }
 
-  int* indices = getIndices(number_of_variables);
+  int* indices = GetBddVariableIndices(number_of_variables);
   char* statuses = new char[original_num_states + 1];
   std::map<std::vector<char>*, int> exceptions;
   std::vector<char>* current_exception = nullptr;
@@ -2006,7 +2006,7 @@ UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
     dfaFree(tmp_dfa);
   }
 
-  int* indices_map = getIndices(number_of_variables);
+  int* indices_map = GetBddVariableIndices(number_of_variables);
   indices_map[number_of_variables - 1] = 0;
   dfaReplaceIndices(unary_dfa, indices_map);
   delete[] indices_map;
@@ -2060,8 +2060,8 @@ IntAutomaton_ptr StringAutomaton::parseToIntAutomaton() {
       state_paths = pp = make_paths(dfa_->bddm, dfa_->q[current_state]);
       while (pp) {
         if (pp->to != (unsigned)sink_state) {
-          for (int j = 0; j < num_of_variables_; j++) {
-            for (tp = pp->trace; tp && (tp->index != (unsigned)variable_indices_[j]); tp= tp->next);
+          for (int j = 0; j < num_of_bdd_variables_; j++) {
+            for (tp = pp->trace; tp && (tp->index != (unsigned)bdd_variable_indices_[j]); tp= tp->next);
               if (tp) {
                 if (tp->value){
                   current_exception.push_back('1');
@@ -2109,13 +2109,13 @@ IntAutomaton_ptr StringAutomaton::parseToIntAutomaton() {
 IntAutomaton_ptr StringAutomaton::length() {
   IntAutomaton_ptr length_auto = nullptr;
   if (this->is_empty_language()) {
-    length_auto = IntAutomaton::makePhi(num_of_variables_);
+    length_auto = IntAutomaton::makePhi(num_of_bdd_variables_);
   } else if (this->isAcceptingSingleString()) {
     std::string example = this->getAnAcceptingString();
-    length_auto = IntAutomaton::makeInt(example.length(), num_of_variables_);
+    length_auto = IntAutomaton::makeInt(example.length(), num_of_bdd_variables_);
   } else {
     UnaryAutomaton_ptr unary_auto = this->toUnaryAutomaton();
-    length_auto = unary_auto->toIntAutomaton(num_of_variables_);
+    length_auto = unary_auto->toIntAutomaton(num_of_bdd_variables_);
     delete unary_auto; unary_auto = nullptr;
   }
 
@@ -2465,7 +2465,7 @@ std::string StringAutomaton::getAnAcceptingString() {
   };
   std::vector<bool>* example = getAnAcceptingWord(readable_ascii_heuristic);
   unsigned char c = 0;
-  unsigned bit_range = num_of_variables_ - 1;
+  unsigned bit_range = num_of_bdd_variables_ - 1;
   unsigned read_count = 0;
   for (auto bit: *example) {
     if (bit) {
@@ -2599,7 +2599,7 @@ StringAutomaton_ptr StringAutomaton::indexOfHelper(StringAutomaton_ptr search_au
   index_of_auto->minimize();
 
   // remove extra bit used
-  index_of_auto->project((unsigned)(index_of_auto->num_of_variables_ - 1));
+  index_of_auto->project((unsigned)(index_of_auto->num_of_bdd_variables_ - 1));
   index_of_auto->minimize();
 
   DVLOG(VLOG_LEVEL) << index_of_auto->id_ << " = [" << this->id_ << "]->indexOfHelper(" << search_auto->id_  << ")";
@@ -2671,7 +2671,7 @@ StringAutomaton_ptr StringAutomaton::lastIndexOfHelper(StringAutomaton_ptr searc
   delete search_result_auto;
 
   // remove extra bit
-  lastIndexOf_auto->project((unsigned)(lastIndexOf_auto->num_of_variables_ - 1));
+  lastIndexOf_auto->project((unsigned)(lastIndexOf_auto->num_of_bdd_variables_ - 1));
   lastIndexOf_auto->minimize();
 
   DVLOG(VLOG_LEVEL) << lastIndexOf_auto->id_ << " = [" << this->id_ << "]->lastIndexOf(" << search_auto->id_ << ")";
@@ -2695,10 +2695,10 @@ StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton() {
 
   // sharp1: 1111 1111 1
   // sharp0: 1111 1110 1
-  std::vector<char> sharp1 = Automaton::getReservedWord('1', num_of_variables_, true);
-  std::vector<char> sharp0 = Automaton::getReservedWord('0', num_of_variables_, true);
+  std::vector<char> sharp1 = Automaton::getReservedWord('1', num_of_bdd_variables_, true);
+  std::vector<char> sharp0 = Automaton::getReservedWord('0', num_of_bdd_variables_, true);
 
-  int number_of_variables = this->num_of_variables_ + 1,
+  int number_of_variables = this->num_of_bdd_variables_ + 1,
           sink_state = this->GetSinkState(),
           to_state = 0,
           to_duplicate_state = 0,
@@ -2714,7 +2714,7 @@ StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton() {
   }
   int number_of_states = original_num_states * 2 - 1; // no duplicate sink state
 
-  int* indices = getIndices(number_of_variables);
+  int* indices = GetBddVariableIndices(number_of_variables);
   std::map<std::vector<char>*, int> exceptions;
   std::vector<char>* current_exception = nullptr;
   char *statuses = new char[number_of_states + 1];
@@ -2736,7 +2736,7 @@ StringAutomaton_ptr StringAutomaton::getDuplicateStateAutomaton() {
           }
 
           current_exception = new std::vector<char>();
-          for (int j = 0; j < this->num_of_variables_; j++) {
+          for (int j = 0; j < this->num_of_bdd_variables_; j++) {
             for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
             if (tp) {
               if (tp->value) {
@@ -2851,17 +2851,17 @@ StringAutomaton_ptr StringAutomaton::toQueryAutomaton() {
 
   // sharp1: 1111 1111 1
   // sharp0: 1111 1110 1
-  std::vector<char> sharp1 = Automaton::getReservedWord('1', num_of_variables_, true);
-  std::vector<char> sharp0 = Automaton::getReservedWord('0', num_of_variables_, true);
+  std::vector<char> sharp1 = Automaton::getReservedWord('1', num_of_bdd_variables_, true);
+  std::vector<char> sharp0 = Automaton::getReservedWord('0', num_of_bdd_variables_, true);
 
-  int number_of_variables = num_of_variables_ + 1,
+  int number_of_variables = num_of_bdd_variables_ + 1,
           shift = 0,
           number_of_states = 0,
           sink_state = this->GetSinkState(),
           not_contains_sink_state = -1,
           to_state = 0;
 
-  int* indices = getIndices(number_of_variables);
+  int* indices = GetBddVariableIndices(number_of_variables);
 
   std::map<std::vector<char>*, int> exceptions;
   std::vector<char>* current_exception = nullptr;
@@ -2903,7 +2903,7 @@ StringAutomaton_ptr StringAutomaton::toQueryAutomaton() {
           }
 
           current_exception = new std::vector<char>();
-          for (int j = 0; j < not_contains_auto->num_of_variables_; j++) {
+          for (int j = 0; j < not_contains_auto->num_of_bdd_variables_; j++) {
             for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
             if (tp) {
               if (tp->value) {
@@ -3051,7 +3051,7 @@ StringAutomaton_ptr StringAutomaton::search(StringAutomaton_ptr search_auto) {
  * Can be generalize to general replace algorithm
  */
 StringAutomaton_ptr StringAutomaton::removeReservedWords() {
-  if(this->num_of_variables_ < 9) {
+  if(this->num_of_bdd_variables_ < 9) {
     LOG(FATAL) << "can't remove reserved words without first having extra bit";
   }
   StringAutomaton_ptr string_auto = nullptr;
@@ -3066,7 +3066,7 @@ StringAutomaton_ptr StringAutomaton::removeReservedWords() {
   std::map<int, int> state_id_map;
   std::map<std::vector<char>*, int> exceptions;
 
-  int number_of_variables = this->num_of_variables_,
+  int number_of_variables = this->num_of_bdd_variables_,
           number_of_states = this->dfa_->ns,
           sink_state = this->GetSinkState(),
           next_state = -1;
@@ -3124,11 +3124,11 @@ StringAutomaton_ptr StringAutomaton::removeReservedWords() {
 
   CHECK_NE(0, max) << "Automaton [" << this->id_ << "] does not include reserved keywords";
 
-  number_of_variables = this->num_of_variables_ + std::ceil(std::log2(max)); // number of variables required
-  int* indices = getIndices(number_of_variables);
+  number_of_variables = this->num_of_bdd_variables_ + std::ceil(std::log2(max)); // number of variables required
+  int* indices = GetBddVariableIndices(number_of_variables);
   char* statuses = new char[number_of_states + 1];
   unsigned extra_bits_value = 0;
-  int number_of_extra_bits_needed = number_of_variables - this->num_of_variables_;
+  int number_of_extra_bits_needed = number_of_variables - this->num_of_bdd_variables_;
   std::vector<char>* current_exception = nullptr;
 
   dfaSetup(number_of_states, number_of_variables, indices);
@@ -3141,7 +3141,7 @@ StringAutomaton_ptr StringAutomaton::removeReservedWords() {
         while (pp) {
           if (pp->to != (unsigned)sink_state) {
             current_exception = new std::vector<char>();
-            for (int j = 0; j < this->num_of_variables_; j++) {
+            for (int j = 0; j < this->num_of_bdd_variables_; j++) {
               for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
               if (tp) {
                 if (tp->value) {
@@ -3207,7 +3207,7 @@ StringAutomaton_ptr StringAutomaton::removeReservedWords() {
   dfaFree(result_dfa); result_dfa = nullptr;
 
   while (number_of_extra_bits_needed > 0) {
-    string_auto->project((unsigned)(string_auto->num_of_variables_ - 1));
+    string_auto->project((unsigned)(string_auto->num_of_bdd_variables_ - 1));
     string_auto->minimize();
     number_of_extra_bits_needed--;
   }

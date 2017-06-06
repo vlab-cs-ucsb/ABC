@@ -152,7 +152,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(SemilinearSet_ptr semil
   }
 
   int sink_state = number_of_states - 1;
-  int* indices = getIndices(number_of_variables);
+  int* indices = GetBddVariableIndices(number_of_variables);
   std::string statuses(number_of_states + 1, '-');
   statuses[number_of_states] = '\0';
   dfaSetup(number_of_states, number_of_variables, indices);
@@ -289,7 +289,7 @@ bool BinaryIntAutomaton::is_natural_number() {
 }
 
 bool BinaryIntAutomaton::HasNegative1() {
-  CHECK_EQ(1, num_of_variables_)<< "implemented for single track binary automaton";
+  CHECK_EQ(1, num_of_bdd_variables_)<< "implemented for single track binary automaton";
 
   if (is_natural_number_) {
     return false;
@@ -365,9 +365,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Exists(std::string var_name) {
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::GetBinaryAutomatonFor(std::string var_name) {
-  CHECK_EQ(num_of_variables_, formula_->get_number_of_variables())<< "number of variables is not consistent with formula";
+  CHECK_EQ(num_of_bdd_variables_, formula_->get_number_of_variables())<< "number of variables is not consistent with formula";
   int bdd_var_index = formula_->get_variable_index(var_name);;
-  auto single_var_dfa = Automaton::DFAProjectTo(bdd_var_index, num_of_variables_, this->dfa_);
+  auto single_var_dfa = Automaton::DFAProjectTo(bdd_var_index, num_of_bdd_variables_, this->dfa_);
   auto single_var_formula = new ArithmeticFormula();
   single_var_formula->set_type(ArithmeticFormula::Type::INTERSECT);
   single_var_formula->add_variable(var_name, 1);
@@ -402,7 +402,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::GetNegativeValuesFor(std::string var_
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::TrimLeadingZeros() {
-  CHECK_EQ(1, num_of_variables_)<< "trimming is implemented for single track positive binary automaton";
+  CHECK_EQ(1, num_of_bdd_variables_)<< "trimming is implemented for single track positive binary automaton";
 
   auto tmp_auto = this->clone();
 
@@ -434,7 +434,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::TrimLeadingZeros() {
 
   tmp_auto->minimize();
 
-  auto trim_helper_auto = BinaryIntAutomaton::MakeTrimHelperAuto(0,num_of_variables_);
+  auto trim_helper_auto = BinaryIntAutomaton::MakeTrimHelperAuto(0,num_of_bdd_variables_);
   trim_helper_auto->set_formula(tmp_auto->formula_->clone());
   auto trimmed_auto = tmp_auto->Intersect(trim_helper_auto);
   delete tmp_auto;
@@ -449,10 +449,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::AddLeadingZeros() {
   BinaryIntAutomaton_ptr leading_zero_auto = nullptr;
   DFA_ptr leading_zero_dfa = nullptr, tmp_dfa = nullptr;
 
-  int number_of_variables = num_of_variables_ + 1,
+  int number_of_variables = num_of_bdd_variables_ + 1,
   leading_zero_state = number_of_variables - 1,
   to_state = 0;
-  int* indices = getIndices(number_of_variables);
+  int* indices = GetBddVariableIndices(number_of_variables);
 
   std::vector<char> leading_zero_exception;
   std::map<std::vector<char>*, int> exceptions;
@@ -685,7 +685,7 @@ std::map<std::string, int> BinaryIntAutomaton::GetAnAcceptingIntForEachVar() {
   auto rit = example->rbegin();
   if (not is_natural_number_) {
     // read the sign bit for integers
-    for (int var_index = num_of_variables_ - 1; var_index >= 0; --var_index) {
+    for (int var_index = num_of_bdd_variables_ - 1; var_index >= 0; --var_index) {
       if (*rit) {
         values[var_index] = -1;
       } else {
@@ -696,13 +696,13 @@ std::map<std::string, int> BinaryIntAutomaton::GetAnAcceptingIntForEachVar() {
   }
 
   // read value bits
-  for (int var_index = num_of_variables_ - 1; rit != example->rend(); rit++) {
+  for (int var_index = num_of_bdd_variables_ - 1; rit != example->rend(); rit++) {
     values[var_index] <<= 1;
     values[var_index] |= (*rit);
     var_index--;
 
     if (var_index == -1) {
-      var_index = num_of_variables_ - 1;
+      var_index = num_of_bdd_variables_ - 1;
     }
   }
 
@@ -769,7 +769,7 @@ BigInteger BinaryIntAutomaton::SymbolicCount(double bound, bool count_less_than_
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntGraterThanOrEqualToZero(std::vector<int> indexes,
                                                                           int number_of_variables) {
-  int* bin_variable_indices = getIndices(number_of_variables);
+  int* bin_variable_indices = GetBddVariableIndices(number_of_variables);
   int number_of_states = 3;
   char statuses[3] { '-', '+', '-' };
   std::vector<char> exception;
@@ -856,7 +856,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
   // TODO instead of doing shift, try to update algorithm
   unsigned long transitions = 1 << active_num_variables;  //number of transitions from each state
 
-  int* indices = getIndices(total_num_variables);
+  int* indices = GetBddVariableIndices(total_num_variables);
   dfaSetup(num_of_states, total_num_variables, indices);
 
   std::map<std::vector<char>, int> transitions_from_initial_state; // populated if initial state is in cycle and accepting
@@ -1030,7 +1030,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticF
   // TODO instead of doing shift, try to update algorithm
   unsigned long transitions = 1 << active_num_variables;  //number of transitions from each state
 
-  int* indices = getIndices(total_num_variables);
+  int* indices = GetBddVariableIndices(total_num_variables);
   dfaSetup(num_of_states, total_num_variables, indices);
 
   std::map<std::vector<char>, int> transitions_from_initial_state; // populated if initial state is in cycle and accepting
@@ -1191,7 +1191,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntLessThan(ArithmeticFormula_ptr
   // TODO instead of doing shift, try to update algorithm
   unsigned long transitions = 1 << active_num_variables;  //number of transitions from each state
 
-  int* indices = getIndices(total_num_variables);
+  int* indices = GetBddVariableIndices(total_num_variables);
   dfaSetup(num_of_states, total_num_variables, indices);
 
   std::map<int, StateIndices> carry_map;  // maps carries to state indices
@@ -1342,7 +1342,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberLessThan(ArithmeticF
   // TODO instead of allocating that many of transitions, try to reduce them with a preprocessing
   unsigned long transitions = 1 << active_num_variables;  //number of transitions from each state
 
-  int* indices = getIndices(total_num_variables);
+  int* indices = GetBddVariableIndices(total_num_variables);
   dfaSetup(num_of_states, total_num_variables, indices);
 
   std::map<std::vector<char>, int> transitions_from_initial_state; // populated if initial state is in cycle and accepting
@@ -1502,7 +1502,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeTrimHelperAuto(int var_index, int
   }
   exception[number_of_variables] = '\0';
 
-  int* indices = getIndices(number_of_variables);
+  int* indices = GetBddVariableIndices(number_of_variables);
   int number_of_states = 5;
   dfaSetup(number_of_states, number_of_variables, indices);
   // state 0

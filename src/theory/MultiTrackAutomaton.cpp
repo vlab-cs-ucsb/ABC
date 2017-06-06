@@ -35,7 +35,7 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_track
 	int lambda_state = num_states-1;
 	int var = VAR_PER_TRACK;
 	int len = (num_tracks * var)+1; // extrabit for nondeterminism
-	mindices = getIndices(len);
+	mindices = GetBddVariableIndices(len);
 
 	sink = find_sink(M);
 	if(sink < 0) {
@@ -155,7 +155,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makePrefixSuffix(int left_track, in
 
 	int var = VAR_PER_TRACK;
 	int len = num_tracks * var;
-	int *mindices = getIndices(num_tracks*var);
+	int *mindices = GetBddVariableIndices(num_tracks*var);
 	std::vector<char> exep_lambda(var,'1');
 	tv = generate_transitions_for_relation(StringRelation::Type::EQ,var);
 
@@ -308,7 +308,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeBegins(StringRelation_ptr relat
 
 	int var = VAR_PER_TRACK;
 	int len = num_tracks * var;
-	int *mindices = getIndices(num_tracks*var);
+	int *mindices = GetBddVariableIndices(num_tracks*var);
 
 	std::vector<char> exep_lambda(var,'1');
 	tv = generate_transitions_for_relation(StringRelation::Type::EQ,var);
@@ -406,7 +406,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeNotBegins(StringRelation_ptr re
 			lambda_lambda = 3, star_lambda = 4, sink = 5;
 	int var = VAR_PER_TRACK;
 	int len = num_tracks * var;
-	int *mindices = getIndices(num_tracks*var);
+	int *mindices = GetBddVariableIndices(num_tracks*var);
 	std::vector<char> exep_lambda(var,'1');
 	tv = generate_transitions_for_relation(StringRelation::Type::EQ,var);
 
@@ -885,7 +885,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThanOrEqual(StringRelati
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAnyAutoUnaligned(int num_tracks) {
 	DFA_ptr result, temp;
 	int len = VAR_PER_TRACK * num_tracks;
-	int *mindices = Automaton::getIndices(len);
+	int *mindices = Automaton::GetBddVariableIndices(len);
 
 	dfaSetup(1, len, mindices);
 	dfaAllocExceptions(0);
@@ -1019,8 +1019,8 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::projectKTrack(int k_track) {
 	MultiTrackAutomaton_ptr result_auto;
 	DFA_ptr temp,result_dfa = this->dfa_;
 	int flag = 0;
-	int *map = getIndices(this->num_of_tracks*VAR_PER_TRACK);
-	for(int i = 0,k=0,l=0; i < this->num_of_variables_; i++) {
+	int *map = GetBddVariableIndices(this->num_of_tracks*VAR_PER_TRACK);
+	for(int i = 0,k=0,l=0; i < this->num_of_bdd_variables_; i++) {
 	    if(i == k_track+l*this->num_of_tracks) {
 	        map[i] = (this->num_of_tracks-1)*VAR_PER_TRACK+l;
 	        l++;
@@ -1063,7 +1063,7 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
     // while all others need to be pushed back by VAR_PER_TRACK, then
     // interleaved with 1 less than current number of tracks
 
-	int* map = getIndices(this->num_of_tracks*VAR_PER_TRACK);
+	int* map = GetBddVariableIndices(this->num_of_tracks*VAR_PER_TRACK);
 	for(int i = 0; i < this->num_of_tracks; i++) {
 		if(i == k_track) {
 			for(int k = 0; k < VAR_PER_TRACK; k++) {
@@ -1122,7 +1122,7 @@ void MultiTrackAutomaton::SetSymbolicCounter() {
   }
   int var = VAR_PER_TRACK;
   int len = var * num_of_tracks;
-  int* mindices = getIndices(len);
+  int* mindices = GetBddVariableIndices(len);
   char* statuses = new char[original_dfa->ns+1];
 	std::vector<std::pair<std::vector<char>,int>> state_exeps;
 	std::vector<bool> lambda_states(original_dfa->ns,false);
@@ -1191,12 +1191,12 @@ std::vector<std::string> MultiTrackAutomaton::getAnAcceptingStringForEachTrack()
   std::vector<std::string> strings(num_of_tracks, "");
   std::vector<bool>* example = getAnAcceptingWord();
   unsigned char c = 0;
-  unsigned num_transitions = example->size() / num_of_variables_;
+  unsigned num_transitions = example->size() / num_of_bdd_variables_;
   bool bit;
   unsigned sharp1 = 254, sharp2 = 255;
 
   for(int t = 0; t < num_transitions; t++) {
-    unsigned offset = t*num_of_variables_;
+    unsigned offset = t*num_of_bdd_variables_;
     for (int i = 0; i < num_of_tracks; i++) {
       for (int j = 0; j < VAR_PER_TRACK; j++) {
         bit = (*example)[offset+i+num_of_tracks*j];
@@ -1314,7 +1314,7 @@ DFA_ptr MultiTrackAutomaton::make_binary_relation_dfa(StringRelation::Type type,
 	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, aligned_dfa = nullptr;
 	int var = bits_per_var;
 	int len = num_tracks * var;
-	int *mindices = getIndices(num_tracks*var);
+	int *mindices = GetBddVariableIndices(num_tracks*var);
 	int eq = 0,
 	    left = 1,
 		  right = 2,
@@ -1451,7 +1451,7 @@ DFA_ptr MultiTrackAutomaton::make_binary_aligned_dfa(int left_track, int right_t
 			star_lambda = 3, sink = 4;
 	int var = VAR_PER_TRACK;
 	int len = num_tracks * var;
-	int *mindices = getIndices(num_tracks*var);
+	int *mindices = GetBddVariableIndices(num_tracks*var);
 	std::vector<char> exep_lambda(var,'1');
 	std::vector<char> exep_dont_care(var,'X');
 	exep_dont_care[var-1] = '0';
@@ -1597,7 +1597,7 @@ DFA_ptr MultiTrackAutomaton::prepend_lambda(DFA_ptr dfa, int var) {
 	int* mindices;
 	int len = VAR_PER_TRACK; // 1 more than default_num_var
 
-	mindices = getIndices(len);
+	mindices = GetBddVariableIndices(len);
 	statuses = new char[num_states+1];
 
 	// begin dfa building process
@@ -1707,7 +1707,7 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_prefix(DFA_ptr dfa, int var, bool proje
 	paths state_paths, pp;
 	trace_descr tp;
 	char* statuses;
-	int *indices = Automaton::getIndices(var);
+	int *indices = Automaton::GetBddVariableIndices(var);
 	int sink = find_sink(dfa);
   CHECK_GT(sink,-1);
   std::vector<char> lambda_vec(var,'1');
@@ -1766,7 +1766,7 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_prefix(DFA_ptr dfa, int var, bool proje
 	// by lambda
 	int num_states = dfa->ns+1;
   std::vector<std::pair<std::vector<char>,int>> state_exeps;
-	indices = getIndices(len);
+	indices = GetBddVariableIndices(len);
 	statuses = new char[num_states+1];
 
   // if any of the reachable states are final, then the new
@@ -1898,7 +1898,7 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_suffix(DFA_ptr dfa, int var, bool proje
 	paths state_paths, pp;
 	trace_descr tp;
 	char* statuses = new char[dfa->ns+1];
-	int *indices = Automaton::getIndices(var);
+	int *indices = Automaton::GetBddVariableIndices(var);
 	int sink = find_sink(dfa);
 	CHECK_GT(sink,-1);
 

@@ -14,7 +14,7 @@ const int Automaton::VLOG_LEVEL = 9;
 
 int Automaton::name_counter = 0;
 
-unsigned long Automaton::trace_id = 0;
+unsigned long Automaton::next_id = 0;
 
 const std::string Automaton::Name::NONE = "none";
 const std::string Automaton::Name::BOOL = "BoolAutomaton";
@@ -24,29 +24,22 @@ const std::string Automaton::Name::STRING = "StringAutomaton";
 const std::string Automaton::Name::BINARYINT = "BinaryIntAutomaton";
 
 Automaton::Automaton(Automaton::Type type)
-        : type_(type), is_counter_cached_{false}, dfa_(nullptr), num_of_variables_(0), variable_indices_(nullptr), id_(Automaton::trace_id++) {
+        : type_(type), is_counter_cached_{false}, dfa_(nullptr), num_of_bdd_variables_(0), id_(Automaton::next_id++) {
 }
 
 Automaton::Automaton(Automaton::Type type, DFA_ptr dfa, int num_of_variables)
-        : type_(type), is_counter_cached_{false}, dfa_(dfa), num_of_variables_(num_of_variables), id_(Automaton::trace_id++) {
-  variable_indices_ = getIndices(num_of_variables, 1); // make indices one more to be safe
-}
+        : type_(type), is_counter_cached_{false}, dfa_(dfa), num_of_bdd_variables_(num_of_variables), id_(Automaton::next_id++) { }
 
 Automaton::Automaton(const Automaton& other)
-        : type_(other.type_), is_counter_cached_{false}, dfa_(nullptr), num_of_variables_(other.num_of_variables_), id_(Automaton::trace_id++) {
-          if (other.dfa_) {
+        : type_(other.type_), is_counter_cached_{false}, dfa_(nullptr), num_of_bdd_variables_(other.num_of_bdd_variables_), id_(Automaton::next_id++) {
+          if (other.dfa_)
+          {
             dfa_ = dfaCopy(other.dfa_);
           }
-          variable_indices_ = getIndices(num_of_variables_, 1); // make indices one more to be safe
 }
 
 Automaton::~Automaton() {
-  if (dfa_) {
     dfaFree(dfa_);
-    dfa_ = nullptr;
-  }
-  delete[] variable_indices_;
-  variable_indices_ = nullptr;
 //  DVLOG(VLOG_LEVEL) << "deleted " << " [" << this->id_ << "]";
 }
 
@@ -54,6 +47,7 @@ Automaton::~Automaton() {
 //  return new Automaton(*this);
 //}
 
+// TODO implement as pure virtual function
 std::string Automaton::str() const {
   switch (type_) {
   case Automaton::Type::NONE:
@@ -88,12 +82,8 @@ DFA_ptr Automaton::getDFA() {
   return dfa_;
 }
 
-int Automaton::get_number_of_variables() {
-  return num_of_variables_;
-}
-
-int* Automaton::getVariableIndices() {
-  return variable_indices_;
+int Automaton::get_number_of_bdd_variables() {
+  return num_of_bdd_variables_;
 }
 
 /**
@@ -316,7 +306,7 @@ bool Automaton::isAcceptingSingleWord() {
       if (index == BDD_LEAF_INDEX) {
         if (sink_state != l) {
           next_states[l]++;
-          if (bit_counter != num_of_variables_ or (next_states[l] > 1) or (next_states.size() > 1) or is_final_state) {
+          if (bit_counter != num_of_bdd_variables_ or (next_states[l] > 1) or (next_states.size() > 1) or is_final_state) {
             is_accepting_single_word = false;
             break;
           }
@@ -400,7 +390,7 @@ bool Automaton::getAnAcceptingWord(NextState& state, std::map<int, bool>& is_sta
 }
 
 char* Automaton::getAnExample(bool accepting) {
-  return dfaMakeExample(this->dfa_, 1, num_of_variables_, getIndices((unsigned) num_of_variables_));
+  return dfaMakeExample(this->dfa_, 1, num_of_bdd_variables_, getIndices((unsigned) num_of_bdd_variables_));
 }
 
 std::ostream& operator<<(std::ostream& os, const Automaton& automaton) {
@@ -412,7 +402,7 @@ std::ostream& operator<<(std::ostream& os, const Automaton& automaton) {
  */
 DFA_ptr Automaton::DfaMakePhi(int num_of_variables, int* variable_indices) {
   if (variable_indices == nullptr) {
-    variable_indices = getIndices(num_of_variables);
+    variable_indices = GetBddVariableIndices(num_of_variables);
   }
   char statuses[1] {'-'};
   dfaSetup(1, num_of_variables, variable_indices);
@@ -425,7 +415,7 @@ DFA_ptr Automaton::DfaMakePhi(int num_of_variables, int* variable_indices) {
 
 DFA_ptr Automaton::DfaMakeAny(int num_of_variables, int* variable_indices) {
   if (variable_indices == nullptr) {
-    variable_indices = getIndices(num_of_variables);
+    variable_indices = GetBddVariableIndices(num_of_variables);
   }
   char statuses[1] {'+'};
   dfaSetup(1, num_of_variables, variable_indices);
@@ -438,7 +428,7 @@ DFA_ptr Automaton::DfaMakeAny(int num_of_variables, int* variable_indices) {
 
 DFA_ptr Automaton::DfaMakeAnyButNotEmpty(int num_of_variables, int* variable_indices) {
   if (variable_indices == nullptr) {
-    variable_indices = getIndices(num_of_variables);
+    variable_indices = GetBddVariableIndices(num_of_variables);
   }
   char statuses[2] { '-', '+' };
   dfaSetup(2, num_of_variables, variable_indices);
@@ -502,7 +492,7 @@ DFA_ptr Automaton::DFAProjectTo(int index, int num_of_variables, DFA_ptr dfa) {
     }
   }
 
-  int* indices_map = getIndices(num_of_variables);
+  int* indices_map = GetBddVariableIndices(num_of_variables);
   indices_map[index] = 0;
   indices_map[0] = index;
   dfaReplaceIndices(result_dfa, indices_map);
@@ -515,7 +505,7 @@ DFA_ptr Automaton::DfaL1ToL2(int start, int end, int num_of_variables, int *vari
   char *statuses;
   DFA *result=nullptr;
   if(variable_indices == nullptr) {
-    variable_indices = getIndices(num_of_variables);
+    variable_indices = GetBddVariableIndices(num_of_variables);
   }
   if (start <= -1 && end <= -1) {
     result = Automaton::DfaMakePhi(num_of_variables, variable_indices);
@@ -601,10 +591,20 @@ std::set<std::string> Automaton::DFAGetTransitionsFromTo(DFA_ptr dfa, const int 
   return transitions;
 }
 
-int* Automaton::getIndices(int num_of_variables, int extra_num_of_variables) {
-  int size = num_of_variables + extra_num_of_variables;
-  int* indices = new int[size];
-  for (int i = 0; i < size; i++) {
+int* Automaton::GetBddVariableIndices(const int number_of_bdd_variables) {
+  auto it = bdd_var_indices.find(number_of_bdd_variables);
+  if (it != bdd_var_indices.end())
+  {
+    return it->second;
+  }
+  int* indices = GenerateBddVariableIndices(number_of_bdd_variables);
+  bdd_var_indices[number_of_bdd_variables] = indices;
+  return indices;
+}
+
+int* Automaton::GenerateBddVariableIndices(const int number_of_bdd_variables) {
+  int* indices = new int[number_of_bdd_variables];
+  for (int i = 0; i < number_of_bdd_variables; ++i) {
     indices[i] = i;
   }
   return indices;
@@ -712,9 +712,9 @@ void Automaton::project(unsigned index) {
   this->dfa_ = dfaProject(tmp, index);
   dfaFree(tmp);
 
-  if (index < (unsigned)(this->num_of_variables_ - 1)) {
-    int* indices_map = new int[this->num_of_variables_];
-    for (int i = 0, j = 0; i < this->num_of_variables_; i++) {
+  if (index < (unsigned)(this->num_of_bdd_variables_ - 1)) {
+    int* indices_map = new int[this->num_of_bdd_variables_];
+    for (int i = 0, j = 0; i < this->num_of_bdd_variables_; i++) {
       if ((unsigned)i != index) {
         indices_map[i] = j;
         j++;
@@ -724,10 +724,8 @@ void Automaton::project(unsigned index) {
     delete[] indices_map;
   }
 
-  this->num_of_variables_ = this->num_of_variables_ - 1;
+  this->num_of_bdd_variables_ = this->num_of_bdd_variables_ - 1;
 
-  delete this->variable_indices_;
-  this->variable_indices_ = getIndices(num_of_variables_);
   DVLOG(VLOG_LEVEL) << this->id_ << " = [" << this->id_ << "]->project(" << index << ")";
 }
 
@@ -817,11 +815,11 @@ int Automaton::getNextState(int state, std::vector<char>& exception) {
   int next_state = -1; // only for initialization
    unsigned p, l, r, index = 0; // BDD traversal variables
 
-   CHECK_EQ(num_of_variables_, exception.size());
+   CHECK_EQ(num_of_bdd_variables_, exception.size());
 
    p = this->dfa_->q[state];
 
-   for (int i = 0; i < num_of_variables_; i++) {
+   for (int i = 0; i < num_of_bdd_variables_; i++) {
      LOAD_lri(&this->dfa_->bddm->node_table[p], l, r, index);
      if (index == BDD_LEAF_INDEX) {
        next_state = l;
@@ -897,7 +895,7 @@ std::vector<NextState> Automaton::getNextStatesOrdered(int state, std::function<
         // avoid cycles
       } else {
         state = l;
-        while (current_transition.size() < (unsigned) num_of_variables_) {
+        while (current_transition.size() < (unsigned) num_of_bdd_variables_) {
           unsigned i = current_transition.size();
           if (next_node_heuristic and next_node_heuristic(i)) {
             current_transition.push_back(1); // add 1 for don't cares
@@ -984,7 +982,7 @@ void Automaton::SetSymbolicCounter() {
         LOAD_lri(&dfa_->bddm->node_table[current_bdd_node.first], left, right, index);
         if (index == BDD_LEAF_INDEX) {
           if (sink_state != left) {
-            const int exponent = num_of_variables_ - current_bdd_node.second;
+            const int exponent = num_of_bdd_variables_ - current_bdd_node.second;
             if (exponent == 0) {
               entries.push_back(Eigen::Triplet<BigInteger>(s, left, 1));
             } else if (exponent < 31) {
@@ -1305,8 +1303,8 @@ void Automaton::ToDot(std::ostream& out, bool print_sink) {
   int i, j, k, l;
   char **buffer;
   int *used, *allocated;
-  unsigned* offsets = getIndices((unsigned) num_of_variables_);
-  int no_free_vars = num_of_variables_;
+  unsigned* offsets = getIndices((unsigned) num_of_bdd_variables_);
+  int no_free_vars = num_of_bdd_variables_;
   DFA_ptr a = this->dfa_;
   int sink = GetSinkState();
 
@@ -1498,20 +1496,20 @@ void Automaton::exportDfa(std::string file_name) {
   // order 0 for boolean variables
   // we dont care about variable names but they are used in
   // MONA DFA file format with dfaExport()
-  char **names = new char*[this->num_of_variables_];
-  char *orders = new char[this->num_of_variables_];
+  char **names = new char*[this->num_of_bdd_variables_];
+  char *orders = new char[this->num_of_bdd_variables_];
   std::string name = "a";
-  for (int i = 0; i < this->num_of_variables_; i++) {
+  for (int i = 0; i < this->num_of_bdd_variables_; i++) {
     orders[i] = i;
     names[0] = &*name.begin();
   }
 
-  dfaExport(this->dfa_, nullptr, this->num_of_variables_, names, orders);
+  dfaExport(this->dfa_, nullptr, this->num_of_bdd_variables_, names, orders);
 }
 
 DFA_ptr Automaton::importDFA(std::string file_name) {
-  char **names = new char*[this->num_of_variables_];
-  int ** orders = new int*[this->num_of_variables_];
+  char **names = new char*[this->num_of_bdd_variables_];
+  int ** orders = new int*[this->num_of_bdd_variables_];
   return dfaImport(&*file_name.begin(), &names, orders);
 }
 

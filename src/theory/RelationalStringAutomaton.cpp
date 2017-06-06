@@ -40,7 +40,7 @@ RelationalStringAutomaton::RelationalStringAutomaton(DFA_ptr dfa, int i_track, i
   int lambda_state = num_states-1;
   int var = VAR_PER_TRACK;
   int len = (num_tracks * var)+1; // extrabit for nondeterminism
-  mindices = getIndices(len);
+  mindices = GetBddVariableIndices(len);
 
   sink = find_sink(M);
   if(sink < 0) {
@@ -862,7 +862,7 @@ RelationalStringAutomaton_ptr RelationalStringAutomaton::MakeGreaterThanOrEqual(
 RelationalStringAutomaton_ptr RelationalStringAutomaton::MakeAnyStringUnaligned(StringFormula_ptr formula) {
   DFA_ptr result, temp;
   int len = VAR_PER_TRACK * formula->get_number_of_variables();
-  int *mindices = Automaton::getIndices(len);
+  int *mindices = Automaton::GetBddVariableIndices(len);
 
   dfaSetup(1, len, mindices);
   dfaAllocExceptions(0);
@@ -979,8 +979,8 @@ RelationalStringAutomaton_ptr RelationalStringAutomaton::ProjectKTrack(int k_tra
   RelationalStringAutomaton_ptr result_auto;
   DFA_ptr temp,result_dfa = this->dfa_;
   int flag = 0;
-  int *map = getIndices(this->num_of_tracks_*VAR_PER_TRACK);
-  for(int i = 0,k=0,l=0; i < this->num_of_variables_; i++) {
+  int *map = GetBddVariableIndices(this->num_of_tracks_*VAR_PER_TRACK);
+  for(int i = 0,k=0,l=0; i < this->num_of_bdd_variables_; i++) {
       if(i == k_track+l*this->num_of_tracks_) {
           map[i] = (this->num_of_tracks_-1)*VAR_PER_TRACK+l;
           l++;
@@ -1027,7 +1027,7 @@ StringAutomaton_ptr RelationalStringAutomaton::GetKTrack(int k_track) {
 
 
     // TODO baki: added below for charat example
-    temp = dfaProject(result, this->num_of_variables_ - 1);
+    temp = dfaProject(result, this->num_of_bdd_variables_ - 1);
     result = dfaMinimize(temp);
     dfaFree(temp);
     result_auto = new StringAutomaton(result);
@@ -1039,7 +1039,7 @@ StringAutomaton_ptr RelationalStringAutomaton::GetKTrack(int k_track) {
     // while all others need to be pushed back by VAR_PER_TRACK, then
     // interleaved with 1 less than current number of tracks
 
-  int* map = getIndices(this->num_of_tracks_*VAR_PER_TRACK);
+  int* map = GetBddVariableIndices(this->num_of_tracks_*VAR_PER_TRACK);
   for(int i = 0; i < this->num_of_tracks_; i++) {
     if(i == k_track) {
       for(int k = 0; k < VAR_PER_TRACK; k++) {
@@ -1098,7 +1098,7 @@ void RelationalStringAutomaton::SetSymbolicCounter() {
   }
   int var = VAR_PER_TRACK;
   int len = var * num_of_tracks_;
-  int* mindices = getIndices(len);
+  int* mindices = GetBddVariableIndices(len);
   char* statuses = new char[original_dfa->ns+1];
   std::vector<std::pair<std::vector<char>,int>> state_exeps;
   std::vector<bool> lambda_states(original_dfa->ns,false);
@@ -1167,12 +1167,12 @@ std::vector<std::string> RelationalStringAutomaton::getAnAcceptingStringForEachT
   std::vector<std::string> strings(num_of_tracks_, "");
   std::vector<bool>* example = getAnAcceptingWord();
   unsigned char c = 0;
-  unsigned num_transitions = example->size() / num_of_variables_;
+  unsigned num_transitions = example->size() / num_of_bdd_variables_;
   bool bit;
   unsigned sharp1 = 254, sharp2 = 255;
 
   for(int t = 0; t < num_transitions; t++) {
-    unsigned offset = t*num_of_variables_;
+    unsigned offset = t*num_of_bdd_variables_;
     for (int i = 0; i < num_of_tracks_; i++) {
       for (int j = 0; j < VAR_PER_TRACK; j++) {
         bit = (*example)[offset+i+num_of_tracks_*j];
@@ -1286,7 +1286,7 @@ DFA_ptr RelationalStringAutomaton::make_binary_relation_dfa(StringFormula::Type 
   DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, aligned_dfa = nullptr;
   int var = bits_per_var;
   int len = num_tracks * var;
-  int *mindices = getIndices(num_tracks*var);
+  int *mindices = GetBddVariableIndices(num_tracks*var);
   int eq = 0,
       left = 1,
       right = 2,
@@ -1423,7 +1423,7 @@ DFA_ptr RelationalStringAutomaton::make_binary_aligned_dfa(int left_track, int r
       star_lambda = 3, sink = 4;
   int var = VAR_PER_TRACK;
   int len = num_tracks * var;
-  int *mindices = getIndices(num_tracks*var);
+  int *mindices = GetBddVariableIndices(num_tracks*var);
   std::vector<char> exep_lambda(var,'1');
   std::vector<char> exep_dont_care(var,'X');
   exep_dont_care[var-1] = '0';
@@ -1569,7 +1569,7 @@ DFA_ptr RelationalStringAutomaton::prepend_lambda(DFA_ptr dfa, int var) {
   int* mindices;
   int len = VAR_PER_TRACK; // 1 more than default_num_var
 
-  mindices = getIndices(len);
+  mindices = GetBddVariableIndices(len);
   statuses = new char[num_states+1];
 
   // begin dfa building process
@@ -1679,7 +1679,7 @@ DFA_ptr RelationalStringAutomaton::trim_lambda_prefix(DFA_ptr dfa, int var, bool
   paths state_paths, pp;
   trace_descr tp;
   char* statuses;
-  int *indices = Automaton::getIndices(var);
+  int *indices = Automaton::GetBddVariableIndices(var);
   int sink = find_sink(dfa);
   CHECK_GT(sink,-1);
   std::vector<char> lambda_vec(var,'1');
@@ -1738,7 +1738,7 @@ DFA_ptr RelationalStringAutomaton::trim_lambda_prefix(DFA_ptr dfa, int var, bool
   // by lambda
   int num_states = dfa->ns+1;
   std::vector<std::pair<std::vector<char>,int>> state_exeps;
-  indices = getIndices(len);
+  indices = GetBddVariableIndices(len);
   statuses = new char[num_states+1];
 
   // if any of the reachable states are final, then the new
@@ -1870,7 +1870,7 @@ DFA_ptr RelationalStringAutomaton::trim_lambda_suffix(DFA_ptr dfa, int var, bool
   paths state_paths, pp;
   trace_descr tp;
   char* statuses = new char[dfa->ns+1];
-  int *indices = Automaton::getIndices(var);
+  int *indices = Automaton::GetBddVariableIndices(var);
   int sink = find_sink(dfa);
   CHECK_GT(sink,-1);
 

@@ -65,7 +65,7 @@ IntAutomaton_ptr IntAutomaton::makeZero(int num_of_variables) {
   DFA_ptr zero_int_dfa = nullptr;
   IntAutomaton_ptr zero_int = nullptr;
   char statuses[2] { '+', '-' };
-  int* variable_indices = getIndices(num_of_variables);
+  int* variable_indices = GetBddVariableIndices(num_of_variables);
 
   dfaSetup(2, num_of_variables, variable_indices);
   dfaAllocExceptions(0);
@@ -88,7 +88,7 @@ IntAutomaton_ptr IntAutomaton::makeAnyInt(int num_of_variables) {
   DFA_ptr any_int_dfa = nullptr;
   IntAutomaton_ptr any_int = nullptr;
   char statuses[1] { '+' };
-  int* variable_indices = getIndices(num_of_variables);
+  int* variable_indices = GetBddVariableIndices(num_of_variables);
 
   dfaSetup(1, num_of_variables, variable_indices);
   dfaAllocExceptions(0);
@@ -257,7 +257,7 @@ IntAutomaton_ptr IntAutomaton::complement() {
   dfaFree(complement_dfa);
   complement_dfa = nullptr;
 
-  complement_auto = new IntAutomaton(minimized_dfa, num_of_variables_);
+  complement_auto = new IntAutomaton(minimized_dfa, num_of_bdd_variables_);
   complement_auto->has_negative_1 = (not this->has_negative_1);
 
   DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->makeComplement()";
@@ -285,7 +285,7 @@ IntAutomaton_ptr IntAutomaton::union_(IntAutomaton_ptr other_auto) {
 
   union_dfa = DfaUnion(this->dfa_, other_auto->dfa_);
 
-  union_auto = new IntAutomaton(union_dfa, num_of_variables_);
+  union_auto = new IntAutomaton(union_dfa, num_of_bdd_variables_);
   union_auto->has_negative_1 = this->has_negative_1 or other_auto->has_negative_1;
 
   DVLOG(VLOG_LEVEL) << union_auto->id_ << " = [" << this->id_ << "]->union(" << other_auto->id_ << ")";
@@ -307,7 +307,7 @@ IntAutomaton_ptr IntAutomaton::intersect(IntAutomaton_ptr other_auto) {
 
   intersect_dfa = DfaIntersect(this->dfa_, other_auto->dfa_);
 
-  intersect_auto = new IntAutomaton(intersect_dfa, num_of_variables_);
+  intersect_auto = new IntAutomaton(intersect_dfa, num_of_bdd_variables_);
   intersect_auto->has_negative_1 = this->has_negative_1 and other_auto->has_negative_1;
 
   DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->intersect(" << other_auto->id_ << ")";
@@ -751,7 +751,7 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
   UnaryAutomaton_ptr unary_auto = nullptr;
   DFA_ptr unary_dfa = nullptr;
   int number_of_variables = 1;
-  int* indices = getIndices(number_of_variables);
+  int* indices = GetBddVariableIndices(number_of_variables);
   int number_of_states = this->dfa_->ns;
   int to_state, sink_state = GetSinkState();
   bool has_sink = true;
@@ -814,7 +814,7 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
   DFA_ptr d1,d2,d3;
   d1 = this->dfa_;
   d2 = other_auto->getDFA();
-  d3 = RelationalStringAutomaton::concat(d1,d2,num_of_variables_);
+  d3 = RelationalStringAutomaton::concat(d1,d2,num_of_bdd_variables_);
   return new IntAutomaton(d3);
 /*
   DFA_ptr concat_dfa = nullptr, tmp_dfa = nullptr;
@@ -1065,9 +1065,9 @@ IntAutomaton_ptr IntAutomaton::__minus(IntAutomaton_ptr other_auto) {
   DFA_ptr result_dfa = nullptr;
   IntAutomaton_ptr result_auto = nullptr;
 
-  result_dfa = RelationalStringAutomaton::pre_concat_prefix(this->dfa_, other_auto->dfa_,num_of_variables_);
+  result_dfa = RelationalStringAutomaton::pre_concat_prefix(this->dfa_, other_auto->dfa_,num_of_bdd_variables_);
 
-  result_auto = new IntAutomaton(result_dfa, num_of_variables_);
+  result_auto = new IntAutomaton(result_dfa, num_of_bdd_variables_);
 
   DVLOG(VLOG_LEVEL) << result_auto->id_ << " = [" << this->id_ << "]->__minus(" << other_auto->id_ << ")";
 
