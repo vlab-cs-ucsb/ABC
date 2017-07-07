@@ -34,38 +34,136 @@ namespace Vlab {
 namespace Theory {
 
 class StringAutomaton;
-typedef StringAutomaton* StringAutomaton_ptr;
-/**
- * TODO Try to refactor libstranger functions here.
- * Method specific todos are listed in .cpp file
- * Number of variables in String automaton kept as a static member
- * An object member version can be introduced later on.
- */
+using StringAutomaton_ptr = StringAutomaton*;
+
 class StringAutomaton: public Automaton {
 public:
-  StringAutomaton(DFA_ptr);
-  StringAutomaton(DFA_ptr, int num_of_variables);
+  StringAutomaton(const DFA_ptr);
+  StringAutomaton(const DFA_ptr, const int number_of_bdd_variables);
   StringAutomaton(const StringAutomaton&);
   virtual ~StringAutomaton();
 
   virtual StringAutomaton_ptr clone() const;
 
-  static StringAutomaton_ptr makePhi(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-  static StringAutomaton_ptr makeEmptyString(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-  static StringAutomaton_ptr makeString(std::string str, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-  static StringAutomaton_ptr makeAnyString(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-  static StringAutomaton_ptr makeAnyStringOtherThan(std::string str, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-  static StringAutomaton_ptr makeChar(char c, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-  static StringAutomaton_ptr makeCharRange(char from, char to, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-  static StringAutomaton_ptr makeAnyChar(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-  static StringAutomaton_ptr makeRegexAuto(std::string regex, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-  static StringAutomaton_ptr makeLengthEqual(int length, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-  static StringAutomaton_ptr makeLengthLessThan(int length, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-  static StringAutomaton_ptr makeLengthLessThanEqual(int length, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-  static StringAutomaton_ptr makeLengthGreaterThan(int length, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-  static StringAutomaton_ptr makeLengthGreaterThanEqual(int length, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
-  static StringAutomaton_ptr makeLengthRange(int start, int end, int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  /**
+   * Generates a string automaton that does not recognize any string
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static StringAutomaton_ptr MakePhi(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
+  /**
+   * Generates a string automaton that recognizes only empty string
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static StringAutomaton_ptr MakeEmptyString(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+
+  /**
+   * Generates a string automaton that recognizes given string
+   * @param str
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static StringAutomaton_ptr MakeString(const std::string str, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+
+  /**
+   * Generates a string automaton that recognizes any string
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static StringAutomaton_ptr MakeAnyString(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+
+  /**
+   * Generates a string automaton that recognizes any string except the given string
+   * @param str
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static StringAutomaton_ptr MakeAnyOtherString(const std::string str, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+
+  /**
+   * Generates a string automaton that recognizes characters inclusive from a given character to a given character
+   * @param from
+   * @param to
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static StringAutomaton_ptr MakeCharRange(const char from, const char to, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+
+  /**
+   * Generates a string automaton that accepts any character. It is equivalent to the string automaton that accepts any strings with length 1
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static StringAutomaton_ptr MakeAnyChar(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+
+  /**
+   * Generates a string automaton that accepts the strings defined by the given regular expression
+   * @param regex_string
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static StringAutomaton_ptr MakeRegexAuto(const std::string regex_string, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+
+  /**
+   * Generates a string automaton that accepts the strign defined by the given regular expression
+   * @param regular_expression
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static StringAutomaton_ptr MakeRegexAuto(Util::RegularExpression_ptr regular_expression, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+
+  /**
+   * Generates a string automaton that accepts any string with the given length
+   * @param length
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static StringAutomaton_ptr MakeAnyStringLengthEqualTo(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+
+  /**
+   * Generates a string automaton that accepts any string with length less than the given length
+   * @param length
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static StringAutomaton_ptr MakeAnyStringLengthLessThan(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+
+  /**
+   * Generates a string automaton that accepts any string with length less than or equal the given length
+   * @param length
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static StringAutomaton_ptr MakeAnyStringLengthLessThanOrEqualTo(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+
+  /**
+   * Generates a string automaton that accepts any string with length greater than the given length
+   * @param length
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static StringAutomaton_ptr MakeAnyStringLengthGreaterThan(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+
+  /**
+   * Generates a string automaton that accepts any string with length greater than or equal to the given length
+   * @param length
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static StringAutomaton_ptr MakeAnyStringLengthGreaterThanOrEqualTo(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+
+  /**
+   * Generates a string automaton that accepts any string with length in the range of given start and end lengths
+   * @param start
+   * @param end
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static StringAutomaton_ptr MakeAnyStringWithLengthInRange(const int start, const int end, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+
+  // TODO baki left here: move common functions to base class, should be implemented similar to visitor pattern
   StringAutomaton_ptr complement();
   StringAutomaton_ptr union_(StringAutomaton_ptr other_auto);
   StringAutomaton_ptr intersect(StringAutomaton_ptr other_auto);
@@ -153,13 +251,6 @@ public:
   void set_formula(StringFormula_ptr formula);
 
 protected:
-
-  static StringAutomaton_ptr makeRegexAuto(Util::RegularExpression_ptr regular_expression);
-
-  // TODO figure out better name
-//  static StringAutomaton_ptr dfaSharpStringWithExtraBit(int num_of_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES,
-//      int* variable_indices = StringAutomaton::DEFAULT_VARIABLE_INDICES);
-
   bool hasExceptionToValidStateFrom(int state, std::vector<char>& exception);
   std::vector<int> getAcceptingStates();
 

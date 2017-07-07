@@ -386,7 +386,7 @@ void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
     if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term)) {
       StringAutomaton_ptr temp,con;
       Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
-      temp = StringAutomaton::makeString(right_constant->getValue());
+      temp = StringAutomaton::MakeString(right_constant->getValue());
       con = temp->complement();
       Value_ptr val = new Value(con);
       bool result = symbol_table_->IntersectValue(var,val);
@@ -571,7 +571,7 @@ void ConstraintSolver::visitIn(In_ptr in_term) {
     if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(in_term->right_term)) {
 
       Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
-      StringAutomaton_ptr con = StringAutomaton::makeRegexAuto(right_constant->getValue());
+      StringAutomaton_ptr con = StringAutomaton::MakeRegexAuto(right_constant->getValue());
       bool res = true;
       Value_ptr val = new Value(con);
       LOG(FATAL) << "fix me";
@@ -675,7 +675,7 @@ void ConstraintSolver::visitNotContains(NotContains_ptr not_contains_term) {
     delete sub_strings_auto;
     sub_strings_auto = nullptr;
     if (difference_auto->is_empty_language()) {
-      result = new Value(Theory::StringAutomaton::makePhi());
+      result = new Value(Theory::StringAutomaton::MakePhi());
     } else {
       result = param_subject->clone();
     }
@@ -721,7 +721,7 @@ void ConstraintSolver::visitNotBegins(NotBegins_ptr not_begins_term) {
     delete prefixes_auto;
     prefixes_auto = nullptr;
     if (difference_auto->is_empty_language()) {
-      result = new Value(Theory::StringAutomaton::makePhi());
+      result = new Value(Theory::StringAutomaton::MakePhi());
     } else {
       result = param_subject->clone();
     }
@@ -765,7 +765,7 @@ void ConstraintSolver::visitNotEnds(NotEnds_ptr not_ends_term) {
     delete suffixes_auto;
     suffixes_auto = nullptr;
     if (difference_auto->is_empty_language()) {
-      result = new Value(Theory::StringAutomaton::makePhi());
+      result = new Value(Theory::StringAutomaton::MakePhi());
     } else {
       result = param_subject->clone();
     }
@@ -962,7 +962,7 @@ void ConstraintSolver::visitToString(ToString_ptr to_string_term) {
   if (Value::Type::INT_CONSTANT == param->getType()) {
     std::stringstream ss;
     ss << param->getIntConstant();
-    result = new Value(StringAutomaton::makeString(ss.str()));
+    result = new Value(StringAutomaton::MakeString(ss.str()));
   } else {
     auto unary_auto = param->getIntAutomaton()->toUnaryAutomaton();
     result = new Value(unary_auto->toStringAutomaton());
@@ -1041,7 +1041,7 @@ void ConstraintSolver::visitUnknownTerm(Unknown_ptr unknown_term) {
     visit(term_ptr);
   }
   path_trace_.pop_back();
-  Value_ptr result = new Value(Theory::StringAutomaton::makeAnyString());
+  Value_ptr result = new Value(Theory::StringAutomaton::MakeAnyString());
 
   setTermValue(unknown_term, result);
 }
@@ -1107,10 +1107,10 @@ void ConstraintSolver::visitTermConstant(TermConstant_ptr term_constant) {
       // TODO instead we may use string constants before going into automaton
       // and keep it unless we need automaton
       // this may complicate the code with a perf gain ??
-      result = new Value(Theory::StringAutomaton::makeString(term_constant->getValue()));
+      result = new Value(Theory::StringAutomaton::MakeString(term_constant->getValue()));
       break;
       case Primitive::Type::REGEX:
-      result = new Value(Theory::StringAutomaton::makeRegexAuto(term_constant->getValue()));
+      result = new Value(Theory::StringAutomaton::MakeRegexAuto(term_constant->getValue()));
       break;
       default:
       LOG(FATAL) << "unhandled term constant: " << *term_constant;

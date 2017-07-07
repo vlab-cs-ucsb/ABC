@@ -116,17 +116,59 @@ public:
   friend std::ostream& operator<<(std::ostream& os, const Automaton& automaton);
 
 protected:
-  static DFA_ptr DfaMakePhi(int num_of_variables, int* variable_indices = nullptr);
-  static DFA_ptr DfaMakeAny(int num_of_variables, int* variable_indices = nullptr);
-  static DFA_ptr DfaMakeAnyButNotEmpty(int num_of_variables, int* variable_indices = nullptr);
-  static DFA_ptr DfaIntersect(DFA_ptr dfa1, DFA_ptr dfa2);
-  static DFA_ptr DfaUnion(DFA_ptr dfa1, DFA_ptr dfa2);
+  /**
+   * Generates a dfa that accepts nothing
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static DFA_ptr DFAMakePhi(const int number_of_bdd_variables);
+
+  /**
+   * Generates a dfa that accepts any input
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static DFA_ptr DFAMakeAny(const int number_of_bdd_variables);
+
+  /**
+   * Generates a dfa that accepts any input except one
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static DFA_ptr DFAMakeAnyButNotEmpty(const int number_of_bdd_variables);
+
+  /**
+   * Generates a dfa that has an accepting initial state without any loop
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static DFA_ptr DFAMakeEmpty(const int number_of_bdd_variables);
+
+  static DFA_ptr DFAIntersect(DFA_ptr dfa1, DFA_ptr dfa2);
+  static DFA_ptr DFAUnion(DFA_ptr dfa1, DFA_ptr dfa2);
   static DFA_ptr DFAProjectAway(int index, DFA_ptr dfa);
-  static DFA_ptr DFAProjectAwayAndReMap(int index, int num_of_variables, DFA_ptr dfa);
+  static DFA_ptr DFAProjectAwayAndReMap(int index, int number_of_bdd_variables, DFA_ptr dfa);
 //  static DFA_ptr DFAProjectAway(std::vector<int> index, int num_of_variables, DFA_ptr dfa);
   static DFA_ptr DFAProjectTo(int index, int num_of_variables, DFA_ptr dfa);
-  static DFA_ptr DfaL1ToL2(int start, int end, int num_of_variables, int* variable_indices = nullptr);
-  static std::set<std::string> DFAGetTransitionsFromTo(DFA_ptr dfa, const int from, const int to, const int num_of_variables, const int* variable_indices);
+
+  /**
+   * Generates a dfa that accepts any input that has length between start and end inclusive
+   * @param start
+   * @param end
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static DFA_ptr DFAMakeAcceptingAnyWithInRange(const int start, const int end, const int number_of_bdd_variables);
+
+  /**
+   * Generates a dfa that accepts any input after reading the given number of inputs
+   * @param start
+   * @param number_of_bdd_variables
+   * @return
+   */
+  static DFA_ptr DFAMakeAcceptingAnyAfterLength(const int length, const int number_of_bdd_variables);
+
+  static std::set<std::string> DFAGetTransitionsFromTo(DFA_ptr dfa, const int from, const int to, const int num_of_variables);
 
   bool isAcceptingSingleWord();
   // TODO update it to work for non-accepting inputs
@@ -135,21 +177,21 @@ protected:
   virtual void add_print_label(std::ostream& out);
 
   static int* GetBddVariableIndices(const int number_of_bdd_variables);
-  static int* GenerateBddVariableIndices(const int number_of_bdd_variables);
+  static int* CreateBddVariableIndices(const int number_of_bdd_variables);
 
-  static unsigned* getIndices(unsigned num_of_variables, unsigned extra_num_of_variables = 0); // TODO remove
-  // TODO remove vector<char> version of binary format
+  // TODO remove vector<char> version of binary format and use string version below
   static std::vector<char> GetBinaryFormat(unsigned long n, int bit_length);
   static std::vector<char> GetReversedBinaryFormat(unsigned long n, int bit_length);
 
-  static std::string getBinaryString(unsigned long n, int bit_length);
+  static std::string GetBinaryStringMSB(unsigned long n, int bit_length);
 
+  // TODO return string instead of vector<char>
   static std::vector<char> getReservedWord(char last_char, int length, bool extra_bit = false);
-  void minimize();
-  void project(unsigned index);
+  void Minimize();
+  void ProjectAway(unsigned index);
 
-  bool isStartState(int state_id);
-  bool isSinkState(int state_id);
+  bool is_start_state(int state_id);
+  bool is_sink_state(int state_id);
   bool is_accepting_state(int state_id);
 
   bool hasIncomingTransition(int state);
@@ -190,7 +232,7 @@ protected:
   /**
    * Bdd variable indices cache used in MONA dfa manipulation
    */
-  static std::unordered_map<int, int*> bdd_var_indices;
+  static std::unordered_map<int, int*> bdd_variable_indices;
 
   /**
    * Automaton id used for debuggin purposes

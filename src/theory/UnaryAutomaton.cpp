@@ -34,18 +34,14 @@ UnaryAutomaton_ptr UnaryAutomaton::clone() const {
   return cloned_auto;
 }
 
-UnaryAutomaton_ptr UnaryAutomaton::makePhi() {
-  DFA_ptr non_accepting_unary_dfa = nullptr;
-  UnaryAutomaton_ptr non_acception_unary_auto = nullptr;
-  int a[1] = {0};
-  non_accepting_unary_dfa = Automaton::DfaMakePhi(1, a);
-  non_acception_unary_auto = new UnaryAutomaton(non_accepting_unary_dfa);
-
+UnaryAutomaton_ptr UnaryAutomaton::MakePhi() {
+  DFA_ptr non_accepting_unary_dfa = Automaton::DFAMakePhi(1);
+  UnaryAutomaton_ptr non_acception_unary_auto = new UnaryAutomaton(non_accepting_unary_dfa);
   DVLOG(VLOG_LEVEL) << non_acception_unary_auto->getId() << " = makePhi()";
   return non_acception_unary_auto;
 }
 
-UnaryAutomaton_ptr UnaryAutomaton::makeAutomaton(SemilinearSet_ptr semilinear_set) {
+UnaryAutomaton_ptr UnaryAutomaton::MakeAutomaton(SemilinearSet_ptr semilinear_set) {
   UnaryAutomaton_ptr unary_auto = nullptr;
   DFA_ptr unary_dfa = nullptr, tmp_dfa = nullptr;
 
@@ -60,7 +56,7 @@ UnaryAutomaton_ptr UnaryAutomaton::makeAutomaton(SemilinearSet_ptr semilinear_se
   bool has_only_constants = semilinear_set->has_only_constants();
 
   if (semilinear_set->is_empty_set()) {
-    return UnaryAutomaton::makePhi();
+    return UnaryAutomaton::MakePhi();
   } else if (has_only_constants) {
     number_of_states = semilinear_set->get_constants().back() + 2;
     sink_state = number_of_states - 1;
@@ -155,7 +151,7 @@ SemilinearSet_ptr UnaryAutomaton::getSemilinearSet() {
 
   semilinear_set = new SemilinearSet();
   int cycle_head_value = 0;
-  bool is_in_cycle = isStartState(cycle_head_state);
+  bool is_in_cycle = is_start_state(cycle_head_state);
 
   for (auto state : states) {
     if (not is_in_cycle) {
@@ -285,7 +281,7 @@ BinaryIntAutomaton_ptr UnaryAutomaton::toBinaryIntAutomaton(std::string var_name
 }
 
 StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
-  StringAutomaton_ptr result_auto = StringAutomaton::makePhi(),
+  StringAutomaton_ptr result_auto = StringAutomaton::MakePhi(),
           tmp_1_auto = nullptr,
           tmp_2_auto = nullptr;
 
@@ -305,7 +301,7 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
     if (is_visited[curr_state]) { // cycle over approximate rest, an algorithm can be found to map between encodings (from semilinear set to string encoding)
       std::string value_str = std::to_string(value);
       std::string regex_str = "[0-9]{" + std::to_string(value_str.length()) + ",}";
-      tmp_1_auto = StringAutomaton::makeRegexAuto(regex_str);
+      tmp_1_auto = StringAutomaton::MakeRegexAuto(regex_str);
       tmp_2_auto = result_auto;
       result_auto = tmp_2_auto->concat(tmp_1_auto);
       delete tmp_1_auto;
@@ -314,7 +310,7 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
     }
 
     if (is_accepting_state(curr_state)) {
-      tmp_1_auto = StringAutomaton::makeString(std::to_string(value));
+      tmp_1_auto = StringAutomaton::MakeString(std::to_string(value));
       tmp_2_auto = result_auto;
       result_auto = tmp_2_auto->union_(tmp_1_auto);
       delete tmp_1_auto;

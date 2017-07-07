@@ -1196,7 +1196,7 @@ void VariableValueComputer::visitToInt(ToInt_ptr to_int_term) {
   if (Value::Type::INT_CONSTANT == term_value->getType()) {
     std::stringstream ss;
     ss << term_value->getIntConstant();
-    auto str_auto = Theory::StringAutomaton::makeString(ss.str());
+    auto str_auto = Theory::StringAutomaton::MakeString(ss.str());
     child_pre_auto = child_post_value->getStringAutomaton()->intersect(str_auto);
     delete str_auto;
   } else {
@@ -1284,7 +1284,7 @@ void VariableValueComputer::visitUnknownTerm(Unknown_ptr unknown_term) {
   Value_ptr child_post_value = getTermPostImage(child_term);
   switch (child_post_value->getType()) {
     case Value::Type::STRING_AUTOMATON:
-      child_value = new Value(Theory::StringAutomaton::makeAnyString());
+      child_value = new Value(Theory::StringAutomaton::MakeAnyString());
       break;
     case Value::Type::INT_CONSTANT:
     case Value::Type::INT_AUTOMATON:

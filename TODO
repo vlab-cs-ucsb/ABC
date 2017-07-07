@@ -1,0 +1,15 @@
+- Refactor Automaton::GetBddVariableIndices method, avoid deleting indices retrieved by it
+
+- Generate automata with factory pattern or builder pattern
+
+- Generate an AutomatonBuilder class, Inherit from it DFA builder, NFA builder (if needed)
+
+- Inherit specific builders for specific automaton packages, example: MonaDfaBuilder
+
+- Generate New Automaton Base Class, support NFA
+- Actively use polyphormism, StringDFA, IntegerDfa, UnaryDFA, StringConstant, IntegerConstant.
+or
+- StringAutomaton, IntegerAutomaton, UnaryAutomaton, StringConstant, IntegerConstant // NFA, DFA support
+- Use AutomatonBuilder classes
+- build method returns automaton at highlevel,
+- map it to mona or other automaton package when necessary.

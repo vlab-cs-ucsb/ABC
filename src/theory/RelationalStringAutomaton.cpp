@@ -243,7 +243,7 @@ RelationalStringAutomaton_ptr RelationalStringAutomaton::makePrefixSuffix(int le
 }
 
 RelationalStringAutomaton_ptr RelationalStringAutomaton::MakePhi(StringFormula_ptr formula) {
-  auto non_accepting_dfa = Automaton::DfaMakePhi(formula->get_number_of_variables() * VAR_PER_TRACK);
+  auto non_accepting_dfa = Automaton::DFAMakePhi(formula->get_number_of_variables() * VAR_PER_TRACK);
   auto non_accepting_auto = new RelationalStringAutomaton(non_accepting_dfa, formula);
   return non_accepting_auto;
 }
@@ -880,7 +880,7 @@ RelationalStringAutomaton_ptr RelationalStringAutomaton::MakeAnyStringAligned(St
   StringAutomaton_ptr any_string_auto = nullptr;
 
   aligned_auto = MakeAnyStringUnaligned(formula->clone());
-  any_string_auto = StringAutomaton::makeAnyString();
+  any_string_auto = StringAutomaton::MakeAnyString();
   const int number_of_string_vars = formula->get_number_of_variables();
   for(unsigned i = 0; i < number_of_string_vars; i++) {
     any_auto = new RelationalStringAutomaton(any_string_auto->getDFA(), i, number_of_string_vars);
@@ -911,7 +911,7 @@ RelationalStringAutomaton_ptr RelationalStringAutomaton::Union(RelationalStringA
     return nullptr;
   }
 
-  auto union_dfa = Automaton::DfaUnion(this->dfa_,other_auto->dfa_);
+  auto union_dfa = Automaton::DFAUnion(this->dfa_,other_auto->dfa_);
   auto formula = formula_->clone();
   formula->reset_param_orders();
   auto union_auto = new RelationalStringAutomaton(union_dfa, formula);
@@ -938,7 +938,7 @@ RelationalStringAutomaton_ptr RelationalStringAutomaton::Intersect(RelationalStr
     return nullptr;
   }
 
-  auto intersect_dfa = DfaIntersect(this->dfa_,other_auto->dfa_);
+  auto intersect_dfa = DFAIntersect(this->dfa_,other_auto->dfa_);
   auto formula = formula_->clone();
   formula->reset_param_orders();
   auto intersect_auto = new RelationalStringAutomaton(intersect_dfa, formula);
@@ -1081,7 +1081,7 @@ StringAutomaton_ptr RelationalStringAutomaton::GetKTrack(int k_track) {
   } else {
     DVLOG(VLOG_LEVEL) << "no sink";
     dfaFree(result);
-    result_auto = StringAutomaton::makeAnyString();
+    result_auto = StringAutomaton::MakeAnyString();
   }
   return result_auto;
 }

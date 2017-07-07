@@ -16,6 +16,8 @@ int Automaton::name_counter = 0;
 
 unsigned long Automaton::next_id = 0;
 
+std::unordered_map<int, int*> Automaton::bdd_variable_indices;
+
 const std::string Automaton::Name::NONE = "none";
 const std::string Automaton::Name::BOOL = "BoolAutomaton";
 const std::string Automaton::Name::UNARY = "UnaryAutomaton";
@@ -235,7 +237,7 @@ bool Automaton::isStateReachableFrom(int search_state, int from_state, std::map<
   for (auto next_state : getNextStates(from_state)) {
     if (next_state == search_state) {
       return true;
-    } else if ((not is_stack_member[next_state]) and (not isSinkState(next_state)) and
+    } else if ((not is_stack_member[next_state]) and (not is_sink_state(next_state)) and
       isStateReachableFrom(search_state, next_state, is_stack_member)) {
       return true;
     }
@@ -257,7 +259,7 @@ Graph_ptr Automaton::toGraph() {
       graph->setStartNode(node);
     }
 
-    if (this->isSinkState(s)) {
+    if (this->is_sink_state(s)) {
       graph->setSinkNode(node);
     } else if (this->is_accepting_state(s)) {
       graph->addFinalNode(node);
@@ -390,7 +392,7 @@ bool Automaton::getAnAcceptingWord(NextState& state, std::map<int, bool>& is_sta
 }
 
 char* Automaton::getAnExample(bool accepting) {
-  return dfaMakeExample(this->dfa_, 1, num_of_bdd_variables_, getIndices((unsigned) num_of_bdd_variables_));
+  return dfaMakeExample(this->dfa_, 1, num_of_bdd_variables_, (unsigned*)GetBddVariableIndices(num_of_bdd_variables_));
 }
 
 std::ostream& operator<<(std::ostream& os, const Automaton& automaton) {
@@ -398,181 +400,198 @@ std::ostream& operator<<(std::ostream& os, const Automaton& automaton) {
 }
 
 /**
- * If variable indices is nullptr, default indices are created
+ *
+ * @returns a non accepting dfa
  */
-DFA_ptr Automaton::DfaMakePhi(int num_of_variables, int* variable_indices) {
-  if (variable_indices == nullptr) {
-    variable_indices = GetBddVariableIndices(num_of_variables);
-  }
+DFA_ptr Automaton::DFAMakePhi(const int number_of_bdd_variables) {
   char statuses[1] {'-'};
-  dfaSetup(1, num_of_variables, variable_indices);
+  dfaSetup(1, number_of_bdd_variables, GetBddVariableIndices(number_of_bdd_variables));
   dfaAllocExceptions(0);
   dfaStoreState(0);
-  delete[] variable_indices;
-  auto non_accepting_dfa = dfaBuild(statuses);
-  return non_accepting_dfa;
+  return dfaBuild(statuses);
 }
 
-DFA_ptr Automaton::DfaMakeAny(int num_of_variables, int* variable_indices) {
-  if (variable_indices == nullptr) {
-    variable_indices = GetBddVariableIndices(num_of_variables);
-  }
+/**
+ *
+ * @returns a dfa that accepts any input including an accepting initial state
+ */
+DFA_ptr Automaton::DFAMakeAny(const int number_of_bdd_variables) {
   char statuses[1] {'+'};
-  dfaSetup(1, num_of_variables, variable_indices);
+  dfaSetup(1, number_of_bdd_variables, GetBddVariableIndices(number_of_bdd_variables));
   dfaAllocExceptions(0);
   dfaStoreState(0);
-  delete[] variable_indices;
-  auto non_accepting_dfa = dfaBuild(statuses);
-  return non_accepting_dfa;
+  return dfaBuild(statuses);
 }
 
-DFA_ptr Automaton::DfaMakeAnyButNotEmpty(int num_of_variables, int* variable_indices) {
-  if (variable_indices == nullptr) {
-    variable_indices = GetBddVariableIndices(num_of_variables);
-  }
+/**
+ *
+ * @returns a dfa that accepts any input except initial state is not accepting
+ */
+DFA_ptr Automaton::DFAMakeAnyButNotEmpty(const int number_of_bdd_variables) {
   char statuses[2] { '-', '+' };
-  dfaSetup(2, num_of_variables, variable_indices);
+  dfaSetup(2, number_of_bdd_variables, GetBddVariableIndices(number_of_bdd_variables));
   dfaAllocExceptions(0);
   dfaStoreState(1);
   dfaAllocExceptions(0);
   dfaStoreState(1);
-  delete[] variable_indices;
-  auto any_dfa = dfaBuild(statuses);
-  return any_dfa;
+  return dfaBuild(statuses);
 }
 
-DFA_ptr Automaton::DfaIntersect(DFA_ptr dfa1, DFA_ptr dfa2) {
-  auto intersect_dfa = dfaProduct(dfa1, dfa2, dfaAND);
-  auto minimized_dfa = dfaMinimize(intersect_dfa);
+DFA_ptr Automaton::DFAMakeEmpty(const int number_of_bdd_variables) {
+  char statuses[2] { '+', '-' };
+  dfaSetup(2, number_of_bdd_variables, GetBddVariableIndices(number_of_bdd_variables));
+  dfaAllocExceptions(0);
+  dfaStoreState(1);
+  dfaAllocExceptions(0);
+  dfaStoreState(1);
+  return dfaBuild(statuses);
+}
+
+/**
+ *
+ * @returns a minimized intersection dfa
+ */
+DFA_ptr Automaton::DFAIntersect(DFA_ptr dfa1, DFA_ptr dfa2) {
+  DFA_ptr intersect_dfa = dfaProduct(dfa1, dfa2, dfaAND);
+  DFA_ptr minimized_dfa = dfaMinimize(intersect_dfa);
   dfaFree(intersect_dfa);
   return minimized_dfa;
 }
 
-DFA_ptr Automaton::DfaUnion(DFA_ptr dfa1, DFA_ptr dfa2) {
-  auto union_dfa = dfaProduct(dfa1, dfa2, dfaOR);
-  auto minimized_dfa = dfaMinimize(union_dfa);
+/**
+ *
+ * @returns a minimized union dfa
+ */
+DFA_ptr Automaton::DFAUnion(DFA_ptr dfa1, DFA_ptr dfa2) {
+  DFA_ptr union_dfa = dfaProduct(dfa1, dfa2, dfaOR);
+  DFA_ptr minimized_dfa = dfaMinimize(union_dfa);
   dfaFree(union_dfa);
   return minimized_dfa;
 }
 
+/**
+ *
+ * @returns a minimized dfa where the bdd variable @index projected away
+ */
 DFA_ptr Automaton::DFAProjectAway(int index, DFA_ptr dfa) {
-  auto result_dfa = dfaProject(dfa, (unsigned)index);
-  auto tmp_dfa = result_dfa;
-  result_dfa = dfaMinimize(tmp_dfa);
-  dfaFree(tmp_dfa);
-  return result_dfa;
+  DFA_ptr projected_dfa = dfaProject(dfa, (unsigned)index);
+  DFA_ptr minimized_dfa = dfaMinimize(projected_dfa);
+  dfaFree(projected_dfa);
+  return minimized_dfa;
 }
 
-DFA_ptr Automaton::DFAProjectAwayAndReMap(int index, int num_of_variables, DFA_ptr dfa) {
-  auto result_dfa = dfaProject(dfa, (unsigned)index);
-  if (index < (unsigned)(num_of_variables - 1)) {
-    int* indices_map = new int[num_of_variables];
-    for (int i = 0, j = 0; i < num_of_variables; i++) {
+/**
+ * Projects a way the bdd variable @index and re map the indices from 0 to @number_of_bdd_variables-1
+ * @returns a minimized dfa
+ */
+DFA_ptr Automaton::DFAProjectAwayAndReMap(int index, int number_of_bdd_variables, DFA_ptr dfa) {
+  DFA_ptr projected_dfa = dfaProject(dfa, (unsigned)index);
+  if (index < (unsigned)(number_of_bdd_variables - 1)) {
+    int* indices_map = new int[number_of_bdd_variables];
+    for (int i = 0, j = 0; i < number_of_bdd_variables; i++) {
       if ((unsigned)i != index) {
         indices_map[i] = j;
         j++;
       }
     }
-    dfaReplaceIndices(result_dfa, indices_map);
+    dfaReplaceIndices(projected_dfa, indices_map);
     delete[] indices_map;
   }
-  auto tmp_dfa = result_dfa;
-  result_dfa = dfaMinimize(tmp_dfa);
-  dfaFree(tmp_dfa);
-  return result_dfa;
+
+  DFA_ptr minimized_dfa = dfaMinimize(projected_dfa);
+  dfaFree(projected_dfa);
+  return minimized_dfa;
 }
 
-DFA_ptr Automaton::DFAProjectTo(int index, int num_of_variables, DFA_ptr dfa) {
-  auto result_dfa = dfaCopy(dfa);
-  for (int i = 0 ; i < num_of_variables; ++i) {
+
+/**
+ * Projects away all bdd variables except the one at @index
+ * @returns a dfa
+ */
+DFA_ptr Automaton::DFAProjectTo(int index, int number_of_bdd_variables, DFA_ptr dfa) {
+  DFA_ptr projected_dfa = dfaCopy(dfa);
+  for (int i = 0 ; i < number_of_bdd_variables; ++i) {
     if (i != index) {
-      auto tmp_dfa = result_dfa;
-      result_dfa = Automaton::DFAProjectAway(i, tmp_dfa);
+      DFA_ptr tmp_dfa = projected_dfa;
+      projected_dfa = Automaton::DFAProjectAway(i, tmp_dfa);
       dfaFree(tmp_dfa);
     }
   }
 
-  int* indices_map = GetBddVariableIndices(num_of_variables);
+  int* indices_map = CreateBddVariableIndices(number_of_bdd_variables);
   indices_map[index] = 0;
   indices_map[0] = index;
-  dfaReplaceIndices(result_dfa, indices_map);
+  dfaReplaceIndices(projected_dfa, indices_map);
   delete[] indices_map;
-  return result_dfa;
+  return projected_dfa;
 }
 
-DFA_ptr Automaton::DfaL1ToL2(int start, int end, int num_of_variables, int *variable_indices) {
-  int i, number_of_states;
-  char *statuses;
-  DFA *result=nullptr;
-  if(variable_indices == nullptr) {
-    variable_indices = GetBddVariableIndices(num_of_variables);
-  }
-  if (start <= -1 && end <= -1) {
-    result = Automaton::DfaMakePhi(num_of_variables, variable_indices);
-    delete[] variable_indices;
-    return result;
-  }
-  if ( start <= -1 ) {
-    start = 0; // -1 means no lower bound, zero is the minimum lower bound
-  }
-  if(end <= -1) { //accept everything after l1 steps
-    number_of_states = start + 2; // add one sink state
-    statuses = new char[number_of_states+1];
-    dfaSetup(number_of_states, num_of_variables, variable_indices);
+DFA_ptr Automaton::DFAMakeAcceptingAnyWithInRange(const int start, const int end, const int number_of_bdd_variables) {
+  CHECK((start >= 0) && (end >= start));
+  // 1 initial state and 1 sink state
+  const int number_of_states = end + 2;
+  char *statuses = new char[number_of_states];
+  dfaSetup(number_of_states, number_of_bdd_variables, GetBddVariableIndices(number_of_bdd_variables));
 
-    //the 0 to start - 1 states(unaccepted)
-    for( i = 0; i < start; i++){
-      dfaAllocExceptions(0);
-      dfaStoreState(i + 1);
-      statuses[i] = '-';
-    }
-    // the start state
+  // 0 to start - 1 not accepting, start to end accepting states
+  for(int i = 0; i <= end; ++i) {
     dfaAllocExceptions(0);
-    dfaStoreState(i);     // i == start
-    statuses[i] = '+';    // i == start
-    i++;
-  } else {
-    CHECK( end >= start);
-    number_of_states = end + 2; // add one sink state
-    statuses = new char[number_of_states+1];
-    dfaSetup(number_of_states, num_of_variables, variable_indices);
-
-    //the start to end states(accepted)
-    for( i = 0; i <= end; i++){
-      dfaAllocExceptions(0);
-      dfaStoreState(i + 1);
-      if(i >= start) {
-        statuses[i] = '+';
-      } else {
-        statuses[i] = '-';
-      }
+    dfaStoreState(i + 1);
+    if(i >= start) {
+      statuses[i] = '+';
+    } else {
+      statuses[i] = '-';
     }
   }
 
   //the sink state
   dfaAllocExceptions(0);
   dfaStoreState(number_of_states - 1);  // sink state
-  statuses[number_of_states - 1] = '-';   // i == end + 1 == number_of_states - 1
-  statuses[number_of_states] = '\0';    // number_of_states == end + 2
+  statuses[number_of_states - 1] = '-';
 
-  result=dfaBuild(statuses);
+  DFA_ptr result_dfa = dfaBuild(statuses);
   delete[] statuses;
-  delete[] variable_indices;
-  if(start == 0) result->f[result->s] = 1;
-  DFA *tmp = dfaMinimize(result);
-  dfaFree(result);
-  return tmp;
+  return result_dfa;
 }
 
-std::set<std::string> Automaton::DFAGetTransitionsFromTo(DFA_ptr dfa, const int from, const int to, const int num_of_variables, const int* variable_indices) {
+DFA_ptr Automaton::DFAMakeAcceptingAnyAfterLength(const int length, const int number_of_bdd_variables) {
+  CHECK(length >= 0);
+  // 1 initial state
+  const int number_of_states = length + 1;
+  char *statuses = new char[number_of_states];
+  dfaSetup(number_of_states, number_of_bdd_variables, GetBddVariableIndices(number_of_bdd_variables));
+
+  // 0 to length - 1 not accepting
+  for(int i = 0; i < length; ++i) {
+    dfaAllocExceptions(0);
+    dfaStoreState(i + 1);
+    statuses[i] = '-';
+  }
+
+  // final state
+  dfaAllocExceptions(0);
+  dfaStoreState(length);
+  statuses[length] = '+';
+
+  DFA_ptr result_dfa = dfaBuild(statuses);
+  delete[] statuses;
+  return result_dfa;
+}
+
+/**
+ *
+ * @returns set of transitions in MONA encoded format
+ */
+std::set<std::string> Automaton::DFAGetTransitionsFromTo(DFA_ptr dfa, const int from, const int to, const int number_of_bdd_variables) {
+  const int* bdd_indices = GetBddVariableIndices(number_of_bdd_variables);
   std::set<std::string> transitions;
   paths pp = make_paths(dfa->bddm, dfa->q[from]);
   while (pp) {
     if (pp->to == to) {
       std::string current_exception;
-      for (int j = 0; j < num_of_variables; ++j) {
+      for (int j = 0; j < number_of_bdd_variables; ++j) {
         trace_descr tp = nullptr;
-        for (tp = pp->trace; tp && (tp->index != (unsigned)variable_indices[j]); tp = tp->next);
+        for (tp = pp->trace; tp && (tp->index != (unsigned)bdd_indices[j]); tp = tp->next);
         if (tp) {
           if (tp->value) {
             current_exception.push_back('1');
@@ -591,37 +610,33 @@ std::set<std::string> Automaton::DFAGetTransitionsFromTo(DFA_ptr dfa, const int 
   return transitions;
 }
 
+/**
+ * Uses a cache for bdd variable indices.
+ * We use a fixed ordering in all automata we generate
+ * @returns a pointer to bdd indices
+ */
 int* Automaton::GetBddVariableIndices(const int number_of_bdd_variables) {
-  auto it = bdd_var_indices.find(number_of_bdd_variables);
-  if (it != bdd_var_indices.end())
+  auto it = bdd_variable_indices.find(number_of_bdd_variables);
+  if (it != bdd_variable_indices.end())
   {
     return it->second;
   }
-  int* indices = GenerateBddVariableIndices(number_of_bdd_variables);
-  bdd_var_indices[number_of_bdd_variables] = indices;
+  int* indices = CreateBddVariableIndices(number_of_bdd_variables);
+  bdd_variable_indices[number_of_bdd_variables] = indices;
   return indices;
 }
 
-int* Automaton::GenerateBddVariableIndices(const int number_of_bdd_variables) {
+/**
+ * Creates bdd variable indices
+ * @return bdd variable indices in a fixed order
+ */
+int* Automaton::CreateBddVariableIndices(const int number_of_bdd_variables) {
   int* indices = new int[number_of_bdd_variables];
   for (int i = 0; i < number_of_bdd_variables; ++i) {
     indices[i] = i;
   }
   return indices;
 }
-
-unsigned* Automaton::getIndices(unsigned num_of_variables, unsigned extra_num_of_variables) {
-  unsigned* indices = nullptr;
-  unsigned size = num_of_variables + extra_num_of_variables;
-
-  indices = new unsigned[size];
-  for (unsigned i = 0; i < size; i++) {
-    indices[i] = i;
-  }
-
-  return indices;
-}
-
 
 std::vector<char> Automaton::GetBinaryFormat(unsigned long number, int bit_length) {
   unsigned subject = number;
@@ -657,7 +672,7 @@ std::vector<char> Automaton::GetReversedBinaryFormat(unsigned long number, int b
   return binary_str;
 }
 
-std::string Automaton::getBinaryString(unsigned long number, int bit_length) {
+std::string Automaton::GetBinaryStringMSB(unsigned long number, int bit_length) {
   int index = bit_length;
   unsigned subject = number;
   std::string binary_string (bit_length + 1, '\0');
@@ -700,14 +715,14 @@ std::vector<char> Automaton::getReservedWord(char last_char, int length, bool ex
   return reserved_word;
 }
 
-void Automaton::minimize() {
+void Automaton::Minimize() {
   DFA_ptr tmp = this->dfa_;
   this->dfa_ = dfaMinimize(tmp);
   dfaFree(tmp);
   DVLOG(VLOG_LEVEL) << this->id_ << " = [" << this->id_ << "]->minimize()";
 }
 
-void Automaton::project(unsigned index) {
+void Automaton::ProjectAway(unsigned index) {
   DFA_ptr tmp = this->dfa_;
   this->dfa_ = dfaProject(tmp, index);
   dfaFree(tmp);
@@ -729,11 +744,11 @@ void Automaton::project(unsigned index) {
   DVLOG(VLOG_LEVEL) << this->id_ << " = [" << this->id_ << "]->project(" << index << ")";
 }
 
-bool Automaton::isStartState(int state_id) {
+bool Automaton::is_start_state(int state_id) {
   return (this->dfa_->s == state_id);
 }
 
-bool Automaton::isSinkState(int state_id) {
+bool Automaton::is_sink_state(int state_id) {
   return (bdd_is_leaf(this->dfa_->bddm, this->dfa_->q[state_id])
           and (bdd_leaf_value(this->dfa_->bddm, this->dfa_->q[state_id]) == (unsigned) state_id)
           and this->dfa_->f[state_id] == -1);
@@ -748,7 +763,7 @@ bool Automaton::is_accepting_state(int state_id) {
  */
 int Automaton::GetSinkState() {
   for (int i = 0; i < this->dfa_->ns; i++) {
-    if (isSinkState(i)) {
+    if (is_sink_state(i)) {
       return i;
     }
   }
@@ -1303,7 +1318,7 @@ void Automaton::ToDot(std::ostream& out, bool print_sink) {
   int i, j, k, l;
   char **buffer;
   int *used, *allocated;
-  unsigned* offsets = getIndices((unsigned) num_of_bdd_variables_);
+  int* offsets = GetBddVariableIndices(num_of_bdd_variables_);
   int no_free_vars = num_of_bdd_variables_;
   DFA_ptr a = this->dfa_;
   int sink = GetSinkState();
@@ -1369,7 +1384,7 @@ void Automaton::ToDot(std::ostream& out, bool print_sink) {
 
       for (j = 0; j < no_free_vars; j++) {
         char c;
-        for (tp = pp->trace; tp && (tp->index != offsets[j]); tp = tp->next)
+        for (tp = pp->trace; tp && (tp->index != (unsigned)offsets[j]); tp = tp->next)
           ;
 
         if (tp) {
@@ -1417,7 +1432,6 @@ void Automaton::ToDot(std::ostream& out, bool print_sink) {
   mem_free(allocated);
   mem_free(used);
   mem_free(buffer);
-  delete[] offsets;
   add_print_label(out);
   out << "}" << std::endl;
 }

@@ -563,7 +563,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 	MultiTrackAutomaton_ptr temp_multi = nullptr, prefix_multi = nullptr,
                           suffix_multi = nullptr, intersect_multi = nullptr,
                           result_auto = nullptr;
-  StringAutomaton_ptr any_string = StringAutomaton::makeAnyString(), const_string_auto = nullptr;
+  StringAutomaton_ptr any_string = StringAutomaton::MakeAnyString(), const_string_auto = nullptr;
   DFA_ptr temp_dfa = nullptr;
 	int num_tracks = relation->get_num_tracks(),
 			left_track,right_track;
@@ -581,9 +581,9 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 	right_track = relation->get_variable_index(left_var_data);
 
 	if(right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
-		const_string_auto = StringAutomaton::makeString(const_data);
+		const_string_auto = StringAutomaton::MakeString(const_data);
 	} else {
-		const_string_auto = StringAutomaton::makeRegexAuto(const_data);
+		const_string_auto = StringAutomaton::MakeRegexAuto(const_data);
 	}
 
   temp_dfa = prepend_lambda(const_string_auto->getDFA(),DEFAULT_NUM_VAR);
@@ -667,22 +667,22 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr rel
   if(left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(left_data);
+		constant_string_auto = StringAutomaton::MakeString(left_data);
   } else if(left_relation->get_type() == StringRelation::Type::REGEX) {
 		left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
+		constant_string_auto = StringAutomaton::MakeRegexAuto(left_data);
 	} else {
   	left_track = trackmap[left_data];
 	}
 	if(right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	right_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(right_data);
+		constant_string_auto = StringAutomaton::MakeString(right_data);
   } else if(right_relation->get_type() == StringRelation::Type::REGEX) {
 		right_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeRegexAuto(right_data);
+		constant_string_auto = StringAutomaton::MakeRegexAuto(right_data);
 	} else {
   	right_track = trackmap[right_data];
 	}
@@ -723,11 +723,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThanOrEqual(StringRelation_
   if(left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(left_data);
+		constant_string_auto = StringAutomaton::MakeString(left_data);
   } else if(left_relation->get_type() == StringRelation::Type::REGEX) {
 		left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
+		constant_string_auto = StringAutomaton::MakeRegexAuto(left_data);
 	} else {
   	left_track = trackmap[left_data];
 	}
@@ -735,11 +735,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThanOrEqual(StringRelation_
 	if(right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	right_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(right_data);
+		constant_string_auto = StringAutomaton::MakeString(right_data);
   } else if(right_relation->get_type() == StringRelation::Type::REGEX) {
 		right_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeRegexAuto(right_data);
+		constant_string_auto = StringAutomaton::MakeRegexAuto(right_data);
 	} else {
   	right_track = trackmap[right_data];
 	}
@@ -781,11 +781,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThan(StringRelation_ptr 
   if(left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(left_data);
+		constant_string_auto = StringAutomaton::MakeString(left_data);
   } else if(left_relation->get_type() == StringRelation::Type::REGEX) {
 		left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
+		constant_string_auto = StringAutomaton::MakeRegexAuto(left_data);
 	} else {
   	left_track = trackmap[left_data];
 	}
@@ -793,11 +793,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThan(StringRelation_ptr 
 	if(right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	right_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(right_data);
+		constant_string_auto = StringAutomaton::MakeString(right_data);
   } else if(right_relation->get_type() == StringRelation::Type::REGEX) {
 		right_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeRegexAuto(right_data);
+		constant_string_auto = StringAutomaton::MakeRegexAuto(right_data);
 	} else {
   	right_track = trackmap[right_data];
 	}
@@ -840,11 +840,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThanOrEqual(StringRelati
   if(left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(left_data);
+		constant_string_auto = StringAutomaton::MakeString(left_data);
   } else if(left_relation->get_type() == StringRelation::Type::REGEX) {
 		left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
+		constant_string_auto = StringAutomaton::MakeRegexAuto(left_data);
 	} else {
   	left_track = trackmap[left_data];
 	}
@@ -852,11 +852,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThanOrEqual(StringRelati
 	if(right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	right_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeString(right_data);
+		constant_string_auto = StringAutomaton::MakeString(right_data);
   } else if(right_relation->get_type() == StringRelation::Type::REGEX) {
 		right_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::makeRegexAuto(right_data);
+		constant_string_auto = StringAutomaton::MakeRegexAuto(right_data);
 	} else {
   	right_track = trackmap[right_data];
 	}
@@ -903,7 +903,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAnyAutoAligned(int num_tracks) 
 	StringAutomaton_ptr any_string_auto = nullptr;
 
 	aligned_auto = makeAnyAutoUnaligned(num_tracks);
-	any_string_auto = StringAutomaton::makeAnyString();
+	any_string_auto = StringAutomaton::MakeAnyString();
 
 	for(unsigned i = 0; i < num_tracks; i++) {
 		any_auto = new MultiTrackAutomaton(any_string_auto->getDFA(),i,num_tracks);
@@ -940,7 +940,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::union_(MultiTrackAutomaton_ptr othe
   DFA_ptr union_dfa;
 	MultiTrackAutomaton_ptr union_auto;
 	StringRelation_ptr union_relation = nullptr;
-	union_dfa = DfaUnion(this->dfa_,other_auto->dfa_);
+	union_dfa = DFAUnion(this->dfa_,other_auto->dfa_);
 	union_auto = new MultiTrackAutomaton(union_dfa, this->num_of_tracks);
 	if(this->relation == nullptr && other_auto->relation == nullptr) {
 		LOG(FATAL) << "No relation set for either multitrack during union";
@@ -995,7 +995,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::intersect(MultiTrackAutomaton_ptr o
 							 << this->num_of_tracks << " != " << other_auto->num_of_tracks;
 	}
 
-	intersect_dfa = DfaIntersect(this->dfa_,other_auto->dfa_);
+	intersect_dfa = DFAIntersect(this->dfa_,other_auto->dfa_);
 	intersect_auto = new MultiTrackAutomaton(intersect_dfa, this->num_of_tracks);
 
 	if(this->relation == nullptr && other_auto->relation == nullptr) {
@@ -1105,7 +1105,7 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 	} else {
 		DVLOG(VLOG_LEVEL) << "no sink";
 		dfaFree(result);
-		result_auto = StringAutomaton::makeAnyString();
+		result_auto = StringAutomaton::MakeAnyString();
 	}
 	return result_auto;
 }

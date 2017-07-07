@@ -20,7 +20,7 @@ class PublicBinaryIntAutomaton : public BinaryIntAutomaton {
   using BinaryIntAutomaton::type_;
   using BinaryIntAutomaton::is_count_matrix_cached_;
   using BinaryIntAutomaton::dfa_;
-  using BinaryIntAutomaton::num_of_variables_;
+  using BinaryIntAutomaton::num_of_bdd_variables_;
   using BinaryIntAutomaton::count_matrix_;
   using BinaryIntAutomaton::is_natural_number_;
   using BinaryIntAutomaton::formula_;
@@ -42,7 +42,7 @@ TEST_F(BinaryIntAutomatonTest, ConstructorWith1Args) {
   EXPECT_EQ(nullptr, b_int_auto.formula_);
   EXPECT_EQ(nullptr, b_int_auto.dfa_);
   EXPECT_EQ(false, b_int_auto.is_natural_number_);
-  EXPECT_EQ(0, b_int_auto.num_of_variables_);
+  EXPECT_EQ(0, b_int_auto.num_of_bdd_variables_);
 }
 
 TEST_F(BinaryIntAutomatonTest, ConstructorWith3Args) {
@@ -51,7 +51,7 @@ TEST_F(BinaryIntAutomatonTest, ConstructorWith3Args) {
   EXPECT_EQ(nullptr, b_int_auto_0.formula_);
   EXPECT_EQ(nullptr, b_int_auto_0.dfa_);
   EXPECT_EQ(true, b_int_auto_0.is_natural_number_);
-  EXPECT_EQ(5, b_int_auto_0.num_of_variables_);
+  EXPECT_EQ(5, b_int_auto_0.num_of_bdd_variables_);
 
   auto formula = new ArithmeticFormula();
   formula->set_type(ArithmeticFormula::Type::EQ);
@@ -64,7 +64,7 @@ TEST_F(BinaryIntAutomatonTest, ConstructorWith3Args) {
   EXPECT_EQ(formula, b_int_auto_1.formula_);
   EXPECT_EQ(nullptr, b_int_auto_1.dfa_);
   EXPECT_EQ(true, b_int_auto_1.is_natural_number_);
-  EXPECT_EQ(3, b_int_auto_1.num_of_variables_);
+  EXPECT_EQ(3, b_int_auto_1.num_of_bdd_variables_);
 }
 
 
@@ -82,7 +82,7 @@ TEST_F(BinaryIntAutomatonTest, CopyConstructor) {
   EXPECT_THAT(b_int_auto_1.formula_->get_variable_coefficient_map(), ElementsAre(Pair("x", 1), Pair("y", 2), Pair("z", 3)));
   EXPECT_EQ(nullptr, b_int_auto_1.dfa_);
   EXPECT_EQ(true, b_int_auto_1.is_natural_number_);
-  EXPECT_EQ(3, b_int_auto_1.num_of_variables_);
+  EXPECT_EQ(3, b_int_auto_1.num_of_bdd_variables_);
 }
 
 TEST_F(BinaryIntAutomatonTest, MakePhi) {

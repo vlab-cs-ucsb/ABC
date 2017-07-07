@@ -52,7 +52,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::clone() const {
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakePhi(ArithmeticFormula_ptr formula, bool is_natural_number) {
-  auto non_accepting_dfa = Automaton::DfaMakePhi(formula->get_number_of_variables());
+  auto non_accepting_dfa = Automaton::DFAMakePhi(formula->get_number_of_variables());
   auto non_accepting_binary_auto = new BinaryIntAutomaton(non_accepting_dfa, formula, is_natural_number);
 
   DVLOG(VLOG_LEVEL) << non_accepting_binary_auto->id_ << " = MakePhi(" << *formula << ")";
@@ -63,7 +63,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakePhi(ArithmeticFormula_ptr formula
  * Binary int automaton does not accept empty string
  */
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAnyInt(ArithmeticFormula_ptr formula, bool is_natural_number) {
-  auto any_binary_int_dfa = Automaton::DfaMakeAnyButNotEmpty(formula->get_number_of_variables());
+  auto any_binary_int_dfa = Automaton::DFAMakeAnyButNotEmpty(formula->get_number_of_variables());
   auto any_int = new BinaryIntAutomaton(any_binary_int_dfa, formula, is_natural_number);
 
   DVLOG(VLOG_LEVEL) << any_int->id_ << " = MakeAnyInt(" << *formula << ")";
@@ -329,7 +329,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Complement() {
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr other_auto) {
-  auto intersect_dfa = Automaton::DfaIntersect(this->dfa_, other_auto->dfa_);
+  auto intersect_dfa = Automaton::DFAIntersect(this->dfa_, other_auto->dfa_);
   auto intersect_formula = this->formula_->clone();
   intersect_formula->reset_coefficients();
   intersect_formula->set_type(ArithmeticFormula::Type::INTERSECT);
@@ -340,7 +340,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr othe
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::Union(BinaryIntAutomaton_ptr other_auto) {
-  auto union_dfa = Automaton::DfaUnion(this->dfa_, other_auto->dfa_);
+  auto union_dfa = Automaton::DFAUnion(this->dfa_, other_auto->dfa_);
   auto union_formula = this->formula_->clone();
   union_formula->reset_coefficients();
   union_formula->set_type(ArithmeticFormula::Type::UNION);
@@ -432,7 +432,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::TrimLeadingZeros() {
     }
   }
 
-  tmp_auto->minimize();
+  tmp_auto->Minimize();
 
   auto trim_helper_auto = BinaryIntAutomaton::MakeTrimHelperAuto(0,num_of_bdd_variables_);
   trim_helper_auto->set_formula(tmp_auto->formula_->clone());
@@ -668,7 +668,7 @@ UnaryAutomaton_ptr BinaryIntAutomaton::ToUnaryAutomaton() {
   delete trimmed_auto;
   trimmed_auto = nullptr;
 
-  unary_auto = UnaryAutomaton::makeAutomaton(semilinear_set);
+  unary_auto = UnaryAutomaton::MakeAutomaton(semilinear_set);
   delete semilinear_set;
   semilinear_set = nullptr;
   DVLOG(VLOG_LEVEL) << unary_auto->getId() << " = [" << this->id_ << "]->ToUnaryAutomaton()";
@@ -1734,7 +1734,7 @@ void BinaryIntAutomaton::GetConstants(std::map<int, bool>& cycle_status, std::ve
   std::vector<bool> path;
 
   // current state cannot be accepting in binary automaton
-  if ((not isSinkState(this->dfa_->s)) and (not cycle_status[this->dfa_->s])) {
+  if ((not is_sink_state(this->dfa_->s)) and (not cycle_status[this->dfa_->s])) {
     GetConstants(this->dfa_->s, cycle_status, path, constants);
   }
 
@@ -1759,7 +1759,7 @@ void BinaryIntAutomaton::GetConstants(int state, std::map<int, bool>& cycle_stat
   for (int b = 0; b < 2; b++) {
     next_state = (b == 0) ? l : r;
 
-    if ((not isSinkState(next_state))) {
+    if ((not is_sink_state(next_state))) {
       path.push_back(b == 1);
       if (is_accepting_state(next_state)) {
         unsigned c = 0;
@@ -1875,7 +1875,7 @@ void BinaryIntAutomaton::GetBaseConstants(std::vector<int>& constants, unsigned 
     is_visited[i] = false;
   }
 
-  if (not isSinkState(this->dfa_->s)) {
+  if (not is_sink_state(this->dfa_->s)) {
     GetBaseConstants(this->dfa_->s, is_visited, path, constants, max_number_of_bit_limit);
   }
 
@@ -1911,7 +1911,7 @@ void BinaryIntAutomaton::GetBaseConstants(int state, unsigned char *is_visited, 
 
   next_state = getNextState(state, exception);  // taking transition 0
 
-  if ((is_visited[state] & 1) == 0 and (not isSinkState(next_state))) {
+  if ((is_visited[state] & 1) == 0 and (not is_sink_state(next_state))) {
     is_visited[state] |= 1;
     path.push_back(false);
     GetBaseConstants(next_state, is_visited, path, constants, max_number_of_bit_limit);
@@ -1922,7 +1922,7 @@ void BinaryIntAutomaton::GetBaseConstants(int state, unsigned char *is_visited, 
   exception[0] = '1';
   next_state = getNextState(state, exception);  // taking transition 1
 
-  if ((is_visited[state] & 2) == 0 and (not isSinkState(next_state))) {
+  if ((is_visited[state] & 2) == 0 and (not is_sink_state(next_state))) {
     is_visited[state] |= 2;
     path.push_back(true);
     GetBaseConstants(next_state, is_visited, path, constants, max_number_of_bit_limit);
