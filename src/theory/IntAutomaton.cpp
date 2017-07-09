@@ -696,7 +696,7 @@ bool IntAutomaton::isAcceptingSingleInt() {
   state_path.push(this->dfa_->s);
   while (not state_path.empty()) {
     curr_state = state_path.top(); state_path.pop();
-    if (this->is_accepting_state(curr_state)) {
+    if (this->IsAcceptingState(curr_state)) {
       ++num_of_accepting_paths;
     }
     if (num_of_accepting_paths > 1) {
@@ -729,7 +729,7 @@ int IntAutomaton::getAnAcceptingInt() {
   while (not state_path.empty()) {
     curr_state = state_path.top(); state_path.pop();
     path_length = path_length_stack.top(); path_length_stack.pop();
-    if (this->is_accepting_state(curr_state)) {
+    if (this->IsAcceptingState(curr_state)) {
       return path_length;
     }
     next_states = this->getNextStates(curr_state);
@@ -775,7 +775,7 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
 
     dfaStoreState(sink_state);
 
-    if (is_accepting_state(s)) {
+    if (IsAcceptingState(s)) {
       statuses[s] = '+';
     } else {
       statuses[s] = '-';

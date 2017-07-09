@@ -77,17 +77,51 @@ public:
   DFA_ptr getDFA();
   int get_number_of_bdd_variables();
 
-  class Name {
-  public:
-    static const std::string NONE;
-    static const std::string BOOL;
-    static const std::string UNARY;
-    static const std::string INT;
-    static const std::string STRING;
-    static const std::string BINARYINT;
-  };
+  /**
+   * Generates a specific type of automaton that wraps dfa instance
+   * @param dfa
+   * @param number_of_variables
+   * @return
+   */
+  virtual Automaton_ptr MakeAutomaton(DFA_ptr dfa, const int number_of_variables) = 0;
+
+  /**
+   * Complements an automaton
+   * @return
+   */
+  virtual Automaton_ptr Complement();
+
+  /**
+   * Generates an automaton that is the result of union product of the two automata
+   * @param other_automaton
+   * @return
+   */
+  virtual Automaton_ptr Union(Automaton_ptr other_automaton);
+
+  /**
+   * Generates an automaton that is the result of intersection product of the two automata
+   * @param other_automaton
+   * @return
+   */
+  virtual Automaton_ptr Intersect(Automaton_ptr other_automaton);
+
+  /**
+   * Generates an automaton that accept strings accepted by the current automaton but not by the other automaton
+   * @param other_automaton
+   * @return
+   */
+  virtual Automaton_ptr Difference(Automaton_ptr other_automaton);
+
+  /**
+   * TODO Fix empty string bug that happens in case (concat /.{0,1}/ /{1,1}/)
+   * Generates an automaton that is the concatenation of the current automaton with the other automaton
+   * @param other_automaton
+   * @return
+   */
+  virtual Automaton_ptr Concat(Automaton_ptr other_automaton);
 
   bool IsEqual(Automaton_ptr other_auto);
+
   bool is_empty_language();
   bool is_initial_state_accepting();
   bool isOnlyInitialStateAccepting();
@@ -99,6 +133,16 @@ public:
   virtual BigInteger SymbolicCount(int bound, bool count_less_than_or_equal_to_bound = true);
   virtual BigInteger SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true);
   SymbolicCounter GetSymbolicCounter();
+
+  class Name {
+  public:
+    static const std::string NONE;
+    static const std::string BOOL;
+    static const std::string UNARY;
+    static const std::string INT;
+    static const std::string STRING;
+    static const std::string BINARYINT;
+  };
 
   Graph_ptr toGraph();
 
@@ -144,11 +188,59 @@ protected:
    */
   static DFA_ptr DFAMakeEmpty(const int number_of_bdd_variables);
 
+  /**
+   * Checks if a state is an accepting state in a given dfa
+   * @param state_id
+   * @return
+   */
+  static bool DFAIsAcceptingState(const DFA_ptr dfa, const int state_id);
+
+  /**
+   * Checks if a minimized dfa accepts nothing
+   * @param dfa
+   * @return
+   */
+  static bool DFAIsMinimizedEmtpy(const DFA_ptr minimized_dfa);
+
+  /**
+   * Checks if a dfa accepts nothing
+   * @param dfa
+   * @return
+   */
+  static bool DFAIsEmpty(const DFA_ptr dfa);
+
+  /**
+   * Generates a dfa with the intersection of the two given dfas
+   * @param dfa1
+   * @param dfa2
+   * @return
+   */
   static DFA_ptr DFAIntersect(DFA_ptr dfa1, DFA_ptr dfa2);
+
+  /**
+   * Generates a dfa with the union of the two given dfas
+   * @param dfa1
+   * @param dfa2
+   * @return
+   */
   static DFA_ptr DFAUnion(DFA_ptr dfa1, DFA_ptr dfa2);
-  static DFA_ptr DFAProjectAway(int index, DFA_ptr dfa);
-  static DFA_ptr DFAProjectAwayAndReMap(int index, int number_of_bdd_variables, DFA_ptr dfa);
-//  static DFA_ptr DFAProjectAway(std::vector<int> index, int num_of_variables, DFA_ptr dfa);
+
+  /**
+   * Generates a dfa where the bdd variable in the given index of the given dfa projected away
+   * @returns a minimized dfa
+   */
+  static DFA_ptr DFAProjectAway(DFA_ptr dfa, const int index);
+
+  /**
+   * Generates a dfa where the bdd variable in the given index of the given dfa projected away and the index mapping is done again
+   * @param dfa
+   * @param number_of_bdd_variables
+   * @param index
+   * @return
+   */
+  static DFA_ptr DFAProjectAwayAndReMap(const DFA_ptr dfa, const int number_of_bdd_variables, const int index);
+
+  // baki here
   static DFA_ptr DFAProjectTo(int index, int num_of_variables, DFA_ptr dfa);
 
   /**
@@ -190,9 +282,16 @@ protected:
   void Minimize();
   void ProjectAway(unsigned index);
 
+  /**
+   * Checks if the given state is an accepting state
+   * @param state_id
+   * @return
+   */
+  bool IsAcceptingState(const int state_id);
+
   bool is_start_state(int state_id);
   bool is_sink_state(int state_id);
-  bool is_accepting_state(int state_id);
+
 
   bool hasIncomingTransition(int state);
   bool isStartStateReachableFromAnAcceptingState();

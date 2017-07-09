@@ -278,7 +278,7 @@ Value_ptr Value::complement() const {
   Value_ptr complement_value = nullptr;
   switch (type) {
     case Type::STRING_AUTOMATON: {
-      complement_value = new Value(string_automaton->complement());
+      complement_value = new Value(string_automaton->Complement());
       break;
     }
     case Type::RELATIONALSTRING_AUTOMATON: {

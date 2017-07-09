@@ -387,7 +387,7 @@ void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
       StringAutomaton_ptr temp,con;
       Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
       temp = StringAutomaton::MakeString(right_constant->getValue());
-      con = temp->complement();
+      con = temp->Complement();
       Value_ptr val = new Value(con);
       bool result = symbol_table_->IntersectValue(var,val);
       delete val;

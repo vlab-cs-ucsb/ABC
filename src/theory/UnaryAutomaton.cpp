@@ -158,16 +158,16 @@ SemilinearSet_ptr UnaryAutomaton::getSemilinearSet() {
       if (state == cycle_head_state) {
         is_in_cycle = true;
         cycle_head_value = values[state];
-        if (is_accepting_state(state)) {
+        if (IsAcceptingState(state)) {
           semilinear_set->add_periodic_constant(0);
         }
       } else {
-        if (is_accepting_state(state)) {
+        if (IsAcceptingState(state)) {
           semilinear_set->add_constant(values[state]);
         }
       }
     } else {
-      if (is_accepting_state(state)) {
+      if (IsAcceptingState(state)) {
         semilinear_set->add_periodic_constant(values[state] - cycle_head_value);
       }
     }
@@ -220,7 +220,7 @@ IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool ad
       dfaStoreState(sink_state);
     }
 
-    if (is_accepting_state(s)) {
+    if (IsAcceptingState(s)) {
       statuses[s] = '+';
     } else {
       statuses[s] = '-';
@@ -309,7 +309,7 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
       break;
     }
 
-    if (is_accepting_state(curr_state)) {
+    if (IsAcceptingState(curr_state)) {
       tmp_1_auto = StringAutomaton::MakeString(std::to_string(value));
       tmp_2_auto = result_auto;
       result_auto = tmp_2_auto->union_(tmp_1_auto);

@@ -163,11 +163,16 @@ public:
    */
   static StringAutomaton_ptr MakeAnyStringWithLengthInRange(const int start, const int end, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
+  /**
+   * Generates a string automaton that wraps the dfa
+   * @param dfa
+   * @param number_of_variables
+   * @return
+   */
+  virtual StringAutomaton_ptr MakeAutomaton(DFA_ptr dfa, const int number_of_variables) override;
+
+
   // TODO baki left here: move common functions to base class, should be implemented similar to visitor pattern
-  StringAutomaton_ptr complement();
-  StringAutomaton_ptr union_(StringAutomaton_ptr other_auto);
-  StringAutomaton_ptr intersect(StringAutomaton_ptr other_auto);
-  StringAutomaton_ptr difference(StringAutomaton_ptr other_auto);
   StringAutomaton_ptr concat(StringAutomaton_ptr other_auto);
 
   StringAutomaton_ptr optional();

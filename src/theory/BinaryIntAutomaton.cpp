@@ -301,7 +301,7 @@ bool BinaryIntAutomaton::HasNegative1() {
   while (not is_visited[current_state]) {
     is_visited[current_state] = true;
     current_state = getNextState(current_state, exception);
-    if (current_state > -1 and is_accepting_state(current_state)) {
+    if (current_state > -1 and IsAcceptingState(current_state)) {
       return true;
     }
   }
@@ -417,7 +417,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::TrimLeadingZeros() {
     if ((sink_state not_eq next_state) and (i not_eq next_state)) {
       possible_final_states[next_state].push_back(i);
     }
-    if (is_accepting_state(i)) {
+    if (IsAcceptingState(i)) {
       final_states.push(i);
     }
   }
@@ -425,7 +425,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::TrimLeadingZeros() {
   while (not final_states.empty()) {
     next_state = final_states.top(); final_states.pop();
     for (auto s : possible_final_states[next_state]) {
-      if (not tmp_auto->is_accepting_state(s)) {
+      if (not tmp_auto->IsAcceptingState(s)) {
         tmp_auto->dfa_->f[s] = 1;
         final_states.push(s);
       }
@@ -1761,7 +1761,7 @@ void BinaryIntAutomaton::GetConstants(int state, std::map<int, bool>& cycle_stat
 
     if ((not is_sink_state(next_state))) {
       path.push_back(b == 1);
-      if (is_accepting_state(next_state)) {
+      if (IsAcceptingState(next_state)) {
         unsigned c = 0;
         for (unsigned i = 0; i < path.size(); i++) {
           if (path[i]) {
@@ -1899,7 +1899,7 @@ void BinaryIntAutomaton::GetBaseConstants(int state, unsigned char *is_visited, 
     return;
   }
 
-  if (is_accepting_state(state)) {
+  if (IsAcceptingState(state)) {
     unsigned c = 0;
     for (unsigned i = 0; i < path.size(); i++) {
       if (path[i]) {
