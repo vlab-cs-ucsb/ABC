@@ -132,21 +132,19 @@ bool Automaton::IsEqual(const Automaton_ptr other_automaton) const {
   DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsEqual("<< other_automaton->id_ <<  ")" << std::boolalpha << result;
   return result;
 }
-// baki here create dfa versions of all the below functions
+
 int Automaton::GetInitialState() const {
-  return this->dfa_->s;
+  int initial_state = Automaton::DFAGetInitialState(this->dfa_);
+  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->GetInitialState()" << initial_state;
+  return initial_state;
 }
 
 int Automaton::GetSinkState() const {
-  for (int s = 0; s < this->dfa_->ns; ++s) {
-    if (IsSinkState(s)) {
-      return s;
-    }
-  }
-
-  return -1;
+  int sink_state = Automaton::DFAGetSinkState(this->dfa_);
+  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->GetSinkState()" << sink_state;
+  return sink_state;
 }
-
+// TODO baki here make complement and difference like other function as aversion of DFA function
 Automaton_ptr Automaton::Complement() {
   DFA_ptr current_dfa = dfaCopy(dfa_);
   dfaNegation(current_dfa);
@@ -822,6 +820,19 @@ bool Automaton::DFAIsEqual(const DFA_ptr dfa1, const DFA_ptr dfa2) {
   bool result = DFAIsMinimizedEmtpy(minimized_dfa);
   dfaFree(minimized_dfa);
   return result;
+}
+
+int Automaton::DFAGetInitialState(const DFA_ptr dfa) {
+  return dfa->s;
+}
+
+int Automaton::DFAGetSinkState(const DFA_ptr dfa) {
+  for (int s = 0; s < dfa->ns; ++s) {
+    if (Automaton::DFAIsSinkState(dfa, s)) {
+      return s;
+    }
+  }
+  return -1;
 }
 
 DFA_ptr Automaton::DFAMakePhi(const int number_of_bdd_variables) {

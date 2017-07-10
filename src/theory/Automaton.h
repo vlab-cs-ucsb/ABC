@@ -282,6 +282,20 @@ protected:
   static bool DFAIsEqual(const DFA_ptr dfa1, const DFA_ptr dfa2);
 
   /**
+   * Gets the initial state of the given dfa
+   * @param dfa
+   * @return
+   */
+  static int DFAGetInitialState(const DFA_ptr dfa);
+
+  /**
+   * Gets the sinks of the given dfa
+   * @param dfa
+   * @return sink state or -1 if not exists
+   */
+  static int DFAGetSinkState(const DFA_ptr dfa);
+
+  /**
    * Generates a dfa that accepts nothing
    * @param number_of_bdd_variables
    * @return
