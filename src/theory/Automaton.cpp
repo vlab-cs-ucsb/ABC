@@ -105,38 +105,34 @@ bool Automaton::IsInitialStateAccepting() const {
 }
 
 bool Automaton::IsAcceptingState(const int state_id) const {
-  return Automaton::DFAIsAcceptingState(this->dfa_, state_id);
+  bool result = Automaton::DFAIsAcceptingState(this->dfa_, state_id);
+  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsAcceptingState(" << state_id << ") " << std::boolalpha << result;
+  return result;
 }
-// baki here, have DFA versions of all methods here as much as possible
 bool Automaton::IsInitialState(const int state_id) const {
-  return (state_id == this->dfa_->s);
+  bool result = Automaton::DFAIsInitialState(this->dfa_, state_id);
+  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsInitialState(" << state_id << ") " << std::boolalpha << result;
+  return result;
 }
 
 bool Automaton::IsSinkState(const int state_id) const {
-  return (bdd_is_leaf(this->dfa_->bddm, this->dfa_->q[state_id])
-          and (bdd_leaf_value(this->dfa_->bddm, this->dfa_->q[state_id]) == (unsigned) state_id)
-          and this->dfa_->f[state_id] == -1);
+  bool result = Automaton::DFAIsSinkState(this->dfa_, state_id);
+  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsSinkState(" << state_id << ") " << std::boolalpha << result;
+  return result;
 }
 
 bool Automaton::IsOneStepAway(const int from_state, const int to_state) const {
-  return Automaton::DFAIsOneStepAway(this->dfa_, from_state, to_state);
+  bool result = Automaton::DFAIsOneStepAway(this->dfa_, from_state, to_state);
+  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsSinkState(" << from_state << "," << to_state << ") " << std::boolalpha << result;
+  return result;
 }
 
 bool Automaton::IsEqual(const Automaton_ptr other_automaton) const {
-  DFA_ptr impl_1 = dfaProduct(this->dfa_, other_automaton->dfa_, dfaIMPL);
-  DFA_ptr impl_2 = dfaProduct(other_automaton->dfa_, this->dfa_, dfaIMPL);
-  DFA_ptr result_dfa = dfaProduct(impl_1,impl_2,dfaAND);
-  dfaFree(impl_1);
-  dfaFree(impl_2);
-  dfaNegation(result_dfa);
-  DFA_ptr minimized_dfa = dfaMinimize(result_dfa);
-  dfaFree(result_dfa);
-  bool is_empty_language = DFAIsMinimizedEmtpy(minimized_dfa);
-  dfaFree(minimized_dfa);
-  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsEqual("<< other_automaton->id_ <<  ")" << std::boolalpha << is_empty_language;
-  return is_empty_language;
+  bool result = Automaton::DFAIsEqual(this->dfa_, other_automaton->dfa_);
+  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsEqual("<< other_automaton->id_ <<  ")" << std::boolalpha << result;
+  return result;
 }
-
+// baki here create dfa versions of all the below functions
 int Automaton::GetInitialState() const {
   return this->dfa_->s;
 }
@@ -748,10 +744,6 @@ std::ostream& operator<<(std::ostream& os, const Automaton& automaton) {
   return os << automaton.str();
 }
 
-bool Automaton::DFAIsAcceptingState(const DFA_ptr dfa, const int state_id) {
-  return (dfa->f[state_id] == 1);
-}
-
 bool Automaton::DFAIsMinimizedEmtpy(const DFA_ptr minimized_dfa) {
     return (minimized_dfa->ns == 1 && minimized_dfa->f[minimized_dfa->s] == -1)? true : false;
 }
@@ -782,6 +774,20 @@ bool Automaton::DFAIsMinimizedOnlyAcceptingEmptyInput(const DFA_ptr minimized_df
   return true;
 }
 
+bool Automaton::DFAIsAcceptingState(const DFA_ptr dfa, const int state_id) {
+  return (dfa->f[state_id] == 1);
+}
+
+bool Automaton::DFAIsInitialState(const DFA_ptr dfa, const int state_id) {
+  return (state_id == dfa->s);
+}
+
+bool Automaton::DFAIsSinkState(const DFA_ptr dfa, const int state_id) {
+  return (bdd_is_leaf(dfa->bddm, dfa->q[state_id])
+            and (bdd_leaf_value(dfa->bddm, dfa->q[state_id]) == (unsigned) state_id)
+            and dfa->f[state_id] == -1);
+}
+
 bool Automaton::DFAIsOneStepAway(const DFA_ptr dfa, const int from_state, const int to_state) {
   unsigned p, l, r, index; // BDD traversal variables
   std::stack<unsigned> nodes;
@@ -802,6 +808,20 @@ bool Automaton::DFAIsOneStepAway(const DFA_ptr dfa, const int from_state, const 
     }
   }
   return false;
+}
+
+bool Automaton::DFAIsEqual(const DFA_ptr dfa1, const DFA_ptr dfa2) {
+  DFA_ptr impl_1 = dfaProduct(dfa1, dfa2, dfaIMPL);
+  DFA_ptr impl_2 = dfaProduct(dfa2, dfa1, dfaIMPL);
+  DFA_ptr result_dfa = dfaProduct(impl_1,impl_2,dfaAND);
+  dfaFree(impl_1);
+  dfaFree(impl_2);
+  dfaNegation(result_dfa);
+  DFA_ptr minimized_dfa = dfaMinimize(result_dfa);
+  dfaFree(result_dfa);
+  bool result = DFAIsMinimizedEmtpy(minimized_dfa);
+  dfaFree(minimized_dfa);
+  return result;
 }
 
 DFA_ptr Automaton::DFAMakePhi(const int number_of_bdd_variables) {

@@ -221,13 +221,6 @@ public:
 protected:
 
   /**
-   * Checks if a state is an accepting state in a given dfa
-   * @param state_id
-   * @return
-   */
-  static bool DFAIsAcceptingState(const DFA_ptr dfa, const int state_id);
-
-  /**
    * Checks if a minimized dfa accepts nothing
    * @param dfa
    * @return
@@ -249,6 +242,29 @@ protected:
   static bool DFAIsMinimizedOnlyAcceptingEmptyInput(const DFA_ptr minimized_dfa);
 
   /**
+   * Checks if a state is an accepting state in a given dfa
+   * @param state_id
+   * @return
+   */
+  static bool DFAIsAcceptingState(const DFA_ptr dfa, const int state_id);
+
+  /**
+   * Checks if a state is the initial state in a given dfa
+   * @param dfa
+   * @param state_id
+   * @return
+   */
+  static bool DFAIsInitialState(const DFA_ptr dfa, const int state_id);
+
+  /**
+   * Checks if a state is a sink state in a given dfa
+   * @param dfa
+   * @param state_id
+   * @return
+   */
+  static bool DFAIsSinkState(const DFA_ptr dfa, const int state_id);
+
+  /**
    * Checks if a given dfa has a transition from a given state to a given state
    * @param dfa
    * @param from_state
@@ -256,6 +272,14 @@ protected:
    * @return
    */
   static bool DFAIsOneStepAway(const DFA_ptr dfa, const int from_state, const int to_state);
+
+  /**
+   * Checks if the given two dfas accepts the same language
+   * @param dfa1
+   * @param dfa2
+   * @return
+   */
+  static bool DFAIsEqual(const DFA_ptr dfa1, const DFA_ptr dfa2);
 
   /**
    * Generates a dfa that accepts nothing
