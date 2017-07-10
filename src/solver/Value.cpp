@@ -494,13 +494,13 @@ bool Value::is_satisfiable() {
       is_satisfiable = not int_automaton->isEmptyLanguage();
       break;
       case Type::BINARYINT_AUTOMATON:
-      is_satisfiable = not binaryint_automaton->is_empty_language();
+      is_satisfiable = not binaryint_automaton->IsEmptyLanguage();
       break;
       case Type::STRING_AUTOMATON:
-      is_satisfiable = not string_automaton->is_empty_language();
+      is_satisfiable = not string_automaton->IsEmptyLanguage();
       break;
       case Type::RELATIONALSTRING_AUTOMATON:
-      is_satisfiable = not relationalstring_automaton->is_empty_language();
+      is_satisfiable = not relationalstring_automaton->IsEmptyLanguage();
       break;
       default:
       LOG(FATAL) << "value type is not supported";

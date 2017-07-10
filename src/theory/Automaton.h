@@ -78,6 +78,72 @@ public:
   int get_number_of_bdd_variables();
 
   /**
+   * Checks if an automaton accepts nothing
+   * @return
+   */
+  bool IsEmptyLanguage() const;
+
+  /**
+   * Checks if only the initial state is accepting and any input is rejected
+   * @return
+   */
+  bool IsOnlyAcceptingEmptyInput() const;
+
+  /**
+   * Checks if initial state is an accepting state
+   * @return
+   */
+  bool IsInitialStateAccepting() const;
+
+  /**
+   * Checks if the given state is an accepting state
+   * @param state_id
+   * @return
+   */
+  bool IsAcceptingState(const int state_id) const;
+
+  /**
+   * Checks if the given state is the initial state
+   * @param state_id
+   * @return
+   */
+  bool IsInitialState(const int state_id) const;
+
+  /**
+   * Checks if the given state is a sink state
+   * @param state_id
+   * @return
+   */
+  bool IsSinkState(const int state_id) const;
+
+  /**
+   * Checks if there is a one direct transtion from a given state to a given state
+   * @param from_state
+   * @param to_state
+   * @return
+   */
+  bool IsOneStepAway(const int from_state, const int to_state) const;
+
+  /**
+   * Checks if the current automaton accepts the same language with the other automaton
+   * @param other_auto
+   * @return
+   */
+  bool IsEqual(const Automaton_ptr other_automaton) const;
+
+  /**
+   * Gets the initial state id
+   * @return
+   */
+  int GetInitialState() const;
+
+  /**
+   * Gets the sink state
+   * @return
+   */
+  int GetSinkState() const;
+
+  /**
    * Generates a specific type of automaton that wraps dfa instance
    * @param dfa
    * @param number_of_variables
@@ -120,11 +186,6 @@ public:
    */
   virtual Automaton_ptr Concat(Automaton_ptr other_automaton);
 
-  bool IsEqual(Automaton_ptr other_auto);
-
-  bool is_empty_language();
-  bool is_initial_state_accepting();
-  bool isOnlyInitialStateAccepting();
   bool isCyclic();
   bool isInCycle(int state);
   bool isStateReachableFrom(int search_state, int from_state);
@@ -155,11 +216,47 @@ public:
   int inspectAuto(bool print_sink = false, bool force_mona_format = false);
   int inspectBDD();
 
-  int GetSinkState();
-
   friend std::ostream& operator<<(std::ostream& os, const Automaton& automaton);
 
 protected:
+
+  /**
+   * Checks if a state is an accepting state in a given dfa
+   * @param state_id
+   * @return
+   */
+  static bool DFAIsAcceptingState(const DFA_ptr dfa, const int state_id);
+
+  /**
+   * Checks if a minimized dfa accepts nothing
+   * @param dfa
+   * @return
+   */
+  static bool DFAIsMinimizedEmtpy(const DFA_ptr minimized_dfa);
+
+  /**
+   * Checks if a dfa accepts nothing
+   * @param dfa
+   * @return
+   */
+  static bool DFAIsEmpty(const DFA_ptr dfa);
+
+  /**
+   * Checks if a minimzed dfa only accepts the initial state without any input
+   * @param minimized_dfa
+   * @return
+   */
+  static bool DFAIsMinimizedOnlyAcceptingEmptyInput(const DFA_ptr minimized_dfa);
+
+  /**
+   * Checks if a given dfa has a transition from a given state to a given state
+   * @param dfa
+   * @param from_state
+   * @param to_state
+   * @return
+   */
+  static bool DFAIsOneStepAway(const DFA_ptr dfa, const int from_state, const int to_state);
+
   /**
    * Generates a dfa that accepts nothing
    * @param number_of_bdd_variables
@@ -187,27 +284,6 @@ protected:
    * @return
    */
   static DFA_ptr DFAMakeEmpty(const int number_of_bdd_variables);
-
-  /**
-   * Checks if a state is an accepting state in a given dfa
-   * @param state_id
-   * @return
-   */
-  static bool DFAIsAcceptingState(const DFA_ptr dfa, const int state_id);
-
-  /**
-   * Checks if a minimized dfa accepts nothing
-   * @param dfa
-   * @return
-   */
-  static bool DFAIsMinimizedEmtpy(const DFA_ptr minimized_dfa);
-
-  /**
-   * Checks if a dfa accepts nothing
-   * @param dfa
-   * @return
-   */
-  static bool DFAIsEmpty(const DFA_ptr dfa);
 
   /**
    * Generates a dfa with the intersection of the two given dfas
@@ -240,8 +316,14 @@ protected:
    */
   static DFA_ptr DFAProjectAwayAndReMap(const DFA_ptr dfa, const int number_of_bdd_variables, const int index);
 
-  // baki here
-  static DFA_ptr DFAProjectTo(int index, int num_of_variables, DFA_ptr dfa);
+  /**
+   * Generates a dfa by projecting all bits except one away
+   * @param dfa
+   * @param number_of_bdd_variables
+   * @param index
+   * @return
+   */
+  static DFA_ptr DFAProjectTo(const DFA_ptr dfa, const int number_of_bdd_variables, const int index);
 
   /**
    * Generates a dfa that accepts any input that has length between start and end inclusive
@@ -282,20 +364,12 @@ protected:
   void Minimize();
   void ProjectAway(unsigned index);
 
-  /**
-   * Checks if the given state is an accepting state
-   * @param state_id
-   * @return
-   */
-  bool IsAcceptingState(const int state_id);
 
-  bool is_start_state(int state_id);
-  bool is_sink_state(int state_id);
 
 
   bool hasIncomingTransition(int state);
   bool isStartStateReachableFromAnAcceptingState();
-  bool hasNextState(int state, int search);
+
   int getNextState(int state, std::vector<char>& exception);
   std::set<int> getNextStates(int state);
   std::vector<NextState> getNextStatesOrdered(int state, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);

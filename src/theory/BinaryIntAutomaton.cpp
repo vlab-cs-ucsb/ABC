@@ -541,7 +541,7 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
   int cycle_head = 0;
   std::vector<int> tmp_periods;
   int bound = 0;
-  while (not subject_auto->is_empty_language() and (bound++ < 5)) {
+  while (not subject_auto->IsEmptyLanguage() and (bound++ < 5)) {
     i = 0;
     cycle_head = 0;
     tmp_periods.clear();
@@ -590,7 +590,7 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
             tmp_1_auto = nullptr;
             delete tmp_2_auto;
             tmp_2_auto = nullptr;
-            if (diff_auto->is_empty_language()) {
+            if (diff_auto->IsEmptyLanguage()) {
               tmp_set = semilinear_set;
               semilinear_set = tmp_set->Merge(current_set);
               delete tmp_set;
@@ -1734,7 +1734,7 @@ void BinaryIntAutomaton::GetConstants(std::map<int, bool>& cycle_status, std::ve
   std::vector<bool> path;
 
   // current state cannot be accepting in binary automaton
-  if ((not is_sink_state(this->dfa_->s)) and (not cycle_status[this->dfa_->s])) {
+  if ((not IsSinkState(this->dfa_->s)) and (not cycle_status[this->dfa_->s])) {
     GetConstants(this->dfa_->s, cycle_status, path, constants);
   }
 
@@ -1759,7 +1759,7 @@ void BinaryIntAutomaton::GetConstants(int state, std::map<int, bool>& cycle_stat
   for (int b = 0; b < 2; b++) {
     next_state = (b == 0) ? l : r;
 
-    if ((not is_sink_state(next_state))) {
+    if ((not IsSinkState(next_state))) {
       path.push_back(b == 1);
       if (IsAcceptingState(next_state)) {
         unsigned c = 0;
@@ -1875,7 +1875,7 @@ void BinaryIntAutomaton::GetBaseConstants(std::vector<int>& constants, unsigned 
     is_visited[i] = false;
   }
 
-  if (not is_sink_state(this->dfa_->s)) {
+  if (not IsSinkState(this->dfa_->s)) {
     GetBaseConstants(this->dfa_->s, is_visited, path, constants, max_number_of_bit_limit);
   }
 
@@ -1911,7 +1911,7 @@ void BinaryIntAutomaton::GetBaseConstants(int state, unsigned char *is_visited, 
 
   next_state = getNextState(state, exception);  // taking transition 0
 
-  if ((is_visited[state] & 1) == 0 and (not is_sink_state(next_state))) {
+  if ((is_visited[state] & 1) == 0 and (not IsSinkState(next_state))) {
     is_visited[state] |= 1;
     path.push_back(false);
     GetBaseConstants(next_state, is_visited, path, constants, max_number_of_bit_limit);
@@ -1922,7 +1922,7 @@ void BinaryIntAutomaton::GetBaseConstants(int state, unsigned char *is_visited, 
   exception[0] = '1';
   next_state = getNextState(state, exception);  // taking transition 1
 
-  if ((is_visited[state] & 2) == 0 and (not is_sink_state(next_state))) {
+  if ((is_visited[state] & 2) == 0 and (not IsSinkState(next_state))) {
     is_visited[state] |= 2;
     path.push_back(true);
     GetBaseConstants(next_state, is_visited, path, constants, max_number_of_bit_limit);

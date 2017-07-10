@@ -674,7 +674,7 @@ void ConstraintSolver::visitNotContains(NotContains_ptr not_contains_term) {
     Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->difference(sub_strings_auto);
     delete sub_strings_auto;
     sub_strings_auto = nullptr;
-    if (difference_auto->is_empty_language()) {
+    if (difference_auto->IsEmptyLanguage()) {
       result = new Value(Theory::StringAutomaton::MakePhi());
     } else {
       result = param_subject->clone();
@@ -720,7 +720,7 @@ void ConstraintSolver::visitNotBegins(NotBegins_ptr not_begins_term) {
     Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->difference(prefixes_auto);
     delete prefixes_auto;
     prefixes_auto = nullptr;
-    if (difference_auto->is_empty_language()) {
+    if (difference_auto->IsEmptyLanguage()) {
       result = new Value(Theory::StringAutomaton::MakePhi());
     } else {
       result = param_subject->clone();
@@ -764,7 +764,7 @@ void ConstraintSolver::visitNotEnds(NotEnds_ptr not_ends_term) {
     Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->difference(suffixes_auto);
     delete suffixes_auto;
     suffixes_auto = nullptr;
-    if (difference_auto->is_empty_language()) {
+    if (difference_auto->IsEmptyLanguage()) {
       result = new Value(Theory::StringAutomaton::MakePhi());
     } else {
       result = param_subject->clone();

@@ -88,6 +88,69 @@ int Automaton::get_number_of_bdd_variables() {
   return num_of_bdd_variables_;
 }
 
+bool Automaton::IsEmptyLanguage() const {
+  bool result = DFAIsMinimizedEmtpy(this->dfa_);
+  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsEmptyLanguage() " << std::boolalpha << result;
+  return result;
+}
+
+bool Automaton::IsOnlyAcceptingEmptyInput() const {
+  bool result = DFAIsMinimizedOnlyAcceptingEmptyInput(this->dfa_);
+  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsOnlyAcceptingEmptyInput() " << std::boolalpha << result;
+  return result;
+}
+
+bool Automaton::IsInitialStateAccepting() const {
+  return IsAcceptingState(GetInitialState());
+}
+
+bool Automaton::IsAcceptingState(const int state_id) const {
+  return Automaton::DFAIsAcceptingState(this->dfa_, state_id);
+}
+// baki here, have DFA versions of all methods here as much as possible
+bool Automaton::IsInitialState(const int state_id) const {
+  return (state_id == this->dfa_->s);
+}
+
+bool Automaton::IsSinkState(const int state_id) const {
+  return (bdd_is_leaf(this->dfa_->bddm, this->dfa_->q[state_id])
+          and (bdd_leaf_value(this->dfa_->bddm, this->dfa_->q[state_id]) == (unsigned) state_id)
+          and this->dfa_->f[state_id] == -1);
+}
+
+bool Automaton::IsOneStepAway(const int from_state, const int to_state) const {
+  return Automaton::DFAIsOneStepAway(this->dfa_, from_state, to_state);
+}
+
+bool Automaton::IsEqual(const Automaton_ptr other_automaton) const {
+  DFA_ptr impl_1 = dfaProduct(this->dfa_, other_automaton->dfa_, dfaIMPL);
+  DFA_ptr impl_2 = dfaProduct(other_automaton->dfa_, this->dfa_, dfaIMPL);
+  DFA_ptr result_dfa = dfaProduct(impl_1,impl_2,dfaAND);
+  dfaFree(impl_1);
+  dfaFree(impl_2);
+  dfaNegation(result_dfa);
+  DFA_ptr minimized_dfa = dfaMinimize(result_dfa);
+  dfaFree(result_dfa);
+  bool is_empty_language = DFAIsMinimizedEmtpy(minimized_dfa);
+  dfaFree(minimized_dfa);
+  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsEqual("<< other_automaton->id_ <<  ")" << std::boolalpha << is_empty_language;
+  return is_empty_language;
+}
+
+int Automaton::GetInitialState() const {
+  return this->dfa_->s;
+}
+
+int Automaton::GetSinkState() const {
+  for (int s = 0; s < this->dfa_->ns; ++s) {
+    if (IsSinkState(s)) {
+      return s;
+    }
+  }
+
+  return -1;
+}
+
 Automaton_ptr Automaton::Complement() {
   DFA_ptr current_dfa = dfaCopy(dfa_);
   dfaNegation(current_dfa);
@@ -121,11 +184,11 @@ Automaton_ptr Automaton::Difference(Automaton_ptr other_automaton) {
 Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
   Automaton_ptr left_auto = this, right_auto = other_automaton;
 
-  if (left_auto->is_empty_language() or right_auto->is_empty_language()) {
+  if (left_auto->IsEmptyLanguage() or right_auto->IsEmptyLanguage()) {
     return StringAutomaton::MakePhi();
-  } else if (left_auto->isEmptyString()) {
+  } else if (left_auto->IsOnlyAcceptingEmptyInput()) {
     return right_auto->clone();
-  } else if (right_auto->isEmptyString()) {
+  } else if (right_auto->IsOnlyAcceptingEmptyInput()) {
     return left_auto->clone();
   }
 
@@ -425,52 +488,6 @@ Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
   return concat_auto;
 }
 
-/**
- * TODO write test cases
- */
-bool Automaton::IsEqual(Automaton_ptr other_auto) {
-  DFA_ptr impl_1 = dfaProduct(this->dfa_, other_auto->dfa_, dfaIMPL);
-  DFA_ptr impl_2 = dfaProduct(other_auto->dfa_, this->dfa_, dfaIMPL);
-  DFA_ptr result_dfa = dfaProduct(impl_1,impl_2,dfaAND);
-  dfaFree(impl_1);
-  dfaFree(impl_2);
-  dfaNegation(result_dfa);
-  DFA_ptr minimized_dfa = dfaMinimize(result_dfa);
-  dfaFree(result_dfa);
-  bool is_empty_language = (minimized_dfa->ns == 1 && minimized_dfa->f[minimized_dfa->s] == -1)? true : false;
-  dfaFree(minimized_dfa);
-  return is_empty_language;
-}
-
-/**
- * Works for minimized automaton,
- * (For a non-minimized automaton need to check reachability of an accepting state)
- */
-bool Automaton::is_empty_language() {
-  bool result = (dfa_->ns == 1 && dfa_->f[dfa_->s] == -1)? true : false;
-  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->is_empty_language? " << std::boolalpha << result;
-  return result;
-}
-
-bool Automaton::is_initial_state_accepting() {
-  return IsAcceptingState(this->dfa_->s);
-}
-
-bool Automaton::isOnlyInitialStateAccepting() {
-  if (not is_initial_state_accepting()) {
-    return false;
-  }
-
-  for (int s = 0; s < this->dfa_->ns; s++) {
-    if (s != this->dfa_->s and IsAcceptingState(s)) {
-      return false;
-    } else if (hasNextState(s, this->dfa_->s)) {
-      return false;
-    }
-  }
-  return true;
-}
-
 bool Automaton::isCyclic() {
   bool result = false;
   std::map<int, bool> is_discovered;
@@ -569,7 +586,7 @@ bool Automaton::isStateReachableFrom(int search_state, int from_state, std::map<
   for (auto next_state : getNextStates(from_state)) {
     if (next_state == search_state) {
       return true;
-    } else if ((not is_stack_member[next_state]) and (not is_sink_state(next_state)) and
+    } else if ((not is_stack_member[next_state]) and (not IsSinkState(next_state)) and
       isStateReachableFrom(search_state, next_state, is_stack_member)) {
       return true;
     }
@@ -591,7 +608,7 @@ Graph_ptr Automaton::toGraph() {
       graph->setStartNode(node);
     }
 
-    if (this->is_sink_state(s)) {
+    if (this->IsSinkState(s)) {
       graph->setSinkNode(node);
     } else if (this->IsAcceptingState(s)) {
       graph->addFinalNode(node);
@@ -731,10 +748,62 @@ std::ostream& operator<<(std::ostream& os, const Automaton& automaton) {
   return os << automaton.str();
 }
 
-/**
- *
- * @returns a non accepting dfa
- */
+bool Automaton::DFAIsAcceptingState(const DFA_ptr dfa, const int state_id) {
+  return (dfa->f[state_id] == 1);
+}
+
+bool Automaton::DFAIsMinimizedEmtpy(const DFA_ptr minimized_dfa) {
+    return (minimized_dfa->ns == 1 && minimized_dfa->f[minimized_dfa->s] == -1)? true : false;
+}
+
+// TODO implement general is empty function
+bool Automaton::DFAIsEmpty(const DFA_ptr dfa) {
+  bool result = false;
+  for (int s = 0; s < dfa->ns; ++s) {
+    if (DFAIsAcceptingState(dfa, s)) {
+      // check if the accepting state is reachable
+      LOG(FATAL) << "Not implemented";
+    }
+  }
+  return result;
+}
+
+bool Automaton::DFAIsMinimizedOnlyAcceptingEmptyInput(const DFA_ptr minimized_dfa) {
+  if (not Automaton::DFAIsAcceptingState(minimized_dfa, minimized_dfa->s)) {
+    return false;
+  }
+  for (int s = 0; s < minimized_dfa->ns; s++) {
+    if (Automaton::DFAIsAcceptingState(minimized_dfa, s) and s != minimized_dfa->s) {
+      return false;
+    } else if (DFAIsOneStepAway(minimized_dfa, s, minimized_dfa->s)) { // if initial state is reachable in a minimized auto, there is a loop
+      return false;
+    }
+  }
+  return true;
+}
+
+bool Automaton::DFAIsOneStepAway(const DFA_ptr dfa, const int from_state, const int to_state) {
+  unsigned p, l, r, index; // BDD traversal variables
+  std::stack<unsigned> nodes;
+
+  p = this->dfa_->q[from_state];
+  nodes.push(p);
+  while (not nodes.empty()) {
+    p = nodes.top();
+    nodes.pop();
+    LOAD_lri(&this->dfa_->bddm->node_table[p], l, r, index);
+    if (index == BDD_LEAF_INDEX) {
+      if (l == (unsigned) to_state) {
+        return true;
+      }
+    } else {
+      nodes.push(l);
+      nodes.push(r);
+    }
+  }
+  return false;
+}
+
 DFA_ptr Automaton::DFAMakePhi(const int number_of_bdd_variables) {
   char statuses[1] {'-'};
   dfaSetup(1, number_of_bdd_variables, GetBddVariableIndices(number_of_bdd_variables));
@@ -779,26 +848,6 @@ DFA_ptr Automaton::DFAMakeEmpty(const int number_of_bdd_variables) {
   return dfaBuild(statuses);
 }
 
-bool Automaton::DFAIsAcceptingState(const DFA_ptr dfa, const int state_id) {
-  return (dfa->f[state_id] == 1);
-}
-
-bool Automaton::DFAIsMinimizedEmtpy(const DFA_ptr minimized_dfa) {
-    return (minimized_dfa->ns == 1 && minimized_dfa->f[minimized_dfa->s] == -1)? true : false;
-}
-
-// TODO implement general is empty function
-bool Automaton::DFAIsEmpty(const DFA_ptr dfa) {
-  bool result = false;
-  for (int s = 0; s < dfa->ns; ++s) {
-    if (DFAIsAcceptingState(dfa, s)) {
-      // check if the accepting state is reachable
-      LOG(FATAL) << "Not implemented";
-    }
-  }
-  return result;
-}
-
 DFA_ptr Automaton::DFAIntersect(DFA_ptr dfa1, DFA_ptr dfa2) {
   DFA_ptr intersect_dfa = dfaProduct(dfa1, dfa2, dfaAND);
   DFA_ptr minimized_dfa = dfaMinimize(intersect_dfa);
@@ -839,17 +888,12 @@ DFA_ptr Automaton::DFAProjectAwayAndReMap(const DFA_ptr dfa, const int number_of
   return minimized_dfa;
 }
 
-
-/**
- * Projects away all bdd variables except the one at @index
- * @returns a dfa
- */
-DFA_ptr Automaton::DFAProjectTo(int index, int number_of_bdd_variables, DFA_ptr dfa) {
+DFA_ptr Automaton::DFAProjectTo(const DFA_ptr dfa, const int number_of_bdd_variables, const int index) {
   DFA_ptr projected_dfa = dfaCopy(dfa);
   for (int i = 0 ; i < number_of_bdd_variables; ++i) {
     if (i != index) {
       DFA_ptr tmp_dfa = projected_dfa;
-      projected_dfa = Automaton::DFAProjectAway(i, tmp_dfa);
+      projected_dfa = Automaton::DFAProjectAway(tmp_dfa, i);
       dfaFree(tmp_dfa);
     }
   }
@@ -1080,35 +1124,6 @@ void Automaton::ProjectAway(unsigned index) {
   DVLOG(VLOG_LEVEL) << this->id_ << " = [" << this->id_ << "]->project(" << index << ")";
 }
 
-bool Automaton::IsAcceptingState(const int state_id) {
-  return Automaton::DFAIsAcceptingState(this->dfa_, state_id);
-}
-
-bool Automaton::is_start_state(int state_id) {
-  return (this->dfa_->s == state_id);
-}
-
-bool Automaton::is_sink_state(int state_id) {
-  return (bdd_is_leaf(this->dfa_->bddm, this->dfa_->q[state_id])
-          and (bdd_leaf_value(this->dfa_->bddm, this->dfa_->q[state_id]) == (unsigned) state_id)
-          and this->dfa_->f[state_id] == -1);
-}
-
-
-
-/**
- * @returns sink state number if exists, -1 otherwise
- */
-int Automaton::GetSinkState() {
-  for (int i = 0; i < this->dfa_->ns; i++) {
-    if (is_sink_state(i)) {
-      return i;
-    }
-  }
-
-  return -1;
-}
-
 bool Automaton::hasIncomingTransition(int state) {
   for (int i = 0; i < this->dfa_->ns; i++) {
     if (hasNextState(i, state)) {
@@ -1134,28 +1149,6 @@ bool Automaton::isStartStateReachableFromAnAcceptingState() {
         pp = pp->next;
       }
       kill_paths(state_paths);
-    }
-  }
-  return false;
-}
-
-bool Automaton::hasNextState(int state, int search) {
-  unsigned p, l, r, index; // BDD traversal variables
-  std::stack<unsigned> nodes;
-
-  p = this->dfa_->q[state];
-  nodes.push(p);
-  while (not nodes.empty()) {
-    p = nodes.top();
-    nodes.pop();
-    LOAD_lri(&this->dfa_->bddm->node_table[p], l, r, index);
-    if (index == BDD_LEAF_INDEX) {
-      if (l == (unsigned) search) {
-        return true;
-      }
-    } else {
-      nodes.push(l);
-      nodes.push(r);
     }
   }
   return false;

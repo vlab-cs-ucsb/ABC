@@ -675,7 +675,7 @@ bool IntAutomaton::isEmptyLanguage() {
   if (has_negative_1) {
     return false;
   }
-  return Automaton::is_empty_language();
+  return Automaton::IsEmptyLanguage();
 }
 
 bool IntAutomaton::hasZero() {

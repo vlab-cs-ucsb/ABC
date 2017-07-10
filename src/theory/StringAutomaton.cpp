@@ -302,7 +302,7 @@ StringAutomaton_ptr StringAutomaton::MakeAutomaton(DFA_ptr dfa, const int number
 StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
   StringAutomaton_ptr left_auto = this, right_auto = other_auto;
 
-  if (left_auto->is_empty_language() or right_auto->is_empty_language()) {
+  if (left_auto->IsEmptyLanguage() or right_auto->IsEmptyLanguage()) {
     return StringAutomaton::MakePhi();
   } else if (left_auto->isEmptyString()) {
     return right_auto->clone();
@@ -781,7 +781,7 @@ StringAutomaton_ptr StringAutomaton::repeat(unsigned min, unsigned max) {
 StringAutomaton_ptr StringAutomaton::suffixes() {
   StringAutomaton_ptr suffixes_auto = nullptr;
 
-  if (this->is_empty_language()) {
+  if (this->IsEmptyLanguage()) {
     suffixes_auto = StringAutomaton::MakePhi();
     DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->suffixes()";
     return suffixes_auto;
@@ -920,7 +920,7 @@ StringAutomaton_ptr StringAutomaton::suffixesFromIndex(int start){
 StringAutomaton_ptr StringAutomaton::suffixesFromTo(int start, int end) {
   StringAutomaton_ptr suffixes_auto = nullptr;
 
-  if (this->is_empty_language()) {
+  if (this->IsEmptyLanguage()) {
     suffixes_auto = StringAutomaton::MakePhi();
     DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->suffixes(" << start << ", " << end << ")";
     return suffixes_auto;
@@ -1118,7 +1118,7 @@ StringAutomaton_ptr StringAutomaton::subStrings() {
 
 StringAutomaton_ptr StringAutomaton::CharAt(const int index) {
 
-  if (this->is_empty_language()) {
+  if (this->IsEmptyLanguage()) {
     auto charat_auto = StringAutomaton::MakePhi();
     DVLOG(VLOG_LEVEL) << charat_auto->id_ << " = [" << this->id_ << "]->charAt(" << index << ")";
     return charat_auto;
@@ -1345,7 +1345,7 @@ StringAutomaton_ptr StringAutomaton::subStringLastOf(StringAutomaton_ptr search_
   }
 
   contains_auto = this->contains(search_param_auto);
-  if (contains_auto->is_empty_language()) {
+  if (contains_auto->IsEmptyLanguage()) {
     delete contains_auto; contains_auto = nullptr;
     if (search_has_empty_string) {
       substring_auto = StringAutomaton::MakeEmptyString();
@@ -1396,7 +1396,7 @@ StringAutomaton_ptr StringAutomaton::subStringFirstOf(StringAutomaton_ptr search
   }
 
   contains_auto = this->contains(search_param_auto);
-  if (contains_auto->is_empty_language()) {
+  if (contains_auto->IsEmptyLanguage()) {
     delete contains_auto; contains_auto = nullptr;
     if (search_has_empty_string) {
       substring_auto = this->clone();
@@ -1450,7 +1450,7 @@ IntAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
   }
 
   contains_auto = this->contains(search_param_auto);
-  if (contains_auto->is_empty_language()) {
+  if (contains_auto->IsEmptyLanguage()) {
     delete contains_auto;
     // if search has empty string indexOf also returns 0
     if (search_has_empty_string) {
@@ -1467,7 +1467,7 @@ IntAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
 
   // check for the cases where string does not contain the search char, return -1 in that case
   difference_auto = this->difference(contains_auto);
-  if (not difference_auto->is_empty_language()) {
+  if (not difference_auto->IsEmptyLanguage()) {
     has_negative_1 = true;
   }
   delete difference_auto;
@@ -1512,7 +1512,7 @@ IntAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto) {
   }
 
   contains_auto = this->contains(search_param_auto);
-  if (contains_auto->is_empty_language()) {
+  if (contains_auto->IsEmptyLanguage()) {
     delete contains_auto;
     if (search_has_empty_string) {
       length_auto = this->length();
@@ -1526,7 +1526,7 @@ IntAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto) {
   }
 
   difference_auto = this->difference(contains_auto);
-  if (not difference_auto->is_empty_language()) {
+  if (not difference_auto->IsEmptyLanguage()) {
     has_negative_1 = true;
   }
   delete difference_auto;
@@ -1786,7 +1786,7 @@ IntAutomaton_ptr StringAutomaton::parseToIntAutomaton() {
   IntAutomaton_ptr int_auto = nullptr;
   if (this->isCyclic()) {
     int_auto = IntAutomaton::makeIntGreaterThanOrEqual(0);
-  } else if (this->is_empty_language()) {
+  } else if (this->IsEmptyLanguage()) {
     int_auto = IntAutomaton::makePhi();
   } else {
     using StatePaths = std::pair<int, std::vector<std::string>>;
@@ -1869,7 +1869,7 @@ IntAutomaton_ptr StringAutomaton::parseToIntAutomaton() {
 
 IntAutomaton_ptr StringAutomaton::length() {
   IntAutomaton_ptr length_auto = nullptr;
-  if (this->is_empty_language()) {
+  if (this->IsEmptyLanguage()) {
     length_auto = IntAutomaton::makePhi(num_of_bdd_variables_);
   } else if (this->isAcceptingSingleString()) {
     std::string example = this->getAnAcceptingString();
