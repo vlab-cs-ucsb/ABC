@@ -324,12 +324,11 @@ protected:
   static DFA_ptr DFAMakeEmpty(const int number_of_bdd_variables);
 
   /**
-   * Generates a dfa with the intersection of the two given dfas
-   * @param dfa1
-   * @param dfa2
+   * Generates a dfa that accepts strings that are not accepted by the given dfa
+   * @param
    * @return
    */
-  static DFA_ptr DFAIntersect(DFA_ptr dfa1, DFA_ptr dfa2);
+  static DFA_ptr DFAComplement(const DFA_ptr dfa);
 
   /**
    * Generates a dfa with the union of the two given dfas
@@ -337,13 +336,29 @@ protected:
    * @param dfa2
    * @return
    */
-  static DFA_ptr DFAUnion(DFA_ptr dfa1, DFA_ptr dfa2);
+  static DFA_ptr DFAUnion(const DFA_ptr dfa1, const DFA_ptr dfa2);
+
+  /**
+   * Generates a dfa with the intersection of the two given dfas
+   * @param dfa1
+   * @param dfa2
+   * @return
+   */
+  static DFA_ptr DFAIntersect(const DFA_ptr dfa1, const DFA_ptr dfa2);
+
+  /**
+   * Generates a dfa that accepts strings that are accepted by dfa1 but not by dfa2
+   * @param dfa1
+   * @param dfa2
+   * @return
+   */
+  static DFA_ptr DFADifference(const DFA_ptr dfa1, DFA_ptr dfa2);
 
   /**
    * Generates a dfa where the bdd variable in the given index of the given dfa projected away
    * @returns a minimized dfa
    */
-  static DFA_ptr DFAProjectAway(DFA_ptr dfa, const int index);
+  static DFA_ptr DFAProjectAway(const DFA_ptr dfa, const int index);
 
   /**
    * Generates a dfa where the bdd variable in the given index of the given dfa projected away and the index mapping is done again
@@ -380,7 +395,18 @@ protected:
    */
   static DFA_ptr DFAMakeAcceptingAnyAfterLength(const int length, const int number_of_bdd_variables);
 
+  /**
+   * Gets set of transitions between two states
+   * @param dfa
+   * @param from
+   * @param to
+   * @param num_of_variables
+   * @return
+   */
   static std::set<std::string> DFAGetTransitionsFromTo(DFA_ptr dfa, const int from, const int to, const int num_of_variables);
+
+  static DFA_ptr DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int number_of_bdd_variables);
+
 
   bool isAcceptingSingleWord();
   // TODO update it to work for non-accepting inputs
@@ -388,7 +414,19 @@ protected:
   std::vector<char> decodeException(std::vector<char>& exception);
   virtual void add_print_label(std::ostream& out);
 
+  /**
+   * Uses a cache for bdd variable indices.
+   * We use a fixed ordering in all automata we generate
+   * @param number_of_bdd_variables
+   * @return
+   */
   static int* GetBddVariableIndices(const int number_of_bdd_variables);
+
+  /**
+   * Creates bdd variable indices
+   * @param number_of_bdd_variables
+   * @return bdd variable indices in a fixed order
+   */
   static int* CreateBddVariableIndices(const int number_of_bdd_variables);
 
   // TODO remove vector<char> version of binary format and use string version below
