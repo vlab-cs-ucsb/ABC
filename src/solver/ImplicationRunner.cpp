@@ -55,11 +55,15 @@ void ImplicationRunner::visitAssert(Assert_ptr assert_command) {
 }
 
 void ImplicationRunner::visitAnd(And_ptr and_term) {
-  for (auto& term : *(and_term->term_list)) {
-    current_and_ = and_term;
-    visit(term);
-    current_and_ = nullptr;
-  }
+
+	int i = 0;
+	while(i < and_term->term_list->size()) {
+		auto& term = and_term->term_list->at(i);
+		current_and_ = and_term;
+		visit(term);
+		current_and_ = nullptr;
+		i++;
+	}
 }
 
 void ImplicationRunner::visitOr(Or_ptr or_term) {
