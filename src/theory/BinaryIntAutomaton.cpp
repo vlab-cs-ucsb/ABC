@@ -1036,11 +1036,13 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
           }
         }
 
-        for(auto& it : boolean_variables) {
-        	int temp_index = coeffs_map[it.first];
-        	current_exception[temp_index] = it.second ? '1' : '0';
+        // if initial state, configure boolean variables correctly
+        if(current_state == 0) {
+					for(auto& it : boolean_variables) {
+						int temp_index = coeffs_map[it.first];
+						current_exception[temp_index] = it.second ? '1' : '0';
+					}
         }
-
         target = result / 2;
         int to_state;
         if (target == next_label) {
@@ -1219,10 +1221,12 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticF
             ++k;
           }
         }
-        for(auto& it : boolean_variables) {
-					int temp_index = coeffs_map[it.first];
-					current_exception[temp_index] = it.second ? '1' : '0';
-				}
+        if(current_state == 0) {
+					for(auto& it : boolean_variables) {
+						int temp_index = coeffs_map[it.first];
+						current_exception[temp_index] = it.second ? '1' : '0';
+					}
+        }
         // hack to avoid an accepting initial state
         int to_state = carry_map[target].i;
         if (needs_shift_state) { // initial state is accepting, shift it
@@ -1400,10 +1404,12 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntLessThan(ArithmeticFormula_ptr
           ++k;
         }
       }
-      for(auto& it : boolean_variables) {
-				int temp_index = coeffs_map[it.first];
-				current_exception[temp_index] = it.second ? '1' : '0';
-			}
+      if(current_state == 0) {
+				for(auto& it : boolean_variables) {
+					int temp_index = coeffs_map[it.first];
+					current_exception[temp_index] = it.second ? '1' : '0';
+				}
+      }
 
       if (write1) {
         if (carry_map[target].s == 0) {
@@ -1545,10 +1551,13 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberLessThan(ArithmeticF
           ++k;
         }
       }
-      for(auto& it : boolean_variables) {
-				int temp_index = coeffs_map[it.first];
-				current_exception[temp_index] = it.second ? '1' : '0';
-			}
+
+      if(current_state == 0) {
+				for(auto& it : boolean_variables) {
+					int temp_index = coeffs_map[it.first];
+					current_exception[temp_index] = it.second ? '1' : '0';
+				}
+      }
 
       // hack to avoid an accepting initial state
       int to_state = carry_map[target].i;
