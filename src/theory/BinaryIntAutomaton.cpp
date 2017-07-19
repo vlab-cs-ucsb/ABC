@@ -807,14 +807,11 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeBoolean(ArithmeticFormula_ptr for
 	dfaStoreState(2);
 
 	auto boolean_dfa = dfaBuild(statuses);
-	auto boolean_auto = new BinaryIntAutomaton(boolean_dfa,number_of_variables,false);
+	auto boolean_auto = new BinaryIntAutomaton(boolean_dfa,formula,false);
 
 	delete[] bin_variable_indices;
 
 	DVLOG(VLOG_LEVEL) << boolean_auto->id_ << " = [BinaryIntAutomaton]->MakeBoolean()";
-
-	boolean_auto->inspectBDD();
-	std::cin.get();
 
 	return boolean_auto;
 }
@@ -923,9 +920,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
   CHECK_LT(active_num_variables, 64);
   // TODO instead of doing shift, try to update algorithm
   unsigned long transitions = 1 << active_num_variables;  //number of transitions from each state
-  LOG(INFO) << "total_num_variables: " << total_num_variables;
-  LOG(INFO) << "active_num_variables: " << active_num_variables;
-  LOG(INFO) << "transitions: " << transitions;
+//  LOG(INFO) << "total_num_variables: " << total_num_variables;
+//  LOG(INFO) << "active_num_variables: " << active_num_variables;
+//  LOG(INFO) << "transitions: " << transitions;
 
   int* indices = getIndices(total_num_variables);
   dfaSetup(num_of_states, total_num_variables, indices);

@@ -386,11 +386,21 @@ bool SymbolTable::IntersectValue(std::string var_name, Value_ptr value) {
 bool SymbolTable::IntersectValue(Variable_ptr variable, Value_ptr value) {
   Value_ptr variable_old_value = get_value(variable);
   Value_ptr variable_new_value = nullptr;
+  LOG(INFO) << 21;
   if (variable_old_value not_eq nullptr) {
-    variable_new_value = variable_old_value->intersect(value);
+  	LOG(INFO) << 22;
+  	if(variable_old_value->getType() == Value::Type::BINARYINT_AUTOMATON) {
+			LOG(INFO) << "variable_old_value num_var: " << variable_old_value->getBinaryIntAutomaton()->get_formula()->get_number_of_variables();
+			LOG(INFO) << "value num_var: " << value->getBinaryIntAutomaton()->get_formula()->get_number_of_variables();
+			variable_old_value->getBinaryIntAutomaton()->inspectBDD();
+			value->getBinaryIntAutomaton()->inspectBDD();
+  	}
+  	variable_new_value = variable_old_value->intersect(value);
   } else {
+  	LOG(INFO) << 23;
     variable_new_value = value->clone();
   }
+  LOG(INFO) << 24;
   return set_value(variable, variable_new_value);
 }
 
