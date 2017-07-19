@@ -548,6 +548,13 @@ void ArithmeticFormulaGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term)
     formula->add_variable(variable->getName(), 1);
     formula->set_type(ArithmeticFormula::Type::VAR);
     set_term_formula(qi_term, formula);
+  } else if(Variable::Type::BOOL == variable->getType()) {
+  	auto formula = new ArithmeticFormula();
+  	formula->add_boolean(variable->getName());
+  	formula->add_variable(variable->getName(), 0);
+  	formula->set_type(ArithmeticFormula::Type::BOOL);
+  	set_term_formula(qi_term, formula);
+  	add_int_variables(current_group_,qi_term);
   }
 }
 

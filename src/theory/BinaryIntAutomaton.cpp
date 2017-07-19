@@ -73,6 +73,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAnyInt(ArithmeticFormula_ptr form
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(ArithmeticFormula_ptr formula, bool is_natural_number) {
   BinaryIntAutomaton_ptr result_auto = nullptr;
 
+  // reorder formula variables so booleans come first
+  //formula->reorder();
+
   switch (formula->get_type()) {
     case ArithmeticFormula::Type::EQ: {
       result_auto = BinaryIntAutomaton::MakeEquality(formula, is_natural_number);
@@ -97,6 +100,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(ArithmeticFormula_ptr f
     case ArithmeticFormula::Type::LE: {
       result_auto = BinaryIntAutomaton::MakeLessThanOrEqual(formula, is_natural_number);
       break;
+    }
+    case ArithmeticFormula::Type::BOOL: {
+    	result_auto = BinaryIntAutomaton::MakeBoolean(formula);
+    	break;
     }
     case ArithmeticFormula::Type::VAR: {
       CHECK_EQ(1, formula->get_number_of_variables());
@@ -768,6 +775,50 @@ BigInteger BinaryIntAutomaton::SymbolicCount(double bound, bool count_less_than_
   return BigInteger(str_result);
 }
 
+BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeBoolean(ArithmeticFormula_ptr formula) {
+
+	auto boolean_variables = formula->get_booleans();
+
+	std::string boolean_var = boolean_variables.begin()->first;
+	int index = formula->get_variable_index(boolean_var);
+
+	int number_of_variables = formula->get_number_of_variables();
+	int* bin_variable_indices = getIndices(number_of_variables);
+
+	LOG(INFO) << "index: " << index;
+	LOG(INFO) << "number of variables: " << number_of_variables;
+
+	char statuses[3] = {'-', '+', '-'};
+	std::vector<char> exception(number_of_variables,'X');
+	exception[index] = (boolean_variables[boolean_var] ? '1' : '0');
+	exception.push_back('\0');
+
+	dfaSetup(3, number_of_variables, bin_variable_indices);
+	dfaAllocExceptions(1);
+	dfaStoreException(1, &*exception.begin());
+	dfaStoreState(2);
+
+	dfaAllocExceptions(1);
+	exception[index] = 'X';
+	dfaStoreException(1, &*exception.begin());
+	dfaStoreState(2);
+
+	dfaAllocExceptions(0);
+	dfaStoreState(2);
+
+	auto boolean_dfa = dfaBuild(statuses);
+	auto boolean_auto = new BinaryIntAutomaton(boolean_dfa,number_of_variables,false);
+
+	delete[] bin_variable_indices;
+
+	DVLOG(VLOG_LEVEL) << boolean_auto->id_ << " = [BinaryIntAutomaton]->MakeBoolean()";
+
+	boolean_auto->inspectBDD();
+	std::cin.get();
+
+	return boolean_auto;
+}
+
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntGraterThanOrEqualToZero(std::vector<int> indexes,
                                                                           int number_of_variables) {
   int* bin_variable_indices = getIndices(number_of_variables);
@@ -824,7 +875,23 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
     return equality_auto;
   }
 
+  auto initial_coeffs = formula->get_variable_coefficient_map();
   auto coeffs = formula->get_coefficients();
+  //auto variable_indices = formula->get_indices();
+  auto boolean_variables = formula->get_booleans();
+//  std::vector<int> coeffs(initial_coeffs.size(),0);
+//  std::vector<int> boolean_values(boolean_variables.size(),0);
+
+//  for(auto& it : variable_indices) {
+//  	LOG(INFO) << it.first << " at index " << it.second << " with coeff " << initial_coeffs[it.first];
+//  	coeffs[it.second] = initial_coeffs[it.first];
+//  	if(boolean_variables.find(it.first) != boolean_variables.end()) {
+//  		boolean_values[it.second] = (boolean_variables[it.first] ? 1 : 0);
+//  		LOG(INFO) << "with bool val: " << boolean_values[it.second];
+//  	}
+//  }
+
+
   int min = 0, max = 0, num_of_zero_coefficient = 0;
   for (int coeff : coeffs) {
     if (coeff > 0) {
@@ -856,6 +923,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
   CHECK_LT(active_num_variables, 64);
   // TODO instead of doing shift, try to update algorithm
   unsigned long transitions = 1 << active_num_variables;  //number of transitions from each state
+  LOG(INFO) << "total_num_variables: " << total_num_variables;
+  LOG(INFO) << "active_num_variables: " << active_num_variables;
+  LOG(INFO) << "transitions: " << transitions;
 
   int* indices = getIndices(total_num_variables);
   dfaSetup(num_of_states, total_num_variables, indices);
@@ -890,12 +960,25 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
         std::vector<char> binary_string = GetReversedBinaryFormat(j, active_num_variables);
         std::vector<char> current_exception(total_num_variables, 'X');
         current_exception.push_back('\0');
+//        for (int i1 = 0; i1 < boolean_values.size(); i1++) {
+//        	if(boolean_values[i1] == 1) {
+//        		current_exception[i1] = '1';
+//        	} else {
+//        		current_exception[i1] = '0';
+//        	}
+//        }
         for (int i = 0, k = 0; i < total_num_variables; i++) {
           if (coeffs[i] != 0) {
             current_exception[i] = binary_string[k];
             ++k;
           }
         }
+
+        for(auto& it : boolean_variables) {
+        	int temp_index = initial_coeffs[it.first];
+        	current_exception[temp_index] = it.second ? '1' : '0';
+        }
+
         target = result / 2;
         int to_state;
         if (target == next_label) {

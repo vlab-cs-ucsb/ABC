@@ -24,6 +24,8 @@ ArithmeticFormula::ArithmeticFormula(const ArithmeticFormula& other)
     : type_(other.type_),
       constant_(other.constant_) {
   this->variable_coefficient_map_ = other.variable_coefficient_map_;
+  this->boolean_variable_value_map_ = other.boolean_variable_value_map_;
+  this->variable_indices_ = other.variable_indices_;
 }
 
 ArithmeticFormula_ptr ArithmeticFormula::clone() const {
@@ -165,12 +167,27 @@ void ArithmeticFormula::add_variable(std::string name, int coefficient) {
   variable_coefficient_map_[name] = coefficient;
 }
 
+void ArithmeticFormula::add_boolean(std::string name) {
+	if(boolean_variable_value_map_.find(name) != boolean_variable_value_map_.end()) {
+		LOG(FATAL) << "Boolean has already been added! : " << name;
+	}
+	boolean_variable_value_map_[name] = true;
+}
+
 std::vector<int> ArithmeticFormula::get_coefficients() const {
   std::vector<int> coefficients;
   for (const auto& el : variable_coefficient_map_) {
     coefficients.push_back(el.second);
   }
   return coefficients;
+}
+
+std::map<std::string,int> ArithmeticFormula::get_indices() const {
+	return variable_indices_;
+}
+
+std::map<std::string,bool> ArithmeticFormula::get_booleans() const {
+	return boolean_variable_value_map_;
 }
 
 int ArithmeticFormula::get_variable_index(std::string variable_name) const {
@@ -180,6 +197,12 @@ int ArithmeticFormula::get_variable_index(std::string variable_name) const {
   }
   LOG(FATAL)<< "Variable '" << variable_name << "' is not in formula: " << *this;
   return -1;
+//	auto it = variable_indices_.find(variable_name);
+//	if (it != variable_indices_.end()) {
+//		return it->second;
+//	}
+//	LOG(FATAL) << "Variable '" << variable_name << "' is not in formula: " << *this;
+//	return -1;
 }
 
 ArithmeticFormula_ptr ArithmeticFormula::Add(ArithmeticFormula_ptr other_formula) {
@@ -241,6 +264,15 @@ ArithmeticFormula_ptr ArithmeticFormula::negate() {
     case Type::LE:
       result->type_ = Type::GT;
       break;
+    case Type::BOOL: {
+    	// should be reachable only if var is bool
+    	if(result->boolean_variable_value_map_.size() != 1) {
+    		LOG(FATAL) << "can't negate variable! dont know how";
+    	}
+    	auto it = result->boolean_variable_value_map_.begin();
+    	result->boolean_variable_value_map_[it->first] = !result->boolean_variable_value_map_[it->first];
+    	break;
+    }
     default:
       break;
   }
@@ -314,6 +346,24 @@ void ArithmeticFormula::merge_variables(const ArithmeticFormula_ptr other) {
       variable_coefficient_map_[el.first] = 0;
     }
   }
+}
+
+void ArithmeticFormula::reorder() {
+	int index = 0;
+	std::map<std::string,int> new_indices;
+	for(auto &it : boolean_variable_value_map_) {
+		new_indices[it.first] = index;
+		index++;
+	}
+
+	for(auto &it : variable_coefficient_map_) {
+		if(boolean_variable_value_map_.find(it.first) != boolean_variable_value_map_.end()) {
+			continue;
+		}
+		new_indices[it.first] = index;
+		index++;
+	}
+	variable_indices_ = new_indices;
 }
 
 std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula) {

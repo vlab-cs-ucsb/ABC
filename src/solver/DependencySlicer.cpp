@@ -29,14 +29,14 @@ void DependencySlicer::start() {
 }
 
 void DependencySlicer::end() {
-#ifndef NDEBUG
-  if (VLOG_IS_ON(VLOG_LEVEL)) {
-    for (auto& c : constraint_information_->get_components()){
-      DVLOG(VLOG_LEVEL) << c;
-      DVLOG(VLOG_LEVEL) <<  dynamic_cast<And_ptr>(c)->term_list->size();
-    }
-  }
-#endif
+//#ifndef NDEBUG
+//  if (VLOG_IS_ON(VLOG_LEVEL)) {
+//    for (auto& c : constraint_information_->get_components()){
+//      DVLOG(VLOG_LEVEL) << c;
+//      DVLOG(VLOG_LEVEL) <<  dynamic_cast<And_ptr>(c)->term_list->size();
+//    }
+//  }
+//#endif
 }
 
 void DependencySlicer::setCallbacks() {
@@ -129,6 +129,7 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
 void DependencySlicer::visitOr(Or_ptr or_term) {
   term_variable_map_[or_term];
   auto it = term_variable_map_.find(or_term);
+  LOG(INFO) << 1;
   for (auto& term : *(or_term->term_list)) {
     symbol_table_->push_scope(term, false);
     current_term_ = term;
@@ -136,10 +137,14 @@ void DependencySlicer::visitOr(Or_ptr or_term) {
     current_term_ = nullptr;
     symbol_table_->pop_scope();
   }
+  LOG(INFO) << 2;
 
   constraint_information_->add_component(or_term);
+  LOG(INFO) << 3;
 
   ReMapTerms(or_term->term_list, or_term);
+  LOG(INFO) << 4;
+
 }
 
 /**

@@ -31,7 +31,7 @@ class ArithmeticFormula {
 public:
   enum class Type :
           int {
-            NONE = 0, EQ, NOTEQ, GT, GE, LT, LE, INTERSECT, UNION, VAR
+            NONE = 0, EQ, NOTEQ, GT, GE, LT, LE, INTERSECT, UNION, VAR, BOOL
           };
   ArithmeticFormula();
   virtual ~ArithmeticFormula();
@@ -48,7 +48,10 @@ public:
   int get_variable_coefficient(std::string) const;
   void set_variable_coefficient(std::string, int coeff);
   void add_variable(std::string, int);
+  void add_boolean(std::string);
   std::vector<int> get_coefficients() const;
+  std::map<std::string,int> get_indices() const;
+  std::map<std::string,bool> get_booleans() const;
   int get_constant() const;
   void set_constant(int constant);
   bool is_constant() const;
@@ -63,6 +66,7 @@ public:
   bool Simplify();
   int CountOnes(unsigned long n) const;
   void merge_variables(ArithmeticFormula_ptr other);
+  void reorder();
 
   friend std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula);
 
@@ -70,6 +74,8 @@ protected:
   ArithmeticFormula::Type type_;
   int constant_;
   std::map<std::string, int> variable_coefficient_map_;
+  std::map<std::string, bool> boolean_variable_value_map_;
+  std::map<std::string, int> variable_indices_;
 
 private:
   static const int VLOG_LEVEL;
