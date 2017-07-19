@@ -101,6 +101,10 @@ public:
   SMT::Term_ptr* top();
   void visit(SMT::Term_ptr& term);
   void visit_term_list(SMT::TermList_ptr term_list);
+
+  void check_and_transform(SMT::Term_ptr &term);
+  bool is_boolean_term(SMT::Term_ptr);
+
 protected:
   SMT::Script_ptr root_;
   std::stack<SMT::Term_ptr*> term_ptr_ref_stack_;

@@ -199,7 +199,8 @@ bool EquivalenceGenerator::is_equiv_of_variable_and_constant(SMT::Term_ptr left_
 bool EquivalenceGenerator::is_equiv_of_bool_var_and_term(SMT::Term_ptr left_term, SMT::Term_ptr right_term) {
   if (QualIdentifier_ptr left_id = dynamic_cast<QualIdentifier_ptr>(left_term)) {
     auto variable = symbol_table_->get_variable(left_id->getVarName());
-    if (Variable::Type::BOOL == variable->getType()) {
+    if (Variable::Type::BOOL == variable->getType()
+    		&& right_term->type() != SMT::Term::Type::AND) {
       left_variable_ = variable;
       unclassified_term_ = right_term;
       DVLOG(VLOG_LEVEL)<< "bool variable to term equivalence: " << left_variable_->getName() << " = " << *unclassified_term_;

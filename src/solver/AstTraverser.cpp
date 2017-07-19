@@ -688,6 +688,7 @@ Term_ptr* AstTraverser::top() {
 }
 
 void AstTraverser::visit(Term_ptr& term) {
+	check_and_transform(term);
   term_ptr_ref_stack_.push(&term);
   this->Visitor::visit(term);
   term_ptr_ref_stack_.pop();
@@ -699,6 +700,78 @@ void AstTraverser::visit_term_list(SMT::TermList_ptr term_list) {
   for (auto& el : *term_list) {
     visit(el);
   }
+}
+
+void AstTraverser::check_and_transform(SMT::Term_ptr &term) {
+	// check if term is eq/neq; if yes, and if either the left or right
+	// child term is a boolean operator/function (and,or,not),
+	// then apply the following transformations; e.g.,
+	// p = (q & r)
+	//    ----> (p & (q & r)) | (~p & ~(q & r))
+	// p != (q & r)
+	//    ----> (~p & (q & r)) | (p & ~(q & r))
+
+	if(term->type() == Term::Type::EQ) {
+		auto eq_term = dynamic_cast<Eq_ptr>(term);
+		if(is_boolean_term(eq_term->left_term) || is_boolean_term(eq_term->right_term)) {
+			TermList_ptr or_term_list = new TermList();
+			TermList_ptr and_term_list = new TermList();
+			// left_and, "positive" side of the or
+			and_term_list->push_back(eq_term->left_term->clone());
+			and_term_list->push_back(eq_term->right_term->clone());
+			And_ptr left_and = new And(and_term_list);
+			or_term_list->push_back(left_and);
+			// right_and, "negative" side; both children negated
+			and_term_list = new TermList();
+			and_term_list->push_back(new Not(eq_term->left_term->clone()));
+			and_term_list->push_back(new Not(eq_term->right_term->clone()));
+			And_ptr right_and = new And(and_term_list);
+			or_term_list->push_back(right_and);
+			Or_ptr or_term = new Or(or_term_list);
+			delete term;
+			term = or_term;
+		}
+	} else if(term->type() == Term::Type::NOTEQ) {
+		auto neq_term = dynamic_cast<NotEq_ptr>(term);
+		if(is_boolean_term(neq_term->left_term) || is_boolean_term(neq_term->right_term)) {
+			TermList_ptr or_term_list = new TermList();
+			TermList_ptr and_term_list = new TermList();
+			// left_and, with left child negated
+			and_term_list->push_back(new Not(neq_term->left_term->clone()));
+			and_term_list->push_back(neq_term->right_term->clone());
+			And_ptr left_and = new And(and_term_list);
+			or_term_list->push_back(left_and);
+			// right_and, with right child negated
+			and_term_list = new TermList();
+			and_term_list->push_back(neq_term->left_term->clone());
+			and_term_list->push_back(new Not(neq_term->right_term->clone()));
+			And_ptr right_and = new And(and_term_list);
+			or_term_list->push_back(right_and);
+			Or_ptr or_term = new Or(or_term_list);
+			delete term;
+			term = or_term;
+		}
+	}
+}
+
+bool AstTraverser::is_boolean_term(SMT::Term_ptr term) {
+	if(term == nullptr) {
+		LOG(FATAL) << "is_boolean_term called on nullptr";
+	}
+	bool ret;
+
+	switch(term->type()) {
+	case SMT::Term::Type::AND:
+	case SMT::Term::Type::OR:
+	case SMT::Term::Type::NOT:
+		ret = true;
+		break;
+	default:
+		ret = false;
+		break;
+	}
+
+	return ret;
 }
 
 } /* namespace Solver */

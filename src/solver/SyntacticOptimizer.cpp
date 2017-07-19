@@ -537,7 +537,7 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
   constant_term_checker_right.start(eq_term->right_term, Optimization::ConstantTermChecker::Mode::FULL);
 
   if (constant_term_checker_left.is_constant() and constant_term_checker_right.is_constant()) {
-    bool result = (constant_term_checker_left.get_constant_as_string() == constant_term_checker_right.get_constant_as_string());
+  	bool result = (constant_term_checker_left.get_constant_as_string() == constant_term_checker_right.get_constant_as_string());
     add_callback_to_replace_with_bool(eq_term, result);
     return;
   }
@@ -545,7 +545,7 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
   if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
     add_callback_to_replace_with_bool(eq_term, true);
   } else if (check_and_process_len_transformation(eq_term, eq_term->left_term, eq_term->right_term)) {
-    if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
+  	if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
       add_callback_to_replace_with_bool(eq_term, true);
     } else {
       DVLOG(VLOG_LEVEL) << "Applying 'in' transformation for length: '" << *eq_term << "'";
