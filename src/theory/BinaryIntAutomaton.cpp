@@ -110,6 +110,14 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(ArithmeticFormula_ptr f
       result_auto = BinaryIntAutomaton::MakeAnyInt(formula, is_natural_number);
       break;
     }
+    case ArithmeticFormula::Type::INTERSECT: {
+    	result_auto = BinaryIntAutomaton::MakeBooleanIntersect(formula);
+    	break;
+    }
+    case ArithmeticFormula::Type::UNION: {
+    	result_auto = BinaryIntAutomaton::MakeBooleanUnion(formula);
+    	break;
+    }
     default:
       LOG(FATAL)<< "Equation type is not specified, please set type for input formula: " << *formula;
       break;
@@ -790,18 +798,20 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeBoolean(ArithmeticFormula_ptr for
 	exception[index] = (boolean_variables[boolean_var] ? '1' : '0');
 	exception.push_back('\0');
 
+	int accept = 1;
+	int sink = 2;
+
 	dfaSetup(3, number_of_variables, bin_variable_indices);
+	// start state
 	dfaAllocExceptions(1);
-	dfaStoreException(1, &*exception.begin());
-	dfaStoreState(2);
-
-	dfaAllocExceptions(1);
-	exception[index] = 'X';
-	dfaStoreException(1, &*exception.begin());
-	dfaStoreState(2);
-
+	dfaStoreException(accept, &*exception.begin());
+	dfaStoreState(sink);
+	// accept state
 	dfaAllocExceptions(0);
-	dfaStoreState(2);
+	dfaStoreState(accept);
+	// sink state
+	dfaAllocExceptions(0);
+	dfaStoreState(sink);
 
 	auto boolean_dfa = dfaBuild(statuses);
 	auto boolean_auto = new BinaryIntAutomaton(boolean_dfa,formula,false);
@@ -809,6 +819,84 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeBoolean(ArithmeticFormula_ptr for
 	delete[] bin_variable_indices;
 
 	DVLOG(VLOG_LEVEL) << boolean_auto->id_ << " = [BinaryIntAutomaton]->MakeBoolean()";
+
+	return boolean_auto;
+}
+
+BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeBooleanIntersect(ArithmeticFormula_ptr formula) {
+	int number_of_variables = formula->get_number_of_variables();
+	auto boolean_variables = formula->get_booleans();
+	int* bin_variable_indices = getIndices(number_of_variables);
+	char statuses[3] = {'-', '+', '-'};
+	std::vector<char> exception(number_of_variables,'X');
+	exception.push_back('\0');
+
+	for(auto& it : boolean_variables) {
+		int index = formula->get_variable_index(it.first);
+		exception[index] = (boolean_variables[it.first] ? '1' : '0');
+	}
+
+	int accept = 1;
+	int sink = 2;
+
+	dfaSetup(3, number_of_variables, bin_variable_indices);
+	// start state
+	dfaAllocExceptions(1);
+	dfaStoreException(accept, &*exception.begin());
+	dfaStoreState(sink);
+	// accept state
+	dfaAllocExceptions(0);
+	dfaStoreState(accept);
+	// sink state
+	dfaAllocExceptions(0);
+	dfaStoreState(sink);
+
+	auto boolean_dfa = dfaBuild(statuses);
+	auto boolean_auto = new BinaryIntAutomaton(boolean_dfa,formula,false);
+
+	delete[] bin_variable_indices;
+
+	DVLOG(VLOG_LEVEL) << boolean_auto->id_ << " = [BinaryIntAutomaton]->MakeBooleanIntersect()";
+
+	return boolean_auto;
+}
+
+BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeBooleanUnion(ArithmeticFormula_ptr formula) {
+	int number_of_variables = formula->get_number_of_variables();
+	auto boolean_variables = formula->get_booleans();
+	int* bin_variable_indices = getIndices(number_of_variables);
+	char statuses[3] = {'-', '+', '-'};
+	std::vector<char> exception(number_of_variables,'X');
+	exception.push_back('\0');
+
+	// set transition so that all booleans are not satisifiable
+	// which will go from start->sink
+	for(auto& it : boolean_variables) {
+		int index = formula->get_variable_index(it.first);
+		exception[index] = (boolean_variables[it.first] ? '0' : '1');
+	}
+
+	int accept = 1;
+	int sink = 2;
+
+	dfaSetup(3, number_of_variables, bin_variable_indices);
+	//initial state
+	dfaAllocExceptions(1);
+	dfaStoreException(sink, &*exception.begin());
+	dfaStoreState(accept);
+	// accept state
+	dfaAllocExceptions(0);
+	dfaStoreState(accept);
+	// sink state
+	dfaAllocExceptions(0);
+	dfaStoreState(sink);
+
+	auto boolean_dfa = dfaBuild(statuses);
+	auto boolean_auto = new BinaryIntAutomaton(boolean_dfa,formula,false);
+
+	delete[] bin_variable_indices;
+
+	DVLOG(VLOG_LEVEL) << boolean_auto->id_ << " = [BinaryIntAutomaton]->MakeBooleanUnion()";
 
 	return boolean_auto;
 }

@@ -86,6 +86,8 @@ public:
 protected:
   BinaryIntAutomaton(ArithmeticFormula_ptr formula);
   static BinaryIntAutomaton_ptr MakeBoolean(ArithmeticFormula_ptr);
+  static BinaryIntAutomaton_ptr MakeBooleanIntersect(ArithmeticFormula_ptr);
+  static BinaryIntAutomaton_ptr MakeBooleanUnion(ArithmeticFormula_ptr);
   static BinaryIntAutomaton_ptr MakeIntGraterThanOrEqualToZero(std::vector<int> indexes, int number_of_variables);
   static BinaryIntAutomaton_ptr MakeEquality(ArithmeticFormula_ptr, bool is_natural_number);
   static BinaryIntAutomaton_ptr MakeIntEquality(ArithmeticFormula_ptr);
