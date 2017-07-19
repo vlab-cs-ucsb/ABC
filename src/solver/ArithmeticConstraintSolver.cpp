@@ -158,19 +158,14 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *and_term << "@" << and_term;
   if (has_arithmetic_formula) {
-  	LOG(INFO) << 1;
     if (is_satisfiable) {
-    	LOG(INFO) << 2;
       symbol_table_->IntersectValue(group_name, and_value);  // update value
     } else {
-    	LOG(INFO) << 3;
       auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
       auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(group_formula->clone(), use_unsigned_integers_));
       symbol_table_->set_value(group_name, value);
     }
-    LOG(INFO) << 4;
     delete and_value;
-    LOG(INFO) << 5;
   }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *and_term << "@" << and_term;
 }
