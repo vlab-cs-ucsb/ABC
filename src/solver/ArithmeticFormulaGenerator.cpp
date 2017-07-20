@@ -285,7 +285,7 @@ void ArithmeticFormulaGenerator::visitEq(Eq_ptr eq_term) {
     set_term_formula(eq_term, formula);
     add_int_variables(current_group_, eq_term);
     if (string_terms_.size() > 0) {
-      formula->UpdateMixedConstraintRelations();
+      //formula->UpdateMixedConstraintRelations();
       string_terms_map_[eq_term] = string_terms_;
       string_terms_.clear();
       constraint_information_->add_mixed_constraint(eq_term);
@@ -442,7 +442,7 @@ void ArithmeticFormulaGenerator::visitLen(Len_ptr len_term) {
   auto formula = new ArithmeticFormula();
   formula->add_variable(name, 1);
   formula->set_type(ArithmeticFormula::Type::VAR);
-  formula->add_relation_to_mixed_term(name, ArithmeticFormula::Type::NONE, len_term);
+  //formula->add_relation_to_mixed_term(name, ArithmeticFormula::Type::NONE, len_term);
 
   set_term_formula(len_term, formula);
 
@@ -475,7 +475,7 @@ void ArithmeticFormulaGenerator::visitIndexOf(IndexOf_ptr index_of_term) {
   auto formula = new ArithmeticFormula();
   formula->add_variable(name, 1);
   formula->set_type(ArithmeticFormula::Type::VAR);
-  formula->add_relation_to_mixed_term(name, ArithmeticFormula::Type::NONE, index_of_term);
+  //formula->add_relation_to_mixed_term(name, ArithmeticFormula::Type::NONE, index_of_term);
 
   set_term_formula(index_of_term, formula);
 
@@ -490,7 +490,7 @@ void ArithmeticFormulaGenerator::visitLastIndexOf(LastIndexOf_ptr last_index_of_
   auto formula = new ArithmeticFormula();
   formula->add_variable(name, 1);
   formula->set_type(ArithmeticFormula::Type::VAR);
-  formula->add_relation_to_mixed_term(name, ArithmeticFormula::Type::NONE, last_index_of_term);
+  //formula->add_relation_to_mixed_term(name, ArithmeticFormula::Type::NONE, last_index_of_term);
 
   set_term_formula(last_index_of_term, formula);
 
@@ -523,7 +523,7 @@ void ArithmeticFormulaGenerator::visitToInt(ToInt_ptr to_int_term) {
   auto formula = new ArithmeticFormula();
   formula->add_variable(name, 1);
   formula->set_type(ArithmeticFormula::Type::VAR);
-  formula->add_relation_to_mixed_term(name, ArithmeticFormula::Type::NONE, to_int_term);
+  //formula->add_relation_to_mixed_term(name, ArithmeticFormula::Type::NONE, to_int_term);
 
   set_term_formula(to_int_term, formula);
 

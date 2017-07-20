@@ -34,33 +34,37 @@ UnaryAutomaton_ptr UnaryAutomaton::clone() const {
   return cloned_auto;
 }
 
-UnaryAutomaton_ptr UnaryAutomaton::MakePhi() {
-  DFA_ptr non_accepting_unary_dfa = Automaton::DFAMakePhi(1);
-  UnaryAutomaton_ptr non_acception_unary_auto = new UnaryAutomaton(non_accepting_unary_dfa);
+UnaryAutomaton_ptr UnaryAutomaton::makePhi() {
+  DFA_ptr non_accepting_unary_dfa = nullptr;
+  UnaryAutomaton_ptr non_acception_unary_auto = nullptr;
+  int a[1] = {0};
+  non_accepting_unary_dfa = Automaton::DfaMakePhi(1, a);
+  non_acception_unary_auto = new UnaryAutomaton(non_accepting_unary_dfa);
+
   DVLOG(VLOG_LEVEL) << non_acception_unary_auto->getId() << " = makePhi()";
   return non_acception_unary_auto;
 }
 
-UnaryAutomaton_ptr UnaryAutomaton::MakeAutomaton(SemilinearSet_ptr semilinear_set) {
+UnaryAutomaton_ptr UnaryAutomaton::makeAutomaton(SemilinearSet_ptr semilinear_set) {
   UnaryAutomaton_ptr unary_auto = nullptr;
   DFA_ptr unary_dfa = nullptr, tmp_dfa = nullptr;
 
-  const int cycle_head = semilinear_set->get_cycle_head();
-  const int period = semilinear_set->get_period();
+  const int cycle_head = semilinear_set->getCycleHead();
+  const int period = semilinear_set->getPeriod();
   int number_of_variables = 1;
-  int number_of_states = cycle_head + semilinear_set->get_period() + 1;
+  int number_of_states = cycle_head + semilinear_set->getPeriod() + 1;
   int sink_state = number_of_states - 1;
-  int* indices = GetBddVariableIndices(number_of_variables);
+  int* indices = getIndices(number_of_variables);
   char unary_exception[1] = {'1'};
   std::vector<char> statuses;
-  bool has_only_constants = semilinear_set->has_only_constants();
+  bool has_only_constants = semilinear_set->hasOnlyConstants();
 
-  if (semilinear_set->is_empty_set()) {
-    return UnaryAutomaton::MakePhi();
+  if (semilinear_set->isEmptySet()) {
+    return UnaryAutomaton::makePhi();
   } else if (has_only_constants) {
-    number_of_states = semilinear_set->get_constants().back() + 2;
+    number_of_states = semilinear_set->getConstants().back() + 2;
     sink_state = number_of_states - 1;
-    semilinear_set->get_periodic_constants().clear();
+    semilinear_set->getPeriodicConstants().clear();
   }
 
   for (int i = 0; i < number_of_states; i++) {
@@ -90,11 +94,11 @@ UnaryAutomaton_ptr UnaryAutomaton::MakeAutomaton(SemilinearSet_ptr semilinear_se
   dfaAllocExceptions(0);
   dfaStoreState(sink_state);
 
-  for (auto c : semilinear_set->get_constants()) {
+  for (auto c : semilinear_set->getConstants()) {
     statuses[c] = '+';
   }
 
-  for (auto r : semilinear_set->get_periodic_constants()) {
+  for (auto r : semilinear_set->getPeriodicConstants()) {
     statuses[cycle_head + r] = '+';
   }
 
@@ -151,31 +155,31 @@ SemilinearSet_ptr UnaryAutomaton::getSemilinearSet() {
 
   semilinear_set = new SemilinearSet();
   int cycle_head_value = 0;
-  bool is_in_cycle = is_start_state(cycle_head_state);
+  bool is_in_cycle = isStartState(cycle_head_state);
 
   for (auto state : states) {
     if (not is_in_cycle) {
       if (state == cycle_head_state) {
         is_in_cycle = true;
         cycle_head_value = values[state];
-        if (IsAcceptingState(state)) {
-          semilinear_set->add_periodic_constant(0);
+        if (is_accepting_state(state)) {
+          semilinear_set->addPeriodicConstant(0);
         }
       } else {
-        if (IsAcceptingState(state)) {
-          semilinear_set->add_constant(values[state]);
+        if (is_accepting_state(state)) {
+          semilinear_set->addConstant(values[state]);
         }
       }
     } else {
-      if (IsAcceptingState(state)) {
-        semilinear_set->add_periodic_constant(values[state] - cycle_head_value);
+      if (is_accepting_state(state)) {
+        semilinear_set->addPeriodicConstant(values[state] - cycle_head_value);
       }
     }
   }
 
-  semilinear_set->set_cycle_head(cycle_head_value);
+  semilinear_set->setCycleHead(cycle_head_value);
   int period = (cycle_head_state == -1) ? 0 : values[states.back()] - cycle_head_value + 1;
-  semilinear_set->set_period(period);
+  semilinear_set->setPeriod(period);
 
   DVLOG(VLOG_LEVEL) << "semilinear set = [" << this->id_ << "]->getSemilinearSet()";
 
@@ -185,7 +189,7 @@ SemilinearSet_ptr UnaryAutomaton::getSemilinearSet() {
 IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool add_minus_one) {
   IntAutomaton_ptr int_auto = nullptr;
   DFA_ptr int_dfa = nullptr;
-  int* indices = GetBddVariableIndices(number_of_variables);
+  int* indices = getIndices(number_of_variables);
   const int number_of_states = this->dfa_->ns;
   int to_state, sink_state = GetSinkState();
   bool has_sink = true;
@@ -220,7 +224,7 @@ IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool ad
       dfaStoreState(sink_state);
     }
 
-    if (IsAcceptingState(s)) {
+    if (is_accepting_state(s)) {
       statuses[s] = '+';
     } else {
       statuses[s] = '-';
@@ -256,10 +260,6 @@ BinaryIntAutomaton_ptr UnaryAutomaton::toBinaryIntAutomaton(std::string var_name
   SemilinearSet_ptr semilinear_set = getSemilinearSet();
 
   binary_auto = BinaryIntAutomaton::MakeAutomaton(semilinear_set, var_name, formula, true);
-//  auto test = BinaryIntAutomaton::MakeAutomaton(semilinear_set, var_name, formula, false);
-//
-//  binary_auto->inspectAuto();
-//  test->inspectAuto();
 
   if (add_minus_one) {
     BinaryIntAutomaton_ptr minus_one_auto = nullptr, tmp_auto = nullptr;
@@ -281,7 +281,7 @@ BinaryIntAutomaton_ptr UnaryAutomaton::toBinaryIntAutomaton(std::string var_name
 }
 
 StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
-  StringAutomaton_ptr result_auto = StringAutomaton::MakePhi(),
+  StringAutomaton_ptr result_auto = StringAutomaton::makePhi(),
           tmp_1_auto = nullptr,
           tmp_2_auto = nullptr;
 
@@ -301,7 +301,7 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
     if (is_visited[curr_state]) { // cycle over approximate rest, an algorithm can be found to map between encodings (from semilinear set to string encoding)
       std::string value_str = std::to_string(value);
       std::string regex_str = "[0-9]{" + std::to_string(value_str.length()) + ",}";
-      tmp_1_auto = StringAutomaton::MakeRegexAuto(regex_str);
+      tmp_1_auto = StringAutomaton::makeRegexAuto(regex_str);
       tmp_2_auto = result_auto;
       result_auto = tmp_2_auto->concat(tmp_1_auto);
       delete tmp_1_auto;
@@ -309,8 +309,8 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
       break;
     }
 
-    if (IsAcceptingState(curr_state)) {
-      tmp_1_auto = StringAutomaton::MakeString(std::to_string(value));
+    if (is_accepting_state(curr_state)) {
+      tmp_1_auto = StringAutomaton::makeString(std::to_string(value));
       tmp_2_auto = result_auto;
       result_auto = tmp_2_auto->union_(tmp_1_auto);
       delete tmp_1_auto;

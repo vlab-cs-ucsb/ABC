@@ -35,22 +35,22 @@ public:
   SemilinearSet_ptr clone();
   std::string str() const;
 
-  int get_cycle_head();
-  void set_cycle_head(int value);
-  int get_period();
-  void set_period(int value);
-  std::vector<int>& get_constants();
-  void set_constants(std::vector<int>& constants);
-  std::vector<int>& get_periodic_constants();
-  void set_periodic_constants(std::vector<int>& periodic_constants);
-  void add_constant(int value);
-  void add_periodic_constant(int value);
-  int get_number_of_constants();
-  int get_number_of_periodic_constants();
-  SemilinearSet_ptr Merge(SemilinearSet_ptr other);
-  bool is_empty_set();
-  bool has_only_constants();
-  bool has_constants();
+  int getCycleHead();
+  void setCycleHead(int value);
+  int getPeriod();
+  void setPeriod(int value);
+  std::vector<int>& getConstants();
+  void setConstants(std::vector<int>& constants);
+  std::vector<int>& getPeriodicConstants();
+  void setPeriodicConstants(std::vector<int>& periodic_constants);
+  void addConstant(int value);
+  void addPeriodicConstant(int value);
+  int getNumberOfConstants();
+  int getNumberOfPeriodicConstants();
+  SemilinearSet_ptr merge(SemilinearSet_ptr other);
+  bool isEmptySet();
+  bool hasOnlyConstants();
+  bool hasConstants();
   void clear();
 
   friend std::ostream& operator<<(std::ostream& os, const SemilinearSet& semilinear_set);

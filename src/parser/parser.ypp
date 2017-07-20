@@ -108,7 +108,6 @@
   TBOOL                 "TBool"
   TINT                  "TInt"
   TSTRING               "TString"
-  TREGEXP               "TRegExp"
 
   ASSERT               "assert"
   CHECK_SAT            "check-sat"
@@ -370,7 +369,6 @@ t_variable              :
                         TBOOL                                                           { $$ = new TBool(); }
                       | TINT                                                            { $$ = new TInt(); }
                       | TSTRING                                                         { $$ = new TString(); }
-                      | TREGEXP                                                         { $$ = new TRegExp(); }
                       ;
 
 /* Identifiers */

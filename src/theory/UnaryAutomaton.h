@@ -48,8 +48,8 @@ public:
 
   virtual UnaryAutomaton_ptr clone() const;
 
-  static UnaryAutomaton_ptr MakePhi();
-  static UnaryAutomaton_ptr MakeAutomaton(SemilinearSet_ptr semilinear_set);
+  static UnaryAutomaton_ptr makePhi();
+  static UnaryAutomaton_ptr makeAutomaton(SemilinearSet_ptr semilinear_set);
 
   SemilinearSet_ptr getSemilinearSet();
   IntAutomaton_ptr toIntAutomaton(int number_of_variables, bool add_minus_one = false);

@@ -35,7 +35,7 @@ MultiTrackAutomaton::MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_track
 	int lambda_state = num_states-1;
 	int var = VAR_PER_TRACK;
 	int len = (num_tracks * var)+1; // extrabit for nondeterminism
-	mindices = GetBddVariableIndices(len);
+	mindices = getIndices(len);
 
 	sink = find_sink(M);
 	if(sink < 0) {
@@ -155,7 +155,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makePrefixSuffix(int left_track, in
 
 	int var = VAR_PER_TRACK;
 	int len = num_tracks * var;
-	int *mindices = GetBddVariableIndices(num_tracks*var);
+	int *mindices = getIndices(num_tracks*var);
 	std::vector<char> exep_lambda(var,'1');
 	tv = generate_transitions_for_relation(StringRelation::Type::EQ,var);
 
@@ -308,7 +308,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeBegins(StringRelation_ptr relat
 
 	int var = VAR_PER_TRACK;
 	int len = num_tracks * var;
-	int *mindices = GetBddVariableIndices(num_tracks*var);
+	int *mindices = getIndices(num_tracks*var);
 
 	std::vector<char> exep_lambda(var,'1');
 	tv = generate_transitions_for_relation(StringRelation::Type::EQ,var);
@@ -406,7 +406,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeNotBegins(StringRelation_ptr re
 			lambda_lambda = 3, star_lambda = 4, sink = 5;
 	int var = VAR_PER_TRACK;
 	int len = num_tracks * var;
-	int *mindices = GetBddVariableIndices(num_tracks*var);
+	int *mindices = getIndices(num_tracks*var);
 	std::vector<char> exep_lambda(var,'1');
 	tv = generate_transitions_for_relation(StringRelation::Type::EQ,var);
 
@@ -563,7 +563,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 	MultiTrackAutomaton_ptr temp_multi = nullptr, prefix_multi = nullptr,
                           suffix_multi = nullptr, intersect_multi = nullptr,
                           result_auto = nullptr;
-  StringAutomaton_ptr any_string = StringAutomaton::MakeAnyString(), const_string_auto = nullptr;
+  StringAutomaton_ptr any_string = StringAutomaton::makeAnyString(), const_string_auto = nullptr;
   DFA_ptr temp_dfa = nullptr;
 	int num_tracks = relation->get_num_tracks(),
 			left_track,right_track;
@@ -581,9 +581,9 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 	right_track = relation->get_variable_index(left_var_data);
 
 	if(right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
-		const_string_auto = StringAutomaton::MakeString(const_data);
+		const_string_auto = StringAutomaton::makeString(const_data);
 	} else {
-		const_string_auto = StringAutomaton::MakeRegexAuto(const_data);
+		const_string_auto = StringAutomaton::makeRegexAuto(const_data);
 	}
 
   temp_dfa = prepend_lambda(const_string_auto->getDFA(),DEFAULT_NUM_VAR);
@@ -667,22 +667,22 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr rel
   if(left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::MakeString(left_data);
+		constant_string_auto = StringAutomaton::makeString(left_data);
   } else if(left_relation->get_type() == StringRelation::Type::REGEX) {
 		left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::MakeRegexAuto(left_data);
+		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
 	} else {
   	left_track = trackmap[left_data];
 	}
 	if(right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	right_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::MakeString(right_data);
+		constant_string_auto = StringAutomaton::makeString(right_data);
   } else if(right_relation->get_type() == StringRelation::Type::REGEX) {
 		right_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::MakeRegexAuto(right_data);
+		constant_string_auto = StringAutomaton::makeRegexAuto(right_data);
 	} else {
   	right_track = trackmap[right_data];
 	}
@@ -723,11 +723,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThanOrEqual(StringRelation_
   if(left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::MakeString(left_data);
+		constant_string_auto = StringAutomaton::makeString(left_data);
   } else if(left_relation->get_type() == StringRelation::Type::REGEX) {
 		left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::MakeRegexAuto(left_data);
+		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
 	} else {
   	left_track = trackmap[left_data];
 	}
@@ -735,11 +735,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThanOrEqual(StringRelation_
 	if(right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	right_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::MakeString(right_data);
+		constant_string_auto = StringAutomaton::makeString(right_data);
   } else if(right_relation->get_type() == StringRelation::Type::REGEX) {
 		right_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::MakeRegexAuto(right_data);
+		constant_string_auto = StringAutomaton::makeRegexAuto(right_data);
 	} else {
   	right_track = trackmap[right_data];
 	}
@@ -781,11 +781,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThan(StringRelation_ptr 
   if(left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::MakeString(left_data);
+		constant_string_auto = StringAutomaton::makeString(left_data);
   } else if(left_relation->get_type() == StringRelation::Type::REGEX) {
 		left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::MakeRegexAuto(left_data);
+		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
 	} else {
   	left_track = trackmap[left_data];
 	}
@@ -793,11 +793,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThan(StringRelation_ptr 
 	if(right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	right_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::MakeString(right_data);
+		constant_string_auto = StringAutomaton::makeString(right_data);
   } else if(right_relation->get_type() == StringRelation::Type::REGEX) {
 		right_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::MakeRegexAuto(right_data);
+		constant_string_auto = StringAutomaton::makeRegexAuto(right_data);
 	} else {
   	right_track = trackmap[right_data];
 	}
@@ -840,11 +840,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThanOrEqual(StringRelati
   if(left_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::MakeString(left_data);
+		constant_string_auto = StringAutomaton::makeString(left_data);
   } else if(left_relation->get_type() == StringRelation::Type::REGEX) {
 		left_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::MakeRegexAuto(left_data);
+		constant_string_auto = StringAutomaton::makeRegexAuto(left_data);
 	} else {
   	left_track = trackmap[left_data];
 	}
@@ -852,11 +852,11 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThanOrEqual(StringRelati
 	if(right_relation->get_type() == StringRelation::Type::STRING_CONSTANT) {
   	right_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::MakeString(right_data);
+		constant_string_auto = StringAutomaton::makeString(right_data);
   } else if(right_relation->get_type() == StringRelation::Type::REGEX) {
 		right_track = num_tracks;
 		num_tracks++;
-		constant_string_auto = StringAutomaton::MakeRegexAuto(right_data);
+		constant_string_auto = StringAutomaton::makeRegexAuto(right_data);
 	} else {
   	right_track = trackmap[right_data];
 	}
@@ -885,7 +885,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThanOrEqual(StringRelati
 MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAnyAutoUnaligned(int num_tracks) {
 	DFA_ptr result, temp;
 	int len = VAR_PER_TRACK * num_tracks;
-	int *mindices = Automaton::GetBddVariableIndices(len);
+	int *mindices = Automaton::getIndices(len);
 
 	dfaSetup(1, len, mindices);
 	dfaAllocExceptions(0);
@@ -903,7 +903,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAnyAutoAligned(int num_tracks) 
 	StringAutomaton_ptr any_string_auto = nullptr;
 
 	aligned_auto = makeAnyAutoUnaligned(num_tracks);
-	any_string_auto = StringAutomaton::MakeAnyString();
+	any_string_auto = StringAutomaton::makeAnyString();
 
 	for(unsigned i = 0; i < num_tracks; i++) {
 		any_auto = new MultiTrackAutomaton(any_string_auto->getDFA(),i,num_tracks);
@@ -940,7 +940,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::union_(MultiTrackAutomaton_ptr othe
   DFA_ptr union_dfa;
 	MultiTrackAutomaton_ptr union_auto;
 	StringRelation_ptr union_relation = nullptr;
-	union_dfa = DFAUnion(this->dfa_,other_auto->dfa_);
+	union_dfa = DfaUnion(this->dfa_,other_auto->dfa_);
 	union_auto = new MultiTrackAutomaton(union_dfa, this->num_of_tracks);
 	if(this->relation == nullptr && other_auto->relation == nullptr) {
 		LOG(FATAL) << "No relation set for either multitrack during union";
@@ -995,7 +995,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::intersect(MultiTrackAutomaton_ptr o
 							 << this->num_of_tracks << " != " << other_auto->num_of_tracks;
 	}
 
-	intersect_dfa = DFAIntersect(this->dfa_,other_auto->dfa_);
+	intersect_dfa = DfaIntersect(this->dfa_,other_auto->dfa_);
 	intersect_auto = new MultiTrackAutomaton(intersect_dfa, this->num_of_tracks);
 
 	if(this->relation == nullptr && other_auto->relation == nullptr) {
@@ -1019,8 +1019,8 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::projectKTrack(int k_track) {
 	MultiTrackAutomaton_ptr result_auto;
 	DFA_ptr temp,result_dfa = this->dfa_;
 	int flag = 0;
-	int *map = GetBddVariableIndices(this->num_of_tracks*VAR_PER_TRACK);
-	for(int i = 0,k=0,l=0; i < this->num_of_bdd_variables_; i++) {
+	int *map = getIndices(this->num_of_tracks*VAR_PER_TRACK);
+	for(int i = 0,k=0,l=0; i < this->num_of_variables_; i++) {
 	    if(i == k_track+l*this->num_of_tracks) {
 	        map[i] = (this->num_of_tracks-1)*VAR_PER_TRACK+l;
 	        l++;
@@ -1063,7 +1063,7 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
     // while all others need to be pushed back by VAR_PER_TRACK, then
     // interleaved with 1 less than current number of tracks
 
-	int* map = GetBddVariableIndices(this->num_of_tracks*VAR_PER_TRACK);
+	int* map = getIndices(this->num_of_tracks*VAR_PER_TRACK);
 	for(int i = 0; i < this->num_of_tracks; i++) {
 		if(i == k_track) {
 			for(int k = 0; k < VAR_PER_TRACK; k++) {
@@ -1105,7 +1105,7 @@ StringAutomaton_ptr MultiTrackAutomaton::getKTrack(int k_track) {
 	} else {
 		DVLOG(VLOG_LEVEL) << "no sink";
 		dfaFree(result);
-		result_auto = StringAutomaton::MakeAnyString();
+		result_auto = StringAutomaton::makeAnyString();
 	}
 	return result_auto;
 }
@@ -1122,7 +1122,7 @@ void MultiTrackAutomaton::SetSymbolicCounter() {
   }
   int var = VAR_PER_TRACK;
   int len = var * num_of_tracks;
-  int* mindices = GetBddVariableIndices(len);
+  int* mindices = getIndices(len);
   char* statuses = new char[original_dfa->ns+1];
 	std::vector<std::pair<std::vector<char>,int>> state_exeps;
 	std::vector<bool> lambda_states(original_dfa->ns,false);
@@ -1191,12 +1191,12 @@ std::vector<std::string> MultiTrackAutomaton::getAnAcceptingStringForEachTrack()
   std::vector<std::string> strings(num_of_tracks, "");
   std::vector<bool>* example = getAnAcceptingWord();
   unsigned char c = 0;
-  unsigned num_transitions = example->size() / num_of_bdd_variables_;
+  unsigned num_transitions = example->size() / num_of_variables_;
   bool bit;
   unsigned sharp1 = 254, sharp2 = 255;
 
   for(int t = 0; t < num_transitions; t++) {
-    unsigned offset = t*num_of_bdd_variables_;
+    unsigned offset = t*num_of_variables_;
     for (int i = 0; i < num_of_tracks; i++) {
       for (int j = 0; j < VAR_PER_TRACK; j++) {
         bit = (*example)[offset+i+num_of_tracks*j];
@@ -1314,7 +1314,7 @@ DFA_ptr MultiTrackAutomaton::make_binary_relation_dfa(StringRelation::Type type,
 	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, aligned_dfa = nullptr;
 	int var = bits_per_var;
 	int len = num_tracks * var;
-	int *mindices = GetBddVariableIndices(num_tracks*var);
+	int *mindices = getIndices(num_tracks*var);
 	int eq = 0,
 	    left = 1,
 		  right = 2,
@@ -1451,7 +1451,7 @@ DFA_ptr MultiTrackAutomaton::make_binary_aligned_dfa(int left_track, int right_t
 			star_lambda = 3, sink = 4;
 	int var = VAR_PER_TRACK;
 	int len = num_tracks * var;
-	int *mindices = GetBddVariableIndices(num_tracks*var);
+	int *mindices = getIndices(num_tracks*var);
 	std::vector<char> exep_lambda(var,'1');
 	std::vector<char> exep_dont_care(var,'X');
 	exep_dont_care[var-1] = '0';
@@ -1597,7 +1597,7 @@ DFA_ptr MultiTrackAutomaton::prepend_lambda(DFA_ptr dfa, int var) {
 	int* mindices;
 	int len = VAR_PER_TRACK; // 1 more than default_num_var
 
-	mindices = GetBddVariableIndices(len);
+	mindices = getIndices(len);
 	statuses = new char[num_states+1];
 
 	// begin dfa building process
@@ -1707,7 +1707,7 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_prefix(DFA_ptr dfa, int var, bool proje
 	paths state_paths, pp;
 	trace_descr tp;
 	char* statuses;
-	int *indices = Automaton::GetBddVariableIndices(var);
+	int *indices = Automaton::getIndices(var);
 	int sink = find_sink(dfa);
   CHECK_GT(sink,-1);
   std::vector<char> lambda_vec(var,'1');
@@ -1766,7 +1766,7 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_prefix(DFA_ptr dfa, int var, bool proje
 	// by lambda
 	int num_states = dfa->ns+1;
   std::vector<std::pair<std::vector<char>,int>> state_exeps;
-	indices = GetBddVariableIndices(len);
+	indices = getIndices(len);
 	statuses = new char[num_states+1];
 
   // if any of the reachable states are final, then the new
@@ -1898,7 +1898,7 @@ DFA_ptr MultiTrackAutomaton::trim_lambda_suffix(DFA_ptr dfa, int var, bool proje
 	paths state_paths, pp;
 	trace_descr tp;
 	char* statuses = new char[dfa->ns+1];
-	int *indices = Automaton::GetBddVariableIndices(var);
+	int *indices = Automaton::getIndices(var);
 	int sink = find_sink(dfa);
 	CHECK_GT(sink,-1);
 

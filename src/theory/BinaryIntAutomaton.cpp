@@ -52,7 +52,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::clone() const {
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakePhi(ArithmeticFormula_ptr formula, bool is_natural_number) {
-  auto non_accepting_dfa = Automaton::DFAMakePhi(formula->get_number_of_variables());
+  auto non_accepting_dfa = Automaton::DfaMakePhi(formula->get_number_of_variables());
   auto non_accepting_binary_auto = new BinaryIntAutomaton(non_accepting_dfa, formula, is_natural_number);
 
   DVLOG(VLOG_LEVEL) << non_accepting_binary_auto->id_ << " = MakePhi(" << *formula << ")";
@@ -63,7 +63,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakePhi(ArithmeticFormula_ptr formula
  * Binary int automaton does not accept empty string
  */
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAnyInt(ArithmeticFormula_ptr formula, bool is_natural_number) {
-  auto any_binary_int_dfa = Automaton::DFAMakeAnyButNotEmpty(formula->get_number_of_variables());
+  auto any_binary_int_dfa = Automaton::DfaMakeAnyButNotEmpty(formula->get_number_of_variables());
   auto any_int = new BinaryIntAutomaton(any_binary_int_dfa, formula, is_natural_number);
 
   DVLOG(VLOG_LEVEL) << any_int->id_ << " = MakeAnyInt(" << *formula << ")";
@@ -72,6 +72,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAnyInt(ArithmeticFormula_ptr form
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(ArithmeticFormula_ptr formula, bool is_natural_number) {
   BinaryIntAutomaton_ptr result_auto = nullptr;
+
+  // reorder formula variables so booleans come first
+  //formula->reorder();
 
   switch (formula->get_type()) {
     case ArithmeticFormula::Type::EQ: {
@@ -164,7 +167,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(SemilinearSet_ptr semil
   }
 
   int sink_state = number_of_states - 1;
-  int* indices = GetBddVariableIndices(number_of_variables);
+  int* indices = getIndices(number_of_variables);
+//  char* statuses = new char[number_of_states + 1];
   std::string statuses(number_of_states + 1, '-');
   statuses[number_of_states] = '\0';
   dfaSetup(number_of_states, number_of_variables, indices);
@@ -250,11 +254,11 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(SemilinearSet_ptr semil
 
   int zero_state = binary_states[0]->getd0();  // adding leading zeros makes accepting zero 00, fix here
   if (zero_state > -1 and is_accepting_binary_state(binary_states[zero_state], semilinear_set)) {
-    // TODO temporary removal
-    //    statuses[zero_state] = '+';
+    statuses[zero_state] = '+';
   }
 
   auto binary_dfa = dfaBuild(&statuses[0]);
+
   // cleanup
   for (auto bin_state : binary_states) {
     delete bin_state;
@@ -274,7 +278,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(SemilinearSet_ptr semil
   binary_dfa = nullptr;
 
   // binary state computation for semilinear sets may have leading zeros, remove them
-  if ((not add_leading_zeros) and (not semilinear_set->has_only_constants())) {
+  if ((not add_leading_zeros) and (not semilinear_set->hasOnlyConstants())) {
     auto trim_helper_auto = BinaryIntAutomaton::MakeTrimHelperAuto(var_index, number_of_variables);
     trim_helper_auto->set_formula(formula->clone());
     auto tmp_auto = binary_auto;
@@ -301,7 +305,7 @@ bool BinaryIntAutomaton::is_natural_number() {
 }
 
 bool BinaryIntAutomaton::HasNegative1() {
-  CHECK_EQ(1, num_of_bdd_variables_)<< "implemented for single track binary automaton";
+  CHECK_EQ(1, num_of_variables_)<< "implemented for single track binary automaton";
 
   if (is_natural_number_) {
     return false;
@@ -313,7 +317,7 @@ bool BinaryIntAutomaton::HasNegative1() {
   while (not is_visited[current_state]) {
     is_visited[current_state] = true;
     current_state = getNextState(current_state, exception);
-    if (current_state > -1 and IsAcceptingState(current_state)) {
+    if (current_state > -1 and is_accepting_state(current_state)) {
       return true;
     }
   }
@@ -341,7 +345,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Complement() {
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr other_auto) {
-  auto intersect_dfa = Automaton::DFAIntersect(this->dfa_, other_auto->dfa_);
+  auto intersect_dfa = Automaton::DfaIntersect(this->dfa_, other_auto->dfa_);
   auto intersect_formula = this->formula_->clone();
   intersect_formula->reset_coefficients();
   intersect_formula->set_type(ArithmeticFormula::Type::INTERSECT);
@@ -352,7 +356,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr othe
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::Union(BinaryIntAutomaton_ptr other_auto) {
-  auto union_dfa = Automaton::DFAUnion(this->dfa_, other_auto->dfa_);
+  auto union_dfa = Automaton::DfaUnion(this->dfa_, other_auto->dfa_);
   auto union_formula = this->formula_->clone();
   union_formula->reset_coefficients();
   union_formula->set_type(ArithmeticFormula::Type::UNION);
@@ -377,9 +381,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Exists(std::string var_name) {
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::GetBinaryAutomatonFor(std::string var_name) {
-  CHECK_EQ(num_of_bdd_variables_, formula_->get_number_of_variables())<< "number of variables is not consistent with formula";
+  CHECK_EQ(num_of_variables_, formula_->get_number_of_variables())<< "number of variables is not consistent with formula";
   int bdd_var_index = formula_->get_variable_index(var_name);;
-  auto single_var_dfa = Automaton::DFAProjectTo(bdd_var_index, num_of_bdd_variables_, this->dfa_);
+  auto single_var_dfa = Automaton::DFAProjectTo(bdd_var_index, num_of_variables_, this->dfa_);
   auto single_var_formula = new ArithmeticFormula();
   single_var_formula->set_type(ArithmeticFormula::Type::INTERSECT);
   single_var_formula->add_variable(var_name, 1);
@@ -414,7 +418,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::GetNegativeValuesFor(std::string var_
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::TrimLeadingZeros() {
-  CHECK_EQ(1, num_of_bdd_variables_)<< "trimming is implemented for single track positive binary automaton";
+  CHECK_EQ(1, num_of_variables_)<< "trimming is implemented for single track positive binary automaton";
 
   auto tmp_auto = this->clone();
 
@@ -429,7 +433,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::TrimLeadingZeros() {
     if ((sink_state not_eq next_state) and (i not_eq next_state)) {
       possible_final_states[next_state].push_back(i);
     }
-    if (IsAcceptingState(i)) {
+    if (is_accepting_state(i)) {
       final_states.push(i);
     }
   }
@@ -437,16 +441,16 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::TrimLeadingZeros() {
   while (not final_states.empty()) {
     next_state = final_states.top(); final_states.pop();
     for (auto s : possible_final_states[next_state]) {
-      if (not tmp_auto->IsAcceptingState(s)) {
+      if (not tmp_auto->is_accepting_state(s)) {
         tmp_auto->dfa_->f[s] = 1;
         final_states.push(s);
       }
     }
   }
 
-  tmp_auto->Minimize();
+  tmp_auto->minimize();
 
-  auto trim_helper_auto = BinaryIntAutomaton::MakeTrimHelperAuto(0,num_of_bdd_variables_);
+  auto trim_helper_auto = BinaryIntAutomaton::MakeTrimHelperAuto(0,num_of_variables_);
   trim_helper_auto->set_formula(tmp_auto->formula_->clone());
   auto trimmed_auto = tmp_auto->Intersect(trim_helper_auto);
   delete tmp_auto;
@@ -461,10 +465,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::AddLeadingZeros() {
   BinaryIntAutomaton_ptr leading_zero_auto = nullptr;
   DFA_ptr leading_zero_dfa = nullptr, tmp_dfa = nullptr;
 
-  int number_of_variables = num_of_bdd_variables_ + 1,
+  int number_of_variables = num_of_variables_ + 1,
   leading_zero_state = number_of_variables - 1,
   to_state = 0;
-  int* indices = GetBddVariableIndices(number_of_variables);
+  int* indices = getIndices(number_of_variables);
 
   std::vector<char> leading_zero_exception;
   std::map<std::vector<char>*, int> exceptions;
@@ -504,7 +508,7 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
   GetConstants(cycle_status, constants);
   Util::List::sort_and_remove_duplicate(constants);
   cycle_status.clear();
-  semilinear_set->set_constants(constants);
+  semilinear_set->setConstants(constants);
 
   // CASE automaton has only constants
   if (not is_cyclic) {
@@ -519,14 +523,14 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
    * intersection with Ac
    * Delete these numbers from original automaton
    */
-  if (semilinear_set->has_constants()) {
+  if (semilinear_set->hasConstants()) {
 
     int max_constant = constants.back();  // it is already sorted
     constants.clear();
     for (int i = 0; i <= max_constant; i++) {
       constants.push_back(i);
     }
-    semilinear_set->set_constants(constants);
+    semilinear_set->setConstants(constants);
     constants.clear();
     tmp_1_auto = BinaryIntAutomaton::MakeAutomaton(semilinear_set, var_name, formula_->clone(), false);
     semilinear_set->clear();
@@ -537,7 +541,7 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
 
     tmp_2_auto->GetBaseConstants(constants);  // if automaton is acyclic, it will return all constants
     Util::List::sort_and_remove_duplicate(constants);
-    semilinear_set->set_constants(constants);
+    semilinear_set->setConstants(constants);
     constants.clear();
 
     subject_auto = this->Difference(tmp_2_auto);
@@ -553,7 +557,7 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
   int cycle_head = 0;
   std::vector<int> tmp_periods;
   int bound = 0;
-  while (not subject_auto->IsEmptyLanguage() and (bound++ < 5)) {
+  while (not subject_auto->isEmptyLanguage() and (bound++ < 5)) {
     i = 0;
     cycle_head = 0;
     tmp_periods.clear();
@@ -568,8 +572,8 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
     }
 
     if (bases.size() == 1) {
-      semilinear_set->set_period(bases[0]);
-      semilinear_set->add_periodic_constant(0);
+      semilinear_set->setPeriod(bases[0]);
+      semilinear_set->addPeriodicConstant(0);
       semilinears.push_back(semilinear_set->clone());
       // no need to verify period
     } else if (bases.size() > 1) {
@@ -591,9 +595,9 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
           }
           if (add_me) {
             current_set = new SemilinearSet();
-            current_set->set_cycle_head(cycle_head);
-            current_set->set_period(possible_period);
-            current_set->add_periodic_constant(0);
+            current_set->setCycleHead(cycle_head);
+            current_set->setPeriod(possible_period);
+            current_set->addPeriodicConstant(0);
 
             tmp_1_auto = BinaryIntAutomaton::MakeAutomaton(current_set, var_name, formula_->clone(), false);
             tmp_2_auto = subject_auto->Intersect(tmp_1_auto);
@@ -602,9 +606,9 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
             tmp_1_auto = nullptr;
             delete tmp_2_auto;
             tmp_2_auto = nullptr;
-            if (diff_auto->IsEmptyLanguage()) {
+            if (diff_auto->isEmptyLanguage()) {
               tmp_set = semilinear_set;
-              semilinear_set = tmp_set->Merge(current_set);
+              semilinear_set = tmp_set->merge(current_set);
               delete tmp_set;
               tmp_set = nullptr;
               semilinears.push_back(current_set);
@@ -659,7 +663,7 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
   semilinear_set = new SemilinearSet();
   for (auto s : semilinears) {
     tmp_set = semilinear_set;
-    semilinear_set = tmp_set->Merge(s);
+    semilinear_set = tmp_set->merge(s);
     delete tmp_set;
     delete s;
   }
@@ -680,7 +684,7 @@ UnaryAutomaton_ptr BinaryIntAutomaton::ToUnaryAutomaton() {
   delete trimmed_auto;
   trimmed_auto = nullptr;
 
-  unary_auto = UnaryAutomaton::MakeAutomaton(semilinear_set);
+  unary_auto = UnaryAutomaton::makeAutomaton(semilinear_set);
   delete semilinear_set;
   semilinear_set = nullptr;
   DVLOG(VLOG_LEVEL) << unary_auto->getId() << " = [" << this->id_ << "]->ToUnaryAutomaton()";
@@ -697,7 +701,7 @@ std::map<std::string, int> BinaryIntAutomaton::GetAnAcceptingIntForEachVar() {
   auto rit = example->rbegin();
   if (not is_natural_number_) {
     // read the sign bit for integers
-    for (int var_index = num_of_bdd_variables_ - 1; var_index >= 0; --var_index) {
+    for (int var_index = num_of_variables_ - 1; var_index >= 0; --var_index) {
       if (*rit) {
         values[var_index] = -1;
       } else {
@@ -708,13 +712,13 @@ std::map<std::string, int> BinaryIntAutomaton::GetAnAcceptingIntForEachVar() {
   }
 
   // read value bits
-  for (int var_index = num_of_bdd_variables_ - 1; rit != example->rend(); rit++) {
+  for (int var_index = num_of_variables_ - 1; rit != example->rend(); rit++) {
     values[var_index] <<= 1;
     values[var_index] |= (*rit);
     var_index--;
 
     if (var_index == -1) {
-      var_index = num_of_bdd_variables_ - 1;
+      var_index = num_of_variables_ - 1;
     }
   }
 
@@ -785,6 +789,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeBoolean(ArithmeticFormula_ptr for
 
 	std::string boolean_var = boolean_variables.begin()->first;
 	int index = formula->get_variable_index(boolean_var);
+
 	int number_of_variables = formula->get_number_of_variables();
 	int* bin_variable_indices = getIndices(number_of_variables);
 
@@ -792,7 +797,6 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeBoolean(ArithmeticFormula_ptr for
 	std::vector<char> exception(number_of_variables,'X');
 	exception[index] = (boolean_variables[boolean_var] ? '1' : '0');
 	exception.push_back('\0');
-	LOG(INFO) << "boolean_var: " << boolean_var << " has value = " << boolean_variables[boolean_var] << " at index " << index;
 
 	int accept = 1;
 	int sink = 2;
@@ -829,7 +833,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeBooleanIntersect(ArithmeticFormul
 
 	for(auto& it : boolean_variables) {
 		int index = formula->get_variable_index(it.first);
-		exception[index] = (it.second ? '1' : '0');
+		exception[index] = (boolean_variables[it.first] ? '1' : '0');
 	}
 
 	int accept = 1;
@@ -869,7 +873,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeBooleanUnion(ArithmeticFormula_pt
 	// which will go from start->sink
 	for(auto& it : boolean_variables) {
 		int index = formula->get_variable_index(it.first);
-		exception[index] = (it.second ? '0' : '1');
+		exception[index] = (boolean_variables[it.first] ? '0' : '1');
 	}
 
 	int accept = 1;
@@ -899,7 +903,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeBooleanUnion(ArithmeticFormula_pt
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntGraterThanOrEqualToZero(std::vector<int> indexes,
                                                                           int number_of_variables) {
-  int* bin_variable_indices = GetBddVariableIndices(number_of_variables);
+  int* bin_variable_indices = getIndices(number_of_variables);
   int number_of_states = 3;
   char statuses[3] { '-', '+', '-' };
   std::vector<char> exception;
@@ -987,9 +991,12 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
   const int active_num_variables = total_num_variables - num_of_zero_coefficient;
   CHECK_LT(active_num_variables, 64);
   // TODO instead of doing shift, try to update algorithm
-  unsigned long transitions = 1 << active_num_variables;
+  unsigned long transitions = 1 << active_num_variables;  //number of transitions from each state
+//  LOG(INFO) << "total_num_variables: " << total_num_variables;
+//  LOG(INFO) << "active_num_variables: " << active_num_variables;
+//  LOG(INFO) << "transitions: " << transitions;
 
-  int* indices = GetBddVariableIndices(total_num_variables);
+  int* indices = getIndices(total_num_variables);
   dfaSetup(num_of_states, total_num_variables, indices);
 
   std::map<std::vector<char>, int> transitions_from_initial_state; // populated if initial state is in cycle and accepting
@@ -1173,7 +1180,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticF
   // TODO instead of doing shift, try to update algorithm
   unsigned long transitions = 1 << active_num_variables;  //number of transitions from each state
 
-  int* indices = GetBddVariableIndices(total_num_variables);
+  int* indices = getIndices(total_num_variables);
   dfaSetup(num_of_states, total_num_variables, indices);
 
   std::map<std::vector<char>, int> transitions_from_initial_state; // populated if initial state is in cycle and accepting
@@ -1342,7 +1349,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntLessThan(ArithmeticFormula_ptr
   // TODO instead of doing shift, try to update algorithm
   unsigned long transitions = 1 << active_num_variables;  //number of transitions from each state
 
-  int* indices = GetBddVariableIndices(total_num_variables);
+  int* indices = getIndices(total_num_variables);
   dfaSetup(num_of_states, total_num_variables, indices);
 
   std::map<int, StateIndices> carry_map;  // maps carries to state indices
@@ -1501,7 +1508,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberLessThan(ArithmeticF
   // TODO instead of allocating that many of transitions, try to reduce them with a preprocessing
   unsigned long transitions = 1 << active_num_variables;  //number of transitions from each state
 
-  int* indices = GetBddVariableIndices(total_num_variables);
+  int* indices = getIndices(total_num_variables);
   dfaSetup(num_of_states, total_num_variables, indices);
 
   std::map<std::vector<char>, int> transitions_from_initial_state; // populated if initial state is in cycle and accepting
@@ -1668,7 +1675,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeTrimHelperAuto(int var_index, int
   }
   exception[number_of_variables] = '\0';
 
-  int* indices = GetBddVariableIndices(number_of_variables);
+  int* indices = getIndices(number_of_variables);
   int number_of_states = 5;
   dfaSetup(number_of_states, number_of_variables, indices);
   // state 0
@@ -1714,10 +1721,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeTrimHelperAuto(int var_index, int
 
 void BinaryIntAutomaton::ComputeBinaryStates(std::vector<BinaryState_ptr>& binary_states,
                                                SemilinearSet_ptr semilinear_set) {
-  if (semilinear_set->get_period() == 0) {
-    AddBinaryState(binary_states, semilinear_set->get_constants());
+  if (semilinear_set->getPeriod() == 0) {
+    AddBinaryState(binary_states, semilinear_set->getConstants());
   } else {
-    AddBinaryState(binary_states, semilinear_set->get_cycle_head(), semilinear_set->get_period(), BinaryState::Type::VAL,
+    AddBinaryState(binary_states, semilinear_set->getCycleHead(), semilinear_set->getPeriod(), BinaryState::Type::VAL,
                      -1, -1);
   }
 }
@@ -1813,14 +1820,14 @@ int BinaryIntAutomaton::AddBinaryState(std::vector<BinaryState_ptr>& binary_stat
 
 bool BinaryIntAutomaton::is_accepting_binary_state(BinaryState_ptr binary_state, SemilinearSet_ptr semilinear_set) {
   if (BinaryState::Type::VAL == binary_state->getType()) {
-    for (auto i : semilinear_set->get_constants()) {
+    for (auto i : semilinear_set->getConstants()) {
       if (i == binary_state->getV()) {
         return true;
       }
     }
   } else if (BinaryState::Type::REMT == binary_state->getType()) {
-    for (auto i : semilinear_set->get_periodic_constants()) {
-      if (((i + semilinear_set->get_cycle_head()) % (semilinear_set->get_period())) == binary_state->getV()) {
+    for (auto i : semilinear_set->getPeriodicConstants()) {
+      if (((i + semilinear_set->getCycleHead()) % (semilinear_set->getPeriod())) == binary_state->getV()) {
         return true;
       }
     }
@@ -1900,7 +1907,7 @@ void BinaryIntAutomaton::GetConstants(std::map<int, bool>& cycle_status, std::ve
   std::vector<bool> path;
 
   // current state cannot be accepting in binary automaton
-  if ((not IsSinkState(this->dfa_->s)) and (not cycle_status[this->dfa_->s])) {
+  if ((not isSinkState(this->dfa_->s)) and (not cycle_status[this->dfa_->s])) {
     GetConstants(this->dfa_->s, cycle_status, path, constants);
   }
 
@@ -1925,9 +1932,9 @@ void BinaryIntAutomaton::GetConstants(int state, std::map<int, bool>& cycle_stat
   for (int b = 0; b < 2; b++) {
     next_state = (b == 0) ? l : r;
 
-    if ((not IsSinkState(next_state))) {
+    if ((not isSinkState(next_state))) {
       path.push_back(b == 1);
-      if (IsAcceptingState(next_state)) {
+      if (is_accepting_state(next_state)) {
         unsigned c = 0;
         for (unsigned i = 0; i < path.size(); i++) {
           if (path[i]) {
@@ -2041,7 +2048,7 @@ void BinaryIntAutomaton::GetBaseConstants(std::vector<int>& constants, unsigned 
     is_visited[i] = false;
   }
 
-  if (not IsSinkState(this->dfa_->s)) {
+  if (not isSinkState(this->dfa_->s)) {
     GetBaseConstants(this->dfa_->s, is_visited, path, constants, max_number_of_bit_limit);
   }
 
@@ -2065,7 +2072,7 @@ void BinaryIntAutomaton::GetBaseConstants(int state, unsigned char *is_visited, 
     return;
   }
 
-  if (IsAcceptingState(state)) {
+  if (is_accepting_state(state)) {
     unsigned c = 0;
     for (unsigned i = 0; i < path.size(); i++) {
       if (path[i]) {
@@ -2077,7 +2084,7 @@ void BinaryIntAutomaton::GetBaseConstants(int state, unsigned char *is_visited, 
 
   next_state = getNextState(state, exception);  // taking transition 0
 
-  if ((is_visited[state] & 1) == 0 and (not IsSinkState(next_state))) {
+  if ((is_visited[state] & 1) == 0 and (not isSinkState(next_state))) {
     is_visited[state] |= 1;
     path.push_back(false);
     GetBaseConstants(next_state, is_visited, path, constants, max_number_of_bit_limit);
@@ -2088,7 +2095,7 @@ void BinaryIntAutomaton::GetBaseConstants(int state, unsigned char *is_visited, 
   exception[0] = '1';
   next_state = getNextState(state, exception);  // taking transition 1
 
-  if ((is_visited[state] & 2) == 0 and (not IsSinkState(next_state))) {
+  if ((is_visited[state] & 2) == 0 and (not isSinkState(next_state))) {
     is_visited[state] |= 2;
     path.push_back(true);
     GetBaseConstants(next_state, is_visited, path, constants, max_number_of_bit_limit);

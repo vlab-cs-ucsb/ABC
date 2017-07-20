@@ -24,7 +24,6 @@ ArithmeticFormula::ArithmeticFormula(const ArithmeticFormula& other)
     : type_(other.type_),
       constant_(other.constant_) {
   this->variable_coefficient_map_ = other.variable_coefficient_map_;
-  this->mixed_terms_ = other.mixed_terms_;
   this->boolean_variable_value_map_ = other.boolean_variable_value_map_;
   this->variable_indices_ = other.variable_indices_;
 }
@@ -198,55 +197,13 @@ int ArithmeticFormula::get_variable_index(std::string variable_name) const {
   }
   LOG(FATAL)<< "Variable '" << variable_name << "' is not in formula: " << *this;
   return -1;
+//	auto it = variable_indices_.find(variable_name);
+//	if (it != variable_indices_.end()) {
+//		return it->second;
+//	}
+//	LOG(FATAL) << "Variable '" << variable_name << "' is not in formula: " << *this;
+//	return -1;
 }
-
-std::string ArithmeticFormula::get_variable_at_index(const std::size_t index) const {
-  if (index >= variable_coefficient_map_.size()) {
-    LOG(FATAL) << "Index out of range";
-  }
-  auto it = variable_coefficient_map_.begin();
-  std::advance(it, index);
-  return it->first;
-}
-
-bool ArithmeticFormula::has_relation_to_mixed_term(const std::string var_name) const {
-  auto it = mixed_terms_.find(var_name);
-  return it != mixed_terms_.end();
-}
-
-void ArithmeticFormula::add_relation_to_mixed_term(const std::string var_name, const ArithmeticFormula::Type relation, const SMT::Term_ptr term) {
-  mixed_terms_[var_name] = {relation, term};
-}
-
-std::pair<ArithmeticFormula::Type, SMT::Term_ptr> ArithmeticFormula::get_relation_to_mixed_term(const std::string var_name) const {
-  auto it = mixed_terms_.find(var_name);
-  if (it == mixed_terms_.end()) {
-    LOG(FATAL) << "Variable '" << var_name << "' does not have a relation to a mixed term";
-  }
-  return it->second;
-}
-
-bool ArithmeticFormula::UpdateMixedConstraintRelations() {
-  if (mixed_terms_.empty()) {
-    return false;
-  }
-  std::string v1, v2;
-  if (get_var_names_if_equality_of_two_vars(v1, v2)) {
-    auto it = mixed_terms_.find(v1);
-    if (it == mixed_terms_.end()) {
-      auto rel_pair = mixed_terms_[v2];
-      rel_pair.first = Type::EQ;
-      mixed_terms_[v1] = rel_pair;
-    } else {
-      auto rel_pair = it->second;
-      rel_pair.first = Type::EQ;
-      mixed_terms_[v2] = rel_pair;
-    }
-    return true;
-  }
-  return false;
-}
-
 
 ArithmeticFormula_ptr ArithmeticFormula::Add(ArithmeticFormula_ptr other_formula) {
   auto result = new ArithmeticFormula(*this);
@@ -260,8 +217,6 @@ ArithmeticFormula_ptr ArithmeticFormula::Add(ArithmeticFormula_ptr other_formula
     }
   }
   result->constant_ = result->constant_ + other_formula->constant_;
-
-  result->mixed_terms_.insert(other_formula->mixed_terms_.begin(), other_formula->mixed_terms_.end());
   return result;
 }
 
@@ -276,8 +231,6 @@ ArithmeticFormula_ptr ArithmeticFormula::Subtract(ArithmeticFormula_ptr other_fo
     }
   }
   result->constant_ = result->constant_ - other_formula->constant_;
-
-  result->mixed_terms_.insert(other_formula->mixed_terms_.begin(), other_formula->mixed_terms_.end());
   return result;
 }
 
@@ -393,31 +346,6 @@ void ArithmeticFormula::merge_variables(const ArithmeticFormula_ptr other) {
       variable_coefficient_map_[el.first] = 0;
     }
   }
-  mixed_terms_.insert(other->mixed_terms_.begin(), other->mixed_terms_.end());
-}
-
-bool ArithmeticFormula::get_var_names_if_equality_of_two_vars(std::string &v1, std::string &v2) {
-  if (type_ not_eq Type::EQ) {
-    return false;
-  }
-  v1.clear();
-  v2.clear();
-  int active_vars = 0;
-  for (auto& el : variable_coefficient_map_) {
-    if (el.second != 0) {
-      ++active_vars;
-      if (el.second == 1) {
-        v1 = el.first;
-      } else if (el.second == -1) {
-        v2 = el.first;
-      }
-      if (active_vars > 2) {
-        return false;
-      }
-    }
-  }
-
-  return ((active_vars == 2) and !v1.empty() and !v2.empty());
 }
 
 void ArithmeticFormula::reorder() {

@@ -58,8 +58,8 @@ libabcsolver_la_SOURCES = \
   ArithmeticFormulaGenerator.h \
   ArithmeticConstraintSolver.cpp \
   ArithmeticConstraintSolver.h \
-  StringFormulaGenerator.cpp \
-  StringFormulaGenerator.h \
+  StringRelationGenerator.cpp \
+  StringRelationGenerator.h \
   StringConstraintSolver.cpp \
   StringConstraintSolver.h \
   ConstraintSolver.cpp \
