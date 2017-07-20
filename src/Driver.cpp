@@ -103,14 +103,13 @@ void Driver::InitializeSolver() {
 }
 
 void Driver::Solve() {
-
 //  TODO move arithmetic formula generation and string relation generation here to guide constraint solving better
+//
 //  Solver::ArithmeticFormulaGenerator arithmetic_formula_generator(script_, symbol_table_, constraint_information_);
 //  arithmetic_formula_generator.start();
 
   Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
   constraint_solver.start();
-  // TODO iterate to handle over-approximation, solve the part that contributes to over-approximation
 }
 
 bool Driver::is_sat() {
@@ -122,7 +121,6 @@ Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsig
 }
 
 Theory::BigInteger Driver::CountInts(const unsigned long bound) {
-	GetModelCounter().set_use_sign_integers(false);
   return GetModelCounter().CountInts(bound);
 }
 
@@ -217,16 +215,6 @@ void Driver::SetModelCounter() {
         model_counter_.add_symbolic_counter(int_auto->GetSymbolicCounter());
       }
         break;
-      case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
-    	auto string_auto = variable_entry.second->getStringAutomaton();
-    	model_counter_.add_symbolic_counter(string_auto->GetSymbolicCounter());
-      }
-        break;
-      case Vlab::Solver::Value::Type::MULTITRACK_AUTOMATON: {
-      	auto multi_auto = variable_entry.second->getMultiTrackAutomaton();
-      	model_counter_.add_symbolic_counter(multi_auto->GetSymbolicCounter());
-      }
-        break;
       default:
         break;
     }
@@ -260,16 +248,16 @@ void Driver::inspectResult(Solver::Value_ptr value, std::string file_name) {
 void Driver::printResult(Solver::Value_ptr value, std::ostream& out) {
   switch (value->getType()) {
     case Solver::Value::Type::STRING_AUTOMATON:
-      value->getStringAutomaton()->ToDot(out,false);
+      value->getStringAutomaton()->toDotAscii(false, out);
       break;
     case Solver::Value::Type::INT_AUTOMATON:
-      value->getIntAutomaton()->ToDot(out,false);
+      value->getIntAutomaton()->toDotAscii(false, out);
       break;
     case Solver::Value::Type::BINARYINT_AUTOMATON:
       value->getBinaryIntAutomaton()->ToDot(out, false);
       break;
-    case Solver::Value::Type::MULTITRACK_AUTOMATON:
-      value->getMultiTrackAutomaton()->ToDot(out, false);
+    case Solver::Value::Type::RELATIONALSTRING_AUTOMATON:
+      value->getRelationalStringAutomaton()->ToDot(out, false);
       break;
     default:
       break;
@@ -381,7 +369,7 @@ void Driver::test() {
   return;
 //  LOG(INFO) << "DRIVER TEST METHOD";
 //  using namespace Theory;
-
+//
 //  Theory::BigInteger m ("4");
 //  std::cout << m << std::endl;
 //
@@ -441,8 +429,21 @@ void Driver::test() {
 //  auto f1 = new ArithmeticFormula();
 //  f1->set_type(ArithmeticFormula::Type::EQ);
 //  f1->add_variable("x", 1);
-//
-//  auto t1 = BinaryIntAutomaton::MakeAnyInt(f1, false);
+//  f1->add_variable("y", 0);
+//  f1->set_constant(0);
+////
+//  auto t1 = BinaryIntAutomaton::MakeAutomaton(f1, false);
+//  t1->inspectAuto();
+
+//  SemilinearSet_ptr s1 = new SemilinearSet();
+//  s1->set_cycle_head(0);
+//  s1->add_periodic_constant(0);
+//  s1->set_period(1);
+////  s1->add_constant(0);
+//  std::cout << *s1 << std::endl;
+//  t1 = BinaryIntAutomaton::MakeAutomaton(s1, "x", f1, true);
+
+
 //  t1->Count(4);
 //
 //  auto t2 = BinaryIntAutomaton::MakeAnyInt(f1->clone(), true);
@@ -534,11 +535,14 @@ void Driver::test() {
 
 //  non_accepting_auto->inspectAuto(true);
 
-//  Theory::StringAutomaton_ptr any_string = Theory::StringAutomaton::makeAnyString();
-//  Theory::StringAutomaton_ptr complement = nullptr;
-  //any_string->toDotAscii(1);
-//  complement = any_string->complement();
-  //complement->toDotAscii(1);
+//  StringAutomaton_ptr any_string = Theory::StringAutomaton::makeAnyString();
+//  StringAutomaton_ptr regex_auto = StringAutomaton::makeRegexAuto("(..)*");
+//  IntAutomaton_ptr len_auto = regex_auto->length();
+//
+//  StringAutomaton_ptr char_at_auto = any_string->CharAt(len_auto);
+//  char_at_auto->inspectAuto(false, true);
+
+
 
 //  Theory::StringAutomaton_ptr a1 = Theory::StringAutomaton::makeString("Hi,");
   //make_string->complement()->toDotAscii();

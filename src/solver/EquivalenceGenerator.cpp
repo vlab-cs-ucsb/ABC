@@ -122,13 +122,13 @@ void EquivalenceGenerator::visitEq(Eq_ptr eq_term) {
       create_equiv_class_and_update_symbol_table(left_variable_, right_variable_);
     }
   } else if (is_equiv_of_variable_and_constant(eq_term->left_term, eq_term->right_term)) {
-    has_constant_substitution_ = true;
-    auto equiv_class = symbol_table_->get_equivalence_class_of(left_variable_);
-    if (equiv_class) {
-      update_equiv_class_and_symbol_table(equiv_class, term_constant_);
-    } else {
-      create_equiv_class_and_update_symbol_table(left_variable_, term_constant_);
-    }
+//    has_constant_substitution_ = true;
+//    auto equiv_class = symbol_table_->get_equivalence_class_of(left_variable_);
+//    if (equiv_class) {
+//      update_equiv_class_and_symbol_table(equiv_class, term_constant_);
+//    } else {
+//      create_equiv_class_and_update_symbol_table(left_variable_, term_constant_);
+//    }
   } else if (is_equiv_of_bool_var_and_term(eq_term->left_term, eq_term->right_term)) {
     auto equiv_class = symbol_table_->get_equivalence_class_of(left_variable_);
     if (equiv_class) {

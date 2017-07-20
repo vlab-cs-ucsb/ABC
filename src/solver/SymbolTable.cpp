@@ -265,17 +265,18 @@ Value_ptr SymbolTable::get_value(std::string var_name) {
 }
 
 Value_ptr SymbolTable::get_value(Variable_ptr variable) {
-  for (auto it = scope_stack_.rbegin(); it != scope_stack_.rend(); it++) {
-    auto representative_variable = get_representative_variable_of_at_scope((*it), variable);
-//    auto group_variable = get_group_variable_of(representative_variable);
-//    auto entry = variable_value_table_[(*it)].find(group_variable);
-    auto entry = variable_value_table_[(*it)].find(representative_variable);
-    if (entry != variable_value_table_[(*it)].end()) {
-      return entry->second;
-    }
-  }
+	for (auto it = scope_stack_.rbegin(); it != scope_stack_.rend(); it++) {
+		auto representative_variable = get_representative_variable_of_at_scope((*it), variable);
+		// TODO !! group variable look up is addd !!! BAKI: make sure to test this
+		auto group_variable = get_group_variable_of(representative_variable);
+		auto entry = variable_value_table_[(*it)].find(group_variable);
+//    auto entry = variable_value_table_[(*it)].find(representative_variable);
+		if (entry != variable_value_table_[(*it)].end()) {
+			return entry->second;
+		}
+	}
 
-  Value_ptr result = nullptr;
+	Value_ptr result = nullptr;
 
   switch (variable->getType()) {
   case Variable::Type::BOOL:
@@ -286,7 +287,7 @@ Value_ptr SymbolTable::get_value(Variable_ptr variable) {
     DVLOG(VLOG_LEVEL) << "initialized variable as any integer: " << *variable;
     break;
   case Variable::Type::STRING:
-    result = new Value(Theory::StringAutomaton::makeAnyString());
+    result = new Value(Theory::StringAutomaton::MakeAnyString());
     DVLOG(VLOG_LEVEL) << "initialized variable as any string: " << *variable;
     break;
   case Variable::Type::NONE:
@@ -303,9 +304,10 @@ Value_ptr SymbolTable::get_value(Variable_ptr variable) {
 
 Value_ptr SymbolTable::get_value_at_scope(Visitable_ptr scope, Variable_ptr variable) {
   auto representative_variable = get_representative_variable_of_at_scope(scope, variable);
-//  auto group_variable = get_group_variable_of(representative_variable);
-//  auto it = variable_value_table_[scope].find(group_variable);
-  auto it = variable_value_table_[scope].find(representative_variable);
+  // TODO !! group variable look up is added !!! BAKI: make sure to test this
+  auto group_variable = get_group_variable_of(representative_variable);
+  auto it = variable_value_table_[scope].find(group_variable);
+//  auto it = variable_value_table_[scope].find(representative_variable);
   if (it != variable_value_table_[scope].end()) {
     return it->second;
   }
@@ -334,10 +336,9 @@ Value_ptr SymbolTable::get_projected_value_at_scope(Visitable_ptr scope, Variabl
       auto relational_auto = it->second->getBinaryIntAutomaton();
       auto projected_auto = relational_auto->GetBinaryAutomatonFor(representative_variable->getName());
       result = new Value(projected_auto);
-    } else if (Value::Type::MULTITRACK_AUTOMATON == it->second->getType()) {
-      auto relational_auto = it->second->getMultiTrackAutomaton();
-      auto string_relation = relational_auto->getRelation();
-      auto projected_auto = relational_auto->getKTrack(string_relation->get_variable_index(representative_variable->getName()));
+    } else if (Value::Type::RELATIONALSTRING_AUTOMATON == it->second->getType()) {
+      auto relational_auto = it->second->getRelationalStringAutomaton();
+      auto projected_auto = relational_auto->GetAutomatonForVariable(representative_variable->getName());
       result = new Value(projected_auto);
     } else {
       LOG(FATAL) << "Value error, fix me";
@@ -359,13 +360,17 @@ bool SymbolTable::set_value(std::string var_name, Value_ptr value) {
 }
 
 bool SymbolTable::set_value(Variable_ptr variable, Value_ptr value) {
+  // !! TODO Baki test representative and group variable behavior
+  auto representative_variable = get_representative_variable_of_at_scope(top_scope(), variable);
+  auto group_variable = get_group_variable_of(representative_variable);
+
   auto& current_scope_values = variable_value_table_[top_scope()];
-  auto it = current_scope_values.find(variable);
+  auto it = current_scope_values.find(group_variable);
   if (it not_eq current_scope_values.end()) {
     delete it->second;
     it->second = value;
   } else {
-    current_scope_values[variable] = value;
+    current_scope_values[group_variable] = value;
   }
   return value->is_satisfiable();
 }
@@ -387,10 +392,11 @@ bool SymbolTable::IntersectValue(Variable_ptr variable, Value_ptr value) {
   Value_ptr variable_old_value = get_value(variable);
   Value_ptr variable_new_value = nullptr;
   if (variable_old_value not_eq nullptr) {
-  	variable_new_value = variable_old_value->intersect(value);
+    variable_new_value = variable_old_value->intersect(value);
   } else {
     variable_new_value = value->clone();
   }
+
   return set_value(variable, variable_new_value);
 }
 

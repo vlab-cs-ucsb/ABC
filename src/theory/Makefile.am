@@ -23,6 +23,8 @@ libabcautomaton_la_SOURCES = \
 	BinaryState.h \
 	SemilinearSet.cpp \
 	SemilinearSet.h \
+	StringFormula.cpp \
+	StringFormula.h \
 	Automaton.cpp \
 	Automaton.h \
 	BoolAutomaton.cpp \
@@ -35,10 +37,8 @@ libabcautomaton_la_SOURCES = \
 	StringAutomaton.h \
 	BinaryIntAutomaton.cpp \
 	BinaryIntAutomaton.h \
-	MultiTrackAutomaton.cpp \
-	MultiTrackAutomaton.h \
-	StringRelation.cpp \
-	StringRelation.h \
+	RelationalStringAutomaton.cpp \
+	RelationalStringAutomaton.h \
 	SymbolicCounter.cpp \
 	SymbolicCounter.h
 	

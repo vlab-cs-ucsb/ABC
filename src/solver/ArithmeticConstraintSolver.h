@@ -47,6 +47,9 @@ class ArithmeticConstraintSolver : public AstTraverser {
   void visitAnd(SMT::And_ptr);
   void visitOr(SMT::Or_ptr);
 
+  void postVisitAnd(SMT::And_ptr);
+  void postVisitOr(SMT::Or_ptr);
+
   std::string get_int_variable_name(SMT::Term_ptr);
   Value_ptr get_term_value(SMT::Term_ptr term);
   bool set_term_value(SMT::Term_ptr term, Value_ptr value);

@@ -30,6 +30,8 @@ libabcsolver_la_SOURCES = \
   optimization/CharAtOptimization.h \
   optimization/SubstringOptimization.cpp \
   optimization/SubstringOptimization.h \
+  optimization/ConstraintQuerier.cpp \
+  optimization/ConstraintQuerier.h \
   SyntacticOptimizer.cpp \
   SyntacticOptimizer.h \
   Counter.cpp \
@@ -56,8 +58,8 @@ libabcsolver_la_SOURCES = \
   ArithmeticFormulaGenerator.h \
   ArithmeticConstraintSolver.cpp \
   ArithmeticConstraintSolver.h \
-  StringRelationGenerator.cpp \
-  StringRelationGenerator.h \
+  StringFormulaGenerator.cpp \
+  StringFormulaGenerator.h \
   StringConstraintSolver.cpp \
   StringConstraintSolver.h \
   ConstraintSolver.cpp \

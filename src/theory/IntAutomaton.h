@@ -22,7 +22,7 @@
 
 #include "Automaton.h"
 #include "UnaryAutomaton.h"
-#include "MultiTrackAutomaton.h"
+#include "RelationalStringAutomaton.h"
 
 
 namespace Vlab {

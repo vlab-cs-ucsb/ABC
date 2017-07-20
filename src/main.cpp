@@ -37,6 +37,7 @@
 std::vector<unsigned long> parse_count_bounds(std::string);
 
 int main(const int argc, const char **argv) {
+  google::InstallFailureSignalHandler();
 
   std::istream* in = &std::cin;
   std::ifstream* file = nullptr;
@@ -66,7 +67,7 @@ int main(const int argc, const char **argv) {
       file = new std::ifstream(file_name);
       in = file;
       ++i;
-    } else if (argv[i] == std::string("--use-unsigned")) {
+    } else if (argv[i] == std::string("--use-unsinged")) {
       driver.set_option(Vlab::Option::Name::USE_UNSIGNED_INTEGERS);
     } else if (argv[i] == std::string("--use-signed")) {
       driver.set_option(Vlab::Option::Name::USE_SIGNED_INTEGERS);
@@ -173,15 +174,16 @@ int main(const int argc, const char **argv) {
 
 #ifndef NDEBUG
   if (VLOG_IS_ON(30)) {
-    driver.ast2dot(output_root + "/parser_out.dot");
+//    driver.ast2dot(output_root + "/parser_out.dot");
   }
 #endif
+
   auto start = std::chrono::steady_clock::now();
   driver.InitializeSolver();
 
 #ifndef NDEBUG
   if (VLOG_IS_ON(30)) {
-    driver.ast2dot(output_root + "/optimized.dot");
+//    driver.ast2dot(output_root + "/optimized.dot");
   }
 #endif
   driver.Solve();
@@ -191,14 +193,17 @@ int main(const int argc, const char **argv) {
 
   if (driver.is_sat()) {
     if (VLOG_IS_ON(30)) {
-       //      unsigned index = 0;
-      for (auto& variable_entry : driver.getSatisfyingVariables()) {
-        if (variable_entry.second == nullptr) {
-          // part of multitrack/binaryint
-          continue;
-        }
-        std::stringstream ss;
-        ss << output_root << "/result_";
+//      for (auto& variable_entry : driver.getSatisfyingVariables()) {
+//        variable_entry.second->getStringAutomaton()->inspectAuto(false, true);
+//      }
+      //      unsigned index = 0;
+//      for (auto& variable_entry : driver.getSatisfyingVariables()) {
+//        if (variable_entry.second == nullptr) {
+//          // part of multitrack/binaryint
+//          continue;
+//        }
+//        std::stringstream ss;
+//        ss << output_root << "/result_";
 //
 //        bool print_auto = true;
 //        switch (variable_entry.second->getType()) {
@@ -255,17 +260,17 @@ int main(const int argc, const char **argv) {
 //          print_auto = false;
 //          break;
 //        }
-
-        //if (print_auto) {
-          std::string out_file = ss.str();
-          std::ofstream outfile(out_file.c_str());
-          if (!outfile.good()) {
-            std::cout << "cannot open file: " << file_name << std::endl;
-            exit(2);
-          }
-          driver.printResult(variable_entry.second, outfile);
-        //}
-      }
+//
+//        if (print_auto) {
+//          std::string out_file = ss.str();
+//          std::ofstream outfile(out_file.c_str());
+//          if (!outfile.good()) {
+//            std::cout << "cannot open file: " << file_name << std::endl;
+//            exit(2);
+//          }
+//          driver.printResult(variable_entry.second, outfile);
+//        }
+//      }
     }
 
     LOG(INFO)<< "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";

@@ -2325,6 +2325,7 @@ std::string TVariable::str() const {
       return "Int";
     case TVariable::Type::STRING:
       return "String";
+
     default:
       LOG(FATAL)<< "Unknown variable type!";
       return "";
@@ -2396,6 +2397,24 @@ void TString::accept(Visitor_ptr v) {
   v->visitTString(this);
 }
 void TString::visit_children(Visitor_ptr v) {
+}
+
+TRegExp::TRegExp()
+    : TVariable(TVariable::Type::REGEX) {
+}
+TRegExp::TRegExp(const TRegExp& other)
+    : TVariable(TVariable::Type::REGEX) {
+}
+TRegExp_ptr TRegExp::clone() const {
+  return new TRegExp(*this);
+}
+TRegExp::~TRegExp() {
+}
+
+void TRegExp::accept(Visitor_ptr v) {
+//  v->visitTRegExp(this);
+}
+void TRegExp::visit_children(Visitor_ptr v) {
 }
 
 const std::string Variable::LOCAL_VAR_PREFIX = "__VLAB_CS_L_";

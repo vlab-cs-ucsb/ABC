@@ -1,3 +1,4 @@
+
 /*
  * Solver.cpp
  *
@@ -19,7 +20,7 @@ bool Solver::ENABLE_EQUIVALENCE_CLASSES = true;
 bool Solver::ENABLE_DEPENDENCY_ANALYSIS = true;
 bool Solver::ENABLE_IMPLICATIONS = true;
 bool Solver::ENABLE_LEN_IMPLICATIONS = true;
-bool Solver::ENABLE_SORTING_HEURISTICS = true;
+bool Solver::ENABLE_SORTING_HEURISTICS = false;
 
 std::string Solver::OUTPUT_PATH         = ".";
 std::string Solver::SCRIPT_PATH         = ".";

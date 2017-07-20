@@ -135,15 +135,19 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   bool is_satisfiable = true;
   bool is_component = constraint_information_->is_component(and_term);
 
-  if (is_component and iteration_count_ == 0) {
+  if (is_component) {
     if (constraint_information_->has_arithmetic_constraint(and_term)) {
       arithmetic_constraint_solver_.start(and_term);
       is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
+      DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *and_term << "@" << and_term;
     }
     if (is_satisfiable and constraint_information_->has_string_constraint(and_term)) {
       string_constraint_solver_.start(and_term);
       is_satisfiable = string_constraint_solver_.get_term_value(and_term)->is_satisfiable();
+      DVLOG(VLOG_LEVEL) << "String formulae solved: " << *and_term << "@" << and_term;
     }
+
+    DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *and_term << "@" << and_term;
   }
 
   DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
@@ -151,58 +155,59 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   if (is_satisfiable and (constraint_information_->has_mixed_constraint(and_term) or (not is_component))) {
     for (auto& term : *(and_term->term_list)) {
       is_satisfiable = check_and_visit(term) and is_satisfiable;
-      if (is_satisfiable) {
-        is_satisfiable = update_variables();
-      }
-      clearTermValuesAndLocalLetVars();
       if (not is_satisfiable) {
+        LOG(FATAL) << "mixed constraint te problem var";
         break;
+      }
+      if (dynamic_cast<Or_ptr>(term) == nullptr) {
+        if (is_satisfiable) {
+          update_variables();
+        }
+        clearTermValuesAndLocalLetVars();
       }
     }
   }
 
-  if (not is_satisfiable) {
-    // TODO decide if we need to do set values of variables to empty automaton at this scope
+  DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
+
+  if (is_component and is_satisfiable) {
+    if (constraint_information_->has_arithmetic_constraint(and_term)) {
+      arithmetic_constraint_solver_.postVisitAnd(and_term);
+      is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
+    }
+
+    if (is_satisfiable and constraint_information_->has_string_constraint(and_term)) {
+      string_constraint_solver_.postVisitAnd(and_term);
+      is_satisfiable = string_constraint_solver_.get_term_value(and_term)->is_satisfiable();
+    }
   }
 
   Value_ptr result = new Value(is_satisfiable);
   setTermValue(and_term, result);
-
-  DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 }
 
 void ConstraintSolver::visitOr(Or_ptr or_term) {
   bool is_satisfiable = false;
   bool is_component = constraint_information_->is_component(or_term);
 
-  if (is_component and iteration_count_ == 0) {
-    if (constraint_information_->has_arithmetic_constraint(or_term)) {
-      arithmetic_constraint_solver_.start(or_term);
-      is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
-    }
-    if (is_satisfiable and constraint_information_->has_string_constraint(or_term)) {
-      string_constraint_solver_.start(or_term);
-//      is_satisfiable = // check string constraint solver part is satisfiable
-    }
-  }
+
 
   if (not constraint_information_->has_mixed_constraint(or_term)) {
     // below return is a tmp solution for just only arithmetic constraints
+    LOG(FATAL) << "do not have mixed constraints: " << *or_term << "@" << or_term;
     Value_ptr result = new Value(is_satisfiable);
     setTermValue(or_term, result);
     return;
   }
 
-  // TODO call arithmetic constraint solver and check result
-  // TODO call string constraint solver and check result
+  DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
 
-  // TODO go over each disjunct and compute values for each mixed or single track
   if (constraint_information_->has_mixed_constraint(or_term)) {
     for (auto& term : *(or_term->term_list)) {
       symbol_table_->push_scope(term);
       bool is_scope_satisfiable = check_and_visit(term);
 
-      if (Term::Type::AND not_eq term->type()) {
+      if (dynamic_cast<And_ptr>(term) == nullptr) {
         if (is_scope_satisfiable) {
           update_variables();
         }
@@ -210,59 +215,24 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
       }
 
       is_satisfiable = is_satisfiable or is_scope_satisfiable;
-
       symbol_table_->pop_scope();
     }
   }
 
-  // TODO union automata for all type of variables
-  // 1- if possible call visitOr function of arithmetic solver
-  // 2- if possible call visitOr function of string solver
-  // 3- implement visitOr for mixed (single track string) operations, union all variables that appear under or_term
-  LOG(FATAL)<< "implement me";
-  // semantics will be similar to below
-//  void SymbolTable::UnionValuesOfVariables(Script_ptr script) {
-//    if (scopes.size() < 2) {
-//      return;
-//    } else if (variable_value_table[script].size() > 0) { // a union operation is done before
-//      return;
-//    }
-//
-//    push_scope(script);
-//    for (auto variable_entry : variables) {
-//      Value_ptr value = nullptr;
-//      for (auto scope : scopes) { // dnf form
-//        // union values
-//        if (is_scope_satisfiable[scope]) {
-//          auto variable = variable_entry.second;
-//          auto top_equiv_class = get_equivalence_class_of(variable);
-//          auto local_equiv_class = get_equivalence_class_of_at_scope(scope, variable);
-//          Value_ptr scope_var_value = nullptr;
-//          if (top_equiv_class or local_equiv_class) {
-//            variable = local_equiv_class->get_representative_variable();
-//          }
-//          scope_var_value = get_value_at_scope(scope, variable);
-//
-//          if (value) {
-//            Value_ptr tmp = value;
-//            value = tmp->union_(scope_var_value);
-//            delete tmp;
-//          } else {
-//            value = scope_var_value->clone();
-//          }
-//        }
-//      }
-//      if (value) {
-//        set_value(variable_entry.second, value);
-//      }
-//    }
-//    pop_scope();
-//  }
+  if (is_component and is_satisfiable) {
+    if (constraint_information_->has_arithmetic_constraint(or_term)) {
+      arithmetic_constraint_solver_.postVisitOr(or_term);
+      is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+    }
+
+    if (is_satisfiable and constraint_information_->has_string_constraint(or_term)) {
+      string_constraint_solver_.postVisitOr(or_term);
+      is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+    }
+  }
 
   Value_ptr result = new Value(is_satisfiable);
   setTermValue(or_term, result);
-
-  DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
 
   DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
 }
@@ -416,18 +386,12 @@ void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
     if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term)) {
       StringAutomaton_ptr temp,con;
       Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
-      temp = StringAutomaton::makeString(right_constant->getValue());
-      con = temp->complement();
-      bool res = true;
+      temp = StringAutomaton::MakeString(right_constant->getValue());
+      con = temp->Complement();
       Value_ptr val = new Value(con);
-
-      if(string_constraint_solver_.has_variable(var)) {
-        res = res and string_constraint_solver_.update_variable_value(var, val);
-      } else {
-        symbol_table_->IntersectValue(var,val);
-        res = res and symbol_table_->get_value(var)->is_satisfiable();
-      }
-      setTermValue(not_eq_term, new Value(res));
+      bool result = symbol_table_->IntersectValue(var,val);
+      delete val;
+      setTermValue(not_eq_term, new Value(result));
       return;
     }
   }
@@ -607,16 +571,16 @@ void ConstraintSolver::visitIn(In_ptr in_term) {
     if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(in_term->right_term)) {
 
       Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
-      StringAutomaton_ptr con = StringAutomaton::makeRegexAuto(right_constant->getValue());
+      StringAutomaton_ptr con = StringAutomaton::MakeRegexAuto(right_constant->getValue());
       bool res = true;
       Value_ptr val = new Value(con);
-
-      if(string_constraint_solver_.has_variable(var)) {
-        res = res and string_constraint_solver_.update_variable_value(var, val);
-      } else {
-        symbol_table_->IntersectValue(var,val);
-        res = res and symbol_table_->get_value(var)->is_satisfiable();
-      }
+      LOG(FATAL) << "fix me";
+//      if(string_constraint_solver_.has_variable(var)) {
+//        res = res and string_constraint_solver_.update_variable_value(var, val);
+//      } else {
+//        symbol_table_->IntersectValue(var,val);
+//        res = res and symbol_table_->get_value(var)->is_satisfiable();
+//      }
       setTermValue(in_term, new Value(res));
       return;
     }
@@ -686,7 +650,6 @@ void ConstraintSolver::visitContains(Contains_ptr contains_term) {
 
   Value_ptr result = nullptr, param_subject = getTermValue(contains_term->subject_term), param_search = getTermValue(
       contains_term->search_term);
-
   result = new Value(param_subject->getStringAutomaton()->contains(param_search->getStringAutomaton()));
   setTermValue(contains_term, result);
 }
@@ -711,8 +674,8 @@ void ConstraintSolver::visitNotContains(NotContains_ptr not_contains_term) {
     Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->difference(sub_strings_auto);
     delete sub_strings_auto;
     sub_strings_auto = nullptr;
-    if (difference_auto->isEmptyLanguage()) {
-      result = new Value(Theory::StringAutomaton::makePhi());
+    if (difference_auto->IsEmptyLanguage()) {
+      result = new Value(Theory::StringAutomaton::MakePhi());
     } else {
       result = param_subject->clone();
     }
@@ -757,8 +720,8 @@ void ConstraintSolver::visitNotBegins(NotBegins_ptr not_begins_term) {
     Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->difference(prefixes_auto);
     delete prefixes_auto;
     prefixes_auto = nullptr;
-    if (difference_auto->isEmptyLanguage()) {
-      result = new Value(Theory::StringAutomaton::makePhi());
+    if (difference_auto->IsEmptyLanguage()) {
+      result = new Value(Theory::StringAutomaton::MakePhi());
     } else {
       result = param_subject->clone();
     }
@@ -801,8 +764,8 @@ void ConstraintSolver::visitNotEnds(NotEnds_ptr not_ends_term) {
     Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->difference(suffixes_auto);
     delete suffixes_auto;
     suffixes_auto = nullptr;
-    if (difference_auto->isEmptyLanguage()) {
-      result = new Value(Theory::StringAutomaton::makePhi());
+    if (difference_auto->IsEmptyLanguage()) {
+      result = new Value(Theory::StringAutomaton::MakePhi());
     } else {
       result = param_subject->clone();
     }
@@ -860,112 +823,102 @@ void ConstraintSolver::visitCharAt(CharAt_ptr char_at_term) {
 
   Value_ptr result = nullptr, param_subject = getTermValue(char_at_term->subject_term), param_index = getTermValue(
       char_at_term->index_term);
-  if(param_index->getType() == Solver::Value::Type::INT_AUTOMATON) {
-	  result = nullptr;
-      //result = new Value(param_subject->getStringAutomaton()->charAt(param_index->getIntAutomaton()));
-  } else if(param_index->getType() == Solver::Value::Type::INT_CONSTANT) {
-	  result = new Value(param_subject->getStringAutomaton()->charAt(param_index->getIntConstant()));
+  if (Value::Type::INT_CONSTANT == param_index->getType()) {
+    result = new Value(param_subject->getStringAutomaton()->CharAt(param_index->getIntConstant()));
+  } else if (Value::Type::INT_AUTOMATON == param_index->getType()) {
+    result = new Value(param_subject->getStringAutomaton()->CharAt(param_index->getIntAutomaton()));
+  } else if (Value::Type::BINARYINT_AUTOMATON == param_index->getType()) {
+    LOG(FATAL)<< "Handle this case";
   }
+
   setTermValue(char_at_term, result);
 }
 
+/**
+ * TODO instead of having optional substring parameters,
+ * add new substring terms to ast (indexof, lastindexof as well)
+ * Below code should go inside a SubStringHelper class
+ */
 void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
   visit_children_of(sub_string_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *sub_string_term;
   Value_ptr result = nullptr, param_subject = getTermValue(sub_string_term->subject_term), param_start_index =
       getTermValue(sub_string_term->start_index_term), param_end_index = nullptr;
 
-  switch (sub_string_term->getMode()) {
-    case SubString::Mode::FROMINDEX: {
-      DVLOG(VLOG_LEVEL) << "subString mode: FROMINDEX";
-//      CHECK_EQ(Value::Type::INT_CONSTANT, param_start_index->getType())
-//              << "start index of a subString is expected to be an integer constant";
-      result = new Value(param_subject->getStringAutomaton()->subString(param_start_index->getIntConstant()));
-      break;
+  // First calculate substring from start to end index
+  Theory::StringAutomaton_ptr substring_auto = nullptr;
+  if (Value::Type::INT_CONSTANT == param_start_index->getType()) {
+    int start_index_value = param_start_index->getIntConstant();
+    if (start_index_value == 0) {
+      substring_auto = param_subject->getStringAutomaton()->clone();
     }
-    case SubString::Mode::FROMFIRSTOF: {
-      DVLOG(VLOG_LEVEL) << "subString mode: FROMFIRSTOF";
-      result = new Value(
-          param_subject->getStringAutomaton()->subStringFirstOf(param_start_index->getStringAutomaton()));
-      break;
+    else if (start_index_value > 0) {
+      substring_auto = param_subject->getStringAutomaton()->SubString(start_index_value);
+    } else {
+      LOG(FATAL) << "substring start index can't be negative, handle case";
     }
-    case SubString::Mode::FROMLASTOF: {
-      DVLOG(VLOG_LEVEL) << "subString mode: FROMLASTOF";
-      result = new Value(param_subject->getStringAutomaton()->subStringLastOf(param_start_index->getStringAutomaton()));
-      break;
-    }
-    case SubString::Mode::FROMINDEXTOINDEX: {
-      DVLOG(VLOG_LEVEL) << "subString mode: FROMINDEXTOINDEX";
-      param_end_index = getTermValue(sub_string_term->end_index_term);
+  } else {
+    LOG(FATAL) << "add more cases here";
+  }
 
-      if (Value::Type::INT_AUTOMATON == param_end_index->getType()) {
-        if (param_end_index->getIntAutomaton()->isEmptyLanguage()) {
-          result = new Value(StringAutomaton::makePhi());
-        } else if (Value::Type::INT_CONSTANT == param_start_index->getType()) {
-          result = new Value(
-              param_subject->getStringAutomaton()->subString(param_start_index->getIntConstant(),
-                                                             param_end_index->getIntAutomaton()));
-        } else {
-          LOG (FATAL)<< "Fully implement substring for symbolic ints";
+  // If there is an end index handle it
+  if (sub_string_term->end_index_term) {
+    param_end_index = getTermValue(sub_string_term->end_index_term);
+    Theory::StringAutomaton_ptr sub_str_start_auto = substring_auto;
+    substring_auto = nullptr;
+
+    // Based on the type handle it;
+    // TODO need to generalize the cases below, a substringhelper class can be used
+    if (Value::Type::BINARYINT_AUTOMATON == param_end_index->getType()) {
+      auto bin_end_index_auto = param_end_index->getBinaryIntAutomaton();
+      // if end index is a variable (TODO make sure it is always a variable)
+      QualIdentifier_ptr index_var = dynamic_cast<QualIdentifier_ptr>(sub_string_term->end_index_term);
+
+      Optimization::ConstraintQuerier query;
+      // checks if the integer parameter is an index of operation (currently works for indexof only)
+      if (index_var and bin_end_index_auto->get_formula()->has_relation_to_mixed_term(index_var->getVarName())) {
+        auto relation = bin_end_index_auto->get_formula()->get_relation_to_mixed_term(index_var->getVarName());
+        if (relation.first == Theory::ArithmeticFormula::Type::EQ and
+            query.is_param_equal_to(sub_string_term->subject_term, relation.second, 1)) {
+          // Refactor below flow into a function
+          auto positive_bin_end_index_var_auto = bin_end_index_auto->GetPositiveValuesFor(index_var->getVarName());
+          auto bin_end_index_var_auto = positive_bin_end_index_var_auto->GetBinaryAutomatonFor(index_var->getVarName());
+          delete positive_bin_end_index_var_auto;
+          positive_bin_end_index_var_auto = nullptr;
+          auto unary_end_index_var_auto = bin_end_index_var_auto->ToUnaryAutomaton();
+          delete bin_end_index_var_auto;
+          bin_end_index_var_auto = nullptr;
+          auto string_len_end_index_auto = unary_end_index_var_auto->toIntAutomaton(param_subject->getStringAutomaton()->get_number_of_bdd_variables(), false);
+          delete unary_end_index_var_auto;
+          unary_end_index_var_auto = nullptr;
+
+          // TODO more cases here to handle
+          auto string_search_term = query.get_parameter(relation.second, 2);
+          auto string_search_term_value = getTermValue(string_search_term);
+          if (string_search_term_value == nullptr) {
+            visit(string_search_term); // generate automata for it
+            string_search_term_value = getTermValue(string_search_term);
+          }
+
+          // if there is an additional from index parameter, we need to consider it
+          // I guess the best way to handle it is to add a substring variable from from
+          // index and then to implement the rest
+          substring_auto = sub_str_start_auto->SubString(string_len_end_index_auto, string_search_term_value->getStringAutomaton());
+          delete string_len_end_index_auto;
+          string_len_end_index_auto = nullptr;
         }
-      } else {
 
-//      CHECK_EQ(Value::Type::INT_CONSTANT, param_start_index->getType())
-//                    << "start index of a subString is expected to be an integer constant";
-//      CHECK_EQ(Value::Type::INT_CONSTANT, param_end_index->getType())
-//                    << "start index of a subString is expected to be an integer constant";
-        result = new Value(param_subject->getStringAutomaton()->subString(
-                param_start_index->getIntConstant(),
-                param_end_index->getIntConstant()));
       }
-      break;
-    }
-    case SubString::Mode::FROMINDEXTOFIRSTOF: {
-      DVLOG(VLOG_LEVEL) << "subString mode: FROMINDEXTOFIRSTOF";
-      LOG(FATAL)<< "implement me";
-      break;
-    }
-    case SubString::Mode::FROMINDEXTOLASTOF: {
-      DVLOG(VLOG_LEVEL) << "subString mode: FROMINDEXTOLASTOF";
-      LOG(FATAL)<< "implement me";
-      break;
-    }
-    case SubString::Mode::FROMFIRSTOFTOINDEX: {
-      DVLOG(VLOG_LEVEL) << "subString mode: FROMFIRSTOFTOINDEX";
-      LOG(FATAL)<< "implement me";
-      break;
-    }
-    case SubString::Mode::FROMFIRSTOFTOFIRSTOF: {
-      DVLOG(VLOG_LEVEL) << "subString mode: FROMFIRSTOFTOFIRSTOF";
-      LOG(FATAL)<< "implement me";
-      break;
-    }
-    case SubString::Mode::FROMFIRSTOFTOLASTOF: {
-      DVLOG(VLOG_LEVEL) << "subString mode: FROMFIRSTOFTOFIRSTOF";
-      LOG(FATAL)<< "implement me";
-      break;
-    }
-    case SubString::Mode::FROMLASTOFTOINDEX: {
-      DVLOG(VLOG_LEVEL) << "subString mode: FROMLASTOFTOINDEX";
-      LOG(FATAL)<< "implement me";
-      break;
-    }
-    case SubString::Mode::FROMLASTOFTOFIRSTOF: {
-      DVLOG(VLOG_LEVEL) << "subString mode: FROMLASTOFTOFIRSTOF";
-      LOG(FATAL)<< "implement me";
-      break;
-    }
-    case SubString::Mode::FROMLASTOFTOLASTOF: {
-      DVLOG(VLOG_LEVEL) << "subString mode: FROMLASTOFTOLASTOF";
-      LOG(FATAL)<< "implement me";
-      break;
-    }
-    default:
-      LOG(FATAL)<< "Undefined subString semantic";
-      break;
+    } else {
+      LOG(FATAL) << "implement and fix me";
     }
 
-//  result->getStringAutomaton()->inspectAuto();
+  } else {
+    LOG(FATAL) << "implement me";
+  }
+
+  CHECK_NOTNULL(substring_auto);
+  result = new Value(substring_auto);
   setTermValue(sub_string_term, result);
 }
 
@@ -1009,7 +962,7 @@ void ConstraintSolver::visitToString(ToString_ptr to_string_term) {
   if (Value::Type::INT_CONSTANT == param->getType()) {
     std::stringstream ss;
     ss << param->getIntConstant();
-    result = new Value(StringAutomaton::makeString(ss.str()));
+    result = new Value(StringAutomaton::MakeString(ss.str()));
   } else {
     auto unary_auto = param->getIntAutomaton()->toUnaryAutomaton();
     result = new Value(unary_auto->toStringAutomaton());
@@ -1088,7 +1041,7 @@ void ConstraintSolver::visitUnknownTerm(Unknown_ptr unknown_term) {
     visit(term_ptr);
   }
   path_trace_.pop_back();
-  Value_ptr result = new Value(Theory::StringAutomaton::makeAnyString());
+  Value_ptr result = new Value(Theory::StringAutomaton::MakeAnyString());
 
   setTermValue(unknown_term, result);
 }
@@ -1097,31 +1050,29 @@ void ConstraintSolver::visitAsQualIdentifier(AsQualIdentifier_ptr as_qid_term) {
 }
 
 void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
-  DVLOG(VLOG_LEVEL) << "visit: " << *qi_term;
+  DVLOG(VLOG_LEVEL) << "visit: " << *qi_term << " = " << qi_term->getVarName();
 
   Variable_ptr variable = symbol_table_->get_variable(qi_term->getVarName());
 
-  //  TODO Fix that case of handling with projected value table...
-  // check if variable is relational first. if so, since we're storing
-  // multitrack values in the string constraint solver, get the variable's value
-  // from there and clone it into the symbol table, so the variable value computer has
-  // the most recent value
-  Value_ptr variable_value = nullptr;
-  if (Option::Solver::USE_MULTITRACK_AUTO) {
-    DVLOG(VLOG_LEVEL) << "Getting var value for " << variable->getName();
-    variable_value = string_constraint_solver_.get_variable_value(variable);
-    DVLOG(VLOG_LEVEL) << "Got var";
+  Value_ptr variable_value = symbol_table_->get_value(variable);
+
+  Value_ptr result = nullptr;
+  if (Value::Type::RELATIONALSTRING_AUTOMATON == variable_value->getType())
+  {
+    result = new Value(variable_value->getRelationalStringAutomaton()->GetAutomatonForVariable(qi_term->getVarName()));
+  } else if (Value::Type::BINARYINT_AUTOMATON == variable_value->getType())
+  {
+    // TODO baki: added for charat may need to fix it
+    auto var_auto = variable_value->getBinaryIntAutomaton()->GetBinaryAutomatonFor(qi_term->getVarName());
+    auto unary_auto = var_auto->ToUnaryAutomaton();
+    result = new Value(unary_auto->toIntAutomaton(8));
+    delete var_auto;
+    delete unary_auto;
+  } else
+  {
+    result = variable_value->clone();
   }
-  if (variable_value != nullptr) {
-    DVLOG(VLOG_LEVEL) << "Relational variable: " << *variable;
-    // variable relational, put in symbol table and tag for later update
-    symbol_table_->set_value(variable, variable_value);
-    tagged_variables.push_back(variable);
-  } else {
-    // variable not relational, just get normally from symbol table
-    variable_value = symbol_table_->get_value(variable);
-  }
-  Value_ptr result = variable_value->clone();
+
 
   setTermValue(qi_term, result);
   setVariablePath(qi_term);
@@ -1156,10 +1107,10 @@ void ConstraintSolver::visitTermConstant(TermConstant_ptr term_constant) {
       // TODO instead we may use string constants before going into automaton
       // and keep it unless we need automaton
       // this may complicate the code with a perf gain ??
-      result = new Value(Theory::StringAutomaton::makeString(term_constant->getValue()));
+      result = new Value(Theory::StringAutomaton::MakeString(term_constant->getValue()));
       break;
       case Primitive::Type::REGEX:
-      result = new Value(Theory::StringAutomaton::makeRegexAuto(term_constant->getValue()));
+      result = new Value(Theory::StringAutomaton::MakeRegexAuto(term_constant->getValue()));
       break;
       default:
       LOG(FATAL) << "unhandled term constant: " << *term_constant;
@@ -1252,27 +1203,12 @@ bool ConstraintSolver::update_variables() {
   if (variable_path_table_.size() == 0) {
     return true;
   }
-
   VariableValueComputer value_updater(symbol_table_, variable_path_table_, term_values_);
   value_updater.start();
   auto is_satisfiable = value_updater.is_satisfiable();
   variable_path_table_.clear();
   // TODO should we delete term_values ???
-
   // TODO refactor relation - single interaction
-  // update any relational variables tagged prior to variable value computer
-  // and update any changes in satisfiability
-  for (auto& var : tagged_variables) {
-    Value_ptr value = symbol_table_->get_value(var);
-    if (value == nullptr) {
-      DVLOG(VLOG_LEVEL) << "Inconsistent value for variable: " << var->getName();
-      continue;
-    }
-    bool still_good = string_constraint_solver_.update_variable_value(var, value);
-    is_satisfiable = is_satisfiable and still_good;
-    symbol_table_->clear_value(var,symbol_table_->top_scope());
-  }
-  tagged_variables.clear();
   return is_satisfiable;
 }
 
@@ -1285,14 +1221,14 @@ void ConstraintSolver::visit_children_of(Term_ptr term) {
 bool ConstraintSolver::check_and_visit(Term_ptr term) {
   if ((Term::Type::OR not_eq term->type()) and (Term::Type::AND not_eq term->type())) {
     if (constraint_information_->has_arithmetic_constraint(term)) {  // if arithmetic constraint and has string terms
-      auto is_satisfiable = true;
+      bool is_satisfiable = true;
       if (arithmetic_constraint_solver_.has_string_terms(term)) {
         DVLOG(VLOG_LEVEL) << "Mixed Linear Arithmetic Constraint";
         is_satisfiable = process_mixed_integer_string_constraints_in(term);
       }
       return is_satisfiable;
     } else if (constraint_information_->has_string_constraint(term)) {
-      DVLOG(VLOG_LEVEL) << "Mixed Multi- and Single- Track String Automata Constraint";
+      LOG(FATAL) << "Mixed Multi- and Single- Track String Automata Constraint";
       return true;  // should be checked already
     }
   }
@@ -1309,12 +1245,12 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
   int number_of_variables_for_int_auto;
   bool is_satisfiable = true;
 
+  // get term value returns result from the symbol table (should return)
   auto arithmetic_result = arithmetic_constraint_solver_.get_term_value(term);
   for (auto& string_term : arithmetic_constraint_solver_.get_string_terms_in(term)) {
     visit(string_term);
     auto string_term_result = getTermValue(string_term);
     is_satisfiable = string_term_result->is_satisfiable();
-
     if (not is_satisfiable) {
       auto binary_auto = arithmetic_result->getBinaryIntAutomaton();
       arithmetic_result = new Value(
@@ -1326,8 +1262,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     std::string string_term_var_name = symbol_table_->get_var_name_for_expression(string_term, Variable::Type::INT);
     if (Value::Type::INT_AUTOMATON == string_term_result->getType()) {
       has_minus_one = string_term_result->getIntAutomaton()->hasNegative1();
-      number_of_variables_for_int_auto = string_term_result->getIntAutomaton()->getNumberOfVariables();
-
+      number_of_variables_for_int_auto = string_term_result->getIntAutomaton()->get_number_of_bdd_variables();
       // first convert integer result to unary, then unary to binary
       string_term_unary_auto = string_term_result->getIntAutomaton()->toUnaryAutomaton();
       string_term_binary_auto = string_term_unary_auto->toBinaryIntAutomaton(

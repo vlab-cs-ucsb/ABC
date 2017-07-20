@@ -80,6 +80,7 @@ public:
   virtual void visitTBool(TBool_ptr) = 0;
   virtual void visitTInt(TInt_ptr) = 0;
   virtual void visitTString(TString_ptr) = 0;
+//  virtual void visitTRegExp(TRegExp_ptr) = 0;
   virtual void visitAttribute(Attribute_ptr) = 0;
   virtual void visitSortedVar(SortedVar_ptr) = 0;
   virtual void visitVarBinding(VarBinding_ptr) = 0;

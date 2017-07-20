@@ -1,42 +1,37 @@
 /*
- * ArithmeticFormulaGenerator.h
+ * ConstraintQuerier.h
  *
- *  Created on: Oct 19, 2015
+ *  Created on: Jan 21, 2017
  *      Author: baki
- *   Copyright: Copyright 2015 The ABC Authors. All rights reserved. 
- *              Use of this source code is governed license that can
- *              be found in the COPYING file.
  */
 
-#ifndef SOLVER_ARITHMETICFORMULAGENERATOR_H_
-#define SOLVER_ARITHMETICFORMULAGENERATOR_H_
+#ifndef SRC_SOLVER_OPTIMIZATION_CONSTRAINTQUERIER_H_
+#define SRC_SOLVER_OPTIMIZATION_CONSTRAINTQUERIER_H_
 
-#include <map>
+#include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include <glog/logging.h>
 
-#include "../smt/ast.h"
-#include "../smt/typedefs.h"
-#include "../smt/Visitor.h"
-#include "../theory/ArithmeticFormula.h"
-#include "ConstraintInformation.h"
-#include "options/Solver.h"
-#include "SymbolTable.h"
+#include "../../smt/ast.h"
+#include "../../smt/Visitor.h"
+#include "../Ast2Dot.h"
 
 namespace Vlab {
 namespace Solver {
+namespace Optimization {
 
-class ArithmeticFormulaGenerator: public SMT::Visitor {
-public:
-  ArithmeticFormulaGenerator(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr);
-  virtual ~ArithmeticFormulaGenerator();
+class ConstraintQuerier: public SMT::Visitor {
+ public:
+  enum class Mode : int {QUERY = 0, GET};
+  ConstraintQuerier();
+  virtual ~ConstraintQuerier();
 
-  void start(SMT::Visitable_ptr);
-  void start() override;
+  bool is_param_equal_to(SMT::Term_ptr term_search, SMT::Term_ptr term_subject, int index);
+  SMT::Term_ptr get_parameter(SMT::Term_ptr, int index);
   void end() override;
 
   void visitScript(SMT::Script_ptr) override;
@@ -105,47 +100,19 @@ public:
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
 
-  //bool has_arithmetic_formula();
-  Theory::ArithmeticFormula_ptr get_term_formula(SMT::Term_ptr term);
-  Theory::ArithmeticFormula_ptr get_group_formula(std::string group_name);
-  bool has_string_terms(SMT::Term_ptr term);
-  std::map<SMT::Term_ptr, SMT::TermList> get_string_terms_map();
-  SMT::TermList& get_string_terms_in(SMT::Term_ptr term);
-  void clear_term_formula(SMT::Term_ptr term);
-  void clear_term_formulas();
-
-  std::string get_term_group_name(SMT::Term_ptr term);
-
 protected:
-  void add_int_variables(std::string group_name, SMT::Term_ptr term);
-
-  bool set_term_formula(SMT::Term_ptr term, Theory::ArithmeticFormula_ptr formula);
-  void delete_term_formula(SMT::Term_ptr);
-  void set_group_mappings();
-
-  SMT::Script_ptr root_;
-  SymbolTable_ptr symbol_table_;
-  ConstraintInformation_ptr constraint_information_;
-  bool has_mixed_constraint_;
-  std::string current_group_;
-
-  std::map<SMT::Term_ptr, Theory::ArithmeticFormula_ptr> term_formula_;
-
-  /**
-	 * TODO instead of keeping that maps, add a pre-processing step
-	 * to have a auxiliary variable for mixed terms
-	 */
-  SMT::TermList string_terms_;
-  std::map<SMT::Term_ptr, SMT::TermList> string_terms_map_;
-
-  std::map<SMT::Term_ptr, std::string> term_group_map_;
-  std::map<std::string, Theory::ArithmeticFormula_ptr> group_formula_;
-
+  void start() override;
+  ConstraintQuerier::Mode mode_;
+  bool query_result_;
+  int param_index_;
+  SMT::Term_ptr search_term_;
 private:
   static const int VLOG_LEVEL;
+
 };
 
+} /* namespace Optimization */
 } /* namespace Solver */
 } /* namespace Vlab */
 
-#endif /* SOLVER_ARITHMETICFORMULAGENERATOR_H_ */
+#endif /* SRC_SOLVER_OPTIMIZATION_CONSTRAINTQUERIER_H_ */

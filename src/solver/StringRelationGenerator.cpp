@@ -497,11 +497,13 @@ void StringRelationGenerator::visitLen(Len_ptr len_term) {
 }
 
 void StringRelationGenerator::visitContains(Contains_ptr contains_term) {
-  // implement
+  has_mixed_constraint_ = true;
+  has_string_formula_ = false;
 }
 
 void StringRelationGenerator::visitNotContains(NotContains_ptr not_contains_term) {
-  // implement
+  has_mixed_constraint_ = true;
+  has_string_formula_ = false;
 }
 
 void StringRelationGenerator::visitBegins(Begins_ptr begins_term) {

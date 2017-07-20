@@ -57,6 +57,12 @@ public:
   bool is_constant() const;
   void reset_coefficients(int value = 0);
   int get_variable_index(std::string) const;
+  std::string get_variable_at_index(const std::size_t index) const;
+
+  bool has_relation_to_mixed_term(const std::string var_name) const;
+	void add_relation_to_mixed_term(const std::string var_name, const ArithmeticFormula::Type relation, const SMT::Term_ptr term);
+	std::pair<ArithmeticFormula::Type, SMT::Term_ptr> get_relation_to_mixed_term(const std::string var_name) const;
+	bool UpdateMixedConstraintRelations();
 
   ArithmeticFormula_ptr Add(ArithmeticFormula_ptr);
   ArithmeticFormula_ptr Subtract(ArithmeticFormula_ptr);
@@ -71,11 +77,15 @@ public:
   friend std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula);
 
 protected:
+  bool get_var_names_if_equality_of_two_vars(std::string &v1, std::string &v2);
+
   ArithmeticFormula::Type type_;
   int constant_;
   std::map<std::string, int> variable_coefficient_map_;
   std::map<std::string, bool> boolean_variable_value_map_;
   std::map<std::string, int> variable_indices_;
+
+  std::map<std::string, std::pair<ArithmeticFormula::Type, SMT::Term_ptr>> mixed_terms_;
 
 private:
   static const int VLOG_LEVEL;

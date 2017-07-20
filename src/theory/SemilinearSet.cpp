@@ -52,59 +52,59 @@ std::string SemilinearSet::str() const {
   return ss.str();
 }
 
-int SemilinearSet::getCycleHead() {
+int SemilinearSet::get_cycle_head() {
   return C;
 }
 
-void SemilinearSet::setCycleHead(int value) {
+void SemilinearSet::set_cycle_head(int value) {
   C = value;
 }
 
-int SemilinearSet::getPeriod() {
+int SemilinearSet::get_period() {
   return R;
 }
 
-void SemilinearSet::setPeriod(int value) {
+void SemilinearSet::set_period(int value) {
   R = value;
 }
 
-std::vector<int>& SemilinearSet::getConstants() {
+std::vector<int>& SemilinearSet::get_constants() {
   return constants;
 }
 
-void SemilinearSet::setConstants(std::vector<int>& constants) {
+void SemilinearSet::set_constants(std::vector<int>& constants) {
   this->constants = constants;
 }
 
-std::vector<int>& SemilinearSet::getPeriodicConstants() {
+std::vector<int>& SemilinearSet::get_periodic_constants() {
   return periodic_constants;
 }
 
-void SemilinearSet::setPeriodicConstants(std::vector<int>& periodic_constants) {
+void SemilinearSet::set_periodic_constants(std::vector<int>& periodic_constants) {
   this->periodic_constants = periodic_constants;
 }
 
-void SemilinearSet::addConstant(int value) {
+void SemilinearSet::add_constant(int value) {
   constants.push_back(value);
 }
 
-void SemilinearSet::addPeriodicConstant(int value) {
+void SemilinearSet::add_periodic_constant(int value) {
   periodic_constants.push_back(value);
 }
-int SemilinearSet::getNumberOfConstants() {
+int SemilinearSet::get_number_of_constants() {
   return constants.size();
 }
 
-int SemilinearSet::getNumberOfPeriodicConstants() {
+int SemilinearSet::get_number_of_periodic_constants() {
   return periodic_constants.size();
 }
 
-// TODO fix me
-SemilinearSet_ptr SemilinearSet::merge(SemilinearSet_ptr other) {
+// TODO test and fix me
+SemilinearSet_ptr SemilinearSet::Merge(SemilinearSet_ptr other) {
   SemilinearSet_ptr result = nullptr;
-  if (this->isEmptySet()) {
+  if (this->is_empty_set()) {
     return other->clone();
-  } else if (other->isEmptySet()) {
+  } else if (other->is_empty_set()) {
     return this->clone();
   }
 
@@ -120,18 +120,18 @@ SemilinearSet_ptr SemilinearSet::merge(SemilinearSet_ptr other) {
 
   if (not result->constants.empty()) {
     cycle_head = result->constants.back() + 1;
-    int max_head = std::max(this->getCycleHead(), other->getCycleHead());
+    int max_head = std::max(this->get_cycle_head(), other->get_cycle_head());
     if (max_head > lcm_value) {
       cycle_head = std::max(cycle_head, max_head);
     }
   } else {
-    cycle_head = std::max(this->getCycleHead(), other->getCycleHead());
+    cycle_head = std::max(this->get_cycle_head(), other->get_cycle_head());
     if (cycle_head < lcm_value) {
       cycle_head = 0;
     }
   }
 
-  result->setCycleHead(cycle_head);
+  result->set_cycle_head(cycle_head);
 
   int period;
   if (p1 == 0) {
@@ -144,19 +144,19 @@ SemilinearSet_ptr SemilinearSet::merge(SemilinearSet_ptr other) {
     result->R = lcm_value;
 
     auto compute_periods = [result](SemilinearSet_ptr other) {
-      int period = result->getPeriod();
-      int cycle_head = result->getCycleHead();
-      int other_cycle_head = other->getCycleHead();
-      int other_period = other->getPeriod();
-      for (auto p : other->getPeriodicConstants()) {
+      int period = result->get_period();
+      int cycle_head = result->get_cycle_head();
+      int other_cycle_head = other->get_cycle_head();
+      int other_period = other->get_period();
+      for (auto p : other->get_periodic_constants()) {
         int sum = 0;
         while (sum < period) {
           int value = (other_cycle_head + p + sum);
           if (value >= cycle_head) {
-            result->addPeriodicConstant(value - cycle_head);
+            result->add_periodic_constant(value - cycle_head);
           } else {
-            result->addConstant(value);
-            result->addPeriodicConstant(value - cycle_head + period);
+            result->add_constant(value);
+            result->add_periodic_constant(value - cycle_head + period);
           }
           sum += other_period;
         }
@@ -172,15 +172,15 @@ SemilinearSet_ptr SemilinearSet::merge(SemilinearSet_ptr other) {
   return result;
 }
 
-bool SemilinearSet::isEmptySet() {
+bool SemilinearSet::is_empty_set() {
   return (C == 0 and R == 0 and constants.empty());
 }
 
-bool SemilinearSet::hasOnlyConstants() {
+bool SemilinearSet::has_only_constants() {
   return (C == 0 and R == 0 and (not constants.empty()));
 }
 
-bool SemilinearSet::hasConstants() {
+bool SemilinearSet::has_constants() {
   return (not constants.empty());
 }
 

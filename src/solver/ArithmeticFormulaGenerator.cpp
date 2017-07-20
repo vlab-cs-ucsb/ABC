@@ -128,15 +128,32 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
   visit_children_of(or_term);
   DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
 
-  if (not constraint_information_->is_component(or_term)) { // a rare case, @deprecated
+  // @deprecated check, all or terms must be a component
+  // will be removed after careful testing
+  if (not constraint_information_->is_component(or_term)) {
     current_group_ = "";
     has_mixed_constraint_ = false;
     return;
   }
 
+  /**
+   * If an or term does not have a child that has arithmetic formula, but we end up being here:
+   * If or term does not have a group formula we are fine.
+   * If or term has a group formula, that means or term is under a conjunction where other
+   * conjunctive terms has arithmetic formula. We don't really need to set a formula for this
+   * or term in this case (if has_arithmetic_formula var remains false).
+   * ! Instead we can let it generate a formula for this or term  and handle this case in
+   * Arithmetic constraint solver by generating a Sigma* automaton, but this will be an
+   * unneccessary intersection with other terms.
+   */
+  bool has_arithmetic_formula = false;
+  for (auto term : *or_term->term_list) {
+    has_arithmetic_formula = constraint_information_->has_arithmetic_constraint(term) or has_arithmetic_formula;
+  }
+
   DVLOG(VLOG_LEVEL) << "post visit start: " << *or_term << "@" << or_term;
   auto group_formula = get_group_formula(current_group_);
-  if (group_formula not_eq nullptr and group_formula->get_number_of_variables() > 0) {
+  if (has_arithmetic_formula and group_formula not_eq nullptr and group_formula->get_number_of_variables() > 0) {
     auto formula = group_formula->clone();
     formula->set_type(ArithmeticFormula::Type::UNION);
     set_term_formula(or_term, formula);
@@ -268,10 +285,12 @@ void ArithmeticFormulaGenerator::visitEq(Eq_ptr eq_term) {
     set_term_formula(eq_term, formula);
     add_int_variables(current_group_, eq_term);
     if (string_terms_.size() > 0) {
+      formula->UpdateMixedConstraintRelations();
       string_terms_map_[eq_term] = string_terms_;
       string_terms_.clear();
       constraint_information_->add_mixed_constraint(eq_term);
       has_mixed_constraint_ = true;
+
     }
     constraint_information_->add_arithmetic_constraint(eq_term);
   }
@@ -422,6 +441,8 @@ void ArithmeticFormulaGenerator::visitLen(Len_ptr len_term) {
 
   auto formula = new ArithmeticFormula();
   formula->add_variable(name, 1);
+  formula->set_type(ArithmeticFormula::Type::VAR);
+  formula->add_relation_to_mixed_term(name, ArithmeticFormula::Type::NONE, len_term);
 
   set_term_formula(len_term, formula);
 
@@ -453,6 +474,8 @@ void ArithmeticFormulaGenerator::visitIndexOf(IndexOf_ptr index_of_term) {
 
   auto formula = new ArithmeticFormula();
   formula->add_variable(name, 1);
+  formula->set_type(ArithmeticFormula::Type::VAR);
+  formula->add_relation_to_mixed_term(name, ArithmeticFormula::Type::NONE, index_of_term);
 
   set_term_formula(index_of_term, formula);
 
@@ -466,6 +489,8 @@ void ArithmeticFormulaGenerator::visitLastIndexOf(LastIndexOf_ptr last_index_of_
 
   auto formula = new ArithmeticFormula();
   formula->add_variable(name, 1);
+  formula->set_type(ArithmeticFormula::Type::VAR);
+  formula->add_relation_to_mixed_term(name, ArithmeticFormula::Type::NONE, last_index_of_term);
 
   set_term_formula(last_index_of_term, formula);
 
@@ -497,6 +522,8 @@ void ArithmeticFormulaGenerator::visitToInt(ToInt_ptr to_int_term) {
 
   auto formula = new ArithmeticFormula();
   formula->add_variable(name, 1);
+  formula->set_type(ArithmeticFormula::Type::VAR);
+  formula->add_relation_to_mixed_term(name, ArithmeticFormula::Type::NONE, to_int_term);
 
   set_term_formula(to_int_term, formula);
 
@@ -543,19 +570,19 @@ void ArithmeticFormulaGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term)
   DVLOG(VLOG_LEVEL) << "visit: " << *qi_term;
 
   Variable_ptr variable = symbol_table_->get_variable(qi_term->getVarName());
-  if (Variable::Type::INT == variable->getType()) {
-    auto formula = new ArithmeticFormula();
-    formula->add_variable(variable->getName(), 1);
-    formula->set_type(ArithmeticFormula::Type::VAR);
-    set_term_formula(qi_term, formula);
-  } else if(Variable::Type::BOOL == variable->getType()) {
-  	auto formula = new ArithmeticFormula();
-  	formula->add_boolean(variable->getName());
-  	formula->add_variable(variable->getName(), 0);
-  	formula->set_type(ArithmeticFormula::Type::BOOL);
-  	set_term_formula(qi_term, formula);
-  	add_int_variables(current_group_,qi_term);
-  }
+	if (Variable::Type::INT == variable->getType()) {
+		auto formula = new ArithmeticFormula();
+		formula->add_variable(variable->getName(), 1);
+		formula->set_type(ArithmeticFormula::Type::VAR);
+		set_term_formula(qi_term, formula);
+	} else if(Variable::Type::BOOL == variable->getType()) {
+		auto formula = new ArithmeticFormula();
+		formula->add_boolean(variable->getName());
+		formula->add_variable(variable->getName(), 0);
+		formula->set_type(ArithmeticFormula::Type::BOOL);
+		set_term_formula(qi_term, formula);
+		add_int_variables(current_group_,qi_term);
+	}
 }
 
 void ArithmeticFormulaGenerator::visitTermConstant(TermConstant_ptr term_constant) {
@@ -607,10 +634,6 @@ void ArithmeticFormulaGenerator::visitSortedVar(SortedVar_ptr sorted_var) {
 void ArithmeticFormulaGenerator::visitVarBinding(VarBinding_ptr var_binding) {
 }
 
-bool ArithmeticFormulaGenerator::has_arithmetic_formula() {
-  return false;
-}
-
 ArithmeticFormula_ptr ArithmeticFormulaGenerator::get_term_formula(Term_ptr term) {
   auto it = term_formula_.find(term);
   if (it == term_formula_.end()) {
@@ -637,6 +660,14 @@ std::map<Term_ptr, TermList> ArithmeticFormulaGenerator::get_string_terms_map() 
 
 TermList& ArithmeticFormulaGenerator::get_string_terms_in(Term_ptr term) {
   return string_terms_map_[term];
+}
+
+void ArithmeticFormulaGenerator::clear_term_formula(Term_ptr term) {
+  auto it = term_formula_.find(term);
+  if (it != term_formula_.end()) {
+    delete it->second;
+    term_formula_.erase(it);
+  }
 }
 
 void ArithmeticFormulaGenerator::clear_term_formulas() {
@@ -688,6 +719,9 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
   DVLOG(VLOG_LEVEL)<< "start setting int group for components";
   for (auto& el : term_group_map_) {
     term_formula_[el.first]->merge_variables(group_formula_[el.second]);
+    // to propagate mixed constraint information, merge onto group formula as well
+    // TODO same integer variable can be assigned into different terms, test case (v = indexof... and v = lastindexof...)
+    group_formula_[el.second]->merge_variables(term_formula_[el.first]);
   }
   // add a variable entry to symbol table for each group
   // define a variable mapping for a group
