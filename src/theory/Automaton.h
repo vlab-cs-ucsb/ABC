@@ -444,7 +444,8 @@ protected:
 
 
   bool hasIncomingTransition(int state);
-  bool isStartStateReachableFromAnAcceptingState();
+  // todo will remove temp function
+  static bool TEMPisStartStateReachableFromAnAcceptingState(DFA_ptr dfa);
 
   int getNextState(int state, std::vector<char>& exception);
   std::set<int> getNextStates(int state);

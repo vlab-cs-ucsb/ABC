@@ -225,7 +225,7 @@ Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
   state_id_shift_amount = left_auto->dfa_->ns;
   expected_num_of_states = left_auto->dfa_->ns + right_auto->dfa_->ns;
 
-  is_start_state_reachable = right_auto->isStartStateReachableFromAnAcceptingState();
+  is_start_state_reachable = right_auto->TEMPisStartStateReachableFromAnAcceptingState();
   if (not is_start_state_reachable) {
     expected_num_of_states = expected_num_of_states  - 1; // if start state is reachable from an accepting state, it will be merge with accepting states of left hand side
   }
@@ -1042,7 +1042,7 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
   bool left_hand_side_accepts_emtpy_input = DFAIsAcceptingState(dfa1, dfa1->s);
   bool right_hand_side_accepts_empty_input = DFAIsAcceptingState(dfa2, dfa2->s);
 
-  DFA_ptr left_dfa = nullptr, right_dfa = nullptr;
+  DFA_ptr left_dfa = dfa1, right_dfa = dfa2;
 
   if (left_hand_side_accepts_emtpy_input or right_hand_side_accepts_empty_input) {
     auto any_input_other_than_empty = Automaton::DFAMakeAcceptingAnyAfterLength(1, number_of_bdd_variables);
@@ -1056,8 +1056,6 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
     dfaFree(any_input_other_than_empty);
   }
 
-  // baki left here,
-  // just do it for dfa for now, after making it compile work on improving concat, fixing bugs
   int* indices = GetBddVariableIndices(number_of_bdd_variables);
   int tmp_num_of_variables,
       state_id_shift_amount,
@@ -1078,17 +1076,17 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
   std::map<std::vector<char>*, int> exceptions_fix;
   std::vector<char>* current_exception = nullptr;
   char* statuses = nullptr;
-  tmp_num_of_variables = left_auto->num_of_bdd_variables_ + 1; // add one extra bit
-  state_id_shift_amount = left_auto->dfa_->ns;
-  expected_num_of_states = left_auto->dfa_->ns + right_auto->dfa_->ns;
+  tmp_num_of_variables = number_of_bdd_variables + 1; // add one extra bit
+  state_id_shift_amount = left_dfa->ns;
+  expected_num_of_states = left_dfa->ns + right_dfa->ns;
 
-  is_start_state_reachable = right_auto->isStartStateReachableFromAnAcceptingState();
+  is_start_state_reachable = TEMPisStartStateReachableFromAnAcceptingState(right_dfa);
   if (not is_start_state_reachable) {
     expected_num_of_states = expected_num_of_states  - 1; // if start state is reachable from an accepting state, it will be merge with accepting states of left hand side
   }
   // variable initializations
-  sink_state_left_auto = left_auto->GetSinkState();
-  sink_state_right_auto = right_auto->GetSinkState();
+  sink_state_left_auto = DFAGetSinkState(left_dfa);
+  sink_state_right_auto = DFAGetSinkState(right_dfa);
 
   bool left_sink = true, right_sink = true;
   int sink = sink_state_left_auto;
@@ -1113,24 +1111,24 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
   int* concat_indices = GetBddVariableIndices(tmp_num_of_variables);
 
   dfaSetup(expected_num_of_states, tmp_num_of_variables, concat_indices); //sink states are merged
-  state_paths = pp = make_paths(right_auto->dfa_->bddm, right_auto->dfa_->q[right_auto->dfa_->s]);
+  state_paths = pp = make_paths(right_dfa->bddm, right_dfa->q[right_dfa->s]);
   while (pp) {
     if (!right_sink || pp->to != sink_state_right_auto ) {
       to_state = pp->to + state_id_shift_amount;
       // if there is a self loop keep it
-      if (pp->to == (unsigned)right_auto->dfa_->s ) {
+      if (pp->to == (unsigned)right_dfa->s ) {
         to_state -= 2;
       } else {
         if (left_sink && right_sink && pp->to > (unsigned)sink_state_right_auto ) {
           to_state--; //to new state, sink state will be eliminated and hence need -1
         }
-        if ((not is_start_state_reachable) && pp->to > (unsigned)right_auto->dfa_->s) {
+        if ((not is_start_state_reachable) && pp->to > (unsigned)right_dfa->s) {
           to_state--; // to new state, init state will be eliminated if init is not reachable
         }
       }
 
       current_exception = new std::vector<char>();
-      for (j = 0; j < right_auto->num_of_bdd_variables_; j++) {
+      for (j = 0; j < number_of_bdd_variables; j++) {
         //the following for loop can be avoided if the indices are in order
         for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
         if (tp) {
@@ -1473,15 +1471,16 @@ bool Automaton::hasIncomingTransition(int state) {
 }
 
 /**
+ * TODO will remove this function with a better approach in its uses
  * @returns true if a start state is reachable from an accepting state, false otherwise
  */
-bool Automaton::isStartStateReachableFromAnAcceptingState() {
+bool Automaton::TEMPisStartStateReachableFromAnAcceptingState(DFA_ptr dfa) {
   paths state_paths, pp;
-  for (int i = 0; i < this->dfa_->ns; i++) {
+  for (int i = 0; i < dfa->ns; i++) {
     if (IsAcceptingState(i)) {
-      state_paths = pp = make_paths(this->dfa_->bddm, this->dfa_->q[i]);
+      state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
       while (pp) {
-        if (pp->to == (unsigned) this->dfa_->s) {
+        if (pp->to == (unsigned) dfa->s) {
           kill_paths(state_paths);
           return true;
         }

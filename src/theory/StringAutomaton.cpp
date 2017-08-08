@@ -350,7 +350,7 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
   state_id_shift_amount = left_auto->dfa_->ns;
   expected_num_of_states = left_auto->dfa_->ns + right_auto->dfa_->ns;
 
-  is_start_state_reachable = right_auto->isStartStateReachableFromAnAcceptingState();
+  is_start_state_reachable = right_auto->TEMPisStartStateReachableFromAnAcceptingState();
   if (not is_start_state_reachable) {
     expected_num_of_states = expected_num_of_states  - 1; // if start state is reachable from an accepting state, it will be merge with accepting states of left hand side
   }
