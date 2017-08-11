@@ -173,7 +173,7 @@ public:
 
 
   // TODO baki left here: move common functions to base class, should be implemented similar to visitor pattern
-  StringAutomaton_ptr concat(StringAutomaton_ptr other_auto);
+  //StringAutomaton_ptr concat(StringAutomaton_ptr other_auto);
 
   StringAutomaton_ptr optional();
   StringAutomaton_ptr closure();

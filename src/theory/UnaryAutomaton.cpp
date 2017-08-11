@@ -41,6 +41,14 @@ UnaryAutomaton_ptr UnaryAutomaton::MakePhi() {
   return non_acception_unary_auto;
 }
 
+UnaryAutomaton_ptr UnaryAutomaton::MakeAutomaton(DFA_ptr dfa, const int number_of_variables) {
+	if(number_of_variables != 1) {
+		LOG(FATAL) << "unary auto cannot have more than one variable";
+	}
+	UnaryAutomaton_ptr unary_auto = new UnaryAutomaton(dfa);
+	return unary_auto;
+}
+
 UnaryAutomaton_ptr UnaryAutomaton::MakeAutomaton(SemilinearSet_ptr semilinear_set) {
   UnaryAutomaton_ptr unary_auto = nullptr;
   DFA_ptr unary_dfa = nullptr, tmp_dfa = nullptr;
@@ -151,7 +159,7 @@ SemilinearSet_ptr UnaryAutomaton::getSemilinearSet() {
 
   semilinear_set = new SemilinearSet();
   int cycle_head_value = 0;
-  bool is_in_cycle = is_start_state(cycle_head_state);
+  bool is_in_cycle = IsInitialState(cycle_head_state);
 
   for (auto state : states) {
     if (not is_in_cycle) {
@@ -303,7 +311,7 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
       std::string regex_str = "[0-9]{" + std::to_string(value_str.length()) + ",}";
       tmp_1_auto = StringAutomaton::MakeRegexAuto(regex_str);
       tmp_2_auto = result_auto;
-      result_auto = tmp_2_auto->concat(tmp_1_auto);
+      result_auto = static_cast<StringAutomaton_ptr>(tmp_2_auto->Concat(tmp_1_auto));
       delete tmp_1_auto;
       delete tmp_2_auto;
       break;
@@ -312,7 +320,7 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
     if (IsAcceptingState(curr_state)) {
       tmp_1_auto = StringAutomaton::MakeString(std::to_string(value));
       tmp_2_auto = result_auto;
-      result_auto = tmp_2_auto->union_(tmp_1_auto);
+      result_auto = static_cast<StringAutomaton_ptr>(tmp_2_auto->Union(tmp_1_auto));
       delete tmp_1_auto;
       delete tmp_2_auto;
     }

@@ -405,6 +405,13 @@ protected:
    */
   static std::set<std::string> DFAGetTransitionsFromTo(DFA_ptr dfa, const int from, const int to, const int num_of_variables);
 
+  /**
+	 * Generates a dfa that accepts that accepts the concatenated language of dfa1 and dfa2
+	 * @param dfa1
+	 * @param dfa2
+	 * @param number_of_bdd_variables
+	 * @return
+	 */
   static DFA_ptr DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int number_of_bdd_variables);
 
 

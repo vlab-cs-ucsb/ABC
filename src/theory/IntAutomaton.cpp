@@ -50,6 +50,11 @@ IntAutomaton_ptr IntAutomaton::clone() const {
   return cloned_auto;
 }
 
+IntAutomaton_ptr IntAutomaton::MakeAutomaton(DFA_ptr dfa, const int number_of_variables) {
+	IntAutomaton_ptr int_auto = new IntAutomaton(dfa,number_of_variables);
+	return int_auto;
+}
+
 IntAutomaton_ptr IntAutomaton::makePhi(int num_of_variables) {
   DFA_ptr non_accepting_int_dfa = nullptr;
   IntAutomaton_ptr non_acception_int_auto = nullptr;
@@ -115,7 +120,7 @@ IntAutomaton_ptr IntAutomaton::makeInt(int value, int num_of_variables){
     int_auto = IntAutomaton::makeZero();
   }
   else{
-    int_dfa = Automaton::DFAMakeL1ToL2(value, value,num_of_variables);
+    int_dfa = Automaton::DFAMakeAcceptingAnyWithInRange(value, value,num_of_variables);
     int_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
   }
 
@@ -135,7 +140,7 @@ IntAutomaton_ptr IntAutomaton::makeIntLessThan(int value, int num_of_variables){
      int_auto->has_negative_1 = true;
    }
    else{
-     int_dfa = Automaton::DFAMakeL1ToL2(0, value - 1,IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+     int_dfa = Automaton::DFAMakeAcceptingAnyWithInRange(0, value - 1,IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
      int_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
    }
 
@@ -157,7 +162,7 @@ IntAutomaton_ptr IntAutomaton::makeIntLessThanOrEqual(int value, int num_of_vari
     int_auto->has_negative_1 = true;
   }
   else{
-    int_dfa = Automaton::DFAMakeL1ToL2(0, value, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+    int_dfa = Automaton::DFAMakeAcceptingAnyWithInRange(0, value, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
     int_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
   }
 
@@ -203,7 +208,7 @@ IntAutomaton_ptr IntAutomaton::makeIntGreaterThanOrEqual(int value, int num_of_v
 IntAutomaton_ptr IntAutomaton::makeIntRange(int start, int end, int num_of_variables){
   DFA_ptr int_dfa = nullptr;
   IntAutomaton_ptr range_auto = nullptr;
-  int_dfa = Automaton::DFAMakeL1ToL2(start, end,IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  int_dfa = Automaton::DFAMakeAcceptingAnyWithInRange(start, end,IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
   range_auto = new IntAutomaton(int_dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   DVLOG(VLOG_LEVEL) << range_auto->id_ << " = makeIntRange(" << start << "," << end <<  ")";
@@ -679,11 +684,11 @@ bool IntAutomaton::isEmptyLanguage() {
 }
 
 bool IntAutomaton::hasZero() {
-  return Automaton::is_initial_state_accepting();
+  return Automaton::IsInitialStateAccepting();
 }
 
 bool IntAutomaton::isZero() {
-  return (Automaton::isOnlyInitialStateAccepting() and (not has_negative_1));
+  return (Automaton::IsOnlyAcceptingEmptyInput() and (not has_negative_1));
 }
 
 bool IntAutomaton::isAcceptingSingleInt() {

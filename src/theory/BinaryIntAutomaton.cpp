@@ -51,6 +51,11 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::clone() const {
   return cloned_auto;
 }
 
+// What about natural number parameter?
+BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(DFA_ptr dfa, const int number_of_variables) {
+	return new BinaryIntAutomaton(dfa,false,number_of_variables);
+}
+
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakePhi(ArithmeticFormula_ptr formula, bool is_natural_number) {
   auto non_accepting_dfa = Automaton::DFAMakePhi(formula->get_number_of_variables());
   auto non_accepting_binary_auto = new BinaryIntAutomaton(non_accepting_dfa, formula, is_natural_number);
@@ -367,7 +372,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Exists(std::string var_name) {
 BinaryIntAutomaton_ptr BinaryIntAutomaton::GetBinaryAutomatonFor(std::string var_name) {
   CHECK_EQ(num_of_bdd_variables_, formula_->get_number_of_variables())<< "number of variables is not consistent with formula";
   int bdd_var_index = formula_->get_variable_index(var_name);;
-  auto single_var_dfa = Automaton::DFAProjectTo(bdd_var_index, num_of_bdd_variables_, this->dfa_);
+  auto single_var_dfa = Automaton::DFAProjectTo(this->dfa_, num_of_bdd_variables_, bdd_var_index);
   auto single_var_formula = new ArithmeticFormula();
   single_var_formula->set_type(ArithmeticFormula::Type::INTERSECT);
   single_var_formula->add_variable(var_name, 1);
@@ -984,7 +989,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
   delete[] statuses;
 
   auto equality_auto = new BinaryIntAutomaton(equality_dfa, formula, false);
-  CHECK_EQ(false, equality_auto->is_initial_state_accepting());
+  CHECK_EQ(false, equality_auto->IsInitialStateAccepting());
 
   DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeIntEquality(" << *formula << ")";
   return equality_auto;
@@ -1143,7 +1148,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticF
   delete[] statuses;
 
   auto equality_auto = new BinaryIntAutomaton(equality_dfa, formula, true);
-  CHECK_EQ(false, equality_auto->is_initial_state_accepting());
+  CHECK_EQ(false, equality_auto->IsInitialStateAccepting());
 
   DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeNaturalNumberEquality(" << *formula << ")";
   return equality_auto;
@@ -1301,7 +1306,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntLessThan(ArithmeticFormula_ptr
   delete[] statuses;
 
   auto less_than_auto = new BinaryIntAutomaton(less_than_dfa, formula, false);
-  CHECK_EQ(false, less_than_auto->is_initial_state_accepting());
+  CHECK_EQ(false, less_than_auto->IsInitialStateAccepting());
 
   DVLOG(VLOG_LEVEL) << less_than_auto->id_ << " = MakeIntLessThan(" << *formula << ")";
   return less_than_auto;
@@ -1449,7 +1454,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberLessThan(ArithmeticF
   delete[] statuses;
 
   auto less_than_auto = new BinaryIntAutomaton(less_than_dfa, formula, true);
-  CHECK_EQ(false, less_than_auto->is_initial_state_accepting());
+  CHECK_EQ(false, less_than_auto->IsInitialStateAccepting());
 
   DVLOG(VLOG_LEVEL) << less_than_auto->id_ << " = MakeNaturalNumberLessThan(" << *formula << ")";
   return less_than_auto;

@@ -31,42 +31,43 @@ BoolAutomaton::BoolAutomaton(const BoolAutomaton& other)
 }
 
 BoolAutomaton_ptr BoolAutomaton::clone() const {
-  return new BoolAutomaton(*this);
+	LOG(FATAL) << "IMPLEMENT ME";
+	//return new BoolAutomaton(*this);
 }
 
 BoolAutomaton::~BoolAutomaton() {
 }
 
-BoolAutomaton_ptr BoolAutomaton::makeTrue(int num_of_variables,
-    int* variable_indices) {
-  BoolAutomaton_ptr result = nullptr;
-  DFA_ptr true_dfa = nullptr;
-  std::array<char, 1> statuses { '+' };
-
-  dfaSetup(1, 0, nullptr);
-
-  dfaAllocExceptions(0);
-  dfaStoreState(0);
-
-  true_dfa = dfaBuild(&*statuses.begin());
-  result = new BoolAutomaton(true_dfa);
-  return result;
+BoolAutomaton_ptr BoolAutomaton::makeTrue(int num_of_variables, int* variable_indices) {
+	LOG(FATAL) << "IMPLEMENT ME";
+//  BoolAutomaton_ptr result = nullptr;
+//  DFA_ptr true_dfa = nullptr;
+//  std::array<char, 1> statuses { '+' };
+//
+//  dfaSetup(1, 0, nullptr);
+//
+//  dfaAllocExceptions(0);
+//  dfaStoreState(0);
+//
+//  true_dfa = dfaBuild(&*statuses.begin());
+//  result = new BoolAutomaton(true_dfa);
+//  return result;
 }
 
-BoolAutomaton_ptr BoolAutomaton::makeFalse(int num_of_variables,
-    int* variable_indices) {
-  BoolAutomaton_ptr result = nullptr;
-  DFA_ptr false_dfa = nullptr;
-  std::array<char, 1> statuses { '-' };
-
-  dfaSetup(1, 0, nullptr);
-
-  dfaAllocExceptions(0);
-  dfaStoreState(0);
-
-  false_dfa = dfaBuild(&*statuses.begin());
-  result = new BoolAutomaton(false_dfa);
-  return result;
+BoolAutomaton_ptr BoolAutomaton::makeFalse(int num_of_variables,int* variable_indices) {
+	LOG(FATAL) << "IMPLEMENT ME";
+//  BoolAutomaton_ptr result = nullptr;
+//  DFA_ptr false_dfa = nullptr;
+//  std::array<char, 1> statuses { '-' };
+//
+//  dfaSetup(1, 0, nullptr);
+//
+//  dfaAllocExceptions(0);
+//  dfaStoreState(0);
+//
+//  false_dfa = dfaBuild(&*statuses.begin());
+//  result = new BoolAutomaton(false_dfa);
+//  return result;
 }
 
 void BoolAutomaton::toDot() {
