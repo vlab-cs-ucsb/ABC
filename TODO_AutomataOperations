@@ -78,3 +78,105 @@ DFAMakeNaturalNumberEquality
 DFAMakeIntLessThan
 DFAMakeNaturalNumberLessThan
 DFAMakeTrimHelper
+
+
+
+
+
+StringAutomaton Operations
+(s) - singletrack only
+(m) - multitrack only
+(sm) - both singletrack & multitrack
+
+Constructor(DFA_ptr dfa, const int number_of_tracks = 1)
+Constructor(DFA_ptr dfa, const int track, const int number_of_tracks)
+(sm) MakePhi 
+(sm) MakeEmptyString 
+(s)  MakeString 
+(sm) MakeAnyString 
+(sm) MakeAnyStringAligned
+(s)  MakeAnyOtherString 
+(s)  MakeCharRange
+(s)  MakeAnyChar
+(s)  MakeRegexAuto
+(s)  MakeAnyStringLengthEqualTo
+(s)  MakeAnyStringLengthLessThan
+(s)  MakeAnyStringLengthLessThanOrEqualTo
+(s)  MakeAnyStringLengthGreaterThan
+(s)  MakeAnyStringLengthGreaterThanOrEqualTo
+(s)  MakeAnyStringWithLengthInRange
+(sm) MakeAutomaton
+(sm) MakeBegins
+(sm) MakeNotBegins
+(sm) MakeEquality
+(sm) MakeNotEquality
+(sm) MakeLessThan
+(sm) MakeLessThanOrEqualTo
+(sm) MakeGreaterThan
+(sm) MakeGreaterThanOrEqual
+(m)  GetAutoForVariable
+(s)  Closure
+(s)  KleeneClosure
+(s)  Repeat
+(s)  Suffixes
+(s)  SuffixesAtIndex
+(s)  SuffixesFromIndex
+(s)  SuffixesFromTo
+(s)  Prefixes
+(s)  PrefixesUntilIndex
+(s)  PrefixesAtIndex
+(s)  SubStrings
+(s)  CharAt(int)
+(s)  CharAt(IntAutomaton)
+(s)  SubString(int)
+(s)  SubString(int start, int end)
+(s)  SubString(IntAutomaton length_auto, IntAutomaton search_auto)
+(s)  SubString(int start IntAutomaton end_auto)
+(s)  SubStringLastOf(StringAutomaton search_auto)
+(s)  SubStringFirstOf(StringAutomaton_ptr search_auto)
+(s)  IndexOf
+(s)  LastIndexOf
+(s)  Contains
+(s)  Begins
+(s)  Ends
+(s)  ToUpperCase
+(s)  ToLowerCase
+(s)  Trim
+(s)  Replace
+(s)  ToUnaryAutomaton
+(s)  Length
+(s)  RestrictLengthTo(int)
+(s)  RestrictLengthTo(IntAutomaton)
+(s)  RestrictIndexOfTo(int index, StringAutomaton search_auto)
+(s)  RestrictIndexOfTo(IntAutomaton index_auto, StringAutomaton search_auto)
+(s)  RestrictLastIndexOfTo(int index, StringAutomaton search_auto)
+(s)  RestrictLastIndexOfTo(IntAutomaton index_auto, StringAutomaton search_auto)
+(s)  RestrictLastOccuranceOf(StringAutomaton search_auto)
+(s)  RestrictFromIndexToEndTo(int index, StringAutomaton sub_string_auto)
+(s)  RestrictFromIndexToEndTo(IntAutomaton index_auto, StringAutomaton sub_string_auto)
+(s)  RestrictAtIndexTo(int index, StringAutomaton sub_string_auto)
+(s)  RestrictAtIndexTo(IntAutomaton index_auto, StringAutomaton sub_string_auto)
+(s)  PreToUpperCase
+(s)  PreToLowerCase
+(s)  PreTrim
+(s)  PreConcatLeft
+(s)  PreConcatRight
+(s)  PreReplace
+(sm) GetAnAcceptingString
+(s)  DFAMakeString
+(s)  DFAMakeCharRange
+(s)  DFAClosure
+(s)  DFASuffixes
+(s)  DFAIndexOf
+(m)  DFAPrependLambda
+(m)  DFATrimLambdaPrefix
+(m)  DFATrimLambdaSuffix
+(m)  DFAMakeBinaryRelation
+(m)  DFAMakeBinaryRelationAligned
+(m)  DFAMakeAnyAligned
+(s)  DFAMakeQuery
+(s)  DFARemoveReserveWords
+(s)  DFAIndexOfHelper
+(s)  DFAGetDuplicateState
+(s)  DFAMakeBegins
+(s)  DFAMakeNotBegins
