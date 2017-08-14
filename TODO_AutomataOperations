@@ -1,0 +1,80 @@
+StringAutomaton functions that use mona directly:
+MakeString
+MakeAnyString -> use DFAMakeAny
+MakeCharRange
+Closure
+Suffixes
+SuffixesFromTo
+CharAt(int)
+CharAt(IntAutomaton)
+ToUnaryAutomaton
+IndexOfHelper
+GetDuplicateStateAutomaton
+ToQueryAutomaton
+RemoveReservedWords
+
+	RelationalStringAutomaton functions that use mona directly:
+RelationalStringAutomaton() - constructor
+MakePrefixSuffix
+MakeBegins
+MakeNotBegins
+MakeAnyStringUnaligned
+MakeAnyStringAligned
+ProjectKTrack
+GetKTrack
+SetSymbolicCounter
+MakeBinaryRelationDFA
+MakeBinaryAlignedDFA
+PrependLambda
+TrimLambdaPrefix
+TrimLambdaSuffix
+
+	IntAutomaton functions that use mona directly:
+MakeZero
+MakeAnyInt -> use DFAMakeAny
+ToUnaryAutomaton
+
+	BinaryIntAutomaton functions that use mona directly:
+MakeAutomaton() - semilinear set
+AddLeadingZeros
+MakeIntGraterThanOrEqualToZero
+MakeIntEquality
+MakeNaturalNumberEquality
+MakeIntLessThan
+MakeNaturalNumberLessThan
+MakeTrimHelperAuto
+
+---New DFAOps---
+
+*Automaton.h*
+DFAProjectAway(DFA_ptr dfa, const std::vector<int> indices)
+DFAProjectTo(DFA_ptr dfa, const int number_of_bdd_variables, const std::vector<int> indices)
+
+*StringAutomaton.h*
+DFAMakeString
+DFAMakeCharRange
+DFAClosure
+DFASuffixes (could use multitrack X=YZ and just get Z out instead)
+DFAIndexOf
+DFAPrependLambda
+DFATrimLambdaPrefix
+DFATrimLambdaSuffix
+DFAMakeBinaryRelation
+DFAMakeBinaryRelationAligned
+DFAMakeAnyAligned
+DFAMakeQuery
+DFARemoveReservedWords
+DFAIndexOfHelper
+DFAGetDuplicateState
+DFAMakeBegins
+DFAMakeNotBegins
+
+*IntAutomaton.h*
+DFAMakeZero
+DFAMakeInt
+DFAPrependZeros
+DFAMakeIntEquality
+DFAMakeNaturalNumberEquality
+DFAMakeIntLessThan
+DFAMakeNaturalNumberLessThan
+DFAMakeTrimHelper
