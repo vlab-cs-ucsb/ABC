@@ -314,7 +314,7 @@ protected:
   StringFormula_ptr formula_;
   static TransitionTable TRANSITION_TABLE;
   static const int VAR_PER_TRACK = 9;
-  static int DEFAULT_NUM_OF_VARIABLES;
+  static int DEFAULT_NUM_OF_VARIABLES = 8;
 
 private:
   StringAutomaton();

@@ -362,6 +362,12 @@ protected:
   static DFA_ptr DFAProjectAway(const DFA_ptr dfa, const int index);
 
   /**
+	 * Generates a dfa where the bdd variables in the given indicies of the given dfa projected away
+	 * @returns a minimized dfa
+	 */
+	static DFA_ptr DFAProjectAway(const DFA_ptr dfa, std::vector<int> map, const std::vector<int> indices);
+
+  /**
    * Generates a dfa where the bdd variable in the given index of the given dfa projected away and the index mapping is done again
    * @param dfa
    * @param number_of_bdd_variables

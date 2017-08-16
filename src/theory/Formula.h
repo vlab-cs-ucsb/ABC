@@ -52,7 +52,7 @@ public:
 	void AddVariable(std::string,int);
 	void RemoveVariable(std::string);
 	std::vector<int> GetCoefficients() const;
-	void ResetCoefficients(int);
+	virtual void ResetCoefficients(int coeff = 0);
 
 	virtual bool UpdateMixedConstraintRelations() = 0;
 	virtual bool Simplify();

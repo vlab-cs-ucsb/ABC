@@ -15,21 +15,21 @@ StringAutomaton::TransitionTable StringAutomaton::TRANSITION_TABLE;
 StringAutomaton::StringAutomaton(const DFA_ptr dfa, const int number_of_bdd_variables)
 		:	Automaton(Automaton::Type::MULTITRACK, dfa, number_of_bdd_variables),
 			num_tracks_(number_of_bdd_variables > DEFAULT_NUM_OF_VARIABLES ? number_of_bdd_variables / VAR_PER_TRACK : 1),
-			formula_(nullptr) {
+			formula_(new StringFormula()) {
 
 }
 
 StringAutomaton::StringAutomaton(const DFA_ptr dfa, const int number_of_tracks, const int number_of_bdd_variables)
 		:	Automaton(Automaton::Type::MULTITRACK, dfa, number_of_bdd_variables),
 			num_tracks_(number_of_tracks),
-			formula_(nullptr) {
+			formula_(new StringFormula()) {
 
 }
 
 StringAutomaton::StringAutomaton(const DFA_ptr dfa, const int i_track, const int number_of_tracks, const int in_num_vars)
 		:	Automaton(Automaton::Type::MULTITRACK, nullptr, number_of_tracks * VAR_PER_TRACK),
 			num_tracks_(number_of_tracks),
-			formula_(nullptr) {
+			formula_(new StringFormula()) {
 	DFA_ptr M = dfa, temp = nullptr, result = nullptr;
 	trace_descr tp;
 	paths state_paths, pp;
@@ -474,176 +474,301 @@ StringAutomaton_ptr StringAutomaton::MakeAnyStringAligned(
 }
 
 StringAutomaton_ptr StringAutomaton::Complement() {
+	auto complement_dfa = Automaton::DFAComplement(dfa_);
+	auto temp_auto = new StringAutomaton(complement_dfa, formula_->Complement(),num_of_bdd_variables_);
+	auto aligned_universe_auto = MakeAnyStringAligned(formula_->clone());
+	auto complement_auto = temp_auto->Intersect(aligned_universe_auto);
+	delete temp_auto;
+	delete aligned_universe_auto;
+  DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->Complement()";
+	return complement_auto;
 }
 
-StringAutomaton_ptr StringAutomaton::Intersect(
-		StringAutomaton_ptr string_auto) {
+StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
+	// if both autos are same size, we're good. Otherwise, if one auto has one track
+	// put it in a multi-track with the correct track.
+	if(this->num_tracks_ != other_auto->num_tracks_) {
+		StringAutomaton_ptr small_auto, big_auto;
+		if(this->num_tracks_ == 1 && other_auto->num_tracks_ != 1 && !this->formula_->IsConstant()) {
+			small_auto = this;
+			big_auto = other_auto;
+		} else if(other_auto->num_tracks_ == 1 && !other_auto->formula_->IsConstant()) {
+			small_auto = other_auto;
+			big_auto = this;
+		} else {
+			LOG(FATAL) << "Intersection between incompatible StringAutomata";
+		}
+
+		std::string variable_name = small_auto->formula_->GetVariableAtIndex(0);
+		int index = big_auto->formula_->GetVariableIndex(variable_name);
+		auto relation_other_auto = new StringAutomaton(small_auto->dfa_,index,big_auto->num_tracks_,small_auto->num_of_bdd_variables_);
+		auto intersect_auto = big_auto->Intersect(relation_other_auto);
+		delete relation_other_auto;
+		return intersect_auto;
+	}
+
+	auto intersect_dfa = Automaton::DFAIntersect(this->dfa_, other_auto->dfa_);
+	auto intersect_formula = this->formula_->Intersect(other_auto->formula_);
+	auto intersect_auto = new StringAutomaton(intersect_dfa,intersect_formula,this->num_of_bdd_variables_);
+
+  DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << other_auto->id_ << ")";
+	return intersect_auto;
 }
 
-StringAutomaton_ptr StringAutomaton::Union(StringAutomaton_ptr) {
+StringAutomaton_ptr StringAutomaton::Union(StringAutomaton_ptr other_auto) {
+
+	auto union_formula = this->formula_->Union(other_auto->formula_);
+	auto left_variables = this->formula_->GetVariableCoefficientMap();
+	auto right_variables = other_auto->formula_->GetVariableCoefficientMap();
+
+	int* left_indices_map = CreateBddVariableIndices(union_formula->GetNumberOfVariables() * VAR_PER_TRACK);
+	int* left_indices_map = CreateBddVariableIndices(union_formula->GetNumberOfVariables() * VAR_PER_TRACK);
+
+	int left_var_per_track = DEFAULT_NUM_OF_VARIABLES;
+	int right_var_per_track = DEFAULT_NUM_OF_VARIABLES;
+	if(this->num_tracks_ > 1) {
+		left_var_per_track++;
+	}
+	if(other_auto->num_tracks_ > 1) {
+		right_var_per_track++;
+	}
+
+	for(auto var : left_variables) {
+		int old_position = this->formula_->GetVariableIndex(var.first);
+		int new_position = union_formula->GetVariableIndex(var.first);
+	}
+
+	CHECK_EQ(this->num_tracks_,other_auto->num_tracks_);
+	auto union_dfa = Automaton::DFAIntersect(this->dfa_, other_auto->dfa_);
+	auto union_formula = this->formula_->Intersect(other_auto->formula_);
+	auto union_auto = new StringAutomaton(union_dfa,union_formula,this->num_of_bdd_variables_);
+
+	DVLOG(VLOG_LEVEL) << union_auto->id_ << " = [" << this->id_ << "]->union(" << other_auto->id_ << ")";
+	return union_auto;
 }
 
-StringAutomaton_ptr StringAutomaton::Difference(StringAutomaton_ptr) {
+StringAutomaton_ptr StringAutomaton::Difference(StringAutomaton_ptr other_auto) {
+	auto complement_auto = other_auto->Complement();
+	auto difference_auto = this->Intersect(complement_auto);
+	delete complement_auto;
+
+	DVLOG(VLOG_LEVEL) << difference_auto->id_ << " = [" << this->id_ << "]->Difference(" << other_auto->id_ << ")";
+	return difference_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::Optional() {
+	CHECK_EQ(this->num_tracks_,1);
+	StringAutomaton_ptr optional_auto = nullptr, empty_string = nullptr;
+
+	empty_string = StringAutomaton::MakeEmptyString();
+	optional_auto = static_cast<StringAutomaton_ptr>(this->Union(empty_string));
+	delete empty_string;
+
+	DVLOG(VLOG_LEVEL) << optional_auto->id_ << " = [" << this->id_ << "]->optional()";
+
+	return optional_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::Closure() {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::KleeneClosure() {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::Repeat(unsigned min) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::Repeat(unsigned min, unsigned max) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::Suffixes() {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::SuffixesAtIndex(int index) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::SuffixesFromIndex(int start) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::SuffixesFromTo(int start, int end) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::Prefixes() {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::PrefixesUntilIndex(int end) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::PrefixesAtIndex(int index) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::SubStrings() {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::SubString(int start,
 		IntAutomaton_ptr end_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::SubStringLastOf(
 		StringAutomaton_ptr search_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::SubStringFirstOf(
 		StringAutomaton_ptr search_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 IntAutomaton_ptr StringAutomaton::LastIndexOf(StringAutomaton_ptr search_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::Contains(StringAutomaton_ptr search_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::Begins(StringAutomaton_ptr search_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::Ends(StringAutomaton_ptr search_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::ToUpperCase() {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::ToLowerCase() {
 }
 
 StringAutomaton_ptr StringAutomaton::Trim() {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::Replace(StringAutomaton_ptr search_auto,
 		StringAutomaton_ptr replace_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::GetAnyStringNotContainsMe() {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 DFA_ptr StringAutomaton::UnaryLength() {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 UnaryAutomaton_ptr StringAutomaton::ToUnaryAutomaton() {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 IntAutomaton_ptr StringAutomaton::Length() {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::RestrictLengthTo(int length) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::RestrictLengthTo(
 		IntAutomaton_ptr length_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::RestrictIndexOfTo(int index,
 		StringAutomaton_ptr search_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::RestrictIndexOfTo(
 		IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::RestrictLastIndexOfTo(int index,
 		StringAutomaton_ptr search_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::RestrictLastIndexOfTo(
 		IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::RestrictLastOccuranceOf(
 		StringAutomaton_ptr search_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::RestrictFromIndexToEndTo(int index,
 		StringAutomaton_ptr sub_string_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::RestrictFromIndexToEndTo(
 		IntAutomaton_ptr index_auto, StringAutomaton_ptr sub_string_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::RestrictAtIndexTo(int index,
 		StringAutomaton_ptr sub_string_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::RestrictAtIndexTo(
 		IntAutomaton_ptr index_auto, StringAutomaton_ptr sub_string_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::PreToUpperCase(
 		StringAutomaton_ptr rangeAuto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::PreToLowerCase(
 		StringAutomaton_ptr rangeAuto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::PreTrim(StringAutomaton_ptr rangeAuto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::PreConcatLeft(
 		StringAutomaton_ptr right_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::PreConcatRight(
 		StringAutomaton_ptr left_auto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::PreReplace(StringAutomaton_ptr searchAuto,
 		std::string replaceString, StringAutomaton_ptr rangeAuto) {
+	CHECK_EQ(this->num_tracks_,1);
 }
 
 StringAutomaton_ptr StringAutomaton::GetAutomatonForVariable(
