@@ -12,6 +12,13 @@ namespace Theory {
 
 StringAutomaton::TransitionTable StringAutomaton::TRANSITION_TABLE;
 
+StringAutomaton::StringAutomaton(const DFA_ptr dfa, const int number_of_bdd_variables)
+		:	Automaton(Automaton::Type::MULTITRACK, dfa, number_of_bdd_variables),
+			num_tracks_(number_of_bdd_variables > DEFAULT_NUM_OF_VARIABLES ? number_of_bdd_variables / VAR_PER_TRACK : 1),
+			formula_(nullptr) {
+
+}
+
 StringAutomaton::StringAutomaton(const DFA_ptr dfa, const int number_of_tracks, const int number_of_bdd_variables)
 		:	Automaton(Automaton::Type::MULTITRACK, dfa, number_of_bdd_variables),
 			num_tracks_(number_of_tracks),
@@ -157,6 +164,528 @@ StringAutomaton::~StringAutomaton() {
 StringAutomaton_ptr StringAutomaton::clone() const {
 	return new StringAutomaton(*this);
 }
+
+StringAutomaton_ptr StringAutomaton::MakePhi(const int number_of_bdd_variables) {
+  DFA_ptr non_accepting_string_dfa = Automaton::DFAMakePhi(number_of_bdd_variables);
+  StringAutomaton_ptr non_accepting_string_auto = new StringAutomaton(non_accepting_string_dfa, number_of_bdd_variables);
+  DVLOG(VLOG_LEVEL) << non_accepting_string_auto->id_ << " = MakePhi(" << number_of_bdd_variables << ")";
+  return non_accepting_string_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::MakeEmptyString(const int number_of_bdd_variables) {
+  DFA_ptr empty_string_dfa = Automaton::DFAMakeEmpty(number_of_bdd_variables);
+  StringAutomaton_ptr empty_string_auto = new StringAutomaton(empty_string_dfa, number_of_bdd_variables);
+  DVLOG(VLOG_LEVEL) << empty_string_auto->id_ << " = MakeEmptyString(" << number_of_bdd_variables << ")";
+  return empty_string_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::MakeString(const std::string str, const int number_of_bdd_variables) {
+  if (str.empty()) {
+    return StringAutomaton::MakeEmptyString();
+  }
+
+  const int str_length = str.length();
+  const int number_of_states = str_length + 2;
+  char* statuses = new char[number_of_states];
+
+  dfaSetup(number_of_states, number_of_bdd_variables, GetBddVariableIndices(number_of_bdd_variables));
+
+  for (int i = 0; i < str_length; i++) {
+    dfaAllocExceptions(1);
+    dfaStoreException(i + 1, const_cast<char*>(GetBinaryStringMSB((unsigned long) str[i], number_of_bdd_variables).data()));
+    dfaStoreState(str_length + 1);
+    statuses[i] = '-';
+  }
+
+  dfaAllocExceptions(0);
+  dfaStoreState(str_length + 1);
+  statuses[str_length] = '+';
+
+  //sink state
+  dfaAllocExceptions(0);
+  dfaStoreState(str_length + 1);
+  statuses[str_length + 1] = '-';
+
+  DFA_ptr result_dfa = dfaBuild(statuses);
+  StringAutomaton_ptr result_auto = new StringAutomaton(result_dfa, number_of_bdd_variables);
+  delete[] statuses;
+
+  DVLOG(VLOG_LEVEL) << result_auto->id_ << " = MakeString(\"" << str << "\")";
+
+  return result_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::MakeAnyString(const int number_of_bdd_variables) {
+  char statuses[2] { '+', '-' };
+  int *variable_indices = GetBddVariableIndices(number_of_bdd_variables);
+  dfaSetup(1, number_of_bdd_variables, variable_indices);
+  dfaAllocExceptions(0);
+  dfaStoreState(0);
+  DFA_ptr any_string_dfa = dfaBuild(statuses);
+  StringAutomaton_ptr any_string = new StringAutomaton(any_string_dfa, number_of_bdd_variables);
+  DVLOG(VLOG_LEVEL) << any_string->id_ << " = MakeAnyString()";
+  return any_string;
+}
+
+StringAutomaton_ptr StringAutomaton::MakeAnyOtherString(const std::string str, const int num_of_variables) {
+  StringAutomaton_ptr str_auto = MakeString(str);
+  StringAutomaton_ptr not_contains_me_auto = str_auto->getAnyStringNotContainsMe();
+  delete str_auto; str_auto = nullptr;
+  DVLOG(VLOG_LEVEL) << not_contains_me_auto->id_ << " = StringAutomaton::MakeAnyOtherString(" << str << ")";
+  return not_contains_me_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::MakeCharRange(const char from, const char to, const int number_of_bdd_variables) {
+  unsigned long from_char = (unsigned long) from;
+  unsigned long to_char = (unsigned long) to;
+  if (from_char > to_char) {
+    std::swap(from_char, to_char);
+  }
+
+  char statuses[3] { '-', '+', '-' };
+  int* variable_indices = GetBddVariableIndices(number_of_bdd_variables);
+
+  dfaSetup(3, number_of_bdd_variables, variable_indices);
+
+  int initial_state = to_char - from_char;
+
+  //state 0
+  dfaAllocExceptions(initial_state + 1);
+  for (unsigned long index = from_char; index <= to_char; index++) {
+    std::vector<char> v = GetBinaryFormat(index,number_of_bdd_variables);
+    dfaStoreException(1, const_cast<char*>(GetBinaryStringMSB(index, number_of_bdd_variables).data()));
+  }
+  dfaStoreState(2);
+
+  //state 1
+  dfaAllocExceptions(0);
+  dfaStoreState(2);
+
+  //state 2
+  dfaAllocExceptions(0);
+  dfaStoreState(2);
+
+  DFA_ptr range_dfa = dfaBuild(statuses);
+  StringAutomaton_ptr range_auto = new StringAutomaton(range_dfa, number_of_bdd_variables);
+
+  DVLOG(VLOG_LEVEL) << range_auto->id_ << " = MakeCharRange('" << from << "', '" << to << "')";
+
+  return range_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::MakeAnyChar(const int number_of_bdd_variables) {
+  StringAutomaton_ptr any_char_auto = StringAutomaton::MakeAnyStringLengthEqualTo(1, number_of_bdd_variables);
+  DVLOG(VLOG_LEVEL) << any_char_auto->id_ << " = MakeAnyChar()";
+  return any_char_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::MakeRegexAuto(const std::string regex, const int number_of_bdd_variables) {
+  Util::RegularExpression regular_expression (regex);
+  StringAutomaton_ptr regex_auto = StringAutomaton::MakeRegexAuto(&regular_expression, number_of_bdd_variables);
+  DVLOG(VLOG_LEVEL) << regex_auto->id_ << " = MakeRegexAuto(" << regex << ")";
+
+  return regex_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::MakeRegexAuto(Util::RegularExpression_ptr regular_expression, const int number_of_bdd_variables) {
+  StringAutomaton_ptr regex_auto = nullptr;
+  StringAutomaton_ptr regex_expr1_auto = nullptr;
+  StringAutomaton_ptr regex_expr2_auto = nullptr;
+
+  switch (regular_expression->type()) {
+  case Util::RegularExpression::Type::UNION:
+    regex_expr1_auto = StringAutomaton::MakeRegexAuto(regular_expression->get_expr1(), number_of_bdd_variables);
+    regex_expr2_auto = StringAutomaton::MakeRegexAuto(regular_expression->get_expr2(), number_of_bdd_variables);
+    regex_auto = regex_expr1_auto->Union(regex_expr2_auto);
+    delete regex_expr1_auto;
+    delete regex_expr2_auto;
+    break;
+  case Util::RegularExpression::Type::CONCATENATION:
+    regex_expr1_auto = StringAutomaton::MakeRegexAuto(regular_expression->get_expr1(), number_of_bdd_variables);
+    regex_expr2_auto = StringAutomaton::MakeRegexAuto(regular_expression->get_expr2(), number_of_bdd_variables);
+    regex_auto = regex_expr1_auto->Concat(regex_expr2_auto);
+    delete regex_expr1_auto;
+    delete regex_expr2_auto;
+    break;
+  case Util::RegularExpression::Type::INTERSECTION:
+    regex_expr1_auto = StringAutomaton::MakeRegexAuto(regular_expression->get_expr1(), number_of_bdd_variables);
+    regex_expr2_auto = StringAutomaton::MakeRegexAuto(regular_expression->get_expr2(), number_of_bdd_variables);
+    regex_auto = regex_expr1_auto->Intersect(regex_expr2_auto);
+    delete regex_expr1_auto;
+    delete regex_expr2_auto;
+    break;
+  case Util::RegularExpression::Type::OPTIONAL:
+    regex_expr1_auto = StringAutomaton::MakeRegexAuto(regular_expression->get_expr1(), number_of_bdd_variables);
+    regex_auto = regex_expr1_auto->Optional();
+    delete regex_expr1_auto;
+    break;
+  case Util::RegularExpression::Type::REPEAT_STAR:
+    regex_expr1_auto = StringAutomaton::MakeRegexAuto(regular_expression->get_expr1(), number_of_bdd_variables);
+    regex_auto = regex_expr1_auto->KleeneClosure();
+    delete regex_expr1_auto;
+    break;
+  case Util::RegularExpression::Type::REPEAT_PLUS:
+    regex_expr1_auto = StringAutomaton::MakeRegexAuto(regular_expression->get_expr1(), number_of_bdd_variables);
+    regex_auto = regex_expr1_auto->Closure();
+    delete regex_expr1_auto;
+    break;
+  case Util::RegularExpression::Type::REPEAT_MIN:
+    regex_expr1_auto = StringAutomaton::MakeRegexAuto(regular_expression->get_expr1(), number_of_bdd_variables);
+    regex_auto = regex_expr1_auto->Repeat(regular_expression->get_min());
+    delete regex_expr1_auto;
+    break;
+  case Util::RegularExpression::Type::REPEAT_MINMAX:
+    regex_expr1_auto = StringAutomaton::MakeRegexAuto(regular_expression->get_expr1(), number_of_bdd_variables);
+    regex_auto = regex_expr1_auto->Repeat(regular_expression->get_min(), regular_expression->get_max());
+    delete regex_expr1_auto;
+    break;
+  case Util::RegularExpression::Type::COMPLEMENT:
+    regex_expr1_auto = StringAutomaton::MakeRegexAuto(regular_expression->get_expr1(), number_of_bdd_variables);
+    regex_auto = regex_expr1_auto->Complement();
+    delete regex_expr1_auto;
+    break;
+  case Util::RegularExpression::Type::CHAR:
+    regex_auto = StringAutomaton::MakeString(std::string(1, regular_expression->get_character()), number_of_bdd_variables);
+    break;
+  case Util::RegularExpression::Type::CHAR_RANGE:
+    regex_auto = StringAutomaton::MakeCharRange(regular_expression->get_from_character(), regular_expression->get_to_character(), number_of_bdd_variables);
+    break;
+  case Util::RegularExpression::Type::ANYCHAR:
+    regex_auto = StringAutomaton::MakeAnyChar(number_of_bdd_variables);
+    break;
+  case Util::RegularExpression::Type::EMPTY:
+    regex_auto = StringAutomaton::MakePhi(number_of_bdd_variables);
+    break;
+  case Util::RegularExpression::Type::STRING:
+    regex_auto = StringAutomaton::MakeString(regular_expression->get_string(), number_of_bdd_variables);
+    break;
+  case Util::RegularExpression::Type::ANYSTRING:
+    regex_auto = StringAutomaton::MakeAnyString(number_of_bdd_variables);
+    break;
+  case Util::RegularExpression::Type::AUTOMATON:
+    LOG(FATAL)<< "Unsupported regular expression" << *regular_expression;
+    break;
+  case Util::RegularExpression::Type::INTERVAL:
+    LOG(FATAL) << "Unsupported regular expression" << *regular_expression;
+    break;
+  default:
+    LOG(FATAL) << "Unsupported regular expression" << *regular_expression;
+    break;
+  }
+
+  return regex_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::MakeAnyStringLengthEqualTo(const int length, const int number_of_bdd_variables) {
+  DFA_ptr length_dfa = Automaton::DFAMakeAcceptingAnyWithInRange(length, length, number_of_bdd_variables);
+  StringAutomaton_ptr length_auto = new StringAutomaton(length_dfa, number_of_bdd_variables);
+  DVLOG(VLOG_LEVEL) << length_auto->id_ << " = MakeAnyStringLengthEqualTo(" << length <<  ")";
+  return length_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::MakeAnyStringLengthLessThan(const int length, const int number_of_bdd_variables){
+  DFA_ptr length_dfa = Automaton::DFAMakeAcceptingAnyWithInRange(0, length-1, number_of_bdd_variables);
+  StringAutomaton_ptr length_auto = new StringAutomaton(length_dfa, number_of_bdd_variables);
+  DVLOG(VLOG_LEVEL) << length_auto->id_ << " = MakeAnyStringLengthLessThan(" << length <<  ")";
+  return length_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::MakeAnyStringLengthLessThanOrEqualTo(const int length, const int number_of_bdd_variables){
+  DFA_ptr length_dfa = Automaton::DFAMakeAcceptingAnyWithInRange(0, length, number_of_bdd_variables);
+  StringAutomaton_ptr length_auto = new StringAutomaton(length_dfa, number_of_bdd_variables);
+  DVLOG(VLOG_LEVEL) << length_auto->id_ << " = MakeAnyStringLengthLessThanOrEqualTo(" << length <<  ")";
+  return length_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::MakeAnyStringLengthGreaterThan(const int length, const int number_of_bdd_variables) {
+  DFA_ptr length_dfa = Automaton::DFAMakeAcceptingAnyAfterLength(length + 1, number_of_bdd_variables);
+  StringAutomaton_ptr length_auto = new StringAutomaton(length_dfa, number_of_bdd_variables);
+  DVLOG(VLOG_LEVEL) << length_auto->id_ << " = MakeAnyStringLengthGreaterThan(" << length <<  ")";
+  return length_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::MakeAnyStringLengthGreaterThanOrEqualTo(const int length, const int number_of_bdd_variables) {
+  DFA_ptr length_dfa = Automaton::DFAMakeAcceptingAnyAfterLength(length, number_of_bdd_variables);
+  StringAutomaton_ptr length_auto = new StringAutomaton(length_dfa, number_of_bdd_variables);
+  DVLOG(VLOG_LEVEL) << length_auto->id_ << " = MakeAnyStringLengthGreaterThanOrEqualTo(" << length <<  ")";
+  return length_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::MakeAnyStringWithLengthInRange(const int start, const int end, const int number_of_bdd_variables) {
+  DFA_ptr length_dfa = Automaton::DFAMakeAcceptingAnyWithInRange(start, end, number_of_bdd_variables);
+  StringAutomaton_ptr length_auto = new StringAutomaton(length_dfa, number_of_bdd_variables);
+  DVLOG(VLOG_LEVEL) << length_auto->id_ << " = MakeAnyStringWithLengthInRange(" << start << "," << end <<  ")";
+  return length_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::MakeAutomaton(DFA_ptr dfa, Formula_ptr formula, const int number_of_variables) {
+	return new StringAutomaton(dfa, formula, number_of_variables);
+}
+
+StringAutomaton_ptr StringAutomaton::MakeBegins(StringFormula_ptr formula) {
+	LOG(FATAL) << "IMPLEMENT ME";
+}
+
+StringAutomaton_ptr StringAutomaton::MakeNotBegins(StringFormula_ptr formula) {
+	LOG(FATAL) << "IMPLEMENT ME";
+}
+
+StringAutomaton_ptr StringAutomaton::MakeConcatExtraTrack(
+		StringFormula_ptr formula) {
+	LOG(FATAL) << "IMPLEMENT ME";
+}
+
+StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
+	LOG(FATAL) << "IMPLEMENT ME";
+}
+
+StringAutomaton_ptr StringAutomaton::MakeNotEquality(
+		StringFormula_ptr formula) {
+	LOG(FATAL) << "IMPLEMENT ME";
+}
+
+StringAutomaton_ptr StringAutomaton::MakeLessThan(StringFormula_ptr formula) {
+	LOG(FATAL) << "IMPLEMENT ME";
+}
+
+StringAutomaton_ptr StringAutomaton::MakeLessThanOrEqual(
+		StringFormula_ptr formula) {
+	LOG(FATAL) << "IMPLEMENT ME";
+}
+
+StringAutomaton_ptr StringAutomaton::MakeGreaterThan(
+		StringFormula_ptr formula) {
+	LOG(FATAL) << "IMPLEMENT ME";
+}
+
+StringAutomaton_ptr StringAutomaton::MakeGreaterThanOrEqual(
+		StringFormula_ptr formula) {
+	LOG(FATAL) << "IMPLEMENT ME";
+}
+
+StringAutomaton_ptr StringAutomaton::MakeAnyStringUnaligned(
+		StringFormula_ptr formula) {
+	LOG(FATAL) << "IMPLEMENT ME";
+}
+
+StringAutomaton_ptr StringAutomaton::MakeAnyStringAligned(
+		StringFormula_ptr formula) {
+	LOG(FATAL) << "IMPLEMENT ME";
+}
+
+StringAutomaton_ptr StringAutomaton::Complement() {
+}
+
+StringAutomaton_ptr StringAutomaton::Intersect(
+		StringAutomaton_ptr string_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::Union(StringAutomaton_ptr) {
+}
+
+StringAutomaton_ptr StringAutomaton::Difference(StringAutomaton_ptr) {
+}
+
+StringAutomaton_ptr StringAutomaton::Optional() {
+}
+
+StringAutomaton_ptr StringAutomaton::Closure() {
+}
+
+StringAutomaton_ptr StringAutomaton::KleeneClosure() {
+}
+
+StringAutomaton_ptr StringAutomaton::Repeat(unsigned min) {
+}
+
+StringAutomaton_ptr StringAutomaton::Repeat(unsigned min, unsigned max) {
+}
+
+StringAutomaton_ptr StringAutomaton::Suffixes() {
+}
+
+StringAutomaton_ptr StringAutomaton::SuffixesAtIndex(int index) {
+}
+
+StringAutomaton_ptr StringAutomaton::SuffixesFromIndex(int start) {
+}
+
+StringAutomaton_ptr StringAutomaton::SuffixesFromTo(int start, int end) {
+}
+
+StringAutomaton_ptr StringAutomaton::Prefixes() {
+}
+
+StringAutomaton_ptr StringAutomaton::PrefixesUntilIndex(int end) {
+}
+
+StringAutomaton_ptr StringAutomaton::PrefixesAtIndex(int index) {
+}
+
+StringAutomaton_ptr StringAutomaton::SubStrings() {
+}
+
+StringAutomaton_ptr StringAutomaton::SubString(int start,
+		IntAutomaton_ptr end_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::SubStringLastOf(
+		StringAutomaton_ptr search_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::SubStringFirstOf(
+		StringAutomaton_ptr search_auto) {
+}
+
+IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto) {
+}
+
+IntAutomaton_ptr StringAutomaton::LastIndexOf(StringAutomaton_ptr search_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::Contains(StringAutomaton_ptr search_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::Begins(StringAutomaton_ptr search_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::Ends(StringAutomaton_ptr search_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::ToUpperCase() {
+}
+
+StringAutomaton_ptr StringAutomaton::ToLowerCase() {
+}
+
+StringAutomaton_ptr StringAutomaton::Trim() {
+}
+
+StringAutomaton_ptr StringAutomaton::Replace(StringAutomaton_ptr search_auto,
+		StringAutomaton_ptr replace_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::GetAnyStringNotContainsMe() {
+}
+
+DFA_ptr StringAutomaton::UnaryLength() {
+}
+
+UnaryAutomaton_ptr StringAutomaton::ToUnaryAutomaton() {
+}
+
+IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
+}
+
+IntAutomaton_ptr StringAutomaton::Length() {
+}
+
+StringAutomaton_ptr StringAutomaton::RestrictLengthTo(int length) {
+}
+
+StringAutomaton_ptr StringAutomaton::RestrictLengthTo(
+		IntAutomaton_ptr length_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::RestrictIndexOfTo(int index,
+		StringAutomaton_ptr search_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::RestrictIndexOfTo(
+		IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::RestrictLastIndexOfTo(int index,
+		StringAutomaton_ptr search_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::RestrictLastIndexOfTo(
+		IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::RestrictLastOccuranceOf(
+		StringAutomaton_ptr search_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::RestrictFromIndexToEndTo(int index,
+		StringAutomaton_ptr sub_string_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::RestrictFromIndexToEndTo(
+		IntAutomaton_ptr index_auto, StringAutomaton_ptr sub_string_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::RestrictAtIndexTo(int index,
+		StringAutomaton_ptr sub_string_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::RestrictAtIndexTo(
+		IntAutomaton_ptr index_auto, StringAutomaton_ptr sub_string_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::PreToUpperCase(
+		StringAutomaton_ptr rangeAuto) {
+}
+
+StringAutomaton_ptr StringAutomaton::PreToLowerCase(
+		StringAutomaton_ptr rangeAuto) {
+}
+
+StringAutomaton_ptr StringAutomaton::PreTrim(StringAutomaton_ptr rangeAuto) {
+}
+
+StringAutomaton_ptr StringAutomaton::PreConcatLeft(
+		StringAutomaton_ptr right_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::PreConcatRight(
+		StringAutomaton_ptr left_auto) {
+}
+
+StringAutomaton_ptr StringAutomaton::PreReplace(StringAutomaton_ptr searchAuto,
+		std::string replaceString, StringAutomaton_ptr rangeAuto) {
+}
+
+StringAutomaton_ptr StringAutomaton::GetAutomatonForVariable(
+		std::string var_name) {
+}
+
+StringAutomaton_ptr StringAutomaton::ProjectAwayVariable(std::string var_name) {
+}
+
+StringAutomaton_ptr StringAutomaton::ProjectKTrack(int track) {
+}
+
+void StringAutomaton::SetSymbolicCounter() {
+}
+
+std::vector<std::string> StringAutomaton::GetAnAcceptingStringForEachTrack() {
+}
+
+int StringAutomaton::GetNumTracks() const {
+}
+
+bool StringAutomaton::HasEmptyString() {
+}
+
+bool StringAutomaton::IsEmptyString() {
+}
+
+bool StringAutomaton::IsAcceptingSingleString() {
+}
+
+std::string StringAutomaton::GetAnAcceptingString() {
+}
+
+StringFormula_ptr StringAutomaton::GetFormula() {
+}
+
+void StringAutomaton::SetFormula(StringFormula_ptr formula) {
+}
+
+DFA_ptr StringAutomaton::AppendLambda(DFA_ptr dfa, int var) {
+}
+
 
 const StringAutomaton::TransitionVector& StringAutomaton::GenerateTransitionsForRelation(StringFormula::Type type, int bits_per_var) {
   bits_per_var--;

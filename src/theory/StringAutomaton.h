@@ -39,6 +39,7 @@ class StringAutomaton: public Automaton {
 	using TransitionVector = std::vector<std::pair<std::string,std::string>>;
 	using TransitionTable = std::map<std::pair<int,StringFormula::Type>,TransitionVector>;
 public:
+	StringAutomaton(const DFA_ptr, const int number_of_bdd_variables);
 	StringAutomaton(const DFA_ptr, const int number_of_tracks, const int number_of_bdd_variables);
 	StringAutomaton(const DFA_ptr, const int i_track, const int number_of_tracks, const int in_num_vars);
 	StringAutomaton(const DFA_ptr, StringFormula_ptr formula, const int number_of_bdd_variables);
@@ -52,14 +53,14 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakePhi(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
+  static StringAutomaton_ptr MakePhi(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   /**
    * Generates a string automaton that recognizes only empty string
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeEmptyString(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
+  static StringAutomaton_ptr MakeEmptyString(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   /**
    * Generates a string automaton that recognizes given string
@@ -67,14 +68,14 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeString(const std::string str, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
+  static StringAutomaton_ptr MakeString(const std::string str, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   /**
    * Generates a string automaton that recognizes any string
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeAnyString(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
+  static StringAutomaton_ptr MakeAnyString(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   /**
    * Generates a string automaton that recognizes any string except the given string
@@ -82,7 +83,7 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeAnyOtherString(const std::string str, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
+  static StringAutomaton_ptr MakeAnyOtherString(const std::string str, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   /**
    * Generates a string automaton that recognizes characters inclusive from a given character to a given character
@@ -91,14 +92,14 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeCharRange(const char from, const char to, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
+  static StringAutomaton_ptr MakeCharRange(const char from, const char to, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   /**
    * Generates a string automaton that accepts any character. It is equivalent to the string automaton that accepts any strings with length 1
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeAnyChar(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
+  static StringAutomaton_ptr MakeAnyChar(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   /**
    * Generates a string automaton that accepts the strings defined by the given regular expression
@@ -106,7 +107,7 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeRegexAuto(const std::string regex_string, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
+  static StringAutomaton_ptr MakeRegexAuto(const std::string regex_string, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   /**
    * Generates a string automaton that accepts the strign defined by the given regular expression
@@ -114,7 +115,7 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeRegexAuto(Util::RegularExpression_ptr regular_expression, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
+  static StringAutomaton_ptr MakeRegexAuto(Util::RegularExpression_ptr regular_expression, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   /**
    * Generates a string automaton that accepts any string with the given length
@@ -122,7 +123,7 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeAnyStringLengthEqualTo(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
+  static StringAutomaton_ptr MakeAnyStringLengthEqualTo(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   /**
    * Generates a string automaton that accepts any string with length less than the given length
@@ -130,7 +131,7 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeAnyStringLengthLessThan(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
+  static StringAutomaton_ptr MakeAnyStringLengthLessThan(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   /**
    * Generates a string automaton that accepts any string with length less than or equal the given length
@@ -138,7 +139,7 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeAnyStringLengthLessThanOrEqualTo(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
+  static StringAutomaton_ptr MakeAnyStringLengthLessThanOrEqualTo(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   /**
    * Generates a string automaton that accepts any string with length greater than the given length
@@ -146,7 +147,7 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeAnyStringLengthGreaterThan(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
+  static StringAutomaton_ptr MakeAnyStringLengthGreaterThan(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   /**
    * Generates a string automaton that accepts any string with length greater than or equal to the given length
@@ -154,7 +155,7 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeAnyStringLengthGreaterThanOrEqualTo(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
+  static StringAutomaton_ptr MakeAnyStringLengthGreaterThanOrEqualTo(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   /**
    * Generates a string automaton that accepts any string with length in the range of given start and end lengths
@@ -163,7 +164,7 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeAnyStringWithLengthInRange(const int start, const int end, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
+  static StringAutomaton_ptr MakeAnyStringWithLengthInRange(const int start, const int end, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   /**
    * Generates a string automaton that wraps the dfa
@@ -173,6 +174,17 @@ public:
    */
   virtual StringAutomaton_ptr MakeAutomaton(DFA_ptr dfa, Formula_ptr formula, const int number_of_variables) override;
 
+  static StringAutomaton_ptr MakeBegins(StringFormula_ptr formula);
+	static StringAutomaton_ptr MakeNotBegins(StringFormula_ptr formula);
+	static StringAutomaton_ptr MakeConcatExtraTrack(StringFormula_ptr formula);
+	static StringAutomaton_ptr MakeEquality(StringFormula_ptr formula);
+	static StringAutomaton_ptr MakeNotEquality(StringFormula_ptr formula);
+	static StringAutomaton_ptr MakeLessThan(StringFormula_ptr formula);
+	static StringAutomaton_ptr MakeLessThanOrEqual(StringFormula_ptr formula);
+	static StringAutomaton_ptr MakeGreaterThan(StringFormula_ptr formula);
+	static StringAutomaton_ptr MakeGreaterThanOrEqual(StringFormula_ptr formula);
+	static StringAutomaton_ptr MakeAnyStringUnaligned(StringFormula_ptr formula);
+	static StringAutomaton_ptr MakeAnyStringAligned(StringFormula_ptr formula);
 
   StringAutomaton_ptr Complement();
   StringAutomaton_ptr Intersect(StringAutomaton_ptr);
@@ -248,10 +260,11 @@ public:
   StringAutomaton_ptr PreTrim(StringAutomaton_ptr rangeAuto = nullptr);
   StringAutomaton_ptr PreConcatLeft(StringAutomaton_ptr right_auto);
   StringAutomaton_ptr PreConcatRight(StringAutomaton_ptr left_auto);
-
   StringAutomaton_ptr PreReplace(StringAutomaton_ptr searchAuto, std::string replaceString, StringAutomaton_ptr rangeAuto = nullptr);
 
   StringAutomaton_ptr GetAutomatonForVariable(std::string var_name);
+  StringAutomaton_ptr ProjectAwayVariable(std::string var_name);
+  StringAutomaton_ptr ProjectKTrack(int track);
   void SetSymbolicCounter() override;
 	std::vector<std::string> GetAnAcceptingStringForEachTrack();
 	int GetNumTracks() const;
