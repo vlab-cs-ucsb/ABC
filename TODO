@@ -5,6 +5,8 @@ Notes: To precisely handle disjunctions we need to encode every variable into au
 Automata Construction Tasks:
   1- Refactor automaton classes: Generate a set of MONA related automaton methods to use in automata construction. Mona C++ wrapper function names starts with "DFA" prefix.
 
+  1.5 - Create base Formula class and have StringFormula and ArithmeticFormula inherit from it
+
   2- Combine "RelationalStringAutomaton" and "StringAutomaton" classes into one class called "StringAutomaton". A single variable string automaton will be equivalent to a relational string automaton with one variable. This will allow as to handle mixed constraints in a better way.
 
   4- Replace the usage of "IntAutomaton" with "UnaryAutomaton".
