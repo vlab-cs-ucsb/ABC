@@ -28,7 +28,6 @@
 #include "GraphNode.h"
 #include "IntAutomaton.h"
 #include "StringFormula.h"
-#include "RelationalStringAutomaton.h"
 
 namespace Vlab {
 namespace Theory {
@@ -37,9 +36,12 @@ class StringAutomaton;
 using StringAutomaton_ptr = StringAutomaton*;
 
 class StringAutomaton: public Automaton {
+	using TransitionVector = std::vector<std::pair<std::string,std::string>>;
+	using TransitionTable = std::map<std::pair<int,StringFormula::Type>,TransitionVector>;
 public:
-  StringAutomaton(const DFA_ptr);
-  StringAutomaton(const DFA_ptr, const int number_of_bdd_variables);
+	StringAutomaton(const DFA_ptr, const int number_of_tracks, const int number_of_bdd_variables);
+	StringAutomaton(const DFA_ptr, const int i_track, const int number_of_tracks, const int in_num_vars);
+	StringAutomaton(const DFA_ptr, StringFormula_ptr formula, const int number_of_bdd_variables);
   StringAutomaton(const StringAutomaton&);
   virtual ~StringAutomaton();
 
@@ -50,14 +52,14 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakePhi(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr MakePhi(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
 
   /**
    * Generates a string automaton that recognizes only empty string
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeEmptyString(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr MakeEmptyString(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
 
   /**
    * Generates a string automaton that recognizes given string
@@ -65,14 +67,14 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeString(const std::string str, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr MakeString(const std::string str, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
 
   /**
    * Generates a string automaton that recognizes any string
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeAnyString(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr MakeAnyString(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
 
   /**
    * Generates a string automaton that recognizes any string except the given string
@@ -80,7 +82,7 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeAnyOtherString(const std::string str, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr MakeAnyOtherString(const std::string str, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
 
   /**
    * Generates a string automaton that recognizes characters inclusive from a given character to a given character
@@ -89,14 +91,14 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeCharRange(const char from, const char to, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr MakeCharRange(const char from, const char to, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
 
   /**
    * Generates a string automaton that accepts any character. It is equivalent to the string automaton that accepts any strings with length 1
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeAnyChar(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr MakeAnyChar(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
 
   /**
    * Generates a string automaton that accepts the strings defined by the given regular expression
@@ -104,7 +106,7 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeRegexAuto(const std::string regex_string, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr MakeRegexAuto(const std::string regex_string, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
 
   /**
    * Generates a string automaton that accepts the strign defined by the given regular expression
@@ -112,7 +114,7 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeRegexAuto(Util::RegularExpression_ptr regular_expression, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr MakeRegexAuto(Util::RegularExpression_ptr regular_expression, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
 
   /**
    * Generates a string automaton that accepts any string with the given length
@@ -120,7 +122,7 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeAnyStringLengthEqualTo(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr MakeAnyStringLengthEqualTo(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
 
   /**
    * Generates a string automaton that accepts any string with length less than the given length
@@ -128,7 +130,7 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeAnyStringLengthLessThan(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr MakeAnyStringLengthLessThan(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
 
   /**
    * Generates a string automaton that accepts any string with length less than or equal the given length
@@ -136,7 +138,7 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeAnyStringLengthLessThanOrEqualTo(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr MakeAnyStringLengthLessThanOrEqualTo(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
 
   /**
    * Generates a string automaton that accepts any string with length greater than the given length
@@ -144,7 +146,7 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeAnyStringLengthGreaterThan(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr MakeAnyStringLengthGreaterThan(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
 
   /**
    * Generates a string automaton that accepts any string with length greater than or equal to the given length
@@ -152,7 +154,7 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeAnyStringLengthGreaterThanOrEqualTo(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr MakeAnyStringLengthGreaterThanOrEqualTo(const int length, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
 
   /**
    * Generates a string automaton that accepts any string with length in the range of given start and end lengths
@@ -161,7 +163,7 @@ public:
    * @param number_of_bdd_variables
    * @return
    */
-  static StringAutomaton_ptr MakeAnyStringWithLengthInRange(const int start, const int end, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+  static StringAutomaton_ptr MakeAnyStringWithLengthInRange(const int start, const int end, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES, const int track = 1, const int num_tracks = 1);
 
   /**
    * Generates a string automaton that wraps the dfa
@@ -169,29 +171,28 @@ public:
    * @param number_of_variables
    * @return
    */
-  virtual StringAutomaton_ptr MakeAutomaton(DFA_ptr dfa, const int number_of_variables) override;
+  virtual StringAutomaton_ptr MakeAutomaton(DFA_ptr dfa, Formula_ptr formula, const int number_of_variables) override;
 
 
   StringAutomaton_ptr Complement();
-  StringAutomaton_ptr
+  StringAutomaton_ptr Intersect(StringAutomaton_ptr);
+  StringAutomaton_ptr Union(StringAutomaton_ptr);
+  StringAutomaton_ptr Difference(StringAutomaton_ptr);
 
-  // TODO baki left here: move common functions to base class, should be implemented similar to visitor pattern
-  //StringAutomaton_ptr concat(StringAutomaton_ptr other_auto);
+  StringAutomaton_ptr Optional();
+  StringAutomaton_ptr Closure();
+  StringAutomaton_ptr KleeneClosure();
+  StringAutomaton_ptr Repeat(unsigned min);
+  StringAutomaton_ptr Repeat(unsigned min, unsigned max);
 
-  StringAutomaton_ptr optional();
-  StringAutomaton_ptr closure();
-  StringAutomaton_ptr kleeneClosure();
-  StringAutomaton_ptr repeat(unsigned min);
-  StringAutomaton_ptr repeat(unsigned min, unsigned max);
-
-  StringAutomaton_ptr suffixes();
-  StringAutomaton_ptr suffixesAtIndex(int index);
-  StringAutomaton_ptr suffixesFromIndex(int start);
-  StringAutomaton_ptr suffixesFromTo(int start, int end);
-  StringAutomaton_ptr prefixes();
-  StringAutomaton_ptr prefixesUntilIndex(int end);
-  StringAutomaton_ptr prefixesAtIndex(int index);
-  StringAutomaton_ptr subStrings();
+  StringAutomaton_ptr Suffixes();
+  StringAutomaton_ptr SuffixesAtIndex(int index);
+  StringAutomaton_ptr SuffixesFromIndex(int start);
+  StringAutomaton_ptr SuffixesFromTo(int start, int end);
+  StringAutomaton_ptr Prefixes();
+  StringAutomaton_ptr PrefixesUntilIndex(int end);
+  StringAutomaton_ptr PrefixesAtIndex(int index);
+  StringAutomaton_ptr SubStrings();
 
   StringAutomaton_ptr CharAt(const int index);
   StringAutomaton_ptr CharAt(IntAutomaton_ptr index_auto);
@@ -202,39 +203,39 @@ public:
    */
   StringAutomaton_ptr SubString(const int start, const int end);
   StringAutomaton_ptr SubString(IntAutomaton_ptr length_auto, StringAutomaton_ptr search_auto);
-  StringAutomaton_ptr subString(int start, IntAutomaton_ptr end_auto);
-  StringAutomaton_ptr subStringLastOf(StringAutomaton_ptr search_auto);
-  StringAutomaton_ptr subStringFirstOf(StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr SubString(int start, IntAutomaton_ptr end_auto);
+  StringAutomaton_ptr SubStringLastOf(StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr SubStringFirstOf(StringAutomaton_ptr search_auto);
 
-  IntAutomaton_ptr indexOf(StringAutomaton_ptr search_auto);
-  IntAutomaton_ptr lastIndexOf(StringAutomaton_ptr search_auto);
-  StringAutomaton_ptr contains(StringAutomaton_ptr search_auto);
-  StringAutomaton_ptr begins(StringAutomaton_ptr search_auto);
-  StringAutomaton_ptr ends(StringAutomaton_ptr search_auto);
-  StringAutomaton_ptr toUpperCase();
-  StringAutomaton_ptr toLowerCase();
-  StringAutomaton_ptr trim();
+  IntAutomaton_ptr IndexOf(StringAutomaton_ptr search_auto);
+  IntAutomaton_ptr LastIndexOf(StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr Contains(StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr Begins(StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr Ends(StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr ToUpperCase();
+  StringAutomaton_ptr ToLowerCase();
+  StringAutomaton_ptr Trim();
 
-  StringAutomaton_ptr replace(StringAutomaton_ptr search_auto, StringAutomaton_ptr replace_auto);
+  StringAutomaton_ptr Replace(StringAutomaton_ptr search_auto, StringAutomaton_ptr replace_auto);
 
-  StringAutomaton_ptr getAnyStringNotContainsMe();
+  StringAutomaton_ptr GetAnyStringNotContainsMe();
 
-  DFA_ptr unaryLength();
-  UnaryAutomaton_ptr toUnaryAutomaton();
-  IntAutomaton_ptr parseToIntAutomaton();
-  IntAutomaton_ptr length();
-  StringAutomaton_ptr restrictLengthTo(int length);
-  StringAutomaton_ptr restrictLengthTo(IntAutomaton_ptr length_auto);
-  StringAutomaton_ptr restrictIndexOfTo(int index, StringAutomaton_ptr search_auto);
-  StringAutomaton_ptr restrictIndexOfTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto);
-  StringAutomaton_ptr restrictLastIndexOfTo(int index, StringAutomaton_ptr search_auto);
-  StringAutomaton_ptr restrictLastIndexOfTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto);
-  StringAutomaton_ptr restrictLastOccuranceOf(StringAutomaton_ptr search_auto);
+  DFA_ptr UnaryLength();
+  UnaryAutomaton_ptr ToUnaryAutomaton();
+  IntAutomaton_ptr ParseToIntAutomaton();
+  IntAutomaton_ptr Length();
+  StringAutomaton_ptr RestrictLengthTo(int length);
+  StringAutomaton_ptr RestrictLengthTo(IntAutomaton_ptr length_auto);
+  StringAutomaton_ptr RestrictIndexOfTo(int index, StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr RestrictIndexOfTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr RestrictLastIndexOfTo(int index, StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr RestrictLastIndexOfTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr RestrictLastOccuranceOf(StringAutomaton_ptr search_auto);
 
-  StringAutomaton_ptr restrictFromIndexToEndTo(int index, StringAutomaton_ptr sub_string_auto);
-  StringAutomaton_ptr restrictFromIndexToEndTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr sub_string_auto);
-  StringAutomaton_ptr restrictAtIndexTo(int index, StringAutomaton_ptr sub_string_auto);
-  StringAutomaton_ptr restrictAtIndexTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr sub_string_auto);
+  StringAutomaton_ptr RestrictFromIndexToEndTo(int index, StringAutomaton_ptr sub_string_auto);
+  StringAutomaton_ptr RestrictFromIndexToEndTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr sub_string_auto);
+  StringAutomaton_ptr RestrictAtIndexTo(int index, StringAutomaton_ptr sub_string_auto);
+  StringAutomaton_ptr RestrictAtIndexTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr sub_string_auto);
 
   /**
    * TODO Pre image computations can be gudied by a range auto
@@ -242,38 +243,69 @@ public:
    * it corresponds to post image value of the operation
    */
 
-  StringAutomaton_ptr preToUpperCase(StringAutomaton_ptr rangeAuto = nullptr);
-  StringAutomaton_ptr preToLowerCase(StringAutomaton_ptr rangeAuto = nullptr);
-  StringAutomaton_ptr preTrim(StringAutomaton_ptr rangeAuto = nullptr);
-  StringAutomaton_ptr preConcatLeft(StringAutomaton_ptr right_auto);
-  StringAutomaton_ptr preConcatRight(StringAutomaton_ptr left_auto);
+  StringAutomaton_ptr PreToUpperCase(StringAutomaton_ptr rangeAuto = nullptr);
+  StringAutomaton_ptr PreToLowerCase(StringAutomaton_ptr rangeAuto = nullptr);
+  StringAutomaton_ptr PreTrim(StringAutomaton_ptr rangeAuto = nullptr);
+  StringAutomaton_ptr PreConcatLeft(StringAutomaton_ptr right_auto);
+  StringAutomaton_ptr PreConcatRight(StringAutomaton_ptr left_auto);
 
-  StringAutomaton_ptr preReplace(StringAutomaton_ptr searchAuto, std::string replaceString, StringAutomaton_ptr rangeAuto = nullptr);
+  StringAutomaton_ptr PreReplace(StringAutomaton_ptr searchAuto, std::string replaceString, StringAutomaton_ptr rangeAuto = nullptr);
 
-  bool hasEmptyString();
-  bool isEmptyString();
-  bool isAcceptingSingleString();
-  std::string getAnAcceptingString();
+  StringAutomaton_ptr GetAutomatonForVariable(std::string var_name);
+  void SetSymbolicCounter() override;
+	std::vector<std::string> GetAnAcceptingStringForEachTrack();
+	int GetNumTracks() const;
 
-  StringFormula_ptr get_formula();
-  void set_formula(StringFormula_ptr formula);
+  bool HasEmptyString();
+  bool IsEmptyString();
+  bool IsAcceptingSingleString();
+  std::string GetAnAcceptingString();
+
+  StringFormula_ptr GetFormula();
+  void SetFormula(StringFormula_ptr formula);
+
+  static const TransitionVector& GenerateTransitionsForRelation(StringFormula::Type type, int bits_per_var);
+	static DFA_ptr MakeBinaryRelationDfa(StringFormula::Type type, int bits_per_var, int num_tracks, int left_track, int right_track);
+	static DFA_ptr MakeBinaryAlignedDfa(int left_track, int right_track, int total_tracks);
+	static StringAutomaton_ptr MakePrefixSuffix(int left_track, int prefix_track, int suffix_track, int num_tracks);
+
+
+	static bool IsExepEqualChar(std::vector<char> exep, std::vector<char> cvec, int var);
+	static bool IsExepIncludeChar(std::vector<char> exep, std::vector<char> cvec, int var);
+
+	static DFA_ptr PrependLambda(DFA_ptr dfa, int var);
+	static DFA_ptr AppendLambda(DFA_ptr dfa, int var);
+	static DFA_ptr TrimLambdaPrefix(DFA_ptr dfa, int var, bool project_bit = true);
+	static DFA_ptr TrimLambdaSuffix(DFA_ptr dfa, int var, bool project_bit = true);
+	static DFA_ptr TrimPrefix(DFA_ptr subject_dfa, DFA_ptr trim_dfa, int var);
+	static DFA_ptr TrimSuffix(DFA_ptr subject_dfa, DFA_ptr trim_dfa, int var);
+	static DFA_ptr concat(DFA_ptr prefix_dfa, DFA_ptr suffix_dfa, int var);
+
+	static DFA_ptr PreConcatPrefix(DFA_ptr concat_dfa, DFA_ptr suffix_dfa, int var);
+	static DFA_ptr PreConcatSuffix(DFA_ptr concat_dfa, DFA_ptr prefix_dfa, int var);
 
 protected:
-  bool hasExceptionToValidStateFrom(int state, std::vector<char>& exception);
-  std::vector<int> getAcceptingStates();
+  bool HasExceptionToValidStateFrom(int state, std::vector<char>& exception);
+  std::vector<int> GetAcceptingStates();
 
-  StringAutomaton_ptr indexOfHelper(StringAutomaton_ptr search_auto);
-  StringAutomaton_ptr lastIndexOfHelper(StringAutomaton_ptr search_auto);
-  StringAutomaton_ptr getDuplicateStateAutomaton();
-  StringAutomaton_ptr toQueryAutomaton();
-  StringAutomaton_ptr search(StringAutomaton_ptr search_auto);
-  StringAutomaton_ptr removeReservedWords();
-  void add_print_label(std::ostream& out) override;
+  StringAutomaton_ptr IndexOfHelper(StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr LastIndexOfHelper(StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr GetDuplicateStateAutomaton();
+  StringAutomaton_ptr ToQueryAutomaton();
+  StringAutomaton_ptr Search(StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr RemoveReservedWords();
+  void AddPrintLabel(std::ostream& out) override;
 
+
+  int num_tracks_;
   StringFormula_ptr formula_;
+  static TransitionTable TRANSITION_TABLE;
+  static const int VAR_PER_TRACK = 9;
   static int DEFAULT_NUM_OF_VARIABLES;
 
 private:
+  StringAutomaton();
+
   static int name_counter;
   static const int VLOG_LEVEL;
 };

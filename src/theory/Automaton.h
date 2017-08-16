@@ -39,6 +39,7 @@
 #include "GraphNode.h"
 #include "options/Theory.h"
 #include "SymbolicCounter.h"
+#include "Formula.h"
 
 namespace Vlab {
 namespace Theory {
@@ -149,7 +150,7 @@ public:
    * @param number_of_variables
    * @return
    */
-  virtual Automaton_ptr MakeAutomaton(DFA_ptr dfa, const int number_of_variables) = 0;
+  virtual Automaton_ptr MakeAutomaton(DFA_ptr dfa, Formula_ptr formula, const int number_of_variables) = 0;
 
   /**
    * Complements an automaton
@@ -364,7 +365,7 @@ protected:
    * Generates a dfa where the bdd variable in the given index of the given dfa projected away and the index mapping is done again
    * @param dfa
    * @param number_of_bdd_variables
-   * @param index
+   * @param indices
    * @return
    */
   static DFA_ptr DFAProjectAwayAndReMap(const DFA_ptr dfa, const int number_of_bdd_variables, const int index);
@@ -377,6 +378,15 @@ protected:
    * @return
    */
   static DFA_ptr DFAProjectTo(const DFA_ptr dfa, const int number_of_bdd_variables, const int index);
+
+  /**
+	 * Generates a dfa by projecting all bits except those in indices away
+	 * @param dfa
+	 * @param number_of_bdd_variables
+	 * @param indices
+	 * @return
+	 */
+	static DFA_ptr DFAProjectTo(const DFA_ptr dfa, const int number_of_bdd_variables, const std::vector<int> indices);
 
   /**
    * Generates a dfa that accepts any input that has length between start and end inclusive

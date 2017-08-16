@@ -932,6 +932,22 @@ DFA_ptr Automaton::DFAProjectAway(const DFA_ptr dfa, const int index) {
   return minimized_dfa;
 }
 
+DFA_ptr Automaton::DFAProjectAway(const DFA_ptr dfa, std::vector<int> map, const std::vector<int> indices) {
+	DFA_ptr temp,result_dfa = dfa;
+	int flag = 0;
+
+	for(auto index : indices) {
+		temp = dfaProject(result_dfa,index);
+		if(flag)
+			dfaFree(result_dfa);
+		result_dfa = dfaMinimize(temp);
+		flag = 1;
+		dfaFree(temp);
+	}
+	dfaReplaceIndices(result_dfa,&map[0]);
+	return result_dfa;
+}
+
 DFA_ptr Automaton::DFAProjectAwayAndReMap(const DFA_ptr dfa, const int number_of_bdd_variables, const int index) {
   DFA_ptr projected_dfa = dfaProject(dfa, (unsigned)index);
   if (index < (unsigned)(number_of_bdd_variables - 1)) {
