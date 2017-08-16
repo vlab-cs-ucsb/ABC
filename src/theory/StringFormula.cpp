@@ -23,9 +23,9 @@ StringFormula::~StringFormula() {
 }
 
 StringFormula::StringFormula(const StringFormula& other)
-    : type_(other.type_),
+    : Formula(other),
+    	type_(other.type_),
       constant_(other.constant_) {
-  this->variable_order_map_ = other.variable_order_map_;
   this->mixed_terms_ = other.mixed_terms_;
 }
 
@@ -114,51 +114,64 @@ std::string StringFormula::str() const {
   return ss.str();
 }
 
-void StringFormula::set_type(Type type) {
+Formula_ptr StringFormula::Intersect(Formula_ptr other) {
+	StringFormula_ptr intersect_formula = this->clone();
+	intersect_formula->ResetCoefficients(0);
+	intersect_formula->SetType(StringFormula::Type::INTERSECT);
+	return intersect_formula;
+}
+
+Formula_ptr StringFormula::Union(Formula_ptr other) {
+	StringFormula_ptr union_formula = this->clone();
+	union_formula->ResetCoefficients(0);
+	union_formula->SetType(StringFormula::Type::UNION);
+	return union_formula;
+}
+
+Formula_ptr StringFormula::Complement() {
+	StringFormula_ptr result = this->clone();
+	switch (result->type_) {
+		case StringFormula::Type::EQ:
+			result->type_ = StringFormula::Type::NOTEQ;
+			break;
+		case StringFormula::Type::NOTEQ:
+			result->type_ = StringFormula::Type::EQ;
+			break;
+		case StringFormula::Type::GT:
+			result->type_ = StringFormula::Type::LE;
+			break;
+		case StringFormula::Type::GE:
+			result->type_ = StringFormula::Type::LT;
+			break;
+		case StringFormula::Type::LT:
+			result->type_ = StringFormula::Type::GE;
+			break;
+		case StringFormula::Type::LE:
+			result->type_ = StringFormula::Type::GT;
+			break;
+		default:
+			break;
+	}
+	return result;
+}
+
+void StringFormula::SetType(Type type) {
   this->type_ = type;
 }
 
-StringFormula::Type StringFormula::get_type() const {
+StringFormula::Type StringFormula::GetType() const {
   return type_;
 }
 
-int StringFormula::get_number_of_variables() const {
-  return variable_order_map_.size();
-}
-
-std::map<std::string, int> StringFormula::get_variable_coefficient_map() const {
-  return variable_order_map_;
-}
-
-void StringFormula::set_variable_coefficient_map(std::map<std::string, int>& coefficient_map) {
-  variable_order_map_ = coefficient_map;
-}
-
-int StringFormula::get_variable_coefficient(std::string variable_name) const {
-  auto it = variable_order_map_.find(variable_name);
-  if (it == variable_order_map_.end()) {
-    LOG(FATAL)<< "Variable '" << variable_name << "' is not in formula: " << *this;
-  }
-  return it->second;
-}
-
-void StringFormula::set_variable_coefficient(std::string variable_name, int coeff) {
-  auto it = variable_order_map_.find(variable_name);
-  if (it == variable_order_map_.end()) {
-    LOG(FATAL)<< "Variable '" << variable_name << "' is not in formula: " << *this;
-  }
-  it->second = coeff;
-}
-
-std::string StringFormula::get_constant() const {
+std::string StringFormula::GetConstant() const {
   return constant_;
 }
 
-void StringFormula::set_constant(std::string constant) {
+void StringFormula::SetConstant(std::string constant) {
   this->constant_ = constant;
 }
 
-bool StringFormula::is_constant() const {
+bool StringFormula::IsConstant() const {
   for (const auto& el : variable_order_map_) {
     if (el.second != 0) {
       return false;
@@ -167,70 +180,16 @@ bool StringFormula::is_constant() const {
   return true;
 }
 
-void StringFormula::reset_param_orders(int value) {
-  for (auto& el : variable_order_map_) {
-    el.second = value;
-  }
-}
-
-void StringFormula::add_variable(std::string name, int position) {
-  if (variable_order_map_.find(name) != variable_order_map_.end()) {
-    LOG(FATAL)<< "Variable has already been added! : " << name;
-  }
-  variable_order_map_[name] = position;
-}
-
-void StringFormula::remove_variable(std::string var_name) {
-  variable_order_map_.erase(var_name);
-}
-
-std::vector<int> StringFormula::get_coefficients() const {
-  std::vector<int> coefficients;
-  for (const auto& el : variable_order_map_) {
-    coefficients.push_back(el.second);
-  }
-  return coefficients;
-}
-
-int StringFormula::get_variable_index(const std::string variable_name) const {
-  auto it = variable_order_map_.find(variable_name);
-  if (it != variable_order_map_.end()) {
-    return std::distance(variable_order_map_.begin(), it);
-  }
-  LOG(FATAL)<< "Variable '" << variable_name << "' is not in formula: " << *this;
-  return -1;
-}
-
-int StringFormula::get_variable_index(const std::size_t param_index) const {
-  for (auto it = variable_order_map_.begin(); it != variable_order_map_.end(); ++it) {
-    if (it->second == param_index) {
-      return std::distance(variable_order_map_.begin(), it);
-    }
-  }
-
-  LOG(FATAL)<< "Formula does not have param: " << param_index << ", " << *this;
-  return -1;
-}
-
-std::string StringFormula::get_variable_at_index(const std::size_t index) const {
-  if (index >= variable_order_map_.size()) {
-    LOG(FATAL) << "Index out of range";
-  }
-  auto it = variable_order_map_.begin();
-  std::advance(it, index);
-  return it->first;
-}
-
-bool StringFormula::has_relation_to_mixed_term(const std::string var_name) const {
+bool StringFormula::HasRelationToMixedTerm(const std::string var_name) const {
   auto it = mixed_terms_.find(var_name);
   return it != mixed_terms_.end();
 }
 
-void StringFormula::add_relation_to_mixed_term(const std::string var_name, const StringFormula::Type relation, const Term_ptr term) {
+void StringFormula::AddRelationToMixedTerm(const std::string var_name, const StringFormula::Type relation, const Term_ptr term) {
   mixed_terms_[var_name] = {relation, term};
 }
 
-std::pair<StringFormula::Type, Term_ptr> StringFormula::get_relation_to_mixed_term(const std::string var_name) const {
+std::pair<StringFormula::Type, Term_ptr> StringFormula::GetRelationToMixedTerm(const std::string var_name) const {
   auto it = mixed_terms_.find(var_name);
   if (it == mixed_terms_.end()) {
     LOG(FATAL) << "Variable '" << var_name << "' does not have a relation to a mixed term";
@@ -243,7 +202,7 @@ bool StringFormula::UpdateMixedConstraintRelations() {
     return false;
   }
   std::string v1, v2;
-  if (get_var_names_if_equality_of_two_vars(v1, v2)) {
+  if (GetVarNamesIfEqualityOfTwoVars(v1, v2)) {
     auto it = mixed_terms_.find(v1);
     if (it == mixed_terms_.end()) {
       auto rel_pair = mixed_terms_[v2];
@@ -259,86 +218,6 @@ bool StringFormula::UpdateMixedConstraintRelations() {
   return false;
 }
 
-StringFormula_ptr StringFormula::Add(StringFormula_ptr other_formula) {
-  auto result = new StringFormula(*this);
-//
-//  for (const auto& el : other_formula->variable_order_map_) {
-//    auto it = result->variable_order_map_.find(el.first);
-//    if (it != result->variable_order_map_.end()) {
-//      it->second = it->second + el.second;
-//    } else {
-//      result->variable_order_map_.insert(el);
-//    }
-//  }
-//  result->constant_ = result->constant_ + other_formula->constant_;
-//
-//  result->mixed_terms_.insert(other_formula->mixed_terms_.begin(), other_formula->mixed_terms_.end());
-  return result;
-}
-
-StringFormula_ptr StringFormula::Subtract(StringFormula_ptr other_formula) {
-  auto result = new StringFormula(*this);
-//  for (const auto& el : other_formula->variable_order_map_) {
-//    auto it = result->variable_order_map_.find(el.first);
-//    if (it != result->variable_order_map_.end()) {
-//      it->second = it->second - el.second;
-//    } else {
-//      result->variable_order_map_[el.first] = -el.second;
-//    }
-//  }
-//  result->constant_ = result->constant_ - other_formula->constant_;
-//
-//  result->mixed_terms_.insert(other_formula->mixed_terms_.begin(), other_formula->mixed_terms_.end());
-  return result;
-}
-
-StringFormula_ptr StringFormula::Multiply(int value) {
-  auto result = new StringFormula(*this);
-//  for (auto& coeff : result->variable_order_map_) {
-//    coeff.second = value * coeff.second;
-//  }
-//  result->constant_ = value * constant_;
-  return result;
-}
-
-StringFormula_ptr StringFormula::negate() {
-  auto result = new StringFormula(*this);
-  switch (type_) {
-    case Type::EQ:
-      result->type_ = Type::NOTEQ;
-      break;
-    case Type::NOTEQ:
-      result->type_ = Type::EQ;
-      break;
-    case Type::GT:
-      result->type_ = Type::LE;
-      break;
-    case Type::GE:
-      result->type_ = Type::LT;
-      break;
-    case Type::LT:
-      result->type_ = Type::GE;
-      break;
-    case Type::LE:
-      result->type_ = Type::GT;
-      break;
-    default:
-      break;
-  }
-  return result;
-}
-
-/**
- * @returns false if formula is not satisfiable and catched by simplification
- */
-bool StringFormula::Simplify() {
-  if (variable_order_map_.size() == 0) {
-    return true;
-  }
-
-  return true;
-}
-
 int StringFormula::CountOnes(unsigned long n) const {
   int ones = 0;
   for (const auto& el : variable_order_map_) {
@@ -352,15 +231,15 @@ int StringFormula::CountOnes(unsigned long n) const {
   return ones;
 }
 
-void StringFormula::merge_variables(const StringFormula_ptr other) {
-  for (auto& el : other->variable_order_map_) {
+void StringFormula::MergeVariables(Formula_ptr other) {
+  for (auto& el : other->variable_coefficient_map_) {
     if (variable_order_map_.find(el.first) == variable_order_map_.end()) {
       variable_order_map_[el.first] = 0;
     }
   }
 }
 
-bool StringFormula::get_var_names_if_equality_of_two_vars(std::string &v1, std::string &v2) {
+bool StringFormula::GetVarNamesIfEqualityOfTwoVars(std::string &v1, std::string &v2) {
   if (type_ not_eq Type::EQ) {
     return false;
   }
@@ -382,10 +261,6 @@ bool StringFormula::get_var_names_if_equality_of_two_vars(std::string &v1, std::
   }
 
   return ((active_vars == 2) and !v1.empty() and !v2.empty());
-}
-
-std::ostream& operator<<(std::ostream& os, const StringFormula& formula) {
-  return os << formula.str();
 }
 
 } /* namespace Theory */

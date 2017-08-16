@@ -28,7 +28,7 @@ namespace Theory {
 class StringFormula;
 using StringFormula_ptr = StringFormula*;
 
-class StringFormula {
+class StringFormula : public Formula {
  public:
   enum class Type : int {
     NONE = 0, EQ, NOTEQ, GT, GE, LT, LE, DIFFERENCE, VAR,
@@ -40,53 +40,32 @@ class StringFormula {
   virtual ~StringFormula();
 
   StringFormula(const StringFormula&);
-  StringFormula_ptr clone() const;
+  virtual StringFormula_ptr clone() const;
+  virtual std::string str() const;
 
-  std::string str() const;
-  void set_type(Type type);
-  StringFormula::Type get_type() const;
-  int get_number_of_variables() const;
-  std::map<std::string, int> get_variable_coefficient_map() const;
-  void set_variable_coefficient_map(std::map<std::string, int>& coefficient_map);
-  int get_variable_coefficient(std::string) const;
-  void set_variable_coefficient(std::string, int coeff);
-  void add_variable(std::string, int);
-  void remove_variable(std::string);
-  std::vector<int> get_coefficients() const;
-  std::string get_constant() const;
-  void set_constant(std::string constant);
-  bool is_constant() const;
-  void reset_param_orders(int value = 0);
-  int get_variable_index(const std::string) const;
-  int get_variable_index(const std::size_t param_index) const;
-  std::string get_variable_at_index(const std::size_t index) const;
+  virtual Formula_ptr Intersect(Formula_ptr);
+	virtual Formula_ptr Union(Formula_ptr);
+	virtual Formula_ptr Complement();
 
-  bool has_relation_to_mixed_term(const std::string var_name) const;
-  void add_relation_to_mixed_term(const std::string var_name, const StringFormula::Type relation, const SMT::Term_ptr term);
-  std::pair<StringFormula::Type, SMT::Term_ptr> get_relation_to_mixed_term(const std::string var_name) const;
-  bool UpdateMixedConstraintRelations();
+  void SetType(Type type);
+  StringFormula::Type GetType() const;
+  std::string GetConstant() const;
+  void SetConstant(std::string constant);
+  bool IsConstant() const;
 
-  StringFormula_ptr Add(StringFormula_ptr);
-  StringFormula_ptr Subtract(StringFormula_ptr);
-  StringFormula_ptr Multiply(int value);
-  StringFormula_ptr negate();
+  bool HasRelationToMixedTerm(const std::string var_name) const;
+  void AddRelationToMixedTerm(const std::string var_name, const StringFormula::Type relation, const SMT::Term_ptr term);
+  std::pair<StringFormula::Type, SMT::Term_ptr> GetRelationToMixedTerm(const std::string var_name) const;
+  virtual bool UpdateMixedConstraintRelations();
 
-  bool Simplify();
   int CountOnes(unsigned long n) const;
-  void merge_variables(StringFormula_ptr other);
-
-  friend std::ostream& operator<<(std::ostream& os, const StringFormula& formula);
+  virtual void MergeVariables(Formula_ptr);
 
 protected:
-  bool get_var_names_if_equality_of_two_vars(std::string &v1, std::string &v2);
+  bool GetVarNamesIfEqualityOfTwoVars(std::string &v1, std::string &v2);
 
   StringFormula::Type type_;
   std::string constant_;
-  /**
-   * Track order is the sort order
-   * Mapped value is the parameter order in the constraint
-   */
-  std::map<std::string, int> variable_order_map_;
 
   // TODO a quick solution for a restricted set of cases in mixed constraints
   // generalize it as much as possible
