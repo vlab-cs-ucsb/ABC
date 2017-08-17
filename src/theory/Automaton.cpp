@@ -1091,10 +1091,9 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
   paths state_paths = nullptr, pp = nullptr;
   trace_descr tp = nullptr;
 
-  std::map<std::vector<char>*, int> exceptions_left_auto;
-  std::map<std::vector<char>*, int> exceptions_right_auto;
-  std::map<std::vector<char>*, int> exceptions_fix;
-  std::vector<char>* current_exception = nullptr;
+  std::map<std::string, int> exceptions_left_auto;
+  std::map<std::string, int> exceptions_right_auto;
+  std::map<std::string, int> exceptions_fix;
   char* statuses = nullptr;
   tmp_num_of_variables = number_of_bdd_variables + 1; // add one extra bit
   state_id_shift_amount = left_dfa->ns;
@@ -1147,28 +1146,27 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
         }
       }
 
-      current_exception = new std::vector<char>();
+      std::string current_exception = "";
       for (j = 0; j < number_of_bdd_variables; j++) {
         //the following for loop can be avoided if the indices are in order
         for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
         if (tp) {
           if (tp->value) {
-            current_exception->push_back('1');
+            current_exception.push_back('1');
           }
           else {
-            current_exception->push_back('0');
+            current_exception.push_back('0');
           }
         }
         else {
-          current_exception->push_back('X');
+          current_exception.push_back('X');
         }
       }
 
-      current_exception->push_back('1'); // new path
-      current_exception->push_back('\0');
+      current_exception.push_back('1'); // new path
+      current_exception.push_back('\0');
       exceptions_right_auto[current_exception] = to_state;
     }
-    current_exception = nullptr;
     tp = nullptr;
     pp = pp->next;
   }
@@ -1184,41 +1182,35 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
         continue;
       }
       to_state = pp->to;
-      current_exception = new std::vector<char>();
+      std::string current_exception = "";
       for (j = 0; j < number_of_bdd_variables; j++) {
         for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
         if (tp) {
           if (tp->value) {
-            current_exception->push_back('1');
+            current_exception.push_back('1');
           } else {
-            current_exception->push_back('0');
+            current_exception.push_back('0');
           }
         } else {
-          current_exception->push_back('X');
+          current_exception.push_back('X');
         }
       }
 
-      current_exception->push_back('0'); // add extra bit, '0' is used for the exceptions coming from left auto
-      current_exception->push_back('\0');
+      current_exception.push_back('0'); // add extra bit, '0' is used for the exceptions coming from left auto
+      current_exception.push_back('\0');
       exceptions_left_auto[current_exception] = to_state;
       tp = nullptr;
       pp = pp->next;
     }
-    current_exception = nullptr;
     // generate concat automaton
     if (DFAIsAcceptingState(dfa1,i)) {
       dfaAllocExceptions(exceptions_left_auto.size() + exceptions_right_auto.size());
-      for (auto it = exceptions_left_auto.begin(); it != exceptions_left_auto.end();) {
-        dfaStoreException(it->second, &*it->first->begin());
-        current_exception = it->first;
-        it = exceptions_left_auto.erase(it);
-        delete current_exception;
+      for (auto entry : exceptions_left_auto) {
+        dfaStoreException(entry.second, const_cast<char*>(entry.first.data()));
       }
-      for (auto it = exceptions_right_auto.begin(); it != exceptions_right_auto.end();) {
-        dfaStoreException(it->second, &*it->first->begin());
-        current_exception = it->first;
-        it = exceptions_right_auto.erase(it);
-        delete current_exception;
+
+      for (auto entry : exceptions_right_auto) {
+        dfaStoreException(entry.second, const_cast<char*>(entry.first.data()));
       }
 
       dfaStoreState(sink);
@@ -1230,16 +1222,12 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
       }
     } else {
       dfaAllocExceptions(exceptions_left_auto.size());
-      for (auto it = exceptions_left_auto.begin(); it != exceptions_left_auto.end();) {
-        dfaStoreException(it->second, &*it->first->begin());
-        current_exception = it->first;
-        it = exceptions_left_auto.erase(it);
-        delete current_exception;
+      for (auto entry : exceptions_left_auto) {
+        dfaStoreException(entry.second, const_cast<char*>(entry.first.data()));
       }
       dfaStoreState(sink);
       statuses[i] = '-';
     }
-    current_exception = nullptr;
     kill_paths(state_paths);
     state_paths = pp = nullptr;
   }
@@ -1261,36 +1249,32 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
               to_state--; // to new state, init state will be eliminated if init is not reachable
             }
 
-            current_exception = new std::vector<char>();
+            std::string current_exception = "";
             for (j = 0; j < number_of_bdd_variables; j++) {
               for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp =tp->next);
               if (tp) {
                 if (tp->value){
-                  current_exception->push_back('1');
+                  current_exception.push_back('1');
                 }
                 else {
-                  current_exception->push_back('0');
+                  current_exception.push_back('0');
                 }
               }
               else {
-                current_exception->push_back('X');
+                current_exception.push_back('X');
               }
             }
-            current_exception->push_back('0'); // old value
-            current_exception->push_back('\0');
+            current_exception.push_back('0'); // old value
+            current_exception.push_back('\0');
             exceptions_fix[current_exception] = to_state;
             tp = nullptr;
-            current_exception = nullptr;
           }
           pp = pp->next;
         }
 
         dfaAllocExceptions(exceptions_fix.size());
-        for (auto it = exceptions_fix.begin(); it != exceptions_fix.end();) {
-          dfaStoreException(it->second, &*it->first->begin());
-          current_exception = it->first;
-          it = exceptions_fix.erase(it);
-          delete current_exception;
+        for (auto entry : exceptions_fix) {
+          dfaStoreException(entry.second, const_cast<char*>(entry.first.data()));
         }
 
         dfaStoreState(sink);
@@ -1335,22 +1319,6 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
   concat_dfa = dfaMinimize(tmp_dfa);
   dfaFree(tmp_dfa); tmp_dfa = nullptr;
 
-  //auto concat_auto = new StringAutomaton(concat_dfa, num_of_bdd_variables_);
-
-//  if (left_hand_side_accepts_emtpy_input) {
-//    auto tmp_auto = concat_auto;
-//    concat_auto = tmp_auto->Union(other_auto);
-//    delete tmp_auto;
-//    delete left_auto; left_auto = nullptr;
-//  }
-//
-//  if (right_hand_side_accepts_empty_input) {
-//    auto tmp_auto = concat_auto;
-//    concat_auto = tmp_auto->Union(this);
-//    delete tmp_auto;
-//    delete right_auto; right_auto = nullptr;
-//  }
-
   if (left_hand_side_accepts_emtpy_input) {
 		tmp_dfa = concat_dfa;
 		concat_dfa = DFAUnion(tmp_dfa,dfa2);
@@ -1364,8 +1332,6 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 		delete tmp_dfa;
 		delete right_dfa; right_dfa = nullptr;
 	}
-
-  //DVLOG(VLOG_LEVEL) << concat_auto->id_ << " = [" << this->id_ << "]->concat(" << other_auto->id_ << ")";
 
   return concat_dfa;
 }
