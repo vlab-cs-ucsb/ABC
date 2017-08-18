@@ -171,10 +171,6 @@ public:
    */
   virtual StringAutomaton_ptr MakeAutomaton(DFA_ptr dfa, const int number_of_variables) override;
 
-
-  // TODO baki left here: move common functions to base class, should be implemented similar to visitor pattern
-  //StringAutomaton_ptr concat(StringAutomaton_ptr other_auto);
-
   StringAutomaton_ptr optional();
   StringAutomaton_ptr closure();
   StringAutomaton_ptr kleeneClosure();

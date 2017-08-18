@@ -147,7 +147,7 @@ int Automaton::GetSinkState() const {
 
 Automaton_ptr Automaton::Complement() {
   DFA_ptr complement_dfa = Automaton::DFAComplement(this->dfa_);
-  Automaton_ptr complement_auto = MakeAutomaton(complement_dfa, num_of_bdd_variables_);
+  Automaton_ptr complement_auto = this->MakeAutomaton(complement_dfa, num_of_bdd_variables_);
   DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->Complement()";
   return complement_auto;
 }
@@ -157,7 +157,7 @@ Automaton_ptr Automaton::Union(Automaton_ptr other_automaton) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
 	DFA_ptr union_dfa = Automaton::DFAUnion(this->dfa_, other_automaton->dfa_);
-  Automaton_ptr union_auto = MakeAutomaton(union_dfa, num_of_bdd_variables_);
+  Automaton_ptr union_auto = this->MakeAutomaton(union_dfa, num_of_bdd_variables_);
   DVLOG(VLOG_LEVEL) << union_auto->id_ << " = [" << this->id_ << "]->Union(" << other_automaton->id_ << ")";
   return union_auto;
 }
@@ -167,7 +167,7 @@ Automaton_ptr Automaton::Intersect(Automaton_ptr other_automaton) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
 	DFA_ptr intersect_dfa = Automaton::DFAIntersect(this->dfa_, other_automaton->dfa_);
-  Automaton_ptr intersect_auto =  MakeAutomaton(intersect_dfa, num_of_bdd_variables_);
+  Automaton_ptr intersect_auto =  this->MakeAutomaton(intersect_dfa, num_of_bdd_variables_);
   DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << other_automaton->id_ << ")";
   return intersect_auto;
 }
@@ -177,7 +177,7 @@ Automaton_ptr Automaton::Difference(Automaton_ptr other_automaton) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
 	DFA_ptr difference_dfa = Automaton::DFADifference(this->dfa_, other_automaton->dfa_);
-  Automaton_ptr difference_auto = MakeAutomaton(difference_dfa, num_of_bdd_variables_);
+  Automaton_ptr difference_auto = this->MakeAutomaton(difference_dfa, num_of_bdd_variables_);
   DVLOG(VLOG_LEVEL) << difference_auto->id_ << " = [" << this->id_ << "]->Difference(" << other_automaton->id_ << ")";
   return difference_auto;
 }
@@ -186,319 +186,10 @@ Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
 	if(this->num_of_bdd_variables_ != other_automaton->num_of_bdd_variables_) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
-	DFA_ptr concat_dfa = Automaton::DFAConcat(this->dfa_,other_automaton->dfa_,num_of_bdd_variables_);
-  Automaton_ptr concat_auto = MakeAutomaton(concat_dfa,num_of_bdd_variables_);
-  DVLOG(VLOG_LEVEL) << concat_auto->id_ << " = [" << this->id_ << "]->concat(" << other_automaton->id_ << ")";
+	DFA_ptr concat_dfa = Automaton::DFAConcat(this->dfa_, other_automaton->dfa_, num_of_bdd_variables_);
+  Automaton_ptr concat_auto = this->MakeAutomaton(concat_dfa, num_of_bdd_variables_);
+  DVLOG(VLOG_LEVEL) << concat_auto->id_ << " = [" << this->id_ << "]->Concat(" << other_automaton->id_ << ")";
   return concat_auto;
-
-
-//	Automaton_ptr left_auto = this, right_auto = other_automaton;
-//
-//  if (left_auto->IsEmptyLanguage() or right_auto->IsEmptyLanguage()) {
-//  	DFA_ptr phi_dfa = DFAMakePhi(num_of_bdd_variables_);
-//    return MakeAutomaton(phi_dfa,num_of_bdd_variables_);
-//  } else if (left_auto->IsOnlyAcceptingEmptyInput()) {
-//    return right_auto->clone();
-//  } else if (right_auto->IsOnlyAcceptingEmptyInput()) {
-//    return left_auto->clone();
-//  }
-//
-//  // TODO refactor handling empty string case
-//  bool left_hand_side_has_emtpy_string = left_auto->IsInitialStateAccepting();
-//  bool right_hand_side_has_empty_string = right_auto->IsInitialStateAccepting();
-//
-//  if (left_hand_side_has_emtpy_string or right_hand_side_has_empty_string) {
-//  	DFA_ptr len_dfa = DFAMakeAcceptingAnyAfterLength(0,num_of_bdd_variables_);
-//    auto any_string_other_than_empty = MakeAutomaton(len_dfa,num_of_bdd_variables_);
-//    if (left_hand_side_has_emtpy_string) {
-//      left_auto = left_auto->Intersect(any_string_other_than_empty);
-//    }
-//
-//    if (right_hand_side_has_empty_string) {
-//      right_auto = right_auto->Intersect(any_string_other_than_empty);
-//    }
-//    delete any_string_other_than_empty;
-//  }
-//
-//  int var = left_auto->num_of_bdd_variables_;
-//  int* indices = GetBddVariableIndices(var);
-//  int tmp_num_of_variables,
-//      state_id_shift_amount,
-//      expected_num_of_states,
-//      sink_state_left_auto,
-//      sink_state_right_auto,
-//      to_state = 0,
-//      loc,
-//      i = 0,
-//      j = 0;
-//
-//  bool is_start_state_reachable;
-//  paths state_paths = nullptr, pp = nullptr;
-//  trace_descr tp = nullptr;
-//
-//  std::map<std::vector<char>*, int> exceptions_left_auto;
-//  std::map<std::vector<char>*, int> exceptions_right_auto;
-//  std::map<std::vector<char>*, int> exceptions_fix;
-//  std::vector<char>* current_exception = nullptr;
-//  char* statuses = nullptr;
-//  tmp_num_of_variables = left_auto->num_of_bdd_variables_ + 1; // add one extra bit
-//  state_id_shift_amount = left_auto->dfa_->ns;
-//  expected_num_of_states = left_auto->dfa_->ns + right_auto->dfa_->ns;
-//
-//  is_start_state_reachable = TEMPisStartStateReachableFromAnAcceptingState(right_auto->dfa_);
-//  if (not is_start_state_reachable) {
-//    expected_num_of_states = expected_num_of_states  - 1; // if start state is reachable from an accepting state, it will be merge with accepting states of left hand side
-//  }
-//  // variable initializations
-//  sink_state_left_auto = left_auto->GetSinkState();
-//  sink_state_right_auto = right_auto->GetSinkState();
-//
-//  bool left_sink = true, right_sink = true;
-//  int sink = sink_state_left_auto;
-//
-//  if(sink_state_left_auto < 0 && sink_state_right_auto < 0) {
-//    left_sink = right_sink = false;
-//    sink = expected_num_of_states;
-//    expected_num_of_states++;
-//  } else if(sink_state_left_auto < 0) {
-//    left_sink = false;
-//    sink = sink_state_right_auto + state_id_shift_amount;
-//    if(not is_start_state_reachable) {
-//      sink--;
-//    }
-//  } else if(sink_state_right_auto < 0) {
-//    right_sink = false;
-//  } else {
-//    expected_num_of_states--;
-//  }
-//
-//  statuses = new char[expected_num_of_states + 1];
-//  int* concat_indices = GetBddVariableIndices(tmp_num_of_variables);
-//
-//  dfaSetup(expected_num_of_states, tmp_num_of_variables, concat_indices); //sink states are merged
-//  state_paths = pp = make_paths(right_auto->dfa_->bddm, right_auto->dfa_->q[right_auto->dfa_->s]);
-//  while (pp) {
-//    if (!right_sink || pp->to != sink_state_right_auto ) {
-//      to_state = pp->to + state_id_shift_amount;
-//      // if there is a self loop keep it
-//      if (pp->to == (unsigned)right_auto->dfa_->s ) {
-//        to_state -= 2;
-//      } else {
-//        if (left_sink && right_sink && pp->to > (unsigned)sink_state_right_auto ) {
-//          to_state--; //to new state, sink state will be eliminated and hence need -1
-//        }
-//        if ((not is_start_state_reachable) && pp->to > (unsigned)right_auto->dfa_->s) {
-//          to_state--; // to new state, init state will be eliminated if init is not reachable
-//        }
-//      }
-//
-//      current_exception = new std::vector<char>();
-//      for (j = 0; j < right_auto->num_of_bdd_variables_; j++) {
-//        //the following for loop can be avoided if the indices are in order
-//        for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
-//        if (tp) {
-//          if (tp->value) {
-//            current_exception->push_back('1');
-//          }
-//          else {
-//            current_exception->push_back('0');
-//          }
-//        }
-//        else {
-//          current_exception->push_back('X');
-//        }
-//      }
-//
-//      current_exception->push_back('1'); // new path
-//      current_exception->push_back('\0');
-//      exceptions_right_auto[current_exception] = to_state;
-//    }
-//    current_exception = nullptr;
-//    tp = nullptr;
-//    pp = pp->next;
-//  }
-//
-//  kill_paths(state_paths);
-//  state_paths = pp = nullptr;
-//
-//  for (i = 0; i < left_auto->dfa_->ns; i++) {
-//    state_paths = pp = make_paths(left_auto->dfa_->bddm, left_auto->dfa_->q[i]);
-//    while (pp) {
-//      if (left_sink && pp->to == (unsigned)sink_state_left_auto) {
-//        pp = pp->next;
-//        continue;
-//      }
-//      to_state = pp->to;
-//      current_exception = new std::vector<char>();
-//      for (j = 0; j < left_auto->num_of_bdd_variables_; j++) {
-//        for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
-//        if (tp) {
-//          if (tp->value) {
-//            current_exception->push_back('1');
-//          } else {
-//            current_exception->push_back('0');
-//          }
-//        } else {
-//          current_exception->push_back('X');
-//        }
-//      }
-//
-//      current_exception->push_back('0'); // add extra bit, '0' is used for the exceptions coming from left auto
-//      current_exception->push_back('\0');
-//      exceptions_left_auto[current_exception] = to_state;
-//      tp = nullptr;
-//      pp = pp->next;
-//    }
-//    current_exception = nullptr;
-//    // generate concat automaton
-//    if (left_auto->IsAcceptingState(i)) {
-//      dfaAllocExceptions(exceptions_left_auto.size() + exceptions_right_auto.size());
-//      for (auto it = exceptions_left_auto.begin(); it != exceptions_left_auto.end();) {
-//        dfaStoreException(it->second, &*it->first->begin());
-//        current_exception = it->first;
-//        it = exceptions_left_auto.erase(it);
-//        delete current_exception;
-//      }
-//      for (auto it = exceptions_right_auto.begin(); it != exceptions_right_auto.end();) {
-//        dfaStoreException(it->second, &*it->first->begin());
-//        current_exception = it->first;
-//        it = exceptions_right_auto.erase(it);
-//        delete current_exception;
-//      }
-//
-//      dfaStoreState(sink);
-//      if (right_auto->IsAcceptingState(0)) {
-//        statuses[i]='+';
-//      }
-//      else {
-//        statuses[i]='-';
-//      }
-//    } else {
-//      dfaAllocExceptions(exceptions_left_auto.size());
-//      for (auto it = exceptions_left_auto.begin(); it != exceptions_left_auto.end();) {
-//        dfaStoreException(it->second, &*it->first->begin());
-//        current_exception = it->first;
-//        it = exceptions_left_auto.erase(it);
-//        delete current_exception;
-//      }
-//      dfaStoreState(sink);
-//      statuses[i] = '-';
-//    }
-//    current_exception = nullptr;
-//    kill_paths(state_paths);
-//    state_paths = pp = nullptr;
-//  }
-//
-//  //  initflag is 1 iff init is reached by some state. In this case,
-//  for (i = 0; i < right_auto->dfa_->ns; i++) {
-//    if (i != sink_state_right_auto ) {
-//      if ( i != right_auto->dfa_->s || is_start_state_reachable) {
-//        state_paths = pp = make_paths(right_auto->dfa_->bddm, right_auto->dfa_->q[i]);
-//        while (pp) {
-//          if (!right_sink || pp->to != (unsigned)sink_state_right_auto) {
-//            to_state = pp->to + state_id_shift_amount;
-//
-//            if ( right_sink && left_sink && pp->to > (unsigned)sink_state_right_auto) {
-//              to_state--; //to new state, sink state will be eliminated and hence need -1
-//            }
-//
-//            if ( (not is_start_state_reachable) && pp->to > (unsigned)right_auto->dfa_->s) {
-//              to_state--; // to new state, init state will be eliminated if init is not reachable
-//            }
-//
-//            current_exception = new std::vector<char>();
-//            for (j = 0; j < var; j++) {
-//              for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp =tp->next);
-//              if (tp) {
-//                if (tp->value){
-//                  current_exception->push_back('1');
-//                }
-//                else {
-//                  current_exception->push_back('0');
-//                }
-//              }
-//              else {
-//                current_exception->push_back('X');
-//              }
-//            }
-//            current_exception->push_back('0'); // old value
-//            current_exception->push_back('\0');
-//            exceptions_fix[current_exception] = to_state;
-//            tp = nullptr;
-//            current_exception = nullptr;
-//          }
-//          pp = pp->next;
-//        }
-//
-//        dfaAllocExceptions(exceptions_fix.size());
-//        for (auto it = exceptions_fix.begin(); it != exceptions_fix.end();) {
-//          dfaStoreException(it->second, &*it->first->begin());
-//          current_exception = it->first;
-//          it = exceptions_fix.erase(it);
-//          delete current_exception;
-//        }
-//
-//        dfaStoreState(sink);
-//
-//        loc = state_id_shift_amount + i;
-//        if ( (not is_start_state_reachable) && i > right_auto->dfa_->s) {
-//          loc--;
-//        }
-//        if (left_sink && right_sink && i > sink_state_right_auto) {
-//          loc--;
-//        }
-//
-//        if ( right_auto->IsAcceptingState(i)) {
-//          statuses[loc]='+';
-//        } else {
-//          statuses[loc]='-';
-//        }
-//
-//        kill_paths(state_paths);
-//        state_paths = pp = nullptr;
-//      }
-//    } else if(!left_sink && right_sink) {
-//      dfaAllocExceptions(0);
-//      dfaStoreState(sink);
-//      statuses[sink] = '-';
-//    }
-//  }
-//
-//  if(!right_sink && !left_sink) {
-//    dfaAllocExceptions(0);
-//    dfaStoreState(sink);
-//    statuses[sink] = '-';
-//  }
-//
-//  statuses[expected_num_of_states]='\0';
-//
-//  DFA_ptr concat_dfa = dfaBuild(statuses);
-//  delete[] statuses; statuses = nullptr;
-//  delete[] concat_indices; concat_indices = nullptr;
-//  DFA_ptr tmp_dfa = dfaProject(concat_dfa, (unsigned) var);
-//  dfaFree(concat_dfa);
-//  concat_dfa = dfaMinimize(tmp_dfa);
-//  dfaFree(tmp_dfa); tmp_dfa = nullptr;
-//
-//  auto concat_auto = MakeAutomaton(concat_dfa, num_of_bdd_variables_);
-//
-//  if (left_hand_side_has_emtpy_string) {
-//    auto tmp_auto = concat_auto;
-//    concat_auto = tmp_auto->Union(other_automaton);
-//    delete tmp_auto;
-//    delete left_auto; left_auto = nullptr;
-//  }
-//
-//  if (right_hand_side_has_empty_string) {
-//    auto tmp_auto = concat_auto;
-//    concat_auto = tmp_auto->Union(this);
-//    delete tmp_auto;
-//    delete right_auto; right_auto = nullptr;
-//  }
-//
-//  DVLOG(VLOG_LEVEL) << concat_auto->id_ << " = [" << this->id_ << "]->concat(" << other_automaton->id_ << ")";
-//
-//  return concat_auto;
 }
 
 bool Automaton::isCyclic() {
