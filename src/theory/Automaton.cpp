@@ -712,9 +712,40 @@ DFA_ptr Automaton::DFAMakeAcceptingAnyAfterLength(const int length, const int nu
   return result_dfa;
 }
 
-std::set<std::string> Automaton::DFAGetTransitionsFromTo(DFA_ptr dfa, const int from, const int to, const int number_of_bdd_variables) {
+std::unordered_map<std::string, int> Automaton::DFAGetTransitionsFrom(DFA_ptr dfa, const int from, const int number_of_bdd_variables, std::string extra_bits) {
   const int* bdd_indices = GetBddVariableIndices(number_of_bdd_variables);
-  std::set<std::string> transitions;
+  const int sink_state = DFAGetSinkState(dfa);
+  std::unordered_map<std::string, int> transition_map;
+  paths pp = make_paths(dfa->bddm, dfa->q[from]);
+  while (pp) {
+    if (pp->to != sink_state) {
+      std::string current_exception;
+      for (int j = 0; j < number_of_bdd_variables; ++j) {
+        trace_descr tp = nullptr;
+        for (tp = pp->trace; tp && (tp->index != (unsigned)bdd_indices[j]); tp = tp->next);
+        if (tp) {
+          if (tp->value) {
+            current_exception.push_back('1');
+          } else {
+            current_exception.push_back('0');
+          }
+        } else {
+          current_exception.push_back('X');
+        }
+      }
+      current_exception.append(extra_bits);
+      current_exception.push_back('\0');
+      transition_map[current_exception] = pp->to;
+    }
+    pp = pp->next;
+  }
+  return transition_map;
+
+}
+
+std::unordered_set<std::string> Automaton::DFAGetTransitionsFromTo(DFA_ptr dfa, const int from, const int to, const int number_of_bdd_variables, std::string extra_bits) {
+  const int* bdd_indices = GetBddVariableIndices(number_of_bdd_variables);
+  std::unordered_set<std::string> transitions;
   paths pp = make_paths(dfa->bddm, dfa->q[from]);
   while (pp) {
     if (pp->to == to) {
@@ -732,6 +763,7 @@ std::set<std::string> Automaton::DFAGetTransitionsFromTo(DFA_ptr dfa, const int 
           current_exception.push_back('X');
         }
       }
+      current_exception.append(extra_bits);
       current_exception.push_back('\0');
       transitions.insert(current_exception);
     }
@@ -1159,7 +1191,7 @@ bool Automaton::hasIncomingTransition(int state) {
 //      return true;
 //    }
 //  }
-//  return false;
+  return false;
 }
 
 /**

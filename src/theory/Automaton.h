@@ -388,7 +388,7 @@ protected:
   static DFA_ptr DFAMakeAcceptingAnyWithInRange(const int start, const int end, const int number_of_bdd_variables);
 
   /**
-   * Generates a dfa that accepts any input after reading the given number of inputs
+   * Generates a dfa that accepts any input after reading the given number of inputs.
    * @param start
    * @param number_of_bdd_variables
    * @return
@@ -396,17 +396,29 @@ protected:
   static DFA_ptr DFAMakeAcceptingAnyAfterLength(const int length, const int number_of_bdd_variables);
 
   /**
+   * Gets outgoing transitions and target states from the given state.
+   * Excludes the transition that goes into a sink state.
+   * @param dfa
+   * @param from
+   * @param number_of_variables
+   * @param extra_bits appends bits to the read transitions
+   * @return
+   */
+  static std::unordered_map<std::string, int> DFAGetTransitionsFrom(DFA_ptr dfa, const int from, const int number_of_bdd_variables, std::string extra_bits = "");
+
+  /**
    * Gets set of transitions between two states
    * @param dfa
    * @param from
    * @param to
-   * @param num_of_variables
+   * @param number_of_variables
+   * @param extra_bits appends bits to the read transitions
    * @return
    */
-  static std::set<std::string> DFAGetTransitionsFromTo(DFA_ptr dfa, const int from, const int to, const int num_of_variables);
+  static std::unordered_set<std::string> DFAGetTransitionsFromTo(DFA_ptr dfa, const int from, const int to, const int number_of_variables, std::string extra_bits = "");
 
   /**
-	 * Generates a dfa that accepts the concatenated language of dfa1 and dfa2
+	 * Generates a dfa that accepts the concatenated language of dfa1 and dfa2.
 	 * @param dfa1
 	 * @param dfa2
 	 * @param number_of_bdd_variables
@@ -444,6 +456,7 @@ protected:
 
   // TODO return string instead of vector<char>
   static std::vector<char> getReservedWord(char last_char, int length, bool extra_bit = false);
+  // todo baki left here, implement Minimize project using dfa versions and use them in all non dfa functions
   void Minimize();
   void ProjectAway(unsigned index);
 

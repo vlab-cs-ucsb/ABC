@@ -29,3 +29,8 @@ Tasks:
 2- Define an abstract builder class that declares a set of automata construction methods.
 3- Move underlaying automata related functions into a separate class that inherits from the class defined in task 1.
 3- Implement a builder for each underlaying automata construction support.
+
+
+3- Intermediate Automata Representation
+
+  Idea: Encode bdd is as bit string use two bit per bdd variable, 01 true, 10, false, 11 don't care. store transition

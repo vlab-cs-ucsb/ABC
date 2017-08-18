@@ -161,7 +161,7 @@ StringAutomaton_ptr StringAutomaton::MakeRegexAuto(const std::string regex, cons
 }
 
 StringAutomaton_ptr StringAutomaton::MakeRegexAuto(Util::RegularExpression_ptr regular_expression, const int number_of_bdd_variables) {
-  Automaton_ptr regex_auto = nullptr;
+  StringAutomaton_ptr regex_auto = nullptr;
   StringAutomaton_ptr regex_expr1_auto = nullptr;
   StringAutomaton_ptr regex_expr2_auto = nullptr;
 
@@ -189,27 +189,27 @@ StringAutomaton_ptr StringAutomaton::MakeRegexAuto(Util::RegularExpression_ptr r
     break;
   case Util::RegularExpression::Type::OPTIONAL:
     regex_expr1_auto = StringAutomaton::MakeRegexAuto(regular_expression->get_expr1(), number_of_bdd_variables);
-    regex_auto = regex_expr1_auto->optional();
+    regex_auto = regex_expr1_auto->Optional();
     delete regex_expr1_auto;
     break;
   case Util::RegularExpression::Type::REPEAT_STAR:
     regex_expr1_auto = StringAutomaton::MakeRegexAuto(regular_expression->get_expr1(), number_of_bdd_variables);
-    regex_auto = regex_expr1_auto->kleeneClosure();
+    regex_auto = regex_expr1_auto->KleeneClosure();
     delete regex_expr1_auto;
     break;
   case Util::RegularExpression::Type::REPEAT_PLUS:
     regex_expr1_auto = StringAutomaton::MakeRegexAuto(regular_expression->get_expr1(), number_of_bdd_variables);
-    regex_auto = regex_expr1_auto->closure();
+    regex_auto = regex_expr1_auto->Closure();
     delete regex_expr1_auto;
     break;
   case Util::RegularExpression::Type::REPEAT_MIN:
     regex_expr1_auto = StringAutomaton::MakeRegexAuto(regular_expression->get_expr1(), number_of_bdd_variables);
-    regex_auto = regex_expr1_auto->repeat(regular_expression->get_min());
+    regex_auto = regex_expr1_auto->Repeat(regular_expression->get_min());
     delete regex_expr1_auto;
     break;
   case Util::RegularExpression::Type::REPEAT_MINMAX:
     regex_expr1_auto = StringAutomaton::MakeRegexAuto(regular_expression->get_expr1(), number_of_bdd_variables);
-    regex_auto = regex_expr1_auto->repeat(regular_expression->get_min(), regular_expression->get_max());
+    regex_auto = regex_expr1_auto->Repeat(regular_expression->get_min(), regular_expression->get_max());
     delete regex_expr1_auto;
     break;
   case Util::RegularExpression::Type::COMPLEMENT:
@@ -246,8 +246,7 @@ StringAutomaton_ptr StringAutomaton::MakeRegexAuto(Util::RegularExpression_ptr r
     break;
   }
 
-  StringAutomaton_ptr ret_auto = static_cast<StringAutomaton_ptr>(regex_auto);
-  return ret_auto;
+  return regex_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::MakeAnyStringLengthEqualTo(const int length, const int number_of_bdd_variables) {
@@ -296,438 +295,64 @@ StringAutomaton_ptr StringAutomaton::MakeAutomaton(DFA_ptr dfa, const int number
   return new StringAutomaton(dfa, number_of_variables);
 }
 
-/**
- * Initial Re-implementation of  'dfa_concat_extrabit' in LibStranger
- *TODO Fix empty string bug that happens in case (concat /.{0,1}/ /{1,1}/)
- */
-//StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
-//  StringAutomaton_ptr left_auto = this, right_auto = other_auto;
-//
-//  if (left_auto->IsEmptyLanguage() or right_auto->IsEmptyLanguage()) {
-//    return StringAutomaton::MakePhi();
-//  } else if (left_auto->isEmptyString()) {
-//    return right_auto->clone();
-//  } else if (right_auto->isEmptyString()) {
-//    return left_auto->clone();
-//  }
-//
-//  bool left_hand_side_has_emtpy_string = left_auto->hasEmptyString();
-//  bool right_hand_side_has_empty_string = right_auto->hasEmptyString();
-//
-//  if (left_hand_side_has_emtpy_string or right_hand_side_has_empty_string) {
-//    auto any_string_other_than_empty = StringAutomaton::MakeAnyStringLengthGreaterThan(0);
-//    if (left_hand_side_has_emtpy_string) {
-//      left_auto = left_auto->Intersect(any_string_other_than_empty);
-//    }
-//
-//    if (right_hand_side_has_empty_string) {
-//      right_auto = right_auto->Intersect(any_string_other_than_empty);
-//    }
-//    delete any_string_other_than_empty;
-//  }
-//
-//  int var = left_auto->num_of_bdd_variables_;
-//  int* indices = GetBddVariableIndices(var);
-//  int tmp_num_of_variables,
-//      state_id_shift_amount,
-//      expected_num_of_states,
-//      sink_state_left_auto,
-//      sink_state_right_auto,
-//      to_state = 0,
-//      loc,
-//      i = 0,
-//      j = 0;
-//
-//  bool is_start_state_reachable;
-//  paths state_paths = nullptr, pp = nullptr;
-//  trace_descr tp = nullptr;
-//
-//  std::map<std::vector<char>*, int> exceptions_left_auto;
-//  std::map<std::vector<char>*, int> exceptions_right_auto;
-//  std::map<std::vector<char>*, int> exceptions_fix;
-//  std::vector<char>* current_exception = nullptr;
-//  char* statuses = nullptr;
-//  tmp_num_of_variables = left_auto->num_of_bdd_variables_ + 1; // add one extra bit
-//  state_id_shift_amount = left_auto->dfa_->ns;
-//  expected_num_of_states = left_auto->dfa_->ns + right_auto->dfa_->ns;
-//
-//  is_start_state_reachable = right_auto->TEMPisStartStateReachableFromAnAcceptingState();
-//  if (not is_start_state_reachable) {
-//    expected_num_of_states = expected_num_of_states  - 1; // if start state is reachable from an accepting state, it will be merge with accepting states of left hand side
-//  }
-//  // variable initializations
-//  sink_state_left_auto = left_auto->GetSinkState();
-//  sink_state_right_auto = right_auto->GetSinkState();
-//
-//  bool left_sink = true, right_sink = true;
-//  int sink = sink_state_left_auto;
-//
-//  if(sink_state_left_auto < 0 && sink_state_right_auto < 0) {
-//    left_sink = right_sink = false;
-//    sink = expected_num_of_states;
-//    expected_num_of_states++;
-//  } else if(sink_state_left_auto < 0) {
-//    left_sink = false;
-//    sink = sink_state_right_auto + state_id_shift_amount;
-//    if(not is_start_state_reachable) {
-//      sink--;
-//    }
-//  } else if(sink_state_right_auto < 0) {
-//    right_sink = false;
-//  } else {
-//    expected_num_of_states--;
-//  }
-//
-//  statuses = new char[expected_num_of_states + 1];
-//  int* concat_indices = GetBddVariableIndices(tmp_num_of_variables);
-//
-//  dfaSetup(expected_num_of_states, tmp_num_of_variables, concat_indices); //sink states are merged
-//  state_paths = pp = make_paths(right_auto->dfa_->bddm, right_auto->dfa_->q[right_auto->dfa_->s]);
-//  while (pp) {
-//    if (!right_sink || pp->to != sink_state_right_auto ) {
-//      to_state = pp->to + state_id_shift_amount;
-//      // if there is a self loop keep it
-//      if (pp->to == (unsigned)right_auto->dfa_->s ) {
-//        to_state -= 2;
-//      } else {
-//        if (left_sink && right_sink && pp->to > (unsigned)sink_state_right_auto ) {
-//          to_state--; //to new state, sink state will be eliminated and hence need -1
-//        }
-//        if ((not is_start_state_reachable) && pp->to > (unsigned)right_auto->dfa_->s) {
-//          to_state--; // to new state, init state will be eliminated if init is not reachable
-//        }
-//      }
-//
-//      current_exception = new std::vector<char>();
-//      for (j = 0; j < right_auto->num_of_bdd_variables_; j++) {
-//        //the following for loop can be avoided if the indices are in order
-//        for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
-//        if (tp) {
-//          if (tp->value) {
-//            current_exception->push_back('1');
-//          }
-//          else {
-//            current_exception->push_back('0');
-//          }
-//        }
-//        else {
-//          current_exception->push_back('X');
-//        }
-//      }
-//
-//      current_exception->push_back('1'); // new path
-//      current_exception->push_back('\0');
-//      exceptions_right_auto[current_exception] = to_state;
-//    }
-//    current_exception = nullptr;
-//    tp = nullptr;
-//    pp = pp->next;
-//  }
-//
-//  kill_paths(state_paths);
-//  state_paths = pp = nullptr;
-//
-//  for (i = 0; i < left_auto->dfa_->ns; i++) {
-//    state_paths = pp = make_paths(left_auto->dfa_->bddm, left_auto->dfa_->q[i]);
-//    while (pp) {
-//      if (left_sink && pp->to == (unsigned)sink_state_left_auto) {
-//        pp = pp->next;
-//        continue;
-//      }
-//      to_state = pp->to;
-//      current_exception = new std::vector<char>();
-//      for (j = 0; j < left_auto->num_of_bdd_variables_; j++) {
-//        for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
-//        if (tp) {
-//          if (tp->value) {
-//            current_exception->push_back('1');
-//          } else {
-//            current_exception->push_back('0');
-//          }
-//        } else {
-//          current_exception->push_back('X');
-//        }
-//      }
-//
-//      current_exception->push_back('0'); // add extra bit, '0' is used for the exceptions coming from left auto
-//      current_exception->push_back('\0');
-//      exceptions_left_auto[current_exception] = to_state;
-//      tp = nullptr;
-//      pp = pp->next;
-//    }
-//    current_exception = nullptr;
-//    // generate concat automaton
-//    if (left_auto->IsAcceptingState(i)) {
-//      dfaAllocExceptions(exceptions_left_auto.size() + exceptions_right_auto.size());
-//      for (auto it = exceptions_left_auto.begin(); it != exceptions_left_auto.end();) {
-//        dfaStoreException(it->second, &*it->first->begin());
-//        current_exception = it->first;
-//        it = exceptions_left_auto.erase(it);
-//        delete current_exception;
-//      }
-//      for (auto it = exceptions_right_auto.begin(); it != exceptions_right_auto.end();) {
-//        dfaStoreException(it->second, &*it->first->begin());
-//        current_exception = it->first;
-//        it = exceptions_right_auto.erase(it);
-//        delete current_exception;
-//      }
-//
-//      dfaStoreState(sink);
-//      if (right_auto->IsAcceptingState(0)) {
-//        statuses[i]='+';
-//      }
-//      else {
-//        statuses[i]='-';
-//      }
-//    } else {
-//      dfaAllocExceptions(exceptions_left_auto.size());
-//      for (auto it = exceptions_left_auto.begin(); it != exceptions_left_auto.end();) {
-//        dfaStoreException(it->second, &*it->first->begin());
-//        current_exception = it->first;
-//        it = exceptions_left_auto.erase(it);
-//        delete current_exception;
-//      }
-//      dfaStoreState(sink);
-//      statuses[i] = '-';
-//    }
-//    current_exception = nullptr;
-//    kill_paths(state_paths);
-//    state_paths = pp = nullptr;
-//  }
-//
-//  //  initflag is 1 iff init is reached by some state. In this case,
-//  for (i = 0; i < right_auto->dfa_->ns; i++) {
-//    if (i != sink_state_right_auto ) {
-//      if ( i != right_auto->dfa_->s || is_start_state_reachable) {
-//        state_paths = pp = make_paths(right_auto->dfa_->bddm, right_auto->dfa_->q[i]);
-//        while (pp) {
-//          if (!right_sink || pp->to != (unsigned)sink_state_right_auto) {
-//            to_state = pp->to + state_id_shift_amount;
-//
-//            if ( right_sink && left_sink && pp->to > (unsigned)sink_state_right_auto) {
-//              to_state--; //to new state, sink state will be eliminated and hence need -1
-//            }
-//
-//            if ( (not is_start_state_reachable) && pp->to > (unsigned)right_auto->dfa_->s) {
-//              to_state--; // to new state, init state will be eliminated if init is not reachable
-//            }
-//
-//            current_exception = new std::vector<char>();
-//            for (j = 0; j < var; j++) {
-//              for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp =tp->next);
-//              if (tp) {
-//                if (tp->value){
-//                  current_exception->push_back('1');
-//                }
-//                else {
-//                  current_exception->push_back('0');
-//                }
-//              }
-//              else {
-//                current_exception->push_back('X');
-//              }
-//            }
-//            current_exception->push_back('0'); // old value
-//            current_exception->push_back('\0');
-//            exceptions_fix[current_exception] = to_state;
-//            tp = nullptr;
-//            current_exception = nullptr;
-//          }
-//          pp = pp->next;
-//        }
-//
-//        dfaAllocExceptions(exceptions_fix.size());
-//        for (auto it = exceptions_fix.begin(); it != exceptions_fix.end();) {
-//          dfaStoreException(it->second, &*it->first->begin());
-//          current_exception = it->first;
-//          it = exceptions_fix.erase(it);
-//          delete current_exception;
-//        }
-//
-//        dfaStoreState(sink);
-//
-//        loc = state_id_shift_amount + i;
-//        if ( (not is_start_state_reachable) && i > right_auto->dfa_->s) {
-//          loc--;
-//        }
-//        if (left_sink && right_sink && i > sink_state_right_auto) {
-//          loc--;
-//        }
-//
-//        if ( right_auto->IsAcceptingState(i)) {
-//          statuses[loc]='+';
-//        } else {
-//          statuses[loc]='-';
-//        }
-//
-//        kill_paths(state_paths);
-//        state_paths = pp = nullptr;
-//      }
-//    } else if(!left_sink && right_sink) {
-//      dfaAllocExceptions(0);
-//      dfaStoreState(sink);
-//      statuses[sink] = '-';
-//    }
-//  }
-//
-//  if(!right_sink && !left_sink) {
-//    dfaAllocExceptions(0);
-//    dfaStoreState(sink);
-//    statuses[sink] = '-';
-//  }
-//
-//  statuses[expected_num_of_states]='\0';
-//
-//  DFA_ptr concat_dfa = dfaBuild(statuses);
-//  delete[] statuses; statuses = nullptr;
-//  delete[] concat_indices; concat_indices = nullptr;
-//  DFA_ptr tmp_dfa = dfaProject(concat_dfa, (unsigned) var);
-//  dfaFree(concat_dfa);
-//  concat_dfa = dfaMinimize(tmp_dfa);
-//  dfaFree(tmp_dfa); tmp_dfa = nullptr;
-//
-//  auto concat_auto = new StringAutomaton(concat_dfa, num_of_bdd_variables_);
-//
-//  if (left_hand_side_has_emtpy_string) {
-//    auto tmp_auto = concat_auto;
-//    concat_auto = tmp_auto->Union(other_auto);
-//    delete tmp_auto;
-//    delete left_auto; left_auto = nullptr;
-//  }
-//
-//  if (right_hand_side_has_empty_string) {
-//    auto tmp_auto = concat_auto;
-//    concat_auto = tmp_auto->Union(this);
-//    delete tmp_auto;
-//    delete right_auto; right_auto = nullptr;
-//  }
-//
-//  DVLOG(VLOG_LEVEL) << concat_auto->id_ << " = [" << this->id_ << "]->concat(" << other_auto->id_ << ")";
-//
-//  return concat_auto;
-//
-//}
-
-StringAutomaton_ptr StringAutomaton::optional() {
-  StringAutomaton_ptr optional_auto = nullptr, empty_string = nullptr;
-
-  empty_string = StringAutomaton::MakeEmptyString();
-  optional_auto = static_cast<StringAutomaton_ptr>(this->Union(empty_string));
+StringAutomaton_ptr StringAutomaton::Optional() {
+  StringAutomaton_ptr empty_string = StringAutomaton::MakeEmptyString();
+  StringAutomaton_ptr optional_auto = static_cast<StringAutomaton_ptr>(this->Union(empty_string));
   delete empty_string;
-
-  DVLOG(VLOG_LEVEL) << optional_auto->id_ << " = [" << this->id_ << "]->optional()";
-
+  DVLOG(VLOG_LEVEL) << optional_auto->id_ << " = [" << this->id_ << "]->Optional()";
   return optional_auto;
 }
 
-/**
- * TODO improve implementation by refactoring libstranger call
- *
- */
-StringAutomaton_ptr StringAutomaton::closure() {
-  StringAutomaton_ptr result_auto = nullptr;
-  DFA_ptr result_dfa = nullptr, temp_dfa = nullptr;
-  paths state_paths, pp;
-  trace_descr tp;
-  int sink = GetSinkState();
-  CHECK_GT(sink,-1);
-  int var = DEFAULT_NUM_OF_VARIABLES;
-  int len = var + 1; //one extra bit
-  int *indices = GetBddVariableIndices(len);
-  char *statuses = new char[dfa_->ns+1];
-  std::vector<std::pair<int,std::vector<char>>> added_exeps, original_exeps;
-  std::vector<char> exep;
-
-  dfaSetup(dfa_->ns, len, indices);
-  //construct the added paths
-  state_paths = pp = make_paths(dfa_->bddm, dfa_->q[dfa_->s]);
-  exep = std::vector<char>(len,'X');
-  exep.push_back('\0');
-  while (pp) {
-    if (pp->to != sink) {
-      for (int j = 0; j < var; j++) {
-        //the following for loop can be avoided if the indices are in order
-        for (tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
-        if (tp) {
-          if (tp->value)
-            exep[j] = '1';
-          else
-            exep[j] = '0';
-        } else
-          exep[j] = 'X';
-      }
-      exep[len-1] = '1'; //new path
-      added_exeps.push_back(std::make_pair(pp->to,exep));
-    }
-    pp = pp->next;
+StringAutomaton_ptr StringAutomaton::Closure() {
+  int number_of_states = dfa_->ns;
+  int sink_state = this->GetSinkState();
+  if (sink_state == -1) {
+    sink_state = number_of_states;
+    ++number_of_states;
   }
-  kill_paths(state_paths);
+  const int number_of_bdd_variables = num_of_bdd_variables_ + 1;
+  int *indices = GetBddVariableIndices(number_of_bdd_variables);
+  char *statuses = new char[number_of_states];
+  std::unordered_map<std::string, int> transitions_from_init_state = Automaton::DFAGetTransitionsFrom(dfa_, dfa_->s, num_of_bdd_variables_, "1");
+  dfaSetup(number_of_states, number_of_bdd_variables, indices);
 
-  exep = std::vector<char>(len,'X');
-  exep.push_back('\0');
-  for (int i = 0; i < dfa_->ns; i++) {
-    state_paths = pp = make_paths(dfa_->bddm, dfa_->q[i]);
-    while (pp) {
-      if (pp->to != sink) {
-        for (int j = 0; j < var; j++) {
-          //the following for loop can be avoided if the indices are in order
-          for (tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
-
-          if (tp) {
-            if (tp->value)
-              exep[j] = '1';
-            else
-              exep[j] = '0';
-          } else
-            exep[j] = 'X';
+  for (int s = 0; s < dfa_->ns; ++s) {
+    if (s != sink_state) {
+      std::unordered_map<std::string, int> transition_map = Automaton::DFAGetTransitionsFrom(dfa_, s, num_of_bdd_variables_, "0");
+      if (IsAcceptingState(s)) {
+        dfaAllocExceptions(transitions_from_init_state.size() + transition_map.size());
+        for (auto tmap : transitions_from_init_state) {
+          dfaStoreException(tmap.second, const_cast<char*>(tmap.first.data()));
         }
-        exep[len-1] = '0'; //old value
-        original_exeps.push_back(std::make_pair(pp->to,exep));
+        for (auto tmap : transition_map) {
+          dfaStoreException(tmap.second, const_cast<char*>(tmap.first.data()));
+        }
+        statuses[s] = '+';
+      } else {
+        dfaAllocExceptions(transition_map.size());
+        for (auto tmap : transition_map) {
+          dfaStoreException(tmap.second, const_cast<char*>(tmap.first.data()));
+        }
+        statuses[s] = '-';
       }
-      pp = pp->next;
     }
-    if (dfa_->f[i] == 1) { //add added paths
-      dfaAllocExceptions(added_exeps.size() + original_exeps.size());
-      for(int k = 0; k < added_exeps.size(); k++) {
-        dfaStoreException(added_exeps[k].first,&added_exeps[k].second[0]);
-      }
-      for(int k = 0; k < original_exeps.size(); k++) {
-        dfaStoreException(original_exeps[k].first,&original_exeps[k].second[0]);
-      }
-      statuses[i] = '+';
-    } else {
-      dfaAllocExceptions(original_exeps.size());
-      for(int k = 0; k < original_exeps.size(); k++) {
-        dfaStoreException(original_exeps[k].first,&original_exeps[k].second[0]);
-      }
-      if (dfa_->f[i] == -1)
-        statuses[i] = '-';
-      else
-        statuses[i] = '0';
-    }
-    dfaStoreState(sink);
-    kill_paths(state_paths);
-    original_exeps.clear();
+    dfaStoreState(sink_state);
   }
-  statuses[dfa_->ns] = '\0';
-  temp_dfa = dfaBuild(statuses);
-  result_dfa = dfaProject(temp_dfa, (unsigned) var); //var is the index of the extra bit
-  dfaFree(temp_dfa);
-  temp_dfa = result_dfa;
-  result_dfa = dfaMinimize(temp_dfa);
-  dfaFree(temp_dfa);
+  statuses[sink_state] = '-';
 
-  result_auto = new StringAutomaton(result_dfa);
-  delete[] indices;
+  DFA_ptr result_dfa = dfaBuild(statuses);
   delete[] statuses;
-  DVLOG(VLOG_LEVEL) << result_auto->id_ << " = [" << this->id_ << "]->closure()";
+  DFA_ptr projected_dfa = DFAProjectAway(result_dfa, number_of_bdd_variables - 1);
+  dfaFree(result_dfa);
+  StringAutomaton_ptr result_auto = new StringAutomaton(projected_dfa, number_of_bdd_variables - 1);
+  DVLOG(VLOG_LEVEL) << result_auto->id_ << " = [" << this->id_ << "]->Closure()";
   return result_auto;
 }
 
-StringAutomaton_ptr StringAutomaton::kleeneClosure() {
+StringAutomaton_ptr StringAutomaton::KleeneClosure() {
   StringAutomaton_ptr kleene_closure_auto = nullptr, closure_auto = nullptr, empty_string = nullptr;
 
-  closure_auto = this->closure();
+  closure_auto = this->Closure();
   empty_string = StringAutomaton::MakeEmptyString();
   kleene_closure_auto = static_cast<StringAutomaton_ptr>(closure_auto->Union(empty_string));
   delete closure_auto;
@@ -739,15 +364,15 @@ StringAutomaton_ptr StringAutomaton::kleeneClosure() {
 }
 
 
-StringAutomaton_ptr StringAutomaton::repeat(unsigned min) {
+StringAutomaton_ptr StringAutomaton::Repeat(unsigned min) {
   StringAutomaton_ptr repeated_auto = nullptr;
 
   if (min == 0) {
-    repeated_auto = this->kleeneClosure();
+    repeated_auto = this->KleeneClosure();
   } else if (min == 1) {
-    repeated_auto = this->closure();
+    repeated_auto = this->Closure();
   } else {
-    StringAutomaton_ptr closure_auto = this->closure();
+    StringAutomaton_ptr closure_auto = this->Closure();
     StringAutomaton_ptr range_auto = StringAutomaton::MakeAnyStringLengthGreaterThanOrEqualTo(min);
     repeated_auto = static_cast<StringAutomaton_ptr>(closure_auto->Intersect(range_auto));
     delete range_auto; range_auto = nullptr;
@@ -759,13 +384,13 @@ StringAutomaton_ptr StringAutomaton::repeat(unsigned min) {
   return repeated_auto;
 }
 
-StringAutomaton_ptr StringAutomaton::repeat(unsigned min, unsigned max) {
+StringAutomaton_ptr StringAutomaton::Repeat(unsigned min, unsigned max) {
   StringAutomaton_ptr repeated_auto = nullptr;
 
   if (min == 0) {
-    repeated_auto = this->kleeneClosure();
+    repeated_auto = this->KleeneClosure();
   } else {
-    repeated_auto = this->closure();
+    repeated_auto = this->Closure();
   }
 
   StringAutomaton_ptr range_auto = StringAutomaton::MakeAnyStringWithLengthInRange(min, max);
@@ -1201,7 +826,6 @@ StringAutomaton_ptr StringAutomaton::CharAt(const int index) {
   dfaStoreState(2); // 2 -> 2
 
   DFA_ptr result_dfa = dfaBuild(statuses);
-  delete[] indices;
   auto charat_auto = new StringAutomaton(dfaMinimize(result_dfa), number_of_variables);
   dfaFree(result_dfa); result_dfa = nullptr;
 
@@ -1229,12 +853,12 @@ StringAutomaton_ptr StringAutomaton::CharAt(IntAutomaton_ptr index_auto) {
 
   const int number_of_variables = charat_indexes_auto->num_of_bdd_variables_;
 
-  std::set<std::string> exceptions;
+  std::unordered_set<std::string> exceptions;
   for (int s = 0; s < charat_indexes_auto->dfa_->ns; ++s) {
     for (int next : charat_indexes_auto->getNextStates(s)) {
       if (charat_indexes_auto->IsAcceptingState(next)) {
         // extract transitions
-        auto transitions = Automaton::DFAGetTransitionsFromTo(charat_indexes_auto->dfa_, s, next, number_of_variables);
+        std::unordered_set<std::string> transitions = Automaton::DFAGetTransitionsFromTo(charat_indexes_auto->dfa_, s, next, number_of_variables);
         exceptions.insert(transitions.begin(), transitions.end());
       }
     }

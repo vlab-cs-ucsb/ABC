@@ -164,18 +164,49 @@ public:
   static StringAutomaton_ptr MakeAnyStringWithLengthInRange(const int start, const int end, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   /**
-   * Generates a string automaton that wraps the dfa
+   * Generates a string automaton that wraps the dfa.
    * @param dfa
    * @param number_of_variables
    * @return
    */
   virtual StringAutomaton_ptr MakeAutomaton(DFA_ptr dfa, const int number_of_variables) override;
 
-  StringAutomaton_ptr optional();
-  StringAutomaton_ptr closure();
-  StringAutomaton_ptr kleeneClosure();
-  StringAutomaton_ptr repeat(unsigned min);
-  StringAutomaton_ptr repeat(unsigned min, unsigned max);
+  /**
+   * Generates a string automaton that accepts empty string or the current accepting strings.
+   * This operation corresponds to '?' operation in regular expression literals.
+   * @return
+   */
+  StringAutomaton_ptr Optional();
+
+  /**
+   * Generates a string automaton using closure of the current automaton,
+   * This operation corresponds to '+' operation in regular expression literals.
+   * @return
+   */
+  StringAutomaton_ptr Closure();
+
+  /**
+   * Generates a string automaton using kleene closure fo the current automaton.
+   * This operation corresponds to '*' operation in regular expression literals.
+   * @return
+   */
+  StringAutomaton_ptr KleeneClosure();
+
+  /**
+   * Generates a string automaton that accepts the strings accepted by the current automaton repated by at least given number of times.
+   * This operation corresponds to '{n,} operation in regular expression literals.
+   * @param min
+   * @return
+   */
+  StringAutomaton_ptr Repeat(unsigned min);
+
+  /**Generates a string automaton that accepts the strings accepted by the current automaton repated by some number between the given numbers.
+   * This operation corresponds to '{n,m} operation in regular expression literals.
+   * @param min
+   * @param max
+   * @return
+   */
+  StringAutomaton_ptr Repeat(unsigned min, unsigned max);
 
   StringAutomaton_ptr suffixes();
   StringAutomaton_ptr suffixesAtIndex(int index);
