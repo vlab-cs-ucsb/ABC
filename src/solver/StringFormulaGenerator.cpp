@@ -279,36 +279,42 @@ void StringFormulaGenerator::visitEq(Eq_ptr eq_term) {
   auto right_formula = get_term_formula(eq_term->right_term);
 
   if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
-    if (StringFormula::Type::VAR == left_formula->get_type() and StringFormula::Type::VAR == right_formula->get_type()) {
-      LOG(FATAL) << "implement me";
+    StringFormula_ptr formula = nullptr;
+  	if (StringFormula::Type::VAR == left_formula->GetType() and StringFormula::Type::VAR == right_formula->GetType()) {
+      formula = left_formula->clone();
+    	formula->MergeVariables(right_formula);
+      formula->SetType(StringFormula::Type::EQ);
+      auto right_var = right_formula->GetVariableAtIndex(0);
+      formula->SetVariableCoefficient(right_var,2);
+      constraint_information_->add_string_constraint(eq_term);
+    } else if(StringFormula::Type::VAR == left_formula->GetType() and StringFormula::Type::CONCAT_VAR_CONSTANT == right_formula->GetType()) {
+    	formula = left_formula->clone();
+			formula->MergeVariables(right_formula);
+			formula->SetType(StringFormula::Type::EQ);
+			auto right_var = right_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(right_var,2);
+			formula->SetConstant(right_formula->GetConstant());
+			constraint_information_->add_string_constraint(eq_term);
+    } else if(StringFormula::Type::CONCAT_VAR_CONSTANT == left_formula->GetType() && StringFormula::Type::VAR == right_formula->GetType()) {
+    	formula = right_formula->clone();
+			formula->MergeVariables(left_formula);
+			formula->SetType(StringFormula::Type::EQ);
+			auto left_var = left_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(left_var,2);
+			formula->SetConstant(left_formula->GetConstant());
+			constraint_information_->add_string_constraint(eq_term);
     } else {
-      auto formula = left_formula->clone();
-      formula->merge_variables(right_formula);
-      formula->set_type(StringFormula::Type::NONRELATIONAL);
-      delete_term_formula(eq_term->left_term);
-      delete_term_formula(eq_term->right_term);
-      set_term_formula(eq_term, formula);
-      add_string_variables(current_group_, eq_term);
+      formula = left_formula->clone();
+      formula->MergeVariables(right_formula);
+      formula->SetType(StringFormula::Type::NONRELATIONAL);
       has_mixed_constraint_ = true;
       constraint_information_->add_mixed_constraint(eq_term);
     }
-
-//    auto formula = left_formula->Subtract(right_formula);
-//    formula->set_type(StringFormula::Type::EQ);
-//    delete_term_formula(eq_term->left_term);
-//    delete_term_formula(eq_term->right_term);
-//    set_term_formula(eq_term, formula);
-//    add_string_variables(current_group_, eq_term);
-//    if (string_terms_.size() > 0) {
-//      formula->UpdateMixedConstraintRelations();
-//      string_terms_map_[eq_term] = string_terms_;
-//      string_terms_.clear();
-//      constraint_information_->add_mixed_constraint(eq_term);
-//      has_mixed_constraint_ = true;
-//
-//    }
-//    constraint_information_->add_arithmetic_constraint(eq_term);
-  } else if (left_formula not_eq nullptr and left_formula->get_number_of_variables() > 0) {
+  	delete_term_formula(eq_term->left_term);
+		delete_term_formula(eq_term->right_term);
+		set_term_formula(eq_term, formula);
+		add_string_variables(current_group_, eq_term);
+  } else if (left_formula not_eq nullptr and left_formula->GetNumberOfVariables() > 0) {
     auto formula = left_formula->clone();
     formula->set_type(StringFormula::Type::NONRELATIONAL);
     delete_term_formula(eq_term->left_term);
@@ -316,7 +322,7 @@ void StringFormulaGenerator::visitEq(Eq_ptr eq_term) {
     add_string_variables(current_group_, eq_term);
     has_mixed_constraint_ = true;
     constraint_information_->add_mixed_constraint(eq_term);
-  } else if (right_formula not_eq nullptr and right_formula->get_number_of_variables() > 0) {
+  } else if (right_formula not_eq nullptr and right_formula->GetNumberOfVariables() > 0) {
     auto formula = right_formula->clone();
     formula->set_type(StringFormula::Type::NONRELATIONAL);
     delete_term_formula(eq_term->left_term);
@@ -330,131 +336,110 @@ void StringFormulaGenerator::visitEq(Eq_ptr eq_term) {
 }
 
 void StringFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
-//  visit_children_of(not_eq_term);
-//  DVLOG(VLOG_LEVEL) << "post visit start: " << *not_eq_term << "@" << not_eq_term;
-//
-//  auto left_formula = get_term_formula(not_eq_term->left_term);
-//  auto right_formula = get_term_formula(not_eq_term->right_term);
-//
-//  if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
-//    auto formula = left_formula->Subtract(right_formula);
-//    formula->set_type(StringFormula::Type::NOTEQ);
-//    delete_term_formula(not_eq_term->left_term);
-//    delete_term_formula(not_eq_term->right_term);
-//    set_term_formula(not_eq_term, formula);
-//    add_string_variables(current_group_, not_eq_term);
-//    if (string_terms_.size() > 0) {
-//      string_terms_map_[not_eq_term] = string_terms_;
-//      string_terms_.clear();
-//      constraint_information_->add_mixed_constraint(not_eq_term);
-//      has_mixed_constraint_ = true;
-//    }
-//    constraint_information_->add_arithmetic_constraint(not_eq_term);
-//  }
-//  DVLOG(VLOG_LEVEL) << "post visit end: " << *not_eq_term << "@" << not_eq_term;
+	visit_children_of(not_eq_term);
+	DVLOG(VLOG_LEVEL) << "post visit start: " << *not_eq_term << "@" << not_eq_term;
+
+	auto left_formula = get_term_formula(not_eq_term->left_term);
+	auto right_formula = get_term_formula(not_eq_term->right_term);
+
+	if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
+		StringFormula_ptr formula = nullptr;
+		if (StringFormula::Type::VAR == left_formula->GetType() and StringFormula::Type::VAR == right_formula->GetType()) {
+			formula = left_formula->clone();
+			formula->MergeVariables(right_formula);
+			formula->SetType(StringFormula::Type::NOTEQ);
+			auto right_var = right_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(right_var,2);
+			constraint_information_->add_string_constraint(not_eq_term);
+		} else if(StringFormula::Type::VAR == left_formula->GetType() and StringFormula::Type::CONCAT_VAR_CONSTANT == right_formula->GetType()) {
+			formula = left_formula->clone();
+			formula->MergeVariables(right_formula);
+			formula->SetType(StringFormula::Type::NOTEQ);
+			auto right_var = right_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(right_var,2);
+			formula->SetConstant(right_formula->GetConstant());
+			constraint_information_->add_string_constraint(not_eq_term);
+		} else if(StringFormula::Type::CONCAT_VAR_CONSTANT == left_formula->GetType() && StringFormula::Type::VAR == right_formula->GetType()) {
+			formula = right_formula->clone();
+			formula->MergeVariables(left_formula);
+			formula->SetType(StringFormula::Type::NOTEQ);
+			auto left_var = left_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(left_var,2);
+			formula->SetConstant(left_formula->GetConstant());
+			constraint_information_->add_string_constraint(not_eq_term);
+		} else {
+			formula = left_formula->clone();
+			formula->MergeVariables(right_formula);
+			formula->SetType(StringFormula::Type::NONRELATIONAL);
+			has_mixed_constraint_ = true;
+			constraint_information_->add_mixed_constraint(not_eq_term);
+		}
+		delete_term_formula(not_eq_term->left_term);
+		delete_term_formula(not_eq_term->right_term);
+		set_term_formula(not_eq_term, formula);
+		add_string_variables(current_group_, not_eq_term);
+	} else if (left_formula not_eq nullptr and left_formula->GetNumberOfVariables() > 0) {
+		auto formula = left_formula->clone();
+		formula->set_type(StringFormula::Type::NONRELATIONAL);
+		delete_term_formula(not_eq_term->left_term);
+		set_term_formula(not_eq_term, formula);
+		add_string_variables(current_group_, not_eq_term);
+		has_mixed_constraint_ = true;
+		constraint_information_->add_mixed_constraint(not_eq_term);
+	} else if (right_formula not_eq nullptr and right_formula->GetNumberOfVariables() > 0) {
+		auto formula = right_formula->clone();
+		formula->set_type(StringFormula::Type::NONRELATIONAL);
+		delete_term_formula(not_eq_term->left_term);
+		set_term_formula(not_eq_term, formula);
+		add_string_variables(current_group_, not_eq_term);
+		has_mixed_constraint_ = true;
+		constraint_information_->add_mixed_constraint(not_eq_term);
+	}
+
+	DVLOG(VLOG_LEVEL) << "post visit end: " << *not_eq_term << "@" << not_eq_term;
 }
 
 void StringFormulaGenerator::visitGt(Gt_ptr gt_term) {
-//  visit_children_of(gt_term);
-//  DVLOG(VLOG_LEVEL) << "post visit start: " << *gt_term << "@" << gt_term;
-//
-//  auto left_formula = get_term_formula(gt_term->left_term);
-//  auto right_formula = get_term_formula(gt_term->right_term);
-//
-//  if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
-//    auto formula = left_formula->Subtract(right_formula);
-//    formula->set_type(StringFormula::Type::GT);
-//    delete_term_formula(gt_term->left_term);
-//    delete_term_formula(gt_term->right_term);
-//    set_term_formula(gt_term, formula);
-//    add_string_variables(current_group_, gt_term);
-//    if (string_terms_.size() > 0) {
-//      string_terms_map_[gt_term] = string_terms_;
-//      string_terms_.clear();
-//      constraint_information_->add_mixed_constraint(gt_term);
-//      has_mixed_constraint_ = true;
-//    }
-//    constraint_information_->add_arithmetic_constraint(gt_term);
-//  }
-//  DVLOG(VLOG_LEVEL) << "post visit end: " << *gt_term << "@" << gt_term;
 }
 
 void StringFormulaGenerator::visitGe(Ge_ptr ge_term) {
-//  visit_children_of(ge_term);
-//  DVLOG(VLOG_LEVEL) << "post visit start: " << *ge_term << "@" << ge_term;
-//
-//  auto left_formula = get_term_formula(ge_term->left_term);
-//  auto right_formula = get_term_formula(ge_term->right_term);
-//
-//  if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
-//    auto formula = left_formula->Subtract(right_formula);
-//    formula->set_type(StringFormula::Type::GE);
-//    delete_term_formula(ge_term->left_term);
-//    delete_term_formula(ge_term->right_term);
-//    set_term_formula(ge_term, formula);
-//    add_string_variables(current_group_, ge_term);
-//    if (string_terms_.size() > 0) {
-//      string_terms_map_[ge_term] = string_terms_;
-//      string_terms_.clear();
-//      constraint_information_->add_mixed_constraint(ge_term);
-//      has_mixed_constraint_ = true;
-//    }
-//    constraint_information_->add_arithmetic_constraint(ge_term);
-//  }
-//  DVLOG(VLOG_LEVEL) << "post visit end: " << *ge_term << "@" << ge_term;
 }
 
 void StringFormulaGenerator::visitLt(Lt_ptr lt_term) {
-//  visit_children_of(lt_term);
-//  DVLOG(VLOG_LEVEL) << "post visit start: " << *lt_term << "@" << lt_term;
-//
-//  auto left_formula = get_term_formula(lt_term->left_term);
-//  auto right_formula = get_term_formula(lt_term->right_term);
-//
-//  if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
-//    auto formula = left_formula->Subtract(right_formula);
-//    formula->set_type(StringFormula::Type::LT);
-//    delete_term_formula(lt_term->left_term);
-//    delete_term_formula(lt_term->right_term);
-//    set_term_formula(lt_term, formula);
-//    add_string_variables(current_group_, lt_term);
-//    if (string_terms_.size() > 0) {
-//      string_terms_map_[lt_term] = string_terms_;
-//      string_terms_.clear();
-//      constraint_information_->add_mixed_constraint(lt_term);
-//      has_mixed_constraint_ = true;
-//    }
-//    constraint_information_->add_arithmetic_constraint(lt_term);
-//  }
-//  DVLOG(VLOG_LEVEL) << "post visit end: " << *lt_term << "@" << lt_term;
 }
 
 void StringFormulaGenerator::visitLe(Le_ptr le_term) {
-//  visit_children_of(le_term);
-//  DVLOG(VLOG_LEVEL) << "post visit start: " << *le_term << "@" << le_term;
-//
-//  auto left_formula = get_term_formula(le_term->left_term);
-//  auto right_formula = get_term_formula(le_term->right_term);
-//
-//  if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
-//    auto formula = left_formula->Subtract(right_formula);
-//    formula->set_type(StringFormula::Type::LE);
-//    delete_term_formula(le_term->left_term);
-//    delete_term_formula(le_term->right_term);
-//    set_term_formula(le_term, formula);
-//    add_string_variables(current_group_, le_term);
-//    if (string_terms_.size() > 0) {
-//      string_terms_map_[le_term] = string_terms_;
-//      string_terms_.clear();
-//      constraint_information_->add_mixed_constraint(le_term);
-//      has_mixed_constraint_ = true;
-//    }
-//    constraint_information_->add_arithmetic_constraint(le_term);
-//  }
-//  DVLOG(VLOG_LEVEL) << "post visit end: " << *le_term << "@" << le_term;
 }
 
 void StringFormulaGenerator::visitConcat(Concat_ptr concat_term) {
+	 visit_children_of(concat_term);
+	 DVLOG(VLOG_LEVEL) << "visit: " << *concat_term;
+
+	 StringFormula_ptr concat_formula = nullptr;
+	 if(concat_term->term_list->size() == 2 and concat_term->term_list->at(0)->type() == Term::Type::QUALIDENTIFIER
+			 	 	 and concat_term->term_list->at(1)->type() == Term::Type::TERMCONSTANT) {
+		 auto left_formula = get_term_formula(concat_term->term_list->at(0));
+		 auto right_formula = get_term_formula(concat_term->term_list->at(1));
+		 concat_formula = left_formula->clone();
+		 concat_formula->SetConstant(right_formula->GetConstant());
+		 concat_formula->SetType(StringFormula::Type::CONCAT_VAR_CONSTANT);
+		 delete_term_formula(concat_term->term_list->at(0));
+		 delete_term_formula(concat_term->term_list->at(1));
+		 constraint_information_->add_string_constraint(concat_term);
+	 } else {
+		 for(auto &iter : *concat_term->term_list) {
+			 if(concat_formula == nullptr) {
+				 concat_formula = get_term_formula(iter)->clone();
+			 } else {
+				 concat_formula->MergeVariables(get_term_formula(iter));
+				 delete_term_formula(iter);
+			 }
+		 }
+		 concat_formula->SetType(StringFormula::Type::NONRELATIONAL);
+		 constraint_information_->add_mixed_constraint(concat_term);
+	 }
+	 set_term_formula(concat_term,concat_formula);
+	 add_string_variables(current_group_,concat_term);
 }
 
 

@@ -436,7 +436,14 @@ StringAutomaton_ptr StringAutomaton::MakeConcatExtraTrack(
 }
 
 StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
-	LOG(FATAL) << "IMPLEMENT ME";
+	int num_tracks = formula->GetNumberOfVariables();
+	int left_track = formula->GetVariableAtIndex(1); // variable on the left of equality
+	int right_track = formula->GetVariableAtIndex(2); // variable on the right of equality
+
+	auto result_dfa = MakeBinaryRelationDfa(StringFormula::Type::EQ, VAR_PER_TRACK, num_tracks, left_track, right_track);
+	auto equality_auto = new RelationalStringAutomaton(result_dfa, formula);
+	DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeEquality(" << *formula << ")";
+	return equality_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::MakeNotEquality(
@@ -517,26 +524,26 @@ StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
 
 StringAutomaton_ptr StringAutomaton::Union(StringAutomaton_ptr other_auto) {
 
-	auto union_formula = this->formula_->Union(other_auto->formula_);
-	auto left_variables = this->formula_->GetVariableCoefficientMap();
-	auto right_variables = other_auto->formula_->GetVariableCoefficientMap();
-
-	int* left_indices_map = CreateBddVariableIndices(union_formula->GetNumberOfVariables() * VAR_PER_TRACK);
-	int* left_indices_map = CreateBddVariableIndices(union_formula->GetNumberOfVariables() * VAR_PER_TRACK);
-
-	int left_var_per_track = DEFAULT_NUM_OF_VARIABLES;
-	int right_var_per_track = DEFAULT_NUM_OF_VARIABLES;
-	if(this->num_tracks_ > 1) {
-		left_var_per_track++;
-	}
-	if(other_auto->num_tracks_ > 1) {
-		right_var_per_track++;
-	}
-
-	for(auto var : left_variables) {
-		int old_position = this->formula_->GetVariableIndex(var.first);
-		int new_position = union_formula->GetVariableIndex(var.first);
-	}
+//	auto union_formula = this->formula_->Union(other_auto->formula_);
+//	auto left_variables = this->formula_->GetVariableCoefficientMap();
+//	auto right_variables = other_auto->formula_->GetVariableCoefficientMap();
+//
+//	int* left_indices_map = CreateBddVariableIndices(union_formula->GetNumberOfVariables() * VAR_PER_TRACK);
+//	int* left_indices_map = CreateBddVariableIndices(union_formula->GetNumberOfVariables() * VAR_PER_TRACK);
+//
+//	int left_var_per_track = DEFAULT_NUM_OF_VARIABLES;
+//	int right_var_per_track = DEFAULT_NUM_OF_VARIABLES;
+//	if(this->num_tracks_ > 1) {
+//		left_var_per_track++;
+//	}
+//	if(other_auto->num_tracks_ > 1) {
+//		right_var_per_track++;
+//	}
+//
+//	for(auto var : left_variables) {
+//		int old_position = this->formula_->GetVariableIndex(var.first);
+//		int new_position = union_formula->GetVariableIndex(var.first);
+//	}
 
 	CHECK_EQ(this->num_tracks_,other_auto->num_tracks_);
 	auto union_dfa = Automaton::DFAIntersect(this->dfa_, other_auto->dfa_);

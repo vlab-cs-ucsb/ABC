@@ -233,8 +233,8 @@ int StringFormula::CountOnes(unsigned long n) const {
 
 void StringFormula::MergeVariables(Formula_ptr other) {
   for (auto& el : other->variable_coefficient_map_) {
-    if (variable_order_map_.find(el.first) == variable_order_map_.end()) {
-      variable_order_map_[el.first] = 0;
+    if (variable_coefficient_map_.find(el.first) == variable_coefficient_map_.end()) {
+      variable_coefficient_map_[el.first] = 0;
     }
   }
 }
