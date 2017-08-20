@@ -436,19 +436,64 @@ StringAutomaton_ptr StringAutomaton::MakeConcatExtraTrack(
 }
 
 StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
+  StringAutomaton_ptr equality_auto = nullptr;
 	int num_tracks = formula->GetNumberOfVariables();
 	int left_track = formula->GetVariableAtIndex(1); // variable on the left of equality
 	int right_track = formula->GetVariableAtIndex(2); // variable on the right of equality
 
-	auto result_dfa = MakeBinaryRelationDfa(StringFormula::Type::EQ, VAR_PER_TRACK, num_tracks, left_track, right_track);
-	auto equality_auto = new RelationalStringAutomaton(result_dfa, formula);
+  // if string is not empty, eq is of form X = Y.c
+  if(formula->GetConstant() != "") {
+    int temp_left = num_tracks;
+    int temp_right = right_track;
+    int temp_num_tracks = num_tracks+1;
+
+    StringAutomaton_ptr concat_auto = StringAutomaton::MakeConcatExtraTrack(temp_left,temp_right,temp_num_tracks,formula->GetConstant());
+    DFA_ptr eq_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::EQ, VAR_PER_TRACK, num_tracks+1, left_track, temp_left);
+    StringAutomaton_ptr eq_auto = new StringAutomaton(eq_dfa,num_tracks+1,(num_tracks+1)*VAR_PER_TRACK);
+    auto temp_auto = concat_auto->Intersect(eq_auto);
+    delete eq_auto;
+    delete concat_auto;
+    equality_auto = temp_auto->ProjectKTrack(num_tracks);
+    delete temp_auto;
+    equality_auto->SetFormula(formula);
+  } else {
+    auto equality_dfa = MakeBinaryRelationDFA(StringFormula::Type::EQ, VAR_PER_TRACK, num_tracks, left_track, right_track);
+    equality_auto = new StringAutomaton(equality_dfa,num_tracks,num_tracks*VAR_PER_TRACK);
+  }
+
 	DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeEquality(" << *formula << ")";
 	return equality_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::MakeNotEquality(
 		StringFormula_ptr formula) {
-	LOG(FATAL) << "IMPLEMENT ME";
+	StringAutomaton_ptr not_quality_auto = nullptr;
+  int num_tracks = formula->GetNumberOfVariables();
+  int left_track = formula->GetVariableAtIndex(1); // variable on the left of equality
+  int right_track = formula->GetVariableAtIndex(2); // variable on the right of equality
+
+  // if string is not empty, eq is of form X = Y.c
+  if(formula->GetConstant() != "") {
+    int temp_left = num_tracks;
+    int temp_right = right_track;
+    int temp_num_tracks = num_tracks+1;
+
+    StringAutomaton_ptr concat_auto = StringAutomaton::MakeConcatExtraTrack(temp_left,temp_right,temp_num_tracks,formula->GetConstant());
+    DFA_ptr eq_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::NOTEQ, VAR_PER_TRACK, num_tracks+1, left_track, temp_left);
+    StringAutomaton_ptr eq_auto = new StringAutomaton(eq_dfa,num_tracks+1,(num_tracks+1)*VAR_PER_TRACK);
+    auto temp_auto = concat_auto->Intersect(eq_auto);
+    delete eq_auto;
+    delete concat_auto;
+    not_equality_auto = temp_auto->ProjectKTrack(num_tracks);
+    delete temp_auto;
+    not_equality_auto->SetFormula(formula);
+  } else {
+    auto equality_dfa = MakeBinaryRelationDFA(StringFormula::Type::NOTEQ, VAR_PER_TRACK, num_tracks, left_track, right_track);
+    not_equality_auto = new StringAutomaton(equality_dfa,num_tracks,num_tracks*VAR_PER_TRACK);
+  }
+
+  DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeNotEquality(" << *formula << ")";
+  return equality_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::MakeLessThan(StringFormula_ptr formula) {
@@ -1228,6 +1273,35 @@ StringAutomaton_ptr StringAutomaton::MakePrefixSuffix(int left_track, int prefix
   return result_auto;
   return nullptr;
 }
+
+// TODO: Formulas and intersection? What do?
+StringAutomaton_ptr StringAutomaton::MakeConcatExtraTrack(int left_track, int right_track, int num_tracks, std::string str_constant) {
+  StringAutomaton_ptr any_string_auto = StringAutomaton::MakeAnyString();
+  StringAutomaton_ptr const_string_auto = StringAutomaton::MakeRegexAuto(str_constant);
+  auto temp_dfa = StringAutomaton::PrependLambda(const_string_auto->getDFA(),DEFAULT_NUM_OF_VARIABLES);
+  delete const_string_auto;
+  // has string constant on last track (prepended with lambda)
+  auto temp_auto = new StringAutomaton(temp_dfa,num_tracks,num_tracks+1,VAR_PER_TRACK);
+  delete temp_dfa;
+  // has any-string on correct track
+  auto any_string_extended_auto = new StringAutomaton(any_string_auto->getDFA(),right_track,num_tracks+1,DEFAULT_NUM_OF_VARIABLES);
+  delete any_string_auto;
+  auto prefix_suffix_auto = StringAutomaton::MakePrefixSuffix(left_track,right_track,num_tracks,num_tracks+1);
+
+  auto intersect_auto = prefix_suffix_auto->Intersect(any_string_extended_auto);
+  delete prefix_suffix_auto;
+  delete any_string_extended_auto;
+  auto result_auto = intersect_auto->Intersect(temp_auto);
+  delete intersect_auto;
+  delete temp_auto;
+  temp_auto = result_auto;
+  // project away temporary track used for constant
+  result_auto = temp_auto->ProjectKTrack(num_tracks);
+  delete temp_auto;
+
+  return result_auto;
+}
+
 
 bool StringAutomaton::IsExepEqualChar(std::vector<char> exep, std::vector<char> cvec, int var) {
   for(int i = 0; i < var; i++) {
