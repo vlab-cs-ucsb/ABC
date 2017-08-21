@@ -37,3 +37,4 @@ Tasks:
 StringAutomaton and Formulas - Tasks:
 0. Every StringAutomaton should have a non-null StringFormula (even if basic StringFormula)
 1. Make sure all non-relational StringAutomaton methods correctly implement task 0.
+2. Currently IntAutomaton & UnaryAutomaton has a formula in order to make every auto work OK. This is just a hack, find better solution.

@@ -197,8 +197,8 @@ void Driver::SetModelCounter() {
     switch (variable_entry.second->getType()) {
       case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
         auto binary_auto = variable_entry.second->getBinaryIntAutomaton();
-        auto formula = binary_auto->get_formula();
-        for (auto& el : formula->get_variable_coefficient_map()) {
+        auto formula = binary_auto->GetFormula();
+        for (auto& el : formula->GetVariableCoefficientMap()) {
           if (symbol_table_->get_variable_unsafe(el.first) != nullptr) {
             ++num_bin_var;
           }
@@ -255,9 +255,6 @@ void Driver::printResult(Solver::Value_ptr value, std::ostream& out) {
       break;
     case Solver::Value::Type::BINARYINT_AUTOMATON:
       value->getBinaryIntAutomaton()->ToDot(out, false);
-      break;
-    case Solver::Value::Type::RELATIONALSTRING_AUTOMATON:
-      value->getRelationalStringAutomaton()->ToDot(out, false);
       break;
     default:
       break;

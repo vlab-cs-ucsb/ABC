@@ -67,7 +67,7 @@ void StringConstraintSolver::setCallbacks() {
         auto formula = string_formula_generator_.get_term_formula(term);
         if (formula != nullptr) {
           DVLOG(VLOG_LEVEL) << "Relational String Formula: " << *formula << "@" << term;
-          auto relational_str_auto = RelationalStringAutomaton::MakeAutomaton(formula->clone());
+          auto relational_str_auto = StringAutomaton::MakeAutomaton(formula->clone());
           auto result = new Value(relational_str_auto);
           set_term_value(term, result);
           // once we solve an atomic string constraint,
@@ -164,7 +164,7 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
    */
   if (and_value == nullptr and (not has_string_formula)) {
     auto group_formula = string_formula_generator_.get_group_formula(group_name);
-    and_value = new Value(Theory::RelationalStringAutomaton::MakeAnyStringUnaligned(group_formula->clone()));
+    and_value = new Value(Theory::StringAutomaton::MakeAnyStringUnaligned(group_formula->clone()));
     has_string_formula = true;
     is_satisfiable = true;
   }
@@ -174,7 +174,7 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
       symbol_table_->IntersectValue(group_name, and_value);  // update value
     } else {
       auto group_formula = string_formula_generator_.get_group_formula(group_name);
-      auto value = new Value(Theory::RelationalStringAutomaton::MakePhi(group_formula->clone()));
+      auto value = new Value(Theory::StringAutomaton::MakePhi(group_formula->clone()));
       symbol_table_->set_value(group_name, value);
     }
     delete and_value;
@@ -235,7 +235,7 @@ void StringConstraintSolver::visitOr(Or_ptr or_term) {
       symbol_table_->set_value(group_name, or_value);
     } else {
       auto group_formula = string_formula_generator_.get_group_formula(group_name);
-      auto value = new Value(Theory::RelationalStringAutomaton::MakePhi(group_formula->clone()));
+      auto value = new Value(Theory::StringAutomaton::MakePhi(group_formula->clone()));
       symbol_table_->set_value(group_name, value);
       delete or_value; // nullptr safe
     }
@@ -297,7 +297,7 @@ void StringConstraintSolver::postVisitAnd(And_ptr and_term) {
    */
   if (and_value == nullptr and (not has_string_formula)) {
     auto group_formula = string_formula_generator_.get_group_formula(group_name);
-    and_value = new Value(Theory::RelationalStringAutomaton::MakeAnyStringUnaligned(group_formula->clone()));
+    and_value = new Value(Theory::StringAutomaton::MakeAnyStringUnaligned(group_formula->clone()));
     has_string_formula = true;
     is_satisfiable = true;
   }
@@ -307,7 +307,7 @@ void StringConstraintSolver::postVisitAnd(And_ptr and_term) {
       symbol_table_->IntersectValue(group_name, and_value);  // update value
     } else {
       auto group_formula = string_formula_generator_.get_group_formula(group_name);
-      auto value = new Value(Theory::RelationalStringAutomaton::MakePhi(group_formula->clone()));
+      auto value = new Value(Theory::StringAutomaton::MakePhi(group_formula->clone()));
       symbol_table_->set_value(group_name, value);
     }
     delete and_value;

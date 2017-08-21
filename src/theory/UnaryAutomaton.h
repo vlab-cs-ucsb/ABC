@@ -49,16 +49,19 @@ public:
   virtual UnaryAutomaton_ptr clone() const;
 
   static UnaryAutomaton_ptr MakePhi();
-  virtual UnaryAutomaton_ptr MakeAutomaton(DFA_ptr dfa, const int number_of_variables) override;
+  virtual UnaryAutomaton_ptr MakeAutomaton(DFA_ptr dfa, Formula_ptr formula, const int number_of_variables) override;
   static UnaryAutomaton_ptr MakeAutomaton(SemilinearSet_ptr semilinear_set);
 
   SemilinearSet_ptr getSemilinearSet();
   IntAutomaton_ptr toIntAutomaton(int number_of_variables, bool add_minus_one = false);
   BinaryIntAutomaton_ptr toBinaryIntAutomaton(std::string var_name, ArithmeticFormula_ptr formula, bool add_minus_one = false);
   StringAutomaton_ptr toStringAutomaton();
+  ArithmeticFormula_ptr GetFormula();
 
 protected:
   void decide_counting_schema(Eigen::SparseMatrix<BigInteger>& count_matrix) override;
+
+  ArithmeticFormula_ptr formula_;
 
 private:
   static const int VLOG_LEVEL;

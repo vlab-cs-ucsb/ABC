@@ -27,8 +27,7 @@
 #include "smt/ast.h"
 #include "solver/Value.h"
 #include "theory/BinaryIntAutomaton.h"
-#include "theory/MultiTrackAutomaton.h"
-#include "theory/StringRelation.h"
+#include "theory/StringAutomaton.h"
 #include "utils/RegularExpression.h"
 
 //static const std::string get_default_output_dir();

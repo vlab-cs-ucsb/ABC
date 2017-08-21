@@ -45,10 +45,10 @@
 #include "theory/ArithmeticFormula.h"
 #include "theory/BinaryIntAutomaton.h"
 #include "theory/IntAutomaton.h"
-#include "theory/MultiTrackAutomaton.h"
 #include "theory/options/Theory.h"
 #include "theory/StringAutomaton.h"
-#include "theory/StringRelation.h"
+#include "theory/StringFormula.h"
+#include "theory/Formula.h"
 #include "theory/SymbolicCounter.h"
 #include "utils/Serialize.h"
 

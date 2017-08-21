@@ -19,29 +19,33 @@ int IntAutomaton::DEFAULT_NUM_OF_VARIABLES = 8;
 IntAutomaton::IntAutomaton(DFA_ptr dfa) :
         Automaton(Automaton::Type::INT, dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES),
         has_negative_1(false) {
-
+	formula_ = new ArithmeticFormula();
 }
 IntAutomaton::IntAutomaton(DFA_ptr dfa, int num_of_variables) :
         Automaton(Automaton::Type::INT, dfa, num_of_variables),
         has_negative_1 (false) {
+	formula_ = new ArithmeticFormula();
 }
 
 IntAutomaton::IntAutomaton(DFA_ptr dfa, bool has_negative_1) :
         Automaton(Automaton::Type::INT, dfa, IntAutomaton::DEFAULT_NUM_OF_VARIABLES),
         has_negative_1 (has_negative_1) {
+	formula_ = new ArithmeticFormula();
 }
 
 IntAutomaton::IntAutomaton(DFA_ptr dfa, bool has_negative_1, int num_of_variables) :
         Automaton(Automaton::Type::INT, dfa, num_of_variables),
         has_negative_1 (has_negative_1) {
-
+	formula_ = new ArithmeticFormula();
 }
 
 IntAutomaton::IntAutomaton(const IntAutomaton& other) :
         Automaton(other), has_negative_1 (other.has_negative_1) {
+	formula_ = new ArithmeticFormula();
 }
 
 IntAutomaton::~IntAutomaton() {
+	delete formula_;
 }
 
 IntAutomaton_ptr IntAutomaton::clone() const {
@@ -50,7 +54,7 @@ IntAutomaton_ptr IntAutomaton::clone() const {
   return cloned_auto;
 }
 
-IntAutomaton_ptr IntAutomaton::MakeAutomaton(DFA_ptr dfa, const int number_of_variables) {
+IntAutomaton_ptr IntAutomaton::MakeAutomaton(DFA_ptr dfa, Formula_ptr formula, const int number_of_variables) {
 	IntAutomaton_ptr int_auto = new IntAutomaton(dfa,number_of_variables);
 	return int_auto;
 }
@@ -812,6 +816,10 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
   return unary_auto;
 }
 
+ArithmeticFormula_ptr IntAutomaton::GetFormula() {
+	return formula_;
+}
+
 /**
  * TODO WILL: Don't use multitrack for this, too much work
  */
@@ -819,7 +827,7 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
   DFA_ptr d1,d2,d3;
   d1 = this->dfa_;
   d2 = other_auto->getDFA();
-  d3 = RelationalStringAutomaton::concat(d1,d2,num_of_bdd_variables_);
+  d3 = StringAutomaton::concat(d1,d2,num_of_bdd_variables_);
   return new IntAutomaton(d3);
 /*
   DFA_ptr concat_dfa = nullptr, tmp_dfa = nullptr;
@@ -1070,7 +1078,7 @@ IntAutomaton_ptr IntAutomaton::__minus(IntAutomaton_ptr other_auto) {
   DFA_ptr result_dfa = nullptr;
   IntAutomaton_ptr result_auto = nullptr;
 
-  result_dfa = RelationalStringAutomaton::pre_concat_prefix(this->dfa_, other_auto->dfa_,num_of_bdd_variables_);
+  result_dfa = StringAutomaton::PreConcatPrefix(this->dfa_, other_auto->dfa_,num_of_bdd_variables_);
 
   result_auto = new IntAutomaton(result_dfa, num_of_bdd_variables_);
 

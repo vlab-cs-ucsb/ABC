@@ -5,8 +5,8 @@
  *      Author: baki
  */
 
-#ifndef SRC_THEORY_STRINGFORMULA_H_
-#define SRC_THEORY_STRINGFORMULA_H_
+#ifndef THEORY_STRINGFORMULA_H_
+#define THEORY_STRINGFORMULA_H_
 
 #include <cmath>
 #include <cstdlib>
@@ -20,6 +20,7 @@
 
 #include <glog/logging.h>
 
+#include "Formula.h"
 #include "../smt/ast.h"
 
 namespace Vlab {
@@ -43,9 +44,9 @@ class StringFormula : public Formula {
   virtual StringFormula_ptr clone() const;
   virtual std::string str() const;
 
-  virtual Formula_ptr Intersect(Formula_ptr);
-	virtual Formula_ptr Union(Formula_ptr);
-	virtual Formula_ptr Complement();
+  virtual StringFormula_ptr Intersect(Formula_ptr);
+	virtual StringFormula_ptr Union(Formula_ptr);
+	virtual StringFormula_ptr Complement();
 
   void SetType(Type type);
   StringFormula::Type GetType() const;
@@ -60,6 +61,8 @@ class StringFormula : public Formula {
 
   int CountOnes(unsigned long n) const;
   virtual void MergeVariables(Formula_ptr);
+
+  friend std::ostream& operator<<(std::ostream& os, const StringFormula& formula);
 
 protected:
   bool GetVarNamesIfEqualityOfTwoVars(std::string &v1, std::string &v2);

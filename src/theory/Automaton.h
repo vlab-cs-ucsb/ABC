@@ -463,9 +463,6 @@ protected:
   void Minimize();
   void ProjectAway(unsigned index);
 
-
-
-
   bool hasIncomingTransition(int state);
   // todo will remove temp function
   static bool TEMPisStartStateReachableFromAnAcceptingState(DFA_ptr dfa);
@@ -498,6 +495,8 @@ protected:
   char* bintostr(unsigned long, int k);
   unsigned char strtobin(char* binChar, int var);
   static int find_sink(DFA_ptr dfa);
+
+  virtual Formula_ptr GetFormula() = 0;
 
 
   static unsigned long next_id;

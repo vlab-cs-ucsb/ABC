@@ -264,7 +264,7 @@ void ConstraintSolver::visitNot(Not_ptr not_term) {
     }
     case Value::Type::STRING_AUTOMATON: {
       // TODO multi-track automaton solves over-approximation problem in most cases
-      if (param->getStringAutomaton()->isAcceptingSingleString()) {
+      if (param->getStringAutomaton()->IsAcceptingSingleString()) {
         result = param->complement();
       } else {
         result = param->clone();
@@ -631,7 +631,7 @@ void ConstraintSolver::visitLen(Len_ptr len_term) {
 
   Value_ptr result = nullptr, param = getTermValue(len_term->term);
 
-  Theory::IntAutomaton_ptr int_auto = param->getStringAutomaton()->length();
+  Theory::IntAutomaton_ptr int_auto = param->getStringAutomaton()->Length();
 
   if (int_auto->isAcceptingSingleInt()) {
     result = new Value(int_auto->getAnAcceptingInt());
@@ -650,7 +650,7 @@ void ConstraintSolver::visitContains(Contains_ptr contains_term) {
 
   Value_ptr result = nullptr, param_subject = getTermValue(contains_term->subject_term), param_search = getTermValue(
       contains_term->search_term);
-  result = new Value(param_subject->getStringAutomaton()->contains(param_search->getStringAutomaton()));
+  result = new Value(param_subject->getStringAutomaton()->Contains(param_search->getStringAutomaton()));
   setTermValue(contains_term, result);
 }
 
@@ -664,14 +664,14 @@ void ConstraintSolver::visitNotContains(NotContains_ptr not_contains_term) {
   if (not (param_subject->is_satisfiable() and param_search->is_satisfiable())) {
     result = new Value(false);
   } else if (param_search->isSingleValue()) {
-    Theory::StringAutomaton_ptr contains_auto = param_subject->getStringAutomaton()->contains(
+    Theory::StringAutomaton_ptr contains_auto = param_subject->getStringAutomaton()->Contains(
         param_search->getStringAutomaton());
-    result = new Value(param_subject->getStringAutomaton()->difference(contains_auto));
+    result = new Value(param_subject->getStringAutomaton()->Difference(contains_auto));
     delete contains_auto;
     contains_auto = nullptr;
   } else if (param_subject->isSingleValue()) {
-    Theory::StringAutomaton_ptr sub_strings_auto = param_subject->getStringAutomaton()->subStrings();
-    Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->difference(sub_strings_auto);
+    Theory::StringAutomaton_ptr sub_strings_auto = param_subject->getStringAutomaton()->SubStrings();
+    Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->Difference(sub_strings_auto);
     delete sub_strings_auto;
     sub_strings_auto = nullptr;
     if (difference_auto->IsEmptyLanguage()) {
@@ -697,7 +697,7 @@ void ConstraintSolver::visitBegins(Begins_ptr begins_term) {
   Value_ptr result = nullptr, param_left = getTermValue(begins_term->subject_term), param_right = getTermValue(
       begins_term->search_term);
 
-  result = new Value(param_left->getStringAutomaton()->begins(param_right->getStringAutomaton()));
+  result = new Value(param_left->getStringAutomaton()->Begins(param_right->getStringAutomaton()));
 
   setTermValue(begins_term, result);
 }
@@ -710,14 +710,14 @@ void ConstraintSolver::visitNotBegins(NotBegins_ptr not_begins_term) {
       not_begins_term->search_term);
 
   if (param_search->isSingleValue()) {
-    Theory::StringAutomaton_ptr begins_auto = param_subject->getStringAutomaton()->begins(
+    Theory::StringAutomaton_ptr begins_auto = param_subject->getStringAutomaton()->Begins(
         param_search->getStringAutomaton());
-    result = new Value(param_subject->getStringAutomaton()->difference(begins_auto));
+    result = new Value(param_subject->getStringAutomaton()->Difference(begins_auto));
     delete begins_auto;
     begins_auto = nullptr;
   } else if (param_subject->isSingleValue()) {
-    Theory::StringAutomaton_ptr prefixes_auto = param_subject->getStringAutomaton()->prefixes();
-    Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->difference(prefixes_auto);
+    Theory::StringAutomaton_ptr prefixes_auto = param_subject->getStringAutomaton()->Prefixes();
+    Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->Difference(prefixes_auto);
     delete prefixes_auto;
     prefixes_auto = nullptr;
     if (difference_auto->IsEmptyLanguage()) {
@@ -741,7 +741,7 @@ void ConstraintSolver::visitEnds(Ends_ptr ends_term) {
   Value_ptr result = nullptr, param_left = getTermValue(ends_term->subject_term), param_right = getTermValue(
       ends_term->search_term);
 
-  result = new Value(param_left->getStringAutomaton()->ends(param_right->getStringAutomaton()));
+  result = new Value(param_left->getStringAutomaton()->Ends(param_right->getStringAutomaton()));
 
   setTermValue(ends_term, result);
 }
@@ -754,14 +754,14 @@ void ConstraintSolver::visitNotEnds(NotEnds_ptr not_ends_term) {
       not_ends_term->search_term);
 
   if (param_search->isSingleValue()) {
-    Theory::StringAutomaton_ptr ends_auto = param_subject->getStringAutomaton()->ends(
+    Theory::StringAutomaton_ptr ends_auto = param_subject->getStringAutomaton()->Ends(
         param_search->getStringAutomaton());
-    result = new Value(param_subject->getStringAutomaton()->difference(ends_auto));
+    result = new Value(param_subject->getStringAutomaton()->Difference(ends_auto));
     delete ends_auto;
     ends_auto = nullptr;
   } else if (param_subject->isSingleValue()) {
-    Theory::StringAutomaton_ptr suffixes_auto = param_subject->getStringAutomaton()->suffixes();
-    Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->difference(suffixes_auto);
+    Theory::StringAutomaton_ptr suffixes_auto = param_subject->getStringAutomaton()->Suffixes();
+    Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->Difference(suffixes_auto);
     delete suffixes_auto;
     suffixes_auto = nullptr;
     if (difference_auto->IsEmptyLanguage()) {
@@ -786,7 +786,7 @@ void ConstraintSolver::visitIndexOf(IndexOf_ptr index_of_term) {
   Value_ptr result = nullptr, param_left = getTermValue(index_of_term->subject_term), param_right = getTermValue(
       index_of_term->search_term);
 
-  Theory::IntAutomaton_ptr index_of_auto = param_left->getStringAutomaton()->indexOf(param_right->getStringAutomaton());
+  Theory::IntAutomaton_ptr index_of_auto = param_left->getStringAutomaton()->IndexOf(param_right->getStringAutomaton());
   if (index_of_auto->isAcceptingSingleInt()) {
     result = new Value(index_of_auto->getAnAcceptingInt());
     delete index_of_auto;
@@ -805,7 +805,7 @@ void ConstraintSolver::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
   Value_ptr result = nullptr, param_left = getTermValue(last_index_of_term->subject_term), param_right = getTermValue(
       last_index_of_term->search_term);
 
-  Theory::IntAutomaton_ptr last_index_of_auto = param_left->getStringAutomaton()->lastIndexOf(
+  Theory::IntAutomaton_ptr last_index_of_auto = param_left->getStringAutomaton()->LastIndexOf(
       param_right->getStringAutomaton());
   if (last_index_of_auto->isAcceptingSingleInt()) {
     result = new Value(last_index_of_auto->getAnAcceptingInt());
@@ -876,8 +876,8 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
 
       Optimization::ConstraintQuerier query;
       // checks if the integer parameter is an index of operation (currently works for indexof only)
-      if (index_var and bin_end_index_auto->get_formula()->has_relation_to_mixed_term(index_var->getVarName())) {
-        auto relation = bin_end_index_auto->get_formula()->get_relation_to_mixed_term(index_var->getVarName());
+      if (index_var and bin_end_index_auto->GetFormula()->HasRelationToMixedTerm(index_var->getVarName())) {
+        auto relation = bin_end_index_auto->GetFormula()->GetRelationToMixedTerm(index_var->getVarName());
         if (relation.first == Theory::ArithmeticFormula::Type::EQ and
             query.is_param_equal_to(sub_string_term->subject_term, relation.second, 1)) {
           // Refactor below flow into a function
@@ -927,7 +927,7 @@ void ConstraintSolver::visitToUpper(ToUpper_ptr to_upper_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *to_upper_term;
 
   Value_ptr param = getTermValue(to_upper_term->subject_term);
-  Value_ptr result = new Value(param->getStringAutomaton()->toUpperCase());
+  Value_ptr result = new Value(param->getStringAutomaton()->ToUpperCase());
 
   setTermValue(to_upper_term, result);
 }
@@ -937,7 +937,7 @@ void ConstraintSolver::visitToLower(ToLower_ptr to_lower_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *to_lower_term;
 
   Value_ptr param = getTermValue(to_lower_term->subject_term);
-  Value_ptr result = new Value(param->getStringAutomaton()->toLowerCase());
+  Value_ptr result = new Value(param->getStringAutomaton()->ToLowerCase());
 
   setTermValue(to_lower_term, result);
 }
@@ -947,7 +947,7 @@ void ConstraintSolver::visitTrim(Trim_ptr trim_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *trim_term;
 
   Value_ptr param = getTermValue(trim_term->subject_term);
-  Value_ptr result = new Value(param->getStringAutomaton()->trim());
+  Value_ptr result = new Value(param->getStringAutomaton()->Trim());
 
   setTermValue(trim_term, result);
 
@@ -977,7 +977,7 @@ void ConstraintSolver::visitToInt(ToInt_ptr to_int_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *to_int_term;
 
   Value_ptr param = getTermValue(to_int_term->subject_term);
-  Theory::IntAutomaton_ptr int_auto = param->getStringAutomaton()->parseToIntAutomaton();
+  Theory::IntAutomaton_ptr int_auto = param->getStringAutomaton()->ParseToIntAutomaton();
 
   Value_ptr result = nullptr;
   if (int_auto->isAcceptingSingleInt()) {
@@ -997,7 +997,7 @@ void ConstraintSolver::visitReplace(Replace_ptr replace_term) {
       replace_term->search_term), param_replace = getTermValue(replace_term->replace_term);
 
   Value_ptr result = new Value(
-      param_subject->getStringAutomaton()->replace(param_search->getStringAutomaton(),
+      param_subject->getStringAutomaton()->Replace(param_search->getStringAutomaton(),
                                                    param_replace->getStringAutomaton()));
 
   setTermValue(replace_term, result);
@@ -1057,9 +1057,9 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   Value_ptr variable_value = symbol_table_->get_value(variable);
 
   Value_ptr result = nullptr;
-  if (Value::Type::RELATIONALSTRING_AUTOMATON == variable_value->getType())
+  if (Value::Type::STRING_AUTOMATON == variable_value->getType())
   {
-    result = new Value(variable_value->getRelationalStringAutomaton()->GetAutomatonForVariable(qi_term->getVarName()));
+    result = new Value(variable_value->getStringAutomaton()->GetAutomatonForVariable(qi_term->getVarName()));
   } else if (Value::Type::BINARYINT_AUTOMATON == variable_value->getType())
   {
     // TODO baki: added for charat may need to fix it
@@ -1254,7 +1254,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     if (not is_satisfiable) {
       auto binary_auto = arithmetic_result->getBinaryIntAutomaton();
       arithmetic_result = new Value(
-          BinaryIntAutomaton::MakePhi(binary_auto->get_formula()->clone(), binary_auto->is_natural_number()));
+          BinaryIntAutomaton::MakePhi(binary_auto->GetFormula()->clone(), binary_auto->is_natural_number()));
       arithmetic_constraint_solver_.set_group_value(term, arithmetic_result);
       break;
     }
@@ -1266,7 +1266,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
       // first convert integer result to unary, then unary to binary
       string_term_unary_auto = string_term_result->getIntAutomaton()->toUnaryAutomaton();
       string_term_binary_auto = string_term_unary_auto->toBinaryIntAutomaton(
-          string_term_var_name, arithmetic_result->getBinaryIntAutomaton()->get_formula()->clone(), has_minus_one);
+          string_term_var_name, arithmetic_result->getBinaryIntAutomaton()->GetFormula()->clone(), has_minus_one);
       delete string_term_unary_auto;
       string_term_unary_auto = nullptr;
     } else if (Value::Type::INT_CONSTANT == string_term_result->getType()) {
@@ -1274,7 +1274,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
       has_minus_one = (value < 0);
       number_of_variables_for_int_auto = Theory::IntAutomaton::DEFAULT_NUM_OF_VARIABLES;
       string_term_binary_auto = Theory::BinaryIntAutomaton::MakeAutomaton(
-          value, string_term_var_name, arithmetic_result->getBinaryIntAutomaton()->get_formula()->clone(), true);
+          value, string_term_var_name, arithmetic_result->getBinaryIntAutomaton()->GetFormula()->clone(), true);
     } else {
       LOG(FATAL)<< "unexpected type";
     }
@@ -1316,7 +1316,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     if (not is_satisfiable) {
       auto binary_auto = arithmetic_result->getBinaryIntAutomaton();
       arithmetic_result = new Value(
-          BinaryIntAutomaton::MakePhi(binary_auto->get_formula()->clone(), binary_auto->is_natural_number()));
+          BinaryIntAutomaton::MakePhi(binary_auto->GetFormula()->clone(), binary_auto->is_natural_number()));
       arithmetic_constraint_solver_.set_group_value(term, arithmetic_result);
       break;
     }

@@ -590,7 +590,7 @@ void VariableValueComputer::visitConcat(Concat_ptr concat_term) {
         current_auto = post_value->getStringAutomaton()->clone();
       } else {
         Theory::StringAutomaton_ptr tmp = current_auto;
-        current_auto = current_auto->concat(post_value->getStringAutomaton());
+        current_auto = current_auto->Concat(post_value->getStringAutomaton());
         delete tmp;
       }
     }
@@ -600,26 +600,26 @@ void VariableValueComputer::visitConcat(Concat_ptr concat_term) {
   Theory::StringAutomaton_ptr tmp_parent_auto = term_value->getStringAutomaton();
   Theory::StringAutomaton_ptr child_result_auto = nullptr;
   if (left_of_child != nullptr) {
-    child_result_auto = tmp_parent_auto->preConcatRight(left_of_child);
+    child_result_auto = tmp_parent_auto->PreConcatRight(left_of_child);
     tmp_parent_auto = child_result_auto;
   }
   if (right_of_child != nullptr) {
     if (left_of_child != nullptr) { // that means our variable is in between some other variables, make the preconcat precise (this can be avoided if preconcat works perfect)
-      Theory::StringAutomaton_ptr tmp_2 = child_post_value->getStringAutomaton()->concat(right_of_child);
+      Theory::StringAutomaton_ptr tmp_2 = child_post_value->getStringAutomaton()->Concat(right_of_child);
       Theory::StringAutomaton_ptr tmp_3 = tmp_parent_auto;
-      tmp_parent_auto = tmp_3->intersect(tmp_2);
+      tmp_parent_auto = tmp_3->Intersect(tmp_2);
       child_result_auto = tmp_parent_auto;
       delete tmp_2; tmp_2 = nullptr;
       delete tmp_3; tmp_3 = nullptr;
     }
     Theory::StringAutomaton_ptr  tmp = child_result_auto;
-    child_result_auto = tmp_parent_auto->preConcatLeft(right_of_child);
+    child_result_auto = tmp_parent_auto->PreConcatLeft(right_of_child);
     delete tmp; tmp = nullptr;
   }
   delete left_of_child; left_of_child = nullptr;
   delete right_of_child; right_of_child = nullptr;
 
-  child_value = new Value(child_post_value->getStringAutomaton()->intersect(child_result_auto));
+  child_value = new Value(child_post_value->getStringAutomaton()->Intersect(child_result_auto));
   delete child_result_auto; child_result_auto = nullptr;
   setTermPreImage(child_term, child_value);
   visit(child_term);
@@ -682,9 +682,9 @@ void VariableValueComputer::visitLen(Len_ptr len_term) {
   Value_ptr child_post_value = getTermPostImage(child_term);
 
   if (Value::Type::INT_CONSTANT == term_value->getType()) {
-    child_value = new Value(child_post_value->getStringAutomaton()->restrictLengthTo(term_value->getIntConstant()));
+    child_value = new Value(child_post_value->getStringAutomaton()->RestrictLengthTo(term_value->getIntConstant()));
   } else {
-    child_value = new Value(child_post_value->getStringAutomaton()->restrictLengthTo(term_value->getIntAutomaton()));
+    child_value = new Value(child_post_value->getStringAutomaton()->RestrictLengthTo(term_value->getIntAutomaton()));
   }
 
 
@@ -709,8 +709,8 @@ void VariableValueComputer::visitContains(Contains_ptr contains_term) {
     child_value = term_value->clone();
   } else {
     Value_ptr child_post_value = getTermPostImage(child_term);
-    Theory::StringAutomaton_ptr sub_strings_auto = term_value->getStringAutomaton()->subStrings();
-    child_value = new Value(child_post_value->getStringAutomaton()->intersect(sub_strings_auto));
+    Theory::StringAutomaton_ptr sub_strings_auto = term_value->getStringAutomaton()->SubStrings();
+    child_value = new Value(child_post_value->getStringAutomaton()->Intersect(sub_strings_auto));
     delete sub_strings_auto; sub_strings_auto = nullptr;
   }
 
@@ -736,8 +736,8 @@ void VariableValueComputer::visitNotContains(NotContains_ptr not_contains_term) 
   } else {
     Value_ptr child_post_value = getTermPostImage(child_term);
     if (term_value->isSingleValue()) {
-      Theory::StringAutomaton_ptr sub_strings_auto = term_value->getStringAutomaton()->subStrings();
-      child_value = new Value(child_post_value->getStringAutomaton()->difference(sub_strings_auto));
+      Theory::StringAutomaton_ptr sub_strings_auto = term_value->getStringAutomaton()->SubStrings();
+      child_value = new Value(child_post_value->getStringAutomaton()->Difference(sub_strings_auto));
       delete sub_strings_auto; sub_strings_auto = nullptr;
     } else {
       child_value = child_post_value->clone();
@@ -765,8 +765,8 @@ void VariableValueComputer::visitBegins(Begins_ptr begins_term) {
     child_value = term_value->clone();
   } else {
     Value_ptr child_post_value = getTermPostImage(child_term);
-    Theory::StringAutomaton_ptr prefixes_auto = term_value->getStringAutomaton()->prefixes();
-    child_value = new Value(child_post_value->getStringAutomaton()->intersect(prefixes_auto));
+    Theory::StringAutomaton_ptr prefixes_auto = term_value->getStringAutomaton()->Prefixes();
+    child_value = new Value(child_post_value->getStringAutomaton()->Intersect(prefixes_auto));
     delete prefixes_auto; prefixes_auto = nullptr;
   }
 
@@ -792,8 +792,8 @@ void VariableValueComputer::visitNotBegins(NotBegins_ptr not_begins_term) {
   } else {
     Value_ptr child_post_value = getTermPostImage(child_term);
     if (term_value->isSingleValue()) {
-      Theory::StringAutomaton_ptr prefixes_auto = term_value->getStringAutomaton()->prefixes();
-      child_value = new Value(child_post_value->getStringAutomaton()->difference(prefixes_auto));
+      Theory::StringAutomaton_ptr prefixes_auto = term_value->getStringAutomaton()->Prefixes();
+      child_value = new Value(child_post_value->getStringAutomaton()->Difference(prefixes_auto));
       delete prefixes_auto; prefixes_auto = nullptr;
     } else {
       child_value = child_post_value->clone();
@@ -818,8 +818,8 @@ void VariableValueComputer::visitEnds(Ends_ptr ends_term) {
     child_value = term_value->clone();
   } else {
     Value_ptr child_post_value = getTermPostImage(child_term);
-    Theory::StringAutomaton_ptr suffixes_auto = term_value->getStringAutomaton()->suffixes();
-    child_value = new Value(child_post_value->getStringAutomaton()->intersect(suffixes_auto));
+    Theory::StringAutomaton_ptr suffixes_auto = term_value->getStringAutomaton()->Suffixes();
+    child_value = new Value(child_post_value->getStringAutomaton()->Intersect(suffixes_auto));
     delete suffixes_auto; suffixes_auto = nullptr;
   }
   setTermPreImage(child_term, child_value);
@@ -844,8 +844,8 @@ void VariableValueComputer::visitNotEnds(NotEnds_ptr not_ends_term) {
   } else {
     Value_ptr child_post_value = getTermPostImage(child_term);
     if (term_value->isSingleValue()) {
-      Theory::StringAutomaton_ptr suffixes_auto = term_value->getStringAutomaton()->suffixes();
-      child_value = new Value(child_post_value->getStringAutomaton()->difference(suffixes_auto));
+      Theory::StringAutomaton_ptr suffixes_auto = term_value->getStringAutomaton()->Suffixes();
+      child_value = new Value(child_post_value->getStringAutomaton()->Difference(suffixes_auto));
       delete suffixes_auto; suffixes_auto = nullptr;
     } else {
       child_value = child_post_value->clone();
@@ -877,10 +877,10 @@ void VariableValueComputer::visitIndexOf(IndexOf_ptr index_of_term) {
 
   if (Value::Type::INT_CONSTANT == term_value->getType()) {
     child_value = new Value(child_post_value->getStringAutomaton()
-            ->restrictIndexOfTo(term_value->getIntConstant(), param_search->getStringAutomaton()));
+            ->RestrictIndexOfTo(term_value->getIntConstant(), param_search->getStringAutomaton()));
   } else {
     child_value = new Value(child_post_value->getStringAutomaton()
-                ->restrictIndexOfTo(term_value->getIntAutomaton(), param_search->getStringAutomaton()));
+                ->RestrictIndexOfTo(term_value->getIntAutomaton(), param_search->getStringAutomaton()));
   }
 
   setTermPreImage(child_term, child_value);
@@ -908,10 +908,10 @@ void VariableValueComputer::visitLastIndexOf(LastIndexOf_ptr last_index_of_term)
 
   if (Value::Type::INT_CONSTANT == term_value->getType()) {
     child_value = new Value(child_post_value->getStringAutomaton()
-            ->restrictLastIndexOfTo(term_value->getIntConstant(), param_search->getStringAutomaton()));
+            ->RestrictLastIndexOfTo(term_value->getIntConstant(), param_search->getStringAutomaton()));
   } else {
     child_value = new Value(child_post_value->getStringAutomaton()
-                ->restrictLastIndexOfTo(term_value->getIntAutomaton(), param_search->getStringAutomaton()));
+                ->RestrictLastIndexOfTo(term_value->getIntAutomaton(), param_search->getStringAutomaton()));
   }
 
   setTermPreImage(child_term, child_value);
@@ -942,16 +942,16 @@ void VariableValueComputer::visitCharAt(CharAt_ptr char_at_term) {
     Value_ptr index_value = getTermPostImage(char_at_term->index_term);
     if (Value::Type::INT_CONSTANT == index_value->getType()) {
       child_value = new Value(child_post_value->getStringAutomaton()
-              ->restrictAtIndexTo(index_value->getIntConstant(), term_value->getStringAutomaton()));
+              ->RestrictAtIndexTo(index_value->getIntConstant(), term_value->getStringAutomaton()));
     } else {
       child_value = new Value(child_post_value->getStringAutomaton()
-              ->restrictAtIndexTo(index_value->getIntAutomaton(), term_value->getStringAutomaton()));
+              ->RestrictAtIndexTo(index_value->getIntAutomaton(), term_value->getStringAutomaton()));
     }
   }
   else
   {
     Value_ptr subject_value = getTermPostImage(char_at_term->subject_term);
-    Theory::IntAutomaton_ptr indexes_auto = subject_value->getStringAutomaton()->indexOf(subject_value->getStringAutomaton());
+    Theory::IntAutomaton_ptr indexes_auto = subject_value->getStringAutomaton()->IndexOf(subject_value->getStringAutomaton());
     if (Value::Type::INT_CONSTANT == child_post_value->getType())
     {
       child_value = new Value(indexes_auto->intersect(child_post_value->getIntConstant()));
@@ -1008,27 +1008,27 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
     case SubString::Mode::FROMINDEX: {
       if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
         child_value = new Value(child_post_value->getStringAutomaton()
-                ->restrictFromIndexToEndTo(start_index_value->getIntConstant(), term_value->getStringAutomaton()));
+                ->RestrictFromIndexToEndTo(start_index_value->getIntConstant(), term_value->getStringAutomaton()));
       } else {
         child_value = new Value(child_post_value->getStringAutomaton()
-                ->restrictFromIndexToEndTo(start_index_value->getIntAutomaton(), term_value->getStringAutomaton()));
+                ->RestrictFromIndexToEndTo(start_index_value->getIntAutomaton(), term_value->getStringAutomaton()));
       }
       break;
     }
     case SubString::Mode::FROMFIRSTOF: {
       Value_ptr index_value = getTermPostImage(sub_string_term->start_index_term);
-      Theory::StringAutomaton_ptr any_string_not_contains_search = index_value->getStringAutomaton()->getAnyStringNotContainsMe();
-      Theory::StringAutomaton_ptr general_pre_substring = any_string_not_contains_search->concat(term_value->getStringAutomaton());
+      Theory::StringAutomaton_ptr any_string_not_contains_search = index_value->getStringAutomaton()->GetAnyStringNotContainsMe();
+      Theory::StringAutomaton_ptr general_pre_substring = any_string_not_contains_search->Concat(term_value->getStringAutomaton());
       delete any_string_not_contains_search; any_string_not_contains_search = nullptr;
 
       child_value = new Value(child_post_value->getStringAutomaton()
-                    ->intersect(general_pre_substring));
+                    ->Intersect(general_pre_substring));
       delete general_pre_substring; general_pre_substring = nullptr;
       break;
     }
     case SubString::Mode::FROMLASTOF: {
       child_value = new Value(child_post_value->getStringAutomaton()
-              ->ends(term_value->getStringAutomaton()));
+              ->Ends(term_value->getStringAutomaton()));
       break;
     }
     case SubString::Mode::FROMINDEXTOINDEX: {
@@ -1036,10 +1036,10 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
       //term_value already contains end index
       if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
         child_value = new Value(child_post_value->getStringAutomaton()
-                ->restrictAtIndexTo(start_index_value->getIntConstant(), term_value->getStringAutomaton()));
+                ->RestrictAtIndexTo(start_index_value->getIntConstant(), term_value->getStringAutomaton()));
       } else {
         child_value = new Value(child_post_value->getStringAutomaton()
-                ->restrictAtIndexTo(start_index_value->getIntAutomaton(), term_value->getStringAutomaton()));
+                ->RestrictAtIndexTo(start_index_value->getIntAutomaton(), term_value->getStringAutomaton()));
       }
       break;
     }
@@ -1101,7 +1101,7 @@ void VariableValueComputer::visitToUpper(ToUpper_ptr to_upper_term) {
   Value_ptr term_value = getTermPreImage(to_upper_term);
   Value_ptr child_post_value = getTermPostImage(child_term);
   Theory::StringAutomaton_ptr child_pre_auto = term_value->getStringAutomaton()
-      ->preToUpperCase(child_post_value->getStringAutomaton());
+      ->PreToUpperCase(child_post_value->getStringAutomaton());
   child_value = new Value(child_pre_auto);
   setTermPreImage(child_term, child_value);
   visit(child_term);
@@ -1120,7 +1120,7 @@ void VariableValueComputer::visitToLower(ToLower_ptr to_lower_term) {
   Value_ptr term_value = getTermPreImage(to_lower_term);
   Value_ptr child_post_value = getTermPostImage(child_term);
   Theory::StringAutomaton_ptr child_pre_auto = term_value->getStringAutomaton()
-      ->preToLowerCase(child_post_value->getStringAutomaton());
+      ->PreToLowerCase(child_post_value->getStringAutomaton());
   child_value = new Value(child_pre_auto);
   setTermPreImage(child_term, child_value);
   visit(child_term);
@@ -1139,7 +1139,7 @@ void VariableValueComputer::visitTrim(Trim_ptr trim_term) {
   Value_ptr term_value = getTermPreImage(trim_term);
   Value_ptr child_post_value = getTermPostImage(child_term);
   Theory::StringAutomaton_ptr child_pre_auto = term_value->getStringAutomaton()
-      ->preTrim(child_post_value->getStringAutomaton());
+      ->PreTrim(child_post_value->getStringAutomaton());
   child_value = new Value(child_pre_auto);
   setTermPreImage(child_term, child_value);
   visit(child_term);
@@ -1159,7 +1159,7 @@ void VariableValueComputer::visitToString(ToString_ptr to_string_term) {
   Value_ptr child_post_value = getTermPostImage(child_term);
 
   Theory::IntAutomaton_ptr int_auto = term_value->getStringAutomaton()
-      ->parseToIntAutomaton();
+      ->ParseToIntAutomaton();
 
   if (int_auto->isAcceptingSingleInt()) {
     int value = int_auto->getAnAcceptingInt();
@@ -1197,12 +1197,12 @@ void VariableValueComputer::visitToInt(ToInt_ptr to_int_term) {
     std::stringstream ss;
     ss << term_value->getIntConstant();
     auto str_auto = Theory::StringAutomaton::MakeString(ss.str());
-    child_pre_auto = child_post_value->getStringAutomaton()->intersect(str_auto);
+    child_pre_auto = child_post_value->getStringAutomaton()->Intersect(str_auto);
     delete str_auto;
   } else {
     auto unary_auto = term_value->getIntAutomaton()->toUnaryAutomaton();
     auto str_auto = unary_auto->toStringAutomaton();
-    child_pre_auto = child_post_value->getStringAutomaton()->intersect(str_auto);
+    child_pre_auto = child_post_value->getStringAutomaton()->Intersect(str_auto);
     delete unary_auto;
   }
 
@@ -1228,8 +1228,8 @@ void VariableValueComputer::visitReplace(Replace_ptr replace_term) {
 
   if (child_term == replace_term->replace_term) {
     Theory::StringAutomaton_ptr child_pre_auto = term_value->getStringAutomaton()
-        ->preReplace(search_auto_value->getStringAutomaton(),
-            replace_auto_value->getStringAutomaton()->getAnAcceptingString(),
+        ->PreReplace(search_auto_value->getStringAutomaton(),
+            replace_auto_value->getStringAutomaton()->GetAnAcceptingString(),
             child_post_value->getStringAutomaton());
     child_value = new Value(child_pre_auto);
   } else {
@@ -1318,13 +1318,13 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
     case Value::Type::STRING_AUTOMATON:
     {
       auto string_auto = term_pre_value->getStringAutomaton();
-      auto formula = string_auto->get_formula();
+      auto formula = string_auto->GetFormula();
       if (formula == nullptr) {
         formula = new Theory::StringFormula();
-        formula->set_type(Theory::StringFormula::Type::VAR);
-        formula->add_variable(qi_term->getVarName(), 1);
-        string_auto->set_formula(formula);
-      } else if (Theory::StringFormula::Type::VAR != formula->get_type()) {
+        formula->SetType(Theory::StringFormula::Type::VAR);
+        formula->AddVariable(qi_term->getVarName(), 1);
+        string_auto->SetFormula(formula);
+      } else if (Theory::StringFormula::Type::VAR != formula->GetType()) {
         LOG(FATAL) << "fix me";
       }
     }
@@ -1338,7 +1338,7 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
       auto variable_value = symbol_table->get_value(variable);
 
       auto term_binary_auto = unary_auto->toBinaryIntAutomaton(qi_term->getVarName(),
-                                                               variable_value->getBinaryIntAutomaton()->get_formula()->clone(),
+                                                               variable_value->getBinaryIntAutomaton()->GetFormula()->clone(),
                                                                false);
       delete unary_auto;
       term_pre_value = new Value(term_binary_auto);

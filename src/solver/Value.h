@@ -16,8 +16,6 @@
 #include "../theory/BinaryIntAutomaton.h"
 #include "../theory/BoolAutomaton.h"
 #include "../theory/IntAutomaton.h"
-#include "../theory/RelationalStringAutomaton.h"
-#include "../theory/RelationalStringAutomaton.h"
 #include "../theory/StringAutomaton.h"
 
 /**
@@ -40,8 +38,7 @@ class Value {
     BOOL_AUTOMATON,
     INT_AUTOMATON,
     BINARYINT_AUTOMATON,
-    STRING_AUTOMATON,
-    RELATIONALSTRING_AUTOMATON
+    STRING_AUTOMATON
   };
 
   Value();
@@ -51,7 +48,6 @@ class Value {
   Value(Theory::IntAutomaton_ptr data);
   Value(Theory::BinaryIntAutomaton_ptr data);
   Value(Theory::StringAutomaton_ptr data);
-  Value(Theory::RelationalStringAutomaton_ptr data);
   Value(const Value&);
   Value_ptr clone() const;
   virtual ~Value();
@@ -66,7 +62,6 @@ class Value {
   void setData(Theory::IntAutomaton_ptr data);
   void setData(Theory::BinaryIntAutomaton_ptr data);
   void setData(Theory::StringAutomaton_ptr data);
-  void setData(Theory::RelationalStringAutomaton_ptr data);
 
   bool getBoolConstant() const;
   int getIntConstant() const;
@@ -74,7 +69,6 @@ class Value {
   Theory::IntAutomaton_ptr getIntAutomaton() const;
   Theory::BinaryIntAutomaton_ptr getBinaryIntAutomaton() const;
   Theory::StringAutomaton_ptr getStringAutomaton() const;
-  Theory::RelationalStringAutomaton_ptr getRelationalStringAutomaton() const;
 
   Value_ptr union_(Value_ptr other_value) const;
   Value_ptr intersect(Value_ptr other_value) const;
@@ -99,7 +93,6 @@ class Value {
     static const std::string INT_AUTOMATON;
     static const std::string BINARYINT_AUTOMATON;
     static const std::string STRING_AUTOMATON;
-    static const std::string RELATIONALSTRING_AUTOMATON;
   };
 
   friend std::ostream& operator<<(std::ostream& os, const Value& value);
@@ -113,7 +106,6 @@ class Value {
     Theory::IntAutomaton_ptr int_automaton;
     Theory::BinaryIntAutomaton_ptr binaryint_automaton;
     Theory::StringAutomaton_ptr string_automaton;
-    Theory::RelationalStringAutomaton_ptr relationalstring_automaton;
   };
 
   static const int VLOG_LEVEL;

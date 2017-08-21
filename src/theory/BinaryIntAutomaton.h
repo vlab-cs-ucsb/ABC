@@ -54,7 +54,7 @@ public:
 
   virtual BinaryIntAutomaton_ptr clone() const;
   // What about natural number parameter?
-  virtual BinaryIntAutomaton_ptr MakeAutomaton(DFA_ptr dfa, const int number_of_variables);
+  virtual BinaryIntAutomaton_ptr MakeAutomaton(DFA_ptr dfa, Formula_ptr formula, const int number_of_variables);
 
   static BinaryIntAutomaton_ptr MakePhi(ArithmeticFormula_ptr, bool is_natural_number);
   static BinaryIntAutomaton_ptr MakeAnyInt(ArithmeticFormula_ptr, bool is_natural_number);
@@ -64,8 +64,8 @@ public:
   static BinaryIntAutomaton_ptr MakeAutomaton(SemilinearSet_ptr semilinear_set, std::string var_name,
           ArithmeticFormula_ptr formula, bool add_leading_zeros = false);
 
-  ArithmeticFormula_ptr get_formula();
-  void set_formula(ArithmeticFormula_ptr formula);
+  ArithmeticFormula_ptr GetFormula();
+  void SetFormula(ArithmeticFormula_ptr formula);
   bool is_natural_number();
   bool HasNegative1();
   BinaryIntAutomaton_ptr Complement();

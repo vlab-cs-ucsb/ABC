@@ -5,8 +5,8 @@
  *      Author: will
  */
 
-#ifndef SRC_THEORY_FORMULA_H_
-#define SRC_THEORY_FORMULA_H_
+#ifndef THEORY_FORMULA_H_
+#define THEORY_FORMULA_H_
 
 #include <cmath>
 #include <cstdlib>

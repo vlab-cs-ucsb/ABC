@@ -147,7 +147,7 @@ int Automaton::GetSinkState() const {
 
 Automaton_ptr Automaton::Complement() {
   DFA_ptr complement_dfa = Automaton::DFAComplement(this->dfa_);
-  Automaton_ptr complement_auto = MakeAutomaton(complement_dfa, num_of_bdd_variables_);
+  Automaton_ptr complement_auto = MakeAutomaton(complement_dfa, this->GetFormula()->Complement(), num_of_bdd_variables_);
   DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->Complement()";
   return complement_auto;
 }
@@ -157,7 +157,7 @@ Automaton_ptr Automaton::Union(Automaton_ptr other_automaton) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
 	DFA_ptr union_dfa = Automaton::DFAUnion(this->dfa_, other_automaton->dfa_);
-  Automaton_ptr union_auto = MakeAutomaton(union_dfa, num_of_bdd_variables_);
+  Automaton_ptr union_auto = MakeAutomaton(union_dfa, this->GetFormula()->Union(other_automaton->GetFormula()), num_of_bdd_variables_);
   DVLOG(VLOG_LEVEL) << union_auto->id_ << " = [" << this->id_ << "]->Union(" << other_automaton->id_ << ")";
   return union_auto;
 }
@@ -167,7 +167,7 @@ Automaton_ptr Automaton::Intersect(Automaton_ptr other_automaton) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
 	DFA_ptr intersect_dfa = Automaton::DFAIntersect(this->dfa_, other_automaton->dfa_);
-  Automaton_ptr intersect_auto =  MakeAutomaton(intersect_dfa, num_of_bdd_variables_);
+  Automaton_ptr intersect_auto =  MakeAutomaton(intersect_dfa, this->GetFormula()->Intersect(other_automaton->GetFormula()), num_of_bdd_variables_);
   DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << other_automaton->id_ << ")";
   return intersect_auto;
 }
@@ -177,7 +177,7 @@ Automaton_ptr Automaton::Difference(Automaton_ptr other_automaton) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
 	DFA_ptr difference_dfa = Automaton::DFADifference(this->dfa_, other_automaton->dfa_);
-  Automaton_ptr difference_auto = MakeAutomaton(difference_dfa, num_of_bdd_variables_);
+  Automaton_ptr difference_auto = MakeAutomaton(difference_dfa, this->GetFormula()->Intersect(other_automaton->GetFormula()), num_of_bdd_variables_);
   DVLOG(VLOG_LEVEL) << difference_auto->id_ << " = [" << this->id_ << "]->Difference(" << other_automaton->id_ << ")";
   return difference_auto;
 }
@@ -187,7 +187,7 @@ Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
 	DFA_ptr concat_dfa = Automaton::DFAConcat(this->dfa_,other_automaton->dfa_,num_of_bdd_variables_);
-  Automaton_ptr concat_auto = MakeAutomaton(concat_dfa,num_of_bdd_variables_);
+  Automaton_ptr concat_auto = MakeAutomaton(concat_dfa,this->GetFormula()->clone() ,num_of_bdd_variables_);
   DVLOG(VLOG_LEVEL) << concat_auto->id_ << " = [" << this->id_ << "]->concat(" << other_automaton->id_ << ")";
   return concat_auto;
 
@@ -2573,6 +2573,7 @@ int Automaton::find_sink(DFA_ptr dfa) {
 
   return -1;
 }
+
 
 } /* namespace Theory */
 } /* namespace Vlab */

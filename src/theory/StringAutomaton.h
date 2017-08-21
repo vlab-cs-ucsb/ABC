@@ -55,6 +55,7 @@ public:
    */
   static StringAutomaton_ptr MakePhi(const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
+  static StringAutomaton_ptr MakePhi(StringFormula_ptr group_formula);
   /**
    * Generates a string automaton that recognizes only empty string
    * @param number_of_bdd_variables
@@ -174,6 +175,7 @@ public:
    */
   virtual StringAutomaton_ptr MakeAutomaton(DFA_ptr dfa, Formula_ptr formula, const int number_of_variables) override;
 
+  static StringAutomaton_ptr MakeAutomaton(StringFormula_ptr formula);
   static StringAutomaton_ptr MakeBegins(StringFormula_ptr formula);
 	static StringAutomaton_ptr MakeNotBegins(StringFormula_ptr formula);
 	static StringAutomaton_ptr MakeConcatExtraTrack(StringFormula_ptr formula);
@@ -190,6 +192,7 @@ public:
   StringAutomaton_ptr Intersect(StringAutomaton_ptr);
   StringAutomaton_ptr Union(StringAutomaton_ptr);
   StringAutomaton_ptr Difference(StringAutomaton_ptr);
+  StringAutomaton_ptr Concat(StringAutomaton_ptr);
 
   StringAutomaton_ptr Optional();
   StringAutomaton_ptr Closure();
@@ -263,6 +266,7 @@ public:
   StringAutomaton_ptr PreReplace(StringAutomaton_ptr searchAuto, std::string replaceString, StringAutomaton_ptr rangeAuto = nullptr);
 
   StringAutomaton_ptr GetAutomatonForVariable(std::string var_name);
+  StringAutomaton_ptr GetKTrack(int track);
   StringAutomaton_ptr ProjectAwayVariable(std::string var_name);
   StringAutomaton_ptr ProjectKTrack(int track);
   void SetSymbolicCounter() override;
@@ -281,7 +285,7 @@ public:
 	static DFA_ptr MakeBinaryRelationDfa(StringFormula::Type type, int bits_per_var, int num_tracks, int left_track, int right_track);
 	static DFA_ptr MakeBinaryAlignedDfa(int left_track, int right_track, int total_tracks);
 	static StringAutomaton_ptr MakePrefixSuffix(int left_track, int prefix_track, int suffix_track, int num_tracks);
-  static StringAutomaton_ptr makeConcatExtraTrack(int left_track, int right_track, int num_tracks, std::string str_constant);
+  static StringAutomaton_ptr MakeConcatExtraTrack(int left_track, int right_track, int num_tracks, std::string str_constant);
 
 
 	static bool IsExepEqualChar(std::vector<char> exep, std::vector<char> cvec, int var);
@@ -307,14 +311,14 @@ protected:
   StringAutomaton_ptr ToQueryAutomaton();
   StringAutomaton_ptr Search(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr RemoveReservedWords();
-  void AddPrintLabel(std::ostream& out) override;
+  virtual void AddPrintLabel(std::ostream& out);
 
 
   int num_tracks_;
   StringFormula_ptr formula_;
   static TransitionTable TRANSITION_TABLE;
   static const int VAR_PER_TRACK = 9;
-  static int DEFAULT_NUM_OF_VARIABLES = 8;
+  static const int DEFAULT_NUM_OF_VARIABLES = 8;
 
 private:
   StringAutomaton();

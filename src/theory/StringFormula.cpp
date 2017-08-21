@@ -36,7 +36,7 @@ StringFormula_ptr StringFormula::clone() const {
 std::string StringFormula::str() const {
   std::stringstream ss;
 
-  for (auto& el : variable_order_map_) {
+  for (auto& el : variable_coefficient_map_) {
     const int coefficient = el.second;
     if (coefficient > 0) {
       ss << "(";
@@ -114,21 +114,21 @@ std::string StringFormula::str() const {
   return ss.str();
 }
 
-Formula_ptr StringFormula::Intersect(Formula_ptr other) {
+StringFormula_ptr StringFormula::Intersect(Formula_ptr other) {
 	StringFormula_ptr intersect_formula = this->clone();
 	intersect_formula->ResetCoefficients(0);
 	intersect_formula->SetType(StringFormula::Type::INTERSECT);
 	return intersect_formula;
 }
 
-Formula_ptr StringFormula::Union(Formula_ptr other) {
+StringFormula_ptr StringFormula::Union(Formula_ptr other) {
 	StringFormula_ptr union_formula = this->clone();
 	union_formula->ResetCoefficients(0);
 	union_formula->SetType(StringFormula::Type::UNION);
 	return union_formula;
 }
 
-Formula_ptr StringFormula::Complement() {
+StringFormula_ptr StringFormula::Complement() {
 	StringFormula_ptr result = this->clone();
 	switch (result->type_) {
 		case StringFormula::Type::EQ:
@@ -172,7 +172,7 @@ void StringFormula::SetConstant(std::string constant) {
 }
 
 bool StringFormula::IsConstant() const {
-  for (const auto& el : variable_order_map_) {
+  for (const auto& el : variable_coefficient_map_) {
     if (el.second != 0) {
       return false;
     }
@@ -220,7 +220,7 @@ bool StringFormula::UpdateMixedConstraintRelations() {
 
 int StringFormula::CountOnes(unsigned long n) const {
   int ones = 0;
-  for (const auto& el : variable_order_map_) {
+  for (const auto& el : variable_coefficient_map_) {
     if (el.second != 0) {
       if (n & 1) {
         ones += el.second;
@@ -232,7 +232,7 @@ int StringFormula::CountOnes(unsigned long n) const {
 }
 
 void StringFormula::MergeVariables(Formula_ptr other) {
-  for (auto& el : other->variable_coefficient_map_) {
+  for (auto& el : other->GetVariableCoefficientMap()) {
     if (variable_coefficient_map_.find(el.first) == variable_coefficient_map_.end()) {
       variable_coefficient_map_[el.first] = 0;
     }
@@ -246,7 +246,7 @@ bool StringFormula::GetVarNamesIfEqualityOfTwoVars(std::string &v1, std::string 
   v1.clear();
   v2.clear();
   int active_vars = 0;
-  for (auto& el : variable_order_map_) {
+  for (auto& el : variable_coefficient_map_) {
     if (el.second != 0) {
       ++active_vars;
       if (el.second == 1) {
@@ -261,6 +261,10 @@ bool StringFormula::GetVarNamesIfEqualityOfTwoVars(std::string &v1, std::string 
   }
 
   return ((active_vars == 2) and !v1.empty() and !v2.empty());
+}
+
+std::ostream& operator<<(std::ostream& os, const StringFormula& formula) {
+  return os << formula.str();
 }
 
 } /* namespace Theory */

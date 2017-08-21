@@ -20,6 +20,7 @@
 #include "../smt/typedefs.h"
 #include "../smt/Visitor.h"
 #include "../theory/StringFormula.h"
+#include "../theory/Formula.h"
 #include "ConstraintInformation.h"
 #include "options/Solver.h"
 #include "SymbolTable.h"

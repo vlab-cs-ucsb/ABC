@@ -22,7 +22,8 @@
 
 #include "Automaton.h"
 #include "UnaryAutomaton.h"
-#include "RelationalStringAutomaton.h"
+#include "StringAutomaton.h"
+#include "BinaryIntAutomaton.h"
 
 
 namespace Vlab {
@@ -44,7 +45,7 @@ public:
   virtual ~IntAutomaton();
 
   virtual IntAutomaton_ptr clone() const;
-  IntAutomaton_ptr MakeAutomaton(DFA_ptr dfa, const int number_of_variables);
+  IntAutomaton_ptr MakeAutomaton(DFA_ptr dfa, Formula_ptr formula, const int number_of_variables);
   static IntAutomaton_ptr makePhi(int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
   static IntAutomaton_ptr makeZero(int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
   static IntAutomaton_ptr makeAnyInt(int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
@@ -104,6 +105,7 @@ public:
   int getAnAcceptingInt();
 
   UnaryAutomaton_ptr toUnaryAutomaton();
+  virtual ArithmeticFormula_ptr GetFormula();
 
   static const int INFINITE;
   static int DEFAULT_NUM_OF_VARIABLES;
@@ -113,7 +115,7 @@ protected:
 
   void decide_counting_schema(Eigen::SparseMatrix<BigInteger>& count_matrix) override;
 
-
+  ArithmeticFormula_ptr formula_;
   bool has_negative_1;
 private:
   static const int VLOG_LEVEL;

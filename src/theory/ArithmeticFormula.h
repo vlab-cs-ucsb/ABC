@@ -19,6 +19,7 @@
 
 #include <glog/logging.h>
 
+#include "Formula.h"
 #include "../smt/ast.h"
 #include "../utils/Math.h"
 
@@ -61,9 +62,11 @@ public:
   ArithmeticFormula_ptr Multiply(int value);
   ArithmeticFormula_ptr negate();
 
-  virtual bool Simplify();
+  bool Simplify() override;
   int CountOnes(unsigned long n) const;
   virtual void MergeVariables(Formula_ptr);
+
+  friend std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula);
 
 protected:
   bool GetVarNamesIfEqualityOfTwoVars(std::string &v1, std::string &v2);

@@ -20,12 +20,16 @@ namespace Theory {
 const int UnaryAutomaton::VLOG_LEVEL = 9;
 
 UnaryAutomaton::UnaryAutomaton(DFA_ptr dfa) :
-      Automaton(Automaton::Type::UNARY, dfa, 1) { }
+      Automaton(Automaton::Type::UNARY, dfa, 1) {
+	formula_ = new ArithmeticFormula();
+}
 
 UnaryAutomaton::UnaryAutomaton(const UnaryAutomaton& other) : Automaton (other) {
+	formula_ = new ArithmeticFormula();
 }
 
 UnaryAutomaton::~UnaryAutomaton() {
+	delete formula_;
 }
 
 UnaryAutomaton_ptr UnaryAutomaton::clone() const {
@@ -41,7 +45,7 @@ UnaryAutomaton_ptr UnaryAutomaton::MakePhi() {
   return non_acception_unary_auto;
 }
 
-UnaryAutomaton_ptr UnaryAutomaton::MakeAutomaton(DFA_ptr dfa, const int number_of_variables) {
+UnaryAutomaton_ptr UnaryAutomaton::MakeAutomaton(DFA_ptr dfa, Formula_ptr formula, const int number_of_variables) {
 	if(number_of_variables != 1) {
 		LOG(FATAL) << "unary auto cannot have more than one variable";
 	}
@@ -241,7 +245,7 @@ IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool ad
   int_dfa = dfaMinimize(temp_dfa);
   dfaFree(temp_dfa);
 
-  int_auto = new IntAutomaton(int_dfa, number_of_variables);
+  int_auto = new IntAutomaton(int_dfa, formula_->clone(), number_of_variables);
 
   if(!has_sink) {
     for(int i = 0; i < int_dfa->ns; i++) {
@@ -272,10 +276,10 @@ BinaryIntAutomaton_ptr UnaryAutomaton::toBinaryIntAutomaton(std::string var_name
   if (add_minus_one) {
     BinaryIntAutomaton_ptr minus_one_auto = nullptr, tmp_auto = nullptr;
     ArithmeticFormula_ptr minus_one_formula = formula->clone();
-    minus_one_formula->reset_coefficients();
-    minus_one_formula->set_variable_coefficient(var_name, 1);
-    minus_one_formula->set_constant(1);
-    minus_one_formula->set_type(ArithmeticFormula::Type::EQ);
+    minus_one_formula->ResetCoefficients();
+    minus_one_formula->SetVariableCoefficient(var_name, 1);
+    minus_one_formula->SetConstant(1);
+    minus_one_formula->SetType(ArithmeticFormula::Type::EQ);
     minus_one_auto = BinaryIntAutomaton::MakeAutomaton(minus_one_formula, false);
     tmp_auto = binary_auto;
     binary_auto = tmp_auto->Union(minus_one_auto);
@@ -283,7 +287,7 @@ BinaryIntAutomaton_ptr UnaryAutomaton::toBinaryIntAutomaton(std::string var_name
     delete minus_one_auto; minus_one_auto = nullptr;
   }
 
-  DVLOG(VLOG_LEVEL)  << binary_auto->getId() << " = [" << this->id_ << "]->toBinaryIntAutomaton(" << var_name << ", " << *binary_auto->get_formula() << ", " << add_minus_one << ")";
+  DVLOG(VLOG_LEVEL)  << binary_auto->getId() << " = [" << this->id_ << "]->toBinaryIntAutomaton(" << var_name << ", " << binary_auto->GetFormula()->str() << ", " << add_minus_one << ")";
 
   return binary_auto;
 }
@@ -334,6 +338,10 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
 
   DVLOG(VLOG_LEVEL)  << result_auto->getId() << " = [" << this->id_ << "]->toStringAutomaton()";
   return result_auto;
+}
+
+ArithmeticFormula_ptr UnaryAutomaton::GetFormula() {
+	return formula_;
 }
 
 void UnaryAutomaton::decide_counting_schema(Eigen::SparseMatrix<BigInteger>& count_matrix) {

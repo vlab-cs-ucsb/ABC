@@ -376,5 +376,9 @@ bool ArithmeticFormula::GetVarNamesIfEqualityOfTwoVars(std::string &v1, std::str
   return ((active_vars == 2) and !v1.empty() and !v2.empty());
 }
 
+std::ostream& operator<<(std::ostream& os, const ArithmeticFormula& formula) {
+  return os << formula.str();
+}
+
 } /* namespace Theory */
 } /* namespace Vlab */

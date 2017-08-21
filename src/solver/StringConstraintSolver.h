@@ -16,9 +16,9 @@
 
 #include "../smt/ast.h"
 #include "../smt/Visitor.h"
-#include "../theory/RelationalStringAutomaton.h"
 #include "../theory/StringAutomaton.h"
 #include "../theory/StringFormula.h"
+#include "../theory/Formula.h"
 #include "AstTraverser.h"
 #include "ConstraintInformation.h"
 #include "StringFormulaGenerator.h"

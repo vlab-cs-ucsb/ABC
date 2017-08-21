@@ -102,9 +102,9 @@ void StringFormulaGenerator::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "post visit start: " << *and_term << "@" << and_term;
 
   auto group_formula = get_group_formula(current_group_);
-  if (group_formula not_eq nullptr and group_formula->get_number_of_variables() > 0) {
+  if (group_formula not_eq nullptr and group_formula->GetNumberOfVariables() > 0) {
     auto formula = group_formula->clone();
-    formula->set_type(StringFormula::Type::INTERSECT);
+    formula->SetType(StringFormula::Type::INTERSECT);
     set_term_formula(and_term, formula);
     term_group_map_[and_term] = current_group_;
     constraint_information_->add_string_constraint(and_term);
@@ -153,9 +153,9 @@ void StringFormulaGenerator::visitOr(Or_ptr or_term) {
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *or_term << "@" << or_term;
   auto group_formula = get_group_formula(current_group_);
-  if (has_string_formula and group_formula not_eq nullptr and group_formula->get_number_of_variables() > 0) {
+  if (has_string_formula and group_formula not_eq nullptr and group_formula->GetNumberOfVariables() > 0) {
     auto formula = group_formula->clone();
-    formula->set_type(StringFormula::Type::UNION);
+    formula->SetType(StringFormula::Type::UNION);
     set_term_formula(or_term, formula);
     term_group_map_[or_term] = current_group_;
     constraint_information_->add_string_constraint(or_term);
@@ -214,7 +214,7 @@ void StringFormulaGenerator::visitMinus(Minus_ptr minus_term) {
 //  auto left_formula = get_term_formula(minus_term->left_term);
 //  auto right_formula = get_term_formula(minus_term->right_term);
 //  auto formula = left_formula->Subtract(right_formula);
-//  formula->set_type(StringFormula::Type::EQ);
+//  formula->SetType(StringFormula::Type::EQ);
 //  delete_term_formula(minus_term->left_term);
 //  delete_term_formula(minus_term->right_term);
 //  set_term_formula(minus_term, formula);
@@ -316,7 +316,7 @@ void StringFormulaGenerator::visitEq(Eq_ptr eq_term) {
 		add_string_variables(current_group_, eq_term);
   } else if (left_formula not_eq nullptr and left_formula->GetNumberOfVariables() > 0) {
     auto formula = left_formula->clone();
-    formula->set_type(StringFormula::Type::NONRELATIONAL);
+    formula->SetType(StringFormula::Type::NONRELATIONAL);
     delete_term_formula(eq_term->left_term);
     set_term_formula(eq_term, formula);
     add_string_variables(current_group_, eq_term);
@@ -324,7 +324,7 @@ void StringFormulaGenerator::visitEq(Eq_ptr eq_term) {
     constraint_information_->add_mixed_constraint(eq_term);
   } else if (right_formula not_eq nullptr and right_formula->GetNumberOfVariables() > 0) {
     auto formula = right_formula->clone();
-    formula->set_type(StringFormula::Type::NONRELATIONAL);
+    formula->SetType(StringFormula::Type::NONRELATIONAL);
     delete_term_formula(eq_term->left_term);
     set_term_formula(eq_term, formula);
     add_string_variables(current_group_, eq_term);
@@ -380,7 +380,7 @@ void StringFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
 		add_string_variables(current_group_, not_eq_term);
 	} else if (left_formula not_eq nullptr and left_formula->GetNumberOfVariables() > 0) {
 		auto formula = left_formula->clone();
-		formula->set_type(StringFormula::Type::NONRELATIONAL);
+		formula->SetType(StringFormula::Type::NONRELATIONAL);
 		delete_term_formula(not_eq_term->left_term);
 		set_term_formula(not_eq_term, formula);
 		add_string_variables(current_group_, not_eq_term);
@@ -388,7 +388,7 @@ void StringFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
 		constraint_information_->add_mixed_constraint(not_eq_term);
 	} else if (right_formula not_eq nullptr and right_formula->GetNumberOfVariables() > 0) {
 		auto formula = right_formula->clone();
-		formula->set_type(StringFormula::Type::NONRELATIONAL);
+		formula->SetType(StringFormula::Type::NONRELATIONAL);
 		delete_term_formula(not_eq_term->left_term);
 		set_term_formula(not_eq_term, formula);
 		add_string_variables(current_group_, not_eq_term);
@@ -457,7 +457,7 @@ void StringFormulaGenerator::visitLen(Len_ptr len_term) {
 //
 //  auto formula = new StringFormula();
 //  formula->add_variable(name, 1);
-//  formula->set_type(StringFormula::Type::VAR);
+//  formula->SetType(StringFormula::Type::VAR);
 //  formula->add_relation_to_mixed_term(name, StringFormula::Type::NONE, len_term);
 //
 //  set_term_formula(len_term, formula);
@@ -474,8 +474,8 @@ void StringFormulaGenerator::visitContains(Contains_ptr contains_term) {
 
   if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
     auto formula = left_formula->clone();
-    formula->merge_variables(right_formula);
-    formula->set_type(StringFormula::Type::NONRELATIONAL);
+    formula->MergeVariables(right_formula);
+    formula->SetType(StringFormula::Type::NONRELATIONAL);
     delete_term_formula(contains_term->subject_term);
     delete_term_formula(contains_term->subject_term);
     set_term_formula(contains_term, formula);
@@ -496,8 +496,8 @@ void StringFormulaGenerator::visitNotContains(NotContains_ptr not_contains_term)
 
   if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
     auto formula = left_formula->clone();
-    formula->merge_variables(right_formula);
-    formula->set_type(StringFormula::Type::NONRELATIONAL);
+    formula->MergeVariables(right_formula);
+    formula->SetType(StringFormula::Type::NONRELATIONAL);
     delete_term_formula(not_contains_term->subject_term);
     delete_term_formula(not_contains_term->subject_term);
     set_term_formula(not_contains_term, formula);
@@ -531,8 +531,8 @@ void StringFormulaGenerator::visitIndexOf(IndexOf_ptr index_of_term) {
 
   if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
     auto formula = left_formula->clone();
-    formula->merge_variables(right_formula);
-    formula->set_type(StringFormula::Type::NONRELATIONAL);
+    formula->MergeVariables(right_formula);
+    formula->SetType(StringFormula::Type::NONRELATIONAL);
     delete_term_formula(index_of_term->subject_term);
     delete_term_formula(index_of_term->subject_term);
     set_term_formula(index_of_term, formula);
@@ -550,8 +550,8 @@ void StringFormulaGenerator::visitLastIndexOf(LastIndexOf_ptr last_index_of_term
 
   if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
     auto formula = left_formula->clone();
-    formula->merge_variables(right_formula);
-    formula->set_type(StringFormula::Type::NONRELATIONAL);
+    formula->MergeVariables(right_formula);
+    formula->SetType(StringFormula::Type::NONRELATIONAL);
     delete_term_formula(last_index_of_term->subject_term);
     delete_term_formula(last_index_of_term->subject_term);
     set_term_formula(last_index_of_term, formula);
@@ -567,7 +567,7 @@ void StringFormulaGenerator::visitCharAt(CharAt_ptr char_at_term) {
   auto left_formula = get_term_formula(char_at_term->subject_term);
   if (left_formula not_eq nullptr) {
     auto formula = left_formula->clone();
-    formula->set_type(StringFormula::Type::NONRELATIONAL);
+    formula->SetType(StringFormula::Type::NONRELATIONAL);
     delete_term_formula(char_at_term->subject_term);
     set_term_formula(char_at_term, formula);
   }
@@ -582,7 +582,7 @@ void StringFormulaGenerator::visitSubString(SubString_ptr sub_string_term) {
   auto left_formula = get_term_formula(sub_string_term->subject_term);
   if (left_formula not_eq nullptr) {
     auto formula = left_formula->clone();
-    formula->set_type(StringFormula::Type::NONRELATIONAL);
+    formula->SetType(StringFormula::Type::NONRELATIONAL);
     delete_term_formula(sub_string_term->subject_term);
     set_term_formula(sub_string_term, formula);
   }
@@ -609,7 +609,7 @@ void StringFormulaGenerator::visitToInt(ToInt_ptr to_int_term) {
 //
 //  auto formula = new StringFormula();
 //  formula->add_variable(name, 1);
-//  formula->set_type(StringFormula::Type::VAR);
+//  formula->SetType(StringFormula::Type::VAR);
 //  formula->add_relation_to_mixed_term(name, StringFormula::Type::NONE, to_int_term);
 //
 //  set_term_formula(to_int_term, formula);
@@ -659,8 +659,8 @@ void StringFormulaGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   Variable_ptr variable = symbol_table_->get_variable(qi_term->getVarName());
   if (Variable::Type::STRING == variable->getType()) {
     auto formula = new StringFormula();
-    formula->add_variable(variable->getName(), 1);
-    formula->set_type(StringFormula::Type::VAR);
+    formula->AddVariable(variable->getName(), 1);
+    formula->SetType(StringFormula::Type::VAR);
     set_term_formula(qi_term, formula);
   }
 }
@@ -671,15 +671,15 @@ void StringFormulaGenerator::visitTermConstant(TermConstant_ptr term_constant) {
   switch (term_constant->getValueType()) {
     case Primitive::Type::STRING: {
       auto formula = new StringFormula();
-      formula->set_type(StringFormula::Type::STRING_CONSTANT);
-      formula->set_constant(term_constant->getValue());
+      formula->SetType(StringFormula::Type::STRING_CONSTANT);
+      formula->SetConstant(term_constant->getValue());
       set_term_formula(term_constant, formula);
       break;
     }
     case Primitive::Type::REGEX: {
       auto formula = new StringFormula();
-      formula->set_type(StringFormula::Type::REGEX_CONSTANT);
-      formula->set_constant(term_constant->getValue());
+      formula->SetType(StringFormula::Type::REGEX_CONSTANT);
+      formula->SetConstant(term_constant->getValue());
       set_term_formula(term_constant, formula);
       break;
     }
@@ -782,15 +782,15 @@ void StringFormulaGenerator::add_string_variables(std::string group_name, Term_p
     group_formula = it->second;
   }
   auto formula = get_term_formula(term);
-  group_formula->merge_variables(formula);
+  group_formula->MergeVariables(formula);
   // TODO if there is an or we need to add single variables into one group, uncomment above
   // line and remove the same line from else branch.
   // find a way to optimize that, if all constraints are nonrelational, we only need that
   // if we have disjunction
-  if (StringFormula::Type::NONRELATIONAL == formula->get_type()) {
+  if (StringFormula::Type::NONRELATIONAL == formula->GetType()) {
     clear_term_formula(term);
   } else {
-//    group_formula->merge_variables(formula);
+//    group_formula->MergeVariables(formula);
     term_group_map_[term] = group_name;
   }
 }
@@ -814,13 +814,13 @@ void StringFormulaGenerator::delete_term_formula(Term_ptr term) {
 void StringFormulaGenerator::set_group_mappings() {
   DVLOG(VLOG_LEVEL)<< "start setting string group for components";
   for (auto& el : term_group_map_) {
-    term_formula_[el.first]->merge_variables(group_formula_[el.second]);
+    term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
   }
   // add a variable entry to symbol table for each group
   // define a variable mapping for a group
   for (auto& el : group_formula_) {
     symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
-    for (const auto& var_entry : el.second->get_variable_coefficient_map()) {
+    for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
       symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
     }
   }

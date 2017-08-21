@@ -37,8 +37,6 @@ libabcautomaton_la_SOURCES = \
 	StringAutomaton.h \
 	BinaryIntAutomaton.cpp \
 	BinaryIntAutomaton.h \
-	RelationalStringAutomaton.cpp \
-	RelationalStringAutomaton.h \
 	SymbolicCounter.cpp \
 	SymbolicCounter.h
 	
