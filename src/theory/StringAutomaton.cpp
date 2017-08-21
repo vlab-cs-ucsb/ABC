@@ -2,7 +2,7 @@
  * StringAutomaton.cpp
  *
  *  Created on: Aug 14, 2017
- *      Author: will
+ *      Author: Baki,Will
  */
 
 #include "StringAutomaton.h"
@@ -430,11 +430,6 @@ StringAutomaton_ptr StringAutomaton::MakeNotBegins(StringFormula_ptr formula) {
 	LOG(FATAL) << "IMPLEMENT ME";
 }
 
-StringAutomaton_ptr StringAutomaton::MakeConcatExtraTrack(
-		StringFormula_ptr formula) {
-	LOG(FATAL) << "IMPLEMENT ME";
-}
-
 StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
   StringAutomaton_ptr equality_auto = nullptr;
 	int num_tracks = formula->GetNumberOfVariables();
@@ -565,7 +560,8 @@ StringAutomaton_ptr StringAutomaton::Complement() {
 StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
 	// if both autos are same size, we're good. Otherwise, if one auto has one track
 	// put it in a multi-track with the correct track.
-	if(this->num_tracks_ != other_auto->num_tracks_) {
+	
+  if(this->num_tracks_ != other_auto->num_tracks_) {
 		StringAutomaton_ptr small_auto, big_auto;
 		if(this->num_tracks_ == 1 && other_auto->num_tracks_ != 1 && !this->formula_->IsConstant()) {
 			small_auto = this;

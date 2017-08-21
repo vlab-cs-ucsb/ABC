@@ -34,5 +34,6 @@ Tasks:
 
 
 
-StringAutomaton and Formulas:
-1. Need to modify non-relational functions so that formula are propagated correctly
+StringAutomaton and Formulas - Tasks:
+0. Every StringAutomaton should have a non-null StringFormula (even if basic StringFormula)
+1. Make sure all non-relational StringAutomaton methods correctly implement task 0.
