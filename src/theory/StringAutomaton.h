@@ -288,7 +288,6 @@ public:
 	static bool IsExepIncludeChar(std::vector<char> exep, std::vector<char> cvec, int var);
 
 	static DFA_ptr PrependLambda(DFA_ptr dfa, int var);
-	static DFA_ptr AppendLambda(DFA_ptr dfa, int var);
 	static DFA_ptr TrimLambdaPrefix(DFA_ptr dfa, int var, bool project_bit = true);
 	static DFA_ptr TrimLambdaSuffix(DFA_ptr dfa, int var, bool project_bit = true);
 	static DFA_ptr TrimPrefix(DFA_ptr subject_dfa, DFA_ptr trim_dfa, int var);
