@@ -350,16 +350,12 @@ StringAutomaton_ptr StringAutomaton::Closure() {
 }
 
 StringAutomaton_ptr StringAutomaton::KleeneClosure() {
-  StringAutomaton_ptr kleene_closure_auto = nullptr, closure_auto = nullptr, empty_string = nullptr;
-
-  closure_auto = this->Closure();
-  empty_string = StringAutomaton::MakeEmptyString();
-  kleene_closure_auto = static_cast<StringAutomaton_ptr>(closure_auto->Union(empty_string));
+  StringAutomaton_ptr closure_auto = this->Closure();
+  StringAutomaton_ptr empty_string = StringAutomaton::MakeEmptyString();
+  StringAutomaton_ptr kleene_closure_auto = static_cast<StringAutomaton_ptr>(closure_auto->Union(empty_string));
   delete closure_auto;
   delete empty_string;
-
-  DVLOG(VLOG_LEVEL) << kleene_closure_auto->id_ << " = [" << this->id_ << "]->kleeneClosure()";
-
+  DVLOG(VLOG_LEVEL) << kleene_closure_auto->id_ << " = [" << this->id_ << "]->KleeneClosure()";
   return kleene_closure_auto;
 }
 
@@ -404,146 +400,15 @@ StringAutomaton_ptr StringAutomaton::Repeat(unsigned min, unsigned max) {
   return repeated_auto;
 }
 
-StringAutomaton_ptr StringAutomaton::suffixes() {
-  StringAutomaton_ptr suffixes_auto = nullptr;
-
-  if (this->IsEmptyLanguage()) {
-    suffixes_auto = StringAutomaton::MakePhi();
-    DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->suffixes()";
-    return suffixes_auto;
-  }
-
-  int number_of_variables = this->num_of_bdd_variables_,
-          number_of_states = this->dfa_->ns,
-          sink_state = this->GetSinkState(),
-          next_state = -1;
-
-  unsigned max = number_of_states;
-  if (sink_state != -1) {
-    max = max - 1;
-  }
-
-  // if number of variables are too large for mona, implement an algorithm that find suffixes by finding
-  // sub suffixes and union them
-  number_of_variables = this->num_of_bdd_variables_ + std::ceil(std::log2(max)); // number of variables required
-  int* indices = GetBddVariableIndices(number_of_variables);
-  char* statuses = new char[number_of_states + 1];
-  unsigned extra_bits_value = 0;
-  int number_of_extra_bits_needed = number_of_variables - this->num_of_bdd_variables_;
-
-  std::vector<char>* current_exception = nullptr;
-  std::map<int, std::map<std::vector<char>*, int>> exception_map;
-
-  paths state_paths = nullptr, pp = nullptr;
-  trace_descr tp = nullptr;
-
-  for (int s = 0; s < number_of_states; s++) {
-    if (s != sink_state) {
-      exception_map[s]; // initialize map entry
-      state_paths = pp = make_paths(this->dfa_->bddm, this->dfa_->q[s]);
-      while (pp) {
-        if (pp->to != (unsigned)sink_state) {
-          current_exception = new std::vector<char>();
-          for (int j = 0; j < this->num_of_bdd_variables_; j++) {
-            for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
-            if (tp) {
-              if (tp->value) {
-                current_exception->push_back('1');
-              } else {
-                current_exception->push_back('0');
-              }
-            } else {
-              current_exception->push_back('X');
-            }
-          }
-
-
-          exception_map[s][current_exception] = pp->to;
-          current_exception = nullptr;
-        }
-        tp = nullptr;
-        pp = pp->next;
-      }
-
-      kill_paths(state_paths);
-      state_paths = pp = nullptr;
-      // add to start state by adding extra bits
-      if (s != this->dfa_->s) {
-        ++extra_bits_value;
-        auto extra_bit_binary_format = GetBinaryFormat(extra_bits_value, number_of_extra_bits_needed);
-        for (auto& exceptions : exception_map[s]) {
-          current_exception = new std::vector<char>();
-          current_exception->insert(current_exception->begin(), exceptions.first->begin(), exceptions.first->end());
-          for (int i = 0; i < number_of_extra_bits_needed; i++) {
-            current_exception->push_back(extra_bit_binary_format[i]); // new transitions for start state
-            exceptions.first->push_back('0'); // default transitions have all zero's in extrabits
-          }
-          current_exception->push_back('\0');
-          exceptions.first->push_back('\0');
-          exception_map[this->dfa_->s][current_exception] = exceptions.second;
-          current_exception = nullptr;
-        }
-      } else {
-        // initial state default transitions' extra bits extended with all zeros
-        for (auto& exceptions : exception_map[this->dfa_->s]) {
-          for (int i = 0; i < number_of_extra_bits_needed; i++) {
-            exceptions.first->push_back('0'); // default transitions have all zero's in extrabits
-          }
-          exceptions.first->push_back('\0');
-        }
-      }
-    }
-  }
-
-  dfaSetup(number_of_states, number_of_variables, indices);
-  for (int s = 0; s < number_of_states; s++) {
-    statuses[s] = '-';
-    if (s != sink_state) {
-      statuses[s] = '-'; // initially
-      dfaAllocExceptions(exception_map[s].size());
-      for (auto it = exception_map[s].begin(); it != exception_map[s].end();) {
-        dfaStoreException(it->second, &*it->first->begin());
-        current_exception = it->first;
-        it = exception_map[s].erase(it);
-        delete current_exception;
-      }
-      dfaStoreState(sink_state);
-      current_exception = nullptr;
-      if (IsAcceptingState(s)) {
-        statuses[s] = '+';
-      }
-    } else {
-      dfaAllocExceptions(0);
-      dfaStoreState(s);
-    }
-  }
-
-  statuses[number_of_states] = '\0';
-  DFA_ptr result_dfa = dfaBuild(statuses);
-  delete[] indices;
-  delete[] statuses;
-  suffixes_auto = new StringAutomaton(dfaMinimize(result_dfa), number_of_variables);
-  dfaFree(result_dfa); result_dfa = nullptr;
-
-  while (number_of_extra_bits_needed > 0) {
-    suffixes_auto->ProjectAway((unsigned)(suffixes_auto->num_of_bdd_variables_ - 1));
-    suffixes_auto->Minimize();
-    number_of_extra_bits_needed--;
-  }
-
-  DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->suffixes()";
-  return suffixes_auto;
-}
-
 StringAutomaton_ptr StringAutomaton::suffixesAtIndex(int index) {
-  return suffixesFromTo(index, index);
+  return SuffixesFromTo(index, index);
 }
 
 StringAutomaton_ptr StringAutomaton::suffixesFromIndex(int start){
-  return suffixesFromTo(start, this->dfa_->ns);
+  return SuffixesFromTo(start, this->dfa_->ns);
 }
 
-StringAutomaton_ptr StringAutomaton::suffixesFromTo(int start, int end) {
+StringAutomaton_ptr StringAutomaton::SuffixesFromTo(int start, int end) {
   StringAutomaton_ptr suffixes_auto = nullptr;
 
   if (this->IsEmptyLanguage()) {
@@ -552,7 +417,7 @@ StringAutomaton_ptr StringAutomaton::suffixesFromTo(int start, int end) {
     return suffixes_auto;
   }
 
-  std::set<int> suffixes_from = getStatesReachableBy(start, end);
+  std::set<int> suffixes_from = GetStatesReachableBy(start, end);
   unsigned max = suffixes_from.size();
   if (max == 0) {
     suffixes_auto = StringAutomaton::MakePhi();
@@ -734,7 +599,7 @@ StringAutomaton_ptr StringAutomaton::prefixesAtIndex(int index){
 StringAutomaton_ptr StringAutomaton::subStrings() {
   StringAutomaton_ptr suffixes_auto = nullptr, sub_strings_auto = nullptr;
 
-  suffixes_auto = this->suffixes();
+  suffixes_auto = this->Suffixes();
   sub_strings_auto = suffixes_auto->prefixes();
   delete suffixes_auto; suffixes_auto = nullptr;
 
@@ -750,7 +615,7 @@ StringAutomaton_ptr StringAutomaton::CharAt(const int index) {
     return charat_auto;
   }
 
-  std::set<int> states_at_index = getStatesReachableBy(index);
+  std::set<int> states_at_index = GetStatesReachableBy(index);
   unsigned max = states_at_index.size();
   if (max == 0) {
     auto charat_auto = StringAutomaton::MakePhi();

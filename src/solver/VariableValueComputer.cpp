@@ -818,7 +818,7 @@ void VariableValueComputer::visitEnds(Ends_ptr ends_term) {
     child_value = term_value->clone();
   } else {
     Value_ptr child_post_value = getTermPostImage(child_term);
-    Theory::StringAutomaton_ptr suffixes_auto = term_value->getStringAutomaton()->suffixes();
+    Theory::StringAutomaton_ptr suffixes_auto = term_value->getStringAutomaton()->Suffixes();
     child_value = new Value(child_post_value->getStringAutomaton()->intersect(suffixes_auto));
     delete suffixes_auto; suffixes_auto = nullptr;
   }
@@ -844,7 +844,7 @@ void VariableValueComputer::visitNotEnds(NotEnds_ptr not_ends_term) {
   } else {
     Value_ptr child_post_value = getTermPostImage(child_term);
     if (term_value->isSingleValue()) {
-      Theory::StringAutomaton_ptr suffixes_auto = term_value->getStringAutomaton()->suffixes();
+      Theory::StringAutomaton_ptr suffixes_auto = term_value->getStringAutomaton()->Suffixes();
       child_value = new Value(child_post_value->getStringAutomaton()->difference(suffixes_auto));
       delete suffixes_auto; suffixes_auto = nullptr;
     } else {

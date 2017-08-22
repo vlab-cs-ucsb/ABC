@@ -192,6 +192,172 @@ Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
   return concat_auto;
 }
 
+Automaton_ptr Automaton::Suffixes() {
+  if (this->IsEmptyLanguage()) {
+    DFA_ptr phi = Automaton::DFAMakePhi(this->num_of_bdd_variables_);
+    Automaton_ptr suffixes_auto = this->MakeAutomaton(phi, this->num_of_bdd_variables_);
+    DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->Suffixes()";
+    return suffixes_auto;
+  }
+
+  const int number_of_states = this->dfa_->ns;
+  const int sink_state = this->GetSinkState();
+
+  unsigned max = number_of_states;
+  if (sink_state != -1) {
+    max = max - 1;
+  }
+
+  // if number of variables are too large for mona, implement an algorithm that find suffixes by finding
+  // sub suffixes and union them
+  int number_of_variables = this->num_of_bdd_variables_ + std::ceil(std::log2(max)); // number of variables required
+  const int number_of_extra_bits_needed = number_of_variables - this->num_of_bdd_variables_;
+  std::string default_extra_bit_string(number_of_extra_bits_needed, '0');
+  unsigned extra_bits_value = 0;
+
+  std::map<int, std::map<std::string, int>> exception_map;
+
+  int* indices = GetBddVariableIndices(number_of_variables);
+  char* statuses = new char[number_of_states];
+  for (int s = 0; s < number_of_states; ++s) {
+    if (s != sink_state) {
+      std::unordered_map<std::string, int> transition_map = Automaton::DFAGetTransitionsFrom(dfa_, s, num_of_bdd_variables_, default_extra_bit_string);
+      exception_map[s] = transition_map;
+
+      // add to start state by adding extra bits
+      if (s != this->dfa_->s) {
+        ++extra_bits_value;
+        std::string extra_bit_binary_format = GetBinaryStringMSB(extra_bits_value, number_of_extra_bits_needed);
+        for (auto& transition_map : exception_map[s]) {
+          std::string current_transition = transition_map.first;
+          current_transition.replace(current_transition.end() - (number_of_extra_bits_needed + 1), current_transition.end(), extra_bit_binary_format);
+          exception_map[this->dfa_->s][current_transition] = transition_map.second;
+        }
+      }
+    }
+  }
+
+  dfaSetup(number_of_states, number_of_variables, indices);
+  for (int s = 0; s < number_of_states; ++s) {
+    statuses[s] = '-';
+    if (s != sink_state) {
+      dfaAllocExceptions(exception_map[s].size());
+      for (auto& transition : exception_map[s]) {
+        dfaStoreException(transition.second, const_cast<char*>(transition.first.data()));
+      }
+      dfaStoreState(sink_state);
+      if (this->IsAcceptingState(s)) {
+        statuses[s] = '+';
+      }
+    } else {
+      dfaAllocExceptions(0);
+      dfaStoreState(s);
+    }
+  }
+
+  DFA_ptr result_dfa = dfaBuild(statuses);
+  delete[] statuses;
+  Automaton_ptr suffixes_auto = this->MakeAutomaton(dfaMinimize(result_dfa), number_of_variables);
+  dfaFree(result_dfa);
+
+  while (number_of_extra_bits_needed-- > 0) {
+    suffixes_auto->ProjectAway((unsigned)(suffixes_auto->num_of_bdd_variables_ - 1));
+    suffixes_auto->Minimize();
+  }
+
+  DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->Suffixes()";
+  return suffixes_auto;
+}
+
+Automaton_ptr Automaton::SuffixesFromTo(const int start, const int end) {
+  std::unordered_set<int> suffixes_from = this->GetStatesReachableBy(start, end);
+  unsigned max = suffixes_from.size();
+  if (max == 0) {
+    DFA_ptr phi = Automaton::DFAMakePhi(this->num_of_bdd_variables_);
+    Automaton_ptr suffixes_auto = this->MakeAutomaton(phi, this->num_of_bdd_variables_);
+    DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->SuffixesFromTo(" << start << ", " << end << ")";
+    return suffixes_auto;
+  }
+
+  if (max == 1) {
+    max = 2; // that will increase the number_of_variables by 1, by doing so we get a perfectly minimized auto at the end
+  }
+
+  // if number of variables are too large for mona, implement an algorithm that find suffixes by finding
+  // sub suffixes and union them
+  const int number_of_variables = this->num_of_bdd_variables_ + std::ceil(std::log2(max));
+  const int number_of_states = this->dfa_->ns + 1; // one extra start for the new start state
+  int sink_state = this->GetSinkState();
+
+  int* indices = GetBddVariableIndices(number_of_variables);
+  char* statuses = new char[number_of_states];
+  unsigned extra_bits_value = 0;
+
+  const int number_of_extra_bits_needed = number_of_variables - this->num_of_bdd_variables_;
+  std::string default_extra_bit_string(number_of_extra_bits_needed, '0');
+
+  std::map<int, std::map<std::string, int>> exception_map;
+
+  for (int s = 0; s < this->dfa_->ns; ++s) {
+    if (s != sink_state) {
+      int state_id = s + 1; // there is a new start state, old states are off by one
+      std::unordered_map<std::string, int> transition_map = Automaton::DFAGetTransitionsFrom(dfa_, s, num_of_bdd_variables_, default_extra_bit_string);
+      exception_map[state_id] = transition_map;
+      // add to start state by adding extra bits
+      if (suffixes_from.find(s) != suffixes_from.end()) {
+        std::string extra_bit_binary_format = GetBinaryStringMSB(extra_bits_value, number_of_extra_bits_needed);
+        for (auto& transition_map : exception_map[state_id]) {
+          transition_map.second = transition_map.second + 1; // new shifted state that are off by one
+          std::string current_transition = transition_map.first;
+          current_transition.replace(current_transition.end() - (number_of_extra_bits_needed + 1), current_transition.end(), extra_bit_binary_format);
+          exception_map[0][current_transition] = transition_map.second; // new start state to new shifted state that are off by one
+        }
+        ++extra_bits_value;
+      } else {
+        for (auto& transition_map : exception_map[state_id]) {
+          transition_map.second = transition_map.second + 1; // new shifted state that are off by one
+        }
+      }
+    }
+  }
+
+  if (sink_state != -1) {
+    ++sink_state; // old states are off by one
+  }
+
+  dfaSetup(number_of_states, number_of_variables, indices);
+  for (int s = 0; s < number_of_states; ++s) {
+    statuses[s] = '-';
+    if (s != sink_state) {
+      int old_state = s - 1;
+      dfaAllocExceptions(exception_map[s].size());
+      for (auto& transition : exception_map[s]) {
+        dfaStoreException(transition.second, const_cast<char*>(transition.first.data()));
+      }
+      dfaStoreState(sink_state);
+      if (old_state > -1 and this->IsAcceptingState(old_state)) {
+        statuses[s] = '+';
+      }
+    } else {
+      dfaAllocExceptions(0);
+      dfaStoreState(s);
+    }
+  }
+
+  DFA_ptr result_dfa = dfaBuild(statuses);
+  delete[] statuses;
+  Automaton_ptr suffixes_auto = this->MakeAutomaton(dfaMinimize(result_dfa), number_of_variables);
+  dfaFree(result_dfa);
+
+  while (number_of_extra_bits_needed-- > 0) {
+    suffixes_auto->ProjectAway((unsigned)(suffixes_auto->num_of_bdd_variables_ - 1));
+    suffixes_auto->Minimize();
+  }
+
+  DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->SuffixesFromTo(" << start << ", " << end << ")";
+  return suffixes_auto;
+}
+
 bool Automaton::isCyclic() {
   bool result = false;
   std::map<int, bool> is_discovered;
@@ -625,10 +791,10 @@ DFA_ptr Automaton::DFAProjectAway(const DFA_ptr dfa, const int index) {
 
 DFA_ptr Automaton::DFAProjectAwayAndReMap(const DFA_ptr dfa, const int number_of_bdd_variables, const int index) {
   DFA_ptr projected_dfa = dfaProject(dfa, (unsigned)index);
-  if (index < (unsigned)(number_of_bdd_variables - 1)) {
+  if (index < (number_of_bdd_variables - 1)) {
     int* indices_map = new int[number_of_bdd_variables];
-    for (int i = 0, j = 0; i < number_of_bdd_variables; i++) {
-      if ((unsigned)i != index) {
+    for (int i = 0, j = 0; i < number_of_bdd_variables; ++i) {
+      if (i != index) {
         indices_map[i] = j;
         j++;
       }
@@ -1159,29 +1325,53 @@ void Automaton::Minimize() {
   DFA_ptr tmp = this->dfa_;
   this->dfa_ = dfaMinimize(tmp);
   dfaFree(tmp);
-  DVLOG(VLOG_LEVEL) << this->id_ << " = [" << this->id_ << "]->minimize()";
+  DVLOG(VLOG_LEVEL) << this->id_ << " = [" << this->id_ << "]->Minimize()";
 }
 
-void Automaton::ProjectAway(unsigned index) {
+void Automaton::ProjectAway(const int index) {
   DFA_ptr tmp = this->dfa_;
-  this->dfa_ = dfaProject(tmp, index);
+  this->dfa_ = DFAProjectAway(tmp, index);
   dfaFree(tmp);
+  this->num_of_bdd_variables_ = this->num_of_bdd_variables_ - 1;
+  DVLOG(VLOG_LEVEL) << this->id_ << " = [" << this->id_ << "]->ProjectAway(" << index << ")";
+}
 
-  if (index < (unsigned)(this->num_of_bdd_variables_ - 1)) {
-    int* indices_map = new int[this->num_of_bdd_variables_];
-    for (int i = 0, j = 0; i < this->num_of_bdd_variables_; i++) {
-      if ((unsigned)i != index) {
-        indices_map[i] = j;
-        j++;
+void Automaton::ProjectAwayAndReMap(const int index) {
+  DFA_ptr tmp = this->dfa_;
+  this->dfa_ = DFAProjectAwayAndReMap(tmp, this->num_of_bdd_variables_, index);
+  dfaFree(tmp);
+  this->num_of_bdd_variables_ = this->num_of_bdd_variables_ - 1;
+  DVLOG(VLOG_LEVEL) << this->id_ << " = [" << this->id_ << "]->ProjectAwayAndReMap(" << index << ")";
+}
+
+std::unordered_set<int> Automaton::GetStatesReachableBy(int walk) {
+  return GetStatesReachableBy(walk, walk);
+}
+
+std::unordered_set<int> Automaton::GetStatesReachableBy(int min_walk, int max_walk) {
+  std::unordered_set<int> states;
+
+  std::stack<std::pair<int, int>> state_stack;
+  int sink_state = this->GetSinkState();
+  if (sink_state != this->dfa_->s) {
+    state_stack.push(std::make_pair(this->dfa_->s, 0));
+  }
+  while (not state_stack.empty()) {
+    auto current = state_stack.top(); state_stack.pop();
+
+    if (current.second >= min_walk and current.second <= max_walk) {
+      states.insert(current.first);
+    }
+
+    if (current.second < max_walk) {
+      for (auto next_state : getNextStates(current.first)) {
+        if (sink_state != next_state) {
+          state_stack.push(std::make_pair(next_state, current.second + 1));
+        }
       }
     }
-    dfaReplaceIndices(this->dfa_, indices_map);
-    delete[] indices_map;
   }
-
-  this->num_of_bdd_variables_ = this->num_of_bdd_variables_ - 1;
-
-  DVLOG(VLOG_LEVEL) << this->id_ << " = [" << this->id_ << "]->project(" << index << ")";
+  return states;
 }
 
 bool Automaton::hasIncomingTransition(int state) {
@@ -1343,36 +1533,6 @@ std::vector<NextState> Automaton::getNextStatesOrdered(int state, std::function<
   }
 
   return next_states;
-}
-
-std::set<int> Automaton::getStatesReachableBy(int walk) {
-  return getStatesReachableBy(walk, walk);
-}
-
-std::set<int> Automaton::getStatesReachableBy(int min_walk, int max_walk) {
-  std::set<int> states;
-
-  std::stack<std::pair<int, int>> state_stack;
-  int sink_state = GetSinkState();
-  if (sink_state != this->dfa_->s) {
-    state_stack.push(std::make_pair(this->dfa_->s, 0));
-  }
-  while (not state_stack.empty()) {
-    auto current = state_stack.top(); state_stack.pop();
-
-    if (current.second >= min_walk and current.second <= max_walk) {
-      states.insert(current.first);
-    }
-
-    if (current.second < max_walk) {
-      for (auto next_state : getNextStates(current.first)) {
-        if (sink_state != next_state) {
-          state_stack.push(std::make_pair(next_state, current.second + 1));
-        }
-      }
-    }
-  }
-  return states;
 }
 
 void Automaton::SetSymbolicCounter() {

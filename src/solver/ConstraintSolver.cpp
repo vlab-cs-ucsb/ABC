@@ -760,7 +760,7 @@ void ConstraintSolver::visitNotEnds(NotEnds_ptr not_ends_term) {
     delete ends_auto;
     ends_auto = nullptr;
   } else if (param_subject->isSingleValue()) {
-    Theory::StringAutomaton_ptr suffixes_auto = param_subject->getStringAutomaton()->suffixes();
+    Theory::StringAutomaton_ptr suffixes_auto = param_subject->getStringAutomaton()->Suffixes();
     Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->difference(suffixes_auto);
     delete suffixes_auto;
     suffixes_auto = nullptr;

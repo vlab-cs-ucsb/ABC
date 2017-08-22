@@ -78,13 +78,13 @@ public:
   int get_number_of_bdd_variables();
 
   /**
-   * Checks if an automaton accepts nothing
+   * Checks if an automaton accepts nothing.
    * @return
    */
   bool IsEmptyLanguage() const;
 
   /**
-   * Checks if only the initial state is accepting and any input is rejected
+   * Checks if only the initial state is accepting and any input is rejected.
    * @return
    */
   bool IsOnlyAcceptingEmptyInput() const;
@@ -96,28 +96,28 @@ public:
   bool IsInitialStateAccepting() const;
 
   /**
-   * Checks if the given state is an accepting state
+   * Checks if the given state is an accepting state.
    * @param state_id
    * @return
    */
   bool IsAcceptingState(const int state_id) const;
 
   /**
-   * Checks if the given state is the initial state
+   * Checks if the given state is the initial state.
    * @param state_id
    * @return
    */
   bool IsInitialState(const int state_id) const;
 
   /**
-   * Checks if the given state is a sink state
+   * Checks if the given state is a sink state.
    * @param state_id
    * @return
    */
   bool IsSinkState(const int state_id) const;
 
   /**
-   * Checks if there is a one direct transtion from a given state to a given state
+   * Checks if there is a one direct transtion from a given state to a given state.
    * @param from_state
    * @param to_state
    * @return
@@ -125,26 +125,26 @@ public:
   bool IsOneStepAway(const int from_state, const int to_state) const;
 
   /**
-   * Checks if the current automaton accepts the same language with the other automaton
+   * Checks if the current automaton accepts the same language with the other automaton.
    * @param other_auto
    * @return
    */
   bool IsEqual(const Automaton_ptr other_automaton) const;
 
   /**
-   * Gets the initial state id
+   * Gets the initial state id.
    * @return
    */
   int GetInitialState() const;
 
   /**
-   * Gets the sink state
+   * Gets the sink state.
    * @return
    */
   int GetSinkState() const;
 
   /**
-   * Generates a specific type of automaton that wraps dfa instance
+   * Generates a specific type of automaton that wraps dfa instance.
    * @param dfa
    * @param number_of_variables
    * @return
@@ -158,21 +158,21 @@ public:
   virtual Automaton_ptr Complement();
 
   /**
-   * Generates an automaton that is the result of union product of the two automata
+   * Generates an automaton that is the result of union product of the two automata.
    * @param other_automaton
    * @return
    */
   virtual Automaton_ptr Union(Automaton_ptr other_automaton);
 
   /**
-   * Generates an automaton that is the result of intersection product of the two automata
+   * Generates an automaton that is the result of intersection product of the two automata.
    * @param other_automaton
    * @return
    */
   virtual Automaton_ptr Intersect(Automaton_ptr other_automaton);
 
   /**
-   * Generates an automaton that accept strings accepted by the current automaton but not by the other automaton
+   * Generates an automaton that accept strings accepted by the current automaton but not by the other automaton.
    * @param other_automaton
    * @return
    */
@@ -180,11 +180,26 @@ public:
 
   /**
    * TODO Fix empty string bug that happens in case (concat /.{0,1}/ /{1,1}/)
-   * Generates an automaton that is the concatenation of the current automaton with the other automaton
+   * Generates an automaton that is the concatenation of the current automaton with the other automaton.
    * @param other_automaton
    * @return
    */
   virtual Automaton_ptr Concat(Automaton_ptr other_automaton);
+
+  /**
+   * Generates an automaton that accepts suffixes of the strings accepted by the current automaton.
+   * @return
+   */
+  virtual Automaton_ptr Suffixes();
+
+  /**
+   * TODO fix comment
+   * Generates an automaton that accepts suffixes at indices between start and end (inclusive) of the strings accepted by the current automaton.
+   * @param start
+   * @param end
+   * @return
+   */
+  virtual Automaton_ptr SuffixesFromTo(const int start, const int end);
 
   bool isCyclic();
   bool isInCycle(int state);
@@ -456,11 +471,38 @@ protected:
 
   // TODO return string instead of vector<char>
   static std::vector<char> getReservedWord(char last_char, int length, bool extra_bit = false);
-  // todo baki left here, implement Minimize project using dfa versions and use them in all non dfa functions
+
+  /**
+   * Minimizes the automaton
+   */
   void Minimize();
-  void ProjectAway(unsigned index);
 
+  /**
+   * Projects away the bdd variable at given index
+   * @param index
+   */
+  void ProjectAway(const int index);
 
+  /**
+   * Projects away the bdd variable at given index and re assigns the index nummbers
+   * @param index
+   */
+  void ProjectAwayAndReMap(const int index);
+
+  /**
+   * Gets the set of states that are reachable from start state at most in the given amount of steps.
+   * @param walk
+   * @return
+   */
+  std::unordered_set<int> GetStatesReachableBy(int walk);
+
+  /**
+   * Gets the set of states that are reachable from start state by a number of step that is between the given amount of steps.
+   * @param min_walk
+   * @param max_walk
+   * @return
+   */
+  std::unordered_set<int> GetStatesReachableBy(int min_walk, int max_walk);
 
 
   bool hasIncomingTransition(int state);
@@ -470,8 +512,6 @@ protected:
   int getNextState(int state, std::vector<char>& exception);
   std::set<int> getNextStates(int state);
   std::vector<NextState> getNextStatesOrdered(int state, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
-  std::set<int> getStatesReachableBy(int walk);
-  std::set<int> getStatesReachableBy(int min_walk, int max_walk);
   bool getAnAcceptingWord(NextState& state, std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
 
   virtual void SetSymbolicCounter();

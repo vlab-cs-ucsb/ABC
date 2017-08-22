@@ -200,7 +200,8 @@ public:
    */
   StringAutomaton_ptr Repeat(unsigned min);
 
-  /**Generates a string automaton that accepts the strings accepted by the current automaton repated by some number between the given numbers.
+  /**
+   * Generates a string automaton that accepts the strings accepted by the current automaton repated by some number between the given numbers.
    * This operation corresponds to '{n,m} operation in regular expression literals.
    * @param min
    * @param max
@@ -208,10 +209,9 @@ public:
    */
   StringAutomaton_ptr Repeat(unsigned min, unsigned max);
 
-  StringAutomaton_ptr suffixes();
+  // todo baki left here, moving to automaton until charat
   StringAutomaton_ptr suffixesAtIndex(int index);
   StringAutomaton_ptr suffixesFromIndex(int start);
-  StringAutomaton_ptr suffixesFromTo(int start, int end);
   StringAutomaton_ptr prefixes();
   StringAutomaton_ptr prefixesUntilIndex(int end);
   StringAutomaton_ptr prefixesAtIndex(int index);
