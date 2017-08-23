@@ -143,7 +143,7 @@ MultiTrackAutomaton::~MultiTrackAutomaton() {
   	delete relation;
 }
 
-MultiTrackAutomaton_ptr MultiTrackAutomaton::clone() const {
+MultiTrackAutomaton_ptr MultiTrackAutomaton::Clone() const {
 	MultiTrackAutomaton_ptr cloned_auto = new MultiTrackAutomaton(*this);
 	return cloned_auto;
 }
@@ -586,9 +586,9 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeConcatExtraTrack(StringRelation
 		const_string_auto = StringAutomaton::MakeRegexAuto(const_data);
 	}
 
-  temp_dfa = prepend_lambda(const_string_auto->getDFA(),DEFAULT_NUM_VAR);
+  temp_dfa = prepend_lambda(const_string_auto->GetDFA(),DEFAULT_NUM_VAR);
   temp_multi = makePrefixSuffix(left_track,right_track,num_tracks,num_tracks+1);
-  prefix_multi = new MultiTrackAutomaton(any_string->getDFA(),right_track,num_tracks+1,DEFAULT_NUM_VAR);
+  prefix_multi = new MultiTrackAutomaton(any_string->GetDFA(),right_track,num_tracks+1,DEFAULT_NUM_VAR);
   suffix_multi = new MultiTrackAutomaton(temp_dfa,num_tracks,num_tracks+1,VAR_PER_TRACK);
   dfaFree(temp_dfa);
 
@@ -694,7 +694,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThan(StringRelation_ptr rel
 	// project away the extra track before we return
 	if(constant_string_auto != nullptr) {
 		DVLOG(VLOG_LEVEL) << "NOT EMPTY";
-		MultiTrackAutomaton_ptr constant_multi_auto = new MultiTrackAutomaton(constant_string_auto->getDFA(),num_tracks-1,num_tracks);
+		MultiTrackAutomaton_ptr constant_multi_auto = new MultiTrackAutomaton(constant_string_auto->GetDFA(),num_tracks-1,num_tracks);
 		temp_auto = result_auto->intersect(constant_multi_auto);
 		delete result_auto;
 		delete constant_multi_auto;
@@ -752,7 +752,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeLessThanOrEqual(StringRelation_
 	// project away the extra track before we return
 	if(constant_string_auto != nullptr) {
 	  DVLOG(VLOG_LEVEL) << "NOT EMPTY";
-		MultiTrackAutomaton_ptr constant_multi_auto = new MultiTrackAutomaton(constant_string_auto->getDFA(),num_tracks-1,num_tracks);
+		MultiTrackAutomaton_ptr constant_multi_auto = new MultiTrackAutomaton(constant_string_auto->GetDFA(),num_tracks-1,num_tracks);
 		temp_auto = result_auto->intersect(constant_multi_auto);
 		delete result_auto;
 		delete constant_multi_auto;
@@ -810,7 +810,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThan(StringRelation_ptr 
 	// project away the extra track before we return
 	if(constant_string_auto != nullptr) {
 	  DVLOG(VLOG_LEVEL) << "NOT EMPTY";
-		MultiTrackAutomaton_ptr constant_multi_auto = new MultiTrackAutomaton(constant_string_auto->getDFA(),num_tracks-1,num_tracks);
+		MultiTrackAutomaton_ptr constant_multi_auto = new MultiTrackAutomaton(constant_string_auto->GetDFA(),num_tracks-1,num_tracks);
 		temp_auto = result_auto->intersect(constant_multi_auto);
 		delete result_auto;
 		delete constant_multi_auto;
@@ -869,7 +869,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeGreaterThanOrEqual(StringRelati
 	// project away the extra track before we return
 	if(constant_string_auto != nullptr) {
 	  DVLOG(VLOG_LEVEL) << "NOT EMPTY";
-		MultiTrackAutomaton_ptr constant_multi_auto = new MultiTrackAutomaton(constant_string_auto->getDFA(),num_tracks-1,num_tracks);
+		MultiTrackAutomaton_ptr constant_multi_auto = new MultiTrackAutomaton(constant_string_auto->GetDFA(),num_tracks-1,num_tracks);
 		temp_auto = result_auto->intersect(constant_multi_auto);
 		delete result_auto;
 		delete constant_multi_auto;
@@ -906,7 +906,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::makeAnyAutoAligned(int num_tracks) 
 	any_string_auto = StringAutomaton::MakeAnyString();
 
 	for(unsigned i = 0; i < num_tracks; i++) {
-		any_auto = new MultiTrackAutomaton(any_string_auto->getDFA(),i,num_tracks);
+		any_auto = new MultiTrackAutomaton(any_string_auto->GetDFA(),i,num_tracks);
 		temp_auto = aligned_auto->intersect(any_auto);
 		delete aligned_auto;
 		delete any_auto;
@@ -935,7 +935,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::complement() {
 MultiTrackAutomaton_ptr MultiTrackAutomaton::union_(MultiTrackAutomaton_ptr other_auto) {
 	if (this->num_of_tracks != other_auto->num_of_tracks) {
 		LOG(ERROR) << "Error in MultiTrackAutomaton::union_, unequal track numbers";
-		return this->clone();
+		return this->Clone();
 	}
   DFA_ptr union_dfa;
 	MultiTrackAutomaton_ptr union_auto;
@@ -962,7 +962,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::union_(MultiTrackAutomaton_ptr othe
 MultiTrackAutomaton_ptr MultiTrackAutomaton::difference(MultiTrackAutomaton_ptr other_auto) {
 	if (this->num_of_tracks != other_auto->num_of_tracks) {
 		LOG(ERROR) << "Error in MultiTrackAutomaton::difference, unequal track numbers";
-		return this->clone();
+		return this->Clone();
 	}
 	MultiTrackAutomaton_ptr complement_auto, difference_auto;
 	StringRelation_ptr difference_relation = nullptr;
@@ -1987,7 +1987,7 @@ DFA_ptr MultiTrackAutomaton::trim_prefix(DFA_ptr subject_dfa, DFA_ptr trim_dfa, 
 
   // 3rd track has lambda prefix, so get it (automatically removes lambda prefix/suffix)
   result_string_auto = intersect_multi->getKTrack(2);
-  result_dfa = dfaCopy(result_string_auto->getDFA());
+  result_dfa = dfaCopy(result_string_auto->GetDFA());
   delete intersect_multi;
   delete result_string_auto;
 
@@ -2019,7 +2019,7 @@ DFA_ptr MultiTrackAutomaton::trim_suffix(DFA_ptr subject_dfa, DFA_ptr trim_dfa, 
   delete trim_multi;
 
   result_string_auto = intersect_multi->getKTrack(1);
-  result_dfa = dfaCopy(result_string_auto->getDFA());
+  result_dfa = dfaCopy(result_string_auto->GetDFA());
   delete intersect_multi;
   delete result_string_auto;
 
@@ -2048,7 +2048,7 @@ DFA_ptr MultiTrackAutomaton::concat(DFA_ptr prefix_dfa, DFA_ptr suffix_dfa, int 
   delete temp_multi;
   delete suffix_multi;
   result_string_auto = intersect_multi->getKTrack(0);
-  result_dfa = dfaCopy(result_string_auto->getDFA());
+  result_dfa = dfaCopy(result_string_auto->GetDFA());
   delete intersect_multi;
   delete result_string_auto;
   return result_dfa;

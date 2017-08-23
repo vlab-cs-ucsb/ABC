@@ -12,6 +12,12 @@ Automata Construction Tasks:
   3- Combine "BinaryIntAutomaton" and "IntAutomaton" classes into one class called "IntAutomaton". Only have binary representation here.
 
   4- Add support for boolean variables. Create a boolean automaton or use IntAutomaton.
+  
+  5- Add a library wrapper class as a singleton. Inherit specific libraries and add methods that needs to be implemented in those libraries. 
+  
+  6- Add Builder class for all static methods, inherit specific builders from builder class (for integer, unary, string) or add build methods for each type.
+  
+  7 - Item 5 and 6 is a combination of Factory and Builder patterns. this->Builder()....build() is a pattern to construct an automaton.
 
 Solver Tasks:
   1- Make sure disjucntions are not treated as a component.

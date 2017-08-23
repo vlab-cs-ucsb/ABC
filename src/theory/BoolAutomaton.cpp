@@ -30,7 +30,7 @@ BoolAutomaton::BoolAutomaton(const BoolAutomaton& other)
         : Automaton(Automaton::Type::STRING), dfa(dfaCopy(other.dfa)), num_of_variables(other.num_of_variables) {
 }
 
-BoolAutomaton_ptr BoolAutomaton::clone() const {
+BoolAutomaton_ptr BoolAutomaton::Clone() const {
 	LOG(FATAL) << "IMPLEMENT ME";
 	//return new BoolAutomaton(*this);
 }

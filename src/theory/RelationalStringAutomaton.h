@@ -29,7 +29,7 @@ class RelationalStringAutomaton: public Automaton {
   RelationalStringAutomaton(DFA_ptr dfa, int i_track, int num_tracks, int in_num_vars = DEFAULT_NUM_VAR);
   RelationalStringAutomaton(const RelationalStringAutomaton&);
   virtual ~RelationalStringAutomaton();
-  virtual RelationalStringAutomaton_ptr clone() const;
+  virtual RelationalStringAutomaton_ptr Clone() const;
 
   static RelationalStringAutomaton_ptr makePrefixSuffix(int left_track, int prefix_track, int suffix_track, int num_tracks);
 

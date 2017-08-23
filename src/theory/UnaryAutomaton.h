@@ -46,7 +46,7 @@ public:
   UnaryAutomaton(const UnaryAutomaton&);
   virtual ~UnaryAutomaton();
 
-  virtual UnaryAutomaton_ptr clone() const;
+  virtual UnaryAutomaton_ptr Clone() const;
 
   static UnaryAutomaton_ptr MakePhi();
   virtual UnaryAutomaton_ptr MakeAutomaton(DFA_ptr dfa, const int number_of_variables) override;

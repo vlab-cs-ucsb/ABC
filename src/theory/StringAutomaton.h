@@ -43,7 +43,7 @@ public:
   StringAutomaton(const StringAutomaton&);
   virtual ~StringAutomaton();
 
-  virtual StringAutomaton_ptr clone() const;
+  virtual StringAutomaton_ptr Clone() const;
 
   /**
    * Generates a string automaton that does not recognize any string
@@ -169,7 +169,7 @@ public:
    * @param number_of_variables
    * @return
    */
-  virtual StringAutomaton_ptr MakeAutomaton(DFA_ptr dfa, const int number_of_variables) override;
+  virtual StringAutomaton_ptr MakeAutomaton(DFA_ptr dfa, const int number_of_variables) const override;
 
   /**
    * Generates a string automaton that accepts empty string or the current accepting strings.
@@ -208,14 +208,6 @@ public:
    * @return
    */
   StringAutomaton_ptr Repeat(unsigned min, unsigned max);
-
-  // todo baki left here, moving to automaton until charat
-  StringAutomaton_ptr suffixesAtIndex(int index);
-  StringAutomaton_ptr suffixesFromIndex(int start);
-  StringAutomaton_ptr prefixes();
-  StringAutomaton_ptr prefixesUntilIndex(int end);
-  StringAutomaton_ptr prefixesAtIndex(int index);
-  StringAutomaton_ptr subStrings();
 
   StringAutomaton_ptr CharAt(const int index);
   StringAutomaton_ptr CharAt(IntAutomaton_ptr index_auto);

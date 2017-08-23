@@ -587,7 +587,7 @@ void VariableValueComputer::visitConcat(Concat_ptr concat_term) {
     } else {
       Value_ptr post_value = getTermPostImage(term_ptr);
       if (current_auto == nullptr) {
-        current_auto = post_value->getStringAutomaton()->clone();
+        current_auto = post_value->getStringAutomaton()->Clone();
       } else {
         Theory::StringAutomaton_ptr tmp = current_auto;
         current_auto = current_auto->concat(post_value->getStringAutomaton());
@@ -709,7 +709,7 @@ void VariableValueComputer::visitContains(Contains_ptr contains_term) {
     child_value = term_value->clone();
   } else {
     Value_ptr child_post_value = getTermPostImage(child_term);
-    Theory::StringAutomaton_ptr sub_strings_auto = term_value->getStringAutomaton()->subStrings();
+    Theory::StringAutomaton_ptr sub_strings_auto = term_value->getStringAutomaton()->SubStrings();
     child_value = new Value(child_post_value->getStringAutomaton()->intersect(sub_strings_auto));
     delete sub_strings_auto; sub_strings_auto = nullptr;
   }
@@ -736,7 +736,7 @@ void VariableValueComputer::visitNotContains(NotContains_ptr not_contains_term) 
   } else {
     Value_ptr child_post_value = getTermPostImage(child_term);
     if (term_value->isSingleValue()) {
-      Theory::StringAutomaton_ptr sub_strings_auto = term_value->getStringAutomaton()->subStrings();
+      Theory::StringAutomaton_ptr sub_strings_auto = term_value->getStringAutomaton()->SubStrings();
       child_value = new Value(child_post_value->getStringAutomaton()->difference(sub_strings_auto));
       delete sub_strings_auto; sub_strings_auto = nullptr;
     } else {
@@ -765,7 +765,7 @@ void VariableValueComputer::visitBegins(Begins_ptr begins_term) {
     child_value = term_value->clone();
   } else {
     Value_ptr child_post_value = getTermPostImage(child_term);
-    Theory::StringAutomaton_ptr prefixes_auto = term_value->getStringAutomaton()->prefixes();
+    Theory::StringAutomaton_ptr prefixes_auto = term_value->getStringAutomaton()->Prefixes();
     child_value = new Value(child_post_value->getStringAutomaton()->intersect(prefixes_auto));
     delete prefixes_auto; prefixes_auto = nullptr;
   }
@@ -792,7 +792,7 @@ void VariableValueComputer::visitNotBegins(NotBegins_ptr not_begins_term) {
   } else {
     Value_ptr child_post_value = getTermPostImage(child_term);
     if (term_value->isSingleValue()) {
-      Theory::StringAutomaton_ptr prefixes_auto = term_value->getStringAutomaton()->prefixes();
+      Theory::StringAutomaton_ptr prefixes_auto = term_value->getStringAutomaton()->Prefixes();
       child_value = new Value(child_post_value->getStringAutomaton()->difference(prefixes_auto));
       delete prefixes_auto; prefixes_auto = nullptr;
     } else {

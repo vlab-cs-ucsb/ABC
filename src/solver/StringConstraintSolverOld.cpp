@@ -320,7 +320,7 @@ bool StringConstraintSolverOld::update_variable_value(Variable_ptr variable, Val
   relation_auto = relation_value->getRelationalStringAutomaton();
   variable_relation = relation_auto->getRelation();
   // place variable value on multitrack, intersect and update corresonding term value
-  variable_multi_auto = new MultiTrackAutomaton(variable_auto->getDFA(),
+  variable_multi_auto = new MultiTrackAutomaton(variable_auto->GetDFA(),
                                        variable_relation->get_variable_index(variable->getName()),
                                        variable_relation->get_num_tracks());
   variable_multi_auto->setRelation(variable_relation->clone());

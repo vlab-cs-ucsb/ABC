@@ -147,7 +147,7 @@ RelationalStringAutomaton::~RelationalStringAutomaton() {
   delete formula_;
 }
 
-RelationalStringAutomaton_ptr RelationalStringAutomaton::clone() const {
+RelationalStringAutomaton_ptr RelationalStringAutomaton::Clone() const {
   RelationalStringAutomaton_ptr cloned_auto = new RelationalStringAutomaton(*this);
   return cloned_auto;
 }
@@ -883,7 +883,7 @@ RelationalStringAutomaton_ptr RelationalStringAutomaton::MakeAnyStringAligned(St
   any_string_auto = StringAutomaton::MakeAnyString();
   const int number_of_string_vars = formula->get_number_of_variables();
   for(unsigned i = 0; i < number_of_string_vars; i++) {
-    any_auto = new RelationalStringAutomaton(any_string_auto->getDFA(), i, number_of_string_vars);
+    any_auto = new RelationalStringAutomaton(any_string_auto->GetDFA(), i, number_of_string_vars);
     temp_auto = aligned_auto->Intersect(any_auto);
     delete aligned_auto;
     delete any_auto;
@@ -953,7 +953,7 @@ RelationalStringAutomaton_ptr RelationalStringAutomaton::Intersect(StringAutomat
     return nullptr;
   }
   std::string var_name = other_auto->get_formula()->get_variable_at_index(0);
-  auto rel_other_auto = new RelationalStringAutomaton(dfaCopy(other_auto->getDFA()), formula_->get_variable_index(var_name), formula_->get_number_of_variables());
+  auto rel_other_auto = new RelationalStringAutomaton(dfaCopy(other_auto->GetDFA()), formula_->get_variable_index(var_name), formula_->get_number_of_variables());
   rel_other_auto->formula_ = formula_->clone();
 
   auto intersect_auto = this->Intersect(rel_other_auto);
@@ -1959,7 +1959,7 @@ DFA_ptr RelationalStringAutomaton::trim_prefix(DFA_ptr subject_dfa, DFA_ptr trim
 
   // 3rd track has lambda prefix, so get it (automatically removes lambda prefix/suffix)
   result_string_auto = intersect_multi->GetKTrack(2);
-  result_dfa = dfaCopy(result_string_auto->getDFA());
+  result_dfa = dfaCopy(result_string_auto->GetDFA());
   delete intersect_multi;
   delete result_string_auto;
 
@@ -1991,7 +1991,7 @@ DFA_ptr RelationalStringAutomaton::trim_suffix(DFA_ptr subject_dfa, DFA_ptr trim
   delete trim_multi;
 
   result_string_auto = intersect_multi->GetKTrack(1);
-  result_dfa = dfaCopy(result_string_auto->getDFA());
+  result_dfa = dfaCopy(result_string_auto->GetDFA());
   delete intersect_multi;
   delete result_string_auto;
 
@@ -2020,7 +2020,7 @@ DFA_ptr RelationalStringAutomaton::concat(DFA_ptr prefix_dfa, DFA_ptr suffix_dfa
   delete temp_multi;
   delete suffix_multi;
   result_string_auto = intersect_multi->GetKTrack(0);
-  result_dfa = dfaCopy(result_string_auto->getDFA());
+  result_dfa = dfaCopy(result_string_auto->GetDFA());
   delete intersect_multi;
   delete result_string_auto;
   return result_dfa;

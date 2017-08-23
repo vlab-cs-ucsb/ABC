@@ -73,19 +73,19 @@ Value::Value(const Value& other)
       int_constant = other.int_constant;
       break;
     case Type::BOOL_AUTOMATON:
-      bool_automaton = other.bool_automaton->clone();
+      bool_automaton = other.bool_automaton->Clone();
       break;
     case Type::INT_AUTOMATON:
-      int_automaton = other.int_automaton->clone();
+      int_automaton = other.int_automaton->Clone();
       break;
     case Type::BINARYINT_AUTOMATON:
-      binaryint_automaton = other.binaryint_automaton->clone();
+      binaryint_automaton = other.binaryint_automaton->Clone();
       break;
     case Type::STRING_AUTOMATON:
-      string_automaton = other.string_automaton->clone();
+      string_automaton = other.string_automaton->Clone();
       break;
     case Type::RELATIONALSTRING_AUTOMATON:
-      relationalstring_automaton = other.relationalstring_automaton->clone();
+      relationalstring_automaton = other.relationalstring_automaton->Clone();
       break;
     default:
       LOG(FATAL)<< "value type is not supported";

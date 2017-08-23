@@ -670,7 +670,7 @@ void ConstraintSolver::visitNotContains(NotContains_ptr not_contains_term) {
     delete contains_auto;
     contains_auto = nullptr;
   } else if (param_subject->isSingleValue()) {
-    Theory::StringAutomaton_ptr sub_strings_auto = param_subject->getStringAutomaton()->subStrings();
+    Theory::StringAutomaton_ptr sub_strings_auto = param_subject->getStringAutomaton()->SubStrings();
     Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->difference(sub_strings_auto);
     delete sub_strings_auto;
     sub_strings_auto = nullptr;
@@ -716,7 +716,7 @@ void ConstraintSolver::visitNotBegins(NotBegins_ptr not_begins_term) {
     delete begins_auto;
     begins_auto = nullptr;
   } else if (param_subject->isSingleValue()) {
-    Theory::StringAutomaton_ptr prefixes_auto = param_subject->getStringAutomaton()->prefixes();
+    Theory::StringAutomaton_ptr prefixes_auto = param_subject->getStringAutomaton()->Prefixes();
     Theory::StringAutomaton_ptr difference_auto = param_search->getStringAutomaton()->difference(prefixes_auto);
     delete prefixes_auto;
     prefixes_auto = nullptr;
@@ -850,7 +850,7 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
   if (Value::Type::INT_CONSTANT == param_start_index->getType()) {
     int start_index_value = param_start_index->getIntConstant();
     if (start_index_value == 0) {
-      substring_auto = param_subject->getStringAutomaton()->clone();
+      substring_auto = param_subject->getStringAutomaton()->Clone();
     }
     else if (start_index_value > 0) {
       substring_auto = param_subject->getStringAutomaton()->SubString(start_index_value);
@@ -888,7 +888,7 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
           auto unary_end_index_var_auto = bin_end_index_var_auto->ToUnaryAutomaton();
           delete bin_end_index_var_auto;
           bin_end_index_var_auto = nullptr;
-          auto string_len_end_index_auto = unary_end_index_var_auto->toIntAutomaton(param_subject->getStringAutomaton()->get_number_of_bdd_variables(), false);
+          auto string_len_end_index_auto = unary_end_index_var_auto->toIntAutomaton(param_subject->getStringAutomaton()->GetNumberOfBddVariables(), false);
           delete unary_end_index_var_auto;
           unary_end_index_var_auto = nullptr;
 
@@ -1262,7 +1262,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     std::string string_term_var_name = symbol_table_->get_var_name_for_expression(string_term, Variable::Type::INT);
     if (Value::Type::INT_AUTOMATON == string_term_result->getType()) {
       has_minus_one = string_term_result->getIntAutomaton()->hasNegative1();
-      number_of_variables_for_int_auto = string_term_result->getIntAutomaton()->get_number_of_bdd_variables();
+      number_of_variables_for_int_auto = string_term_result->getIntAutomaton()->GetNumberOfBddVariables();
       // first convert integer result to unary, then unary to binary
       string_term_unary_auto = string_term_result->getIntAutomaton()->toUnaryAutomaton();
       string_term_binary_auto = string_term_unary_auto->toBinaryIntAutomaton(

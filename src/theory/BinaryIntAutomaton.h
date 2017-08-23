@@ -52,7 +52,7 @@ public:
   BinaryIntAutomaton(const BinaryIntAutomaton&);
   virtual ~BinaryIntAutomaton();
 
-  virtual BinaryIntAutomaton_ptr clone() const;
+  virtual BinaryIntAutomaton_ptr Clone() const;
   // What about natural number parameter?
   virtual BinaryIntAutomaton_ptr MakeAutomaton(DFA_ptr dfa, const int number_of_variables);
 

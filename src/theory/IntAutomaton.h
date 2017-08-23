@@ -43,7 +43,7 @@ public:
   IntAutomaton(const IntAutomaton&);
   virtual ~IntAutomaton();
 
-  virtual IntAutomaton_ptr clone() const;
+  virtual IntAutomaton_ptr Clone() const;
   IntAutomaton_ptr MakeAutomaton(DFA_ptr dfa, const int number_of_variables);
   static IntAutomaton_ptr makePhi(int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES);
   static IntAutomaton_ptr makeZero(int num_of_variables = IntAutomaton::DEFAULT_NUM_OF_VARIABLES);

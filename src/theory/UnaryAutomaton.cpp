@@ -28,7 +28,7 @@ UnaryAutomaton::UnaryAutomaton(const UnaryAutomaton& other) : Automaton (other) 
 UnaryAutomaton::~UnaryAutomaton() {
 }
 
-UnaryAutomaton_ptr UnaryAutomaton::clone() const {
+UnaryAutomaton_ptr UnaryAutomaton::Clone() const {
   UnaryAutomaton_ptr cloned_auto = new UnaryAutomaton(*this);
   DVLOG(VLOG_LEVEL) << cloned_auto->id_ << " = [" << this->id_ << "]->clone()";
   return cloned_auto;

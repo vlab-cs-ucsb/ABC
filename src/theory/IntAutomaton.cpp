@@ -44,7 +44,7 @@ IntAutomaton::IntAutomaton(const IntAutomaton& other) :
 IntAutomaton::~IntAutomaton() {
 }
 
-IntAutomaton_ptr IntAutomaton::clone() const {
+IntAutomaton_ptr IntAutomaton::Clone() const {
   IntAutomaton_ptr cloned_auto = new IntAutomaton(*this);
   DVLOG(VLOG_LEVEL) << cloned_auto->id_ << " = [" << this->id_ << "]->clone()";
   return cloned_auto;
@@ -273,7 +273,7 @@ IntAutomaton_ptr IntAutomaton::complement() {
 IntAutomaton_ptr IntAutomaton::union_(int value) {
   IntAutomaton_ptr union_auto = nullptr, int_auto = nullptr;
   if (value == -1) {
-    union_auto = this->clone();
+    union_auto = this->Clone();
     union_auto->has_negative_1 = true;
     DVLOG(VLOG_LEVEL) << union_auto->id_ << " = [" << this->id_ << "]->union(-1)";
   } else {
@@ -411,12 +411,12 @@ IntAutomaton_ptr IntAutomaton::times(int value) {
   if (value == 0) {
     times_auto = IntAutomaton::makeZero();
   } else if (value == 1) {
-    times_auto = this->clone();
+    times_auto = this->Clone();
   } else if (value == -1) {
     times_auto = this->uminus();
   } else {
     int bound = (value > 0) ? value : -value;
-    times_auto = this->clone();
+    times_auto = this->Clone();
 
     for (int i = 1; i < value; i++) {
       tmp_auto = times_auto;
@@ -647,7 +647,7 @@ IntAutomaton_ptr IntAutomaton::restrictLessThanTo(IntAutomaton_ptr other_auto) {
   if (max_int != IntAutomaton::INFINITE) {
     return this->restrictLessThanTo(max_int);
   } else {
-    return this->clone();
+    return this->Clone();
   }
 }
 
@@ -668,7 +668,7 @@ IntAutomaton_ptr IntAutomaton::restrictLessThanOrEqualTo(IntAutomaton_ptr other_
   if (max_int != IntAutomaton::INFINITE) {
     return this->restrictLessThanOrEqualTo(max_int);
   } else {
-    return this->clone();
+    return this->Clone();
   }
 }
 
@@ -818,7 +818,7 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
 IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
   DFA_ptr d1,d2,d3;
   d1 = this->dfa_;
-  d2 = other_auto->getDFA();
+  d2 = other_auto->GetDFA();
   d3 = RelationalStringAutomaton::concat(d1,d2,num_of_bdd_variables_);
   return new IntAutomaton(d3);
 /*

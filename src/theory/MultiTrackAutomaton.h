@@ -27,7 +27,7 @@ class MultiTrackAutomaton: public Automaton {
 	MultiTrackAutomaton(DFA_ptr dfa, int i_track, int num_tracks, int in_num_vars = DEFAULT_NUM_VAR);
 	MultiTrackAutomaton(const MultiTrackAutomaton&);
 	virtual ~MultiTrackAutomaton();
-	virtual MultiTrackAutomaton_ptr clone() const;
+	virtual MultiTrackAutomaton_ptr Clone() const;
 
 	static MultiTrackAutomaton_ptr makePrefixSuffix(int left_track, int prefix_track, int suffix_track, int num_tracks);
 

@@ -80,12 +80,28 @@ unsigned long Automaton::getId() {
   return id_;
 }
 
-DFA_ptr Automaton::getDFA() {
-  return dfa_;
+DFA_ptr Automaton::GetDFA() const {
+  return this->dfa_;
 }
 
-int Automaton::get_number_of_bdd_variables() {
+int Automaton::GetNumberOfStates() const {
+  return this->dfa_->ns;
+}
+
+int Automaton::GetNumberOfBddVariables() const {
   return num_of_bdd_variables_;
+}
+
+int Automaton::GetInitialState() const {
+  int initial_state = Automaton::DFAGetInitialState(this->dfa_);
+  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->GetInitialState()" << initial_state;
+  return initial_state;
+}
+
+int Automaton::GetSinkState() const {
+  int sink_state = Automaton::DFAGetSinkState(this->dfa_);
+  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->GetSinkState()" << sink_state;
+  return sink_state;
 }
 
 bool Automaton::IsEmptyLanguage() const {
@@ -133,26 +149,14 @@ bool Automaton::IsEqual(const Automaton_ptr other_automaton) const {
   return result;
 }
 
-int Automaton::GetInitialState() const {
-  int initial_state = Automaton::DFAGetInitialState(this->dfa_);
-  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->GetInitialState()" << initial_state;
-  return initial_state;
-}
-
-int Automaton::GetSinkState() const {
-  int sink_state = Automaton::DFAGetSinkState(this->dfa_);
-  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->GetSinkState()" << sink_state;
-  return sink_state;
-}
-
-Automaton_ptr Automaton::Complement() {
+Automaton_ptr Automaton::Complement() const {
   DFA_ptr complement_dfa = Automaton::DFAComplement(this->dfa_);
   Automaton_ptr complement_auto = this->MakeAutomaton(complement_dfa, num_of_bdd_variables_);
   DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->Complement()";
   return complement_auto;
 }
 
-Automaton_ptr Automaton::Union(Automaton_ptr other_automaton) {
+Automaton_ptr Automaton::Union(Automaton_ptr other_automaton) const {
 	if(this->num_of_bdd_variables_ != other_automaton->num_of_bdd_variables_) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
@@ -162,7 +166,7 @@ Automaton_ptr Automaton::Union(Automaton_ptr other_automaton) {
   return union_auto;
 }
 
-Automaton_ptr Automaton::Intersect(Automaton_ptr other_automaton) {
+Automaton_ptr Automaton::Intersect(Automaton_ptr other_automaton) const {
 	if(this->num_of_bdd_variables_ != other_automaton->num_of_bdd_variables_) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
@@ -172,7 +176,7 @@ Automaton_ptr Automaton::Intersect(Automaton_ptr other_automaton) {
   return intersect_auto;
 }
 
-Automaton_ptr Automaton::Difference(Automaton_ptr other_automaton) {
+Automaton_ptr Automaton::Difference(Automaton_ptr other_automaton) const {
 	if(this->num_of_bdd_variables_ != other_automaton->num_of_bdd_variables_) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
@@ -182,7 +186,7 @@ Automaton_ptr Automaton::Difference(Automaton_ptr other_automaton) {
   return difference_auto;
 }
 
-Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
+Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) const {
 	if(this->num_of_bdd_variables_ != other_automaton->num_of_bdd_variables_) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
@@ -192,7 +196,7 @@ Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
   return concat_auto;
 }
 
-Automaton_ptr Automaton::Suffixes() {
+Automaton_ptr Automaton::Suffixes() const {
   if (this->IsEmptyLanguage()) {
     DFA_ptr phi = Automaton::DFAMakePhi(this->num_of_bdd_variables_);
     Automaton_ptr suffixes_auto = this->MakeAutomaton(phi, this->num_of_bdd_variables_);
@@ -269,13 +273,13 @@ Automaton_ptr Automaton::Suffixes() {
   return suffixes_auto;
 }
 
-Automaton_ptr Automaton::SuffixesFromTo(const int start, const int end) {
-  std::unordered_set<int> suffixes_from = this->GetStatesReachableBy(start, end);
+Automaton_ptr Automaton::SuffixesFromTo(const int from_index, const int to_index) const {
+  std::unordered_set<int> suffixes_from = this->GetStatesReachableBy(from_index, to_index);
   unsigned max = suffixes_from.size();
   if (max == 0) {
     DFA_ptr phi = Automaton::DFAMakePhi(this->num_of_bdd_variables_);
     Automaton_ptr suffixes_auto = this->MakeAutomaton(phi, this->num_of_bdd_variables_);
-    DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->SuffixesFromTo(" << start << ", " << end << ")";
+    DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->SuffixesFromTo(" << from_index << ", " << to_index << ")";
     return suffixes_auto;
   }
 
@@ -354,8 +358,74 @@ Automaton_ptr Automaton::SuffixesFromTo(const int start, const int end) {
     suffixes_auto->Minimize();
   }
 
-  DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->SuffixesFromTo(" << start << ", " << end << ")";
+  DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->SuffixesFromTo(" << from_index << ", " << to_index << ")";
   return suffixes_auto;
+}
+
+Automaton_ptr Automaton::SuffixesAtIndex(const int index) const {
+  return SuffixesFromTo(index, index);
+}
+
+Automaton_ptr Automaton::SuffixesFromIndex(const int index) const {
+  return SuffixesFromTo(index, this->GetNumberOfStates());
+}
+
+Automaton_ptr Automaton::Prefixes() const {
+  Automaton_ptr prefix_auto = this->Clone();
+  int sink_state = prefix_auto->GetSinkState();
+
+
+  for (int s = 0; s < prefix_auto->GetNumberOfStates(); s++) {
+    if(s != sink_state){
+      prefix_auto->dfa_->f[s] = 1;
+    }
+  }
+
+  prefix_auto->Minimize();
+
+  DVLOG(VLOG_LEVEL) << prefix_auto->id_ << " = [" << this->id_ << "]->Prefixes()";
+  return prefix_auto;
+}
+
+Automaton_ptr Automaton::PrefixesUntilIndex(const int index) const {
+  Automaton_ptr prefixes_auto = this->Prefixes();
+  DFA_ptr length_dfa = Automaton::DFAMakeAcceptingAnyWithInRange(0, index-1, this->GetNumberOfBddVariables());
+  Automaton_ptr length_auto = this->MakeAutomaton(length_dfa, this->GetNumberOfBddVariables());
+
+  Automaton_ptr prefixesUntil_auto = prefixes_auto->Intersect(length_auto);
+  delete prefixes_auto;
+  delete length_auto;
+  DVLOG(VLOG_LEVEL) << prefixesUntil_auto->id_ << " = [" << this->id_ << "]->PrefixesUntilIndex("<<index<<")";
+  return prefixesUntil_auto;
+}
+
+Automaton_ptr Automaton::PrefixesAtIndex(const int index) const  {
+  Automaton_ptr length_auto = nullptr;
+  Automaton_ptr prefixes_auto = this->Prefixes();
+  if (index == 0 and this->IsInitialStateAccepting()) {
+    // when index is 0, result should also accept at initial state if subject automaton accepts at initial state
+    DFA_ptr length_dfa = Automaton::DFAMakeAcceptingAnyWithInRange(0, 1, this->GetNumberOfBddVariables());
+    length_auto = this->MakeAutomaton(length_dfa, this->GetNumberOfBddVariables());
+  } else {
+    DFA_ptr length_dfa = Automaton::DFAMakeAcceptingAnyWithInRange(index + 1, index + 1, this->GetNumberOfBddVariables());
+    length_auto = this->MakeAutomaton(length_dfa, this->GetNumberOfBddVariables());
+  }
+  Automaton_ptr prefixesAt_auto = prefixes_auto->Intersect(length_auto);
+  delete prefixes_auto;
+  delete length_auto;
+  DVLOG(VLOG_LEVEL) << prefixesAt_auto->id_ << " = [" << this->id_ << "]->PrefixesAtIndex("<<index<<")";
+  return prefixesAt_auto;
+}
+
+/**
+ * In theory empty string should be always a prefix, suffix, and a factor (substring)
+ */
+Automaton_ptr Automaton::SubStrings() const {
+  Automaton_ptr suffixes_auto = this->Suffixes();
+  Automaton_ptr sub_strings_auto = suffixes_auto->Prefixes();
+  delete suffixes_auto;
+  DVLOG(VLOG_LEVEL) << sub_strings_auto->id_ << " = [" << this->id_ << "]->SubStrings()";
+  return sub_strings_auto;
 }
 
 bool Automaton::isCyclic() {
@@ -1244,6 +1314,25 @@ int* Automaton::CreateBddVariableIndices(const int number_of_bdd_variables) {
   return indices;
 }
 
+std::string Automaton::GetBinaryStringMSB(unsigned long number, int bit_length) {
+  int index = bit_length;
+  unsigned subject = number;
+  std::string binary_string (bit_length + 1, '\0');
+
+  for (index--; index >= 0; index--) {
+    if (subject & 1) {
+      binary_string[index] = '1';
+    } else {
+      binary_string[index] = '0';
+    }
+    if (subject > 0) {
+      subject >>= 1;
+    }
+  }
+
+  return binary_string;
+}
+
 std::vector<char> Automaton::GetBinaryFormat(unsigned long number, int bit_length) {
   unsigned subject = number;
   std::vector<char> binary_str (bit_length + 1, '\0');
@@ -1276,25 +1365,6 @@ std::vector<char> Automaton::GetReversedBinaryFormat(unsigned long number, int b
   }
 
   return binary_str;
-}
-
-std::string Automaton::GetBinaryStringMSB(unsigned long number, int bit_length) {
-  int index = bit_length;
-  unsigned subject = number;
-  std::string binary_string (bit_length + 1, '\0');
-
-  for (index--; index >= 0; index--) {
-    if (subject & 1) {
-      binary_string[index] = '1';
-    } else {
-      binary_string[index] = '0';
-    }
-    if (subject > 0) {
-      subject >>= 1;
-    }
-  }
-
-  return binary_string;
 }
 
 /**
@@ -1344,11 +1414,11 @@ void Automaton::ProjectAwayAndReMap(const int index) {
   DVLOG(VLOG_LEVEL) << this->id_ << " = [" << this->id_ << "]->ProjectAwayAndReMap(" << index << ")";
 }
 
-std::unordered_set<int> Automaton::GetStatesReachableBy(int walk) {
+std::unordered_set<int> Automaton::GetStatesReachableBy(int walk) const {
   return GetStatesReachableBy(walk, walk);
 }
 
-std::unordered_set<int> Automaton::GetStatesReachableBy(int min_walk, int max_walk) {
+std::unordered_set<int> Automaton::GetStatesReachableBy(int min_walk, int max_walk) const {
   std::unordered_set<int> states;
 
   std::stack<std::pair<int, int>> state_stack;

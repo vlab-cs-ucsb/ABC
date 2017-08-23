@@ -68,14 +68,46 @@ public:
   Automaton(Automaton::Type type, DFA_ptr dfa, int num_of_variables);
   Automaton(const Automaton&);
   virtual ~Automaton();
-  virtual Automaton_ptr clone() const = 0;
+
+  /**
+   * Generates a copy of the current automaton.
+   * @return
+   */
+  virtual Automaton_ptr Clone() const = 0;
 
   virtual std::string str() const;
   virtual Automaton::Type getType() const;
   unsigned long getId();
 
-  DFA_ptr getDFA();
-  int get_number_of_bdd_variables();
+  /**
+   * Gets underlaying dfa representation. Currently we only use MONA dfa.
+   * @return
+   */
+  DFA_ptr GetDFA() const;
+
+  /**
+   * Gets number of states.
+   * @return
+   */
+  int GetNumberOfStates() const;
+
+  /**
+   * Gets number of bdd variables used in the current automaton representation.
+   * @return
+   */
+  int GetNumberOfBddVariables() const;
+
+  /**
+   * Gets the initial state id.
+   * @return
+   */
+  int GetInitialState() const;
+
+  /**
+   * Gets the sink state.
+   * @return
+   */
+  int GetSinkState() const;
 
   /**
    * Checks if an automaton accepts nothing.
@@ -132,51 +164,39 @@ public:
   bool IsEqual(const Automaton_ptr other_automaton) const;
 
   /**
-   * Gets the initial state id.
-   * @return
-   */
-  int GetInitialState() const;
-
-  /**
-   * Gets the sink state.
-   * @return
-   */
-  int GetSinkState() const;
-
-  /**
    * Generates a specific type of automaton that wraps dfa instance.
    * @param dfa
    * @param number_of_variables
    * @return
    */
-  virtual Automaton_ptr MakeAutomaton(DFA_ptr dfa, const int number_of_variables) = 0;
+  virtual Automaton_ptr MakeAutomaton(DFA_ptr dfa, const int number_of_variables) const = 0;
 
   /**
    * Complements an automaton
    * @return
    */
-  virtual Automaton_ptr Complement();
+  virtual Automaton_ptr Complement() const;
 
   /**
    * Generates an automaton that is the result of union product of the two automata.
    * @param other_automaton
    * @return
    */
-  virtual Automaton_ptr Union(Automaton_ptr other_automaton);
+  virtual Automaton_ptr Union(Automaton_ptr other_automaton) const;
 
   /**
    * Generates an automaton that is the result of intersection product of the two automata.
    * @param other_automaton
    * @return
    */
-  virtual Automaton_ptr Intersect(Automaton_ptr other_automaton);
+  virtual Automaton_ptr Intersect(Automaton_ptr other_automaton) const;
 
   /**
    * Generates an automaton that accept strings accepted by the current automaton but not by the other automaton.
    * @param other_automaton
    * @return
    */
-  virtual Automaton_ptr Difference(Automaton_ptr other_automaton);
+  virtual Automaton_ptr Difference(Automaton_ptr other_automaton) const;
 
   /**
    * TODO Fix empty string bug that happens in case (concat /.{0,1}/ /{1,1}/)
@@ -184,22 +204,62 @@ public:
    * @param other_automaton
    * @return
    */
-  virtual Automaton_ptr Concat(Automaton_ptr other_automaton);
+  virtual Automaton_ptr Concat(Automaton_ptr other_automaton) const;
 
   /**
    * Generates an automaton that accepts suffixes of the strings accepted by the current automaton.
    * @return
    */
-  virtual Automaton_ptr Suffixes();
+  virtual Automaton_ptr Suffixes() const;
 
   /**
    * TODO fix comment
-   * Generates an automaton that accepts suffixes at indices between start and end (inclusive) of the strings accepted by the current automaton.
+   * Generates an automaton that accepts suffixes of the strings accepted by the current automaton and starts at the indices between start and end.
    * @param start
    * @param end
    * @return
    */
-  virtual Automaton_ptr SuffixesFromTo(const int start, const int end);
+  virtual Automaton_ptr SuffixesFromTo(const int from_index, const int end_index) const;
+
+  /**
+   * Generates an automaton that accepts suffixes of the strings accepted by the current automaton and starts at the given index.
+   * @param index
+   * @return
+   */
+  virtual Automaton_ptr SuffixesAtIndex(const int index) const;
+
+  /**
+   * Generates an automaton that accepts suffixes of the strings accepted by the current automaton and starts at the indices after/at the given index.
+   * @param start
+   * @return
+   */
+  virtual Automaton_ptr SuffixesFromIndex(const int index) const;
+
+  /**
+   * Generates an automaton that accepts prefixes of the strings accepted by the current automaton.
+   * @return
+   */
+  virtual Automaton_ptr Prefixes() const;
+
+  /**
+   * Generates an automaton that accepts prefixes of the strings accepted by the current automaton and starts at the indices before/at the given index.
+   * @param end
+   * @return
+   */
+  virtual Automaton_ptr PrefixesUntilIndex(const int index) const;
+
+  /**
+   * Generates an automaton that accepts prefixes of the strings accepted by the current automaton and starts at the given index.
+   * @param index
+   * @return
+   */
+  virtual Automaton_ptr PrefixesAtIndex(const int index) const ;
+
+  /**
+   * Generates an automaton that accepts substrings of the strings accepted by the current automaotn.
+   * @return
+   */
+  virtual Automaton_ptr SubStrings() const;
 
   bool isCyclic();
   bool isInCycle(int state);
@@ -463,11 +523,18 @@ protected:
    */
   static int* CreateBddVariableIndices(const int number_of_bdd_variables);
 
+  /**
+   * Returns binary representation of number n with a bit string with the given bit length
+   * @param n
+   * @param bit_length
+   * @return
+   */
+  static std::string GetBinaryStringMSB(unsigned long n, int bit_length);
+
+
   // TODO remove vector<char> version of binary format and use string version below
   static std::vector<char> GetBinaryFormat(unsigned long n, int bit_length);
   static std::vector<char> GetReversedBinaryFormat(unsigned long n, int bit_length);
-
-  static std::string GetBinaryStringMSB(unsigned long n, int bit_length);
 
   // TODO return string instead of vector<char>
   static std::vector<char> getReservedWord(char last_char, int length, bool extra_bit = false);
@@ -494,7 +561,7 @@ protected:
    * @param walk
    * @return
    */
-  std::unordered_set<int> GetStatesReachableBy(int walk);
+  std::unordered_set<int> GetStatesReachableBy(int walk) const;
 
   /**
    * Gets the set of states that are reachable from start state by a number of step that is between the given amount of steps.
@@ -502,7 +569,7 @@ protected:
    * @param max_walk
    * @return
    */
-  std::unordered_set<int> GetStatesReachableBy(int min_walk, int max_walk);
+  std::unordered_set<int> GetStatesReachableBy(int min_walk, int max_walk) const;
 
 
   bool hasIncomingTransition(int state);

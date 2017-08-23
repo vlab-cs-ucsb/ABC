@@ -45,7 +45,7 @@ BinaryIntAutomaton::~BinaryIntAutomaton() {
   delete formula_;
 }
 
-BinaryIntAutomaton_ptr BinaryIntAutomaton::clone() const {
+BinaryIntAutomaton_ptr BinaryIntAutomaton::Clone() const {
   BinaryIntAutomaton_ptr cloned_auto = new BinaryIntAutomaton(*this);
   DVLOG(VLOG_LEVEL) << cloned_auto->id_ << " = [" << this->id_ << "]->clone()";
   return cloned_auto;
@@ -409,7 +409,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::GetNegativeValuesFor(std::string var_
 BinaryIntAutomaton_ptr BinaryIntAutomaton::TrimLeadingZeros() {
   CHECK_EQ(1, num_of_bdd_variables_)<< "trimming is implemented for single track positive binary automaton";
 
-  auto tmp_auto = this->clone();
+  auto tmp_auto = this->Clone();
 
   // identify leading zeros
   std::vector<char> exception = {'0'};
@@ -537,7 +537,7 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
     delete tmp_2_auto;
     tmp_2_auto = nullptr;
   } else {
-    subject_auto = this->clone();
+    subject_auto = this->Clone();
   }
 
   semilinears.push_back(semilinear_set);

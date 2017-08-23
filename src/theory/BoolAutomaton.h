@@ -28,7 +28,7 @@ public:
   BoolAutomaton(const BoolAutomaton&);
   virtual ~BoolAutomaton();
 
-  virtual BoolAutomaton_ptr clone() const;
+  virtual BoolAutomaton_ptr Clone() const;
 
   static BoolAutomaton_ptr makeTrue(int num_of_variables = BoolAutomaton::DEFAULT_NUM_OF_VARIABLES,
       int* variable_indices = BoolAutomaton::DEFAULT_VARIABLE_INDICES);
