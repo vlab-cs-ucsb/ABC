@@ -17,6 +17,8 @@ libabcautomaton_la_SOURCES = \
 	DAGraphNode.h \
 	DAGraph.cpp \
 	DAGraph.h \
+	Formula.cpp \
+	Formula.h \
 	ArithmeticFormula.cpp \
 	ArithmeticFormula.h \
 	BinaryState.cpp \

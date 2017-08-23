@@ -21,6 +21,7 @@
 //#include <mona/dfa.h>
 
 #include "Automaton.h"
+#include "ArithmeticFormula.h"
 #include "UnaryAutomaton.h"
 #include "StringAutomaton.h"
 #include "BinaryIntAutomaton.h"
