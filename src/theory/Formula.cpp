@@ -30,6 +30,17 @@ int Formula::GetVariableIndex(std::string variable_name) const {
 	return -1;
 }
 
+int Formula::GetVariableIndex(const std::size_t param_index) const {
+  for (auto it = variable_coefficient_map_.begin(); it != variable_coefficient_map_.end(); ++it) {
+    if (it->second == param_index) {
+      return std::distance(variable_coefficient_map_.begin(), it);
+    }
+  }
+
+  LOG(FATAL)<< "Formula does not have param: " << param_index << ", " << str();
+  return -1;
+}
+
 int Formula::GetVariableCoefficient(std::string variable_name) const {
 	auto it = variable_coefficient_map_.find(variable_name);
 	if (it == variable_coefficient_map_.end()) {

@@ -43,6 +43,7 @@ public:
 
 	virtual void MergeVariables(Formula_ptr) = 0;
 	int GetVariableIndex(std::string) const;
+	int GetVariableIndex(const std::size_t param_index) const;
 	int GetVariableCoefficient(std::string) const;
 	void SetVariableCoefficient(std::string, int);
 	std::string GetVariableAtIndex(const std::size_t index) const;

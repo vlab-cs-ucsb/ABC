@@ -363,14 +363,13 @@ bool SymbolTable::set_value(Variable_ptr variable, Value_ptr value) {
   // !! TODO Baki test representative and group variable behavior
   auto representative_variable = get_representative_variable_of_at_scope(top_scope(), variable);
   auto group_variable = get_group_variable_of(representative_variable);
-
   auto& current_scope_values = variable_value_table_[top_scope()];
   auto it = current_scope_values.find(group_variable);
   if (it not_eq current_scope_values.end()) {
     delete it->second;
-    it->second = value;
+    it->second = value->clone();
   } else {
-    current_scope_values[group_variable] = value;
+    current_scope_values[group_variable] = value->clone();
   }
   return value->is_satisfiable();
 }

@@ -345,11 +345,16 @@ void StringFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
 	if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
 		StringFormula_ptr formula = nullptr;
 		if (StringFormula::Type::VAR == left_formula->GetType() and StringFormula::Type::VAR == right_formula->GetType()) {
+			LOG(INFO) << "HERE!";
 			formula = left_formula->clone();
 			formula->MergeVariables(right_formula);
 			formula->SetType(StringFormula::Type::NOTEQ);
 			auto right_var = right_formula->GetVariableAtIndex(0);
 			formula->SetVariableCoefficient(right_var,2);
+			auto vars = formula->GetVariableCoefficientMap();
+			for(auto &it : vars) {
+				LOG(INFO) << it.first << "," << it.second;
+			}
 			constraint_information_->add_string_constraint(not_eq_term);
 		} else if(StringFormula::Type::VAR == left_formula->GetType() and StringFormula::Type::CONCAT_VAR_CONSTANT == right_formula->GetType()) {
 			formula = left_formula->clone();
@@ -820,6 +825,7 @@ void StringFormulaGenerator::set_group_mappings() {
   // define a variable mapping for a group
   for (auto& el : group_formula_) {
     symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
+    LOG(INFO) << "add_variable: " << el.first;
     for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
       symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
     }

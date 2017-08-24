@@ -146,8 +146,11 @@ StringAutomaton::StringAutomaton(const DFA_ptr dfa, StringFormula_ptr formula, c
 	if(formula == nullptr) {
 		LOG(FATAL) << "formula is nullptr!";
 	}
-
-	this->num_tracks_ = formula->GetNumberOfVariables();
+	if(formula->GetNumberOfVariables() > 0) {
+		this->num_tracks_ = formula->GetNumberOfVariables();
+	} else {
+		this->num_tracks_ = 1;
+	}
 	formula_ = formula;
 }
 
@@ -490,8 +493,8 @@ StringAutomaton_ptr StringAutomaton::MakeNotBegins(StringFormula_ptr formula) {
 StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
   StringAutomaton_ptr equality_auto = nullptr;
 	int num_tracks = formula->GetNumberOfVariables();
-	int left_track = formula->GetVariableIndex(formula->GetVariableAtIndex(1)); // variable on the left of equality
-	int right_track = formula->GetVariableIndex(formula->GetVariableAtIndex(2)); // variable on the right of equality
+	int left_track = formula->GetVariableIndex(1); // variable on the left of equality
+	int right_track = formula->GetVariableIndex(2); // variable on the right of equality
 
   // if string is not empty, eq is of form X = Y.c
   if(formula->GetConstant() != "") {
@@ -521,8 +524,8 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(
 		StringFormula_ptr formula) {
 	StringAutomaton_ptr not_equality_auto = nullptr;
   int num_tracks = formula->GetNumberOfVariables();
-  int left_track = formula->GetVariableIndex(formula->GetVariableAtIndex(1)); // variable on the left of equality
-	int right_track = formula->GetVariableIndex(formula->GetVariableAtIndex(2)); // variable on the right of equality
+  int left_track = formula->GetVariableIndex(1); // variable on the left of equality
+	int right_track = formula->GetVariableIndex(2); // variable on the right of equality
 
   // if string is not empty, eq is of form X = Y.c
   if(formula->GetConstant() != "") {
@@ -542,6 +545,7 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(
   } else {
     auto equality_dfa = MakeBinaryRelationDfa(StringFormula::Type::NOTEQ, VAR_PER_TRACK, num_tracks, left_track, right_track);
     not_equality_auto = new StringAutomaton(equality_dfa,num_tracks,num_tracks*VAR_PER_TRACK);
+    not_equality_auto->SetFormula(formula);
   }
 
   DVLOG(VLOG_LEVEL) << not_equality_auto->id_ << " = MakeNotEquality(" << formula->str() << ")";
@@ -606,10 +610,14 @@ StringAutomaton_ptr StringAutomaton::MakeAnyStringAligned(
 StringAutomaton_ptr StringAutomaton::Complement() {
 	auto complement_dfa = Automaton::DFAComplement(dfa_);
 	auto temp_auto = new StringAutomaton(complement_dfa, formula_->Complement(),num_of_bdd_variables_);
-	auto aligned_universe_auto = MakeAnyStringAligned(formula_->clone());
-	auto complement_auto = temp_auto->Intersect(aligned_universe_auto);
-	delete temp_auto;
-	delete aligned_universe_auto;
+	StringAutomaton_ptr complement_auto = temp_auto;
+
+	if(num_tracks_ > 1) {
+		auto aligned_universe_auto = MakeAnyStringAligned(formula_->clone());
+		complement_auto = temp_auto->Intersect(aligned_universe_auto);
+		delete temp_auto;
+		delete aligned_universe_auto;
+	}
   DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->Complement()";
 	return complement_auto;
 }
@@ -647,6 +655,7 @@ StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
   } else {
     intersect_formula = nullptr;
   }
+  LOG(INFO) << "After intersect: " << *intersect_formula;
 	auto intersect_auto = new StringAutomaton(intersect_dfa,intersect_formula,this->num_of_bdd_variables_);
 
   DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << other_auto->id_ << ")";
@@ -2353,8 +2362,73 @@ StringAutomaton_ptr StringAutomaton::GetAutomatonForVariable(std::string var_nam
 }
 
 // handle case where only 1 track, but make sure correct # of variables
-StringAutomaton_ptr StringAutomaton::GetKTrack(int track) {
-	LOG(FATAL) << "IMPLEMENT ME";
+StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
+	DFA_ptr result = this->dfa_, temp;
+	StringAutomaton_ptr result_auto = nullptr;
+	int flag = 0;
+
+	if(k_track >= this->num_tracks_) {
+		LOG(FATAL) << "error in StringAutomaton::GetKTrack; k_track,num_tracks = " << k_track << "," << this->num_tracks_;
+	} else if(this->num_tracks_ == 1) {
+		// TODO baki: better handle this situation where mixed constraint and multi-track really get mixed
+//    DVLOG(VLOG_LEVEL) << "   getKTrack, but only 1 track";
+//    result = trim_lambda_suffix(this->dfa_,this->num_of_variables_);
+
+//    result_auto = new StringAutomaton(result);
+
+		// TODO baki: added below for charat example
+		if(this->num_of_bdd_variables_ > DEFAULT_NUM_OF_VARIABLES) {
+			LOG(FATAL) << "Test me";
+			result = Automaton::DFAProjectAway(result,this->num_of_bdd_variables_  - 1);
+			result_auto = new StringAutomaton(result,this->num_of_bdd_variables_ - 1);
+		} else {
+			result_auto = this->clone();
+		}
+		return result_auto;
+	}
+
+		// k_track needs to be mapped to indices 0-VAR_PER_TRACK
+		// while all others need to be pushed back by VAR_PER_TRACK, then
+		// interleaved with 1 less than current number of tracks
+
+	int* map = GetBddVariableIndices(this->num_tracks_*VAR_PER_TRACK);
+	std::vector<int> indices;
+	for(int i = 0; i < this->num_tracks_; i++) {
+		if(i == k_track) {
+			for(int k = 0; k < VAR_PER_TRACK; k++) {
+				map[i+this->num_tracks_*k] = k;
+			}
+		} else {
+			for(int k = 0; k < VAR_PER_TRACK; k++) {
+				indices.push_back(i+this->num_tracks_*k);
+				map[i+this->num_tracks_*k] = VAR_PER_TRACK + i+(this->num_tracks_-1)*k;
+			}
+		}
+	}
+	std::vector<int> _map;
+	for(int i = 0; i < this->num_tracks_*VAR_PER_TRACK; i++) {
+		_map.push_back(map[i]);
+	}
+
+	result = Automaton::DFAProjectAway(result,_map,indices);
+
+	if(find_sink(result) != -1) {
+		// trim prefix first, then suffix
+		temp = TrimLambdaSuffix(result,VAR_PER_TRACK,false);
+
+		dfaFree(result);
+		result = temp;
+
+		temp = TrimLambdaPrefix(result, VAR_PER_TRACK);
+		dfaFree(result);
+		result = temp;
+		result_auto = new StringAutomaton(result,DEFAULT_NUM_OF_VARIABLES);
+	} else {
+		DVLOG(VLOG_LEVEL) << "no sink";
+		dfaFree(result);
+		result_auto = StringAutomaton::MakeAnyString();
+	}
+	return result_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::ProjectAwayVariable(std::string var_name) {

@@ -382,19 +382,19 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
 void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *not_eq_term;
 
-  if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term)) {
-    if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term)) {
-      StringAutomaton_ptr temp,con;
-      Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
-      temp = StringAutomaton::MakeString(right_constant->getValue());
-      con = temp->Complement();
-      Value_ptr val = new Value(con);
-      bool result = symbol_table_->IntersectValue(var,val);
-      delete val;
-      setTermValue(not_eq_term, new Value(result));
-      return;
-    }
-  }
+//  if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term)) {
+//    if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term)) {
+//      StringAutomaton_ptr temp,con;
+//      Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
+//      temp = StringAutomaton::MakeString(right_constant->getValue());
+//      con = temp->Complement();
+//      Value_ptr val = new Value(con);
+//      bool result = symbol_table_->IntersectValue(var,val);
+//      delete val;
+//      setTermValue(not_eq_term, new Value(result));
+//      return;
+//    }
+//  }
 
   visit_children_of(not_eq_term);
 
@@ -1055,13 +1055,10 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   Variable_ptr variable = symbol_table_->get_variable(qi_term->getVarName());
 
   Value_ptr variable_value = symbol_table_->get_value(variable);
-
   Value_ptr result = nullptr;
-  if (Value::Type::STRING_AUTOMATON == variable_value->getType())
-  {
+  if (Value::Type::STRING_AUTOMATON == variable_value->getType()) {
     result = new Value(variable_value->getStringAutomaton()->GetAutomatonForVariable(qi_term->getVarName()));
-  } else if (Value::Type::BINARYINT_AUTOMATON == variable_value->getType())
-  {
+  } else if (Value::Type::BINARYINT_AUTOMATON == variable_value->getType()) {
     // TODO baki: added for charat may need to fix it
     auto var_auto = variable_value->getBinaryIntAutomaton()->GetBinaryAutomatonFor(qi_term->getVarName());
     auto unary_auto = var_auto->ToUnaryAutomaton();
@@ -1228,7 +1225,7 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
       }
       return is_satisfiable;
     } else if (constraint_information_->has_string_constraint(term)) {
-      LOG(FATAL) << "Mixed Multi- and Single- Track String Automata Constraint";
+      DVLOG(VLOG_LEVEL) << "Mixed Multi- and Single- Track String Automata Constraint";
       return true;  // should be checked already
     }
   }

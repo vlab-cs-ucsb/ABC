@@ -65,7 +65,7 @@ void StringConstraintSolver::setCallbacks() {
       case Term::Type::BEGINS:
       case Term::Type::NOTBEGINS: {
         auto formula = string_formula_generator_.get_term_formula(term);
-        if (formula != nullptr) {
+        if (formula != nullptr && formula->GetType() != Theory::StringFormula::Type::NONRELATIONAL) {
           DVLOG(VLOG_LEVEL) << "Relational String Formula: " << *formula << "@" << term;
           auto relational_str_auto = StringAutomaton::MakeAutomaton(formula->clone());
           auto result = new Value(relational_str_auto);
@@ -171,7 +171,11 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
 
   if (has_string_formula) {
     if (is_satisfiable) {
+    	LOG(INFO) << "Before intersect value: " << group_name;
+    	auto and_auto = and_value->getStringAutomaton();
+    	LOG(INFO) << "and_auto->num_tracks_ : " << and_auto->GetNumTracks();
       symbol_table_->IntersectValue(group_name, and_value);  // update value
+      LOG(INFO) << "After intersect value: " << group_name;
     } else {
       auto group_formula = string_formula_generator_.get_group_formula(group_name);
       auto value = new Value(Theory::StringAutomaton::MakePhi(group_formula->clone()));
@@ -353,11 +357,12 @@ bool StringConstraintSolver::set_term_value(Term_ptr term, Value_ptr value) {
   if (result.second == false) {
     LOG(FATAL)<< "Term automaton is already computed: " << *term << "@" << term;
   }
-//  std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
-//  if(!group_name.empty()) {
-//    symbol_table_->set_value(group_name,value);
-//    return true;
-//  }
+  std::string group_name = string_formula_generator_.get_term_group_name(term);
+  if(!group_name.empty()) {
+  	LOG(INFO) << "Setting value for " << group_name;
+    symbol_table_->set_value(group_name,value);
+    return true;
+  }
   return result.second;
 }
 
