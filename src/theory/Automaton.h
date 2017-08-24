@@ -256,7 +256,7 @@ public:
   virtual Automaton_ptr PrefixesAtIndex(const int index) const ;
 
   /**
-   * Generates an automaton that accepts substrings of the strings accepted by the current automaotn.
+   * Generates an automaton that accepts substrings of the strings accepted by the current automaton.
    * @return
    */
   virtual Automaton_ptr SubStrings() const;

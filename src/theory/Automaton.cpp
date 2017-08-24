@@ -264,7 +264,7 @@ Automaton_ptr Automaton::Suffixes() const {
   Automaton_ptr suffixes_auto = this->MakeAutomaton(dfaMinimize(result_dfa), number_of_variables);
   dfaFree(result_dfa);
 
-  while (number_of_extra_bits_needed-- > 0) {
+  for (int i = 0; i < number_of_extra_bits_needed; ++i) {
     suffixes_auto->ProjectAway((unsigned)(suffixes_auto->num_of_bdd_variables_ - 1));
     suffixes_auto->Minimize();
   }
@@ -353,7 +353,7 @@ Automaton_ptr Automaton::SuffixesFromTo(const int from_index, const int to_index
   Automaton_ptr suffixes_auto = this->MakeAutomaton(dfaMinimize(result_dfa), number_of_variables);
   dfaFree(result_dfa);
 
-  while (number_of_extra_bits_needed-- > 0) {
+  for (int i = 0; i < number_of_extra_bits_needed; ++i) {
     suffixes_auto->ProjectAway((unsigned)(suffixes_auto->num_of_bdd_variables_ - 1));
     suffixes_auto->Minimize();
   }
@@ -418,7 +418,7 @@ Automaton_ptr Automaton::PrefixesAtIndex(const int index) const  {
 }
 
 /**
- * In theory empty string should be always a prefix, suffix, and a factor (substring)
+ * In theory empty string should be always a prefix, suffix, and a factor (substring).
  */
 Automaton_ptr Automaton::SubStrings() const {
   Automaton_ptr suffixes_auto = this->Suffixes();

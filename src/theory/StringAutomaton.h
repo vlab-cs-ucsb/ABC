@@ -209,8 +209,20 @@ public:
    */
   StringAutomaton_ptr Repeat(unsigned min, unsigned max);
 
+  /**
+   * Returns an automaton that accepts characters at the given index.
+   * @param index
+   * @return
+   */
   StringAutomaton_ptr CharAt(const int index);
+
+  /**
+     * Returns an automaton that accepts characters at the given index.
+     * @param index
+     * @return
+     */
   StringAutomaton_ptr CharAt(IntAutomaton_ptr index_auto);
+
   StringAutomaton_ptr SubString(const int start);
   /**
    * TODO decide on substring second param; which one is better:

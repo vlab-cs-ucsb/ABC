@@ -401,79 +401,49 @@ StringAutomaton_ptr StringAutomaton::Repeat(unsigned min, unsigned max) {
 }
 
 StringAutomaton_ptr StringAutomaton::CharAt(const int index) {
-
   if (this->IsEmptyLanguage()) {
-    auto charat_auto = StringAutomaton::MakePhi();
-    DVLOG(VLOG_LEVEL) << charat_auto->id_ << " = [" << this->id_ << "]->charAt(" << index << ")";
+    StringAutomaton_ptr charat_auto = StringAutomaton::MakePhi();
+    DVLOG(VLOG_LEVEL) << charat_auto->id_ << " = [" << this->id_ << "]->CharAt(" << index << ")";
     return charat_auto;
   }
 
-  std::set<int> states_at_index = GetStatesReachableBy(index);
+  std::unordered_set<int> states_at_index = this->GetStatesReachableBy(index);
   unsigned max = states_at_index.size();
   if (max == 0) {
-    auto charat_auto = StringAutomaton::MakePhi();
-    DVLOG(VLOG_LEVEL) << charat_auto->id_ << " = [" << this->id_ << "]->charAt(" << index << ")";
+    StringAutomaton_ptr charat_auto = StringAutomaton::MakePhi();
+    DVLOG(VLOG_LEVEL) << charat_auto->id_ << " = [" << this->id_ << "]->CharAt(" << index << ")";
     return charat_auto;
   }
 
   // if number of variables are too large for mona, implement an algorithm that find suffixes by finding
   // sub suffixes and union them
-  const int number_of_variables = this->num_of_bdd_variables_ + std::ceil(std::log2(max)), // number of variables required
-          sink_state = this->GetSinkState();
-  int* indices = GetBddVariableIndices(number_of_variables);
-
+  const int number_of_variables = this->num_of_bdd_variables_ + std::ceil(std::log2(max));
+  const int number_of_extra_bits_needed = number_of_variables - this->num_of_bdd_variables_;
+  std::string default_extra_bit_string(number_of_extra_bits_needed, '0');
   unsigned extra_bits_value = 0;
 
-  const int number_of_extra_bits_needed = number_of_variables - this->num_of_bdd_variables_;
-
-  std::vector<char>* current_exception = nullptr;
-  std::set<std::vector<char>*> exceptions;
+  std::unordered_set<std::string> exceptions;
 
   paths state_paths = nullptr, pp = nullptr;
   trace_descr tp = nullptr;
   for (int s : states_at_index) {
-    state_paths = pp = make_paths(this->dfa_->bddm, this->dfa_->q[s]);
-    while (pp) {
-      if (pp->to != (unsigned)sink_state) {
-        current_exception = new std::vector<char>();
-        for (int j = 0; j < this->num_of_bdd_variables_; j++) {
-          for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
-          if (tp) {
-            if (tp->value) {
-              current_exception->push_back('1');
-            } else {
-              current_exception->push_back('0');
-            }
-          } else {
-            current_exception->push_back('X');
-          }
-        }
-
-        auto extra_bit_binary_format = GetBinaryFormat(extra_bits_value, number_of_extra_bits_needed);
-        for (int i = 0; i < number_of_extra_bits_needed; i++) {
-          current_exception->push_back(extra_bit_binary_format[i]); // collected transition
-        }
-        current_exception->push_back('\0');
-        exceptions.insert(current_exception);
-        current_exception = nullptr;
-      }
-      tp = nullptr;
-      pp = pp->next;
+    std::unordered_map<std::string, int> transition_map = Automaton::DFAGetTransitionsFrom(dfa_, s, num_of_bdd_variables_, default_extra_bit_string);
+    std::string extra_bit_binary_format = GetBinaryStringMSB(extra_bits_value, number_of_extra_bits_needed);
+    for (auto& transition : transition_map) {
+      std::string current_transition = transition.first;
+      current_transition.replace(current_transition.end() - (number_of_extra_bits_needed + 1), current_transition.end(), extra_bit_binary_format);
+      exceptions.insert(current_transition);
     }
     ++extra_bits_value;
-    kill_paths(state_paths);
-    state_paths = pp = nullptr;
   }
 
+  int* indices = GetBddVariableIndices(number_of_variables);
   char statuses[3] = {'-', '+', '-'};
   dfaSetup(3, number_of_variables, indices);
   // 0 -> 1
   dfaAllocExceptions(exceptions.size());
-  for (auto it = exceptions.begin(); it != exceptions.end();) {
-    auto ex = *it;
-    dfaStoreException(1, &(*ex->begin()));
-    it = exceptions.erase(it);
-    delete ex;
+  for (auto& transition : exceptions) {
+    dfaStoreException(1, const_cast<char*>(transition.data()));
   }
   dfaStoreState(2); // 0 -> 2
 
@@ -497,7 +467,6 @@ StringAutomaton_ptr StringAutomaton::CharAt(const int index) {
 }
 
 StringAutomaton_ptr StringAutomaton::CharAt(IntAutomaton_ptr index_auto) {
-
   StringAutomaton_ptr prefixes_auto = this->Prefixes();
   StringAutomaton_ptr string_length_auto = new StringAutomaton(index_auto->GetDFA());
   StringAutomaton_ptr any_char_auto = StringAutomaton::MakeAnyChar();
