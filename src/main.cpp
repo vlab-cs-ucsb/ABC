@@ -182,7 +182,7 @@ int main(const int argc, const char **argv) {
 
 #ifndef NDEBUG
   if (VLOG_IS_ON(30)) {
-//    driver.ast2dot(output_root + "/optimized.dot");
+    driver.ast2dot(output_root + "/optimized.dot");
   }
 #endif
   driver.Solve();

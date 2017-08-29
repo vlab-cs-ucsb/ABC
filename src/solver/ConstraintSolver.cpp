@@ -187,18 +187,16 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 }
 
 void ConstraintSolver::visitOr(Or_ptr or_term) {
-  bool is_satisfiable = false;
+  bool is_satisfiable = true;
   bool is_component = constraint_information_->is_component(or_term);
 
-
-
-  if (not constraint_information_->has_mixed_constraint(or_term)) {
-    // below return is a tmp solution for just only arithmetic constraints
-    LOG(FATAL) << "do not have mixed constraints: " << *or_term << "@" << or_term;
-    Value_ptr result = new Value(is_satisfiable);
-    setTermValue(or_term, result);
-    return;
-  }
+//  if (not constraint_information_->has_mixed_constraint(or_term)) {
+//    // below return is a tmp solution for just only arithmetic constraints
+//    LOG(FATAL) << "do not have mixed constraints: " << *or_term << "@" << or_term;
+//    Value_ptr result = new Value(is_satisfiable);
+//    setTermValue(or_term, result);
+//    return;
+//  }
 
   DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
 
@@ -1225,7 +1223,7 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
       }
       return is_satisfiable;
     } else if (constraint_information_->has_string_constraint(term)) {
-      DVLOG(VLOG_LEVEL) << "Mixed Multi- and Single- Track String Automata Constraint";
+      DVLOG(VLOG_LEVEL) << "Mixed Multi- and Single- Track String Automata Constraint: " << *term;
       return true;  // should be checked already
     }
   }

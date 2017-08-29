@@ -288,6 +288,7 @@ Value_ptr SymbolTable::get_value(Variable_ptr variable) {
     break;
   case Variable::Type::STRING:
     result = new Value(Theory::StringAutomaton::MakeAnyString());
+    result->getStringAutomaton()->GetFormula()->AddVariable(variable->getName(),1);
     DVLOG(VLOG_LEVEL) << "initialized variable as any string: " << *variable;
     break;
   case Variable::Type::NONE:

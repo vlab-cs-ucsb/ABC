@@ -1319,13 +1319,13 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
     {
       auto string_auto = term_pre_value->getStringAutomaton();
       auto formula = string_auto->GetFormula();
-      if (formula == nullptr) {
+      if (formula == nullptr || string_auto->GetNumTracks() == 1) {
         formula = new Theory::StringFormula();
         formula->SetType(Theory::StringFormula::Type::VAR);
         formula->AddVariable(qi_term->getVarName(), 1);
         string_auto->SetFormula(formula);
       } else if (Theory::StringFormula::Type::VAR != formula->GetType()) {
-        LOG(FATAL) << "fix me";
+      	LOG(FATAL) << "fix me";
       }
     }
       break;
