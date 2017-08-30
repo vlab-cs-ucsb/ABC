@@ -173,7 +173,7 @@ int main(const int argc, const char **argv) {
 
 #ifndef NDEBUG
   if (VLOG_IS_ON(30)) {
-//    driver.ast2dot(output_root + "/parser_out.dot");
+    driver.ast2dot(output_root + "/parser_out.dot");
   }
 #endif
 

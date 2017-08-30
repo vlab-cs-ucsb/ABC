@@ -111,7 +111,7 @@ UnaryAutomaton_ptr UnaryAutomaton::MakeAutomaton(SemilinearSet_ptr semilinear_se
   }
 
   unary_dfa = dfaBuild(&*statuses.begin());
-  delete[] indices; indices = nullptr;
+  //delete[] indices; indices = nullptr;
   if (not has_only_constants) {
     tmp_dfa = unary_dfa;
     unary_dfa = dfaMinimize(tmp_dfa);
@@ -256,7 +256,7 @@ IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool ad
   }
 
   int_auto->setMinus1(add_minus_one);
-  delete[] indices; indices = nullptr;
+  //delete[] indices; indices = nullptr;
   delete[] statuses; statuses = nullptr;
   DVLOG(VLOG_LEVEL)  << int_auto->getId() << " = [" << this->id_ << "]->toIntAutomaton(" << number_of_variables << ", " << add_minus_one << ")";
 

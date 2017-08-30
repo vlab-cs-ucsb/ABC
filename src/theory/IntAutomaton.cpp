@@ -83,7 +83,7 @@ IntAutomaton_ptr IntAutomaton::makeZero(int num_of_variables) {
   dfaStoreState(1);
   zero_int_dfa = dfaBuild(statuses);
   zero_int = new IntAutomaton(zero_int_dfa, num_of_variables);
-  delete[] variable_indices;
+  //delete[] variable_indices;
 
   DVLOG(VLOG_LEVEL) << zero_int->id_ << " = makeZero()";
 
@@ -105,7 +105,7 @@ IntAutomaton_ptr IntAutomaton::makeAnyInt(int num_of_variables) {
 
   any_int_dfa = dfaBuild(statuses);
   any_int = new IntAutomaton(any_int_dfa, true, num_of_variables);
-  delete[] variable_indices;
+  //delete[] variable_indices;
 
   DVLOG(VLOG_LEVEL) << any_int->id_ << " = makeAnyInt()";
 
@@ -808,7 +808,7 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
     }
   }
 
-  delete[] indices; indices = nullptr;
+  //delete[] indices; indices = nullptr;
   delete[] statuses;
 
   unary_auto = new UnaryAutomaton(unary_dfa);

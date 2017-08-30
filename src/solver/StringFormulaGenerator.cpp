@@ -111,6 +111,8 @@ void StringFormulaGenerator::visitAnd(And_ptr and_term) {
     if (has_mixed_constraint_) {
       constraint_information_->add_mixed_constraint(and_term);
     }
+  } else if(has_mixed_constraint_) {
+  	constraint_information_->add_mixed_constraint(and_term);
   }
 
   DVLOG(VLOG_LEVEL) << "post visit end: " << *and_term << "@" << and_term;
@@ -439,7 +441,6 @@ void StringFormulaGenerator::visitConcat(Concat_ptr concat_term) {
 		 constraint_information_->add_mixed_constraint(concat_term);
 	 }
 	 set_term_formula(concat_term,concat_formula);
-	 add_string_variables(current_group_,concat_term);
 }
 
 
@@ -790,7 +791,7 @@ void StringFormulaGenerator::add_string_variables(std::string group_name, Term_p
   if (StringFormula::Type::NONRELATIONAL == formula->GetType()) {
     clear_term_formula(term);
   } else {
-//    group_formula->MergeVariables(formula);
+    //group_formula->MergeVariables(formula);
     term_group_map_[term] = group_name;
   }
 }
@@ -814,6 +815,7 @@ void StringFormulaGenerator::delete_term_formula(Term_ptr term) {
 void StringFormulaGenerator::set_group_mappings() {
   DVLOG(VLOG_LEVEL)<< "start setting string group for components";
   for (auto& el : term_group_map_) {
+  	LOG(INFO) << *el.first;
     term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
   }
   // add a variable entry to symbol table for each group

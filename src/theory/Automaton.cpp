@@ -41,7 +41,9 @@ Automaton::Automaton(const Automaton& other)
 }
 
 Automaton::~Automaton() {
-    dfaFree(dfa_);
+	if(dfa_ != nullptr) {
+		dfaFree(dfa_);
+	}
 //  DVLOG(VLOG_LEVEL) << "deleted " << " [" << this->id_ << "]";
 }
 
@@ -135,13 +137,13 @@ bool Automaton::IsEqual(const Automaton_ptr other_automaton) const {
 
 int Automaton::GetInitialState() const {
   int initial_state = Automaton::DFAGetInitialState(this->dfa_);
-  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->GetInitialState()" << initial_state;
+  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->GetInitialState() = " << initial_state;
   return initial_state;
 }
 
 int Automaton::GetSinkState() const {
   int sink_state = Automaton::DFAGetSinkState(this->dfa_);
-  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->GetSinkState()" << sink_state;
+  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->GetSinkState() = " << sink_state;
   return sink_state;
 }
 

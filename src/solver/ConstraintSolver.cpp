@@ -626,11 +626,11 @@ void ConstraintSolver::visitNotIn(NotIn_ptr not_in_term) {
 void ConstraintSolver::visitLen(Len_ptr len_term) {
   visit_children_of(len_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *len_term;
-
+LOG(INFO) << "1";
   Value_ptr result = nullptr, param = getTermValue(len_term->term);
-
+  LOG(INFO) << "2";
   Theory::IntAutomaton_ptr int_auto = param->getStringAutomaton()->Length();
-
+  LOG(INFO) << "3";
   if (int_auto->isAcceptingSingleInt()) {
     result = new Value(int_auto->getAnAcceptingInt());
     delete int_auto;
@@ -638,7 +638,7 @@ void ConstraintSolver::visitLen(Len_ptr len_term) {
   } else {
     result = new Value(int_auto);
   }
-
+  LOG(INFO) << "4";
   setTermValue(len_term, result);
 }
 
@@ -1243,7 +1243,9 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
   // get term value returns result from the symbol table (should return)
   auto arithmetic_result = arithmetic_constraint_solver_.get_term_value(term);
   for (auto& string_term : arithmetic_constraint_solver_.get_string_terms_in(term)) {
+  	LOG(INFO) << "BeforE";
     visit(string_term);
+    LOG(INFO) << "After";
     auto string_term_result = getTermValue(string_term);
     is_satisfiable = string_term_result->is_satisfiable();
     if (not is_satisfiable) {

@@ -677,16 +677,13 @@ void VariableValueComputer::visitLen(Len_ptr len_term) {
     visit(child_term);
     return;
   }
-
   Value_ptr term_value = getTermPreImage(len_term);
   Value_ptr child_post_value = getTermPostImage(child_term);
-
   if (Value::Type::INT_CONSTANT == term_value->getType()) {
     child_value = new Value(child_post_value->getStringAutomaton()->RestrictLengthTo(term_value->getIntConstant()));
   } else {
     child_value = new Value(child_post_value->getStringAutomaton()->RestrictLengthTo(term_value->getIntAutomaton()));
   }
-
 
   setTermPreImage(child_term, child_value);
   visit(child_term);

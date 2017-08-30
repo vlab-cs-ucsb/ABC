@@ -253,7 +253,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(SemilinearSet_ptr semil
     delete bin_state;
   }
   binary_states.clear();
-  delete[] indices;
+  //delete[] indices;
   if (add_leading_zeros) {
     auto tmp_dfa = binary_dfa;
     binary_dfa = dfaProject(binary_dfa, (unsigned) (lz_index));
@@ -805,7 +805,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntGraterThanOrEqualToZero(std::v
   auto positive_numbers_dfa = dfaBuild(statuses);
   auto postivie_numbers_auto = new BinaryIntAutomaton(positive_numbers_dfa, number_of_variables, false);
 
-  delete[] bin_variable_indices;
+  //delete[] bin_variable_indices;
 
   DVLOG(VLOG_LEVEL) << postivie_numbers_auto->id_
                     << " = [BinaryIntAutomaton]->MakeIntGraterThanOrEqualToZero(<indexes>, " << number_of_variables
@@ -839,6 +839,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
       ++num_of_zero_coefficient;
     }
   }
+	LOG(INFO) << "-----HERE 2";
 
   const int constant = formula->GetConstant();
   if (max < constant) {
@@ -857,6 +858,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
 
   const int total_num_variables = formula->GetNumberOfVariables();
   const int active_num_variables = total_num_variables - num_of_zero_coefficient;
+  LOG(INFO) << "Total_num_variables : " << total_num_variables;
+  LOG(INFO) << "Active_num_variables: " << active_num_variables;
   CHECK_LT(active_num_variables, 64);
   // TODO instead of doing shift, try to update algorithm
   unsigned long transitions = 1 << active_num_variables;  //number of transitions from each state
@@ -985,7 +988,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
   auto tmp_dfa = dfaBuild(statuses);
   auto equality_dfa = dfaMinimize(tmp_dfa);
   dfaFree(tmp_dfa);
-  delete[] indices;
+  //delete[] indices;
   delete[] statuses;
 
   auto equality_auto = new BinaryIntAutomaton(equality_dfa, formula, false);
@@ -1144,7 +1147,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticF
   auto tmp_dfa = dfaBuild(statuses);
   auto equality_dfa = dfaMinimize(tmp_dfa);
   dfaFree(tmp_dfa);
-  delete[] indices;
+  //delete[] indices;
   delete[] statuses;
 
   auto equality_auto = new BinaryIntAutomaton(equality_dfa, formula, true);
@@ -1302,7 +1305,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntLessThan(ArithmeticFormula_ptr
   auto tmp_dfa = dfaBuild(statuses);
   auto less_than_dfa = dfaMinimize(tmp_dfa);
   dfaFree(tmp_dfa);
-  delete[] indices;
+  //delete[] indices;
   delete[] statuses;
 
   auto less_than_auto = new BinaryIntAutomaton(less_than_dfa, formula, false);
@@ -1450,7 +1453,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberLessThan(ArithmeticF
   auto tmp_dfa = dfaBuild(statuses);
   auto less_than_dfa = dfaMinimize(tmp_dfa);
   dfaFree(tmp_dfa);
-  delete[] indices;
+  //delete[] indices;
   delete[] statuses;
 
   auto less_than_auto = new BinaryIntAutomaton(less_than_dfa, formula, true);
@@ -1543,7 +1546,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeTrimHelperAuto(int var_index, int
   auto trim_helper_dfa = dfaBuild(statuses);
   auto trim_helper_auto = new BinaryIntAutomaton(trim_helper_dfa, number_of_variables, false);
 
-  delete[] indices;
+  //delete[] indices;
   delete[] exception;
 
   DVLOG(VLOG_LEVEL) << trim_helper_auto->id_ << " = [BinaryIntAutomaton]->MakeTrimHelperAuto(" << var_index << ", "

@@ -163,7 +163,7 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
    *  intersection below with any string, we can avoid that with more checks later!!!
    */
   if (and_value == nullptr and (not has_string_formula)) {
-    auto group_formula = string_formula_generator_.get_group_formula(group_name);
+  	auto group_formula = string_formula_generator_.get_group_formula(group_name);
     and_value = new Value(Theory::StringAutomaton::MakeAnyStringUnaligned(group_formula->clone()));
     has_string_formula = true;
     is_satisfiable = true;
