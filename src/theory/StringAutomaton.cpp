@@ -521,12 +521,12 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
   }
 
 	DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeEquality(" << formula->str() << ")";
-	equality_auto->inspectAuto(false,true);
-	std::cin.get();
+	//equality_auto->inspectAuto(false,true);
+	//std::cin.get();
 
-	auto temp1 = equality_auto->GetKTrack(left_track);
-	temp1->inspectAuto(false,true);
-	std::cin.get();
+	//auto temp1 = equality_auto->GetKTrack(left_track);
+	//temp1->inspectAuto(false,true);
+	//std::cin.get();
 
 	return equality_auto;
 }
@@ -2371,12 +2371,15 @@ StringAutomaton_ptr StringAutomaton::GetAutomatonForVariable(std::string var_nam
 	result_formula->AddVariable(var_name,1);
 	result_auto->SetFormula(result_formula);
 	DVLOG(VLOG_LEVEL) << result_auto->id_ << " = [" << this->id_ << "]->GetAutomatonForVariable(" << var_name << ")";
-	std::cin.get();
+	//std::cin.get();
 	return result_auto;
 }
 
 // handle case where only 1 track, but make sure correct # of variables
 StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
+
+	return StringAutomaton::MakeAnyString();
+
 	DFA_ptr result = this->dfa_, temp;
 	StringAutomaton_ptr result_auto = nullptr;
 
@@ -2399,20 +2402,21 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 		return result_auto;
 	}
 
-	// k_track needs to be mapped to indices 0-VAR_PER_TRACK
+	// k_track needs to be mapped to indices 0-(VAR_PER_TRACK-1)
 	// while all others need to be pushed back by VAR_PER_TRACK, then
 	// interleaved with 1 less than current number of tracks
 	int* before_indices = CreateBddVariableIndices(this->num_tracks_*VAR_PER_TRACK);
 	int* map = CreateBddVariableIndices(this->num_tracks_*VAR_PER_TRACK);
 	std::vector<int> indices;
 	for(int i = 0; i < this->num_tracks_; i++) {
+		int shift = (i > k_track ? i-1 : i);
 		if(i == k_track) {
 			for(int k = 0; k < VAR_PER_TRACK; k++) {
 				map[i+this->num_tracks_*k] = k;
 			}
 		} else {
 			for(int k = 0; k < VAR_PER_TRACK; k++) {
-				map[i+this->num_tracks_*k] = VAR_PER_TRACK + i+(this->num_tracks_-1)*k;
+				map[i+this->num_tracks_*k] = VAR_PER_TRACK + shift+(this->num_tracks_-1)*k;
 			}
 		}
 	}
@@ -2445,9 +2449,9 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 	LOG(INFO) << "indices: " << c;
 
 	result = Automaton::DFAProjectAway(result,_map,indices);
-LOG(INFO) << "After Automaton::DFAProjectAway";
-StringAutomaton_ptr printer = new StringAutomaton(result,VAR_PER_TRACK);
-printer->inspectAuto(false,true);
+//LOG(INFO) << "After Automaton::DFAProjectAway";
+//StringAutomaton_ptr printer = new StringAutomaton(result,VAR_PER_TRACK);
+//printer->inspectAuto(false,true);
 	if(find_sink(result) != -1) {
 		// trim prefix first, then suffix
 LOG(INFO) << 1;
@@ -2468,7 +2472,7 @@ LOG(INFO) << 1;
 		result_auto = StringAutomaton::MakeAnyString();
 	}
 	delete[] map;
-result_auto->inspectAuto(false,true);
+//result_auto->inspectAuto(false,true);
 	return result_auto;
 }
 

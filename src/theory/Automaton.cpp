@@ -188,7 +188,9 @@ Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
 	if(this->num_of_bdd_variables_ != other_automaton->num_of_bdd_variables_) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
+	LOG(INFO) << this->num_of_bdd_variables_ << "," << other_automaton->num_of_bdd_variables_;
 	DFA_ptr concat_dfa = Automaton::DFAConcat(this->dfa_,other_automaton->dfa_,num_of_bdd_variables_);
+	LOG(INFO) << "after concat";
   Automaton_ptr concat_auto = MakeAutomaton(concat_dfa,this->GetFormula()->clone() ,num_of_bdd_variables_);
   DVLOG(VLOG_LEVEL) << concat_auto->id_ << " = [" << this->id_ << "]->concat(" << other_automaton->id_ << ")";
   return concat_auto;
@@ -1147,6 +1149,7 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 
   statuses = new char[expected_num_of_states + 1];
   int* concat_indices = GetBddVariableIndices(tmp_num_of_variables);
+  LOG(INFO) << "6";
 
   dfaSetup(expected_num_of_states, tmp_num_of_variables, concat_indices); //sink states are merged
   state_paths = pp = make_paths(right_dfa->bddm, right_dfa->q[right_dfa->s]);
@@ -1193,6 +1196,7 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 
   kill_paths(state_paths);
   state_paths = pp = nullptr;
+  LOG(INFO) << "7";
 
   for (i = 0; i < dfa1->ns; i++) {
     state_paths = pp = make_paths(dfa1->bddm, dfa1->q[i]);
@@ -1261,6 +1265,7 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
     kill_paths(state_paths);
     state_paths = pp = nullptr;
   }
+  LOG(INFO) << "8";
 
   //  initflag is 1 iff init is reached by some state. In this case,
   for (i = 0; i < dfa2->ns; i++) {
@@ -1344,11 +1349,14 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
   }
 
   statuses[expected_num_of_states]='\0';
+  LOG(INFO) << "9";
 
   DFA_ptr concat_dfa = dfaBuild(statuses);
   delete[] statuses; statuses = nullptr;
-  delete[] concat_indices; concat_indices = nullptr;
+  //delete[] concat_indices; concat_indices = nullptr;
+  LOG(INFO) << "Projecting: " << (unsigned) number_of_bdd_variables;
   DFA_ptr tmp_dfa = dfaProject(concat_dfa, (unsigned) number_of_bdd_variables);
+  LOG(INFO) << "After project";
   dfaFree(concat_dfa);
   concat_dfa = dfaMinimize(tmp_dfa);
   dfaFree(tmp_dfa); tmp_dfa = nullptr;
@@ -1369,12 +1377,15 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 //    delete right_auto; right_auto = nullptr;
 //  }
 
+  LOG(INFO) << "11";
+
   if (left_hand_side_accepts_emtpy_input) {
 		tmp_dfa = concat_dfa;
 		concat_dfa = DFAUnion(tmp_dfa,dfa2);
 		delete tmp_dfa;
 		delete left_dfa; left_dfa = nullptr;
 	}
+  LOG(INFO) << "12";
 
 	if (right_hand_side_accepts_empty_input) {
 		tmp_dfa = concat_dfa;
@@ -1382,6 +1393,7 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 		delete tmp_dfa;
 		delete right_dfa; right_dfa = nullptr;
 	}
+  LOG(INFO) << "13";
 
   //DVLOG(VLOG_LEVEL) << concat_auto->id_ << " = [" << this->id_ << "]->concat(" << other_auto->id_ << ")";
 
