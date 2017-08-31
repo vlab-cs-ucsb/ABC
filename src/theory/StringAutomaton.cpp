@@ -2377,9 +2377,6 @@ StringAutomaton_ptr StringAutomaton::GetAutomatonForVariable(std::string var_nam
 
 // handle case where only 1 track, but make sure correct # of variables
 StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
-
-	return StringAutomaton::MakeAnyString();
-
 	DFA_ptr result = this->dfa_, temp;
 	StringAutomaton_ptr result_auto = nullptr;
 
