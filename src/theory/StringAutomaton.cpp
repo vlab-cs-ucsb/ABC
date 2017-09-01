@@ -666,7 +666,10 @@ StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
   } else {
     intersect_formula = nullptr;
   }
-  LOG(INFO) << "After intersect: " << *intersect_formula;
+
+LOG(INFO) << num_of_bdd_variables_ << "," << other_auto->num_of_bdd_variables_;
+LOG(INFO) << intersect_formula->GetNumberOfVariables();
+
 	auto intersect_auto = new StringAutomaton(intersect_dfa,intersect_formula,this->num_of_bdd_variables_);
 
   DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << other_auto->id_ << ")";

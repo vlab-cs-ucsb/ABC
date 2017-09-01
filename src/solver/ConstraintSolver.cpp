@@ -360,11 +360,19 @@ void ConstraintSolver::visitTimes(Times_ptr times_term) {
 
 void ConstraintSolver::visitEq(Eq_ptr eq_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *eq_term;
-
+LOG(INFO) << "Before EQ";
   visit_children_of(eq_term);
 
   Value_ptr result = nullptr, param_left = getTermValue(eq_term->left_term), param_right = getTermValue(
       eq_term->right_term);
+
+auto left_auto = param_left->getStringAutomaton();
+auto right_auto = param_right->getStringAutomaton();
+LOG(INFO) << "left auto->num_tracks = " << left_auto->GetNumTracks();
+LOG(INFO) << "right_auto->num_tracks= " << right_auto->GetNumTracks();
+
+LOG(INFO) << "left formula var: " << left_auto->GetFormula()->GetNumberOfVariables();
+LOG(INFO) << "rght formula var: " << right_auto->GetFormula()->GetNumberOfVariables();
 
   if (Value::Type::BOOL_CONSTANT == param_left->getType() and Value::Type::BOOL_CONSTANT == param_right->getType()) {
     result = new Value(param_left->getBoolConstant() == param_right->getBoolConstant());
@@ -373,8 +381,10 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
     result = new Value(param_left->getIntConstant() == param_right->getIntConstant());
   } else {
     result = param_left->intersect(param_right);
+    LOG(INFO) << result->getStringAutomaton()->GetNumTracks();
   }
   setTermValue(eq_term, result);
+LOG(INFO) << "After EQ";
 }
 
 void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
@@ -549,20 +559,15 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
   Value_ptr result = nullptr, concat_value = nullptr, param = nullptr;
   path_trace_.push_back(concat_term);
   for (auto& term_ptr : *(concat_term->term_list)) {
-  	LOG(INFO) << "1";
     visit(term_ptr);
-    LOG(INFO) << "2";
     param = getTermValue(term_ptr);
-    LOG(INFO) << "3";
     if (result == nullptr) {
       result = param->clone();
     } else {
-    	LOG(INFO) << "4";
       concat_value = result->concat(param);
       delete result;
       result = concat_value;
     }
-    LOG(INFO) << "5";
   }
   path_trace_.pop_back();
   setTermValue(concat_term, result);

@@ -116,7 +116,7 @@ std::string StringFormula::str() const {
 
 StringFormula_ptr StringFormula::Intersect(Formula_ptr other) {
 	StringFormula_ptr intersect_formula = this->clone();
-	intersect_formula->MergeVariables(other);
+	//intersect_formula->MergeVariables(other);
 	intersect_formula->ResetCoefficients(0);
 	intersect_formula->SetType(StringFormula::Type::INTERSECT);
 	return intersect_formula;
@@ -124,7 +124,7 @@ StringFormula_ptr StringFormula::Intersect(Formula_ptr other) {
 
 StringFormula_ptr StringFormula::Union(Formula_ptr other) {
 	StringFormula_ptr union_formula = this->clone();
-	union_formula->MergeVariables(other);
+	//union_formula->MergeVariables(other);
 	union_formula->ResetCoefficients(0);
 	union_formula->SetType(StringFormula::Type::UNION);
 	return union_formula;
