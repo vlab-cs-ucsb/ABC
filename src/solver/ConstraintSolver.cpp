@@ -549,15 +549,20 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
   Value_ptr result = nullptr, concat_value = nullptr, param = nullptr;
   path_trace_.push_back(concat_term);
   for (auto& term_ptr : *(concat_term->term_list)) {
+  	LOG(INFO) << "1";
     visit(term_ptr);
+    LOG(INFO) << "2";
     param = getTermValue(term_ptr);
+    LOG(INFO) << "3";
     if (result == nullptr) {
       result = param->clone();
     } else {
+    	LOG(INFO) << "4";
       concat_value = result->concat(param);
       delete result;
       result = concat_value;
     }
+    LOG(INFO) << "5";
   }
   path_trace_.pop_back();
   setTermValue(concat_term, result);
