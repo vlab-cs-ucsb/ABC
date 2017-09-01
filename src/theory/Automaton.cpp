@@ -188,12 +188,7 @@ Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
 	if(this->num_of_bdd_variables_ != other_automaton->num_of_bdd_variables_) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
-	inspectAuto(false,true);
-	other_automaton->inspectAuto(false,true);
-	LOG(INFO) << "Before concat";
-	std::cin.get();
 	DFA_ptr concat_dfa = Automaton::DFAConcat(this->dfa_,other_automaton->dfa_,num_of_bdd_variables_);
-  LOG(INFO) << "After concat";
 	Automaton_ptr concat_auto = MakeAutomaton(concat_dfa,this->GetFormula()->clone() ,num_of_bdd_variables_);
   DVLOG(VLOG_LEVEL) << concat_auto->id_ << " = [" << this->id_ << "]->concat(" << other_automaton->id_ << ")";
   return concat_auto;
@@ -812,7 +807,6 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 	tmp_num_of_variables = number_of_bdd_variables + 1; // add one extra bit
 	state_id_shift_amount = left_dfa->ns;
 	expected_num_of_states = left_dfa->ns + right_dfa->ns;
-
 	is_start_state_reachable = TEMPisStartStateReachableFromAnAcceptingState(right_dfa);
 	if (not is_start_state_reachable) {
 		expected_num_of_states = expected_num_of_states  - 1; // if start state is reachable from an accepting state, it will be merge with accepting states of left hand side
@@ -842,7 +836,6 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 
 	statuses = new char[expected_num_of_states + 1];
 	int* concat_indices = GetBddVariableIndices(tmp_num_of_variables);
-
 	dfaSetup(expected_num_of_states, tmp_num_of_variables, concat_indices); //sink states are merged
 	state_paths = pp = make_paths(right_dfa->bddm, right_dfa->q[right_dfa->s]);
 	while (pp) {
@@ -884,10 +877,8 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 		tp = nullptr;
 		pp = pp->next;
 	}
-
 	kill_paths(state_paths);
 	state_paths = pp = nullptr;
-
 	for (i = 0; i < left_dfa->ns; i++) {
 		state_paths = pp = make_paths(left_dfa->bddm, left_dfa->q[i]);
 		while (pp) {
@@ -917,6 +908,7 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 			pp = pp->next;
 		}
 		// generate concat automaton
+
 		if (DFAIsAcceptingState(left_dfa,i)) {
 			dfaAllocExceptions(exceptions_left_auto.size() + exceptions_right_auto.size());
 			for (auto entry : exceptions_left_auto) {
@@ -942,6 +934,7 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 			dfaStoreState(sink);
 			statuses[i] = '-';
 		}
+		exceptions_left_auto.clear();
 		kill_paths(state_paths);
 		state_paths = pp = nullptr;
 	}
@@ -1015,8 +1008,8 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 			dfaStoreState(sink);
 			statuses[sink] = '-';
 		}
+		exceptions_fix.clear();
 	}
-
 	if(!right_sink && !left_sink) {
 		dfaAllocExceptions(0);
 		dfaStoreState(sink);
@@ -1024,11 +1017,8 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 	}
 
 	statuses[expected_num_of_states]='\0';
-LOG(INFO) << "before build";
 	DFA_ptr concat_dfa = dfaBuild(statuses);
-LOG(INFO) << "After build";
 	delete[] statuses; statuses = nullptr;
-	//delete[] concat_indices; concat_indices = nullptr;
 	DFA_ptr tmp_dfa = dfaProject(concat_dfa, (unsigned) number_of_bdd_variables);
 	dfaFree(concat_dfa);
 	concat_dfa = dfaMinimize(tmp_dfa);
