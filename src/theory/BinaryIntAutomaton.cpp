@@ -839,7 +839,6 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
       ++num_of_zero_coefficient;
     }
   }
-	LOG(INFO) << "-----HERE 2";
 
   const int constant = formula->GetConstant();
   if (max < constant) {
@@ -858,8 +857,6 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
 
   const int total_num_variables = formula->GetNumberOfVariables();
   const int active_num_variables = total_num_variables - num_of_zero_coefficient;
-  LOG(INFO) << "Total_num_variables : " << total_num_variables;
-  LOG(INFO) << "Active_num_variables: " << active_num_variables;
   CHECK_LT(active_num_variables, 64);
   // TODO instead of doing shift, try to update algorithm
   unsigned long transitions = 1 << active_num_variables;  //number of transitions from each state

@@ -21,6 +21,7 @@
 #include "../smt/Visitor.h"
 #include "../theory/StringFormula.h"
 #include "../theory/Formula.h"
+#include "../theory/StringAutomaton.h"
 #include "ConstraintInformation.h"
 #include "options/Solver.h"
 #include "SymbolTable.h"

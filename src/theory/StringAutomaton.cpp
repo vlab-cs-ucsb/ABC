@@ -2449,10 +2449,11 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 	LOG(INFO) << "indices: " << c;
 
 	result = Automaton::DFAProjectAway(result,_map,indices);
-//LOG(INFO) << "After Automaton::DFAProjectAway";
-//StringAutomaton_ptr printer = new StringAutomaton(result,VAR_PER_TRACK);
-//printer->inspectAuto(false,true);
-	if(find_sink(result) != -1) {
+LOG(INFO) << "After Automaton::DFAProjectAway";
+StringAutomaton_ptr printer = new StringAutomaton(result,VAR_PER_TRACK);
+printer->inspectAuto(false,true);
+std::cin.get();
+  if(find_sink(result) != -1) {
 		// trim prefix first, then suffix
 LOG(INFO) << 1;
 		temp = TrimLambdaSuffix(result,VAR_PER_TRACK,false);

@@ -822,6 +822,8 @@ void StringFormulaGenerator::set_group_mappings() {
   // define a variable mapping for a group
   for (auto& el : group_formula_) {
     symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
+    auto init_val = StringAutomaton::MakeAnyStringAligned(el.second->clone());
+    symbol_table_->set_value(el.first,new Value(init_val));
     for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
       symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
     }
