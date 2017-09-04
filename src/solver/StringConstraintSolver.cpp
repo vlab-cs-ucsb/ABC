@@ -67,7 +67,7 @@ void StringConstraintSolver::setCallbacks() {
         auto formula = string_formula_generator_.get_term_formula(term);
         if (formula != nullptr && formula->GetType() != Theory::StringFormula::Type::NONRELATIONAL) {
           DVLOG(VLOG_LEVEL) << "Relational String Formula: " << *formula << "@" << term;
-          auto relational_str_auto = StringAutomaton::MakeAutomaton(formula->clone());
+          auto relational_str_auto = StringAutomaton::MakeAutomaton(formula->clone())->Intersect(Theory::StringAutomaton::MakeAnyStringAligned(formula->clone()));
           auto result = new Value(relational_str_auto);
           set_term_value(term, result);
           // once we solve an atomic string constraint,
@@ -164,7 +164,7 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
    */
   if (and_value == nullptr and (not has_string_formula)) {
   	auto group_formula = string_formula_generator_.get_group_formula(group_name);
-    and_value = new Value(Theory::StringAutomaton::MakeAnyStringUnaligned(group_formula->clone()));
+    and_value = new Value(Theory::StringAutomaton::MakeAnyStringAligned(group_formula->clone()));
     has_string_formula = true;
     is_satisfiable = true;
   }
@@ -301,7 +301,7 @@ void StringConstraintSolver::postVisitAnd(And_ptr and_term) {
    */
   if (and_value == nullptr and (not has_string_formula)) {
     auto group_formula = string_formula_generator_.get_group_formula(group_name);
-    and_value = new Value(Theory::StringAutomaton::MakeAnyStringUnaligned(group_formula->clone()));
+    and_value = new Value(Theory::StringAutomaton::MakeAnyStringAligned(group_formula->clone()));
     has_string_formula = true;
     is_satisfiable = true;
   }

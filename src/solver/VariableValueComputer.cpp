@@ -1324,6 +1324,7 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
       } else if (Theory::StringFormula::Type::VAR != formula->GetType()) {
       	LOG(FATAL) << "fix me";
       }
+
     }
       break;
     case Value::Type::INT_AUTOMATON:
