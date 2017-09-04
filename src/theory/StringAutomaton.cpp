@@ -498,6 +498,7 @@ StringAutomaton_ptr StringAutomaton::MakeNotBegins(StringFormula_ptr formula) {
 }
 
 StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
+
   StringAutomaton_ptr equality_auto = nullptr;
 	int num_tracks = formula->GetNumberOfVariables();
 	int left_track = formula->GetVariableIndex(1); // variable on the left of equality
@@ -662,24 +663,6 @@ StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
     //big_auto->inspectAuto(false,true);
 		auto intersect_auto = big_auto->Intersect(relation_other_auto->Intersect(MakeAnyStringAligned(relation_other_auto->GetFormula()->clone())));
     delete relation_other_auto;
-    
-    
-    
-    intersect_auto->inspectAuto(false,true);
-    std::cin.get();
-    LOG(INFO) << "BEFORE GETKTRACK(0)";
-    StringFormula_ptr ff = new StringFormula();
-    ff->AddVariable("T3_2",1);
-    ff->AddVariable("T4_2",1);
-    ff->SetVariableCoefficient("T4_2",2);
-    ff->SetType(StringFormula::Type::EQ);
-    ff->SetConstant("a");
-    auto aa = MakeEquality(ff);
-    aa->inspectAuto(false,true);
-    aa->GetKTrack(0);
-    //intersect_auto->GetKTrack(0);
-    LOG(INFO) << "AFTER GETKTRACK(0))";
-std::cin.get();
     return intersect_auto;
 	}
 
@@ -1930,10 +1913,10 @@ UnaryAutomaton_ptr StringAutomaton::ToUnaryAutomaton() {
     dfaFree(tmp_dfa);
   }
 
-  int* indices_map = GetBddVariableIndices(number_of_variables);
+  int* indices_map = CreateBddVariableIndices(number_of_variables);
   indices_map[number_of_variables - 1] = 0;
   dfaReplaceIndices(unary_dfa, indices_map);
-  //delete[] indices_map;
+  delete[] indices_map;
 
   // make sure no "dont care" states
   for(int i = 0; i < unary_dfa->ns; i++) {
@@ -2406,7 +2389,6 @@ StringAutomaton_ptr StringAutomaton::GetAutomatonForVariable(std::string var_nam
 
 // handle case where only 1 track, but make sure correct # of variables
 StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
-  LOG(INFO) << "In GetKTrack, id = " << this->id_;
   DFA_ptr res = this->dfa_, temp;
 	StringAutomaton_ptr result_auto = nullptr;
 
@@ -2480,26 +2462,26 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 		_map.push_back(map[i]);
 	}
 
-	std::string a,b,c;
-	for(int i = 0; i < this->num_tracks_*VAR_PER_TRACK; i++) {
-		a += std::to_string(map[i]) + " ";
-    b += std::to_string(before_indices[i]) + " ";
-	}
-	for(auto iter : indices) {
-		c += std::to_string(iter) + " ";
-	}
-	LOG(INFO) << "num_tracks = " << this->num_tracks_;
-	LOG(INFO) << "k_track    = " << k_track;
-	LOG(INFO) << "before : " << b;
-  LOG(INFO) << "after  : " << a;
-	LOG(INFO) << "indices: " << c;
+	// std::string a,b,c;
+	// for(int i = 0; i < this->num_tracks_*VAR_PER_TRACK; i++) {
+	// 	a += std::to_string(map[i]) + " ";
+  //   b += std::to_string(before_indices[i]) + " ";
+	// }
+	// for(auto iter : indices) {
+	// 	c += std::to_string(iter) + " ";
+	// }
+	// LOG(INFO) << "num_tracks = " << this->num_tracks_;
+	// LOG(INFO) << "k_track    = " << k_track;
+	// LOG(INFO) << "before : " << b;
+  // LOG(INFO) << "after  : " << a;
+	// LOG(INFO) << "indices: " << c;
   
 
   auto result = Automaton::DFAProjectAway(res,_map,indices);
-LOG(INFO) << "After Automaton::DFAProjectAway";
-StringAutomaton_ptr printer = new StringAutomaton(result,VAR_PER_TRACK);
-printer->inspectAuto(false,true);
-std::cin.get();
+// LOG(INFO) << "After Automaton::DFAProjectAway";
+// StringAutomaton_ptr printer = new StringAutomaton(result,VAR_PER_TRACK);
+// printer->inspectAuto(false,true);
+// std::cin.get();
   if(find_sink(result) != -1) {
 		// trim prefix first, then suffix
 LOG(INFO) << 1;
@@ -2514,7 +2496,6 @@ LOG(INFO) << 1;
 		result = temp;
 		LOG(INFO) << 5;
     result_auto = new StringAutomaton(result,DEFAULT_NUM_OF_VARIABLES);
-    result_auto->inspectAuto(false,true);
 	} else {
 		DVLOG(VLOG_LEVEL) << "no sink";
 		dfaFree(result);
@@ -2795,8 +2776,7 @@ DFA_ptr StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type type, int bit
       statuses[right] = '+';
       break;
     default:
-      DVLOG(VLOG_LEVEL) << "Invalid stringrelation type! can't make dfa...";
-      delete mindices;
+      LOG(FATAL) << "Invalid stringrelation type! can't make dfa...";
       return nullptr;
   }
 

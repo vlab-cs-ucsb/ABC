@@ -630,7 +630,7 @@ DFA_ptr Automaton::DFAProjectAway(const DFA_ptr dfa, std::vector<int> map, const
 	int flag = 0;
 
 	for(auto index : indices) {
-		temp = dfaProject(result_dfa,index);
+		temp = dfaProject(result_dfa,(unsigned)index);
 		if(flag)
 			dfaFree(result_dfa);
 		result_dfa = dfaMinimize(temp);
