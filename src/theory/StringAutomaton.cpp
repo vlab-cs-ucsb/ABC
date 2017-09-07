@@ -640,8 +640,7 @@ StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
 	// put it in a multi-track with the correct track.
 	
   if(this->num_tracks_ != other_auto->num_tracks_) {
-    LOG(INFO) << "TRACKS NOT EQUAL";
-		StringAutomaton_ptr small_auto, big_auto;
+    StringAutomaton_ptr small_auto, big_auto;
 		if(this->num_tracks_ == 1 && other_auto->num_tracks_ != 1 && !this->formula_->IsConstant()) {
 			small_auto = this;
 			big_auto = other_auto;
@@ -649,14 +648,11 @@ StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
 			small_auto = other_auto;
 			big_auto = this;
 		} else {
-			LOG(INFO) << this->num_tracks_ << "," << other_auto->num_tracks_;
 			LOG(FATAL) << "Intersection between incompatible StringAutomata";
 		}
-    
 
 		std::string variable_name = small_auto->formula_->GetVariableAtIndex(0);
     int index = big_auto->formula_->GetVariableIndex(variable_name);
-    LOG(INFO) << variable_name << " has index " << index;
     auto relation_other_auto = new StringAutomaton(small_auto->dfa_,index,big_auto->num_tracks_,small_auto->num_of_bdd_variables_);
     relation_other_auto->SetFormula(big_auto->GetFormula()->clone());
     //relation_other_auto->inspectAuto(false,true);
@@ -675,9 +671,6 @@ StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
   } else {
     intersect_formula = nullptr;
   }
-
-LOG(INFO) << num_of_bdd_variables_ << "," << other_auto->num_of_bdd_variables_;
-LOG(INFO) << intersect_formula->GetNumberOfVariables();
 
 	auto intersect_auto = new StringAutomaton(intersect_dfa,intersect_formula,this->num_of_bdd_variables_);
 
@@ -2383,7 +2376,6 @@ StringAutomaton_ptr StringAutomaton::GetAutomatonForVariable(std::string var_nam
 	result_formula->AddVariable(var_name,1);
 	result_auto->SetFormula(result_formula);
 	DVLOG(VLOG_LEVEL) << result_auto->id_ << " = [" << this->id_ << "]->GetAutomatonForVariable(" << var_name << ")";
-	//std::cin.get();
 	return result_auto;
 }
 
@@ -2432,23 +2424,6 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 		}
 	}
 
-  // int flag = 0;
-  // auto result = this->dfa_;
-  // for(int i = this->num_tracks_-1; i >= 0; --i) {
-	// 	if(i != k_track) {
-	// 		for(int j = 0; j < VAR_PER_TRACK; ++j) {
-	// 			temp = dfaProject(result,(unsigned)(i+this->num_tracks_*j));
-	// 			if(flag)
-	// 				dfaFree(result);
-	// 			result = dfaMinimize(temp);
-	// 			flag = 1;
-	// 			dfaFree(temp);
-	// 		}
-	// 	}
-	// }
-  // dfaReplaceIndices(result,map);
-
-
 	for(int i = this->num_tracks_-1; i >= 0; --i) {
 		if(i != k_track) {
 			for(int j = 0; j < VAR_PER_TRACK; ++j) {
@@ -2461,48 +2436,23 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 	for(int i = 0; i < this->num_tracks_*VAR_PER_TRACK; i++) {
 		_map.push_back(map[i]);
 	}
-
-	// std::string a,b,c;
-	// for(int i = 0; i < this->num_tracks_*VAR_PER_TRACK; i++) {
-	// 	a += std::to_string(map[i]) + " ";
-  //   b += std::to_string(before_indices[i]) + " ";
-	// }
-	// for(auto iter : indices) {
-	// 	c += std::to_string(iter) + " ";
-	// }
-	// LOG(INFO) << "num_tracks = " << this->num_tracks_;
-	// LOG(INFO) << "k_track    = " << k_track;
-	// LOG(INFO) << "before : " << b;
-  // LOG(INFO) << "after  : " << a;
-	// LOG(INFO) << "indices: " << c;
   
-
   auto result = Automaton::DFAProjectAway(res,_map,indices);
-// LOG(INFO) << "After Automaton::DFAProjectAway";
-// StringAutomaton_ptr printer = new StringAutomaton(result,VAR_PER_TRACK);
-// printer->inspectAuto(false,true);
-// std::cin.get();
   if(find_sink(result) != -1) {
 		// trim prefix first, then suffix
-LOG(INFO) << 1;
 		temp = TrimLambdaSuffix(result,VAR_PER_TRACK,false);
-		LOG(INFO) << 2;
 		dfaFree(result);
 		result = temp;
-		LOG(INFO) << 3;
 		temp = TrimLambdaPrefix(result, VAR_PER_TRACK);
-		LOG(INFO) << 4;
 		dfaFree(result);
 		result = temp;
-		LOG(INFO) << 5;
     result_auto = new StringAutomaton(result,DEFAULT_NUM_OF_VARIABLES);
 	} else {
-		DVLOG(VLOG_LEVEL) << "no sink";
+		DVLOG(VLOG_LEVEL) << "No sink found while getting single track from multi-track, returning any string";
 		dfaFree(result);
 		result_auto = StringAutomaton::MakeAnyString();
 	}
 	delete[] map;
-//result_auto->inspectAuto(false,true);
 	return result_auto;
 }
 

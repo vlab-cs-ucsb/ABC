@@ -156,8 +156,10 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     for (auto& term : *(and_term->term_list)) {
       is_satisfiable = check_and_visit(term) and is_satisfiable;
       if (not is_satisfiable) {
-        LOG(FATAL) << "mixed constraint te problem var";
-        break;
+        //LOG(FATAL) << "mixed constraint te problem var";
+      	clearTermValuesAndLocalLetVars();
+      	variable_path_table_.clear();
+      	break;
       }
       if (dynamic_cast<Or_ptr>(term) == nullptr) {
         if (is_satisfiable) {
@@ -187,7 +189,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 }
 
 void ConstraintSolver::visitOr(Or_ptr or_term) {
-  bool is_satisfiable = true;
+  bool is_satisfiable = false;
   bool is_component = constraint_information_->is_component(or_term);
 
 //  if (not constraint_information_->has_mixed_constraint(or_term)) {
@@ -636,11 +638,8 @@ void ConstraintSolver::visitNotIn(NotIn_ptr not_in_term) {
 void ConstraintSolver::visitLen(Len_ptr len_term) {
   visit_children_of(len_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *len_term;
-LOG(INFO) << "1";
   Value_ptr result = nullptr, param = getTermValue(len_term->term);
-  LOG(INFO) << "2";
   Theory::IntAutomaton_ptr int_auto = param->getStringAutomaton()->Length();
-  LOG(INFO) << "3";
   if (int_auto->isAcceptingSingleInt()) {
     result = new Value(int_auto->getAnAcceptingInt());
     delete int_auto;
@@ -648,7 +647,6 @@ LOG(INFO) << "1";
   } else {
     result = new Value(int_auto);
   }
-  LOG(INFO) << "4";
   setTermValue(len_term, result);
 }
 
