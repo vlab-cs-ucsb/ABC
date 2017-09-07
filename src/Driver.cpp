@@ -329,6 +329,9 @@ void Driver::set_option(const Option::Name option) {
     case Option::Name::DISABLE_SORTING_HEURISTICS:
       Option::Solver::ENABLE_SORTING_HEURISTICS = false;
       break;
+    case Option::Name::FORCE_DNF_FORMULA:
+    	Option::Solver::FORCE_DNF_FORMULA = true;
+    	break;
     default:
       LOG(ERROR)<< "option is not recognized: " << static_cast<int>(option);
       break;

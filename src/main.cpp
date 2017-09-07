@@ -92,6 +92,8 @@ int main(const int argc, const char **argv) {
       driver.set_option(Vlab::Option::Name::ENABLE_SORTING_HEURISTICS);
     } else if (argv[i] == std::string("--disable-sorting")) {
       driver.set_option(Vlab::Option::Name::DISABLE_SORTING_HEURISTICS);
+    } else if (argv[i] == std::string("--force-dnf-formula")) {
+    	driver.set_option(Vlab::Option::Name::FORCE_DNF_FORMULA);
     } else if (argv[i] == std::string("-bs") or argv[i] == std::string("--bound-str")) {
       std::string bounds_str {argv[i + 1]};
       str_bounds = parse_count_bounds(bounds_str);

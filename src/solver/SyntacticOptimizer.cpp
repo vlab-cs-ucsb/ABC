@@ -99,18 +99,25 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
 
 void SyntacticOptimizer::visitOr(Or_ptr or_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
+  bool has_true_term = false;
   for (auto iter = or_term->term_list->begin(); iter != or_term->term_list->end();) {
     visit_and_callback(*iter);
     if (check_bool_constant_value(*iter, "false")) {
       DVLOG(VLOG_LEVEL) << "remove: 'false' constant from 'or'";
       delete (*iter);
       iter = or_term->term_list->erase(iter);
+    } else if (check_bool_constant_value(*iter, "true")) {
+    	DVLOG(VLOG_LEVEL) << "has 'true' constant, SAT 'or'";
+    	has_true_term = true;
+    	break;
     } else {
       iter++;
     }
   }
 
-  if (or_term->term_list->empty()) {
+  if (has_true_term) {
+  	add_callback_to_replace_with_bool(or_term,true);
+  } else if (or_term->term_list->empty()) {
     add_callback_to_replace_with_bool(or_term, false);
   } else if (or_term->term_list->size() == 1) {
     auto child_term = or_term->term_list->front();
@@ -282,6 +289,25 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
       };
       break;
     }
+    case Term::Type::TERMCONSTANT: {
+			callback_ = [not_term](Term_ptr & term) mutable {
+				TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(not_term->term);
+				if(Primitive::Type::BOOL == term_constant->getValueType() and "true" == term_constant->getValue()) {
+					term_constant->primitive->setData("false");
+					not_term->term = nullptr;
+					term = term_constant;
+					delete not_term;
+				} else if(Primitive::Type::BOOL == term_constant->getValueType() and "false" == term_constant->getValue()) {
+					term_constant->primitive->setData("true");
+					not_term->term = nullptr;
+					term = term_constant;
+					delete not_term;
+				} else {
+					LOG(FATAL) << "non-boolean term constant cannot be negated: " << *term_constant;
+				}
+			};
+			break;
+		}
     default:
       break;
   }

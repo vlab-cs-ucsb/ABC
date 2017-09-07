@@ -81,26 +81,32 @@ void SyntacticProcessor::visitAnd(And_ptr and_term) {
   visit_term_list(and_term->term_list);
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *and_term << "@" << and_term;
+
+  bool converted_into_dnf = false;
+	if (Option::Solver::FORCE_DNF_FORMULA) {
+		converted_into_dnf = CheckAndConvertToDnf(and_term);
+	}
+
+	if(!converted_into_dnf) {
   DVLOG(VLOG_LEVEL) << "Check and apply associativity: " << *and_term;
-
-  int pos = 0;
-  TermList or_terms;
-  for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
-    if (And_ptr sub_and_term = dynamic_cast<And_ptr>(*iter)) { // Associativity
-      and_term->term_list->erase(iter);
-      and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
-      sub_and_term->term_list->clear();
-      delete sub_and_term;
-      iter = and_term->term_list->begin() + pos; // insertion invalidates iter, reset it
-    } else if (Or_ptr sub_or_term = dynamic_cast<Or_ptr>(*iter)) { // push or terms to the end
-      or_terms.push_back(*iter);
-      iter = and_term->term_list->erase(iter);
-    } else {
-      iter++; pos++;
-    }
-  }
-
-  and_term->term_list->insert(and_term->term_list->end(), or_terms.begin(), or_terms.end());
+		int pos = 0;
+		TermList or_terms;
+		for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
+			if (And_ptr sub_and_term = dynamic_cast<And_ptr>(*iter)) { // Associativity
+				and_term->term_list->erase(iter);
+				and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
+				sub_and_term->term_list->clear();
+				delete sub_and_term;
+				iter = and_term->term_list->begin() + pos; // insertion invalidates iter, reset it
+			} else if (Or_ptr sub_or_term = dynamic_cast<Or_ptr>(*iter)) { // push or terms to the end
+				or_terms.push_back(*iter);
+				iter = and_term->term_list->erase(iter);
+			} else {
+				iter++; pos++;
+			}
+		}
+		and_term->term_list->insert(and_term->term_list->end(), or_terms.begin(), or_terms.end());
+	}
 
   DVLOG(VLOG_LEVEL) << "post visit end: " << *and_term << "@" << and_term;
 }

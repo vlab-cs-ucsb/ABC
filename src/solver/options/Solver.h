@@ -30,6 +30,7 @@ enum class Name: int {
   LIMIT_LEN_IMPLICATIONS,
   ENABLE_SORTING_HEURISTICS,
   DISABLE_SORTING_HEURISTICS,
+	FORCE_DNF_FORMULA,
   REGEX_FLAG,
   OUTPUT_PATH,
   SCRIPT_PATH
@@ -44,6 +45,7 @@ public:
   static bool ENABLE_IMPLICATIONS;
   static bool ENABLE_LEN_IMPLICATIONS;
   static bool ENABLE_SORTING_HEURISTICS;
+  static bool FORCE_DNF_FORMULA;
   static std::string OUTPUT_PATH;
   static std::string SCRIPT_PATH;
 };
