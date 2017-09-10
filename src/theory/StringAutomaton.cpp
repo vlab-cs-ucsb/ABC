@@ -584,8 +584,16 @@ StringAutomaton_ptr StringAutomaton::MakeGreaterThanOrEqual(
 	LOG(FATAL) << "IMPLEMENT ME";
 }
 
-StringAutomaton_ptr StringAutomaton::MakeAnyStringUnaligned(
-		StringFormula_ptr formula) {
+StringAutomaton_ptr StringAutomaton::MakeAnyStringUnaligned(StringFormula_ptr formula) {
+  StringAutomaton_ptr result_auto = nullptr;
+
+  // if only one variable, don't complicate with lambda transitions
+  if(formula->GetNumberOfVariables() == 1) {
+    result_auto = StringAutomaton::MakeAnyString();
+    result_auto->SetFormula(formula->clone());
+    return result_auto;
+  }
+
 	DFA_ptr result, temp;
   int len = VAR_PER_TRACK * formula->GetNumberOfVariables();
   int *mindices = Automaton::GetBddVariableIndices(len);
@@ -598,11 +606,20 @@ StringAutomaton_ptr StringAutomaton::MakeAnyStringUnaligned(
   result = dfaMinimize(temp);
   dfaFree(temp);
   //delete[] mindices;
-  return new StringAutomaton(result, formula,len);
+  result_auto = new StringAutomaton(result, formula,len);
+  return result_auto;
 }
 
-StringAutomaton_ptr StringAutomaton::MakeAnyStringAligned(
-		StringFormula_ptr formula) {
+StringAutomaton_ptr StringAutomaton::MakeAnyStringAligned(StringFormula_ptr formula) {
+  StringAutomaton_ptr result_auto = nullptr;
+  
+  // if only one variable, don't complicate with lambda transitions
+  if(formula->GetNumberOfVariables() == 1) {
+    result_auto = StringAutomaton::MakeAnyString();
+    result_auto->SetFormula(formula->clone());
+    return result_auto;
+  }
+
   StringAutomaton_ptr aligned_auto = nullptr, any_auto = nullptr, temp_auto = nullptr;
   StringAutomaton_ptr any_string_auto = nullptr;
 
@@ -616,8 +633,9 @@ StringAutomaton_ptr StringAutomaton::MakeAnyStringAligned(
     delete any_auto;
     aligned_auto = temp_auto;
   }
+  result_auto = aligned_auto;
   delete any_string_auto;
-  return aligned_auto;
+  return result_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::Complement() {
@@ -660,7 +678,7 @@ StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
 		auto intersect_auto = big_auto->Intersect(relation_other_auto->Intersect(MakeAnyStringAligned(relation_other_auto->GetFormula()->clone())));
     delete relation_other_auto;
     return intersect_auto;
-	}
+  }
 
 	auto intersect_dfa = Automaton::DFAIntersect(this->dfa_, other_auto->dfa_);
   StringFormula_ptr intersect_formula = nullptr;
@@ -2387,16 +2405,14 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 	if(k_track >= this->num_tracks_) {
 		LOG(FATAL) << "error in StringAutomaton::GetKTrack; k_track,num_tracks = " << k_track << "," << this->num_tracks_;
 	} else if(this->num_tracks_ == 1) {
-		LOG(FATAL) << "TEST ME!";
-		// TODO baki: better handle this situation where mixed constraint and multi-track really get mixed
-//    DVLOG(VLOG_LEVEL) << "   getKTrack, but only 1 track";
-//    result = trim_lambda_suffix(this->dfa_,this->num_of_variables_);
-//    result_auto = new StringAutomaton(result);
-
 		// TODO baki: added below for charat example
 		if(this->num_of_bdd_variables_ > DEFAULT_NUM_OF_VARIABLES) {
-			auto result = Automaton::DFAProjectAway(res,this->num_of_bdd_variables_  - 1);
-			result_auto = new StringAutomaton(result,this->num_of_bdd_variables_ - 1);
+			temp = TrimLambdaSuffix(res,VAR_PER_TRACK,false);
+      res = temp;
+      temp = TrimLambdaPrefix(res, VAR_PER_TRACK);
+      dfaFree(res);
+      res = temp;
+      result_auto = new StringAutomaton(res,DEFAULT_NUM_OF_VARIABLES);
 		} else {
 			result_auto = this->clone();
 		}
@@ -2469,14 +2485,20 @@ StringAutomaton_ptr StringAutomaton::ProjectAwayVariable(std::string var_name) {
 	return result_auto;
 }
 
-/*
- * TODO: If there are only two tracks, and one track is projected away,
- * then the remaining automaton will have only one track, but with lambda.
- * is this okay?
-*/
 StringAutomaton_ptr StringAutomaton::ProjectKTrack(int k_track) {
-	if(num_tracks_ == 2)
-		LOG(FATAL) << "TEST ME";
+  /*
+   * If there are only two tracks, use GetKTrack instead,
+   * since it takes care of lambdas
+   */
+  if(num_tracks_ == 2) {
+    StringAutomaton_ptr result = nullptr;
+    if(k_track == 0) {
+      result = GetKTrack(1);
+    } else {
+      result = GetKTrack(0);
+    }
+    return result;
+  }
   std::vector<int> indices;
   int *map = CreateBddVariableIndices(this->num_tracks_*VAR_PER_TRACK);
   for(int i = 0,k=0,l=0; i < this->num_of_bdd_variables_; i++) {

@@ -188,17 +188,29 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   setTermValue(and_term, result);
 }
 
+/**
+ * 1) Solve arithmetic constraints
+ * 2) Solve relational string constraints
+ * 3) Solve single-track strings and mixed constraints
+ */
 void ConstraintSolver::visitOr(Or_ptr or_term) {
   bool is_satisfiable = false;
   bool is_component = constraint_information_->is_component(or_term);
+  
+  if (is_component) {
+    if (constraint_information_->has_arithmetic_constraint(or_term)) {
+      arithmetic_constraint_solver_.start(or_term);
+      is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+      DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *or_term << "@" << or_term;
+    }
+    if (is_satisfiable and constraint_information_->has_string_constraint(or_term)) {
+      string_constraint_solver_.start(or_term);
+      is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+      DVLOG(VLOG_LEVEL) << "String formulae solved: " << *or_term << "@" << or_term;
+    }
 
-//  if (not constraint_information_->has_mixed_constraint(or_term)) {
-//    // below return is a tmp solution for just only arithmetic constraints
-//    LOG(FATAL) << "do not have mixed constraints: " << *or_term << "@" << or_term;
-//    Value_ptr result = new Value(is_satisfiable);
-//    setTermValue(or_term, result);
-//    return;
-//  }
+    DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *or_term << "@" << or_term;
+  }
 
   DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
 

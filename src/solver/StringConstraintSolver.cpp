@@ -128,6 +128,7 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
 
   for (auto term : *(and_term->term_list)) {
     auto formula = string_formula_generator_.get_term_formula(term);
+    // Do not visit child or terms here, handle them in POSTVISIT AND
     if (formula != nullptr and (dynamic_cast<Or_ptr>(term) == nullptr)) {
       has_string_formula = true;
       visit(term);
@@ -164,18 +165,15 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
    */
   if (and_value == nullptr and (not has_string_formula)) {
   	auto group_formula = string_formula_generator_.get_group_formula(group_name);
-    and_value = new Value(Theory::StringAutomaton::MakeAnyStringAligned(group_formula->clone()));
+    and_value = new Value(Theory::StringAutomaton::MakeAnyStringUnaligned(group_formula->clone()));
     has_string_formula = true;
     is_satisfiable = true;
   }
 
   if (has_string_formula) {
     if (is_satisfiable) {
-    	LOG(INFO) << "Before intersect value: " << group_name;
     	auto and_auto = and_value->getStringAutomaton();
-    	LOG(INFO) << "and_auto->num_tracks_ : " << and_auto->GetNumTracks();
       symbol_table_->IntersectValue(group_name, and_value);  // update value
-      LOG(INFO) << "After intersect value: " << group_name;
     } else {
       auto group_formula = string_formula_generator_.get_group_formula(group_name);
       auto value = new Value(Theory::StringAutomaton::MakePhi(group_formula->clone()));
@@ -191,12 +189,6 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
  * 2) Update result (union of scopes) after all
  */
 void StringConstraintSolver::visitOr(Or_ptr or_term) {
-  if (not constraint_information_->is_component(or_term)) {  // a rare case, @deprecated
-    DVLOG(VLOG_LEVEL) << "visit children of non-component start: " << *or_term << "@" << or_term;
-    visit_children_of(or_term);
-    DVLOG(VLOG_LEVEL) << "visit children of non-component end: " << *or_term << "@" << or_term;
-    return;
-  }
 
   if (not constraint_information_->has_string_constraint(or_term)) {
     return;
@@ -208,8 +200,8 @@ void StringConstraintSolver::visitOr(Or_ptr or_term) {
   Value_ptr or_value = nullptr;
   for (auto term : *(or_term->term_list)) {
     auto formula = string_formula_generator_.get_term_formula(term);
-    //if (formula != nullptr and (dynamic_cast<And_ptr>(term) == nullptr)) {
-		if(formula != nullptr) {
+    // Do not visit child and terms here, handle them in POSTVISIT OR
+    if (formula != nullptr and (dynamic_cast<And_ptr>(term) == nullptr)) {
       symbol_table_->push_scope(term);
       visit(term);
       auto param = get_term_value(term);
@@ -302,7 +294,7 @@ void StringConstraintSolver::postVisitAnd(And_ptr and_term) {
    */
   if (and_value == nullptr and (not has_string_formula)) {
     auto group_formula = string_formula_generator_.get_group_formula(group_name);
-    and_value = new Value(Theory::StringAutomaton::MakeAnyStringAligned(group_formula->clone()));
+    and_value = new Value(Theory::StringAutomaton::MakeAnyStringUnaligned(group_formula->clone()));
     has_string_formula = true;
     is_satisfiable = true;
   }
@@ -321,9 +313,73 @@ void StringConstraintSolver::postVisitAnd(And_ptr and_term) {
 }
 
 void StringConstraintSolver::postVisitOr(Or_ptr or_term) {
+  // DVLOG(VLOG_LEVEL) << "collect child results start: " << *or_term << "@" << or_term;
+  // visitOr(or_term);
+  // DVLOG(VLOG_LEVEL) << "collect child results end: " << *or_term << "@" << or_term;
   DVLOG(VLOG_LEVEL) << "collect child results start: " << *or_term << "@" << or_term;
-  visitOr(or_term);
+  
+  bool is_satisfiable = false;
+  bool has_string_formula = false;
+
+  std::string group_name = string_formula_generator_.get_term_group_name(or_term);
+  Value_ptr or_value = nullptr;
+
+  for (auto term : *(or_term->term_list)) {
+    auto formula = string_formula_generator_.get_term_formula(term);
+    /**
+     * In previous visit, automata for arithmetic constraints are created and
+     * formulae for them are deleted.
+     * For sub and terms, constraint solver recurses into and here we don't
+     * need to visit them, a value is already computed for them,
+     * grabs them from symbol table
+     */
+    if (formula != nullptr) {
+      has_string_formula = true;
+      auto param = get_term_value(term);
+      is_satisfiable = param->is_satisfiable();
+      if (is_satisfiable) {
+        if (or_value == nullptr) {
+          or_value = param->clone();
+        } else {
+          auto old_value = or_value;
+          or_value = or_value->union_(param);
+          delete old_value;
+          is_satisfiable = or_value->is_satisfiable();
+        }
+      }
+      clear_term_value(term);
+    }
+  }
+
   DVLOG(VLOG_LEVEL) << "collect child results end: " << *or_term << "@" << or_term;
+
+  DVLOG(VLOG_LEVEL) << "update result start: " << *or_term << "@" << or_term;
+
+  /**
+   * If or term does not have string formula, but we end up being here:
+   * 1) Or term is under a conjunction and other conjunction terms has string formula.
+   *  Here, variables appearing in string term will be unconstrained.
+   * 2) We are visited or term second time for some mixed constraints, for this we do an unnecessary
+   *  intersection below with any string, we can avoid that with more checks later!!!
+   */
+  if (or_value == nullptr and (not has_string_formula)) {
+    auto group_formula = string_formula_generator_.get_group_formula(group_name);
+    or_value = new Value(Theory::StringAutomaton::MakeAnyStringUnaligned(group_formula->clone()));
+    has_string_formula = true;
+    is_satisfiable = true;
+  }
+
+  if (has_string_formula) {
+    if (is_satisfiable) {
+      symbol_table_->UnionValue(group_name, or_value);  // update value
+    } else {
+      auto group_formula = string_formula_generator_.get_group_formula(group_name);
+      auto value = new Value(Theory::StringAutomaton::MakePhi(group_formula->clone()));
+      symbol_table_->set_value(group_name, value);
+    }
+    delete or_value;
+  }
+  DVLOG(VLOG_LEVEL) << "update result end: " << *or_term << "@" << or_term;
 }
 
 std::string StringConstraintSolver::get_string_variable_name(SMT::Term_ptr term) {
