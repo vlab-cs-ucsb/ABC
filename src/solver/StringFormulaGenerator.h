@@ -29,6 +29,9 @@
 namespace Vlab {
 namespace Solver {
 
+using VariableGroupMap = std::map<std::string,std::string>;
+using VariableGroupTable = std::map<SMT::Term_ptr,VariableGroupMap>;
+
 class StringFormulaGenerator: public SMT::Visitor {
  public:
   StringFormulaGenerator(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr);
@@ -113,9 +116,11 @@ class StringFormulaGenerator: public SMT::Visitor {
   void clear_term_formulas();
 
   std::string get_term_group_name(SMT::Term_ptr term);
+  std::string get_variable_group_name(SMT::Term_ptr term,SMT::Variable_ptr variable);
 
 protected:
   void add_string_variables(std::string group_name, SMT::Term_ptr term);
+  std::string generate_group_name(SMT::Term_ptr term, std::string var_name);
 
   bool set_term_formula(SMT::Term_ptr term, Theory::StringFormula_ptr formula);
   void delete_term_formula(SMT::Term_ptr);
@@ -136,6 +141,7 @@ protected:
   SMT::TermList integer_terms_;
   std::map<SMT::Term_ptr, SMT::TermList> integer_terms_map_;
 
+  VariableGroupTable variable_group_table_;
   std::map<SMT::Term_ptr, std::string> term_group_map_;
   std::map<std::string, Theory::StringFormula_ptr> group_formula_;
 
