@@ -110,6 +110,7 @@ class EquivClassRuleRunner: public SMT::Visitor {
 
   SMT::Script_ptr root;
   SymbolTable_ptr symbol_table_;
+  SMT::Visitable_ptr upper_scope;
  private:
   static const int VLOG_LEVEL;
 };

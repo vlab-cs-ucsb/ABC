@@ -28,7 +28,7 @@ void EquivClassRuleRunner::start() {
   if (not has_optimization_rules()) {
     return;
   }
-
+  upper_scope = nullptr;
   symbol_table_->push_scope(root, false);
   visit(root);
   symbol_table_->pop_scope();
@@ -368,6 +368,8 @@ bool EquivClassRuleRunner::check_and_substitute_var(Term_ptr& term) {
 
       delete tmp_term; tmp_term = nullptr;
       DVLOG(VLOG_LEVEL)<< "apply substitution for: " << *variable << " -> " << *subs_term;
+
+
       // if we replace with a constant update representative variable with the value of constant
       if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(subs_term)) {
         auto representative_variable = equiv->get_representative_variable();
