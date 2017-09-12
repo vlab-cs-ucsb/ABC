@@ -66,7 +66,13 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
   std::vector<TermList> or_term_lists;
   for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
     visit_and_callback(*iter);
-    if (check_bool_constant_value(*iter, "true")) {
+//    if (check_bool_term(*iter)) {
+//    	Term_ptr new_term = generate_eq_bool_constant(*iter,"true");
+//    	Term_ptr old_term = *iter;
+//    	*iter = new_term;
+//    	delete old_term;
+//    } else
+    	if (check_bool_constant_value(*iter, "true")) {
       DVLOG(VLOG_LEVEL) << "remove: 'true' constant from 'and'";
       delete (*iter);
       iter = and_term->term_list->erase(iter);
@@ -102,7 +108,13 @@ void SyntacticOptimizer::visitOr(Or_ptr or_term) {
   bool has_true_term = false;
   for (auto iter = or_term->term_list->begin(); iter != or_term->term_list->end();) {
     visit_and_callback(*iter);
-    if (check_bool_constant_value(*iter, "false")) {
+//    if (check_bool_term(*iter)) {
+//			Term_ptr new_term = generate_eq_bool_constant(*iter,"true");
+//			Term_ptr old_term = *iter;
+//			*iter = new_term;
+//			delete old_term;
+//		} else
+			if (check_bool_constant_value(*iter, "false")) {
       DVLOG(VLOG_LEVEL) << "remove: 'false' constant from 'or'";
       delete (*iter);
       iter = or_term->term_list->erase(iter);
@@ -289,6 +301,19 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
       };
       break;
     }
+//    case Term::Type::QUALIDENTIFIER: {
+//    	if(check_bool_term(not_term->term)) {
+//				callback_ = [not_term](Term_ptr & term) mutable {
+//					Primitive_ptr prim = new Primitive("false",Primitive::Type::BOOL);
+//					TermConstant_ptr term_constant = new TermConstant(prim);
+//					Eq_ptr eq_term = new Eq(not_term->term,term_constant);
+//					not_term->term = nullptr;
+//					term = eq_term;
+//					delete not_term;
+//				};
+//    	}
+//    	break;
+//    }
     case Term::Type::TERMCONSTANT: {
 			callback_ = [not_term](Term_ptr & term) mutable {
 				TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(not_term->term);
@@ -566,6 +591,44 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
     bool result = (constant_term_checker_left.get_constant_as_string() == constant_term_checker_right.get_constant_as_string());
     add_callback_to_replace_with_bool(eq_term, result);
     return;
+  } else if(constant_term_checker_left.is_constant() and (Term::Type::EQ == eq_term->right_term->type() or Term::Type::NOTEQ == eq_term->right_term->type())) {
+  	std::string constant = constant_term_checker_left.get_constant_as_string();
+  	if(constant == "true") {
+  		DVLOG(VLOG_LEVEL) << "Transforming (= true (" << *eq_term->right_term << ")) -> (" << *eq_term->right_term << ")";
+  		callback_ = [eq_term](Term_ptr & term) mutable {
+  			term = eq_term->right_term;
+  			eq_term->right_term = nullptr;
+  			delete eq_term;
+  		};
+  		return;
+  	} else if(constant == "false") {
+  		DVLOG(VLOG_LEVEL) << "Transforming (= false (" << *eq_term->right_term << ")) -> (not (" << *eq_term->right_term << "))";
+  		callback_ = [eq_term](Term_ptr & term) mutable {
+  			term = new Not(eq_term->right_term);
+  			eq_term->right_term = nullptr;
+  			delete eq_term;
+  		};
+  		return;
+  	}
+	} else if(constant_term_checker_right.is_constant() and (Term::Type::EQ == eq_term->left_term->type() or Term::Type::NOTEQ == eq_term->left_term->type())) {
+		std::string constant = constant_term_checker_right.get_constant_as_string();
+		if(constant == "true") {
+			DVLOG(VLOG_LEVEL) << "Transforming (= true (" << *eq_term->left_term << ")) -> (" << *eq_term->left_term << ")";
+			callback_ = [eq_term](Term_ptr & term) mutable {
+				term = eq_term->left_term;
+				eq_term->left_term = nullptr;
+				delete eq_term;
+			};
+			return;
+		} else if(constant == "false") {
+			DVLOG(VLOG_LEVEL) << "Transforming (= false (" << *eq_term->left_term << ")) -> (not (" << *eq_term->left_term << "))";
+			callback_ = [eq_term](Term_ptr & term) mutable {
+				term = new Not(eq_term->left_term);
+				eq_term->left_term = nullptr;
+				delete eq_term;
+			};
+			return;
+  	}
   }
 
   if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
@@ -2267,6 +2330,25 @@ void SyntacticOptimizer::add_callback_to_replace_with_bool(Term_ptr term, bool v
     ref_term = generate_term_constant(term_value, Primitive::Type::BOOL);
     delete term;
   };
+}
+
+bool SyntacticOptimizer::check_bool_term(Term_ptr term) {
+	QualIdentifier_ptr qi_term = dynamic_cast<QualIdentifier_ptr>(term);
+	if(qi_term) {
+		Variable_ptr var = symbol_table_->get_variable(qi_term->getVarName());
+		if(Variable::Type::BOOL == var->getType()) {
+			return true;
+		}
+	}
+	return false;
+}
+
+Eq_ptr SyntacticOptimizer::generate_eq_bool_constant(Term_ptr term, std::string value) {
+	QualIdentifier_ptr qi_term = dynamic_cast<QualIdentifier_ptr>(term);
+	Primitive_ptr prim = new Primitive(value,Primitive::Type::BOOL);
+	TermConstant_ptr term_constant = new TermConstant(prim);
+	Eq_ptr eq_term = new Eq(qi_term->clone(),term_constant);
+	return eq_term;
 }
 
 bool SyntacticOptimizer::check_bool_constant_value(Term_ptr term, std::string value) {

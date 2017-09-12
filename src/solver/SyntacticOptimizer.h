@@ -129,6 +129,8 @@ protected:
   SMT::Let_ptr generateLetTermFor(SMT::LastIndexOf_ptr index_of_term, SMT::SubString::Mode local_substring_mode, SMT::LastIndexOf_ptr param_last_index_of_term, SMT::Term_ptr &index_term);
   SMT::Term_ptr generate_term_constant(std::string data, SMT::Primitive::Type type);
   void add_callback_to_replace_with_bool(SMT::Term_ptr, bool value);
+  bool check_bool_term(SMT::Term_ptr);
+  SMT::Eq_ptr generate_eq_bool_constant(SMT::Term_ptr, std::string value);
   bool check_bool_constant_value(SMT::Term_ptr, std::string value);
   SMT::Variable_ptr generate_local_var(SMT::Variable::Type type);
   SMT::QualIdentifier_ptr generate_qual_identifier(std::string var_name);
