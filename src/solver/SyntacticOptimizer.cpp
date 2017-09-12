@@ -66,13 +66,7 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
   std::vector<TermList> or_term_lists;
   for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
     visit_and_callback(*iter);
-//    if (check_bool_term(*iter)) {
-//    	Term_ptr new_term = generate_eq_bool_constant(*iter,"true");
-//    	Term_ptr old_term = *iter;
-//    	*iter = new_term;
-//    	delete old_term;
-//    } else
-    	if (check_bool_constant_value(*iter, "true")) {
+    if (check_bool_constant_value(*iter, "true")) {
       DVLOG(VLOG_LEVEL) << "remove: 'true' constant from 'and'";
       delete (*iter);
       iter = and_term->term_list->erase(iter);
@@ -591,45 +585,46 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
     bool result = (constant_term_checker_left.get_constant_as_string() == constant_term_checker_right.get_constant_as_string());
     add_callback_to_replace_with_bool(eq_term, result);
     return;
-  } else if(constant_term_checker_left.is_constant() and (Term::Type::EQ == eq_term->right_term->type() or Term::Type::NOTEQ == eq_term->right_term->type())) {
-  	std::string constant = constant_term_checker_left.get_constant_as_string();
-  	if(constant == "true") {
-  		DVLOG(VLOG_LEVEL) << "Transforming (= true (" << *eq_term->right_term << ")) -> (" << *eq_term->right_term << ")";
-  		callback_ = [eq_term](Term_ptr & term) mutable {
-  			term = eq_term->right_term;
-  			eq_term->right_term = nullptr;
-  			delete eq_term;
-  		};
-  		return;
-  	} else if(constant == "false") {
-  		DVLOG(VLOG_LEVEL) << "Transforming (= false (" << *eq_term->right_term << ")) -> (not (" << *eq_term->right_term << "))";
-  		callback_ = [eq_term](Term_ptr & term) mutable {
-  			term = new Not(eq_term->right_term);
-  			eq_term->right_term = nullptr;
-  			delete eq_term;
-  		};
-  		return;
-  	}
-	} else if(constant_term_checker_right.is_constant() and (Term::Type::EQ == eq_term->left_term->type() or Term::Type::NOTEQ == eq_term->left_term->type())) {
-		std::string constant = constant_term_checker_right.get_constant_as_string();
-		if(constant == "true") {
-			DVLOG(VLOG_LEVEL) << "Transforming (= true (" << *eq_term->left_term << ")) -> (" << *eq_term->left_term << ")";
-			callback_ = [eq_term](Term_ptr & term) mutable {
-				term = eq_term->left_term;
-				eq_term->left_term = nullptr;
-				delete eq_term;
-			};
-			return;
-		} else if(constant == "false") {
-			DVLOG(VLOG_LEVEL) << "Transforming (= false (" << *eq_term->left_term << ")) -> (not (" << *eq_term->left_term << "))";
-			callback_ = [eq_term](Term_ptr & term) mutable {
-				term = new Not(eq_term->left_term);
-				eq_term->left_term = nullptr;
-				delete eq_term;
-			};
-			return;
-  	}
-  }
+  } 
+  // else if(constant_term_checker_left.is_constant() and (Term::Type::EQ == eq_term->right_term->type() or Term::Type::NOTEQ == eq_term->right_term->type())) {
+  // 	std::string constant = constant_term_checker_left.get_constant_as_string();
+  // 	if(constant == "true") {
+  // 		DVLOG(VLOG_LEVEL) << "Transforming (= true (" << *eq_term->right_term << ")) -> (" << *eq_term->right_term << ")";
+  // 		callback_ = [eq_term](Term_ptr & term) mutable {
+  // 			term = eq_term->right_term;
+  // 			eq_term->right_term = nullptr;
+  // 			delete eq_term;
+  // 		};
+  // 		return;
+  // 	} else if(constant == "false") {
+  // 		DVLOG(VLOG_LEVEL) << "Transforming (= false (" << *eq_term->right_term << ")) -> (not (" << *eq_term->right_term << "))";
+  // 		callback_ = [eq_term](Term_ptr & term) mutable {
+  // 			term = new Not(eq_term->right_term);
+  // 			eq_term->right_term = nullptr;
+  // 			delete eq_term;
+  // 		};
+  // 		return;
+  // 	}
+	// } else if(constant_term_checker_right.is_constant() and (Term::Type::EQ == eq_term->left_term->type() or Term::Type::NOTEQ == eq_term->left_term->type())) {
+	// 	std::string constant = constant_term_checker_right.get_constant_as_string();
+	// 	if(constant == "true") {
+	// 		DVLOG(VLOG_LEVEL) << "Transforming (= true (" << *eq_term->left_term << ")) -> (" << *eq_term->left_term << ")";
+	// 		callback_ = [eq_term](Term_ptr & term) mutable {
+	// 			term = eq_term->left_term;
+	// 			eq_term->left_term = nullptr;
+	// 			delete eq_term;
+	// 		};
+	// 		return;
+	// 	} else if(constant == "false") {
+	// 		DVLOG(VLOG_LEVEL) << "Transforming (= false (" << *eq_term->left_term << ")) -> (not (" << *eq_term->left_term << "))";
+	// 		callback_ = [eq_term](Term_ptr & term) mutable {
+	// 			term = new Not(eq_term->left_term);
+	// 			eq_term->left_term = nullptr;
+	// 			delete eq_term;
+	// 		};
+	// 		return;
+  // 	}
+  // }
 
   if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
     add_callback_to_replace_with_bool(eq_term, true);

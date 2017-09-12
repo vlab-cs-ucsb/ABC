@@ -78,10 +78,12 @@ void EquivClassRuleRunner::visitAnd(And_ptr and_term) {
 
 void EquivClassRuleRunner::visitOr(Or_ptr or_term) {
   for (auto& term : * (or_term->term_list)) {
+    upper_scope = symbol_table_->top_scope();
     check_and_substitute_var(term);
     symbol_table_->push_scope(term, false);
     visit(term);
     symbol_table_->pop_scope();
+    upper_scope = nullptr;
   }
 }
 
@@ -361,7 +363,17 @@ bool EquivClassRuleRunner::check_and_substitute_var(Term_ptr& term) {
   if (Term::Type::QUALIDENTIFIER == term->type()) {
     Variable_ptr variable = symbol_table_->get_variable(term);
     auto equiv = symbol_table_->get_equivalence_class_of(variable);
+    // EquivalenceClass_ptr upper_equiv = nullptr;
+    // if (upper_scope != nullptr) {
+    //   upper_equiv = symbol_table_->get_equivalence_class_of_at_scope(upper_scope,variable);
+    // } 
     if (equiv) {
+      // if(upper_equiv != nullptr and upper_equiv != equiv) {
+      //   equiv->merge(upper_equiv);
+      //   for (auto variable : upper_equiv->get_variables()) {
+      //     symbol_table_->add_variable_equiv_class_mapping(variable, equiv);
+      //   }
+      // }
       Term_ptr subs_term = equiv->get_representative_term();
       Term_ptr tmp_term = term;
       term = subs_term->clone();

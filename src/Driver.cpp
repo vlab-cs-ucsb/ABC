@@ -72,29 +72,42 @@ void Driver::InitializeSolver() {
   Solver::Initializer initializer(script_, symbol_table_);
   initializer.start();
 
+  std::string output_root {"./output"};
+  ast2dot(output_root + "/post_initializer.dot");
+  std::cin.get();
+
   Solver::SyntacticProcessor syntactic_processor(script_);
   syntactic_processor.start();
 
+  ast2dot(output_root + "/post_syntactic_processor.dot");
+  std::cin.get();
 
   Solver::SyntacticOptimizer syntactic_optimizer(script_, symbol_table_);
   syntactic_optimizer.start();
 
+  ast2dot(output_root + "/post_syntactic_optimizer.dot");
+  std::cin.get();
+
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
   dependency_slicer.start();
 
+  ast2dot(output_root + "/post_dependency_slicer.dot");
+  std::cin.get();
 
-
+  int count = 0;
   if (Option::Solver::ENABLE_EQUIVALENCE_CLASSES) {
     Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
     do {
       equivalence_generator.start();
-      std::string output_root {"./output"};
-                        	ast2dot(output_root + "/optimized.dot");
-                        	std::cin.get();
+      std::string filename = output_root + "/post_equivalence_" + std::to_string(count) + ".dot";
+      ast2dot(filename);
+      count++;
+      std::cin.get();
     } while (equivalence_generator.has_constant_substitution());
   }
 
-
+  ast2dot(output_root + "/post_equivalence_last.dot");
+  std::cin.get();
 
   if (Option::Solver::ENABLE_IMPLICATIONS) {
     Solver::ImplicationRunner implication_runner(script_, symbol_table_);

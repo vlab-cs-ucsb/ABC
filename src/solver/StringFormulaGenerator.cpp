@@ -818,45 +818,45 @@ void StringFormulaGenerator::add_string_variables(std::string group_name, Term_p
     }
   }
 */
-  if(Option::Solver::ENABLE_DEPENDENCY_ANALYSIS && Option::Solver::FORCE_DNF_FORMULA) {
-    std::string start_group;
-    StringFormula_ptr start_group_formula = nullptr;
-    StringFormula_ptr term_formula = get_term_formula(term);
-    if(formula == nullptr) {
-      LOG(FATAL) << "no formula, can't add string variables";
-    }
-    // get a starting group from the variable list
-    auto variables = formula->GetVariableCoefficientMap();
-    for(auto &var : variables) {
-      if(variable_group_table_[term].find(var) != variable_group_table_[term].end()) {
-        start_group = variable_group_table_[term][var];
-        start_group_formula = group_formula_;
-        break;
-      }
-    }
-    // if no group is found, create new one
-    if(start_group.empty()) {
-      start_group = generate_group_name(term,variables[0]);
-      start_group_formula->AddVariable(variables[0],0);
-      group_formula_[start_group] = start_group_formula;
-    }
+  // if(Option::Solver::ENABLE_DEPENDENCY_ANALYSIS && Option::Solver::FORCE_DNF_FORMULA) {
+  //   std::string start_group;
+  //   StringFormula_ptr start_group_formula = nullptr;
+  //   StringFormula_ptr term_formula = get_term_formula(term);
+  //   if(formula == nullptr) {
+  //     LOG(FATAL) << "no formula, can't add string variables";
+  //   }
+  //   // get a starting group from the variable list
+  //   auto variables = formula->GetVariableCoefficientMap();
+  //   for(auto &var : variables) {
+  //     if(variable_group_table_[term].find(var) != variable_group_table_[term].end()) {
+  //       start_group = variable_group_table_[term][var];
+  //       start_group_formula = group_formula_;
+  //       break;
+  //     }
+  //   }
+  //   // if no group is found, create new one
+  //   if(start_group.empty()) {
+  //     start_group = generate_group_name(term,variables[0]);
+  //     start_group_formula->AddVariable(variables[0],0);
+  //     group_formula_[start_group] = start_group_formula;
+  //   }
 
-    // merge each variable's group together into start_group
-    for (auto &var : variables) {
-      if(variable_group_table_[term].find(var) == variable_group_table_[term].end()) {
-        variable_group_table_[term][var] = start_group;
-        start_group_formula->AddVariable(var,0);
-      } else if(variable_group_table_[term][var] != start_group) {
-        // merge the two groups
-        std::string var_group = variable_group_table_[term][var];
-        StringFormula_ptr var_group_formula = group_formula_[var_group_formula];
-        for (auto &iter : var_group_formula->GetVariableCoefficientMap()) {
-          variable_group_table_[term][]
-        }
-      }
-    }
+  //   // merge each variable's group together into start_group
+  //   for (auto &var : variables) {
+  //     if(variable_group_table_[term].find(var) == variable_group_table_[term].end()) {
+  //       variable_group_table_[term][var] = start_group;
+  //       start_group_formula->AddVariable(var,0);
+  //     } else if(variable_group_table_[term][var] != start_group) {
+  //       // merge the two groups
+  //       std::string var_group = variable_group_table_[term][var];
+  //       StringFormula_ptr var_group_formula = group_formula_[var_group_formula];
+  //       for (auto &iter : var_group_formula->GetVariableCoefficientMap()) {
+  //         variable_group_table_[term][]
+  //       }
+  //     }
+  //   }
 
-  } else {
+  // } else {
     StringFormula_ptr group_formula = nullptr;
     auto it = group_formula_.find(group_name);
     if (it == group_formula_.end()) {
@@ -877,7 +877,7 @@ void StringFormulaGenerator::add_string_variables(std::string group_name, Term_p
       //group_formula->MergeVariables(formula);
       term_group_map_[term] = group_name;
     }
-  }
+  //}
 }
 
 std::string StringFormulaGenerator::generate_group_name(SMT::Term_ptr term, std::string var_name) {
