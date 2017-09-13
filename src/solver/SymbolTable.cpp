@@ -464,6 +464,67 @@ bool SymbolTable::has_child_term(Visitable_ptr node, std::string str) {
   return true;
 }
 
+void SymbolTable::clear_child_terms(Visitable_ptr node) {
+	if(term_children_table_.find(node) != term_children_table_.end()) {
+		term_children_table_.erase(node);
+	}
+}
+
+bool SymbolTable::is_or_ite(SMT::Visitable_ptr node_ptr) {
+	if(ite_conditions_.find(node_ptr) == ite_conditions_.end()) {
+		return false;
+	}
+	return true;
+}
+
+void SymbolTable::add_or_ite(SMT::Visitable_ptr node, SMT::Visitable_ptr then_cond, SMT::Visitable_ptr else_cond) {
+	if(ite_conditions_.find(node) != ite_conditions_.end()) {
+		LOG(FATAL) << "or_ite relation has already been added!";
+	}
+	ite_conditions_[node] = std::make_pair(then_cond,else_cond);
+}
+
+void SymbolTable::remove_or_ite(SMT::Visitable_ptr node) {
+	if(ite_conditions_.find(node) != ite_conditions_.end()) {
+		auto &p = ite_conditions_[node];
+		delete p.first; p.first = nullptr;
+		delete p.second; p.second = nullptr;
+		ite_conditions_.erase(node);
+	}
+}
+
+SMT::Visitable_ptr SymbolTable::get_ite_then_cond(SMT::Visitable_ptr node) {
+	if(ite_conditions_.find(node) == ite_conditions_.end()) {
+		LOG(FATAL) << "Cannot find ite then cond!";
+	}
+	return ite_conditions_[node].first;
+}
+
+SMT::Visitable_ptr SymbolTable::get_ite_else_cond(SMT::Visitable_ptr node) {
+	if(ite_conditions_.find(node) == ite_conditions_.end()) {
+		LOG(FATAL) << "Cannot find ite else cond!";
+	}
+	return ite_conditions_[node].second;
+}
+
+void SymbolTable::set_ite_then_cond(SMT::Visitable_ptr node, SMT::Visitable_ptr cond) {
+	if(ite_conditions_.find(node) == ite_conditions_.end()) {
+		LOG(FATAL) << "Cannot find ite else cond!";
+	}
+	auto& it = ite_conditions_[node];
+	//delete it.first;
+	it.first = cond;
+}
+
+void SymbolTable::set_ite_else_cond(SMT::Visitable_ptr node, SMT::Visitable_ptr cond) {
+	if(ite_conditions_.find(node) == ite_conditions_.end()) {
+		LOG(FATAL) << "Cannot find ite else cond!";
+	}
+	auto& it = ite_conditions_[node];
+	//delete it.second;
+	it.second = cond;
+}
+
 std::string SymbolTable::generate_internal_name(std::string name, Variable::Type type) {
   std::stringstream ss;
   ss << "__vlab__";

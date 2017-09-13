@@ -137,6 +137,7 @@ protected:
   bool match_prefix(SMT::Term_ptr, SMT::Term_ptr);
   bool match_suffix(SMT::Term_ptr, SMT::Term_ptr);
 
+  void record_ite_relation(SMT::Term_ptr);
 
   SMT::Script_ptr root_;
   SymbolTable_ptr symbol_table_;
