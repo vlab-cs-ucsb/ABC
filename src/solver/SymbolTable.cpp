@@ -279,9 +279,9 @@ Value_ptr SymbolTable::get_value(Variable_ptr variable) {
   Value_ptr result = nullptr;
 
   switch (variable->getType()) {
-  case Variable::Type::BOOL:
-    LOG(FATAL) << "bool variables are not supported explicitly yet: " << *variable;
-    break;
+//  case Variable::Type::BOOL:
+//    LOG(FATAL) << "bool variables are not supported explicitly yet: " << *variable;
+//    break;
   case Variable::Type::INT:
     result = new Value(Theory::IntAutomaton::makeAnyInt());
     DVLOG(VLOG_LEVEL) << "initialized variable as any integer: " << *variable;

@@ -103,6 +103,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(ArithmeticFormula_ptr f
       result_auto = BinaryIntAutomaton::MakeLessThanOrEqual(formula, is_natural_number);
       break;
     }
+    case ArithmeticFormula::Type::BOOL: {
+    	result_auto = BinaryIntAutomaton::MakeBoolean(formula);
+    	break;
+    }
     case ArithmeticFormula::Type::VAR: {
       CHECK_EQ(1, formula->GetNumberOfVariables());
       result_auto = BinaryIntAutomaton::MakeAnyInt(formula, is_natural_number);
@@ -772,6 +776,48 @@ BigInteger BinaryIntAutomaton::SymbolicCount(double bound, bool count_less_than_
   return BigInteger(str_result);
 }
 
+BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeBoolean(ArithmeticFormula_ptr formula) {
+
+	auto boolean_variables = formula->GetBooleans();
+
+	std::string boolean_var = boolean_variables.begin()->first;
+	int index = formula->GetVariableIndex(boolean_var);
+
+	int number_of_variables = formula->GetNumberOfVariables();
+	int* bin_variable_indices = GetBddVariableIndices(number_of_variables);
+
+	LOG(INFO) << "index: " << index;
+	LOG(INFO) << "number of variables: " << number_of_variables;
+
+	char statuses[3] = {'-', '+', '-'};
+	std::vector<char> exception(number_of_variables,'X');
+	exception[index] = (boolean_variables[boolean_var] ? '1' : '0');
+	exception.push_back('\0');
+
+	dfaSetup(3, number_of_variables, bin_variable_indices);
+	dfaAllocExceptions(1);
+	dfaStoreException(1, &*exception.begin());
+	dfaStoreState(2);
+
+	dfaAllocExceptions(1);
+	exception[index] = 'X';
+	dfaStoreException(1, &*exception.begin());
+	dfaStoreState(2);
+
+	dfaAllocExceptions(0);
+	dfaStoreState(2);
+
+	auto boolean_dfa = dfaBuild(statuses);
+	auto boolean_auto = new BinaryIntAutomaton(boolean_dfa,number_of_variables,false);
+
+	DVLOG(VLOG_LEVEL) << boolean_auto->id_ << " = [BinaryIntAutomaton]->MakeBoolean()";
+
+	boolean_auto->inspectBDD();
+	std::cin.get();
+
+	return boolean_auto;
+}
+
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntGraterThanOrEqualToZero(std::vector<int> indexes,
                                                                           int number_of_variables) {
   int* bin_variable_indices = GetBddVariableIndices(number_of_variables);
@@ -828,7 +874,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
     return equality_auto;
   }
 
+  auto coeffs_map = formula->GetVariableCoefficientMap();
   auto coeffs = formula->GetCoefficients();
+  auto boolean_variables = formula->GetBooleans();
   int min = 0, max = 0, num_of_zero_coefficient = 0;
   for (int coeff : coeffs) {
     if (coeff > 0) {
@@ -899,6 +947,14 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
             current_exception[i] = binary_string[k];
             ++k;
           }
+        }
+        for (auto& it : boolean_variables) {
+        	int temp_index = coeffs_map[it.first];
+        	if(current_state == 0) {
+        		current_exception[temp_index] = (it.second) ? '1' : '0';
+        	} else {
+        		current_exception[temp_index] = 0;
+        	}
         }
         target = result / 2;
         int to_state;
@@ -1002,7 +1058,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticF
     return equality_auto;
   }
 
-  auto coeffs = formula->GetCoefficients();
+  auto coeffs_map = formula->GetVariableCoefficientMap();
+	auto coeffs = formula->GetCoefficients();
+	auto boolean_variables = formula->GetBooleans();
   int min = 0, max = 0, num_of_zero_coefficient = 0;
   for (int coeff : coeffs) {
     if (coeff > 0) {
@@ -1076,6 +1134,14 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticF
             ++k;
           }
         }
+        for (auto& it : boolean_variables) {
+					int temp_index = coeffs_map[it.first];
+					if(current_state == 0) {
+						current_exception[temp_index] = (it.second) ? '1' : '0';
+					} else {
+						current_exception[temp_index] = 0;
+					}
+				}
         // hack to avoid an accepting initial state
         int to_state = carry_map[target].i;
         if (needs_shift_state) { // initial state is accepting, shift it
@@ -1165,6 +1231,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeLessThan(ArithmeticFormula_ptr fo
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntLessThan(ArithmeticFormula_ptr formula) {
   formula->Simplify();
 
+  auto coeffs_map = formula->GetVariableCoefficientMap();
+	auto boolean_variables = formula->GetBooleans();
   auto coeffs = formula->GetCoefficients();
   int min = 0, max = 0, num_of_zero_coefficient = 0;
   for (int coeff : coeffs) {
@@ -1251,6 +1319,14 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntLessThan(ArithmeticFormula_ptr
           ++k;
         }
       }
+      for (auto& it : boolean_variables) {
+				int temp_index = coeffs_map[it.first];
+				if(current_state == 0) {
+					current_exception[temp_index] = (it.second) ? '1' : '0';
+				} else {
+					current_exception[temp_index] = 0;
+				}
+			}
 
       if (write1) {
         if (carry_map[target].s == 0) {
@@ -1315,6 +1391,8 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntLessThan(ArithmeticFormula_ptr
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberLessThan(ArithmeticFormula_ptr formula) {
   formula->Simplify();
 
+  auto coeffs_map = formula->GetVariableCoefficientMap();
+	auto boolean_variables = formula->GetBooleans();
   auto coeffs = formula->GetCoefficients();
   int min = 0, max = 0, num_of_zero_coefficient = 0;
   for (int coeff : coeffs) {
@@ -1390,6 +1468,14 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberLessThan(ArithmeticF
           ++k;
         }
       }
+      for (auto& it : boolean_variables) {
+				int temp_index = coeffs_map[it.first];
+				if(current_state == 0) {
+					current_exception[temp_index] = (it.second) ? '1' : '0';
+				} else {
+					current_exception[temp_index] = 0;
+				}
+			}
 
       // hack to avoid an accepting initial state
       int to_state = carry_map[target].i;

@@ -107,7 +107,6 @@ void Driver::InitializeSolver() {
   }
 
   ast2dot(output_root + "/post_equivalence_last.dot");
-  //std::cin.get();
 
   if (Option::Solver::ENABLE_IMPLICATIONS) {
     Solver::ImplicationRunner implication_runner(script_, symbol_table_);

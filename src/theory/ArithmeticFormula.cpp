@@ -27,6 +27,7 @@ ArithmeticFormula::ArithmeticFormula(const ArithmeticFormula& other)
     	type_(other.type_),
       constant_(other.constant_) {
   this->variable_coefficient_map_ = other.variable_coefficient_map_;
+  this->boolean_variable_value_map_ = other.boolean_variable_value_map_;
   this->mixed_terms_ = other.mixed_terms_;
 }
 
@@ -143,6 +144,18 @@ Formula_ptr ArithmeticFormula::Complement() {
 	}
 	return result;
 }
+
+void ArithmeticFormula::AddBoolean(std::string name) {
+	if(boolean_variable_value_map_.find(name) != boolean_variable_value_map_.end()) {
+		LOG(FATAL) << "Boolean has already been added! : " << name;
+	}
+	boolean_variable_value_map_[name] = true;
+}
+
+std::map<std::string,bool> ArithmeticFormula::GetBooleans() const {
+	return boolean_variable_value_map_;
+}
+
 
 void ArithmeticFormula::SetType(Type type) {
   this->type_ = type;
@@ -270,6 +283,15 @@ ArithmeticFormula_ptr ArithmeticFormula::negate() {
     case Type::LE:
       result->type_ = Type::GT;
       break;
+    case Type::BOOL: {
+			// should be reachable only if var is bool
+			if(result->boolean_variable_value_map_.size() != 1) {
+				LOG(FATAL) << "can't negate variable! dont know how";
+			}
+			auto it = result->boolean_variable_value_map_.begin();
+			result->boolean_variable_value_map_[it->first] = !result->boolean_variable_value_map_[it->first];
+			break;
+		}
     default:
       break;
   }

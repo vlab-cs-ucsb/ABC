@@ -575,7 +575,14 @@ void ArithmeticFormulaGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term)
     formula->AddVariable(variable->getName(), 1);
     formula->SetType(ArithmeticFormula::Type::VAR);
     set_term_formula(qi_term, formula);
-  }
+  } else if(Variable::Type::BOOL == variable->getType()) {
+		auto formula = new ArithmeticFormula();
+		formula->AddBoolean(variable->getName());
+		formula->AddVariable(variable->getName(), 0);
+		formula->SetType(ArithmeticFormula::Type::BOOL);
+		set_term_formula(qi_term, formula);
+		add_int_variables(current_group_,qi_term);
+	}
 }
 
 void ArithmeticFormulaGenerator::visitTermConstant(TermConstant_ptr term_constant) {

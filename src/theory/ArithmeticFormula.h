@@ -33,7 +33,7 @@ class ArithmeticFormula : public Formula {
 public:
   enum class Type :
           int {
-            NONE = 0, EQ, NOTEQ, GT, GE, LT, LE, INTERSECT, UNION, VAR
+            NONE = 0, EQ, NOTEQ, GT, GE, LT, LE, INTERSECT, UNION, VAR, BOOL
           };
   ArithmeticFormula();
   virtual ~ArithmeticFormula();
@@ -45,6 +45,9 @@ public:
   virtual Formula_ptr Intersect(Formula_ptr);
 	virtual Formula_ptr Union(Formula_ptr);
 	virtual Formula_ptr Complement();
+
+	void AddBoolean(std::string);
+	std::map<std::string,bool> GetBooleans() const;
 
   void SetType(Type type);
   ArithmeticFormula::Type GetType() const;
@@ -72,6 +75,7 @@ protected:
   bool GetVarNamesIfEqualityOfTwoVars(std::string &v1, std::string &v2);
 
   ArithmeticFormula::Type type_;
+  std::map<std::string, bool> boolean_variable_value_map_;
   int constant_;
 
   // TODO a quick solution for a restricted set of cases in mixed constraints
