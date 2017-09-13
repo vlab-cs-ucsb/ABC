@@ -39,6 +39,7 @@ using EquivClassTable = std::map<SMT::Visitable_ptr, EquivClassMap>;
 using GroupMap = std::map<SMT::Variable_ptr, SMT::Variable_ptr>;
 using VariableValueMap = std::map<SMT::Variable_ptr, Value_ptr>;
 using VariableValueTable = std::map<SMT::Visitable_ptr, VariableValueMap>;
+using TermChildrenTable = std::map<SMT::Visitable_ptr, std::set<std::string>>
 
 
 
@@ -106,6 +107,9 @@ public:
   std::string get_var_name_for_expression(SMT::Visitable_ptr, SMT::Variable::Type);
   std::string get_var_name_for_node(SMT::Visitable_ptr, SMT::Variable::Type);
 
+  void record_child_term(SMT::Visitable_ptr, std::string);
+  bool has_child_term(SMT::Visitable_ptr, std::string);
+
 private:
   std::string generate_internal_name(std::string, SMT::Variable::Type);
 
@@ -147,6 +151,13 @@ private:
    * Values of each variable for each scope
    */
   VariableValueTable variable_value_table_;
+
+  /**
+    * string names of a terms children, mainly for ANDS
+    */
+  TermChildrenTable term_children_table_;
+  
+  std::map<std::SMT::Visitable_ptr,std::tuple<
 
   static const int VLOG_LEVEL;
   //int reuse; 

@@ -66,6 +66,7 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
   std::vector<TermList> or_term_lists;
   for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
     visit_and_callback(*iter);
+    
     if (check_bool_constant_value(*iter, "true")) {
       DVLOG(VLOG_LEVEL) << "remove: 'true' constant from 'and'";
       delete (*iter);
@@ -102,13 +103,7 @@ void SyntacticOptimizer::visitOr(Or_ptr or_term) {
   bool has_true_term = false;
   for (auto iter = or_term->term_list->begin(); iter != or_term->term_list->end();) {
     visit_and_callback(*iter);
-//    if (check_bool_term(*iter)) {
-//			Term_ptr new_term = generate_eq_bool_constant(*iter,"true");
-//			Term_ptr old_term = *iter;
-//			*iter = new_term;
-//			delete old_term;
-//		} else
-			if (check_bool_constant_value(*iter, "false")) {
+		if (check_bool_constant_value(*iter, "false")) {
       DVLOG(VLOG_LEVEL) << "remove: 'false' constant from 'or'";
       delete (*iter);
       iter = or_term->term_list->erase(iter);
@@ -295,19 +290,6 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
       };
       break;
     }
-//    case Term::Type::QUALIDENTIFIER: {
-//    	if(check_bool_term(not_term->term)) {
-//				callback_ = [not_term](Term_ptr & term) mutable {
-//					Primitive_ptr prim = new Primitive("false",Primitive::Type::BOOL);
-//					TermConstant_ptr term_constant = new TermConstant(prim);
-//					Eq_ptr eq_term = new Eq(not_term->term,term_constant);
-//					not_term->term = nullptr;
-//					term = eq_term;
-//					delete not_term;
-//				};
-//    	}
-//    	break;
-//    }
     case Term::Type::TERMCONSTANT: {
 			callback_ = [not_term](Term_ptr & term) mutable {
 				TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(not_term->term);
@@ -1432,7 +1414,28 @@ void SyntacticOptimizer::visitCount(Count_ptr count_term) {
 }
 
 void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {
-  LOG(FATAL)<< "'ite' term should be converted to 'or' term by parser";
+  callback = [ite_term] (Term_ptr& term) mutable {
+    DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *ite_term << "' into 'or'";
+    And_ptr then_branch = dynamic_cast<And_ptr>(ite_term->then_branch);
+    And_ptr else_branch = dynamic_cast<And_ptr>(ite_term->else_branch);
+    then_branch->term_list->insert(then_branch->term_list->begin(), ite_term->cond->clone());
+    Term_ptr true_cond,false_cond;
+    true_cond = ite_term->cond->clone();
+    if (Not_ptr not_term = dynamic_cast<Not_ptr>(ite_term->cond)) {
+      else_branch->term_list->insert(else_branch->term_list->begin(), not_term->term->clone());
+    } else {
+      not_term = new Not(ite_term->cond);
+      else_branch->term_list->insert(else_branch->term_list->begin(), not_term->clone());
+    }
+
+    TermList_ptr term_list = new TermList();
+    term_list->push_back(then_branch);
+    term_list->push_back(else_branch);
+    term = new Or(term_list);
+    ite_term->then_branch = nullptr;
+    ite_term->else_branch = nullptr;
+    delete ite_term;
+  };
 }
 
 void SyntacticOptimizer::visitReConcat(ReConcat_ptr re_concat_term) {

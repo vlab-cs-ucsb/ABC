@@ -453,6 +453,17 @@ std::string SymbolTable::get_var_name_for_node(Visitable_ptr node, Variable::Typ
   return generate_internal_name(ss.str(), type);
 }
 
+void SymbolTable::record_child_term(Visitable_ptr node, std::string str) {
+  term_children_table_[node].insert(str);
+}
+
+bool SymbolTable::has_child_term(Visitable_ptr node, std::string str) {
+  if(term_children_table_[node].find(str) == term_children_table_[node].end()) {
+    return false;
+  }
+  return true;
+}
+
 std::string SymbolTable::generate_internal_name(std::string name, Variable::Type type) {
   std::stringstream ss;
   ss << "__vlab__";

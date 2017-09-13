@@ -80,9 +80,11 @@ void EquivalenceGenerator::setCallbacks() {
  * Visit children that are not disjunction first
  */
 void EquivalenceGenerator::visitAnd(And_ptr and_term) {
+  // top_scope is and_term  
   TermList or_terms;
   for (auto term : *(and_term->term_list)) {
     if (Term::Type::OR not_eq term->type()) {
+      std::string
       visit(term);
     } else {
       or_terms.push_back(term);
@@ -130,8 +132,7 @@ void EquivalenceGenerator::visitEq(Eq_ptr eq_term) {
     } else {
       create_equiv_class_and_update_symbol_table(left_variable_, term_constant_);
     }
-  }
-  else if (is_equiv_of_bool_var_and_term(eq_term->left_term, eq_term->right_term)) {
+  } else if (is_equiv_of_bool_var_and_term(eq_term->left_term, eq_term->right_term)) {
     auto equiv_class = symbol_table_->get_equivalence_class_of(left_variable_);
     if (equiv_class) {
       update_equiv_class_and_symbol_table(equiv_class, unclassified_term_);
