@@ -42,9 +42,9 @@ public:
   virtual ArithmeticFormula_ptr clone() const;
   virtual std::string str() const;
 
-  virtual Formula_ptr Intersect(Formula_ptr);
-	virtual Formula_ptr Union(Formula_ptr);
-	virtual Formula_ptr Complement();
+  virtual ArithmeticFormula_ptr Intersect(Formula_ptr);
+	virtual ArithmeticFormula_ptr Union(Formula_ptr);
+	virtual ArithmeticFormula_ptr Complement();
 
 	void AddBoolean(std::string);
 	std::map<std::string,bool> GetBooleans() const;

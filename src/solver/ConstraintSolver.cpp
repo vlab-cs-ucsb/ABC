@@ -197,20 +197,20 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
   bool is_satisfiable = false;
   bool is_component = constraint_information_->is_component(or_term);
   
-  if (is_component) {
-    if (constraint_information_->has_arithmetic_constraint(or_term)) {
-      arithmetic_constraint_solver_.start(or_term);
-      is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
-      DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *or_term << "@" << or_term;
-    }
-    if (is_satisfiable and constraint_information_->has_string_constraint(or_term)) {
-      string_constraint_solver_.start(or_term);
-      is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
-      DVLOG(VLOG_LEVEL) << "String formulae solved: " << *or_term << "@" << or_term;
-    }
-
-    DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *or_term << "@" << or_term;
-  }
+//  if (is_component) {
+//    if (constraint_information_->has_arithmetic_constraint(or_term)) {
+//      arithmetic_constraint_solver_.start(or_term);
+//      is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+//      DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *or_term << "@" << or_term;
+//    }
+//    if (is_satisfiable and constraint_information_->has_string_constraint(or_term)) {
+//      string_constraint_solver_.start(or_term);
+//      is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+//      DVLOG(VLOG_LEVEL) << "String formulae solved: " << *or_term << "@" << or_term;
+//    }
+//
+//    DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *or_term << "@" << or_term;
+//  }
 
   DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
 
@@ -221,7 +221,11 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
 
       if (dynamic_cast<And_ptr>(term) == nullptr) {
         if (is_scope_satisfiable) {
+        	LOG(INFO) << "YES";
           update_variables();
+        } else {
+        	LOG(INFO) << "NO";
+        	variable_path_table_.clear();
         }
         clearTermValuesAndLocalLetVars();
       }
@@ -374,19 +378,19 @@ void ConstraintSolver::visitTimes(Times_ptr times_term) {
 
 void ConstraintSolver::visitEq(Eq_ptr eq_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *eq_term;
-LOG(INFO) << "Before EQ";
+//LOG(INFO) << "Before EQ";
   visit_children_of(eq_term);
 
   Value_ptr result = nullptr, param_left = getTermValue(eq_term->left_term), param_right = getTermValue(
       eq_term->right_term);
-
-auto left_auto = param_left->getStringAutomaton();
-auto right_auto = param_right->getStringAutomaton();
-LOG(INFO) << "left auto->num_tracks = " << left_auto->GetNumTracks();
-LOG(INFO) << "right_auto->num_tracks= " << right_auto->GetNumTracks();
-
-LOG(INFO) << "left formula var: " << left_auto->GetFormula()->GetNumberOfVariables();
-LOG(INFO) << "rght formula var: " << right_auto->GetFormula()->GetNumberOfVariables();
+//
+//auto left_auto = param_left->getStringAutomaton();
+//auto right_auto = param_right->getStringAutomaton();
+//LOG(INFO) << "left auto->num_tracks = " << left_auto->GetNumTracks();
+//LOG(INFO) << "right_auto->num_tracks= " << right_auto->GetNumTracks();
+//
+//LOG(INFO) << "left formula var: " << left_auto->GetFormula()->GetNumberOfVariables();
+//LOG(INFO) << "rght formula var: " << right_auto->GetFormula()->GetNumberOfVariables();
 
   if (Value::Type::BOOL_CONSTANT == param_left->getType() and Value::Type::BOOL_CONSTANT == param_right->getType()) {
     result = new Value(param_left->getBoolConstant() == param_right->getBoolConstant());

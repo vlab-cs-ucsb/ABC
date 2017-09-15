@@ -120,7 +120,6 @@ void EquivalenceGenerator::visitOr(Or_ptr or_term) {
  * @left_variable_, @right_variable_, @term_constant_, @unclassified_term_
  */
 void EquivalenceGenerator::visitEq(Eq_ptr eq_term) {
-
   DVLOG(VLOG_LEVEL) << "visit start: " << *eq_term << "@" << eq_term;
 
   if (is_equiv_of_variables(eq_term->left_term, eq_term->right_term)) {
@@ -135,15 +134,18 @@ void EquivalenceGenerator::visitEq(Eq_ptr eq_term) {
     } else { // create a new equivalence class
       create_equiv_class_and_update_symbol_table(left_variable_, right_variable_);
     }
-  } else if (is_equiv_of_variable_and_constant(eq_term->left_term, eq_term->right_term)) {
-    has_constant_substitution_ = true;
-    auto equiv_class = symbol_table_->get_equivalence_class_of(left_variable_);
-    if (equiv_class) {
-      update_equiv_class_and_symbol_table(equiv_class, term_constant_);
-    } else {
-      create_equiv_class_and_update_symbol_table(left_variable_, term_constant_);
-    }
-  } else if (is_equiv_of_bool_var_and_term(eq_term->left_term, eq_term->right_term)) {
+  }
+//  else if (is_equiv_of_variable_and_constant(eq_term->left_term, eq_term->right_term)) {
+//    has_constant_substitution_ = true;
+//    auto equiv_class = symbol_table_->get_equivalence_class_of(left_variable_);
+//    if (equiv_class) {
+//      update_equiv_class_and_symbol_table(equiv_class, term_constant_);
+//    } else {
+//      create_equiv_class_and_update_symbol_table(left_variable_, term_constant_);
+//    }
+//  }
+  else if (is_equiv_of_bool_var_and_term(eq_term->left_term, eq_term->right_term)) {
+  	has_constant_substitution_ = true;
     auto equiv_class = symbol_table_->get_equivalence_class_of(left_variable_);
     if (equiv_class) {
       update_equiv_class_and_symbol_table(equiv_class, unclassified_term_);

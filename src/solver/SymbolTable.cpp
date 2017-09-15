@@ -409,10 +409,10 @@ bool SymbolTable::UnionValue(Variable_ptr variable, Value_ptr value) {
   Value_ptr variable_new_value = nullptr;
   if (variable_old_value not_eq nullptr) {
     variable_new_value = variable_old_value->union_(value);
-    auto it = variable_value_table_[top_scope()].find(variable);
-    if (it != variable_value_table_[top_scope()].end() and it->second == variable_old_value) {
-      delete variable_old_value;
-    }
+    //auto it = variable_value_table_[top_scope()].find(variable);
+//    if (it != variable_value_table_[top_scope()].end() and it->second == variable_old_value) {
+//      delete variable_old_value;
+//    }
   } else {
     variable_new_value = value->clone();
   }

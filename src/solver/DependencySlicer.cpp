@@ -85,9 +85,9 @@ void DependencySlicer::visitAssert(Assert_ptr assert_command) {
 
 void DependencySlicer::visitAnd(And_ptr and_term) {
   for (auto& term : *(and_term->term_list)) {
-    current_term_ = term;
-    visit(term);
-    current_term_ = nullptr;
+		current_term_ = term;
+		visit(term);
+		current_term_ = nullptr;
   }
 
   constraint_information_->add_component(and_term);
@@ -153,7 +153,7 @@ void DependencySlicer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 
 void DependencySlicer::add_variable_current_term_mapping(Variable_ptr variable) {
   term_variable_map_[current_term_].insert(variable);
-  variable_term_map_[variable].insert(current_term_);
+	variable_term_map_[variable].insert(current_term_);
 }
 
 void DependencySlicer::clear_mappings() {

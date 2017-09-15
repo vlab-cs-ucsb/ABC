@@ -103,6 +103,7 @@ void StringFormulaGenerator::visitAnd(And_ptr and_term) {
 
   auto group_formula = get_group_formula(current_group_);
   if (group_formula not_eq nullptr and group_formula->GetNumberOfVariables() > 0) {
+  	LOG(INFO) << "AND HAS FORMULA";
     auto formula = group_formula->clone();
     formula->SetType(StringFormula::Type::INTERSECT);
     set_term_formula(and_term, formula);
@@ -148,14 +149,15 @@ void StringFormulaGenerator::visitOr(Or_ptr or_term) {
    */
   bool has_string_formula = false;
   for (auto term : *or_term->term_list) {
+  	LOG(INFO) << "term " << term << " - " << *term << " has string constraint? " << constraint_information_->has_string_constraint(term);
     has_string_formula = constraint_information_->has_string_constraint(term)
-        or constraint_information_->has_mixed_constraint(term)
         or has_string_formula;
   }
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *or_term << "@" << or_term;
   auto group_formula = get_group_formula(current_group_);
   if (has_string_formula and group_formula not_eq nullptr and group_formula->GetNumberOfVariables() > 0) {
+  	LOG(INFO) << "OR HAS FORMULA";
     auto formula = group_formula->clone();
     formula->SetType(StringFormula::Type::UNION);
     set_term_formula(or_term, formula);

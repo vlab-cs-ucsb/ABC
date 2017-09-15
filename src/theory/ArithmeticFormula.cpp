@@ -104,21 +104,21 @@ std::string ArithmeticFormula::str() const {
   return ss.str();
 }
 
-Formula_ptr ArithmeticFormula::Intersect(Formula_ptr other) {
+ArithmeticFormula_ptr ArithmeticFormula::Intersect(Formula_ptr other) {
 	ArithmeticFormula_ptr intersect_formula = this->clone();
 	intersect_formula->ResetCoefficients(0);
 	intersect_formula->SetType(ArithmeticFormula::Type::INTERSECT);
 	return intersect_formula;
 }
 
-Formula_ptr ArithmeticFormula::Union(Formula_ptr other) {
+ArithmeticFormula_ptr ArithmeticFormula::Union(Formula_ptr other) {
 	ArithmeticFormula_ptr union_formula = this->clone();
 	union_formula->ResetCoefficients(0);
 	union_formula->SetType(ArithmeticFormula::Type::UNION);
 	return union_formula;
 }
 
-Formula_ptr ArithmeticFormula::Complement() {
+ArithmeticFormula_ptr ArithmeticFormula::Complement() {
 	ArithmeticFormula_ptr result = this->clone();
 	switch (result->type_) {
 		case ArithmeticFormula::Type::EQ:

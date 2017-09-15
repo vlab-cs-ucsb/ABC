@@ -36,6 +36,10 @@ void EquivClassRuleRunner::start() {
   end();
 }
 void EquivClassRuleRunner::end() {
+
+	SyntacticProcessor syntactic_processor(root);
+	syntactic_processor.start();
+
   SyntacticOptimizer syntactic_optimizer(root, symbol_table_);
   syntactic_optimizer.start();
 }

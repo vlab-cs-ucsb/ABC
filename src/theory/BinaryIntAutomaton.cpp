@@ -339,7 +339,14 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Complement() {
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr other_auto) {
   auto intersect_dfa = Automaton::DFAIntersect(this->dfa_, other_auto->dfa_);
-  auto intersect_formula = this->formula_->clone();
+  ArithmeticFormula_ptr intersect_formula = nullptr;
+  if(formula_ != nullptr && other_auto->formula_ != nullptr) {
+		intersect_formula = formula_->Intersect(other_auto->formula_);
+	} else if(formula_ != nullptr) {
+		intersect_formula = formula_->clone();
+	} else {
+		intersect_formula = nullptr;
+	}
   intersect_formula->ResetCoefficients();
   intersect_formula->SetType(ArithmeticFormula::Type::INTERSECT);
   auto intersect_auto = new BinaryIntAutomaton(intersect_dfa, intersect_formula, is_natural_number_);
@@ -350,7 +357,14 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr othe
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::Union(BinaryIntAutomaton_ptr other_auto) {
   auto union_dfa = Automaton::DFAUnion(this->dfa_, other_auto->dfa_);
-  auto union_formula = this->formula_->clone();
+  ArithmeticFormula_ptr union_formula = nullptr;
+	if(formula_ != nullptr && other_auto->formula_ != nullptr) {
+		union_formula = formula_->Union(other_auto->formula_);
+	} else if(formula_ != nullptr) {
+		union_formula = formula_->clone();
+	} else {
+		union_formula = nullptr;
+	}
   union_formula->ResetCoefficients();
   union_formula->SetType(ArithmeticFormula::Type::UNION);
   auto union_auto = new BinaryIntAutomaton(union_dfa, union_formula, is_natural_number_);
@@ -786,9 +800,6 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeBoolean(ArithmeticFormula_ptr for
 	int number_of_variables = formula->GetNumberOfVariables();
 	int* bin_variable_indices = GetBddVariableIndices(number_of_variables);
 
-	LOG(INFO) << "index: " << index;
-	LOG(INFO) << "number of variables: " << number_of_variables;
-
 	char statuses[3] = {'-', '+', '-'};
 	std::vector<char> exception(number_of_variables,'X');
 	exception[index] = (boolean_variables[boolean_var] ? '1' : '0');
@@ -800,7 +811,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeBoolean(ArithmeticFormula_ptr for
 	dfaStoreState(2);
 
 	dfaAllocExceptions(1);
-	exception[index] = 'X';
+	exception[index] = '0';
 	dfaStoreException(1, &*exception.begin());
 	dfaStoreState(2);
 
@@ -808,12 +819,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeBoolean(ArithmeticFormula_ptr for
 	dfaStoreState(2);
 
 	auto boolean_dfa = dfaBuild(statuses);
-	auto boolean_auto = new BinaryIntAutomaton(boolean_dfa,number_of_variables,false);
+	auto boolean_auto = new BinaryIntAutomaton(boolean_dfa,formula,false);
 
 	DVLOG(VLOG_LEVEL) << boolean_auto->id_ << " = [BinaryIntAutomaton]->MakeBoolean()";
 
-	boolean_auto->inspectBDD();
-	std::cin.get();
 
 	return boolean_auto;
 }
