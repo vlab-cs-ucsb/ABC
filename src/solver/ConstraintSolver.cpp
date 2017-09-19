@@ -135,6 +135,8 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   bool is_satisfiable = true;
   bool is_component = constraint_information_->is_component(and_term);
 
+  LOG(INFO) << "AND HAS " << and_term->term_list->size();
+
   if (is_component) {
     if (constraint_information_->has_arithmetic_constraint(and_term)) {
       arithmetic_constraint_solver_.start(and_term);
