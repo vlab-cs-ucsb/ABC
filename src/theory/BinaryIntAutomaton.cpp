@@ -108,6 +108,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(ArithmeticFormula_ptr f
       break;
     }
 
+  LOG(INFO) << "------Underlying BDD size: " << bdd_size(result_auto->dfa_->bddm);
+  //result_auto->inspectBDD();
+  //std::cin.get();
   return result_auto;
 }
 
@@ -330,12 +333,16 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Complement() {
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr other_auto) {
-  auto intersect_dfa = Automaton::DfaIntersect(this->dfa_, other_auto->dfa_);
+	LOG(INFO) << "------INTERSECT------";
+
+	LOG(INFO) << "left bdd size: " << bdd_size(dfa_->bddm);
+	LOG(INFO) << "right bdd size: " << bdd_size(other_auto->dfa_->bddm);
+	auto intersect_dfa = Automaton::DfaIntersect(this->dfa_, other_auto->dfa_);
   auto intersect_formula = this->formula_->clone();
   intersect_formula->reset_coefficients();
   intersect_formula->set_type(ArithmeticFormula::Type::INTERSECT);
   auto intersect_auto = new BinaryIntAutomaton(intersect_dfa, intersect_formula, is_natural_number_);
-
+  LOG(INFO) << "result bdd size: " << bdd_size(intersect_auto->dfa_->bddm);
   DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << other_auto->id_ << ")";
   return intersect_auto;
 }

@@ -95,11 +95,23 @@ void EquivalenceGenerator::visitAnd(And_ptr and_term) {
 }
 
 void EquivalenceGenerator::visitOr(Or_ptr or_term) {
-  for (auto term : *(or_term->term_list)) {
-    symbol_table_->push_scope(term, false);
-    visit(term);
-    symbol_table_->pop_scope();
-  }
+	for (auto term : *(or_term->term_list)) {
+		if(symbol_table_->is_or_ite(term)) {
+			Or_ptr or_term = dynamic_cast<Or_ptr>(term);
+			auto then_cond = dynamic_cast<Term_ptr>(symbol_table_->get_ite_then_cond(or_term));
+			auto else_cond = dynamic_cast<Term_ptr>(symbol_table_->get_ite_else_cond(or_term));
+			symbol_table_->push_scope(then_cond, false);
+			visit(then_cond);
+			symbol_table_->pop_scope();
+			symbol_table_->push_scope(else_cond, false);
+			visit(else_cond);
+			symbol_table_->pop_scope();
+
+		}
+		symbol_table_->push_scope(term, false);
+		visit(term);
+		symbol_table_->pop_scope();
+	}
 }
 
 /**

@@ -19,6 +19,7 @@ StringRelationGenerator::StringRelationGenerator(Script_ptr script, SymbolTable_
       has_string_formula_{false},
       has_mixed_constraint_(false),
       current_term_{nullptr} {
+  under_or = false;
 }
 
 StringRelationGenerator::~StringRelationGenerator() {
@@ -50,6 +51,14 @@ void StringRelationGenerator::start() {
 }
 
 void StringRelationGenerator::end() {
+	for(auto& it : group_variables_map_) {
+		LOG(INFO) << "Group: " << it.first;
+		for(auto& it2 : it.second) {
+			LOG(INFO) << it2.first << "," << it2.second;
+		}
+		LOG(INFO) << "";
+	}
+	std::cin.get();
 }
 
 void StringRelationGenerator::visitScript(Script_ptr script) {
@@ -82,7 +91,7 @@ void StringRelationGenerator::visitLet(Let_ptr let_term) {
 
 void StringRelationGenerator::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
-  current_term_ = and_term;
+  if(!under_or) current_term_ = and_term;
   visit_children_of(and_term);
   DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 
@@ -125,10 +134,12 @@ void StringRelationGenerator::visitAnd(And_ptr and_term) {
 }
 
 void StringRelationGenerator::visitOr(Or_ptr or_term) {
-  current_term_ = or_term;
+  //current_term_ = or_term;
+	under_or = true;
   for (auto &term : *(or_term->term_list)) {
     visit(term);
   }
+  under_or = false;
   DVLOG(VLOG_LEVEL) << "visit: " << *or_term;
 }
 

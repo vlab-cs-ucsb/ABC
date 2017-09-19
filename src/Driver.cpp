@@ -78,15 +78,20 @@ void Driver::InitializeSolver() {
   Solver::SyntacticOptimizer syntactic_optimizer(script_, symbol_table_);
   syntactic_optimizer.start();
 
-  Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
-  dependency_slicer.start();
-
   if (Option::Solver::ENABLE_EQUIVALENCE_CLASSES) {
     Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
     do {
       equivalence_generator.start();
     } while (equivalence_generator.has_constant_substitution());
   }
+
+  std::string output_root {"./output"};
+  ast2dot(output_root + "/post_equivalence.dot");
+
+  Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
+	dependency_slicer.start();
+
+	ast2dot(output_root + "/post_dependency.dot");
 
   if (Option::Solver::ENABLE_IMPLICATIONS) {
     Solver::ImplicationRunner implication_runner(script_, symbol_table_);

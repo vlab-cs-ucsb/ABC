@@ -67,6 +67,7 @@ void ArithmeticConstraintSolver::setCallbacks() {
       case Term::Type::QUALIDENTIFIER: {
         auto formula = arithmetic_formula_generator_.get_term_formula(term);
         if (formula != nullptr) {
+        	LOG(INFO) << "Formula has " << formula->get_number_of_variables() << " variables";
           DVLOG(VLOG_LEVEL) << "Linear Arithmetic Equation: " << *formula << "@" << term;
           auto binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), use_unsigned_integers_);
           auto result = new Value(binary_int_auto);

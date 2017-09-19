@@ -95,7 +95,10 @@ void SyntacticProcessor::visitAnd(And_ptr and_term) {
     } else if (Or_ptr sub_or_term = dynamic_cast<Or_ptr>(*iter)) { // push or terms to the end
       or_terms.push_back(*iter);
       iter = and_term->term_list->erase(iter);
-    } else {
+    } else if (Ite_ptr sub_ite_term = dynamic_cast<Ite_ptr>(*iter)) {
+			or_terms.push_back(*iter);
+			iter = and_term->term_list->erase(iter);
+		} else {
       iter++; pos++;
     }
   }

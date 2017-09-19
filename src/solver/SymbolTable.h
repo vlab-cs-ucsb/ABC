@@ -39,7 +39,7 @@ using EquivClassTable = std::map<SMT::Visitable_ptr, EquivClassMap>;
 using GroupMap = std::map<SMT::Variable_ptr, SMT::Variable_ptr>;
 using VariableValueMap = std::map<SMT::Variable_ptr, Value_ptr>;
 using VariableValueTable = std::map<SMT::Visitable_ptr, VariableValueMap>;
-
+using TermChildrenTable = std::map<SMT::Visitable_ptr, std::set<std::string>>;
 
 
 class SymbolTable {
@@ -106,6 +106,18 @@ public:
   std::string get_var_name_for_expression(SMT::Visitable_ptr, SMT::Variable::Type);
   std::string get_var_name_for_node(SMT::Visitable_ptr, SMT::Variable::Type);
 
+  void record_child_term(SMT::Visitable_ptr, std::string);
+	bool has_child_term(SMT::Visitable_ptr, std::string);
+	void clear_child_terms(SMT::Visitable_ptr);
+
+	bool is_or_ite(SMT::Visitable_ptr);
+	void add_or_ite(SMT::Visitable_ptr, SMT::Visitable_ptr, SMT::Visitable_ptr);
+	void remove_or_ite(SMT::Visitable_ptr);
+	SMT::Visitable_ptr get_ite_then_cond(SMT::Visitable_ptr);
+	SMT::Visitable_ptr get_ite_else_cond(SMT::Visitable_ptr);
+	void set_ite_then_cond(SMT::Visitable_ptr, SMT::Visitable_ptr);
+	void set_ite_else_cond(SMT::Visitable_ptr, SMT::Visitable_ptr);
+
 private:
   std::string generate_internal_name(std::string, SMT::Variable::Type);
 
@@ -147,6 +159,13 @@ private:
    * Values of each variable for each scope
    */
   VariableValueTable variable_value_table_;
+
+  /**
+		* string names of a terms children, mainly for ANDS
+		*/
+	TermChildrenTable term_children_table_;
+
+	std::map<SMT::Visitable_ptr,std::pair<SMT::Visitable_ptr, SMT::Visitable_ptr>> ite_conditions_;
 
   static const int VLOG_LEVEL;
   //int reuse; 

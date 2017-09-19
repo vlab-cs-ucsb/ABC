@@ -140,6 +140,8 @@ class StringRelationGenerator : public SMT::Visitor {
   std::map<std::string,VariableTrackMap> group_variables_map_;
   std::map<SMT::Term_ptr, std::string> term_group_map;
 
+  bool under_or;
+
  private:
   static const int VLOG_LEVEL;
 

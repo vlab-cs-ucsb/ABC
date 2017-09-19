@@ -24,6 +24,7 @@
 #include "EquivalenceClass.h"
 #include "SymbolTable.h"
 #include "SyntacticOptimizer.h"
+#include "SyntacticProcessor.h"
 #include "Value.h"
 
 namespace Vlab {
