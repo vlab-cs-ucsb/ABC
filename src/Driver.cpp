@@ -108,6 +108,7 @@ void Driver::InitializeSolver() {
   if (Option::Solver::ENABLE_IMPLICATIONS) {
     Solver::ImplicationRunner implication_runner(script_, symbol_table_);
     implication_runner.start();
+    ast2dot(output_root + "/post_implication_runner.dot");
   }
 
   Solver::FormulaOptimizer formula_optimizer(script_, symbol_table_);

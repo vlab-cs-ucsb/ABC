@@ -574,10 +574,7 @@ StringAutomaton_ptr StringAutomaton::MakeBegins(StringFormula_ptr formula) {
 	result_dfa = dfaMinimize(temp_dfa);
 	dfaFree(temp_dfa);
 	result_auto = new StringAutomaton(result_dfa,formula,var*num_tracks);
-
-	LOG(INFO) << "Begins:";
-	result_auto->inspectAuto(false,true);
-	std::cin.get();
+	DVLOG(VLOG_LEVEL) << result_auto->id_ << " = MakeBegins(" << formula->str() << ")";
 	return result_auto;
 }
 
@@ -743,7 +740,7 @@ StringAutomaton_ptr StringAutomaton::MakeNotBegins(StringFormula_ptr formula) {
 	result_dfa = dfaMinimize(temp_dfa);
 	dfaFree(temp_dfa);
 	result_auto = new StringAutomaton(result_dfa,formula,var*num_tracks);
-
+	DVLOG(VLOG_LEVEL) << result_auto->id_ << " = MakeNotBegins(" << formula->str() << ")";
 	return result_auto;
 }
 
@@ -941,7 +938,7 @@ StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
 
 StringAutomaton_ptr StringAutomaton::Union(StringAutomaton_ptr other_auto) {
 	CHECK_EQ(this->num_tracks_,other_auto->num_tracks_);
-	auto union_dfa = Automaton::DFAIntersect(this->dfa_, other_auto->dfa_);
+	auto union_dfa = Automaton::DFAUnion(this->dfa_, other_auto->dfa_);
 	auto union_formula = this->formula_->Union(other_auto->formula_);
 	auto union_auto = new StringAutomaton(union_dfa,union_formula,this->num_of_bdd_variables_);
 

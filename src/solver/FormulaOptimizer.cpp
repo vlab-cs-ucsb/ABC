@@ -64,6 +64,8 @@ void FormulaOptimizer::visitAnd(And_ptr and_term) {
 void FormulaOptimizer::visitOr(Or_ptr or_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
   for (auto iter = or_term->term_list->begin(); iter != or_term->term_list->end();) {
+  	auto temp_term_strs = term_strs_;
+  	term_strs_.clear();
     visit(*iter);
     if (delete_term_) {
       delete (*iter);
@@ -72,6 +74,7 @@ void FormulaOptimizer::visitOr(Or_ptr or_term) {
       iter++;
     }
     delete_term_ = false;
+    term_strs_ = temp_term_strs;
   }
   term_strs_.clear();
   DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;

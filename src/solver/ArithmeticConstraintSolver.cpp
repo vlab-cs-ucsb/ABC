@@ -176,7 +176,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 //    is_satisfiable = true;
 //  }
 
-  if (has_arithmetic_formula) {
+  //if (has_arithmetic_formula) {
 //    if (is_satisfiable) {
 //      symbol_table_->IntersectValue(group_name, and_value);  // update value
 //    } else {
@@ -185,9 +185,9 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 //      symbol_table_->set_value(group_name, value);
 //    }
 //    delete and_value;
-  	symbol_table_->set_value(group_name,new Value(is_satisfiable));
+  symbol_table_->set_value(group_name,new Value(is_satisfiable));
 
-  }
+  //}
   DVLOG(VLOG_LEVEL) << "post visit component end: " << *and_term << "@" << and_term;
 }
 
@@ -247,7 +247,11 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
 
   DVLOG(VLOG_LEVEL) << "post visit component start: " << *or_term << "@" << or_term;
 
-  if (has_arithmetic_formula) {
+  if(not has_arithmetic_formula) {
+  	is_satisfiable = true;
+  }
+
+//  if (has_arithmetic_formula) {
 //		if (is_satisfiable) {
 //			symbol_table_->IntersectValue(group_name, or_value);  // update value
 //		} else {
@@ -256,8 +260,8 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
 //			symbol_table_->set_value(group_name, value);
 //		}
 //		delete or_value;
-		symbol_table_->set_value(group_name,new Value(is_satisfiable));
-  }
+	symbol_table_->set_value(group_name,new Value(is_satisfiable));
+  //}
 
   DVLOG(VLOG_LEVEL) << "post visit component end: " << *or_term << "@" << or_term;
 }
@@ -371,6 +375,7 @@ void ArithmeticConstraintSolver::postVisitOr(Or_ptr or_term) {
 //      }
 //      clear_term_value(term);
 //      symbol_table_->pop_scope();
+    symbol_table_->push_scope(term);
     for(auto group : arithmetic_formula_generator_.get_group_subgroups(group_name)) {
 			Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
 			Value_ptr subgroup_scope_value = symbol_table_->get_value_at_scope(term,subgroup_variable);
@@ -382,11 +387,12 @@ void ArithmeticConstraintSolver::postVisitOr(Or_ptr or_term) {
 					auto old_value = or_values[group];
 					or_values[group] = or_values[group]->union_(subgroup_scope_value);
 					delete old_value;
-					is_satisfiable = or_values[group]->is_satisfiable() or is_satisfiable;
 				}
+				is_satisfiable = or_values[group]->is_satisfiable() or is_satisfiable;
 				symbol_table_->clear_value(subgroup_variable,term);
 			}
 		}
+    symbol_table_->pop_scope();
 	}
 
 

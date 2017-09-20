@@ -849,8 +849,10 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
 		LOG(INFO) << "Formula : " << el.first;
 		symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
     auto init_val = BinaryIntAutomaton::MakeAnyInt(el.second->clone(),false);
+    symbol_table_->push_scope(root_);
     symbol_table_->set_value(el.first,new Value(init_val));
-		for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
+		symbol_table_->pop_scope();
+    for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
 			symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
 			LOG(INFO) << "-- " << var_entry.first;
 		}

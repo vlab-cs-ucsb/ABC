@@ -143,7 +143,8 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
       DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *and_term << "@" << and_term;
     }
-    if (is_satisfiable and constraint_information_->has_string_constraint(and_term)) {
+    if ((is_satisfiable or (!constraint_information_->has_arithmetic_constraint(and_term)))
+    				and constraint_information_->has_string_constraint(and_term)) {
       string_constraint_solver_.start(and_term);
       is_satisfiable = string_constraint_solver_.get_term_value(and_term)->is_satisfiable();
       DVLOG(VLOG_LEVEL) << "String formulae solved: " << *and_term << "@" << and_term;
@@ -154,7 +155,8 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
   DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
 
-  if (is_satisfiable and (constraint_information_->has_mixed_constraint(and_term) or (not is_component))) {
+  //if (is_satisfiable and (constraint_information_->has_mixed_constraint(and_term) or (not is_component))) {
+  if (is_satisfiable) {
     for (auto& term : *(and_term->term_list)) {
       is_satisfiable = check_and_visit(term) and is_satisfiable;
       if (not is_satisfiable) {
@@ -199,24 +201,26 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
   bool is_satisfiable = false;
   bool is_component = constraint_information_->is_component(or_term);
   
-//  if (is_component) {
-//    if (constraint_information_->has_arithmetic_constraint(or_term)) {
-//      arithmetic_constraint_solver_.start(or_term);
-//      is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
-//      DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *or_term << "@" << or_term;
-//    }
-//    if (is_satisfiable and constraint_information_->has_string_constraint(or_term)) {
-//      string_constraint_solver_.start(or_term);
-//      is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
-//      DVLOG(VLOG_LEVEL) << "String formulae solved: " << *or_term << "@" << or_term;
-//    }
-//
-//    DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *or_term << "@" << or_term;
-//  }
+  if (is_component) {
+    if (constraint_information_->has_arithmetic_constraint(or_term)) {
+      arithmetic_constraint_solver_.start(or_term);
+      is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+      DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *or_term << "@" << or_term;
+    }
+    if ((is_satisfiable or !constraint_information_->has_arithmetic_constraint(or_term))
+    				and constraint_information_->has_string_constraint(or_term)) {
+      string_constraint_solver_.start(or_term);
+      is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+      DVLOG(VLOG_LEVEL) << "String formulae solved: " << *or_term << "@" << or_term;
+    }
+
+    DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *or_term << "@" << or_term;
+  }
 
   DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
 
-  if (constraint_information_->has_mixed_constraint(or_term)) {
+  //if (constraint_information_->has_mixed_constraint(or_term)) {
+  if(true) {
     for (auto& term : *(or_term->term_list)) {
       symbol_table_->push_scope(term);
       bool is_scope_satisfiable = check_and_visit(term);
