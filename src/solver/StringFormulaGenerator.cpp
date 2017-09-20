@@ -116,12 +116,19 @@ void StringFormulaGenerator::visitAnd(And_ptr and_term) {
 //  } else if(has_mixed_constraint_) {
 //  	constraint_information_->add_mixed_constraint(and_term);
 //  }
-  if(subgroups_[current_group_].size() > 0 ) {
+
+  bool has_string_formula = false;
+	for (auto term : *and_term->term_list) {
+		has_string_formula = constraint_information_->has_string_constraint(term)
+				or has_string_formula;
+	}
+
+  if(has_string_formula and subgroups_[current_group_].size() > 0 ) {
 		term_group_map_[and_term] = current_group_;
 		constraint_information_->add_string_constraint(and_term);
-		if (has_mixed_constraint_) {
-			constraint_information_->add_mixed_constraint(and_term);
-		}
+	}
+  if (has_mixed_constraint_) {
+		constraint_information_->add_mixed_constraint(and_term);
 	}
 
   DVLOG(VLOG_LEVEL) << "post visit end: " << *and_term << "@" << and_term;
@@ -179,11 +186,10 @@ void StringFormulaGenerator::visitOr(Or_ptr or_term) {
   if(has_string_formula and subgroups_[current_group_].size() > 0 ) {
   	term_group_map_[or_term] = current_group_;
   	constraint_information_->add_string_constraint(or_term);
-		if (has_mixed_constraint_) {
-			constraint_information_->add_mixed_constraint(or_term);
-		}
   }
-
+  if (has_mixed_constraint_) {
+		constraint_information_->add_mixed_constraint(or_term);
+	}
   DVLOG(VLOG_LEVEL) << "post visit end: " << *or_term << "@" << or_term;
 }
 
@@ -982,8 +988,8 @@ void StringFormulaGenerator::set_group_mappings() {
   for (auto& el : group_formula_) {
   	LOG(INFO) << "Formula : " << el.first;
     symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
-//    auto init_val = StringAutomaton::MakeAnyStringAligned(el.second->clone());
-//    symbol_table_->set_value(el.first,new Value(init_val));
+    auto init_val = StringAutomaton::MakeAnyStringUnaligned(el.second->clone());
+    symbol_table_->set_value(el.first,new Value(init_val));
     for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
       symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
       LOG(INFO) << "-- " << var_entry.first;
@@ -991,9 +997,7 @@ void StringFormulaGenerator::set_group_mappings() {
     LOG(INFO) << "";
   }
 
-
   DVLOG(VLOG_LEVEL)<< "end setting string group for components";
-  std::cin.get();
 }
 
 } /* namespace Solver */

@@ -90,6 +90,7 @@ void ArithmeticFormulaGenerator::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
   if (constraint_information_->is_component(and_term) and current_group_.empty()) {
     current_group_ = symbol_table_->get_var_name_for_node(and_term, Variable::Type::INT);
+    subgroups_[current_group_] = std::set<std::string>();
     has_mixed_constraint_ = false;
   }
   visit_children_of(and_term);
@@ -103,17 +104,24 @@ void ArithmeticFormulaGenerator::visitAnd(And_ptr and_term) {
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *and_term << "@" << and_term;
 
-  auto group_formula = get_group_formula(current_group_);
-  if (group_formula not_eq nullptr and group_formula->GetNumberOfVariables() > 0) {
-    auto formula = group_formula->clone();
-    formula->SetType(ArithmeticFormula::Type::INTERSECT);
-    set_term_formula(and_term, formula);
-    term_group_map_[and_term] = current_group_;
-    constraint_information_->add_arithmetic_constraint(and_term);
-    if (has_mixed_constraint_) {
-      constraint_information_->add_mixed_constraint(and_term);
-    }
-  }
+//  auto group_formula = get_group_formula(current_group_);
+//  if (group_formula not_eq nullptr and group_formula->GetNumberOfVariables() > 0) {
+//    auto formula = group_formula->clone();
+//    formula->SetType(ArithmeticFormula::Type::INTERSECT);
+//    set_term_formula(and_term, formula);
+//    term_group_map_[and_term] = current_group_;
+//    constraint_information_->add_arithmetic_constraint(and_term);
+//    if (has_mixed_constraint_) {
+//      constraint_information_->add_mixed_constraint(and_term);
+//    }
+//  }
+  if(subgroups_[current_group_].size() > 0 ) {
+		term_group_map_[and_term] = current_group_;
+		constraint_information_->add_arithmetic_constraint(and_term);
+	}
+  if (has_mixed_constraint_) {
+		constraint_information_->add_mixed_constraint(and_term);
+	}
 
   DVLOG(VLOG_LEVEL) << "post visit end: " << *and_term << "@" << and_term;
 }
@@ -123,6 +131,7 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
   if (constraint_information_->is_component(or_term) and current_group_.empty()) {
     current_group_ = symbol_table_->get_var_name_for_node(or_term, Variable::Type::INT);
+    subgroups_[current_group_] = std::set<std::string>();
     has_mixed_constraint_ = false;
   }
   visit_children_of(or_term);
@@ -152,17 +161,25 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
   }
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *or_term << "@" << or_term;
-  auto group_formula = get_group_formula(current_group_);
-  if (has_arithmetic_formula and group_formula not_eq nullptr and group_formula->GetNumberOfVariables() > 0) {
-    auto formula = group_formula->clone();
-    formula->SetType(ArithmeticFormula::Type::UNION);
-    set_term_formula(or_term, formula);
-    term_group_map_[or_term] = current_group_;
-    constraint_information_->add_arithmetic_constraint(or_term);
-    if (has_mixed_constraint_) {
-      constraint_information_->add_mixed_constraint(or_term);
-    }
-  }
+//  auto group_formula = get_group_formula(current_group_);
+//  if (has_arithmetic_formula and group_formula not_eq nullptr and group_formula->GetNumberOfVariables() > 0) {
+//    auto formula = group_formula->clone();
+//    formula->SetType(ArithmeticFormula::Type::UNION);
+//    set_term_formula(or_term, formula);
+//    term_group_map_[or_term] = current_group_;
+//    constraint_information_->add_arithmetic_constraint(or_term);
+//    if (has_mixed_constraint_) {
+//      constraint_information_->add_mixed_constraint(or_term);
+//    }
+//  }
+  if(has_arithmetic_formula and subgroups_[current_group_].size() > 0 ) {
+		term_group_map_[or_term] = current_group_;
+		constraint_information_->add_arithmetic_constraint(or_term);
+	}
+  if (has_mixed_constraint_) {
+		constraint_information_->add_mixed_constraint(or_term);
+	}
+
   DVLOG(VLOG_LEVEL) << "post visit end: " << *or_term << "@" << or_term;
 }
 
@@ -685,18 +702,100 @@ std::string ArithmeticFormulaGenerator::get_term_group_name(Term_ptr term) {
   return "";
 }
 
-void ArithmeticFormulaGenerator::add_int_variables(std::string group_name, Term_ptr term) {
-  ArithmeticFormula_ptr group_formula = nullptr;
-  auto it = group_formula_.find(group_name);
-  if (it == group_formula_.end()) {
-    group_formula = new ArithmeticFormula();
-    group_formula_[group_name] = group_formula;
-  } else {
-    group_formula = it->second;
+std::string ArithmeticFormulaGenerator::get_variable_group_name(Variable_ptr variable) {
+  std::string var_name = variable->getName();
+  if(variable_group_map_.find(var_name) == variable_group_map_.end()) {
+    DVLOG(VLOG_LEVEL) << var_name << " has no group";
+    return "";
   }
-  auto formula = get_term_formula(term);
-  group_formula->MergeVariables(formula);
-  term_group_map_[term] = group_name;
+  return variable_group_map_[var_name];
+}
+
+std::set<std::string> ArithmeticFormulaGenerator::get_group_subgroups(std::string group_name) {
+	if(subgroups_.find(group_name) == subgroups_.end()) {
+		return std::set<std::string>();
+	}
+	return subgroups_[group_name];
+}
+
+void ArithmeticFormulaGenerator::add_int_variables(std::string group_name, Term_ptr term) {
+//  ArithmeticFormula_ptr group_formula = nullptr;
+//  auto it = group_formula_.find(group_name);
+//  if (it == group_formula_.end()) {
+//    group_formula = new ArithmeticFormula();
+//    group_formula_[group_name] = group_formula;
+//  } else {
+//    group_formula = it->second;
+//  }
+//  auto formula = get_term_formula(term);
+//  group_formula->MergeVariables(formula);
+//  term_group_map_[term] = group_name;
+	auto formula = get_term_formula(term);
+
+	std::string start_group;
+	ArithmeticFormula_ptr group_formula = nullptr;
+	std::vector<std::string> groups_to_be_removed;
+	auto variables = formula->GetVariableCoefficientMap();
+	// get a starting group for the variable list
+	for(auto &var : variables) {
+		if(variable_group_map_.find(var.first) != variable_group_map_.end()) {
+			start_group = variable_group_map_[var.first];
+			LOG(INFO) << "START GROUP: " << start_group;
+			group_formula = group_formula_[start_group];
+			if(group_formula == nullptr) {
+				LOG(FATAL) << "BAD";
+			}
+			break;
+		}
+	}
+	// if no group is found, create one
+	if (start_group.empty()) {
+		start_group = generate_group_name(term,variables.begin()->first);
+		group_formula = new ArithmeticFormula();
+		group_formula_[start_group] = group_formula;
+		subgroups_[group_name].insert(start_group);
+	}
+	if(group_formula == nullptr) {
+		LOG(FATAL) << "BAD";
+	}
+	// merge each variable's groups together into start group
+	for(auto &var : variables) {
+		if(variable_group_map_.find(var.first) == variable_group_map_.end()) {
+			// variable has no group, add it
+			variable_group_map_[var.first] = start_group;
+			group_formula->AddVariable(var.first,0);
+		} else if(variable_group_map_[var.first] != start_group) {
+			// merge the two groups
+			std::string var_group = variable_group_map_[var.first];
+			auto var_group_formula = group_formula_[var_group];
+			group_formula->MergeVariables(var_group_formula);
+			for(auto &var_group_iter : variable_group_map_) {
+				if(var_group_iter.second == var_group) {
+					var_group_iter.second = start_group;
+				}
+			}
+			for(auto &var_group_iter : term_group_map_) {
+				if(var_group_iter.second == var_group) {
+					var_group_iter.second = start_group;
+				}
+			}
+			// keep relational formulas so we can construct them; they will get destroyed afterwards.
+			auto formula_iter = group_formula_.find(var_group);
+			if(ArithmeticFormula::Type::NONE == formula_iter->second->GetType()) {
+				LOG(INFO) << "--- " << var_group << " group and formula: " << formula_iter->second << " DELETED";
+				delete formula_iter->second; formula_iter->second = nullptr;
+				group_formula_.erase(formula_iter);
+				subgroups_[group_name].erase(var_group);
+			}
+		}
+	}
+	term_group_map_[term] = start_group;
+}
+
+std::string ArithmeticFormulaGenerator::generate_group_name(SMT::Term_ptr term, std::string var_name) {
+  std::string group_name = symbol_table_->get_var_name_for_node(term,SMT::Variable::Type::INT);
+  group_name += var_name;
+  return group_name;
 }
 
 bool ArithmeticFormulaGenerator::set_term_formula(Term_ptr term, ArithmeticFormula_ptr formula) {
@@ -717,20 +816,46 @@ void ArithmeticFormulaGenerator::delete_term_formula(Term_ptr term) {
 
 void ArithmeticFormulaGenerator::set_group_mappings() {
   DVLOG(VLOG_LEVEL)<< "start setting int group for components";
+//  for (auto& el : term_group_map_) {
+//    term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
+//    // to propagate mixed constraint information, merge onto group formula as well
+//    // TODO same integer variable can be assigned into different terms, test case (v = indexof... and v = lastindexof...)
+//    group_formula_[el.second]->MergeVariables(term_formula_[el.first]);
+//  }
+//  // add a variable entry to symbol table for each group
+//  // define a variable mapping for a group
+//  for (auto& el : group_formula_) {
+//    symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
+//    for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
+//      symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
+//    }
+//  }
   for (auto& el : term_group_map_) {
-    term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
-    // to propagate mixed constraint information, merge onto group formula as well
-    // TODO same integer variable can be assigned into different terms, test case (v = indexof... and v = lastindexof...)
-    group_formula_[el.second]->MergeVariables(term_formula_[el.first]);
-  }
-  // add a variable entry to symbol table for each group
-  // define a variable mapping for a group
-  for (auto& el : group_formula_) {
-    symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
-    for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
-      symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
-    }
-  }
+		//LOG(INFO) << *el.first << "@" << el.first;
+		// only subgroups have formulas
+		if(subgroups_.find(el.second) == subgroups_.end()) {
+			//LOG(INFO) << "group: " << el.second;
+			term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
+		}
+		//LOG(INFO) << "";
+	}
+
+	for (auto& el: subgroups_) {
+		symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
+	}
+	// add a variable entry to symbol table for each group
+	// define a variable mapping for a group
+	for (auto& el : group_formula_) {
+		LOG(INFO) << "Formula : " << el.first;
+		symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
+    auto init_val = BinaryIntAutomaton::MakeAnyInt(el.second->clone(),false);
+    symbol_table_->set_value(el.first,new Value(init_val));
+		for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
+			symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
+			LOG(INFO) << "-- " << var_entry.first;
+		}
+		LOG(INFO) << "";
+	}
   DVLOG(VLOG_LEVEL)<< "end setting int group for components";
 }
 

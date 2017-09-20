@@ -269,7 +269,6 @@ void StringConstraintSolver::postVisitAnd(And_ptr and_term) {
   Value_ptr and_value = nullptr;
 
   for (auto term : *(and_term->term_list)) {
-  	LOG(INFO) << "current term: " << term << " - " << *term;
     auto formula = string_formula_generator_.get_term_formula(term);
     /**
      * In previous visit, automata for string constraints are created and
@@ -413,7 +412,7 @@ std::string StringConstraintSolver::get_string_variable_name(SMT::Term_ptr term)
     key = it1->second;
   }
 
-  return symbol_table_->get_var_name_for_node(key, Variable::Type::INT);
+  return symbol_table_->get_var_name_for_node(key, Variable::Type::STRING);
 }
 
 Value_ptr StringConstraintSolver::get_term_value(Term_ptr term) {

@@ -69,79 +69,79 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
   for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
   	std::string str = Ast2Dot::toString(*iter);
 		symbol_table_->record_child_term(and_term,str);
-//  	if (symbol_table_->is_or_ite(*iter)) {
-//  		Or_ptr or_term = dynamic_cast<Or_ptr>(*iter);
-//			auto then_cond = symbol_table_->get_ite_then_cond(or_term);
-//			auto else_cond = symbol_table_->get_ite_else_cond(or_term);
-//			// if then_cond holds, make iter point to then_branch
-//			if(symbol_table_->has_child_term(and_term,Ast2Dot::toString(then_cond))) {
-//				symbol_table_->remove_or_ite(or_term);
-//				//LOG(INFO) << "OPTIMIZING AWAY ELSE BRANCH";
-//				if (And_ptr sub_and_term = dynamic_cast<And_ptr>(or_term->term_list->at(0))) { // reapply Associativity if needed
-//					and_term->term_list->erase(iter);
-//					and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
-//					sub_and_term->term_list->clear();
-//					symbol_table_->clear_child_terms(sub_and_term);
-//					iter = and_term->term_list->begin() + pos; // insertion invalidates iter, reset it
-//				} else {
-//					*iter = or_term->term_list->at(0)->clone();
-//				}
-//				delete or_term;
-//				//std::cin.get();
-//			} else if(symbol_table_->has_child_term(and_term,Ast2Dot::toString(else_cond))) {
-//				symbol_table_->remove_or_ite(or_term);
-//				//LOG(INFO) << "OPTIMIZING AWAY THEN BRANCH";
-//				if (And_ptr sub_and_term = dynamic_cast<And_ptr>(or_term->term_list->at(1))) { // reapply Associativity if needed
-//					and_term->term_list->erase(iter);
-//					and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
-//					sub_and_term->term_list->clear();
-//					symbol_table_->clear_child_terms(sub_and_term);
-//					iter = and_term->term_list->begin() + pos; // insertion invalidates iter, reset it
-//				} else {
-//					*iter = or_term->term_list->at(1)->clone();
-//				}
-//				delete or_term;
-//				//std::cin.get();
-//			}
-//		}
+  	if (symbol_table_->is_or_ite(*iter)) {
+  		Or_ptr or_term = dynamic_cast<Or_ptr>(*iter);
+			auto then_cond = symbol_table_->get_ite_then_cond(or_term);
+			auto else_cond = symbol_table_->get_ite_else_cond(or_term);
+			// if then_cond holds, make iter point to then_branch
+			if(symbol_table_->has_child_term(and_term,Ast2Dot::toString(then_cond))) {
+				symbol_table_->remove_or_ite(or_term);
+				//LOG(INFO) << "OPTIMIZING AWAY ELSE BRANCH";
+				if (And_ptr sub_and_term = dynamic_cast<And_ptr>(or_term->term_list->at(0))) { // reapply Associativity if needed
+					and_term->term_list->erase(iter);
+					and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
+					sub_and_term->term_list->clear();
+					symbol_table_->clear_child_terms(sub_and_term);
+					iter = and_term->term_list->begin() + pos; // insertion invalidates iter, reset it
+				} else {
+					*iter = or_term->term_list->at(0)->clone();
+				}
+				delete or_term;
+				//std::cin.get();
+			} else if(symbol_table_->has_child_term(and_term,Ast2Dot::toString(else_cond))) {
+				symbol_table_->remove_or_ite(or_term);
+				//LOG(INFO) << "OPTIMIZING AWAY THEN BRANCH";
+				if (And_ptr sub_and_term = dynamic_cast<And_ptr>(or_term->term_list->at(1))) { // reapply Associativity if needed
+					and_term->term_list->erase(iter);
+					and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
+					sub_and_term->term_list->clear();
+					symbol_table_->clear_child_terms(sub_and_term);
+					iter = and_term->term_list->begin() + pos; // insertion invalidates iter, reset it
+				} else {
+					*iter = or_term->term_list->at(1)->clone();
+				}
+				delete or_term;
+				//std::cin.get();
+			}
+		}
   	visit_and_callback(*iter);
   	str = Ast2Dot::toString(*iter);
 		symbol_table_->record_child_term(and_term,str);
-//		if (symbol_table_->is_or_ite(*iter)) {
-//			Or_ptr or_term = dynamic_cast<Or_ptr>(*iter);
-//			auto then_cond = symbol_table_->get_ite_then_cond(or_term);
-//			auto else_cond = symbol_table_->get_ite_else_cond(or_term);
-//			// if then_cond holds, make iter point to then_branch
-//			if(symbol_table_->has_child_term(and_term,Ast2Dot::toString(then_cond))) {
-//				symbol_table_->remove_or_ite(or_term);
-//				//LOG(INFO) << "OPTIMIZING AWAY ELSE BRANCH";
-//				if (And_ptr sub_and_term = dynamic_cast<And_ptr>(or_term->term_list->at(0))) { // reapply Associativity if needed
-//					and_term->term_list->erase(iter);
-//					and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
-//					sub_and_term->term_list->clear();
-//					symbol_table_->clear_child_terms(sub_and_term);
-//					iter = and_term->term_list->begin() + pos; // insertion invalidates iter, reset it
-//				} else {
-//					*iter = or_term->term_list->at(0)->clone();
-//				}
-//				delete or_term;
-//				//std::cin.get();
-//			} else if(symbol_table_->has_child_term(and_term,Ast2Dot::toString(else_cond))) {
-//				symbol_table_->remove_or_ite(or_term);
-//				//LOG(INFO) << "OPTIMIZING AWAY THEN BRANCH";
-//				if (And_ptr sub_and_term = dynamic_cast<And_ptr>(or_term->term_list->at(1))) { // reapply Associativity if needed
-//					and_term->term_list->erase(iter);
-//					and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
-//					sub_and_term->term_list->clear();
-//					symbol_table_->clear_child_terms(sub_and_term);
-//					iter = and_term->term_list->begin() + pos; // insertion invalidates iter, reset it
-//				} else {
-//					*iter = or_term->term_list->at(1)->clone();
-//				}
-//				delete or_term;
-//				//std::cin.get();
-//			}
-//		}
+		if (symbol_table_->is_or_ite(*iter)) {
+			Or_ptr or_term = dynamic_cast<Or_ptr>(*iter);
+			auto then_cond = symbol_table_->get_ite_then_cond(or_term);
+			auto else_cond = symbol_table_->get_ite_else_cond(or_term);
+			// if then_cond holds, make iter point to then_branch
+			if(symbol_table_->has_child_term(and_term,Ast2Dot::toString(then_cond))) {
+				symbol_table_->remove_or_ite(or_term);
+				//LOG(INFO) << "OPTIMIZING AWAY ELSE BRANCH";
+				if (And_ptr sub_and_term = dynamic_cast<And_ptr>(or_term->term_list->at(0))) { // reapply Associativity if needed
+					and_term->term_list->erase(iter);
+					and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
+					sub_and_term->term_list->clear();
+					symbol_table_->clear_child_terms(sub_and_term);
+					iter = and_term->term_list->begin() + pos; // insertion invalidates iter, reset it
+				} else {
+					*iter = or_term->term_list->at(0)->clone();
+				}
+				delete or_term;
+				//std::cin.get();
+			} else if(symbol_table_->has_child_term(and_term,Ast2Dot::toString(else_cond))) {
+				symbol_table_->remove_or_ite(or_term);
+				//LOG(INFO) << "OPTIMIZING AWAY THEN BRANCH";
+				if (And_ptr sub_and_term = dynamic_cast<And_ptr>(or_term->term_list->at(1))) { // reapply Associativity if needed
+					and_term->term_list->erase(iter);
+					and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
+					sub_and_term->term_list->clear();
+					symbol_table_->clear_child_terms(sub_and_term);
+					iter = and_term->term_list->begin() + pos; // insertion invalidates iter, reset it
+				} else {
+					*iter = or_term->term_list->at(1)->clone();
+				}
+				delete or_term;
+				//std::cin.get();
+			}
+		}
   	if (check_bool_constant_value(*iter, "true")) {
       DVLOG(VLOG_LEVEL) << "remove: 'true' constant from 'and'";
       delete (*iter); *iter = nullptr;

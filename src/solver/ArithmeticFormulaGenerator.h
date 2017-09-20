@@ -114,9 +114,12 @@ public:
   void clear_term_formulas();
 
   std::string get_term_group_name(SMT::Term_ptr term);
+  std::string get_variable_group_name(SMT::Variable_ptr variable);
+	std::set<std::string> get_group_subgroups(std::string group_name);
 
 protected:
   void add_int_variables(std::string group_name, SMT::Term_ptr term);
+  std::string generate_group_name(SMT::Term_ptr term, std::string var_name);
 
   bool set_term_formula(SMT::Term_ptr term, Theory::ArithmeticFormula_ptr formula);
   void delete_term_formula(SMT::Term_ptr);
@@ -137,6 +140,8 @@ protected:
   SMT::TermList string_terms_;
   std::map<SMT::Term_ptr, SMT::TermList> string_terms_map_;
 
+  std::map<std::string,std::set<std::string>> subgroups_;
+	std::map<std::string,std::string> variable_group_map_;
   std::map<SMT::Term_ptr, std::string> term_group_map_;
   std::map<std::string, Theory::ArithmeticFormula_ptr> group_formula_;
 
