@@ -117,6 +117,7 @@ class StringFormulaGenerator: public SMT::Visitor {
 
   std::string get_term_group_name(SMT::Term_ptr term);
   std::string get_variable_group_name(SMT::Variable_ptr variable);
+  std::set<std::string> get_group_subgroups(std::string group_name);
 
 protected:
   void add_string_variables(std::string group_name, SMT::Term_ptr term);

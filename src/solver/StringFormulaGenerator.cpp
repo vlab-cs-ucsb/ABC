@@ -827,6 +827,13 @@ std::string StringFormulaGenerator::get_variable_group_name(Variable_ptr variabl
   return variable_group_map_[var_name];
 }
 
+std::set<std::string> StringFormulaGenerator::get_group_subgroups(std::string group_name) {
+	if(subgroups_.find(group_name) == subgroups_.end()) {
+		return std::set<std::string>();
+	}
+	return subgroups_[group_name];
+}
+
 // if FORCE_DNF_FORMULA is enabled, we only put variables together into a StringAutomaton when
 // they appear together in relational word equations (Begins, X=Y.c, X=!Y,etc..).
 // Otherwise, we put all string variables into one automata under the current component.
@@ -908,22 +915,27 @@ void StringFormulaGenerator::add_string_variables(std::string group_name, Term_p
 				std::string var_group = variable_group_map_[var.first];
 				auto var_group_formula = group_formula_[var_group];
 				group_formula->MergeVariables(var_group_formula);
-				for(auto &var2 : var_group_formula->GetVariableCoefficientMap()) {
-					variable_group_map_[var2.first] = start_group;
+				for(auto &var_group_iter : variable_group_map_) {
+					if(var_group_iter.second == var_group) {
+						var_group_iter.second = start_group;
+					}
 				}
-				groups_to_be_removed.push_back(var_group);
-				variable_group_map_[var.first] = start_group;
+				for(auto &var_group_iter : term_group_map_) {
+					if(var_group_iter.second == var_group) {
+						var_group_iter.second = start_group;
+					}
+				}
+				// keep relational formulas so we can construct them; they will get destroyed afterwards.
+				auto formula_iter = group_formula_.find(var_group);
+				if(StringFormula::Type::NONE == formula_iter->second->GetType() ||
+								StringFormula::Type::VAR == formula_iter->second->GetType()) {
+					LOG(INFO) << "--- " << var_group << " group and formula: " << formula_iter->second << " DELETED";
+					delete formula_iter->second; formula_iter->second = nullptr;
+					group_formula_.erase(formula_iter);
+					subgroups_[group_name].erase(var_group);
+				}
 			}
 		}
-		// take care of groups which ahve merged with another (and their formulas)
-		for(auto iter : groups_to_be_removed) {
-			auto formula_iter = group_formula_.find(iter);
-			LOG(INFO) << "--- " << iter << " group and formula: " << formula_iter->second << " DELETED";
-			delete formula_iter->second;
-			group_formula_.erase(formula_iter);
-			subgroups_[group_name].erase(iter);
-		}
-		groups_to_be_removed.clear();
 		term_group_map_[term] = start_group;
 	}
 }
@@ -953,11 +965,17 @@ void StringFormulaGenerator::delete_term_formula(Term_ptr term) {
 void StringFormulaGenerator::set_group_mappings() {
   DVLOG(VLOG_LEVEL)<< "start setting string group for components";
   for (auto& el : term_group_map_) {
-  	LOG(INFO) << *el.first;
+  	//LOG(INFO) << *el.first << "@" << el.first;
   	// only subgroups have formulas
     if(subgroups_.find(el.second) == subgroups_.end()) {
+    	//LOG(INFO) << "group: " << el.second;
     	term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
     }
+    //LOG(INFO) << "";
+  }
+
+  for (auto& el: subgroups_) {
+  	symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
   }
   // add a variable entry to symbol table for each group
   // define a variable mapping for a group
