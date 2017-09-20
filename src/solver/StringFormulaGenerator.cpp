@@ -88,6 +88,7 @@ void StringFormulaGenerator::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
   if (constraint_information_->is_component(and_term) and current_group_.empty()) {
     current_group_ = symbol_table_->get_var_name_for_node(and_term, Variable::Type::STRING);
+    subgroups_[current_group_] = std::set<std::string>();
     has_mixed_constraint_ = false;
   }
   visit_children_of(and_term);
@@ -101,20 +102,27 @@ void StringFormulaGenerator::visitAnd(And_ptr and_term) {
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *and_term << "@" << and_term;
 
-  auto group_formula = get_group_formula(current_group_);
-  if (group_formula not_eq nullptr and group_formula->GetNumberOfVariables() > 0) {
-  	LOG(INFO) << "AND HAS FORMULA";
-    auto formula = group_formula->clone();
-    formula->SetType(StringFormula::Type::INTERSECT);
-    set_term_formula(and_term, formula);
-    term_group_map_[and_term] = current_group_;
-    constraint_information_->add_string_constraint(and_term);
-    if (has_mixed_constraint_) {
-      constraint_information_->add_mixed_constraint(and_term);
-    }
-  } else if(has_mixed_constraint_) {
-  	constraint_information_->add_mixed_constraint(and_term);
-  }
+//  auto group_formula = get_group_formula(current_group_);
+//  if (group_formula not_eq nullptr and group_formula->GetNumberOfVariables() > 0) {
+//  	LOG(INFO) << "AND HAS FORMULA";
+//    auto formula = group_formula->clone();
+//    formula->SetType(StringFormula::Type::INTERSECT);
+//    set_term_formula(and_term, formula);
+//    term_group_map_[and_term] = current_group_;
+//    constraint_information_->add_string_constraint(and_term);
+//    if (has_mixed_constraint_) {
+//      constraint_information_->add_mixed_constraint(and_term);
+//    }
+//  } else if(has_mixed_constraint_) {
+//  	constraint_information_->add_mixed_constraint(and_term);
+//  }
+  if(subgroups_[current_group_].size() > 0 ) {
+		term_group_map_[and_term] = current_group_;
+		constraint_information_->add_string_constraint(and_term);
+		if (has_mixed_constraint_) {
+			constraint_information_->add_mixed_constraint(and_term);
+		}
+	}
 
   DVLOG(VLOG_LEVEL) << "post visit end: " << *and_term << "@" << and_term;
 }
@@ -124,6 +132,7 @@ void StringFormulaGenerator::visitOr(Or_ptr or_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
   if (constraint_information_->is_component(or_term) and current_group_.empty()) {
     current_group_ = symbol_table_->get_var_name_for_node(or_term, Variable::Type::STRING);
+    subgroups_[current_group_] = std::set<std::string>();
     has_mixed_constraint_ = false;
   }
   visit_children_of(or_term);
@@ -149,24 +158,32 @@ void StringFormulaGenerator::visitOr(Or_ptr or_term) {
    */
   bool has_string_formula = false;
   for (auto term : *or_term->term_list) {
-  	LOG(INFO) << "term " << term << " - " << *term << " has string constraint? " << constraint_information_->has_string_constraint(term);
     has_string_formula = constraint_information_->has_string_constraint(term)
         or has_string_formula;
   }
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *or_term << "@" << or_term;
-  auto group_formula = get_group_formula(current_group_);
-  if (has_string_formula and group_formula not_eq nullptr and group_formula->GetNumberOfVariables() > 0) {
-  	LOG(INFO) << "OR HAS FORMULA";
-    auto formula = group_formula->clone();
-    formula->SetType(StringFormula::Type::UNION);
-    set_term_formula(or_term, formula);
-    term_group_map_[or_term] = current_group_;
-    constraint_information_->add_string_constraint(or_term);
-    if (has_mixed_constraint_) {
-      constraint_information_->add_mixed_constraint(or_term);
-    }
+//  auto group_formula = get_group_formula(current_group_);
+//  if (has_string_formula and group_formula not_eq nullptr and group_formula->GetNumberOfVariables() > 0) {
+//  	LOG(INFO) << "OR HAS FORMULA";
+//    auto formula = group_formula->clone();
+//    formula->SetType(StringFormula::Type::UNION);
+//    set_term_formula(or_term, formula);
+//    term_group_map_[or_term] = current_group_;
+//    constraint_information_->add_string_constraint(or_term);
+//    if (has_mixed_constraint_) {
+//      constraint_information_->add_mixed_constraint(or_term);
+//    }
+//  }
+
+  if(has_string_formula and subgroups_[current_group_].size() > 0 ) {
+  	term_group_map_[or_term] = current_group_;
+  	constraint_information_->add_string_constraint(or_term);
+		if (has_mixed_constraint_) {
+			constraint_information_->add_mixed_constraint(or_term);
+		}
   }
+
   DVLOG(VLOG_LEVEL) << "post visit end: " << *or_term << "@" << or_term;
 }
 
@@ -200,78 +217,15 @@ void StringFormulaGenerator::visitNot(Not_ptr not_term) {
 }
 
 void StringFormulaGenerator::visitUMinus(UMinus_ptr u_minus_term) {
-//  visit_children_of(u_minus_term);
-//  DVLOG(VLOG_LEVEL) << "post visit start: " << *u_minus_term << "@" << u_minus_term;
-//
-//  auto child_formula = get_term_formula(u_minus_term->term);
-//  auto formula = child_formula->Multiply(-1);
-//  delete_term_formula(u_minus_term->term);
-//  set_term_formula(u_minus_term, formula);
-//
-//  DVLOG(VLOG_LEVEL) << "post visit end: " << *u_minus_term << "@" << u_minus_term;
 }
 
 void StringFormulaGenerator::visitMinus(Minus_ptr minus_term) {
-//  visit_children_of(minus_term);
-//  DVLOG(VLOG_LEVEL) << "post visit start: " << *minus_term << "@" << minus_term;
-//
-//  auto left_formula = get_term_formula(minus_term->left_term);
-//  auto right_formula = get_term_formula(minus_term->right_term);
-//  auto formula = left_formula->Subtract(right_formula);
-//  formula->SetType(StringFormula::Type::EQ);
-//  delete_term_formula(minus_term->left_term);
-//  delete_term_formula(minus_term->right_term);
-//  set_term_formula(minus_term, formula);
-//
-//  DVLOG(VLOG_LEVEL) << "post visit end: " << *minus_term << "@" << minus_term;
 }
 
 void StringFormulaGenerator::visitPlus(Plus_ptr plus_term) {
-//  DVLOG(VLOG_LEVEL) << "visit children start: " << *plus_term << "@" << plus_term;
-//  StringFormula_ptr formula = nullptr,
-//      plus_formula = nullptr,
-//      param_formula = nullptr;
-//  for (auto term_ptr : *(plus_term->term_list)) {
-//    visit(term_ptr);
-//    param_formula = get_term_formula(term_ptr);
-//    if (formula == nullptr) {
-//      formula = param_formula->clone();
-//    } else {
-//      plus_formula = formula->Add(param_formula);
-//      delete formula;
-//      formula = plus_formula;
-//    }
-//    delete_term_formula(term_ptr);
-//  }
-//  set_term_formula(plus_term, formula);
-//
-//  DVLOG(VLOG_LEVEL) << "visit children end: " << *plus_term << "@" << plus_term;
 }
 
-/**
- * All the parameters must be a constant integer except one.
- */
 void StringFormulaGenerator::visitTimes(Times_ptr times_term) {
-//  DVLOG(VLOG_LEVEL) << "visit children start: " << *times_term << "@" << times_term;
-//  int multiplicant = 1;
-//  StringFormula_ptr times_formula = nullptr;
-//  for (auto term_ptr : *(times_term->term_list)) {
-//    visit(term_ptr);
-//    auto param_formula = get_term_formula(term_ptr);
-//    if (param_formula->is_constant()) {
-//      multiplicant = multiplicant * param_formula->get_constant();
-//    } else if (times_formula == nullptr) {
-//      times_formula = param_formula->clone();
-//    } else {
-//      LOG(FATAL)<< "Does not support non-linear multiplication";
-//    }
-//    delete_term_formula(term_ptr);
-//  }
-//  auto formula = times_formula->Multiply(multiplicant);
-//  delete times_formula;
-//  set_term_formula(times_term, formula);
-//
-//  DVLOG(VLOG_LEVEL) << "visit children end: " << *times_term << "@" << times_term;
 }
 
 // TODO make decision based on the formula type
@@ -513,10 +467,99 @@ void StringFormulaGenerator::visitNotContains(NotContains_ptr not_contains_term)
 }
 
 void StringFormulaGenerator::visitBegins(Begins_ptr begins_term) {
+	visit_children_of(begins_term);
+	DVLOG(VLOG_LEVEL) << "post visit start: " << *begins_term << "@" << begins_term;
+
+	auto left_formula = get_term_formula(begins_term->subject_term);
+	auto right_formula = get_term_formula(begins_term->search_term);
+
+	if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
+		StringFormula_ptr formula = nullptr;
+		if(StringFormula::Type::VAR == left_formula->GetType() and StringFormula::Type::VAR == right_formula->GetType()) {
+			formula = left_formula->clone();
+			formula->MergeVariables(right_formula);
+			formula->SetType(StringFormula::Type::BEGINS);
+			auto right_var = right_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(right_var,2);
+			constraint_information_->add_string_constraint(begins_term);
+		} else {
+			formula = left_formula->clone();
+			formula->MergeVariables(right_formula);
+			formula->SetType(StringFormula::Type::NONRELATIONAL);
+			has_mixed_constraint_ = true;
+			constraint_information_->add_mixed_constraint(begins_term);
+		}
+		delete_term_formula(begins_term->subject_term);
+		delete_term_formula(begins_term->search_term);
+		set_term_formula(begins_term, formula);
+		add_string_variables(current_group_, begins_term);
+	}	else if (left_formula not_eq nullptr and left_formula->GetNumberOfVariables() > 0) {
+		auto formula = left_formula->clone();
+		formula->SetType(StringFormula::Type::NONRELATIONAL);
+		delete_term_formula(begins_term->subject_term);
+		set_term_formula(begins_term, formula);
+		add_string_variables(current_group_, begins_term);
+		has_mixed_constraint_ = true;
+		constraint_information_->add_mixed_constraint(begins_term);
+	} else if (right_formula not_eq nullptr and right_formula->GetNumberOfVariables() > 0) {
+		auto formula = right_formula->clone();
+		formula->SetType(StringFormula::Type::NONRELATIONAL);
+		delete_term_formula(begins_term->search_term);
+		set_term_formula(begins_term, formula);
+		add_string_variables(current_group_, begins_term);
+		has_mixed_constraint_ = true;
+		constraint_information_->add_mixed_constraint(begins_term);
+	}
+
+	DVLOG(VLOG_LEVEL) << "post visit end: " << *begins_term << "@" << begins_term;
 }
 
 void StringFormulaGenerator::visitNotBegins(NotBegins_ptr not_begins_term) {
+	visit_children_of(not_begins_term);
+	DVLOG(VLOG_LEVEL) << "post visit start: " << *not_begins_term << "@" << not_begins_term;
 
+	auto left_formula = get_term_formula(not_begins_term->subject_term);
+	auto right_formula = get_term_formula(not_begins_term->search_term);
+
+	if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
+		StringFormula_ptr formula = nullptr;
+		if(StringFormula::Type::VAR == left_formula->GetType() and StringFormula::Type::VAR == right_formula->GetType()) {
+			formula = left_formula->clone();
+			formula->MergeVariables(right_formula);
+			formula->SetType(StringFormula::Type::NOTBEGINS);
+			auto right_var = right_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(right_var,2);
+			constraint_information_->add_string_constraint(not_begins_term);
+		} else {
+			formula = left_formula->clone();
+			formula->MergeVariables(right_formula);
+			formula->SetType(StringFormula::Type::NONRELATIONAL);
+			has_mixed_constraint_ = true;
+			constraint_information_->add_mixed_constraint(not_begins_term);
+		}
+		delete_term_formula(not_begins_term->subject_term);
+		delete_term_formula(not_begins_term->search_term);
+		set_term_formula(not_begins_term, formula);
+		add_string_variables(current_group_, not_begins_term);
+	}	else if (left_formula not_eq nullptr and left_formula->GetNumberOfVariables() > 0) {
+		auto formula = left_formula->clone();
+		formula->SetType(StringFormula::Type::NONRELATIONAL);
+		delete_term_formula(not_begins_term->subject_term);
+		set_term_formula(not_begins_term, formula);
+		add_string_variables(current_group_, not_begins_term);
+		has_mixed_constraint_ = true;
+		constraint_information_->add_mixed_constraint(not_begins_term);
+	} else if (right_formula not_eq nullptr and right_formula->GetNumberOfVariables() > 0) {
+		auto formula = right_formula->clone();
+		formula->SetType(StringFormula::Type::NONRELATIONAL);
+		delete_term_formula(not_begins_term->search_term);
+		set_term_formula(not_begins_term, formula);
+		add_string_variables(current_group_, not_begins_term);
+		has_mixed_constraint_ = true;
+		constraint_information_->add_mixed_constraint(not_begins_term);
+	}
+
+	DVLOG(VLOG_LEVEL) << "post visit end: " << *not_begins_term << "@" << not_begins_term;
 }
 
 void StringFormulaGenerator::visitEnds(Ends_ptr ends_term) {
@@ -775,111 +818,114 @@ std::string StringFormulaGenerator::get_term_group_name(Term_ptr term) {
   return "";
 }
 
-std::string StringFormulaGenerator::get_variable_group_name(Term_ptr term,Variable_ptr variable) {
+std::string StringFormulaGenerator::get_variable_group_name(Variable_ptr variable) {
   std::string var_name = variable->getName();
-  if(variable_group_table_[term].find(var_name) == variable_group_table_[term].end()) {
+  if(variable_group_map_.find(var_name) == variable_group_map_.end()) {
     DVLOG(VLOG_LEVEL) << var_name << " has no group";
     return "";
   }
-  return variable_group_table_[term][var_name];
+  return variable_group_map_[var_name];
 }
 
 // if FORCE_DNF_FORMULA is enabled, we only put variables together into a StringAutomaton when
 // they appear together in relational word equations (Begins, X=Y.c, X=!Y,etc..).
 // Otherwise, we put all string variables into one automata under the current component.
 void StringFormulaGenerator::add_string_variables(std::string group_name, Term_ptr term) {
-/*
-  std::string start_group;
-  // get a starting group from the variable list
-  for (auto &var : variables) {
-    if (variable_group_table_[term].find(var) != variable_group_table_[term].end()) {
-      start_group = variable_group_table_[term][var];
-      break;
-    }
-  }
-  // if no group is found at all, create new one
-  if (start_group.empty()) {
-    start_group = generate_group_name(term, variables[0]);
-  }
+//	StringFormula_ptr group_formula = nullptr;
+//	auto it = group_formula_.find(group_name);
+//	if (it == group_formula_.end()) {
+//		group_formula = new StringFormula();
+//		group_formula_[group_name] = group_formula;
+//	} else {
+//		group_formula = it->second;
+//	}
+//	auto formula = get_term_formula(term);
+//	group_formula->MergeVariables(formula);
+//	// TODO if there is an or we need to add single variables into one group, uncomment above
+//	// line and remove the same line from else branch.
+//	// find a way to optimize that, if all constraints are nonrelational, we only need that
+//	// if we have disjunction
+//	if (StringFormula::Type::NONRELATIONAL == formula->GetType()) {
+//		clear_term_formula(term);
+//	} else {
+//		//group_formula->MergeVariables(formula);
+//		term_group_map_[term] = group_name;
+//	}
 
-  // merge each variable's groups together into start_group
-  for (auto &var : variables) {
-    if (variable_group_table_[term].find(var) == variable_group_table_[term].end()) {
-      variable_group_table_[term][var] = start_group;
-      int track = group_variables_map_[start_group].size();
-      group_variables_map_[start_group][var] = track;
-    } else if (variable_group_table_[term][var] != start_group) {
-      // merge the two groups
-      std::string var_group = variable_group_table_[term][var];
-      for (auto &iter : group_variables_map_[var_group]) {
-        variable_group_table_[term][iter.first] = start_group;
-        int track = group_variables_map_[start_group].size();
-        group_variables_map_[start_group][iter.first] = track;
-      }
-      group_variables_map_.erase(var_group);
-    }
-  }
-*/
-  // if(Option::Solver::ENABLE_DEPENDENCY_ANALYSIS && Option::Solver::FORCE_DNF_FORMULA) {
-  //   std::string start_group;
-  //   StringFormula_ptr start_group_formula = nullptr;
-  //   StringFormula_ptr term_formula = get_term_formula(term);
-  //   if(formula == nullptr) {
-  //     LOG(FATAL) << "no formula, can't add string variables";
-  //   }
-  //   // get a starting group from the variable list
-  //   auto variables = formula->GetVariableCoefficientMap();
-  //   for(auto &var : variables) {
-  //     if(variable_group_table_[term].find(var) != variable_group_table_[term].end()) {
-  //       start_group = variable_group_table_[term][var];
-  //       start_group_formula = group_formula_;
-  //       break;
-  //     }
-  //   }
-  //   // if no group is found, create new one
-  //   if(start_group.empty()) {
-  //     start_group = generate_group_name(term,variables[0]);
-  //     start_group_formula->AddVariable(variables[0],0);
-  //     group_formula_[start_group] = start_group_formula;
-  //   }
-
-  //   // merge each variable's group together into start_group
-  //   for (auto &var : variables) {
-  //     if(variable_group_table_[term].find(var) == variable_group_table_[term].end()) {
-  //       variable_group_table_[term][var] = start_group;
-  //       start_group_formula->AddVariable(var,0);
-  //     } else if(variable_group_table_[term][var] != start_group) {
-  //       // merge the two groups
-  //       std::string var_group = variable_group_table_[term][var];
-  //       StringFormula_ptr var_group_formula = group_formula_[var_group_formula];
-  //       for (auto &iter : var_group_formula->GetVariableCoefficientMap()) {
-  //         variable_group_table_[term][]
-  //       }
-  //     }
-  //   }
-
-  // } else {
-    StringFormula_ptr group_formula = nullptr;
-    auto it = group_formula_.find(group_name);
-    if (it == group_formula_.end()) {
-      group_formula = new StringFormula();
-      group_formula_[group_name] = group_formula;
-    } else {
-      group_formula = it->second;
-    }
-    auto formula = get_term_formula(term);
-    group_formula->MergeVariables(formula);
-    // TODO if there is an or we need to add single variables into one group, uncomment above
-    // line and remove the same line from else branch.
-    // find a way to optimize that, if all constraints are nonrelational, we only need that
-    // if we have disjunction
-    if (StringFormula::Type::NONRELATIONAL == formula->GetType()) {
-      clear_term_formula(term);
-    } else {
-      //group_formula->MergeVariables(formula);
-      term_group_map_[term] = group_name;
-    }
-  //}
+	auto formula = get_term_formula(term);
+	if(StringFormula::Type::NONRELATIONAL == formula->GetType()) {
+		// just make sure each variable has a group, and if not, create a lone group for it
+		auto variables = formula->GetVariableCoefficientMap();
+		for(auto &var : variables) {
+			if(variable_group_map_.find(var.first) == variable_group_map_.end()) {
+				std::string var_group = var.first + generate_group_name(term,var.first);
+				StringFormula_ptr var_formula = new StringFormula();
+				var_formula->SetType(StringFormula::Type::VAR);
+				var_formula->AddVariable(var.first,1);
+				variable_group_map_[var.first] = var_group;
+				group_formula_[var_group] = var_formula;
+				subgroups_[group_name].insert(var_group);
+			}
+		}
+		clear_term_formula(term);
+	} else {
+		LOG(INFO) << 1;
+		std::string start_group;
+		StringFormula_ptr group_formula = nullptr;
+		std::vector<std::string> groups_to_be_removed;
+		auto variables = formula->GetVariableCoefficientMap();
+		// get a starting group for the variable list
+		for(auto &var : variables) {
+			if(variable_group_map_.find(var.first) != variable_group_map_.end()) {
+				start_group = variable_group_map_[var.first];
+				LOG(INFO) << "START GROUP: " << start_group;
+				group_formula = group_formula_[start_group];
+				if(group_formula == nullptr) {
+					LOG(FATAL) << "BAD";
+				}
+				break;
+			}
+		}
+		LOG(INFO) << 2;
+		// if no group is found, create one
+		if (start_group.empty()) {
+			start_group = generate_group_name(term,variables.begin()->first);
+			group_formula = new StringFormula();
+			group_formula_[start_group] = group_formula;
+			subgroups_[group_name].insert(start_group);
+		}
+		if(group_formula == nullptr) {
+			LOG(FATAL) << "BAD";
+		}
+		// merge each variable's groups together into start group
+		for(auto &var : variables) {
+			if(variable_group_map_.find(var.first) == variable_group_map_.end()) {
+				// variable has no group, add it
+				variable_group_map_[var.first] = start_group;
+				group_formula->AddVariable(var.first,0);
+			} else if(variable_group_map_[var.first] != start_group) {
+				// merge the two groups
+				std::string var_group = variable_group_map_[var.first];
+				auto var_group_formula = group_formula_[var_group];
+				group_formula->MergeVariables(var_group_formula);
+				for(auto &var2 : var_group_formula->GetVariableCoefficientMap()) {
+					variable_group_map_[var2.first] = start_group;
+				}
+				groups_to_be_removed.push_back(var_group);
+				variable_group_map_[var.first] = start_group;
+			}
+		}
+		// take care of groups which ahve merged with another (and their formulas)
+		for(auto iter : groups_to_be_removed) {
+			auto formula_iter = group_formula_.find(iter);
+			LOG(INFO) << "--- " << iter << " group and formula: " << formula_iter->second << " DELETED";
+			delete formula_iter->second;
+			group_formula_.erase(formula_iter);
+			subgroups_[group_name].erase(iter);
+		}
+		groups_to_be_removed.clear();
+		term_group_map_[term] = start_group;
+	}
 }
 
 std::string StringFormulaGenerator::generate_group_name(SMT::Term_ptr term, std::string var_name) {
@@ -908,19 +954,28 @@ void StringFormulaGenerator::set_group_mappings() {
   DVLOG(VLOG_LEVEL)<< "start setting string group for components";
   for (auto& el : term_group_map_) {
   	LOG(INFO) << *el.first;
-    term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
+  	// only subgroups have formulas
+    if(subgroups_.find(el.second) == subgroups_.end()) {
+    	term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
+    }
   }
   // add a variable entry to symbol table for each group
   // define a variable mapping for a group
   for (auto& el : group_formula_) {
+  	LOG(INFO) << "Formula : " << el.first;
     symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
-    auto init_val = StringAutomaton::MakeAnyStringAligned(el.second->clone());
-    symbol_table_->set_value(el.first,new Value(init_val));
+//    auto init_val = StringAutomaton::MakeAnyStringAligned(el.second->clone());
+//    symbol_table_->set_value(el.first,new Value(init_val));
     for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
       symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
+      LOG(INFO) << "-- " << var_entry.first;
     }
+    LOG(INFO) << "";
   }
+
+
   DVLOG(VLOG_LEVEL)<< "end setting string group for components";
+  std::cin.get();
 }
 
 } /* namespace Solver */

@@ -116,7 +116,7 @@ class StringFormulaGenerator: public SMT::Visitor {
   void clear_term_formulas();
 
   std::string get_term_group_name(SMT::Term_ptr term);
-  std::string get_variable_group_name(SMT::Term_ptr term,SMT::Variable_ptr variable);
+  std::string get_variable_group_name(SMT::Variable_ptr variable);
 
 protected:
   void add_string_variables(std::string group_name, SMT::Term_ptr term);
@@ -141,7 +141,8 @@ protected:
   SMT::TermList integer_terms_;
   std::map<SMT::Term_ptr, SMT::TermList> integer_terms_map_;
 
-  VariableGroupTable variable_group_table_;
+  std::map<std::string,std::set<std::string>> subgroups_;
+  std::map<std::string,std::string> variable_group_map_;
   std::map<SMT::Term_ptr, std::string> term_group_map_;
   std::map<std::string, Theory::StringFormula_ptr> group_formula_;
 
