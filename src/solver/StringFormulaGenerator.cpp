@@ -993,6 +993,7 @@ void StringFormulaGenerator::set_group_mappings() {
     symbol_table_->push_scope(root_);
     symbol_table_->set_value(el.first,val);
     symbol_table_->pop_scope();
+    delete val;
     LOG(INFO) << "Group " << el.first << " Initial Value: " << symbol_table_->get_value_at_scope(root_,symbol_table_->get_variable(el.first));
     for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
       symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
@@ -1002,6 +1003,7 @@ void StringFormulaGenerator::set_group_mappings() {
   }
 
   DVLOG(VLOG_LEVEL)<< "end setting string group for components";
+  std::cin.get();
 }
 
 } /* namespace Solver */

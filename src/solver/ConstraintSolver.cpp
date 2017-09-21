@@ -588,7 +588,9 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
     if (result == nullptr) {
       result = param->clone();
     } else {
+    	LOG(INFO) << "before concat";
       concat_value = result->concat(param);
+      LOG(INFO) << "after concat";
       delete result;
       result = concat_value;
     }

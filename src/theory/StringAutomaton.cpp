@@ -915,7 +915,8 @@ StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
     relation_other_auto->SetFormula(big_auto->GetFormula()->clone());
     //relation_other_auto->inspectAuto(false,true);
     //big_auto->inspectAuto(false,true);
-		auto intersect_auto = big_auto->Intersect(relation_other_auto->Intersect(MakeAnyStringAligned(relation_other_auto->GetFormula()->clone())));
+		//auto intersect_auto = big_auto->Intersect(relation_other_auto->Intersect(MakeAnyStringAligned(relation_other_auto->GetFormula()->clone())));
+    auto intersect_auto = big_auto->Intersect(relation_other_auto);
     delete relation_other_auto;
     return intersect_auto;
   }
@@ -2627,6 +2628,7 @@ StringAutomaton_ptr StringAutomaton::GetAutomatonForVariable(std::string var_nam
 	if(formula_ == nullptr) {
 		LOG(FATAL) << "No String formula!";
 	}
+
 	int track = formula_->GetVariableIndex(var_name);
 	StringAutomaton_ptr result_auto = GetKTrack(track);
 	auto result_formula = new StringFormula();
@@ -3199,10 +3201,10 @@ StringAutomaton_ptr StringAutomaton::MakePrefixSuffix(int left_track, int prefix
 
   int var = VAR_PER_TRACK;
   int len = num_tracks * var;
-  static int *mindices = GetBddVariableIndices(num_tracks*var);
+  int *mindices = GetBddVariableIndices(num_tracks*var);
+
   std::vector<char> exep_lambda(var,'1');
   tv = GenerateTransitionsForRelation(StringFormula::Type::EQ, var);
-
   dfaSetup(4,len,mindices);
   dfaAllocExceptions(2*tv.size() + 1); // 1 extra for lambda stuff below
   for(int i = 0; i < tv.size(); i++) {
@@ -3252,6 +3254,7 @@ StringAutomaton_ptr StringAutomaton::MakePrefixSuffix(int left_track, int prefix
     str.push_back('\0');
     dfaStoreException(1,&str[0]);
   }
+
   // if all 3 lambda, goto 2
   str = std::vector<char>(len,'X');
   for(int k = 0; k < var; k++) {
@@ -3278,7 +3281,6 @@ StringAutomaton_ptr StringAutomaton::MakePrefixSuffix(int left_track, int prefix
   result_auto = new StringAutomaton(result_dfa,num_tracks,num_tracks*VAR_PER_TRACK);
 
   return result_auto;
-  return nullptr;
 }
 
 // TODO: Formulas and intersection? What do?

@@ -67,7 +67,7 @@ void StringConstraintSolver::setCallbacks() {
         auto formula = string_formula_generator_.get_term_formula(term);
         if (formula != nullptr && formula->GetType() != Theory::StringFormula::Type::NONRELATIONAL) {
           DVLOG(VLOG_LEVEL) << "Relational String Formula: " << *formula << "@" << term;
-          auto relational_str_auto = StringAutomaton::MakeAutomaton(formula->clone())->Intersect(Theory::StringAutomaton::MakeAnyStringAligned(formula->clone()));
+          auto relational_str_auto = StringAutomaton::MakeAutomaton(formula->clone());//->Intersect(Theory::StringAutomaton::MakeAnyStringAligned(formula->clone()));
           auto result = new Value(relational_str_auto);
           set_term_value(term, result);
           // once we solve an atomic string constraint,
