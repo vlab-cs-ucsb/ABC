@@ -137,6 +137,29 @@ void EquivClassRuleRunner::visitTimes(Times_ptr times_term) {
 }
 
 void EquivClassRuleRunner::visitEq(Eq_ptr eq_term) {
+
+	// if eq_term is (x = const), dont replace x with const, leave term alone
+//	if(QualIdentifier_ptr left = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {
+//		if(TermConstant_ptr right = dynamic_cast<TermConstant_ptr>(eq_term->right_term)) {
+//			Variable_ptr variable = symbol_table_->get_variable(left);
+//			auto equiv = symbol_table_->get_equivalence_class_of(variable);
+//			if(equiv and Ast2Dot::isEquivalent(right,equiv->get_representative_term())) {
+//				LOG(INFO) << "SAME!";
+//				return;
+//			}
+//		}
+//	} else if(QualIdentifier_ptr left = dynamic_cast<QualIdentifier_ptr>(eq_term->right_term)) {
+//		if(TermConstant_ptr right = dynamic_cast<TermConstant_ptr>(eq_term->left_term)) {
+//			Variable_ptr variable = symbol_table_->get_variable(left);
+//			auto equiv = symbol_table_->get_equivalence_class_of(variable);
+//			if(equiv and Ast2Dot::isEquivalent(right,equiv->get_representative_term())) {
+//				LOG(INFO) << "SAME!";
+//				return;
+//			}
+//		}
+//	}
+
+
   check_and_substitute_var(eq_term->left_term);
   check_and_substitute_var(eq_term->right_term);
   visit_children_of(eq_term);
@@ -382,17 +405,7 @@ bool EquivClassRuleRunner::check_and_substitute_var(Term_ptr& term) {
   if (Term::Type::QUALIDENTIFIER == term->type()) {
     Variable_ptr variable = symbol_table_->get_variable(term);
     auto equiv = symbol_table_->get_equivalence_class_of(variable);
-    // EquivalenceClass_ptr upper_equiv = nullptr;
-    // if (upper_scope != nullptr) {
-    //   upper_equiv = symbol_table_->get_equivalence_class_of_at_scope(upper_scope,variable);
-    // } 
     if (equiv) {
-      // if(upper_equiv != nullptr and upper_equiv != equiv) {
-      //   equiv->merge(upper_equiv);
-      //   for (auto variable : upper_equiv->get_variables()) {
-      //     symbol_table_->add_variable_equiv_class_mapping(variable, equiv);
-      //   }
-      // }
       Term_ptr subs_term = equiv->get_representative_term();
       Term_ptr tmp_term = term;
       term = subs_term->clone();

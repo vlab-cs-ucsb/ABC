@@ -222,6 +222,17 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
   //if (constraint_information_->has_mixed_constraint(or_term)) {
   if(true) {
     for (auto& term : *(or_term->term_list)) {
+
+//    	auto variable_value_table = symbol_table_->get_values_at_scope(term);
+//			for(auto &variable_value : variable_value_table) {
+//				if(variable_value.second != nullptr) {
+//					LOG(INFO) << *variable_value.first << " = " << *variable_value.second;
+//				} else {
+//					LOG(INFO) << variable_value.first << " = nullptr";
+//				}
+//			}
+//			std::cin.get();
+
       symbol_table_->push_scope(term);
       bool is_scope_satisfiable = check_and_visit(term);
 

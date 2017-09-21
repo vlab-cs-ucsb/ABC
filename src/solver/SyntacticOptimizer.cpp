@@ -142,7 +142,7 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
 				//std::cin.get();
 			}
 		}
-  	if (check_bool_constant_value(*iter, "true")) {
+  	if (check_bool_constant_value(*iter, "true") and and_term->term_list->size() > 1) {
       DVLOG(VLOG_LEVEL) << "remove: 'true' constant from 'and'";
       delete (*iter); *iter = nullptr;
       iter = and_term->term_list->erase(iter);
@@ -198,10 +198,11 @@ void SyntacticOptimizer::visitOr(Or_ptr or_term) {
       DVLOG(VLOG_LEVEL) << "remove: 'false' constant from 'or'";
       delete (*iter);
       iter = or_term->term_list->erase(iter);
-    } else if (check_bool_constant_value(*iter, "true")) {
-    	DVLOG(VLOG_LEVEL) << "has 'true' constant, SAT 'or'";
-    	has_true_term = true;
-    	break;
+//    }
+//		else if (check_bool_constant_value(*iter, "true")) {
+//    	DVLOG(VLOG_LEVEL) << "has 'true' constant, SAT 'or'";
+//    	has_true_term = true;
+//    	break;
     } else {
       iter++;
     }

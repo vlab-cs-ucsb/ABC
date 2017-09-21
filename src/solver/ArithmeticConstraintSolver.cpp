@@ -201,6 +201,7 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
     return;
   }
 
+
   DVLOG(VLOG_LEVEL) << "visit children of component start: " << *or_term << "@" << or_term;
   bool is_satisfiable = false;
   bool has_arithmetic_formula = false;
@@ -208,8 +209,38 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
   // must be a group formula, or else would not be visiting this or_term
   auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
 
+  // propagate equivalence class values for constants
+  for (auto term : *(or_term->term_list)) {
+  	auto variable_value_map = symbol_table_->get_values_at_scope(term);
+  	symbol_table_->push_scope(term);
+  	for (auto iter = variable_value_map.begin(); iter != variable_value_map.end();) {
+  		if(Value::Type::INT_CONSTANT == iter->second->getType() || Value::Type::BOOL_CONSTANT == iter->second->getType()) {
+  			auto variable_group = arithmetic_formula_generator_.get_variable_group_name(iter->first);
+  			auto group_formula = arithmetic_formula_generator_.get_group_formula(variable_group);
+  			if(group_formula == nullptr) {
+  				LOG(FATAL) << "Uhhhh";
+  			}
+  			int constant = 0;
+  			if(Value::Type::BOOL_CONSTANT == iter->second->getType()) {
+  				constant = (iter->second->getBoolConstant()) ? 1 : 0;
+  			} else {
+  				constant = iter->second->getIntConstant();
+  			}
+  			auto bin_auto = BinaryIntAutomaton::MakeAutomaton(constant,iter->first->getName(),group_formula);
+  			auto bin_value = new Value(bin_auto);
+  			symbol_table_->IntersectValue(variable_group,bin_value);
+  			delete bin_value;
+  			delete iter->second;iter->second = nullptr;
+  			iter = variable_value_map.erase(iter);
+  		} else {
+  			iter++;
+  		}
+  	}
+  }
+
 	for (auto term : *(or_term->term_list)) {
 		auto formula = arithmetic_formula_generator_.get_term_formula(term);
+
 		// Do not visit child and terms here, handle them in POSTVISIT OR
 		if (formula != nullptr and (dynamic_cast<And_ptr>(term) == nullptr)) {
 			has_arithmetic_formula = true;
@@ -375,6 +406,7 @@ void ArithmeticConstraintSolver::postVisitOr(Or_ptr or_term) {
 //      }
 //      clear_term_value(term);
 //      symbol_table_->pop_scope();
+
     symbol_table_->push_scope(term);
     for(auto group : arithmetic_formula_generator_.get_group_subgroups(group_name)) {
 			Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
