@@ -25,9 +25,9 @@ SyntacticOptimizer::~SyntacticOptimizer() {
 
 void SyntacticOptimizer::start() {
   DVLOG(VLOG_LEVEL) << "Start SyntacticOptimizer";
-  //symbol_table_->push_scope(root_,false);
+  symbol_table_->push_scope(root_,false);
   visit(root_);
-  //symbol_table_->pop_scope();
+  symbol_table_->pop_scope();
   end();
 }
 
@@ -79,7 +79,7 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
 			if(symbol_table_->has_child_term(and_term,Ast2Dot::toString(then_cond))) {
 				symbol_table_->remove_or_ite(or_term);
 				// merge equivalence classes/variable values from or scope
-				//symbol_table_->merge_scopes(symbol_table_->top_scope(),or_term->term_list->at(0));
+				symbol_table_->merge_scopes(symbol_table_->top_scope(),or_term->term_list->at(0));
 				//LOG(INFO) << "OPTIMIZING AWAY ELSE BRANCH";
 				if (And_ptr sub_and_term = dynamic_cast<And_ptr>(or_term->term_list->at(0))) { // reapply Associativity if needed
 					and_term->term_list->erase(iter);
@@ -94,7 +94,7 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
 			} else if(symbol_table_->has_child_term(and_term,Ast2Dot::toString(else_cond))) {
 				symbol_table_->remove_or_ite(or_term);
 				// merge equivalence classes/variable values from or scope
-				//symbol_table_->merge_scopes(symbol_table_->top_scope(),or_term->term_list->at(1));
+				symbol_table_->merge_scopes(symbol_table_->top_scope(),or_term->term_list->at(1));
 				//LOG(INFO) << "OPTIMIZING AWAY THEN BRANCH";
 				if (And_ptr sub_and_term = dynamic_cast<And_ptr>(or_term->term_list->at(1))) { // reapply Associativity if needed
 					and_term->term_list->erase(iter);
@@ -119,7 +119,7 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
 			if(symbol_table_->has_child_term(and_term,Ast2Dot::toString(then_cond))) {
 				symbol_table_->remove_or_ite(or_term);
 				// merge equivalence classes/variable values from or scope
-				//symbol_table_->merge_scopes(symbol_table_->top_scope(),or_term->term_list->at(0));
+				symbol_table_->merge_scopes(symbol_table_->top_scope(),or_term->term_list->at(0));
 				//LOG(INFO) << "OPTIMIZING AWAY ELSE BRANCH";
 				if (And_ptr sub_and_term = dynamic_cast<And_ptr>(or_term->term_list->at(0))) { // reapply Associativity if needed
 					and_term->term_list->erase(iter);
@@ -134,7 +134,7 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
 			} else if(symbol_table_->has_child_term(and_term,Ast2Dot::toString(else_cond))) {
 				symbol_table_->remove_or_ite(or_term);
 				// merge equivalence classes/variable values from or scope
-				//symbol_table_->merge_scopes(symbol_table_->top_scope(),or_term->term_list->at(1));
+				symbol_table_->merge_scopes(symbol_table_->top_scope(),or_term->term_list->at(1));
 				//LOG(INFO) << "OPTIMIZING AWAY THEN BRANCH";
 				if (And_ptr sub_and_term = dynamic_cast<And_ptr>(or_term->term_list->at(1))) { // reapply Associativity if needed
 					and_term->term_list->erase(iter);
@@ -151,7 +151,7 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
   	if (check_bool_constant_value(*iter, "true") and and_term->term_list->size() > 1) {
       DVLOG(VLOG_LEVEL) << "remove: 'true' constant from 'and'";
       // just in case
-      //symbol_table_->merge_scopes(symbol_table_->top_scope(),*iter);
+      symbol_table_->merge_scopes(symbol_table_->top_scope(),*iter);
       delete (*iter); *iter = nullptr;
       iter = and_term->term_list->erase(iter);
     } else if (check_bool_constant_value(*iter, "false")) {
@@ -190,41 +190,33 @@ void SyntacticOptimizer::visitOr(Or_ptr or_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
 
   if(symbol_table_->is_or_ite(or_term)) {
-  	LOG(INFO) << 1;
   	auto then_cond = dynamic_cast<Term_ptr>(symbol_table_->get_ite_then_cond(or_term));
 		auto else_cond = dynamic_cast<Term_ptr>(symbol_table_->get_ite_else_cond(or_term));
 		auto before_then_cond = then_cond->clone();
 		auto before_else_cond = else_cond->clone();
-		//symbol_table_->push_scope(then_cond, false);
-		LOG(INFO) << 2;
+		symbol_table_->push_scope(then_cond, false);
 		visit_and_callback(then_cond);
-		LOG(INFO) << 3;
-		//symbol_table_->pop_scope();
-		//symbol_table_->push_scope(else_cond, false);
-		//symbol_table_->pop_scope();
+		symbol_table_->pop_scope();
+		symbol_table_->push_scope(else_cond, false);
+		symbol_table_->pop_scope();
 		visit_and_callback(else_cond);
-		LOG(INFO) << 4;
 		// callback may change term_ptr, just reset it
 		// refactor scope names if needed
-		LOG(INFO) << "HERE 1";
 		if(Ast2Dot::toString(before_then_cond) != Ast2Dot::toString(then_cond)) {
-			//symbol_table_->refactor_scope(before_then_cond,then_cond);
+			symbol_table_->refactor_scope(before_then_cond,then_cond);
 		}
-		LOG(INFO) << "HERE 2";
 		if(Ast2Dot::toString(before_else_cond) != Ast2Dot::toString(else_cond)) {
-			//symbol_table_->refactor_scope(before_else_cond,else_cond);
+			symbol_table_->refactor_scope(before_else_cond,else_cond);
 		}
 		delete before_then_cond;
 		delete before_else_cond;
-		LOG(INFO) << 6;
 		symbol_table_->set_ite_then_cond(or_term,then_cond);
 		symbol_table_->set_ite_else_cond(or_term,else_cond);
-		LOG(INFO) << 7;
   }
 
   for (auto iter = or_term->term_list->begin(); iter != or_term->term_list->end();) {
   	auto before_scope = *iter;
-  	//symbol_table_->push_scope(*iter,false);
+  	symbol_table_->push_scope(*iter,false);
     visit_and_callback(*iter);
     auto after_scope = *iter;
 		if (check_bool_constant_value(*iter, "false")) {
@@ -233,13 +225,13 @@ void SyntacticOptimizer::visitOr(Or_ptr or_term) {
       iter = or_term->term_list->erase(iter);
     } else {
     	// term for scope may have changed, refactor equivalence & variable classes
-    	if(before_scope != after_scope) {
+    	if(Ast2Dot::toString(before_scope) != Ast2Dot::toString(after_scope)) {
     		DVLOG(VLOG_LEVEL) << "scope term changed after visiting, refactoring...";
-				//symbol_table_->refactor_scope(before_scope,after_scope);
+				symbol_table_->refactor_scope(before_scope,after_scope);
 			}
       iter++;
     }
-		//symbol_table_->pop_scope();
+		symbol_table_->pop_scope();
   }
 
   if (or_term->term_list->empty()) {
@@ -249,7 +241,7 @@ void SyntacticOptimizer::visitOr(Or_ptr or_term) {
     if (dynamic_cast<And_ptr>(child_term) or dynamic_cast<Or_ptr>(child_term)) {
     	// if child term an AND term, merge upper scope with child scope
     	LOG(INFO) << "HERE 1";
-    	//symbol_table_->merge_scopes(symbol_table_->top_scope(),child_term);
+    	symbol_table_->merge_scopes(symbol_table_->top_scope(),child_term);
       callback_ = [or_term, child_term](Term_ptr & term) mutable {
         or_term->term_list->clear();
         delete or_term;
@@ -2590,9 +2582,9 @@ void SyntacticOptimizer::add_callback_to_replace_with_bool(Term_ptr term, bool v
   callback_ = [this, term, term_value](Term_ptr & ref_term) mutable {
     ref_term = generate_term_constant(term_value, Primitive::Type::BOOL);
     LOG(INFO) << "HERE 3";
-    //if(term_value == "true") {
-    //	symbol_table_->refactor_scope(term,ref_term);
-    //}
+    if(term_value == "true") {
+    	symbol_table_->refactor_scope(term,ref_term);
+    }
     delete term;
   };
 }
