@@ -88,7 +88,7 @@ void EquivClassRuleRunner::visitAnd(And_ptr and_term) {
 			visit(else_cond);
 			symbol_table_->pop_scope();
 			symbol_table_->set_ite_then_cond(or_term,then_cond);
-				symbol_table_->set_ite_else_cond(or_term,else_cond);
+			symbol_table_->set_ite_else_cond(or_term,else_cond);
   	}
     check_and_substitute_var(term);
     visit(term);

@@ -119,6 +119,8 @@ public:
   void set_ite_then_cond(SMT::Visitable_ptr, SMT::Visitable_ptr);
   void set_ite_else_cond(SMT::Visitable_ptr, SMT::Visitable_ptr);
 
+  void refactor_scope(SMT::Visitable_ptr old_scope_id, SMT::Visitable_ptr new_scope_id);
+  void merge_scopes(SMT::Visitable_ptr parent_scope, SMT::Visitable_ptr child_scope);
 
 private:
   std::string generate_internal_name(std::string, SMT::Variable::Type);

@@ -2629,6 +2629,8 @@ StringAutomaton_ptr StringAutomaton::GetAutomatonForVariable(std::string var_nam
 		LOG(FATAL) << "No String formula!";
 	}
 
+
+
 	int track = formula_->GetVariableIndex(var_name);
 	StringAutomaton_ptr result_auto = GetKTrack(track);
 	auto result_formula = new StringFormula();

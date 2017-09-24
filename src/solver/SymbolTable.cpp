@@ -525,6 +525,75 @@ void SymbolTable::set_ite_else_cond(SMT::Visitable_ptr node, SMT::Visitable_ptr 
 	it.second = cond;
 }
 
+void SymbolTable::refactor_scope(SMT::Visitable_ptr old_scope_id, SMT::Visitable_ptr new_scope_id) {
+	if(old_scope_id == new_scope_id) {
+		std::cin.get();
+		LOG(INFO) << "same...";
+	}
+	if(Ast2Dot::toString(old_scope_id) == Ast2Dot::toString(new_scope_id)) {
+		LOG(INFO) << "ast same";
+		std::cin.get();
+	}
+
+	if(variable_equivalence_table_.find(new_scope_id) != variable_equivalence_table_.end()
+			 || variable_value_table_.find(new_scope_id) != variable_value_table_.end()) {
+		//LOG(FATAL) << "Cannot refactor scope, new scope id already exists! (maybe merge instead?)";
+		merge_scopes(new_scope_id,old_scope_id);
+	}
+
+	auto old_equivalence_scope = variable_equivalence_table_.find(old_scope_id);
+
+	// if no equivalences at old_scope, no need to refactor
+	if(old_equivalence_scope == variable_equivalence_table_.end()) {
+		return;
+	} else {
+		// remove old scope id from equivalence table, add new scope id with value of old scope classes
+		auto value = old_equivalence_scope->second;
+		variable_equivalence_table_.erase(old_equivalence_scope);
+		variable_equivalence_table_[new_scope_id] = value;
+	}
+
+	auto old_variable_scope = variable_value_table_.find(old_scope_id);
+	if(old_variable_scope == variable_value_table_.end()) {
+		return;
+	} else{
+		auto value = old_variable_scope->second;
+		variable_value_table_.erase(old_variable_scope);
+		variable_value_table_[new_scope_id] = value;
+	}
+}
+
+// TODO: add check to make sure equivalence generation is turned on; if not, just return
+// TODO: What about variable values in symbol table (that have been set in equiv rule runner)?
+void SymbolTable::merge_scopes(SMT::Visitable_ptr parent_scope, SMT::Visitable_ptr child_scope) {
+
+	if(variable_equivalence_table_.find(parent_scope) == variable_equivalence_table_.end()
+					|| variable_equivalence_table_.find(child_scope) == variable_equivalence_table_.end()) {
+		return;
+	}
+
+	EquivClassMap equiv_class_map;
+	EquivClassMap child_equiv_class_map = variable_equivalence_table_[child_scope];
+	EquivClassMap parent_equiv_class_map = variable_equivalence_table_[parent_scope];
+	for(auto iter : parent_equiv_class_map) {
+		// if variable hasn't already been inserted
+		if(equiv_class_map.find(iter.first) == equiv_class_map.end()) {
+			equiv_class_map[iter.first] = iter.second->clone();
+		}
+
+		if(child_equiv_class_map.find(iter.first) != child_equiv_class_map.end()) {
+			auto child_variable_equiv = child_equiv_class_map[iter.first];
+			equiv_class_map[iter.first]->merge(child_variable_equiv);
+			for(auto var : child_variable_equiv->get_variables()) {
+				equiv_class_map[var] = equiv_class_map[iter.first];
+			}
+		}
+	}
+
+	// delete the old equiv class map for parent scope, point to new one
+	variable_equivalence_table_[parent_scope] = equiv_class_map;
+}
+
 std::string SymbolTable::generate_internal_name(std::string name, Variable::Type type) {
   std::stringstream ss;
   ss << "__vlab__";
