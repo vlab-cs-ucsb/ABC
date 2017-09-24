@@ -215,6 +215,8 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
   	symbol_table_->push_scope(term);
   	for (auto iter = variable_value_map.begin(); iter != variable_value_map.end();) {
   		if(Value::Type::INT_CONSTANT == iter->second->getType() || Value::Type::BOOL_CONSTANT == iter->second->getType()) {
+  			has_arithmetic_formula = true;
+  			LOG(INFO) << "------> " << iter->first << "," << *iter->second;
   			auto variable_group = arithmetic_formula_generator_.get_variable_group_name(iter->first);
   			auto group_formula = arithmetic_formula_generator_.get_group_formula(variable_group);
   			if(group_formula == nullptr) {
@@ -236,6 +238,7 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
   			iter++;
   		}
   	}
+  	symbol_table_->pop_scope();
   }
 
 	for (auto term : *(or_term->term_list)) {
@@ -291,6 +294,7 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
 //			symbol_table_->set_value(group_name, value);
 //		}
 //		delete or_value;
+  LOG(INFO) << "Setting " << or_term << "@" << *or_term << " to " << is_satisfiable;
 	symbol_table_->set_value(group_name,new Value(is_satisfiable));
   //}
 
@@ -357,7 +361,12 @@ void ArithmeticConstraintSolver::postVisitAnd(And_ptr and_term) {
 //		is_satisfiable = true;
 //	}
 
-  if (has_arithmetic_formula) {
+  //if (has_arithmetic_formula) {
+  	for(auto group : arithmetic_formula_generator_.get_group_subgroups(group_name)) {
+			Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
+			Value_ptr subgroup_value = symbol_table_->get_value(subgroup_variable);
+			is_satisfiable = subgroup_value->is_satisfiable() and is_satisfiable;
+		}
 //    if (is_satisfiable) {
 //      symbol_table_->IntersectValue(group_name, and_value);  // update value
 //    } else {
@@ -367,7 +376,7 @@ void ArithmeticConstraintSolver::postVisitAnd(And_ptr and_term) {
 //    }
 //    delete and_value;
   	symbol_table_->set_value(group_name, new Value(is_satisfiable));
-  }
+  //}
   DVLOG(VLOG_LEVEL) << "update result end: " << *and_term << "@" << and_term;
 }
 

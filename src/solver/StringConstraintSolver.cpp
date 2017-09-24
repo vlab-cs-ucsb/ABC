@@ -207,6 +207,33 @@ void StringConstraintSolver::visitOr(Or_ptr or_term) {
   std::string group_name = string_formula_generator_.get_term_group_name(or_term);
   auto group_formula = string_formula_generator_.get_group_formula(group_name);
 
+  // propagate equivalence class values for constants
+	for (auto term : *(or_term->term_list)) {
+		auto variable_value_map = symbol_table_->get_values_at_scope(term);
+		symbol_table_->push_scope(term);
+		for (auto iter = variable_value_map.begin(); iter != variable_value_map.end();) {
+			if(Value::Type::STRING_AUTOMATON == iter->second->getType() and iter->second->getStringAutomaton()->GetFormula() == nullptr) {
+				has_string_formula = true;
+				auto variable_group = string_formula_generator_.get_variable_group_name(iter->first);
+				auto group_formula = string_formula_generator_.get_group_formula(variable_group);
+				if(group_formula == nullptr) {
+					LOG(FATAL) << "Uhhhh";
+				}
+				StringFormula_ptr formula = new StringFormula();
+				formula->SetType(StringFormula::Type::VAR);
+				formula->AddVariable(iter->first->getName(),1);
+				iter->second->getStringAutomaton()->SetFormula(formula);
+				symbol_table_->IntersectValue(variable_group,iter->second);
+				delete iter->second;iter->second = nullptr;
+				iter = variable_value_map.erase(iter);
+			} else {
+				iter++;
+			}
+		}
+		symbol_table_->pop_scope();
+	}
+
+
   for (auto term : *(or_term->term_list)) {
     auto formula = string_formula_generator_.get_term_formula(term);
     // Do not visit child and terms here, handle them in POSTVISIT OR
@@ -312,8 +339,13 @@ void StringConstraintSolver::postVisitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "update result start: " << *and_term << "@" << and_term;
 
 
-  if (has_string_formula) {
-//    if (is_satisfiable) {
+  //if (has_string_formula) {
+  	for(auto group : string_formula_generator_.get_group_subgroups(group_name)) {
+			Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
+			Value_ptr subgroup_value = symbol_table_->get_value(subgroup_variable);
+			is_satisfiable = subgroup_value->is_satisfiable() and is_satisfiable;
+		}
+  	//    if (is_satisfiable) {
 //      symbol_table_->IntersectValue(group_name, and_value);  // update value
 //    } else {
 //      auto group_formula = string_formula_generator_.get_group_formula(group_name);
@@ -322,7 +354,7 @@ void StringConstraintSolver::postVisitAnd(And_ptr and_term) {
 //    }
 //    delete and_value;
   	symbol_table_->set_value(group_name, new Value(is_satisfiable));
-  }
+  //}
   DVLOG(VLOG_LEVEL) << "update result end: " << *and_term << "@" << and_term;
 }
 

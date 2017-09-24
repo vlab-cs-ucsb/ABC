@@ -62,7 +62,7 @@ void SyntacticOptimizer::visitLet(Let_ptr let_term) {
 
 void SyntacticOptimizer::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
-  LOG(INFO) << *and_term << " has " << and_term->term_list->size() << " children";
+  //LOG(INFO) << *and_term << " has " << and_term->term_list->size() << " children";
   bool has_false_term = false;
   std::vector<TermList> or_term_lists;
   int pos = 0;
@@ -1537,24 +1537,83 @@ void SyntacticOptimizer::visitCount(Count_ptr count_term) {
 
 void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {
   callback_ = [ite_term] (Term_ptr& term) mutable {
-    DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *ite_term << "' into 'or'";
-    And_ptr then_branch = dynamic_cast<And_ptr>(ite_term->then_branch);
-    And_ptr else_branch = dynamic_cast<And_ptr>(ite_term->else_branch);
-    then_branch->term_list->insert(then_branch->term_list->begin(), ite_term->cond->clone());
-    if (Not_ptr not_term = dynamic_cast<Not_ptr>(ite_term->cond)) {
-      else_branch->term_list->insert(else_branch->term_list->begin(), not_term->term->clone());
-    } else {
-      not_term = new Not(ite_term->cond);
-      else_branch->term_list->insert(else_branch->term_list->begin(), not_term->clone());
-    }
+//    DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *ite_term << "' into 'or'";
+//    LOG(INFO) << 1;
+//    And_ptr then_branch = dynamic_cast<And_ptr>(ite_term->then_branch);
+//    And_ptr else_branch = dynamic_cast<And_ptr>(ite_term->else_branch);
+//    then_branch->term_list->insert(then_branch->term_list->begin(), ite_term->cond->clone());
+//    LOG(INFO) << 2;
+//    if (Not_ptr not_term = dynamic_cast<Not_ptr>(ite_term->cond)) {
+//      else_branch->term_list->insert(else_branch->term_list->begin(), not_term->term->clone());
+//    } else {
+//      not_term = new Not(ite_term->cond);
+//      else_branch->term_list->insert(else_branch->term_list->begin(), not_term->clone());
+//    }
+//    LOG(INFO) << 3;
+//    TermList_ptr term_list = new TermList();
+//    term_list->push_back(then_branch);
+//    term_list->push_back(else_branch);
+//    term = new Or(term_list);
+//    ite_term->then_branch = nullptr;
+//    ite_term->else_branch = nullptr;
+//    delete ite_term;
+//    LOG(INFO) << 4;
+  	LOG(INFO) << 1;
+  	Term_ptr ite_condition = ite_term->cond;
+  	Term_ptr ite_then_branch = ite_term->then_branch;
+  	Term_ptr ite_else_branch = ite_term->else_branch;
 
-    TermList_ptr term_list = new TermList();
-    term_list->push_back(then_branch);
-    term_list->push_back(else_branch);
-    term = new Or(term_list);
-    ite_term->then_branch = nullptr;
-    ite_term->else_branch = nullptr;
-    delete ite_term;
+  	Term_ptr then_branch_term = nullptr;
+		Term_ptr else_branch_term = nullptr;
+		Term_ptr true_cond = ite_condition;
+		Term_ptr false_cond = nullptr;
+		if (Not_ptr not_term = dynamic_cast<Not_ptr>(true_cond)) {
+			false_cond = not_term->term->clone();
+		} else {
+			false_cond = new Not(true_cond->clone());
+		}
+		LOG(INFO) << 2;
+		// process then branch
+		if (And_ptr then_branch = dynamic_cast<And_ptr>(ite_then_branch)) {
+			then_branch->term_list->insert(then_branch->term_list->begin(), true_cond);
+			then_branch_term = then_branch;
+		} else if (Or_ptr then_branch = dynamic_cast<Or_ptr>(ite_then_branch)) {
+			then_branch->term_list->insert(then_branch->term_list->begin(), true_cond);
+			then_branch_term = then_branch;
+		} else {
+			TermList_ptr local_term_list = new TermList();
+			local_term_list->push_back(true_cond);
+			local_term_list->push_back(ite_then_branch);
+			then_branch_term = new And(local_term_list);
+		}
+		LOG(INFO) << 3;
+		// process else branch
+		if (And_ptr else_branch = dynamic_cast<And_ptr>(ite_else_branch)) {
+			else_branch->term_list->insert(else_branch->term_list->begin(), false_cond);
+			else_branch_term = else_branch;
+		} else if (Or_ptr else_branch = dynamic_cast<Or_ptr>(ite_else_branch)) {
+			else_branch->term_list->insert(else_branch->term_list->begin(), false_cond);
+			else_branch_term = else_branch;
+		} else {
+			TermList_ptr local_term_list = new TermList();
+			local_term_list->push_back(false_cond);
+			local_term_list->push_back(ite_else_branch);
+			else_branch_term = new And(local_term_list);
+		}
+		LOG(INFO) << 4;
+		TermList_ptr term_list = new TermList();
+		term_list->push_back(then_branch_term);
+		term_list->push_back(else_branch_term);
+
+		Or_ptr or_term = new Or(term_list);
+		ite_term->cond = nullptr;
+		ite_term->then_branch = nullptr;
+		ite_term->else_branch = nullptr;
+		LOG(INFO) << 5;
+		delete ite_term;
+		LOG(INFO) << 6;
+		term = or_term;
+		LOG(INFO) << 7;
   };
 }
 

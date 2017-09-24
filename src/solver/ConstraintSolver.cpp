@@ -175,6 +175,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   }
 
   DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
+  LOG(INFO) << "is_sat? " << is_satisfiable;
 
   if (is_component and is_satisfiable) {
     if (constraint_information_->has_arithmetic_constraint(and_term)) {
@@ -246,7 +247,7 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
         }
         clearTermValuesAndLocalLetVars();
       }
-
+      LOG(INFO) << "Is scope sat? " << is_scope_satisfiable;
       is_satisfiable = is_satisfiable or is_scope_satisfiable;
       symbol_table_->pop_scope();
     }
