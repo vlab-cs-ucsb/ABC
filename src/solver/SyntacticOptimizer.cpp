@@ -786,7 +786,87 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
     bool result = (constant_term_checker_left.get_constant_as_string() != constant_term_checker_right.get_constant_as_string());
     add_callback_to_replace_with_bool(not_eq_term, result);
     return;
+  } else if(constant_term_checker_left.is_constant() and (Term::Type::QUALIDENTIFIER == not_eq_term->right_term->type())) {
+    auto var = symbol_table_->get_variable(not_eq_term->right_term);
+    std::string constant = constant_term_checker_left.get_constant_as_string();
+    if(Variable::Type::BOOL == var->getType() and constant == "true") {
+      callback_ = [not_eq_term] (Term_ptr & term) mutable {
+        Primitive_ptr primitive = new Primitive("false",Primitive::Type::BOOL);
+        TermConstant_ptr term_constant = new TermConstant(primitive);
+        term = new Eq(not_eq_term->right_term,term_constant);
+        not_eq_term->right_term = nullptr;
+        delete not_eq_term;
+      };
+    } else if(Variable::Type::BOOL == var->getType() and constant == "false") {
+      callback_ = [not_eq_term] (Term_ptr & term) mutable {
+        Primitive_ptr primitive = new Primitive("true",Primitive::Type::BOOL);
+        TermConstant_ptr term_constant = new TermConstant(primitive);
+        term = new Eq(not_eq_term->right_term,term_constant);
+        not_eq_term->right_term = nullptr;
+        delete not_eq_term;
+      };
+    }
+  } else if(constant_term_checker_right.is_constant() and (Term::Type::QUALIDENTIFIER == not_eq_term->left_term->type())) {
+    auto var = symbol_table_->get_variable(not_eq_term->left_term);
+    std::string constant = constant_term_checker_right.get_constant_as_string();
+    if(Variable::Type::BOOL == var->getType() and constant == "true") {
+      callback_ = [not_eq_term] (Term_ptr & term) mutable {
+        Primitive_ptr primitive = new Primitive("false",Primitive::Type::BOOL);
+        TermConstant_ptr term_constant = new TermConstant(primitive);
+        term = new Eq(not_eq_term->left_term,term_constant);
+        not_eq_term->left_term = nullptr;
+        delete not_eq_term;
+      };
+    } else if(Variable::Type::BOOL == var->getType() and constant == "false") {
+      callback_ = [not_eq_term] (Term_ptr & term) mutable {
+        Primitive_ptr primitive = new Primitive("true",Primitive::Type::BOOL);
+        TermConstant_ptr term_constant = new TermConstant(primitive);
+        term = new Eq(not_eq_term->left_term,term_constant);
+        not_eq_term->left_term = nullptr;
+        delete not_eq_term;
+      };
+    }
   }
+
+// else if(constant_term_checker_left.is_constant() and (Term::Type::EQ == eq_term->right_term->type() or Term::Type::NOTEQ == eq_term->right_term->type())) {
+  //  std::string constant = constant_term_checker_left.get_constant_as_string();
+  //  if(constant == "true") {
+  //    DVLOG(VLOG_LEVEL) << "Transforming (= true (" << *eq_term->right_term << ")) -> (" << *eq_term->right_term << ")";
+  //    callback_ = [eq_term](Term_ptr & term) mutable {
+  //      term = eq_term->right_term;
+  //      eq_term->right_term = nullptr;
+  //      delete eq_term;
+  //    };
+  //    return;
+  //  } else if(constant == "false") {
+  //    DVLOG(VLOG_LEVEL) << "Transforming (= false (" << *eq_term->right_term << ")) -> (not (" << *eq_term->right_term << "))";
+  //    callback_ = [eq_term](Term_ptr & term) mutable {
+  //      term = new Not(eq_term->right_term);
+  //      eq_term->right_term = nullptr;
+  //      delete eq_term;
+  //    };
+  //    return;
+  //  }
+  // } else if(constant_term_checker_right.is_constant() and (Term::Type::EQ == eq_term->left_term->type() or Term::Type::NOTEQ == eq_term->left_term->type())) {
+  //  std::string constant = constant_term_checker_right.get_constant_as_string();
+  //  if(constant == "true") {
+  //    DVLOG(VLOG_LEVEL) << "Transforming (= true (" << *eq_term->left_term << ")) -> (" << *eq_term->left_term << ")";
+  //    callback_ = [eq_term](Term_ptr & term) mutable {
+  //      term = eq_term->left_term;
+  //      eq_term->left_term = nullptr;
+  //      delete eq_term;
+  //    };
+  //    return;
+  //  } else if(constant == "false") {
+  //    DVLOG(VLOG_LEVEL) << "Transforming (= false (" << *eq_term->left_term << ")) -> (not (" << *eq_term->left_term << "))";
+  //    callback_ = [eq_term](Term_ptr & term) mutable {
+  //      term = new Not(eq_term->left_term);
+  //      eq_term->left_term = nullptr;
+  //      delete eq_term;
+  //    };
+  //    return;
+  //  }
+  // }
 
   if (Ast2Dot::isEquivalent(not_eq_term->left_term, not_eq_term->right_term)) {
     add_callback_to_replace_with_bool(not_eq_term, false);
