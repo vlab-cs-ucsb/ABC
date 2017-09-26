@@ -2629,8 +2629,6 @@ StringAutomaton_ptr StringAutomaton::GetAutomatonForVariable(std::string var_nam
 		LOG(FATAL) << "No String formula!";
 	}
 
-
-
 	int track = formula_->GetVariableIndex(var_name);
 	StringAutomaton_ptr result_auto = GetKTrack(track);
 	auto result_formula = new StringFormula();
@@ -2772,7 +2770,86 @@ StringAutomaton_ptr StringAutomaton::ProjectKTrack(int k_track) {
 }
 
 void StringAutomaton::SetSymbolicCounter() {
-  LOG(FATAL) << "IMPLEMENT ME";
+	// normal symbolic counter for single-track
+	if(num_tracks_ == 1) {
+		Automaton::SetSymbolicCounter();
+		return;
+	}
+
+	// remove last lambda loop
+	DFA_ptr original_dfa = nullptr, temp_dfa = nullptr,trimmed_dfa = nullptr;
+	original_dfa = this->dfa_;
+	trace_descr tp;
+	paths state_paths,pp;
+	int sink = find_sink(original_dfa);
+	if(sink < 0) {
+		LOG(FATAL) << "Cant count, no sink!";
+	}
+	int var = VAR_PER_TRACK;
+	int len = var * num_tracks_;
+	int* mindices = GetBddVariableIndices(len);
+	char* statuses = new char[original_dfa->ns+1];
+	std::vector<std::pair<std::vector<char>,int>> state_exeps;
+	std::vector<bool> lambda_states(original_dfa->ns,false);
+	dfaSetup(original_dfa->ns,len,mindices);
+	for(int i = 0; i < original_dfa->ns; i++) {
+		statuses[i] = '-';
+		state_paths = pp = make_paths(original_dfa->bddm, original_dfa->q[i]);
+		while(pp) {
+			if(pp->to == sink) {
+				pp = pp->next;
+				continue;
+			}
+
+			std::vector<char> exep(len,'X');
+			for(int j = 0; j < len; j++) {
+				for(tp = pp->trace; tp && (tp->index != mindices[j]); tp= tp->next);
+				if(tp) {
+					if(tp->value) exep[j] = '1';
+					else exep[j] = '0';
+				}
+				else exep[j] = 'X';
+			}
+
+			// if lambda and loops back, dont add it
+			bool is_lambda = true;
+			for(int k = 0; k < len; k++) {
+				if(exep[k] != '1' && exep[k] != 'X') {
+					is_lambda = false;
+					break;
+				}
+			}
+
+			if(is_lambda) {
+				lambda_states[pp->to] = true;
+				if(!lambda_states[i] || i == pp->to) {
+					statuses[i] = '+';
+				}
+			} else {
+				exep.push_back('\0');
+				state_exeps.push_back(std::make_pair(exep,pp->to));
+			}
+			pp = pp->next;
+		}
+		kill_paths(state_paths);
+		dfaAllocExceptions(state_exeps.size());
+		for(int k = 0; k < state_exeps.size(); k++) {
+			dfaStoreException(state_exeps[k].second, &state_exeps[k].first[0]);
+		}
+		dfaStoreState(sink);
+		state_exeps.clear();
+	}
+	statuses[original_dfa->ns] = '\0';
+	temp_dfa = dfaBuild(statuses);
+	trimmed_dfa = dfaMinimize(temp_dfa);
+	dfaFree(temp_dfa);
+	delete[] mindices;
+	delete[] statuses;
+
+	this->dfa_ = trimmed_dfa;
+	Automaton::SetSymbolicCounter();
+	this->dfa_ = original_dfa;
+	dfaFree(trimmed_dfa);
 }
 
 std::vector<std::string> StringAutomaton::GetAnAcceptingStringForEachTrack() {

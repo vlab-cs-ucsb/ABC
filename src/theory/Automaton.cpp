@@ -1423,7 +1423,10 @@ void Automaton::SetSymbolicCounter() {
  */
 void Automaton::decide_counting_schema(Eigen::SparseMatrix<BigInteger>& count_matrix) {
   counter_.set_type(SymbolicCounter::Type::STRING);
-  count_matrix.insert(this->dfa_->ns, this->dfa_->ns) = 1; // allows us to count all lengths up to given bound
+//  count_matrix.insert(this->dfa_->ns, this->dfa_->ns) = 1; // allows us to count all lengths up to given bound
+  count_matrix.insert(this->dfa_->ns, this->dfa_->ns) = 0; // allows us to count all lengths up to given bound
+
+
 }
 
 void Automaton::generateGFScript(int bound, std::ostream& out, bool count_less_than_or_equal_to_bound) {

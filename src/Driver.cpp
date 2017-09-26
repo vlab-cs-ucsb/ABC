@@ -215,6 +215,7 @@ void Driver::SetModelCounter() {
     if (variable_entry.second == nullptr) {
       continue;
     }
+    LOG(INFO) << "Variable: " << variable_entry.first->getName();
     switch (variable_entry.second->getType()) {
       case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
         auto binary_auto = variable_entry.second->getBinaryIntAutomaton();
@@ -231,6 +232,11 @@ void Driver::SetModelCounter() {
         model_counter_.add_constant(variable_entry.second->getIntConstant());
       }
         break;
+      case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
+				auto string_auto = variable_entry.second->getStringAutomaton();
+				model_counter_.add_symbolic_counter(string_auto->GetSymbolicCounter());
+      }
+      	break;
       case Vlab::Solver::Value::Type::INT_AUTOMATON: {
         auto int_auto = variable_entry.second->getIntAutomaton();
         model_counter_.add_symbolic_counter(int_auto->GetSymbolicCounter());
@@ -240,6 +246,7 @@ void Driver::SetModelCounter() {
         break;
     }
   }
+  std::cin.get();
 
   int number_of_int_variables = symbol_table_->get_num_of_variables(SMT::Variable::Type::INT);
   int number_of_substituted_int_variables = symbol_table_->get_num_of_substituted_variables(script_,
