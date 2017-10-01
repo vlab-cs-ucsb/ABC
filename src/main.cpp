@@ -182,6 +182,10 @@ int main(const int argc, const char **argv) {
   auto start = std::chrono::steady_clock::now();
   driver.InitializeSolver();
 
+  if(driver.symbol_table_->has_count_variable() and count_variable.empty()) {
+    count_variable = driver.symbol_table_->get_count_variable()->getName();
+  }
+
 #ifndef NDEBUG
   if (VLOG_IS_ON(30)) {
     driver.ast2dot(output_root + "/optimized.dot");
@@ -284,29 +288,15 @@ int main(const int argc, const char **argv) {
         auto count_time = end - start;
         LOG(INFO) << "report bound: " << b << " count: " << count_result << " time: "
                   << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
-
-//        auto mc = driver.GetModelCounterForVariable(count_variable);
-//
-//        std::cout << std::endl << mc << std::endl;
-//        mc.Count(b, b);
-//         std::stringstream os;
-//         {
-//           cereal::BinaryOutputArchive ar(os);
-//           mc.save(ar);
-//         }
-//
-//         std::string test = os.str();
-//         std::stringstream is(test);
-//
-//         Vlab::Solver::ModelCounter mcc;
-//
-//         {
-//          cereal::BinaryInputArchive ar2(is);
-//          mcc.load(ar2);
-//        }
-//
-//        std::cout << std::endl << mcc << std::endl;
-//        mcc.Count(b, b);
+      }
+      for (auto b : str_bounds) {
+        start = std::chrono::steady_clock::now();
+        auto count_result = driver.CountVariable(count_variable, b);
+        end = std::chrono::steady_clock::now();
+        auto count_time = end - start;
+        LOG(INFO) << "report bound: " << b << " count: " << count_result << " time: "
+                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+        
       }
     } else {
       for (auto b : int_bounds) {

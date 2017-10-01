@@ -122,6 +122,10 @@ public:
   void refactor_scope(SMT::Visitable_ptr old_scope_id, SMT::Visitable_ptr new_scope_id);
   void merge_scopes(SMT::Visitable_ptr parent_scope, SMT::Visitable_ptr child_scope);
 
+  void set_count_variable(SMT::Primitive_ptr);
+  SMT::Variable_ptr get_count_variable();
+  bool has_count_variable();
+
 private:
   std::string generate_internal_name(std::string, SMT::Variable::Type);
 
@@ -170,6 +174,11 @@ private:
   TermChildrenTable term_children_table_;
   
   std::map<SMT::Visitable_ptr,std::pair<SMT::Visitable_ptr, SMT::Visitable_ptr>> ite_conditions_;
+
+  /**
+   * Count variable for kaluza tests
+   */ 
+  SMT::Primitive_ptr count_symbol_;
 
   static const int VLOG_LEVEL;
   //int reuse; 

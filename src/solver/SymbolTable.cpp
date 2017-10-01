@@ -16,6 +16,7 @@ const int SymbolTable::VLOG_LEVEL = 10;
 
 SymbolTable::SymbolTable()
   : global_assertion_result_(true) {
+  count_symbol_ = nullptr;
 }
 
 SymbolTable::~SymbolTable() {
@@ -593,6 +594,20 @@ void SymbolTable::merge_scopes(SMT::Visitable_ptr parent_scope, SMT::Visitable_p
 	// delete the old equiv class map for parent scope, point to new one
 	variable_equivalence_table_[parent_scope] = equiv_class_map;
 }
+
+void SymbolTable::set_count_variable(Primitive_ptr symbol) {
+  count_symbol_ = symbol->clone();
+}
+
+Variable_ptr SymbolTable::get_count_variable() {
+  return get_variable(count_symbol_->getData());
+}
+
+bool SymbolTable::has_count_variable() {
+  return (count_symbol_ != nullptr);
+}
+
+
 
 std::string SymbolTable::generate_internal_name(std::string name, Variable::Type type) {
   std::stringstream ss;

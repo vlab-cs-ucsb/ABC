@@ -120,7 +120,7 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
 				symbol_table_->remove_or_ite(or_term);
 				// merge equivalence classes/variable values from or scope
 				symbol_table_->merge_scopes(symbol_table_->top_scope(),or_term->term_list->at(0));
-				//LOG(INFO) << "OPTIMIZING AWAY ELSE BRANCH";
+				DVLOG(VLOG_LEVEL) << "OPTIMIZING AWAY ELSE BRANCH";
 				if (And_ptr sub_and_term = dynamic_cast<And_ptr>(or_term->term_list->at(0))) { // reapply Associativity if needed
 					and_term->term_list->erase(iter);
 					and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
@@ -135,7 +135,7 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
 				symbol_table_->remove_or_ite(or_term);
 				// merge equivalence classes/variable values from or scope
 				symbol_table_->merge_scopes(symbol_table_->top_scope(),or_term->term_list->at(1));
-				//LOG(INFO) << "OPTIMIZING AWAY THEN BRANCH";
+				DVLOG(VLOG_LEVEL) << "OPTIMIZING AWAY THEN BRANCH";
 				if (And_ptr sub_and_term = dynamic_cast<And_ptr>(or_term->term_list->at(1))) { // reapply Associativity if needed
 					and_term->term_list->erase(iter);
 					and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
@@ -257,36 +257,6 @@ void SyntacticOptimizer::visitNot(Not_ptr not_term) {
   visit_and_callback(not_term->term);
   DVLOG(VLOG_LEVEL) << "post visit start: " << *not_term << "@" << not_term;
   switch (not_term->term->type()) {
-//		case Term::Type::AND: {
-//			DVLOG(VLOG_LEVEL) << "Applying DeMorgans for not and";
-//			callback_ = [not_term](Term_ptr & term) mutable {
-//				And_ptr and_term = dynamic_cast<And_ptr>(not_term->term);
-//				for (auto& sub_term : *and_term->term_list) {
-//					Not_ptr sub_not_term = new Not(sub_term);
-//					sub_term = sub_not_term;
-//				}
-//				Or_ptr or_term = new Or(and_term->term_list);
-//				term = or_term;
-//				and_term->term_list = nullptr;
-//				delete not_term;
-//			};
-//			break;
-//		}
-//		case Term::Type::OR: {
-//			DVLOG(VLOG_LEVEL) << "Applying DeMorgans for not or";
-//			callback_ = [not_term](Term_ptr & term) mutable {
-//				Or_ptr or_term = dynamic_cast<Or_ptr>(not_term->term);
-//				for (auto& sub_term : *or_term->term_list) {
-//					Not_ptr sub_not_term = new Not(sub_term);
-//					sub_term = sub_not_term;
-//				}
-//				And_ptr and_term = new And(or_term->term_list);
-//				term = and_term;
-//				or_term->term_list = nullptr;
-//				delete not_term;
-//			};
-//			break;
-//		}
     case Term::Type::NOT: {
       DVLOG(VLOG_LEVEL) << "Transforming operation: (not (not a) to a";
       callback_ = [not_term](Term_ptr & term) mutable {
@@ -716,46 +686,7 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
     bool result = (constant_term_checker_left.get_constant_as_string() == constant_term_checker_right.get_constant_as_string());
     add_callback_to_replace_with_bool(eq_term, result);
     return;
-  } 
-  // else if(constant_term_checker_left.is_constant() and (Term::Type::EQ == eq_term->right_term->type() or Term::Type::NOTEQ == eq_term->right_term->type())) {
-  // 	std::string constant = constant_term_checker_left.get_constant_as_string();
-  // 	if(constant == "true") {
-  // 		DVLOG(VLOG_LEVEL) << "Transforming (= true (" << *eq_term->right_term << ")) -> (" << *eq_term->right_term << ")";
-  // 		callback_ = [eq_term](Term_ptr & term) mutable {
-  // 			term = eq_term->right_term;
-  // 			eq_term->right_term = nullptr;
-  // 			delete eq_term;
-  // 		};
-  // 		return;
-  // 	} else if(constant == "false") {
-  // 		DVLOG(VLOG_LEVEL) << "Transforming (= false (" << *eq_term->right_term << ")) -> (not (" << *eq_term->right_term << "))";
-  // 		callback_ = [eq_term](Term_ptr & term) mutable {
-  // 			term = new Not(eq_term->right_term);
-  // 			eq_term->right_term = nullptr;
-  // 			delete eq_term;
-  // 		};
-  // 		return;
-  // 	}
-	// } else if(constant_term_checker_right.is_constant() and (Term::Type::EQ == eq_term->left_term->type() or Term::Type::NOTEQ == eq_term->left_term->type())) {
-	// 	std::string constant = constant_term_checker_right.get_constant_as_string();
-	// 	if(constant == "true") {
-	// 		DVLOG(VLOG_LEVEL) << "Transforming (= true (" << *eq_term->left_term << ")) -> (" << *eq_term->left_term << ")";
-	// 		callback_ = [eq_term](Term_ptr & term) mutable {
-	// 			term = eq_term->left_term;
-	// 			eq_term->left_term = nullptr;
-	// 			delete eq_term;
-	// 		};
-	// 		return;
-	// 	} else if(constant == "false") {
-	// 		DVLOG(VLOG_LEVEL) << "Transforming (= false (" << *eq_term->left_term << ")) -> (not (" << *eq_term->left_term << "))";
-	// 		callback_ = [eq_term](Term_ptr & term) mutable {
-	// 			term = new Not(eq_term->left_term);
-	// 			eq_term->left_term = nullptr;
-	// 			delete eq_term;
-	// 		};
-	// 		return;
-  // 	}
-  // }
+  }
 
   if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
     add_callback_to_replace_with_bool(eq_term, true);
@@ -1604,28 +1535,6 @@ void SyntacticOptimizer::visitCount(Count_ptr count_term) {
 
 void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {
   callback_ = [ite_term] (Term_ptr& term) mutable {
-//    DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *ite_term << "' into 'or'";
-//    LOG(INFO) << 1;
-//    And_ptr then_branch = dynamic_cast<And_ptr>(ite_term->then_branch);
-//    And_ptr else_branch = dynamic_cast<And_ptr>(ite_term->else_branch);
-//    then_branch->term_list->insert(then_branch->term_list->begin(), ite_term->cond->clone());
-//    LOG(INFO) << 2;
-//    if (Not_ptr not_term = dynamic_cast<Not_ptr>(ite_term->cond)) {
-//      else_branch->term_list->insert(else_branch->term_list->begin(), not_term->term->clone());
-//    } else {
-//      not_term = new Not(ite_term->cond);
-//      else_branch->term_list->insert(else_branch->term_list->begin(), not_term->clone());
-//    }
-//    LOG(INFO) << 3;
-//    TermList_ptr term_list = new TermList();
-//    term_list->push_back(then_branch);
-//    term_list->push_back(else_branch);
-//    term = new Or(term_list);
-//    ite_term->then_branch = nullptr;
-//    ite_term->else_branch = nullptr;
-//    delete ite_term;
-//    LOG(INFO) << 4;
-  	LOG(INFO) << 1;
   	Term_ptr ite_condition = ite_term->cond;
   	Term_ptr ite_then_branch = ite_term->then_branch;
   	Term_ptr ite_else_branch = ite_term->else_branch;
@@ -1639,7 +1548,6 @@ void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {
 		} else {
 			false_cond = new Not(true_cond->clone());
 		}
-		LOG(INFO) << 2;
 		// process then branch
 		if (And_ptr then_branch = dynamic_cast<And_ptr>(ite_then_branch)) {
 			then_branch->term_list->insert(then_branch->term_list->begin(), true_cond);
@@ -1653,7 +1561,6 @@ void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {
 			local_term_list->push_back(ite_then_branch);
 			then_branch_term = new And(local_term_list);
 		}
-		LOG(INFO) << 3;
 		// process else branch
 		if (And_ptr else_branch = dynamic_cast<And_ptr>(ite_else_branch)) {
 			else_branch->term_list->insert(else_branch->term_list->begin(), false_cond);
@@ -1667,7 +1574,6 @@ void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {
 			local_term_list->push_back(ite_else_branch);
 			else_branch_term = new And(local_term_list);
 		}
-		LOG(INFO) << 4;
 		TermList_ptr term_list = new TermList();
 		term_list->push_back(then_branch_term);
 		term_list->push_back(else_branch_term);
@@ -1676,11 +1582,8 @@ void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {
 		ite_term->cond = nullptr;
 		ite_term->then_branch = nullptr;
 		ite_term->else_branch = nullptr;
-		LOG(INFO) << 5;
 		delete ite_term;
-		LOG(INFO) << 6;
 		term = or_term;
-		LOG(INFO) << 7;
   };
 }
 

@@ -426,19 +426,24 @@ LOG(INFO) << "After EQ";
 void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *not_eq_term;
 
-//  if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term)) {
-//    if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term)) {
-//      StringAutomaton_ptr temp,con;
-//      Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
-//      temp = StringAutomaton::MakeString(right_constant->getValue());
-//      con = temp->Complement();
-//      Value_ptr val = new Value(con);
-//      bool result = symbol_table_->IntersectValue(var,val);
-//      delete val;
-//      setTermValue(not_eq_term, new Value(result));
-//      return;
-//    }
-//  }
+  // optimization, bypasses variablevaluecomputation & extraction of singletrack from multitrack
+  // which is prohibitively expensive
+  if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term)) {
+    if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term)) {
+      StringAutomaton_ptr temp,con;
+      Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
+      temp = StringAutomaton::MakeString(right_constant->getValue());
+      con = temp->Complement();
+      StringFormula_ptr formula = new StringFormula();
+      formula->SetType(StringFormula::Type::VAR);
+      formula->AddVariable(var->getName(),1);
+      Value_ptr val = new Value(con);
+      bool result = symbol_table_->IntersectValue(var,val);
+      delete val;
+      setTermValue(not_eq_term, new Value(result));
+      return;
+    }
+  }
 
   visit_children_of(not_eq_term);
 

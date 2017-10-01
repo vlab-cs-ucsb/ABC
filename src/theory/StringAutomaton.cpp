@@ -913,9 +913,6 @@ StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
     int index = big_auto->formula_->GetVariableIndex(variable_name);
     auto relation_other_auto = new StringAutomaton(small_auto->dfa_,index,big_auto->num_tracks_,small_auto->num_of_bdd_variables_);
     relation_other_auto->SetFormula(big_auto->GetFormula()->clone());
-    //relation_other_auto->inspectAuto(false,true);
-    //big_auto->inspectAuto(false,true);
-		//auto intersect_auto = big_auto->Intersect(relation_other_auto->Intersect(MakeAnyStringAligned(relation_other_auto->GetFormula()->clone())));
     auto intersect_auto = big_auto->Intersect(relation_other_auto);
     delete relation_other_auto;
     return intersect_auto;
@@ -959,7 +956,11 @@ StringAutomaton_ptr StringAutomaton::Difference(StringAutomaton_ptr other_auto) 
 
 StringAutomaton_ptr StringAutomaton::Concat(StringAutomaton_ptr other_auto) {
   CHECK_EQ(this->num_tracks_,other_auto->num_tracks_);
-	StringAutomaton_ptr concat_auto = static_cast<StringAutomaton_ptr>(Automaton::Concat(other_auto));
+  //StringAutomaton_ptr concat_auto = static_cast<StringAutomaton_ptr>(Automaton::Concat(other_auto));
+  
+  // Other concat is currently maybe broken, don't know why.
+  DFA_ptr concat_dfa = StringAutomaton::concat(this->getDFA(),other_auto->getDFA(),this->num_of_bdd_variables_);
+  StringAutomaton_ptr concat_auto = new StringAutomaton(concat_dfa,this->num_tracks_,this->num_of_bdd_variables_);
   return concat_auto;
 }
 

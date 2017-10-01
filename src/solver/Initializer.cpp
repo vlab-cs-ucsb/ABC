@@ -79,9 +79,11 @@ void Initializer::visitCommand(Command_ptr command) {
     if (primitives_.size() == 1) {
       Primitive_ptr primitive = primitives_.top();
       primitives_.pop();
-      Variable_ptr variable = symbol_table_->get_variable(primitive->getData());
+      symbol_table_->set_count_variable(primitive);
+      //Variable_ptr variable = symbol_table_->get_variable(primitive->getData());
       // TODO treat as queary variable
 //      DVLOG(VLOG_LEVEL) << *variable << " is changed to a symbolic var.";
+
     }
     CHECK_EQ(0, primitives_.size())<< "unexpected primitive left.";
     break;

@@ -108,7 +108,7 @@ bool Automaton::IsInitialStateAccepting() const {
 
 bool Automaton::IsAcceptingState(const int state_id) const {
   bool result = Automaton::DFAIsAcceptingState(this->dfa_, state_id);
-  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsAcceptingState(" << state_id << ") " << std::boolalpha << result;
+  //DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsAcceptingState(" << state_id << ") " << std::boolalpha << result;
   return result;
 }
 bool Automaton::IsInitialState(const int state_id) const {
@@ -119,7 +119,7 @@ bool Automaton::IsInitialState(const int state_id) const {
 
 bool Automaton::IsSinkState(const int state_id) const {
   bool result = Automaton::DFAIsSinkState(this->dfa_, state_id);
-  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsSinkState(" << state_id << ") " << std::boolalpha << result;
+  //DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsSinkState(" << state_id << ") " << std::boolalpha << result;
   return result;
 }
 
@@ -759,6 +759,8 @@ std::set<std::string> Automaton::DFAGetTransitionsFromTo(DFA_ptr dfa, const int 
 }
 
 DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int number_of_bdd_variables) {
+  LOG(FATAL) << "I'm broken, fix me! Use StringAutomaton::concat instead";
+
 	LOG(INFO) << 1;
 	if (DFAIsMinimizedEmtpy(dfa1) or DFAIsMinimizedEmtpy(dfa2)) {
 		return DFAMakeEmpty(number_of_bdd_variables);

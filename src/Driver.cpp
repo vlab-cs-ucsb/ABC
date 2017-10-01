@@ -45,6 +45,7 @@ int Driver::Parse(std::istream* in) {
   //  parser.set_debug_level (trace_parsing);
   int res = parser.parse();
   CHECK_EQ(0, res)<< "Syntax error";
+  
   return res;
 }
 
@@ -73,13 +74,13 @@ void Driver::InitializeSolver() {
   initializer.start();
 
   std::string output_root {"./output"};
-  ast2dot(output_root + "/post_initializer.dot");
+  //ast2dot(output_root + "/post_initializer.dot");
   //std::cin.get();
 
   Solver::SyntacticProcessor syntactic_processor(script_);
   syntactic_processor.start();
 
-  ast2dot(output_root + "/post_syntactic_processor.dot");
+  //ast2dot(output_root + "/post_syntactic_processor.dot");
   //std::cin.get();
 
   Solver::SyntacticOptimizer syntactic_optimizer(script_, symbol_table_);
@@ -88,14 +89,14 @@ void Driver::InitializeSolver() {
   ast2dot(output_root + "/post_syntactic_optimizer.dot");
   //std::cin.get();
 
-  int count = 0;
+  //int count = 0;
   if (Option::Solver::ENABLE_EQUIVALENCE_CLASSES) {
     Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
     do {
       equivalence_generator.start();
-      std::string filename = output_root + "/post_equivalence_" + std::to_string(count) + ".dot";
-      ast2dot(filename);
-      count++;
+      //std::string filename = output_root + "/post_equivalence_" + std::to_string(count) + ".dot";
+      //ast2dot(filename);
+      //count++;
       //std::cin.get();
     } while (equivalence_generator.has_constant_substitution());
   }
@@ -103,18 +104,18 @@ void Driver::InitializeSolver() {
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
 	dependency_slicer.start();
 
-	ast2dot(output_root + "/post_dependency_slicer.dot");
+	//ast2dot(output_root + "/post_dependency_slicer.dot");
 
   if (Option::Solver::ENABLE_IMPLICATIONS) {
     Solver::ImplicationRunner implication_runner(script_, symbol_table_);
     implication_runner.start();
-    ast2dot(output_root + "/post_implication_runner.dot");
+    //ast2dot(output_root + "/post_implication_runner.dot");
   }
 
   Solver::FormulaOptimizer formula_optimizer(script_, symbol_table_);
   formula_optimizer.start();
 
-  ast2dot(output_root + "/post_formula_optimizer.dot");
+  //ast2dot(output_root + "/post_formula_optimizer.dot");
 	//std::cin.get();
 
   if (Option::Solver::ENABLE_SORTING_HEURISTICS) {
