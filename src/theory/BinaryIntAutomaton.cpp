@@ -53,7 +53,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::clone() const {
 
 // What about natural number parameter?
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(DFA_ptr dfa, Formula_ptr formula, const int number_of_variables) {
-	return new BinaryIntAutomaton(dfa,number_of_variables,false);
+	return new BinaryIntAutomaton(dfa,number_of_variables, not Vlab::Option::Solver::USE_SIGNED_INTEGERS);
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakePhi(ArithmeticFormula_ptr formula, bool is_natural_number) {

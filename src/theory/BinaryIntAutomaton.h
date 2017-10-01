@@ -33,6 +33,7 @@
 #include "ArithmeticFormula.h"
 #include "Automaton.h"
 #include "BinaryState.h"
+#include "../solver/options/Solver.h"
 #include "options/Theory.h"
 #include "SemilinearSet.h"
 #include "UnaryAutomaton.h"

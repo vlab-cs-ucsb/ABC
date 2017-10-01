@@ -848,7 +848,7 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
 	for (auto& el : group_formula_) {
 		//LOG(INFO) << "Formula : " << el.first;
 		symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
-    auto init_val = BinaryIntAutomaton::MakeAnyInt(el.second->clone(),false);
+    auto init_val = BinaryIntAutomaton::MakeAnyInt(el.second->clone(),not Option::Solver::USE_SIGNED_INTEGERS);
     symbol_table_->push_scope(root_);
     symbol_table_->set_value(el.first,new Value(init_val));
 		symbol_table_->pop_scope();
