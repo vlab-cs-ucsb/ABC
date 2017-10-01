@@ -396,19 +396,10 @@ void ConstraintSolver::visitTimes(Times_ptr times_term) {
 
 void ConstraintSolver::visitEq(Eq_ptr eq_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *eq_term;
-//LOG(INFO) << "Before EQ";
   visit_children_of(eq_term);
 
   Value_ptr result = nullptr, param_left = getTermValue(eq_term->left_term), param_right = getTermValue(
       eq_term->right_term);
-//
-//auto left_auto = param_left->getStringAutomaton();
-//auto right_auto = param_right->getStringAutomaton();
-//LOG(INFO) << "left auto->num_tracks = " << left_auto->GetNumTracks();
-//LOG(INFO) << "right_auto->num_tracks= " << right_auto->GetNumTracks();
-//
-//LOG(INFO) << "left formula var: " << left_auto->GetFormula()->GetNumberOfVariables();
-//LOG(INFO) << "rght formula var: " << right_auto->GetFormula()->GetNumberOfVariables();
 
   if (Value::Type::BOOL_CONSTANT == param_left->getType() and Value::Type::BOOL_CONSTANT == param_right->getType()) {
     result = new Value(param_left->getBoolConstant() == param_right->getBoolConstant());
@@ -420,7 +411,6 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
     LOG(INFO) << result->getStringAutomaton()->GetNumTracks();
   }
   setTermValue(eq_term, result);
-LOG(INFO) << "After EQ";
 }
 
 void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
