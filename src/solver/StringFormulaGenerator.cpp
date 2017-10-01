@@ -988,7 +988,7 @@ void StringFormulaGenerator::set_group_mappings() {
   for (auto& el : group_formula_) {
   	//LOG(INFO) << "Formula : " << el.first;
     symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
-    auto init_val = StringAutomaton::MakeAnyStringAligned(el.second->clone());
+    auto init_val = StringAutomaton::MakeAnyStringUnaligned(el.second->clone());
     Value_ptr val = new Value(init_val);
     symbol_table_->push_scope(root_);
     symbol_table_->set_value(el.first,val);

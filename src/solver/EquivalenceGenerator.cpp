@@ -194,6 +194,11 @@ bool EquivalenceGenerator::is_equiv_of_variable_and_constant(SMT::Term_ptr left_
     if (constant_term_checker.is_constant()) {
       left_variable_ = symbol_table_->get_variable(left_id->getVarName());
       term_constant_ = constant_term_checker.get_term_constant();
+      if(Variable::Type::INT == left_variable_->getType() and Primitive::Type::NUMERAL == term_constant_->getValueType()) {
+        if(std::stoi(term_constant_->getValue()) > 10) {
+          return false;
+        }
+      }
       DVLOG(VLOG_LEVEL)<< "variable to constant equivalence: " << left_variable_->getName() << " = " << term_constant_->getValue();
       return true;
     }
