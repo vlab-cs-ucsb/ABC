@@ -51,14 +51,6 @@ void StringRelationGenerator::start() {
 }
 
 void StringRelationGenerator::end() {
-	for(auto& it : group_variables_map_) {
-		LOG(INFO) << "Group: " << it.first;
-		for(auto& it2 : it.second) {
-			LOG(INFO) << it2.first << "," << it2.second;
-		}
-		LOG(INFO) << "";
-	}
-	std::cin.get();
 }
 
 void StringRelationGenerator::visitScript(Script_ptr script) {

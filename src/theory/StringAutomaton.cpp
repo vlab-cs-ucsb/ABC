@@ -541,7 +541,21 @@ StringAutomaton_ptr StringAutomaton::difference(StringAutomaton_ptr other_auto) 
  * Initial Re-implementation of  'dfa_concat_extrabit' in LibStranger
  *TODO Fix empty string bug that happens in case (concat /.{0,1}/ /{1,1}/)
  */
+
+
+// USE MULTITRACK CONCAT FOR NOW
+// REGULAR CONCAT HAS BUG WHEN ADDING TRANSITIONS TO ACCEPTING STATES
+// IN PREFIX AUTO
 StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
+
+
+	DFA_ptr ret_dfa = MultiTrackAutomaton::concat(this->dfa_,other_auto->dfa_,this->num_of_variables_);
+	StringAutomaton_ptr ret_auto = new StringAutomaton(ret_dfa);
+	return ret_auto;
+
+
+
+
   StringAutomaton_ptr left_auto = this, right_auto = other_auto;
 
   if (left_auto->isEmptyLanguage() or right_auto->isEmptyLanguage()) {
