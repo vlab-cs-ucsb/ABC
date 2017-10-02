@@ -283,14 +283,38 @@ Value_ptr SymbolTable::get_value(Variable_ptr variable) {
 //  case Variable::Type::BOOL:
 //    LOG(FATAL) << "bool variables are not supported explicitly yet: " << *variable;
 //    break;
-  case Variable::Type::INT:
-    result = new Value(Theory::IntAutomaton::makeAnyInt());
+  case Variable::Type::INT: {
+  	auto int_auto = Theory::IntAutomaton::makeAnyInt();
+  	// int auto should always have formula
+  	// TODO: Remove check after testing
+  	auto int_formula = int_auto->GetFormula();
+  	if(int_formula == nullptr) {
+  		LOG(FATAL) << "Int auto has no formula...";
+  	}
+  	int_formula->SetType(Theory::ArithmeticFormula::Type::VAR);
+  	int_formula->AddVariable(variable->getName(),1);
+  	result = new Value(int_auto);
+
+  	for (auto iter : result->getIntAutomaton()->GetFormula()->GetVariableCoefficientMap()) {
+			LOG(INFO) << iter.first << "," << iter.second;
+		}
+
     DVLOG(VLOG_LEVEL) << "initialized variable as any integer: " << *variable;
+  }
     break;
-  case Variable::Type::STRING:
-    result = new Value(Theory::StringAutomaton::MakeAnyString());
-    result->getStringAutomaton()->GetFormula()->AddVariable(variable->getName(),1);
+  case Variable::Type::STRING: {
+  	auto str_auto = Theory::StringAutomaton::MakeAnyString();
+  	// str auto should always have formula
+		// TODO: Remove check after testing
+  	auto str_formula = str_auto->GetFormula();
+		if(str_formula == nullptr) {
+			LOG(FATAL) << "str auto has no formula...";
+		}
+		str_formula->SetType(Theory::StringFormula::Type::VAR);
+		str_formula->AddVariable(variable->getName(),1);
+		result = new Value(str_auto);
     DVLOG(VLOG_LEVEL) << "initialized variable as any string: " << *variable;
+  }
     break;
   case Variable::Type::NONE:
     return nullptr;

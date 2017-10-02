@@ -106,7 +106,9 @@ public:
   int getAnAcceptingInt();
 
   UnaryAutomaton_ptr toUnaryAutomaton();
-  virtual ArithmeticFormula_ptr GetFormula();
+
+  ArithmeticFormula_ptr GetFormula();
+  void SetFormula(ArithmeticFormula_ptr);
 
   static const int INFINITE;
   static int DEFAULT_NUM_OF_VARIABLES;

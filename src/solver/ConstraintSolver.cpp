@@ -1082,9 +1082,11 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   Value_ptr variable_value = symbol_table_->get_value(variable);
   Value_ptr result = nullptr;
   if (Value::Type::STRING_AUTOMATON == variable_value->getType()) {
+  	LOG(INFO) << 1;
     result = new Value(variable_value->getStringAutomaton()->GetAutomatonForVariable(qi_term->getVarName()));
   } else if (Value::Type::BINARYINT_AUTOMATON == variable_value->getType()) {
-    // TODO baki: added for charat may need to fix it
+  	LOG(INFO) << 2;
+  	// TODO baki: added for charat may need to fix it
     auto var_auto = variable_value->getBinaryIntAutomaton()->GetBinaryAutomatonFor(qi_term->getVarName());
     auto unary_auto = var_auto->ToUnaryAutomaton();
     result = new Value(unary_auto->toIntAutomaton(8));
@@ -1092,6 +1094,7 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
     delete unary_auto;
   } else
   {
+  	LOG(INFO) << 3;
     result = variable_value->clone();
   }
 

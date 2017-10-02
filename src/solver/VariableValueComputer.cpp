@@ -1330,16 +1330,16 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
     case Value::Type::INT_AUTOMATON:
     {
       //TODO !!!! improve mixing constraints by design
-      auto unary_auto = term_pre_value->getIntAutomaton()->toUnaryAutomaton();
-
-      Variable_ptr variable = symbol_table->get_variable(qi_term->getVarName());
-      auto variable_value = symbol_table->get_value(variable);
-
-      auto term_binary_auto = unary_auto->toBinaryIntAutomaton(qi_term->getVarName(),
-                                                               variable_value->getBinaryIntAutomaton()->GetFormula()->clone(),
-                                                               false);
-      delete unary_auto;
-      term_pre_value = new Value(term_binary_auto);
+    	Variable_ptr variable = symbol_table->get_variable(qi_term->getVarName());
+    	auto variable_value = symbol_table->get_value(variable);
+      if(Value::Type::BINARYINT_AUTOMATON == variable_value->getType()) {
+      	auto unary_auto = term_pre_value->getIntAutomaton()->toUnaryAutomaton();
+      	auto term_binary_auto = unary_auto->toBinaryIntAutomaton(qi_term->getVarName(),
+																																 variable_value->getIntAutomaton()->GetFormula()->clone(),
+																																 false);
+				delete unary_auto;
+				term_pre_value = new Value(term_binary_auto);
+      }
     }
       break;
     default:

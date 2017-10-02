@@ -41,7 +41,9 @@ IntAutomaton::IntAutomaton(DFA_ptr dfa, bool has_negative_1, int num_of_variable
 
 IntAutomaton::IntAutomaton(const IntAutomaton& other) :
         Automaton(other), has_negative_1 (other.has_negative_1) {
-	formula_ = new ArithmeticFormula();
+	if(other.formula_) {
+		formula_ = other.formula_->clone();
+	}
 }
 
 IntAutomaton::~IntAutomaton() {
@@ -818,6 +820,10 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
 
 ArithmeticFormula_ptr IntAutomaton::GetFormula() {
 	return formula_;
+}
+
+void IntAutomaton::SetFormula(ArithmeticFormula_ptr formula) {
+	formula_ = formula;
 }
 
 /**

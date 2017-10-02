@@ -861,7 +861,6 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
 		//LOG(INFO) << "";
 	}
   DVLOG(VLOG_LEVEL)<< "end setting int group for components";
-  //std::cin.get();
 }
 
 } /* namespace Solver */
