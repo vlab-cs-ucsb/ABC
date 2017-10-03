@@ -58,6 +58,17 @@ typedef struct CharPair_ {
 	unsigned char last;
 } CharPair, *pCharPair;
 
+struct int_type{
+		int value;
+		struct int_type	*next;
+};
+
+struct int_list_type{
+		int count;
+		struct	int_type	*head;
+		struct	int_type	*tail;
+};
+
 class Automaton {
 public:
   enum class Type
@@ -492,12 +503,75 @@ protected:
   void charToAsciiDigits(unsigned char ci, char s[]);
   void charToAscii(char* asciiVal, unsigned char c);
   void fillOutCharRange(char* range, char firstChar, char lastChar);
-  char* bintostr(unsigned long, int k);
+  static char* bintostr(unsigned long, int k);
   unsigned char strtobin(char* binChar, int var);
   static int find_sink(DFA_ptr dfa);
 
   virtual Formula_ptr GetFormula() = 0;
 
+
+
+  /*
+   * Operations for replace
+   * TODO: currently stranger code, refactor
+   */
+
+
+
+  static bool check_emptiness_minimized(DFA *M);
+  static int check_emptiness(DFA_ptr M1, int var, int* indices);
+  static int check_intersection(DFA_ptr M1, DFA_ptr M2, int var, int* indices);
+  static int check_equivalence(DFA_ptr M1, DFA_ptr M2, int var, int* indices);
+  static char *getSharp1(int k);
+  static char *getSharp0(int k);
+  static char *getSharp1WithExtraBit(int k);
+  static char *getSharp0WithExtraBit(int k);
+  static char * getArbitraryStringWithExtraBit(int k);
+
+  static DFA * dfaAllStringASCIIExceptReserveWords(int var, int *indices);
+  static DFA_ptr dfaSharpStringWithExtraBit(int var, int *indices);
+  static DFA_ptr dfa_star_M_star(DFA_ptr M, int var, int *indices);
+
+  static DFA_ptr dfa_general_replace_extrabit(DFA* M1, DFA* M2, DFA* M3, int var, int* indices);
+  static DFA_ptr dfa_replace_step1_duplicate(DFA *M, int var, int *indices);
+  static DFA_ptr dfa_replace_step2_match_compliment(DFA *M, int var, int *indices);
+  static DFA *dfa_replace_step3_general_replace(DFA *M, DFA* Mr, int var, int *indices);
+
+  static DFA *dfa_replace_delete(DFA *M, int var, int *oldindices);
+  static DFA *dfa_replace_M_dot(DFA *M, DFA* Mr, int var, int *oldindices);
+  static DFA *dfa_replace_M_arbitrary(DFA *M, DFA *Mr, int var, int *oldindices);
+
+  static struct int_list_type **get_match_exclude_self(DFA *M, int var, int *indices);
+  static int exist_sharp1_path(DFA *M, int start, int var);
+  static int* allocateAscIIIndexWithExtraBit(int length);
+  static struct int_list_type *reachable_closure(DFA *M, int start, int var,int *indices);
+
+  // list stuff
+  static struct int_list_type * enqueue(struct int_list_type *list, int value);
+  static int dequeue(struct int_list_type *list);
+  static void free_ilt(struct int_list_type *list);
+  static struct int_type *new_it(int i);
+  static struct int_list_type *new_ilt();
+  static struct int_list_type *add_data(struct int_list_type *list, struct int_type *data);
+  static int check_value(struct int_list_type *list, int value);
+
+  static int get_maxcount(struct int_list_type **pairs, int size);
+  static int get_hsig(int i);
+  static void set_bitvalue(char *bit, int length, int value);
+  static int* allocateArbitraryIndex(int length);
+  static DFA *dfaDot(int var, int *indices);
+
+  static int count_accepted_chars(DFA* M);
+  static void set_accepted_chars(DFA* M,char** apath, int numchars, int var, int* indices);
+  static struct int_list_type **get_match(DFA *M, int var, int *indices);
+  static int get_number_of_sharp1_state(struct int_list_type **pairs, int size);
+  static void initial_out_info(DFA* M, int* num, int* final, char*** bin, int** to, int var, int aux, int* indices);
+  static DFA* dfa_pre_replace_str(DFA* M1, DFA* M2, char *str, int var, int* indices);
+  static DFA *dfa_construct_string(char *reg, int var, int *indices);
+  //static char *bintostr(unsigned long n, int k);
+  static DFA *dfa_insert_M_dot(DFA *M, DFA* Mr, int var, int *indices);
+  static DFA *dfa_insert_M_arbitrary(DFA *M, DFA *Mr, int var, int *indices);
+  static DFA *dfa_insert_everywhere(DFA *M, DFA* Mr, int var, int *indices);
 
   static unsigned long next_id;
 

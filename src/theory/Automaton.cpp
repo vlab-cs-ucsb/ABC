@@ -2232,5 +2232,2047 @@ int Automaton::find_sink(DFA_ptr dfa) {
 }
 
 
+
+/*
+ * BEGIN LIBSTRANGER REPLACE STUFF
+ */
+
+
+bool Automaton::check_emptiness_minimized(DFA *M){
+    return (M->ns == 1 && M->f[M->s] == -1)? true : false;
+}
+
+int Automaton::check_emptiness(DFA_ptr M1, int var, int* indices) {
+	if (M1->f[M1->s] == 1)
+		return false;
+    if (M1->ns == 1 && M1->f[M1->s] == -1)
+        return true;
+
+
+	char *satisfyingexample = NULL;
+	int i;
+	unsigned *uindices = (unsigned *) malloc((var+1) * sizeof(unsigned));
+
+	//conver int to unsigned
+	for (i = 0; i < var; i++)
+		uindices[i] = (indices[i] <= 0 ? 0 : indices[i]);
+	uindices[i] = '\0';
+
+	satisfyingexample = dfaMakeExample(M1, 1, var, uindices);
+
+	mem_free(uindices);
+    int result = ((satisfyingexample == NULL) ? 1 : 0);
+    free(satisfyingexample);
+    return result;
+}
+
+int Automaton::check_intersection(DFA_ptr M1, DFA_ptr M2, int var, int* indices) {
+	DFA *M;
+	int result;
+	M = DFAIntersect(M1, M2);
+	result = 1 - check_emptiness(M, var, indices);
+	dfaFree(M);
+	return result;
+}
+
+int Automaton::check_equivalence(DFA_ptr M1, DFA_ptr M2, int var, int* indices) {
+	DFA *M[4];
+	int result, i;
+
+	M[0] = dfaProduct(M1, M2, dfaIMPL);
+	M[1] = dfaProduct(M2, M1, dfaIMPL);
+	M[2] = DFAIntersect(M[0], M[1]);
+	//M[3] = dfa_negate(M[2], var, indices);
+	M[3] = DFAComplement(M[2]);
+	result = check_emptiness(M[3], var, indices);
+
+	for (i = 0; i < 4; i++)
+		dfaFree(M[i]);
+
+	return result;
+}
+
+//Assume that 11111111(255) and 11111110(254) are reserved words in ASCII (the length depends on k)
+//Sharp1 is 111111111 which will be used as a reserved symbol
+char * Automaton::getSharp1(int k) {
+	char *str;
+
+	// add one extra bit for later used
+	str = (char *) malloc(k + 1);
+	str[k] = '\0';
+	for (k--; k >= 0; k--) {
+		str[k] = '1';
+	}
+	//printf("String Sharp 1:%s\n", str);
+	return str;
+}
+
+//Assume that 11111111(255) and 11111110(254) are reserved words in ASCII, (the length depends on k)
+//Sharp0 is 111111110 which will be used as a reserved symbol
+char * Automaton::getSharp0(int k) {
+	char *str;
+
+	// add one extra bit for later used
+	str = (char *) malloc(k + 1);
+	str[k] = '\0';
+	k--;
+	str[k] = '0';
+	for (k--; k >= 0; k--) {
+		str[k] = '1';
+	}
+	//printf("String Sharp 1:%s\n", str);
+	return str;
+}
+
+//Sharp1 is 111111111 which will be used as a reserved symbol
+//the length is k+1 and the extra bit is set to 1
+char * Automaton::getSharp1WithExtraBit(int k) {
+	char *str;
+
+	// add one extra bit for later used
+	str = (char *) malloc(k + 2);
+	str[k + 1] = '\0';
+	str[k] = '1'; //the last bit dont care
+
+	for (k--; k >= 0; k--) {
+		str[k] = '1';
+	}
+	//printf("String Sharp 1:%s\n", str);
+	return str;
+}
+
+//Sharp0 is 111111110 which will be used as a reserved symbol
+//the length is k+1 and the extra bit is set to 1
+char * Automaton::getSharp0WithExtraBit(int k) {
+	char *str;
+
+	// add one extra bit for later used
+	str = (char *) malloc(k + 2);
+	str[k + 1] = '\0';
+	str[k] = '0'; //the last bit dont care
+	k--;
+	str[k] = '0';
+	for (k--; k >= 0; k--) {
+		str[k] = '1';
+	}
+	//printf("String Sharp 0:%s\n", str);
+	return str;
+}
+
+DFA *Automaton::dfaSharpStringWithExtraBit(int var, int *indices) {
+
+	char *sharp1;
+	sharp1 = getSharp1WithExtraBit(var);
+	dfaSetup(2, var + 1, indices);
+	dfaAllocExceptions(1);
+	dfaStoreException(1, sharp1);
+	dfaStoreState(0);
+	dfaAllocExceptions(0);
+	dfaStoreState(1);
+
+	return dfaBuild("-+");
+}
+
+//Sharp0 is 111111110 which will be used as a reserved symbol
+char * Automaton::getArbitraryStringWithExtraBit(int k) {
+	char *str;
+
+	// add one extra bit for later used
+	str = (char *) malloc(k + 2);
+	str[k + 1] = '\0';
+	str[k] = '0'; //the last bit dont care
+
+	for (k--; k >= 0; k--) {
+		str[k] = 'X';
+	}
+	//printf("Arbitrary String :%s\n", str);
+	return str;
+}
+
+// A DFA that accepts all strings (Sigma*) except 11111111 and 111111110
+DFA * Automaton::dfaAllStringASCIIExceptReserveWords(int var, int *indices) {
+
+	dfaSetup(2, var, indices);
+	dfaAllocExceptions(2);
+	//n = 255; //reserve word for sharp1
+	char* sharp1 = getSharp1(var);
+	dfaStoreException(1, sharp1);
+	free(sharp1); sharp1 = NULL;
+	//n = 254;
+	char* sharp0 = getSharp0(var);
+	dfaStoreException(1, sharp0);
+	free(sharp0); sharp0 = NULL;
+	dfaStoreState(0);
+
+	dfaAllocExceptions(0);
+	dfaStoreState(1);
+
+	return dfaBuild("+-");
+}
+
+DFA_ptr Automaton::dfa_star_M_star(DFA *M, int var, int *indices) {
+	DFA *result;
+	DFA *tmpM;
+	paths state_paths, pp;
+	trace_descr tp;
+	int i, j, k;
+	char *exeps;
+	char *addedexeps;
+	int *to_states;
+	int *added_to_states;
+	int sink;
+	long max_exeps;
+	char *statuces;
+	int len;
+	int ns = M->ns + 1;
+	int shift = 1;
+	char *arbitrary = getArbitraryStringWithExtraBit(var);
+	len = var + 1; //one extra bit
+
+	max_exeps = 1 << len; //maybe exponential
+	sink = find_sink(M);
+	//assert(sink>-1);
+	//printf("\n\n SINK %d\n\n\n", sink);
+
+	dfaSetup(ns, len, indices);
+	exeps = (char *) malloc(max_exeps * (len + 1) * sizeof(char));
+	addedexeps = (char *) malloc(max_exeps * (len + 1) * sizeof(char));
+	to_states = (int *) malloc(max_exeps * sizeof(int));
+	added_to_states = (int *) malloc(max_exeps * sizeof(int));
+	statuces = (char *) malloc((ns + 1) * sizeof(char));
+
+	//construct the added paths for the initial state
+	state_paths = pp = make_paths(M->bddm, M->q[M->s]);
+	//printf("\n\n INIT %d \n\n", M1->s);
+
+	k = 0;
+	while (pp) {
+		if (pp->to != sink) {
+			added_to_states[k] = pp->to + shift;
+			for (j = 0; j < var; j++) {
+				//the following for loop can be avoided if the indices are in order
+				for (tp = pp->trace; tp && (tp->index != indices[j]); tp
+						= tp->next)
+					;
+				if (tp) {
+					if (tp->value)
+						addedexeps[k * (len + 1) + j] = '1';
+					else
+						addedexeps[k * (len + 1) + j] = '0';
+				} else
+					addedexeps[k * (len + 1) + j] = 'X';
+			}
+			addedexeps[k * (len + 1) + var] = '1'; //new path
+			addedexeps[k * (len + 1) + len] = '\0';
+			k++;
+		}
+		pp = pp->next;
+	}
+	kill_paths(state_paths);
+
+	//initial state
+	dfaAllocExceptions(k + 1);
+	for (k--; k >= 0; k--)
+		dfaStoreException(added_to_states[k], addedexeps + k * (len + 1));
+	dfaStoreException(0, arbitrary);
+	dfaStoreState(sink + shift);
+	statuces[0] = '0';
+
+	//M
+	for (i = 0; i < M->ns; i++) {
+
+		state_paths = pp = make_paths(M->bddm, M->q[i]);
+		k = 0;
+
+		while (pp) {
+			if (pp->to != sink) {
+				to_states[k] = pp->to + shift;
+				for (j = 0; j < var; j++) {
+					//the following for loop can be avoided if the indices are in order
+					for (tp = pp->trace; tp && (tp->index != indices[j]); tp
+							= tp->next)
+						;
+
+					if (tp) {
+						if (tp->value)
+							exeps[k * (len + 1) + j] = '1';
+						else
+							exeps[k * (len + 1) + j] = '0';
+					} else
+						exeps[k * (len + 1) + j] = 'X';
+				}
+				exeps[k * (len + 1) + var] = '1'; //old value
+				exeps[k * (len + 1) + len] = '\0';
+				k++;
+			}
+			pp = pp->next;
+		}
+		if (M->f[i] == 1) { //add added paths
+			dfaAllocExceptions(k + 1);
+			for (k--; k >= 0; k--)
+				dfaStoreException(to_states[k], exeps + k * (len + 1));
+			dfaStoreException(i + shift, arbitrary); //for appending S* for the final state
+			dfaStoreState(sink + shift);
+			statuces[i + shift] = '+';
+		} else {
+			dfaAllocExceptions(k);
+			for (k--; k >= 0; k--)
+				dfaStoreException(to_states[k], exeps + k * (len + 1));
+			dfaStoreState(sink + shift);
+			if (M->f[i] == -1)
+				statuces[i + shift] = '-';
+			else
+				statuces[i + shift] = '0';
+		}
+		kill_paths(state_paths);
+	}
+	statuces[ns] = '\0';
+	//result = dfaBuild(statuces);
+	tmpM = dfaBuild(statuces);
+	//dfaPrintVitals(tmpM);
+	//printf("Original M\n");
+	//dfaPrintVerbose(M);
+	//printf("Star M Star\n");
+	//dfaPrintVerbose(tmpM);
+
+	result = dfaProject(tmpM, (unsigned) var); //var is the index of the extra bit
+	//printf("Projection of Star M Star\n");
+	//dfaPrintVerbose(result);
+
+	free(exeps);
+	free(addedexeps);
+	free(to_states);
+	free(added_to_states);
+	free(statuces);
+    free(arbitrary);
+	dfaFree(tmpM);
+    tmpM = dfaMinimize(result);
+    dfaFree(result);
+	return tmpM;
+}
+
+DFA_ptr Automaton::dfa_general_replace_extrabit(DFA* M1, DFA* M2, DFA* M3, int var, int* indices){
+	DFA_ptr result;
+	DFA_ptr M1_bar;
+	DFA_ptr M2_bar;
+	DFA_ptr M_inter;
+	DFA_ptr M_rep;
+	DFA_ptr M_sharp = dfaSharpStringWithExtraBit(var, indices);
+
+	LOG(INFO) << "begin replace alg";
+	M1_bar = dfa_replace_step1_duplicate(M1, var, indices);
+	LOG(INFO) << "step1 done, start step 2";
+	M2_bar = dfa_replace_step2_match_compliment(M2, var, indices);
+	LOG(INFO) << "step2 done, intersecting...";
+	M_inter = DFAIntersect(M1_bar, M2_bar);
+	LOG(INFO) << "intersecting done, checking intersection...";
+	if(check_intersection(M_sharp, M_inter, var, indices)>0){
+		//replace match patterns
+		LOG(INFO) << "intersection > 0, starting step3";
+		M_rep = dfa_replace_step3_general_replace(M_inter, M3, var, indices);
+		LOG(INFO) << "step3 done";
+		result = dfaProject(M_rep, (unsigned) var);
+		dfaFree(M_rep);
+
+	}else { //no match
+		result = dfaCopy(M1);
+	}
+	LOG(INFO) << "freeing dfas";
+	//printf("free M1_bar\n");
+	dfaFree(M1_bar);
+	//printf("free M2_bar\n");
+	dfaFree(M2_bar);
+	//printf("free M_inter\n");
+	dfaFree(M_inter);
+	//printf("free M_sharp\n");
+	dfaFree(M_sharp);
+
+	DFA *tmp = dfaMinimize(result);
+	dfaFree(result);
+	LOG(INFO) << "replace done";
+	return tmp;
+}
+
+
+DFA_ptr Automaton::dfa_replace_step1_duplicate(DFA *M, int var, int *indices) {
+	DFA* result;
+		DFA *temp;
+	paths state_paths, pp;
+	trace_descr tp;
+	int i, j, k;
+	char *exeps;
+	int *to_states;
+	long max_exeps;
+	char *statuces;
+	int len, shift, newns, sink;
+	char *sharp1;
+	char *sharp0;
+	sharp1 = getSharp1WithExtraBit(var);
+	sharp0 = getSharp0WithExtraBit(var);
+	len = var + 1; //one extra bit
+	shift = M->ns; // map M2 transitions to new M
+	newns = 2 * (M->ns) - 1; //number of states after duplicate. The sink state is not duplicated.
+
+	max_exeps = 1 << len; //maybe exponential
+	sink = find_sink(M);
+	//assert(sink>-1);
+
+	dfaSetup(newns, len, indices);
+	exeps = (char *) malloc(max_exeps * (len + 1) * sizeof(char));
+	to_states = (int *) malloc(max_exeps * sizeof(int));
+	statuces = (char *) malloc((newns + 1) * sizeof(char));
+
+	for (i = 0; i < M->ns; i++) {
+
+		if (i != sink) {
+			state_paths = pp = make_paths(M->bddm, M->q[i]);
+			k = 0;
+
+			while (pp) {
+				if (pp->to != sink) {
+					to_states[k] = pp->to;
+					for (j = 0; j < var; j++) {
+						//the following for loop can be avoided if the indices are in order
+						for (tp = pp->trace; tp && (tp->index != indices[j]); tp
+								= tp->next)
+							;
+
+						if (tp) {
+							if (tp->value)
+								exeps[k * (len + 1) + j] = '1';
+							else
+								exeps[k * (len + 1) + j] = '0';
+						} else
+							exeps[k * (len + 1) + j] = 'X';
+					}
+					exeps[k * (len + 1) + var] = '0'; //old value
+					exeps[k * (len + 1) + len] = '\0';
+					k++;
+				}
+				pp = pp->next;
+			}
+			dfaAllocExceptions(k + 1);
+			for (k--; k >= 0; k--)
+				dfaStoreException(to_states[k], exeps + k * (len + 1));
+			if (i > sink)
+				dfaStoreException(i + shift - 1, sharp1);
+			else
+				dfaStoreException(i + shift, sharp1);
+
+			dfaStoreState(sink);
+
+			if (M->f[i] == 1)
+				statuces[i] = '+';
+			else if (M->f[i] == -1)
+				statuces[i] = '-';
+			else
+				statuces[i] = '0';
+			kill_paths(state_paths);
+		} else {
+			dfaAllocExceptions(0);
+			dfaStoreState(sink);
+			statuces[i] = '-';
+		}
+	}
+
+	for (i = 0; i < M->ns; i++) {
+		if (i != sink) {
+			state_paths = pp = make_paths(M->bddm, M->q[i]);
+			k = 0;
+
+			while (pp) {
+				if ((pp->to) != sink) {
+					if ((pp->to) > sink)
+						to_states[k] = pp->to + shift - 1; //to new state, sink state will be eliminated and hence need -1
+					else
+						to_states[k] = pp->to + shift; //to new state
+
+					for (j = 0; j < var; j++) {
+						//the following for loop can be avoided if the indices are in order
+						for (tp = pp->trace; tp && (tp->index != indices[j]); tp
+								= tp->next)
+							;
+
+						if (tp) {
+							if (tp->value)
+								exeps[k * (len + 1) + j] = '1';
+							else
+								exeps[k * (len + 1) + j] = '0';
+						} else
+							exeps[k * (len + 1) + j] = 'X';
+					}
+					exeps[k * (len + 1) + var] = '1'; //bar value
+					exeps[k * (len + 1) + len] = '\0';
+					k++;
+				}
+				pp = pp->next;
+			}
+
+			dfaAllocExceptions(k + 1);
+			for (k--; k >= 0; k--)
+				dfaStoreException(to_states[k], exeps + k * (len + 1));
+			dfaStoreException(i, sharp0);
+			dfaStoreState(sink);
+			if (M->f[i] == 1)
+				statuces[i + shift] = '0';
+			else if (M->f[i] == -1)
+				statuces[i + shift] = '-';
+			else
+				statuces[i + shift] = '0';
+			kill_paths(state_paths);
+		}
+	}
+	statuces[newns] = '\0';
+	//assert(i+shift == newns);
+	temp = dfaBuild(statuces);
+	//dfaPrintVitals(result);
+	//printf("FREE EXEPS\n");
+	free(exeps);
+	//printf("FREE ToState\n");
+	free(to_states);
+	//printf("FREE STATUCES\n");
+	free(statuces);
+	//dfaFree(tmpM);
+		result = dfaMinimize(temp);
+		dfaFree(temp);
+
+	return result;
+}
+
+DFA_ptr Automaton::dfa_replace_step2_match_compliment(DFA *M, int var, int *indices) {
+	DFA *result;
+		DFA *temp;
+	DFA *M_neg;
+	DFA *M_tneg;
+	//	DFA *M_e;
+	paths state_paths, pp;
+	trace_descr tp;
+	int i, j, y, k;
+	char *exeps;
+	int *to_states;
+	long max_exeps;
+	char *statuces;
+	int len, shift, newns, sink, sink_M_neg;
+	char *sharp1;
+	char *sharp0;
+	sharp1 = getSharp1WithExtraBit(var);
+	sharp0 = getSharp0WithExtraBit(var);
+
+	M_tneg = dfa_star_M_star(M, var, indices);
+	dfaNegation(M_tneg);
+
+	//Union empty string manually
+	//M_neg = dfa_union_empty_M(M_tneg, var, indices);
+	DFA_ptr empty_dfa = DFAMakeEmpty(var);
+	M_neg = DFAUnion(M_tneg,empty_dfa);
+	dfaFree(empty_dfa);
+
+	sink_M_neg = find_sink(M_neg);
+	if (sink_M_neg < 0) {
+		//THERE IS no SINK STATES
+		//printf("No Sink of M_neg :[%d]\n", sink_M_neg);
+		shift = M_neg->ns; // map M transitions to new M
+		newns = M->ns + M_neg->ns; //number of states for new M. Note that there maybe no sink state in M_neg.
+	} else {
+		//THERE IS no SINK STATES
+		//printf("Sink of M_neg :[%d] will be removed.\n", sink_M_neg);
+		shift = M_neg->ns - 1; // map M transitions to new M
+		newns = M->ns + M_neg->ns - 1; //number of states for new M. Note that there maybe no sink state in M_neg.
+	}
+
+	len = var + 1; //one extra bit for bar
+
+	max_exeps = 1 << len; //maybe exponential
+	sink = find_sink(M);
+	//assert(sink>-1);
+	sink += shift;
+
+	dfaSetup(newns, len, indices);
+	exeps = (char *) malloc(max_exeps * (len + 1) * sizeof(char));
+	to_states = (int *) malloc(max_exeps * sizeof(int));
+	statuces = (char *) malloc((newns + 1) * sizeof(char));
+
+	//the initial state
+	for (i = 0, y = 0; i < M_neg->ns; i++) {
+		if (i != sink_M_neg) {
+			state_paths = pp = make_paths(M_neg->bddm, M_neg->q[i]);
+			k = 0;
+
+			while (pp) {
+				if (pp->to != sink_M_neg) {
+					if (pp->to > sink_M_neg)
+						to_states[k] = pp->to - 1;
+					else
+						to_states[k] = pp->to;
+					for (j = 0; j < var; j++) {
+						//the following for loop can be avoided if the indices are in order
+						for (tp = pp->trace; tp && (tp->index != indices[j]); tp
+								= tp->next)
+							;
+
+						if (tp) {
+							if (tp->value)
+								exeps[k * (len + 1) + j] = '1';
+							else
+								exeps[k * (len + 1) + j] = '0';
+						} else
+							exeps[k * (len + 1) + j] = 'X';
+					}
+					exeps[k * (len + 1) + var] = '0'; //original value
+					exeps[k * (len + 1) + len] = '\0';
+					k++;
+				}
+				pp = pp->next;
+			}
+
+			if (M_neg->f[i] == 1) {
+				dfaAllocExceptions(k + 1);
+				for (k--; k >= 0; k--)
+					dfaStoreException(to_states[k], exeps + k * (len + 1));
+				dfaStoreException(shift, sharp1);
+				dfaStoreState(sink);
+				statuces[y] = '+';
+			} else {
+				dfaAllocExceptions(k);
+				for (k--; k >= 0; k--)
+					dfaStoreException(to_states[k], exeps + k * (len + 1));
+				dfaStoreState(sink);
+				if (M_neg->f[i] == -1)
+					statuces[y + shift] = '-';
+				else
+					statuces[y + shift] = '0';
+			}
+			kill_paths(state_paths);
+			y++; //y is the number of visited non sink states
+		}
+		/*		else {
+		 //if M_neg exists sink state
+		 dfaAllocExceptions(0);
+		 dfaStoreState(sink);
+		 statuces[i]='0';
+		 }
+		 */
+
+	}
+//	if (sink_M_neg < 0)
+//		assert(y==M_neg->ns);
+//	else
+//		assert(y+1==M_neg->ns);
+
+	for (i = 0; i < M->ns; i++) {
+		if (i != sink - shift) {
+			state_paths = pp = make_paths(M->bddm, M->q[i]);
+			k = 0;
+
+			while (pp) {
+				if (pp->to != sink - shift) {
+					to_states[k] = pp->to + shift;
+					for (j = 0; j < var; j++) {
+						//the following for loop can be avoided if the indices are in order
+						for (tp = pp->trace; tp && (tp->index != indices[j]); tp
+								= tp->next)
+							;
+
+						if (tp) {
+							if (tp->value)
+								exeps[k * (len + 1) + j] = '1';
+							else
+								exeps[k * (len + 1) + j] = '0';
+						} else
+							exeps[k * (len + 1) + j] = 'X';
+					}
+					exeps[k * (len + 1) + var] = '1'; //bar value
+					exeps[k * (len + 1) + len] = '\0';
+					k++;
+				}
+				pp = pp->next;
+			}
+
+			if (M->f[i] == 1) {
+				dfaAllocExceptions(k + 1);
+				for (k--; k >= 0; k--)
+					dfaStoreException(to_states[k], exeps + k * (len + 1));
+				dfaStoreException(0, sharp0); //add sharp1 to the initial state of M
+				dfaStoreState(sink);
+				statuces[i + shift] = '0';
+			} else {
+				dfaAllocExceptions(k);
+				for (k--; k >= 0; k--)
+					dfaStoreException(to_states[k], exeps + k * (len + 1));
+				dfaStoreState(sink);
+				if (M->f[i] == -1)
+					statuces[i + shift] = '-';
+				else
+					statuces[i + shift] = '0';
+			}
+			kill_paths(state_paths);
+		} else { //sink state
+			dfaAllocExceptions(0);
+			dfaStoreState(sink);
+			statuces[i + shift] = '-';
+		}
+	}
+	statuces[newns] = '\0';
+	//assert(i+shift == newns);
+	temp = dfaBuild(statuces);
+	//dfaPrintVitals(result);
+	//printf("FREE EXEPS\n");
+	free(exeps);
+	//printf("FREE ToState\n");
+	free(to_states);
+	//printf("FREE STATUCES\n");
+	free(statuces);
+	dfaFree(M_neg);
+	dfaFree(M_tneg);
+	//dfaFree(M_e);
+		result = dfaMinimize(temp);
+		dfaFree(temp);
+	return result;
+}
+
+DFA_ptr Automaton::dfa_replace_step3_general_replace(DFA *M, DFA* Mr, int var, int *indices)
+{
+  DFA *result0 = NULL;
+  DFA *result1 = NULL;
+  DFA *result2 = NULL;
+  DFA *result = NULL;
+  DFA *tmp = NULL;
+
+  if(Mr->f[M->s]==1){
+    //printf("Replacement [%s]!\n", str);
+    result0 = dfa_replace_delete(M, var, indices);
+    result = result0;
+  }
+
+
+  tmp = DFAIntersect(Mr, dfaDot(var, indices));
+  if(!check_emptiness(tmp, var, indices)){
+    result1 = dfa_replace_M_dot(M, tmp, var, indices);
+    if(result){
+      result = DFAUnion(result, result1);
+      dfaFree(result0);
+      dfaFree(result1);
+    }
+    else result = result1;
+  }
+
+  dfaFree(tmp);
+  DFA_ptr dfa_sigma_c1_to_c2 = DFAMakeAcceptingAnyAfterLength(2,var);
+
+  //tmp = DFAIntersect(Mr, dfaSigmaC1toC2(2, -1, var, indices));
+  tmp = DFAIntersect(Mr, dfa_sigma_c1_to_c2);
+  dfaFree(dfa_sigma_c1_to_c2);
+
+  if(!check_emptiness(tmp, var, indices)){
+    //replace rest rather than single character
+    result2 = dfa_replace_M_arbitrary(M, tmp, var, indices);
+
+   if(result){
+     result1 = result;
+     result = DFAUnion(result1, result2);
+     dfaFree(result1);
+     dfaFree(result2);
+   }
+   else result = result2;
+  }
+  dfaFree(tmp);
+  return result;
+} //END dfa_replace_stpe3_general_replace
+
+//Replace any c \in {sharp1} \vee bar \vee {sharp2} with \epsilon (Assume 00000000000)
+DFA_ptr Automaton::dfa_replace_delete(DFA *M, int var, int *oldindices)
+{
+      DFA *result = NULL;
+  DFA *tmpM2 = NULL;
+  DFA *tmpM1 = NULL;
+  int aux=0;
+  struct int_list_type **pairs=NULL;
+  int maxCount;
+
+  paths state_paths, pp;
+  trace_descr tp;
+  int i, j, o, z, k;
+  char *exeps;
+  int *to_states;
+  long max_exeps;
+  char *statuces;
+  int len=var;
+  int sink;
+  int *indices=oldindices;
+  char *auxbit=NULL;
+  struct int_type *tmp=NULL;
+
+  //printf("Start get match exclude\n");
+  pairs = get_match_exclude_self(M, var, indices); //for deletion, exclude self state from the closure
+  //printf("End get match exclude\n");
+  maxCount = get_maxcount(pairs, M->ns);
+  if(maxCount>0){ //Need auxiliary bits when there exist some outgoing edges
+    //printf("Deletion [insert auxiliary bits]!\n");
+    aux = get_hsig(maxCount);
+    len = var+aux;
+    auxbit = (char *) malloc(aux*sizeof(char));
+    indices = allocateArbitraryIndex(len);
+  }
+
+  max_exeps=1<<len; //maybe exponential
+  sink=find_sink(M);
+  //assert(sink >-1);
+
+  //pairs[i] is the list of all reachable states by \sharp1 \bar \sharp0 from i
+
+
+  dfaSetup(M->ns, len, indices);
+  exeps=(char *)malloc(max_exeps*(len+1)*sizeof(char)); //plus 1 for \0 end of the string
+  to_states=(int *)malloc(max_exeps*sizeof(int));
+  statuces=(char *)malloc((M->ns+1)*sizeof(char));
+
+
+  for (i = 0; i < M->ns; i++) {
+
+    state_paths = pp = make_paths(M->bddm, M->q[i]);
+    k=0;
+
+    while (pp) {
+      if(pp->to!=sink){
+	for (tp = pp->trace; tp && (tp->index != indices[var]); tp =tp->next); //find the bar value
+	if (!tp || !(tp->value)) {//it is bar value
+	  to_states[k]=pp->to;
+	  for (j = 0; j < var; j++) {
+	    //the following for loop can be avoided if the indices are in order
+	    for (tp = pp->trace; tp && (tp->index != indices[j]); tp =tp->next);
+
+	    if (tp) {
+	      if (tp->value) exeps[k*(len+1)+j]='1';
+	      else exeps[k*(len+1)+j]='0';
+	    }
+	    else
+	      exeps[k*(len+1)+j]='X';
+	  }
+	  for (j = var; j < len; j++) {
+	    exeps[k*(len+1)+j]='0';
+	  }
+	  exeps[k*(len+1)+len]='\0';
+	  k++;
+	  if(pairs[pp->to]!=NULL && pairs[pp->to]->count>0){ //need to add extra edges to states in reachable closure
+	    o=k-1; //the original path
+	    for(z=0, tmp=pairs[pp->to]->head;z<pairs[pp->to]->count; z++, tmp = tmp->next){
+	      to_states[k]=tmp->value;
+	      for (j = 0; j < var; j++) exeps[k*(len+1)+j]=exeps[o*(len+1)+j];
+	      set_bitvalue(auxbit, aux, z+1); // aux = 3, z=4, auxbit 001
+	      for (j = var; j < len; j++) { //set to xxxxxxxx100
+		exeps[k*(len+1)+j]=auxbit[len-j-1];
+	      }
+	      k++;
+	    }
+	  }
+	}
+      }
+      pp = pp->next;
+    }//end while
+
+    dfaAllocExceptions(k);
+    for(k--;k>=0;k--)
+      dfaStoreException(to_states[k],exeps+k*(len+1));
+    dfaStoreState(sink);
+
+    if(M->f[i]==1)
+      statuces[i]='+';
+    else if(M->f[i]==-1)
+      statuces[i]='-';
+    else
+      statuces[i]='0';
+
+    kill_paths(state_paths);
+  }
+
+  statuces[M->ns]='\0';
+  tmpM2=dfaBuild(statuces);
+  //dfaPrintVitals(result);
+  for(i=0; i<aux; i++){
+    j=len -i;
+    tmpM1 =dfaProject(tmpM2, (unsigned) j);
+      dfaFree(tmpM2); tmpM2 = NULL;
+    tmpM2 = dfaMinimize(tmpM1);
+      dfaFree(tmpM1); tmpM1 = NULL;
+  }
+  free(exeps);
+  //printf("FREE ToState\n");
+  free(to_states);
+  //printf("FREE STATUCES\n");
+  free(statuces);
+
+  if(maxCount>0) free(auxbit);
+
+  for(i=0; i<M->ns; i++)
+    free_ilt(pairs[i]);
+  free(pairs);
+  result = dfaMinimize(tmpM2);	//MUST BE CAREFUL FOR INDICES..INDICES MAY NOT MATCH!!
+    dfaFree(tmpM2);
+    return result;
+
+}
+
+//Replace sharp1 bar sharp2 to Mr. Mr accepts a set of single chars
+//for all i, if pairs[i]!=NULL, add path to each state in pairs[i]
+DFA * Automaton::dfa_replace_M_dot(DFA *M, DFA* Mr, int var, int *oldindices)
+{
+  DFA *result = NULL;
+  DFA *tmpM = NULL;
+  int aux=0;
+  struct int_list_type **pairs=NULL;
+  int maxCount = 0;
+
+  paths state_paths, pp;
+  trace_descr tp;
+  int i, j, z, k;
+  char *exeps;
+  int *to_states;
+  long max_exeps;
+  char *statuces;
+  int len=var;
+  int sink;
+  int *indices=oldindices;
+  char *auxbit=NULL;
+  struct int_type *tmp=NULL;
+
+  //Get from Mr
+  int nc;
+  int numchars = count_accepted_chars(Mr);
+  char* apath[numchars];
+  set_accepted_chars(Mr, apath, numchars, var, indices);
+
+  pairs = get_match(M, var, indices);
+  maxCount = get_maxcount(pairs, M->ns);
+
+  if(maxCount>0){ //Need auxiliary bits when there exist some outgoing edges
+    aux = get_hsig(maxCount);
+    //	printf("Replace one char: %d hits, need to add %d auxiliary bits\n", maxCount, aux);
+    auxbit = (char *) malloc(aux*sizeof(char));
+    len = var+aux; // extra aux bits
+    indices = allocateArbitraryIndex(len);
+  }
+
+
+
+  max_exeps=1<<len; //maybe exponential
+  sink=find_sink(M);
+  //assert(sink >-1);
+
+  //pairs[i] is the list of all reachable states by \sharp1 \bar \sharp0 from i
+
+
+  dfaSetup(M->ns, len, indices);
+  exeps=(char *)malloc(max_exeps*(len+1)*sizeof(char)); //plus 1 for \0 end of the string
+  to_states=(int *)malloc(max_exeps*sizeof(int));
+  statuces=(char *)malloc((M->ns+1)*sizeof(char));
+
+  //printf("Before Replace Char\n");
+  //dfaPrintVerbose(M);
+
+  for (i = 0; i < M->ns; i++) {
+
+    state_paths = pp = make_paths(M->bddm, M->q[i]);
+    k=0;
+
+    while (pp) {
+      if(pp->to!=sink){
+	for (tp = pp->trace; tp && (tp->index != indices[var]); tp =tp->next); //find the bar value
+	if (!tp || !(tp->value)) {
+	  to_states[k]=pp->to;
+	  for (j = 0; j < var; j++) {
+	    //the following for loop can be avoided if the indices are in order
+	    for (tp = pp->trace; tp && (tp->index != indices[j]); tp =tp->next);
+
+	    if (tp) {
+	      if (tp->value) exeps[k*(len+1)+j]='1';
+	      else exeps[k*(len+1)+j]='0';
+	    }
+	    else
+	      exeps[k*(len+1)+j]='X';
+	  }
+	  for (j = var; j < len; j++) {
+	    exeps[k*(len+1)+j]='0';
+	  }
+	  exeps[k*(len+1)+len]='\0';
+	  k++;
+
+	}
+      }
+      pp = pp->next;
+    }//end while
+
+    if(pairs[i]!=NULL && pairs[i]->count>0){ //need to add extra edges to states in reachable closure
+
+      for(z=0, tmp=pairs[i]->head;z< pairs[i]->count; z++, tmp = tmp->next){
+	set_bitvalue(auxbit, aux, z+1); // aux = 3, z=4, auxbit 001
+	for(nc = 0; nc<numchars; nc++){
+	  to_states[k]=tmp->value;
+	  for (j = 0; j < var; j++) exeps[k*(len+1)+j]=apath[nc][j];
+	  for (j = var; j < len; j++) { //set to xxxxxxxx100
+	    exeps[k*(len+1)+j]=auxbit[len-j-1];
+	  }
+	  exeps[k*(len+1)+len]='\0';
+	  k++;
+	} // end for nc
+      }	//end for z
+    }
+
+    dfaAllocExceptions(k);
+    for(k--;k>=0;k--)
+      dfaStoreException(to_states[k],exeps+k*(len+1));
+    dfaStoreState(sink);
+
+    if(M->f[i]==1)
+      statuces[i]='+';
+    else if(M->f[i]==-1)
+      statuces[i]='-';
+    else
+      statuces[i]='0';
+
+    kill_paths(state_paths);
+  }
+
+  statuces[M->ns]='\0';
+  result=dfaBuild(statuces);
+  //dfaPrintVitals(result);
+  for(i=0; i<aux; i++){
+    j=len-i;
+    tmpM =dfaProject(result, (unsigned) j);
+    result = dfaMinimize(tmpM);
+  }
+  free(exeps);
+  //printf("FREE ToState\n");
+  free(to_states);
+  //printf("FREE STATUCES\n");
+  free(statuces);
+
+  //free(apath);
+  for(i=0; i<numchars; i++) free(apath[i]);
+
+  if(maxCount>0){
+    free(auxbit);
+    free(indices);
+  }
+
+  for(i=0; i<M->ns; i++)
+    free_ilt(pairs[i]);
+  free(pairs);
+
+  return dfaMinimize(result);
+
+}// End dfa_replace_M_dot
+
+//Replace every pairs(i,j), so that i can reach j through sharp1 bar sharp0, to i Mr j,
+//where Mr is the replacement, whihc can be an arbitrary DFA accepting words >1
+DFA_ptr Automaton::dfa_replace_M_arbitrary(DFA *M, DFA *Mr, int var, int *oldindices)
+{
+  DFA *result = NULL;
+  DFA *tmpM = NULL;
+  int aux=0;
+  struct int_list_type **pairs=NULL;
+  int maxCount, numberOfSharp;
+
+
+  paths state_paths, pp;
+  trace_descr tp;
+  int i, j, z, n, o, k, numsharp2;
+  int s=0;
+  char *exeps;
+  char *auxexeps=NULL;
+  int *to_states;
+  int *aux_to_states=NULL;
+  long max_exeps;
+  char *statuces;
+  int len=var;
+  int ns, sink;
+  int *indices=oldindices;
+  char *auxbit=NULL;
+  struct int_type *tmp=NULL;
+
+  int extrastates = Mr->ns; //duplicate states for each sharp pair
+
+  //for out going information in Mr
+  char ***binOfOut = (char ***) malloc((Mr->ns)*sizeof(char **)); //the string of the nonsink outgoing edge of each state
+  int **toOfOut = (int **) malloc((Mr->ns)*sizeof(int *)); // the destination of the nonsink outgoing edge of each state
+  int *numOfOut = (int *) malloc((Mr->ns)*sizeof(int)); // how many nonsink outgoing edges of each state
+  int *numOfOutFinal = (int *) malloc((Mr->ns)*sizeof(int)); //how many final outgoing edges of each state
+
+  int *startStates = NULL;
+
+
+
+  pairs = get_match(M, var, indices);
+
+  maxCount = get_maxcount(pairs, M->ns);
+  numberOfSharp = get_number_of_sharp1_state(pairs, M->ns);
+
+
+  if(maxCount>0){ //Need auxiliary bits when there exist some outgoing edges
+
+    aux = get_hsig(maxCount);//get the highest significant bit
+    auxbit = (char *) malloc(aux*sizeof(char));//the redundant bits to distinguish outgoing edges
+    len = var+aux; // extra aux bits
+    indices = allocateArbitraryIndex(len);
+    s=0;
+    startStates = (int *) malloc(numberOfSharp*sizeof(int));
+    for(i =0; i<numberOfSharp; i++){
+      startStates[i]=-1; //initially it is -1. There is an error if some of them are not set up later.
+    }
+    auxexeps=(char *)malloc(maxCount*(len+1)*sizeof(char));
+    aux_to_states=(int *)malloc(maxCount*sizeof(int));
+  }
+
+  initial_out_info(Mr, numOfOut, numOfOutFinal, binOfOut, toOfOut, var, aux, indices);
+
+
+  max_exeps=1<<len; //maybe exponential
+  sink=find_sink(M);
+  assert(sink >-1);
+  ns = M->ns + numberOfSharp*extrastates;
+
+  //pairs[i] is the list of all reachable states by \sharp1 \bar \sharp0 from i
+  dfaSetup(ns, len, indices);
+  exeps=(char *)malloc(max_exeps*(len+1)*sizeof(char)); //plus 1 for \0 end of the string
+  to_states=(int *)malloc(max_exeps*sizeof(int));
+  statuces=(char *)malloc((ns+1)*sizeof(char));
+
+
+
+  for (i = 0; i < M->ns; i++) {
+
+    state_paths = pp = make_paths(M->bddm, M->q[i]);
+    k=0;
+
+    while (pp) {
+      if(pp->to!=sink){
+	for (tp = pp->trace; tp && (tp->index != indices[var]); tp =tp->next); //find the bar value
+	if (!tp || !(tp->value)) {
+	  to_states[k]=pp->to;
+	  for (j = 0; j < var; j++) {
+	    //the following for loop can be avoided if the indices are in order
+	    for (tp = pp->trace; tp && (tp->index != indices[j]); tp =tp->next);
+
+	    if (tp) {
+	      if (tp->value) exeps[k*(len+1)+j]='1';
+	      else exeps[k*(len+1)+j]='0';
+	    }
+	    else
+	      exeps[k*(len+1)+j]='X';
+	  }
+	  for (j = var; j < len; j++) {
+	    exeps[k*(len+1)+j]='0'; //all original paths are set to zero
+	  }
+	  exeps[k*(len+1)+len]='\0';
+	  k++;
+
+	}
+      }
+      pp = pp->next;
+    }//end while
+
+    if(pairs[i]!=NULL && pairs[i]->count>0){ //need to add extra edges to states in reachable closure
+      startStates[s]=i; //pairs[startStates[s]] is the destination that later we shall use for region s
+      for(o=0; o<numOfOut[Mr->s]; o++){
+	to_states[k]=M->ns+s*(extrastates)+toOfOut[Mr->s][o]; // go to the next state of intial state of  Mr
+	for(j = 0; j < var; j++) exeps[k*(len+1)+j]=binOfOut[Mr->s][o][j];
+	for(j = var; j< len-1; j++) exeps[k*(len+1)+j] = '0';
+	exeps[k*(len+1)+j]='1'; //to distinguish the original path
+	exeps[k*(len+1)+len]='\0';
+	k++;
+      }
+      s++;
+    }
+
+    dfaAllocExceptions(k);
+    for(k--;k>=0;k--)
+      dfaStoreException(to_states[k],exeps+k*(len+1));
+    dfaStoreState(sink);
+
+    if(M->f[i]==1)
+      statuces[i]='+';
+    else if(M->f[i]==-1)
+      statuces[i]='-';
+    else
+      statuces[i]='-';
+
+    kill_paths(state_paths);
+
+  }//end for i
+
+  assert(s==numberOfSharp);
+  assert(i==M->ns);
+
+  //Add replace states
+  for(n=0;n<numberOfSharp; n++){
+    assert((pairs[startStates[n]]!=NULL) && (pairs[startStates[n]]->count > 0));
+    numsharp2 = pairs[startStates[n]]->count;
+    for(i=0; i<Mr->ns; i++){ //internal M (exclude the first and the last char)
+      if(numOfOutFinal[i]==0){
+	dfaAllocExceptions(numOfOut[i]);
+	for(o =0; o<numOfOut[i]; o++){
+	  dfaStoreException(M->ns+n*(extrastates)+toOfOut[i][o], binOfOut[i][o]);
+	}
+	dfaStoreState(sink);
+      }else{//need to add aux edges back to sharp destination, for each edge leads to accepting state
+	dfaAllocExceptions(numOfOut[i]+numOfOutFinal[i]*numsharp2);
+	for(o =0; o<numOfOut[i]; o++){
+	  dfaStoreException(M->ns+n*(extrastates)+toOfOut[i][o], binOfOut[i][o]);
+	  if(Mr->f[toOfOut[i][o]]==1){ //add auxiliary back edges
+	    for(z=0, tmp=pairs[startStates[n]]->head;z< numsharp2; z++, tmp = tmp->next){
+	      aux_to_states[z]=tmp->value;
+	      for (j = 0; j < var; j++) auxexeps[z*(len+1)+j]=binOfOut[i][o][j];
+	      set_bitvalue(auxbit, aux, z+1); // aux = 3, z=4, auxbit 001
+	      for (j = var; j < len; j++) { //set to xxxxxxxx100
+		auxexeps[z*(len+1)+j]=auxbit[len-j-1];
+	      }
+	      auxexeps[z*(len+1)+len]='\0';
+	    }
+
+	    for(z--;z>=0;z--)
+	      dfaStoreException(aux_to_states[z],auxexeps+z*(len+1));
+	  }
+	}
+	dfaStoreState(sink);
+      }
+    }//end for Mr internal
+  }
+
+  for(i=M->ns; i<ns; i++) statuces[i]='-';
+
+  statuces[ns]='\0';
+  result=dfaBuild(statuces);
+
+  for(i=0; i<aux; i++){
+    j=len-i;
+
+    tmpM =dfaProject(dfaMinimize(result), (unsigned) j);
+
+    dfaFree(result);
+    result = dfaMinimize(tmpM);
+    dfaFree(tmpM);
+  }
+  free(exeps);
+  //printf("FREE ToState\n");
+  free(to_states);
+  //printf("FREE STATUCES\n");
+  free(statuces);
+
+
+
+  if(maxCount>0){
+    free(auxbit);
+    free(aux_to_states);
+    free(auxexeps);
+    free(indices);
+    free(startStates);
+  }
+
+  for(i=0; i<M->ns; i++)
+    free_ilt(pairs[i]);
+
+  for(i=0; i<Mr->ns; i++){
+    free(binOfOut[i]);
+    free(toOfOut[i]);
+  }
+
+
+
+  free(binOfOut);
+  free(toOfOut);
+  free(numOfOut);
+  free(numOfOutFinal);
+
+  free(pairs);
+
+  return dfaMinimize(result);
+
+}
+
+struct int_list_type **Automaton::get_match_exclude_self(DFA *M, int var, int *indices) {
+	int i, next;
+	struct int_list_type **result;
+	result = (struct int_list_type **) malloc((M->ns)
+			* sizeof(struct int_list_type *));
+	for (i = 0; i < M->ns; i++) {
+		//printf("Start exist sharp1\n");
+		next = exist_sharp1_path(M, i, var);
+		//printf("End exist sharp1: state[%d]\n", next);
+		if (next > -1) //result[i]= remove_value(reachable_closure(M, next, var, indices), i);
+			result[i] = reachable_closure(M, next, var, indices);
+		else
+			result[i] = new_ilt();
+	}
+	return result;
+}
+
+int Automaton::exist_sharp1_path(DFA *M, int start, int var) {
+	paths state_paths, pp;
+	trace_descr tp;
+	int j, sink;
+	int finalflag = 1;
+	int *indices = allocateAscIIIndexWithExtraBit(var);
+	char *sharp1 = getSharp1WithExtraBit(var);
+	//printf("Get Sharp1 %s\n", sharp1);
+	sink = find_sink(M);
+	//assert(sink>-1);
+	//printf("Find sink in sharp1: %d\n", sink);
+	//assert(start < M->ns);
+
+	if (start == sink){
+        free(indices);
+        free(sharp1);
+		return -1;
+    }
+	else {
+		state_paths = pp = make_paths(M->bddm, M->q[start]);
+
+		while (pp) {
+			if (pp->to != sink) {
+				//find the path that may contain 111111111
+				for (j = 0; j < var + 1; j++) {
+					//the following for loop can be avoided if the indices are in order
+					for (tp = pp->trace; tp && (tp->index != j); tp = tp->next)
+						;
+					if (tp) {
+						if (tp->value) {
+							//printf("TP value true\n");
+							if (sharp1[j] == '0')
+								finalflag = 0;
+						} else {
+							if (sharp1[j] == '1')
+								finalflag = 0;
+						}
+					}
+				}
+				if (finalflag != 0) {
+					free(indices);
+                    free(sharp1);
+                    int toState = pp->to;
+                    kill_paths(state_paths);
+					return toState;
+				}
+			}
+			pp = pp->next;
+			finalflag = 1;
+		}
+        kill_paths(state_paths);
+	}
+	free(indices);
+    free(sharp1);
+	return -1;
+}
+
+//set less significant bit less priority
+//the extra bit has the less priority
+int* Automaton::allocateAscIIIndexWithExtraBit(int length) {
+	int i;
+	int* indices;
+	indices = (int *) malloc((length + 1) * sizeof(int));
+	for (i = 0; i <= length; i++)
+		indices[i] = i;
+	return indices;
+}
+
+//reachable states from \bar* sharp0;
+struct int_list_type * Automaton::reachable_closure(DFA *M, int start, int var,
+		int *indices) {
+
+	paths state_paths, pp;
+	trace_descr tp;
+	int j, sink, current;
+	struct int_list_type *worklist = NULL;
+	struct int_list_type *finallist = NULL;
+	int finalflag = 1;
+	char *sharp0 = getSharp0WithExtraBit(var);
+	int *visited = (int *) malloc(M->ns * sizeof(int));
+	for (j = 0; j < M->ns; j++)
+		visited[j] = 0;
+
+	sink = find_sink(M);
+	//assert(sink>-1);
+
+	worklist = enqueue(worklist, start);
+
+	while (worklist->count > 0) {
+		current = dequeue(worklist);
+		visited[current] = 1;
+		//assert(current!=-1);
+		state_paths = pp = make_paths(M->bddm, M->q[current]);
+		while (pp) {
+			if (pp->to != sink) {
+				//find the path that may contain 111111101
+				for (j = 0; j < var + 1; j++) {
+					//the following for loop can be avoided if the indices are in order
+					for (tp = pp->trace; tp && (tp->index != j); tp = tp->next)
+						;
+
+					if (tp) {
+						if (tp->value) {
+							if (sharp0[j] == '0')
+								finalflag = 0;
+						} else {
+							if (sharp0[j] == '1')
+								finalflag = 0;
+						}
+					}
+				}
+				if (finalflag != 0)
+					finallist = enqueue(finallist, pp->to);
+
+				for (tp = pp->trace; tp && (tp->index != var); tp = tp->next)
+					;
+				if (((tp && tp->value) || !tp) && (visited[pp->to] == 0)
+						&& (finalflag == 0))
+					worklist = enqueue(worklist, pp->to);
+			}
+			pp = pp->next;
+			finalflag = 1;
+		}
+        kill_paths(state_paths);
+	}
+    free_ilt(worklist);
+    free(visited);
+    free(sharp0);
+	return finallist;
+}
+
+//no duplicate
+struct int_list_type * Automaton::enqueue(struct int_list_type *list, int value) {
+	if (!check_value(list, value))
+		list = add_data(list, new_it(value));
+	return list;
+}
+
+int Automaton::dequeue(struct int_list_type *list){
+	struct int_type *data = NULL;
+	int i;
+	if ((list == NULL) || (list->count == 0))
+		return -1;
+	else
+		data = list->head;
+	if (list->count == 1) {
+		list->count = 0;
+		list->head = list->tail = NULL;
+	} else {
+		list->head = list->head->next;
+		list->count--;
+	}
+	i = data->value;
+	free(data);
+	return i;
+}
+
+void Automaton::free_ilt(struct int_list_type *list) {
+	int tmp = dequeue(list);
+	while (tmp != -1)
+		tmp = dequeue(list);
+	free(list);
+}
+
+struct int_type * Automaton::new_it(int i) {
+	struct int_type *tmp;
+	tmp = (struct int_type *) malloc(sizeof(struct int_type));
+	tmp->value = i;
+	tmp->next = NULL;
+	return tmp;
+}
+
+struct int_list_type * Automaton::new_ilt() {
+	struct int_list_type *tmp;
+	tmp = (struct int_list_type *) malloc(sizeof(struct int_list_type));
+	tmp->count = 0;
+	tmp->head = tmp->tail = NULL;
+	return tmp;
+}
+
+struct int_list_type * Automaton::add_data(struct int_list_type *list, struct int_type *data) {
+	if (data == NULL)
+		return list;
+
+	if (list == NULL)
+		list = new_ilt();
+	if (list->count > 0) {
+		list->tail->next = data;
+		list->tail = list->tail->next;
+		list->count++;
+	} else {
+		list->head = list->tail = data;
+		list->count = 1;
+	}
+	return list;
+}
+
+int Automaton::check_value(struct int_list_type *list, int value) {
+	struct int_type *tmp = NULL;
+	if (list != NULL)
+		for (tmp = list->head; tmp != NULL; tmp = tmp->next)
+			if (tmp->value == value)
+				return 1;
+	return 0;
+}
+
+//return the max pairs[i]->count
+int Automaton::get_maxcount(struct int_list_type **pairs, int size) {
+	int i;
+	int result = 0;
+	for (i = 0; i < size; i++) {
+		if (pairs[i] != NULL)
+			if (result < pairs[i]->count)
+				result = pairs[i]->count;
+	}
+	return result;
+}
+
+//return the position of the highest significant bit
+int Automaton::get_hsig(int i) {
+	int sig, n;
+	n = i;
+	for (sig = 0; n > 0; sig++)
+		n >>= 1;
+	return sig;
+}
+
+void Automaton::set_bitvalue(char *bit, int length, int value) {
+	int i;
+	//	bit = (char *) malloc( length*sizeof(char));
+	for (i = 0; i < length; i++)
+		if (value & (1 << i))
+			bit[i] = '1';
+		else
+			bit[i] = '0';
+//	bit[length] = '\0';//causes buffer overrun
+	//	printf("\n added bits: %s\n", bit);
+}
+
+int* Automaton::allocateArbitraryIndex(int length) {
+	int i;
+	int* indices;
+	indices = (int *) malloc((length) * sizeof(int));
+	for (i = 0; i < length; i++)
+		indices[i] = i;
+	return indices;
+}
+
+// A DFA that accepts only one arbitrary character
+DFA * Automaton::dfaDot(int var, int *indices){
+
+   dfaSetup(3,var,indices);
+
+   dfaAllocExceptions(2);
+   dfaStoreException(2, getSharp1(var));
+   dfaStoreException(2, getSharp0(var));
+   dfaStoreState(1);
+   dfaAllocExceptions(0);
+   dfaStoreState(2);
+   dfaAllocExceptions(0);
+   dfaStoreState(2);
+
+   return dfaBuild("-+-");
+}
+
+int Automaton::count_accepted_chars(DFA* M){
+  paths state_paths, pp;
+  int k=0;
+  int sink = find_sink(M);
+  state_paths = pp = make_paths(M->bddm, M->q[M->s]);
+  while (pp){
+    if(pp->to!=sink && (M->f[pp->to]==1))  k++;
+    pp = pp->next;
+  }
+  return k;
+}
+
+
+
+void Automaton::set_accepted_chars(DFA* M,char** apath, int numchars, int var, int* indices){
+
+  paths state_paths, pp;
+  trace_descr tp;
+  int k=0;
+  int j;
+  int sink = find_sink(M);
+  state_paths = pp = make_paths(M->bddm, M->q[M->s]);
+  while (pp){
+    if(pp->to!=sink && (M->f[pp->to]==1)){
+      apath[k] = (char *) malloc(var*sizeof(char));
+       for (j = 0; j < var; j++) {
+	 //the following for loop can be avoided if the indices are in order
+	 for (tp = pp->trace; tp && (tp->index != indices[j]); tp =tp->next);
+
+	 if (tp) {
+	   if (tp->value) apath[k][j]='1';
+	   else apath[k][j]='0';
+	 }
+	 else
+	   apath[k][j]='X';
+       }
+      k++;
+    }
+    pp = pp->next;
+  }
+  //assert(k==numchars); // the number of added apaths shall be equal to numchars
+}
+
+struct int_list_type ** Automaton::get_match(DFA *M, int var, int *indices) {
+	int i, next;
+	struct int_list_type **result;
+	result = (struct int_list_type **) malloc((M->ns)
+			* sizeof(struct int_list_type *));
+	for (i = 0; i < M->ns; i++) {
+		next = exist_sharp1_path(M, i, var);
+		if (next > -1)
+			result[i] = reachable_closure(M, next, var, indices);//result[i]= reachable_closure(M, next, var, indices);
+		else
+			result[i] = new_ilt();
+	}
+	return result;
+}
+
+int Automaton::get_number_of_sharp1_state(struct int_list_type **pairs, int size) {
+	int i;
+	int result = 0;
+	for (i = 0; i < size; i++)
+		if (pairs[i] != NULL && pairs[i]->count > 0)
+			result++;
+
+	return result;
+}
+
+//Get outgoing information from M and fulfill in
+//num: number of outgoing edges
+//final: number of outgoing edges to final states
+//bin: the binary value along the outgoing edge (add aux bits 0 at the tail)
+//to: the destination of the outgoing edge
+
+void Automaton::initial_out_info(DFA* M, int* num, int* final, char*** bin, int** to, int var, int aux, int* indices){
+
+  int i, j, k;
+  paths state_paths, pp;
+  trace_descr tp;
+  int sink = find_sink(M);
+
+
+  //initialize num
+
+  for(i = 0; i<M->ns; i++){
+    k =0;
+    state_paths = pp = make_paths(M->bddm, M->q[i]);
+    while (pp){
+      if(pp->to!=sink)  k++;
+      pp = pp->next;
+    }
+    num[i] = k;
+    final[i] = 0;
+    kill_paths(state_paths);
+  }
+
+  //initialize binary of each outgoing edges
+
+  for(i = 0; i<M->ns; i++){
+	  if(num[i]>0){
+	  bin[i] = (char **) malloc((num[i])*sizeof(char *));
+	  to[i] = (int *) malloc((num[i])*sizeof(int));
+	  k=0;
+	  state_paths = pp = make_paths(M->bddm, M->q[i]);
+	  while (pp){
+		  if(pp->to!=sink){
+
+			  bin[i][k]=(char *) malloc((var+aux+1)*sizeof(char)); //may lead to memory leak
+			  to[i][k] = pp->to;
+			  if(M->f[pp->to] == 1) final[i]++;
+
+			  for (j = 0; j < var; j++) {
+				  //the following for loop can be avoided if the indices are in order
+				  for (tp = pp->trace; tp && (tp->index != indices[j]); tp =tp->next);
+
+				  if (tp) {
+					  if (tp->value) bin[i][k][j]='1';
+					  else bin[i][k][j]='0';
+				  }
+				  else
+					  bin[i][k][j]='X';
+			  }
+			  for(j=var; j<var+aux; j++) bin[i][k][j]='0';
+
+			  bin[i][k][j]= '\0';//end of string
+			  k++;
+		  }//end if != sink
+		  pp = pp->next;
+	  }//end while
+	  kill_paths(state_paths);
+	  }else{
+		  bin[i] = NULL;
+		  to[i] = NULL;
+	  }
+  }
+
+}//end initial_out_info
+
+DFA_ptr Automaton::dfa_pre_replace_str(DFA* M1, DFA* M2, char *str, int var, int* indices){
+
+  DFA *result=NULL;
+  DFA *M3 = dfa_construct_string(str, var, indices);
+  if((str ==NULL)||strlen(str)==0){
+    //printf("Replacement [%s]!\n", str);
+    result = dfa_insert_everywhere(M1, M2, var, indices);
+  }else {
+    //printf("Replacement [%s]!\n", str);
+    result = dfa_general_replace_extrabit(M1, M3, DFAUnion(M2, M3), var, indices);
+  }
+  dfaFree(M3);
+  return result;
+}
+
+DFA * Automaton::dfa_construct_string(char *reg, int var, int *indices) {
+	int i;
+	char *finals;
+	char* binChar;
+	DFA* result;
+	int len = (int) strlen(reg);
+	finals = (char *) malloc((len + 2) * sizeof(char));
+	dfaSetup(len + 2, var, indices);
+	for (i = 0; i < len; i++) {
+		dfaAllocExceptions(1);
+		binChar = bintostr((unsigned long) reg[i], var);
+		dfaStoreException(i + 1, binChar);
+		free(binChar);
+		dfaStoreState(len + 1);
+		finals[i] = '-';
+	}
+	dfaAllocExceptions(0);
+	dfaStoreState(len + 1);
+	finals[len] = '+';
+	//assert(len==i);
+	//sink state
+	dfaAllocExceptions(0);
+	dfaStoreState(len + 1);
+	finals[len + 1] = '-';
+	result = dfaBuild(finals);
+	free(finals);
+	return result;
+}
+
+//char * Automaton::bintostr(unsigned long n, int k) {
+//	char *str;
+//
+//	// no extra bit
+//	str = (char *) malloc(k + 1);
+//	str[k] = '\0';
+//
+//	for (k--; k >= 0; k--) {
+//		if (n & 1)
+//			str[k] = '1';
+//		else
+//			str[k] = '0';
+//		if (n > 0)
+//			n >>= 1;
+//	}
+//	//printf("String:%s\n", str);
+//	return str;
+//}
+
+/******************************************************************
+
+Insertion:insert Mr at every state of M
+
+I.e., Output M' so that L(M')={ w0c0w1c1w2c2w3 | c0c1c2 \in L(M), wi \in L(Mr) }
+
+******************************************************************/
+
+
+DFA * Automaton::dfa_insert_M_dot(DFA *M, DFA* Mr, int var, int *indices)
+{
+  DFA *result = NULL;
+  DFA *tmpM = NULL;
+
+  paths state_paths, pp;
+  trace_descr tp;
+  int i, j, k;
+  char *exeps;
+  int *to_states;
+  long max_exeps;
+  char *statuces;
+  int len=var+1;
+  int sink;
+
+  //Get from Mr
+  int nc;
+  int numchars = count_accepted_chars(Mr);
+  char* apath[numchars];
+  set_accepted_chars(Mr, apath, numchars, var, indices);
+
+
+  max_exeps=1<<len; //maybe exponential
+  sink=find_sink(M);
+  //assert(sink>-1); //dfa_insert_M_dot
+
+
+
+  dfaSetup(M->ns, len, indices);
+  exeps=(char *)malloc(max_exeps*(len+1)*sizeof(char)); //plus 1 for \0 end of the string
+  to_states=(int *)malloc(max_exeps*sizeof(int));
+  statuces=(char *)malloc((M->ns+1)*sizeof(char));
+
+  for (i = 0; i < M->ns; i++) {
+
+    state_paths = pp = make_paths(M->bddm, M->q[i]);
+    k=0;
+
+    while (pp) {
+      if(pp->to!=sink){
+	to_states[k]=pp->to;
+	for (j = 0; j < var; j++) {
+	  //the following for loop can be avoided if the indices are in order
+	  for (tp = pp->trace; tp && (tp->index != indices[j]); tp =tp->next);
+
+	  if (tp) {
+	    if (tp->value) exeps[k*(len+1)+j]='1';
+	    else exeps[k*(len+1)+j]='0';
+	  }
+	  else
+	    exeps[k*(len+1)+j]='X';
+	}
+	exeps[k*(len+1)+j]='0';//old value
+	exeps[k*(len+1)+len]='\0';
+	k++;
+      }
+      pp = pp->next;
+    }//end while
+
+    if(i!=sink){
+      for(nc = 0; nc<numchars; nc++){
+	to_states[k]=i;
+	for (j = 0; j < var; j++) exeps[k*(len+1)+j]=apath[nc][j];
+	exeps[k*(len+1)+j]='1';
+	exeps[k*(len+1)+len]='\0';
+	k++;
+      } // end for nc
+    }
+    dfaAllocExceptions(k);
+    for(k--;k>=0;k--)
+      dfaStoreException(to_states[k],exeps+k*(len+1));
+    dfaStoreState(sink);
+
+    if(M->f[i]==1)
+      statuces[i]='+';
+    else
+      statuces[i]='-';
+
+    kill_paths(state_paths);
+  }
+
+  statuces[M->ns]='\0';
+  result=dfaBuild(statuces);
+  tmpM =dfaProject(result, (unsigned) len-1);
+  result = dfaMinimize(tmpM);
+
+  free(exeps);
+  free(to_states);
+  free(statuces);
+
+  //free(apath);
+  for(i=0; i<numchars; i++) free(apath[i]);
+
+  return result;
+
+}// End dfa_insert_M_dot
+
+
+
+
+DFA * Automaton::dfa_insert_M_arbitrary(DFA *M, DFA *Mr, int var, int *indices)
+{
+  DFA *result = NULL;
+  DFA *tmpM = NULL;
+
+  paths state_paths, pp;
+  trace_descr tp;
+  int i, j, n, o, k;
+  char *exeps;
+  char *auxexeps;
+  int *to_states;
+  long max_exeps;
+  char *statuces;
+  int len=var+1;
+  int ns, sink;
+
+  int extrastates = Mr->ns; //duplicate states for each sharp pair
+
+  //for out going information in Mr
+  char ***binOfOut = (char ***) malloc((Mr->ns)*sizeof(char **)); //the string of the nonsink outgoing edge of each state
+  int **toOfOut = (int **) malloc((Mr->ns)*sizeof(int *)); // the destination of the nonsink outgoing edge of each state
+  int *numOfOut = (int *) malloc((Mr->ns)*sizeof(int)); // how many nonsink outgoing edges of each state
+  int *numOfOutFinal = (int *) malloc((Mr->ns)*sizeof(int)); //how many final outgoing edges of each state
+
+
+  initial_out_info(Mr, numOfOut, numOfOutFinal, binOfOut, toOfOut, var, 1, indices);
+
+
+  max_exeps=1<<len; //maybe exponential
+  sink=find_sink(M);
+  //assert(sink >-1);
+  ns = M->ns + (M->ns)*(extrastates);
+
+  dfaSetup(ns, len, indices);
+  exeps=(char *)malloc(max_exeps*(len+1)*sizeof(char)); //plus 1 for \0 end of the string
+  to_states=(int *)malloc(max_exeps*sizeof(int));
+  statuces=(char *)malloc((ns+1)*sizeof(char));
+  auxexeps=(char *)malloc((len+1)*sizeof(char));
+
+
+  for (i = 0; i < M->ns; i++) {
+
+    state_paths = pp = make_paths(M->bddm, M->q[i]);
+    k=0;
+    // add original paths
+    while (pp) {
+      if(pp->to!=sink){
+	  to_states[k]=pp->to;
+	  for (j = 0; j < var; j++) {
+	    //the following for loop can be avoided if the indices are in order
+	    for (tp = pp->trace; tp && (tp->index != indices[j]); tp =tp->next);
+
+	    if (tp) {
+	      if (tp->value) exeps[k*(len+1)+j]='1';
+	      else exeps[k*(len+1)+j]='0';
+	    }
+	    else
+	      exeps[k*(len+1)+j]='X';
+	  }
+	  for (j = var; j < len; j++) {
+	    exeps[k*(len+1)+j]='0'; //all original paths are set to zero
+	  }
+	  exeps[k*(len+1)+len]='\0';
+	  k++;
+
+      }
+      pp = pp->next;
+    }//end while
+
+    //inser Mr
+
+    for(o=0; o<numOfOut[Mr->s]; o++){
+      to_states[k]=M->ns+i*(extrastates)+toOfOut[Mr->s][o]; // go to the next state of intial state of  Mr
+      for(j = 0; j < var; j++) exeps[k*(len+1)+j]=binOfOut[Mr->s][o][j];
+      exeps[k*(len+1)+j]='1'; //to distinguish the original path
+      exeps[k*(len+1)+len]='\0';
+      k++;
+    }
+
+
+    dfaAllocExceptions(k);
+    for(k--;k>=0;k--)
+      dfaStoreException(to_states[k],exeps+k*(len+1));
+    dfaStoreState(sink);
+
+    if(M->f[i]==1)
+      statuces[i]='+';
+    else if(M->f[i]==-1)
+      statuces[i]='-';
+    else
+      statuces[i]='-';
+
+    kill_paths(state_paths);
+  }//end for i
+
+  //assert(i==M->ns);
+
+  //Add replace states
+  for(n=0; n< M->ns; n++){
+    for(i=0; i<Mr->ns; i++){ //internal M (exclude the first and the last char)
+      if(numOfOutFinal[i]==0){
+	dfaAllocExceptions(numOfOut[i]);
+	for(o =0; o<numOfOut[i]; o++){
+	  dfaStoreException(M->ns+n*(extrastates)+toOfOut[i][o], binOfOut[i][o]);
+	}
+	dfaStoreState(sink);
+      }else{//need to add aux edges back to sharp destination, for each edge leads to accepting state
+	dfaAllocExceptions(numOfOut[i]+numOfOutFinal[i]);
+	for(o =0; o<numOfOut[i]; o++){
+	  dfaStoreException(M->ns+n*(extrastates)+toOfOut[i][o], binOfOut[i][o]);
+	  if(Mr->f[toOfOut[i][o]]==1){ //add auxiliary back edge to n
+	    for (j = 0; j < var; j++) auxexeps[j]=binOfOut[i][o][j];
+	    auxexeps[j]='1';
+	    auxexeps[len]='\0';
+	    dfaStoreException(n,auxexeps);
+	  }
+	}
+	dfaStoreState(sink);
+      }
+    }//end for Mr internal
+  }//end for n
+
+  for(i=M->ns; i<ns; i++) statuces[i]='-';
+
+  statuces[ns]='\0';
+  result=dfaBuild(statuces);
+
+  // dfaPrintVerbose(dfaMinimize(result));
+
+  tmpM =dfaProject(dfaMinimize(result), (unsigned) len-1);
+  //dfaPrintVerbose(tmpM);
+
+  dfaFree(result);
+  result = dfaMinimize(tmpM);
+  dfaFree(tmpM);
+
+  free(exeps);
+  free(auxexeps);
+  free(to_states);
+  free(statuces);
+
+
+  for(i=0; i<Mr->ns; i++){
+    if(binOfOut[i]!=NULL) free(binOfOut[i]);
+    if(toOfOut[i]!=NULL) free(toOfOut[i]);
+  }
+
+
+  free(binOfOut);
+  free(toOfOut);
+
+  free(numOfOut);
+  free(numOfOutFinal);
+
+  return dfaMinimize(result);
+
+}//End dfa_insert_M_arbitrary
+
+DFA * Automaton::dfa_insert_everywhere(DFA *M, DFA* Mr, int var, int *indices)
+{
+  DFA *result1 = NULL;
+  DFA *result2 = NULL;
+  DFA *result = NULL;
+  DFA *tmp = NULL;
+
+
+  tmp = DFAIntersect(Mr, dfaDot(var, indices));
+  if(!check_emptiness(tmp, var, indices)){
+    result = dfa_insert_M_dot(M, tmp, var, indices);
+  }
+
+  dfaFree(tmp);
+
+
+  //tmp = DFAIntersect(Mr, dfaSigmaC1toC2(2, -1, var, indices));
+  DFA_ptr dfa_sigma_c1_to_c2 = DFAMakeAcceptingAnyAfterLength(2,var);
+  tmp = DFAIntersect(Mr, dfa_sigma_c1_to_c2);
+  dfaFree(dfa_sigma_c1_to_c2);
+
+  if(!check_emptiness(tmp, var, indices)){
+    //replace rest rather than single character
+    result2 = dfa_insert_M_arbitrary(M, tmp, var, indices);
+   if(result){
+     result1 = result;
+     result = DFAUnion(result1, result2);
+     dfaFree(result1);
+     dfaFree(result2);
+   }
+   else result = result2;
+  }
+  dfaFree(tmp);
+  return result;
+} //END dfa_insert_everywhere
+
 } /* namespace Theory */
 } /* namespace Vlab */

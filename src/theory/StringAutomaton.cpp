@@ -2023,17 +2023,25 @@ StringAutomaton_ptr StringAutomaton::Trim() {
 
 StringAutomaton_ptr StringAutomaton::Replace(StringAutomaton_ptr search_auto,
 		StringAutomaton_ptr replace_auto) {
+	LOG(FATAL) << "Not fully implemented";
 	CHECK_EQ(this->num_tracks_,1);
   DFA_ptr result_dfa = nullptr;
   StringAutomaton_ptr result_auto = nullptr;
-  LOG(FATAL) << "implement me";
-//  result_dfa = dfa_general_replace_extrabit(dfa, search_auto->dfa, replace_auto->dfa,
-//          StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
+  //LOG(FATAL) << "implement me";
+  int var = StringAutomaton::DEFAULT_NUM_OF_VARIABLES;
+	int *indices = Automaton::allocateAscIIIndexWithExtraBit(var);
+  DFA_ptr dfa1 = Automaton::dfaAllStringASCIIExceptReserveWords(var,indices);
+  DFA_ptr dfa2 = Automaton::dfaAllStringASCIIExceptReserveWords(var,indices);
+  DFA_ptr dfa3 = Automaton::dfaAllStringASCIIExceptReserveWords(var,indices);
+
+
+  result_dfa = dfa_general_replace_extrabit(dfa1, dfa2, dfa3,
+          var, indices);
 
   result_auto = new StringAutomaton(result_dfa, num_of_bdd_variables_);
 
   DVLOG(VLOG_LEVEL) << result_auto->id_ << " = [" << this->id_ << "]->repeat(" << search_auto->id_ << ", " << replace_auto->id_ << ")";
-
+  std::cin.get();
   return result_auto;
 }
 
@@ -2609,10 +2617,11 @@ StringAutomaton_ptr StringAutomaton::PreReplace(StringAutomaton_ptr searchAuto,
   StringAutomaton_ptr result_auto = nullptr;
   std::vector<char> replaceStringVector(replaceString.begin(), replaceString.end());
   replaceStringVector.push_back('\0');
-  LOG(FATAL) << "implement me";
-//  result_dfa = dfa_pre_replace_str(dfa, searchAuto->dfa, &replaceStringVector[0],
-//      StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
-//  result_auto = new StringAutomaton(result_dfa, num_of_variables);
+  //LOG(FATAL) << "implement me";
+  int *indices = CreateBddVariableIndices(StringAutomaton::DEFAULT_NUM_OF_VARIABLES+1);
+  result_dfa = dfa_pre_replace_str(dfa_, searchAuto->dfa_, &replaceStringVector[0],
+      StringAutomaton::DEFAULT_NUM_OF_VARIABLES, indices);
+  result_auto = new StringAutomaton(result_dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
 
   if (rangeAuto not_eq nullptr) {
     StringAutomaton_ptr tmp_auto = result_auto;
