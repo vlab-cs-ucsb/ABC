@@ -209,7 +209,7 @@ void StringConstraintSolver::visitOr(Or_ptr or_term) {
 
   // propagate equivalence class values for constants
 	for (auto term : *(or_term->term_list)) {
-		auto variable_value_map = symbol_table_->get_values_at_scope(term);
+		auto& variable_value_map = symbol_table_->get_values_at_scope(term);
 		symbol_table_->push_scope(term);
 		for (auto iter = variable_value_map.begin(); iter != variable_value_map.end();) {
 			if(Value::Type::STRING_AUTOMATON == iter->second->getType() and iter->second->getStringAutomaton()->GetFormula() == nullptr) {

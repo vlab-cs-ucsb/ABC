@@ -211,12 +211,11 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
 
   // propagate equivalence class values for constants
   for (auto term : *(or_term->term_list)) {
-  	auto variable_value_map = symbol_table_->get_values_at_scope(term);
+  	auto& variable_value_map = symbol_table_->get_values_at_scope(term);
   	symbol_table_->push_scope(term);
   	for (auto iter = variable_value_map.begin(); iter != variable_value_map.end();) {
   		if(Value::Type::INT_CONSTANT == iter->second->getType() || Value::Type::BOOL_CONSTANT == iter->second->getType()) {
   			has_arithmetic_formula = true;
-  			LOG(INFO) << "------> " << iter->first << "," << *iter->second;
   			auto variable_group = arithmetic_formula_generator_.get_variable_group_name(iter->first);
   			auto group_formula = arithmetic_formula_generator_.get_group_formula(variable_group);
   			if(group_formula == nullptr) {
@@ -294,7 +293,6 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
 //			symbol_table_->set_value(group_name, value);
 //		}
 //		delete or_value;
-  LOG(INFO) << "Setting " << or_term << "@" << *or_term << " to " << is_satisfiable;
 	symbol_table_->set_value(group_name,new Value(is_satisfiable));
   //}
 

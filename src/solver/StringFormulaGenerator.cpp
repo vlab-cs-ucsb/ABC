@@ -882,7 +882,6 @@ void StringFormulaGenerator::add_string_variables(std::string group_name, Term_p
 		}
 		clear_term_formula(term);
 	} else {
-		LOG(INFO) << 1;
 		std::string start_group;
 		StringFormula_ptr group_formula = nullptr;
 		std::vector<std::string> groups_to_be_removed;
@@ -891,7 +890,6 @@ void StringFormulaGenerator::add_string_variables(std::string group_name, Term_p
 		for(auto &var : variables) {
 			if(variable_group_map_.find(var.first) != variable_group_map_.end()) {
 				start_group = variable_group_map_[var.first];
-				LOG(INFO) << "START GROUP: " << start_group;
 				group_formula = group_formula_[start_group];
 				if(group_formula == nullptr) {
 					LOG(FATAL) << "BAD";
@@ -899,7 +897,6 @@ void StringFormulaGenerator::add_string_variables(std::string group_name, Term_p
 				break;
 			}
 		}
-		LOG(INFO) << 2;
 		// if no group is found, create one
 		if (start_group.empty()) {
 			start_group = generate_group_name(term,variables.begin()->first);
@@ -935,7 +932,6 @@ void StringFormulaGenerator::add_string_variables(std::string group_name, Term_p
 				auto formula_iter = group_formula_.find(var_group);
 				if(StringFormula::Type::NONE == formula_iter->second->GetType() ||
 								StringFormula::Type::VAR == formula_iter->second->GetType()) {
-					LOG(INFO) << "--- " << var_group << " group and formula: " << formula_iter->second << " DELETED";
 					delete formula_iter->second; formula_iter->second = nullptr;
 					group_formula_.erase(formula_iter);
 					subgroups_[group_name].erase(var_group);

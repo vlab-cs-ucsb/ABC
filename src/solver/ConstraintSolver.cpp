@@ -135,7 +135,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   bool is_satisfiable = true;
   bool is_component = constraint_information_->is_component(and_term);
 
-  LOG(INFO) << "AND HAS " << and_term->term_list->size();
 
   if (is_component) {
     if (constraint_information_->has_arithmetic_constraint(and_term)) {
@@ -174,7 +173,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   }
 
   DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
-  LOG(INFO) << "is_sat? " << is_satisfiable;
 
   if (is_component and is_satisfiable) {
     if (constraint_information_->has_arithmetic_constraint(and_term)) {
@@ -227,10 +225,8 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
 
       if (dynamic_cast<And_ptr>(term) == nullptr) {
         if (is_scope_satisfiable) {
-        	LOG(INFO) << "YES";
           update_variables();
         } else {
-        	LOG(INFO) << "NO";
         	variable_path_table_.clear();
         }
         clearTermValuesAndLocalLetVars();
@@ -395,7 +391,6 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
     result = new Value(param_left->getIntConstant() == param_right->getIntConstant());
   } else {
     result = param_left->intersect(param_right);
-    LOG(INFO) << result->getStringAutomaton()->GetNumTracks();
   }
   setTermValue(eq_term, result);
 }
@@ -583,9 +578,9 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
     if (result == nullptr) {
       result = param->clone();
     } else {
-    	LOG(INFO) << "before concat";
+    	LOG(INFO) << "Before concat";
       concat_value = result->concat(param);
-      LOG(INFO) << "after concat";
+      LOG(INFO) << "After concat";
       delete result;
       result = concat_value;
     }
@@ -1082,10 +1077,8 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   Value_ptr variable_value = symbol_table_->get_value(variable);
   Value_ptr result = nullptr;
   if (Value::Type::STRING_AUTOMATON == variable_value->getType()) {
-  	LOG(INFO) << 1;
     result = new Value(variable_value->getStringAutomaton()->GetAutomatonForVariable(qi_term->getVarName()));
   } else if (Value::Type::BINARYINT_AUTOMATON == variable_value->getType()) {
-  	LOG(INFO) << 2;
   	// TODO baki: added for charat may need to fix it
     auto var_auto = variable_value->getBinaryIntAutomaton()->GetBinaryAutomatonFor(qi_term->getVarName());
     auto unary_auto = var_auto->ToUnaryAutomaton();
@@ -1094,7 +1087,6 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
     delete unary_auto;
   } else
   {
-  	LOG(INFO) << 3;
     result = variable_value->clone();
   }
 
@@ -1273,9 +1265,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
   // get term value returns result from the symbol table (should return)
   auto arithmetic_result = arithmetic_constraint_solver_.get_term_value(term);
   for (auto& string_term : arithmetic_constraint_solver_.get_string_terms_in(term)) {
-  	LOG(INFO) << "BeforE";
     visit(string_term);
-    LOG(INFO) << "After";
     auto string_term_result = getTermValue(string_term);
     is_satisfiable = string_term_result->is_satisfiable();
     if (not is_satisfiable) {

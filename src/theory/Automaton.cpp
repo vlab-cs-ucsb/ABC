@@ -759,9 +759,8 @@ std::set<std::string> Automaton::DFAGetTransitionsFromTo(DFA_ptr dfa, const int 
 }
 
 DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int number_of_bdd_variables) {
-  LOG(FATAL) << "I'm broken, fix me! Use StringAutomaton::concat instead";
+  //LOG(FATAL) << "I'm broken, fix me! Use StringAutomaton::concat instead";
 
-	LOG(INFO) << 1;
 	if (DFAIsMinimizedEmtpy(dfa1) or DFAIsMinimizedEmtpy(dfa2)) {
 		return DFAMakeEmpty(number_of_bdd_variables);
 	} else if (DFAIsMinimizedOnlyAcceptingEmptyInput(dfa1)) {
@@ -769,7 +768,6 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 	} else if (DFAIsMinimizedOnlyAcceptingEmptyInput(dfa2)) {
 		return dfaCopy(dfa1);
 	}
-	LOG(INFO) << 2;
 	// TODO refactor handling empty string case
 	bool left_hand_side_accepts_emtpy_input = DFAIsAcceptingState(dfa1, dfa1->s);
 	bool right_hand_side_accepts_empty_input = DFAIsAcceptingState(dfa2, dfa2->s);
@@ -787,7 +785,6 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 		}
 		dfaFree(any_input_other_than_empty);
 	}
-	LOG(INFO) << 4;
 	int* indices = GetBddVariableIndices(number_of_bdd_variables);
 	int tmp_num_of_variables,
 			state_id_shift_amount,
@@ -817,7 +814,6 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 	// variable initializations
 	sink_state_left_auto = DFAGetSinkState(left_dfa);
 	sink_state_right_auto = DFAGetSinkState(right_dfa);
-	LOG(INFO) << 5;
 	bool left_sink = true, right_sink = true;
 	int sink = sink_state_left_auto;
 
@@ -836,10 +832,8 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 	} else {
 		expected_num_of_states--;
 	}
-	LOG(INFO) << 6;
 	statuses = new char[expected_num_of_states + 1];
 	int* concat_indices = GetBddVariableIndices(tmp_num_of_variables);
-	LOG(INFO) << "Expected_num_of_states: " << expected_num_of_states;
 
 	dfaSetup(expected_num_of_states, tmp_num_of_variables, concat_indices); //sink states are merged
 	state_paths = pp = make_paths(right_dfa->bddm, right_dfa->q[right_dfa->s]);
@@ -882,7 +876,7 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 		tp = nullptr;
 		pp = pp->next;
 	}
-	LOG(INFO) << 7;
+
 	kill_paths(state_paths);
 	state_paths = pp = nullptr;
 	for (i = 0; i < left_dfa->ns; i++) {
@@ -944,7 +938,7 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 		kill_paths(state_paths);
 		state_paths = pp = nullptr;
 	}
-	LOG(INFO) << 8;
+
 	//  initflag is 1 iff init is reached by some state. In this case,
 	for (i = 0; i < right_dfa->ns; i++) {
 		if (i != sink_state_right_auto ) {
@@ -1022,20 +1016,14 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 		statuses[sink] = '-';
 	}
 
-	LOG(INFO) << 9;
+
 	statuses[expected_num_of_states]='\0';
 	DFA_ptr concat_dfa = dfaBuild(statuses);
 	delete[] statuses; statuses = nullptr;
-	LOG(INFO) << 9.1;
-	LOG(INFO) << "Projecting: " << (unsigned) number_of_bdd_variables << " away, total var: " << tmp_num_of_variables;
 	DFA_ptr tmp_dfa = dfaProject(concat_dfa, (unsigned) number_of_bdd_variables);
-	LOG(INFO) << 9.2;
 	dfaFree(concat_dfa);
-	LOG(INFO) << 9.3;
 	concat_dfa = dfaMinimize(tmp_dfa);
-	LOG(INFO) << 9.4;
 	dfaFree(tmp_dfa); tmp_dfa = nullptr;
-	LOG(INFO) << 10;
 
 	if (left_hand_side_accepts_emtpy_input) {
 		tmp_dfa = concat_dfa;
@@ -1043,14 +1031,12 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 		delete tmp_dfa;
 		delete left_dfa; left_dfa = nullptr;
 	}
-	LOG(INFO) << 11;
 	if (right_hand_side_accepts_empty_input) {
 		tmp_dfa = concat_dfa;
 		concat_dfa = DFAUnion(tmp_dfa,dfa1);
 		delete tmp_dfa;
 		delete right_dfa; right_dfa = nullptr;
 	}
-	LOG(INFO) << 12;
 	return concat_dfa;
 }
 
