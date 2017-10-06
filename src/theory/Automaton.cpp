@@ -219,7 +219,7 @@ Automaton_ptr Automaton::Suffixes() const {
   std::string default_extra_bit_string(number_of_extra_bits_needed, '0');
   unsigned extra_bits_value = 0;
 
-  std::map<int, std::map<std::string, int>> exception_map;
+  std::unordered_map<int, std::unordered_map<std::string, int>> exception_map;
 
   int* indices = GetBddVariableIndices(number_of_variables);
   char* statuses = new char[number_of_states];
@@ -300,7 +300,7 @@ Automaton_ptr Automaton::SuffixesFromTo(const int from_index, const int to_index
   const int number_of_extra_bits_needed = number_of_variables - this->num_of_bdd_variables_;
   std::string default_extra_bit_string(number_of_extra_bits_needed, '0');
 
-  std::map<int, std::map<std::string, int>> exception_map;
+  std::unordered_map<int, std::unordered_map<std::string, int>> exception_map;
 
   for (int s = 0; s < this->dfa_->ns; ++s) {
     if (s != sink_state) {
@@ -508,7 +508,7 @@ bool Automaton::isCyclic(int state, std::map<int, bool>& is_discovered, std::map
   if (not is_discovered[state]) {
     is_discovered[state] = true;
     is_stack_member[state] = true;
-    for (auto next_state : getNextStates(state)) {
+    for (auto next_state : GetNextStates(state)) {
       if ((not is_discovered[next_state]) and isCyclic(next_state, is_discovered, is_stack_member)) {
         return true;
       } else if (is_stack_member[next_state]) {
@@ -523,7 +523,7 @@ bool Automaton::isCyclic(int state, std::map<int, bool>& is_discovered, std::map
 bool Automaton::isStateReachableFrom(int search_state, int from_state, std::map<int, bool>& is_stack_member) {
   is_stack_member[from_state] = true;
 
-  for (auto next_state : getNextStates(from_state)) {
+  for (auto next_state : GetNextStates(from_state)) {
     if (next_state == search_state) {
       return true;
     } else if ((not is_stack_member[next_state]) and (not IsSinkState(next_state)) and
@@ -559,7 +559,7 @@ Graph_ptr Automaton::toGraph() {
   node = nullptr;
   for (auto& entry : graph->getNodeMap()) {
     node = entry.second;
-    for (int id : getNextStates(node->getID())) {
+    for (int id : GetNextStates(node->getID())) {
       next_node = graph->getNode(id);
       node->addNextNode(next_node);
       next_node->addPrevNode(node);
@@ -948,7 +948,7 @@ DFA_ptr Automaton::DFAMakeAcceptingAnyAfterLength(const int length, const int nu
   return result_dfa;
 }
 
-std::unordered_map<std::string, int> Automaton::DFAGetTransitionsFrom(DFA_ptr dfa, const int from, const int number_of_bdd_variables, std::string extra_bits) {
+std::unordered_map<std::string, int> Automaton::DFAGetTransitionsFrom(const DFA_ptr dfa, const int from, const int number_of_bdd_variables, std::string extra_bits) {
   const int* bdd_indices = GetBddVariableIndices(number_of_bdd_variables);
   const int sink_state = DFAGetSinkState(dfa);
   std::unordered_map<std::string, int> transition_map;
@@ -979,7 +979,7 @@ std::unordered_map<std::string, int> Automaton::DFAGetTransitionsFrom(DFA_ptr df
 
 }
 
-std::unordered_set<std::string> Automaton::DFAGetTransitionsFromTo(DFA_ptr dfa, const int from, const int to, const int number_of_bdd_variables, std::string extra_bits) {
+std::unordered_set<std::string> Automaton::DFAGetTransitionsFromTo(const DFA_ptr dfa, const int from, const int to, const int number_of_bdd_variables, std::string extra_bits) {
   const int* bdd_indices = GetBddVariableIndices(number_of_bdd_variables);
   std::unordered_set<std::string> transitions;
   paths pp = make_paths(dfa->bddm, dfa->q[from]);
@@ -1006,6 +1006,27 @@ std::unordered_set<std::string> Automaton::DFAGetTransitionsFromTo(DFA_ptr dfa, 
     pp = pp->next;
   }
   return transitions;
+}
+
+std::unordered_set<int> Automaton::DFAGetNextStates(const DFA_ptr dfa, const int from) {
+  unsigned p, l, r, index; // BDD traversal variables
+  std::unordered_set<int> next_states;
+  std::stack<unsigned> nodes;
+
+  p = dfa->q[from];
+  nodes.push(p);
+  while (not nodes.empty()) {
+    p = nodes.top();
+    nodes.pop();
+    LOAD_lri(&dfa->bddm->node_table[p], l, r, index);
+    if (index == BDD_LEAF_INDEX) {
+      next_states.insert(l);
+    } else {
+      nodes.push(l);
+      nodes.push(r);
+    }
+  }
+  return next_states;
 }
 
 DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int number_of_bdd_variables) {
@@ -1434,7 +1455,7 @@ std::unordered_set<int> Automaton::GetStatesReachableBy(int min_walk, int max_wa
     }
 
     if (current.second < max_walk) {
-      for (auto next_state : getNextStates(current.first)) {
+      for (auto next_state : GetNextStates(current.first)) {
         if (sink_state != next_state) {
           state_stack.push(std::make_pair(next_state, current.second + 1));
         }
@@ -1442,6 +1463,12 @@ std::unordered_set<int> Automaton::GetStatesReachableBy(int min_walk, int max_wa
     }
   }
   return states;
+}
+
+std::unordered_set<int> Automaton::GetNextStates(const int from) const {
+  std::unordered_set<int> next_states = Automaton::DFAGetNextStates(this->dfa_, from);
+  DVLOG(VLOG_LEVEL) << "[" << next_states.size() << " states] = [" << this->id_ << "]->GetNextStates(" << from << ")";
+  return next_states;
 }
 
 bool Automaton::hasIncomingTransition(int state) {
@@ -1511,30 +1538,6 @@ int Automaton::getNextState(int state, std::vector<char>& exception) {
    }
 
    return next_state;
-}
-
-/**
- * @return vector of states that are 1 walk away
- */
-std::set<int> Automaton::getNextStates(int state) {
-  unsigned p, l, r, index; // BDD traversal variables
-  std::set<int> next_states;
-  std::stack<unsigned> nodes;
-
-  p = this->dfa_->q[state];
-  nodes.push(p);
-  while (not nodes.empty()) {
-    p = nodes.top();
-    nodes.pop();
-    LOAD_lri(&this->dfa_->bddm->node_table[p], l, r, index);
-    if (index == BDD_LEAF_INDEX) {
-      next_states.insert(l);
-    } else {
-      nodes.push(l);
-      nodes.push(r);
-    }
-  }
-  return next_states;
 }
 
 /**

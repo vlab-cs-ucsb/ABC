@@ -482,7 +482,7 @@ StringAutomaton_ptr StringAutomaton::CharAt(IntAutomaton_ptr index_auto) {
 
   std::unordered_set<std::string> exceptions;
   for (int s = 0; s < charat_indexes_auto->dfa_->ns; ++s) {
-    for (int next : charat_indexes_auto->getNextStates(s)) {
+    for (int next : charat_indexes_auto->GetNextStates(s)) {
       if (charat_indexes_auto->IsAcceptingState(next)) {
         // extract transitions
         std::unordered_set<std::string> transitions = Automaton::DFAGetTransitionsFromTo(charat_indexes_auto->dfa_, s, next, number_of_variables);
@@ -1574,7 +1574,7 @@ StringAutomaton_ptr StringAutomaton::indexOfHelper(StringAutomaton_ptr search_au
     current_state = state_work_list.top(); state_work_list.pop();
     visited[current_state] = true;
 
-    next_states = index_of_auto->getNextStates(current_state);
+    next_states = index_of_auto->GetNextStates(current_state);
 
     if (sink_state != (next_state = index_of_auto->getNextState(current_state, flag))) {
       index_of_auto->dfa_->f[current_state] = 1; // mark final state for beginning of a match

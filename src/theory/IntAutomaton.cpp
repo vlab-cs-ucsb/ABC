@@ -707,7 +707,7 @@ bool IntAutomaton::isAcceptingSingleInt() {
     if (num_of_accepting_paths > 1) {
       return false;
     }
-    next_states = getNextStates(curr_state);
+    next_states = GetNextStates(curr_state);
     next_states.erase(sink_state);
     for (int next_state : next_states) {
       state_path.push(next_state);
@@ -737,7 +737,7 @@ int IntAutomaton::getAnAcceptingInt() {
     if (this->IsAcceptingState(curr_state)) {
       return path_length;
     }
-    next_states = this->getNextStates(curr_state);
+    next_states = this->GetNextStates(curr_state);
     next_states.erase(sink_state);
     for (int next_state : next_states) {
       state_path.push(next_state);

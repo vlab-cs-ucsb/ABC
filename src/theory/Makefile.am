@@ -9,6 +9,8 @@ libabcautomaton_la_CXXFLAGS = -I$(top_srcdir)/src
 libabcautomaton_la_SOURCES = \
 	options/Theory.cpp \
 	options/Theory.h \
+	libs/MONALib.cpp \
+	libs/MONALib.h \
 	GraphNode.cpp \
 	GraphNode.h \
 	Graph.cpp \

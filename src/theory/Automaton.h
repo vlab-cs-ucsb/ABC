@@ -37,6 +37,7 @@
 #include "../Eigen/SparseCore"
 #include "Graph.h"
 #include "GraphNode.h"
+#include "libs/MONALib.h"
 #include "options/Theory.h"
 #include "SymbolicCounter.h"
 
@@ -479,10 +480,10 @@ protected:
    * @param extra_bits appends bits to the read transitions
    * @return
    */
-  static std::unordered_map<std::string, int> DFAGetTransitionsFrom(DFA_ptr dfa, const int from, const int number_of_bdd_variables, std::string extra_bits = "");
+  static std::unordered_map<std::string, int> DFAGetTransitionsFrom(const DFA_ptr dfa, const int from, const int number_of_bdd_variables, std::string extra_bits = "");
 
   /**
-   * Gets set of transitions between two states
+   * Gets set of transitions between two states.
    * @param dfa
    * @param from
    * @param to
@@ -490,7 +491,15 @@ protected:
    * @param extra_bits appends bits to the read transitions
    * @return
    */
-  static std::unordered_set<std::string> DFAGetTransitionsFromTo(DFA_ptr dfa, const int from, const int to, const int number_of_variables, std::string extra_bits = "");
+  static std::unordered_set<std::string> DFAGetTransitionsFromTo(const DFA_ptr dfa, const int from, const int to, const int number_of_variables, std::string extra_bits = "");
+
+  /**
+   * Gets the next states from the given state.
+   * @param dfa
+   * @param from
+   * @return
+   */
+  static std::unordered_set<int> DFAGetNextStates(const DFA_ptr dfa, const int from);
 
   /**
 	 * Generates a dfa that accepts the concatenated language of dfa1 and dfa2.
@@ -571,13 +580,19 @@ protected:
    */
   std::unordered_set<int> GetStatesReachableBy(int min_walk, int max_walk) const;
 
+  /**
+   * Gets the set of next states from the given state.
+   * @param state
+   * @return
+   */
+  std::unordered_set<int> GetNextStates(const int state) const;
 
   bool hasIncomingTransition(int state);
   // todo will remove temp function
   static bool TEMPisStartStateReachableFromAnAcceptingState(DFA_ptr dfa);
 
+  // baki left here, move useful functions to above, and move DFA functions to another class
   int getNextState(int state, std::vector<char>& exception);
-  std::set<int> getNextStates(int state);
   std::vector<NextState> getNextStatesOrdered(int state, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
   bool getAnAcceptingWord(NextState& state, std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
 

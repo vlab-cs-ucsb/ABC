@@ -142,7 +142,7 @@ SemilinearSet_ptr UnaryAutomaton::getSemilinearSet() {
     values[current_state] = s;
     states.push_back(current_state);
 
-    for (auto next_state : getNextStates(current_state)) {
+    for (auto next_state : GetNextStates(current_state)) {
       if (next_state != sink_state) {
         if (values.find(next_state) != values.end()) {
           cycle_head_state = next_state;
@@ -325,7 +325,7 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
       delete tmp_2_auto;
     }
     ++value;
-    for (auto next_state : this->getNextStates(curr_state)) {
+    for (auto next_state : this->GetNextStates(curr_state)) {
       if (sink_state != next_state) {
         work_list.push(next_state);
       }
