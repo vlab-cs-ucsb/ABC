@@ -16,8 +16,6 @@ int Automaton::name_counter = 0;
 
 unsigned long Automaton::next_id = 0;
 
-std::unordered_map<int, int*> Automaton::bdd_variable_indices;
-
 const std::string Automaton::Name::NONE = "none";
 const std::string Automaton::Name::BOOL = "BoolAutomaton";
 const std::string Automaton::Name::UNARY = "UnaryAutomaton";
@@ -29,7 +27,7 @@ Automaton::Automaton(Automaton::Type type)
         : type_(type), is_counter_cached_{false}, dfa_(nullptr), num_of_bdd_variables_(0), id_(Automaton::next_id++) {
 }
 
-Automaton::Automaton(Automaton::Type type, DFA_ptr dfa, int num_of_variables)
+Automaton::Automaton(Automaton::Type type, Libs::MONALib::DFA_ptr dfa, int num_of_variables)
         : type_(type), is_counter_cached_{false}, dfa_(dfa), num_of_bdd_variables_(num_of_variables), id_(Automaton::next_id++) { }
 
 Automaton::Automaton(const Automaton& other)
@@ -80,7 +78,7 @@ unsigned long Automaton::getId() {
   return id_;
 }
 
-DFA_ptr Automaton::GetDFA() const {
+Libs::MONALib::DFA_ptr Automaton::GetDFA() const {
   return this->dfa_;
 }
 
@@ -93,25 +91,25 @@ int Automaton::GetNumberOfBddVariables() const {
 }
 
 int Automaton::GetInitialState() const {
-  int initial_state = Automaton::DFAGetInitialState(this->dfa_);
+  int initial_state = Libs::MONALib::DFAGetInitialState(this->dfa_);
   DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->GetInitialState()" << initial_state;
   return initial_state;
 }
 
 int Automaton::GetSinkState() const {
-  int sink_state = Automaton::DFAGetSinkState(this->dfa_);
+  int sink_state = Libs::MONALib::DFAGetSinkState(this->dfa_);
   DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->GetSinkState()" << sink_state;
   return sink_state;
 }
 
 bool Automaton::IsEmptyLanguage() const {
-  bool result = DFAIsMinimizedEmtpy(this->dfa_);
+  bool result = Libs::MONALib::DFAIsMinimizedEmtpy(this->dfa_);
   DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsEmptyLanguage() " << std::boolalpha << result;
   return result;
 }
 
 bool Automaton::IsOnlyAcceptingEmptyInput() const {
-  bool result = DFAIsMinimizedOnlyAcceptingEmptyInput(this->dfa_);
+  bool result = Libs::MONALib::DFAIsMinimizedOnlyAcceptingEmptyInput(this->dfa_);
   DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsOnlyAcceptingEmptyInput() " << std::boolalpha << result;
   return result;
 }
@@ -121,36 +119,36 @@ bool Automaton::IsInitialStateAccepting() const {
 }
 
 bool Automaton::IsAcceptingState(const int state_id) const {
-  bool result = Automaton::DFAIsAcceptingState(this->dfa_, state_id);
+  bool result = Libs::MONALib::DFAIsAcceptingState(this->dfa_, state_id);
   DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsAcceptingState(" << state_id << ") " << std::boolalpha << result;
   return result;
 }
 bool Automaton::IsInitialState(const int state_id) const {
-  bool result = Automaton::DFAIsInitialState(this->dfa_, state_id);
+  bool result = Libs::MONALib::DFAIsInitialState(this->dfa_, state_id);
   DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsInitialState(" << state_id << ") " << std::boolalpha << result;
   return result;
 }
 
 bool Automaton::IsSinkState(const int state_id) const {
-  bool result = Automaton::DFAIsSinkState(this->dfa_, state_id);
+  bool result = Libs::MONALib::DFAIsSinkState(this->dfa_, state_id);
   DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsSinkState(" << state_id << ") " << std::boolalpha << result;
   return result;
 }
 
 bool Automaton::IsOneStepAway(const int from_state, const int to_state) const {
-  bool result = Automaton::DFAIsOneStepAway(this->dfa_, from_state, to_state);
+  bool result = Libs::MONALib::DFAIsOneStepAway(this->dfa_, from_state, to_state);
   DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsSinkState(" << from_state << "," << to_state << ") " << std::boolalpha << result;
   return result;
 }
 
 bool Automaton::IsEqual(const Automaton_ptr other_automaton) const {
-  bool result = Automaton::DFAIsEqual(this->dfa_, other_automaton->dfa_);
+  bool result = Libs::MONALib::DFAIsEqual(this->dfa_, other_automaton->dfa_);
   DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->IsEqual("<< other_automaton->id_ <<  ")" << std::boolalpha << result;
   return result;
 }
 
 Automaton_ptr Automaton::Complement() const {
-  DFA_ptr complement_dfa = Automaton::DFAComplement(this->dfa_);
+  Libs::MONALib::DFA_ptr complement_dfa = Libs::MONALib::DFAComplement(this->dfa_);
   Automaton_ptr complement_auto = this->MakeAutomaton(complement_dfa, num_of_bdd_variables_);
   DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->Complement()";
   return complement_auto;
@@ -160,7 +158,7 @@ Automaton_ptr Automaton::Union(Automaton_ptr other_automaton) const {
 	if(this->num_of_bdd_variables_ != other_automaton->num_of_bdd_variables_) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
-	DFA_ptr union_dfa = Automaton::DFAUnion(this->dfa_, other_automaton->dfa_);
+	Libs::MONALib::DFA_ptr union_dfa = Libs::MONALib::DFAUnion(this->dfa_, other_automaton->dfa_);
   Automaton_ptr union_auto = this->MakeAutomaton(union_dfa, num_of_bdd_variables_);
   DVLOG(VLOG_LEVEL) << union_auto->id_ << " = [" << this->id_ << "]->Union(" << other_automaton->id_ << ")";
   return union_auto;
@@ -170,7 +168,7 @@ Automaton_ptr Automaton::Intersect(Automaton_ptr other_automaton) const {
 	if(this->num_of_bdd_variables_ != other_automaton->num_of_bdd_variables_) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
-	DFA_ptr intersect_dfa = Automaton::DFAIntersect(this->dfa_, other_automaton->dfa_);
+	Libs::MONALib::DFA_ptr intersect_dfa = Libs::MONALib::DFAIntersect(this->dfa_, other_automaton->dfa_);
   Automaton_ptr intersect_auto =  this->MakeAutomaton(intersect_dfa, num_of_bdd_variables_);
   DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << other_automaton->id_ << ")";
   return intersect_auto;
@@ -180,7 +178,7 @@ Automaton_ptr Automaton::Difference(Automaton_ptr other_automaton) const {
 	if(this->num_of_bdd_variables_ != other_automaton->num_of_bdd_variables_) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
-	DFA_ptr difference_dfa = Automaton::DFADifference(this->dfa_, other_automaton->dfa_);
+	Libs::MONALib::DFA_ptr difference_dfa = Libs::MONALib::DFADifference(this->dfa_, other_automaton->dfa_);
   Automaton_ptr difference_auto = this->MakeAutomaton(difference_dfa, num_of_bdd_variables_);
   DVLOG(VLOG_LEVEL) << difference_auto->id_ << " = [" << this->id_ << "]->Difference(" << other_automaton->id_ << ")";
   return difference_auto;
@@ -190,7 +188,7 @@ Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) const {
 	if(this->num_of_bdd_variables_ != other_automaton->num_of_bdd_variables_) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
-	DFA_ptr concat_dfa = Automaton::DFAConcat(this->dfa_, other_automaton->dfa_, num_of_bdd_variables_);
+	Libs::MONALib::DFA_ptr concat_dfa = Libs::MONALib::DFAConcat(this->dfa_, other_automaton->dfa_, num_of_bdd_variables_);
   Automaton_ptr concat_auto = this->MakeAutomaton(concat_dfa, num_of_bdd_variables_);
   DVLOG(VLOG_LEVEL) << concat_auto->id_ << " = [" << this->id_ << "]->Concat(" << other_automaton->id_ << ")";
   return concat_auto;
@@ -198,7 +196,7 @@ Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) const {
 
 Automaton_ptr Automaton::Suffixes() const {
   if (this->IsEmptyLanguage()) {
-    DFA_ptr phi = Automaton::DFAMakePhi(this->num_of_bdd_variables_);
+    Libs::MONALib::DFA_ptr phi = Libs::MONALib::DFAMakePhi(this->num_of_bdd_variables_);
     Automaton_ptr suffixes_auto = this->MakeAutomaton(phi, this->num_of_bdd_variables_);
     DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->Suffixes()";
     return suffixes_auto;
@@ -221,11 +219,11 @@ Automaton_ptr Automaton::Suffixes() const {
 
   std::unordered_map<int, std::unordered_map<std::string, int>> exception_map;
 
-  int* indices = GetBddVariableIndices(number_of_variables);
+  int* indices = Libs::MONALib::GetBddVariableIndices(number_of_variables);
   char* statuses = new char[number_of_states];
   for (int s = 0; s < number_of_states; ++s) {
     if (s != sink_state) {
-      std::unordered_map<std::string, int> transition_map = Automaton::DFAGetTransitionsFrom(dfa_, s, num_of_bdd_variables_, default_extra_bit_string);
+      std::unordered_map<std::string, int> transition_map = Libs::MONALib::DFAGetTransitionsFrom(dfa_, s, num_of_bdd_variables_, default_extra_bit_string);
       exception_map[s] = transition_map;
 
       // add to start state by adding extra bits
@@ -259,7 +257,7 @@ Automaton_ptr Automaton::Suffixes() const {
     }
   }
 
-  DFA_ptr result_dfa = dfaBuild(statuses);
+  Libs::MONALib::DFA_ptr result_dfa = dfaBuild(statuses);
   delete[] statuses;
   Automaton_ptr suffixes_auto = this->MakeAutomaton(dfaMinimize(result_dfa), number_of_variables);
   dfaFree(result_dfa);
@@ -277,7 +275,7 @@ Automaton_ptr Automaton::SuffixesFromTo(const int from_index, const int to_index
   std::unordered_set<int> suffixes_from = this->GetStatesReachableBy(from_index, to_index);
   unsigned max = suffixes_from.size();
   if (max == 0) {
-    DFA_ptr phi = Automaton::DFAMakePhi(this->num_of_bdd_variables_);
+    Libs::MONALib::DFA_ptr phi = Libs::MONALib::DFAMakePhi(this->num_of_bdd_variables_);
     Automaton_ptr suffixes_auto = this->MakeAutomaton(phi, this->num_of_bdd_variables_);
     DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->SuffixesFromTo(" << from_index << ", " << to_index << ")";
     return suffixes_auto;
@@ -293,7 +291,7 @@ Automaton_ptr Automaton::SuffixesFromTo(const int from_index, const int to_index
   const int number_of_states = this->dfa_->ns + 1; // one extra start for the new start state
   int sink_state = this->GetSinkState();
 
-  int* indices = GetBddVariableIndices(number_of_variables);
+  int* indices = Libs::MONALib::GetBddVariableIndices(number_of_variables);
   char* statuses = new char[number_of_states];
   unsigned extra_bits_value = 0;
 
@@ -305,7 +303,7 @@ Automaton_ptr Automaton::SuffixesFromTo(const int from_index, const int to_index
   for (int s = 0; s < this->dfa_->ns; ++s) {
     if (s != sink_state) {
       int state_id = s + 1; // there is a new start state, old states are off by one
-      std::unordered_map<std::string, int> transition_map = Automaton::DFAGetTransitionsFrom(dfa_, s, num_of_bdd_variables_, default_extra_bit_string);
+      std::unordered_map<std::string, int> transition_map = Libs::MONALib::DFAGetTransitionsFrom(dfa_, s, num_of_bdd_variables_, default_extra_bit_string);
       exception_map[state_id] = transition_map;
       // add to start state by adding extra bits
       if (suffixes_from.find(s) != suffixes_from.end()) {
@@ -348,7 +346,7 @@ Automaton_ptr Automaton::SuffixesFromTo(const int from_index, const int to_index
     }
   }
 
-  DFA_ptr result_dfa = dfaBuild(statuses);
+  Libs::MONALib::DFA_ptr result_dfa = dfaBuild(statuses);
   delete[] statuses;
   Automaton_ptr suffixes_auto = this->MakeAutomaton(dfaMinimize(result_dfa), number_of_variables);
   dfaFree(result_dfa);
@@ -389,7 +387,7 @@ Automaton_ptr Automaton::Prefixes() const {
 
 Automaton_ptr Automaton::PrefixesUntilIndex(const int index) const {
   Automaton_ptr prefixes_auto = this->Prefixes();
-  DFA_ptr length_dfa = Automaton::DFAMakeAcceptingAnyWithInRange(0, index-1, this->GetNumberOfBddVariables());
+  Libs::MONALib::DFA_ptr length_dfa = Libs::MONALib::DFAMakeAcceptingAnyWithInRange(0, index-1, this->GetNumberOfBddVariables());
   Automaton_ptr length_auto = this->MakeAutomaton(length_dfa, this->GetNumberOfBddVariables());
 
   Automaton_ptr prefixesUntil_auto = prefixes_auto->Intersect(length_auto);
@@ -404,10 +402,10 @@ Automaton_ptr Automaton::PrefixesAtIndex(const int index) const  {
   Automaton_ptr prefixes_auto = this->Prefixes();
   if (index == 0 and this->IsInitialStateAccepting()) {
     // when index is 0, result should also accept at initial state if subject automaton accepts at initial state
-    DFA_ptr length_dfa = Automaton::DFAMakeAcceptingAnyWithInRange(0, 1, this->GetNumberOfBddVariables());
+    Libs::MONALib::DFA_ptr length_dfa = Libs::MONALib::DFAMakeAcceptingAnyWithInRange(0, 1, this->GetNumberOfBddVariables());
     length_auto = this->MakeAutomaton(length_dfa, this->GetNumberOfBddVariables());
   } else {
-    DFA_ptr length_dfa = Automaton::DFAMakeAcceptingAnyWithInRange(index + 1, index + 1, this->GetNumberOfBddVariables());
+    Libs::MONALib::DFA_ptr length_dfa = Libs::MONALib::DFAMakeAcceptingAnyWithInRange(index + 1, index + 1, this->GetNumberOfBddVariables());
     length_auto = this->MakeAutomaton(length_dfa, this->GetNumberOfBddVariables());
   }
   Automaton_ptr prefixesAt_auto = prefixes_auto->Intersect(length_auto);
@@ -681,658 +679,11 @@ bool Automaton::getAnAcceptingWord(NextState& state, std::map<int, bool>& is_sta
 }
 
 char* Automaton::getAnExample(bool accepting) {
-  return dfaMakeExample(this->dfa_, 1, num_of_bdd_variables_, (unsigned*)GetBddVariableIndices(num_of_bdd_variables_));
+  return dfaMakeExample(this->dfa_, 1, num_of_bdd_variables_, (unsigned*)Libs::MONALib::GetBddVariableIndices(num_of_bdd_variables_));
 }
 
 std::ostream& operator<<(std::ostream& os, const Automaton& automaton) {
   return os << automaton.str();
-}
-
-bool Automaton::DFAIsMinimizedEmtpy(const DFA_ptr minimized_dfa) {
-    return (minimized_dfa->ns == 1 && minimized_dfa->f[minimized_dfa->s] == -1)? true : false;
-}
-
-// TODO implement general is empty function
-bool Automaton::DFAIsEmpty(const DFA_ptr dfa) {
-  bool result = false;
-  for (int s = 0; s < dfa->ns; ++s) {
-    if (DFAIsAcceptingState(dfa, s)) {
-      // check if the accepting state is reachable
-      LOG(FATAL) << "Not implemented";
-    }
-  }
-  return result;
-}
-
-bool Automaton::DFAIsMinimizedOnlyAcceptingEmptyInput(const DFA_ptr minimized_dfa) {
-  if (not Automaton::DFAIsAcceptingState(minimized_dfa, minimized_dfa->s)) {
-    return false;
-  }
-  for (int s = 0; s < minimized_dfa->ns; s++) {
-    if (Automaton::DFAIsAcceptingState(minimized_dfa, s) and s != minimized_dfa->s) {
-      return false;
-    } else if (DFAIsOneStepAway(minimized_dfa, s, minimized_dfa->s)) { // if initial state is reachable in a minimized auto, there is a loop
-      return false;
-    }
-  }
-  return true;
-}
-
-bool Automaton::DFAIsAcceptingState(const DFA_ptr dfa, const int state_id) {
-  return (dfa->f[state_id] == 1);
-}
-
-bool Automaton::DFAIsInitialState(const DFA_ptr dfa, const int state_id) {
-  return (state_id == dfa->s);
-}
-
-bool Automaton::DFAIsSinkState(const DFA_ptr dfa, const int state_id) {
-  return (bdd_is_leaf(dfa->bddm, dfa->q[state_id])
-            and (bdd_leaf_value(dfa->bddm, dfa->q[state_id]) == (unsigned) state_id)
-            and dfa->f[state_id] == -1);
-}
-
-bool Automaton::DFAIsOneStepAway(const DFA_ptr dfa, const int from_state, const int to_state) {
-  unsigned p, l, r, index; // BDD traversal variables
-  std::stack<unsigned> nodes;
-
-  p = dfa->q[from_state];
-  nodes.push(p);
-  while (not nodes.empty()) {
-    p = nodes.top();
-    nodes.pop();
-    LOAD_lri(&dfa->bddm->node_table[p], l, r, index);
-    if (index == BDD_LEAF_INDEX) {
-      if (l == (unsigned) to_state) {
-        return true;
-      }
-    } else {
-      nodes.push(l);
-      nodes.push(r);
-    }
-  }
-  return false;
-}
-
-bool Automaton::DFAIsEqual(const DFA_ptr dfa1, const DFA_ptr dfa2) {
-  DFA_ptr impl_1 = dfaProduct(dfa1, dfa2, dfaIMPL);
-  DFA_ptr impl_2 = dfaProduct(dfa2, dfa1, dfaIMPL);
-  DFA_ptr result_dfa = dfaProduct(impl_1,impl_2,dfaAND);
-  dfaFree(impl_1);
-  dfaFree(impl_2);
-  dfaNegation(result_dfa);
-  DFA_ptr minimized_dfa = dfaMinimize(result_dfa);
-  dfaFree(result_dfa);
-  bool result = DFAIsMinimizedEmtpy(minimized_dfa);
-  dfaFree(minimized_dfa);
-  return result;
-}
-
-int Automaton::DFAGetInitialState(const DFA_ptr dfa) {
-  return dfa->s;
-}
-
-int Automaton::DFAGetSinkState(const DFA_ptr dfa) {
-  for (int s = 0; s < dfa->ns; ++s) {
-    if (Automaton::DFAIsSinkState(dfa, s)) {
-      return s;
-    }
-  }
-  return -1;
-}
-
-DFA_ptr Automaton::DFAMakePhi(const int number_of_bdd_variables) {
-  char statuses[1] {'-'};
-  dfaSetup(1, number_of_bdd_variables, GetBddVariableIndices(number_of_bdd_variables));
-  dfaAllocExceptions(0);
-  dfaStoreState(0);
-  return dfaBuild(statuses);
-}
-
-/**
- *
- * @returns a dfa that accepts any input including an accepting initial state
- */
-DFA_ptr Automaton::DFAMakeAny(const int number_of_bdd_variables) {
-  char statuses[1] {'+'};
-  dfaSetup(1, number_of_bdd_variables, GetBddVariableIndices(number_of_bdd_variables));
-  dfaAllocExceptions(0);
-  dfaStoreState(0);
-  return dfaBuild(statuses);
-}
-
-/**
- *
- * @returns a dfa that accepts any input except initial state is not accepting
- */
-DFA_ptr Automaton::DFAMakeAnyButNotEmpty(const int number_of_bdd_variables) {
-  char statuses[2] { '-', '+' };
-  dfaSetup(2, number_of_bdd_variables, GetBddVariableIndices(number_of_bdd_variables));
-  dfaAllocExceptions(0);
-  dfaStoreState(1);
-  dfaAllocExceptions(0);
-  dfaStoreState(1);
-  return dfaBuild(statuses);
-}
-
-DFA_ptr Automaton::DFAMakeEmpty(const int number_of_bdd_variables) {
-  char statuses[2] { '+', '-' };
-  dfaSetup(2, number_of_bdd_variables, GetBddVariableIndices(number_of_bdd_variables));
-  dfaAllocExceptions(0);
-  dfaStoreState(1);
-  dfaAllocExceptions(0);
-  dfaStoreState(1);
-  return dfaBuild(statuses);
-}
-
-DFA_ptr Automaton::DFAComplement(const DFA_ptr dfa) {
-  DFA_ptr complement_dfa = dfaCopy(dfa);
-  dfaNegation(complement_dfa);
-  return complement_dfa;
-}
-
-DFA_ptr Automaton::DFAUnion(const DFA_ptr dfa1, const DFA_ptr dfa2) {
-  DFA_ptr union_dfa = dfaProduct(dfa1, dfa2, dfaOR);
-  DFA_ptr minimized_dfa = dfaMinimize(union_dfa);
-  dfaFree(union_dfa);
-  return minimized_dfa;
-}
-
-DFA_ptr Automaton::DFAIntersect(const DFA_ptr dfa1, const DFA_ptr dfa2) {
-  DFA_ptr intersect_dfa = dfaProduct(dfa1, dfa2, dfaAND);
-  DFA_ptr minimized_dfa = dfaMinimize(intersect_dfa);
-  dfaFree(intersect_dfa);
-  return minimized_dfa;
-}
-
-DFA_ptr Automaton::DFADifference(const DFA_ptr dfa1, DFA_ptr dfa2) {
-  dfaNegation(dfa2); // efficient
-  DFA_ptr difference_dfa = Automaton::DFAIntersect(dfa1, dfa2);
-  dfaNegation(dfa2); // restore back
-  return difference_dfa;
-}
-
-DFA_ptr Automaton::DFAProjectAway(const DFA_ptr dfa, const int index) {
-  DFA_ptr projected_dfa = dfaProject(dfa, (unsigned)index);
-  DFA_ptr minimized_dfa = dfaMinimize(projected_dfa);
-  dfaFree(projected_dfa);
-  return minimized_dfa;
-}
-
-DFA_ptr Automaton::DFAProjectAwayAndReMap(const DFA_ptr dfa, const int number_of_bdd_variables, const int index) {
-  DFA_ptr projected_dfa = dfaProject(dfa, (unsigned)index);
-  if (index < (number_of_bdd_variables - 1)) {
-    int* indices_map = new int[number_of_bdd_variables];
-    for (int i = 0, j = 0; i < number_of_bdd_variables; ++i) {
-      if (i != index) {
-        indices_map[i] = j;
-        j++;
-      }
-    }
-    dfaReplaceIndices(projected_dfa, indices_map);
-    delete[] indices_map;
-  }
-
-  DFA_ptr minimized_dfa = dfaMinimize(projected_dfa);
-  dfaFree(projected_dfa);
-  return minimized_dfa;
-}
-
-DFA_ptr Automaton::DFAProjectTo(const DFA_ptr dfa, const int number_of_bdd_variables, const int index) {
-  DFA_ptr projected_dfa = dfaCopy(dfa);
-  for (int i = 0 ; i < number_of_bdd_variables; ++i) {
-    if (i != index) {
-      DFA_ptr tmp_dfa = projected_dfa;
-      projected_dfa = Automaton::DFAProjectAway(tmp_dfa, i);
-      dfaFree(tmp_dfa);
-    }
-  }
-
-  int* indices_map = CreateBddVariableIndices(number_of_bdd_variables);
-  indices_map[index] = 0;
-  indices_map[0] = index;
-  dfaReplaceIndices(projected_dfa, indices_map);
-  delete[] indices_map;
-  return projected_dfa;
-}
-
-DFA_ptr Automaton::DFAMakeAcceptingAnyWithInRange(const int start, const int end, const int number_of_bdd_variables) {
-  CHECK((start >= 0) && (end >= start));
-  // 1 initial state and 1 sink state
-  const int number_of_states = end + 2;
-  char *statuses = new char[number_of_states];
-  dfaSetup(number_of_states, number_of_bdd_variables, GetBddVariableIndices(number_of_bdd_variables));
-
-  // 0 to start - 1 not accepting, start to end accepting states
-  for(int i = 0; i <= end; ++i) {
-    dfaAllocExceptions(0);
-    dfaStoreState(i + 1);
-    if(i >= start) {
-      statuses[i] = '+';
-    } else {
-      statuses[i] = '-';
-    }
-  }
-
-  //the sink state
-  dfaAllocExceptions(0);
-  dfaStoreState(number_of_states - 1);  // sink state
-  statuses[number_of_states - 1] = '-';
-
-  DFA_ptr result_dfa = dfaBuild(statuses);
-  delete[] statuses;
-  return result_dfa;
-}
-
-DFA_ptr Automaton::DFAMakeAcceptingAnyAfterLength(const int length, const int number_of_bdd_variables) {
-  CHECK(length >= 0);
-  // 1 initial state
-  const int number_of_states = length + 1;
-  char *statuses = new char[number_of_states];
-  dfaSetup(number_of_states, number_of_bdd_variables, GetBddVariableIndices(number_of_bdd_variables));
-
-  // 0 to length - 1 not accepting
-  for(int i = 0; i < length; ++i) {
-    dfaAllocExceptions(0);
-    dfaStoreState(i + 1);
-    statuses[i] = '-';
-  }
-
-  // final state
-  dfaAllocExceptions(0);
-  dfaStoreState(length);
-  statuses[length] = '+';
-
-  DFA_ptr result_dfa = dfaBuild(statuses);
-  delete[] statuses;
-  return result_dfa;
-}
-
-std::unordered_map<std::string, int> Automaton::DFAGetTransitionsFrom(const DFA_ptr dfa, const int from, const int number_of_bdd_variables, std::string extra_bits) {
-  const int* bdd_indices = GetBddVariableIndices(number_of_bdd_variables);
-  const int sink_state = DFAGetSinkState(dfa);
-  std::unordered_map<std::string, int> transition_map;
-  paths pp = make_paths(dfa->bddm, dfa->q[from]);
-  while (pp) {
-    if (pp->to != sink_state) {
-      std::string current_exception;
-      for (int j = 0; j < number_of_bdd_variables; ++j) {
-        trace_descr tp = nullptr;
-        for (tp = pp->trace; tp && (tp->index != (unsigned)bdd_indices[j]); tp = tp->next);
-        if (tp) {
-          if (tp->value) {
-            current_exception.push_back('1');
-          } else {
-            current_exception.push_back('0');
-          }
-        } else {
-          current_exception.push_back('X');
-        }
-      }
-      current_exception.append(extra_bits);
-      current_exception.push_back('\0');
-      transition_map[current_exception] = pp->to;
-    }
-    pp = pp->next;
-  }
-  return transition_map;
-
-}
-
-std::unordered_set<std::string> Automaton::DFAGetTransitionsFromTo(const DFA_ptr dfa, const int from, const int to, const int number_of_bdd_variables, std::string extra_bits) {
-  const int* bdd_indices = GetBddVariableIndices(number_of_bdd_variables);
-  std::unordered_set<std::string> transitions;
-  paths pp = make_paths(dfa->bddm, dfa->q[from]);
-  while (pp) {
-    if (pp->to == to) {
-      std::string current_exception;
-      for (int j = 0; j < number_of_bdd_variables; ++j) {
-        trace_descr tp = nullptr;
-        for (tp = pp->trace; tp && (tp->index != (unsigned)bdd_indices[j]); tp = tp->next);
-        if (tp) {
-          if (tp->value) {
-            current_exception.push_back('1');
-          } else {
-            current_exception.push_back('0');
-          }
-        } else {
-          current_exception.push_back('X');
-        }
-      }
-      current_exception.append(extra_bits);
-      current_exception.push_back('\0');
-      transitions.insert(current_exception);
-    }
-    pp = pp->next;
-  }
-  return transitions;
-}
-
-std::unordered_set<int> Automaton::DFAGetNextStates(const DFA_ptr dfa, const int from) {
-  unsigned p, l, r, index; // BDD traversal variables
-  std::unordered_set<int> next_states;
-  std::stack<unsigned> nodes;
-
-  p = dfa->q[from];
-  nodes.push(p);
-  while (not nodes.empty()) {
-    p = nodes.top();
-    nodes.pop();
-    LOAD_lri(&dfa->bddm->node_table[p], l, r, index);
-    if (index == BDD_LEAF_INDEX) {
-      next_states.insert(l);
-    } else {
-      nodes.push(l);
-      nodes.push(r);
-    }
-  }
-  return next_states;
-}
-
-DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int number_of_bdd_variables) {
-  if (DFAIsMinimizedEmtpy(dfa1) or DFAIsMinimizedEmtpy(dfa2)) {
-    return DFAMakeEmpty(number_of_bdd_variables);
-  } else if (DFAIsMinimizedOnlyAcceptingEmptyInput(dfa1)) {
-    return dfaCopy(dfa2);
-  } else if (DFAIsMinimizedOnlyAcceptingEmptyInput(dfa2)) {
-    return dfaCopy(dfa1);
-  }
-
-  // TODO refactor handling empty string case
-  bool left_hand_side_accepts_emtpy_input = DFAIsAcceptingState(dfa1, dfa1->s);
-  bool right_hand_side_accepts_empty_input = DFAIsAcceptingState(dfa2, dfa2->s);
-
-  DFA_ptr left_dfa = dfa1, right_dfa = dfa2;
-
-  if (left_hand_side_accepts_emtpy_input or right_hand_side_accepts_empty_input) {
-    auto any_input_other_than_empty = Automaton::DFAMakeAcceptingAnyAfterLength(1, number_of_bdd_variables);
-    if (left_hand_side_accepts_emtpy_input) {
-      left_dfa = DFAIntersect(dfa1, any_input_other_than_empty);
-    }
-
-    if (right_hand_side_accepts_empty_input) {
-      right_dfa = DFAIntersect(dfa2, any_input_other_than_empty);
-    }
-    dfaFree(any_input_other_than_empty);
-  }
-
-  int* indices = GetBddVariableIndices(number_of_bdd_variables);
-  int tmp_num_of_variables,
-      state_id_shift_amount,
-      expected_num_of_states,
-      sink_state_left_auto,
-      sink_state_right_auto,
-      to_state = 0,
-      loc,
-      i = 0,
-      j = 0;
-
-  bool is_start_state_reachable = false;
-  paths state_paths = nullptr, pp = nullptr;
-  trace_descr tp = nullptr;
-
-  std::map<std::string, int> exceptions_left_auto;
-  std::map<std::string, int> exceptions_right_auto;
-  std::map<std::string, int> exceptions_fix;
-  char* statuses = nullptr;
-  tmp_num_of_variables = number_of_bdd_variables + 1; // add one extra bit
-  state_id_shift_amount = left_dfa->ns;
-  expected_num_of_states = left_dfa->ns + right_dfa->ns;
-
-  is_start_state_reachable = TEMPisStartStateReachableFromAnAcceptingState(right_dfa);
-  if (not is_start_state_reachable) {
-    expected_num_of_states = expected_num_of_states  - 1; // if start state is reachable from an accepting state, it will be merge with accepting states of left hand side
-  }
-  // variable initializations
-  sink_state_left_auto = DFAGetSinkState(left_dfa);
-  sink_state_right_auto = DFAGetSinkState(right_dfa);
-
-  bool left_sink = true, right_sink = true;
-  int sink = sink_state_left_auto;
-
-  if(sink_state_left_auto < 0 && sink_state_right_auto < 0) {
-    left_sink = right_sink = false;
-    sink = expected_num_of_states;
-    expected_num_of_states++;
-  } else if(sink_state_left_auto < 0) {
-    left_sink = false;
-    sink = sink_state_right_auto + state_id_shift_amount;
-    if(not is_start_state_reachable) {
-      sink--;
-    }
-  } else if(sink_state_right_auto < 0) {
-    right_sink = false;
-  } else {
-    expected_num_of_states--;
-  }
-
-  statuses = new char[expected_num_of_states + 1];
-  int* concat_indices = GetBddVariableIndices(tmp_num_of_variables);
-
-  dfaSetup(expected_num_of_states, tmp_num_of_variables, concat_indices); //sink states are merged
-  state_paths = pp = make_paths(right_dfa->bddm, right_dfa->q[right_dfa->s]);
-  while (pp) {
-    if (!right_sink || pp->to != sink_state_right_auto ) {
-      to_state = pp->to + state_id_shift_amount;
-      // if there is a self loop keep it
-      if (pp->to == (unsigned)right_dfa->s ) {
-        to_state -= 2;
-      } else {
-        if (left_sink && right_sink && pp->to > (unsigned)sink_state_right_auto ) {
-          to_state--; //to new state, sink state will be eliminated and hence need -1
-        }
-        if ((not is_start_state_reachable) && pp->to > (unsigned)right_dfa->s) {
-          to_state--; // to new state, init state will be eliminated if init is not reachable
-        }
-      }
-
-      std::string current_exception = "";
-      for (j = 0; j < number_of_bdd_variables; j++) {
-        //the following for loop can be avoided if the indices are in order
-        for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
-        if (tp) {
-          if (tp->value) {
-            current_exception.push_back('1');
-          }
-          else {
-            current_exception.push_back('0');
-          }
-        }
-        else {
-          current_exception.push_back('X');
-        }
-      }
-
-      current_exception.push_back('1'); // new path
-      current_exception.push_back('\0');
-      exceptions_right_auto[current_exception] = to_state;
-    }
-    tp = nullptr;
-    pp = pp->next;
-  }
-
-  kill_paths(state_paths);
-  state_paths = pp = nullptr;
-
-  for (i = 0; i < dfa1->ns; i++) {
-    state_paths = pp = make_paths(dfa1->bddm, dfa1->q[i]);
-    while (pp) {
-      if (left_sink && pp->to == (unsigned)sink_state_left_auto) {
-        pp = pp->next;
-        continue;
-      }
-      to_state = pp->to;
-      std::string current_exception = "";
-      for (j = 0; j < number_of_bdd_variables; j++) {
-        for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
-        if (tp) {
-          if (tp->value) {
-            current_exception.push_back('1');
-          } else {
-            current_exception.push_back('0');
-          }
-        } else {
-          current_exception.push_back('X');
-        }
-      }
-
-      current_exception.push_back('0'); // add extra bit, '0' is used for the exceptions coming from left auto
-      current_exception.push_back('\0');
-      exceptions_left_auto[current_exception] = to_state;
-      tp = nullptr;
-      pp = pp->next;
-    }
-    // generate concat automaton
-    if (DFAIsAcceptingState(dfa1,i)) {
-      dfaAllocExceptions(exceptions_left_auto.size() + exceptions_right_auto.size());
-      for (auto entry : exceptions_left_auto) {
-        dfaStoreException(entry.second, const_cast<char*>(entry.first.data()));
-      }
-
-      for (auto entry : exceptions_right_auto) {
-        dfaStoreException(entry.second, const_cast<char*>(entry.first.data()));
-      }
-
-      dfaStoreState(sink);
-      if (DFAIsAcceptingState(dfa2,0)) {
-        statuses[i]='+';
-      }
-      else {
-        statuses[i]='-';
-      }
-    } else {
-      dfaAllocExceptions(exceptions_left_auto.size());
-      for (auto entry : exceptions_left_auto) {
-        dfaStoreException(entry.second, const_cast<char*>(entry.first.data()));
-      }
-      dfaStoreState(sink);
-      statuses[i] = '-';
-    }
-    kill_paths(state_paths);
-    state_paths = pp = nullptr;
-  }
-
-  //  initflag is 1 iff init is reached by some state. In this case,
-  for (i = 0; i < dfa2->ns; i++) {
-    if (i != sink_state_right_auto ) {
-      if ( i != dfa2->s || is_start_state_reachable) {
-        state_paths = pp = make_paths(dfa2->bddm, dfa2->q[i]);
-        while (pp) {
-          if (!right_sink || pp->to != (unsigned)sink_state_right_auto) {
-            to_state = pp->to + state_id_shift_amount;
-
-            if ( right_sink && left_sink && pp->to > (unsigned)sink_state_right_auto) {
-              to_state--; //to new state, sink state will be eliminated and hence need -1
-            }
-
-            if ( (not is_start_state_reachable) && pp->to > (unsigned)dfa2->s) {
-              to_state--; // to new state, init state will be eliminated if init is not reachable
-            }
-
-            std::string current_exception = "";
-            for (j = 0; j < number_of_bdd_variables; j++) {
-              for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp =tp->next);
-              if (tp) {
-                if (tp->value){
-                  current_exception.push_back('1');
-                }
-                else {
-                  current_exception.push_back('0');
-                }
-              }
-              else {
-                current_exception.push_back('X');
-              }
-            }
-            current_exception.push_back('0'); // old value
-            current_exception.push_back('\0');
-            exceptions_fix[current_exception] = to_state;
-            tp = nullptr;
-          }
-          pp = pp->next;
-        }
-
-        dfaAllocExceptions(exceptions_fix.size());
-        for (auto entry : exceptions_fix) {
-          dfaStoreException(entry.second, const_cast<char*>(entry.first.data()));
-        }
-
-        dfaStoreState(sink);
-
-        loc = state_id_shift_amount + i;
-        if ( (not is_start_state_reachable) && i > dfa2->s) {
-          loc--;
-        }
-        if (left_sink && right_sink && i > sink_state_right_auto) {
-          loc--;
-        }
-
-        if (DFAIsAcceptingState(dfa2,i)) {
-          statuses[loc]='+';
-        } else {
-          statuses[loc]='-';
-        }
-
-        kill_paths(state_paths);
-        state_paths = pp = nullptr;
-      }
-    } else if(!left_sink && right_sink) {
-      dfaAllocExceptions(0);
-      dfaStoreState(sink);
-      statuses[sink] = '-';
-    }
-  }
-
-  if(!right_sink && !left_sink) {
-    dfaAllocExceptions(0);
-    dfaStoreState(sink);
-    statuses[sink] = '-';
-  }
-
-  statuses[expected_num_of_states]='\0';
-
-  DFA_ptr concat_dfa = dfaBuild(statuses);
-  delete[] statuses; statuses = nullptr;
-  delete[] concat_indices; concat_indices = nullptr;
-  DFA_ptr tmp_dfa = dfaProject(concat_dfa, (unsigned) number_of_bdd_variables);
-  dfaFree(concat_dfa);
-  concat_dfa = dfaMinimize(tmp_dfa);
-  dfaFree(tmp_dfa); tmp_dfa = nullptr;
-
-  if (left_hand_side_accepts_emtpy_input) {
-		tmp_dfa = concat_dfa;
-		concat_dfa = DFAUnion(tmp_dfa,dfa2);
-		delete tmp_dfa;
-		delete left_dfa; left_dfa = nullptr;
-	}
-
-	if (right_hand_side_accepts_empty_input) {
-		tmp_dfa = concat_dfa;
-		concat_dfa = DFAUnion(tmp_dfa,dfa1);
-		delete tmp_dfa;
-		delete right_dfa; right_dfa = nullptr;
-	}
-
-  return concat_dfa;
-}
-
-int* Automaton::GetBddVariableIndices(const int number_of_bdd_variables) {
-  auto it = bdd_variable_indices.find(number_of_bdd_variables);
-  if (it != bdd_variable_indices.end())
-  {
-    return it->second;
-  }
-  int* indices = CreateBddVariableIndices(number_of_bdd_variables);
-  bdd_variable_indices[number_of_bdd_variables] = indices;
-  return indices;
-}
-
-int* Automaton::CreateBddVariableIndices(const int number_of_bdd_variables) {
-  int* indices = new int[number_of_bdd_variables];
-  for (int i = 0; i < number_of_bdd_variables; ++i) {
-    indices[i] = i;
-  }
-  return indices;
 }
 
 std::string Automaton::GetBinaryStringMSB(unsigned long number, int bit_length) {
@@ -1413,23 +764,23 @@ std::vector<char> Automaton::getReservedWord(char last_char, int length, bool ex
 }
 
 void Automaton::Minimize() {
-  DFA_ptr tmp = this->dfa_;
+  Libs::MONALib::DFA_ptr tmp = this->dfa_;
   this->dfa_ = dfaMinimize(tmp);
   dfaFree(tmp);
   DVLOG(VLOG_LEVEL) << this->id_ << " = [" << this->id_ << "]->Minimize()";
 }
 
 void Automaton::ProjectAway(const int index) {
-  DFA_ptr tmp = this->dfa_;
-  this->dfa_ = DFAProjectAway(tmp, index);
+  Libs::MONALib::DFA_ptr tmp = this->dfa_;
+  this->dfa_ = Libs::MONALib::DFAProjectAway(tmp, index);
   dfaFree(tmp);
   this->num_of_bdd_variables_ = this->num_of_bdd_variables_ - 1;
   DVLOG(VLOG_LEVEL) << this->id_ << " = [" << this->id_ << "]->ProjectAway(" << index << ")";
 }
 
 void Automaton::ProjectAwayAndReMap(const int index) {
-  DFA_ptr tmp = this->dfa_;
-  this->dfa_ = DFAProjectAwayAndReMap(tmp, this->num_of_bdd_variables_, index);
+  Libs::MONALib::DFA_ptr tmp = this->dfa_;
+  this->dfa_ = Libs::MONALib::DFAProjectAwayAndReMap(tmp, this->num_of_bdd_variables_, index);
   dfaFree(tmp);
   this->num_of_bdd_variables_ = this->num_of_bdd_variables_ - 1;
   DVLOG(VLOG_LEVEL) << this->id_ << " = [" << this->id_ << "]->ProjectAwayAndReMap(" << index << ")";
@@ -1466,7 +817,7 @@ std::unordered_set<int> Automaton::GetStatesReachableBy(int min_walk, int max_wa
 }
 
 std::unordered_set<int> Automaton::GetNextStates(const int from) const {
-  std::unordered_set<int> next_states = Automaton::DFAGetNextStates(this->dfa_, from);
+  std::unordered_set<int> next_states = Libs::MONALib::DFAGetNextStates(this->dfa_, from);
   DVLOG(VLOG_LEVEL) << "[" << next_states.size() << " states] = [" << this->id_ << "]->GetNextStates(" << from << ")";
   return next_states;
 }
@@ -1478,28 +829,6 @@ bool Automaton::hasIncomingTransition(int state) {
 //      return true;
 //    }
 //  }
-  return false;
-}
-
-/**
- * TODO will remove this function with a better approach in its uses
- * @returns true if a start state is reachable from an accepting state, false otherwise
- */
-bool Automaton::TEMPisStartStateReachableFromAnAcceptingState(DFA_ptr dfa) {
-  paths state_paths, pp;
-  for (int i = 0; i < dfa->ns; i++) {
-    if (DFAIsAcceptingState(dfa,i)) {
-      state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
-      while (pp) {
-        if (pp->to == (unsigned) dfa->s) {
-          kill_paths(state_paths);
-          return true;
-        }
-        pp = pp->next;
-      }
-      kill_paths(state_paths);
-    }
-  }
   return false;
 }
 
@@ -1944,9 +1273,9 @@ void Automaton::ToDot(std::ostream& out, bool print_sink) {
   int i, j, k, l;
   char **buffer;
   int *used, *allocated;
-  int* offsets = GetBddVariableIndices(num_of_bdd_variables_);
+  int* offsets = Libs::MONALib::GetBddVariableIndices(num_of_bdd_variables_);
   int no_free_vars = num_of_bdd_variables_;
-  DFA_ptr a = this->dfa_;
+  Libs::MONALib::DFA_ptr a = this->dfa_;
   int sink = GetSinkState();
 
   print_sink = print_sink || (dfa_->ns == 1 and dfa_->f[0] == -1);
@@ -2147,7 +1476,7 @@ void Automaton::exportDfa(std::string file_name) {
   dfaExport(this->dfa_, nullptr, this->num_of_bdd_variables_, names, orders);
 }
 
-DFA_ptr Automaton::importDFA(std::string file_name) {
+Libs::MONALib::DFA_ptr Automaton::importDFA(std::string file_name) {
   char **names = new char*[this->num_of_bdd_variables_];
   int ** orders = new int*[this->num_of_bdd_variables_];
   return dfaImport(&*file_name.begin(), &names, orders);
@@ -2464,7 +1793,7 @@ unsigned char Automaton::strtobin(char* binChar, int var){
   return c;
 }
 
-int Automaton::find_sink(DFA_ptr dfa) {
+int Automaton::find_sink(Libs::MONALib::DFA_ptr dfa) {
   if(dfa == nullptr) {
     LOG(FATAL) << "Null dfa? Really?";
   }
