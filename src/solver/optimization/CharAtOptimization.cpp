@@ -91,6 +91,9 @@ void CharAtOptimization::visitPlus(Plus_ptr plus_term) {
 void CharAtOptimization::visitTimes(Times_ptr times_term) {
 }
 
+void CharAtOptimization::visitDiv(Div_ptr div_term) {
+}
+
 void CharAtOptimization::visitEq(Eq_ptr eq_term) {
 }
 

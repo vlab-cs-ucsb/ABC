@@ -136,6 +136,10 @@ void EquivClassRuleRunner::visitTimes(Times_ptr times_term) {
   }
 }
 
+void EquivClassRuleRunner::visitDiv(Div_ptr div_term) {
+  LOG(FATAL) << "implement me";
+}
+
 void EquivClassRuleRunner::visitEq(Eq_ptr eq_term) {
 
 	// if eq_term is (x = const), dont replace x with const, leave term alone

@@ -92,6 +92,9 @@ void ConstraintQuerier::visitPlus(Plus_ptr plus_term) {
 void ConstraintQuerier::visitTimes(Times_ptr times_term) {
 }
 
+void ConstraintQuerier::visitDiv(Div_ptr div_term) {
+}
+
 void ConstraintQuerier::visitEq(Eq_ptr eq_term) {
 }
 

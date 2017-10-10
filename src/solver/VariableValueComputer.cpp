@@ -362,6 +362,10 @@ void VariableValueComputer::visitTimes(Times_ptr times_term) {
   visit(child_term);
 }
 
+void VariableValueComputer::visitDiv(Div_ptr div_term) {
+  LOG(FATAL) << "Implement me";
+}
+
 void VariableValueComputer::visitEq(Eq_ptr eq_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *eq_term;
   popTerm(eq_term);

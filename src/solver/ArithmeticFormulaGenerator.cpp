@@ -287,6 +287,10 @@ void ArithmeticFormulaGenerator::visitTimes(Times_ptr times_term) {
   DVLOG(VLOG_LEVEL) << "visit children end: " << *times_term << "@" << times_term;
 }
 
+void ArithmeticFormulaGenerator::visitDiv(Div_ptr div_term) {
+  LOG(FATAL) << "implement me";
+}
+
 void ArithmeticFormulaGenerator::visitEq(Eq_ptr eq_term) {
   visit_children_of(eq_term);
   DVLOG(VLOG_LEVEL) << "post visit start: " << *eq_term << "@" << eq_term;

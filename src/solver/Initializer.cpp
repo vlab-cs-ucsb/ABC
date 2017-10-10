@@ -161,6 +161,9 @@ void Initializer::visitPlus(Plus_ptr plus_term) {
 void Initializer::visitTimes(Times_ptr times_term) {
 }
 
+void Initializer::visitDiv(Div_ptr div_term) {
+}
+
 void Initializer::visitEq(Eq_ptr eq_term) {
 }
 

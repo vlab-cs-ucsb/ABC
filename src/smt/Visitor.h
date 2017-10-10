@@ -36,6 +36,7 @@ public:
   virtual void visitMinus(Minus_ptr) = 0;
   virtual void visitPlus(Plus_ptr) = 0;
   virtual void visitTimes(Times_ptr) = 0;
+  virtual void visitDiv(Div_ptr) = 0;
   virtual void visitEq(Eq_ptr) = 0;
   virtual void visitNotEq(NotEq_ptr) = 0;
   virtual void visitGt(Gt_ptr) = 0;

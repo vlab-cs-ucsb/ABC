@@ -377,6 +377,10 @@ void ConstraintSolver::visitTimes(Times_ptr times_term) {
   setTermValue(times_term, result);
 }
 
+void ConstraintSolver::visitDiv(Div_ptr div_term) {
+  LOG(FATAL) << "implement me";
+}
+
 void ConstraintSolver::visitEq(Eq_ptr eq_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *eq_term;
   visit_children_of(eq_term);

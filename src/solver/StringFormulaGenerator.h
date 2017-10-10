@@ -56,6 +56,7 @@ class StringFormulaGenerator: public SMT::Visitor {
   void visitMinus(SMT::Minus_ptr) override;
   void visitPlus(SMT::Plus_ptr) override;
   void visitTimes(SMT::Times_ptr) override;
+  void visitDiv(SMT::Div_ptr) override;
   void visitEq(SMT::Eq_ptr) override;
   void visitNotEq(SMT::NotEq_ptr) override;
   void visitGt(SMT::Gt_ptr) override;

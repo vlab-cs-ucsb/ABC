@@ -93,6 +93,9 @@ void ConstantTermChecker::visitPlus(Plus_ptr plus_term) {
 void ConstantTermChecker::visitTimes(Times_ptr times_term) {
 }
 
+void ConstantTermChecker::visitDiv(Div_ptr div_term) {
+}
+
 void ConstantTermChecker::visitEq(Eq_ptr eq_term) {
 }
 

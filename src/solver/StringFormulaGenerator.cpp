@@ -234,6 +234,9 @@ void StringFormulaGenerator::visitPlus(Plus_ptr plus_term) {
 void StringFormulaGenerator::visitTimes(Times_ptr times_term) {
 }
 
+void StringFormulaGenerator::visitDiv(Div_ptr div_term) {
+}
+
 // TODO make decision based on the formula type
 void StringFormulaGenerator::visitEq(Eq_ptr eq_term) {
   visit_children_of(eq_term);

@@ -187,6 +187,7 @@ class Term : public Visitable {
     MINUS,
     PLUS,
     TIMES,
+    DIV,
     EQ,
     NOTEQ,
     GT,
@@ -397,6 +398,20 @@ class Times : public Term {
   Times(const Times&);
   virtual Times_ptr clone() const override;
   virtual ~Times();
+
+  virtual std::string str() const override;
+  virtual void accept(Visitor_ptr) override;
+  virtual void visit_children(Visitor_ptr) override;
+
+  TermList_ptr term_list;
+};
+
+class Div : public Term {
+ public:
+  Div(TermList_ptr);
+  Div(const Div&);
+  virtual Div_ptr clone() const override;
+  virtual ~Div();
 
   virtual std::string str() const override;
   virtual void accept(Visitor_ptr) override;

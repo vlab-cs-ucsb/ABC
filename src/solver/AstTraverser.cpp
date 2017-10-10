@@ -205,6 +205,16 @@ void AstTraverser::visitTimes(Times_ptr times_term) {
   }
 }
 
+void AstTraverser::visitDiv(Div_ptr div_term) {
+  if (term_pre_callback_ and term_pre_callback_(div_term)) {
+    visit_term_list(div_term->term_list);
+  }
+
+  if (term_post_callback_) {
+    term_post_callback_(div_term);
+  }
+}
+
 void AstTraverser::visitEq(Eq_ptr eq_term) {
   if (term_pre_callback_ and term_pre_callback_(eq_term)) {
     visit(eq_term->left_term);

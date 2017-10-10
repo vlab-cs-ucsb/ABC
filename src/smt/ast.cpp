@@ -660,6 +660,40 @@ void Times::visit_children(Visitor_ptr v) {
   v->visit_list(term_list);
 }
 
+Div::Div(TermList_ptr term_list)
+    : Term(Term::Type::DIV),
+      term_list(term_list) {
+}
+
+Div::Div(const Div& other)
+    : Term(other.type_) {
+  term_list = new TermList();
+  for (auto& term : *(other.term_list)) {
+    term_list->push_back(term->clone());
+  }
+}
+
+Div_ptr Div::clone() const {
+  return new Div(*this);
+}
+
+Div::~Div() {
+  deallocate_list(term_list);
+  delete term_list;
+}
+
+std::string Div::str() const {
+  return "*";
+}
+
+void Div::accept(Visitor_ptr v) {
+  v->visitDiv(this);
+}
+
+void Div::visit_children(Visitor_ptr v) {
+  v->visit_list(term_list);
+}
+
 Eq::Eq(Term_ptr left_term, Term_ptr right_term)
     : Term(Term::Type::EQ),
       left_term(left_term),

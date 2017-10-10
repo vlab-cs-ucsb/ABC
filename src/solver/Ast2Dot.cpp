@@ -154,6 +154,10 @@ void Ast2Dot::visitTimes(Times_ptr times_term) {
   draw("&lowast;", times_term);
 }
 
+void Ast2Dot::visitDiv(Div_ptr div_term) {
+  draw("/", div_term);
+}
+
 void Ast2Dot::visitEq(Eq_ptr eq_term) {
   draw("=", eq_term);
 }

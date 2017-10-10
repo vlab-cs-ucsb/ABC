@@ -91,6 +91,9 @@ void ConstantTermOptimization::visitPlus(Plus_ptr plus_term) {
 void ConstantTermOptimization::visitTimes(Times_ptr times_term) {
 }
 
+void ConstantTermOptimization::visitDiv(Div_ptr div_term) {
+}
+
 void ConstantTermOptimization::visitEq(Eq_ptr eq_term) {
 }
 

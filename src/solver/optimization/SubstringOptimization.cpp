@@ -110,6 +110,9 @@ void SubstringOptimization::visitPlus(Plus_ptr plus_term) {
 void SubstringOptimization::visitTimes(Times_ptr times_term) {
 }
 
+void SubstringOptimization::visitDiv(Div_ptr div_term) {
+}
+
 void SubstringOptimization::visitEq(Eq_ptr eq_term) {
 }
 

@@ -65,6 +65,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "-"                 { return Parser::make_MINUS           (loc);  }
 "+"                 { return Parser::make_PLUS            (loc);  }
 "*"                 { return Parser::make_STAR            (loc);  }
+"div"               { return Parser::make_DIV             (loc);  }
 "="                 { return Parser::make_EQ              (loc);  }
 "!="                { return Parser::make_NOTEQ           (loc);  }
 ">"                 { return Parser::make_GT              (loc);  }

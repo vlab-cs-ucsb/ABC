@@ -64,6 +64,7 @@
   MINUS                "-"
   PLUS                 "+"
   STAR                 "*"
+  DIV                  "div"
   EQ                   "="
   NOTEQ                "!="
   GT                   ">"
@@ -253,6 +254,7 @@ term                  :
                       | "(" MINUS term term ")"                                         { $$ = new Minus($3, $4); }
                       | "(" PLUS term_list_ ")"                                         { $$ = new Plus($3); }
                       | "(" STAR term_list_ ")"                                         { $$ = new Times($3); }
+                      | "(" DIV term_list_ ")"                                          { $$ = new Div($3);   }
                       | "(" EQ term term ")"                                            { $$ = new Eq($3, $4); }
                       | "(" NOTEQ term term ")"                                         { $$ = new NotEq($3, $4); }
                       | "(" GT term term ")"                                            { $$ = new Gt($3, $4); }
