@@ -80,13 +80,13 @@ void Driver::InitializeSolver() {
   Solver::SyntacticProcessor syntactic_processor(script_);
   syntactic_processor.start();
 
-  ast2dot(output_root + "/post_syntactic_processor.dot");
+  //ast2dot(output_root + "/post_syntactic_processor.dot");
   //std::cin.get();
 
   Solver::SyntacticOptimizer syntactic_optimizer(script_, symbol_table_);
   syntactic_optimizer.start();
 
-  ast2dot(output_root + "/post_syntactic_optimizer.dot");
+  //ast2dot(output_root + "/post_syntactic_optimizer.dot");
   //std::cin.get();
 
   //int count = 0;
@@ -101,7 +101,7 @@ void Driver::InitializeSolver() {
     } while (equivalence_generator.has_constant_substitution());
   }
 
-  ast2dot(output_root + "/post_equivalence.dot");
+  //ast2dot(output_root + "/post_equivalence.dot");
 
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
 	dependency_slicer.start();
