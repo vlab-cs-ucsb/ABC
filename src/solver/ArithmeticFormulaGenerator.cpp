@@ -192,7 +192,7 @@ void ArithmeticFormulaGenerator::visitNot(Not_ptr not_term) {
   if (child_formula not_eq nullptr) {
     auto formula = child_formula->negate();
     set_term_formula(not_term, formula);
-    term_group_map_[not_term] = current_group_;
+    term_group_map_[not_term] = term_group_map_[not_term->term];
     if (string_terms_.size() > 0) {
       string_terms_map_[not_term] = string_terms_;
       string_terms_.clear();
@@ -599,7 +599,7 @@ void ArithmeticFormulaGenerator::visitQualIdentifier(QualIdentifier_ptr qi_term)
   } else if(Variable::Type::BOOL == variable->getType()) {
 		auto formula = new ArithmeticFormula();
 		formula->AddBoolean(variable->getName());
-		formula->AddVariable(variable->getName(), 0);
+		formula->AddVariable(variable->getName(), 1);
 		formula->SetType(ArithmeticFormula::Type::BOOL);
 		set_term_formula(qi_term, formula);
 		add_int_variables(current_group_,qi_term);
@@ -612,7 +612,7 @@ void ArithmeticFormulaGenerator::visitTermConstant(TermConstant_ptr term_constan
   switch (term_constant->getValueType()) {
     case Primitive::Type::NUMERAL: {
       int constant = std::stoi(term_constant->getValue());
-      if(constant <= 10) {
+      if(constant <= 100) {
         auto formula = new ArithmeticFormula();
         formula->SetConstant(constant);
         set_term_formula(term_constant, formula);
@@ -746,7 +746,6 @@ void ArithmeticFormulaGenerator::add_int_variables(std::string group_name, Term_
 	for(auto &var : variables) {
 		if(variable_group_map_.find(var.first) != variable_group_map_.end()) {
 			start_group = variable_group_map_[var.first];
-			LOG(INFO) << "START GROUP: " << start_group;
 			group_formula = group_formula_[start_group];
 			if(group_formula == nullptr) {
 				LOG(FATAL) << "BAD";
@@ -788,7 +787,6 @@ void ArithmeticFormulaGenerator::add_int_variables(std::string group_name, Term_
 			// keep relational formulas so we can construct them; they will get destroyed afterwards.
 			auto formula_iter = group_formula_.find(var_group);
 			if(ArithmeticFormula::Type::NONE == formula_iter->second->GetType()) {
-				LOG(INFO) << "--- " << var_group << " group and formula: " << formula_iter->second << " DELETED";
 				delete formula_iter->second; formula_iter->second = nullptr;
 				group_formula_.erase(formula_iter);
 				subgroups_[group_name].erase(var_group);

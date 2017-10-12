@@ -212,6 +212,8 @@ Value_ptr Value::union_(Value_ptr other_value) const {
     union_value = new Value(other_value->int_automaton->union_(int_constant));
   } else if (Type::INT_AUTOMATON == type and Type::INT_CONSTANT == other_value->type) {
     union_value = new Value(int_automaton->union_(other_value->int_constant));
+  } else if (Type::BOOL_CONSTANT == type and Type::BOOL_CONSTANT == other_value->type) {
+    union_value = new Value((bool)(bool_constant | other_value->bool_constant));
   } else {
     LOG(FATAL)<< "cannot union_ types (implement me): " << *this << " | " << *other_value;
   }
@@ -236,6 +238,8 @@ Value_ptr Value::intersect(Value_ptr other_value) const {
     intersection_value = new Value(other_value->int_automaton->intersect(int_constant));
   } else if (Type::INT_AUTOMATON == type and Type::INT_CONSTANT == other_value->type) {
     intersection_value = new Value(int_automaton->intersect(other_value->int_constant));
+  } else if (Type::BOOL_CONSTANT == type and Type::BOOL_CONSTANT == other_value->type) {
+  	intersection_value = new Value((bool)(bool_constant & other_value->bool_constant));
   } else {
     LOG(FATAL) << "cannot intersect types (implement me): " << *this << " & " << *other_value;
   }

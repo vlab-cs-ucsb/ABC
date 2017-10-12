@@ -775,9 +775,14 @@ namespace Solver {
 using namespace SMT;
 
 const int ConstraintSorter::VLOG_LEVEL = 13;
+std::string ConstraintSorter::TermNode::count_var;
 
 ConstraintSorter::ConstraintSorter(Script_ptr script, SymbolTable_ptr symbol_table)
         : root(script), symbol_table(symbol_table), term_node(nullptr) {
+	auto var = symbol_table->get_count_variable();
+	if(var) {
+		ConstraintSorter::TermNode::count_var = var->getName();
+	}
 }
 
 ConstraintSorter::~ConstraintSorter() {
@@ -1512,14 +1517,18 @@ int ConstraintSorter::TermNode::numOfRightVars() {
 }
 
 void ConstraintSorter::TermNode::updateSymbolicVariableInfo() {
-  for (auto& left_node : _left_child_node_list) {
-    if (left_node->getVariable()->getName() == "var_0xINPUT_301") {
+	if(count_var.empty()) {
+  	return;
+  }
+
+	for (auto& left_node : _left_child_node_list) {
+    if (left_node->getVariable()->getName() == count_var) {
       _has_symbolic_var_on_left = true;
       break;
     }
   }
   for (auto& right_node : _right_child_node_list) {
-    if (right_node->getVariable()->getName() == "var_0xINPUT_301") {
+    if (right_node->getVariable()->getName() == count_var) {
       _has_symbolic_var_on_right = true;
       break;
     }

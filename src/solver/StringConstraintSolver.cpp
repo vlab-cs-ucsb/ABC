@@ -186,7 +186,7 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
 //      symbol_table_->set_value(group_name, value);
 //    }
 //    delete and_value;
-  	symbol_table_->set_value(group_name,new Value(is_satisfiable));
+  	symbol_table_->IntersectValue(group_name,new Value(is_satisfiable));
   //}
   DVLOG(VLOG_LEVEL) << "post visit component end: " << *and_term << "@" << and_term;
 }
@@ -290,7 +290,7 @@ void StringConstraintSolver::visitOr(Or_ptr or_term) {
 //			symbol_table_->set_value(group_name, value);
 //		}
 //		delete or_value;
-	symbol_table_->set_value(group_name,new Value(is_satisfiable));
+	symbol_table_->UnionValue(group_name,new Value(is_satisfiable));
 	//}
 
   DVLOG(VLOG_LEVEL) << "post visit component end: " << *or_term << "@" << or_term;
@@ -353,7 +353,7 @@ void StringConstraintSolver::postVisitAnd(And_ptr and_term) {
 //      symbol_table_->set_value(group_name, value);
 //    }
 //    delete and_value;
-  	symbol_table_->set_value(group_name, new Value(is_satisfiable));
+  	symbol_table_->IntersectValue(group_name, new Value(is_satisfiable));
   //}
   DVLOG(VLOG_LEVEL) << "update result end: " << *and_term << "@" << and_term;
 }
@@ -446,7 +446,7 @@ void StringConstraintSolver::postVisitOr(Or_ptr or_term) {
   			break;
   		}
   	}
-  	symbol_table_->set_value(group_name,new Value(is_satisfiable));
+  	symbol_table_->IntersectValue(group_name,new Value(is_satisfiable));
   }
   DVLOG(VLOG_LEVEL) << "update result end: " << *or_term << "@" << or_term;
 }

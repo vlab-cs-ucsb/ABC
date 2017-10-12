@@ -312,6 +312,8 @@ protected:
     bool hasSymbolicVarOnLeft();
     bool hasSymbolicVarOnRight();
     bool hasSymbolicVar();
+
+    static std::string count_var;
   protected:
     SMT::Term_ptr _node;
     bool _has_symbolic_var_on_left;
