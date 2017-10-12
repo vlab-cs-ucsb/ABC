@@ -865,17 +865,26 @@ void ConstraintSorter::visitLet(Let_ptr let_term) {
 
 void ConstraintSorter::visitAnd(And_ptr and_term) {
   std::vector<TermNode_ptr> local_dependency_node_list;
-  for (auto& term : *(and_term->term_list)) {
-    term_node = nullptr;
-    visit(term);
-    if (term_node == nullptr) {
-      term_node = new TermNode(term);
-    } else {
-      term_node->setNode(term);
-    }
-    term_node->addMeToChildVariableNodes();
-    term_node->updateSymbolicVariableInfo();
-    local_dependency_node_list.push_back(term_node);
+  std::vector<Term_ptr> unsorted_constraints;
+  for(auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
+  //for (auto& term : *(and_term->term_list)) {
+  	if(symbol_table->is_unsorted_constraint(*iter)) {
+  		unsorted_constraints.push_back((*iter)->clone());
+  		delete (*iter);
+			iter = and_term->term_list->erase(iter);
+  	} else {
+			term_node = nullptr;
+			visit(*iter);
+			if (term_node == nullptr) {
+				term_node = new TermNode(*iter);
+			} else {
+				term_node->setNode(*iter);
+			}
+			term_node->addMeToChildVariableNodes();
+			term_node->updateSymbolicVariableInfo();
+			local_dependency_node_list.push_back(term_node);
+			iter++;
+  	}
   }
   term_node = nullptr;
 
@@ -896,6 +905,11 @@ void ConstraintSorter::visitAnd(And_ptr and_term) {
     and_term->term_list->push_back((*it)->getNode());
     delete *it;
   }
+
+  for(auto it = unsorted_constraints.cbegin(); it != unsorted_constraints.cend(); it++) {
+		and_term->term_list->push_back((*it)->clone());
+		delete *it;
+	}
 }
 
 void ConstraintSorter::visitOr(Or_ptr or_term) {

@@ -629,6 +629,19 @@ bool SymbolTable::has_count_variable() {
   return (count_symbol_ != nullptr);
 }
 
+void SymbolTable::add_unsorted_constraint(Visitable_ptr term) {
+	last_constraints.insert(Ast2Dot::toString(term));
+}
+
+bool SymbolTable::is_unsorted_constraint(Visitable_ptr term) {
+	std::string str = Ast2Dot::toString(term);
+	return last_constraints.find(str) != last_constraints.end();
+}
+
+void SymbolTable::remove_unsorted_constraint(Visitable_ptr term) {
+	last_constraints.erase(Ast2Dot::toString(term));
+}
+
 
 
 std::string SymbolTable::generate_internal_name(std::string name, Variable::Type type) {

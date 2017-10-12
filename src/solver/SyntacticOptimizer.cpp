@@ -720,8 +720,10 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
       add_callback_to_replace_with_bool(eq_term, true);
     } else {
       DVLOG(VLOG_LEVEL) << "Applying 'in' transformation for length: '" << *eq_term << "'";
-      callback_ = [eq_term](Term_ptr & term) mutable {
+      callback_ = [this,eq_term](Term_ptr & term) mutable {
+      	symbol_table_->remove_unsorted_constraint(eq_term);
         term = new In(eq_term->left_term, eq_term->right_term);
+        symbol_table_->add_unsorted_constraint(term);
         eq_term->left_term = nullptr;
         eq_term->right_term = nullptr;
         delete eq_term;

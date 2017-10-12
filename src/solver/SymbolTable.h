@@ -126,6 +126,10 @@ public:
   SMT::Variable_ptr get_count_variable();
   bool has_count_variable();
 
+  void add_unsorted_constraint(SMT::Visitable_ptr term);
+  bool is_unsorted_constraint(SMT::Visitable_ptr term);
+  void remove_unsorted_constraint(SMT::Visitable_ptr term);
+
 private:
   std::string generate_internal_name(std::string, SMT::Variable::Type);
 
@@ -173,12 +177,18 @@ private:
     */
   TermChildrenTable term_children_table_;
   
+
   std::map<SMT::Visitable_ptr,std::pair<SMT::Visitable_ptr, SMT::Visitable_ptr>> ite_conditions_;
+
+
+  std::set<std::string> last_constraints;
 
   /**
    * Count variable for kaluza tests
    */ 
   SMT::Primitive_ptr count_symbol_;
+
+
 
   static const int VLOG_LEVEL;
   //int reuse; 
