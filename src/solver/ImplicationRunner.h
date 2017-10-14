@@ -20,12 +20,14 @@
 #include "AstTraverser.h"
 #include "options/Solver.h"
 #include "SymbolTable.h"
+#include "../theory/ArithmeticFormula.h"
+#include "ConstraintInformation.h"
 
 namespace Vlab {
 namespace Solver {
 class ImplicationRunner : public AstTraverser {
  public:
-  ImplicationRunner(SMT::Script_ptr, SymbolTable_ptr);
+  ImplicationRunner(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr);
   virtual ~ImplicationRunner();
   void start() override;
   void end() override;
@@ -44,6 +46,7 @@ class ImplicationRunner : public AstTraverser {
 
  protected:
   SymbolTable_ptr symbol_table_;
+  ConstraintInformation_ptr constraint_information_;
   SMT::And_ptr current_and_;
 
   bool is_precise(SMT::Concat_ptr);
@@ -53,6 +56,14 @@ class ImplicationRunner : public AstTraverser {
 
 
  private:
+
+  void CollectHeuristicInfo(SMT::Eq_ptr);
+  void AddLengthHeuristic(SMT::And_ptr);
+  void ResetHeuristicData();
+
+  std::map<std::string, Theory::ArithmeticFormula_ptr> variable_formulas;
+  std::set<std::string> variables_to_expand;
+  Theory::ArithmeticFormula_ptr formula;
   static const int VLOG_LEVEL;
 };
 

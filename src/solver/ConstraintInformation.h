@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "../smt/typedefs.h"
+#include "../theory/StringFormula.h"
 
 namespace Vlab {
 namespace Solver {
@@ -38,6 +39,12 @@ class ConstraintInformation {
 
   bool has_mixed_constraint(const SMT::Visitable_ptr) const;
   void add_mixed_constraint(const SMT::Visitable_ptr);
+
+  bool var_has_formula(std::string);
+  Theory::StringFormula_ptr get_var_formula(std::string);
+  void set_var_formula(std::string,Theory::StringFormula_ptr);
+
+  std::map<std::string,Theory::StringFormula_ptr> string_formulas;
 
  private:
   std::set<SMT::Visitable_ptr> components_;

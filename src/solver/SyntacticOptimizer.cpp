@@ -715,30 +715,32 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
 
   if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
     add_callback_to_replace_with_bool(eq_term, true);
-  } else if (check_and_process_len_transformation(eq_term, eq_term->left_term, eq_term->right_term)) {
-    if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
-      add_callback_to_replace_with_bool(eq_term, true);
-    } else {
-      DVLOG(VLOG_LEVEL) << "Applying 'in' transformation for length: '" << *eq_term << "'";
-      callback_ = [this,eq_term](Term_ptr & term) mutable {
-      	symbol_table_->remove_unsorted_constraint(eq_term);
-        term = new In(eq_term->left_term, eq_term->right_term);
-        symbol_table_->add_unsorted_constraint(term);
-        eq_term->left_term = nullptr;
-        eq_term->right_term = nullptr;
-        delete eq_term;
-      };
-    }
-  } else if (check_and_process_for_contains_transformation(eq_term->left_term, eq_term->right_term, -1)
-      or check_and_process_for_contains_transformation(eq_term->right_term, eq_term->left_term, -1)) {
-    DVLOG(VLOG_LEVEL) << "Applying 'notContains' transformation (validate behavior): '" << *eq_term << "'";
-    callback_ = [eq_term](Term_ptr & term) mutable {
-      term = new NotContains(eq_term->left_term, eq_term->right_term);
-      eq_term->left_term = nullptr;
-      eq_term->right_term = nullptr;
-      delete eq_term;
-    };
   }
+//
+//  else if (check_and_process_len_transformation(eq_term, eq_term->left_term, eq_term->right_term)) {
+//    if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
+//      add_callback_to_replace_with_bool(eq_term, true);
+//    } else {
+////      DVLOG(VLOG_LEVEL) << "Applying 'in' transformation for length: '" << *eq_term << "'";
+////      callback_ = [this,eq_term](Term_ptr & term) mutable {
+////      	symbol_table_->remove_unsorted_constraint(eq_term);
+////        term = new In(eq_term->left_term, eq_term->right_term);
+////        symbol_table_->add_unsorted_constraint(term);
+////        eq_term->left_term = nullptr;
+////        eq_term->right_term = nullptr;
+////        delete eq_term;
+////      };
+//    }
+//  } else if (check_and_process_for_contains_transformation(eq_term->left_term, eq_term->right_term, -1)
+//      or check_and_process_for_contains_transformation(eq_term->right_term, eq_term->left_term, -1)) {
+//    DVLOG(VLOG_LEVEL) << "Applying 'notContains' transformation (validate behavior): '" << *eq_term << "'";
+//    callback_ = [eq_term](Term_ptr & term) mutable {
+//      term = new NotContains(eq_term->left_term, eq_term->right_term);
+//      eq_term->left_term = nullptr;
+//      eq_term->right_term = nullptr;
+//      delete eq_term;
+//    };
+//  }
 
   DVLOG(VLOG_LEVEL) << "post visit end: " << *eq_term << "@" << eq_term;
 }

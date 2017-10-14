@@ -64,6 +64,21 @@ void ConstraintInformation::add_mixed_constraint(const SMT::Visitable_ptr node) 
   mixed_constraints_.insert(node);
 }
 
+bool ConstraintInformation::var_has_formula(std::string var_name) {
+	return string_formulas.find(var_name) != string_formulas.end();
+}
+
+Theory::StringFormula_ptr ConstraintInformation::get_var_formula(std::string var_name) {
+	if(string_formulas.find(var_name) != string_formulas.end()) {
+		return string_formulas[var_name];
+	}
+	return nullptr;
+}
+
+void ConstraintInformation::set_var_formula(std::string var_name,Theory::StringFormula_ptr var_formula) {
+	string_formulas[var_name] = var_formula;
+}
+
 } /* namespace Solver */
 } /* namespace Vlab */
 

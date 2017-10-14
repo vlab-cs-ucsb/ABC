@@ -19,6 +19,7 @@
 #include "../smt/ast.h"
 #include "../smt/typedefs.h"
 #include "../smt/Visitor.h"
+#include "../theory/StringFormula.h"
 #include "AstTraverser.h"
 #include "options/Solver.h"
 #include "ConstraintInformation.h"
@@ -37,6 +38,10 @@ class DependencySlicer : public AstTraverser {
   void visitAssert(SMT::Assert_ptr) override;
   void visitAnd(SMT::And_ptr) override;
   void visitOr(SMT::Or_ptr) override;
+  void visitEq(SMT::Eq_ptr) override;
+  void visitNotEq(SMT::NotEq_ptr) override;
+  void visitBegins(SMT::Begins_ptr) override;
+  void visitNotBegins(SMT::NotBegins_ptr) override;
   void visitQualIdentifier(SMT::QualIdentifier_ptr) override;
 
 

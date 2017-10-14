@@ -985,7 +985,7 @@ void StringFormulaGenerator::set_group_mappings() {
   // add a variable entry to symbol table for each group
   // define a variable mapping for a group
   for (auto& el : group_formula_) {
-  	//LOG(INFO) << "Formula : " << el.first;
+  	LOG(INFO) << "Formula : " << el.first;
     symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
     auto init_val = StringAutomaton::MakeAnyStringUnaligned(el.second->clone());
     Value_ptr val = new Value(init_val);
@@ -996,13 +996,13 @@ void StringFormulaGenerator::set_group_mappings() {
     //LOG(INFO) << "Group " << el.first << " Initial Value: " << symbol_table_->get_value_at_scope(root_,symbol_table_->get_variable(el.first));
     for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
       symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
-      //LOG(INFO) << "-- " << var_entry.first;
+      LOG(INFO) << "-- " << var_entry.first;
     }
-    //LOG(INFO) << "";
+    LOG(INFO) << "";
   }
 
   DVLOG(VLOG_LEVEL)<< "end setting string group for components";
-  //std::cin.get();
+  std::cin.get();
 }
 
 } /* namespace Solver */

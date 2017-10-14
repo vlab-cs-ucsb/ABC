@@ -109,7 +109,7 @@ void Driver::InitializeSolver() {
 	//ast2dot(output_root + "/post_dependency_slicer.dot");
 
   if (Option::Solver::ENABLE_IMPLICATIONS) {
-    Solver::ImplicationRunner implication_runner(script_, symbol_table_);
+    Solver::ImplicationRunner implication_runner(script_, symbol_table_, constraint_information_);
     implication_runner.start();
     //ast2dot(output_root + "/post_implication_runner.dot");
   }
