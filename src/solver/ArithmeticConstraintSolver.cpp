@@ -127,37 +127,68 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(and_term);
   Value_ptr and_value = nullptr;
 
-  for (auto term : *(and_term->term_list)) {
-      auto formula = arithmetic_formula_generator_.get_term_formula(term);
-      // Do not visit child or terms here, handle them in POSTVISIT AND
-      if (formula != nullptr and (dynamic_cast<Or_ptr>(term) == nullptr)) {
-        has_arithmetic_formula = true;
-        visit(term);
-        auto param = get_term_value(term);
-        is_satisfiable = param->is_satisfiable();
-        if (is_satisfiable) {
-  //        if (and_value == nullptr) {
-  //          and_value = param->clone();
-  //        } else {
-  //          auto old_value = and_value;
-  //          and_value = and_value->intersect(param);
-  //          delete old_value;
-  //          is_satisfiable = and_value->is_satisfiable();
-  //        }
-        	auto term_group_name = arithmetic_formula_generator_.get_term_group_name(term);
-  				if(term_group_name.empty()) {
-  					LOG(FATAL) << "Term has no group!";
-  				}
-  				//LOG(INFO) << "------------ " << *term << " has group name " << term_group_name;
-  				symbol_table_->IntersectValue(term_group_name,param);
-  				is_satisfiable = symbol_table_->get_value(term_group_name)->is_satisfiable();
-        }
-        clear_term_value(term);
-        if (not is_satisfiable) {
-          break;
-        }
-      }
-    }
+  auto& variable_value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
+	for (auto iter = variable_value_map.begin(); iter != variable_value_map.end();) {
+		if(Value::Type::INT_CONSTANT == iter->second->getType() || Value::Type::BOOL_CONSTANT == iter->second->getType()) {
+			//has_arithmetic_formula = true;
+			auto variable_group = arithmetic_formula_generator_.get_variable_group_name(iter->first);
+			auto group_formula = arithmetic_formula_generator_.get_group_formula(variable_group);
+			if(group_formula == nullptr) {
+				iter++;
+				continue;
+			}
+			int constant = 0;
+			if(Value::Type::BOOL_CONSTANT == iter->second->getType()) {
+				constant = (iter->second->getBoolConstant()) ? 1 : 0;
+			} else {
+				constant = iter->second->getIntConstant();
+			}
+			auto bin_auto = BinaryIntAutomaton::MakeAutomaton(constant,iter->first->getName(),group_formula,not use_unsigned_integers_);
+			auto bin_value = new Value(bin_auto);
+//			LOG(INFO) << "Before value: " << symbol_table_->get_value(variable_group)->is_satisfiable();
+			symbol_table_->IntersectValue(variable_group,bin_value);
+//			LOG(INFO) << "After value: " << symbol_table_->get_value(variable_group)->is_satisfiable();
+//			std::cin.get();
+			is_satisfiable = is_satisfiable and symbol_table_->get_value(variable_group)->is_satisfiable();
+			delete bin_value;
+			delete iter->second;iter->second = nullptr;
+			iter = variable_value_map.erase(iter);
+		} else {
+			iter++;
+		}
+	}
+
+	for (auto term : *(and_term->term_list)) {
+		auto formula = arithmetic_formula_generator_.get_term_formula(term);
+		// Do not visit child or terms here, handle them in POSTVISIT AND
+		if (formula != nullptr and (dynamic_cast<Or_ptr>(term) == nullptr)) {
+			has_arithmetic_formula = true;
+			visit(term);
+			auto param = get_term_value(term);
+			is_satisfiable = param->is_satisfiable();
+			if (is_satisfiable) {
+//        if (and_value == nullptr) {
+//          and_value = param->clone();
+//        } else {
+//          auto old_value = and_value;
+//          and_value = and_value->intersect(param);
+//          delete old_value;
+//          is_satisfiable = and_value->is_satisfiable();
+//        }
+				auto term_group_name = arithmetic_formula_generator_.get_term_group_name(term);
+				if(term_group_name.empty()) {
+					LOG(FATAL) << "Term has no group!";
+				}
+				//LOG(INFO) << "------------ " << *term << " has group name " << term_group_name;
+				symbol_table_->IntersectValue(term_group_name,param);
+				is_satisfiable = symbol_table_->get_value(term_group_name)->is_satisfiable();
+			}
+			clear_term_value(term);
+			if (not is_satisfiable) {
+				break;
+			}
+		}
+	}
 
   DVLOG(VLOG_LEVEL) << "visit children of component end: " << *and_term << "@" << and_term;
 
@@ -186,7 +217,8 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 //      symbol_table_->set_value(group_name, value);
 //    }
 //    delete and_value;
-  //LOG(INFO) << "***** SETTING VALUE OF " << group_name;
+  LOG(INFO) << "***** SETTING VALUE OF " << group_name << " to " << is_satisfiable;
+
   symbol_table_->IntersectValue(group_name,new Value(is_satisfiable));
 
   //}
@@ -212,35 +244,38 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
   auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
 
   // propagate equivalence class values for constants
-  for (auto term : *(or_term->term_list)) {
-  	auto& variable_value_map = symbol_table_->get_values_at_scope(term);
-  	symbol_table_->push_scope(term);
-  	for (auto iter = variable_value_map.begin(); iter != variable_value_map.end();) {
-  		if(Value::Type::INT_CONSTANT == iter->second->getType() || Value::Type::BOOL_CONSTANT == iter->second->getType()) {
-  			has_arithmetic_formula = true;
-  			auto variable_group = arithmetic_formula_generator_.get_variable_group_name(iter->first);
-  			auto group_formula = arithmetic_formula_generator_.get_group_formula(variable_group);
-  			if(group_formula == nullptr) {
-  				LOG(FATAL) << "Uhhhh";
-  			}
-  			int constant = 0;
-  			if(Value::Type::BOOL_CONSTANT == iter->second->getType()) {
-  				constant = (iter->second->getBoolConstant()) ? 1 : 0;
-  			} else {
-  				constant = iter->second->getIntConstant();
-  			}
-  			auto bin_auto = BinaryIntAutomaton::MakeAutomaton(constant,iter->first->getName(),group_formula);
-  			auto bin_value = new Value(bin_auto);
-  			symbol_table_->IntersectValue(variable_group,bin_value);
-  			delete bin_value;
-  			delete iter->second;iter->second = nullptr;
-  			iter = variable_value_map.erase(iter);
-  		} else {
-  			iter++;
-  		}
-  	}
-  	symbol_table_->pop_scope();
-  }
+//  for (auto term : *(or_term->term_list)) {
+//  	auto& variable_value_map = symbol_table_->get_values_at_scope(term);
+//  	symbol_table_->push_scope(term);
+//  	for (auto iter = variable_value_map.begin(); iter != variable_value_map.end();) {
+//  		if(Value::Type::INT_CONSTANT == iter->second->getType() || Value::Type::BOOL_CONSTANT == iter->second->getType()) {
+//  			//has_arithmetic_formula = true;
+//  			auto variable_group = arithmetic_formula_generator_.get_variable_group_name(iter->first);
+//  			auto group_formula = arithmetic_formula_generator_.get_group_formula(variable_group);
+//  			if(group_formula == nullptr) {
+//  				LOG(FATAL) << "Uhhhh";
+//  			}
+//  			int constant = 0;
+//  			if(Value::Type::BOOL_CONSTANT == iter->second->getType()) {
+//  				constant = (iter->second->getBoolConstant()) ? 1 : 0;
+//  			} else {
+//  				constant = iter->second->getIntConstant();
+//  			}
+//  			auto bin_auto = BinaryIntAutomaton::MakeAutomaton(constant,iter->first->getName(),group_formula,not use_unsigned_integers_);
+//  			auto bin_value = new Value(bin_auto);
+//  			LOG(INFO) << "Before value: " << symbol_table_->get_value(variable_group)->is_satisfiable();
+//  			symbol_table_->IntersectValue(variable_group,bin_value);
+//  			LOG(INFO) << "After value: " << symbol_table_->get_value(variable_group)->is_satisfiable();
+//  			std::cin.get();
+//  			delete bin_value;
+//  			delete iter->second;iter->second = nullptr;
+//  			iter = variable_value_map.erase(iter);
+//  		} else {
+//  			iter++;
+//  		}
+//  	}
+//  	symbol_table_->pop_scope();
+//  }
 
 	for (auto term : *(or_term->term_list)) {
 		auto formula = arithmetic_formula_generator_.get_term_formula(term);
@@ -295,7 +330,8 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
 //			symbol_table_->set_value(group_name, value);
 //		}
 //		delete or_value;
-	symbol_table_->UnionValue(group_name,new Value(is_satisfiable));
+  LOG(INFO) << "Sat: " << is_satisfiable;
+  symbol_table_->UnionValue(group_name,new Value(is_satisfiable));
   //}
 
   DVLOG(VLOG_LEVEL) << "post visit component end: " << *or_term << "@" << or_term;
@@ -365,6 +401,10 @@ void ArithmeticConstraintSolver::postVisitAnd(And_ptr and_term) {
   	for(auto group : arithmetic_formula_generator_.get_group_subgroups(group_name)) {
 			Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
 			Value_ptr subgroup_value = symbol_table_->get_value(subgroup_variable);
+			if(!subgroup_value->is_satisfiable()) {
+				LOG(INFO) << "   ---------    NOT SAT";
+				std::cin.get();
+			}
 			is_satisfiable = subgroup_value->is_satisfiable() and is_satisfiable;
 		}
 //    if (is_satisfiable) {
@@ -375,6 +415,7 @@ void ArithmeticConstraintSolver::postVisitAnd(And_ptr and_term) {
 //      symbol_table_->set_value(group_name, value);
 //    }
 //    delete and_value;
+  	LOG(INFO) << "Sat: " << is_satisfiable;
   	symbol_table_->IntersectValue(group_name, new Value(is_satisfiable));
   //}
   DVLOG(VLOG_LEVEL) << "update result end: " << *and_term << "@" << and_term;
@@ -475,6 +516,7 @@ void ArithmeticConstraintSolver::postVisitOr(Or_ptr or_term) {
 		}
 		symbol_table_->IntersectValue(group_name,new Value(is_satisfiable));
   }
+  LOG(INFO) << "Sat: " << is_satisfiable;
   DVLOG(VLOG_LEVEL) << "update result end: " << *or_term << "@" << or_term;
 }
 

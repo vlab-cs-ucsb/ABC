@@ -142,6 +142,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
       DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *and_term << "@" << and_term;
     }
+    LOG(INFO) << "-------- Between! : " << is_satisfiable << " , string constraint? " << constraint_information_->has_string_constraint(and_term);
     if ((is_satisfiable or (!constraint_information_->has_arithmetic_constraint(and_term)))
     				and constraint_information_->has_string_constraint(and_term)) {
       string_constraint_solver_.start(and_term);
@@ -592,25 +593,22 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
 }
 
 void ConstraintSolver::visitIn(In_ptr in_term) {
-
-//  if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(in_term->left_term)) {
-//    if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(in_term->right_term)) {
-//
-//      Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
-//      StringAutomaton_ptr con = StringAutomaton::MakeRegexAuto(right_constant->getValue());
-//      bool res = true;
-//      Value_ptr val = new Value(con);
-//      LOG(FATAL) << "fix me";
-////      if(string_constraint_solver_.has_variable(var)) {
-////        res = res and string_constraint_solver_.update_variable_value(var, val);
-////      } else {
-////        symbol_table_->IntersectValue(var,val);
-////        res = res and symbol_table_->get_value(var)->is_satisfiable();
-////      }
-//      setTermValue(in_term, new Value(res));
-//      return;
-//    }
-//  }
+	// if term is of type var in const regex, short circuit variable update
+  if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(in_term->left_term)) {
+    if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(in_term->right_term)) {
+      Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
+      StringAutomaton_ptr con = StringAutomaton::MakeRegexAuto(right_constant->getValue());
+      StringFormula_ptr formula = new StringFormula();
+      formula->SetType(StringFormula::Type::VAR);
+      formula->AddVariable(var->getName(),1);
+      con->SetFormula(formula);
+      Value_ptr val = new Value(con);
+      bool result = symbol_table_->IntersectValue(var,val);
+      delete val;
+      setTermValue(in_term, new Value(result));
+      return;
+    }
+  }
 
   visit_children_of(in_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *in_term;

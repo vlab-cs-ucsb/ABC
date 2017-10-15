@@ -759,7 +759,7 @@ std::set<std::string> Automaton::DFAGetTransitionsFromTo(DFA_ptr dfa, const int 
 }
 
 DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int number_of_bdd_variables) {
-  //LOG(FATAL) << "I'm broken, fix me! Use StringAutomaton::concat instead";
+  LOG(FATAL) << "I'm broken, fix me! Use StringAutomaton::concat instead";
 
 	if (DFAIsMinimizedEmtpy(dfa1) or DFAIsMinimizedEmtpy(dfa2)) {
 		return DFAMakeEmpty(number_of_bdd_variables);

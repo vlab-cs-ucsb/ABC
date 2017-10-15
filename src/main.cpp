@@ -66,7 +66,7 @@ int main(const int argc, const char **argv) {
       file = new std::ifstream(file_name);
       in = file;
       ++i;
-    } else if (argv[i] == std::string("--use-unsinged")) {
+    } else if (argv[i] == std::string("--use-unsigned")) {
       driver.set_option(Vlab::Option::Name::USE_UNSIGNED_INTEGERS);
     } else if (argv[i] == std::string("--use-signed")) {
       driver.set_option(Vlab::Option::Name::USE_SIGNED_INTEGERS);

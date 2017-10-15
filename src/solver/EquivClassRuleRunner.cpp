@@ -75,21 +75,21 @@ void EquivClassRuleRunner::visitLet(Let_ptr let_term) {
 
 void EquivClassRuleRunner::visitAnd(And_ptr and_term) {
   for (auto& term : * (and_term->term_list)) {
-  	if(symbol_table_->is_or_ite(term)) {
-  		Or_ptr or_term = dynamic_cast<Or_ptr>(term);
-  		auto then_cond = dynamic_cast<Term_ptr>(symbol_table_->get_ite_then_cond(or_term));
-  		auto else_cond = dynamic_cast<Term_ptr>(symbol_table_->get_ite_else_cond(or_term));
-  		symbol_table_->push_scope(then_cond, false);
-  		check_and_substitute_var(then_cond);
-  		visit(then_cond);
-  		symbol_table_->pop_scope();
-  		symbol_table_->push_scope(else_cond, false);
-			check_and_substitute_var(else_cond);
-			visit(else_cond);
-			symbol_table_->pop_scope();
-			symbol_table_->set_ite_then_cond(or_term,then_cond);
-			symbol_table_->set_ite_else_cond(or_term,else_cond);
-  	}
+//  	if(symbol_table_->is_or_ite(term)) {
+//  		Or_ptr or_term = dynamic_cast<Or_ptr>(term);
+//  		auto then_cond = dynamic_cast<Term_ptr>(symbol_table_->get_ite_then_cond(or_term));
+//  		auto else_cond = dynamic_cast<Term_ptr>(symbol_table_->get_ite_else_cond(or_term));
+//  		symbol_table_->push_scope(then_cond, false);
+//  		check_and_substitute_var(then_cond);
+//  		visit(then_cond);
+//  		symbol_table_->pop_scope();
+//  		symbol_table_->push_scope(else_cond, false);
+//			check_and_substitute_var(else_cond);
+//			visit(else_cond);
+//			symbol_table_->pop_scope();
+//			symbol_table_->set_ite_then_cond(or_term,then_cond);
+//			symbol_table_->set_ite_else_cond(or_term,else_cond);
+//  	}
     check_and_substitute_var(term);
     visit(term);
   }
@@ -97,12 +97,10 @@ void EquivClassRuleRunner::visitAnd(And_ptr and_term) {
 
 void EquivClassRuleRunner::visitOr(Or_ptr or_term) {
   for (auto& term : * (or_term->term_list)) {
-    upper_scope = symbol_table_->top_scope();
     check_and_substitute_var(term);
     symbol_table_->push_scope(term, false);
     visit(term);
     symbol_table_->pop_scope();
-    upper_scope = nullptr;
   }
 }
 
@@ -141,29 +139,6 @@ void EquivClassRuleRunner::visitDiv(Div_ptr div_term) {
 }
 
 void EquivClassRuleRunner::visitEq(Eq_ptr eq_term) {
-
-	// if eq_term is (x = const), dont replace x with const, leave term alone
-//	if(QualIdentifier_ptr left = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {
-//		if(TermConstant_ptr right = dynamic_cast<TermConstant_ptr>(eq_term->right_term)) {
-//			Variable_ptr variable = symbol_table_->get_variable(left);
-//			auto equiv = symbol_table_->get_equivalence_class_of(variable);
-//			if(equiv and Ast2Dot::isEquivalent(right,equiv->get_representative_term())) {
-//				LOG(INFO) << "SAME!";
-//				return;
-//			}
-//		}
-//	} else if(QualIdentifier_ptr left = dynamic_cast<QualIdentifier_ptr>(eq_term->right_term)) {
-//		if(TermConstant_ptr right = dynamic_cast<TermConstant_ptr>(eq_term->left_term)) {
-//			Variable_ptr variable = symbol_table_->get_variable(left);
-//			auto equiv = symbol_table_->get_equivalence_class_of(variable);
-//			if(equiv and Ast2Dot::isEquivalent(right,equiv->get_representative_term())) {
-//				LOG(INFO) << "SAME!";
-//				return;
-//			}
-//		}
-//	}
-
-
   check_and_substitute_var(eq_term->left_term);
   check_and_substitute_var(eq_term->right_term);
   visit_children_of(eq_term);

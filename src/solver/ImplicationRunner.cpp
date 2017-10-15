@@ -89,10 +89,10 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
 
   if (Concat_ptr left_id = dynamic_cast<Concat_ptr>(eq_term->left_term)) {
     if (!is_precise(left_id) or !dynamic_cast<QualIdentifier_ptr>(eq_term->right_term)) {
-      if (Option::Solver::ENABLE_LEN_IMPLICATIONS) {
-        Term_ptr implication_term = new Eq(get_length(left_id), get_length(eq_term->right_term));
-        current_and_->term_list->push_back(implication_term);
-      }
+//      if (Option::Solver::ENABLE_LEN_IMPLICATIONS) {
+//        Term_ptr implication_term = new Eq(get_length(left_id), get_length(eq_term->right_term));
+//        current_and_->term_list->push_back(implication_term);
+//      }
       if (Option::Solver::USE_MULTITRACK_AUTO) {
       	if (QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(left_id->term_list->front())) {
 					if (QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->right_term)) {
@@ -129,10 +129,10 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
 
   if (Concat_ptr right_id = dynamic_cast<Concat_ptr>(eq_term->right_term)) {
     if (!is_precise(right_id) or !dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {
-    	if (Option::Solver::ENABLE_LEN_IMPLICATIONS) {
-				Term_ptr implication_term = new Eq(get_length(eq_term->left_term), get_length(right_id));
-				current_and_->term_list->push_back(implication_term);
-			}
+//    	if (Option::Solver::ENABLE_LEN_IMPLICATIONS) {
+//				Term_ptr implication_term = new Eq(get_length(eq_term->left_term), get_length(right_id));
+//				current_and_->term_list->push_back(implication_term);
+//			}
 
       if (Option::Solver::USE_MULTITRACK_AUTO) {
         if (QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {

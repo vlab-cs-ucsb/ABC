@@ -90,25 +90,27 @@ void EquivalenceGenerator::visitAnd(And_ptr and_term) {
     }
   }
 
+  if(!has_constant_substitution_) {
   for (auto term : or_terms) {
     visit(term);
+  }
   }
 }
 
 void EquivalenceGenerator::visitOr(Or_ptr or_term) {
   for (auto term : *(or_term->term_list)) {
-  	if(symbol_table_->is_or_ite(term)) {
-			Or_ptr or_term = dynamic_cast<Or_ptr>(term);
-			auto then_cond = dynamic_cast<Term_ptr>(symbol_table_->get_ite_then_cond(or_term));
-			auto else_cond = dynamic_cast<Term_ptr>(symbol_table_->get_ite_else_cond(or_term));
-			symbol_table_->push_scope(then_cond, false);
-			visit(then_cond);
-			symbol_table_->pop_scope();
-			symbol_table_->push_scope(else_cond, false);
-			visit(else_cond);
-			symbol_table_->pop_scope();
-
-		}
+//  	if(symbol_table_->is_or_ite(term)) {
+//			Or_ptr or_term = dynamic_cast<Or_ptr>(term);
+//			auto then_cond = dynamic_cast<Term_ptr>(symbol_table_->get_ite_then_cond(or_term));
+//			auto else_cond = dynamic_cast<Term_ptr>(symbol_table_->get_ite_else_cond(or_term));
+//			symbol_table_->push_scope(then_cond, false);
+//			visit(then_cond);
+//			symbol_table_->pop_scope();
+//			symbol_table_->push_scope(else_cond, false);
+//			visit(else_cond);
+//			symbol_table_->pop_scope();
+//
+//		}
     symbol_table_->push_scope(term, false);
     visit(term);
     symbol_table_->pop_scope();
@@ -194,11 +196,11 @@ bool EquivalenceGenerator::is_equiv_of_variable_and_constant(SMT::Term_ptr left_
     if (constant_term_checker.is_constant()) {
       left_variable_ = symbol_table_->get_variable(left_id->getVarName());
       term_constant_ = constant_term_checker.get_term_constant();
-      if(Variable::Type::INT == left_variable_->getType() and Primitive::Type::NUMERAL == term_constant_->getValueType()) {
-        if(std::stoi(term_constant_->getValue()) > 10) {
-          return false;
-        }
-      }
+//      if(Variable::Type::INT == left_variable_->getType() and Primitive::Type::NUMERAL == term_constant_->getValueType()) {
+//        if(std::stoi(term_constant_->getValue()) > 10) {
+//          return false;
+//        }
+//      }
       DVLOG(VLOG_LEVEL)<< "variable to constant equivalence: " << left_variable_->getName() << " = " << term_constant_->getValue();
       return true;
     }
