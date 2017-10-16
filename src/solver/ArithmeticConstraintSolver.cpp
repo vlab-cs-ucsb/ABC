@@ -217,7 +217,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 //      symbol_table_->set_value(group_name, value);
 //    }
 //    delete and_value;
-  LOG(INFO) << "***** SETTING VALUE OF " << group_name << " to " << is_satisfiable;
+  //LOG(INFO) << "***** SETTING VALUE OF " << group_name << " to " << is_satisfiable;
 
   symbol_table_->IntersectValue(group_name,new Value(is_satisfiable));
 
@@ -415,7 +415,7 @@ void ArithmeticConstraintSolver::postVisitAnd(And_ptr and_term) {
 //      symbol_table_->set_value(group_name, value);
 //    }
 //    delete and_value;
-  	LOG(INFO) << "Sat: " << is_satisfiable;
+  	//LOG(INFO) << "Sat: " << is_satisfiable;
   	symbol_table_->IntersectValue(group_name, new Value(is_satisfiable));
   //}
   DVLOG(VLOG_LEVEL) << "update result end: " << *and_term << "@" << and_term;

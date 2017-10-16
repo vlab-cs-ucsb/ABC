@@ -142,7 +142,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
       DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *and_term << "@" << and_term;
     }
-    LOG(INFO) << "-------- Between! : " << is_satisfiable << " , string constraint? " << constraint_information_->has_string_constraint(and_term);
+    //LOG(INFO) << "-------- Between! : " << is_satisfiable << " , string constraint? " << constraint_information_->has_string_constraint(and_term);
     if ((is_satisfiable or (!constraint_information_->has_arithmetic_constraint(and_term)))
     				and constraint_information_->has_string_constraint(and_term)) {
       string_constraint_solver_.start(and_term);
