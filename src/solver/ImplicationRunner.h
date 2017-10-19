@@ -57,6 +57,8 @@ class ImplicationRunner : public AstTraverser {
 
  private:
 
+  std::set<SMT::Term_ptr> terms_to_remove;
+
   void CollectHeuristicInfo(SMT::Eq_ptr);
   void AddLengthHeuristic(SMT::And_ptr);
   void ResetHeuristicData();

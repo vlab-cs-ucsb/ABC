@@ -17,6 +17,7 @@ int Automaton::name_counter = 0;
 unsigned long Automaton::next_id = 0;
 
 std::unordered_map<int, int*> Automaton::bdd_variable_indices;
+bool Automaton::count_bound_exact_;
 
 const std::string Automaton::Name::NONE = "none";
 const std::string Automaton::Name::BOOL = "BoolAutomaton";
@@ -268,6 +269,10 @@ BigInteger Automaton::SymbolicCount(int bound, bool count_less_than_or_equal_to_
 
 BigInteger Automaton::SymbolicCount(double bound, bool count_less_than_or_equal_to_bound) {
   return SymbolicCount(static_cast<int>(bound), count_less_than_or_equal_to_bound);
+}
+
+void Automaton::SetCountBoundExact(bool value) {
+	count_bound_exact_ = value;
 }
 
 bool Automaton::isCyclic(int state, std::map<int, bool>& is_discovered, std::map<int, bool>& is_stack_member) {
@@ -682,7 +687,7 @@ DFA_ptr Automaton::DFAMakeAcceptingAnyWithInRange(const int start, const int end
   CHECK((start >= 0) && (end >= start));
   // 1 initial state and 1 sink state
   const int number_of_states = end + 2;
-  char *statuses = new char[number_of_states];
+  char *statuses = new char[number_of_states+1];
   dfaSetup(number_of_states, number_of_bdd_variables, GetBddVariableIndices(number_of_bdd_variables));
 
   // 0 to start - 1 not accepting, start to end accepting states
@@ -700,6 +705,7 @@ DFA_ptr Automaton::DFAMakeAcceptingAnyWithInRange(const int start, const int end
   dfaAllocExceptions(0);
   dfaStoreState(number_of_states - 1);  // sink state
   statuses[number_of_states - 1] = '-';
+  statuses[number_of_states] = '\0';
 
   DFA_ptr result_dfa = dfaBuild(statuses);
   delete[] statuses;
@@ -710,7 +716,7 @@ DFA_ptr Automaton::DFAMakeAcceptingAnyAfterLength(const int length, const int nu
   CHECK(length >= 0);
   // 1 initial state
   const int number_of_states = length + 1;
-  char *statuses = new char[number_of_states];
+  char *statuses = new char[number_of_states+1];
   dfaSetup(number_of_states, number_of_bdd_variables, GetBddVariableIndices(number_of_bdd_variables));
 
   // 0 to length - 1 not accepting
@@ -724,7 +730,7 @@ DFA_ptr Automaton::DFAMakeAcceptingAnyAfterLength(const int length, const int nu
   dfaAllocExceptions(0);
   dfaStoreState(length);
   statuses[length] = '+';
-
+  statuses[number_of_states] = '\0';
   DFA_ptr result_dfa = dfaBuild(statuses);
   delete[] statuses;
   return result_dfa;
@@ -1411,10 +1417,11 @@ void Automaton::SetSymbolicCounter() {
  */
 void Automaton::decide_counting_schema(Eigen::SparseMatrix<BigInteger>& count_matrix) {
   counter_.set_type(SymbolicCounter::Type::STRING);
-//  count_matrix.insert(this->dfa_->ns, this->dfa_->ns) = 1; // allows us to count all lengths up to given bound
-  count_matrix.insert(this->dfa_->ns, this->dfa_->ns) = 0; // allows us to count all lengths up to given bound
-
-
+  if(count_bound_exact_) {
+  	count_matrix.insert(this->dfa_->ns, this->dfa_->ns) = 0;
+  } else {
+  	count_matrix.insert(this->dfa_->ns, this->dfa_->ns) = 1; // allows us to count all lengths up to given bound
+  }
 }
 
 void Automaton::generateGFScript(int bound, std::ostream& out, bool count_less_than_or_equal_to_bound) {

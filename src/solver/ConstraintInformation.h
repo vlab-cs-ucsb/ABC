@@ -46,6 +46,13 @@ class ConstraintInformation {
 
   std::map<std::string,Theory::StringFormula_ptr> string_formulas;
 
+  void add_var_constraint(SMT::Variable_ptr, SMT::Term_ptr);
+  std::set<SMT::Term_ptr> get_var_constraints(SMT::Variable_ptr);
+
+  std::map<SMT::Variable_ptr,std::set<SMT::Term_ptr>> var_constraints;
+  std::map<std::string,int> strings;
+  std::string most_common_string;
+
  private:
   std::set<SMT::Visitable_ptr> components_;
   std::set<SMT::Visitable_ptr> arithmetic_constraints_;

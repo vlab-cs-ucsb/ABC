@@ -11,6 +11,7 @@ namespace Vlab {
 namespace Theory {
 
 const int StringAutomaton::VLOG_LEVEL = 8;
+bool StringAutomaton::debug = false;
 
 StringAutomaton::TransitionTable StringAutomaton::TRANSITION_TABLE;
 
@@ -45,14 +46,13 @@ StringAutomaton::StringAutomaton(const DFA_ptr dfa, const int i_track, const int
 	int var = VAR_PER_TRACK;
 	int len = (num_tracks_ * var)+1; // extrabit for nondeterminism
 	mindices = GetBddVariableIndices(len);
-
+	int *indices = GetBddVariableIndices(in_num_vars);
 	sink = find_sink(M);
 	if(sink < 0) {
 		has_sink = false;
 		sink = num_states;
 		num_states++;
 	}
-
 	statuses = new char[num_states+1];
 	// begin dfa building process
 	// old transitions end in '0'
@@ -77,7 +77,7 @@ StringAutomaton::StringAutomaton(const DFA_ptr dfa, const int i_track, const int
 			if(pp->to != sink) {
 				std::vector<char> curr(len,'X');
 				for(unsigned j = 0; j < in_num_vars; j++) {
-					for(tp = pp->trace; tp && (tp->index != mindices[j]); tp = tp->next);
+					for(tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
 					if(tp) {
 						if(tp->value) curr[i_track+num_tracks_*j] = '1';
 						else curr[i_track+num_tracks_*j] = '0';
@@ -106,7 +106,6 @@ StringAutomaton::StringAutomaton(const DFA_ptr dfa, const int i_track, const int
 
 		statuses[i] = '-';
 	}
-
 	// lambda state, loop de loop
 	dfaAllocExceptions(1);
 	std::vector<char> str(len,'X');
@@ -118,14 +117,12 @@ StringAutomaton::StringAutomaton(const DFA_ptr dfa, const int i_track, const int
 	dfaStoreException(lambda_state,&str[0]);
 	dfaStoreState(sink);
 	statuses[lambda_state] = '+';
-
 	// extra sink state, if needed
 	if(!has_sink) {
 		dfaAllocExceptions(0);
 		dfaStoreState(sink);
 		statuses[sink] = '-';
 	}
-
 	statuses[num_states] = '\0';
 	result = dfaBuild(statuses);
 	temp = dfaMinimize(result);
@@ -234,7 +231,7 @@ StringAutomaton_ptr StringAutomaton::MakeString(const std::string str, const int
   dfaStoreState(str_length + 1);
   statuses[str_length + 1] = '-';
 
-  DFA_ptr result_dfa = dfaBuild(statuses);
+  DFA_ptr result_dfa = dfaMinimize(dfaBuild(statuses));
   StringAutomaton_ptr result_auto = new StringAutomaton(result_dfa, number_of_bdd_variables);
   delete[] statuses;
 
@@ -777,6 +774,36 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
 StringAutomaton_ptr StringAutomaton::MakeNotEquality(
 		StringFormula_ptr formula) {
 	StringAutomaton_ptr not_equality_auto = nullptr;
+
+	auto coeff_map = formula->GetVariableCoefficientMap();
+	int num_vars = 0;
+	for(auto it : coeff_map) {
+		if(it.second != 0) {
+			num_vars++;
+		}
+	}
+
+	if(num_vars == 1) {
+		int num_tracks = formula->GetNumberOfVariables();
+		int left_track = formula->GetVariableIndex(1);
+		StringAutomaton_ptr string_auto,complement_auto;
+		if(formula->GetConstant() == "") {
+			complement_auto = StringAutomaton::MakeAnyString();
+		} else {
+			complement_auto = StringAutomaton::MakeAnyOtherString(formula->GetConstant());
+		}
+
+		formula->SetConstant("");
+		if(num_tracks == 1) {
+			not_equality_auto = new StringAutomaton(complement_auto->getDFA(),num_tracks,DEFAULT_NUM_OF_VARIABLES);
+		} else {
+			not_equality_auto = new StringAutomaton(complement_auto->getDFA(),left_track,num_tracks,DEFAULT_NUM_OF_VARIABLES);
+		}
+		not_equality_auto->SetFormula(formula);
+		delete complement_auto;
+		return not_equality_auto;
+	}
+
   int num_tracks = formula->GetNumberOfVariables();
   int left_track = formula->GetVariableIndex(1); // variable on the left of equality
 	int right_track = formula->GetVariableIndex(2); // variable on the right of equality
@@ -891,6 +918,25 @@ StringAutomaton_ptr StringAutomaton::Complement() {
 	}
   DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->Complement()";
 	return complement_auto;
+
+
+//	DFA_ptr complement_dfa = nullptr, minimized_dfa = nullptr, current_dfa = dfaCopy(dfa_);
+//	StringAutomaton_ptr complement_auto = nullptr;
+//	StringAutomaton_ptr any_string = StringAutomaton::MakeAnyString();
+//
+//	dfaNegation(current_dfa);
+//	complement_dfa = dfaProduct(any_string->dfa_, current_dfa, dfaAND); // this is to handle case where we complement an automaton that has empty language (/#/ in regex notation)
+//	delete any_string; any_string = nullptr;
+//	dfaFree(current_dfa); current_dfa = nullptr;
+//
+//	minimized_dfa = dfaMinimize(complement_dfa);
+//	dfaFree(complement_dfa); complement_dfa = nullptr;
+//
+//	complement_auto = new StringAutomaton(minimized_dfa, num_of_bdd_variables_);
+//
+//	DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->makeComplement()";
+//
+//	return complement_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
@@ -957,9 +1003,9 @@ StringAutomaton_ptr StringAutomaton::Difference(StringAutomaton_ptr other_auto) 
 StringAutomaton_ptr StringAutomaton::Concat(StringAutomaton_ptr other_auto) {
   CHECK_EQ(this->num_tracks_,other_auto->num_tracks_);
   //StringAutomaton_ptr concat_auto = static_cast<StringAutomaton_ptr>(Automaton::Concat(other_auto));
-  
   // Other concat is currently maybe broken, don't know why.
   DFA_ptr concat_dfa = StringAutomaton::concat(this->getDFA(),other_auto->getDFA(),this->num_of_bdd_variables_);
+  debug = false;
   StringAutomaton_ptr concat_auto = new StringAutomaton(concat_dfa,this->num_tracks_,this->num_of_bdd_variables_);
   return concat_auto;
 }
@@ -1138,28 +1184,28 @@ StringAutomaton_ptr StringAutomaton::Repeat(unsigned min, unsigned max) {
 StringAutomaton_ptr StringAutomaton::Suffixes() {
 	CHECK_EQ(this->num_tracks_,1);
   StringAutomaton_ptr suffixes_auto = nullptr;
-
   if (this->IsEmptyLanguage()) {
     suffixes_auto = StringAutomaton::MakePhi();
     DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->suffixes()";
     return suffixes_auto;
   }
-
   int number_of_variables = this->num_of_bdd_variables_,
           number_of_states = this->dfa_->ns,
           sink_state = this->GetSinkState(),
           next_state = -1;
-
   unsigned max = number_of_states;
   if (sink_state != -1) {
     max = max - 1;
   }
-
+  bool has_sink = true;
+  if(sink_state == -1) {
+  	has_sink = false;
+  }
   // if number of variables are too large for mona, implement an algorithm that find suffixes by finding
   // sub suffixes and union them
   number_of_variables = this->num_of_bdd_variables_ + std::ceil(std::log2(max)); // number of variables required
   int* indices = GetBddVariableIndices(number_of_variables);
-  char* statuses = new char[number_of_states + 1];
+
   unsigned extra_bits_value = 0;
   int number_of_extra_bits_needed = number_of_variables - this->num_of_bdd_variables_;
 
@@ -1174,7 +1220,7 @@ StringAutomaton_ptr StringAutomaton::Suffixes() {
       exception_map[s]; // initialize map entry
       state_paths = pp = make_paths(this->dfa_->bddm, this->dfa_->q[s]);
       while (pp) {
-        if (pp->to != (unsigned)sink_state) {
+        if (pp->to != sink_state) {
           current_exception = new std::vector<char>();
           for (int j = 0; j < this->num_of_bdd_variables_; j++) {
             for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
@@ -1226,6 +1272,15 @@ StringAutomaton_ptr StringAutomaton::Suffixes() {
       }
     }
   }
+
+
+
+  if(!has_sink) {
+  	sink_state = number_of_states;
+  	number_of_states++;
+  }
+
+  char* statuses = new char[number_of_states + 1];
 
   dfaSetup(number_of_states, number_of_variables, indices);
   for (int s = 0; s < number_of_states; s++) {
@@ -2680,7 +2735,7 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 	int* map = CreateBddVariableIndices(this->num_tracks_*VAR_PER_TRACK);
 	std::vector<int> indices;
 	for(int i = 0; i < this->num_tracks_; i++) {
-		int shift = (i > k_track ? i-1 : i);
+		int shift = i;//(i > k_track ? i-1 : i);
 		if(i == k_track) {
 			for(int k = 0; k < VAR_PER_TRACK; k++) {
 				map[i+this->num_tracks_*k] = k;
@@ -2692,9 +2747,9 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 		}
 	}
 
-	for(int i = this->num_tracks_-1; i >= 0; --i) {
+	for(int i = 0; i < this->num_tracks_; ++i) {
 		if(i != k_track) {
-			for(int j = 0; j < VAR_PER_TRACK; ++j) {
+			for(int j = VAR_PER_TRACK-1; j >= 0; --j) {
 				indices.push_back(i+this->num_tracks_*j);
 			}
 		}
@@ -2704,8 +2759,9 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 	for(int i = 0; i < this->num_tracks_*VAR_PER_TRACK; i++) {
 		_map.push_back(map[i]);
 	}
-  
+  LOG(INFO) << "Before project";
   auto result = Automaton::DFAProjectAway(res,_map,indices);
+  LOG(INFO) << "After project";
   if(find_sink(result) != -1) {
 		// trim prefix first, then suffix
 		temp = TrimLambdaSuffix(result,VAR_PER_TRACK,false);
@@ -2720,6 +2776,7 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 		dfaFree(result);
 		result_auto = StringAutomaton::MakeAnyString();
 	}
+  LOG(INFO) << "Done";
 	delete[] map;
 	return result_auto;
 }
@@ -2786,6 +2843,7 @@ void StringAutomaton::SetSymbolicCounter() {
 		return;
 	}
 
+
 	// remove last lambda loop
 	DFA_ptr original_dfa = nullptr, temp_dfa = nullptr,trimmed_dfa = nullptr;
 	original_dfa = this->dfa_;
@@ -2834,7 +2892,7 @@ void StringAutomaton::SetSymbolicCounter() {
 				lambda_states[pp->to] = true;
 				if(!lambda_states[i] || i == pp->to) {
 					statuses[i] = '+';
-				}
+				} 
 			} else {
 				exep.push_back('\0');
 				state_exeps.push_back(std::make_pair(exep,pp->to));
@@ -2853,7 +2911,7 @@ void StringAutomaton::SetSymbolicCounter() {
 	temp_dfa = dfaBuild(statuses);
 	trimmed_dfa = dfaMinimize(temp_dfa);
 	dfaFree(temp_dfa);
-	delete[] mindices;
+	//delete[] mindices;
 	delete[] statuses;
 
 	this->dfa_ = trimmed_dfa;
@@ -3386,9 +3444,12 @@ StringAutomaton_ptr StringAutomaton::MakeConcatExtraTrack(int left_track, int ri
   auto any_string_extended_auto = new StringAutomaton(any_string_auto->getDFA(),right_track,num_tracks+1,DEFAULT_NUM_OF_VARIABLES);
   delete any_string_auto;
   auto prefix_suffix_auto = StringAutomaton::MakePrefixSuffix(left_track,right_track,num_tracks,num_tracks+1);
+
+  //auto intersect_auto = prefix_suffix_auto;
   auto intersect_auto = prefix_suffix_auto->Intersect(any_string_extended_auto);
   delete prefix_suffix_auto;
   delete any_string_extended_auto;
+
   auto result_auto = intersect_auto->Intersect(temp_auto);
   delete intersect_auto;
   delete temp_auto;
@@ -3876,6 +3937,7 @@ DFA_ptr StringAutomaton::concat(DFA_ptr prefix_dfa, DFA_ptr suffix_dfa, int var)
   // (x,x,lambda) until track 2 is lambda
   // (x,lambda,x) until end
 
+
   temp_multi = MakePrefixSuffix(0,1,2,3);
   prefix_multi = new StringAutomaton(prefix_dfa,1,3,var);
   temp_dfa = PrependLambda(suffix_dfa,var);
@@ -3888,8 +3950,9 @@ DFA_ptr StringAutomaton::concat(DFA_ptr prefix_dfa, DFA_ptr suffix_dfa, int var)
   intersect_multi = temp_multi->Intersect(suffix_multi);
   delete temp_multi;
   delete suffix_multi;
-  result_string_auto = intersect_multi->GetKTrack(0);
-  result_dfa = dfaCopy(result_string_auto->getDFA());
+	result_string_auto = intersect_multi->GetKTrack(0);
+	result_dfa = dfaCopy(result_string_auto->getDFA());
+
   delete intersect_multi;
   delete result_string_auto;
   return result_dfa;

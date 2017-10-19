@@ -10,7 +10,7 @@
 namespace Vlab {
 namespace Solver {
 
-ModelCounter::ModelCounter() : use_signed_integers_{true}, unconstraint_int_vars_ {0}, unconstraint_str_vars_ {0} {
+ModelCounter::ModelCounter() : use_signed_integers_{true}, count_bound_exact_{false}, unconstraint_int_vars_ {0}, unconstraint_str_vars_ {0} {
 }
 
 ModelCounter::~ModelCounter() {
@@ -18,6 +18,10 @@ ModelCounter::~ModelCounter() {
 
 void ModelCounter::set_use_sign_integers(bool value) {
   use_signed_integers_ = value;
+}
+
+void ModelCounter::set_count_bound_exact(bool value) {
+	count_bound_exact_ = value;
 }
 
 void ModelCounter::set_num_of_unconstraint_int_vars(int n) {
@@ -94,12 +98,20 @@ Theory::BigInteger ModelCounter::CountStrs(const unsigned long bound) {
   }
 
   if (unconstraint_str_vars_ > 0) {
-    Theory::BigInteger single_unconstraint_str_count = (boost::multiprecision::pow(
-        boost::multiprecision::cpp_int(256), (bound + 1)) - 1)
-            / 255;
-   result = result
-       * boost::multiprecision::pow(single_unconstraint_str_count,
-                                    unconstraint_str_vars_);
+  	if(count_bound_exact_) {
+  		Theory::BigInteger single_unconstraint_str_count = (boost::multiprecision::pow(
+				boost::multiprecision::cpp_int(256), bound));
+			result = result
+			 * boost::multiprecision::pow(single_unconstraint_str_count,
+																		unconstraint_str_vars_);
+  	} else {
+			Theory::BigInteger single_unconstraint_str_count = (boost::multiprecision::pow(
+				boost::multiprecision::cpp_int(256), (bound + 1)) - 1)
+						/ 255;
+			result = result
+			 * boost::multiprecision::pow(single_unconstraint_str_count,
+																		unconstraint_str_vars_);
+  	}
   }
 
   return result;

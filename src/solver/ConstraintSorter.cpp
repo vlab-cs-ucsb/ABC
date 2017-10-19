@@ -1409,10 +1409,12 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
     if ((*it)->numOfTotalVars() == 0) {
       sorted_term_node_list.push_back((*it));
       it = term_node_list.erase(it);
-    } else if(not (*it)->hasSymbolicVar()) {
+    }
+    else if(not (*it)->hasSymbolicVar()) {
       sorted_term_node_list.push_back((*it));
       it = term_node_list.erase(it);
-    } else {
+    }
+    else {
       it++;
     }
   }
@@ -1431,8 +1433,8 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
     }
   }
 
-  //term_node_list.insert(term_node_list.begin(), concat_node_list.begin(), concat_node_list.end());
   term_node_list.insert(term_node_list.begin(), sorted_term_node_list.begin(), sorted_term_node_list.end());
+  //term_node_list.insert(term_node_list.begin(), concat_node_list.begin(), concat_node_list.end());
 
   DVLOG(VLOG_LEVEL) << "node list sorted";
 }

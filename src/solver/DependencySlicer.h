@@ -42,6 +42,7 @@ class DependencySlicer : public AstTraverser {
   void visitNotEq(SMT::NotEq_ptr) override;
   void visitBegins(SMT::Begins_ptr) override;
   void visitNotBegins(SMT::NotBegins_ptr) override;
+  void visitIn(SMT::In_ptr) override;
   void visitQualIdentifier(SMT::QualIdentifier_ptr) override;
 
 

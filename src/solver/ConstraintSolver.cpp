@@ -24,7 +24,7 @@ ConstraintSolver::ConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_tab
       arithmetic_constraint_solver_(script, symbol_table, constraint_information,
                                     Option::Solver::USE_SIGNED_INTEGERS),
       string_constraint_solver_(script, symbol_table, constraint_information) {
-
+	Automaton::SetCountBoundExact(Option::Solver::COUNT_BOUND_EXACT);
 }
 
 ConstraintSolver::~ConstraintSolver() {
@@ -142,7 +142,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
       DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *and_term << "@" << and_term;
     }
-    LOG(INFO) << "-------- Between! : " << is_satisfiable << " , string constraint? " << constraint_information_->has_string_constraint(and_term);
+    //LOG(INFO) << "-------- Between! : " << is_satisfiable << " , string constraint? " << constraint_information_->has_string_constraint(and_term);
     if ((is_satisfiable or (!constraint_information_->has_arithmetic_constraint(and_term)))
     				and constraint_information_->has_string_constraint(and_term)) {
       string_constraint_solver_.start(and_term);
@@ -407,10 +407,16 @@ void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
   // which is prohibitively expensive
   if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term)) {
     if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term)) {
-      StringAutomaton_ptr temp,con;
+
+    	//LOG(FATAL) << "Should not be here";
+    	StringAutomaton_ptr temp,con;
       Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
-      temp = StringAutomaton::MakeString(right_constant->getValue());
-      con = temp->Complement();
+
+      if(right_constant->getValue() == "") {
+      	con = StringAutomaton::MakeAnyString();
+      } else {
+        con = StringAutomaton::MakeAnyOtherString(right_constant->getValue());
+      }
       StringFormula_ptr formula = new StringFormula();
       formula->SetType(StringFormula::Type::VAR);
       formula->AddVariable(var->getName(),1);
@@ -596,7 +602,10 @@ void ConstraintSolver::visitIn(In_ptr in_term) {
 	// if term is of type var in const regex, short circuit variable update
   if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(in_term->left_term)) {
     if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(in_term->right_term)) {
+
+
       Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
+
       StringAutomaton_ptr con = StringAutomaton::MakeRegexAuto(right_constant->getValue());
       StringFormula_ptr formula = new StringFormula();
       formula->SetType(StringFormula::Type::VAR);

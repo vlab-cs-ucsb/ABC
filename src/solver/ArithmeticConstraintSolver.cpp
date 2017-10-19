@@ -217,7 +217,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 //      symbol_table_->set_value(group_name, value);
 //    }
 //    delete and_value;
-  LOG(INFO) << "***** SETTING VALUE OF " << group_name << " to " << is_satisfiable;
+  //LOG(INFO) << "***** SETTING VALUE OF " << group_name << " to " << is_satisfiable;
 
   symbol_table_->IntersectValue(group_name,new Value(is_satisfiable));
 
@@ -330,7 +330,7 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
 //			symbol_table_->set_value(group_name, value);
 //		}
 //		delete or_value;
-  LOG(INFO) << "Sat: " << is_satisfiable;
+  //LOG(INFO) << "Sat: " << is_satisfiable;
   symbol_table_->UnionValue(group_name,new Value(is_satisfiable));
   //}
 
@@ -402,8 +402,8 @@ void ArithmeticConstraintSolver::postVisitAnd(And_ptr and_term) {
 			Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
 			Value_ptr subgroup_value = symbol_table_->get_value(subgroup_variable);
 			if(!subgroup_value->is_satisfiable()) {
-				LOG(INFO) << "   ---------    NOT SAT";
-				std::cin.get();
+				//LOG(INFO) << "   ---------    NOT SAT";
+				//std::cin.get();
 			}
 			is_satisfiable = subgroup_value->is_satisfiable() and is_satisfiable;
 		}
@@ -415,7 +415,7 @@ void ArithmeticConstraintSolver::postVisitAnd(And_ptr and_term) {
 //      symbol_table_->set_value(group_name, value);
 //    }
 //    delete and_value;
-  	LOG(INFO) << "Sat: " << is_satisfiable;
+  	//LOG(INFO) << "Sat: " << is_satisfiable;
   	symbol_table_->IntersectValue(group_name, new Value(is_satisfiable));
   //}
   DVLOG(VLOG_LEVEL) << "update result end: " << *and_term << "@" << and_term;
@@ -516,7 +516,7 @@ void ArithmeticConstraintSolver::postVisitOr(Or_ptr or_term) {
 		}
 		symbol_table_->IntersectValue(group_name,new Value(is_satisfiable));
   }
-  LOG(INFO) << "Sat: " << is_satisfiable;
+  //LOG(INFO) << "Sat: " << is_satisfiable;
   DVLOG(VLOG_LEVEL) << "update result end: " << *or_term << "@" << or_term;
 }
 

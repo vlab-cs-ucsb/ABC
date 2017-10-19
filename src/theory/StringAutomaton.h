@@ -319,6 +319,7 @@ protected:
   static TransitionTable TRANSITION_TABLE;
   static const int VAR_PER_TRACK = 9;
   static const int DEFAULT_NUM_OF_VARIABLES = 8;
+  static bool debug;
 
 private:
   StringAutomaton();

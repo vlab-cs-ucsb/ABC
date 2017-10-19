@@ -79,6 +79,14 @@ void ConstraintInformation::set_var_formula(std::string var_name,Theory::StringF
 	string_formulas[var_name] = var_formula;
 }
 
+void ConstraintInformation::add_var_constraint(SMT::Variable_ptr variable, SMT::Term_ptr term_ptr) {
+	var_constraints[variable].insert(term_ptr);
+}
+
+std::set<SMT::Term_ptr> ConstraintInformation::get_var_constraints(SMT::Variable_ptr variable) {
+	return var_constraints[variable];
+}
+
 } /* namespace Solver */
 } /* namespace Vlab */
 

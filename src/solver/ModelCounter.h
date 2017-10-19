@@ -28,6 +28,7 @@ class ModelCounter {
   ModelCounter();
   virtual ~ModelCounter();
   void set_use_sign_integers(bool value);
+  void set_count_bound_exact(bool value);
   void set_num_of_unconstraint_int_vars(int n);
   void set_num_of_unconstraint_str_vars(int n);
   void add_constant(int c);
@@ -57,6 +58,7 @@ class ModelCounter {
   friend std::ostream& operator<<(std::ostream& os, const ModelCounter& mc);
  protected:
   bool use_signed_integers_;
+  bool count_bound_exact_;
   int unconstraint_int_vars_;
   int unconstraint_str_vars_;
   std::vector<int> constant_ints_;

@@ -126,29 +126,29 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
   std::string group_name = string_formula_generator_.get_term_group_name(and_term);
   Value_ptr and_value = nullptr;
 
-  auto& variable_value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
-	for (auto iter = variable_value_map.begin(); iter != variable_value_map.end();) {
-		if(Value::Type::STRING_AUTOMATON == iter->second->getType() and iter->second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
-			//has_string_formula = true;
-			auto variable_group = string_formula_generator_.get_variable_group_name(iter->first);
-			auto group_formula = string_formula_generator_.get_group_formula(variable_group);
-			if(group_formula == nullptr) {
-				iter++;
-				continue;
-			}
-			StringFormula_ptr formula = new StringFormula();
-			formula->SetType(StringFormula::Type::VAR);
-			formula->AddVariable(iter->first->getName(),1);
-			iter->second->getStringAutomaton()->SetFormula(formula);
-			symbol_table_->IntersectValue(variable_group,iter->second);
-			delete iter->second;iter->second = nullptr;
-			iter = variable_value_map.erase(iter);
-			LOG(INFO) << iter->first << " has a string auto already";
-			std::cin.get();
-		} else {
-			iter++;
-		}
-	}
+//  auto& variable_value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
+//	for (auto iter = variable_value_map.begin(); iter != variable_value_map.end();) {
+//		if(Value::Type::STRING_AUTOMATON == iter->second->getType() and iter->second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
+//			//has_string_formula = true;
+//			auto variable_group = string_formula_generator_.get_variable_group_name(iter->first);
+//			auto group_formula = string_formula_generator_.get_group_formula(variable_group);
+//			if(group_formula == nullptr) {
+//				iter++;
+//				continue;
+//			}
+//			StringFormula_ptr formula = new StringFormula();
+//			formula->SetType(StringFormula::Type::VAR);
+//			formula->AddVariable(iter->first->getName(),1);
+//			iter->second->getStringAutomaton()->SetFormula(formula);
+//			symbol_table_->IntersectValue(variable_group,iter->second);
+//			delete iter->second;iter->second = nullptr;
+//			iter = variable_value_map.erase(iter);
+//			LOG(INFO) << iter->first << " has a string auto already";
+//			std::cin.get();
+//		} else {
+//			iter++;
+//		}
+//	}
 
 
 

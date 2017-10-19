@@ -177,10 +177,14 @@ Solver::ModelCounter& Driver::GetModelCounter() {
 void Driver::SetModelCounterForVariable(const std::string var_name) {
   auto variable = symbol_table_->get_variable(var_name);
   auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(script_, variable);
-  auto var_value = symbol_table_->get_projected_value_at_scope(script_, representative_variable);
+
+  //auto var_value = symbol_table_->get_projected_value_at_scope(script_, representative_variable);
+  auto var_value = symbol_table_->get_value_at_scope(script_, representative_variable);
+
 
   auto& mc = variable_model_counter_[representative_variable];
   mc.set_use_sign_integers(Option::Solver::USE_SIGNED_INTEGERS);
+  mc.set_count_bound_exact(Option::Solver::COUNT_BOUND_EXACT);
   if (var_value == nullptr) {
     if (SMT::Variable::Type::INT == representative_variable->getType()) {
       mc.set_num_of_unconstraint_int_vars(1);
@@ -218,7 +222,6 @@ void Driver::SetModelCounter() {
     if (variable_entry.second == nullptr) {
       continue;
     }
-    LOG(INFO) << "Variable: " << variable_entry.first->getName();
     switch (variable_entry.second->getType()) {
       case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
         auto binary_auto = variable_entry.second->getBinaryIntAutomaton();
@@ -362,6 +365,9 @@ void Driver::set_option(const Option::Name option) {
       break;
     case Option::Name::FORCE_DNF_FORMULA:
     	Option::Solver::FORCE_DNF_FORMULA = true;
+    	break;
+    case Option::Name::COUNT_BOUND_EXACT:
+    	Option::Solver::COUNT_BOUND_EXACT = true;
     	break;
     default:
       LOG(ERROR)<< "option is not recognized: " << static_cast<int>(option);

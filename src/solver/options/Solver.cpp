@@ -21,6 +21,7 @@ bool Solver::ENABLE_IMPLICATIONS = true;
 bool Solver::ENABLE_LEN_IMPLICATIONS = true;
 bool Solver::ENABLE_SORTING_HEURISTICS = false;
 bool Solver::FORCE_DNF_FORMULA = false;
+bool Solver::COUNT_BOUND_EXACT = false;
 
 std::string Solver::OUTPUT_PATH         = ".";
 std::string Solver::SCRIPT_PATH         = ".";

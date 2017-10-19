@@ -206,6 +206,7 @@ public:
   virtual BigInteger SymbolicCount(int bound, bool count_less_than_or_equal_to_bound = true);
   virtual BigInteger SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true);
   SymbolicCounter GetSymbolicCounter();
+  static void SetCountBoundExact(bool value);
 
   class Name {
   public:
@@ -604,6 +605,8 @@ protected:
    * Model counter function
    */
   SymbolicCounter counter_;
+
+  static bool count_bound_exact_;
 private:
   char* getAnExample(bool accepting=true); // MONA version
   // for debugging

@@ -31,6 +31,7 @@ enum class Name: int {
   ENABLE_SORTING_HEURISTICS,
   DISABLE_SORTING_HEURISTICS,
 	FORCE_DNF_FORMULA,
+	COUNT_BOUND_EXACT,
   REGEX_FLAG,
   OUTPUT_PATH,
   SCRIPT_PATH
@@ -46,6 +47,7 @@ public:
   static bool ENABLE_LEN_IMPLICATIONS;
   static bool ENABLE_SORTING_HEURISTICS;
   static bool FORCE_DNF_FORMULA;
+  static bool COUNT_BOUND_EXACT;
   static std::string OUTPUT_PATH;
   static std::string SCRIPT_PATH;
 };

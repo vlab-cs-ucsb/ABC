@@ -1041,9 +1041,9 @@ void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {
       continue;
     } else if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter)) {
       if (term_constant->getValue() == "") {
-//        delete term_constant;  // deallocate
-//        concat_term->term_list->erase(iter);
-//        continue;  // iterator updated by erase
+        delete term_constant;  // deallocate
+        concat_term->term_list->erase(iter);
+        continue;  // iterator updated by erase
       } else {
       	if (initial_term_constant == nullptr) {
       		initial_term_constant = term_constant;
@@ -1937,7 +1937,7 @@ bool SyntacticOptimizer::__check_and_process_len_transformation(Term::Type opera
     if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(right_term)) {
       if (term_constant->getValueType() == Primitive::Type::NUMERAL) {
       	int value = std::stoi(term_constant->getValue());
-      	if(value > 0) return false;
+      	//if (value > 0) return false;
       	DVLOG(VLOG_LEVEL) << "Computing len transformation";
         std::string regex_template = ".{%s,%s}";
         std::string l_value = "";

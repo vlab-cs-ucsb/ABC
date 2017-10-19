@@ -66,10 +66,23 @@ void ImplicationRunner::visitAnd(And_ptr and_term) {
 		current_and_ = nullptr;
 		i++;
 	}
+
+	// remove bad terms
+	for(auto it = and_term->term_list->begin(); it != and_term->term_list->end();) {
+		if(terms_to_remove.find(*it) != terms_to_remove.end()) {
+			*it = nullptr;
+			it = and_term->term_list->erase(it);
+		} else{
+			it++;
+		}
+	}
+
 	if(Option::Solver::ENABLE_LEN_IMPLICATIONS) {
 		AddLengthHeuristic(and_term);
 		ResetHeuristicData();
 	}
+
+
 }
 
 void ImplicationRunner::visitOr(Or_ptr or_term) {
@@ -137,8 +150,63 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
       if (Option::Solver::USE_MULTITRACK_AUTO) {
         if (QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {
           if (QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(right_id->term_list->front())) {
+
+//          	auto query_var = symbol_table_->get_count_variable();
+//          	auto v = symbol_table_->get_variable(left_variable);
+//
+//          	auto var_terms = constraint_information_->get_var_constraints(symbol_table_->get_variable(right_variable));
+//          	if(var_terms.size() == 1) {
+//          		if(Eq_ptr eq_term2 = dynamic_cast<Eq_ptr>((*var_terms.begin()))) {
+//          			if(Concat_ptr eq_right = dynamic_cast<Concat_ptr>(eq_term2->right_term)) {
+//          				QualIdentifier_ptr inner_var = dynamic_cast<QualIdentifier_ptr>(eq_right->term_list->front());
+//          				if(inner_var != nullptr) {
+//          					auto inner_var_terms = constraint_information_->get_var_constraints(symbol_table_->get_variable(inner_var));
+//          					if(inner_var_terms.size() == 1 and (*inner_var_terms.begin())->type() == Term::Type::NOTEQ) {
+//          						NotEq_ptr not_eq_term = dynamic_cast<NotEq_ptr>((*inner_var_terms.begin()));
+//          						if(not_eq_term->right_term->type() == Term::Type::TERMCONSTANT) {
+//
+//
+//          							auto eq_right_clone = eq_right->clone();
+//          							eq_right_clone->term_list->push_back((*right_id->term_list)[1]->clone());
+//
+//          							TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term);
+//
+//          							std::string most_common = constraint_information_->most_common_string;
+//          							int num = constraint_information_->strings[most_common];
+//
+//          							if(num > 20) {
+//          								if(term_constant->getValue() != constraint_information_->most_common_string) {
+//
+//          								} else {
+//          									eq_term->right_term = eq_right_clone;
+//														terms_to_remove.insert(eq_term2);
+//														right_variable = inner_var->clone();
+//														return;
+//          								}
+//          							} else {
+//          								if(term_constant->getValue() == constraint_information_->most_common_string) {
+//          									eq_term->right_term = eq_right_clone;
+//														terms_to_remove.insert(eq_term2);
+//														return;
+//													} else {
+//														//eq_term->right_term = eq_right_clone;
+//														//terms_to_remove.insert(eq_term2);
+//														//right_variable = inner_var->clone();
+//													}
+//          							}
+//          						}
+//          					}
+//          				}
+//          			}
+//          		}
+//          	}
+
+
+
+
           	std::string left_name = left_variable->getVarName();
 						std::string right_name = right_variable->getVarName();
+
 						auto left_formula = constraint_information_->get_var_formula(left_name);
 						auto right_formula = constraint_information_->get_var_formula(right_name);
 						if(left_formula == nullptr) {
@@ -150,7 +218,7 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
 						auto formula = left_formula->clone();
 						formula->MergeVariables(right_formula);
 						// only add begins term if it doesn't cause too many variables in one string formula
-						if(formula->GetNumberOfVariables() <= 7) {
+						if(formula->GetNumberOfVariables() <= 9) {
 							if(left_formula != right_formula) {
 								delete left_formula;
 								delete right_formula;
@@ -160,7 +228,7 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
 							for(auto iter : formula->GetVariableCoefficientMap()) {
 								constraint_information_->set_var_formula(iter.first,formula);
 							}
-							Term_ptr implication_term_begins = new Begins(left_variable->clone(), right_id->term_list->front()->clone());
+							Term_ptr implication_term_begins = new Begins(left_variable->clone(), right_variable->clone());
 							current_and_->term_list->push_back(implication_term_begins);
 						} else {
 							DVLOG(VLOG_LEVEL) << "Can't add begins implication, would cause too many variables in one formula";
@@ -189,13 +257,13 @@ void ImplicationRunner::visitContains(Contains_ptr contains) {
 }
 
 void ImplicationRunner::visitEnds(Ends_ptr ends) {
-  if (Term::Type::TERMCONSTANT not_eq ends->subject_term->type()
-        and Term::Type::TERMCONSTANT not_eq ends->search_term->type()) {
-    Term_ptr subject_length = get_length(ends->subject_term);
-    Term_ptr search_length = get_length(ends->search_term);
-    Term_ptr implication_term = new Ge(subject_length, search_length);
-    current_and_->term_list->push_back(implication_term);
-  }
+//  if (Term::Type::TERMCONSTANT not_eq ends->subject_term->type()
+//        and Term::Type::TERMCONSTANT not_eq ends->search_term->type()) {
+//    Term_ptr subject_length = get_length(ends->subject_term);
+//    Term_ptr search_length = get_length(ends->search_term);
+//    Term_ptr implication_term = new Ge(subject_length, search_length);
+//    current_and_->term_list->push_back(implication_term);
+//  }
 }
 
 
