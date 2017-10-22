@@ -37,7 +37,7 @@ UnaryAutomaton_ptr UnaryAutomaton::Clone() const {
 UnaryAutomaton_ptr UnaryAutomaton::MakePhi() {
   DFA_ptr non_accepting_unary_dfa = Automaton::DFAMakePhi(1);
   UnaryAutomaton_ptr non_acception_unary_auto = new UnaryAutomaton(non_accepting_unary_dfa);
-  DVLOG(VLOG_LEVEL) << non_acception_unary_auto->getId() << " = makePhi()";
+  DVLOG(VLOG_LEVEL) << non_acception_unary_auto->GetId() << " = makePhi()";
   return non_acception_unary_auto;
 }
 
@@ -254,7 +254,7 @@ IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool ad
   int_auto->setMinus1(add_minus_one);
   delete[] indices; indices = nullptr;
   delete[] statuses; statuses = nullptr;
-  DVLOG(VLOG_LEVEL)  << int_auto->getId() << " = [" << this->id_ << "]->toIntAutomaton(" << number_of_variables << ", " << add_minus_one << ")";
+  DVLOG(VLOG_LEVEL)  << int_auto->GetId() << " = [" << this->id_ << "]->toIntAutomaton(" << number_of_variables << ", " << add_minus_one << ")";
 
   return int_auto;
 }
@@ -283,7 +283,7 @@ BinaryIntAutomaton_ptr UnaryAutomaton::toBinaryIntAutomaton(std::string var_name
     delete minus_one_auto; minus_one_auto = nullptr;
   }
 
-  DVLOG(VLOG_LEVEL)  << binary_auto->getId() << " = [" << this->id_ << "]->toBinaryIntAutomaton(" << var_name << ", " << *binary_auto->get_formula() << ", " << add_minus_one << ")";
+  DVLOG(VLOG_LEVEL)  << binary_auto->GetId() << " = [" << this->id_ << "]->toBinaryIntAutomaton(" << var_name << ", " << *binary_auto->get_formula() << ", " << add_minus_one << ")";
 
   return binary_auto;
 }
@@ -332,7 +332,7 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
     }
   }
 
-  DVLOG(VLOG_LEVEL)  << result_auto->getId() << " = [" << this->id_ << "]->toStringAutomaton()";
+  DVLOG(VLOG_LEVEL)  << result_auto->GetId() << " = [" << this->id_ << "]->toStringAutomaton()";
   return result_auto;
 }
 

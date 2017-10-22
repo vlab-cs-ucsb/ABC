@@ -126,7 +126,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(int value, std::string 
   constant_value_formula->set_type(ArithmeticFormula::Type::EQ);
   auto binary_auto = BinaryIntAutomaton::MakeAutomaton(constant_value_formula, not add_leading_zeros);
 
-  DVLOG(VLOG_LEVEL) << binary_auto->getId() << " = BinaryIntAutomaton::MakeAutomaton(" << value << ", " << var_name
+  DVLOG(VLOG_LEVEL) << binary_auto->GetId() << " = BinaryIntAutomaton::MakeAutomaton(" << value << ", " << var_name
                     << ", " << *formula << ", " << std::boolalpha << add_leading_zeros << ")";
   return binary_auto;
 }
@@ -276,7 +276,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(SemilinearSet_ptr semil
     delete tmp_auto;
   }
 
-  DVLOG(VLOG_LEVEL) << binary_auto->getId() << " = BinaryIntAutomaton::MakeAutomaton(<semilinear_set>, " << var_name
+  DVLOG(VLOG_LEVEL) << binary_auto->GetId() << " = BinaryIntAutomaton::MakeAutomaton(<semilinear_set>, " << var_name
                     << ", " << *(binary_auto->formula_) << ", " << std::boolalpha << add_leading_zeros << ")";
   return binary_auto;
 }
@@ -676,7 +676,7 @@ UnaryAutomaton_ptr BinaryIntAutomaton::ToUnaryAutomaton() {
   unary_auto = UnaryAutomaton::MakeAutomaton(semilinear_set);
   delete semilinear_set;
   semilinear_set = nullptr;
-  DVLOG(VLOG_LEVEL) << unary_auto->getId() << " = [" << this->id_ << "]->ToUnaryAutomaton()";
+  DVLOG(VLOG_LEVEL) << unary_auto->GetId() << " = [" << this->id_ << "]->ToUnaryAutomaton()";
   return unary_auto;
 }
 

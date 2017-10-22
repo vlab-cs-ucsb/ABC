@@ -1007,7 +1007,7 @@ RelationalStringAutomaton_ptr RelationalStringAutomaton::ProjectKTrack(int k_tra
 StringAutomaton_ptr RelationalStringAutomaton::GetAutomatonForVariable(std::string var_name) {
   int index = formula_->get_variable_index(var_name);
   auto result_auto = GetKTrack(index);
-  DVLOG(VLOG_LEVEL) << result_auto->getId() << " = [" << this->id_ << "]->GetAutomatonForVariable(" << var_name << ")";
+  DVLOG(VLOG_LEVEL) << result_auto->GetId() << " = [" << this->id_ << "]->GetAutomatonForVariable(" << var_name << ")";
   return result_auto;
 }
 

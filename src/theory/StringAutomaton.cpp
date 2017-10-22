@@ -515,7 +515,7 @@ StringAutomaton_ptr StringAutomaton::CharAt(IntAutomaton_ptr index_auto) {
   dfaFree(result_dfa); result_dfa = nullptr;
 
 
-  DVLOG(VLOG_LEVEL) << charat_auto->id_ << " = [" << this->id_ << "]->CharAt(" << index_auto->getId() << ")";
+  DVLOG(VLOG_LEVEL) << charat_auto->id_ << " = [" << this->id_ << "]->CharAt(" << index_auto->GetId() << ")";
   return charat_auto;
 }
 
@@ -562,7 +562,7 @@ StringAutomaton_ptr StringAutomaton::SubString(IntAutomaton_ptr length_auto, Str
   substring_auto = prefix_does_not_contain_search_auto->restrictLengthTo(length_auto);
   delete prefix_does_not_contain_search_auto;
 
-  DVLOG(VLOG_LEVEL) << substring_auto->id_ << " = [" << this->id_ << "]->subString(" << length_auto->getId() << "," << search_auto->id_ << ")";
+  DVLOG(VLOG_LEVEL) << substring_auto->id_ << " = [" << this->id_ << "]->subString(" << length_auto->GetId() << "," << search_auto->id_ << ")";
   return substring_auto;
 }
 
@@ -713,7 +713,7 @@ IntAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
       length_auto = IntAutomaton::makeInt(-1);
     }
 
-    DVLOG(VLOG_LEVEL) << length_auto->getId() << " = [" << this->id_ << "]->indexOf(" << search_auto->id_  << ")";
+    DVLOG(VLOG_LEVEL) << length_auto->GetId() << " = [" << this->id_ << "]->indexOf(" << search_auto->id_  << ")";
     return length_auto;
   }
 
@@ -742,7 +742,7 @@ IntAutomaton_ptr StringAutomaton::indexOf(StringAutomaton_ptr search_auto) {
     delete search_param_auto; search_param_auto = nullptr; // search_param_auto auto is not the parameter search auto, it is updated, delete it
   }
 
-  DVLOG(VLOG_LEVEL) << length_auto->getId() << " = [" << this->id_ << "]->indexOf(" << search_auto->id_  << ")";
+  DVLOG(VLOG_LEVEL) << length_auto->GetId() << " = [" << this->id_ << "]->indexOf(" << search_auto->id_  << ")";
   return length_auto;
 }
 
@@ -775,7 +775,7 @@ IntAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto) {
     } else {
       length_auto = IntAutomaton::makeInt(-1);
     }
-    DVLOG(VLOG_LEVEL) << length_auto->getId() << " = [" << this->id_ << "]->lastIndexOf(" << search_auto->id_  << ")";
+    DVLOG(VLOG_LEVEL) << length_auto->GetId() << " = [" << this->id_ << "]->lastIndexOf(" << search_auto->id_  << ")";
     return length_auto;
   }
 
@@ -802,7 +802,7 @@ IntAutomaton_ptr StringAutomaton::lastIndexOf(StringAutomaton_ptr search_auto) {
     delete search_param_auto; search_param_auto = nullptr; // search_param_auto auto is not the parameter search auto, it is updated, delete it
   }
 
-  DVLOG(VLOG_LEVEL) << length_auto->getId() << " = [" << this->id_ << "]->lastIndexOf(" << search_auto->id_ << ")";
+  DVLOG(VLOG_LEVEL) << length_auto->GetId() << " = [" << this->id_ << "]->lastIndexOf(" << search_auto->id_ << ")";
 
   return length_auto;
 }
@@ -1032,7 +1032,7 @@ UnaryAutomaton_ptr StringAutomaton::toUnaryAutomaton() {
   }
 
   unary_auto = new UnaryAutomaton(unary_dfa);
-  DVLOG(VLOG_LEVEL) << unary_auto->getId() << " = [" << this->id_ << "]->toUnaryAutomaton()";
+  DVLOG(VLOG_LEVEL) << unary_auto->GetId() << " = [" << this->id_ << "]->toUnaryAutomaton()";
   return unary_auto;
 }
 
@@ -1117,7 +1117,7 @@ IntAutomaton_ptr StringAutomaton::parseToIntAutomaton() {
     int_auto = IntAutomaton::makeInts(int_values);
   }
 
-  DVLOG(VLOG_LEVEL) << int_auto->getId() << " = [" << this->id_ << "]->parseToIntAutomaton()";
+  DVLOG(VLOG_LEVEL) << int_auto->GetId() << " = [" << this->id_ << "]->parseToIntAutomaton()";
   return int_auto;
 }
 
@@ -1134,7 +1134,7 @@ IntAutomaton_ptr StringAutomaton::length() {
     delete unary_auto; unary_auto = nullptr;
   }
 
-  DVLOG(VLOG_LEVEL) << length_auto->getId() << " = [" << this->id_ << "]->length()";
+  DVLOG(VLOG_LEVEL) << length_auto->GetId() << " = [" << this->id_ << "]->length()";
 
   return length_auto;
 }
@@ -1161,7 +1161,7 @@ StringAutomaton_ptr StringAutomaton::restrictLengthTo(IntAutomaton_ptr length_au
   length_string_auto->dfa_ = nullptr;
   delete length_string_auto; length_string_auto = nullptr;
 
-  DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictLengthTo(" << length_auto->getId() << ")";
+  DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictLengthTo(" << length_auto->GetId() << ")";
 
   return restricted_auto;
 }
@@ -1211,7 +1211,7 @@ StringAutomaton_ptr StringAutomaton::restrictIndexOfTo(IntAutomaton_ptr index_au
     delete not_contains_subject_auto; not_contains_subject_auto = nullptr;
   }
 
-  DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictIndexOfTo(" << index_auto->getId() << ", " << search_auto->id_ << ")";
+  DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictIndexOfTo(" << index_auto->GetId() << ", " << search_auto->id_ << ")";
 
   return restricted_auto;
 }
@@ -1258,7 +1258,7 @@ StringAutomaton_ptr StringAutomaton::restrictLastIndexOfTo(IntAutomaton_ptr inde
     delete not_contains_subject_auto; not_contains_subject_auto = nullptr;
   }
 
-  DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictLastIndexOfTo(" << index_auto->getId() << ", " << search_auto->id_ << ")";
+  DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictLastIndexOfTo(" << index_auto->GetId() << ", " << search_auto->id_ << ")";
 
   return restricted_auto;
 }
@@ -1312,7 +1312,7 @@ StringAutomaton_ptr StringAutomaton::restrictFromIndexToEndTo(IntAutomaton_ptr i
   restricted_auto = static_cast<StringAutomaton_ptr>(this->Intersect(tmp_auto_1));
   delete tmp_auto_1; tmp_auto_1 = nullptr;
 
-  DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictFromIndexToEndTo(" << index_auto->getId() << ", " << sub_string_auto->id_ << ")";
+  DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictFromIndexToEndTo(" << index_auto->GetId() << ", " << sub_string_auto->id_ << ")";
 
   return restricted_auto;
 }
@@ -1345,7 +1345,7 @@ StringAutomaton_ptr StringAutomaton::restrictAtIndexTo(IntAutomaton_ptr index_au
   restricted_auto = static_cast<StringAutomaton_ptr>(this->Intersect(tmp_auto_2));
   delete tmp_auto_2; tmp_auto_2 = nullptr;
 
-  DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictIndexTo(" << index_auto->getId() << ", " << sub_string_auto->id_ << ")";
+  DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictIndexTo(" << index_auto->GetId() << ", " << sub_string_auto->id_ << ")";
   return restricted_auto;
 }
 

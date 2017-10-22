@@ -808,7 +808,7 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
   delete[] statuses;
 
   unary_auto = new UnaryAutomaton(unary_dfa);
-  DVLOG(VLOG_LEVEL) << unary_auto->getId() << " = [" << this->id_ << "]->toUnaryAutomaton()";
+  DVLOG(VLOG_LEVEL) << unary_auto->GetId() << " = [" << this->id_ << "]->toUnaryAutomaton()";
   return unary_auto;
 }
 
