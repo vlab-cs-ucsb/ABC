@@ -413,9 +413,13 @@ void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
       Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
 
       if(right_constant->getValue() == "") {
-      	con = StringAutomaton::MakeAnyString();
+      	con = StringAutomaton::MakeAnyStringLengthGreaterThan(0);
       } else {
-        con = StringAutomaton::MakeAnyOtherString(right_constant->getValue());
+      	auto t1 = StringAutomaton::MakeAnyString();
+      	auto t2 = StringAutomaton::MakeString(right_constant->getValue());
+        con = t1->Difference(t2);
+        delete t1;
+        delete t2;
       }
       StringFormula_ptr formula = new StringFormula();
       formula->SetType(StringFormula::Type::VAR);
@@ -582,7 +586,10 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *concat_term << " ...";
 
   Value_ptr result = nullptr, concat_value = nullptr, param = nullptr;
-  path_trace_.push_back(concat_term);
+  if(concat_term->term_list->size() <= 3) {
+  	path_trace_.push_back(concat_term);
+	}
+
   for (auto& term_ptr : *(concat_term->term_list)) {
     visit(term_ptr);
     param = getTermValue(term_ptr);
@@ -593,8 +600,11 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
       delete result;
       result = concat_value;
     }
+
   }
-  path_trace_.pop_back();
+  if(concat_term->term_list->size() <= 3) {
+  	path_trace_.pop_back();
+  }
   setTermValue(concat_term, result);
 }
 

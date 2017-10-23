@@ -178,8 +178,8 @@ void Driver::SetModelCounterForVariable(const std::string var_name) {
   auto variable = symbol_table_->get_variable(var_name);
   auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(script_, variable);
 
-  //auto var_value = symbol_table_->get_projected_value_at_scope(script_, representative_variable);
-  auto var_value = symbol_table_->get_value_at_scope(script_, representative_variable);
+  auto var_value = symbol_table_->get_projected_value_at_scope(script_, representative_variable);
+  //auto var_value = symbol_table_->get_value_at_scope(script_, representative_variable);
 
 
   auto& mc = variable_model_counter_[representative_variable];

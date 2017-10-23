@@ -228,6 +228,11 @@ bool EquivalenceGenerator::is_equiv_of_bool_var_and_term(SMT::Term_ptr left_term
       unclassified_term_ = right_term;
       DVLOG(VLOG_LEVEL)<< "bool variable to term equivalence: " << left_variable_->getName() << " = " << *unclassified_term_;
       return true;
+    } else if(symbol_table_->get_variable_usage(variable->getName()) == 1) {
+    	left_variable_ = variable;
+			unclassified_term_ = right_term;
+			DVLOG(VLOG_LEVEL)<< "non-bool variable to term equivalence: " << left_variable_->getName() << " = " << *unclassified_term_;
+			return true;
     }
   } else if (QualIdentifier_ptr right_id = dynamic_cast<QualIdentifier_ptr>(right_term)) {
     auto variable = symbol_table_->get_variable(right_id->getVarName());

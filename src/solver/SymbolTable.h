@@ -130,6 +130,10 @@ public:
   bool is_unsorted_constraint(SMT::Visitable_ptr term);
   void remove_unsorted_constraint(SMT::Visitable_ptr term);
 
+  void increment_variable_usage(std::string);
+  int get_variable_usage(std::string);
+  void reset_variable_usage();
+
 private:
   std::string generate_internal_name(std::string, SMT::Variable::Type);
 
@@ -188,7 +192,10 @@ private:
    */ 
   SMT::Primitive_ptr count_symbol_;
 
-
+  /*
+   *
+   */
+  std::map<std::string,int> variable_usage_;
 
   static const int VLOG_LEVEL;
   //int reuse; 

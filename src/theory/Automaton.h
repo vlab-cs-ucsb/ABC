@@ -585,6 +585,7 @@ protected:
    * Automaton id used for debuggin purposes
    */
   unsigned long id_;
+  static int next_state;
 
   const Automaton::Type type_; // TODO remove type
 

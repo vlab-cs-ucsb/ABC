@@ -24,6 +24,8 @@ SyntacticOptimizer::~SyntacticOptimizer() {
 }
 
 void SyntacticOptimizer::start() {
+	symbol_table_->reset_variable_usage();
+
   DVLOG(VLOG_LEVEL) << "Start SyntacticOptimizer";
   symbol_table_->push_scope(root_,false);
   visit(root_);
@@ -710,6 +712,10 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
       }
     }
     LOG(FATAL) << "Operation not supported";
+  } else if(Term::Type::TERMCONSTANT != eq_term->right_term->type() and Term::Type::QUALIDENTIFIER != eq_term->right_term->type()
+  								and Term::Type::QUALIDENTIFIER == eq_term->left_term->type()) {
+  	auto left_var = symbol_table_->get_variable(eq_term->left_term);
+  	symbol_table_->increment_variable_usage(left_var->getName());
   }
 
   if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
@@ -1937,7 +1943,7 @@ bool SyntacticOptimizer::__check_and_process_len_transformation(Term::Type opera
     if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(right_term)) {
       if (term_constant->getValueType() == Primitive::Type::NUMERAL) {
       	int value = std::stoi(term_constant->getValue());
-      	//if (value > 0) return false;
+      	//if (value > 1) return false;
       	DVLOG(VLOG_LEVEL) << "Computing len transformation";
         std::string regex_template = ".{%s,%s}";
         std::string l_value = "";

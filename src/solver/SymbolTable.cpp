@@ -642,6 +642,25 @@ void SymbolTable::remove_unsorted_constraint(Visitable_ptr term) {
 	last_constraints.erase(Ast2Dot::toString(term));
 }
 
+void SymbolTable::increment_variable_usage(std::string var_name) {
+	if(variable_usage_.find(var_name) == variable_usage_.end()) {
+		variable_usage_[var_name] = 1;
+	} else {
+		variable_usage_[var_name] = variable_usage_[var_name] + 1;
+	}
+}
+
+int SymbolTable::get_variable_usage(std::string var_name) {
+	if(variable_usage_.find(var_name) == variable_usage_.end()) {
+		return 0;
+	}
+	return variable_usage_[var_name];
+}
+
+void SymbolTable::reset_variable_usage() {
+	variable_usage_.clear();
+}
+
 
 
 std::string SymbolTable::generate_internal_name(std::string name, Variable::Type type) {

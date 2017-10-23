@@ -154,8 +154,9 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
 //          	auto query_var = symbol_table_->get_count_variable();
 //          	auto v = symbol_table_->get_variable(left_variable);
 //
+//
 //          	auto var_terms = constraint_information_->get_var_constraints(symbol_table_->get_variable(right_variable));
-//          	if(var_terms.size() == 1) {
+//          	if(var_terms.size() <= 1) {
 //          		if(Eq_ptr eq_term2 = dynamic_cast<Eq_ptr>((*var_terms.begin()))) {
 //          			if(Concat_ptr eq_right = dynamic_cast<Concat_ptr>(eq_term2->right_term)) {
 //          				QualIdentifier_ptr inner_var = dynamic_cast<QualIdentifier_ptr>(eq_right->term_list->front());
@@ -174,14 +175,19 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
 //          							std::string most_common = constraint_information_->most_common_string;
 //          							int num = constraint_information_->strings[most_common];
 //
+////          							LOG(INFO) << "MOST COMMON: " << most_common;
+////          							std::cin.get();
 //          							if(num > 20) {
 //          								if(term_constant->getValue() != constraint_information_->most_common_string) {
-//
+//          									//eq_term->right_term = eq_right_clone;
+//														//terms_to_remove.insert(eq_term2);
+//														//right_variable = inner_var->clone();
+////														LOG(INFO) << "Yep!";
+////														std::cin.get();
+//														//return;
 //          								} else {
-//          									eq_term->right_term = eq_right_clone;
-//														terms_to_remove.insert(eq_term2);
-//														right_variable = inner_var->clone();
-//														return;
+//          									//return;
+//
 //          								}
 //          							} else {
 //          								if(term_constant->getValue() == constraint_information_->most_common_string) {

@@ -788,14 +788,18 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(
 		int left_track = formula->GetVariableIndex(1);
 		StringAutomaton_ptr string_auto,complement_auto;
 		if(formula->GetConstant() == "") {
-			complement_auto = StringAutomaton::MakeAnyString();
+			complement_auto = StringAutomaton::MakeAnyStringLengthGreaterThan(0);
 		} else {
-			complement_auto = StringAutomaton::MakeAnyOtherString(formula->GetConstant());
+			auto t1 = StringAutomaton::MakeAnyString();
+			auto t2 = StringAutomaton::MakeString(formula->GetConstant());
+			complement_auto = t1->Difference(t2);
+			delete t1;
+			delete t2;
 		}
 
 		formula->SetConstant("");
 		if(num_tracks == 1) {
-			not_equality_auto = new StringAutomaton(complement_auto->getDFA(),num_tracks,DEFAULT_NUM_OF_VARIABLES);
+			not_equality_auto = new StringAutomaton(dfaCopy(complement_auto->getDFA()),num_tracks,DEFAULT_NUM_OF_VARIABLES);
 		} else {
 			not_equality_auto = new StringAutomaton(complement_auto->getDFA(),left_track,num_tracks,DEFAULT_NUM_OF_VARIABLES);
 		}
@@ -906,43 +910,42 @@ StringAutomaton_ptr StringAutomaton::MakeAnyStringAligned(StringFormula_ptr form
 }
 
 StringAutomaton_ptr StringAutomaton::Complement() {
-	auto complement_dfa = Automaton::DFAComplement(dfa_);
-	auto temp_auto = new StringAutomaton(complement_dfa, formula_->Complement(),num_of_bdd_variables_);
-	StringAutomaton_ptr complement_auto = temp_auto;
-
-	if(num_tracks_ > 1) {
-		auto aligned_universe_auto = MakeAnyStringAligned(formula_->clone());
-		complement_auto = temp_auto->Intersect(aligned_universe_auto);
-		delete temp_auto;
-		delete aligned_universe_auto;
-	}
-  DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->Complement()";
-	return complement_auto;
-
-
-//	DFA_ptr complement_dfa = nullptr, minimized_dfa = nullptr, current_dfa = dfaCopy(dfa_);
-//	StringAutomaton_ptr complement_auto = nullptr;
-//	StringAutomaton_ptr any_string = StringAutomaton::MakeAnyString();
+//	auto complement_dfa = Automaton::DFAComplement(dfa_);
+//	auto temp_auto = new StringAutomaton(complement_dfa, formula_->Complement(),num_of_bdd_variables_);
+//	StringAutomaton_ptr complement_auto = temp_auto;
 //
-//	dfaNegation(current_dfa);
-//	complement_dfa = dfaProduct(any_string->dfa_, current_dfa, dfaAND); // this is to handle case where we complement an automaton that has empty language (/#/ in regex notation)
-//	delete any_string; any_string = nullptr;
-//	dfaFree(current_dfa); current_dfa = nullptr;
-//
-//	minimized_dfa = dfaMinimize(complement_dfa);
-//	dfaFree(complement_dfa); complement_dfa = nullptr;
-//
-//	complement_auto = new StringAutomaton(minimized_dfa, num_of_bdd_variables_);
-//
-//	DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->makeComplement()";
-//
+//	if(num_tracks_ > 1) {
+//		auto aligned_universe_auto = MakeAnyStringAligned(formula_->clone());
+//		complement_auto = temp_auto->Intersect(aligned_universe_auto);
+//		delete temp_auto;
+//		delete aligned_universe_auto;
+//	}
+//  DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->Complement()";
 //	return complement_auto;
+
+
+	DFA_ptr complement_dfa = nullptr, minimized_dfa = nullptr, current_dfa = dfaCopy(dfa_);
+	StringAutomaton_ptr complement_auto = nullptr;
+	StringAutomaton_ptr any_string = StringAutomaton::MakeAnyString();
+
+	dfaNegation(current_dfa);
+	complement_dfa = dfaProduct(any_string->dfa_, current_dfa, dfaAND); // this is to handle case where we complement an automaton that has empty language (/#/ in regex notation)
+	delete any_string; any_string = nullptr;
+	dfaFree(current_dfa); current_dfa = nullptr;
+
+	minimized_dfa = dfaMinimize(complement_dfa);
+	dfaFree(complement_dfa); complement_dfa = nullptr;
+
+	complement_auto = new StringAutomaton(minimized_dfa, num_of_bdd_variables_);
+
+	DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->makeComplement()";
+
+	return complement_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
 	// if both autos are same size, we're good. Otherwise, if one auto has one track
 	// put it in a multi-track with the correct track.
-	
   if(this->num_tracks_ != other_auto->num_tracks_) {
     StringAutomaton_ptr small_auto, big_auto;
 		if(this->num_tracks_ == 1 && other_auto->num_tracks_ != 1 && !this->formula_->IsConstant()) {
@@ -1002,11 +1005,11 @@ StringAutomaton_ptr StringAutomaton::Difference(StringAutomaton_ptr other_auto) 
 
 StringAutomaton_ptr StringAutomaton::Concat(StringAutomaton_ptr other_auto) {
   CHECK_EQ(this->num_tracks_,other_auto->num_tracks_);
-  //StringAutomaton_ptr concat_auto = static_cast<StringAutomaton_ptr>(Automaton::Concat(other_auto));
+  StringAutomaton_ptr concat_auto = static_cast<StringAutomaton_ptr>(Automaton::Concat(other_auto));
   // Other concat is currently maybe broken, don't know why.
-  DFA_ptr concat_dfa = StringAutomaton::concat(this->getDFA(),other_auto->getDFA(),this->num_of_bdd_variables_);
-  debug = false;
-  StringAutomaton_ptr concat_auto = new StringAutomaton(concat_dfa,this->num_tracks_,this->num_of_bdd_variables_);
+  //DFA_ptr concat_dfa = StringAutomaton::concat(this->getDFA(),other_auto->getDFA(),this->num_of_bdd_variables_);
+  //debug = false;
+  //StringAutomaton_ptr concat_auto = new StringAutomaton(concat_dfa,this->num_tracks_,this->num_of_bdd_variables_);
   return concat_auto;
 }
 
@@ -2735,7 +2738,7 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 	int* map = CreateBddVariableIndices(this->num_tracks_*VAR_PER_TRACK);
 	std::vector<int> indices;
 	for(int i = 0; i < this->num_tracks_; i++) {
-		int shift = i;//(i > k_track ? i-1 : i);
+		int shift = (i > k_track ? i-1 : i);
 		if(i == k_track) {
 			for(int k = 0; k < VAR_PER_TRACK; k++) {
 				map[i+this->num_tracks_*k] = k;
@@ -2749,7 +2752,7 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 
 	for(int i = 0; i < this->num_tracks_; ++i) {
 		if(i != k_track) {
-			for(int j = VAR_PER_TRACK-1; j >= 0; --j) {
+			for(int j = 0; j < VAR_PER_TRACK; ++j) {
 				indices.push_back(i+this->num_tracks_*j);
 			}
 		}
@@ -3936,7 +3939,7 @@ DFA_ptr StringAutomaton::concat(DFA_ptr prefix_dfa, DFA_ptr suffix_dfa, int var)
 
   // (x,x,lambda) until track 2 is lambda
   // (x,lambda,x) until end
-
+  LOG(FATAL) << "HERE";
 
   temp_multi = MakePrefixSuffix(0,1,2,3);
   prefix_multi = new StringAutomaton(prefix_dfa,1,3,var);

@@ -1433,8 +1433,8 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
     }
   }
 
-  term_node_list.insert(term_node_list.begin(), sorted_term_node_list.begin(), sorted_term_node_list.end());
   //term_node_list.insert(term_node_list.begin(), concat_node_list.begin(), concat_node_list.end());
+  term_node_list.insert(term_node_list.begin(), sorted_term_node_list.begin(), sorted_term_node_list.end());
 
   DVLOG(VLOG_LEVEL) << "node list sorted";
 }

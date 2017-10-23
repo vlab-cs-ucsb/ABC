@@ -254,7 +254,10 @@ void StringFormulaGenerator::visitEq(Eq_ptr eq_term) {
       auto right_var = right_formula->GetVariableAtIndex(0);
       formula->SetVariableCoefficient(right_var,2);
       constraint_information_->add_string_constraint(eq_term);
-    } else if(StringFormula::Type::VAR == left_formula->GetType() and StringFormula::Type::CONCAT_VAR_CONSTANT == right_formula->GetType()) {
+    }
+  	else if(StringFormula::Type::VAR == left_formula->GetType() and StringFormula::Type::CONCAT_VAR_CONSTANT == right_formula->GetType()
+    		  //and right_formula->GetConstant() != constraint_information_->most_common_string
+					) {
     	formula = left_formula->clone();
 			formula->MergeVariables(right_formula);
 			formula->SetType(StringFormula::Type::EQ);
@@ -262,7 +265,8 @@ void StringFormulaGenerator::visitEq(Eq_ptr eq_term) {
 			formula->SetVariableCoefficient(right_var,2);
 			formula->SetConstant(right_formula->GetConstant());
 			constraint_information_->add_string_constraint(eq_term);
-    } else if(StringFormula::Type::CONCAT_VAR_CONSTANT == left_formula->GetType() && StringFormula::Type::VAR == right_formula->GetType()) {
+    }
+  	else if(StringFormula::Type::CONCAT_VAR_CONSTANT == left_formula->GetType() && StringFormula::Type::VAR == right_formula->GetType()) {
     	formula = right_formula->clone();
 			formula->MergeVariables(left_formula);
 			formula->SetType(StringFormula::Type::EQ);

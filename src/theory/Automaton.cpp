@@ -13,6 +13,7 @@ namespace Theory {
 const int Automaton::VLOG_LEVEL = 9;
 
 int Automaton::name_counter = 0;
+int Automaton::next_state = 0;
 
 unsigned long Automaton::next_id = 0;
 
@@ -189,8 +190,29 @@ Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
 	if(this->num_of_bdd_variables_ != other_automaton->num_of_bdd_variables_) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
-	DFA_ptr concat_dfa = Automaton::DFAConcat(this->dfa_,other_automaton->dfa_,num_of_bdd_variables_);
-	Automaton_ptr concat_auto = MakeAutomaton(concat_dfa,this->GetFormula()->clone() ,num_of_bdd_variables_);
+
+	int flag = 0;
+	DFA_ptr initial_dfa = nullptr;
+	DFA_ptr tmp_dfa;
+	for(int i = 0; i < dfa_->ns; i++) {
+		if(dfa_->f[i] == 1) {
+			next_state = i;
+			DFA_ptr d = DFAConcat(this->dfa_, other_automaton->dfa_,num_of_bdd_variables_);
+			if(initial_dfa == nullptr) {
+				initial_dfa = d;
+			} else {
+				tmp_dfa = DFAUnion(initial_dfa,d);
+				dfaFree(initial_dfa);
+				dfaFree(d);
+				initial_dfa = tmp_dfa;
+			}
+		}
+	}
+
+
+
+	//DFA_ptr concat_dfa = Automaton::DFAConcat(this->dfa_,other_automaton->dfa_,num_of_bdd_variables_);
+	Automaton_ptr concat_auto = MakeAutomaton(initial_dfa,this->GetFormula()->clone() ,num_of_bdd_variables_);
   DVLOG(VLOG_LEVEL) << concat_auto->id_ << " = [" << this->id_ << "]->concat(" << other_automaton->id_ << ")";
   return concat_auto;
 }
@@ -765,7 +787,7 @@ std::set<std::string> Automaton::DFAGetTransitionsFromTo(DFA_ptr dfa, const int 
 }
 
 DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int number_of_bdd_variables) {
-  LOG(FATAL) << "I'm broken, fix me! Use StringAutomaton::concat instead";
+  //LOG(FATAL) << "I'm broken, fix me! Use StringAutomaton::concat instead";
 
 	if (DFAIsMinimizedEmtpy(dfa1) or DFAIsMinimizedEmtpy(dfa2)) {
 		return DFAMakeEmpty(number_of_bdd_variables);
@@ -915,7 +937,7 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 		}
 		// generate concat automaton
 
-		if (DFAIsAcceptingState(left_dfa,i)) {
+		if (DFAIsAcceptingState(left_dfa,i) && next_state == i) {
 			dfaAllocExceptions(exceptions_left_auto.size() + exceptions_right_auto.size());
 			for (auto entry : exceptions_left_auto) {
 				dfaStoreException(entry.second, const_cast<char*>(entry.first.data()));
@@ -924,6 +946,7 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 			for (auto entry : exceptions_right_auto) {
 				dfaStoreException(entry.second, const_cast<char*>(entry.first.data()));
 			}
+			exceptions_right_auto.clear();
 
 			dfaStoreState(sink);
 			if (DFAIsAcceptingState(right_dfa,0)) {
@@ -941,6 +964,7 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 			statuses[i] = '-';
 		}
 		exceptions_left_auto.clear();
+
 		kill_paths(state_paths);
 		state_paths = pp = nullptr;
 	}
