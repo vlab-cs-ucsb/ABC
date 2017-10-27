@@ -1944,7 +1944,7 @@ bool SyntacticOptimizer::__check_and_process_len_transformation(Term::Type opera
       if (term_constant->getValueType() == Primitive::Type::NUMERAL) {
       	int value = std::stoi(term_constant->getValue());
       	//if (value > 1) return false;
-      	DVLOG(VLOG_LEVEL) << "Computing len transformation";
+				DVLOG(VLOG_LEVEL) << "Computing len transformation";
         std::string regex_template = ".{%s,%s}";
         std::string l_value = "";
         std::string r_value = "";
