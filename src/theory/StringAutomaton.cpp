@@ -253,6 +253,24 @@ StringAutomaton_ptr StringAutomaton::MakeAnyString(const int number_of_bdd_varia
 }
 
 StringAutomaton_ptr StringAutomaton::MakeAnyOtherString(const std::string str, const int num_of_variables) {
+
+//	int *indices = GetBddVariableIndices(num_of_variables);
+//	dfaSetup(2,num_of_variables,indices);
+//
+//	std::vector<char> v = GetBinaryFormat('a',num_of_variables);
+//	v.push_back('\0');
+//	dfaAllocExceptions(1);
+//	dfaStoreException(1,&v[0]);
+//	dfaStoreState(0);
+//
+//	dfaAllocExceptions(0);
+//	dfaStoreState(1);
+//
+//	auto d = dfaBuild("+-");
+//	return new StringAutomaton(d,num_of_variables);
+
+
+
   StringAutomaton_ptr str_auto = MakeString(str);
   StringAutomaton_ptr not_contains_me_auto = str_auto->GetAnyStringNotContainsMe();
   delete str_auto; str_auto = nullptr;
@@ -2762,9 +2780,9 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 	for(int i = 0; i < this->num_tracks_*VAR_PER_TRACK; i++) {
 		_map.push_back(map[i]);
 	}
-  LOG(INFO) << "Before project";
+
   auto result = Automaton::DFAProjectAway(res,_map,indices);
-  LOG(INFO) << "After project";
+
   if(find_sink(result) != -1) {
 		// trim prefix first, then suffix
 		temp = TrimLambdaSuffix(result,VAR_PER_TRACK,false);
@@ -3939,7 +3957,7 @@ DFA_ptr StringAutomaton::concat(DFA_ptr prefix_dfa, DFA_ptr suffix_dfa, int var)
 
   // (x,x,lambda) until track 2 is lambda
   // (x,lambda,x) until end
-  LOG(FATAL) << "HERE";
+//  LOG(FATAL) << "HERE";
 
   temp_multi = MakePrefixSuffix(0,1,2,3);
   prefix_multi = new StringAutomaton(prefix_dfa,1,3,var);

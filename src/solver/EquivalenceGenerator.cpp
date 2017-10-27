@@ -228,7 +228,13 @@ bool EquivalenceGenerator::is_equiv_of_bool_var_and_term(SMT::Term_ptr left_term
       unclassified_term_ = right_term;
       DVLOG(VLOG_LEVEL)<< "bool variable to term equivalence: " << left_variable_->getName() << " = " << *unclassified_term_;
       return true;
-    } else if(symbol_table_->get_variable_usage(variable->getName()) == 1) {
+    } else if(symbol_table_->get_variable_usage(variable->getName()) == 1 and variable->getName() != symbol_table_->get_count_variable()->getName()) {
+    	if(Concat_ptr right_id = dynamic_cast<Concat_ptr>(right_term)) {
+    		if(right_id->term_list->at(0)->type() == Term::Type::QUALIDENTIFIER and right_id->term_list->at(1)->type() == Term::Type::TERMCONSTANT) {
+    			return false;
+    		}
+    	}
+
     	left_variable_ = variable;
 			unclassified_term_ = right_term;
 			DVLOG(VLOG_LEVEL)<< "non-bool variable to term equivalence: " << left_variable_->getName() << " = " << *unclassified_term_;

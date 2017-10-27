@@ -14,6 +14,7 @@ using namespace SMT;
 using namespace Theory;
 
 const int ConstraintSolver::VLOG_LEVEL = 11;
+bool ConstraintSolver::many_vars = false;
 
 ConstraintSolver::ConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_table,
                                    ConstraintInformation_ptr constraint_information)
@@ -383,7 +384,7 @@ void ConstraintSolver::visitDiv(Div_ptr div_term) {
 }
 
 void ConstraintSolver::visitEq(Eq_ptr eq_term) {
-  DVLOG(VLOG_LEVEL) << "visit: " << *eq_term;
+  DVLOG(VLOG_LEVEL) << "visit: " << *eq_term << "@" << eq_term;
   visit_children_of(eq_term);
 
   Value_ptr result = nullptr, param_left = getTermValue(eq_term->left_term), param_right = getTermValue(
@@ -588,7 +589,10 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
   Value_ptr result = nullptr, concat_value = nullptr, param = nullptr;
   if(concat_term->term_list->size() <= 3) {
   	path_trace_.push_back(concat_term);
-	}
+
+  } else {
+  	many_vars = true;
+  }
 
   for (auto& term_ptr : *(concat_term->term_list)) {
     visit(term_ptr);
@@ -596,6 +600,7 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
     if (result == nullptr) {
       result = param->clone();
     } else {
+
       concat_value = result->concat(param);
       delete result;
       result = concat_value;
@@ -604,30 +609,32 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
   }
   if(concat_term->term_list->size() <= 3) {
   	path_trace_.pop_back();
+
   }
+  many_vars = false;
   setTermValue(concat_term, result);
 }
 
 void ConstraintSolver::visitIn(In_ptr in_term) {
 	// if term is of type var in const regex, short circuit variable update
-  if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(in_term->left_term)) {
-    if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(in_term->right_term)) {
-
-
-      Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
-
-      StringAutomaton_ptr con = StringAutomaton::MakeRegexAuto(right_constant->getValue());
-      StringFormula_ptr formula = new StringFormula();
-      formula->SetType(StringFormula::Type::VAR);
-      formula->AddVariable(var->getName(),1);
-      con->SetFormula(formula);
-      Value_ptr val = new Value(con);
-      bool result = symbol_table_->IntersectValue(var,val);
-      delete val;
-      setTermValue(in_term, new Value(result));
-      return;
-    }
-  }
+//  if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(in_term->left_term)) {
+//    if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(in_term->right_term)) {
+//
+//
+//      Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
+//
+//      StringAutomaton_ptr con = StringAutomaton::MakeRegexAuto(right_constant->getValue());
+//      StringFormula_ptr formula = new StringFormula();
+//      formula->SetType(StringFormula::Type::VAR);
+//      formula->AddVariable(var->getName(),1);
+//      con->SetFormula(formula);
+//      Value_ptr val = new Value(con);
+//      bool result = symbol_table_->IntersectValue(var,val);
+//      delete val;
+//      setTermValue(in_term, new Value(result));
+//      return;
+//    }
+//  }
 
   visit_children_of(in_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *in_term;
@@ -703,9 +710,24 @@ void ConstraintSolver::visitNotContains(NotContains_ptr not_contains_term) {
   if (not (param_subject->is_satisfiable() and param_search->is_satisfiable())) {
     result = new Value(false);
   } else if (param_search->isSingleValue()) {
+//  	auto t1 = Theory::StringAutomaton::MakeString("s");
+//  	auto t2 = Theory::StringAutomaton::MakeAnyString();
+//  	auto t3 = t2->Concat(t1);
+//  	t3->inspectAuto(false,true);
+//  	std::cin.get();
+//  	auto t4 = t3->Concat(t2);
+//  	t4->inspectAuto(false,true);
+//  	auto t5 = t2->Difference(t4);
+//  	t5->inspectAuto(false,true);
+//  	LOG(FATAL) << "HEL";
+//  	result = new Value(param_subject->getStringAutomaton()->Intersect(t1));
+
     Theory::StringAutomaton_ptr contains_auto = param_subject->getStringAutomaton()->Contains(
         param_search->getStringAutomaton());
+    //contains_auto->inspectAuto(false,true);
     result = new Value(param_subject->getStringAutomaton()->Difference(contains_auto));
+    //result->getStringAutomaton()->inspectAuto(false,true);
+    //std::cin.get();
     delete contains_auto;
     contains_auto = nullptr;
   } else if (param_subject->isSingleValue()) {
@@ -1111,7 +1133,9 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 
 
   setTermValue(qi_term, result);
-  setVariablePath(qi_term);
+  if(!many_vars) {
+  	setVariablePath(qi_term);
+  }
 }
 
 void ConstraintSolver::visitTermConstant(TermConstant_ptr term_constant) {

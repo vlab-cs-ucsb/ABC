@@ -367,7 +367,7 @@ void VariableValueComputer::visitDiv(Div_ptr div_term) {
 }
 
 void VariableValueComputer::visitEq(Eq_ptr eq_term) {
-  DVLOG(VLOG_LEVEL) << "pop: " << *eq_term;
+  DVLOG(VLOG_LEVEL) << "pop: " << *eq_term << "@" << eq_term;
   popTerm(eq_term);
 
   Term_ptr child_term = current_path->back();
@@ -740,6 +740,7 @@ void VariableValueComputer::visitNotContains(NotContains_ptr not_contains_term) 
       Theory::StringAutomaton_ptr sub_strings_auto = term_value->getStringAutomaton()->SubStrings();
       child_value = new Value(child_post_value->getStringAutomaton()->Difference(sub_strings_auto));
       delete sub_strings_auto; sub_strings_auto = nullptr;
+
     } else {
       child_value = child_post_value->clone();
     }
@@ -1328,7 +1329,9 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
       } else if (Theory::StringFormula::Type::VAR != formula->GetType()) {
       	LOG(FATAL) << "fix me";
       }
-
+//      string_auto->inspectAuto(false,true);
+//      symbol_table->get_value(qi_term->getVarName())->getStringAutomaton()->inspectAuto(false,true);
+//      std::cin.get();
     }
       break;
     case Value::Type::INT_AUTOMATON:

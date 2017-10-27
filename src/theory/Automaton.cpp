@@ -194,10 +194,20 @@ Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
 	int flag = 0;
 	DFA_ptr initial_dfa = nullptr;
 	DFA_ptr tmp_dfa;
-	for(int i = 0; i < dfa_->ns; i++) {
-		if(dfa_->f[i] == 1) {
+	DFA_ptr left_dfa = this->dfa_;
+	bool left_hand_side_accepts_emtpy_input = DFAIsAcceptingState(left_dfa, left_dfa->s);
+
+	if (left_hand_side_accepts_emtpy_input) {
+		auto any_input_other_than_empty = Automaton::DFAMakeAcceptingAnyAfterLength(1, num_of_bdd_variables_);
+		if (left_hand_side_accepts_emtpy_input) {
+			left_dfa = DFAIntersect(left_dfa, any_input_other_than_empty);
+		}
+	}
+
+	for(int i = 0; i < left_dfa->ns; i++) {
+		if(left_dfa->f[i] == 1) {
 			next_state = i;
-			DFA_ptr d = DFAConcat(this->dfa_, other_automaton->dfa_,num_of_bdd_variables_);
+			DFA_ptr d = DFAConcat(left_dfa, other_automaton->dfa_,num_of_bdd_variables_);
 			if(initial_dfa == nullptr) {
 				initial_dfa = d;
 			} else {
@@ -209,7 +219,12 @@ Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
 		}
 	}
 
-
+	if (left_hand_side_accepts_emtpy_input) {
+		tmp_dfa = initial_dfa;
+		initial_dfa = DFAUnion(tmp_dfa,other_automaton->dfa_);
+		delete tmp_dfa;
+		delete left_dfa; left_dfa = nullptr;
+	}
 
 	//DFA_ptr concat_dfa = Automaton::DFAConcat(this->dfa_,other_automaton->dfa_,num_of_bdd_variables_);
 	Automaton_ptr concat_auto = MakeAutomaton(initial_dfa,this->GetFormula()->clone() ,num_of_bdd_variables_);
@@ -799,7 +814,6 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 	// TODO refactor handling empty string case
 	bool left_hand_side_accepts_emtpy_input = DFAIsAcceptingState(dfa1, dfa1->s);
 	bool right_hand_side_accepts_empty_input = DFAIsAcceptingState(dfa2, dfa2->s);
-	LOG(INFO) << 3;
 	DFA_ptr left_dfa = dfa1, right_dfa = dfa2;
 
 	if (left_hand_side_accepts_emtpy_input or right_hand_side_accepts_empty_input) {
@@ -808,11 +822,13 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 			left_dfa = DFAIntersect(dfa1, any_input_other_than_empty);
 		}
 
+
 		if (right_hand_side_accepts_empty_input) {
 			right_dfa = DFAIntersect(dfa2, any_input_other_than_empty);
 		}
 		dfaFree(any_input_other_than_empty);
 	}
+
 	int* indices = GetBddVariableIndices(number_of_bdd_variables);
 	int tmp_num_of_variables,
 			state_id_shift_amount,

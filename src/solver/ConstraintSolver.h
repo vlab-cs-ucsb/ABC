@@ -143,6 +143,7 @@ class ConstraintSolver: public SMT::Visitor {
 
   // for relational variables that need to be updated
   std::vector<SMT::Variable_ptr> tagged_variables;
+  static bool many_vars;
  private:
   static const int VLOG_LEVEL;
 };

@@ -868,7 +868,7 @@ void ConstraintSorter::visitAnd(And_ptr and_term) {
   std::vector<Term_ptr> unsorted_constraints;
   for(auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
   //for (auto& term : *(and_term->term_list)) {
-  	if(symbol_table->is_unsorted_constraint(*iter)) {
+  	if(symbol_table->is_unsorted_constraint(*iter) and false) {
   		unsorted_constraints.push_back((*iter)->clone());
   		delete (*iter);
 			iter = and_term->term_list->erase(iter);

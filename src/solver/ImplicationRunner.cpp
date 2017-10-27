@@ -343,19 +343,23 @@ void ImplicationRunner::CollectHeuristicInfo(Eq_ptr eq_term) {
 			Theory::ArithmeticFormula_ptr f = new Theory::ArithmeticFormula();
 			f->AddVariable(left_var->getVarName(),-1);
 
-			if(TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(right_id->term_list->front())) {
-				int constant = term_constant->getValue().length();
-				f->SetConstant(constant);
-			} else if(QualIdentifier_ptr last_var = dynamic_cast<QualIdentifier_ptr>(right_id->term_list->front())) {
-				f->AddVariable(last_var->getVarName(),1);
+			for(auto iter : *right_id->term_list) {
+				if(TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(iter)) {
+					int constant = term_constant->getValue().length();
+					f->SetConstant(constant);
+				} else if(QualIdentifier_ptr last_var = dynamic_cast<QualIdentifier_ptr>(iter)) {
+					f->AddVariable(last_var->getVarName(),1);
+				}
+
+//				if(TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(right_id->term_list->at(1))) {
+//					int constant = term_constant->getValue().length();
+//					f->SetConstant(constant);
+//				} else if(QualIdentifier_ptr last_var = dynamic_cast<QualIdentifier_ptr>(right_id->term_list->at(1))) {
+//					f->AddVariable(last_var->getVarName(),1);
+//				}
 			}
 
-			if(TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(right_id->term_list->at(1))) {
-				int constant = term_constant->getValue().length();
-				f->SetConstant(constant);
-			} else if(QualIdentifier_ptr last_var = dynamic_cast<QualIdentifier_ptr>(right_id->term_list->at(1))) {
-				f->AddVariable(last_var->getVarName(),1);
-			}
+
 
 			f->SetType(Theory::ArithmeticFormula::Type::EQ);
 			if(formula == nullptr) {
