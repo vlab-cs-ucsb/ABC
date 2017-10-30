@@ -2797,7 +2797,7 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 		dfaFree(result);
 		result_auto = StringAutomaton::MakeAnyString();
 	}
-  LOG(INFO) << "Done";
+  //LOG(INFO) << "Done";
 	delete[] map;
 	return result_auto;
 }

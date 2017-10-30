@@ -253,8 +253,6 @@ void StringConstraintSolver::visitOr(Or_ptr or_term) {
 				symbol_table_->IntersectValue(variable_group,iter->second);
 				delete iter->second;iter->second = nullptr;
 				iter = variable_value_map.erase(iter);
-				LOG(INFO) << iter->first << " has a string auto already";
-							std::cin.get();
 			} else {
 				iter++;
 			}
@@ -372,7 +370,7 @@ void StringConstraintSolver::postVisitAnd(And_ptr and_term) {
   	for(auto group : string_formula_generator_.get_group_subgroups(group_name)) {
 			Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
 			Value_ptr subgroup_value = symbol_table_->get_value(subgroup_variable);
-			LOG(INFO) << *subgroup_variable << " is sat? " << subgroup_value->is_satisfiable();
+			//LOG(INFO) << *subgroup_variable << " is sat? " << subgroup_value->is_satisfiable();
 			is_satisfiable = subgroup_value->is_satisfiable() and is_satisfiable;
 		}
   	//    if (is_satisfiable) {
