@@ -344,19 +344,20 @@ void ImplicationRunner::CollectHeuristicInfo(Eq_ptr eq_term) {
 			f->AddVariable(left_var->getVarName(),-1);
 
 			for(auto iter : *right_id->term_list) {
+				auto var_coeffs = f->GetVariableCoefficientMap();
 				if(TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(iter)) {
-					int constant = term_constant->getValue().length();
+					// if constant, add to current constant (if no constant in formula yet, GetConstant returns 0)
+					int constant = term_constant->getValue().length() + f->GetConstant();
 					f->SetConstant(constant);
 				} else if(QualIdentifier_ptr last_var = dynamic_cast<QualIdentifier_ptr>(iter)) {
-					f->AddVariable(last_var->getVarName(),1);
+					// add variable, to formula
+					// if variable already exists, increment its coefficient
+					if(var_coeffs.find(last_var->getVarName()) == var_coeffs.end()) {
+						f->AddVariable(last_var->getVarName(),1);
+					} else {
+						f->SetVariableCoefficient(last_var->getVarName(),var_coeffs[last_var->getVarName()]+1);
+					}
 				}
-
-//				if(TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(right_id->term_list->at(1))) {
-//					int constant = term_constant->getValue().length();
-//					f->SetConstant(constant);
-//				} else if(QualIdentifier_ptr last_var = dynamic_cast<QualIdentifier_ptr>(right_id->term_list->at(1))) {
-//					f->AddVariable(last_var->getVarName(),1);
-//				}
 			}
 
 
@@ -401,6 +402,7 @@ void ImplicationRunner::CollectHeuristicInfo(Eq_ptr eq_term) {
 				variable_formulas[len_var->getVarName()] = f;
 			}
 			variables_to_expand.insert(len_var->getVarName());
+			symbol_table_->add_unsorted_constraint(eq_term);
 		}
 	}
 }
