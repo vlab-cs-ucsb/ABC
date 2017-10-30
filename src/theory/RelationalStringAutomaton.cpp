@@ -980,7 +980,7 @@ RelationalStringAutomaton_ptr RelationalStringAutomaton::ProjectKTrack(int k_tra
   DFA_ptr temp,result_dfa = this->dfa_;
   int flag = 0;
   int *map = GetBddVariableIndices(this->num_of_tracks_*VAR_PER_TRACK);
-  for(int i = 0,k=0,l=0; i < this->num_of_bdd_variables_; i++) {
+  for(int i = 0,k=0,l=0; i < this->number_of_bdd_variables_; i++) {
       if(i == k_track+l*this->num_of_tracks_) {
           map[i] = (this->num_of_tracks_-1)*VAR_PER_TRACK+l;
           l++;
@@ -1027,7 +1027,7 @@ StringAutomaton_ptr RelationalStringAutomaton::GetKTrack(int k_track) {
 
 
     // TODO baki: added below for charat example
-    temp = dfaProject(result, this->num_of_bdd_variables_ - 1);
+    temp = dfaProject(result, this->number_of_bdd_variables_ - 1);
     result = dfaMinimize(temp);
     dfaFree(temp);
     result_auto = new StringAutomaton(result);
@@ -1167,12 +1167,12 @@ std::vector<std::string> RelationalStringAutomaton::getAnAcceptingStringForEachT
   std::vector<std::string> strings(num_of_tracks_, "");
   std::vector<bool>* example = getAnAcceptingWord();
   unsigned char c = 0;
-  unsigned num_transitions = example->size() / num_of_bdd_variables_;
+  unsigned num_transitions = example->size() / number_of_bdd_variables_;
   bool bit;
   unsigned sharp1 = 254, sharp2 = 255;
 
   for(int t = 0; t < num_transitions; t++) {
-    unsigned offset = t*num_of_bdd_variables_;
+    unsigned offset = t*number_of_bdd_variables_;
     for (int i = 0; i < num_of_tracks_; i++) {
       for (int j = 0; j < VAR_PER_TRACK; j++) {
         bit = (*example)[offset+i+num_of_tracks_*j];

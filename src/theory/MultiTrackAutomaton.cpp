@@ -1020,7 +1020,7 @@ MultiTrackAutomaton_ptr MultiTrackAutomaton::projectKTrack(int k_track) {
 	DFA_ptr temp,result_dfa = this->dfa_;
 	int flag = 0;
 	int *map = GetBddVariableIndices(this->num_of_tracks*VAR_PER_TRACK);
-	for(int i = 0,k=0,l=0; i < this->num_of_bdd_variables_; i++) {
+	for(int i = 0,k=0,l=0; i < this->number_of_bdd_variables_; i++) {
 	    if(i == k_track+l*this->num_of_tracks) {
 	        map[i] = (this->num_of_tracks-1)*VAR_PER_TRACK+l;
 	        l++;
@@ -1191,12 +1191,12 @@ std::vector<std::string> MultiTrackAutomaton::getAnAcceptingStringForEachTrack()
   std::vector<std::string> strings(num_of_tracks, "");
   std::vector<bool>* example = getAnAcceptingWord();
   unsigned char c = 0;
-  unsigned num_transitions = example->size() / num_of_bdd_variables_;
+  unsigned num_transitions = example->size() / number_of_bdd_variables_;
   bool bit;
   unsigned sharp1 = 254, sharp2 = 255;
 
   for(int t = 0; t < num_transitions; t++) {
-    unsigned offset = t*num_of_bdd_variables_;
+    unsigned offset = t*number_of_bdd_variables_;
     for (int i = 0; i < num_of_tracks; i++) {
       for (int j = 0; j < VAR_PER_TRACK; j++) {
         bit = (*example)[offset+i+num_of_tracks*j];

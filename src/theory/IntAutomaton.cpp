@@ -262,7 +262,7 @@ IntAutomaton_ptr IntAutomaton::complement() {
   dfaFree(complement_dfa);
   complement_dfa = nullptr;
 
-  complement_auto = new IntAutomaton(minimized_dfa, num_of_bdd_variables_);
+  complement_auto = new IntAutomaton(minimized_dfa, number_of_bdd_variables_);
   complement_auto->has_negative_1 = (not this->has_negative_1);
 
   DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->makeComplement()";
@@ -290,7 +290,7 @@ IntAutomaton_ptr IntAutomaton::union_(IntAutomaton_ptr other_auto) {
 
   union_dfa = DFAUnion(this->dfa_, other_auto->dfa_);
 
-  union_auto = new IntAutomaton(union_dfa, num_of_bdd_variables_);
+  union_auto = new IntAutomaton(union_dfa, number_of_bdd_variables_);
   union_auto->has_negative_1 = this->has_negative_1 or other_auto->has_negative_1;
 
   DVLOG(VLOG_LEVEL) << union_auto->id_ << " = [" << this->id_ << "]->union(" << other_auto->id_ << ")";
@@ -312,7 +312,7 @@ IntAutomaton_ptr IntAutomaton::intersect(IntAutomaton_ptr other_auto) {
 
   intersect_dfa = DFAIntersect(this->dfa_, other_auto->dfa_);
 
-  intersect_auto = new IntAutomaton(intersect_dfa, num_of_bdd_variables_);
+  intersect_auto = new IntAutomaton(intersect_dfa, number_of_bdd_variables_);
   intersect_auto->has_negative_1 = this->has_negative_1 and other_auto->has_negative_1;
 
   DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->intersect(" << other_auto->id_ << ")";
@@ -819,7 +819,7 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
   DFA_ptr d1,d2,d3;
   d1 = this->dfa_;
   d2 = other_auto->GetDFA();
-  d3 = RelationalStringAutomaton::concat(d1,d2,num_of_bdd_variables_);
+  d3 = RelationalStringAutomaton::concat(d1,d2,number_of_bdd_variables_);
   return new IntAutomaton(d3);
 /*
   DFA_ptr concat_dfa = nullptr, tmp_dfa = nullptr;
@@ -1070,9 +1070,9 @@ IntAutomaton_ptr IntAutomaton::__minus(IntAutomaton_ptr other_auto) {
   DFA_ptr result_dfa = nullptr;
   IntAutomaton_ptr result_auto = nullptr;
 
-  result_dfa = RelationalStringAutomaton::pre_concat_prefix(this->dfa_, other_auto->dfa_,num_of_bdd_variables_);
+  result_dfa = RelationalStringAutomaton::pre_concat_prefix(this->dfa_, other_auto->dfa_,number_of_bdd_variables_);
 
-  result_auto = new IntAutomaton(result_dfa, num_of_bdd_variables_);
+  result_auto = new IntAutomaton(result_dfa, number_of_bdd_variables_);
 
   DVLOG(VLOG_LEVEL) << result_auto->id_ << " = [" << this->id_ << "]->__minus(" << other_auto->id_ << ")";
 

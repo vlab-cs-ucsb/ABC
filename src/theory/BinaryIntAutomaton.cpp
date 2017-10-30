@@ -294,7 +294,7 @@ bool BinaryIntAutomaton::is_natural_number() {
 }
 
 bool BinaryIntAutomaton::HasNegative1() {
-  CHECK_EQ(1, num_of_bdd_variables_)<< "implemented for single track binary automaton";
+  CHECK_EQ(1, number_of_bdd_variables_)<< "implemented for single track binary automaton";
 
   if (is_natural_number_) {
     return false;
@@ -370,9 +370,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Exists(std::string var_name) {
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::GetBinaryAutomatonFor(std::string var_name) {
-  CHECK_EQ(num_of_bdd_variables_, formula_->get_number_of_variables())<< "number of variables is not consistent with formula";
+  CHECK_EQ(number_of_bdd_variables_, formula_->get_number_of_variables())<< "number of variables is not consistent with formula";
   int bdd_var_index = formula_->get_variable_index(var_name);;
-  auto single_var_dfa = Automaton::DFAProjectTo(this->dfa_, num_of_bdd_variables_, bdd_var_index);
+  auto single_var_dfa = Automaton::DFAProjectTo(this->dfa_, number_of_bdd_variables_, bdd_var_index);
   auto single_var_formula = new ArithmeticFormula();
   single_var_formula->set_type(ArithmeticFormula::Type::INTERSECT);
   single_var_formula->add_variable(var_name, 1);
@@ -407,7 +407,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::GetNegativeValuesFor(std::string var_
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::TrimLeadingZeros() {
-  CHECK_EQ(1, num_of_bdd_variables_)<< "trimming is implemented for single track positive binary automaton";
+  CHECK_EQ(1, number_of_bdd_variables_)<< "trimming is implemented for single track positive binary automaton";
 
   auto tmp_auto = this->Clone();
 
@@ -439,7 +439,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::TrimLeadingZeros() {
 
   tmp_auto->Minimize();
 
-  auto trim_helper_auto = BinaryIntAutomaton::MakeTrimHelperAuto(0,num_of_bdd_variables_);
+  auto trim_helper_auto = BinaryIntAutomaton::MakeTrimHelperAuto(0,number_of_bdd_variables_);
   trim_helper_auto->set_formula(tmp_auto->formula_->clone());
   auto trimmed_auto = tmp_auto->Intersect(trim_helper_auto);
   delete tmp_auto;
@@ -454,7 +454,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::AddLeadingZeros() {
   BinaryIntAutomaton_ptr leading_zero_auto = nullptr;
   DFA_ptr leading_zero_dfa = nullptr, tmp_dfa = nullptr;
 
-  int number_of_variables = num_of_bdd_variables_ + 1,
+  int number_of_variables = number_of_bdd_variables_ + 1,
   leading_zero_state = number_of_variables - 1,
   to_state = 0;
   int* indices = GetBddVariableIndices(number_of_variables);
@@ -690,7 +690,7 @@ std::map<std::string, int> BinaryIntAutomaton::GetAnAcceptingIntForEachVar() {
   auto rit = example->rbegin();
   if (not is_natural_number_) {
     // read the sign bit for integers
-    for (int var_index = num_of_bdd_variables_ - 1; var_index >= 0; --var_index) {
+    for (int var_index = number_of_bdd_variables_ - 1; var_index >= 0; --var_index) {
       if (*rit) {
         values[var_index] = -1;
       } else {
@@ -701,13 +701,13 @@ std::map<std::string, int> BinaryIntAutomaton::GetAnAcceptingIntForEachVar() {
   }
 
   // read value bits
-  for (int var_index = num_of_bdd_variables_ - 1; rit != example->rend(); rit++) {
+  for (int var_index = number_of_bdd_variables_ - 1; rit != example->rend(); rit++) {
     values[var_index] <<= 1;
     values[var_index] |= (*rit);
     var_index--;
 
     if (var_index == -1) {
-      var_index = num_of_bdd_variables_ - 1;
+      var_index = number_of_bdd_variables_ - 1;
     }
   }
 

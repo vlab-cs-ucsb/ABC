@@ -80,7 +80,7 @@ namespace Vlab
          * @param dfa
          * @param num_of_variables
          */
-        Automaton(Libs::MONALib::DFA_ptr dfa, int number_of_variables);
+        Automaton(Libs::MONALib::DFA_ptr dfa, int number_of_bdd_variables);
 
         /**
          * Copy constructor.
@@ -97,7 +97,7 @@ namespace Vlab
          * Generates a clone copy of the current automaton.
          * @return
          */
-        virtual Automaton_ptr Clone() const = 0;
+        virtual Automaton_ptr Clone() const;
 
         /**
          * Prints the actual type and the details of the automaton.
@@ -201,7 +201,7 @@ namespace Vlab
          * @param number_of_variables
          * @return
          */
-        virtual Automaton_ptr MakeAutomaton(Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const = 0;
+        virtual Automaton_ptr MakeAutomaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const;
 
         /**
          * Complements an automaton
@@ -427,7 +427,7 @@ namespace Vlab
         /**
          * Number of bdd variables used in MONA representation.
          */
-        int num_of_bdd_variables_;
+        int number_of_bdd_variables_;
 
         /**
          * Automaton id used for debugging purposes.
@@ -472,6 +472,25 @@ namespace Vlab
         virtual Automaton_ptr Build();
        protected:
 
+        /**
+         * Number of states.
+         */
+        int number_of_states_;
+
+        /**
+         * Number of bdd variables.
+         */
+        int number_of_bdd_variables_;
+
+        /**
+         * Mona dfa pointer.
+         */
+        Libs::MONALib::DFA_ptr dfa_;
+
+        /**
+         * State to state transition map.
+         */
+        std::unordered_map<int, std::unordered_map<std::string, int>> transitions_;
     };
 
   } /* namespace Theory */

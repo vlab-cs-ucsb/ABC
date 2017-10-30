@@ -17,15 +17,15 @@ namespace Vlab
 
     Automaton::Automaton()
         : is_counter_cached_ { false },
-          num_of_bdd_variables_(0),
+          number_of_bdd_variables_(0),
           id_(Automaton::next_id++),
           dfa_(nullptr)
     {
     }
 
-    Automaton::Automaton(Libs::MONALib::DFA_ptr dfa, int num_of_variables)
+    Automaton::Automaton(Libs::MONALib::DFA_ptr dfa, int number_of_bdd_variables)
         : is_counter_cached_ { false },
-          num_of_bdd_variables_(num_of_variables),
+          number_of_bdd_variables_(number_of_bdd_variables),
           id_(Automaton::next_id++),
           dfa_(dfa)
     {
@@ -33,7 +33,7 @@ namespace Vlab
 
     Automaton::Automaton(const Automaton& other)
         : is_counter_cached_ { false },
-          num_of_bdd_variables_(other.num_of_bdd_variables_),
+          number_of_bdd_variables_(other.number_of_bdd_variables_),
           id_(Automaton::next_id++),
           dfa_(nullptr)
 
@@ -50,9 +50,15 @@ namespace Vlab
 //      DVLOG(VLOG_LEVEL) << "deleted = " << " [" << this->id_ << "]->~Automaton()";
     }
 
-//Automaton_ptr Automaton::clone() const {
-//  return new Automaton(*this);
-//}
+    Automaton_ptr Automaton::Clone() const
+    {
+      return new Automaton(*this);
+    }
+
+    std::string Automaton::Str() const
+    {
+      return "Automaton";
+    }
 
     unsigned long Automaton::GetId() const
     {
@@ -71,7 +77,7 @@ namespace Vlab
 
     int Automaton::GetNumberOfBddVariables() const
     {
-      return this->num_of_bdd_variables_;
+      return this->number_of_bdd_variables_;
     }
 
     int Automaton::GetInitialState() const
@@ -143,58 +149,63 @@ namespace Vlab
       return result;
     }
 
+    Automaton_ptr Automaton::MakeAutomaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const
+    {
+      return new Automaton(dfa, number_of_variables);
+    }
+
     Automaton_ptr Automaton::Complement() const
     {
       Libs::MONALib::DFA_ptr complement_dfa = Libs::MONALib::DFAComplement(this->dfa_);
-      Automaton_ptr complement_auto = this->MakeAutomaton(complement_dfa, num_of_bdd_variables_);
+      Automaton_ptr complement_auto = this->MakeAutomaton(complement_dfa, number_of_bdd_variables_);
       DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->Complement()";
       return complement_auto;
     }
 
     Automaton_ptr Automaton::Union(Automaton_ptr other_automaton) const
     {
-      if (this->num_of_bdd_variables_ != other_automaton->num_of_bdd_variables_)
+      if (this->number_of_bdd_variables_ != other_automaton->number_of_bdd_variables_)
       {
         LOG(FATAL)<< "number of variables does not match between both automaton!";
       }
       Libs::MONALib::DFA_ptr union_dfa = Libs::MONALib::DFAUnion(this->dfa_, other_automaton->dfa_);
-      Automaton_ptr union_auto = this->MakeAutomaton(union_dfa, num_of_bdd_variables_);
+      Automaton_ptr union_auto = this->MakeAutomaton(union_dfa, number_of_bdd_variables_);
       DVLOG(VLOG_LEVEL) << union_auto->id_ << " = [" << this->id_ << "]->Union(" << other_automaton->id_ << ")";
       return union_auto;
     }
 
     Automaton_ptr Automaton::Intersect(Automaton_ptr other_automaton) const
     {
-      if (this->num_of_bdd_variables_ != other_automaton->num_of_bdd_variables_)
+      if (this->number_of_bdd_variables_ != other_automaton->number_of_bdd_variables_)
       {
         LOG(FATAL)<< "number of variables does not match between both automaton!";
       }
       Libs::MONALib::DFA_ptr intersect_dfa = Libs::MONALib::DFAIntersect(this->dfa_, other_automaton->dfa_);
-      Automaton_ptr intersect_auto = this->MakeAutomaton(intersect_dfa, num_of_bdd_variables_);
+      Automaton_ptr intersect_auto = this->MakeAutomaton(intersect_dfa, number_of_bdd_variables_);
       DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << other_automaton->id_ << ")";
       return intersect_auto;
     }
 
     Automaton_ptr Automaton::Difference(Automaton_ptr other_automaton) const
     {
-      if (this->num_of_bdd_variables_ != other_automaton->num_of_bdd_variables_)
+      if (this->number_of_bdd_variables_ != other_automaton->number_of_bdd_variables_)
       {
         LOG(FATAL)<< "number of variables does not match between both automaton!";
       }
       Libs::MONALib::DFA_ptr difference_dfa = Libs::MONALib::DFADifference(this->dfa_, other_automaton->dfa_);
-      Automaton_ptr difference_auto = this->MakeAutomaton(difference_dfa, num_of_bdd_variables_);
+      Automaton_ptr difference_auto = this->MakeAutomaton(difference_dfa, number_of_bdd_variables_);
       DVLOG(VLOG_LEVEL) << difference_auto->id_ << " = [" << this->id_ << "]->Difference(" << other_automaton->id_ << ")";
       return difference_auto;
     }
 
     Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) const
     {
-      if (this->num_of_bdd_variables_ != other_automaton->num_of_bdd_variables_)
+      if (this->number_of_bdd_variables_ != other_automaton->number_of_bdd_variables_)
       {
         LOG(FATAL)<< "number of variables does not match between both automaton!";
       }
-      Libs::MONALib::DFA_ptr concat_dfa = Libs::MONALib::DFAConcat(this->dfa_, other_automaton->dfa_, num_of_bdd_variables_);
-      Automaton_ptr concat_auto = this->MakeAutomaton(concat_dfa, num_of_bdd_variables_);
+      Libs::MONALib::DFA_ptr concat_dfa = Libs::MONALib::DFAConcat(this->dfa_, other_automaton->dfa_, number_of_bdd_variables_);
+      Automaton_ptr concat_auto = this->MakeAutomaton(concat_dfa, number_of_bdd_variables_);
       DVLOG(VLOG_LEVEL) << concat_auto->id_ << " = [" << this->id_ << "]->Concat(" << other_automaton->id_ << ")";
       return concat_auto;
     }
@@ -203,8 +214,8 @@ namespace Vlab
     {
       if (this->IsEmptyLanguage())
       {
-        Libs::MONALib::DFA_ptr phi = Libs::MONALib::DFAMakePhi(this->num_of_bdd_variables_);
-        Automaton_ptr suffixes_auto = this->MakeAutomaton(phi, this->num_of_bdd_variables_);
+        Libs::MONALib::DFA_ptr phi = Libs::MONALib::DFAMakePhi(this->number_of_bdd_variables_);
+        Automaton_ptr suffixes_auto = this->MakeAutomaton(phi, this->number_of_bdd_variables_);
         DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->Suffixes()";
         return suffixes_auto;
       }
@@ -220,8 +231,8 @@ namespace Vlab
 
       // if number of variables are too large for mona, implement an algorithm that find suffixes by finding
       // sub suffixes and union them
-      int number_of_variables = this->num_of_bdd_variables_ + std::ceil(std::log2(max));  // number of variables required
-      const int number_of_extra_bits_needed = number_of_variables - this->num_of_bdd_variables_;
+      int number_of_variables = this->number_of_bdd_variables_ + std::ceil(std::log2(max));  // number of variables required
+      const int number_of_extra_bits_needed = number_of_variables - this->number_of_bdd_variables_;
       std::string default_extra_bit_string(number_of_extra_bits_needed, '0');
       unsigned extra_bits_value = 0;
 
@@ -234,7 +245,7 @@ namespace Vlab
         if (s != sink_state)
         {
           std::unordered_map<std::string, int> transition_map = Libs::MONALib::DFAGetTransitionsFrom(
-              dfa_, s, num_of_bdd_variables_, default_extra_bit_string);
+              dfa_, s, number_of_bdd_variables_, default_extra_bit_string);
           exception_map[s] = transition_map;
 
           // add to start state by adding extra bits
@@ -284,7 +295,7 @@ namespace Vlab
 
       for (int i = 0; i < number_of_extra_bits_needed; ++i)
       {
-        suffixes_auto->ProjectAway((unsigned) (suffixes_auto->num_of_bdd_variables_ - 1));
+        suffixes_auto->ProjectAway((unsigned) (suffixes_auto->number_of_bdd_variables_ - 1));
         suffixes_auto->Minimize();
       }
 
@@ -298,8 +309,8 @@ namespace Vlab
       unsigned max = suffixes_from.size();
       if (max == 0)
       {
-        Libs::MONALib::DFA_ptr phi = Libs::MONALib::DFAMakePhi(this->num_of_bdd_variables_);
-        Automaton_ptr suffixes_auto = this->MakeAutomaton(phi, this->num_of_bdd_variables_);
+        Libs::MONALib::DFA_ptr phi = Libs::MONALib::DFAMakePhi(this->number_of_bdd_variables_);
+        Automaton_ptr suffixes_auto = this->MakeAutomaton(phi, this->number_of_bdd_variables_);
         DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->SuffixesFromTo(" << from_index << ", "
                           << to_index << ")";
         return suffixes_auto;
@@ -312,7 +323,7 @@ namespace Vlab
 
       // if number of variables are too large for mona, implement an algorithm that find suffixes by finding
       // sub suffixes and union them
-      const int number_of_variables = this->num_of_bdd_variables_ + std::ceil(std::log2(max));
+      const int number_of_variables = this->number_of_bdd_variables_ + std::ceil(std::log2(max));
       const int number_of_states = this->dfa_->ns + 1;  // one extra start for the new start state
       int sink_state = this->GetSinkState();
 
@@ -320,7 +331,7 @@ namespace Vlab
       char* statuses = new char[number_of_states];
       unsigned extra_bits_value = 0;
 
-      const int number_of_extra_bits_needed = number_of_variables - this->num_of_bdd_variables_;
+      const int number_of_extra_bits_needed = number_of_variables - this->number_of_bdd_variables_;
       std::string default_extra_bit_string(number_of_extra_bits_needed, '0');
 
       std::unordered_map<int, std::unordered_map<std::string, int>> exception_map;
@@ -331,7 +342,7 @@ namespace Vlab
         {
           int state_id = s + 1;  // there is a new start state, old states are off by one
           std::unordered_map<std::string, int> transition_map = Libs::MONALib::DFAGetTransitionsFrom(
-              dfa_, s, num_of_bdd_variables_, default_extra_bit_string);
+              dfa_, s, number_of_bdd_variables_, default_extra_bit_string);
           exception_map[state_id] = transition_map;
           // add to start state by adding extra bits
           if (suffixes_from.find(s) != suffixes_from.end())
@@ -394,7 +405,7 @@ namespace Vlab
 
       for (int i = 0; i < number_of_extra_bits_needed; ++i)
       {
-        suffixes_auto->ProjectAway((unsigned) (suffixes_auto->num_of_bdd_variables_ - 1));
+        suffixes_auto->ProjectAway((unsigned) (suffixes_auto->number_of_bdd_variables_ - 1));
         suffixes_auto->Minimize();
       }
 
@@ -691,7 +702,7 @@ namespace Vlab
             if (sink_state != l)
             {
               next_states[l]++;
-              if (bit_counter != num_of_bdd_variables_ or (next_states[l] > 1) or (next_states.size() > 1)
+              if (bit_counter != number_of_bdd_variables_ or (next_states[l] > 1) or (next_states.size() > 1)
                   or is_final_state)
               {
                 is_accepting_single_word = false;
@@ -795,8 +806,8 @@ namespace Vlab
 
     char* Automaton::getAnExample(bool accepting)
     {
-      return dfaMakeExample(this->dfa_, 1, num_of_bdd_variables_,
-                            (unsigned*) Libs::MONALib::GetBddVariableIndices(num_of_bdd_variables_));
+      return dfaMakeExample(this->dfa_, 1, number_of_bdd_variables_,
+                            (unsigned*) Libs::MONALib::GetBddVariableIndices(number_of_bdd_variables_));
     }
 
     std::ostream& operator<<(std::ostream& os, const Automaton& automaton)
@@ -915,16 +926,16 @@ namespace Vlab
       Libs::MONALib::DFA_ptr tmp = this->dfa_;
       this->dfa_ = Libs::MONALib::DFAProjectAway(tmp, index);
       dfaFree(tmp);
-      this->num_of_bdd_variables_ = this->num_of_bdd_variables_ - 1;
+      this->number_of_bdd_variables_ = this->number_of_bdd_variables_ - 1;
       DVLOG(VLOG_LEVEL) << this->id_ << " = [" << this->id_ << "]->ProjectAway(" << index << ")";
     }
 
     void Automaton::ProjectAwayAndReMap(const int index)
     {
       Libs::MONALib::DFA_ptr tmp = this->dfa_;
-      this->dfa_ = Libs::MONALib::DFAProjectAwayAndReMap(tmp, this->num_of_bdd_variables_, index);
+      this->dfa_ = Libs::MONALib::DFAProjectAwayAndReMap(tmp, this->number_of_bdd_variables_, index);
       dfaFree(tmp);
-      this->num_of_bdd_variables_ = this->num_of_bdd_variables_ - 1;
+      this->number_of_bdd_variables_ = this->number_of_bdd_variables_ - 1;
       DVLOG(VLOG_LEVEL) << this->id_ << " = [" << this->id_ << "]->ProjectAwayAndReMap(" << index << ")";
     }
 
@@ -994,11 +1005,11 @@ namespace Vlab
       int next_state = -1;  // only for initialization
       unsigned p, l, r, index = 0;  // BDD traversal variables
 
-      CHECK_EQ(num_of_bdd_variables_, exception.size());
+      CHECK_EQ(number_of_bdd_variables_, exception.size());
 
       p = this->dfa_->q[state];
 
-      for (int i = 0; i < num_of_bdd_variables_; i++)
+      for (int i = 0; i < number_of_bdd_variables_; i++)
       {
         LOAD_lri(&this->dfa_->bddm->node_table[p], l, r, index);
         if (index == BDD_LEAF_INDEX)
@@ -1067,7 +1078,7 @@ namespace Vlab
           else
           {
             state = l;
-            while (current_transition.size() < (unsigned) num_of_bdd_variables_)
+            while (current_transition.size() < (unsigned) number_of_bdd_variables_)
             {
               unsigned i = current_transition.size();
               if (next_node_heuristic and next_node_heuristic(i))
@@ -1126,10 +1137,11 @@ namespace Vlab
     {
       std::vector<Eigen::Triplet<BigInteger>> entries;
       const int sink_state = GetSinkState();
+      bool has_sink_state = sink_state != -1;
       unsigned left, right, index;
       for (int s = 0; s < this->dfa_->ns; ++s)
       {
-        if (sink_state != s)
+        if (has_sink_state and sink_state != s)
         {
           // Node is a pair<sbdd_node_id, bdd_depth>
           Node current_bdd_node { dfa_->q[s], 0 }, left_node, right_node;
@@ -1142,9 +1154,9 @@ namespace Vlab
             LOAD_lri(&dfa_->bddm->node_table[current_bdd_node.first], left, right, index);
             if (index == BDD_LEAF_INDEX)
             {
-              if (sink_state != left)
+              if (has_sink_state and (unsigned)sink_state != left)
               {
-                const int exponent = num_of_bdd_variables_ - current_bdd_node.second;
+                const int exponent = number_of_bdd_variables_ - current_bdd_node.second;
                 if (exponent == 0)
                 {
                   entries.push_back(Eigen::Triplet<BigInteger>(s, left, 1));
@@ -1487,8 +1499,8 @@ namespace Vlab
       int i, j, k, l;
       char **buffer;
       int *used, *allocated;
-      int* offsets = Libs::MONALib::GetBddVariableIndices(num_of_bdd_variables_);
-      int no_free_vars = num_of_bdd_variables_;
+      int* offsets = Libs::MONALib::GetBddVariableIndices(number_of_bdd_variables_);
+      int no_free_vars = number_of_bdd_variables_;
       Libs::MONALib::DFA_ptr a = this->dfa_;
       int sink = GetSinkState();
 
@@ -1722,22 +1734,22 @@ namespace Vlab
       // order 0 for boolean variables
       // we dont care about variable names but they are used in
       // MONA DFA file format with dfaExport()
-      char **names = new char*[this->num_of_bdd_variables_];
-      char *orders = new char[this->num_of_bdd_variables_];
+      char **names = new char*[this->number_of_bdd_variables_];
+      char *orders = new char[this->number_of_bdd_variables_];
       std::string name = "a";
-      for (int i = 0; i < this->num_of_bdd_variables_; i++)
+      for (int i = 0; i < this->number_of_bdd_variables_; i++)
       {
         orders[i] = i;
         names[0] = &*name.begin();
       }
 
-      dfaExport(this->dfa_, nullptr, this->num_of_bdd_variables_, names, orders);
+      dfaExport(this->dfa_, nullptr, this->number_of_bdd_variables_, names, orders);
     }
 
     Libs::MONALib::DFA_ptr Automaton::importDFA(std::string file_name)
     {
-      char **names = new char*[this->num_of_bdd_variables_];
-      int ** orders = new int*[this->num_of_bdd_variables_];
+      char **names = new char*[this->number_of_bdd_variables_];
+      int ** orders = new int*[this->number_of_bdd_variables_];
       return dfaImport(&*file_name.begin(), &names, orders);
     }
 
@@ -1862,7 +1874,7 @@ namespace Vlab
      */
     void Automaton::getTransitionChars(char* transitions, int var, pCharPair result[], int* pSize)
     {
-      CHECK(strlen(transitions) == var);
+      CHECK(strlen(transitions) == (unsigned)var);
       char* trans = (char*) malloc((var + 1) * sizeof(char));
       strcpy(trans, transitions);
       int indexInResult = 0;
@@ -1955,12 +1967,12 @@ namespace Vlab
     {
       int i = 0;
       CHECK(asciiVal != NULL);
-      char* charName[] = { "NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL", "BS ", "HT ", "LF ", "VT ", "FF ",
+      std::string charName[] = { "NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL", "BS ", "HT ", "LF ", "VT ", "FF ",
           "CR ", "SO ", "SI ", "DLE", "DC1", "DC2", "CD3", "DC4", "NAK", "SYN", "ETB", "CAN", "EM ", "SUB", "ESC",
           "FS ", "GS ", "RS ", "US " };
       if (c < 32)
       {
-        strcpy(asciiVal, charName[(int) c]);
+        strcpy(asciiVal, charName[(int) c].data());
         return;
       }
       else if (c > 126)
@@ -2098,10 +2110,33 @@ namespace Vlab
       return -1;
     }
 
-    Automaton::Builder::Builder() {
+    Automaton::Builder::Builder()
+        : number_of_states_ { 0 },
+          number_of_bdd_variables_ { 0 },
+          dfa_ { nullptr }
+    {
 
     }
 
-}
+    Automaton::Builder::~Builder()
+    {
+
+    }
+
+    Automaton_ptr Automaton::Builder::Build()
+    {
+
+      if (dfa_)
+      {
+        Automaton_ptr automaton = new Automaton(dfa_, number_of_bdd_variables_);
+        dfa_ = nullptr;
+
+        return automaton;
+      }
+
+      LOG(FATAL) << "DFA is not constructed.";
+      return nullptr;
+    }
+  }
 /* namespace Theory */
 } /* namespace Vlab */
