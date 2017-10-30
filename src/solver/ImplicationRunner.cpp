@@ -386,6 +386,10 @@ void ImplicationRunner::CollectHeuristicInfo(Eq_ptr eq_term) {
 			if(TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(eq_term->right_term)) {
 				int constant = std::stoi(term_constant->getValue());
 				f->SetConstant(constant);
+				// if the constant is big, put it later in the formula
+				if(constant > 100) {
+					symbol_table_->add_unsorted_constraint(eq_term);
+				}
 			} else if(QualIdentifier_ptr right_var = dynamic_cast<QualIdentifier_ptr>(eq_term->right_term)) {
 				f->AddVariable(right_var->getVarName(),1);
 			} else {
@@ -402,7 +406,7 @@ void ImplicationRunner::CollectHeuristicInfo(Eq_ptr eq_term) {
 				variable_formulas[len_var->getVarName()] = f;
 			}
 			variables_to_expand.insert(len_var->getVarName());
-			symbol_table_->add_unsorted_constraint(eq_term);
+			
 		}
 	}
 }
