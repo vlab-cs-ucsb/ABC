@@ -1243,6 +1243,52 @@ bool Automaton::TEMPisStartStateReachableFromAnAcceptingState(DFA_ptr dfa) {
   return false;
 }
 
+std::vector<std::pair<int,std::vector<char>>> Automaton::GetNextTransitions(int state) {
+  std::vector<std::pair<int,std::vector<char>>> next_states;
+  std::vector<unsigned> nodes;
+  std::vector<std::vector<char>> transition_stack;
+  std::vector<char> current_transition;
+
+  unsigned p, l, r, index; // BDD traversal variables
+  p = this->dfa_->q[state];
+  nodes.push_back(p);
+  transition_stack.push_back(std::vector<char>());
+  while (not nodes.empty()) {
+    p = nodes.back();
+    nodes.pop_back();
+    current_transition = transition_stack.back();
+    transition_stack.pop_back();
+    LOAD_lri(&this->dfa_->bddm->node_table[p], l, r, index);
+    if (index == BDD_LEAF_INDEX) {
+      while (current_transition.size() < (unsigned) num_of_bdd_variables_) {
+        current_transition.push_back('X');
+      }
+      // put loops first, other states at back
+      if(l != state) {
+        next_states.push_back(std::make_pair(l, current_transition));
+      } else {
+        next_states.insert(next_states.begin(),std::make_pair(l,current_transition));
+      }
+      
+    } else {
+      while (current_transition.size() < index) {
+        unsigned i = current_transition.size();
+        current_transition.push_back('X');
+      }
+      std::vector<char> left = current_transition;
+      left.push_back('0');
+      std::vector<char> right = current_transition;
+      right.push_back('1');
+      transition_stack.push_back(right);
+      nodes.push_back(r);
+      transition_stack.push_back(left);
+      nodes.push_back(l);
+    }
+  }
+
+  return next_states;
+}
+
 /**
  * @return next state from the state by taking transition path (1 step away)
  */

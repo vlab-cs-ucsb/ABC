@@ -2972,6 +2972,107 @@ std::vector<std::string> StringAutomaton::GetAnAcceptingStringForEachTrack() {
 //  return strings;
 }
 
+std::map<std::string,std::vector<std::string>*>* StringAutomaton::GetModelsWithinBound(int num_models, int bound) {
+  LOG(INFO) << "bound: " << bound;
+
+  // assume num_tracks > 1; Otherwise, juse call normal version
+  int models_so_far = 0;
+  int num_tracks = this->num_tracks_;
+  int var_per_track = this->num_of_bdd_variables_ / num_tracks;
+  std::vector<std::pair<int,std::vector<char>>> next_states;
+  std::stack<std::pair<int,std::vector<std::vector<char>>>> models_to_process;
+
+  // since we're not expanding dont-care characters ('X') yet, the models we find are unfinished
+  std::set<std::vector<std::vector<char>>> unfinished_models;
+
+  int start = this->dfa_->s;
+  int sink = GetSinkState();
+  bool get_more_models = true;
+  std::vector<std::vector<char>> track_characters(num_tracks,std::vector<char>());
+  models_to_process.push(std::make_pair(start,track_characters));
+  int num_loops = 0;
+  while(not models_to_process.empty() and get_more_models) {
+    num_loops += 1;
+    std::pair<int,std::vector<std::vector<char>>> current_model = models_to_process.top();
+    models_to_process.pop();
+    // next_states will return loops first, then transitions to other states
+    // since we are using a stack to process models, this means we take loops last
+    next_states = GetNextTransitions(current_model.first);
+    
+    for(auto iter : next_states) {
+      // next_state is in first position
+      int to_state = iter.first;
+
+      // check if its final state
+      // since we're assuming we have lambda transitions, transitions to final states must be all lambda transitions
+      // therefor, if to_state is a final state, and the current_length is <= bound, then we record the previous track_characters
+      // and don't new transitions!
+      int length = current_model.second[0].size() / var_per_track;
+      if(this->dfa_->f[to_state] == 1) {
+        
+        
+        if((count_bound_exact_ and length == bound) or (not count_bound_exact_ and length <= bound)) {
+          
+          int max_x = 0;
+          // each track can have differing number of x's
+          // find the max number of x's in all tracks
+          for(int i = 0; i < num_tracks; i++) {
+            std::string s;
+            int num_x = 0;
+            for(int k = 0; k < current_model.second[i].size(); k++) {
+              if(current_model.second[i][k] == 'X') {
+                num_x++;
+              }
+              s += current_model.second[i][k];
+            }
+            LOG(INFO) << "s" << i << " : " << s;
+            if(num_x > max_x) {
+              max_x = num_x;
+            }
+          }
+          
+          // for each 'X', there are 2 possible transitions
+          models_so_far += (1 << max_x);
+          LOG(INFO) << "max_x: " << max_x;
+          LOG(INFO) << "Length: " << length;
+          LOG(INFO) << "models_so_far: " << models_so_far;
+          LOG(INFO) << "";
+          unfinished_models.insert(current_model.second);
+          // set finish condition if necessary
+          if(num_models != -1 and models_so_far >= num_models) {
+            get_more_models = false;
+          }
+        }
+      } else if(to_state != sink and (length < bound or bound == -1)) {
+        std::vector<char> transition = iter.second;
+
+        std::string s;
+        for(int i = 0; i < transition.size(); i++) {
+          s += transition[i];
+        }
+        LOG(INFO) << "s: " << s;
+        
+        // transition is in second position
+        track_characters = current_model.second;
+        for(int i = 0; i < num_tracks; i++) {
+          std::string s1;
+          for(int k = 0; k < var_per_track; k++) {
+            // since tracks are interleaved, track i's characters don't lie in order in the transition we got
+            track_characters[i].push_back(transition[i+num_tracks*k]);
+            s1 += transition[i+num_tracks*k];
+          }
+          LOG(INFO) << "track " << i << " = " << s1;
+        }
+        
+        models_to_process.push(std::make_pair(to_state,track_characters));
+      }
+    }
+    LOG(INFO) << "num_loops: " << num_loops;
+  }
+
+  LOG(INFO) << "num_models: " << unfinished_models.size();
+}
+
 int StringAutomaton::GetNumTracks() const {
   return num_tracks_;
 }
