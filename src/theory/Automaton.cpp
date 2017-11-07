@@ -145,7 +145,7 @@ int Automaton::GetInitialState() const {
 
 int Automaton::GetSinkState() const {
   int sink_state = Automaton::DFAGetSinkState(this->dfa_);
-  DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->GetSinkState() = " << sink_state;
+  //DVLOG(VLOG_LEVEL) << "[" << this->id_ << "]->GetSinkState() = " << sink_state;
   return sink_state;
 }
 
@@ -1248,6 +1248,7 @@ std::vector<std::pair<int,std::vector<char>>> Automaton::GetNextTransitions(int 
   std::vector<unsigned> nodes;
   std::vector<std::vector<char>> transition_stack;
   std::vector<char> current_transition;
+  int sink = GetSinkState();
 
   unsigned p, l, r, index; // BDD traversal variables
   p = this->dfa_->q[state];
@@ -1260,14 +1261,20 @@ std::vector<std::pair<int,std::vector<char>>> Automaton::GetNextTransitions(int 
     transition_stack.pop_back();
     LOAD_lri(&this->dfa_->bddm->node_table[p], l, r, index);
     if (index == BDD_LEAF_INDEX) {
+    	int to_state = l;
+    	// if to_state is sink state, ignore
+    	if(to_state == sink) {
+    		continue;
+    	}
+
       while (current_transition.size() < (unsigned) num_of_bdd_variables_) {
         current_transition.push_back('X');
       }
       // put loops first, other states at back
-      if(l != state) {
-        next_states.push_back(std::make_pair(l, current_transition));
+      if(to_state != state) {
+        next_states.push_back(std::make_pair(to_state, current_transition));
       } else {
-        next_states.insert(next_states.begin(),std::make_pair(l,current_transition));
+        next_states.insert(next_states.begin(),std::make_pair(to_state,current_transition));
       }
       
     } else {
