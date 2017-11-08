@@ -183,7 +183,7 @@ void Driver::SetModelCounterForVariable(const std::string var_name) {
   auto var_value = symbol_table_->get_value_at_scope(script_, representative_variable);
 
   // test get_models
-  auto models = var_value->getStringAutomaton()->GetModelsWithinBound(-1,4);
+  auto models = var_value->getStringAutomaton()->GetModelsWithinBound(100,-1);
 
   auto& mc = variable_model_counter_[representative_variable];
   mc.set_use_sign_integers(Option::Solver::USE_SIGNED_INTEGERS);

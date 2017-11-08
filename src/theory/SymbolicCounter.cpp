@@ -77,6 +77,7 @@ BigInteger SymbolicCounter::Count(const unsigned long bound) {
     ++bound_; // handle sign bit
   }
 
+
   DVLOG(VLOG_LEVEL) << "Count(" << bound << ") = " << initialization_vector_.coeff(0);
   return initialization_vector_.coeff(0);
 }
@@ -111,6 +112,43 @@ BigInteger SymbolicCounter::CountbyMatrixMultiplication(const unsigned long boun
 //
 //  BigInteger result = x.coeff(this->dfa_->s, this->dfa_->ns);
 //  return result;
+}
+
+int SymbolicCounter::GetMinBound(int num_models) {
+	unsigned long bound = INT_MAX;
+	unsigned long power = bound;
+
+	if (SymbolicCounter::Type::BINARYINT == type_) {
+		++power; // handle sign bit
+	} else if (SymbolicCounter::Type::UNARYINT == type_) {
+		unsigned long base = 1;
+		power = (base << bound) - 1;
+	}
+
+	if (power >= bound_) {
+		power = power - bound_;
+	} else {
+		initialization_vector_ = transition_count_matrix_.innerVector(transition_count_matrix_.cols()-1);
+	}
+
+	int count = 0;
+	int min_bound = INT_MAX;
+	while (power > 0) {
+		initialization_vector_ = transition_count_matrix_ * initialization_vector_;
+		--power;
+		count++;
+		if(initialization_vector_.coeff(0) >= num_models) {
+			min_bound = count;
+			break;
+		}
+	}
+
+	bound_ = min_bound;
+	if (SymbolicCounter::Type::BINARYINT == type_) {
+		++bound_; // handle sign bit
+	}
+
+	return min_bound;
 }
 
 std::string SymbolicCounter::str() const {

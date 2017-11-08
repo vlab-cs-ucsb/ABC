@@ -2973,9 +2973,18 @@ std::vector<std::string> StringAutomaton::GetAnAcceptingStringForEachTrack() {
 }
 
 std::map<std::string,std::vector<std::string>*>* StringAutomaton::GetModelsWithinBound(int num_models, int bound) {
-	LOG(INFO) << "num_models : " << num_models;
-  LOG(INFO) << "bound: " << bound;
-  LOG(INFO) << "Count_bound_exact ? " << count_bound_exact_;
+	// if not multitrack, use parent automaton version
+	if(this->num_tracks_ == 1) {
+		return Automaton::GetModelsWithinBound(num_models,bound);
+	}
+
+	if(bound == -1 and num_models == -1) {
+		LOG(FATAL) << "both bound and num_models cant be -1";
+	} else if(bound == -1) {
+		auto counter = GetSymbolicCounter();
+		bound = counter.GetMinBound(num_models);
+		LOG(INFO) << "bound: " << bound;
+	}
 
   // compute BFS for unweighted graph (dfa)
   std::queue<int> states_to_process;
@@ -3030,9 +3039,6 @@ std::map<std::string,std::vector<std::string>*>* StringAutomaton::GetModelsWithi
 
   std::vector<std::pair<int,std::vector<char>>> next_states;
   std::stack<std::pair<int,std::vector<std::vector<char>>>> models_to_process;
-
-  // since we're not expanding dont-care characters ('X') yet, the models we find are unfinished
-  std::set<std::vector<std::vector<char>>> unfinished_models;
 
   // cache the process for finding next transitions from a state
   std::vector<std::vector<std::pair<int,std::vector<char>>>> next_states_matrix(this->dfa_->ns);
@@ -3092,6 +3098,9 @@ std::map<std::string,std::vector<std::string>*>* StringAutomaton::GetModelsWithi
   int start = this->dfa_->s;
   int sink = GetSinkState();
   bool get_more_models = true;
+  // since we're not expanding dont-care characters ('X') yet, the models we find are unfinished
+	std::set<std::vector<std::vector<char>>> unfinished_models;
+	std::set<std::vector<std::vector<bool>>> finished_models;
   std::vector<std::vector<char>> track_characters(num_tracks,std::vector<char>());
   models_to_process.push(std::make_pair(start,track_characters));
   int num_loops = 0;
@@ -3167,7 +3176,150 @@ std::map<std::string,std::vector<std::string>*>* StringAutomaton::GetModelsWithi
     }
   }
 
+
+  // unfinished_models contain 'X' (dont care) in transitions
+  // we need to expand those
+  bool expand = true;
+  int num_initial = unfinished_models.size();
+  int num_finished = 0;
+  int count = 0;
+  for(auto iter : unfinished_models) {
+  	int num_remaining = unfinished_models.size()-count;
+  	// for each track
+
+  	std::vector<std::vector<std::vector<bool>>> expanded_track_models(num_tracks);
+  	int cartesian_size = 1;
+  	for(int j = 0; j < iter.size(); j++) {
+  		// initial unfinished model
+  		int num_models_current_track = 1;
+
+  		// don't expand 'X's in transitions if we already have enough models
+  		// instead, flatten them to 0 or 1.
+  		if(expand and cartesian_size + num_remaining + num_finished >= num_models) {
+  			expand = false;
+  		}
+
+			std::vector<std::vector<bool>> models;
+			models.push_back(std::vector<bool>());
+
+			for(int k = 0; k < iter[j].size(); k++) {
+				// if a character is X (dont care), duplicate transition, one for 1, one for 0
+				if(iter[j][k] == 'X') {
+					// dont add both transitions for X if we are at the desired number of models
+					if(!expand) {
+						for(int i = 0; i < models.size(); i++) {
+							models[i].push_back(0);
+						}
+					} else {
+						std::vector<std::vector<bool>> temp_models;
+						for(int i = 0; i < models.size(); i++) {
+							// dont add both transitions for X if we are at the desired number of models
+							if(expand) {
+								std::vector<bool> m = models[i];
+								m.push_back(1);
+								temp_models.push_back(m);
+								num_models_current_track++;
+							}
+							models[i].push_back(0);
+
+						}
+						models.insert(models.end(),temp_models.begin(),temp_models.end());
+						if(num_finished + num_remaining + cartesian_size*num_models_current_track >= num_models) {
+							expand = false;
+						}
+					}
+				} else {
+					for(int i = 0; i < models.size(); i++) {
+						if(iter[j][k] == '0') {
+							models[i].push_back(0);
+						} else {
+							models[i].push_back(1);
+						}
+					}
+				}
+			}
+			cartesian_size *= num_models_current_track;
+			expanded_track_models[j] = models;
+  	}
+
+  	for(int i = 0; i < num_tracks; i++) {
+  		LOG(INFO) << "expanded_track_models[" << i << "].size() = " << expanded_track_models[i].size();
+  	}
+
+  	std::vector<std::vector<bool>> temp_model(num_tracks);
+  	std::vector<int> next_model_to_use(num_tracks,0);
+  	// add all pairs in expanded_track_models to finished_models
+  	int pos = 0;
+  	do {
+  		pos = 0;
+  		std::string s0;
+  		for(int i = 0; i < num_tracks; i++) {
+  			s0 += std::to_string(next_model_to_use[i]) + " ";
+  		}
+  		LOG(INFO) << "next model = " << s0;
+  		std::cin.get();
+
+  		// build the next model from next_model_to_use vector of positions
+  		for(int i = 0; i < num_tracks; i++) {
+  			temp_model[i] = expanded_track_models[i][next_model_to_use[i]];
+  		}
+  		// insert it into finished_models
+  		finished_models.insert(temp_model);
+
+  		while(pos < num_tracks and next_model_to_use[pos] >= expanded_track_models[pos].size()-1) {
+				next_model_to_use[pos] = 0;
+				pos++;
+			}
+
+  		// increment position of next model we want to use if we're still in range
+  		if(pos < num_tracks) {
+  			next_model_to_use[pos]++;
+  		}
+
+  	} while (pos < num_tracks and finished_models.size() < num_models);
+
+  	count++;
+	}
+
+//  std::set<std::vector<std::string>> printable_models;
+//  for(auto iter : finished_models) {
+//  	LOG(INFO) << "iter size: " << iter.size();
+//  	std::vector<std::string> model(iter.size());
+//  	for(int i = 0; i < iter.size(); i++) {
+//  		std::string s;
+//			unsigned int length = iter[i].size() / var_per_track;
+//			for(int k = 0; k < length and iter[i][(k*var_per_track)-1] != 1; k++) {
+//				unsigned char c = 0;
+//				for(int j = 0; j < 8; j++) {
+//					if(iter[i][(length*var_per_track)+j]) {
+//						c |= 1;
+//					} else {
+//						c |= 0;
+//					}
+//					if(j != 7) {
+//						c <<= 1;
+//					}
+//				}
+//				char c_arr[4];
+//				charToAscii(c_arr,c);
+//				s += c_arr;
+//			}
+//			model[i] = s;
+//  	}
+//  	printable_models.insert(model);
+//  }
+//
+//  int count = 0;
+//  for(auto iter: printable_models) {
+//  	LOG(INFO) << "Solution " << count;
+//  	for(int i = 0; i < iter.size(); i++) {
+//  		LOG(INFO) << "	Track " << i << " = " << iter[i];
+//  	}
+//  	count++;
+//  }
+
   LOG(INFO) << "num_models: " << unfinished_models.size();
+  LOG(INFO) << "num finished_models: " << finished_models.size();
 }
 
 int StringAutomaton::GetNumTracks() const {

@@ -39,6 +39,7 @@ class SymbolicCounter {
 
   BigInteger Count(const unsigned long bound);
   BigInteger CountbyMatrixMultiplication(const unsigned long bound);
+  int GetMinBound(int num_models);
 
   template <class Archive>
   void save(Archive& ar) const {
