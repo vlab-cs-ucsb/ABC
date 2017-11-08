@@ -3038,7 +3038,7 @@ std::map<std::string,std::vector<std::string>*>* StringAutomaton::GetModelsWithi
   int var_per_track = this->num_of_bdd_variables_ / num_tracks;
 
   std::vector<std::pair<int,std::vector<char>>> next_states;
-  std::stack<std::pair<int,std::vector<std::vector<char>>>> models_to_process;
+
 
   // cache the process for finding next transitions from a state
   std::vector<std::vector<std::pair<int,std::vector<char>>>> next_states_matrix(this->dfa_->ns);
@@ -3101,6 +3101,7 @@ std::map<std::string,std::vector<std::string>*>* StringAutomaton::GetModelsWithi
   // since we're not expanding dont-care characters ('X') yet, the models we find are unfinished
 	std::set<std::vector<std::vector<char>>> unfinished_models;
 	std::set<std::vector<std::vector<bool>>> finished_models;
+	std::stack<std::pair<int,std::vector<std::vector<char>>>> models_to_process;
   std::vector<std::vector<char>> track_characters(num_tracks,std::vector<char>());
   models_to_process.push(std::make_pair(start,track_characters));
   int num_loops = 0;
@@ -3148,11 +3149,6 @@ std::map<std::string,std::vector<std::string>*>* StringAutomaton::GetModelsWithi
           
           // for each 'X', there are 2 possible transitions
           models_so_far += (1 << max_x);
-          if(models_so_far % 10000 == 0) {
-          	LOG(INFO) << "models_to_process: " << models_to_process.size();
-          	LOG(INFO) << "models_so_far    : " << models_so_far;
-          }
-//          LOG(INFO) << "";
           unfinished_models.insert(current_model.second);
           // set finish condition if necessary
           if(num_models != -1 and models_so_far >= num_models) {
@@ -3242,23 +3238,12 @@ std::map<std::string,std::vector<std::string>*>* StringAutomaton::GetModelsWithi
 			expanded_track_models[j] = models;
   	}
 
-  	for(int i = 0; i < num_tracks; i++) {
-  		LOG(INFO) << "expanded_track_models[" << i << "].size() = " << expanded_track_models[i].size();
-  	}
-
   	std::vector<std::vector<bool>> temp_model(num_tracks);
   	std::vector<int> next_model_to_use(num_tracks,0);
   	// add all pairs in expanded_track_models to finished_models
   	int pos = 0;
   	do {
   		pos = 0;
-  		std::string s0;
-  		for(int i = 0; i < num_tracks; i++) {
-  			s0 += std::to_string(next_model_to_use[i]) + " ";
-  		}
-  		LOG(INFO) << "next model = " << s0;
-  		std::cin.get();
-
   		// build the next model from next_model_to_use vector of positions
   		for(int i = 0; i < num_tracks; i++) {
   			temp_model[i] = expanded_track_models[i][next_model_to_use[i]];
@@ -3281,42 +3266,44 @@ std::map<std::string,std::vector<std::string>*>* StringAutomaton::GetModelsWithi
   	count++;
 	}
 
-//  std::set<std::vector<std::string>> printable_models;
-//  for(auto iter : finished_models) {
-//  	LOG(INFO) << "iter size: " << iter.size();
-//  	std::vector<std::string> model(iter.size());
-//  	for(int i = 0; i < iter.size(); i++) {
-//  		std::string s;
-//			unsigned int length = iter[i].size() / var_per_track;
-//			for(int k = 0; k < length and iter[i][(k*var_per_track)-1] != 1; k++) {
-//				unsigned char c = 0;
-//				for(int j = 0; j < 8; j++) {
-//					if(iter[i][(length*var_per_track)+j]) {
-//						c |= 1;
-//					} else {
-//						c |= 0;
-//					}
-//					if(j != 7) {
-//						c <<= 1;
-//					}
-//				}
-//				char c_arr[4];
-//				charToAscii(c_arr,c);
-//				s += c_arr;
-//			}
-//			model[i] = s;
-//  	}
-//  	printable_models.insert(model);
-//  }
-//
-//  int count = 0;
-//  for(auto iter: printable_models) {
-//  	LOG(INFO) << "Solution " << count;
-//  	for(int i = 0; i < iter.size(); i++) {
-//  		LOG(INFO) << "	Track " << i << " = " << iter[i];
-//  	}
-//  	count++;
-//  }
+  std::set<std::vector<std::string>> printable_models;
+  for(auto iter : finished_models) {
+
+  	std::vector<std::string> model(iter.size());
+  	for(int i = 0; i < iter.size(); i++) {
+  		std::string s;
+			unsigned int length = iter[i].size() / var_per_track;
+
+			for(int k = 0; k < length and iter[i][((k+1)*var_per_track)-1] != 1; k++) {
+				unsigned char c = 0;
+				// var_per_track-1 since we dont' care about the last bit, which is used for lambda
+				for(int j = 0; j < var_per_track-1; j++) {
+					if(iter[i][(k*var_per_track)+j]) {
+						c |= 1;
+					} else {
+						c |= 0;
+					}
+					if(j != 7) {
+						c <<= 1;
+					}
+				}
+				char c_arr[4];
+				charToAscii(c_arr,c);
+				s += c_arr;
+			}
+			model[i] = s;
+  	}
+  	printable_models.insert(model);
+  }
+
+  int count2 = 0;
+  for(auto iter: printable_models) {
+  	LOG(INFO) << "Solution " << count2;
+  	for(int i = 0; i < iter.size(); i++) {
+  		LOG(INFO) << "	Track " << i << " = " << iter[i];
+  	}
+  	count2++;
+  }
 
   LOG(INFO) << "num_models: " << unfinished_models.size();
   LOG(INFO) << "num finished_models: " << finished_models.size();

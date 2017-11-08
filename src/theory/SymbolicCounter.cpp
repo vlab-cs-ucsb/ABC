@@ -115,6 +115,8 @@ BigInteger SymbolicCounter::CountbyMatrixMultiplication(const unsigned long boun
 }
 
 int SymbolicCounter::GetMinBound(int num_models) {
+
+
 	unsigned long bound = INT_MAX;
 	unsigned long power = bound;
 
@@ -134,10 +136,18 @@ int SymbolicCounter::GetMinBound(int num_models) {
 	int count = 0;
 	int min_bound = INT_MAX;
 	while (power > 0) {
+		auto before_vector(initialization_vector_);
 		initialization_vector_ = transition_count_matrix_ * initialization_vector_;
 		--power;
 		count++;
+		// if we have enough models, or the count vector doesn't change, return with
+		// the corresponding bound
 		if(initialization_vector_.coeff(0) >= num_models) {
+			min_bound = count;
+			break;
+		} else if(before_vector.isApprox(initialization_vector_)) {
+			// -1 for incrementing count when not needed
+			count--;
 			min_bound = count;
 			break;
 		}

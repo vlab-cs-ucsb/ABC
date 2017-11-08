@@ -271,7 +271,7 @@ public:
   StringAutomaton_ptr ProjectKTrack(int track);
   void SetSymbolicCounter() override;
   std::vector<std::string> GetAnAcceptingStringForEachTrack();
-  std::map<std::string,std::vector<std::string>*>* GetModelsWithinBound(int num_models, int bound);
+  std::map<std::string,std::vector<std::string>*>* GetModelsWithinBound(int num_models, int bound) override;
 	int GetNumTracks() const;
 
   bool HasEmptyString();

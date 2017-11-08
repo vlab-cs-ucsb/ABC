@@ -85,6 +85,7 @@ public:
   std::map<std::string, int> GetAnAcceptingIntForEachVar();
 
   BigInteger SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = false) override;
+  std::map<std::string,std::vector<std::string>*>* GetModelsWithinBound(int num_models, int bound) override;
 
 protected:
   BinaryIntAutomaton(ArithmeticFormula_ptr formula);

@@ -790,6 +790,406 @@ BigInteger BinaryIntAutomaton::SymbolicCount(double bound, bool count_less_than_
   return BigInteger(str_result);
 }
 
+std::map<std::string,std::vector<std::string>*>* BinaryIntAutomaton::GetModelsWithinBound(int num_models, int bound) {
+	inspectAuto(false,true);
+	std::cin.get();
+	int num_tracks;
+	if(formula_ == nullptr) {
+		num_tracks = this->num_of_bdd_variables_;
+	} else {
+		num_tracks = formula_->GetNumberOfVariables();
+	}
+
+	// if not multitrack, use parent automaton version
+	if(num_tracks == 1) {
+		return Automaton::GetModelsWithinBound(num_models,bound);
+	}
+
+	if(bound == -1 and num_models == -1) {
+		LOG(FATAL) << "both bound and num_models cant be -1";
+	} else if(bound == -1) {
+		auto counter = GetSymbolicCounter();
+		bound = counter.GetMinBound(num_models);
+		LOG(INFO) << "bound: " << bound;
+	}
+
+  // compute BFS for unweighted graph (dfa)
+  std::queue<int> states_to_process;
+  std::vector<int> distances(this->dfa_->ns,INT_MAX);
+  std::set<int> final_states;
+
+  std::vector<int> shortest_accepting_path(this->dfa_->ns,INT_MAX);
+  for(int start_state = 0; start_state < this->dfa_->ns; start_state++) {
+  	distances[start_state] = 0;
+		states_to_process.push(start_state);
+
+		while(not states_to_process.empty()) {
+			int s = states_to_process.front();
+			states_to_process.pop();
+			// mark final states for later
+			if(this->dfa_->f[s] == 1) {
+				final_states.insert(s);
+			}
+
+			for(auto iter : getNextStates(s)) {
+				if(distances[iter] == INT_MAX) {
+					states_to_process.push(iter);
+					distances[iter] = distances[s] + 1;
+				}
+			}
+		}
+
+		int shortest = INT_MAX;
+		for(auto final : final_states) {
+			if(distances[final] < shortest) {
+				shortest = distances[final];
+			}
+		}
+		shortest_accepting_path[start_state] = shortest;
+
+
+		distances = std::vector<int>(this->dfa_->ns,INT_MAX);
+  }
+
+  for(int i = 0; i < this->dfa_->ns; i++) {
+  	LOG(INFO) << "shortest path for state " << i << " = " << shortest_accepting_path[i];
+  }
+
+  LOG(INFO) << "Done computing shortest paths to final state";
+  std::cin.get();
+
+  // assume num_tracks > 1; Otherwise, juse call normal version
+  int models_so_far = 0;
+  int num_variables = this->num_of_bdd_variables_;
+  int var_per_track = num_variables / num_tracks;
+
+  std::vector<std::pair<int,std::vector<char>>> next_states;
+
+  // cache the process for finding next transitions from a state
+  std::vector<std::vector<std::pair<int,std::vector<char>>>> next_states_matrix(this->dfa_->ns);
+  for(int i = 0; i < this->dfa_->ns; i++) {
+  	int current_state = i;
+  	std::vector<std::pair<int,std::vector<char>>> inner_next_states;
+		std::vector<unsigned> nodes;
+		std::vector<std::vector<char>> transition_stack;
+		std::vector<char> current_transition;
+		int sink = GetSinkState();
+
+		unsigned p, l, r, index; // BDD traversal variables
+		p = this->dfa_->q[current_state];
+		nodes.push_back(p);
+		transition_stack.push_back(std::vector<char>());
+		while (not nodes.empty()) {
+			p = nodes.back();
+			nodes.pop_back();
+			current_transition = transition_stack.back();
+			transition_stack.pop_back();
+			LOAD_lri(&this->dfa_->bddm->node_table[p], l, r, index);
+			if (index == BDD_LEAF_INDEX) {
+				int to_state = l;
+				// if to_state is sink state, ignore
+				if(to_state == sink) {
+					continue;
+				}
+
+				while (current_transition.size() < (unsigned) num_of_bdd_variables_) {
+					current_transition.push_back('X');
+				}
+				// put loops first, other states at back
+				if(to_state != current_state) {
+					next_states_matrix[i].push_back(std::make_pair(to_state, current_transition));
+				} else {
+					next_states_matrix[i].insert(next_states_matrix[i].begin(),std::make_pair(to_state,current_transition));
+				}
+
+			} else {
+				while (current_transition.size() < index) {
+					unsigned i = current_transition.size();
+					current_transition.push_back('X');
+				}
+				std::vector<char> left = current_transition;
+				left.push_back('0');
+				std::vector<char> right = current_transition;
+				right.push_back('1');
+				transition_stack.push_back(right);
+				nodes.push_back(r);
+				transition_stack.push_back(left);
+				nodes.push_back(l);
+			}
+		}
+  }
+
+
+  int start = this->dfa_->s;
+	int sink = GetSinkState();
+	bool get_more_models = true;
+	// since we're not expanding dont-care characters ('X') yet, the models we find are unfinished
+	std::set<std::vector<std::vector<char>>> unfinished_models;
+	std::set<std::vector<std::vector<bool>>> finished_models;
+	std::stack<std::pair<int,std::vector<std::vector<char>>>> models_to_process;
+	std::vector<std::vector<char>> track_characters(num_tracks,std::vector<char>());
+	models_to_process.push(std::make_pair(start,track_characters));
+	int num_loops = 0;
+	while(not models_to_process.empty() and get_more_models) {
+		std::pair<int,std::vector<std::vector<char>>> current_model = models_to_process.top();
+		models_to_process.pop();
+
+		int current_state = current_model.first;
+		int length = current_model.second[0].size() / var_per_track;
+
+		if(shortest_accepting_path[current_state] + length > bound) {
+			continue;
+		}
+
+
+
+		for(auto iter : next_states_matrix[current_state]) {
+		// next_state is in first position
+			int to_state = iter.first;
+			// if the current length + shortest path to final state from to_state + 1 (for transition from current -> to_state)
+			// is greater than bound, ignore
+			if(to_state == sink || length + shortest_accepting_path[to_state]+1 > bound) {
+				continue;
+			}
+
+
+			if(to_state != sink and (length < bound or bound == -1)) {
+				std::vector<char> transition = iter.second;
+
+				// transition is in second position
+				track_characters = current_model.second;
+				for(int i = 0; i < num_tracks; i++) {
+					for(int k = 0; k < var_per_track; k++) {
+						// since tracks are interleaved, track i's characters don't lie in order in the transition we got
+						// however, this is a binaryint, so each var should only take 1 bit, so this isn't really needed
+						track_characters[i].push_back(transition[i+num_tracks*k]);
+					}
+				}
+
+				models_to_process.push(std::make_pair(to_state,track_characters));
+			}
+		}
+
+		// check if its final state
+		// since we can have any number of leading zeros or ones, first truncate
+		// all leading zeros or ones (except for one) and add the transition if we haven't
+		// seen it yet
+		if(this->dfa_->f[current_state] == 1) {
+			if((count_bound_exact_ and length == bound) or (not count_bound_exact_ and length <= bound)) {
+				LOG(INFO) << "Length: " << length;
+
+				// for each track, truncate leading zeros or ones (except for one)
+				// in dfa representation, we read backwards (0101 = 5, instead of 3) so leading zeros
+				// or ones are at the end of the transition
+				if(is_natural_number_) {
+					// for unsigned, just get rid of leading 0s
+					for(int i = 0; i < num_tracks; i++) {
+						int pos = current_model.second[i].size()-1;
+						while(current_model.second[i].back() == '0' and pos > 0) {
+							current_model.second[i].pop_back();
+							pos--;
+						}
+					}
+				}
+				else {
+					// for signed, we need to get rid of most leading 0s and 1s
+					for(int i = 0; i < num_tracks; i++) {
+						char last_char = current_model.second[i].back();
+						int pos = current_model.second[i].size()-2;
+						while(pos >= 0 and current_model.second[i][pos] == last_char and last_char != 'X') {
+							current_model.second[i].pop_back();
+							pos--;
+						}
+					}
+				}
+
+				// if we haven't seen the truncated version, add it
+				if(unfinished_models.find(current_model.second) == unfinished_models.end()) {
+					int max_x = 0;
+					// each track can have differing number of x's
+					// find the max number of x's in all tracks
+					for(int i = 0; i < num_tracks; i++) {
+						int num_x = 0;
+						for(int k = 0; k < current_model.second[i].size(); k++) {
+							if(current_model.second[i][k] == 'X') {
+								num_x++;
+							}
+						}
+						if(num_x > max_x) {
+							max_x = num_x;
+						}
+					}
+
+					// for each 'X', there are 2 possible transitions
+					models_so_far += (1 << max_x);
+					unfinished_models.insert(current_model.second);
+
+					std::string s1,s2;
+					for(int k = 0; k < current_model.second[0].size(); k++) {
+						s1 += current_model.second[0][k];
+					}
+					for(int k = 0; k < current_model.second[1].size(); k++) {
+						s2 += current_model.second[1][k];
+					}
+					LOG(INFO) << "ADDED:";
+					LOG(INFO) << "  s1: " << s1;
+					LOG(INFO) << "  s2: " << s2;
+					LOG(INFO) << "";
+
+					// set finish condition if necessary
+					if(num_models != -1 and models_so_far >= num_models) {
+						get_more_models = false;
+					}
+				}
+//				else {
+//					LOG(INFO) << "SEEN IT:";
+//					std::string s1,s2;
+//					for(int k = 0; k < current_model.second[0].size(); k++) {
+//						s1 += current_model.second[0][k];
+//					}
+//					for(int k = 0; k < current_model.second[1].size(); k++) {
+//						s2 += current_model.second[1][k];
+//					}
+//					LOG(INFO) << "  s1: " << s1;
+//					LOG(INFO) << "  s2: " << s2;
+//					LOG(INFO) << "";
+//					std::cin.get();
+//				}
+			}
+		}
+	}
+
+	// unfinished_models contain 'X' (dont care) in transitions
+	// we need to expand those
+	bool expand = true;
+	int num_initial = unfinished_models.size();
+	int num_finished = 0;
+	int count = 0;
+	for(auto iter : unfinished_models) {
+		int num_remaining = unfinished_models.size()-count;
+		// for each track
+
+		std::vector<std::vector<std::vector<bool>>> expanded_track_models(num_tracks);
+		int cartesian_size = 1;
+		for(int j = 0; j < iter.size(); j++) {
+			// initial unfinished model
+			int num_models_current_track = 1;
+
+			// don't expand 'X's in transitions if we already have enough models
+			// instead, flatten them to 0 or 1.
+			if(expand and cartesian_size + num_remaining + num_finished >= num_models) {
+				expand = false;
+			}
+
+			std::vector<std::vector<bool>> models;
+			models.push_back(std::vector<bool>());
+
+			for(int k = 0; k < iter[j].size(); k++) {
+				// if a character is X (dont care), duplicate transition, one for 1, one for 0
+				if(iter[j][k] == 'X') {
+					// dont add both transitions for X if we are at the desired number of models
+					if(!expand) {
+						for(int i = 0; i < models.size(); i++) {
+							models[i].push_back(0);
+						}
+					} else {
+						std::vector<std::vector<bool>> temp_models;
+						for(int i = 0; i < models.size(); i++) {
+							// dont add both transitions for X if we are at the desired number of models
+							if(expand) {
+								std::vector<bool> m = models[i];
+								m.push_back(1);
+								temp_models.push_back(m);
+								num_models_current_track++;
+							}
+							models[i].push_back(0);
+
+						}
+						models.insert(models.end(),temp_models.begin(),temp_models.end());
+						if(num_finished + num_remaining + cartesian_size*num_models_current_track >= num_models) {
+							expand = false;
+						}
+					}
+				} else {
+					for(int i = 0; i < models.size(); i++) {
+						if(iter[j][k] == '0') {
+							models[i].push_back(0);
+						} else {
+							models[i].push_back(1);
+						}
+					}
+				}
+			}
+			cartesian_size *= num_models_current_track;
+			expanded_track_models[j] = models;
+		}
+
+		std::vector<std::vector<bool>> temp_model(num_tracks);
+		std::vector<int> next_model_to_use(num_tracks,0);
+		// add all pairs in expanded_track_models to finished_models
+		int pos = 0;
+		do {
+			pos = 0;
+			// build the next model from next_model_to_use vector of positions
+			for(int i = 0; i < num_tracks; i++) {
+				temp_model[i] = expanded_track_models[i][next_model_to_use[i]];
+			}
+			// insert it into finished_models
+			finished_models.insert(temp_model);
+
+			while(pos < num_tracks and next_model_to_use[pos] >= expanded_track_models[pos].size()-1) {
+				next_model_to_use[pos] = 0;
+				pos++;
+			}
+
+			// increment position of next model we want to use if we're still in range
+			if(pos < num_tracks) {
+				next_model_to_use[pos]++;
+			}
+
+		} while (pos < num_tracks and finished_models.size() < num_models);
+
+		count++;
+	}
+
+	std::set<std::vector<int>> printable_models;
+	for(auto iter : finished_models) {
+
+		std::vector<int> model(iter.size());
+		for(int i = 0; i < iter.size(); i++) {
+			unsigned int length = iter[i].size() / var_per_track;
+			int num = 0;
+			// since bits are in reverse, iterate backwards
+			for(int k = length-1; k >= 0; k--) {
+				if(iter[i][k]) {
+					num |= 1;
+				} else {
+					num |= 0;
+				}
+				if(k != 0) {
+					num <<= 1;
+				}
+			}
+			model[i] = num;
+		}
+		printable_models.insert(model);
+	}
+
+	int count2 = 0;
+	for(auto iter: printable_models) {
+		LOG(INFO) << "Solution " << count2;
+		for(int i = 0; i < iter.size(); i++) {
+			LOG(INFO) << "	Track " << i << " = " << iter[i];
+		}
+		count2++;
+	}
+
+	LOG(INFO) << "num_models: " << unfinished_models.size();
+	LOG(INFO) << "num finished_models: " << finished_models.size();
+
+	LOG(INFO) << "size: " << unfinished_models.size();
+}
+
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeBoolean(ArithmeticFormula_ptr formula) {
 
 	auto boolean_variables = formula->GetBooleans();
