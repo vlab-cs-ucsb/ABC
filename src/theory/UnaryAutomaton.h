@@ -1,4 +1,4 @@
-/*
+/*\\
  * UnaryAutomaton.h
  *
  *  Created on: Nov 5, 2015
@@ -19,52 +19,109 @@
 #include <vector>
 
 #include <glog/logging.h>
-//#include <mona/dfa.h>
 
 #include "ArithmeticFormula.h"
 #include "Automaton.h"
+#include "libs/MONALib.h"
 #include "SemilinearSet.h"
 
-namespace Vlab {
-namespace Theory {
+namespace Vlab
+{
+  namespace Theory
+  {
 
-class UnaryAutomaton;
-typedef UnaryAutomaton* UnaryAutomaton_ptr;
+    class UnaryAutomaton;
+    typedef UnaryAutomaton* UnaryAutomaton_ptr;
 
-class IntAutomaton;
-using IntAutomaton_ptr = IntAutomaton*;
+    class IntAutomaton;
+    using IntAutomaton_ptr = IntAutomaton*;
 
-class BinaryIntAutomaton;
-using BinaryIntAutomaton_ptr = BinaryIntAutomaton* ;
+    class BinaryIntAutomaton;
+    using BinaryIntAutomaton_ptr = BinaryIntAutomaton*;
 
-class StringAutomaton;
-using StringAutomaton_ptr = StringAutomaton*;
+    class StringAutomaton;
+    using StringAutomaton_ptr = StringAutomaton*;
 
-class UnaryAutomaton: public Automaton {
-public:
-  UnaryAutomaton(DFA_ptr);
-  UnaryAutomaton(const UnaryAutomaton&);
-  virtual ~UnaryAutomaton();
+    class UnaryAutomaton : public Automaton
+    {
+       public:
 
-  virtual UnaryAutomaton_ptr Clone() const;
+        /**
+         * Use this class to build an automaton.
+         */
+        class Builder;
 
-  static UnaryAutomaton_ptr MakePhi();
-  virtual UnaryAutomaton_ptr MakeAutomaton(DFA_ptr dfa, const int number_of_variables) override;
-  static UnaryAutomaton_ptr MakeAutomaton(SemilinearSet_ptr semilinear_set);
+        /**
+         * Constructs a unary automaton given the unary dfa.
+         * @param dfa
+         */
+        UnaryAutomaton(Libs::MONALib::DFA_ptr dfa);
 
-  SemilinearSet_ptr getSemilinearSet();
-  IntAutomaton_ptr toIntAutomaton(int number_of_variables, bool add_minus_one = false);
-  BinaryIntAutomaton_ptr toBinaryIntAutomaton(std::string var_name, ArithmeticFormula_ptr formula, bool add_minus_one = false);
-  StringAutomaton_ptr toStringAutomaton();
+        /**
+         * Copy constructor.
+         * @param
+         */
+        UnaryAutomaton(const UnaryAutomaton&);
 
-protected:
-  void decide_counting_schema(Eigen::SparseMatrix<BigInteger>& count_matrix) override;
+        /**
+         * Destructor.
+         */
+        virtual ~UnaryAutomaton();
 
-private:
-  static const int VLOG_LEVEL;
-};
+        /**
+         * Generates a clone copy of the current automaton.
+         * @return
+         */
+        virtual UnaryAutomaton_ptr Clone() const;
 
-} /* namespace Theory */
+        /**
+         * Generates a unary automaton that wraps dfa instance.
+         * @param dfa
+         * @param number_of_variables
+         * @return
+         */
+        virtual UnaryAutomaton_ptr MakeAutomaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const
+            override;
+
+        // TODO move to builder class
+        static UnaryAutomaton_ptr MakePhi();
+        static UnaryAutomaton_ptr MakeAutomaton(SemilinearSet_ptr semilinear_set);
+
+        SemilinearSet_ptr getSemilinearSet();
+        IntAutomaton_ptr toIntAutomaton(int number_of_variables, bool add_minus_one = false);
+        BinaryIntAutomaton_ptr toBinaryIntAutomaton(std::string var_name, ArithmeticFormula_ptr formula,
+                                                    bool add_minus_one = false);
+        StringAutomaton_ptr toStringAutomaton();
+
+       protected:
+        void decide_counting_schema(Eigen::SparseMatrix<BigInteger>& count_matrix) override;
+
+       private:
+        static const int VLOG_LEVEL;
+    };
+
+    class UnaryAutomaton::Builder : public Automaton::Builder
+    {
+       public:
+
+        /**
+         * Initializes a new instances of the Builder class.
+         */
+        Builder();
+
+        /**
+         * Destructor.
+         */
+        virtual ~Builder();
+
+        /**
+         * Builds an instance of the automaton class.
+         * @return
+         */
+        virtual Automaton_ptr Build();
+    };
+
+  } /* namespace Theory */
 } /* namespace Vlab */
 
 #endif /* THEORY_UNARYAUTOMATON_H_ */

@@ -169,7 +169,7 @@ public:
    * @param number_of_variables
    * @return
    */
-  virtual StringAutomaton_ptr MakeAutomaton(DFA_ptr dfa, const int number_of_variables) const override;
+  virtual StringAutomaton_ptr MakeAutomaton(Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const override;
 
   /**
    * Generates a string automaton that accepts empty string or the current accepting strings.

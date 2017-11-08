@@ -387,6 +387,7 @@ namespace Vlab
                                 std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
 
         virtual void SetSymbolicCounter();
+        // TODO baki update naming of the function
         virtual void decide_counting_schema(Eigen::SparseMatrix<BigInteger>& mm);
         void generateGFScript(int bound, std::ostream& out = std::cout, bool count_less_than_or_equal_to_bound = true);
         void generateMatrixScript(int bound, std::ostream& out = std::cout, bool count_less_than_or_equal_to_bound =
