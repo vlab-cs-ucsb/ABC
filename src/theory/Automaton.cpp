@@ -1154,7 +1154,7 @@ namespace Vlab
             LOAD_lri(&dfa_->bddm->node_table[current_bdd_node.first], left, right, index);
             if (index == BDD_LEAF_INDEX)
             {
-              if (has_sink_state and (unsigned)sink_state != left)
+              if (has_sink_state and (unsigned) sink_state != left)
               {
                 const int exponent = number_of_bdd_variables_ - current_bdd_node.second;
                 if (exponent == 0)
@@ -1874,7 +1874,7 @@ namespace Vlab
      */
     void Automaton::getTransitionChars(char* transitions, int var, pCharPair result[], int* pSize)
     {
-      CHECK(strlen(transitions) == (unsigned)var);
+      CHECK(strlen(transitions) == (unsigned )var);
       char* trans = (char*) malloc((var + 1) * sizeof(char));
       strcpy(trans, transitions);
       int indexInResult = 0;
@@ -1967,9 +1967,9 @@ namespace Vlab
     {
       int i = 0;
       CHECK(asciiVal != NULL);
-      std::string charName[] = { "NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL", "BS ", "HT ", "LF ", "VT ", "FF ",
-          "CR ", "SO ", "SI ", "DLE", "DC1", "DC2", "CD3", "DC4", "NAK", "SYN", "ETB", "CAN", "EM ", "SUB", "ESC",
-          "FS ", "GS ", "RS ", "US " };
+      std::string charName[] = { "NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL", "BS ", "HT ", "LF ", "VT ",
+          "FF ", "CR ", "SO ", "SI ", "DLE", "DC1", "DC2", "CD3", "DC4", "NAK", "SYN", "ETB", "CAN", "EM ", "SUB",
+          "ESC", "FS ", "GS ", "RS ", "US " };
       if (c < 32)
       {
         strcpy(asciiVal, charName[(int) c].data());
@@ -2110,6 +2110,8 @@ namespace Vlab
       return -1;
     }
 
+    /** Automaton builder implementation */
+
     Automaton::Builder::Builder()
         : number_of_states_ { 0 },
           number_of_bdd_variables_ { 0 },
@@ -2120,7 +2122,25 @@ namespace Vlab
 
     Automaton::Builder::~Builder()
     {
+      // do not free the dfa as it is used in the automaton constructed.
+    }
 
+    Automaton::Builder& Automaton::Builder::SetNumberOfStates(const int number_of_states)
+    {
+      this->number_of_states_ = number_of_states;
+      return *this;
+    }
+
+    Automaton::Builder& Automaton::Builder::SetNumberOfBddVariables(const int number_of_bdd_variables)
+    {
+      this->number_of_bdd_variables_ = number_of_bdd_variables;
+      return *this;
+    }
+
+    Automaton::Builder& Automaton::Builder::SetDfa(const Libs::MONALib::DFA_ptr dfa)
+    {
+      this->dfa_ = dfa;
+      return *this;
     }
 
     Automaton_ptr Automaton::Builder::Build()
@@ -2134,7 +2154,7 @@ namespace Vlab
         return automaton;
       }
 
-      LOG(FATAL) << "DFA is not constructed.";
+      LOG(FATAL)<< "DFA is not constructed.";
       return nullptr;
     }
   }

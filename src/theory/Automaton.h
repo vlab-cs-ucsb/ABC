@@ -467,6 +467,27 @@ namespace Vlab
         virtual ~Builder();
 
         /**
+         * Sets the number of states.
+         * @param number_of_states
+         * @return
+         */
+        Builder& SetNumberOfStates(const int number_of_states);
+
+        /**
+         * Sets the number of bdd variables.
+         * @param number_of_bdd_variables
+         * @return
+         */
+        Builder& SetNumberOfBddVariables(const int number_of_bdd_variables);
+
+        /**
+         *  Sets the dfa.
+         * @param dfa
+         * @return
+         */
+        Builder& SetDfa(const Libs::MONALib::DFA_ptr dfa);
+
+        /**
          * Builds an instance of the automaton class.
          * @return
          */

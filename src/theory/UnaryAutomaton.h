@@ -118,7 +118,7 @@ namespace Vlab
          * Builds an instance of the automaton class.
          * @return
          */
-        virtual Automaton_ptr Build();
+        virtual UnaryAutomaton_ptr Build() override;
     };
 
   } /* namespace Theory */

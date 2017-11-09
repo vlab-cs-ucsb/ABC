@@ -50,7 +50,8 @@ namespace Vlab
       return non_acception_unary_auto;
     }
 
-    UnaryAutomaton_ptr UnaryAutomaton::MakeAutomaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const
+    UnaryAutomaton_ptr UnaryAutomaton::MakeAutomaton(const Libs::MONALib::DFA_ptr dfa,
+                                                     const int number_of_variables) const
     {
       if (number_of_variables != 1)
       {
@@ -409,6 +410,33 @@ namespace Vlab
       counter_.set_type(SymbolicCounter::Type::UNARYINT);
     }
 
-}
+    /** Automaton builder implementation */
+
+    UnaryAutomaton::Builder::Builder()
+        : Automaton::Builder()
+    {
+
+    }
+
+    UnaryAutomaton::Builder::~Builder()
+    {
+
+    }
+
+    UnaryAutomaton_ptr UnaryAutomaton::Builder::Build()
+    {
+      if (dfa_)
+      {
+        UnaryAutomaton_ptr automaton = new UnaryAutomaton(dfa_);
+        dfa_ = nullptr;
+
+        return automaton;
+      }
+
+      LOG(FATAL)<< "DFA is not constructed.";
+      return nullptr;
+    }
+
+  }
 /* namespace Theory */
 } /* namespace Vlab */
