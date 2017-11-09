@@ -712,7 +712,18 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
       }
     }
     LOG(FATAL) << "Operation not supported";
-  } else if(Term::Type::TERMCONSTANT != eq_term->right_term->type() and Term::Type::QUALIDENTIFIER != eq_term->right_term->type()
+  }
+//  else if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type() and Term::Type::QUALIDENTIFIER == eq_term->right_term->type()) {
+//  	auto left_var = symbol_table_->get_variable(eq_term->left_term);
+//  	auto right_var = symbol_table_->get_variable(eq_term->right_term);
+//  	if(left_var->getType() == Variable::Type::STRING) {
+//  		symbol_table_->increment_variable_usage(left_var->getName());
+//  	}
+//  	if(right_var->getType() == Variable::Type::STRING) {
+//  		symbol_table_->increment_variable_usage(right_var->getName());
+//  	}
+//  }
+  else if(Term::Type::TERMCONSTANT != eq_term->right_term->type() and Term::Type::QUALIDENTIFIER != eq_term->right_term->type()
   								and Term::Type::QUALIDENTIFIER == eq_term->left_term->type()) {
   	auto left_var = symbol_table_->get_variable(eq_term->left_term);
   	symbol_table_->increment_variable_usage(left_var->getName());
@@ -823,6 +834,20 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
       };
     }
   }
+
+  if(Term::Type::QUALIDENTIFIER == not_eq_term->left_term->type()) {
+		auto left_var = symbol_table_->get_variable(not_eq_term->left_term);
+		if(left_var->getType() == Variable::Type::STRING) {
+			symbol_table_->increment_variable_usage(left_var->getName());
+		}
+	}
+  if(Term::Type::QUALIDENTIFIER == not_eq_term->right_term->type()) {
+		auto right_var = symbol_table_->get_variable(not_eq_term->right_term);
+		if(right_var->getType() == Variable::Type::STRING) {
+			symbol_table_->increment_variable_usage(right_var->getName());
+		}
+	}
+
 
   if (Ast2Dot::isEquivalent(not_eq_term->left_term, not_eq_term->right_term)) {
     add_callback_to_replace_with_bool(not_eq_term, false);

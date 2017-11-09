@@ -1410,10 +1410,10 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
       sorted_term_node_list.push_back((*it));
       it = term_node_list.erase(it);
     }
-    else if(not (*it)->hasSymbolicVar()) {
-      sorted_term_node_list.push_back((*it));
-      it = term_node_list.erase(it);
-    }
+//    else if(not (*it)->hasSymbolicVar()) {
+//      sorted_term_node_list.push_back((*it));
+//      it = term_node_list.erase(it);
+//    }
     else {
       it++;
     }

@@ -587,10 +587,14 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *concat_term << " ...";
 
   Value_ptr result = nullptr, concat_value = nullptr, param = nullptr;
+
+  // value updating optimization
+  // if we're only concerned with counting the query variable, then
+  // we don't need to update "macro" variables (spurious variables taht are defined once through
+  // equality and substituted elsewhere)
   if(concat_term->term_list->size() <= 3) {
   	path_trace_.push_back(concat_term);
-
-  } else {
+  } else if(symbol_table_->has_count_variable()) {
   	many_vars = true;
   }
 
@@ -600,7 +604,6 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
     if (result == nullptr) {
       result = param->clone();
     } else {
-
       concat_value = result->concat(param);
       delete result;
       result = concat_value;
@@ -1133,7 +1136,9 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 
 
   setTermValue(qi_term, result);
+  //if(!many_vars || (many_vars and symbol_table_->get_variable_usage(variable->getName()) > 1)) {
   if(!many_vars) {
+  	LOG(INFO) << "---- VARIABLE " << variable->getName() << "'s value scheduled to get updated!";
   	setVariablePath(qi_term);
   }
 }

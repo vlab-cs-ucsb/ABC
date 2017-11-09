@@ -223,13 +223,23 @@ bool EquivalenceGenerator::is_equiv_of_variable_and_constant(SMT::Term_ptr left_
 bool EquivalenceGenerator::is_equiv_of_bool_var_and_term(SMT::Term_ptr left_term, SMT::Term_ptr right_term) {
   if (QualIdentifier_ptr left_id = dynamic_cast<QualIdentifier_ptr>(left_term)) {
     auto variable = symbol_table_->get_variable(left_id->getVarName());
+    auto rep_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),variable);
     if (Variable::Type::BOOL == variable->getType()) {
       left_variable_ = variable;
       unclassified_term_ = right_term;
       DVLOG(VLOG_LEVEL)<< "bool variable to term equivalence: " << left_variable_->getName() << " = " << *unclassified_term_;
       return true;
     } 
-    else if(symbol_table_->get_variable_usage(variable->getName()) == 1 and variable->getName() != symbol_table_->get_count_variable()->getName()) {
+    // if we're simply counting query variable, no need to keep terms which are essentially "macros"
+    // i.e., only used in equality once and substituted everywhere else
+    else if(symbol_table_->get_variable_usage(variable->getName()) == 1 and symbol_table_->has_count_variable()) {
+			auto count_var = symbol_table_->get_count_variable();
+			auto rep_count_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),count_var);
+			if(rep_var->getName() == rep_count_var->getName()) {
+				return false;
+			}
+
+
     	if(Concat_ptr right_id = dynamic_cast<Concat_ptr>(right_term)) {
     		if(right_id->term_list->at(0)->type() == Term::Type::QUALIDENTIFIER and right_id->term_list->at(1)->type() == Term::Type::TERMCONSTANT) {
     			return false;
