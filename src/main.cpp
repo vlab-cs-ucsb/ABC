@@ -59,6 +59,7 @@ int main(const int argc, const char **argv) {
   std::vector<unsigned long> str_bounds;
   std::vector<unsigned long> int_bounds;
   std::string count_variable {""};
+  unsigned long num_models = 0;
 
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == std::string("-i") or argv[i] == std::string("--input-file")) {
@@ -109,6 +110,9 @@ int main(const int argc, const char **argv) {
       str_bounds = parse_count_bounds(bounds_str);
       int_bounds = str_bounds;
       ++i;
+    } else if (argv[i] == std::string("--get-models")) {
+    	num_models = std::stoi(argv[i+1]);
+    	++i;
     } else if (argv[i] == std::string("--count-variable")) {
       count_variable = argv[i + 1];
       ++i;
@@ -281,6 +285,15 @@ int main(const int argc, const char **argv) {
     }
 
     LOG(INFO)<< "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
+    if(num_models > 0) {
+    	start = std::chrono::steady_clock::now();
+    	driver.GetModels(0,num_models);
+    	end = std::chrono::steady_clock::now();
+    	auto count_time = end-start;
+    	LOG(INFO) << "report get_models: " << num_models << " time: "
+    	                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+    }
+
     if(not count_variable.empty()) {
       LOG(INFO) << "report var: " << count_variable;
       for (auto b : int_bounds) {

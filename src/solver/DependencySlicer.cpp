@@ -276,6 +276,9 @@ void DependencySlicer::visitNotEq(NotEq_ptr not_eq_term) {
 			std::string right_name = right_variable->getVarName();
 			auto left_formula = constraint_information_->get_var_formula(left_name);
 			auto right_formula = constraint_information_->get_var_formula(right_name);
+			if(left_formula == nullptr or right_formula == nullptr) {
+				return;
+			}
 			auto formula = left_formula->clone();
 			formula->MergeVariables(right_formula);
 			delete left_formula;

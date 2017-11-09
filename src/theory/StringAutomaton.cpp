@@ -3025,12 +3025,11 @@ std::map<std::string,std::vector<std::string>*>* StringAutomaton::GetModelsWithi
 		distances = std::vector<int>(this->dfa_->ns,INT_MAX);
   }
 
-  for(int i = 0; i < this->dfa_->ns; i++) {
-  	LOG(INFO) << "shortest path for state " << i << " = " << shortest_accepting_path[i];
-  }
-
-  LOG(INFO) << "Done computing shortest paths to final state";
-  std::cin.get();
+//  for(int i = 0; i < this->dfa_->ns; i++) {
+//  	LOG(INFO) << "shortest path for state " << i << " = " << shortest_accepting_path[i];
+//  }
+//
+  //LOG(INFO) << "Done computing shortest paths to final state";
 
   // assume num_tracks > 1; Otherwise, juse call normal version
   int models_so_far = 0;
@@ -3296,16 +3295,15 @@ std::map<std::string,std::vector<std::string>*>* StringAutomaton::GetModelsWithi
   	printable_models.insert(model);
   }
 
-  int count2 = 0;
-  for(auto iter: printable_models) {
-  	LOG(INFO) << "Solution " << count2;
-  	for(int i = 0; i < iter.size(); i++) {
-  		LOG(INFO) << "	Track " << i << " = " << iter[i];
-  	}
-  	count2++;
-  }
+//  int count2 = 0;
+//  for(auto iter: printable_models) {
+//  	LOG(INFO) << "Solution " << count2;
+//  	for(int i = 0; i < iter.size(); i++) {
+//  		LOG(INFO) << "	Track " << i << " = " << iter[i];
+//  	}
+//  	count2++;
+//  }
 
-  LOG(INFO) << "num_models: " << unfinished_models.size();
   LOG(INFO) << "num finished_models: " << finished_models.size();
 }
 

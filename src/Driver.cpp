@@ -140,6 +140,53 @@ bool Driver::is_sat() {
   return symbol_table_->isSatisfiable();
 }
 
+void Driver::GetModels(const unsigned long bound,const unsigned long num_models) {
+
+	//LOG(INFO) << "Numver of satisfying variables: " << getSatisfyingVariables().size();
+
+	for (const auto &variable_entry : getSatisfyingVariables()) {
+		if (variable_entry.second == nullptr) {
+			continue;
+		}
+		switch (variable_entry.second->getType()) {
+			case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
+				auto binary_auto = variable_entry.second->getBinaryIntAutomaton();
+				auto formula = binary_auto->GetFormula();
+				model_counter_.add_symbolic_counter(binary_auto->GetSymbolicCounter());
+				//LOG(INFO) << "Binary int with " << formula->GetNumberOfVariables() << " variables";
+				//binary_auto->inspectAuto(false,true);
+				//std::cin.get();
+				binary_auto->GetModelsWithinBound(num_models,-1);
+//				for (auto& el : formula->GetVariableCoefficientMap()) {
+//					if (symbol_table_->get_variable_unsafe(el.first) != nullptr) {
+//						++num_bin_var;
+//					}
+//				}
+
+			}
+				break;
+//			case Vlab::Solver::Value::Type::INT_CONSTANT: {
+//				model_counter_.add_constant(variable_entry.second->getIntConstant());
+//			}
+//				break;
+			case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
+				auto string_auto = variable_entry.second->getStringAutomaton();
+				model_counter_.add_symbolic_counter(string_auto->GetSymbolicCounter());
+				//LOG(INFO) << "String int with " << string_auto->GetNumTracks() << " variables";
+				string_auto->GetModelsWithinBound(num_models,-1);
+			}
+				break;
+//			case Vlab::Solver::Value::Type::INT_AUTOMATON: {
+//				auto int_auto = variable_entry.second->getIntAutomaton();
+//				model_counter_.add_symbolic_counter(int_auto->GetSymbolicCounter());
+//			}
+//				break;
+			default:
+				break;
+		}
+	}
+}
+
 Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsigned long bound) {
   return GetModelCounterForVariable(var_name).Count(bound, bound);
 }
@@ -184,7 +231,7 @@ void Driver::SetModelCounterForVariable(const std::string var_name) {
 
   // test get_models
   //auto models = var_value->getStringAutomaton()->GetModelsWithinBound(100,-1);
-  auto models = var_value->getBinaryIntAutomaton()->GetModelsWithinBound(100,-1);
+//  auto models = var_value->getBinaryIntAutomaton()->GetModelsWithinBound(100,-1);
 
   auto& mc = variable_model_counter_[representative_variable];
   mc.set_use_sign_integers(Option::Solver::USE_SIGNED_INTEGERS);
@@ -256,7 +303,6 @@ void Driver::SetModelCounter() {
         break;
     }
   }
-  std::cin.get();
 
   int number_of_int_variables = symbol_table_->get_num_of_variables(SMT::Variable::Type::INT);
   int number_of_substituted_int_variables = symbol_table_->get_num_of_substituted_variables(script_,

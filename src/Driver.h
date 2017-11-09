@@ -77,6 +77,8 @@ public:
   void Solve();
   bool is_sat();
 
+  void GetModels(const unsigned long bound,const unsigned long num_models);
+
   Theory::BigInteger CountVariable(const std::string var_name, const unsigned long bound);
   Theory::BigInteger CountInts(const unsigned long bound);
   Theory::BigInteger CountStrs(const unsigned long bound);

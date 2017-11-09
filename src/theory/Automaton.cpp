@@ -315,8 +315,10 @@ std::map<std::string,std::vector<std::string>*>* Automaton::GetModelsWithinBound
 	} else if(bound == -1) {
 		auto counter = GetSymbolicCounter();
 		bound = counter.GetMinBound(num_models);
-		LOG(INFO) << "bound: " << bound;
 	}
+
+//	LOG(INFO) << "bound : " << bound;
+//	LOG(INFO) << "models: " << num_models;
 
 	// compute BFS for unweighted graph (dfa)
 	std::queue<int> states_to_process;
@@ -356,12 +358,11 @@ std::map<std::string,std::vector<std::string>*>* Automaton::GetModelsWithinBound
 		distances = std::vector<int>(this->dfa_->ns,INT_MAX);
 	}
 
-	for(int i = 0; i < this->dfa_->ns; i++) {
-		LOG(INFO) << "shortest path for state " << i << " = " << shortest_accepting_path[i];
-	}
-
-	LOG(INFO) << "Done computing shortest paths to final state";
-	std::cin.get();
+//	for(int i = 0; i < this->dfa_->ns; i++) {
+//		LOG(INFO) << "shortest path for state " << i << " = " << shortest_accepting_path[i];
+//	}
+//
+//	LOG(INFO) << "Done computing shortest paths to final state";
 
 	// assume num_tracks > 1; Otherwise, juse call normal version
 	int models_so_far = 0;
@@ -431,7 +432,7 @@ std::map<std::string,std::vector<std::string>*>* Automaton::GetModelsWithinBound
 	std::stack<std::pair<int,std::vector<char>>> models_to_process;
 	// since we're not expanding dont-care characters ('X') yet, the models we find are unfinished
 	std::set<std::vector<char>> unfinished_models;
-	std::vector<std::vector<bool>> finished_models;
+
 	models_to_process.push(std::make_pair(start,characters));
 
 	// BLASTOFF!
@@ -491,7 +492,8 @@ std::map<std::string,std::vector<std::string>*>* Automaton::GetModelsWithinBound
 		}
 	}
 
-	LOG(INFO) << "Got unfinished";
+	//LOG(INFO) << "Got unfinished";
+	std::vector<std::vector<bool>> finished_models;
 	for(auto iter : unfinished_models) {
 		std::vector<std::vector<bool>> models;
 		models.push_back(std::vector<bool>());
@@ -531,8 +533,39 @@ std::map<std::string,std::vector<std::string>*>* Automaton::GetModelsWithinBound
 		finished_models.insert(finished_models.end(),models.begin(),models.end());
 	}
 
-	LOG(INFO) << "num_unfinished_models: " << unfinished_models.size();
-	LOG(INFO) << "num_finished_models  : " << finished_models.size();
+	//LOG(INFO) << "Got finished models";
+
+	std::set<std::string> printable_models;
+	for(auto iter : finished_models) {
+		// quit early if we have enough models
+		if(printable_models.size() >= num_models) {
+			break;
+		}
+		std::string model;
+		unsigned int length = iter.size();
+
+		for(int k = 0; k < length; k++) {
+			unsigned char c = 0;
+			// var_per_track-1 since we dont' care about the last bit, which is used for lambda
+			for(int j = 0; j < num_variables; j++) {
+				if(iter[k]) {
+					c |= 1;
+				} else {
+					c |= 0;
+				}
+				if(j != 7) {
+					c <<= 1;
+				}
+			}
+			char c_arr[4];
+			charToAscii(c_arr,c);
+			model += c_arr;
+		}
+		printable_models.insert(model);
+	}
+
+//	LOG(INFO) << "num_unfinished_models: " << unfinished_models.size();
+	LOG(INFO) << "num models  : " << printable_models.size();
 }
 
 void Automaton::SetCountBoundExact(bool value) {

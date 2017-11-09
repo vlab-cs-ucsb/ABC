@@ -791,8 +791,8 @@ BigInteger BinaryIntAutomaton::SymbolicCount(double bound, bool count_less_than_
 }
 
 std::map<std::string,std::vector<std::string>*>* BinaryIntAutomaton::GetModelsWithinBound(int num_models, int bound) {
-	inspectAuto(false,true);
-	std::cin.get();
+	//inspectAuto(false,true);
+	//std::cin.get();
 	int num_tracks;
 	if(formula_ == nullptr) {
 		num_tracks = this->num_of_bdd_variables_;
@@ -800,18 +800,15 @@ std::map<std::string,std::vector<std::string>*>* BinaryIntAutomaton::GetModelsWi
 		num_tracks = formula_->GetNumberOfVariables();
 	}
 
-	// if not multitrack, use parent automaton version
-	if(num_tracks == 1) {
-		return Automaton::GetModelsWithinBound(num_models,bound);
-	}
-
 	if(bound == -1 and num_models == -1) {
 		LOG(FATAL) << "both bound and num_models cant be -1";
 	} else if(bound == -1) {
 		auto counter = GetSymbolicCounter();
 		bound = counter.GetMinBound(num_models);
-		LOG(INFO) << "bound: " << bound;
 	}
+
+//	LOG(INFO) << "num_models : " << num_models;
+//	LOG(INFO) << "bound      : " << bound;
 
   // compute BFS for unweighted graph (dfa)
   std::queue<int> states_to_process;
@@ -851,12 +848,11 @@ std::map<std::string,std::vector<std::string>*>* BinaryIntAutomaton::GetModelsWi
 		distances = std::vector<int>(this->dfa_->ns,INT_MAX);
   }
 
-  for(int i = 0; i < this->dfa_->ns; i++) {
-  	LOG(INFO) << "shortest path for state " << i << " = " << shortest_accepting_path[i];
-  }
-
-  LOG(INFO) << "Done computing shortest paths to final state";
-  std::cin.get();
+//  for(int i = 0; i < this->dfa_->ns; i++) {
+//  	LOG(INFO) << "shortest path for state " << i << " = " << shortest_accepting_path[i];
+//  }
+//
+//  LOG(INFO) << "Done computing shortest paths to final state";
 
   // assume num_tracks > 1; Otherwise, juse call normal version
   int models_so_far = 0;
@@ -895,13 +891,46 @@ std::map<std::string,std::vector<std::string>*>* BinaryIntAutomaton::GetModelsWi
 				while (current_transition.size() < (unsigned) num_of_bdd_variables_) {
 					current_transition.push_back('X');
 				}
-				// put loops first, other states at back
-				if(to_state != current_state) {
-					next_states_matrix[i].push_back(std::make_pair(to_state, current_transition));
-				} else {
-					next_states_matrix[i].insert(next_states_matrix[i].begin(),std::make_pair(to_state,current_transition));
-				}
 
+				// if transition is to a final state, unroll the 'X'
+				// must do this now because of leading zeros or ones causes issues later
+				// TODO: Will, think of better way to handle this
+				if(this->dfa_->f[to_state] == 1) {
+					std::vector<std::vector<char>> models;
+					models.push_back(std::vector<char>());
+					for(int k = 0; k < current_transition.size(); k++) {
+						if(current_transition[k] == 'X') {
+							std::vector<std::vector<char>> temp_models;
+							for(int j = 0; j < models.size(); j++) {
+								std::vector<char> m = models[j];
+								m.push_back('0');
+								temp_models.push_back(m);
+								models[j].push_back('1');
+							}
+							models.insert(models.end(),temp_models.begin(),temp_models.end());
+						} else {
+							for(int j = 0; j < models.size(); j++) {
+								models[j].push_back(current_transition[k]);
+							}
+						}
+					}
+					// put loops first, other states at back
+					for(int k = 0; k < models.size(); k++) {
+						if(to_state != current_state) {
+							next_states_matrix[i].push_back(std::make_pair(to_state, models[k]));
+						} else {
+							next_states_matrix[i].insert(next_states_matrix[i].begin(),std::make_pair(to_state,models[k]));
+						}
+					}
+
+				} else {
+					// put loops first, other states at back
+					if(to_state != current_state) {
+						next_states_matrix[i].push_back(std::make_pair(to_state, current_transition));
+					} else {
+						next_states_matrix[i].insert(next_states_matrix[i].begin(),std::make_pair(to_state,current_transition));
+					}
+				}
 			} else {
 				while (current_transition.size() < index) {
 					unsigned i = current_transition.size();
@@ -918,6 +947,8 @@ std::map<std::string,std::vector<std::string>*>* BinaryIntAutomaton::GetModelsWi
 			}
 		}
   }
+
+  //LOG(INFO) << "Done precomputing transition matrix";
 
 
   int start = this->dfa_->s;
@@ -976,7 +1007,7 @@ std::map<std::string,std::vector<std::string>*>* BinaryIntAutomaton::GetModelsWi
 		// seen it yet
 		if(this->dfa_->f[current_state] == 1) {
 			if((count_bound_exact_ and length == bound) or (not count_bound_exact_ and length <= bound)) {
-				LOG(INFO) << "Length: " << length;
+//				LOG(INFO) << "Length: " << length;
 
 				// for each track, truncate leading zeros or ones (except for one)
 				// in dfa representation, we read backwards (0101 = 5, instead of 3) so leading zeros
@@ -1024,25 +1055,6 @@ std::map<std::string,std::vector<std::string>*>* BinaryIntAutomaton::GetModelsWi
 					models_so_far += (1 << max_x);
 					unfinished_models.insert(current_model.second);
 
-					std::string s1,s2;
-					for(int k = 0; k < current_model.second[0].size(); k++) {
-						s1 += current_model.second[0][k];
-					}
-					for(int k = 0; k < current_model.second[1].size(); k++) {
-						s2 += current_model.second[1][k];
-					}
-					LOG(INFO) << "ADDED:";
-					LOG(INFO) << "  s1: " << s1;
-					LOG(INFO) << "  s2: " << s2;
-					LOG(INFO) << "";
-
-					// set finish condition if necessary
-					if(num_models != -1 and models_so_far >= num_models) {
-						get_more_models = false;
-					}
-				}
-//				else {
-//					LOG(INFO) << "SEEN IT:";
 //					std::string s1,s2;
 //					for(int k = 0; k < current_model.second[0].size(); k++) {
 //						s1 += current_model.second[0][k];
@@ -1050,14 +1062,22 @@ std::map<std::string,std::vector<std::string>*>* BinaryIntAutomaton::GetModelsWi
 //					for(int k = 0; k < current_model.second[1].size(); k++) {
 //						s2 += current_model.second[1][k];
 //					}
+//					LOG(INFO) << "ADDED:";
 //					LOG(INFO) << "  s1: " << s1;
 //					LOG(INFO) << "  s2: " << s2;
 //					LOG(INFO) << "";
 //					std::cin.get();
-//				}
+
+					// set finish condition if necessary
+					if(num_models != -1 and models_so_far >= num_models) {
+						get_more_models = false;
+					}
+				}
 			}
 		}
 	}
+
+	//LOG(INFO) << "Got unfinished models";
 
 	// unfinished_models contain 'X' (dont care) in transitions
 	// we need to expand those
@@ -1152,13 +1172,29 @@ std::map<std::string,std::vector<std::string>*>* BinaryIntAutomaton::GetModelsWi
 		count++;
 	}
 
+	//LOG(INFO) << "Got finished models";
+
 	std::set<std::vector<int>> printable_models;
 	for(auto iter : finished_models) {
+		// only add num_models
+		if(num_models != -1 and printable_models.size() >= num_models) {
+			break;
+		}
 
 		std::vector<int> model(iter.size());
 		for(int i = 0; i < iter.size(); i++) {
 			unsigned int length = iter[i].size() / var_per_track;
 			int num = 0;
+			// if we're using signed numbers and the sign bit is set,
+			// we need to add leading ones for c++ int to be negative
+			if(not is_natural_number_ and iter[i][length-1] == 1) {
+				int int_bytes = sizeof(int) * 8; // 8 bits per byte
+				for(int k = 0; k < int_bytes-length; k++) {
+					num |= 1;
+					num <<= 1;
+				}
+			}
+
 			// since bits are in reverse, iterate backwards
 			for(int k = length-1; k >= 0; k--) {
 				if(iter[i][k]) {
@@ -1175,19 +1211,19 @@ std::map<std::string,std::vector<std::string>*>* BinaryIntAutomaton::GetModelsWi
 		printable_models.insert(model);
 	}
 
-	int count2 = 0;
-	for(auto iter: printable_models) {
-		LOG(INFO) << "Solution " << count2;
-		for(int i = 0; i < iter.size(); i++) {
-			LOG(INFO) << "	Track " << i << " = " << iter[i];
-		}
-		count2++;
-	}
-
-	LOG(INFO) << "num_models: " << unfinished_models.size();
-	LOG(INFO) << "num finished_models: " << finished_models.size();
-
-	LOG(INFO) << "size: " << unfinished_models.size();
+//	int count2 = 0;
+//	for(auto iter: printable_models) {
+//		LOG(INFO) << "Solution " << count2;
+//		for(int i = 0; i < iter.size(); i++) {
+//			LOG(INFO) << "	Track " << i << " = " << iter[i];
+//		}
+//		count2++;
+//	}
+//
+//	LOG(INFO) << "num_models: " << unfinished_models.size();
+//	LOG(INFO) << "num finished_models: " << finished_models.size();
+//
+	LOG(INFO) << "Number of models: " << printable_models.size();
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeBoolean(ArithmeticFormula_ptr formula) {
