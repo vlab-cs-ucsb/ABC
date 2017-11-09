@@ -308,7 +308,8 @@ BigInteger Automaton::SymbolicCount(double bound, bool count_less_than_or_equal_
   return SymbolicCount(static_cast<int>(bound), count_less_than_or_equal_to_bound);
 }
 
-std::map<std::string,std::vector<std::string>*>* Automaton::GetModelsWithinBound(int num_models, int bound) {
+std::map<std::string,std::vector<std::string>> Automaton::GetModelsWithinBound(int num_models, int bound) {
+	//inspectAuto(false,true);
 
 	if(bound == -1 and num_models == -1) {
 		LOG(FATAL) << "both bound and num_models cant be -1";
@@ -458,6 +459,12 @@ std::map<std::string,std::vector<std::string>*>* Automaton::GetModelsWithinBound
 					}
 				}
 
+				std::string s1;
+				for(int k = 0; k < current_model.second.size(); k++) {
+					s1 += current_model.second[k];
+				}
+				LOG(INFO) << "model: " << s1;
+
 				unfinished_models.insert(current_model.second);
 				// set finish condition if necessary
 				if(num_models != -1 and models_so_far >= num_models) {
@@ -504,6 +511,7 @@ std::map<std::string,std::vector<std::string>*>* Automaton::GetModelsWithinBound
 			if(iter[k] == 'X') {
 				// dont add both transitions for X if we are at the desired number of models
 				if(models.size() + finished_models.size() >= num_models) {
+					LOG(INFO) << "TOO BIG!";
 					for(int i = 0; i < models.size(); i++) {
 						models[i].push_back(0);
 					}
@@ -530,6 +538,17 @@ std::map<std::string,std::vector<std::string>*>* Automaton::GetModelsWithinBound
 				}
 			}
 		}
+
+//		for(auto i2 : models) {
+//			std::string s;
+//			for(int k = 0; k < i2.size(); k++) {
+//				if(i2[k]) s+= '1';
+//				else s+='0';
+//			}
+//			LOG(INFO) << s;
+//		}
+//		std::cin.get();
+
 		finished_models.insert(finished_models.end(),models.begin(),models.end());
 	}
 
@@ -542,13 +561,14 @@ std::map<std::string,std::vector<std::string>*>* Automaton::GetModelsWithinBound
 			break;
 		}
 		std::string model;
-		unsigned int length = iter.size();
-
+		int length = iter.size() / num_variables;
 		for(int k = 0; k < length; k++) {
 			unsigned char c = 0;
+
 			// var_per_track-1 since we dont' care about the last bit, which is used for lambda
 			for(int j = 0; j < num_variables; j++) {
-				if(iter[k]) {
+				int index = (k*num_variables + j);
+				if(iter[index]) {
 					c |= 1;
 				} else {
 					c |= 0;
@@ -557,15 +577,34 @@ std::map<std::string,std::vector<std::string>*>* Automaton::GetModelsWithinBound
 					c <<= 1;
 				}
 			}
-			char c_arr[4];
-			charToAscii(c_arr,c);
-			model += c_arr;
+
+//			char c_arr[4];
+//			charToAscii(c_arr,c);
+//			model += c_arr;
+			model += c;
 		}
 		printable_models.insert(model);
 	}
 
-//	LOG(INFO) << "num_unfinished_models: " << unfinished_models.size();
+	auto formula = this->GetFormula();
+	if(formula == nullptr) {
+		LOG(FATAL) << "Formula not set!";
+	}
+	auto var_coeffs = formula->GetVariableCoefficientMap();
+	std::map<std::string,std::vector<std::string>> variable_values;
+	for(auto iter : var_coeffs) {
+		variable_values[iter.first] = std::vector<std::string>();
+	}
+
+	// should be only 1 track, so should have a variable
+	std::string var_name = formula->GetVariableAtIndex(0);
+
+	for(auto iter : printable_models) {
+		variable_values[var_name].push_back(iter);
+	}
+
 	LOG(INFO) << "num models  : " << printable_models.size();
+	return variable_values;
 }
 
 void Automaton::SetCountBoundExact(bool value) {

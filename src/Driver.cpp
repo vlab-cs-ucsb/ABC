@@ -143,6 +143,9 @@ bool Driver::is_sat() {
 void Driver::GetModels(const unsigned long bound,const unsigned long num_models) {
 
 	//LOG(INFO) << "Numver of satisfying variables: " << getSatisfyingVariables().size();
+	std::map<std::string,std::vector<std::string>> variable_values;
+
+	auto start = std::chrono::steady_clock::now();
 
 	for (const auto &variable_entry : getSatisfyingVariables()) {
 		if (variable_entry.second == nullptr) {
@@ -156,35 +159,67 @@ void Driver::GetModels(const unsigned long bound,const unsigned long num_models)
 				//LOG(INFO) << "Binary int with " << formula->GetNumberOfVariables() << " variables";
 				//binary_auto->inspectAuto(false,true);
 				//std::cin.get();
-				binary_auto->GetModelsWithinBound(num_models,-1);
-//				for (auto& el : formula->GetVariableCoefficientMap()) {
-//					if (symbol_table_->get_variable_unsafe(el.first) != nullptr) {
-//						++num_bin_var;
-//					}
-//				}
+				auto res = binary_auto->GetModelsWithinBound(num_models,-1);
+				for(auto iter : res) {
+					variable_values[iter.first] = iter.second;
+				}
 
 			}
-				break;
-//			case Vlab::Solver::Value::Type::INT_CONSTANT: {
-//				model_counter_.add_constant(variable_entry.second->getIntConstant());
-//			}
-//				break;
 			case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
 				auto string_auto = variable_entry.second->getStringAutomaton();
 				model_counter_.add_symbolic_counter(string_auto->GetSymbolicCounter());
 				//LOG(INFO) << "String int with " << string_auto->GetNumTracks() << " variables";
-				string_auto->GetModelsWithinBound(num_models,-1);
+				auto res = string_auto->GetModelsWithinBound(num_models,-1);
+				for(auto iter : res) {
+					variable_values[iter.first] = iter.second;
+				}
 			}
 				break;
-//			case Vlab::Solver::Value::Type::INT_AUTOMATON: {
-//				auto int_auto = variable_entry.second->getIntAutomaton();
-//				model_counter_.add_symbolic_counter(int_auto->GetSymbolicCounter());
-//			}
-//				break;
+			case Vlab::Solver::Value::Type::INT_AUTOMATON: {
+				auto int_auto = variable_entry.second->getIntAutomaton();
+				model_counter_.add_symbolic_counter(int_auto->GetSymbolicCounter());
+				int_auto->GetModelsWithinBound(num_models,-1);
+			}
+				break;
 			default:
 				break;
 		}
 	}
+
+	auto end = std::chrono::steady_clock::now();
+	auto t1 = end-start;
+	int sat = 0;
+
+	LOG(INFO) << "Getting models took " << std::chrono::duration<long double, std::milli>(t1).count() << " ms";
+
+	start = std::chrono::steady_clock::now();
+	for(int model_index = 0; model_index < num_models; model_index++) {
+		symbol_table_->clear_variable_values();
+		symbol_table_->push_scope(script_);
+		for(auto var : variable_values) {
+			LOG(INFO) << var.first << " = " << var.second[model_index];
+			Theory::StringAutomaton_ptr str_auto = Theory::StringAutomaton::MakeString(var.second[model_index]);
+			Theory::StringFormula_ptr str_formula = str_auto->GetFormula();
+			str_formula->AddVariable(var.first,1);
+			str_formula->SetType(Theory::StringFormula::Type::VAR);
+			symbol_table_->set_value(var.first,new Solver::Value(str_auto));
+		}
+		symbol_table_->pop_scope();
+		Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
+		constraint_solver.start();
+		if(symbol_table_->isSatisfiable()) {
+			sat++;
+		}
+		LOG(INFO) << "sat? " << symbol_table_->isSatisfiable();
+		std::cin.get();
+	}
+	end = std::chrono::steady_clock::now();
+	auto t2 = end-start;
+
+	LOG(INFO) << "Checking models took " << std::chrono::duration<long double, std::milli>(t1).count() << " ms";
+	LOG(INFO) << "num sat  : " << sat;
+	LOG(INFO) << "num unsat: " << num_models - sat;
+
 }
 
 Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsigned long bound) {

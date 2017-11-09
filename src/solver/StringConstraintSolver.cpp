@@ -127,7 +127,12 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
   Value_ptr and_value = nullptr;
 
 //  auto& variable_value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
+//  LOG(INFO) << "SIZE: " << variable_value_map.size();
 //	for (auto iter = variable_value_map.begin(); iter != variable_value_map.end();) {
+//		if(Value::Type::STRING_AUTOMATON == iter->second->getType()) {
+//			LOG(INFO) << iter->first << " has formula with " << iter->second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() << " variables";
+//		}
+//
 //		if(Value::Type::STRING_AUTOMATON == iter->second->getType() and iter->second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
 //			//has_string_formula = true;
 //			auto variable_group = string_formula_generator_.get_variable_group_name(iter->first);

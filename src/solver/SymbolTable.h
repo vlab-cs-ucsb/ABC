@@ -94,6 +94,9 @@ public:
   Value_ptr get_value_at_scope(SMT::Visitable_ptr scope, SMT::Variable_ptr variable);
   Value_ptr get_projected_value_at_scope(SMT::Visitable_ptr scope, SMT::Variable_ptr variable);
   VariableValueMap& get_values_at_scope(SMT::Visitable_ptr scope);
+  void clear_variable_values();
+
+
   bool set_value(std::string var_name, Value_ptr value);
   bool set_value(SMT::Variable_ptr variable, Value_ptr value);
   bool IntersectValue(std::string var_name, Value_ptr value);

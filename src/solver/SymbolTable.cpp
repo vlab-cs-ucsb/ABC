@@ -79,7 +79,7 @@ void SymbolTable::clearLetScopes() {
 void SymbolTable::add_variable(Variable_ptr variable) {
   auto result = variables_.insert(std::make_pair(variable->getName(), variable));
   if (not result.second) {
-    LOG(FATAL) << "Duplicate variable definition: " << *variable;
+    //LOG(FATAL) << "Duplicate variable definition: " << *variable;
   }
 }
 
@@ -377,6 +377,22 @@ Value_ptr SymbolTable::get_projected_value_at_scope(Visitable_ptr scope, Variabl
 
 VariableValueMap& SymbolTable::get_values_at_scope(Visitable_ptr scope) {
   return variable_value_table_[scope];
+}
+
+void SymbolTable::clear_variable_values() {
+	for (auto& map_pair : variable_value_table_) {
+		for (auto& value_pair : map_pair.second) {
+			delete value_pair.second;
+		}
+	}
+	variable_value_table_.clear();
+
+	for (auto& map_pair : variable_projected_value_table_) {
+		for (auto& value_pair : map_pair.second) {
+			delete value_pair.second;
+		}
+	}
+	variable_projected_value_table_.clear();
 }
 
 bool SymbolTable::set_value(std::string var_name, Value_ptr value) {

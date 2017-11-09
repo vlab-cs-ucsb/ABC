@@ -2972,7 +2972,7 @@ std::vector<std::string> StringAutomaton::GetAnAcceptingStringForEachTrack() {
 //  return strings;
 }
 
-std::map<std::string,std::vector<std::string>*>* StringAutomaton::GetModelsWithinBound(int num_models, int bound) {
+std::map<std::string,std::vector<std::string>> StringAutomaton::GetModelsWithinBound(int num_models, int bound) {
 	// if not multitrack, use parent automaton version
 	if(this->num_tracks_ == 1) {
 		return Automaton::GetModelsWithinBound(num_models,bound);
@@ -3286,25 +3286,38 @@ std::map<std::string,std::vector<std::string>*>* StringAutomaton::GetModelsWithi
 						c <<= 1;
 					}
 				}
-				char c_arr[4];
-				charToAscii(c_arr,c);
-				s += c_arr;
+//				char c_arr[4];
+//				charToAscii(c_arr,c);
+//				s += c_arr;
+				s += c;
 			}
 			model[i] = s;
   	}
   	printable_models.insert(model);
   }
 
-//  int count2 = 0;
-//  for(auto iter: printable_models) {
-//  	LOG(INFO) << "Solution " << count2;
-//  	for(int i = 0; i < iter.size(); i++) {
-//  		LOG(INFO) << "	Track " << i << " = " << iter[i];
-//  	}
-//  	count2++;
-//  }
+  auto formula = this->formula_;
+  if(formula == nullptr) {
+  	LOG(FATAL) << "Formula not set!";
+  }
+  auto var_coeffs = formula->GetVariableCoefficientMap();
+  std::map<std::string,std::vector<std::string>> variable_values;
+  for(auto iter : var_coeffs) {
+  	variable_values[iter.first] = std::vector<std::string>();
+  }
+
+  for(auto iter : printable_models) {
+  	for(int i = 0; i < iter.size(); i++) {
+  		// i corresponds to track, iter[i] is track value (string)
+  		std::string var_name = formula->GetVariableAtIndex(i);
+  		variable_values[var_name].push_back(iter[i]);
+  	}
+  }
+
+
 
   LOG(INFO) << "num finished_models: " << finished_models.size();
+  return variable_values;
 }
 
 int StringAutomaton::GetNumTracks() const {

@@ -52,6 +52,9 @@ void ConstraintSolver::start(int iteration_count) {
 }
 
 void ConstraintSolver::end() {
+	term_values_.clear();
+	arithmetic_constraint_solver_.clear_term_values();
+	string_constraint_solver_.clear_term_values();
 }
 
 void ConstraintSolver::visitScript(Script_ptr script) {
@@ -1138,7 +1141,6 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   setTermValue(qi_term, result);
   //if(!many_vars || (many_vars and symbol_table_->get_variable_usage(variable->getName()) > 1)) {
   if(!many_vars) {
-  	LOG(INFO) << "---- VARIABLE " << variable->getName() << "'s value scheduled to get updated!";
   	setVariablePath(qi_term);
   }
 }

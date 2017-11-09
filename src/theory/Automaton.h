@@ -206,7 +206,7 @@ public:
   BigInteger CountByMatrixMultiplication(const unsigned long bound);
   virtual BigInteger SymbolicCount(int bound, bool count_less_than_or_equal_to_bound = true);
   virtual BigInteger SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = true);
-  virtual std::map<std::string,std::vector<std::string>*>* GetModelsWithinBound(int num_models, int bound);
+  virtual std::map<std::string,std::vector<std::string>> GetModelsWithinBound(int num_models, int bound);
   SymbolicCounter GetSymbolicCounter();
   static void SetCountBoundExact(bool value);
 

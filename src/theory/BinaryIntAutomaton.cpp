@@ -790,7 +790,7 @@ BigInteger BinaryIntAutomaton::SymbolicCount(double bound, bool count_less_than_
   return BigInteger(str_result);
 }
 
-std::map<std::string,std::vector<std::string>*>* BinaryIntAutomaton::GetModelsWithinBound(int num_models, int bound) {
+std::map<std::string,std::vector<std::string>> BinaryIntAutomaton::GetModelsWithinBound(int num_models, int bound) {
 	//inspectAuto(false,true);
 	//std::cin.get();
 	int num_tracks;
