@@ -84,7 +84,7 @@ public:
   Theory::BigInteger CountStrs(const unsigned long bound);
   Theory::BigInteger Count(const unsigned long int_bound, const unsigned long str_bound);
 
-  Solver::ModelCounter& GetModelCounterForVariable(const std::string var_name);
+  Solver::ModelCounter& GetModelCounterForVariable(const std::string var_name, bool project = true);
   Solver::ModelCounter& GetModelCounter();
 
   void printResult(Solver::Value_ptr value, std::ostream& out);
@@ -109,7 +109,7 @@ public:
   std::string file_;
 
 protected:
-  void SetModelCounterForVariable(const std::string var_name);
+  void SetModelCounterForVariable(const std::string var_name, bool project = true);
   void SetModelCounter();
 
   bool is_model_counter_cached_;

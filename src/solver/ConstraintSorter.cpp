@@ -779,8 +779,9 @@ std::string ConstraintSorter::TermNode::count_var;
 
 ConstraintSorter::ConstraintSorter(Script_ptr script, SymbolTable_ptr symbol_table)
         : root(script), symbol_table(symbol_table), term_node(nullptr) {
-	auto var = symbol_table->get_count_variable();
-	if(var) {
+
+	if(symbol_table->has_count_variable()) {
+		auto var = symbol_table->get_count_variable();
 		ConstraintSorter::TermNode::count_var = var->getName();
 	}
 }

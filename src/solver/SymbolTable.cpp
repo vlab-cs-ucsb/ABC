@@ -393,6 +393,8 @@ void SymbolTable::clear_variable_values() {
 		}
 	}
 	variable_projected_value_table_.clear();
+
+	variable_group_map_.clear();
 }
 
 bool SymbolTable::set_value(std::string var_name, Value_ptr value) {

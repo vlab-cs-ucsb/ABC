@@ -420,6 +420,8 @@ void EquivClassRuleRunner::set_variable_value(Variable_ptr variable, TermConstan
       break;
     case Primitive::Type::STRING: {
       result = new Value(Theory::StringAutomaton::MakeString(term_constant->getValue()));
+      result->getStringAutomaton()->GetFormula()->AddVariable(variable->getName(),1);
+      result->getStringAutomaton()->GetFormula()->SetType(Theory::StringFormula::Type::VAR);
     }
       break;
     default:

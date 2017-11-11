@@ -1002,27 +1002,20 @@ void StringFormulaGenerator::set_group_mappings() {
   for (auto& el : group_formula_) {
   	//LOG(INFO) << "Formula : " << el.first;
     symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
-    auto init_val = StringAutomaton::MakeAnyStringAligned(el.second->clone());
+    auto init_val = StringAutomaton::MakeAnyStringUnaligned(el.second->clone());
     Value_ptr val = new Value(init_val);
     symbol_table_->push_scope(root_);
-
-
-    //LOG(INFO) << "Group " << el.first << " Initial Value: " << symbol_table_->get_value_at_scope(root_,symbol_table_->get_variable(el.first));
-    for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
-    	LOG(INFO) << var_entry.first << " - " << el.second->GetVariableIndex(var_entry.first);
-    	//symbol_table_->get_value(var_entry.first)->getStringAutomaton()->inspectAuto(false,true);
-
-    	auto v2 = val->intersect(symbol_table_->get_value(var_entry.first));
-      delete val;
-      val = v2;
-    	symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
-      //LOG(INFO) << "-- " << var_entry.first;
-    }
-    val->getStringAutomaton()->inspectAuto(false,true);
-    std::cin.get();
     symbol_table_->set_value(el.first,val);
 		symbol_table_->pop_scope();
 		delete val;
+
+    //LOG(INFO) << "Group " << el.first << " Initial Value: " << symbol_table_->get_value_at_scope(root_,symbol_table_->get_variable(el.first));
+    for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
+    	//val->getStringAutomaton()->inspectAuto(false,true);
+      symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
+      //LOG(INFO) << "-- " << var_entry.first;
+    }
+
     //LOG(INFO) << "";
   }
 

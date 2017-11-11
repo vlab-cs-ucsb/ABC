@@ -194,7 +194,14 @@ Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
 	int flag = 0;
 	DFA_ptr initial_dfa = nullptr;
 	DFA_ptr tmp_dfa;
-	DFA_ptr left_dfa = this->dfa_;
+	DFA_ptr left_dfa = this->dfa_, right_dfa = other_automaton->dfa_;
+
+	if (DFAIsMinimizedOnlyAcceptingEmptyInput(left_dfa)) {
+		return other_automaton->clone();
+	} else if (DFAIsMinimizedOnlyAcceptingEmptyInput(right_dfa)) {
+		return this->clone();
+	}
+
 	bool left_hand_side_accepts_emtpy_input = DFAIsAcceptingState(left_dfa, left_dfa->s);
 
 	if (left_hand_side_accepts_emtpy_input) {
@@ -459,12 +466,6 @@ std::map<std::string,std::vector<std::string>> Automaton::GetModelsWithinBound(i
 					}
 				}
 
-				std::string s1;
-				for(int k = 0; k < current_model.second.size(); k++) {
-					s1 += current_model.second[k];
-				}
-				LOG(INFO) << "model: " << s1;
-
 				unfinished_models.insert(current_model.second);
 				// set finish condition if necessary
 				if(num_models != -1 and models_so_far >= num_models) {
@@ -511,7 +512,6 @@ std::map<std::string,std::vector<std::string>> Automaton::GetModelsWithinBound(i
 			if(iter[k] == 'X') {
 				// dont add both transitions for X if we are at the desired number of models
 				if(models.size() + finished_models.size() >= num_models) {
-					LOG(INFO) << "TOO BIG!";
 					for(int i = 0; i < models.size(); i++) {
 						models[i].push_back(0);
 					}

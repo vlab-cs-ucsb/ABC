@@ -3141,11 +3141,9 @@ std::map<std::string,std::vector<std::string>> StringAutomaton::GetModelsWithinB
                 num_x++;
               }
             }
-            if(num_x > max_x) {
-              max_x = num_x;
-            }
+            max_x += num_x;
           }
-          
+
           // for each 'X', there are 2 possible transitions
           models_so_far += (1 << max_x);
           unfinished_models.insert(current_model.second);
@@ -3272,8 +3270,12 @@ std::map<std::string,std::vector<std::string>> StringAutomaton::GetModelsWithinB
   	for(int i = 0; i < iter.size(); i++) {
   		std::string s;
 			unsigned int length = iter[i].size() / var_per_track;
-
-			for(int k = 0; k < length and iter[i][((k+1)*var_per_track)-1] != 1; k++) {
+			LOG(INFO) << i << " has length " << length;
+			for(int k = 0; k < length; k++) {
+				// if lambda, go on
+				if(iter[i][((k+1)*var_per_track)-1] == true) {
+					continue;
+				}
 				unsigned char c = 0;
 				// var_per_track-1 since we dont' care about the last bit, which is used for lambda
 				for(int j = 0; j < var_per_track-1; j++) {
@@ -3289,10 +3291,14 @@ std::map<std::string,std::vector<std::string>> StringAutomaton::GetModelsWithinB
 //				char c_arr[4];
 //				charToAscii(c_arr,c);
 //				s += c_arr;
-				s += c;
+				s += std::to_string((int)c);
+				s += " ";
+
 			}
+			LOG(INFO) << s;
 			model[i] = s;
   	}
+  	std::cin.get();
   	printable_models.insert(model);
   }
 
@@ -3302,14 +3308,29 @@ std::map<std::string,std::vector<std::string>> StringAutomaton::GetModelsWithinB
   }
   auto var_coeffs = formula->GetVariableCoefficientMap();
   std::map<std::string,std::vector<std::string>> variable_values;
-  for(auto iter : var_coeffs) {
-  	variable_values[iter.first] = std::vector<std::string>();
-  }
+//  for(auto iter : var_coeffs) {
+//  	variable_values[iter.first] = std::vector<std::string>();
+//  }
+  variable_values["var_8"] = std::vector<std::string>();
+  variable_values["var_7"] = std::vector<std::string>();
+  variable_values["var_6"] = std::vector<std::string>();
+
+
 
   for(auto iter : printable_models) {
   	for(int i = 0; i < iter.size(); i++) {
   		// i corresponds to track, iter[i] is track value (string)
-  		std::string var_name = formula->GetVariableAtIndex(i);
+  		std::string var_name;
+  		if(i == 0) {
+  			var_name = "var_8";
+  		} else if(i == 2) {
+  			var_name = "var_7";
+  		} else if(i == 1) {
+  			var_name = "var_6";
+  		}
+
+
+  		//std::string var_name = formula->GetVariableAtIndex(i);
   		variable_values[var_name].push_back(iter[i]);
   	}
   }
