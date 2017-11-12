@@ -55,7 +55,7 @@ namespace Vlab
          * Constructs a unary automaton given the unary dfa.
          * @param dfa
          */
-        UnaryAutomaton(Libs::MONALib::DFA_ptr dfa);
+        UnaryAutomaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_bdd_variables);
 
         /**
          * Copy constructor.
@@ -75,6 +75,12 @@ namespace Vlab
         virtual UnaryAutomaton_ptr Clone() const;
 
         /**
+         * Prints the actual type and the details of the automaton.
+         * @return
+         */
+        virtual std::string Str() const override;
+
+        /**
          * Generates a unary automaton that wraps dfa instance.
          * @param dfa
          * @param number_of_variables
@@ -83,15 +89,10 @@ namespace Vlab
         virtual UnaryAutomaton_ptr MakeAutomaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const
             override;
 
-        // TODO move to builder class
-        static UnaryAutomaton_ptr MakePhi();
-        static UnaryAutomaton_ptr MakeAutomaton(SemilinearSet_ptr semilinear_set);
-
-        SemilinearSet_ptr getSemilinearSet();
-        IntAutomaton_ptr toIntAutomaton(int number_of_variables, bool add_minus_one = false);
-        BinaryIntAutomaton_ptr toBinaryIntAutomaton(std::string var_name, ArithmeticFormula_ptr formula,
-                                                    bool add_minus_one = false);
-        StringAutomaton_ptr toStringAutomaton();
+        SemilinearSet_ptr GetSemilinearSet();
+        IntAutomaton_ptr ConvertToIntAutomaton(int number_of_variables, bool add_minus_one = false);
+        BinaryIntAutomaton_ptr ConvertToBinaryIntAutomaton(std::string var_name, ArithmeticFormula_ptr formula, bool add_minus_one = false);
+        StringAutomaton_ptr ConvertToStringAutomaton();
 
        protected:
         void decide_counting_schema(Eigen::SparseMatrix<BigInteger>& count_matrix) override;
@@ -115,10 +116,35 @@ namespace Vlab
         virtual ~Builder();
 
         /**
+         * Sets the unary symbol char.
+         * @param c
+         * @return
+         */
+        Builder& SetUnaryChar(const char c);
+
+        /**
+         * Sets semilinear set.
+         * @param semilinear_set
+         * @return
+         */
+        Builder& SetSemilinearSet(const SemilinearSet_ptr semilinear_set);
+
+        /**
          * Builds an instance of the automaton class.
          * @return
          */
         virtual UnaryAutomaton_ptr Build() override;
+       protected:
+
+        /**
+         * Unary symbol.
+         */
+        char unary_char_;
+
+        /**
+         * Semilinear set.
+         */
+        SemilinearSet_ptr semilinear_set_;
     };
 
   } /* namespace Theory */

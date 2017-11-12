@@ -1201,7 +1201,7 @@ void VariableValueComputer::visitToInt(ToInt_ptr to_int_term) {
     delete str_auto;
   } else {
     auto unary_auto = term_value->getIntAutomaton()->toUnaryAutomaton();
-    auto str_auto = unary_auto->toStringAutomaton();
+    auto str_auto = unary_auto->ConvertToStringAutomaton();
     child_pre_auto = child_post_value->getStringAutomaton()->intersect(str_auto);
     delete unary_auto;
   }
@@ -1337,7 +1337,7 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
       Variable_ptr variable = symbol_table->get_variable(qi_term->getVarName());
       auto variable_value = symbol_table->get_value(variable);
 
-      auto term_binary_auto = unary_auto->toBinaryIntAutomaton(qi_term->getVarName(),
+      auto term_binary_auto = unary_auto->ConvertToBinaryIntAutomaton(qi_term->getVarName(),
                                                                variable_value->getBinaryIntAutomaton()->get_formula()->clone(),
                                                                false);
       delete unary_auto;

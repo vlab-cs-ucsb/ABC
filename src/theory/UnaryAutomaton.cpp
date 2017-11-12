@@ -21,7 +21,7 @@ namespace Vlab
 
     const int UnaryAutomaton::VLOG_LEVEL = 9;
 
-    UnaryAutomaton::UnaryAutomaton(Libs::MONALib::DFA_ptr dfa)
+    UnaryAutomaton::UnaryAutomaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_bdd_variables)
         : Automaton(dfa, 1)
     {
     }
@@ -42,134 +42,34 @@ namespace Vlab
       return cloned_auto;
     }
 
-    UnaryAutomaton_ptr UnaryAutomaton::MakePhi()
+    std::string UnaryAutomaton::Str() const
     {
-      Libs::MONALib::DFA_ptr non_accepting_unary_dfa = Libs::MONALib::DFAMakePhi(1);
-      UnaryAutomaton_ptr non_acception_unary_auto = new UnaryAutomaton(non_accepting_unary_dfa);
-      DVLOG(VLOG_LEVEL) << non_acception_unary_auto->GetId() << " = makePhi()";
-      return non_acception_unary_auto;
+      std::stringstream ss;
+      ss << "UnaryAutomaton[" << id_ << "]";
+      return ss.str();
     }
 
-    UnaryAutomaton_ptr UnaryAutomaton::MakeAutomaton(const Libs::MONALib::DFA_ptr dfa,
-                                                     const int number_of_variables) const
+    SemilinearSet_ptr UnaryAutomaton::GetSemilinearSet()
     {
-      if (number_of_variables != 1)
-      {
-        LOG(FATAL)<< "unary auto cannot have more than one variable";
-      }
-      UnaryAutomaton_ptr unary_auto = new UnaryAutomaton(dfa);
-      return unary_auto;
-    }
-
-    UnaryAutomaton_ptr UnaryAutomaton::MakeAutomaton(SemilinearSet_ptr semilinear_set)
-    {
-      UnaryAutomaton_ptr unary_auto = nullptr;
-      DFA_ptr unary_dfa = nullptr, tmp_dfa = nullptr;
-
-      const int cycle_head = semilinear_set->get_cycle_head();
-      const int period = semilinear_set->get_period();
-      int number_of_variables = 1;
-      int number_of_states = cycle_head + semilinear_set->get_period() + 1;
-      int sink_state = number_of_states - 1;
-      int* indices = GetBddVariableIndices(number_of_variables);
-      char unary_exception[1] = { '1' };
-      std::vector<char> statuses;
-      bool has_only_constants = semilinear_set->has_only_constants();
-
-      if (semilinear_set->is_empty_set())
-      {
-        return UnaryAutomaton::MakePhi();
-      }
-      else if (has_only_constants)
-      {
-        number_of_states = semilinear_set->get_constants().back() + 2;
-        sink_state = number_of_states - 1;
-        semilinear_set->get_periodic_constants().clear();
-      }
-
-      for (int i = 0; i < number_of_states; i++)
-      {
-        statuses.push_back('-');
-      }
-      statuses.push_back('\0');
-
-      dfaSetup(number_of_states, number_of_variables, indices);
-
-      for (int s = 0; s < number_of_states - 2; s++)
-      {
-
-        dfaAllocExceptions(1);
-        dfaStoreException(s + 1, unary_exception);
-        dfaStoreState(sink_state);
-      }
-
-      // Handle last state
-      if (has_only_constants)
-      {
-        dfaAllocExceptions(0);
-        dfaStoreState(sink_state);
-      }
-      else
-      {
-        dfaAllocExceptions(1);
-        dfaStoreException(cycle_head, unary_exception);
-        dfaStoreState(sink_state);
-      }
-
-      dfaAllocExceptions(0);
-      dfaStoreState(sink_state);
-
-      for (auto c : semilinear_set->get_constants())
-      {
-        statuses[c] = '+';
-      }
-
-      for (auto r : semilinear_set->get_periodic_constants())
-      {
-        statuses[cycle_head + r] = '+';
-      }
-
-      unary_dfa = dfaBuild(&*statuses.begin());
-      delete[] indices;
-      indices = nullptr;
-      if (not has_only_constants)
-      {
-        tmp_dfa = unary_dfa;
-        unary_dfa = dfaMinimize(tmp_dfa);
-        dfaFree(tmp_dfa);
-        tmp_dfa = nullptr;
-      }
-
-      unary_auto = new UnaryAutomaton(unary_dfa);
-
-      DVLOG(VLOG_LEVEL) << unary_auto->id_ << " = " << *semilinear_set;
-      DVLOG(VLOG_LEVEL) << unary_auto->id_ << " = UnaryAutomaton::makeAutomaton(<semilinear set>)";
-      return unary_auto;
-    }
-
-    SemilinearSet_ptr UnaryAutomaton::getSemilinearSet()
-    {
-      SemilinearSet_ptr semilinear_set = nullptr;
-
-      int cycle_head_state = -1, current_state = this->dfa_->s, sink_state = this->GetSinkState();
-
-      CHECK_NE(-1, sink_state);
-
-      std::vector<int> states;
-      std::map<int, int> values;
+      int cycle_head_state = -1;
+      int current_state = this->GetInitialState();
+      int sink_state = this->GetSinkState();
 
       if (sink_state == current_state)
       {
         return new SemilinearSet();
       }
 
+      std::vector<int> states;
+      std::map<int, int> values;
+
       // loop over all states except for sink state
-      for (int s = 0; (s < this->dfa_->ns - 1); s++)
+      for (int s = 0; s < this->GetNumberOfStates() - 1; s++)
       {
         values[current_state] = s;
         states.push_back(current_state);
 
-        for (auto next_state : GetNextStates(current_state))
+        for (int next_state : this->GetNextStates(current_state))
         {
           if (next_state != sink_state)
           {
@@ -188,9 +88,9 @@ namespace Vlab
         }
       }
 
-      semilinear_set = new SemilinearSet();
+      SemilinearSet_ptr semilinear_set = new SemilinearSet();
       int cycle_head_value = 0;
-      bool is_in_cycle = IsInitialState(cycle_head_state);
+      bool is_in_cycle = this->IsInitialState(cycle_head_state);
 
       for (auto state : states)
       {
@@ -200,14 +100,14 @@ namespace Vlab
           {
             is_in_cycle = true;
             cycle_head_value = values[state];
-            if (IsAcceptingState(state))
+            if (this->IsAcceptingState(state))
             {
               semilinear_set->add_periodic_constant(0);
             }
           }
           else
           {
-            if (IsAcceptingState(state))
+            if (this->IsAcceptingState(state))
             {
               semilinear_set->add_constant(values[state]);
             }
@@ -215,7 +115,7 @@ namespace Vlab
         }
         else
         {
-          if (IsAcceptingState(state))
+          if (this->IsAcceptingState(state))
           {
             semilinear_set->add_periodic_constant(values[state] - cycle_head_value);
           }
@@ -226,100 +126,101 @@ namespace Vlab
       int period = (cycle_head_state == -1) ? 0 : values[states.back()] - cycle_head_value + 1;
       semilinear_set->set_period(period);
 
-      DVLOG(VLOG_LEVEL) << "semilinear set = [" << this->id_ << "]->getSemilinearSet()";
+      DVLOG(VLOG_LEVEL) << *semilinear_set;
+      DVLOG(VLOG_LEVEL) << "semilinear set = [" << this->id_ << "]->GetSemilinearSet()";
 
       return semilinear_set;
     }
 
-    IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool add_minus_one)
+    IntAutomaton_ptr UnaryAutomaton::ConvertToIntAutomaton(int number_of_bdd_variables, bool add_minus_one)
     {
-      IntAutomaton_ptr int_auto = nullptr;
-      DFA_ptr int_dfa = nullptr;
-      int* indices = GetBddVariableIndices(number_of_variables);
-      const int number_of_states = this->dfa_->ns;
-      int to_state, sink_state = GetSinkState();
-      bool has_sink = true;
-
-      if (sink_state < 0)
-      {
-        has_sink = false;
-        sink_state = 0;
-      }
-
-      std::vector<char> unary_exception = { '1' };
-      char* statuses = new char[number_of_states + 1];
-      std::vector<std::vector<char> > exceptions = { { 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X' } };
-
-      for (auto& exception : exceptions)
-      {
-        exception.push_back('\0');
-      }
-
-      dfaSetup(number_of_states, number_of_variables, indices);
-
-      for (int s = 0; s < this->dfa_->ns; s++)
-      {
-        if (s != sink_state || !has_sink)
-        {
-          to_state = getNextState(s, unary_exception);
-          dfaAllocExceptions(exceptions.size());
-          for (auto& exception : exceptions)
-          {
-            dfaStoreException(to_state, &*exception.begin());
-          }
-          dfaStoreState(sink_state);
-        }
-        else
-        {
-          dfaAllocExceptions(0);
-          dfaStoreState(sink_state);
-        }
-
-        if (IsAcceptingState(s))
-        {
-          statuses[s] = '+';
-        }
-        else
-        {
-          statuses[s] = '-';
-        }
-      }
-
-      statuses[number_of_states] = '\0';
-
-      DFA_ptr temp_dfa = dfaBuild(statuses);
-      int_dfa = dfaMinimize(temp_dfa);
-      dfaFree(temp_dfa);
-
-      int_auto = new IntAutomaton(int_dfa, number_of_variables);
-
-      if (!has_sink)
-      {
-        for (int i = 0; i < int_dfa->ns; i++)
-        {
-          if (int_dfa->f[i] == 0)
-          {
-            int_dfa->f[i] = -1;
-          }
-        }
-      }
-
-      int_auto->setMinus1(add_minus_one);
-      delete[] indices;
-      indices = nullptr;
-      delete[] statuses;
-      statuses = nullptr;
-      DVLOG(VLOG_LEVEL) << int_auto->GetId() << " = [" << this->id_ << "]->toIntAutomaton(" << number_of_variables
-                        << ", " << add_minus_one << ")";
-
-      return int_auto;
+      LOG(FATAL) << "reimplement me";
+      return nullptr;
+//      int* indices = Libs::MONALib::GetBddVariableIndices(number_of_bdd_variables);
+//      const int number_of_states = this->GetNumberOfStates();
+//      int to_state, sink_state = this->GetSinkState();
+//      bool has_sink = true;
+//
+//      if (sink_state < 0)
+//      {
+//        has_sink = false;
+//        sink_state = 0;
+//      }
+//
+//      std::vector<char> unary_exception = { '1' };
+//      char* statuses = new char[number_of_states + 1];
+//      std::vector<std::vector<char> > exceptions = { { 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X' } };
+//
+//      for (auto& exception : exceptions)
+//      {
+//        exception.push_back('\0');
+//      }
+//
+//      dfaSetup(number_of_states, number_of_bdd_variables, indices);
+//
+//      for (int s = 0; s < this->dfa_->ns; s++)
+//      {
+//        if (s != sink_state || !has_sink)
+//        {
+//          to_state = getNextState(s, unary_exception);
+//          dfaAllocExceptions(exceptions.size());
+//          for (auto& exception : exceptions)
+//          {
+//            dfaStoreException(to_state, &*exception.begin());
+//          }
+//          dfaStoreState(sink_state);
+//        }
+//        else
+//        {
+//          dfaAllocExceptions(0);
+//          dfaStoreState(sink_state);
+//        }
+//
+//        if (IsAcceptingState(s))
+//        {
+//          statuses[s] = '+';
+//        }
+//        else
+//        {
+//          statuses[s] = '-';
+//        }
+//      }
+//
+//      statuses[number_of_states] = '\0';
+//
+//      DFA_ptr temp_dfa = dfaBuild(statuses);
+//      int_dfa = dfaMinimize(temp_dfa);
+//      dfaFree(temp_dfa);
+//
+//      int_auto = new IntAutomaton(int_dfa, number_of_bdd_variables);
+//
+//      if (!has_sink)
+//      {
+//        for (int i = 0; i < int_dfa->ns; i++)
+//        {
+//          if (int_dfa->f[i] == 0)
+//          {
+//            int_dfa->f[i] = -1;
+//          }
+//        }
+//      }
+//
+//      int_auto->setMinus1(add_minus_one);
+//      delete[] indices;
+//      indices = nullptr;
+//      delete[] statuses;
+//      statuses = nullptr;
+//      DVLOG(VLOG_LEVEL) << int_auto->GetId() << " = [" << this->id_ << "]->toIntAutomaton(" << number_of_bdd_variables
+//                        << ", " << add_minus_one << ")";
+//
+//      return int_auto;
     }
 
-    BinaryIntAutomaton_ptr UnaryAutomaton::toBinaryIntAutomaton(std::string var_name, ArithmeticFormula_ptr formula,
+    BinaryIntAutomaton_ptr UnaryAutomaton::ConvertToBinaryIntAutomaton(std::string var_name, ArithmeticFormula_ptr formula,
                                                                 bool add_minus_one)
     {
       BinaryIntAutomaton_ptr binary_auto = nullptr;
-      SemilinearSet_ptr semilinear_set = getSemilinearSet();
+      SemilinearSet_ptr semilinear_set = GetSemilinearSet();
 
       binary_auto = BinaryIntAutomaton::MakeAutomaton(semilinear_set, var_name, formula, true);
 //  auto test = BinaryIntAutomaton::MakeAutomaton(semilinear_set, var_name, formula, false);
@@ -350,7 +251,7 @@ namespace Vlab
       return binary_auto;
     }
 
-    StringAutomaton_ptr UnaryAutomaton::toStringAutomaton()
+    StringAutomaton_ptr UnaryAutomaton::ConvertToStringAutomaton()
     {
       StringAutomaton_ptr result_auto = StringAutomaton::MakePhi(), tmp_1_auto = nullptr, tmp_2_auto = nullptr;
 
@@ -413,27 +314,109 @@ namespace Vlab
     /** Automaton builder implementation */
 
     UnaryAutomaton::Builder::Builder()
-        : Automaton::Builder()
+        : Automaton::Builder(),
+          unary_char_ { 'X' },
+          semilinear_set_ { nullptr }
     {
 
     }
 
     UnaryAutomaton::Builder::~Builder()
     {
+      delete semilinear_set_;
+    }
 
+    UnaryAutomaton::Builder& UnaryAutomaton::Builder::SetUnaryChar(const char c)
+    {
+      this->unary_char_ = c;
+      return *this;
+    }
+
+    UnaryAutomaton::Builder& UnaryAutomaton::Builder::SetSemilinearSet(const SemilinearSet_ptr semilinear_set)
+    {
+      this->semilinear_set_ = semilinear_set;
+      return *this;
     }
 
     UnaryAutomaton_ptr UnaryAutomaton::Builder::Build()
     {
+      if (semilinear_set_ and semilinear_set_->is_empty_set())
+      {
+        DVLOG(VLOG_LEVEL) << *semilinear_set_;
+        dfa_ = Libs::MONALib::DFAMakePhi(number_of_bdd_variables_);
+      }
+      else if (semilinear_set_)
+      {
+        DVLOG(VLOG_LEVEL) << *semilinear_set_;
+        const int cycle_head = semilinear_set_->get_cycle_head();
+        const int period = semilinear_set_->get_period();
+
+        number_of_states_ = cycle_head + semilinear_set_->get_period() + 1;
+        if (semilinear_set_->has_only_constants())
+        {
+          number_of_states_ = semilinear_set_->get_constants().back() + 2;
+          semilinear_set_->get_periodic_constants().clear();
+        }
+
+        int sink_state = number_of_states_ - 1;
+        int* indices = Libs::MONALib::GetBddVariableIndices(number_of_bdd_variables_);
+        std::string transition(number_of_bdd_variables_, unary_char_);
+        std::string statuses(number_of_states_, '-');
+
+        dfaSetup(number_of_states_, number_of_bdd_variables_, indices);
+        for (int s = 0; s < number_of_states_ - 2; ++s)
+        {
+          dfaAllocExceptions(1);
+          dfaStoreException(s + 1, const_cast<char*>(transition.data()));
+          dfaStoreState(sink_state);
+        }
+
+        // Handle last state
+        if (semilinear_set_->has_only_constants())
+        {
+          dfaAllocExceptions(0);
+          dfaStoreState(sink_state);
+        }
+        else
+        {
+          dfaAllocExceptions(1);
+          dfaStoreException(cycle_head, const_cast<char*>(transition.data()));
+          dfaStoreState(sink_state);
+        }
+
+        dfaAllocExceptions(0);
+        dfaStoreState(sink_state);
+
+        for (auto c : semilinear_set_->get_constants())
+        {
+          CHECK_GE(c, 0);
+          statuses[c] = '+';
+        }
+
+        for (auto r : semilinear_set_->get_periodic_constants())
+        {
+          statuses[cycle_head + r] = '+';
+        }
+
+        dfa_ = dfaBuild(const_cast<char*>(statuses.data()));
+        if (not semilinear_set_->has_only_constants())
+        {
+          auto tmp_dfa = dfa_;
+          dfa_ = dfaMinimize(tmp_dfa);
+          dfaFree (tmp_dfa);
+        }
+      }
+
       if (dfa_)
       {
-        UnaryAutomaton_ptr automaton = new UnaryAutomaton(dfa_);
+        UnaryAutomaton_ptr automaton = new UnaryAutomaton(dfa_, number_of_bdd_variables_);
         dfa_ = nullptr;
 
+        DVLOG(VLOG_LEVEL) << *automaton << " built.";
         return automaton;
       }
 
-      LOG(FATAL)<< "DFA is not constructed.";
+      LOG(FATAL)<< "Automaton cannot be constructed. Make sure minimum required fields are set in order.";
       return nullptr;
     }
 

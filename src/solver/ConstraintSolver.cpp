@@ -888,7 +888,7 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
           auto unary_end_index_var_auto = bin_end_index_var_auto->ToUnaryAutomaton();
           delete bin_end_index_var_auto;
           bin_end_index_var_auto = nullptr;
-          auto string_len_end_index_auto = unary_end_index_var_auto->toIntAutomaton(param_subject->getStringAutomaton()->GetNumberOfBddVariables(), false);
+          auto string_len_end_index_auto = unary_end_index_var_auto->ConvertToIntAutomaton(param_subject->getStringAutomaton()->GetNumberOfBddVariables(), false);
           delete unary_end_index_var_auto;
           unary_end_index_var_auto = nullptr;
 
@@ -965,7 +965,7 @@ void ConstraintSolver::visitToString(ToString_ptr to_string_term) {
     result = new Value(StringAutomaton::MakeString(ss.str()));
   } else {
     auto unary_auto = param->getIntAutomaton()->toUnaryAutomaton();
-    result = new Value(unary_auto->toStringAutomaton());
+    result = new Value(unary_auto->ConvertToStringAutomaton());
     delete unary_auto;
   }
 
@@ -1065,7 +1065,7 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
     // TODO baki: added for charat may need to fix it
     auto var_auto = variable_value->getBinaryIntAutomaton()->GetBinaryAutomatonFor(qi_term->getVarName());
     auto unary_auto = var_auto->ToUnaryAutomaton();
-    result = new Value(unary_auto->toIntAutomaton(8));
+    result = new Value(unary_auto->ConvertToIntAutomaton(8));
     delete var_auto;
     delete unary_auto;
   } else
@@ -1265,7 +1265,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
       number_of_variables_for_int_auto = string_term_result->getIntAutomaton()->GetNumberOfBddVariables();
       // first convert integer result to unary, then unary to binary
       string_term_unary_auto = string_term_result->getIntAutomaton()->toUnaryAutomaton();
-      string_term_binary_auto = string_term_unary_auto->toBinaryIntAutomaton(
+      string_term_binary_auto = string_term_unary_auto->ConvertToBinaryIntAutomaton(
           string_term_var_name, arithmetic_result->getBinaryIntAutomaton()->get_formula()->clone(), has_minus_one);
       delete string_term_unary_auto;
       string_term_unary_auto = nullptr;
@@ -1304,7 +1304,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     string_term_unary_auto = string_term_binary_auto->ToUnaryAutomaton();
     delete string_term_binary_auto;
     string_term_binary_auto = nullptr;
-    updated_int_auto = string_term_unary_auto->toIntAutomaton(number_of_variables_for_int_auto, has_minus_one);
+    updated_int_auto = string_term_unary_auto->ConvertToIntAutomaton(number_of_variables_for_int_auto, has_minus_one);
     delete string_term_unary_auto;
     string_term_unary_auto = nullptr;
     clearTermValue(string_term);

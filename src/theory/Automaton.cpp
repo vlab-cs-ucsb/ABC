@@ -17,25 +17,25 @@ namespace Vlab
 
     Automaton::Automaton()
         : is_counter_cached_ { false },
-          number_of_bdd_variables_(0),
-          id_(Automaton::next_id++),
-          dfa_(nullptr)
+          number_of_bdd_variables_{0},
+          id_{Automaton::next_id++},
+          dfa_{nullptr}
     {
     }
 
-    Automaton::Automaton(Libs::MONALib::DFA_ptr dfa, int number_of_bdd_variables)
-        : is_counter_cached_ { false },
-          number_of_bdd_variables_(number_of_bdd_variables),
-          id_(Automaton::next_id++),
-          dfa_(dfa)
+    Automaton::Automaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_bdd_variables)
+        : is_counter_cached_{ false },
+          number_of_bdd_variables_{number_of_bdd_variables},
+          id_{Automaton::next_id++},
+          dfa_{dfa}
     {
     }
 
     Automaton::Automaton(const Automaton& other)
         : is_counter_cached_ { false },
-          number_of_bdd_variables_(other.number_of_bdd_variables_),
-          id_(Automaton::next_id++),
-          dfa_(nullptr)
+          number_of_bdd_variables_{other.number_of_bdd_variables_},
+          id_{Automaton::next_id++},
+          dfa_{nullptr}
 
     {
       if (other.dfa_)
@@ -57,7 +57,9 @@ namespace Vlab
 
     std::string Automaton::Str() const
     {
-      return "Automaton";
+      std::stringstream ss;
+      ss << "Automaton[" << id_ << "]";
+      return ss.str();
     }
 
     unsigned long Automaton::GetId() const

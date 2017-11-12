@@ -80,7 +80,7 @@ namespace Vlab
          * @param dfa
          * @param num_of_variables
          */
-        Automaton(Libs::MONALib::DFA_ptr dfa, int number_of_bdd_variables);
+        Automaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_bdd_variables);
 
         /**
          * Copy constructor.
@@ -481,7 +481,7 @@ namespace Vlab
         Builder& SetNumberOfBddVariables(const int number_of_bdd_variables);
 
         /**
-         *  Sets the dfa.
+         * Sets the dfa.
          * @param dfa
          * @return
          */

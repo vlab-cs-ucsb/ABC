@@ -1130,7 +1130,7 @@ IntAutomaton_ptr StringAutomaton::length() {
     length_auto = IntAutomaton::makeInt(example.length(), number_of_bdd_variables_);
   } else {
     UnaryAutomaton_ptr unary_auto = this->toUnaryAutomaton();
-    length_auto = unary_auto->toIntAutomaton(number_of_bdd_variables_);
+    length_auto = unary_auto->ConvertToIntAutomaton(number_of_bdd_variables_);
     delete unary_auto; unary_auto = nullptr;
   }
 
