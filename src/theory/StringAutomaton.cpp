@@ -728,11 +728,8 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
         it = exceptions_left_auto.erase(it);
         delete current_exception;
       }
-      for (auto it = exceptions_right_auto.begin(); it != exceptions_right_auto.end();) {
+      for (auto it = exceptions_right_auto.begin(); it != exceptions_right_auto.end();it++) {
         dfaStoreException(it->second, &*it->first->begin());
-        current_exception = it->first;
-        it = exceptions_right_auto.erase(it);
-        delete current_exception;
       }
 
       dfaStoreState(sink_state_left_auto);
@@ -757,6 +754,12 @@ StringAutomaton_ptr StringAutomaton::concat(StringAutomaton_ptr other_auto) {
     kill_paths(state_paths);
     state_paths = pp = nullptr;
   }
+
+  for (auto it = exceptions_right_auto.begin(); it != exceptions_right_auto.end();) {
+		current_exception = it->first;
+		it = exceptions_right_auto.erase(it);
+		delete current_exception;
+	}
 
   //  initflag is 1 iff init is reached by some state. In this case,
   for (i = 0; i < right_auto->dfa->ns; i++) {
