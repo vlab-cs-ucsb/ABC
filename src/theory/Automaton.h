@@ -100,6 +100,14 @@ namespace Vlab
         virtual Automaton_ptr Clone() const;
 
         /**
+         * Generates a specific type of automaton that wraps dfa instance.
+         * @param dfa
+         * @param number_of_variables
+         * @return
+         */
+        virtual Automaton_ptr MakeAutomaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const;
+
+        /**
          * Prints the actual type and the details of the automaton.
          * @return
          */
@@ -194,14 +202,6 @@ namespace Vlab
          * @return
          */
         bool IsEqual(const Automaton_ptr other_automaton) const;
-
-        /**
-         * Generates a specific type of automaton that wraps dfa instance.
-         * @param dfa
-         * @param number_of_variables
-         * @return
-         */
-        virtual Automaton_ptr MakeAutomaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const;
 
         /**
          * Complements an automaton
@@ -377,10 +377,16 @@ namespace Vlab
          */
         std::unordered_set<int> GetNextStates(const int state) const;
 
-        bool hasIncomingTransition(int state);
+        /**
+         * Gets the next state given the transition from current state.
+         * @param state
+         * @param transition
+         * @return
+         */
+        int GetNextState(const int state, const std::string& transition) const;
+
 
         // baki left here, move useful functions to above, and move DFA functions to another class
-        int getNextState(int state, std::vector<char>& exception);
         std::vector<NextState> getNextStatesOrdered(int state,
                                                     std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
         bool getAnAcceptingWord(NextState& state, std::map<int, bool>& is_stack_member, std::vector<bool>& path,

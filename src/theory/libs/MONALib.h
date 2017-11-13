@@ -221,7 +221,8 @@ namespace Vlab
            * @param number_of_bdd_variables
            * @return
            */
-          static DFA_ptr DFAMakeAcceptingAnyWithInRange(const int start, const int end, const int number_of_bdd_variables);
+          static DFA_ptr DFAMakeAcceptingAnyWithInRange(const int number_of_bdd_variables, const int start,
+                                                        const int end);
 
           /**
            * Generates a dfa that accepts any input after reading the given number of inputs.
@@ -229,7 +230,7 @@ namespace Vlab
            * @param number_of_bdd_variables
            * @return
            */
-          static DFA_ptr DFAMakeAcceptingAnyAfterLength(const int length, const int number_of_bdd_variables);
+          static DFA_ptr DFAMakeAcceptingAnyAfterLength(const int number_of_bdd_variables, const int length);
 
           /**
            * Gets outgoing transitions and target states from the given state.
@@ -240,7 +241,10 @@ namespace Vlab
            * @param extra_bits appends bits to the read transitions
            * @return
            */
-          static std::unordered_map<std::string, int> DFAGetTransitionsFrom(const DFA_ptr dfa, const int from, const int number_of_bdd_variables, std::string extra_bits = "");
+          static std::unordered_map<std::string, int> DFAGetTransitionsFrom(const DFA_ptr dfa,
+                                                                            const int number_of_bdd_variables,
+                                                                            const int from,
+                                                                            const std::string& extra_bits = "");
 
           /**
            * Gets set of transitions between two states.
@@ -251,7 +255,10 @@ namespace Vlab
            * @param extra_bits appends bits to the read transitions
            * @return
            */
-          static std::unordered_set<std::string> DFAGetTransitionsFromTo(const DFA_ptr dfa, const int from, const int to, const int number_of_variables, std::string extra_bits = "");
+          static std::unordered_set<std::string> DFAGetTransitionsFromTo(const DFA_ptr dfa,
+                                                                         const int number_of_variables, const int from,
+                                                                         const int to, const std::string& extra_bits =
+                                                                             "");
 
           /**
            * Gets the next states from the given state.
@@ -260,6 +267,16 @@ namespace Vlab
            * @return
            */
           static std::unordered_set<int> DFAGetNextStates(const DFA_ptr dfa, const int from);
+
+          /**
+           * Gets the next state from the given state with the given transition. Returns -1 if no such transition exists.
+           * @param dfa
+           * @param from
+           * @param transition
+           * @return
+           */
+          static int DFAGetNextState(const DFA_ptr dfa, const int number_of_bdd_variables, const int from,
+                                     const std::string& transition);
 
           /**
            * Generates a dfa that accepts the concatenated language of dfa1 and dfa2.

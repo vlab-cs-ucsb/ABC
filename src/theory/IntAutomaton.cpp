@@ -246,6 +246,7 @@ void IntAutomaton::setMinus1(bool has_minus_one) {
 bool IntAutomaton::hasNegative1() {
   return has_negative_1;
 }
+
 IntAutomaton_ptr IntAutomaton::complement() {
   DFA_ptr complement_dfa = nullptr, minimized_dfa = nullptr, current_dfa = dfaCopy(dfa_);
   IntAutomaton_ptr complement_auto = nullptr;
@@ -774,7 +775,7 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
   dfaSetup(number_of_states, number_of_variables, indices);
 
   for (int s = 0; s < this->dfa_->ns; s++) {
-    to_state = getNextState(s, exception);
+    to_state = GetNextState(s, exception);
     dfaAllocExceptions(1);
     dfaStoreException(to_state, &*unary_exception.begin());
 

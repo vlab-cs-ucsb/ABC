@@ -54,6 +54,7 @@ namespace Vlab
         /**
          * Constructs a unary automaton given the unary dfa.
          * @param dfa
+         * @param number_of_bdd_variables
          */
         UnaryAutomaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_bdd_variables);
 
@@ -75,12 +76,6 @@ namespace Vlab
         virtual UnaryAutomaton_ptr Clone() const;
 
         /**
-         * Prints the actual type and the details of the automaton.
-         * @return
-         */
-        virtual std::string Str() const override;
-
-        /**
          * Generates a unary automaton that wraps dfa instance.
          * @param dfa
          * @param number_of_variables
@@ -88,6 +83,12 @@ namespace Vlab
          */
         virtual UnaryAutomaton_ptr MakeAutomaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const
             override;
+
+        /**
+         * Prints the actual type and the details of the automaton.
+         * @return
+         */
+        virtual std::string Str() const override;
 
         SemilinearSet_ptr GetSemilinearSet();
         IntAutomaton_ptr ConvertToIntAutomaton(int number_of_variables, bool add_minus_one = false);

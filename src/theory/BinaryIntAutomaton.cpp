@@ -305,7 +305,7 @@ bool BinaryIntAutomaton::HasNegative1() {
   int current_state = this->dfa_->s;
   while (not is_visited[current_state]) {
     is_visited[current_state] = true;
-    current_state = getNextState(current_state, exception);
+    current_state = GetNextState(current_state, exception);
     if (current_state > -1 and IsAcceptingState(current_state)) {
       return true;
     }
@@ -418,7 +418,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::TrimLeadingZeros() {
   std::map<int, std::vector<int>> possible_final_states;
   std::stack<int> final_states;
   for (int i = 0; i < tmp_auto->dfa_->ns; i++) {
-    next_state = getNextState(i, exception);
+    next_state = GetNextState(i, exception);
     if ((sink_state not_eq next_state) and (i not_eq next_state)) {
       possible_final_states[next_state].push_back(i);
     }
@@ -1698,9 +1698,9 @@ void BinaryIntAutomaton::GetCycleStatus(int state, std::map<int, int>& disc, std
   st.push_back(state);
   is_stack_member[state] = true;
 
-  l = getNextState(state, exception);
+  l = GetNextState(state, exception);
   exception[0] = '1';
-  r = getNextState(state, exception);
+  r = GetNextState(state, exception);
 
   for (int b = 0; b < 2; b++) {
     next_state = (b == 0) ? l : r;
@@ -1757,9 +1757,9 @@ void BinaryIntAutomaton::GetConstants(int state, std::map<int, bool>& cycle_stat
     return;
   }
 
-  l = getNextState(state, exception);
+  l = GetNextState(state, exception);
   exception[0] = '1';
-  r = getNextState(state, exception);
+  r = GetNextState(state, exception);
 
   for (int b = 0; b < 2; b++) {
     next_state = (b == 0) ? l : r;
@@ -1914,7 +1914,7 @@ void BinaryIntAutomaton::GetBaseConstants(int state, unsigned char *is_visited, 
     constants.push_back(c);
   }
 
-  next_state = getNextState(state, exception);  // taking transition 0
+  next_state = GetNextState(state, exception);  // taking transition 0
 
   if ((is_visited[state] & 1) == 0 and (not IsSinkState(next_state))) {
     is_visited[state] |= 1;
@@ -1925,7 +1925,7 @@ void BinaryIntAutomaton::GetBaseConstants(int state, unsigned char *is_visited, 
   }
 
   exception[0] = '1';
-  next_state = getNextState(state, exception);  // taking transition 1
+  next_state = GetNextState(state, exception);  // taking transition 1
 
   if ((is_visited[state] & 2) == 0 and (not IsSinkState(next_state))) {
     is_visited[state] |= 2;

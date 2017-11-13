@@ -42,6 +42,11 @@ namespace Vlab
       return cloned_auto;
     }
 
+    UnaryAutomaton_ptr UnaryAutomaton::MakeAutomaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const
+    {
+      return new UnaryAutomaton(dfa, number_of_variables);
+    }
+
     std::string UnaryAutomaton::Str() const
     {
       std::stringstream ss;
@@ -315,7 +320,7 @@ namespace Vlab
 
     UnaryAutomaton::Builder::Builder()
         : Automaton::Builder(),
-          unary_char_ { 'X' },
+          unary_char_ { '1' },
           semilinear_set_ { nullptr }
     {
 

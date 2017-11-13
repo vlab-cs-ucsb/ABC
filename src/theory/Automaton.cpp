@@ -17,25 +17,25 @@ namespace Vlab
 
     Automaton::Automaton()
         : is_counter_cached_ { false },
-          number_of_bdd_variables_{0},
-          id_{Automaton::next_id++},
-          dfa_{nullptr}
+          number_of_bdd_variables_ { 0 },
+          id_ { Automaton::next_id++ },
+          dfa_ { nullptr }
     {
     }
 
     Automaton::Automaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_bdd_variables)
-        : is_counter_cached_{ false },
-          number_of_bdd_variables_{number_of_bdd_variables},
-          id_{Automaton::next_id++},
-          dfa_{dfa}
+        : is_counter_cached_ { false },
+          number_of_bdd_variables_ { number_of_bdd_variables },
+          id_ { Automaton::next_id++ },
+          dfa_ { dfa }
     {
     }
 
     Automaton::Automaton(const Automaton& other)
         : is_counter_cached_ { false },
-          number_of_bdd_variables_{other.number_of_bdd_variables_},
-          id_{Automaton::next_id++},
-          dfa_{nullptr}
+          number_of_bdd_variables_ { other.number_of_bdd_variables_ },
+          id_ { Automaton::next_id++ },
+          dfa_ { nullptr }
 
     {
       if (other.dfa_)
@@ -53,6 +53,11 @@ namespace Vlab
     Automaton_ptr Automaton::Clone() const
     {
       return new Automaton(*this);
+    }
+
+    Automaton_ptr Automaton::MakeAutomaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const
+    {
+      return new Automaton(dfa, number_of_variables);
     }
 
     std::string Automaton::Str() const
@@ -151,11 +156,6 @@ namespace Vlab
       return result;
     }
 
-    Automaton_ptr Automaton::MakeAutomaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const
-    {
-      return new Automaton(dfa, number_of_variables);
-    }
-
     Automaton_ptr Automaton::Complement() const
     {
       Libs::MONALib::DFA_ptr complement_dfa = Libs::MONALib::DFAComplement(this->dfa_);
@@ -247,7 +247,7 @@ namespace Vlab
         if (s != sink_state)
         {
           std::unordered_map<std::string, int> transition_map = Libs::MONALib::DFAGetTransitionsFrom(
-              dfa_, s, number_of_bdd_variables_, default_extra_bit_string);
+              dfa_, number_of_bdd_variables_, s, default_extra_bit_string);
           exception_map[s] = transition_map;
 
           // add to start state by adding extra bits
@@ -344,7 +344,7 @@ namespace Vlab
         {
           int state_id = s + 1;  // there is a new start state, old states are off by one
           std::unordered_map<std::string, int> transition_map = Libs::MONALib::DFAGetTransitionsFrom(
-              dfa_, s, number_of_bdd_variables_, default_extra_bit_string);
+              dfa_, number_of_bdd_variables_, s, default_extra_bit_string);
           exception_map[state_id] = transition_map;
           // add to start state by adding extra bits
           if (suffixes_from.find(s) != suffixes_from.end())
@@ -448,8 +448,8 @@ namespace Vlab
     Automaton_ptr Automaton::PrefixesUntilIndex(const int index) const
     {
       Automaton_ptr prefixes_auto = this->Prefixes();
-      Libs::MONALib::DFA_ptr length_dfa = Libs::MONALib::DFAMakeAcceptingAnyWithInRange(
-          0, index - 1, this->GetNumberOfBddVariables());
+      Libs::MONALib::DFA_ptr length_dfa = Libs::MONALib::DFAMakeAcceptingAnyWithInRange(this->GetNumberOfBddVariables(),
+                                                                                        0, index - 1);
       Automaton_ptr length_auto = this->MakeAutomaton(length_dfa, this->GetNumberOfBddVariables());
 
       Automaton_ptr prefixesUntil_auto = prefixes_auto->Intersect(length_auto);
@@ -467,13 +467,13 @@ namespace Vlab
       {
         // when index is 0, result should also accept at initial state if subject automaton accepts at initial state
         Libs::MONALib::DFA_ptr length_dfa = Libs::MONALib::DFAMakeAcceptingAnyWithInRange(
-            0, 1, this->GetNumberOfBddVariables());
+            this->GetNumberOfBddVariables(), 0, 1);
         length_auto = this->MakeAutomaton(length_dfa, this->GetNumberOfBddVariables());
       }
       else
       {
         Libs::MONALib::DFA_ptr length_dfa = Libs::MONALib::DFAMakeAcceptingAnyWithInRange(
-            index + 1, index + 1, this->GetNumberOfBddVariables());
+            this->GetNumberOfBddVariables(), index + 1, index + 1);
         length_auto = this->MakeAutomaton(length_dfa, this->GetNumberOfBddVariables());
       }
       Automaton_ptr prefixesAt_auto = prefixes_auto->Intersect(length_auto);
@@ -980,71 +980,19 @@ namespace Vlab
       return states;
     }
 
-    std::unordered_set<int> Automaton::GetNextStates(const int from) const
+    std::unordered_set<int> Automaton::GetNextStates(const int state) const
     {
-      std::unordered_set<int> next_states = Libs::MONALib::DFAGetNextStates(this->dfa_, from);
-      DVLOG(VLOG_LEVEL) << "[" << next_states.size() << " states] = [" << this->id_ << "]->GetNextStates(" << from
+      std::unordered_set<int> next_states = Libs::MONALib::DFAGetNextStates(this->dfa_, state);
+      DVLOG(VLOG_LEVEL) << "[" << next_states.size() << " states] = [" << this->id_ << "]->GetNextStates(" << state
                         << ")";
       return next_states;
     }
 
-    bool Automaton::hasIncomingTransition(int state)
+    int Automaton::GetNextState(const int state, const std::string& transition) const
     {
-      LOG(FATAL)<< "implement me!";
-//  for (int i = 0; i < this->dfa_->ns; i++) {
-//    if (hasNextState(i, state)) {
-//      return true;
-//    }
-//  }
-      return false;
-    }
-
-    /**
-     * @return next state from the state by taking transition path (1 step away)
-     */
-    int Automaton::getNextState(int state, std::vector<char>& exception)
-    {
-      int next_state = -1;  // only for initialization
-      unsigned p, l, r, index = 0;  // BDD traversal variables
-
-      CHECK_EQ(number_of_bdd_variables_, exception.size());
-
-      p = this->dfa_->q[state];
-
-      for (int i = 0; i < number_of_bdd_variables_; i++)
-      {
-        LOAD_lri(&this->dfa_->bddm->node_table[p], l, r, index);
-        if (index == BDD_LEAF_INDEX)
-        {
-          next_state = l;
-          break;
-        }
-        else
-        {
-          if (exception[i] == '0')
-          {
-            p = l;
-          }
-          else if (exception[i] == '1')
-          {
-            p = r;
-          }
-        }
-      }
-
-      if (index != BDD_LEAF_INDEX)
-      {
-        LOAD_lri(&this->dfa_->bddm->node_table[p], l, r, index);
-        if (index == BDD_LEAF_INDEX)
-        {
-          next_state = l;
-        }
-        else
-        {
-          LOG(FATAL)<< "Please check this algorithm, something wrong with bdd traversal";
-        }
-      }
-
+      int next_state = Libs::MONALib::DFAGetNextState(this->GetDFA(), this->GetNumberOfBddVariables(), state,
+                                                      transition);
+      DVLOG(VLOG_LEVEL) << next_state << " = [" << this->id_ << "]->GetNextState(" << state << transition << ")";
       return next_state;
     }
 
