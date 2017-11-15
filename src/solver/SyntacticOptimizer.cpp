@@ -713,16 +713,22 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
     }
     LOG(FATAL) << "Operation not supported";
   }
-//  else if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type() and Term::Type::QUALIDENTIFIER == eq_term->right_term->type()) {
-//  	auto left_var = symbol_table_->get_variable(eq_term->left_term);
-//  	auto right_var = symbol_table_->get_variable(eq_term->right_term);
-//  	if(left_var->getType() == Variable::Type::STRING) {
-//  		symbol_table_->increment_variable_usage(left_var->getName());
-//  	}
-//  	if(right_var->getType() == Variable::Type::STRING) {
-//  		symbol_table_->increment_variable_usage(right_var->getName());
-//  	}
-//  }
+  else if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type() and Term::Type::QUALIDENTIFIER == eq_term->right_term->type()) {
+  	auto count_var = symbol_table_->get_count_variable();
+		auto rep_count_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),count_var);
+
+  	auto left_var = symbol_table_->get_variable(eq_term->left_term);
+  	auto right_var = symbol_table_->get_variable(eq_term->right_term);
+
+  	if(left_var->getType() == Variable::Type::STRING and left_var->getName() == rep_count_var->getName()) {
+  		symbol_table_->increment_variable_usage(left_var->getName());
+  		symbol_table_->increment_variable_usage(right_var->getName());
+  	}
+  	else if(right_var->getType() == Variable::Type::STRING and right_var->getName() == rep_count_var->getName()) {
+			symbol_table_->increment_variable_usage(left_var->getName());
+  		symbol_table_->increment_variable_usage(right_var->getName());
+  	}
+  }
   else if(Term::Type::TERMCONSTANT != eq_term->right_term->type() and Term::Type::QUALIDENTIFIER != eq_term->right_term->type()
   								and Term::Type::QUALIDENTIFIER == eq_term->left_term->type()) {
   	auto left_var = symbol_table_->get_variable(eq_term->left_term);
