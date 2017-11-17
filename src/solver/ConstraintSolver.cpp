@@ -595,25 +595,40 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
   // if we're only concerned with counting the query variable, then
   // we don't need to update "macro" variables (spurious variables taht are defined once through
   // equality and substituted elsewhere)
-  if(concat_term->term_list->size() <= 3) {
+  if(concat_term->term_list->size() <= 10) {
   	path_trace_.push_back(concat_term);
   } else if(symbol_table_->has_count_variable()) {
   	many_vars = true;
   }
 
-  for (auto& term_ptr : *(concat_term->term_list)) {
-    visit(term_ptr);
-    param = getTermValue(term_ptr);
-    if (result == nullptr) {
-      result = param->clone();
+  if(concat_term->term_list->at(0)->type() != Term::Type::TERMCONSTANT and concat_term->term_list->size() <= 10) {
+    	many_vars = true;
+  		for(auto iter = concat_term->term_list->rbegin(); iter != concat_term->term_list->rend(); iter++) {
+  			visit(*iter);
+  			param = getTermValue(*iter);
+  			if (result == nullptr) {
+  				result = param->clone();
+  			} else {
+  				concat_value = param->concat(result);
+  				delete result;
+  				result = concat_value;
+  			}
+  		}
     } else {
-      concat_value = result->concat(param);
-      delete result;
-      result = concat_value;
-    }
+  		for (auto& term_ptr : *(concat_term->term_list)) {
+  			visit(term_ptr);
+  			param = getTermValue(term_ptr);
+  			if (result == nullptr) {
+  				result = param->clone();
+  			} else {
+  				concat_value = result->concat(param);
+  				delete result;
+  				result = concat_value;
+  			}
 
-  }
-  if(concat_term->term_list->size() <= 3) {
+  		}
+    }
+  if(concat_term->term_list->size() <= 10) {
   	path_trace_.pop_back();
 
   }

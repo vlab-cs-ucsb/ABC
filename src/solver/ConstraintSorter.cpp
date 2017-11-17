@@ -867,6 +867,13 @@ void ConstraintSorter::visitLet(Let_ptr let_term) {
 void ConstraintSorter::visitAnd(And_ptr and_term) {
   std::vector<TermNode_ptr> local_dependency_node_list;
   std::vector<Term_ptr> unsorted_constraints;
+
+  if(symbol_table->has_count_variable()) {
+		auto count_var = symbol_table->get_count_variable();
+		auto rep_count_var = symbol_table->get_representative_variable_of_at_scope(symbol_table->top_scope(),count_var);
+		ConstraintSorter::TermNode::count_var = rep_count_var->getName();
+	}
+
   for(auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
   //for (auto& term : *(and_term->term_list)) {
   	if(symbol_table->is_unsorted_constraint(*iter) and false) {

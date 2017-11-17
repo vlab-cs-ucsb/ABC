@@ -26,6 +26,7 @@ EquivalenceGenerator::EquivalenceGenerator(Script_ptr script, SymbolTable_ptr sy
       term_constant_{nullptr},
       unclassified_term_{nullptr} {
   setCallbacks();
+  sub_term  =false;
 }
 
 EquivalenceGenerator::~EquivalenceGenerator() {
@@ -91,7 +92,16 @@ void EquivalenceGenerator::visitAnd(And_ptr and_term) {
   }
 
   if(!has_constant_substitution_) {
-  for (auto term : or_terms) {
+  	sub_term = true;
+  	for (auto term : *(and_term->term_list)) {
+  	    if (Term::Type::OR not_eq term->type()) {
+  	      visit(term);
+  	    } else {
+  	      or_terms.push_back(term);
+  	    }
+  	  }
+
+  	for (auto term : or_terms) {
     visit(term);
   }
   }
@@ -124,7 +134,7 @@ void EquivalenceGenerator::visitOr(Or_ptr or_term) {
 void EquivalenceGenerator::visitEq(Eq_ptr eq_term) {
   DVLOG(VLOG_LEVEL) << "visit start: " << *eq_term << "@" << eq_term;
 
-  if (is_equiv_of_variables(eq_term->left_term, eq_term->right_term)) {
+  if (!sub_term and is_equiv_of_variables(eq_term->left_term, eq_term->right_term)) {
     auto left_equiv_class = symbol_table_->get_equivalence_class_of(left_variable_);
     auto right_equiv_class = symbol_table_->get_equivalence_class_of(right_variable_);
     if (left_equiv_class and right_equiv_class) { // merge them
@@ -137,7 +147,7 @@ void EquivalenceGenerator::visitEq(Eq_ptr eq_term) {
       create_equiv_class_and_update_symbol_table(left_variable_, right_variable_);
     }
   }
-  else if (is_equiv_of_variable_and_constant(eq_term->left_term, eq_term->right_term)) {
+  else if (!sub_term and is_equiv_of_variable_and_constant(eq_term->left_term, eq_term->right_term)) {
     auto equiv_class = symbol_table_->get_equivalence_class_of(left_variable_);
     if (equiv_class) {
     	has_constant_substitution_ = true;
@@ -147,7 +157,7 @@ void EquivalenceGenerator::visitEq(Eq_ptr eq_term) {
       create_equiv_class_and_update_symbol_table(left_variable_, term_constant_);
     }
   }
-  else if (is_equiv_of_bool_var_and_term(eq_term->left_term, eq_term->right_term)) {
+  else if (sub_term and is_equiv_of_bool_var_and_term(eq_term->left_term, eq_term->right_term)) {
   	has_constant_substitution_ = true;
     auto equiv_class = symbol_table_->get_equivalence_class_of(left_variable_);
     if (equiv_class) {

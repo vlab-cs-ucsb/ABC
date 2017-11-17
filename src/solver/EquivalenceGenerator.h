@@ -58,6 +58,7 @@ class EquivalenceGenerator : public AstTraverser {
   void create_equiv_class_and_update_symbol_table(SMT::Variable_ptr, SMT::Term_ptr);
 
   bool has_constant_substitution_;
+  bool sub_term;
   SymbolTable_ptr symbol_table_;
   SMT::Variable_ptr left_variable_;
   SMT::Variable_ptr right_variable_;
