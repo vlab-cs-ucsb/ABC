@@ -522,6 +522,7 @@ protected:
    */
 
 
+  static DFA_ptr DFAExtendExtrabit(DFA_ptr M, int var);
 
   static bool check_emptiness_minimized(DFA *M);
   static int check_emptiness(DFA_ptr M1, int var, int* indices);

@@ -2099,24 +2099,44 @@ StringAutomaton_ptr StringAutomaton::Trim() {
 
 StringAutomaton_ptr StringAutomaton::Replace(StringAutomaton_ptr search_auto,
 		StringAutomaton_ptr replace_auto) {
-	LOG(FATAL) << "Not fully implemented";
+
+	LOG(INFO) << "Before replace";
+	//this->inspectAuto(false,true);
+	//LOG(FATAL) << "Not fully implemented";
 	CHECK_EQ(this->num_tracks_,1);
   DFA_ptr result_dfa = nullptr;
-  StringAutomaton_ptr result_auto = nullptr;
+  StringAutomaton_ptr result_auto = nullptr,temp_auto = nullptr;
   //LOG(FATAL) << "implement me";
   int var = StringAutomaton::DEFAULT_NUM_OF_VARIABLES;
-	int *indices = Automaton::allocateAscIIIndexWithExtraBit(var);
-  DFA_ptr dfa1 = Automaton::dfaAllStringASCIIExceptReserveWords(var,indices);
-  DFA_ptr dfa2 = Automaton::dfaAllStringASCIIExceptReserveWords(var,indices);
-  DFA_ptr dfa3 = Automaton::dfaAllStringASCIIExceptReserveWords(var,indices);
+  int nvar = var+2;
+
+  StringAutomaton_ptr simple_dfa = StringAutomaton::MakeString("baab");
+
+	// dfa1 will have var+1 indices, with all valid transitions having extrabit=0
+	DFA_ptr dfa1 = Automaton::DFAExtendExtrabit(simple_dfa->dfa_,var);
+	DFA_ptr dfa2 = Automaton::DFAExtendExtrabit(search_auto->dfa_,var);
+	DFA_ptr dfa3 = Automaton::DFAExtendExtrabit(replace_auto->dfa_,var);
 
 
+
+
+
+	int *indices = Automaton::GetBddVariableIndices(nvar+1);
   result_dfa = dfa_general_replace_extrabit(dfa1, dfa2, dfa3,
-          var, indices);
+          nvar, indices);
+//  temp_auto = new StringAutomaton(result_dfa,1,nvar+1);
+//	temp_auto->inspectAuto(false,true);
+//	std::cin.get();
+
+  // PROJECT AWAY LAST INDEX!
+  result_dfa = Automaton::DFAProjectAway(result_dfa,var+1);
+  result_dfa = Automaton::DFAProjectAway(result_dfa,var);
 
   result_auto = new StringAutomaton(result_dfa, num_of_bdd_variables_);
-
+  result_auto->inspectAuto(false,true);
   DVLOG(VLOG_LEVEL) << result_auto->id_ << " = [" << this->id_ << "]->repeat(" << search_auto->id_ << ", " << replace_auto->id_ << ")";
+  LOG(INFO) << "After replace";
+  //this->inspectAuto(false,true);
   std::cin.get();
   return result_auto;
 }

@@ -2636,6 +2636,81 @@ int Automaton::find_sink(DFA_ptr dfa) {
  * BEGIN LIBSTRANGER REPLACE STUFF
  */
 
+DFA_ptr Automaton::DFAExtendExtrabit(DFA_ptr M, int var) {
+	DFA_ptr result_dfa = nullptr,temp_dfa = nullptr;
+	trace_descr tp;
+	paths state_paths, pp;
+	std::vector<std::pair<std::vector<char>,int>> state_exeps;
+	int nvar = var+2;
+	int sink = find_sink(M);
+	int num_states = M->ns;
+
+	// dfa M may not have sink; make necessary preparations
+	bool has_sink = true;
+	if(sink < 0) {
+		sink = num_states;
+		num_states++;
+		has_sink = false;
+	}
+
+	int *indices = GetBddVariableIndices(nvar);
+	char* statuses = new char[num_states+1];
+
+	dfaSetup(num_states,nvar,indices);
+
+	for(int i = 0; i < M->ns; i++) {
+		state_paths = pp = make_paths(M->bddm, M->q[i]);
+		while(pp) {
+			if(pp->to != sink) {
+				std::vector<char> curr(nvar,'X');
+				for(unsigned j = 0; j < var; j++) {
+					for(tp = pp->trace; tp && (tp->index != indices[j]); tp = tp->next);
+					if(tp) {
+						if(tp->value) curr[j] = '1';
+						else curr[j] = '0';
+					}
+					else
+						curr[j] = 'X';
+				}
+				// add new bit, set to 0
+				curr[var] = '0';
+				curr[var+1] = '0';
+				curr.push_back('\0');
+				state_exeps.push_back(std::make_pair(curr,pp->to));
+			}
+			pp = pp->next;
+		}
+		kill_paths(state_paths);
+
+		dfaAllocExceptions(state_exeps.size());
+		for(unsigned k = 0; k < state_exeps.size(); ++k) {
+			dfaStoreException(state_exeps[k].second,&state_exeps[k].first[0]);
+		}
+		dfaStoreState(sink);
+		state_exeps.clear();
+
+		if(M->f[i] == 1) {
+			statuses[i] = '+';
+		} else {
+			statuses[i] = '-';
+		}
+	}
+
+	// if necessary, create new sink state
+	if(not has_sink) {
+		dfaAllocExceptions(0);
+		dfaStoreState(sink);
+		statuses[sink] = '-';
+	}
+
+	statuses[num_states] = '\0';
+	temp_dfa = dfaBuild(statuses);
+	result_dfa = dfaMinimize(temp_dfa);
+	dfaFree(temp_dfa);
+	delete[] statuses;
+	return result_dfa;
+}
+
 
 bool Automaton::check_emptiness_minimized(DFA *M){
     return (M->ns == 1 && M->f[M->s] == -1)? true : false;
@@ -2696,7 +2771,6 @@ int Automaton::check_equivalence(DFA_ptr M1, DFA_ptr M2, int var, int* indices) 
 char * Automaton::getSharp1(int k) {
 	char *str;
 
-	// add one extra bit for later used
 	str = (char *) malloc(k + 1);
 	str[k] = '\0';
 	for (k--; k >= 0; k--) {
@@ -2711,7 +2785,6 @@ char * Automaton::getSharp1(int k) {
 char * Automaton::getSharp0(int k) {
 	char *str;
 
-	// add one extra bit for later used
 	str = (char *) malloc(k + 1);
 	str[k] = '\0';
 	k--;
@@ -2875,7 +2948,7 @@ DFA_ptr Automaton::dfa_star_M_star(DFA *M, int var, int *indices) {
 		dfaStoreException(added_to_states[k], addedexeps + k * (len + 1));
 	dfaStoreException(0, arbitrary);
 	dfaStoreState(sink + shift);
-	statuces[0] = '0';
+	statuces[0] = '-';
 
 	//M
 	for (i = 0; i < M->ns; i++) {
@@ -2918,10 +2991,7 @@ DFA_ptr Automaton::dfa_star_M_star(DFA *M, int var, int *indices) {
 			for (k--; k >= 0; k--)
 				dfaStoreException(to_states[k], exeps + k * (len + 1));
 			dfaStoreState(sink + shift);
-			if (M->f[i] == -1)
-				statuces[i + shift] = '-';
-			else
-				statuces[i + shift] = '0';
+			statuces[i + shift] = '-';
 		}
 		kill_paths(state_paths);
 	}
@@ -2961,10 +3031,14 @@ DFA_ptr Automaton::dfa_general_replace_extrabit(DFA* M1, DFA* M2, DFA* M3, int v
 	LOG(INFO) << "begin replace alg";
 	M1_bar = dfa_replace_step1_duplicate(M1, var, indices);
 	LOG(INFO) << "step1 done, start step 2";
+
 	M2_bar = dfa_replace_step2_match_compliment(M2, var, indices);
+
 	LOG(INFO) << "step2 done, intersecting...";
+
 	M_inter = DFAIntersect(M1_bar, M2_bar);
 	LOG(INFO) << "intersecting done, checking intersection...";
+
 	if(check_intersection(M_sharp, M_inter, var, indices)>0){
 		//replace match patterns
 		LOG(INFO) << "intersection > 0, starting step3";
@@ -2974,6 +3048,7 @@ DFA_ptr Automaton::dfa_general_replace_extrabit(DFA* M1, DFA* M2, DFA* M3, int v
 		dfaFree(M_rep);
 
 	}else { //no match
+		LOG(INFO) << "no match";
 		result = dfaCopy(M1);
 	}
 	LOG(INFO) << "freeing dfas";
@@ -3062,10 +3137,8 @@ DFA_ptr Automaton::dfa_replace_step1_duplicate(DFA *M, int var, int *indices) {
 
 			if (M->f[i] == 1)
 				statuces[i] = '+';
-			else if (M->f[i] == -1)
-				statuces[i] = '-';
 			else
-				statuces[i] = '0';
+				statuces[i] = '-';
 			kill_paths(state_paths);
 		} else {
 			dfaAllocExceptions(0);
@@ -3113,11 +3186,11 @@ DFA_ptr Automaton::dfa_replace_step1_duplicate(DFA *M, int var, int *indices) {
 			dfaStoreException(i, sharp0);
 			dfaStoreState(sink);
 			if (M->f[i] == 1)
-				statuces[i + shift] = '0';
+				statuces[i + shift] = '-';
 			else if (M->f[i] == -1)
 				statuces[i + shift] = '-';
 			else
-				statuces[i + shift] = '0';
+				statuces[i + shift] = '-';
 			kill_paths(state_paths);
 		}
 	}
@@ -3158,12 +3231,15 @@ DFA_ptr Automaton::dfa_replace_step2_match_compliment(DFA *M, int var, int *indi
 	sharp0 = getSharp0WithExtraBit(var);
 
 	M_tneg = dfa_star_M_star(M, var, indices);
+
 	dfaNegation(M_tneg);
 
 	//Union empty string manually
 	//M_neg = dfa_union_empty_M(M_tneg, var, indices);
-	DFA_ptr empty_dfa = DFAMakeEmpty(var);
+	DFA_ptr empty_dfa = DFAMakeEmpty(var+1);
+	//M_tneg->f[0] = 1;
 	M_neg = DFAUnion(M_tneg,empty_dfa);
+
 	dfaFree(empty_dfa);
 
 	sink_M_neg = find_sink(M_neg);
@@ -3239,7 +3315,7 @@ DFA_ptr Automaton::dfa_replace_step2_match_compliment(DFA *M, int var, int *indi
 				if (M_neg->f[i] == -1)
 					statuces[y + shift] = '-';
 				else
-					statuces[y + shift] = '0';
+					statuces[y + shift] = '-';
 			}
 			kill_paths(state_paths);
 			y++; //y is the number of visited non sink states
@@ -3293,7 +3369,7 @@ DFA_ptr Automaton::dfa_replace_step2_match_compliment(DFA *M, int var, int *indi
 					dfaStoreException(to_states[k], exeps + k * (len + 1));
 				dfaStoreException(0, sharp0); //add sharp1 to the initial state of M
 				dfaStoreState(sink);
-				statuces[i + shift] = '0';
+				statuces[i + shift] = '-';
 			} else {
 				dfaAllocExceptions(k);
 				for (k--; k >= 0; k--)
@@ -3302,7 +3378,7 @@ DFA_ptr Automaton::dfa_replace_step2_match_compliment(DFA *M, int var, int *indi
 				if (M->f[i] == -1)
 					statuces[i + shift] = '-';
 				else
-					statuces[i + shift] = '0';
+					statuces[i + shift] = '-';
 			}
 			kill_paths(state_paths);
 		} else { //sink state
@@ -3479,7 +3555,7 @@ DFA_ptr Automaton::dfa_replace_delete(DFA *M, int var, int *oldindices)
     else if(M->f[i]==-1)
       statuces[i]='-';
     else
-      statuces[i]='0';
+      statuces[i]='-';
 
     kill_paths(state_paths);
   }
@@ -3626,7 +3702,7 @@ DFA * Automaton::dfa_replace_M_dot(DFA *M, DFA* Mr, int var, int *oldindices)
     else if(M->f[i]==-1)
       statuces[i]='-';
     else
-      statuces[i]='0';
+      statuces[i]='-';
 
     kill_paths(state_paths);
   }
