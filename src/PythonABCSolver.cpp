@@ -73,11 +73,6 @@ static int DriverProxy_init (DriverProxy* self, PyObject* args, PyObject* kwargs
     return 0;
 }
 
-static PyMemberDef driverProxyMembers[] = {
-    {"driver_handle", T_OBJECT_EX, offsetof(DriverProxy, driver_handle), 0, "Opaque handle of the ABC String solver driver object."},
-    {NULL},
-};
-
 
 static Vlab::Driver *getDriverHandle(DriverProxy* self)
 {
@@ -95,6 +90,7 @@ static Vlab::Driver *getDriverHandle(DriverProxy* self)
     return reinterpret_cast<Vlab::Driver *>(ptr);
 }
 
+/*
 static int setDriverHandle(DriverProxy* self, Vlab::Driver *driver)
 {
     void* ptr = reinterpret_cast<void*>(driver);
@@ -108,6 +104,7 @@ static int setDriverHandle(DriverProxy* self, Vlab::Driver *driver)
     self->driver_handle = capsule;
     return 1;
 }
+*/
 
 
 static PyObject* newBigInteger(const char* value) {
@@ -426,6 +423,10 @@ static PyObject* DriverProxy_reset(DriverProxy* self, PyObject* args)
     return Py_BuildValue("");
 }*/
 
+static PyMemberDef driverProxyMembers[] = {
+    {(char*)"driver_handle", T_OBJECT_EX, offsetof(DriverProxy, driver_handle), 0, (char*)"Opaque handle of the ABC String solver driver object."},
+    {NULL},
+};
 
 static PyMethodDef driverProxyMethods[] = {
     {"setOption__Int", (PyCFunction)DriverProxy_setOption__Int, METH_VARARGS | METH_KEYWORDS, "set a boolean option"},
