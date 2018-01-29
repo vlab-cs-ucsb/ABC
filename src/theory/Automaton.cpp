@@ -2641,7 +2641,7 @@ DFA_ptr Automaton::DFAExtendExtrabit(DFA_ptr M, int var) {
 	trace_descr tp;
 	paths state_paths, pp;
 	std::vector<std::pair<std::vector<char>,int>> state_exeps;
-	int nvar = var+2;
+	int nvar = var+1;
 	int sink = find_sink(M);
 	int num_states = M->ns;
 
@@ -2674,7 +2674,7 @@ DFA_ptr Automaton::DFAExtendExtrabit(DFA_ptr M, int var) {
 				}
 				// add new bit, set to 0
 				curr[var] = '0';
-				curr[var+1] = '0';
+				//curr[var+1] = '0';
 				curr.push_back('\0');
 				state_exeps.push_back(std::make_pair(curr,pp->to));
 			}

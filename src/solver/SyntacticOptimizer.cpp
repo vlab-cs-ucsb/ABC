@@ -24,7 +24,6 @@ SyntacticOptimizer::~SyntacticOptimizer() {
 }
 
 void SyntacticOptimizer::start() {
-	symbol_table_->reset_variable_usage();
 
   DVLOG(VLOG_LEVEL) << "Start SyntacticOptimizer";
   symbol_table_->push_scope(root_,false);
@@ -66,90 +65,11 @@ void SyntacticOptimizer::visitLet(Let_ptr let_term) {
 
 void SyntacticOptimizer::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
-  //LOG(INFO) << *and_term << " has " << and_term->term_list->size() << " children";
   bool has_false_term = false;
   std::vector<TermList> or_term_lists;
   int pos = 0;
   for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
-//  	std::string str = Ast2Dot::toString(*iter);
-//		symbol_table_->record_child_term(and_term,str);
-//		if (symbol_table_->is_or_ite(*iter)) {
-//			Or_ptr or_term = dynamic_cast<Or_ptr>(*iter);
-//			auto then_cond = symbol_table_->get_ite_then_cond(or_term);
-//			auto else_cond = symbol_table_->get_ite_else_cond(or_term);
-//			// if then_cond holds, make iter point to then_branch
-//			if(symbol_table_->has_child_term(and_term,Ast2Dot::toString(then_cond))) {
-//				symbol_table_->remove_or_ite(or_term);
-//				// merge equivalence classes/variable values from or scope
-//				symbol_table_->merge_scopes(symbol_table_->top_scope(),or_term->term_list->at(0));
-//				//LOG(INFO) << "OPTIMIZING AWAY ELSE BRANCH";
-//				if (And_ptr sub_and_term = dynamic_cast<And_ptr>(or_term->term_list->at(0))) { // reapply Associativity if needed
-//					and_term->term_list->erase(iter);
-//					and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
-//					sub_and_term->term_list->clear();
-//					symbol_table_->clear_child_terms(sub_and_term);
-//					iter = and_term->term_list->begin() + pos; // insertion invalidates iter, reset it
-//				} else {
-//					*iter = or_term->term_list->at(0)->clone();
-//				}
-//				delete or_term;
-//			} else if(symbol_table_->has_child_term(and_term,Ast2Dot::toString(else_cond))) {
-//				symbol_table_->remove_or_ite(or_term);
-//				// merge equivalence classes/variable values from or scope
-//				symbol_table_->merge_scopes(symbol_table_->top_scope(),or_term->term_list->at(1));
-//				//LOG(INFO) << "OPTIMIZING AWAY THEN BRANCH";
-//				if (And_ptr sub_and_term = dynamic_cast<And_ptr>(or_term->term_list->at(1))) { // reapply Associativity if needed
-//					and_term->term_list->erase(iter);
-//					and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
-//					sub_and_term->term_list->clear();
-//					symbol_table_->clear_child_terms(sub_and_term);
-//					iter = and_term->term_list->begin() + pos; // insertion invalidates iter, reset it
-//				} else {
-//					*iter = or_term->term_list->at(1)->clone();
-//				}
-//				delete or_term;
-//			}
-//		}
   	visit_and_callback(*iter);
-//  	str = Ast2Dot::toString(*iter);
-//		symbol_table_->record_child_term(and_term,str);
-//		if (symbol_table_->is_or_ite(*iter)) {
-//			Or_ptr or_term = dynamic_cast<Or_ptr>(*iter);
-//			auto then_cond = symbol_table_->get_ite_then_cond(or_term);
-//			auto else_cond = symbol_table_->get_ite_else_cond(or_term);
-//			// if then_cond holds, make iter point to then_branch
-//			if(symbol_table_->has_child_term(and_term,Ast2Dot::toString(then_cond))) {
-//				symbol_table_->remove_or_ite(or_term);
-//				// merge equivalence classes/variable values from or scope
-//				symbol_table_->merge_scopes(symbol_table_->top_scope(),or_term->term_list->at(0));
-//				DVLOG(VLOG_LEVEL) << "OPTIMIZING AWAY ELSE BRANCH";
-//				if (And_ptr sub_and_term = dynamic_cast<And_ptr>(or_term->term_list->at(0))) { // reapply Associativity if needed
-//					and_term->term_list->erase(iter);
-//					and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
-//					sub_and_term->term_list->clear();
-//					symbol_table_->clear_child_terms(sub_and_term);
-//					iter = and_term->term_list->begin() + pos; // insertion invalidates iter, reset it
-//				} else {
-//					*iter = or_term->term_list->at(0)->clone();
-//				}
-//				delete or_term;
-//			} else if(symbol_table_->has_child_term(and_term,Ast2Dot::toString(else_cond))) {
-//				symbol_table_->remove_or_ite(or_term);
-//				// merge equivalence classes/variable values from or scope
-//				symbol_table_->merge_scopes(symbol_table_->top_scope(),or_term->term_list->at(1));
-//				DVLOG(VLOG_LEVEL) << "OPTIMIZING AWAY THEN BRANCH";
-//				if (And_ptr sub_and_term = dynamic_cast<And_ptr>(or_term->term_list->at(1))) { // reapply Associativity if needed
-//					and_term->term_list->erase(iter);
-//					and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
-//					sub_and_term->term_list->clear();
-//					symbol_table_->clear_child_terms(sub_and_term);
-//					iter = and_term->term_list->begin() + pos; // insertion invalidates iter, reset it
-//				} else {
-//					*iter = or_term->term_list->at(1)->clone();
-//				}
-//				delete or_term;
-//			}
-//		}
   	if (check_bool_constant_value(*iter, "true") and and_term->term_list->size() > 1) {
       DVLOG(VLOG_LEVEL) << "remove: 'true' constant from 'and'";
       // just in case
@@ -161,9 +81,6 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
       has_false_term = true;
       break;
     } else {
-    	// for ite_condition optimizations
-    	//std::string str = Ast2Dot::toString(*iter);
-    	//symbol_table_->record_child_term(and_term,str);
       iter++;
       pos++;
     }
@@ -171,10 +88,8 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
   if (has_false_term) {
     add_callback_to_replace_with_bool(and_term, false);
   } else if (and_term->term_list->empty()) {
-  	//symbol_table_->clear_child_terms(and_term);
     add_callback_to_replace_with_bool(and_term, true);
   } else if (and_term->term_list->size() == 1) {
-  	//symbol_table_->clear_child_terms(and_term);
     auto child_term = and_term->term_list->front();
     if (dynamic_cast<And_ptr>(child_term) or dynamic_cast<Or_ptr>(child_term)) {
       callback_ = [and_term, child_term](Term_ptr & term) mutable {
@@ -190,31 +105,6 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
 
 void SyntacticOptimizer::visitOr(Or_ptr or_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
-
-//	if(symbol_table_->is_or_ite(or_term)) {
-//		auto then_cond = dynamic_cast<Term_ptr>(symbol_table_->get_ite_then_cond(or_term));
-//		auto else_cond = dynamic_cast<Term_ptr>(symbol_table_->get_ite_else_cond(or_term));
-//		auto before_then_cond = then_cond->clone();
-//		auto before_else_cond = else_cond->clone();
-//		symbol_table_->push_scope(then_cond, false);
-//		visit_and_callback(then_cond);
-//		symbol_table_->pop_scope();
-//		symbol_table_->push_scope(else_cond, false);
-//		symbol_table_->pop_scope();
-//		visit_and_callback(else_cond);
-//		// callback may change term_ptr, just reset it
-//		// refactor scope names if needed
-//		if(Ast2Dot::toString(before_then_cond) != Ast2Dot::toString(then_cond)) {
-//			symbol_table_->refactor_scope(before_then_cond,then_cond);
-//		}
-//		if(Ast2Dot::toString(before_else_cond) != Ast2Dot::toString(else_cond)) {
-//			symbol_table_->refactor_scope(before_else_cond,else_cond);
-//		}
-//		delete before_then_cond;
-//		delete before_else_cond;
-//		symbol_table_->set_ite_then_cond(or_term,then_cond);
-//		symbol_table_->set_ite_else_cond(or_term,else_cond);
-//	}
 
   for (auto iter = or_term->term_list->begin(); iter != or_term->term_list->end();) {
   	auto before_scope = *iter;
@@ -713,33 +603,6 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
     }
     LOG(FATAL) << "Operation not supported";
   }
-  else if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type() and Term::Type::QUALIDENTIFIER == eq_term->right_term->type()) {
-  	auto count_var = symbol_table_->get_count_variable();
-		auto rep_count_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),count_var);
-
-  	auto left_var = symbol_table_->get_variable(eq_term->left_term);
-  	auto right_var = symbol_table_->get_variable(eq_term->right_term);
-
-  	if(left_var->getType() == Variable::Type::STRING and left_var->getName() == rep_count_var->getName()) {
-  		symbol_table_->increment_variable_usage(left_var->getName());
-  		symbol_table_->increment_variable_usage(right_var->getName());
-  	}
-  	else if(right_var->getType() == Variable::Type::STRING and right_var->getName() == rep_count_var->getName()) {
-			symbol_table_->increment_variable_usage(left_var->getName());
-  		symbol_table_->increment_variable_usage(right_var->getName());
-  	}
-  }
-  else if(Term::Type::TERMCONSTANT != eq_term->right_term->type() and Term::Type::QUALIDENTIFIER != eq_term->right_term->type()
-  								and Term::Type::QUALIDENTIFIER == eq_term->left_term->type()) {
-  	auto left_var = symbol_table_->get_variable(eq_term->left_term);
-  	symbol_table_->increment_variable_usage(left_var->getName());
-  } else if(Len_ptr len_term = dynamic_cast<Len_ptr>(eq_term->left_term)) {
-    QualIdentifier_ptr qualid_term = dynamic_cast<QualIdentifier_ptr>(len_term->term);
-    if(qualid_term != nullptr) {
-      auto left_var = symbol_table_->get_variable(qualid_term);
-      symbol_table_->increment_variable_usage(left_var->getName());
-    }
-  }
 
   if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
     add_callback_to_replace_with_bool(eq_term, true);
@@ -840,19 +703,6 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
       };
     }
   }
-
-  if(Term::Type::QUALIDENTIFIER == not_eq_term->left_term->type()) {
-		auto left_var = symbol_table_->get_variable(not_eq_term->left_term);
-		if(left_var->getType() == Variable::Type::STRING) {
-			symbol_table_->increment_variable_usage(left_var->getName());
-		}
-	}
-  if(Term::Type::QUALIDENTIFIER == not_eq_term->right_term->type()) {
-		auto right_var = symbol_table_->get_variable(not_eq_term->right_term);
-		if(right_var->getType() == Variable::Type::STRING) {
-			symbol_table_->increment_variable_usage(right_var->getName());
-		}
-	}
 
 
   if (Ast2Dot::isEquivalent(not_eq_term->left_term, not_eq_term->right_term)) {
@@ -1980,7 +1830,6 @@ bool SyntacticOptimizer::__check_and_process_len_transformation(Term::Type opera
     if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(right_term)) {
       if (term_constant->getValueType() == Primitive::Type::NUMERAL) {
       	int value = std::stoi(term_constant->getValue());
-      	if (value > 0 and operation == Term::Type::EQ) return false;
 				DVLOG(VLOG_LEVEL) << "Computing len transformation";
         std::string regex_template = ".{%s,%s}";
         std::string l_value = "";

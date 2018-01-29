@@ -29,15 +29,6 @@ void DependencySlicer::start() {
 }
 
 void DependencySlicer::end() {
-
-//	for(auto iter : constraint_information_->var_constraints) {
-//		LOG(INFO) << iter.first->getName();
-//		for(auto iter2 : iter.second) {
-//			LOG(INFO) << *iter2;
-//		}
-//		LOG(INFO) << "------------";
-//		std::cin.get();
-//	}
 	int max = 0;
 	std::string str;
 	for(auto iter : constraint_information_->strings) {

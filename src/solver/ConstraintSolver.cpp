@@ -14,7 +14,6 @@ using namespace SMT;
 using namespace Theory;
 
 const int ConstraintSolver::VLOG_LEVEL = 11;
-bool ConstraintSolver::many_vars = false;
 
 ConstraintSolver::ConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_table,
                                    ConstraintInformation_ptr constraint_information)
@@ -146,7 +145,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
       DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *and_term << "@" << and_term;
     }
-    //LOG(INFO) << "-------- Between! : " << is_satisfiable << " , string constraint? " << constraint_information_->has_string_constraint(and_term);
     if ((is_satisfiable or (!constraint_information_->has_arithmetic_constraint(and_term)))
     				and constraint_information_->has_string_constraint(and_term)) {
       string_constraint_solver_.start(and_term);
@@ -411,8 +409,6 @@ void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
   // which is prohibitively expensive
   if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term)) {
     if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term)) {
-
-    	//LOG(FATAL) << "Should not be here";
     	StringAutomaton_ptr temp,con;
       Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
 
@@ -590,73 +586,25 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *concat_term << " ...";
 
   Value_ptr result = nullptr, concat_value = nullptr, param = nullptr;
+	path_trace_.push_back(concat_term);
 
-  // value updating optimization
-  // if we're only concerned with counting the query variable, then
-  // we don't need to update "macro" variables (spurious variables taht are defined once through
-  // equality and substituted elsewhere)
-  if(concat_term->term_list->size() <= 10) {
-  	path_trace_.push_back(concat_term);
-  } else if(symbol_table_->has_count_variable()) {
-  	many_vars = true;
-  }
+	for (auto& term_ptr : *(concat_term->term_list)) {
+		visit(term_ptr);
+		param = getTermValue(term_ptr);
+		if (result == nullptr) {
+			result = param->clone();
+		} else {
+			concat_value = result->concat(param);
+			delete result;
+			result = concat_value;
+		}
 
-  if(concat_term->term_list->at(0)->type() != Term::Type::TERMCONSTANT and concat_term->term_list->size() <= 10) {
-    	many_vars = true;
-  		for(auto iter = concat_term->term_list->rbegin(); iter != concat_term->term_list->rend(); iter++) {
-  			visit(*iter);
-  			param = getTermValue(*iter);
-  			if (result == nullptr) {
-  				result = param->clone();
-  			} else {
-  				concat_value = param->concat(result);
-  				delete result;
-  				result = concat_value;
-  			}
-  		}
-    } else {
-  		for (auto& term_ptr : *(concat_term->term_list)) {
-  			visit(term_ptr);
-  			param = getTermValue(term_ptr);
-  			if (result == nullptr) {
-  				result = param->clone();
-  			} else {
-  				concat_value = result->concat(param);
-  				delete result;
-  				result = concat_value;
-  			}
-
-  		}
-    }
-  if(concat_term->term_list->size() <= 10) {
-  	path_trace_.pop_back();
-
-  }
-  many_vars = false;
+	}
+	path_trace_.pop_back();
   setTermValue(concat_term, result);
 }
 
 void ConstraintSolver::visitIn(In_ptr in_term) {
-	// if term is of type var in const regex, short circuit variable update
-//  if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(in_term->left_term)) {
-//    if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(in_term->right_term)) {
-//
-//
-//      Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
-//
-//      StringAutomaton_ptr con = StringAutomaton::MakeRegexAuto(right_constant->getValue());
-//      StringFormula_ptr formula = new StringFormula();
-//      formula->SetType(StringFormula::Type::VAR);
-//      formula->AddVariable(var->getName(),1);
-//      con->SetFormula(formula);
-//      Value_ptr val = new Value(con);
-//      bool result = symbol_table_->IntersectValue(var,val);
-//      delete val;
-//      setTermValue(in_term, new Value(result));
-//      return;
-//    }
-//  }
-
   visit_children_of(in_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *in_term;
 
@@ -731,24 +679,9 @@ void ConstraintSolver::visitNotContains(NotContains_ptr not_contains_term) {
   if (not (param_subject->is_satisfiable() and param_search->is_satisfiable())) {
     result = new Value(false);
   } else if (param_search->isSingleValue()) {
-//  	auto t1 = Theory::StringAutomaton::MakeString("s");
-//  	auto t2 = Theory::StringAutomaton::MakeAnyString();
-//  	auto t3 = t2->Concat(t1);
-//  	t3->inspectAuto(false,true);
-//  	std::cin.get();
-//  	auto t4 = t3->Concat(t2);
-//  	t4->inspectAuto(false,true);
-//  	auto t5 = t2->Difference(t4);
-//  	t5->inspectAuto(false,true);
-//  	LOG(FATAL) << "HEL";
-//  	result = new Value(param_subject->getStringAutomaton()->Intersect(t1));
-
     Theory::StringAutomaton_ptr contains_auto = param_subject->getStringAutomaton()->Contains(
         param_search->getStringAutomaton());
-    //contains_auto->inspectAuto(false,true);
     result = new Value(param_subject->getStringAutomaton()->Difference(contains_auto));
-    //result->getStringAutomaton()->inspectAuto(false,true);
-    //std::cin.get();
     delete contains_auto;
     contains_auto = nullptr;
   } else if (param_subject->isSingleValue()) {
@@ -1154,10 +1087,7 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 
 
   setTermValue(qi_term, result);
-  //if(!many_vars || (many_vars and symbol_table_->get_variable_usage(variable->getName()) > 1)) {
-  if(!many_vars) {
-  	setVariablePath(qi_term);
-  }
+	setVariablePath(qi_term);
 }
 
 void ConstraintSolver::visitTermConstant(TermConstant_ptr term_constant) {

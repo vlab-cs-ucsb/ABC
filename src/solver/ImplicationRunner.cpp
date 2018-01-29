@@ -102,10 +102,6 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
 
   if (Concat_ptr left_id = dynamic_cast<Concat_ptr>(eq_term->left_term)) {
     if (!is_precise(left_id) or !dynamic_cast<QualIdentifier_ptr>(eq_term->right_term)) {
-//      if (Option::Solver::ENABLE_LEN_IMPLICATIONS) {
-//        Term_ptr implication_term = new Eq(get_length(left_id), get_length(eq_term->right_term));
-//        current_and_->term_list->push_back(implication_term);
-//      }
       if (Option::Solver::USE_MULTITRACK_AUTO) {
       	if (QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(left_id->term_list->front())) {
 					if (QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->right_term)) {
@@ -113,6 +109,12 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
 						std::string right_name = right_variable->getVarName();
 						auto left_formula = constraint_information_->get_var_formula(left_name);
 						auto right_formula = constraint_information_->get_var_formula(right_name);
+						if(left_formula == nullptr) {
+							LOG(FATAL) << "LEFT FORMULA NULL";
+						}
+						if(right_formula == nullptr) {
+							LOG(FATAL) << "RIGHT FORMULA NULL";
+						}
 						auto formula = left_formula->clone();
 						formula->MergeVariables(right_formula);
 						// only add begins term if it doesn't cause too many variables in one string formula
@@ -142,74 +144,9 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
 
   if (Concat_ptr right_id = dynamic_cast<Concat_ptr>(eq_term->right_term)) {
     if (!is_precise(right_id) or !dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {
-//    	if (Option::Solver::ENABLE_LEN_IMPLICATIONS) {
-//				Term_ptr implication_term = new Eq(get_length(eq_term->left_term), get_length(right_id));
-//				current_and_->term_list->push_back(implication_term);
-//			}
-
       if (Option::Solver::USE_MULTITRACK_AUTO) {
         if (QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {
           if (QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(right_id->term_list->front())) {
-
-//          	auto query_var = symbol_table_->get_count_variable();
-//          	auto v = symbol_table_->get_variable(left_variable);
-//
-//
-//          	auto var_terms = constraint_information_->get_var_constraints(symbol_table_->get_variable(right_variable));
-//          	if(var_terms.size() <= 1) {
-//          		if(Eq_ptr eq_term2 = dynamic_cast<Eq_ptr>((*var_terms.begin()))) {
-//          			if(Concat_ptr eq_right = dynamic_cast<Concat_ptr>(eq_term2->right_term)) {
-//          				QualIdentifier_ptr inner_var = dynamic_cast<QualIdentifier_ptr>(eq_right->term_list->front());
-//          				if(inner_var != nullptr) {
-//          					auto inner_var_terms = constraint_information_->get_var_constraints(symbol_table_->get_variable(inner_var));
-//          					if(inner_var_terms.size() == 1 and (*inner_var_terms.begin())->type() == Term::Type::NOTEQ) {
-//          						NotEq_ptr not_eq_term = dynamic_cast<NotEq_ptr>((*inner_var_terms.begin()));
-//          						if(not_eq_term->right_term->type() == Term::Type::TERMCONSTANT) {
-//
-//
-//          							auto eq_right_clone = eq_right->clone();
-//          							eq_right_clone->term_list->push_back((*right_id->term_list)[1]->clone());
-//
-//          							TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term);
-//
-//          							std::string most_common = constraint_information_->most_common_string;
-//          							int num = constraint_information_->strings[most_common];
-//
-////          							LOG(INFO) << "MOST COMMON: " << most_common;
-////          							std::cin.get();
-//          							if(num > 20) {
-//          								if(term_constant->getValue() != constraint_information_->most_common_string) {
-//          									//eq_term->right_term = eq_right_clone;
-//														//terms_to_remove.insert(eq_term2);
-//														//right_variable = inner_var->clone();
-////														LOG(INFO) << "Yep!";
-////														std::cin.get();
-//														//return;
-//          								} else {
-//          									//return;
-//
-//          								}
-//          							} else {
-//          								if(term_constant->getValue() == constraint_information_->most_common_string) {
-//          									eq_term->right_term = eq_right_clone;
-//														terms_to_remove.insert(eq_term2);
-//														return;
-//													} else {
-//														//eq_term->right_term = eq_right_clone;
-//														//terms_to_remove.insert(eq_term2);
-//														//right_variable = inner_var->clone();
-//													}
-//          							}
-//          						}
-//          					}
-//          				}
-//          			}
-//          		}
-//          	}
-
-
-
-
           	std::string left_name = left_variable->getVarName();
 						std::string right_name = right_variable->getVarName();
 
@@ -224,7 +161,7 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
 						auto formula = left_formula->clone();
 						formula->MergeVariables(right_formula);
 						// only add begins term if it doesn't cause too many variables in one string formula
-						if(formula->GetNumberOfVariables() <= 9) {
+						if(formula->GetNumberOfVariables() <= 7) {
 							if(left_formula != right_formula) {
 								delete left_formula;
 								delete right_formula;

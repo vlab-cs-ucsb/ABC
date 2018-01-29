@@ -1229,10 +1229,10 @@ void VariableValueComputer::visitReplace(Replace_ptr replace_term) {
   Value_ptr replace_auto_value = getTermPostImage(replace_term->replace_term);
 
   if (child_term == replace_term->replace_term) {
-    Theory::StringAutomaton_ptr child_pre_auto = term_value->getStringAutomaton()
-        ->PreReplace(search_auto_value->getStringAutomaton(),
-            replace_auto_value->getStringAutomaton()->GetAnAcceptingString(),
-            child_post_value->getStringAutomaton());
+    Theory::StringAutomaton_ptr child_pre_auto =
+    		term_value->getStringAutomaton()->PreReplace(search_auto_value->getStringAutomaton(),
+            																				 replace_auto_value->getStringAutomaton()->GetAnAcceptingString(),
+																										 child_post_value->getStringAutomaton());
     child_value = new Value(child_pre_auto);
   } else {
     child_value = child_post_value->clone();

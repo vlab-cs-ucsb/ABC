@@ -253,24 +253,6 @@ StringAutomaton_ptr StringAutomaton::MakeAnyString(const int number_of_bdd_varia
 }
 
 StringAutomaton_ptr StringAutomaton::MakeAnyOtherString(const std::string str, const int num_of_variables) {
-
-//	int *indices = GetBddVariableIndices(num_of_variables);
-//	dfaSetup(2,num_of_variables,indices);
-//
-//	std::vector<char> v = GetBinaryFormat('a',num_of_variables);
-//	v.push_back('\0');
-//	dfaAllocExceptions(1);
-//	dfaStoreException(1,&v[0]);
-//	dfaStoreState(0);
-//
-//	dfaAllocExceptions(0);
-//	dfaStoreState(1);
-//
-//	auto d = dfaBuild("+-");
-//	return new StringAutomaton(d,num_of_variables);
-
-
-
   StringAutomaton_ptr str_auto = MakeString(str);
   StringAutomaton_ptr not_contains_me_auto = str_auto->GetAnyStringNotContainsMe();
   delete str_auto; str_auto = nullptr;
@@ -928,37 +910,37 @@ StringAutomaton_ptr StringAutomaton::MakeAnyStringAligned(StringFormula_ptr form
 }
 
 StringAutomaton_ptr StringAutomaton::Complement() {
-//	auto complement_dfa = Automaton::DFAComplement(dfa_);
-//	auto temp_auto = new StringAutomaton(complement_dfa, formula_->Complement(),num_of_bdd_variables_);
-//	StringAutomaton_ptr complement_auto = temp_auto;
-//
-//	if(num_tracks_ > 1) {
-//		auto aligned_universe_auto = MakeAnyStringAligned(formula_->clone());
-//		complement_auto = temp_auto->Intersect(aligned_universe_auto);
-//		delete temp_auto;
-//		delete aligned_universe_auto;
-//	}
-//  DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->Complement()";
-//	return complement_auto;
+	auto complement_dfa = Automaton::DFAComplement(dfa_);
+	auto temp_auto = new StringAutomaton(complement_dfa, formula_->Complement(),num_of_bdd_variables_);
+	StringAutomaton_ptr complement_auto = temp_auto;
 
-
-	DFA_ptr complement_dfa = nullptr, minimized_dfa = nullptr, current_dfa = dfaCopy(dfa_);
-	StringAutomaton_ptr complement_auto = nullptr;
-	StringAutomaton_ptr any_string = StringAutomaton::MakeAnyString();
-
-	dfaNegation(current_dfa);
-	complement_dfa = dfaProduct(any_string->dfa_, current_dfa, dfaAND); // this is to handle case where we complement an automaton that has empty language (/#/ in regex notation)
-	delete any_string; any_string = nullptr;
-	dfaFree(current_dfa); current_dfa = nullptr;
-
-	minimized_dfa = dfaMinimize(complement_dfa);
-	dfaFree(complement_dfa); complement_dfa = nullptr;
-
-	complement_auto = new StringAutomaton(minimized_dfa, num_of_bdd_variables_);
-
-	DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->makeComplement()";
-
+	if(num_tracks_ > 1) {
+		auto aligned_universe_auto = MakeAnyStringAligned(formula_->clone());
+		complement_auto = temp_auto->Intersect(aligned_universe_auto);
+		delete temp_auto;
+		delete aligned_universe_auto;
+	}
+  DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->Complement()";
 	return complement_auto;
+
+
+//	DFA_ptr complement_dfa = nullptr, minimized_dfa = nullptr, current_dfa = dfaCopy(dfa_);
+//	StringAutomaton_ptr complement_auto = nullptr;
+//	StringAutomaton_ptr any_string = StringAutomaton::MakeAnyString();
+//
+//	dfaNegation(current_dfa);
+//	complement_dfa = dfaProduct(any_string->dfa_, current_dfa, dfaAND); // this is to handle case where we complement an automaton that has empty language (/#/ in regex notation)
+//	delete any_string; any_string = nullptr;
+//	dfaFree(current_dfa); current_dfa = nullptr;
+//
+//	minimized_dfa = dfaMinimize(complement_dfa);
+//	dfaFree(complement_dfa); complement_dfa = nullptr;
+//
+//	complement_auto = new StringAutomaton(minimized_dfa, num_of_bdd_variables_);
+//
+//	DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->makeComplement()";
+//
+//	return complement_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
@@ -1024,10 +1006,6 @@ StringAutomaton_ptr StringAutomaton::Difference(StringAutomaton_ptr other_auto) 
 StringAutomaton_ptr StringAutomaton::Concat(StringAutomaton_ptr other_auto) {
   CHECK_EQ(this->num_tracks_,other_auto->num_tracks_);
   StringAutomaton_ptr concat_auto = static_cast<StringAutomaton_ptr>(Automaton::Concat(other_auto));
-  // Other concat is currently maybe broken, don't know why.
-  //DFA_ptr concat_dfa = StringAutomaton::concat(this->getDFA(),other_auto->getDFA(),this->num_of_bdd_variables_);
-  //debug = false;
-  //StringAutomaton_ptr concat_auto = new StringAutomaton(concat_dfa,this->num_tracks_,this->num_of_bdd_variables_);
   return concat_auto;
 }
 
@@ -2099,45 +2077,32 @@ StringAutomaton_ptr StringAutomaton::Trim() {
 
 StringAutomaton_ptr StringAutomaton::Replace(StringAutomaton_ptr search_auto,
 		StringAutomaton_ptr replace_auto) {
-
-	LOG(INFO) << "Before replace";
-	//this->inspectAuto(false,true);
-	//LOG(FATAL) << "Not fully implemented";
 	CHECK_EQ(this->num_tracks_,1);
-  DFA_ptr result_dfa = nullptr;
+  DFA_ptr result_dfa = nullptr, temp_dfa = nullptr;
   StringAutomaton_ptr result_auto = nullptr,temp_auto = nullptr;
   //LOG(FATAL) << "implement me";
-  int var = StringAutomaton::DEFAULT_NUM_OF_VARIABLES;
-  int nvar = var+2;
-
-  StringAutomaton_ptr simple_dfa = StringAutomaton::MakeString("baab");
+  int var = this->num_of_bdd_variables_;
+  int nvar = var+1;
 
 	// dfa1 will have var+1 indices, with all valid transitions having extrabit=0
-	DFA_ptr dfa1 = Automaton::DFAExtendExtrabit(simple_dfa->dfa_,var);
+	DFA_ptr dfa1 = Automaton::DFAExtendExtrabit(this->dfa_,var);
 	DFA_ptr dfa2 = Automaton::DFAExtendExtrabit(search_auto->dfa_,var);
 	DFA_ptr dfa3 = Automaton::DFAExtendExtrabit(replace_auto->dfa_,var);
 
-
-
-
-
 	int *indices = Automaton::GetBddVariableIndices(nvar+1);
-  result_dfa = dfa_general_replace_extrabit(dfa1, dfa2, dfa3,
+  temp_dfa = dfa_general_replace_extrabit(dfa1, dfa2, dfa3,
           nvar, indices);
-//  temp_auto = new StringAutomaton(result_dfa,1,nvar+1);
-//	temp_auto->inspectAuto(false,true);
-//	std::cin.get();
+  dfaFree(dfa1);
+  dfaFree(dfa2);
+  dfaFree(dfa3);
 
   // PROJECT AWAY LAST INDEX!
-  result_dfa = Automaton::DFAProjectAway(result_dfa,var+1);
-  result_dfa = Automaton::DFAProjectAway(result_dfa,var);
+ //result_dfa = Automaton::DFAProjectAway(result_dfa,var+1); necessary?
+  result_dfa = Automaton::DFAProjectAway(temp_dfa,var);
+  dfaFree(temp_dfa);
 
-  result_auto = new StringAutomaton(result_dfa, num_of_bdd_variables_);
-  result_auto->inspectAuto(false,true);
+  result_auto = new StringAutomaton(result_dfa, var);
   DVLOG(VLOG_LEVEL) << result_auto->id_ << " = [" << this->id_ << "]->repeat(" << search_auto->id_ << ", " << replace_auto->id_ << ")";
-  LOG(INFO) << "After replace";
-  //this->inspectAuto(false,true);
-  std::cin.get();
   return result_auto;
 }
 
@@ -2709,15 +2674,29 @@ StringAutomaton_ptr StringAutomaton::PreConcatRight(
 StringAutomaton_ptr StringAutomaton::PreReplace(StringAutomaton_ptr searchAuto,
 		std::string replaceString, StringAutomaton_ptr rangeAuto) {
 	CHECK_EQ(this->num_tracks_,1);
-  DFA_ptr result_dfa = nullptr;
+  DFA_ptr result_dfa = nullptr, temp_dfa = nullptr;
   StringAutomaton_ptr result_auto = nullptr;
+
   std::vector<char> replaceStringVector(replaceString.begin(), replaceString.end());
   replaceStringVector.push_back('\0');
-  //LOG(FATAL) << "implement me";
-  int *indices = CreateBddVariableIndices(StringAutomaton::DEFAULT_NUM_OF_VARIABLES+1);
-  result_dfa = dfa_pre_replace_str(dfa_, searchAuto->dfa_, &replaceStringVector[0],
-      StringAutomaton::DEFAULT_NUM_OF_VARIABLES, indices);
-  result_auto = new StringAutomaton(result_dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
+
+  int var = this->num_of_bdd_variables_;
+  int nvar = var+1;
+
+  DFA_ptr dfa1 = Automaton::DFAExtendExtrabit(this->dfa_,var);
+	DFA_ptr dfa2 = Automaton::DFAExtendExtrabit(searchAuto->dfa_,var);
+
+  int *indices = GetBddVariableIndices(nvar+1); // +1 for libstranger stuff
+  temp_dfa = dfa_pre_replace_str(dfa_, searchAuto->dfa_, &replaceStringVector[0],
+      nvar, indices);
+
+  dfaFree(dfa1);
+  dfaFree(dfa2);
+
+  // project away the extra bit
+  result_dfa = DFAProjectAway(temp_dfa,var);
+  dfaFree(temp_dfa);
+  result_auto = new StringAutomaton(result_dfa,1,var);
 
   if (rangeAuto not_eq nullptr) {
     StringAutomaton_ptr tmp_auto = result_auto;

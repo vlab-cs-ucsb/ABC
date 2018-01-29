@@ -40,9 +40,9 @@ namespace Util {
 
 const int RegularExpression::VLOG_LEVEL = 10;
 
-const int RegularExpression::INTERSECTION = 0x0000;//1;
+const int RegularExpression::INTERSECTION = 0x0001;
 const int RegularExpression::COMPLEMENT = 0x0002;
-const int RegularExpression::EMPTY = 0x0000;//4;
+const int RegularExpression::EMPTY = 0x0004;
 const int RegularExpression::ANYSTRING = 0x0008;
 const int RegularExpression::AUTOMATON = 0x0010;
 const int RegularExpression::INTERVAL = 0x0020;
@@ -722,7 +722,7 @@ RegularExpression_ptr RegularExpression::parseCharClass() {
 RegularExpression_ptr RegularExpression::parseSimpleExp() {
   if (match('.')) {
     return makeAnyChar();
-  } else if (check(EMPTY) and match('|')) {
+  } else if (check(EMPTY) and match('#')) {
     return makeEmpty();
   } else if (check(ANYSTRING) and match('@')) {
     return makeAnyString();

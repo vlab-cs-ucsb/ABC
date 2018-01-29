@@ -28,7 +28,6 @@ void EquivClassRuleRunner::start() {
   if (not has_optimization_rules()) {
     return;
   }
-  upper_scope = nullptr;
   symbol_table_->push_scope(root, false);
   visit(root);
   symbol_table_->pop_scope();
@@ -75,21 +74,6 @@ void EquivClassRuleRunner::visitLet(Let_ptr let_term) {
 
 void EquivClassRuleRunner::visitAnd(And_ptr and_term) {
   for (auto& term : * (and_term->term_list)) {
-//  	if(symbol_table_->is_or_ite(term)) {
-//  		Or_ptr or_term = dynamic_cast<Or_ptr>(term);
-//  		auto then_cond = dynamic_cast<Term_ptr>(symbol_table_->get_ite_then_cond(or_term));
-//  		auto else_cond = dynamic_cast<Term_ptr>(symbol_table_->get_ite_else_cond(or_term));
-//  		symbol_table_->push_scope(then_cond, false);
-//  		check_and_substitute_var(then_cond);
-//  		visit(then_cond);
-//  		symbol_table_->pop_scope();
-//  		symbol_table_->push_scope(else_cond, false);
-//			check_and_substitute_var(else_cond);
-//			visit(else_cond);
-//			symbol_table_->pop_scope();
-//			symbol_table_->set_ite_then_cond(or_term,then_cond);
-//			symbol_table_->set_ite_else_cond(or_term,else_cond);
-//  	}
     check_and_substitute_var(term);
     visit(term);
   }
