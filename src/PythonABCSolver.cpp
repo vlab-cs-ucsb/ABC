@@ -513,34 +513,36 @@ initPythonABCSolver(void)
     {
         return;
     }
+
+    PyModule_AddObject(module, "USE_SIGNED_INTEGERS", PyInt_FromLong(0));
+    PyModule_AddObject(module, "USE_UNSIGNED_INTEGERS", PyInt_FromLong(1));
+    PyModule_AddObject(module, "USE_MULTITRACK_AUTO", PyInt_FromLong(2));
+    PyModule_AddObject(module, "USE_SINGLETRACK_AUTO", PyInt_FromLong(3));
+    PyModule_AddObject(module, "ENABLE_EQUIVALENCE_CLASSES", PyInt_FromLong(4));
+    PyModule_AddObject(module, "DISABLE_EQUIVALENCE_CLASSES", PyInt_FromLong(5));
+    PyModule_AddObject(module, "ENABLE_DEPENDENCY_ANALYSIS", PyInt_FromLong(6));
+    PyModule_AddObject(module, "DISABLE_DEPENDENCY_ANALYSIS", PyInt_FromLong(7));
+    PyModule_AddObject(module, "ENABLE_IMPLICATIONS", PyInt_FromLong(8));
+    PyModule_AddObject(module, "DISABLE_IMPLICATIONS", PyInt_FromLong(9));
+    PyModule_AddObject(module, "LIMIT_LEN_IMPLICATIONS", PyInt_FromLong(10));
+    PyModule_AddObject(module, "ENABLE_SORTING_HEURISTICS", PyInt_FromLong(11));
+    PyModule_AddObject(module, "DISABLE_SORTING_HEURISTICS", PyInt_FromLong(12));
+    PyModule_AddObject(module, "REGEX_FLAG", PyInt_FromLong(13));
+    PyModule_AddObject(module, "OUTPUT_PATH", PyInt_FromLong(14));
+    PyModule_AddObject(module, "SCRIPT_PATH", PyInt_FromLong(15));
+    
+    PyModule_AddObject(module, "REGEX_FLAG_INTERSECTION", PyInt_FromLong(0x0001));
+    PyModule_AddObject(module, "REGEX_FLAG_COMPLEMENT", PyInt_FromLong(0x0002));
+    PyModule_AddObject(module, "REGEX_FLAG_EMPTY", PyInt_FromLong(0x0004));
+    PyModule_AddObject(module, "REGEX_FLAG_ANYSTRING", PyInt_FromLong(0x0008));
+    PyModule_AddObject(module, "REGEX_FLAG_AUTOMATON", PyInt_FromLong(0x0010));
+    PyModule_AddObject(module, "REGEX_FLAG_INTERVAL", PyInt_FromLong(0x0020));
+
+    PyModule_AddObject(module, "REGEX_FLAG_NONE", PyInt_FromLong(0x0000));
+    PyModule_AddObject(module, "REGEX_FLAG_ALL", PyInt_FromLong(0xFFFF));
+    
     Py_INCREF(&DriverProxyType);
     PyModule_AddObject(module, "DriverProxy", (PyObject*)&DriverProxyType);
-    PyModule_AddObject(module, "options.USE_SIGNED_INTEGERS", PyInt_FromLong(0));
-    PyModule_AddObject(module, "options.USE_UNSIGNED_INTEGERS", PyInt_FromLong(1));
-    PyModule_AddObject(module, "options.USE_MULTITRACK_AUTO", PyInt_FromLong(2));
-    PyModule_AddObject(module, "options.USE_SINGLETRACK_AUTO", PyInt_FromLong(3));
-    PyModule_AddObject(module, "options.ENABLE_EQUIVALENCE_CLASSES", PyInt_FromLong(4));
-    PyModule_AddObject(module, "options.DISABLE_EQUIVALENCE_CLASSES", PyInt_FromLong(5));
-    PyModule_AddObject(module, "options.ENABLE_DEPENDENCY_ANALYSIS", PyInt_FromLong(6));
-    PyModule_AddObject(module, "options.DISABLE_DEPENDENCY_ANALYSIS", PyInt_FromLong(7));
-    PyModule_AddObject(module, "options.ENABLE_IMPLICATIONS", PyInt_FromLong(8));
-    PyModule_AddObject(module, "options.DISABLE_IMPLICATIONS", PyInt_FromLong(9));
-    PyModule_AddObject(module, "options.LIMIT_LEN_IMPLICATIONS", PyInt_FromLong(10));
-    PyModule_AddObject(module, "options.ENABLE_SORTING_HEURISTICS", PyInt_FromLong(11));
-    PyModule_AddObject(module, "options.DISABLE_SORTING_HEURISTICS", PyInt_FromLong(12));
-    PyModule_AddObject(module, "options.REGEX_FLAG", PyInt_FromLong(13));
-    PyModule_AddObject(module, "options.OUTPUT_PATH", PyInt_FromLong(14));
-    PyModule_AddObject(module, "options.SCRIPT_PATH", PyInt_FromLong(15));
-    
-    PyModule_AddObject(module, "options.REGEX_FLAG_INTERSECTION", PyInt_FromLong(0x0001));
-    PyModule_AddObject(module, "options.REGEX_FLAG_COMPLEMENT", PyInt_FromLong(0x0002));
-    PyModule_AddObject(module, "options.REGEX_FLAG_EMPTY", PyInt_FromLong(0x0004));
-    PyModule_AddObject(module, "options.REGEX_FLAG_ANYSTRING", PyInt_FromLong(0x0008));
-    PyModule_AddObject(module, "options.REGEX_FLAG_AUTOMATON", PyInt_FromLong(0x0010));
-    PyModule_AddObject(module, "options.REGEX_FLAG_INTERVAL", PyInt_FromLong(0x0020));
-
-    PyModule_AddObject(module, "options.REGEX_FLAG_NONE", PyInt_FromLong(0x0000));
-    PyModule_AddObject(module, "options.REGEX_FLAG_ALL", PyInt_FromLong(0xFFFF));
 }
 
 }
