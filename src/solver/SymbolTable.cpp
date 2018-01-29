@@ -567,15 +567,6 @@ void SymbolTable::set_ite_else_cond(SMT::Visitable_ptr node, SMT::Visitable_ptr 
 }
 
 void SymbolTable::refactor_scope(SMT::Visitable_ptr old_scope_id, SMT::Visitable_ptr new_scope_id) {
-	if(old_scope_id == new_scope_id) {
-		std::cin.get();
-		LOG(INFO) << "same...";
-	}
-	if(Ast2Dot::toString(old_scope_id) == Ast2Dot::toString(new_scope_id)) {
-		LOG(INFO) << "ast same";
-		std::cin.get();
-	}
-
 	if(variable_equivalence_table_.find(new_scope_id) != variable_equivalence_table_.end()
 			 || variable_value_table_.find(new_scope_id) != variable_value_table_.end()) {
 		//LOG(FATAL) << "Cannot refactor scope, new scope id already exists! (maybe merge instead?)";

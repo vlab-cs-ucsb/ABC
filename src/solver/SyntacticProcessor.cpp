@@ -78,14 +78,27 @@ void SyntacticProcessor::convertAssertsToAnd() {
  *
  */
 void SyntacticProcessor::visitAnd(And_ptr and_term) {
-  visit_term_list(and_term->term_list);
+  // preprocess any bool vars to bool var = true
+  // and visit children
+  for(auto iter = and_term->term_list->begin(); iter != and_term->term_list->end(); iter++) {
+    if(QualIdentifier_ptr qualid_term = dynamic_cast<QualIdentifier_ptr>(*iter)) {
+      // convert to var = "true"
+      Primitive_ptr prim = new Primitive("true",Primitive::Type::BOOL);
+      TermConstant_ptr term_constant = new TermConstant(prim);
+      Eq_ptr eq_term = new Eq(qualid_term,term_constant);
+      *iter = eq_term;
+    }
+    visit(*iter);
+  }
+
+  // visit_term_list(and_term->term_list);
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *and_term << "@" << and_term;
 
   bool converted_into_dnf = false;
 	if (Option::Solver::FORCE_DNF_FORMULA) {
 		converted_into_dnf = CheckAndConvertToDnf(and_term);
-	}
+  }
 
 	if(!converted_into_dnf) {
   DVLOG(VLOG_LEVEL) << "Check and apply associativity: " << *and_term;
@@ -118,7 +131,21 @@ void SyntacticProcessor::visitAnd(And_ptr and_term) {
  * Apply Associativity to Or
  */
 void SyntacticProcessor::visitOr(Or_ptr or_term) {
-  visit_term_list(or_term->term_list);
+
+  // preprocess any bool vars to bool var = true
+  // and visit children
+  for(auto iter = or_term->term_list->begin(); iter != or_term->term_list->end(); iter++) {
+    if(QualIdentifier_ptr qualid_term = dynamic_cast<QualIdentifier_ptr>(*iter)) {
+      // convert to var = "true"
+      Primitive_ptr prim = new Primitive("true",Primitive::Type::BOOL);
+      TermConstant_ptr term_constant = new TermConstant(prim);
+      Eq_ptr eq_term = new Eq(qualid_term,term_constant);
+      *iter = eq_term;
+    }
+    visit(*iter);
+  }
+
+  //visit_term_list(or_term->term_list);
   DVLOG(VLOG_LEVEL) << "post visit start: " << *or_term << "@" << or_term;
   DVLOG(VLOG_LEVEL) << "Check and apply associativity: " << *or_term;
 
@@ -323,7 +350,16 @@ void SyntacticProcessor::visitNot(Not_ptr not_term) {
     *reference_term = ends_term;
     DVLOG(VLOG_LEVEL) << "pre visit end: not@<deleted>";
     visitEnds(ends_term);
+  } else if (QualIdentifier_ptr qualid_term = dynamic_cast<QualIdentifier_ptr>(not_term->term)) {
+    Primitive_ptr prim = new Primitive("false",Primitive::Type::BOOL);
+    TermConstant_ptr term_constant = new TermConstant(prim);
+    Eq_ptr eq_term = new Eq(not_term->term,term_constant);
+    not_term->term = nullptr;
+    delete not_term; not_term = nullptr;
 
+    *reference_term = eq_term;
+    DVLOG(VLOG_LEVEL) << "pre visit end: not@<deleted>";
+    visitEq(eq_term);
   } else {
     DVLOG(VLOG_LEVEL) << "pre visit end: " << *not_term << "@" << not_term;
     visit(not_term->term);
