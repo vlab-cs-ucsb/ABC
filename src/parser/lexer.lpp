@@ -107,6 +107,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "toInt"             { return Parser::make_TOINT           (loc);  }
 "replace"           { return Parser::make_REPLACE         (loc);  }
 "Replace"           { return Parser::make_REPLACE         (loc);  }
+"ReplaceAll"        { return Parser::make_REPLACE         (loc);  }
 "count"             { return Parser::make_COUNT           (loc);  }
 "ite"               { return Parser::make_ITE             (loc);  }
 "RegexConcat"       { return Parser::make_RE_CONCAT       (loc);  }

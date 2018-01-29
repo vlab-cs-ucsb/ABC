@@ -323,10 +323,97 @@ void SyntacticProcessor::visitNot(Not_ptr not_term) {
     *reference_term = ends_term;
     DVLOG(VLOG_LEVEL) << "pre visit end: not@<deleted>";
     visitEnds(ends_term);
+
   } else {
     DVLOG(VLOG_LEVEL) << "pre visit end: " << *not_term << "@" << not_term;
     visit(not_term->term);
   }
+}
+
+void SyntacticProcessor::visitEq(Eq_ptr eq_term) {
+
+	// if equivalent terms, will be taken care of by syntactic optimizer
+	if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
+		return;
+	}
+
+	DVLOG(VLOG_LEVEL) << "pre visit start: " << *eq_term << "@" << eq_term;
+	Term_ptr* reference_term = top();
+
+	if(term_has_bool_result(eq_term->left_term)) {
+		if(term_has_bool_result(eq_term->right_term)) {
+			// transform into (left && right) || (not left && not right)
+			// first create child and terms
+			TermList_ptr and_term_list = new TermList();
+			and_term_list->push_back(eq_term->left_term);
+			and_term_list->push_back(eq_term->right_term);
+			And_ptr and_term = new And(and_term_list);
+
+			TermList_ptr not_and_term_list = new TermList();
+			not_and_term_list->push_back(new Not(eq_term->left_term->clone()));
+			not_and_term_list->push_back(new Not(eq_term->right_term->clone()));
+			And_ptr not_and_term = new And(not_and_term_list);
+
+			// then create parent or term
+			TermList_ptr or_term_list = new TermList();
+			or_term_list->push_back(and_term);
+			or_term_list->push_back(not_and_term);
+			Or_ptr or_term = new Or(or_term_list);
+
+			// cleanup
+			eq_term->left_term = nullptr;
+			eq_term->right_term = nullptr;
+			delete eq_term; eq_term = nullptr;
+
+			// set new child & visit
+			*reference_term = or_term;
+			DVLOG(VLOG_LEVEL) << "pre visit end: eq@deleted";
+			visitOr(or_term);
+		} else if(Term::Type::TERMCONSTANT == eq_term->right_term->type()) {
+			auto term_constant = dynamic_cast<TermConstant_ptr>(eq_term->right_term);
+			if(term_constant->getValue() == "true") {
+				// just move left_term to be the new reference term
+				*reference_term = eq_term->left_term;
+				eq_term->left_term = nullptr;
+				delete eq_term; eq_term = nullptr;
+
+				DVLOG(VLOG_LEVEL) << "pre visit end: eq@deleted";
+
+			} else if(term_constant->getValue() == "false") {
+				// just move not(left_term) to be the new reference term
+				*reference_term = new Not(eq_term->left_term);
+				eq_term->left_term = nullptr;
+				delete eq_term; eq_term = nullptr;
+
+				DVLOG(VLOG_LEVEL) << "pre visit end: eq@deleted";
+			} else {
+				LOG(FATAL) << "Incompatible types: " << *eq_term->left_term << " = " << *eq_term->right_term;
+			}
+			visit(*reference_term);
+		}
+	} else if(term_has_bool_result(eq_term->right_term)) {
+		if(Term::Type::TERMCONSTANT == eq_term->left_term->type()) {
+			auto term_constant = dynamic_cast<TermConstant_ptr>(eq_term->left_term);
+			if(term_constant->getValue() == "true") {
+				// just move right_term to be the new reference term
+				*reference_term = eq_term->right_term;
+				eq_term->right_term = nullptr;
+				delete eq_term; eq_term = nullptr;
+
+				DVLOG(VLOG_LEVEL) << "pre visit end: eq@deleted";
+			} else if(term_constant->getValue() == "false") {
+				// just move not(right_term) to be the new reference term
+				*reference_term = new Not(eq_term->right_term);
+				eq_term->right_term = nullptr;
+				delete eq_term; eq_term = nullptr;
+
+				DVLOG(VLOG_LEVEL) << "pre visit end: eq@deleted";
+			} else {
+				LOG(FATAL) << "Incompatible types: " << *eq_term->left_term << " = " << *eq_term->right_term;
+			}
+			visit(*reference_term);
+		}
+	}
 }
 
 /**
@@ -449,6 +536,31 @@ void SyntacticProcessor::check_and_convert_numeral_to_char(TermConstant_ptr term
     default:
       break;
   }
+}
+
+bool SyntacticProcessor::term_has_bool_result(Term_ptr term) {
+	switch (term->type()) {
+	case Term::Type::NOT:
+	case Term::Type::AND:
+	case Term::Type::OR:
+	case Term::Type::EQ:
+	case Term::Type::NOTEQ:
+	case Term::Type::LT:
+	case Term::Type::LE:
+	case Term::Type::GT:
+	case Term::Type::GE:
+	case Term::Type::IN:
+	case Term::Type::NOTIN:
+	case Term::Type::CONTAINS:
+	case Term::Type::NOTCONTAINS:
+	case Term::Type::BEGINS:
+	case Term::Type::NOTBEGINS:
+	case Term::Type::ENDS:
+	case Term::Type::NOTENDS:
+		return true;
+	default:
+		return false;
+	}
 }
 
 

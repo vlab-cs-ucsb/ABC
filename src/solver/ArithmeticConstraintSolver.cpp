@@ -116,6 +116,8 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
   }
 
   if (not constraint_information_->has_arithmetic_constraint(and_term)) {
+  	LOG(INFO) << "NO ARITH CONSTRAINT";
+  	std::cin.get();
     return;
   }
 

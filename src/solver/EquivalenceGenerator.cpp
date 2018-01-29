@@ -81,7 +81,6 @@ void EquivalenceGenerator::setCallbacks() {
  * Visit children that are not disjunction first
  */
 void EquivalenceGenerator::visitAnd(And_ptr and_term) {
-  // top_scope is and_term  
   TermList or_terms;
   for (auto term : *(and_term->term_list)) {
     if (Term::Type::OR not_eq term->type()) {
@@ -94,24 +93,27 @@ void EquivalenceGenerator::visitAnd(And_ptr and_term) {
   if(!has_constant_substitution_) {
   	sub_term = true;
   	for (auto term : *(and_term->term_list)) {
-  	    if (Term::Type::OR not_eq term->type()) {
-  	      visit(term);
-  	    } else {
-  	      or_terms.push_back(term);
-  	    }
-  	  }
-
+			if (Term::Type::OR not_eq term->type()) {
+				visit(term);
+			} else {
+				or_terms.push_back(term);
+			}
+		}
+  	sub_term = false;
   	for (auto term : or_terms) {
-    visit(term);
-  }
+			visit(term);
+		}
+
   }
 }
 
 void EquivalenceGenerator::visitOr(Or_ptr or_term) {
   for (auto term : *(or_term->term_list)) {
-    symbol_table_->push_scope(term, false);
-    visit(term);
-    symbol_table_->pop_scope();
+  	if(term->type() == Term::Type::AND) {
+			symbol_table_->push_scope(term, false);
+			visit(term);
+			symbol_table_->pop_scope();
+  	}
   }
 }
 

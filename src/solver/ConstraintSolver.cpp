@@ -1237,6 +1237,8 @@ bool ConstraintSolver::check_and_visit(Term_ptr term) {
       if (arithmetic_constraint_solver_.has_string_terms(term)) {
         DVLOG(VLOG_LEVEL) << "Mixed Linear Arithmetic Constraint";
         is_satisfiable = process_mixed_integer_string_constraints_in(term);
+      } else {
+      	DVLOG(VLOG_LEVEL) << "Arithmetic Constraint";
       }
       return is_satisfiable;
     } else if (constraint_information_->has_string_constraint(term)) {

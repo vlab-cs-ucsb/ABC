@@ -581,6 +581,20 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
     add_callback_to_replace_with_bool(eq_term, result);
     return;
   }
+//  else if(constant_term_checker_left.is_constant()) {
+//  	if(constant_term_checker_left.get_constant_as_string() == "false") {
+//  		callback_ = [eq_term](Term_ptr & term) mutable {
+//  			term = new Not(eq_term->right_term);
+//  			eq_term->right_term = nullptr;
+//  			delete eq_term;
+//  		};
+//  	} else if(constant_term_checker_left.get_constant_as_string() == "true") {
+//  		callback_ = [eq_term](Term_ptr & term) mutable {
+//  			term = eq_term->right_term;
+//  			eq_term->right_term = nullptr;
+//  		}
+//  	}
+//  }
 
   // if EQ is of the form X = Y / C, where C is constant, transform to X * C = Y
   if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type() && Term::Type::DIV == eq_term->right_term->type()) {
@@ -1774,19 +1788,10 @@ void SyntacticOptimizer::visitSortedVar(SortedVar_ptr sorted_var) {
 void SyntacticOptimizer::visitVarBinding(VarBinding_ptr var_binding) {
 }
 
-// if term to visit is an ITE, first visit and callback to process the ite -> or
-// transformation, then record the then_condition and else_condition with the or term
 void SyntacticOptimizer::visit_and_callback(Term_ptr & term) {
-	//bool ite = false;
-	//if(Term::Type::ITE == term->type()) {
-		//ite = true;
-	//}
   visit(term);
   if (callback_) {
     callback_(term);
-//    if(ite) {
-//    	record_ite_relation(term);
-//    }
     callback_ = nullptr;
     visit_and_callback(term);  // TODO be carefull!!
   }
@@ -1830,6 +1835,7 @@ bool SyntacticOptimizer::__check_and_process_len_transformation(Term::Type opera
     if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(right_term)) {
       if (term_constant->getValueType() == Primitive::Type::NUMERAL) {
       	int value = std::stoi(term_constant->getValue());
+      	if(value > 0 and operation == Term::Type::EQ) return false;
 				DVLOG(VLOG_LEVEL) << "Computing len transformation";
         std::string regex_template = ".{%s,%s}";
         std::string l_value = "";

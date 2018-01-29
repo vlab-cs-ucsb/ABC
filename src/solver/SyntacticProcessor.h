@@ -21,6 +21,7 @@
 #include "../smt/ast.h"
 #include "../smt/Visitor.h"
 #include "../smt/typedefs.h"
+#include "Ast2Dot.h"
 #include "AstTraverser.h"
 #include "options/Solver.h"
 
@@ -39,12 +40,14 @@ public:
   void visitAnd(SMT::And_ptr);
   void visitOr(SMT::Or_ptr);
   void visitNot(SMT::Not_ptr);
+  void visitEq(SMT::Eq_ptr);
   void visitIndexOf(SMT::IndexOf_ptr);
   void visitLastIndexOf(SMT::LastIndexOf_ptr);
 
 protected:
   bool CheckAndConvertToDnf(SMT::And_ptr);
   void check_and_convert_numeral_to_char(SMT::TermConstant_ptr);
+  bool term_has_bool_result(SMT::Term_ptr);
 
 private:
   static const int VLOG_LEVEL;

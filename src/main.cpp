@@ -137,6 +137,7 @@ int main(const int argc, const char **argv) {
       std::cout << std::setw(col) << "-bi or --bound-int <values>" << ": model count integer bit length bound e.g., -bs 10 or a set of bounds e.g., -bi \"4,8,16\"" << std::endl;
       std::cout << std::setw(col) << "-bv or --bound-var <values>" << ": model count integer bit length bound e.g., -b 10 or a set of bounds e.g., -b \"4,8,16\"" << std::endl;
       std::cout << std::setw(col) << "--count-variable <name>" << ": model counts projected variable instead of tuples e.g., --count-variable x" << std::endl;
+      std::cout << std::setw(col) << "--count-bound-exact" << ": model counts solutions of length exactly equal to given bound" << std::endl;
       std::cout << std::setw(col) << "--use-unsigned" << ": allows only positive integers" << std::endl;
       std::cout << std::setw(col) << "--use-signed" << ": allows positive and negative integers" << std::endl;
       std::cout << std::setw(col) << "--use-multitrack" << ": uses multitrack automata for strings" << std::endl;
