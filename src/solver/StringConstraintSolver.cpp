@@ -259,7 +259,7 @@ void StringConstraintSolver::visitOr(Or_ptr or_term) {
 				}
 				//LOG(INFO) << "Before value: " << symbol_table_->get_value_at_scope(symbol_table_->top_scope(),symbol_table_->get_variable(term_group_name));
 				//LOG(INFO) << "Param  value: " << param;
-				symbol_table_->UnionValue(term_group_name,param);
+				symbol_table_->IntersectValue(term_group_name,param);
 				//auto val = symbol_table_->get_value_at_scope(symbol_table_->top_scope(),symbol_table_->get_variable(term_group_name));
 				//LOG(INFO) << "After  value: " << val << " is sat? " << val->is_satisfiable();
 			}
@@ -449,6 +449,7 @@ void StringConstraintSolver::postVisitOr(Or_ptr or_term) {
   			break;
   		}
   	}
+
   	symbol_table_->IntersectValue(group_name,new Value(is_satisfiable));
   }
   DVLOG(VLOG_LEVEL) << "update result end: " << *or_term << "@" << or_term;

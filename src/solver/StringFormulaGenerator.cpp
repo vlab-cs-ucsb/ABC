@@ -153,6 +153,7 @@ void StringFormulaGenerator::visitOr(Or_ptr or_term) {
     return;
   }
 
+
   /**
    * If an or term does not have a child that has string formula, but we end up being here:
    * If or term does not have a group formula we are fine.
@@ -170,7 +171,10 @@ void StringFormulaGenerator::visitOr(Or_ptr or_term) {
   }
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *or_term << "@" << or_term;
-//  auto group_formula = get_group_formula(current_group_);
+
+
+
+  //  auto group_formula = get_group_formula(current_group_);
 //  if (has_string_formula and group_formula not_eq nullptr and group_formula->GetNumberOfVariables() > 0) {
 //  	LOG(INFO) << "OR HAS FORMULA";
 //    auto formula = group_formula->clone();
@@ -274,13 +278,32 @@ void StringFormulaGenerator::visitEq(Eq_ptr eq_term) {
 			formula->SetVariableCoefficient(left_var,2);
 			formula->SetConstant(left_formula->GetConstant());
 			constraint_information_->add_string_constraint(eq_term);
-    } else {
+    } else if(StringFormula::Type::VAR == left_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
+						&& (StringFormula::Type::STRING_CONSTANT == right_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == right_formula->GetType())) {
+			formula = left_formula->clone();
+			formula->MergeVariables(right_formula);
+			formula->SetType(StringFormula::Type::EQ);
+			auto left_var = left_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(left_var,1);
+			formula->SetConstant(right_formula->GetConstant());
+			constraint_information_->add_string_constraint(eq_term);
+		}	else if(StringFormula::Type::VAR == right_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
+							&& (StringFormula::Type::STRING_CONSTANT == left_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == left_formula->GetType())) {
+			formula = right_formula->clone();
+			formula->MergeVariables(left_formula);
+			formula->SetType(StringFormula::Type::EQ);
+			auto right_var = right_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(right_var,1);
+			formula->SetConstant(left_formula->GetConstant());
+			constraint_information_->add_string_constraint(eq_term);
+		} else {
       formula = left_formula->clone();
       formula->MergeVariables(right_formula);
       formula->SetType(StringFormula::Type::NONRELATIONAL);
       has_mixed_constraint_ = true;
       constraint_information_->add_mixed_constraint(eq_term);
     }
+
   	delete_term_formula(eq_term->left_term);
 		delete_term_formula(eq_term->right_term);
 		set_term_formula(eq_term, formula);
@@ -338,8 +361,7 @@ void StringFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
 			formula->SetVariableCoefficient(left_var,2);
 			formula->SetConstant(left_formula->GetConstant());
 			constraint_information_->add_string_constraint(not_eq_term);
-		}
-		else if(StringFormula::Type::VAR == left_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
+		} else if(StringFormula::Type::VAR == left_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
 						&& (StringFormula::Type::STRING_CONSTANT == right_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == right_formula->GetType())) {
 			formula = left_formula->clone();
 			formula->MergeVariables(right_formula);
@@ -347,6 +369,15 @@ void StringFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
 			auto left_var = left_formula->GetVariableAtIndex(0);
 			formula->SetVariableCoefficient(left_var,1);
 			formula->SetConstant(right_formula->GetConstant());
+			constraint_information_->add_string_constraint(not_eq_term);
+		}	else if(StringFormula::Type::VAR == right_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
+							&& (StringFormula::Type::STRING_CONSTANT == left_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == left_formula->GetType())) {
+			formula = right_formula->clone();
+			formula->MergeVariables(left_formula);
+			formula->SetType(StringFormula::Type::NOTEQ);
+			auto right_var = right_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(right_var,1);
+			formula->SetConstant(left_formula->GetConstant());
 			constraint_information_->add_string_constraint(not_eq_term);
 		}
 		else {

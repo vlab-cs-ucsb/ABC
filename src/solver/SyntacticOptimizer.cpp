@@ -76,7 +76,8 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
       symbol_table_->merge_scopes(symbol_table_->top_scope(),*iter);
       delete (*iter); *iter = nullptr;
       iter = and_term->term_list->erase(iter);
-    } else if (check_bool_constant_value(*iter, "false")) {
+    } else
+    	if (check_bool_constant_value(*iter, "false")) {
       DVLOG(VLOG_LEVEL) << "has 'false' constant, UNSAT 'and'";
       has_false_term = true;
       break;
@@ -108,25 +109,20 @@ void SyntacticOptimizer::visitOr(Or_ptr or_term) {
 
   for (auto iter = or_term->term_list->begin(); iter != or_term->term_list->end();) {
     auto before_scope = *iter;
-    LOG(INFO) << "BEFORE : " << before_scope;
   	symbol_table_->push_scope(*iter,false);
     visit_and_callback(*iter);
     auto after_scope = *iter;
-    LOG(INFO) << "Before - After";
-    LOG(INFO) << before_scope << " - " << after_scope;
 		if (check_bool_constant_value(*iter, "false")) {
       DVLOG(VLOG_LEVEL) << "remove: 'false' constant from 'or'";
       delete (*iter);
       iter = or_term->term_list->erase(iter);
     } else {
       // // term for scope may have changed, refactor equivalence & variable classes
-      LOG(INFO) << "Bfore";
     	// if(Ast2Dot::toString(before_scope) != Ast2Dot::toString(after_scope)) {
       if(before_scope != after_scope) {
     		DVLOG(VLOG_LEVEL) << "scope term changed after visiting, refactoring...";
 				symbol_table_->refactor_scope(before_scope,after_scope);
       }
-      LOG(INFO) << "after";
       iter++;
     }
 		symbol_table_->pop_scope();
@@ -138,7 +134,6 @@ void SyntacticOptimizer::visitOr(Or_ptr or_term) {
     auto child_term = or_term->term_list->front();
     if (dynamic_cast<And_ptr>(child_term) or dynamic_cast<Or_ptr>(child_term)) {
       // if child term an AND term, merge upper scope with child scope
-      LOG(INFO) << "YEP";
     	symbol_table_->merge_scopes(symbol_table_->top_scope(),child_term);
       callback_ = [or_term, child_term](Term_ptr & term) mutable {
         or_term->term_list->clear();
@@ -562,10 +557,6 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
   visit_and_callback(eq_term->right_term);
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *eq_term << "@" << eq_term;
-  LOG(INFO) << "Left:";
-  LOG(INFO) << *eq_term->left_term;
-  LOG(INFO) << "Right:";
-  LOG(INFO) << *eq_term->right_term;
   bool match_p = match_prefix(eq_term->left_term, eq_term->right_term);
   if (!match_p) {
     add_callback_to_replace_with_bool(eq_term, false);

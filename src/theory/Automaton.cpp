@@ -603,7 +603,6 @@ std::map<std::string,std::vector<std::string>> Automaton::GetModelsWithinBound(i
 		variable_values[var_name].push_back(iter);
 	}
 
-	LOG(INFO) << "num models  : " << printable_models.size();
 	return variable_values;
 }
 
@@ -3028,30 +3027,21 @@ DFA_ptr Automaton::dfa_general_replace_extrabit(DFA* M1, DFA* M2, DFA* M3, int v
 	DFA_ptr M_rep;
 	DFA_ptr M_sharp = dfaSharpStringWithExtraBit(var, indices);
 
-	LOG(INFO) << "begin replace alg";
 	M1_bar = dfa_replace_step1_duplicate(M1, var, indices);
-	LOG(INFO) << "step1 done, start step 2";
 
 	M2_bar = dfa_replace_step2_match_compliment(M2, var, indices);
 
-	LOG(INFO) << "step2 done, intersecting...";
-
 	M_inter = DFAIntersect(M1_bar, M2_bar);
-	LOG(INFO) << "intersecting done, checking intersection...";
 
 	if(check_intersection(M_sharp, M_inter, var, indices)>0){
 		//replace match patterns
-		LOG(INFO) << "intersection > 0, starting step3";
 		M_rep = dfa_replace_step3_general_replace(M_inter, M3, var, indices);
-		LOG(INFO) << "step3 done";
 		result = dfaProject(M_rep, (unsigned) var);
 		dfaFree(M_rep);
 
 	}else { //no match
-		LOG(INFO) << "no match";
 		result = dfaCopy(M1);
 	}
-	LOG(INFO) << "freeing dfas";
 	//printf("free M1_bar\n");
 	dfaFree(M1_bar);
 	//printf("free M2_bar\n");
@@ -3063,7 +3053,6 @@ DFA_ptr Automaton::dfa_general_replace_extrabit(DFA* M1, DFA* M2, DFA* M3, int v
 
 	DFA *tmp = dfaMinimize(result);
 	dfaFree(result);
-	LOG(INFO) << "replace done";
 	return tmp;
 }
 

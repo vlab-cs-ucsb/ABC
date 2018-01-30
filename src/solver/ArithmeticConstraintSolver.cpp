@@ -116,8 +116,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
   }
 
   if (not constraint_information_->has_arithmetic_constraint(and_term)) {
-  	LOG(INFO) << "NO ARITH CONSTRAINT";
-  	std::cin.get();
+
     return;
   }
 
@@ -301,7 +300,7 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
 				if(term_group_name.empty()) {
 					LOG(FATAL) << "Term has no group!";
 				}
-				symbol_table_->UnionValue(term_group_name,param);
+				symbol_table_->IntersectValue(term_group_name,param);
 			}
 			clear_term_value(term);
 			symbol_table_->pop_scope();

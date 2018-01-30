@@ -83,6 +83,36 @@ void FormulaOptimizer::visitOr(Or_ptr or_term) {
 
 
 void FormulaOptimizer::visitEq(Eq_ptr eq_term) {
+
+	Term_ptr* reference_term = top();
+	if(eq_term->left_term->type() == Term::Type::TERMCONSTANT and eq_term->right_term->type() == Term::Type::QUALIDENTIFIER) {
+		TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(eq_term->left_term);
+		if(term_constant->getValue() == "true") {
+			*reference_term = eq_term->right_term;
+			eq_term->right_term = nullptr;
+			delete eq_term; eq_term = nullptr;
+			return;
+		} else if(term_constant->getValue() == "false") {
+			*reference_term = new Not(eq_term->right_term);
+			eq_term->right_term = nullptr;
+			delete eq_term; eq_term = nullptr;
+			return;
+		}
+	} else if(eq_term->left_term->type() == Term::Type::QUALIDENTIFIER and eq_term->right_term->type() == Term::Type::TERMCONSTANT) {
+		TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(eq_term->right_term);
+		if(term_constant->getValue() == "true") {
+			*reference_term = eq_term->left_term;
+			eq_term->left_term = nullptr;
+			delete eq_term; eq_term = nullptr;
+			return;
+		} else if(term_constant->getValue() == "false") {
+			*reference_term = new Not(eq_term->left_term);
+			eq_term->left_term = nullptr;
+			delete eq_term; eq_term = nullptr;
+			return;
+		}
+	}
+
   const std::string left_expr = Ast2Dot::toString(eq_term->left_term);
   const std::string right_expr = Ast2Dot::toString(eq_term->right_term);
 
@@ -106,6 +136,36 @@ void FormulaOptimizer::visitEq(Eq_ptr eq_term) {
 }
 
 void FormulaOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
+
+	Term_ptr* reference_term = top();
+	if(not_eq_term->left_term->type() == Term::Type::TERMCONSTANT and not_eq_term->right_term->type() == Term::Type::QUALIDENTIFIER) {
+		TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->left_term);
+		if(term_constant->getValue() == "false") {
+			*reference_term = not_eq_term->right_term;
+			not_eq_term->right_term = nullptr;
+			delete not_eq_term; not_eq_term = nullptr;
+			return;
+		} else if(term_constant->getValue() == "true") {
+			*reference_term = new Not(not_eq_term->right_term);
+			not_eq_term->right_term = nullptr;
+			delete not_eq_term; not_eq_term = nullptr;
+			return;
+		}
+	} else if(not_eq_term->left_term->type() == Term::Type::QUALIDENTIFIER and not_eq_term->right_term->type() == Term::Type::TERMCONSTANT) {
+		TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term);
+		if(term_constant->getValue() == "false") {
+			*reference_term = not_eq_term->left_term;
+			not_eq_term->left_term = nullptr;
+			delete not_eq_term; not_eq_term = nullptr;
+			return;
+		} else if(term_constant->getValue() == "true") {
+			*reference_term = new Not(not_eq_term->left_term);
+			not_eq_term->left_term = nullptr;
+			delete not_eq_term; not_eq_term = nullptr;
+			return;
+		}
+	}
+
   const std::string left_expr = Ast2Dot::toString(not_eq_term->left_term);
   const std::string right_expr = Ast2Dot::toString(not_eq_term->right_term);
 

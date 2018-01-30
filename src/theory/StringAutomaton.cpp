@@ -744,6 +744,32 @@ StringAutomaton_ptr StringAutomaton::MakeNotBegins(StringFormula_ptr formula) {
 StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
 
   StringAutomaton_ptr equality_auto = nullptr;
+
+  auto coeff_map = formula->GetVariableCoefficientMap();
+	int num_vars = 0;
+	for(auto it : coeff_map) {
+		if(it.second != 0) {
+			num_vars++;
+		}
+	}
+
+	if(num_vars == 1) {
+		int num_tracks = formula->GetNumberOfVariables();
+		int left_track = formula->GetVariableIndex(1);
+		StringAutomaton_ptr string_auto;
+		string_auto = StringAutomaton::MakeRegexAuto(formula->GetConstant());
+
+		formula->SetConstant("");
+		if(num_tracks == 1) {
+			equality_auto = new StringAutomaton(dfaCopy(string_auto->getDFA()),num_tracks,DEFAULT_NUM_OF_VARIABLES);
+		} else {
+			equality_auto = new StringAutomaton(string_auto->getDFA(),left_track,num_tracks,DEFAULT_NUM_OF_VARIABLES);
+		}
+		equality_auto->SetFormula(formula);
+		delete string_auto;
+		return equality_auto;
+	}
+
 	int num_tracks = formula->GetNumberOfVariables();
 	int left_track = formula->GetVariableIndex(1); // variable on the left of equality
 	int right_track = formula->GetVariableIndex(2); // variable on the right of equality
@@ -2097,7 +2123,7 @@ StringAutomaton_ptr StringAutomaton::Replace(StringAutomaton_ptr search_auto,
   dfaFree(dfa3);
 
   // PROJECT AWAY LAST INDEX!
- //result_dfa = Automaton::DFAProjectAway(result_dfa,var+1); necessary?
+  //result_dfa = Automaton::DFAProjectAway(temp_dfa,var+1);
   result_dfa = Automaton::DFAProjectAway(temp_dfa,var);
   dfaFree(temp_dfa);
 
@@ -2685,19 +2711,17 @@ StringAutomaton_ptr StringAutomaton::PreReplace(StringAutomaton_ptr searchAuto,
 
   DFA_ptr dfa1 = Automaton::DFAExtendExtrabit(this->dfa_,var);
 	DFA_ptr dfa2 = Automaton::DFAExtendExtrabit(searchAuto->dfa_,var);
-
+	LOG(INFO) << 0;
   int *indices = GetBddVariableIndices(nvar+1); // +1 for libstranger stuff
   temp_dfa = dfa_pre_replace_str(dfa_, searchAuto->dfa_, &replaceStringVector[0],
       nvar, indices);
 
   dfaFree(dfa1);
   dfaFree(dfa2);
-
   // project away the extra bit
   result_dfa = DFAProjectAway(temp_dfa,var);
   dfaFree(temp_dfa);
   result_auto = new StringAutomaton(result_dfa,1,var);
-
   if (rangeAuto not_eq nullptr) {
     StringAutomaton_ptr tmp_auto = result_auto;
     result_auto = tmp_auto->Intersect(rangeAuto);
@@ -2982,7 +3006,6 @@ std::map<std::string,std::vector<std::string>> StringAutomaton::GetModelsWithinB
 	} else if(bound == -1) {
 		auto counter = GetSymbolicCounter();
 		bound = counter.GetMinBound(num_models);
-		LOG(INFO) << "bound: " << bound;
 	}
 
   // compute BFS for unweighted graph (dfa)
@@ -3269,7 +3292,6 @@ std::map<std::string,std::vector<std::string>> StringAutomaton::GetModelsWithinB
   	for(int i = 0; i < iter.size(); i++) {
   		std::string s;
 			unsigned int length = iter[i].size() / var_per_track;
-			LOG(INFO) << i << " has length " << length;
 			for(int k = 0; k < length; k++) {
 				// if lambda, go on
 				if(iter[i][((k+1)*var_per_track)-1] == true) {
@@ -3294,10 +3316,8 @@ std::map<std::string,std::vector<std::string>> StringAutomaton::GetModelsWithinB
 				s += " ";
 
 			}
-			LOG(INFO) << s;
 			model[i] = s;
   	}
-  	std::cin.get();
   	printable_models.insert(model);
   }
 
@@ -3336,7 +3356,6 @@ std::map<std::string,std::vector<std::string>> StringAutomaton::GetModelsWithinB
 
 
 
-  LOG(INFO) << "num finished_models: " << finished_models.size();
   return variable_values;
 }
 

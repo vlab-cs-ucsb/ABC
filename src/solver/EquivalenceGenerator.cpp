@@ -95,15 +95,16 @@ void EquivalenceGenerator::visitAnd(And_ptr and_term) {
   	for (auto term : *(and_term->term_list)) {
 			if (Term::Type::OR not_eq term->type()) {
 				visit(term);
-			} else {
-				or_terms.push_back(term);
 			}
+//			else {
+//				or_terms.push_back(term);
+//			}
 		}
-  	sub_term = false;
+
   	for (auto term : or_terms) {
 			visit(term);
 		}
-
+  	sub_term = false;
   }
 }
 

@@ -238,7 +238,12 @@ ArithmeticFormula_ptr ArithmeticFormula::Add(ArithmeticFormula_ptr other_formula
 }
 
 ArithmeticFormula_ptr ArithmeticFormula::Subtract(ArithmeticFormula_ptr other_formula) {
+
+
+
+
   auto result = new ArithmeticFormula(*this);
+
   for (const auto& el : other_formula->variable_coefficient_map_) {
     auto it = result->variable_coefficient_map_.find(el.first);
     if (it != result->variable_coefficient_map_.end()) {
@@ -247,6 +252,7 @@ ArithmeticFormula_ptr ArithmeticFormula::Subtract(ArithmeticFormula_ptr other_fo
       result->variable_coefficient_map_[el.first] = -el.second;
     }
   }
+
   result->constant_ = result->constant_ - other_formula->constant_;
 
   result->mixed_terms_.insert(other_formula->mixed_terms_.begin(), other_formula->mixed_terms_.end());

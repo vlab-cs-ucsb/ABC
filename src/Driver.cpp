@@ -86,22 +86,22 @@ void Driver::InitializeSolver() {
   Solver::SyntacticOptimizer syntactic_optimizer(script_, symbol_table_);
   syntactic_optimizer.start();
 
-  ast2dot(output_root + "/post_syntactic_optimizer.dot");
+  //ast2dot(output_root + "/post_syntactic_optimizer.dot");
   //std::cin.get();
 
-  int count = 0;
+  //int count = 0;
   if (Option::Solver::ENABLE_EQUIVALENCE_CLASSES) {
     Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
     do {
       equivalence_generator.start();
-      std::string filename = output_root + "/post_equivalence_" + std::to_string(count) + ".dot";
-      ast2dot(filename);
-      count++;
+      //std::string filename = output_root + "/post_equivalence_" + std::to_string(count) + ".dot";
+      //ast2dot(filename);
+      //count++;
       //std::cin.get();
     } while (equivalence_generator.has_constant_substitution());
   }
 
-  ast2dot(output_root + "/post_equivalence.dot");
+  //ast2dot(output_root + "/post_equivalence.dot");
 
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
 	dependency_slicer.start();
