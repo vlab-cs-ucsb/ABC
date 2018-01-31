@@ -4463,19 +4463,25 @@ DFA * Automaton::dfa_insert_M_dot(DFA *M, DFA* Mr, int var, int *indices)
   int nc;
   int numchars = count_accepted_chars(Mr);
   char* apath[numchars];
+  bool has_sink = true;
+  int num_states = M->ns;
   set_accepted_chars(Mr, apath, numchars, var, indices);
 
 
   max_exeps=1<<len; //maybe exponential
   sink=find_sink(M);
-  //assert(sink>-1); //dfa_insert_M_dot
+  if(sink < 0) {
+  	has_sink = false;
+  	sink = num_states;
+  	num_states++;
+  }
 
 
 
   dfaSetup(M->ns, len, indices);
   exeps=(char *)malloc(max_exeps*(len+1)*sizeof(char)); //plus 1 for \0 end of the string
   to_states=(int *)malloc(max_exeps*sizeof(int));
-  statuces=(char *)malloc((M->ns+1)*sizeof(char));
+  statuces=(char *)malloc((num_states+1)*sizeof(char));
 
   for (i = 0; i < M->ns; i++) {
 
@@ -4484,32 +4490,32 @@ DFA * Automaton::dfa_insert_M_dot(DFA *M, DFA* Mr, int var, int *indices)
 
     while (pp) {
       if(pp->to!=sink){
-	to_states[k]=pp->to;
-	for (j = 0; j < var; j++) {
-	  //the following for loop can be avoided if the indices are in order
-	  for (tp = pp->trace; tp && (tp->index != indices[j]); tp =tp->next);
+				to_states[k]=pp->to;
+				for (j = 0; j < var; j++) {
+					//the following for loop can be avoided if the indices are in order
+					for (tp = pp->trace; tp && (tp->index != indices[j]); tp =tp->next);
 
-	  if (tp) {
-	    if (tp->value) exeps[k*(len+1)+j]='1';
-	    else exeps[k*(len+1)+j]='0';
-	  }
-	  else
-	    exeps[k*(len+1)+j]='X';
-	}
-	exeps[k*(len+1)+j]='0';//old value
-	exeps[k*(len+1)+len]='\0';
-	k++;
-      }
-      pp = pp->next;
+					if (tp) {
+						if (tp->value) exeps[k*(len+1)+j]='1';
+						else exeps[k*(len+1)+j]='0';
+					}
+					else
+						exeps[k*(len+1)+j]='X';
+				}
+				exeps[k*(len+1)+j]='0';//old value
+				exeps[k*(len+1)+len]='\0';
+				k++;
+			}
+			pp = pp->next;
     }//end while
 
     if(i!=sink){
       for(nc = 0; nc<numchars; nc++){
-	to_states[k]=i;
-	for (j = 0; j < var; j++) exeps[k*(len+1)+j]=apath[nc][j];
-	exeps[k*(len+1)+j]='1';
-	exeps[k*(len+1)+len]='\0';
-	k++;
+				to_states[k]=i;
+				for (j = 0; j < var; j++) exeps[k*(len+1)+j]=apath[nc][j];
+				exeps[k*(len+1)+j]='1';
+				exeps[k*(len+1)+len]='\0';
+				k++;
       } // end for nc
     }
     dfaAllocExceptions(k);
@@ -4525,7 +4531,14 @@ DFA * Automaton::dfa_insert_M_dot(DFA *M, DFA* Mr, int var, int *indices)
     kill_paths(state_paths);
   }
 
-  statuces[M->ns]='\0';
+  // if original dfa had no sink, add one
+  if(not has_sink) {
+  	dfaAllocExceptions(0);
+  	dfaStoreState(sink);
+  	statuces[sink] = '-';
+  }
+
+  statuces[num_states]='\0';
   result=dfaBuild(statuces);
   tmpM =dfaProject(result, (unsigned) len-1);
   result = dfaMinimize(tmpM);
@@ -4708,31 +4721,37 @@ DFA * Automaton::dfa_insert_everywhere(DFA *M, DFA* Mr, int var, int *indices)
   DFA *result2 = NULL;
   DFA *result = NULL;
   DFA *tmp = NULL;
-
+  LOG(INFO) << 121;
 
   tmp = DFAIntersect(Mr, dfaDot(var, indices));
   if(!check_emptiness(tmp, var, indices)){
+  	LOG(INFO) << 1211;
     result = dfa_insert_M_dot(M, tmp, var, indices);
   }
-
+  LOG(INFO) << 122;
   dfaFree(tmp);
 
 
   //tmp = DFAIntersect(Mr, dfaSigmaC1toC2(2, -1, var, indices));
   DFA_ptr dfa_sigma_c1_to_c2 = DFAMakeAcceptingAnyAfterLength(2,var);
+  LOG(INFO) << 123;
   tmp = DFAIntersect(Mr, dfa_sigma_c1_to_c2);
   dfaFree(dfa_sigma_c1_to_c2);
-
+  LOG(INFO) << 124;
   if(!check_emptiness(tmp, var, indices)){
+  	LOG(INFO) << 125;
     //replace rest rather than single character
     result2 = dfa_insert_M_arbitrary(M, tmp, var, indices);
-   if(result){
+    LOG(INFO) << 126;
+    if(result){
+  	 LOG(INFO) << 127;
      result1 = result;
      result = DFAUnion(result1, result2);
      dfaFree(result1);
      dfaFree(result2);
    }
    else result = result2;
+    LOG(INFO) << 128;
   }
   dfaFree(tmp);
   return result;

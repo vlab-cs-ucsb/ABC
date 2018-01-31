@@ -2128,7 +2128,7 @@ StringAutomaton_ptr StringAutomaton::Replace(StringAutomaton_ptr search_auto,
   dfaFree(temp_dfa);
 
   result_auto = new StringAutomaton(result_dfa, var);
-  DVLOG(VLOG_LEVEL) << result_auto->id_ << " = [" << this->id_ << "]->repeat(" << search_auto->id_ << ", " << replace_auto->id_ << ")";
+  DVLOG(VLOG_LEVEL) << result_auto->id_ << " = [" << this->id_ << "]->replace(" << search_auto->id_ << ", " << replace_auto->id_ << ")";
   return result_auto;
 }
 
@@ -2711,9 +2711,8 @@ StringAutomaton_ptr StringAutomaton::PreReplace(StringAutomaton_ptr searchAuto,
 
   DFA_ptr dfa1 = Automaton::DFAExtendExtrabit(this->dfa_,var);
 	DFA_ptr dfa2 = Automaton::DFAExtendExtrabit(searchAuto->dfa_,var);
-	LOG(INFO) << 0;
   int *indices = GetBddVariableIndices(nvar+1); // +1 for libstranger stuff
-  temp_dfa = dfa_pre_replace_str(dfa_, searchAuto->dfa_, &replaceStringVector[0],
+  temp_dfa = dfa_pre_replace_str(dfa1,dfa2, &replaceStringVector[0],
       nvar, indices);
 
   dfaFree(dfa1);
