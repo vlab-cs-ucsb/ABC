@@ -516,11 +516,44 @@ protected:
 
 
 
+
+
+
+  /*
+   * Operations for ToLower/ToUpper/PreToLower/PreToUpper
+   * TODO: currently stranger code, refactor
+   */
+
+  static void getUpperCaseCharsHelper(char** result, char* transitions, int* indexInResult, int currentBit, int var, char* prev);
+  static void getLowerUpperCaseCharsPrePostHelper(char** result, char* transitions, int* indexInResult, int currentBit, int var, char* prev, boolean lowerCase, boolean preImage);
+  /**
+   * returns same chars in transitions unless char is capital in which case it is converted into small
+   * or visa versa
+   * examples:
+   * A=01000001 -> a=[011000011]
+   * {@, A, B, C ,D, E, F, G}=01000XXX -> {@, a, b, c, d, e, f, g}=[010000000, 011000011, 0110001X1, 011001XX1]
+   * extrabit will be used. 0 for original letters, 1 for new small letters (converted from capital) to differentiate from original small chars
+   */
+  static void getLowerUpperCaseCharsPrePost(char* transitions, int var, char** result, int* pSize, boolean lowerCase, boolean preImage);
+  /**
+   * This functions models any function that changes all capital letters in a string to small ones (for example strtolower in php)
+   * M: dfa to process
+   * var: number of bits per character(for ASCII it is 8 bits)
+   * indices: the indices
+   * output: return D such that L(D) = { W_1S_1W_2S2..W_nS_n | W_1C_1W_2C2..W_nC_n element_of L(M) && W_i element_of Sigma* && S_i, C_i element_of Sigma && S_i = LowerCase(C_i)}
+   */
+  static DFA* dfaPrePostToLowerUpperCaseHelper(DFA* M, int var, int* oldIndices, boolean lowerCase, boolean preImage);
+
+  static DFA* dfaToLowerCase(DFA* M, int var, int* indices);
+  static DFA* dfaToUpperCase(DFA* M, int var, int* indices);
+  static DFA* dfaPreToLowerCase(DFA* M, int var, int* indices);
+  static DFA* dfaPreToUpperCase(DFA* M, int var, int* indices);
+
+
   /*
    * Operations for replace
    * TODO: currently stranger code, refactor
    */
-
 
   static DFA_ptr DFAExtendExtrabit(DFA_ptr M, int var);
 

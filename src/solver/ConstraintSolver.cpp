@@ -168,7 +168,10 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       }
       if (dynamic_cast<Or_ptr>(term) == nullptr) {
         if (is_satisfiable) {
-          update_variables();
+          is_satisfiable = update_variables();
+          if(not is_satisfiable) {
+          	break;
+          }
         }
         clearTermValuesAndLocalLetVars();
       }
@@ -675,6 +678,7 @@ void ConstraintSolver::visitNotContains(NotContains_ptr not_contains_term) {
 
   Value_ptr result = nullptr, param_subject = getTermValue(not_contains_term->subject_term), param_search =
       getTermValue(not_contains_term->search_term);
+
 
   if (not (param_subject->is_satisfiable() and param_search->is_satisfiable())) {
     result = new Value(false);

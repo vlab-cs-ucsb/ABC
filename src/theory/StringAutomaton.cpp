@@ -2060,9 +2060,19 @@ StringAutomaton_ptr StringAutomaton::ToUpperCase() {
   DFA_ptr upper_case_dfa = nullptr;
   StringAutomaton_ptr upper_case_auto = nullptr;
 
-  LOG(FATAL) << "implement me";
-//  upper_case_dfa = dfaToUpperCase(dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
-//  upper_case_auto = new StringAutomaton(upper_case_dfa, num_of_variables);
+  int var = this->num_of_bdd_variables_;
+	int nvar = var+1;
+
+	// dfa1 will have var+1 indices, with all valid transitions having extrabit=0
+	DFA_ptr dfa1 = Automaton::DFAExtendExtrabit(this->dfa_,var);
+	int *indices = Automaton::GetBddVariableIndices(nvar);
+
+  upper_case_dfa = Automaton::dfaToUpperCase(dfa1, nvar, indices);
+  DFA_ptr temp_dfa = Automaton::DFAProjectAway(upper_case_dfa,var);
+  dfaFree(upper_case_dfa);
+
+  upper_case_auto = new StringAutomaton(temp_dfa,var);
+
 
   DVLOG(VLOG_LEVEL) << upper_case_auto->id_ << " = [" << this->id_ << "]->toUpperCase()";
 
@@ -2073,9 +2083,19 @@ StringAutomaton_ptr StringAutomaton::ToLowerCase() {
   CHECK_EQ(this->num_tracks_,1);
   DFA_ptr lower_case_dfa = nullptr;
   StringAutomaton_ptr lower_case_auto = nullptr;
-  LOG(FATAL) << "implement me";
-//  lower_case_dfa = dfaToLowerCase(dfa, StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
-//  lower_case_auto = new StringAutomaton(lower_case_dfa, num_of_variables);
+
+  int var = this->num_of_bdd_variables_;
+	int nvar = var+1;
+
+	// dfa1 will have var+1 indices, with all valid transitions having extrabit=0
+	DFA_ptr dfa1 = Automaton::DFAExtendExtrabit(this->dfa_,var);
+	int *indices = Automaton::GetBddVariableIndices(nvar);
+
+	lower_case_dfa = Automaton::dfaToLowerCase(dfa1, nvar, indices);
+
+	DFA_ptr temp_dfa = Automaton::DFAProjectAway(lower_case_dfa,var);
+	dfaFree(lower_case_dfa);
+	lower_case_auto = new StringAutomaton(temp_dfa, var);
 
   DVLOG(VLOG_LEVEL) << lower_case_auto->id_ << " = [" << this->id_ << "]->toLowerCase()";
 
@@ -2612,15 +2632,24 @@ StringAutomaton_ptr StringAutomaton::RestrictAtIndexTo(
  * TODO Efficiency of the pre image computations can be improved
  * if they are guided by the post image values
  */
-StringAutomaton_ptr StringAutomaton::PreToUpperCase(
-		StringAutomaton_ptr rangeAuto) {
+StringAutomaton_ptr StringAutomaton::PreToUpperCase(StringAutomaton_ptr rangeAuto) {
 	CHECK_EQ(this->num_tracks_,1);
   DFA_ptr result_dfa = nullptr;
   StringAutomaton_ptr result_auto = nullptr;
-  LOG(FATAL) << "implement me";
-//  result_dfa = dfaPreToUpperCase(dfa,
-//      StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
-//  result_auto = new StringAutomaton(result_dfa, num_of_variables);
+
+  int var = this->num_of_bdd_variables_;
+	int nvar = var+1;
+
+	// dfa1 will have var+1 indices, with all valid transitions having extrabit=0
+	DFA_ptr dfa1 = Automaton::DFAExtendExtrabit(this->dfa_,var);
+	int *indices = Automaton::GetBddVariableIndices(nvar);
+
+  result_dfa = Automaton::dfaPreToUpperCase(dfa1,nvar,indices);
+	DFA_ptr temp_dfa = Automaton::DFAProjectAway(result_dfa,var);
+	dfaFree(result_dfa);
+
+
+  result_auto = new StringAutomaton(temp_dfa,var);
 
   if (rangeAuto not_eq nullptr) {
     StringAutomaton_ptr tmp_auto = result_auto;
@@ -2633,15 +2662,23 @@ StringAutomaton_ptr StringAutomaton::PreToUpperCase(
   return result_auto;
 }
 
-StringAutomaton_ptr StringAutomaton::PreToLowerCase(
-		StringAutomaton_ptr rangeAuto) {
+StringAutomaton_ptr StringAutomaton::PreToLowerCase(StringAutomaton_ptr rangeAuto) {
 	CHECK_EQ(this->num_tracks_,1);
   DFA_ptr result_dfa = nullptr;
   StringAutomaton_ptr result_auto = nullptr;
-  LOG(FATAL) << "implement me";
-//  result_dfa = dfaPreToLowerCase(dfa,
-//      StringAutomaton::DEFAULT_NUM_OF_VARIABLES, StringAutomaton::DEFAULT_VARIABLE_INDICES);
-//  result_auto = new StringAutomaton(result_dfa, num_of_variables);
+
+  int var = this->num_of_bdd_variables_;
+	int nvar = var+1;
+  DFA_ptr dfa1 = Automaton::DFAExtendExtrabit(this->dfa_,var);
+	int *indices = Automaton::GetBddVariableIndices(nvar);
+
+  result_dfa = dfaPreToLowerCase(dfa1,nvar,indices);
+
+
+	DFA_ptr temp_dfa = Automaton::DFAProjectAway(result_dfa,var);
+	dfaFree(result_dfa);
+
+  result_auto = new StringAutomaton(temp_dfa,var);
 
   if (rangeAuto not_eq nullptr) {
     StringAutomaton_ptr tmp_auto = result_auto;

@@ -246,22 +246,11 @@ void StringConstraintSolver::visitOr(Or_ptr or_term) {
 			auto param = get_term_value(term);
 			is_satisfiable = param->is_satisfiable() or is_satisfiable;
 			if (is_satisfiable) {
-//				if (or_value == nullptr) {
-//					or_value = param->clone();
-//				} else {
-//					auto old_value = or_value;
-//					or_value = or_value->union_(param);
-//					delete old_value;
-//				}
 				auto term_group_name = string_formula_generator_.get_term_group_name(term);
 				if(term_group_name.empty()) {
 					LOG(FATAL) << "Term has no group!";
 				}
-				//LOG(INFO) << "Before value: " << symbol_table_->get_value_at_scope(symbol_table_->top_scope(),symbol_table_->get_variable(term_group_name));
-				//LOG(INFO) << "Param  value: " << param;
 				symbol_table_->IntersectValue(term_group_name,param);
-				//auto val = symbol_table_->get_value_at_scope(symbol_table_->top_scope(),symbol_table_->get_variable(term_group_name));
-				//LOG(INFO) << "After  value: " << val << " is sat? " << val->is_satisfiable();
 			}
 			clear_term_value(term);
 			symbol_table_->pop_scope();
@@ -272,26 +261,10 @@ void StringConstraintSolver::visitOr(Or_ptr or_term) {
 
   DVLOG(VLOG_LEVEL) << "post visit component start: " << *or_term << "@" << or_term;
 
-//  if (or_value == nullptr and (not has_string_formula)) {
-//		auto group_formula = string_formula_generator_.get_group_formula(group_name);
-//		or_value = new Value(Theory::StringAutomaton::MakeAnyStringAligned(group_formula->clone()));
-//		has_string_formula = true;
-//		is_satisfiable = true;
-//	}
-
   if (not has_string_formula) {
   	is_satisfiable = true;
   }
 
-	//if (has_string_formula) {
-//		if (is_satisfiable) {
-//			symbol_table_->IntersectValue(group_name, or_value);  // update value
-//		} else {
-//			auto group_formula = string_formula_generator_.get_group_formula(group_name);
-//			auto value = new Value(Theory::StringAutomaton::MakePhi(group_formula->clone()));
-//			symbol_table_->set_value(group_name, value);
-//		}
-//		delete or_value;
 	symbol_table_->UnionValue(group_name,new Value(is_satisfiable));
 	//}
 
@@ -317,22 +290,6 @@ void StringConstraintSolver::postVisitAnd(And_ptr and_term) {
      */
     if (formula != nullptr) {
     	has_string_formula = true;
-//      auto param = get_term_value(term);
-//      is_satisfiable = param->is_satisfiable();
-//      if (is_satisfiable) {
-//        if (and_value == nullptr) {
-//          and_value = param->clone();
-//        } else {
-//          auto old_value = and_value;
-//          and_value = and_value->intersect(param);
-//          delete old_value;
-//          is_satisfiable = and_value->is_satisfiable();
-//        }
-//      }
-//      clear_term_value(term);
-//      if (not is_satisfiable) {
-//        break;
-//      }
     }
   }
 
@@ -341,23 +298,12 @@ void StringConstraintSolver::postVisitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "update result start: " << *and_term << "@" << and_term;
 
 
-  //if (has_string_formula) {
-  	for(auto group : string_formula_generator_.get_group_subgroups(group_name)) {
-			Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
-			Value_ptr subgroup_value = symbol_table_->get_value(subgroup_variable);
-			//LOG(INFO) << *subgroup_variable << " is sat? " << subgroup_value->is_satisfiable();
-			is_satisfiable = subgroup_value->is_satisfiable() and is_satisfiable;
-		}
-  	//    if (is_satisfiable) {
-//      symbol_table_->IntersectValue(group_name, and_value);  // update value
-//    } else {
-//      auto group_formula = string_formula_generator_.get_group_formula(group_name);
-//      auto value = new Value(Theory::StringAutomaton::MakePhi(group_formula->clone()));
-//      symbol_table_->set_value(group_name, value);
-//    }
-//    delete and_value;
-  	symbol_table_->IntersectValue(group_name, new Value(is_satisfiable));
-  //}
+	for(auto group : string_formula_generator_.get_group_subgroups(group_name)) {
+		Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
+		Value_ptr subgroup_value = symbol_table_->get_value(subgroup_variable);
+		is_satisfiable = subgroup_value->is_satisfiable() and is_satisfiable;
+	}
+	symbol_table_->IntersectValue(group_name, new Value(is_satisfiable));
   DVLOG(VLOG_LEVEL) << "update result end: " << *and_term << "@" << and_term;
 }
 
@@ -379,29 +325,10 @@ void StringConstraintSolver::postVisitOr(Or_ptr or_term) {
      * need to visit them, a value is already computed for them,
      * grabs them from symbol table
      */
-//    if (formula != nullptr) {
-//      has_string_formula = true;
-//      symbol_table_->push_scope(term);
-//      auto param = get_term_value(term);
-//      is_satisfiable = param->is_satisfiable();
-//      if (is_satisfiable) {
-//        if (or_value == nullptr) {
-//          or_value = param->clone();
-//        } else {
-//          auto old_value = or_value;
-//          or_value = or_value->union_(param);
-//          delete old_value;
-//          is_satisfiable = or_value->is_satisfiable();
-//        }
-//      }
-//      clear_term_value(term);
-//      symbol_table_->pop_scope();
-//    }
   	symbol_table_->push_scope(term);
   	for(auto group : string_formula_generator_.get_group_subgroups(group_name)) {
   		Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
   		Value_ptr subgroup_scope_value = symbol_table_->get_value_at_scope(term,subgroup_variable);
-  		//LOG(INFO) << "subgroup_scope_value: " << subgroup_scope_value;
   		if(subgroup_scope_value != nullptr) {
   			has_string_formula = true;
   			if(or_values.find(group) == or_values.end()) {
@@ -431,17 +358,7 @@ void StringConstraintSolver::postVisitOr(Or_ptr or_term) {
    */
 
   if (has_string_formula) {
-//    if (is_satisfiable) {
-//      symbol_table_->IntersectValue(group_name, or_value);  // update value
-//    } else {
-//      auto group_formula = string_formula_generator_.get_group_formula(group_name);
-//      auto value = new Value(Theory::StringAutomaton::MakePhi(group_formula->clone()));
-//      symbol_table_->set_value(group_name, value);
-//    }
-//    delete or_value;
   	for(auto& iter : or_values) {
-  		//LOG(INFO) << "or value: " << iter.second << " sat? " << iter.second->is_satisfiable();
-  		//LOG(INFO) << "Current group " << iter.first << " Value before update: " << symbol_table_->get_value(iter.first);
   		symbol_table_->IntersectValue(iter.first,iter.second);
   		is_satisfiable = symbol_table_->get_value(iter.first)->is_satisfiable() and is_satisfiable;
   		delete iter.second; iter.second = nullptr;
@@ -487,12 +404,6 @@ bool StringConstraintSolver::set_term_value(Term_ptr term, Value_ptr value) {
   if (result.second == false) {
     LOG(FATAL)<< "Term automaton is already computed: " << *term << "@" << term;
   }
-//  std::string group_name = string_formula_generator_.get_term_group_name(term);
-//  if(!group_name.empty()) {
-//  	LOG(INFO) << "Setting value for " << group_name;
-//    symbol_table_->set_value(group_name,value);
-//    return true;
-//  }
   return result.second;
 }
 

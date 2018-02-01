@@ -2629,6 +2629,262 @@ int Automaton::find_sink(DFA_ptr dfa) {
   return -1;
 }
 
+/*
+ * BEGIN LIBSTRANGER ToUPPER toLOWER stuff
+ */
+
+void Automaton::getUpperCaseCharsHelper(char** result, char* transitions, int* indexInResult, int currentBit, int var, char* prev){
+	int i;
+	if (transitions[currentBit] == 'X')
+	{
+		transitions[currentBit] = '0';
+		getUpperCaseCharsHelper(result, transitions, indexInResult, currentBit, var, prev);
+		transitions[currentBit] = '1';
+		getUpperCaseCharsHelper(result, transitions, indexInResult, currentBit, var, prev);
+		transitions[currentBit] = 'X';
+	}
+	// things that do not contain upper case
+	else if ( (transitions[0] == '1' && currentBit == 0) ||
+			  (transitions[1] == '0' && currentBit == 1) ||
+			  (transitions[2] == '0' && currentBit == 2) ||
+			  (transitions[5] == '1' && transitions[3] == '1' && currentBit == 5) ||
+			  (transitions[7] ==  transitions[3] && currentBit == 7)
+			 )
+	{
+		result[*indexInResult] = (char*) malloc((var+2)*(sizeof (char)));
+		for (i = 0; i < var; i++){
+			result[*indexInResult][i] = transitions[i];
+		}
+		result[*indexInResult][var] = '0';//extrabit
+		result[*indexInResult][var+1] = '\0';
+		(*indexInResult)++;
+	}
+	else if ( (transitions[3] != transitions[4] && (currentBit == 4 )) ||
+			  (transitions[3] != transitions[6] && currentBit == 6 ) ||
+			  (transitions[3] != transitions[7] && currentBit == 7 ) ||
+			  (transitions[5] == '1' && transitions[3] ==  '0' && currentBit == 5)
+				 ){
+		result[*indexInResult] = (char*) malloc((var+2)*(sizeof(char)));
+		for (i = 0; i < var; i++)
+			result[*indexInResult][i] = transitions[i];
+		// only difference between capital and small is bit number 2
+		result[*indexInResult][2] = '0';
+		// extrabit should be 1 since we may already have same small letter originally with 0
+		result[*indexInResult][var] = '1';//extrabit
+		result[*indexInResult][var+1] = '\0';
+		(*indexInResult)++;
+	}
+	else{
+		if (currentBit < (var-1)){
+			getUpperCaseCharsHelper(result, transitions, indexInResult, currentBit + 1, var, prev);
+		}
+		else
+			assert(FALSE);
+	}
+}
+
+void Automaton::getLowerUpperCaseCharsPrePostHelper(char** result, char* transitions, int* indexInResult, int currentBit, int var, char* prev, boolean lowerCase, boolean preImage){
+	int i;
+	if (transitions[currentBit] == 'X')
+	{
+		transitions[currentBit] = '0';
+		getLowerUpperCaseCharsPrePostHelper(result, transitions, indexInResult, currentBit, var, prev, lowerCase, preImage);
+		transitions[currentBit] = '1';
+		getLowerUpperCaseCharsPrePostHelper(result, transitions, indexInResult, currentBit, var, prev, lowerCase, preImage);
+		transitions[currentBit] = 'X';
+	}
+	// things that do not contain lower case
+	else if ( (transitions[0] == '1' && currentBit == 0) ||
+			  (transitions[1] == '0' && currentBit == 1) ||
+			  (currentBit == 2 && ((transitions[2] == '1' && lowerCase) || (transitions[2] == '0' && !lowerCase))) ||
+			  (transitions[5] == '1' && transitions[3] == '1' && currentBit == 5) ||
+			  (transitions[7] ==  transitions[3] && currentBit == 7)
+			 )
+	{
+		result[*indexInResult] = (char*) malloc((var+2)*(sizeof (char)));
+		for (i = 0; i < var; i++){
+			result[*indexInResult][i] = transitions[i];
+		}
+		result[*indexInResult][var] = '0';//extrabit
+		result[*indexInResult][var+1] = '\0';
+		(*indexInResult)++;
+	}
+	else if ( (transitions[3] != transitions[4] && (currentBit == 4 )) ||
+			  (transitions[3] != transitions[6] && currentBit == 6 ) ||
+			  (transitions[3] != transitions[7] && currentBit == 7 ) ||
+			  (transitions[5] == '1' && transitions[3] ==  '0' && currentBit == 5)
+				 ){
+		result[*indexInResult] = (char*) malloc((var+2)*(sizeof(char)));
+		for (i = 0; i < var; i++)
+			result[*indexInResult][i] = transitions[i];
+		// only difference between capital and small is bit number 2
+		if (!preImage){
+			if (lowerCase)
+				result[*indexInResult][2] = '1';
+			else
+				result[*indexInResult][2] = '0';
+        }
+		// extrabit should be 1 since we may already have same small letter originally with 0
+		result[*indexInResult][var] = '1';//extrabit
+		result[*indexInResult][var+1] = '\0';
+		(*indexInResult)++;
+		if (preImage){
+			result[*indexInResult] = (char*) malloc((var+2)*(sizeof(char)));
+			for (i = 0; i < var; i++)
+				result[*indexInResult][i] = transitions[i];
+			// only difference between capital and small is bit number 2
+			if (lowerCase)
+				result[*indexInResult][2] = '1';
+			else
+				result[*indexInResult][2] = '0';
+			// extrabit should be 1 since we may already have same small letter originally with 0
+			result[*indexInResult][var] = '1';//extrabit
+			result[*indexInResult][var+1] = '\0';
+			(*indexInResult)++;
+		}
+	}
+	else{
+			if (currentBit < (var-1)){
+				getLowerUpperCaseCharsPrePostHelper(result, transitions, indexInResult, currentBit + 1, var, prev, lowerCase, preImage);
+			}
+			else
+				assert(FALSE);
+	}
+
+}
+
+void Automaton::getLowerUpperCaseCharsPrePost(char* transitions, int var, char** result, int* pSize, boolean lowerCase, boolean preImage){
+	int indexInResult = 0;
+	char* prev = (char*) malloc(var*(sizeof(char)));
+	getLowerUpperCaseCharsPrePostHelper(result, transitions, &indexInResult, 0, var, prev, lowerCase, preImage);
+	*pSize = indexInResult;
+}
+
+DFA* Automaton::dfaPrePostToLowerUpperCaseHelper(DFA* M, int var, int* oldIndices, boolean lowerCase, boolean preImage){
+	DFA *result;
+	paths state_paths, pp;
+	trace_descr tp;
+	int i, j, n, k;
+	char *exeps;
+	int *to_states;
+	int sink;
+	long max_exeps;
+	char *statuces;
+	int len;
+	int ns = M->ns;
+
+	bool has_sink = true;
+
+	len = var + 1;
+	int* indices = allocateArbitraryIndex(len);
+
+	max_exeps = 1 << len; //maybe exponential
+
+	sink = find_sink(M);
+	if(sink < 0) {
+		has_sink = false;
+		sink = ns;
+		ns++;
+	}
+
+	char* symbol = (char *) malloc((len + 1) * sizeof(char));//len+1 since we need extra bit
+	exeps = (char *) malloc(max_exeps * (len + 1) * sizeof(char));
+	to_states = (int *) malloc(max_exeps * sizeof(int));
+	statuces = (char *) malloc((ns + 1) * sizeof(char));
+	int numOfChars = 1 << len;
+	char** charachters = (char**) malloc(numOfChars * (sizeof (char*)));
+	int size = 0;
+
+
+	dfaSetup(ns, len, indices);
+	for (i = 0; i < M->ns; i++) {
+		state_paths = pp = make_paths(M->bddm, M->q[i]);
+		k = 0;
+		while (pp) {
+			if (pp->to != sink) {
+				for (j = 0; j < var; j++) {
+					//the following for loop can be avoided if the indices are in order
+					for (tp = pp->trace; tp && (tp->index != indices[j]); tp
+							= tp->next)
+						;
+					if (tp) {
+						if (tp->value)
+							symbol[j] = '1';
+						else
+							symbol[j] = '0';
+					} else
+						symbol[j] = 'X';
+				}
+				symbol[var] = '\0';
+				// convert symbol into a list of chars where we replace each capital letter with small letter
+				getLowerUpperCaseCharsPrePost(symbol, var, charachters, &size, lowerCase, preImage);
+				for (n = 0; n < size; n++)
+				{
+//						printf("%s, ", charachters[n]);
+					to_states[k] = pp->to;
+					for (j = 0; j < len; j++)
+						exeps[k * (len + 1) + j] = charachters[n][j];
+					exeps[k * (len + 1) + len] = '\0';
+					free(charachters[n]);
+					k++;
+				}
+//					printf("\n");
+			}
+			pp = pp->next;
+		}
+		kill_paths(state_paths);
+
+		// if accept state create a self loop on lambda
+		dfaAllocExceptions(k);
+		for (k--; k >= 0; k--)
+			dfaStoreException(to_states[k], exeps + k * (len + 1));
+		dfaStoreState(sink);
+
+		if (M->f[i] == 1)
+			statuces[i] = '+';
+		else
+			statuces[i] = '-';
+	}
+
+	// create artificial sink if original dfa did not have one
+	if(not has_sink) {
+		dfaAllocExceptions(0);
+		dfaStoreState(sink);
+		statuces[sink] = '-';
+	}
+
+	statuces[ns] = '\0';
+	DFA* tmpM = dfaBuild(statuces);
+	result = dfaProject(tmpM, ((unsigned)var));
+	dfaFree(tmpM);
+	tmpM = dfaMinimize(result);
+	dfaFree(result);result = NULL;
+
+	free(exeps);
+	free(symbol);
+	free(to_states);
+	free(statuces);
+	free(indices);
+	free(charachters);
+
+	return tmpM;
+}
+
+DFA* Automaton::dfaToLowerCase(DFA* M, int var, int* indices){
+	return dfaPrePostToLowerUpperCaseHelper(M, var, indices, TRUE, FALSE);
+}
+
+DFA* Automaton::dfaToUpperCase(DFA* M, int var, int* indices){
+	return dfaPrePostToLowerUpperCaseHelper(M, var, indices, FALSE, FALSE);
+}
+
+DFA* Automaton::dfaPreToLowerCase(DFA* M, int var, int* indices){
+	return dfaPrePostToLowerUpperCaseHelper(M, var, indices, FALSE, TRUE);
+}
+
+DFA* Automaton::dfaPreToUpperCase(DFA* M, int var, int* indices){
+	return dfaPrePostToLowerUpperCaseHelper(M, var, indices, TRUE, TRUE);
+}
 
 
 /*
@@ -2901,7 +3157,14 @@ DFA_ptr Automaton::dfa_star_M_star(DFA *M, int var, int *indices) {
 	len = var + 1; //one extra bit
 
 	max_exeps = 1 << len; //maybe exponential
+
+	bool has_sink = true;
 	sink = find_sink(M);
+	if(sink < 0) {
+		has_sink = false;
+		sink = ns;
+		ns++;
+	}
 	//assert(sink>-1);
 	//printf("\n\n SINK %d\n\n\n", sink);
 
@@ -2994,6 +3257,14 @@ DFA_ptr Automaton::dfa_star_M_star(DFA *M, int var, int *indices) {
 		}
 		kill_paths(state_paths);
 	}
+
+	// add artificial sink state if necessary
+	if(not has_sink) {
+		dfaAllocExceptions(0);
+		dfaStoreState(sink);
+		statuces[sink] = '-';
+	}
+
 	statuces[ns] = '\0';
 	//result = dfaBuild(statuces);
 	tmpM = dfaBuild(statuces);
@@ -3074,11 +3345,21 @@ DFA_ptr Automaton::dfa_replace_step1_duplicate(DFA *M, int var, int *indices) {
 	sharp0 = getSharp0WithExtraBit(var);
 	len = var + 1; //one extra bit
 	shift = M->ns; // map M2 transitions to new M
-	newns = 2 * (M->ns) - 1; //number of states after duplicate. The sink state is not duplicated.
-
 	max_exeps = 1 << len; //maybe exponential
+
+
+	newns = 2 * (M->ns) - 1; //number of states after duplicate. The sink state is not duplicated.
+	bool has_sink = true;
 	sink = find_sink(M);
-	//assert(sink>-1);
+	if(sink < 0) {
+		// revert the -1 from above, since no sink state originally
+		newns++;
+		// make new sink state;
+		has_sink = false;
+		sink = newns;
+		newns++;
+	}
+
 
 	dfaSetup(newns, len, indices);
 	exeps = (char *) malloc(max_exeps * (len + 1) * sizeof(char));
@@ -3183,6 +3464,14 @@ DFA_ptr Automaton::dfa_replace_step1_duplicate(DFA *M, int var, int *indices) {
 			kill_paths(state_paths);
 		}
 	}
+
+	// add artificial sink state if necessary
+	if(not has_sink) {
+		dfaAllocExceptions(0);
+		dfaStoreState(sink);
+		statuces[sink] = '-';
+	}
+
 	statuces[newns] = '\0';
 	//assert(i+shift == newns);
 	temp = dfaBuild(statuces);
@@ -3247,9 +3536,16 @@ DFA_ptr Automaton::dfa_replace_step2_match_compliment(DFA *M, int var, int *indi
 	len = var + 1; //one extra bit for bar
 
 	max_exeps = 1 << len; //maybe exponential
+
+	bool has_sink = true;
 	sink = find_sink(M);
-	//assert(sink>-1);
-	sink += shift;
+	if(sink < 0) {
+		has_sink = false;
+		sink = newns;
+		newns++;
+	} else {
+		sink += shift;
+	}
 
 	dfaSetup(newns, len, indices);
 	exeps = (char *) malloc(max_exeps * (len + 1) * sizeof(char));
@@ -3376,6 +3672,14 @@ DFA_ptr Automaton::dfa_replace_step2_match_compliment(DFA *M, int var, int *indi
 			statuces[i + shift] = '-';
 		}
 	}
+
+	// add artificial sink state if necessary
+	if(not has_sink) {
+		dfaAllocExceptions(0);
+		dfaStoreState(sink);
+		statuces[sink] = '-';
+	}
+
 	statuces[newns] = '\0';
 	//assert(i+shift == newns);
 	temp = dfaBuild(statuces);
@@ -3479,8 +3783,15 @@ DFA_ptr Automaton::dfa_replace_delete(DFA *M, int var, int *oldindices)
   }
 
   max_exeps=1<<len; //maybe exponential
+
+  bool has_sink = true;
+  int ns = M->ns;;
   sink=find_sink(M);
-  //assert(sink >-1);
+  if(sink < 0) {
+  	has_sink = false;
+  	sink = ns;
+  	ns++;
+  }
 
   //pairs[i] is the list of all reachable states by \sharp1 \bar \sharp0 from i
 
@@ -3488,7 +3799,7 @@ DFA_ptr Automaton::dfa_replace_delete(DFA *M, int var, int *oldindices)
   dfaSetup(M->ns, len, indices);
   exeps=(char *)malloc(max_exeps*(len+1)*sizeof(char)); //plus 1 for \0 end of the string
   to_states=(int *)malloc(max_exeps*sizeof(int));
-  statuces=(char *)malloc((M->ns+1)*sizeof(char));
+  statuces=(char *)malloc((ns+1)*sizeof(char));
 
 
   for (i = 0; i < M->ns; i++) {
@@ -3549,7 +3860,14 @@ DFA_ptr Automaton::dfa_replace_delete(DFA *M, int var, int *oldindices)
     kill_paths(state_paths);
   }
 
-  statuces[M->ns]='\0';
+  // add artificial sink state if necessary
+  if(not has_sink) {
+  	dfaAllocExceptions(0);
+  	dfaStoreState(sink);
+  	statuces[sink] = '-';
+  }
+
+  statuces[ns]='\0';
   tmpM2=dfaBuild(statuces);
   //dfaPrintVitals(result);
   for(i=0; i<aux; i++){
@@ -3619,16 +3937,23 @@ DFA * Automaton::dfa_replace_M_dot(DFA *M, DFA* Mr, int var, int *oldindices)
 
 
   max_exeps=1<<len; //maybe exponential
+  int ns = M->ns;
+  bool has_sink = true;
   sink=find_sink(M);
-  //assert(sink >-1);
+  if(sink < 0) {
+  	has_sink = false;
+  	sink = ns;
+  	ns++;
+  }
+
 
   //pairs[i] is the list of all reachable states by \sharp1 \bar \sharp0 from i
 
 
-  dfaSetup(M->ns, len, indices);
+  dfaSetup(ns, len, indices);
   exeps=(char *)malloc(max_exeps*(len+1)*sizeof(char)); //plus 1 for \0 end of the string
   to_states=(int *)malloc(max_exeps*sizeof(int));
-  statuces=(char *)malloc((M->ns+1)*sizeof(char));
+  statuces=(char *)malloc((ns+1)*sizeof(char));
 
   //printf("Before Replace Char\n");
   //dfaPrintVerbose(M);
@@ -3696,7 +4021,14 @@ DFA * Automaton::dfa_replace_M_dot(DFA *M, DFA* Mr, int var, int *oldindices)
     kill_paths(state_paths);
   }
 
-  statuces[M->ns]='\0';
+  // add artificial sink state if necessary
+  if(not has_sink) {
+  	dfaAllocExceptions(0);
+  	dfaStoreState(sink);
+  	statuces[sink] = '-';
+  }
+
+  statuces[ns]='\0';
   result=dfaBuild(statuces);
   //dfaPrintVitals(result);
   for(i=0; i<aux; i++){
@@ -3790,9 +4122,17 @@ DFA_ptr Automaton::dfa_replace_M_arbitrary(DFA *M, DFA *Mr, int var, int *oldind
 
 
   max_exeps=1<<len; //maybe exponential
-  sink=find_sink(M);
-  assert(sink >-1);
   ns = M->ns + numberOfSharp*extrastates;
+
+  bool has_sink = true;
+  sink=find_sink(M);
+  if(sink < 0) {
+  	has_sink = false;
+  	sink = ns;
+  	ns++;
+  }
+
+
 
   //pairs[i] is the list of all reachable states by \sharp1 \bar \sharp0 from i
   dfaSetup(ns, len, indices);
@@ -3902,6 +4242,12 @@ DFA_ptr Automaton::dfa_replace_M_arbitrary(DFA *M, DFA *Mr, int var, int *oldind
   }
 
   for(i=M->ns; i<ns; i++) statuces[i]='-';
+
+  // add artificial sink state if necessary
+  if(not has_sink) {
+  	dfaAllocExceptions(0);
+  	dfaStoreState(sink);
+  }
 
   statuces[ns]='\0';
   result=dfaBuild(statuces);
@@ -4416,25 +4762,6 @@ DFA * Automaton::dfa_construct_string(char *reg, int var, int *indices) {
 	return result;
 }
 
-//char * Automaton::bintostr(unsigned long n, int k) {
-//	char *str;
-//
-//	// no extra bit
-//	str = (char *) malloc(k + 1);
-//	str[k] = '\0';
-//
-//	for (k--; k >= 0; k--) {
-//		if (n & 1)
-//			str[k] = '1';
-//		else
-//			str[k] = '0';
-//		if (n > 0)
-//			n >>= 1;
-//	}
-//	//printf("String:%s\n", str);
-//	return str;
-//}
-
 /******************************************************************
 
 Insertion:insert Mr at every state of M
@@ -4478,7 +4805,7 @@ DFA * Automaton::dfa_insert_M_dot(DFA *M, DFA* Mr, int var, int *indices)
 
 
 
-  dfaSetup(M->ns, len, indices);
+  dfaSetup(num_states, len, indices);
   exeps=(char *)malloc(max_exeps*(len+1)*sizeof(char)); //plus 1 for \0 end of the string
   to_states=(int *)malloc(max_exeps*sizeof(int));
   statuces=(char *)malloc((num_states+1)*sizeof(char));
@@ -4555,8 +4882,6 @@ DFA * Automaton::dfa_insert_M_dot(DFA *M, DFA* Mr, int var, int *indices)
 }// End dfa_insert_M_dot
 
 
-
-
 DFA * Automaton::dfa_insert_M_arbitrary(DFA *M, DFA *Mr, int var, int *indices)
 {
   DFA *result = NULL;
@@ -4586,9 +4911,17 @@ DFA * Automaton::dfa_insert_M_arbitrary(DFA *M, DFA *Mr, int var, int *indices)
 
 
   max_exeps=1<<len; //maybe exponential
-  sink=find_sink(M);
-  //assert(sink >-1);
   ns = M->ns + (M->ns)*(extrastates);
+
+  bool has_sink = true;
+	sink=find_sink(M);
+  if(sink < 0) {
+  	has_sink = false;
+  	sink = ns;
+  	ns++;
+  }
+  //assert(sink >-1);
+
 
   dfaSetup(ns, len, indices);
   exeps=(char *)malloc(max_exeps*(len+1)*sizeof(char)); //plus 1 for \0 end of the string
@@ -4680,6 +5013,11 @@ DFA * Automaton::dfa_insert_M_arbitrary(DFA *M, DFA *Mr, int var, int *indices)
   }//end for n
 
   for(i=M->ns; i<ns; i++) statuces[i]='-';
+  // add artificial sink state if necessary
+  if(not has_sink) {
+  	dfaAllocExceptions(0);
+  	dfaStoreState(sink);
+  }
 
   statuces[ns]='\0';
   result=dfaBuild(statuces);
@@ -4721,37 +5059,28 @@ DFA * Automaton::dfa_insert_everywhere(DFA *M, DFA* Mr, int var, int *indices)
   DFA *result2 = NULL;
   DFA *result = NULL;
   DFA *tmp = NULL;
-  LOG(INFO) << 121;
 
   tmp = DFAIntersect(Mr, dfaDot(var, indices));
   if(!check_emptiness(tmp, var, indices)){
-  	LOG(INFO) << 1211;
     result = dfa_insert_M_dot(M, tmp, var, indices);
   }
-  LOG(INFO) << 122;
   dfaFree(tmp);
 
 
   //tmp = DFAIntersect(Mr, dfaSigmaC1toC2(2, -1, var, indices));
   DFA_ptr dfa_sigma_c1_to_c2 = DFAMakeAcceptingAnyAfterLength(2,var);
-  LOG(INFO) << 123;
   tmp = DFAIntersect(Mr, dfa_sigma_c1_to_c2);
   dfaFree(dfa_sigma_c1_to_c2);
-  LOG(INFO) << 124;
   if(!check_emptiness(tmp, var, indices)){
-  	LOG(INFO) << 125;
     //replace rest rather than single character
     result2 = dfa_insert_M_arbitrary(M, tmp, var, indices);
-    LOG(INFO) << 126;
     if(result){
-  	 LOG(INFO) << 127;
      result1 = result;
      result = DFAUnion(result1, result2);
      dfaFree(result1);
      dfaFree(result2);
    }
    else result = result2;
-    LOG(INFO) << 128;
   }
   dfaFree(tmp);
   return result;
