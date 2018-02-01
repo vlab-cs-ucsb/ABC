@@ -186,6 +186,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 \"                  { quoted_value.str(std::string()); yy_push_state(START_STRING); }
 
 <START_STRING>{
+  \\[xX][0-9A-Fa-f][0-9A-Fa-f] { std::string byte = std::string(yytext).substr(2,4);quoted_value << (char)(int)strtol(byte.c_str(),NULL,16); }
   \\\"              { quoted_value << '"';      }
   \\\\              { quoted_value << '\\';     }
   [^\"\n]           { quoted_value << yytext;   }

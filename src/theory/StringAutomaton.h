@@ -235,7 +235,6 @@ public:
 
   StringAutomaton_ptr GetAnyStringNotContainsMe();
 
-  DFA_ptr UnaryLength();
   UnaryAutomaton_ptr ToUnaryAutomaton();
   IntAutomaton_ptr ParseToIntAutomaton();
   IntAutomaton_ptr Length();

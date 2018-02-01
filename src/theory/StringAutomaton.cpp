@@ -2142,8 +2142,6 @@ StringAutomaton_ptr StringAutomaton::Replace(StringAutomaton_ptr search_auto,
   dfaFree(dfa2);
   dfaFree(dfa3);
 
-  // PROJECT AWAY LAST INDEX!
-  //result_dfa = Automaton::DFAProjectAway(temp_dfa,var+1);
   result_dfa = Automaton::DFAProjectAway(temp_dfa,var);
   dfaFree(temp_dfa);
 
@@ -2168,17 +2166,6 @@ StringAutomaton_ptr StringAutomaton::GetAnyStringNotContainsMe() {
 	DVLOG(VLOG_LEVEL) << not_contains_auto->id_ << " = [" << this->id_ << "]->getAnyStringNotContainsMe()";
 
 	return not_contains_auto;
-}
-
-DFA_ptr StringAutomaton::UnaryLength() {
-	CHECK_EQ(this->num_tracks_,1);
-  DFA_ptr unary_dfa = nullptr;
-  LOG(FATAL) << "implement me";
-//  unary_dfa = dfa_string_to_unaryDFA(this->dfa, num_of_variables, variable_indices);
-
-  DVLOG(VLOG_LEVEL) << "?" << " = [" << this->id_ << "]->unaryLength()";
-
-  return unary_dfa;
 }
 
 UnaryAutomaton_ptr StringAutomaton::ToUnaryAutomaton() {
