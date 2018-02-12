@@ -621,6 +621,7 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
               semilinears.push_back(current_set);
               tmp_periods.push_back(possible_period);
               period_found = true;
+              break;
             } else {
               delete current_set;
             }
