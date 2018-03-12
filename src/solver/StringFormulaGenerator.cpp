@@ -295,6 +295,14 @@ void StringFormulaGenerator::visitEq(Eq_ptr eq_term) {
 			auto right_var = right_formula->GetVariableAtIndex(0);
 			formula->SetVariableCoefficient(right_var,1);
 			formula->SetConstant(left_formula->GetConstant());
+			constraint_information_->add_string_constraint(eq_term);					
+		} else if(StringFormula::Type::CHARAT == left_formula->GetType() && StringFormula::Type::CHARAT == right_formula->GetType()
+							&& (left_formula->GetConstant() == right_formula->GetConstant())) {
+			formula = left_formula->clone();
+			formula->MergeVariables(right_formula);
+			formula->SetType(StringFormula::Type::EQ_CHARAT);
+			auto right_var = right_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(right_var,2);
 			constraint_information_->add_string_constraint(eq_term);
 		} else {
       formula = left_formula->clone();
@@ -379,8 +387,15 @@ void StringFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
 			formula->SetVariableCoefficient(right_var,1);
 			formula->SetConstant(left_formula->GetConstant());
 			constraint_information_->add_string_constraint(not_eq_term);
-		}
-		else {
+		} else if(StringFormula::Type::CHARAT == left_formula->GetType() && StringFormula::Type::CHARAT == right_formula->GetType()
+							&& (left_formula->GetConstant() == right_formula->GetConstant())) {
+			formula = left_formula->clone();
+			formula->MergeVariables(right_formula);
+			formula->SetType(StringFormula::Type::NOTEQ_CHARAT);
+			auto right_var = right_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(right_var,2);
+			constraint_information_->add_string_constraint(not_eq_term);
+		} else {
 			formula = left_formula->clone();
 			formula->MergeVariables(right_formula);
 			formula->SetType(StringFormula::Type::NONRELATIONAL);
@@ -661,17 +676,45 @@ void StringFormulaGenerator::visitLastIndexOf(LastIndexOf_ptr last_index_of_term
   DVLOG(VLOG_LEVEL) << "post visit end: " << *last_index_of_term << "@" << last_index_of_term;
 }
 
+
 void StringFormulaGenerator::visitCharAt(CharAt_ptr char_at_term) {
   visit_children_of(char_at_term);
   DVLOG(VLOG_LEVEL) << "post visit start: " << *char_at_term << "@" << char_at_term;
 
   auto left_formula = get_term_formula(char_at_term->subject_term);
-  if (left_formula not_eq nullptr) {
-    auto formula = left_formula->clone();
-    formula->SetType(StringFormula::Type::NONRELATIONAL);
-    delete_term_formula(char_at_term->subject_term);
-    set_term_formula(char_at_term, formula);
-  }
+	auto right_formula = get_term_formula(char_at_term->index_term);
+  if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
+		if(StringFormula::Type::VAR == left_formula->GetType() and StringFormula::Type::INTEGER_CONSTANT == right_formula->GetType()) {
+			// can maybe support, assume we can going forward
+			auto formula = left_formula->clone();
+			formula->SetType(StringFormula::Type::CHARAT);
+			formula->SetConstant(right_formula->GetConstant());
+			delete_term_formula(char_at_term->subject_term);
+			delete_term_formula(char_at_term->index_term);
+			set_term_formula(char_at_term,formula);
+			constraint_information_->add_string_constraint(char_at_term);
+		} else {
+			// not supported yet, just delete both formulas and solve non-relational
+			auto formula = left_formula->clone();
+			formula->SetType(StringFormula::Type::NONRELATIONAL);
+			delete_term_formula(char_at_term->subject_term);
+			delete_term_formula(char_at_term->index_term);
+			set_term_formula(char_at_term, formula);
+			constraint_information_->add_mixed_constraint(char_at_term);
+		}
+  } else if(left_formula not_eq nullptr) {
+		auto formula = left_formula->clone();
+		formula->SetType(StringFormula::Type::NONRELATIONAL);
+		delete_term_formula(char_at_term->subject_term);
+		set_term_formula(char_at_term,formula);
+		constraint_information_->add_mixed_constraint(char_at_term);
+	} else {
+		auto formula = right_formula->clone();
+		formula->SetType(StringFormula::Type::NONRELATIONAL);
+		delete_term_formula(char_at_term->index_term);
+		set_term_formula(char_at_term,formula);
+		constraint_information_->add_mixed_constraint(char_at_term);
+	}
 
   DVLOG(VLOG_LEVEL) << "post visit end: " << *char_at_term << "@" << char_at_term;
 }
@@ -782,6 +825,13 @@ void StringFormulaGenerator::visitTermConstant(TermConstant_ptr term_constant) {
       formula->SetType(StringFormula::Type::REGEX_CONSTANT);
       formula->SetConstant(term_constant->getValue());
       set_term_formula(term_constant, formula);
+      break;
+    }
+		case Primitive::Type::NUMERAL: {
+      auto formula = new StringFormula();
+			formula->SetType(StringFormula::Type::INTEGER_CONSTANT);
+			formula->SetConstant(term_constant->getValue());
+			set_term_formula(term_constant, formula);
       break;
     }
     default:

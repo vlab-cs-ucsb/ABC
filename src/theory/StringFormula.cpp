@@ -73,10 +73,13 @@ std::string StringFormula::str() const {
       ss << "diff";
       break;
     case Type::STRING_CONSTANT:
-      ss << "const";
+      ss << "string const";
       break;
     case Type::REGEX_CONSTANT:
       ss << "re.const";
+      break;
+    case Type::INTEGER_CONSTANT:
+      ss << "integer constant";
       break;
     case Type::EQ_NO_LAMBDA:
       ss << "= no lambda";
@@ -104,6 +107,15 @@ std::string StringFormula::str() const {
       break;
     case Type::VAR:
       ss << "<var>";
+      break;
+    case Type::CHARAT:
+      ss << "charAt";
+      break;
+    case Type::EQ_CHARAT:
+      ss << "= charAt";
+      break;
+    case Type::NOTEQ_CHARAT:
+      ss << "!= charAt";
       break;
     default:
       ss << "none";
@@ -151,6 +163,11 @@ StringFormula_ptr StringFormula::Complement() {
 		case StringFormula::Type::LE:
 			result->type_ = StringFormula::Type::GT;
 			break;
+    case StringFormula::Type::EQ_CHARAT:
+      result->type_ = StringFormula::Type::NOTEQ_CHARAT;
+      break;
+    case StringFormula::Type::NOTEQ_CHARAT:
+      result->type_ = StringFormula::Type::EQ_CHARAT;
 		default:
 			break;
 	}
