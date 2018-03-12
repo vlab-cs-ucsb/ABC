@@ -31,7 +31,7 @@ namespace Vlab
   {
 
     class UnaryAutomaton;
-    typedef UnaryAutomaton* UnaryAutomaton_ptr;
+    using UnaryAutomaton_ptr = UnaryAutomaton*;
 
     class IntAutomaton;
     using IntAutomaton_ptr = IntAutomaton*;
@@ -47,7 +47,7 @@ namespace Vlab
        public:
 
         /**
-         * Use this class to build an automaton.
+         * Unary automaton builder.
          */
         class Builder;
 
@@ -73,7 +73,7 @@ namespace Vlab
          * Generates a clone copy of the current automaton.
          * @return
          */
-        virtual UnaryAutomaton_ptr Clone() const;
+        virtual UnaryAutomaton_ptr Clone() const override;
 
         /**
          * Generates a unary automaton that wraps dfa instance.
@@ -131,7 +131,7 @@ namespace Vlab
         Builder& SetSemilinearSet(const SemilinearSet_ptr semilinear_set);
 
         /**
-         * Builds an instance of the automaton class.
+         * Builds an instance of the UnaryAutomaton class.
          * @return
          */
         virtual UnaryAutomaton_ptr Build() override;

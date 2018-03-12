@@ -24,12 +24,11 @@
 #include "UnaryAutomaton.h"
 #include "RelationalStringAutomaton.h"
 
-
 namespace Vlab {
 namespace Theory {
 
 class IntAutomaton;
-typedef IntAutomaton* IntAutomaton_ptr;
+using IntAutomaton_ptr = IntAutomaton*;
 
 /**
  * A compatible version with string automaton

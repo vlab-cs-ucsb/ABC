@@ -66,7 +66,7 @@ namespace Vlab
        public:
 
         /**
-         * Use this class to build an automaton.
+         * Automaton builder.
          */
         class Builder;
 

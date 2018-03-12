@@ -43,7 +43,7 @@ namespace Vlab
        public:
 
         /**
-         * Use this class to build an automaton.
+         * String automaton builder.
          */
         class Builder;
 
@@ -69,7 +69,7 @@ namespace Vlab
          * Generates a clone copy of the current automaton.
          * @return
          */
-        virtual StringAutomaton_ptr Clone() const;
+        virtual StringAutomaton_ptr Clone() const override;
 
         /**
          * Generates a string automaton that wraps the dfa.
@@ -77,8 +77,7 @@ namespace Vlab
          * @param number_of_variables
          * @return
          */
-        virtual StringAutomaton_ptr MakeAutomaton(Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const
-            override;
+        virtual StringAutomaton_ptr MakeAutomaton(Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const override;
 
         /**
          * Generates a string automaton that does not recognize any string

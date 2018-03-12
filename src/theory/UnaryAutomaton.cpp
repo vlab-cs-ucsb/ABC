@@ -38,7 +38,7 @@ namespace Vlab
     UnaryAutomaton_ptr UnaryAutomaton::Clone() const
     {
       UnaryAutomaton_ptr cloned_auto = new UnaryAutomaton(*this);
-      DVLOG(VLOG_LEVEL) << cloned_auto->id_ << " = [" << this->id_ << "]->clone()";
+      DVLOG(VLOG_LEVEL) << cloned_auto->id_ << " = [" << this->id_ << "]->Clone()";
       return cloned_auto;
     }
 
@@ -417,7 +417,7 @@ namespace Vlab
         UnaryAutomaton_ptr automaton = new UnaryAutomaton(dfa_, number_of_bdd_variables_);
         dfa_ = nullptr;
 
-        DVLOG(VLOG_LEVEL) << *automaton << " built.";
+        DVLOG(VLOG_LEVEL) << *automaton << " = UnaryAutomaton::Builder::Build()";
         return automaton;
       }
 
