@@ -983,7 +983,7 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(
 	int right_track = formula->GetVariableIndex(2); // variable on the right of equality
 
   // if charAt() == charAt() and constants are the same (such as charAt(X,0) == charAt(Y,0))
-  if(formula->GetType() == StringFormula::Type::EQ_CHARAT) {
+  if(formula->GetType() == StringFormula::Type::NOTEQ_CHARAT) {
     // #states = (#index+1)+4
     // e.g, index = 2 --> #states = 2+1 (for 0-based indexing) + 1 (initial) + 3 (for lambda states) + 1 (sink)
     int index = std::stoi(formula->GetConstant()); // will be string version of integer
