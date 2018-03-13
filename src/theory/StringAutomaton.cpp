@@ -1275,7 +1275,6 @@ StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
     delete relation_other_auto;
     return intersect_auto;
   }
-
 	auto intersect_dfa = Automaton::DFAIntersect(this->dfa_, other_auto->dfa_);
   StringFormula_ptr intersect_formula = nullptr;
   if(formula_ != nullptr && other_auto->formula_ != nullptr) {
@@ -2717,7 +2716,10 @@ StringAutomaton_ptr StringAutomaton::RestrictIndexOfTo(IntAutomaton_ptr index_au
 
   bool has_negative_1 = index_auto->hasNegative1();
 
-  StringAutomaton_ptr length_string_auto = new StringAutomaton(index_auto->getDFA(),index_auto->get_number_of_bdd_variables());
+  //StringAutomaton_ptr length_string_auto = new StringAutomaton(index_auto->getDFA(),index_auto->get_number_of_bdd_variables());
+  UnaryAutomaton_ptr unary_auto = index_auto->toUnaryAutomaton();
+	StringAutomaton_ptr length_string_auto = unary_auto->toStringAutomaton();
+	delete unary_auto;
   StringAutomaton_ptr any_string = StringAutomaton::MakeAnyString();
 
   contains_auto = any_string->Contains(search_auto);
@@ -2768,7 +2770,10 @@ StringAutomaton_ptr StringAutomaton::RestrictLastIndexOfTo(
   StringAutomaton_ptr restricted_auto = nullptr, contains_auto = nullptr,
           not_contains_auto = nullptr, not_contains_subject_auto = nullptr,
           tmp_auto_1 = nullptr, tmp_auto_2 = nullptr;
-  StringAutomaton_ptr length_string_auto = new StringAutomaton(index_auto->getDFA(),index_auto->get_number_of_bdd_variables());
+  //StringAutomaton_ptr length_string_auto = new StringAutomaton(index_auto->getDFA(),index_auto->get_number_of_bdd_variables());
+  UnaryAutomaton_ptr unary_auto = index_auto->toUnaryAutomaton();
+	StringAutomaton_ptr length_string_auto = unary_auto->toStringAutomaton();
+	delete unary_auto;
   StringAutomaton_ptr any_string = StringAutomaton::MakeAnyString();
 
   contains_auto = any_string->Contains(search_auto);
@@ -2848,7 +2853,10 @@ StringAutomaton_ptr StringAutomaton::RestrictFromIndexToEndTo(
 		IntAutomaton_ptr index_auto, StringAutomaton_ptr sub_string_auto) {
 	CHECK_EQ(this->num_tracks_,1);
   StringAutomaton_ptr restricted_auto = nullptr, tmp_auto_1 = nullptr, tmp_auto_2;
-  StringAutomaton_ptr length_string_auto = new StringAutomaton(index_auto->getDFA(),index_auto->get_number_of_bdd_variables());
+  //StringAutomaton_ptr length_string_auto = new StringAutomaton(index_auto->getDFA(),index_auto->get_number_of_bdd_variables());
+  UnaryAutomaton_ptr unary_auto = index_auto->toUnaryAutomaton();
+	StringAutomaton_ptr length_string_auto = unary_auto->toStringAutomaton();
+	delete unary_auto;
 
   tmp_auto_1 = length_string_auto->Concat(sub_string_auto);
   length_string_auto->dfa_ = nullptr;
@@ -2877,8 +2885,11 @@ StringAutomaton_ptr StringAutomaton::RestrictAtIndexTo(
 		IntAutomaton_ptr index_auto, StringAutomaton_ptr sub_string_auto) {
 	CHECK_EQ(this->num_tracks_,1);
   StringAutomaton_ptr restricted_auto = nullptr, tmp_auto_1 = nullptr, tmp_auto_2;
-  StringAutomaton_ptr length_string_auto = new StringAutomaton(index_auto->getDFA(),index_auto->get_number_of_bdd_variables());
+  UnaryAutomaton_ptr unary_auto = index_auto->toUnaryAutomaton();
+  StringAutomaton_ptr length_string_auto = unary_auto->toStringAutomaton();
+  delete unary_auto;
   StringAutomaton_ptr any_string = StringAutomaton::MakeAnyString();
+
 
   tmp_auto_1 = length_string_auto->Concat(sub_string_auto);
   if (tmp_auto_1->IsEmptyString()) {
@@ -2888,6 +2899,7 @@ StringAutomaton_ptr StringAutomaton::RestrictAtIndexTo(
     tmp_auto_2 = tmp_auto_1->Concat(any_string);
   }
   length_string_auto->dfa_ = nullptr; // it is index_auto's dfa
+
   delete length_string_auto; length_string_auto = nullptr;
   delete tmp_auto_1; tmp_auto_1 = nullptr;
   delete any_string; any_string = nullptr;
