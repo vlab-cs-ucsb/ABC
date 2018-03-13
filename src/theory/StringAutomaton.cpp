@@ -908,7 +908,6 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
     dfaFree(temp_dfa);
     StringAutomaton_ptr result_auto = new StringAutomaton(result_dfa,formula->clone(),var*num_tracks);
     StringAutomaton_ptr any_string_auto = StringAutomaton::MakeAnyStringAligned(formula->clone());
-    LOG(INFO) << "HERE";
     StringAutomaton_ptr intersect_auto = result_auto->Intersect(any_string_auto);
     delete result_auto;
     delete any_string_auto;
