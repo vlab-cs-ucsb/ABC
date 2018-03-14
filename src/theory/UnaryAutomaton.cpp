@@ -322,7 +322,7 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
     }
 
     if (IsAcceptingState(curr_state)) {
-      tmp_1_auto = StringAutomaton::MakeString(std::to_string(value));
+      tmp_1_auto = StringAutomaton::MakeAnyStringLengthEqualTo(value);
       tmp_2_auto = result_auto;
       result_auto = static_cast<StringAutomaton_ptr>(tmp_2_auto->Union(tmp_1_auto));
       delete tmp_1_auto;
