@@ -40,7 +40,7 @@ namespace Vlab
         formula_ = other.formula_->clone();
       }
     }
-
+num
     BinaryIntAutomaton::~BinaryIntAutomaton()
     {
       delete formula_;
@@ -53,14 +53,21 @@ namespace Vlab
       return cloned_auto;
     }
 
-    BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_bdd_variables)
+    BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_bdd_variables) const
     {
       return new BinaryIntAutomaton(dfa, false, number_of_bdd_variables);
     }
 
+    std::string BinaryIntAutomaton::Str() const
+    {
+      std::stringstream ss;
+      ss << "BinaryIntAutomaton[" << id_ << "]";
+      return ss.str();
+    }
+
     BinaryIntAutomaton_ptr BinaryIntAutomaton::MakePhi(ArithmeticFormula_ptr formula, bool is_natural_number)
     {
-      auto non_accepting_dfa = Automaton::DFAMakePhi(formula->get_number_of_variables());
+      auto non_accepting_dfa = Libs::MONALib::DFAMakePhi(formula->get_number_of_variables());
       auto non_accepting_binary_auto = new BinaryIntAutomaton(non_accepting_dfa, formula, is_natural_number);
 
       DVLOG(VLOG_LEVEL) << non_accepting_binary_auto->id_ << " = MakePhi(" << *formula << ")";

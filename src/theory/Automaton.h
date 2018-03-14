@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <functional>
+#include <initializer_list>
 #include <iostream>
 #include <iterator>
 #include <map>
@@ -477,21 +478,37 @@ namespace Vlab
          * @param number_of_states
          * @return
          */
-        Builder& SetNumberOfStates(const int number_of_states);
+        virtual Builder& SetNumberOfStates(const int number_of_states);
 
         /**
          * Sets the number of bdd variables.
          * @param number_of_bdd_variables
          * @return
          */
-        Builder& SetNumberOfBddVariables(const int number_of_bdd_variables);
+        virtual Builder& SetNumberOfBddVariables(const int number_of_bdd_variables);
+
+        /**
+         * Sets the given state as accepting state.
+         * @param state
+         * @return
+         */
+        virtual Builder& SetAcceptingState(int state);
+
+        /**
+         * Sets a transition from source to given target.
+         * @param source
+         * @param transition is bdd transition string, e.g.; 1XX means 100,101, 110,111 where there are three BDD variables.
+         * @param target
+         * @return
+         */
+        virtual Builder& SetTransition(const int source, const std::string transition, const int target);
 
         /**
          * Sets the dfa.
          * @param dfa
          * @return
          */
-        Builder& SetDfa(const Libs::MONALib::DFA_ptr dfa);
+        virtual Builder& SetDfa(const Libs::MONALib::DFA_ptr dfa);
 
         /**
          * Builds an instance of the automaton class.
@@ -516,9 +533,14 @@ namespace Vlab
         Libs::MONALib::DFA_ptr dfa_;
 
         /**
+         * Accepting or non accepting mark for each state as '0' or '1'.
+         */
+        std::string statuses_;
+
+        /**
          * State to state transition map.
          */
-        std::unordered_map<int, std::unordered_map<std::string, int>> transitions_;
+        std::vector<std::unordered_map<std::string, int>> transitions_;
     };
 
   } /* namespace Theory */

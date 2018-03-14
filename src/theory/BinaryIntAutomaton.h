@@ -87,8 +87,20 @@ namespace Vlab
          */
         virtual BinaryIntAutomaton_ptr Clone() const override;
 
-        // What about natural number parameter?
+        /**
+         * Generates a binary automaton that wraps the given dfa instance.
+         * TODO need a parameter to specifiy integer or natural numbers; will separate into two classes.
+         * @param dfa
+         * @param number_of_variables
+         * @return
+         */
         virtual BinaryIntAutomaton_ptr MakeAutomaton(Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const override;
+
+        /**
+         * Prints the actual type and the details of the automaton.
+         * @return
+         */
+        virtual std::string Str() const override;
 
         static BinaryIntAutomaton_ptr MakePhi(ArithmeticFormula_ptr, bool is_natural_number);
         static BinaryIntAutomaton_ptr MakeAnyInt(ArithmeticFormula_ptr, bool is_natural_number);

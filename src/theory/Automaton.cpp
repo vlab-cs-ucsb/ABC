@@ -2078,12 +2078,27 @@ namespace Vlab
     Automaton::Builder& Automaton::Builder::SetNumberOfStates(const int number_of_states)
     {
       this->number_of_states_ = number_of_states;
+      transitions_.resize(number_of_states);
+      statuses_.resize(number_of_states, '-');
       return *this;
     }
 
     Automaton::Builder& Automaton::Builder::SetNumberOfBddVariables(const int number_of_bdd_variables)
     {
       this->number_of_bdd_variables_ = number_of_bdd_variables;
+      return *this;
+    }
+
+    Automaton::Builder& Automaton::Builder::SetAcceptingState(int state)
+    {
+      this->statuses_[state] = '+';
+      return *this;
+    }
+
+    Automaton::Builder& Automaton::Builder::SetTransition(const int source, const std::string transition, const int target)
+    {
+      CHECK_EQ(number_of_bdd_variables_, transition.length());
+      this->transitions_[source][transition] = target;
       return *this;
     }
 

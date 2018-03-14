@@ -76,7 +76,7 @@ namespace Vlab
         virtual UnaryAutomaton_ptr Clone() const override;
 
         /**
-         * Generates a unary automaton that wraps dfa instance.
+         * Generates a unary automaton that wraps the dfa instance.
          * @param dfa
          * @param number_of_variables
          * @return

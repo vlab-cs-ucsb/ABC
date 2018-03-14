@@ -542,8 +542,6 @@ void Driver::test() {
 //  StringAutomaton_ptr char_at_auto = any_string->CharAt(len_auto);
 //  char_at_auto->inspectAuto(false, true);
 
-
-
 //  Theory::StringAutomaton_ptr a1 = Theory::StringAutomaton::makeString("Hi,");
   //make_string->complement()->toDotAscii();
 
