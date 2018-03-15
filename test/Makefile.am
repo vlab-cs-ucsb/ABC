@@ -14,24 +14,24 @@ AM_LDFLAGS = \
 	$(GMOCK_LDFLAGS) \
 	-L$(top_srcdir)/src/.libs \
 	-L$(top_srcdir)/lib/googletest/googletest/lib/.libs \
-	-L$(top_srcdir)/lib/googletest/googlemock/lib/.libs 
+	-L$(top_srcdir)/lib/googletest/googlemock/lib/.libs
 
 # TESTS -- Programs run automatically by "make check"
 # check_PROGRAMS -- Programs built by "make check" but not necessarily run
-TESTS = 
-check_PROGRAMS = 
+TESTS =
+check_PROGRAMS =
 
 TESTS += \
 	abctest
-	
+
 check_PROGRAMS += \
 	abctest
-	
+
 abctest_SOURCES = \
 	theory/ArithmeticFormulaTest.cpp \
 	theory/ArithmeticFormulaTest.h \
-	theory/BinaryIntAutomatonTest.cpp \
-	theory/BinaryIntAutomatonTest.h
+	theory/IntegerAutomatonTest.cpp \
+	theory/IntegerAutomatonTest.h
 
 abctest_LDADD = \
 	helper/libabctesthelper.la \
@@ -39,8 +39,8 @@ abctest_LDADD = \
 	$(LIBGMOCKMAIN) \
 	$(LIBGMOCK) \
 	$(LIBGTEST) \
-	$(GMOCK_LIBS) 
-	
+	$(GMOCK_LIBS)
+
 
 test-local:
 	@echo src, $(srcdir), $(top_srcdir)

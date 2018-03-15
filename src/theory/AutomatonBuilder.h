@@ -47,7 +47,7 @@ namespace Vlab
          * @param state
          * @return
          */
-        virtual Builder& SetAcceptingState(int state);
+        virtual Builder& SetAcceptingState(const int state);
 
         /**
          * Sets a transition from source to given target.

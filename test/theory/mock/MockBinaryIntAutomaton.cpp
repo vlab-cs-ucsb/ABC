@@ -1,11 +1,11 @@
 /*
- * MockBinaryIntAutomaton.cpp
+ * MockIntegerAutomaton.cpp
  *
  *  Created on: Oct 30, 2015
  *      Author: baki
  */
 
-#include "../../mock/theory/MockBinaryIntAutomaton.h"
+#include "../../mock/theory/MockIntegerAutomaton.h"
 
 namespace Vlab {
 namespace Test {

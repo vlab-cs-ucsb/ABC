@@ -39,7 +39,7 @@ namespace Vlab
       return *this;
     }
 
-    Automaton::Builder& Automaton::Builder::SetAcceptingState(int state)
+    Automaton::Builder& Automaton::Builder::SetAcceptingState(const int state)
     {
       this->statuses_[state] = '+';
       return *this;

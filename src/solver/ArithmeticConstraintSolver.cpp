@@ -68,7 +68,7 @@ void ArithmeticConstraintSolver::setCallbacks() {
         auto formula = arithmetic_formula_generator_.get_term_formula(term);
         if (formula != nullptr) {
           DVLOG(VLOG_LEVEL) << "Linear Arithmetic Equation: " << *formula << "@" << term;
-          auto binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), use_unsigned_integers_);
+          auto binary_int_auto = IntegerAutomaton::MakeAutomaton(formula->clone(), use_unsigned_integers_);
           auto result = new Value(binary_int_auto);
           set_term_value(term, result);
           // once we solve an atomic linear integer arithmetic constraint,
@@ -165,7 +165,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
    */
   if (and_value == nullptr and (not has_arithmetic_formula)) {
     auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
-    and_value = new Value(Theory::BinaryIntAutomaton::MakeAnyInt(group_formula->clone(), use_unsigned_integers_));
+    and_value = new Value(Theory::IntegerAutomaton::MakeAnyInt(group_formula->clone(), use_unsigned_integers_));
     has_arithmetic_formula = true;
     is_satisfiable = true;
   }
@@ -175,7 +175,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
       symbol_table_->IntersectValue(group_name, and_value);  // update value
     } else {
       auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
-      auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(group_formula->clone(), use_unsigned_integers_));
+      auto value = new Value(Theory::IntegerAutomaton::MakePhi(group_formula->clone(), use_unsigned_integers_));
       symbol_table_->set_value(group_name, value);
     }
     delete and_value;
@@ -236,7 +236,7 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
       symbol_table_->set_value(group_name, or_value);
     } else {
       auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
-      auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(group_formula->clone(), use_unsigned_integers_));
+      auto value = new Value(Theory::IntegerAutomaton::MakePhi(group_formula->clone(), use_unsigned_integers_));
       symbol_table_->set_value(group_name, value);
       delete or_value; // nullptr safe
     }
@@ -300,7 +300,7 @@ void ArithmeticConstraintSolver::postVisitAnd(And_ptr and_term) {
    */
   if (and_value == nullptr and (not has_arithmetic_formula)) {
     auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
-    and_value = new Value(Theory::BinaryIntAutomaton::MakeAnyInt(group_formula->clone(), use_unsigned_integers_));
+    and_value = new Value(Theory::IntegerAutomaton::MakeAnyInt(group_formula->clone(), use_unsigned_integers_));
     has_arithmetic_formula = true;
     is_satisfiable = true;
   }
@@ -310,7 +310,7 @@ void ArithmeticConstraintSolver::postVisitAnd(And_ptr and_term) {
       symbol_table_->IntersectValue(group_name, and_value);  // update value
     } else {
       auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
-      auto value = new Value(Theory::BinaryIntAutomaton::MakePhi(group_formula->clone(), use_unsigned_integers_));
+      auto value = new Value(Theory::IntegerAutomaton::MakePhi(group_formula->clone(), use_unsigned_integers_));
       symbol_table_->set_value(group_name, value);
     }
     delete and_value;

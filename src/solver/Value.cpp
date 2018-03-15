@@ -46,7 +46,7 @@ Value::Value(Theory::IntAutomaton_ptr data)
       int_automaton(data) {
 }
 
-Value::Value(Theory::BinaryIntAutomaton_ptr data)
+Value::Value(Theory::IntegerAutomaton_ptr data)
     : type(Type::BINARYINT_AUTOMATON),
       binaryint_automaton(data) {
 }
@@ -207,7 +207,7 @@ Theory::IntAutomaton_ptr Value::getIntAutomaton() const {
   return int_automaton;
 }
 
-Theory::BinaryIntAutomaton_ptr Value::getBinaryIntAutomaton() const {
+Theory::IntegerAutomaton_ptr Value::getIntegerAutomaton() const {
   return binaryint_automaton;
 }
 

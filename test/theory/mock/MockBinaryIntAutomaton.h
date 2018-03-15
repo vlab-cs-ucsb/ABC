@@ -1,5 +1,5 @@
 /*
- * MockBinaryIntAutomaton.h
+ * MockIntegerAutomaton.h
  *
  *  Created on: Oct 30, 2015
  *      Author: baki
@@ -8,10 +8,10 @@
 #ifndef TEST_MOCK_THEORY_MOCKBINARYINTAUTOMATON_H_
 #define TEST_MOCK_THEORY_MOCKBINARYINTAUTOMATON_H_
 
+#include "../../../src/theory/IntegerAutomaton.h"
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "theory/ArithmeticFormula.h"
-#include "theory/BinaryIntAutomaton.h"
 
 namespace Vlab {
 namespace Test {
@@ -19,38 +19,38 @@ namespace Mock {
 
 using namespace Vlab::Theory;
 
-class BinaryIntAutomatonInterface {
+class IntegerAutomatonInterface {
 public:
-  virtual ~BinaryIntAutomatonInterface() { }
-  virtual BinaryIntAutomaton_ptr makeAutomaton(ArithmeticFormula_ptr formula) = 0;
-  virtual BinaryIntAutomaton_ptr makeEquality(ArithmeticFormula_ptr formula) = 0;
+  virtual ~IntegerAutomatonInterface() { }
+  virtual IntegerAutomaton_ptr makeAutomaton(ArithmeticFormula_ptr formula) = 0;
+  virtual IntegerAutomaton_ptr makeEquality(ArithmeticFormula_ptr formula) = 0;
 };
 
-class TestableBinaryIntAutomaton : public BinaryIntAutomaton, public BinaryIntAutomatonInterface {
+class TestableIntegerAutomaton : public IntegerAutomaton, public IntegerAutomatonInterface {
 
  public:
-  using BinaryIntAutomaton::MakeIntEquality; // changes access rights
-  using BinaryIntAutomaton::makeNotEquality; // changes access rights
-  using BinaryIntAutomaton::makeLessThan;
-  using BinaryIntAutomaton::makeLessThanOrEqual;
-  using BinaryIntAutomaton::makeGreaterThan;
-  using BinaryIntAutomaton::makeGreaterThanOrEqual;
+  using IntegerAutomaton::MakeIntEquality; // changes access rights
+  using IntegerAutomaton::makeNotEquality; // changes access rights
+  using IntegerAutomaton::makeLessThan;
+  using IntegerAutomaton::makeLessThanOrEqual;
+  using IntegerAutomaton::makeGreaterThan;
+  using IntegerAutomaton::makeGreaterThanOrEqual;
 
-  virtual BinaryIntAutomaton_ptr makeAutomaton(ArithmeticFormula_ptr formula) {
-    return BinaryIntAutomaton::makeAutomaton(formula);
+  virtual IntegerAutomaton_ptr makeAutomaton(ArithmeticFormula_ptr formula) {
+    return IntegerAutomaton::makeAutomaton(formula);
   }
 
-  virtual BinaryIntAutomaton_ptr makeEquality(ArithmeticFormula_ptr formula) {
-    return BinaryIntAutomaton::MakeIntEquality(formula);
+  virtual IntegerAutomaton_ptr makeEquality(ArithmeticFormula_ptr formula) {
+    return IntegerAutomaton::MakeIntEquality(formula);
   }
 
 
 };
 
-class MockBinaryIntAutomaton : public TestableBinaryIntAutomaton {
+class MockIntegerAutomaton : public TestableIntegerAutomaton {
 public:
-  MOCK_METHOD1(makeAutomaton, BinaryIntAutomaton_ptr(ArithmeticFormula_ptr formula));
-  MOCK_METHOD1(makeEquality, BinaryIntAutomaton_ptr(ArithmeticFormula_ptr formula));
+  MOCK_METHOD1(makeAutomaton, IntegerAutomaton_ptr(ArithmeticFormula_ptr formula));
+  MOCK_METHOD1(makeEquality, IntegerAutomaton_ptr(ArithmeticFormula_ptr formula));
 };
 
 } /* namespace Mock */

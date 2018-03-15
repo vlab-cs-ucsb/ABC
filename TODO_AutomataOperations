@@ -34,7 +34,7 @@ MakeZero
 MakeAnyInt -> use DFAMakeAny
 ToUnaryAutomaton
 
-	BinaryIntAutomaton functions that use mona directly:
+	IntegerAutomaton functions that use mona directly:
 MakeAutomaton() - semilinear set
 AddLeadingZeros
 MakeIntGraterThanOrEqualToZero
@@ -90,12 +90,12 @@ StringAutomaton Operations
 
 Constructor(DFA_ptr dfa, const int number_of_tracks = 1)
 Constructor(DFA_ptr dfa, const int track, const int number_of_tracks)
-(sm) MakePhi 
-(sm) MakeEmptyString 
-(s)  MakeString 
-(sm) MakeAnyString 
+(sm) MakePhi
+(sm) MakeEmptyString
+(s)  MakeString
+(sm) MakeAnyString
 (sm) MakeAnyStringAligned
-(s)  MakeAnyOtherString 
+(s)  MakeAnyOtherString
 (s)  MakeCharRange
 (s)  MakeAnyChar
 (s)  MakeRegexAuto

@@ -26,7 +26,7 @@
 #include "solver/options/Solver.h"
 #include "smt/ast.h"
 #include "solver/Value.h"
-#include "theory/BinaryIntAutomaton.h"
+#include "theory/IntegerAutomaton.h"
 #include "theory/MultiTrackAutomaton.h"
 #include "theory/StringRelation.h"
 #include "utils/RegularExpression.h"
@@ -224,7 +224,7 @@ int main(const int argc, const char **argv) {
 //          break;
 //        }
 //        case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
-//          std::map<std::string, int> values = variable_entry.second->getBinaryIntAutomaton()->GetAnAcceptingIntForEachVar();
+//          std::map<std::string, int> values = variable_entry.second->getIntegerAutomaton()->GetAnAcceptingIntForEachVar();
 //          ss << "binaryint" << index++  << ".dot";
 //          LOG(INFO) << "---Binary int variables---";
 //          for (auto& entry : values) {

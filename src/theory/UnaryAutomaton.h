@@ -3,7 +3,7 @@
  *
  *  Created on: Nov 5, 2015
  *      Author: baki
- *   Copyright: Copyright 2015 The ABC Authors. All rights reserved. 
+ *   Copyright: Copyright 2015 The ABC Authors. All rights reserved.
  *              Use of this source code is governed license that can
  *              be found in the COPYING file.
  */
@@ -36,8 +36,8 @@ namespace Vlab
     class IntAutomaton;
     using IntAutomaton_ptr = IntAutomaton*;
 
-    class BinaryIntAutomaton;
-    using BinaryIntAutomaton_ptr = BinaryIntAutomaton*;
+    class IntegerAutomaton;
+    using IntegerAutomaton_ptr = IntegerAutomaton*;
 
     class StringAutomaton;
     using StringAutomaton_ptr = StringAutomaton*;
@@ -92,7 +92,7 @@ namespace Vlab
 
         SemilinearSet_ptr GetSemilinearSet();
         IntAutomaton_ptr ConvertToIntAutomaton(int number_of_variables, bool add_minus_one = false);
-        BinaryIntAutomaton_ptr ConvertToBinaryIntAutomaton(std::string var_name, ArithmeticFormula_ptr formula, bool add_minus_one = false);
+        IntegerAutomaton_ptr ConvertToIntegerAutomaton(std::string var_name, ArithmeticFormula_ptr formula, bool add_minus_one = false);
         StringAutomaton_ptr ConvertToStringAutomaton();
 
        protected:
@@ -101,90 +101,6 @@ namespace Vlab
        private:
         static const int VLOG_LEVEL;
     };
-
-    class UnaryAutomaton::Builder : public Automaton::Builder
-    {
-       public:
-
-        /**
-         * Initializes a new instances of the Builder class.
-         */
-        Builder();
-
-        /**
-         * Destructor.
-         */
-        virtual ~Builder();
-
-        /**
-         * Sets the number of states.
-         * @param number_of_states
-         * @return
-         */
-        virtual Builder& SetNumberOfStates(const int number_of_states) override;
-
-        /**
-         * Sets the number of bdd variables.
-         * @param number_of_bdd_variables
-         * @return
-         */
-        virtual Builder& SetNumberOfBddVariables(const int number_of_bdd_variables) override;
-
-        /**
-         * Sets the given state as accepting state.
-         * @param state
-         * @return
-         */
-        virtual Builder& SetAcceptingState(int state) override;
-
-        /**
-         * Sets a transition from source to given target.
-         * @param source
-         * @param transition is bdd transition string, e.g.; 1XX means 100,101, 110,111 where there are three BDD variables.
-         * @param target
-         * @return
-         */
-        virtual Builder& SetTransition(const int source, const std::string transition, const int target) override;
-
-        /**
-         * Sets the dfa.
-         * @param dfa
-         * @return
-         */
-        virtual Builder& SetDfa(const Libs::MONALib::DFA_ptr dfa) override;
-
-        /**
-         * Sets the unary symbol char.
-         * @param c
-         * @return
-         */
-        Builder& SetUnaryChar(const char c);
-
-        /**
-         * Sets semilinear set.
-         * @param semilinear_set
-         * @return
-         */
-        Builder& SetSemilinearSet(const SemilinearSet_ptr semilinear_set);
-
-        /**
-         * Builds an instance of the UnaryAutomaton class.
-         * @return
-         */
-        virtual UnaryAutomaton_ptr Build() override;
-       protected:
-
-        /**
-         * Unary symbol.
-         */
-        char unary_char_;
-
-        /**
-         * Semilinear set.
-         */
-        SemilinearSet_ptr semilinear_set_;
-    };
-
   } /* namespace Theory */
 } /* namespace Vlab */
 

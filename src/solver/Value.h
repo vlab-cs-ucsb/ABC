@@ -13,7 +13,7 @@
 
 #include <glog/logging.h>
 
-#include "../theory/BinaryIntAutomaton.h"
+#include "../theory/IntegerAutomaton.h"
 #include "../theory/BoolAutomaton.h"
 #include "../theory/IntAutomaton.h"
 #include "../theory/RelationalStringAutomaton.h"
@@ -49,7 +49,7 @@ class Value {
   Value(int data);
   Value(Theory::BoolAutomaton_ptr data);
   Value(Theory::IntAutomaton_ptr data);
-  Value(Theory::BinaryIntAutomaton_ptr data);
+  Value(Theory::IntegerAutomaton_ptr data);
   Value(Theory::StringAutomaton_ptr data);
   Value(Theory::RelationalStringAutomaton_ptr data);
   Value(const Value&);
@@ -64,7 +64,7 @@ class Value {
   void setData(int data);
   void setData(Theory::BoolAutomaton_ptr data);
   void setData(Theory::IntAutomaton_ptr data);
-  void setData(Theory::BinaryIntAutomaton_ptr data);
+  void setData(Theory::IntegerAutomaton_ptr data);
   void setData(Theory::StringAutomaton_ptr data);
   void setData(Theory::RelationalStringAutomaton_ptr data);
 
@@ -72,7 +72,7 @@ class Value {
   int getIntConstant() const;
   Theory::BoolAutomaton_ptr getBoolAutomaton() const;
   Theory::IntAutomaton_ptr getIntAutomaton() const;
-  Theory::BinaryIntAutomaton_ptr getBinaryIntAutomaton() const;
+  Theory::IntegerAutomaton_ptr getIntegerAutomaton() const;
   Theory::StringAutomaton_ptr getStringAutomaton() const;
   Theory::RelationalStringAutomaton_ptr getRelationalStringAutomaton() const;
 
@@ -111,7 +111,7 @@ class Value {
     int int_constant;
     Theory::BoolAutomaton_ptr bool_automaton;
     Theory::IntAutomaton_ptr int_automaton;
-    Theory::BinaryIntAutomaton_ptr binaryint_automaton;
+    Theory::IntegerAutomaton_ptr binaryint_automaton;
     Theory::StringAutomaton_ptr string_automaton;
     Theory::RelationalStringAutomaton_ptr relationalstring_automaton;
   };

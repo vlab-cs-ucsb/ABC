@@ -333,7 +333,7 @@ Value_ptr SymbolTable::get_projected_value_at_scope(Visitable_ptr scope, Variabl
   if (it != variable_value_table_[scope].end()) {
     Value_ptr result = nullptr;
     if (Value::Type::BINARYINT_AUTOMATON == it->second->getType()) {
-      auto relational_auto = it->second->getBinaryIntAutomaton();
+      auto relational_auto = it->second->getIntegerAutomaton();
       auto projected_auto = relational_auto->GetBinaryAutomatonFor(representative_variable->getName());
       result = new Value(projected_auto);
     } else if (Value::Type::RELATIONALSTRING_AUTOMATON == it->second->getType()) {

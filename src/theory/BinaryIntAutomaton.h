@@ -1,9 +1,9 @@
 /*
- * BinaryIntAutomaton.h
+ * IntegerAutomaton.h
  *
  *  Created on: Oct 16, 2015
  *      Author: baki
- *   Copyright: Copyright 2015 The ABC Authors. All rights reserved. 
+ *   Copyright: Copyright 2015 The ABC Authors. All rights reserved.
  *              Use of this source code is governed license that can
  *              be found in the COPYING file.
  */
@@ -42,10 +42,10 @@ namespace Vlab
   namespace Theory
   {
 
-    class BinaryIntAutomaton;
-    using BinaryIntAutomaton_ptr = BinaryIntAutomaton*;
+    class IntegerAutomaton;
+    using IntegerAutomaton_ptr = IntegerAutomaton*;
 
-    class BinaryIntAutomaton : public Automaton
+    class IntegerAutomaton : public Automaton
     {
        public:
 
@@ -60,7 +60,7 @@ namespace Vlab
          * @param num_of_variables
          * @param is_natural_number
          */
-        BinaryIntAutomaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_bdd_variables, const bool is_natural_number);
+        IntegerAutomaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_bdd_variables, const bool is_natural_number);
 
         /**
          * Constructs a binary encoded integer automaton given a binary encoded dfa and an arithmetic formula.
@@ -68,24 +68,24 @@ namespace Vlab
          * @param formula
          * @param is_natural_number
          */
-        BinaryIntAutomaton(const Libs::MONALib::DFA_ptr dfa, const ArithmeticFormula_ptr formula, const bool is_natural_number);
+        IntegerAutomaton(const Libs::MONALib::DFA_ptr dfa, const ArithmeticFormula_ptr formula, const bool is_natural_number);
 
         /**
          * Copy constructor.
          * @param
          */
-        BinaryIntAutomaton(const BinaryIntAutomaton&);
+        IntegerAutomaton(const IntegerAutomaton&);
 
         /**
          * Destructor.
          */
-        virtual ~BinaryIntAutomaton();
+        virtual ~IntegerAutomaton();
 
         /**
          * Generates a clone copy of the current automaton.
          * @return
          */
-        virtual BinaryIntAutomaton_ptr Clone() const override;
+        virtual IntegerAutomaton_ptr Clone() const override;
 
         /**
          * Generates a binary automaton that wraps the given dfa instance.
@@ -94,7 +94,7 @@ namespace Vlab
          * @param number_of_variables
          * @return
          */
-        virtual BinaryIntAutomaton_ptr MakeAutomaton(Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const override;
+        virtual IntegerAutomaton_ptr MakeAutomaton(Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const override;
 
         /**
          * Prints the actual type and the details of the automaton.
@@ -102,28 +102,28 @@ namespace Vlab
          */
         virtual std::string Str() const override;
 
-        static BinaryIntAutomaton_ptr MakePhi(ArithmeticFormula_ptr, bool is_natural_number);
-        static BinaryIntAutomaton_ptr MakeAnyInt(ArithmeticFormula_ptr, bool is_natural_number);
-        static BinaryIntAutomaton_ptr MakeAutomaton(ArithmeticFormula_ptr, bool is_natural_number);
-        static BinaryIntAutomaton_ptr MakeAutomaton(int value, std::string var_name, ArithmeticFormula_ptr formula,
+        static IntegerAutomaton_ptr MakePhi(ArithmeticFormula_ptr, bool is_natural_number);
+        static IntegerAutomaton_ptr MakeAnyInt(ArithmeticFormula_ptr, bool is_natural_number);
+        static IntegerAutomaton_ptr MakeAutomaton(ArithmeticFormula_ptr, bool is_natural_number);
+        static IntegerAutomaton_ptr MakeAutomaton(int value, std::string var_name, ArithmeticFormula_ptr formula,
                                                     bool add_leading_zeros = false);
-        static BinaryIntAutomaton_ptr MakeAutomaton(SemilinearSet_ptr semilinear_set, std::string var_name,
+        static IntegerAutomaton_ptr MakeAutomaton(SemilinearSet_ptr semilinear_set, std::string var_name,
                                                     ArithmeticFormula_ptr formula, bool add_leading_zeros = false);
 
         ArithmeticFormula_ptr get_formula();
         void set_formula(ArithmeticFormula_ptr formula);
         bool is_natural_number();
         bool HasNegative1();
-        BinaryIntAutomaton_ptr Complement();
-        BinaryIntAutomaton_ptr Intersect(BinaryIntAutomaton_ptr);
-        BinaryIntAutomaton_ptr Union(BinaryIntAutomaton_ptr);
-        BinaryIntAutomaton_ptr Difference(BinaryIntAutomaton_ptr);
-        BinaryIntAutomaton_ptr Exists(std::string var_name);
-        BinaryIntAutomaton_ptr GetBinaryAutomatonFor(std::string var_name);
-        BinaryIntAutomaton_ptr GetPositiveValuesFor(std::string var_name);
-        BinaryIntAutomaton_ptr GetNegativeValuesFor(std::string var_name);
-        BinaryIntAutomaton_ptr TrimLeadingZeros();
-        BinaryIntAutomaton_ptr AddLeadingZeros();
+        IntegerAutomaton_ptr Complement();
+        IntegerAutomaton_ptr Intersect(IntegerAutomaton_ptr);
+        IntegerAutomaton_ptr Union(IntegerAutomaton_ptr);
+        IntegerAutomaton_ptr Difference(IntegerAutomaton_ptr);
+        IntegerAutomaton_ptr Exists(std::string var_name);
+        IntegerAutomaton_ptr GetBinaryAutomatonFor(std::string var_name);
+        IntegerAutomaton_ptr GetPositiveValuesFor(std::string var_name);
+        IntegerAutomaton_ptr GetNegativeValuesFor(std::string var_name);
+        IntegerAutomaton_ptr TrimLeadingZeros();
+        IntegerAutomaton_ptr AddLeadingZeros();
         SemilinearSet_ptr GetSemilinearSet();
         UnaryAutomaton_ptr ToUnaryAutomaton();
 
@@ -132,18 +132,18 @@ namespace Vlab
         BigInteger SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = false) override;
 
        protected:
-        BinaryIntAutomaton(ArithmeticFormula_ptr formula);
-        static BinaryIntAutomaton_ptr MakeIntGraterThanOrEqualToZero(std::vector<int> indexes, int number_of_variables);
-        static BinaryIntAutomaton_ptr MakeEquality(ArithmeticFormula_ptr, bool is_natural_number);
-        static BinaryIntAutomaton_ptr MakeIntEquality(ArithmeticFormula_ptr);
-        static BinaryIntAutomaton_ptr MakeNaturalNumberEquality(ArithmeticFormula_ptr);
-        static BinaryIntAutomaton_ptr MakeLessThan(ArithmeticFormula_ptr, bool is_natural_number);
-        static BinaryIntAutomaton_ptr MakeIntLessThan(ArithmeticFormula_ptr);
-        static BinaryIntAutomaton_ptr MakeNaturalNumberLessThan(ArithmeticFormula_ptr);
-        static BinaryIntAutomaton_ptr MakeLessThanOrEqual(ArithmeticFormula_ptr, bool is_natural_number);
-        static BinaryIntAutomaton_ptr MakeGreaterThan(ArithmeticFormula_ptr, bool is_natural_number);
-        static BinaryIntAutomaton_ptr MakeGreaterThanOrEqual(ArithmeticFormula_ptr, bool is_natural_number);
-        static BinaryIntAutomaton_ptr MakeTrimHelperAuto(int var_index, int number_of_variables);
+        IntegerAutomaton(ArithmeticFormula_ptr formula);
+        static IntegerAutomaton_ptr MakeIntGraterThanOrEqualToZero(std::vector<int> indexes, int number_of_variables);
+        static IntegerAutomaton_ptr MakeEquality(ArithmeticFormula_ptr, bool is_natural_number);
+        static IntegerAutomaton_ptr MakeIntEquality(ArithmeticFormula_ptr);
+        static IntegerAutomaton_ptr MakeNaturalNumberEquality(ArithmeticFormula_ptr);
+        static IntegerAutomaton_ptr MakeLessThan(ArithmeticFormula_ptr, bool is_natural_number);
+        static IntegerAutomaton_ptr MakeIntLessThan(ArithmeticFormula_ptr);
+        static IntegerAutomaton_ptr MakeNaturalNumberLessThan(ArithmeticFormula_ptr);
+        static IntegerAutomaton_ptr MakeLessThanOrEqual(ArithmeticFormula_ptr, bool is_natural_number);
+        static IntegerAutomaton_ptr MakeGreaterThan(ArithmeticFormula_ptr, bool is_natural_number);
+        static IntegerAutomaton_ptr MakeGreaterThanOrEqual(ArithmeticFormula_ptr, bool is_natural_number);
+        static IntegerAutomaton_ptr MakeTrimHelperAuto(int var_index, int number_of_variables);
         static void ComputeBinaryStates(std::vector<BinaryState_ptr>& binary_states, SemilinearSet_ptr semilinear_set);
         static void AddBinaryState(std::vector<BinaryState_ptr>& binary_states, std::vector<int>& constants);
         static int AddBinaryState(std::vector<BinaryState_ptr>& binary_states, int C, int R, BinaryState::Type t, int v,
@@ -188,7 +188,7 @@ namespace Vlab
         static const int VLOG_LEVEL;
     };
 
-    class BinaryIntAutomaton::Builder : public Automaton::Builder
+    class IntegerAutomaton::Builder : public Automaton::Builder
     {
        public:
 
@@ -240,10 +240,10 @@ namespace Vlab
         virtual ~Builder();
 
         /**
-         * Builds an instance of the BinaryIntAutomaton class.
+         * Builds an instance of the IntegerAutomaton class.
          * @return
          */
-        virtual BinaryIntAutomaton_ptr Build() override;
+        virtual IntegerAutomaton_ptr Build() override;
     };
 
   } /* namespace Theory */

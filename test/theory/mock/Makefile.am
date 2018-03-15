@@ -16,12 +16,12 @@ AM_LDFLAGS = \
 
 noinst_LTLIBRARIES = libabctestmocktheory.la
 libabctestmocktheory_la_SOURCES = \
-	./mock/theory/MockBinaryIntAutomaton.cpp \
-	./mock/theory/MockBinaryIntAutmaton.h 
+	./mock/theory/MockIntegerAutomaton.cpp \
+	./mock/theory/MockBinaryIntAutmaton.h
 
 libabctestmocktheory_la_LDFLAGS = -version-info 0:1:0
 
-#libabctestmocktheory_la_LIBADD = 
+#libabctestmocktheory_la_LIBADD =
 
 test-local:
 	@echo src, $(srcdir), $(top_srcdir)

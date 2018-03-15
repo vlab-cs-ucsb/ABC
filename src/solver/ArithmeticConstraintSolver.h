@@ -19,7 +19,7 @@
 #include "../smt/Visitor.h"
 #include "../smt/typedefs.h"
 #include "../theory/ArithmeticFormula.h"
-#include "../theory/BinaryIntAutomaton.h"
+#include "../theory/IntegerAutomaton.h"
 #include "ArithmeticFormulaGenerator.h"
 #include "AstTraverser.h"
 #include "ConstraintInformation.h"

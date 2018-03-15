@@ -169,7 +169,7 @@ void Driver::SetModelCounterForVariable(const std::string var_name) {
         mc.add_symbolic_counter(var_value->getStringAutomaton()->GetSymbolicCounter());
         break;
       case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON:
-        mc.add_symbolic_counter(var_value->getBinaryIntAutomaton()->GetSymbolicCounter());
+        mc.add_symbolic_counter(var_value->getIntegerAutomaton()->GetSymbolicCounter());
         break;
       case Vlab::Solver::Value::Type::INT_AUTOMATON:
         mc.add_symbolic_counter(var_value->getIntAutomaton()->GetSymbolicCounter());
@@ -196,7 +196,7 @@ void Driver::SetModelCounter() {
     }
     switch (variable_entry.second->getType()) {
       case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
-        auto binary_auto = variable_entry.second->getBinaryIntAutomaton();
+        auto binary_auto = variable_entry.second->getIntegerAutomaton();
         auto formula = binary_auto->get_formula();
         for (auto& el : formula->get_variable_coefficient_map()) {
           if (symbol_table_->get_variable_unsafe(el.first) != nullptr) {
@@ -254,7 +254,7 @@ void Driver::printResult(Solver::Value_ptr value, std::ostream& out) {
       value->getIntAutomaton()->toDotAscii(false, out);
       break;
     case Solver::Value::Type::BINARYINT_AUTOMATON:
-      value->getBinaryIntAutomaton()->ToDot(out, false);
+      value->getIntegerAutomaton()->ToDot(out, false);
       break;
     case Solver::Value::Type::RELATIONALSTRING_AUTOMATON:
       value->getRelationalStringAutomaton()->ToDot(out, false);
@@ -272,7 +272,7 @@ std::map<std::string, std::string> Driver::getSatisfyingExamples() {
   std::map<std::string, std::string> results;
   for (auto& variable_entry : getSatisfyingVariables()) {
     if (Solver::Value::Type::BINARYINT_AUTOMATON == variable_entry.second->getType()) {
-      std::map<std::string, int> values = variable_entry.second->getBinaryIntAutomaton()->GetAnAcceptingIntForEachVar();
+      std::map<std::string, int> values = variable_entry.second->getIntegerAutomaton()->GetAnAcceptingIntForEachVar();
       for (auto& entry : values) {
         results[entry.first] = std::to_string(entry.second);
       }
@@ -432,7 +432,7 @@ void Driver::test() {
 //  f1->add_variable("y", 0);
 //  f1->set_constant(0);
 ////
-//  auto t1 = BinaryIntAutomaton::MakeAutomaton(f1, false);
+//  auto t1 = IntegerAutomaton::MakeAutomaton(f1, false);
 //  t1->inspectAuto();
 
 //  SemilinearSet_ptr s1 = new SemilinearSet();
@@ -441,24 +441,24 @@ void Driver::test() {
 //  s1->set_period(1);
 ////  s1->add_constant(0);
 //  std::cout << *s1 << std::endl;
-//  t1 = BinaryIntAutomaton::MakeAutomaton(s1, "x", f1, true);
+//  t1 = IntegerAutomaton::MakeAutomaton(s1, "x", f1, true);
 
 
 //  t1->Count(4);
 //
-//  auto t2 = BinaryIntAutomaton::MakeAnyInt(f1->clone(), true);
+//  auto t2 = IntegerAutomaton::MakeAnyInt(f1->clone(), true);
 //  t2->Count(4);
 //
-//  auto t2 = BinaryIntAutomaton::MakeAutomaton(f1, false);
+//  auto t2 = IntegerAutomaton::MakeAutomaton(f1, false);
 //  t2->Count(10, false);
 //
-//  auto t3 = BinaryIntAutomaton::MakeAutomaton(f1, false);
+//  auto t3 = IntegerAutomaton::MakeAutomaton(f1, false);
 //  t3->Count(5, false);
 //
-//  auto t4 = BinaryIntAutomaton::MakeAutomaton(f1, false);
+//  auto t4 = IntegerAutomaton::MakeAutomaton(f1, false);
 //  t4->Count(20, false);
 //
-//  auto t5 = BinaryIntAutomaton::MakeAutomaton(f1, false);
+//  auto t5 = IntegerAutomaton::MakeAutomaton(f1, false);
 //  t5->Count(2, false);
 //  t5->Count(10, false);
 //  t5->Count(5, false);
@@ -470,7 +470,7 @@ void Driver::test() {
 //  f2->add_variable("x", 1);
 //  f2->add_variable("y", 0);
 //
-//  auto t2 = BinaryIntAutomaton::MakeAutomaton(f2, false);
+//  auto t2 = IntegerAutomaton::MakeAutomaton(f2, false);
 //  t2->inspectAuto();
 //
 //  auto t3 = t1->Union(t2);
@@ -489,7 +489,7 @@ void Driver::test() {
 //
 //  Theory::ArithmeticFormula formula_2(eq_1, coeff);
 //  formula_2.setType(Theory::ArithmeticFormula::Type::EQ);
-//  Theory::BinaryIntAutomaton_ptr test_auto = Theory::BinaryIntAutomaton::makeAutomaton(&formula_2);
+//  Theory::IntegerAutomaton_ptr test_auto = Theory::IntegerAutomaton::makeAutomaton(&formula_2);
 //
 //  test_auto->inspectAuto();
 //  test_auto->inspectBDD();
