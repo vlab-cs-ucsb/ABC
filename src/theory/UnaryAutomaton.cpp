@@ -316,7 +316,7 @@ namespace Vlab
       counter_.set_type(SymbolicCounter::Type::UNARYINT);
     }
 
-    /** Automaton builder implementation */
+    /** UnaryAutomaton builder implementation */
 
     UnaryAutomaton::Builder::Builder()
         : Automaton::Builder(),
@@ -329,6 +329,31 @@ namespace Vlab
     UnaryAutomaton::Builder::~Builder()
     {
       delete semilinear_set_;
+    }
+
+    UnaryAutomaton::Builder& UnaryAutomaton::Builder::SetNumberOfStates(const int number_of_states)
+    {
+      return Automaton::Builder::SetNumberOfStates(number_of_states);
+    }
+
+    UnaryAutomaton::Builder& UnaryAutomaton::Builder::SetNumberOfBddVariables(const int number_of_bdd_variables)
+    {
+      return Automaton::Builder::SetNumberOfBddVariables(number_of_bdd_variables);
+    }
+
+    UnaryAutomaton::Builder& UnaryAutomaton::Builder::SetAcceptingState(int state)
+    {
+      return Automaton::Builder::SetAcceptingState(state);
+    }
+
+    UnaryAutomaton::Builder& UnaryAutomaton::Builder::SetTransition(const int source, const std::string transition, const int target)
+    {
+      return Automaton::Builder::SetTransition(source, transition, target);
+    }
+
+    UnaryAutomaton::Builder& UnaryAutomaton::Builder::SetDfa(const Libs::MONALib::DFA_ptr dfa)
+    {
+      return Automaton::Builder::SetDfa(dfa);
     }
 
     UnaryAutomaton::Builder& UnaryAutomaton::Builder::SetUnaryChar(const char c)

@@ -2350,5 +2350,52 @@ num
       out << " }";
     }
 
+    /** BinaryIntAutomaton builder implementation */
+
+    BinaryIntAutomaton::Builder::Builder()
+        : Automaton::Builder()
+    {
+    }
+
+    BinaryIntAutomaton::Builder& BinaryIntAutomaton::Builder::SetNumberOfStates(const int number_of_states)
+    {
+      return Automaton::Builder::SetNumberOfStates(number_of_states);
+    }
+
+    BinaryIntAutomaton::Builder& BinaryIntAutomaton::Builder::SetNumberOfBddVariables(const int number_of_bdd_variables)
+    {
+      return Automaton::Builder::SetNumberOfBddVariables(number_of_bdd_variables);
+    }
+
+    BinaryIntAutomaton::Builder& BinaryIntAutomaton::Builder::SetAcceptingState(int state)
+    {
+      return Automaton::Builder::SetAcceptingState(state);
+    }
+
+    BinaryIntAutomaton::Builder& BinaryIntAutomaton::Builder::SetTransition(const int source, const std::string transition, const int target)
+    {
+      return Automaton::Builder::SetTransition(source, transition, target);
+    }
+
+    BinaryIntAutomaton::Builder& BinaryIntAutomaton::Builder::SetDfa(const Libs::MONALib::DFA_ptr dfa)
+    {
+      return Automaton::Builder::SetDfa(dfa);
+    }
+
+    UnaryAutomaton_ptr UnaryAutomaton::Builder::Build()
+    {
+      if (dfa_)
+      {
+        BinaryIntAutomaton_ptr automaton = new BinaryIntAutomaton(dfa_, number_of_bdd_variables_, false);
+        dfa_ = nullptr;
+
+        DVLOG(VLOG_LEVEL) << *automaton << " = BinaryIntAutomaton::Builder::Build()";
+        return automaton;
+      }
+
+      LOG(FATAL)<< "Automaton cannot be constructed. Make sure minimum required fields are set in order.";
+      return nullptr;
+    }
+
   } /* namespace Theory */
 } /* namespace Vlab */

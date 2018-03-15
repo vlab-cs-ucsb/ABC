@@ -29,16 +29,30 @@ libabcautomaton_la_SOURCES = \
 	StringFormula.h \
 	Automaton.cpp \
 	Automaton.h \
+	AutomatonBuilder.cpp \
+	AutomatonBuilder.h \
 	BoolAutomaton.cpp \
 	BoolAutomaton.h \
+	BoolAutomatonBuilder.cpp \
+	BoolAutomatonBuilder.h \
 	UnaryAutomaton.cpp \
 	UnaryAutomaton.h \
+	UnaryAutomatonBuilder.cpp \
+	UnaryAutomatonBuilder.h \
 	IntAutomaton.cpp \
 	IntAutomaton.h \
 	StringAutomaton.cpp \
 	StringAutomaton.h \
-	BinaryIntAutomaton.cpp \
-	BinaryIntAutomaton.h \
+	StringAutomatonBuilder.cpp \
+	StringAutomatonBuilder.h \
+	IntegerAutomaton.cpp \
+	IntegerAutomaton.h \
+	IntegerAutomatonBuilder.cpp \
+	IntegerAutomatonBuilder.h \
+	NaturalNumberAutomaton.cpp \
+	NaturalNumberAutomaton.h \
+	NaturalNumberAutomatonBuilder.cpp \
+	NaturalNumberAutomatonBuilder.cpp \
 	RelationalStringAutomaton.cpp \
 	RelationalStringAutomaton.h \
 	SymbolicCounter.cpp \
