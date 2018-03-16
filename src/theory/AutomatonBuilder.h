@@ -66,6 +66,24 @@ namespace Vlab
         virtual Builder& SetDfa(const Libs::MONALib::DFA_ptr dfa);
 
         /**
+         * Setups a non accepting automaton.
+         * @return
+         */
+        virtual Builder& RejectAll();
+
+        /**
+         * Setups an automaton that accepts all inputs.
+         * @return
+         */
+        virtual Builder& AcceptAll();
+
+        /**
+         * Setups an automaton that accepts any input except empty input.
+         * @return
+         */
+        virtual Builder& AcceptAllExceptEmptyInput();
+
+        /**
          * Builds an instance of the automaton class.
          * @return
          */

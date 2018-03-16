@@ -178,7 +178,6 @@ namespace Vlab
             }
         };
 
-        bool is_natural_number_;
         ArithmeticFormula_ptr formula_;
        private:
         static const int VLOG_LEVEL;

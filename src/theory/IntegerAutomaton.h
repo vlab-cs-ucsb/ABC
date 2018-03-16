@@ -42,6 +42,12 @@ namespace Vlab
     class IntegerAutomaton;
     using IntegerAutomaton_ptr = IntegerAutomaton*;
 
+    /**
+     * Binary encoded integer automaton class.
+     * Represents integers in 2's complement form.
+     * Accepts binary representation of integers reading from least significant bit to most significant bit.
+     * The last bit read is the sign bit.
+     */
     class IntegerAutomaton : public Automaton
     {
        public:
@@ -84,7 +90,6 @@ namespace Vlab
 
         /**
          * Generates a binary automaton that wraps the given dfa instance.
-         * TODO need a parameter to specifiy integer or natural numbers; will separate into two classes.
          * @param dfa
          * @param number_of_variables
          * @return
@@ -98,8 +103,6 @@ namespace Vlab
          */
         virtual std::string Str() const override;
 
-        static IntegerAutomaton_ptr MakePhi(ArithmeticFormula_ptr, bool is_natural_number);
-        static IntegerAutomaton_ptr MakeAnyInt(ArithmeticFormula_ptr, bool is_natural_number);
         static IntegerAutomaton_ptr MakeAutomaton(ArithmeticFormula_ptr, bool is_natural_number);
         static IntegerAutomaton_ptr MakeAutomaton(int value, std::string var_name, ArithmeticFormula_ptr formula,
                                                   bool add_leading_zeros = false);
@@ -108,7 +111,6 @@ namespace Vlab
 
         ArithmeticFormula_ptr get_formula();
         void set_formula(ArithmeticFormula_ptr formula);
-        bool is_natural_number();
         bool HasNegative1();
         IntegerAutomaton_ptr Complement();
         IntegerAutomaton_ptr Intersect(IntegerAutomaton_ptr);

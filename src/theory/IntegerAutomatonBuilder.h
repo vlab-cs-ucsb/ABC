@@ -25,6 +25,11 @@ namespace Vlab
         Builder();
 
         /**
+         * Destructor.
+         */
+        virtual ~Builder();
+
+        /**
          * Sets the number of states.
          * @param number_of_states
          * @return
@@ -62,15 +67,31 @@ namespace Vlab
         virtual Builder& SetDfa(const Libs::MONALib::DFA_ptr dfa) override;
 
         /**
-         * Destructor.
+         * TODO tmp solution for binary int automaton formula
+         * @param formula
+         * @return
          */
-        virtual ~Builder();
+        Builder& SetFormula(ArithmeticFormula_ptr formula);
+
+        /**
+         * Generates an automaton that accepts all integers.
+         * @return
+         */
+        Builder& AcceptAllIntegers();
 
         /**
          * Builds an instance of the IntegerAutomaton class.
          * @return
          */
         virtual IntegerAutomaton_ptr Build() override;
+
+       protected:
+
+        /**
+         * TODO tmp
+         * Arithmetic formula
+         */
+        ArithmeticFormula_ptr formula_
     };
 
   } /* namespace Theory */

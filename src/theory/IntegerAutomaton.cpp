@@ -6,6 +6,7 @@
  */
 
 #include "IntegerAutomaton.h"
+#include "IntegerAutomatonBuilder.h"
 
 namespace Vlab
 {
@@ -60,27 +61,6 @@ namespace Vlab
       return ss.str();
     }
 
-    IntegerAutomaton_ptr IntegerAutomaton::MakePhi(ArithmeticFormula_ptr formula, bool is_natural_number)
-    {
-      auto non_accepting_dfa = Libs::MONALib::DFAMakePhi(formula->get_number_of_variables());
-      auto non_accepting_binary_auto = new IntegerAutomaton(non_accepting_dfa, formula, is_natural_number);
-
-      DVLOG(VLOG_LEVEL) << non_accepting_binary_auto->id_ << " = MakePhi(" << *formula << ")";
-      return non_accepting_binary_auto;
-    }
-
-    /**
-     * Binary int automaton does not accept empty string
-     */
-    IntegerAutomaton_ptr IntegerAutomaton::MakeAnyInt(ArithmeticFormula_ptr formula, bool is_natural_number)
-    {
-      auto any_binary_int_dfa = Automaton::DFAMakeAnyButNotEmpty(formula->get_number_of_variables());
-      auto any_int = new IntegerAutomaton(any_binary_int_dfa, formula, is_natural_number);
-
-      DVLOG(VLOG_LEVEL) << any_int->id_ << " = MakeAnyInt(" << *formula << ")";
-      return any_int;
-    }
-
     IntegerAutomaton_ptr IntegerAutomaton::MakeAutomaton(ArithmeticFormula_ptr formula, bool is_natural_number)
     {
       IntegerAutomaton_ptr result_auto = nullptr;
@@ -113,7 +93,7 @@ namespace Vlab
         }
         case ArithmeticFormula::Type::VAR: {
           CHECK_EQ(1, formula->get_number_of_variables());
-          result_auto = IntegerAutomaton::MakeAnyInt(formula, is_natural_number);
+          result_auto = Builder().SetFormula(formula).AcceptAllIntegers().Build();
           break;
         }
         default:
@@ -327,11 +307,6 @@ namespace Vlab
       this->formula_ = formula;
     }
 
-    bool IntegerAutomaton::is_natural_number()
-    {
-      return is_natural_number_;
-    }
-
     bool IntegerAutomaton::HasNegative1()
     {
       CHECK_EQ(1, number_of_bdd_variables_)<< "implemented for single track binary automaton";
@@ -392,11 +367,11 @@ namespace Vlab
 
     IntegerAutomaton_ptr IntegerAutomaton::Union(IntegerAutomaton_ptr other_auto)
     {
-      auto union_dfa = Automaton::DFAUnion(this->dfa_, other_auto->dfa_);
+      auto union_dfa = Libs::MONALib::DFAUnion(this->dfa_, other_auto->dfa_);
       auto union_formula = this->formula_->clone();
       union_formula->reset_coefficients();
       union_formula->set_type(ArithmeticFormula::Type::UNION);
-      auto union_auto = new IntegerAutomaton(union_dfa, union_formula, is_natural_number_);
+      auto union_auto = new IntegerAutomaton(union_dfa, union_formula);
 
       DVLOG(VLOG_LEVEL) << union_auto->id_ << " = [" << this->id_ << "]->Union(" << other_auto->id_ << ")";
       return union_auto;

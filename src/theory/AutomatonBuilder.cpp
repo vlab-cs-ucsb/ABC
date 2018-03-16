@@ -17,7 +17,6 @@ namespace Vlab
           number_of_bdd_variables_ { 0 },
           dfa_ { nullptr }
     {
-
     }
 
     Automaton::Builder::~Builder()
@@ -48,7 +47,7 @@ namespace Vlab
     Automaton::Builder& Automaton::Builder::SetTransition(const int source, const std::string transition,
                                                           const int target)
     {
-      CHECK_EQ(number_of_bdd_variables_, transition.length());
+      DCHECK_EQ(number_of_bdd_variables_, transition.length());
       this->transitions_[source][transition] = target;
       return *this;
     }
@@ -59,9 +58,26 @@ namespace Vlab
       return *this;
     }
 
+    Automaton::Builder& Automaton::Builder::RejectAll()
+    {
+      this->dfa_ = Libs::MONALib::DFAMakePhi(this->number_of_bdd_variables_);
+      return *this;
+    }
+
+    Automaton::Builder& Automaton::Builder::AcceptAll()
+    {
+      this->dfa_ = Libs::MONALib::DFAMakeAny(this->number_of_bdd_variables_);
+      return *this;
+    }
+
+    Automaton::Builder& Automaton::Builder::AcceptAllExceptEmptyInput()
+    {
+      this->dfa_ = Libs::MONALib::DFAMakeAnyButNotEmpty(this->number_of_bdd_variables_);
+      return *this;
+    }
+
     Automaton_ptr Automaton::Builder::Build()
     {
-
       if (dfa_)
       {
         Automaton_ptr automaton = new Automaton(dfa_, number_of_bdd_variables_);
@@ -70,7 +86,7 @@ namespace Vlab
         return automaton;
       }
 
-      LOG(FATAL)<< "DFA is not constructed.";
+      LOG(FATAL)<< "Automaton is not constructed. Make sure minimum required fields are set in order.";
       return nullptr;
     }
 

@@ -14,7 +14,8 @@ namespace Vlab
   {
 
     IntegerAutomaton::Builder::Builder()
-        : Automaton::Builder()
+        : Automaton::Builder(),
+          formula_ {nullptr}
     {
     }
 
@@ -44,12 +45,25 @@ namespace Vlab
       return Automaton::Builder::SetDfa(dfa);
     }
 
+    IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetFormula(ArithmeticFormula_ptr formula)
+    {
+      this->formula_ = formula->clone();
+      this->number_of_bdd_variables_ = formula->get_number_of_variables();
+      return *this;
+    }
+
+    IntegerAutomaton::Builder& IntegerAutomaton::Builder::AcceptAllIntegers()
+    {
+      return Automaton::Builder::AcceptAllExceptEmptyInput();
+    }
+
     IntegerAutomaton_ptr IntegerAutomaton::Builder::Build()
     {
-      if (dfa_)
+      if (dfa_ and formula_)
       {
-        IntegerAutomaton_ptr automaton = new IntegerAutomaton(dfa_, number_of_bdd_variables_);
+        IntegerAutomaton_ptr automaton = new IntegerAutomaton(dfa_, formula_);
         dfa_ = nullptr;
+        formula_ = nullptr;
 
         DVLOG(VLOG_LEVEL) << *automaton << " = IntegerAutomaton::Builder::Build()";
         return automaton;
