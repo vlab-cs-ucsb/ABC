@@ -90,5 +90,10 @@ namespace Vlab
       return nullptr;
     }
 
+    void Automaton::Builder::BuildDFA()
+    {
+      LOG(FATAL) << "Implement me!";
+    }
+
   } /* namespace Theory */
 } /* namespace Vlab */

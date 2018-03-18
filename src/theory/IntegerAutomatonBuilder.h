@@ -88,6 +88,21 @@ namespace Vlab
        protected:
 
         /**
+         * Builds binary encoded integer DFA.
+         */
+        virtual void BuildDFA() override;
+
+        /**
+         * Builds an equality or disequality DFA.
+         */
+        void BuildEqualityDFA();
+
+        /**
+         * Builds an inequality DFA.
+         */
+        void BuildInEqualityDFA();
+
+        /**
          * TODO tmp
          * Arithmetic formula
          */

@@ -15,6 +15,39 @@ namespace Vlab
     {
       std::unordered_map<int, int*> MONALib::bdd_variable_indices;
 
+      void MONALib::DFASetup(const int number_of_states, const int number_of_bdd_variables)
+      {
+        dfaSetup(number_of_states, number_of_bdd_variables, MONALib::GetBddVariableIndices(number_of_bdd_variables));
+      }
+
+      void MONALib::DFASetNumberOfExceptionalTransitions(const int number_of_exceptional_transtions)
+      {
+        dfaAllocExceptions(number_of_exceptional_transtions);
+      }
+
+      void MONALib::DFASetExceptionalTransition(const std::string& exceptional_transition, const int to)
+      {
+        dfaStoreException(to, const_cast<char*>(exceptional_transition.data()));
+      }
+
+      void MONALib::DFASetTargetForRemaningTransitions(const int state)
+      {
+        dfaStoreState(state);
+      }
+
+      MONALib::DFA_ptr MONALib::DFABuild(const std::string& statuses)
+      {
+        return dfaBuild(const_cast<char*>(statuses.data()));
+      }
+
+      MONALib::DFA_ptr MONALib::DFABuild(const std::string& statuses)
+      {
+        auto tmp_dfa = MONALib::DFABuild(statuses);
+        auto result_dfa = dfaMinimize(tmp_dfa);
+        dfaFree(tmp_dfa);
+        return result_dfa;
+      }
+
       int* MONALib::GetBddVariableIndices(const int number_of_bdd_variables)
       {
         auto it = MONALib::bdd_variable_indices.find(number_of_bdd_variables);

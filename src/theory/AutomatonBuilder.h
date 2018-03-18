@@ -91,6 +91,11 @@ namespace Vlab
        protected:
 
         /**
+         * Builds underlying DFA.
+         */
+        virtual void BuildDFA();
+
+        /**
          * Number of states.
          */
         int number_of_states_;

@@ -42,6 +42,53 @@ namespace Vlab
           using DFA_ptr = DFA*;
 
           /**
+           * Setups a MONA dfa.
+           * @param number_of_states
+           * @param number_of_bdd_variables
+           */
+          static void DFASetup(const int number_of_states, const int number_of_bdd_variables);
+
+          /**
+           * Sets number of exceptional transitions from the current state to other states.
+           * You do not need to set this number if all transitions are going to the same state.
+           * You do not need to include the transitions that goes to a default next next state.
+           * Example: from state 1, 'a' goes to state '2', 'b', 'c' goes to state 3 and rest goes
+           * to state 4. You can say state 4 is the default state and there are only 3 exceptional
+           * transition that do not go to state 4. You will call this method with value 3 and later
+           * you will set those 3 exceptional transitions.
+           * @param number_of_transitions
+           */
+          static void DFASetNumberOfExceptionalTransitions(const int number_of_exceptional_transtions);
+
+          /**
+           * Sets a transition from the current state to the given state.
+           * @param exceptional_transition
+           * @param to
+           */
+          static void DFASetExceptionalTransition(const std::string& exceptional_transition, const int to);
+
+          /**
+           * Sets all the transitions except the exceptional ones to go into the given state.
+           * @param state
+           */
+          static void DFASetTargetForRemaningTransitions(const int state);
+
+          /**
+           * Generates a MONA DFA given the status of each state as accepting or rejecting.
+           * '+' used for accepting states, '-' used for rejecting states.
+           * @param statuses
+           * @return
+           */
+          static DFA_ptr DFABuild(const std::string& statuses);
+
+          /**
+           * Generates MONA DFA given teh status of each state and minimizes it afterwards.
+           * @param statuses
+           * @return
+           */
+          static DFA_ptr DFABuildAndMinimize(const std::string& statuses);
+
+          /**
            * Uses a cache for bdd variable indices.
            * We use a fixed ordering in all automata we generate
            * @param number_of_bdd_variables
@@ -293,7 +340,7 @@ namespace Vlab
          private:
 
           /**
-           * Bdd variable indices cache used in MONA dfa manipulation
+           * Bdd variable indices cache used in MONA dfa manipulation.
            */
           static std::unordered_map<int, int*> bdd_variable_indices;
 

@@ -103,7 +103,6 @@ namespace Vlab
          */
         virtual std::string Str() const override;
 
-        static IntegerAutomaton_ptr MakeAutomaton(ArithmeticFormula_ptr, bool is_natural_number);
         static IntegerAutomaton_ptr MakeAutomaton(int value, std::string var_name, ArithmeticFormula_ptr formula,
                                                   bool add_leading_zeros = false);
         static IntegerAutomaton_ptr MakeAutomaton(SemilinearSet_ptr semilinear_set, std::string var_name,
@@ -132,15 +131,6 @@ namespace Vlab
        protected:
         IntegerAutomaton(ArithmeticFormula_ptr formula);
         static IntegerAutomaton_ptr MakeIntGraterThanOrEqualToZero(std::vector<int> indexes, int number_of_variables);
-        static IntegerAutomaton_ptr MakeEquality(ArithmeticFormula_ptr, bool is_natural_number);
-        static IntegerAutomaton_ptr MakeIntEquality(ArithmeticFormula_ptr);
-        static IntegerAutomaton_ptr MakeNaturalNumberEquality(ArithmeticFormula_ptr);
-        static IntegerAutomaton_ptr MakeLessThan(ArithmeticFormula_ptr, bool is_natural_number);
-        static IntegerAutomaton_ptr MakeIntLessThan(ArithmeticFormula_ptr);
-        static IntegerAutomaton_ptr MakeNaturalNumberLessThan(ArithmeticFormula_ptr);
-        static IntegerAutomaton_ptr MakeLessThanOrEqual(ArithmeticFormula_ptr, bool is_natural_number);
-        static IntegerAutomaton_ptr MakeGreaterThan(ArithmeticFormula_ptr, bool is_natural_number);
-        static IntegerAutomaton_ptr MakeGreaterThanOrEqual(ArithmeticFormula_ptr, bool is_natural_number);
         static IntegerAutomaton_ptr MakeTrimHelperAuto(int var_index, int number_of_variables);
         static void ComputeBinaryStates(std::vector<BinaryState_ptr>& binary_states, SemilinearSet_ptr semilinear_set);
         static void AddBinaryState(std::vector<BinaryState_ptr>& binary_states, std::vector<int>& constants);

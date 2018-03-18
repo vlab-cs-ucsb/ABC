@@ -325,12 +325,22 @@ namespace Vlab
         virtual void add_print_label(std::ostream& out);
 
         /**
-         * Returns binary representation of number n with a bit string with the given bit length
+         * Returns binary representation of number n with a bit string with the given bit length.
+         * Places the most significant bit into the 0th index of the bit string.
          * @param n
          * @param bit_length
          * @return
          */
-        static std::string GetBinaryStringMSB(unsigned long n, int bit_length);
+        static std::string GetBinaryStringMSB(unsigned long n, const int bit_length);
+
+        /**
+         * Returns binary representation of number n with a bit string with the given bit length.
+         * Places the least significant bit into the 0th index of the bit string.
+         * @param n
+         * @param bit_length
+         * @return
+         */
+        static std::string GetBinaryStringLSB(unsigned long n, const int bit_length);
 
         // TODO remove vector<char> version of binary format and use string version below
         static std::vector<char> GetBinaryFormat(unsigned long n, int bit_length);

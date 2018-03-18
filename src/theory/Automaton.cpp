@@ -240,8 +240,6 @@ namespace Vlab
 
       std::unordered_map<int, std::unordered_map<std::string, int>> exception_map;
 
-      int* indices = Libs::MONALib::GetBddVariableIndices(number_of_variables);
-      char* statuses = new char[number_of_states];
       for (int s = 0; s < number_of_states; ++s)
       {
         if (s != sink_state)
@@ -266,18 +264,18 @@ namespace Vlab
         }
       }
 
-      dfaSetup(number_of_states, number_of_variables, indices);
+      std::string statuses(number_of_states, '-');
+      Libs::MONALib::DFASetup(number_of_states, number_of_variables);
       for (int s = 0; s < number_of_states; ++s)
       {
-        statuses[s] = '-';
         if (s != sink_state)
         {
-          dfaAllocExceptions(exception_map[s].size());
+          Libs::MONALib::DFASetNumberOfExceptionalTransitions(exception_map[s].size());
           for (auto& transition : exception_map[s])
           {
-            dfaStoreException(transition.second, const_cast<char*>(transition.first.data()));
+            Libs::MONALib::DFASetExceptionalTransition(transition.first, transition.second);
           }
-          dfaStoreState(sink_state);
+
           if (this->IsAcceptingState(s))
           {
             statuses[s] = '+';
@@ -285,15 +283,13 @@ namespace Vlab
         }
         else
         {
-          dfaAllocExceptions(0);
-          dfaStoreState(s);
+          Libs::MONALib::DFASetNumberOfExceptionalTransitions(0);
         }
+        Libs::MONALib::DFASetTargetForRemaningTransitions(sink_state);
       }
 
-      Libs::MONALib::DFA_ptr result_dfa = dfaBuild(statuses);
-      delete[] statuses;
-      Automaton_ptr suffixes_auto = this->MakeAutomaton(dfaMinimize(result_dfa), number_of_variables);
-      dfaFree(result_dfa);
+      auto result_dfa = Libs::MONALib::DFABuildAndMinimize(statuses);
+      Automaton_ptr suffixes_auto = this->MakeAutomaton(result_dfa, number_of_variables);
 
       for (int i = 0; i < number_of_extra_bits_needed; ++i)
       {
@@ -329,8 +325,7 @@ namespace Vlab
       const int number_of_states = this->dfa_->ns + 1;  // one extra start for the new start state
       int sink_state = this->GetSinkState();
 
-      int* indices = Libs::MONALib::GetBddVariableIndices(number_of_variables);
-      char* statuses = new char[number_of_states];
+
       unsigned extra_bits_value = 0;
 
       const int number_of_extra_bits_needed = number_of_variables - this->number_of_bdd_variables_;
@@ -342,7 +337,7 @@ namespace Vlab
       {
         if (s != sink_state)
         {
-          int state_id = s + 1;  // there is a new start state, old states are off by one
+          const int state_id = s + 1;  // there is a new start state, old states are off by one
           std::unordered_map<std::string, int> transition_map = Libs::MONALib::DFAGetTransitionsFrom(
               dfa_, number_of_bdd_variables_, s, default_extra_bit_string);
           exception_map[state_id] = transition_map;
@@ -374,36 +369,27 @@ namespace Vlab
       {
         ++sink_state;  // old states are off by one
       }
-
-      dfaSetup(number_of_states, number_of_variables, indices);
+      // TODO move that into builder logic, setup builder above. it uses correct builder
+      std::string statuses(number_of_states, '-');
+      Libs::MONALib::DFASetup(number_of_states, number_of_variables);
       for (int s = 0; s < number_of_states; ++s)
       {
-        statuses[s] = '-';
-        if (s != sink_state)
+        Libs::MONALib::DFASetNumberOfExceptionalTransitions(exception_map[s].size());
+        for (auto& transition : exception_map[s])
         {
-          int old_state = s - 1;
-          dfaAllocExceptions(exception_map[s].size());
-          for (auto& transition : exception_map[s])
-          {
-            dfaStoreException(transition.second, const_cast<char*>(transition.first.data()));
-          }
-          dfaStoreState(sink_state);
-          if (old_state > -1 and this->IsAcceptingState(old_state))
-          {
-            statuses[s] = '+';
-          }
+          Libs::MONALib::DFASetExceptionalTransition(transition.first, transition.second);
         }
-        else
+
+        Libs::MONALib::DFASetTargetForRemaningTransitions(sink_state);
+        int old_state = s - 1;
+        if (old_state > -1 and this->IsAcceptingState(old_state))
         {
-          dfaAllocExceptions(0);
-          dfaStoreState(s);
+          statuses[s] = '+';
         }
       }
 
-      Libs::MONALib::DFA_ptr result_dfa = dfaBuild(statuses);
-      delete[] statuses;
-      Automaton_ptr suffixes_auto = this->MakeAutomaton(dfaMinimize(result_dfa), number_of_variables);
-      dfaFree(result_dfa);
+      auto result_dfa = Libs::MONALib::DFABuildAndMinimize(statuses);
+      Automaton_ptr suffixes_auto = this->MakeAutomaton(result_dfa, number_of_variables);
 
       for (int i = 0; i < number_of_extra_bits_needed; ++i)
       {
@@ -817,29 +803,35 @@ namespace Vlab
       return os << automaton.Str();
     }
 
-    std::string Automaton::GetBinaryStringMSB(unsigned long number, int bit_length)
+    std::string Automaton::GetBinaryStringMSB(unsigned long number, const int bit_length)
     {
-      int index = bit_length;
-      unsigned subject = number;
-      std::string binary_string(bit_length + 1, '\0');
+      std::string binary_string(bit_length, '0');
+      binary_string.push_back('\0');
 
-      for (index--; index >= 0; index--)
+      for (int index = bit_length - 1; index >= 0; --index)
       {
-        if (subject & 1)
+        if (number & 1)
         {
           binary_string[index] = '1';
         }
-        else
-        {
-          binary_string[index] = '0';
-        }
-        if (subject > 0)
-        {
-          subject >>= 1;
-        }
+
+        number >>= 1;
       }
 
       return binary_string;
+    }
+
+    std::string Automaton::GetBinaryStringLSB(unsigned long number, const int bit_length)
+    {
+      std::string binary_str;
+      for (int index = 0; index < bit_length; ++index)
+      {
+        (number & 1) ? binary_str.push_back('1') : binary_str.push_back('0');
+        number >>= 1;
+      }
+
+      binary_str.push_back('\0');
+      return binary_str;
     }
 
     std::vector<char> Automaton::GetBinaryFormat(unsigned long number, int bit_length)
