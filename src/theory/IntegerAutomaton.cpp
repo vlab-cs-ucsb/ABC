@@ -48,6 +48,13 @@ namespace Vlab
       return cloned_auto;
     }
 
+    IntegerAutomaton::Builder& IntegerAutomaton::DynamicBuilder()
+    {
+      delete dynamic_builder_;
+      this->dynamic_builder_ = new IntegerAutomaton::Builder();
+      return static_cast<Builder&>(*dynamic_builder_);
+    }
+
     IntegerAutomaton_ptr IntegerAutomaton::MakeAutomaton(const Libs::MONALib::DFA_ptr dfa,
                                                          const int number_of_bdd_variables) const
     {

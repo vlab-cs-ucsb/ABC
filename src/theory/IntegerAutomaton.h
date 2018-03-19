@@ -89,6 +89,12 @@ namespace Vlab
         virtual IntegerAutomaton_ptr Clone() const override;
 
         /**
+         * Generates an IntegerAutomatonBuilder.
+         * @return
+         */
+        virtual Builder& DynamicBuilder() override;
+
+        /**
          * Generates a binary automaton that wraps the given dfa instance.
          * @param dfa
          * @param number_of_variables

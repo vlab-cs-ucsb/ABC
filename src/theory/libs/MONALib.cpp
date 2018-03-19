@@ -40,7 +40,7 @@ namespace Vlab
         return dfaBuild(const_cast<char*>(statuses.data()));
       }
 
-      MONALib::DFA_ptr MONALib::DFABuild(const std::string& statuses)
+      MONALib::DFA_ptr MONALib::DFABuildAndMinimize(const std::string& statuses)
       {
         auto tmp_dfa = MONALib::DFABuild(statuses);
         auto result_dfa = dfaMinimize(tmp_dfa);

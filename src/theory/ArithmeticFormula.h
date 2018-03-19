@@ -54,7 +54,7 @@ namespace Vlab
             int minimum_sum_of_coefficients_;
             int maximum_sum_of_coefficients_;
             int number_of_zero_coefficients_;
-            int constant_
+            int constant_;
             std::vector<int> coefficients_;
         };
 

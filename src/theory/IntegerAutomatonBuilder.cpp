@@ -21,28 +21,38 @@ namespace Vlab
 
     IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetNumberOfStates(const int number_of_states)
     {
-      return Automaton::Builder::SetNumberOfStates(number_of_states);
+      return static_cast<IntegerAutomaton::Builder&>(Automaton::Builder::SetNumberOfStates(number_of_states));
+    }
+
+    IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetSinkState(const int state)
+    {
+      return static_cast<IntegerAutomaton::Builder&>(Automaton::Builder::SetSinkState(state));
+    }
+
+    IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetAcceptingState(const int state)
+    {
+      return static_cast<IntegerAutomaton::Builder&>(Automaton::Builder::SetAcceptingState(state));
     }
 
     IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetNumberOfBddVariables(const int number_of_bdd_variables)
     {
-      return Automaton::Builder::SetNumberOfBddVariables(number_of_bdd_variables);
+      return static_cast<IntegerAutomaton::Builder&>(Automaton::Builder::SetNumberOfBddVariables(number_of_bdd_variables));
     }
 
-    IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetAcceptingState(int state)
-    {
-      return Automaton::Builder::SetAcceptingState(state);
-    }
-
-    IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetTransition(const int source, const std::string transition,
+    IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetTransition(const int source, const std::string& transition,
                                                                         const int target)
     {
-      return Automaton::Builder::SetTransition(source, transition, target);
+      return static_cast<IntegerAutomaton::Builder&>(Automaton::Builder::SetTransition(source, transition, target));
+    }
+
+    IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetTransitions(const int source, const std::unordered_map<std::string, int>& transitions)
+    {
+      return static_cast<IntegerAutomaton::Builder&>(Automaton::Builder::SetTransitions(source, transitions));
     }
 
     IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetDfa(const Libs::MONALib::DFA_ptr dfa)
     {
-      return Automaton::Builder::SetDfa(dfa);
+      return static_cast<IntegerAutomaton::Builder&>(Automaton::Builder::SetDfa(dfa));
     }
 
     IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetFormula(ArithmeticFormula_ptr formula)
@@ -54,7 +64,7 @@ namespace Vlab
 
     IntegerAutomaton::Builder& IntegerAutomaton::Builder::AcceptAllIntegers()
     {
-      return Automaton::Builder::AcceptAllExceptEmptyInput();
+      return static_cast<IntegerAutomaton::Builder&>(Automaton::Builder::AcceptAllExceptEmptyInput());
     }
 
     IntegerAutomaton_ptr IntegerAutomaton::Builder::Build()
@@ -86,6 +96,8 @@ namespace Vlab
 
     void IntegerAutomaton::Builder::BuildDFA()
     {
+      // TODO add an option to to call and return base bulder
+//      this->Automaton::Builder::BuildDFA();
       switch (formula_->get_type())
       {
         case ArithmeticFormula::Type::EQ:

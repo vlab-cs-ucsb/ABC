@@ -14,6 +14,7 @@ namespace Vlab
 
     Automaton::Builder::Builder()
         : number_of_states_ { 0 },
+          sink_state_{-1},
           number_of_bdd_variables_ { 0 },
           dfa_ { nullptr }
     {
@@ -32,9 +33,9 @@ namespace Vlab
       return *this;
     }
 
-    Automaton::Builder& Automaton::Builder::SetNumberOfBddVariables(const int number_of_bdd_variables)
+    Automaton::Builder& Automaton::Builder::SetSinkState(const int state)
     {
-      this->number_of_bdd_variables_ = number_of_bdd_variables;
+      this->sink_state_ = state;
       return *this;
     }
 
@@ -44,11 +45,23 @@ namespace Vlab
       return *this;
     }
 
-    Automaton::Builder& Automaton::Builder::SetTransition(const int source, const std::string transition,
+    Automaton::Builder& Automaton::Builder::SetNumberOfBddVariables(const int number_of_bdd_variables)
+    {
+      this->number_of_bdd_variables_ = number_of_bdd_variables;
+      return *this;
+    }
+
+    Automaton::Builder& Automaton::Builder::SetTransition(const int source, const std::string& transition,
                                                           const int target)
     {
       DCHECK_EQ(number_of_bdd_variables_, transition.length());
       this->transitions_[source][transition] = target;
+      return *this;
+    }
+
+    Automaton::Builder& Automaton::Builder::SetTransitions(const int source, const std::unordered_map<std::string, int>& transitions)
+    {
+      this->transitions_[source] = transitions;
       return *this;
     }
 
@@ -78,11 +91,16 @@ namespace Vlab
 
     Automaton_ptr Automaton::Builder::Build()
     {
+      if (dfa_ == nullptr)
+      {
+        this->BuildDFA();
+      }
+
       if (dfa_)
       {
         Automaton_ptr automaton = new Automaton(dfa_, number_of_bdd_variables_);
         dfa_ = nullptr;
-
+        // clean up
         return automaton;
       }
 
@@ -92,7 +110,17 @@ namespace Vlab
 
     void Automaton::Builder::BuildDFA()
     {
-      LOG(FATAL) << "Implement me!";
+      Libs::MONALib::DFASetup(number_of_states_, number_of_bdd_variables_);
+      for (int s = 0; s < number_of_states_; ++s)
+      {
+        Libs::MONALib::DFASetNumberOfExceptionalTransitions(transitions_[s].size());
+        for (auto& transition : transitions_[s])
+        {
+          Libs::MONALib::DFASetExceptionalTransition(transition.first, transition.second);
+        }
+        Libs::MONALib::DFASetTargetForRemaningTransitions (sink_state_);
+      }
+      this->dfa_ = Libs::MONALib::DFABuildAndMinimize(statuses_);
     }
 
   } /* namespace Theory */

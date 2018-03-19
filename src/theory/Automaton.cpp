@@ -6,6 +6,7 @@
  */
 
 #include "Automaton.h"
+#include "AutomatonBuilder.h"
 
 namespace Vlab
 {
@@ -19,7 +20,8 @@ namespace Vlab
         : is_counter_cached_ { false },
           number_of_bdd_variables_ { 0 },
           id_ { Automaton::next_id++ },
-          dfa_ { nullptr }
+          dfa_ { nullptr },
+          dynamic_builder_ { nullptr }
     {
     }
 
@@ -27,7 +29,8 @@ namespace Vlab
         : is_counter_cached_ { false },
           number_of_bdd_variables_ { number_of_bdd_variables },
           id_ { Automaton::next_id++ },
-          dfa_ { dfa }
+          dfa_ { dfa },
+          dynamic_builder_ { nullptr }
     {
     }
 
@@ -35,8 +38,8 @@ namespace Vlab
         : is_counter_cached_ { false },
           number_of_bdd_variables_ { other.number_of_bdd_variables_ },
           id_ { Automaton::next_id++ },
-          dfa_ { nullptr }
-
+          dfa_ { nullptr },
+          dynamic_builder_ { nullptr }
     {
       if (other.dfa_)
       {
@@ -47,12 +50,20 @@ namespace Vlab
     Automaton::~Automaton()
     {
       dfaFree(dfa_);
+      delete dynamic_builder_;
 //      DVLOG(VLOG_LEVEL) << "deleted = " << " [" << this->id_ << "]->~Automaton()";
     }
 
     Automaton_ptr Automaton::Clone() const
     {
       return new Automaton(*this);
+    }
+
+    Automaton::Builder& Automaton::DynamicBuilder() const
+    {
+      delete dynamic_builder_;
+      this->dynamic_builder_ = new Automaton::Builder();
+      return *dynamic_builder_;
     }
 
     Automaton_ptr Automaton::MakeAutomaton(const Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const
@@ -216,13 +227,14 @@ namespace Vlab
     {
       if (this->IsEmptyLanguage())
       {
-        Libs::MONALib::DFA_ptr phi = Libs::MONALib::DFAMakePhi(this->number_of_bdd_variables_);
-        Automaton_ptr suffixes_auto = this->MakeAutomaton(phi, this->number_of_bdd_variables_);
+        Automaton_ptr suffixes_auto = this->DynamicBuilder().SetNumberOfBddVariables(this->GetNumberOfBddVariables())
+            .RejectAll().Build();
+
         DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->Suffixes()";
         return suffixes_auto;
       }
 
-      const int number_of_states = this->dfa_->ns;
+      const int number_of_states = this->GetNumberOfStates();
       const int sink_state = this->GetSinkState();
 
       unsigned max = number_of_states;
@@ -233,67 +245,53 @@ namespace Vlab
 
       // if number of variables are too large for mona, implement an algorithm that find suffixes by finding
       // sub suffixes and union them
-      int number_of_variables = this->number_of_bdd_variables_ + std::ceil(std::log2(max));  // number of variables required
-      const int number_of_extra_bits_needed = number_of_variables - this->number_of_bdd_variables_;
+      int number_of_variables = this->GetNumberOfBddVariables() + std::ceil(std::log2(max));  // number of variables required
+      const int number_of_extra_bits_needed = number_of_variables - this->GetNumberOfBddVariables();
       std::string default_extra_bit_string(number_of_extra_bits_needed, '0');
-      unsigned extra_bits_value = 0;
+      unsigned extra_bits_value = 1; // avoid all zeros in the start state, to avoid overriding default transitions
 
-      std::unordered_map<int, std::unordered_map<std::string, int>> exception_map;
+      Builder& builder = this->DynamicBuilder().SetNumberOfStates(number_of_states).SetSinkState(sink_state)
+          .SetNumberOfBddVariables(number_of_variables);
 
       for (int s = 0; s < number_of_states; ++s)
       {
         if (s != sink_state)
         {
-          std::unordered_map<std::string, int> transition_map = Libs::MONALib::DFAGetTransitionsFrom(
-              dfa_, number_of_bdd_variables_, s, default_extra_bit_string);
-          exception_map[s] = transition_map;
-
+          const std::unordered_map<std::string, int> transition_map =
+              Libs::MONALib::DFAGetTransitionsFrom(
+                                                   this->GetDFA(),
+                                                   this->GetNumberOfBddVariables(),
+                                                   s,
+                                                   default_extra_bit_string);
           // add to start state by adding extra bits
-          if (s != this->dfa_->s)
+          if (false == this->IsInitialState(s))
           {
-            ++extra_bits_value;
             std::string extra_bit_binary_format = GetBinaryStringMSB(extra_bits_value, number_of_extra_bits_needed);
-            for (auto& transition_map : exception_map[s])
+            ++extra_bits_value;
+            for (const auto& transition_entry : transition_map)
             {
-              std::string current_transition = transition_map.first;
-              current_transition.replace(current_transition.end() - (number_of_extra_bits_needed + 1),
-                                         current_transition.end(), extra_bit_binary_format);
-              exception_map[this->dfa_->s][current_transition] = transition_map.second;
+              std::string current_transition = transition_entry.first;
+              current_transition.replace(
+                                         current_transition.end() - (number_of_extra_bits_needed + 1),
+                                         current_transition.end(),
+                                         extra_bit_binary_format);
+              builder.SetTransition(this->GetInitialState(), current_transition, transition_entry.second);
             }
           }
-        }
-      }
 
-      std::string statuses(number_of_states, '-');
-      Libs::MONALib::DFASetup(number_of_states, number_of_variables);
-      for (int s = 0; s < number_of_states; ++s)
-      {
-        if (s != sink_state)
-        {
-          Libs::MONALib::DFASetNumberOfExceptionalTransitions(exception_map[s].size());
-          for (auto& transition : exception_map[s])
-          {
-            Libs::MONALib::DFASetExceptionalTransition(transition.first, transition.second);
-          }
-
+          builder.SetTransitions(s, transition_map);
           if (this->IsAcceptingState(s))
           {
-            statuses[s] = '+';
+            builder.SetAcceptingState(s);
           }
         }
-        else
-        {
-          Libs::MONALib::DFASetNumberOfExceptionalTransitions(0);
-        }
-        Libs::MONALib::DFASetTargetForRemaningTransitions(sink_state);
       }
 
-      auto result_dfa = Libs::MONALib::DFABuildAndMinimize(statuses);
-      Automaton_ptr suffixes_auto = this->MakeAutomaton(result_dfa, number_of_variables);
+      Automaton_ptr suffixes_auto = builder.Build();
 
       for (int i = 0; i < number_of_extra_bits_needed; ++i)
       {
-        suffixes_auto->ProjectAway((unsigned) (suffixes_auto->number_of_bdd_variables_ - 1));
+        suffixes_auto->ProjectAway((unsigned) (suffixes_auto->GetNumberOfBddVariables() - 1));
         suffixes_auto->Minimize();
       }
 
@@ -307,8 +305,9 @@ namespace Vlab
       unsigned max = suffixes_from.size();
       if (max == 0)
       {
-        Libs::MONALib::DFA_ptr phi = Libs::MONALib::DFAMakePhi(this->number_of_bdd_variables_);
-        Automaton_ptr suffixes_auto = this->MakeAutomaton(phi, this->number_of_bdd_variables_);
+        Automaton_ptr suffixes_auto = this->DynamicBuilder().SetNumberOfBddVariables(this->GetNumberOfBddVariables())
+            .RejectAll().Build();
+
         DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->SuffixesFromTo(" << from_index << ", "
                           << to_index << ")";
         return suffixes_auto;
@@ -321,79 +320,60 @@ namespace Vlab
 
       // if number of variables are too large for mona, implement an algorithm that find suffixes by finding
       // sub suffixes and union them
-      const int number_of_variables = this->number_of_bdd_variables_ + std::ceil(std::log2(max));
-      const int number_of_states = this->dfa_->ns + 1;  // one extra start for the new start state
+      const int number_of_variables = this->GetNumberOfBddVariables() + std::ceil(std::log2(max));
+      const int number_of_states = this->GetNumberOfStates() + 1;  // one extra start for the new start state
       int sink_state = this->GetSinkState();
-
-
-      unsigned extra_bits_value = 0;
-
-      const int number_of_extra_bits_needed = number_of_variables - this->number_of_bdd_variables_;
+      const int number_of_extra_bits_needed = number_of_variables - this->GetNumberOfBddVariables();
       std::string default_extra_bit_string(number_of_extra_bits_needed, '0');
+      unsigned extra_bits_value = 0; // will be used new start state
 
-      std::unordered_map<int, std::unordered_map<std::string, int>> exception_map;
+      Builder& builder = this->DynamicBuilder().SetNumberOfStates(number_of_states)
+          .SetNumberOfBddVariables(number_of_variables);
 
-      for (int s = 0; s < this->dfa_->ns; ++s)
+      if (sink_state != -1)
+      {
+        builder.SetSinkState(sink_state + 1); // states are shifted by.
+      }
+
+      for (int s = 0; s < this->GetNumberOfStates(); ++s)
       {
         if (s != sink_state)
         {
           const int state_id = s + 1;  // there is a new start state, old states are off by one
-          std::unordered_map<std::string, int> transition_map = Libs::MONALib::DFAGetTransitionsFrom(
-              dfa_, number_of_bdd_variables_, s, default_extra_bit_string);
-          exception_map[state_id] = transition_map;
-          // add to start state by adding extra bits
-          if (suffixes_from.find(s) != suffixes_from.end())
+          std::unordered_map<std::string, int> transition_map =
+              Libs::MONALib::DFAGetTransitionsFrom(dfa_, number_of_bdd_variables_, s, default_extra_bit_string);
+
+          for (auto& transition_entry : transition_map)
           {
-            std::string extra_bit_binary_format = GetBinaryStringMSB(extra_bits_value, number_of_extra_bits_needed);
-            for (auto& transition_map : exception_map[state_id])
+            transition_entry.second = transition_entry.second + 1;  // new shifted state that are off by one
+            // add to start state by adding extra bits
+            if (suffixes_from.find(s) != suffixes_from.end())
             {
-              transition_map.second = transition_map.second + 1;  // new shifted state that are off by one
-              std::string current_transition = transition_map.first;
-              current_transition.replace(current_transition.end() - (number_of_extra_bits_needed + 1),
-                                         current_transition.end(), extra_bit_binary_format);
-              exception_map[0][current_transition] = transition_map.second;  // new start state to new shifted state that are off by one
-            }
-            ++extra_bits_value;
-          }
-          else
-          {
-            for (auto& transition_map : exception_map[state_id])
-            {
-              transition_map.second = transition_map.second + 1;  // new shifted state that are off by one
+              std::string extra_bit_binary_format = GetBinaryStringMSB(extra_bits_value, number_of_extra_bits_needed);
+              ++extra_bits_value;
+              std::string current_transition = transition_entry.first;
+                              current_transition.replace(
+                                                         current_transition.end() - (number_of_extra_bits_needed + 1),
+                                                         current_transition.end(),
+                                                         extra_bit_binary_format);
+              // new start state to new shifted state that are off by one
+              builder.SetTransition(0, current_transition, transition_entry.second);
             }
           }
+
+          builder.SetTransitions(state_id, transition_map);
+          if (this->IsAcceptingState(s))
+          {
+            builder.SetAcceptingState(state_id);
+          }
         }
       }
 
-      if (sink_state != -1)
-      {
-        ++sink_state;  // old states are off by one
-      }
-      // TODO move that into builder logic, setup builder above. it uses correct builder
-      std::string statuses(number_of_states, '-');
-      Libs::MONALib::DFASetup(number_of_states, number_of_variables);
-      for (int s = 0; s < number_of_states; ++s)
-      {
-        Libs::MONALib::DFASetNumberOfExceptionalTransitions(exception_map[s].size());
-        for (auto& transition : exception_map[s])
-        {
-          Libs::MONALib::DFASetExceptionalTransition(transition.first, transition.second);
-        }
-
-        Libs::MONALib::DFASetTargetForRemaningTransitions(sink_state);
-        int old_state = s - 1;
-        if (old_state > -1 and this->IsAcceptingState(old_state))
-        {
-          statuses[s] = '+';
-        }
-      }
-
-      auto result_dfa = Libs::MONALib::DFABuildAndMinimize(statuses);
-      Automaton_ptr suffixes_auto = this->MakeAutomaton(result_dfa, number_of_variables);
+      Automaton_ptr suffixes_auto = builder.Build();
 
       for (int i = 0; i < number_of_extra_bits_needed; ++i)
       {
-        suffixes_auto->ProjectAway((unsigned) (suffixes_auto->number_of_bdd_variables_ - 1));
+        suffixes_auto->ProjectAway((unsigned) (suffixes_auto->GetNumberOfBddVariables() - 1));
         suffixes_auto->Minimize();
       }
 
@@ -415,7 +395,7 @@ namespace Vlab
     Automaton_ptr Automaton::Prefixes() const
     {
       Automaton_ptr prefix_auto = this->Clone();
-      int sink_state = prefix_auto->GetSinkState();
+      const int sink_state = prefix_auto->GetSinkState();
 
       for (int s = 0; s < prefix_auto->GetNumberOfStates(); s++)
       {
@@ -434,8 +414,10 @@ namespace Vlab
     Automaton_ptr Automaton::PrefixesUntilIndex(const int index) const
     {
       Automaton_ptr prefixes_auto = this->Prefixes();
-      Libs::MONALib::DFA_ptr length_dfa = Libs::MONALib::DFAMakeAcceptingAnyWithInRange(this->GetNumberOfBddVariables(),
-                                                                                        0, index - 1);
+      Libs::MONALib::DFA_ptr length_dfa = Libs::MONALib::DFAMakeAcceptingAnyWithInRange(
+                                                                                        this->GetNumberOfBddVariables(),
+                                                                                        0,
+                                                                                        index - 1);
       Automaton_ptr length_auto = this->MakeAutomaton(length_dfa, this->GetNumberOfBddVariables());
 
       Automaton_ptr prefixesUntil_auto = prefixes_auto->Intersect(length_auto);
@@ -452,14 +434,14 @@ namespace Vlab
       if (index == 0 and this->IsInitialStateAccepting())
       {
         // when index is 0, result should also accept at initial state if subject automaton accepts at initial state
-        Libs::MONALib::DFA_ptr length_dfa = Libs::MONALib::DFAMakeAcceptingAnyWithInRange(
-            this->GetNumberOfBddVariables(), 0, 1);
+        Libs::MONALib::DFA_ptr length_dfa =
+            Libs::MONALib::DFAMakeAcceptingAnyWithInRange(this->GetNumberOfBddVariables(), 0, 1);
         length_auto = this->MakeAutomaton(length_dfa, this->GetNumberOfBddVariables());
       }
       else
       {
-        Libs::MONALib::DFA_ptr length_dfa = Libs::MONALib::DFAMakeAcceptingAnyWithInRange(
-            this->GetNumberOfBddVariables(), index + 1, index + 1);
+        Libs::MONALib::DFA_ptr length_dfa =
+            Libs::MONALib::DFAMakeAcceptingAnyWithInRange(this->GetNumberOfBddVariables(), index + 1, index + 1);
         length_auto = this->MakeAutomaton(length_dfa, this->GetNumberOfBddVariables());
       }
       Automaton_ptr prefixesAt_auto = prefixes_auto->Intersect(length_auto);
@@ -474,9 +456,9 @@ namespace Vlab
      */
     Automaton_ptr Automaton::SubStrings() const
     {
-      Automaton_ptr suffixes_auto = this->Suffixes();
-      Automaton_ptr sub_strings_auto = suffixes_auto->Prefixes();
-      delete suffixes_auto;
+      Automaton_ptr prefixes_auto = this->Prefixes();
+      Automaton_ptr sub_strings_auto = prefixes_auto->Suffixes();
+      delete prefixes_auto;
       DVLOG(VLOG_LEVEL) << sub_strings_auto->id_ << " = [" << this->id_ << "]->SubStrings()";
       return sub_strings_auto;
     }
@@ -794,7 +776,10 @@ namespace Vlab
 
     char* Automaton::getAnExample(bool accepting)
     {
-      return dfaMakeExample(this->dfa_, 1, number_of_bdd_variables_,
+      return dfaMakeExample(
+                            this->dfa_,
+                            1,
+                            number_of_bdd_variables_,
                             (unsigned*) Libs::MONALib::GetBddVariableIndices(number_of_bdd_variables_));
     }
 
@@ -982,7 +967,10 @@ namespace Vlab
 
     int Automaton::GetNextState(const int state, const std::string& transition) const
     {
-      int next_state = Libs::MONALib::DFAGetNextState(this->GetDFA(), this->GetNumberOfBddVariables(), state,
+      int next_state = Libs::MONALib::DFAGetNextState(
+                                                      this->GetDFA(),
+                                                      this->GetNumberOfBddVariables(),
+                                                      state,
                                                       transition);
       DVLOG(VLOG_LEVEL) << next_state << " = [" << this->id_ << "]->GetNextState(" << state << transition << ")";
       return next_state;
@@ -1110,8 +1098,13 @@ namespace Vlab
                 else
                 {
                   entries.push_back(
-                      Eigen::Triplet<BigInteger>(
-                          s, left, boost::multiprecision::pow(boost::multiprecision::cpp_int(2), exponent)));
+                                    Eigen::Triplet<BigInteger>(
+                                                               s,
+                                                               left,
+                                                               boost::multiprecision::pow(
+                                                                                          boost::multiprecision::cpp_int(
+                                                                                                                         2),
+                                                                                          exponent)));
                 }
               }
             }
@@ -2037,20 +2030,20 @@ namespace Vlab
       if (dfa == nullptr)
       {
         LOG(FATAL)<<"Null dfa? Really?";
-      }
-      for (int i = 0; i < dfa->ns; i++)
-      {
-        int state_id = i;
-        if ((bdd_is_leaf(dfa->bddm, dfa->q[state_id])
-                and (bdd_leaf_value(dfa->bddm, dfa->q[state_id]) == (unsigned) state_id)
-                and dfa->f[state_id] == -1))
-        {
-          return i;
-        }
-      }
-
-      return -1;
     }
+    for (int i = 0; i < dfa->ns; i++)
+    {
+      int state_id = i;
+      if ((bdd_is_leaf(dfa->bddm, dfa->q[state_id])
+              and (bdd_leaf_value(dfa->bddm, dfa->q[state_id]) == (unsigned) state_id)
+              and dfa->f[state_id] == -1))
+      {
+        return i;
+      }
+    }
+
+    return -1;
   }
+}
 /* namespace Theory */
 } /* namespace Vlab */

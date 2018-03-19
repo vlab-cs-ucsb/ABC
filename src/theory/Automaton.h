@@ -101,6 +101,12 @@ namespace Vlab
         virtual Automaton_ptr Clone() const;
 
         /**
+         * Generates an AutomatonBuilder based on the type of the current object.
+         * @return pointer to the builder.
+         */
+        virtual Builder& DynamicBuilder() const;
+
+        /**
          * Generates a specific type of automaton that wraps dfa instance.
          * @param dfa
          * @param number_of_variables
@@ -456,6 +462,11 @@ namespace Vlab
          * Mona dfa pointer.
          */
         Libs::MONALib::DFA_ptr dfa_;
+
+        /**
+         * Builder pointer for the current builder instance.
+         */
+        mutable Builder* dynamic_builder_;
 
         /**
          * Model counter function.

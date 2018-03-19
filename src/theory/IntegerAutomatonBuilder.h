@@ -37,18 +37,25 @@ namespace Vlab
         virtual Builder& SetNumberOfStates(const int number_of_states) override;
 
         /**
-         * Sets the number of bdd variables.
-         * @param number_of_bdd_variables
+         * Sets the given state as sink state.
+         * @param state
          * @return
          */
-        virtual Builder& SetNumberOfBddVariables(const int number_of_bdd_variables) override;
+        virtual Builder& SetSinkState(const int state) override;
 
         /**
          * Sets the given state as accepting state.
          * @param state
          * @return
          */
-        virtual Builder& SetAcceptingState(int state) override;
+        virtual Builder& SetAcceptingState(const int state) override;
+
+        /**
+         * Sets the number of bdd variables.
+         * @param number_of_bdd_variables
+         * @return
+         */
+        virtual Builder& SetNumberOfBddVariables(const int number_of_bdd_variables) override;
 
         /**
          * Sets a transition from source to given target.
@@ -57,7 +64,15 @@ namespace Vlab
          * @param target
          * @return
          */
-        virtual Builder& SetTransition(const int source, const std::string transition, const int target) override;
+        virtual Builder& SetTransition(const int source, const std::string& transition, const int target) override;
+
+        /**
+         * Sets transitions from a source state.
+         * @param source
+         * @param transitions
+         * @return
+         */
+        virtual Builder& SetTransitions(const int source, const std::unordered_map<std::string, int>& transitions) override;
 
         /**
          * Sets the dfa.
