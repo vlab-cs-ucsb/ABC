@@ -22,7 +22,7 @@ namespace Vlab
 
     Automaton::Builder::~Builder()
     {
-      // do not free the dfa as it is used in the automaton constructed.
+
     }
 
     Automaton::Builder& Automaton::Builder::SetNumberOfStates(const int number_of_states)
@@ -99,13 +99,22 @@ namespace Vlab
       if (dfa_)
       {
         Automaton_ptr automaton = new Automaton(dfa_, number_of_bdd_variables_);
-        dfa_ = nullptr;
-        // clean up
+        this->ResetBuilder();
         return automaton;
       }
 
       LOG(FATAL)<< "Automaton is not constructed. Make sure minimum required fields are set in order.";
       return nullptr;
+    }
+
+    void Automaton::Builder::ResetBuilder()
+    {
+      this->number_of_states_ = 0;
+      this->sink_state_ = -1;
+      this->number_of_bdd_variables_ = 0;
+      this->dfa_ = nullptr;
+      this->statuses_ = std::string();
+      this->transitions_ = std::vector<std::unordered_map<std::string, int>>();
     }
 
     void Automaton::Builder::BuildDFA()

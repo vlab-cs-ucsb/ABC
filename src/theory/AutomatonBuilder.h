@@ -106,6 +106,11 @@ namespace Vlab
        protected:
 
         /**
+         * Reinitializes members to avoid holder larger memory.
+         */
+        virtual void ResetBuilder();
+
+        /**
          * Builds underlying DFA.
          */
         virtual void BuildDFA();

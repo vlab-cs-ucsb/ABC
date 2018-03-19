@@ -57,7 +57,7 @@ namespace Vlab
 
     IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetFormula(ArithmeticFormula_ptr formula)
     {
-      this->formula_ = formula->clone();
+      this->formula_ = formula;
       this->number_of_bdd_variables_ = formula->get_number_of_variables();
       return *this;
     }
@@ -83,15 +83,19 @@ namespace Vlab
       if (dfa_ and formula_)
       {
         IntegerAutomaton_ptr automaton = new IntegerAutomaton(dfa_, formula_);
-        dfa_ = nullptr;
-        formula_ = nullptr;
-
+        this->ResetBuilder();
         DVLOG(VLOG_LEVEL) << *automaton << " = IntegerAutomaton::Builder::Build()";
         return automaton;
       }
 
       LOG(FATAL)<< "IntegerAutomaton cannot be constructed. Make sure minimum required fields are set in order.";
       return nullptr;
+    }
+
+    void IntegerAutomaton::Builder::ResetBuilder()
+    {
+      this->Automaton::Builder::ResetBuilder();
+      this->formula_ = nullptr;
     }
 
     void IntegerAutomaton::Builder::BuildDFA()

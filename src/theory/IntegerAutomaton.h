@@ -92,7 +92,7 @@ namespace Vlab
          * Generates an IntegerAutomatonBuilder.
          * @return
          */
-        virtual Builder& DynamicBuilder() override;
+        virtual Builder& DynamicBuilder() const override;
 
         /**
          * Generates a binary automaton that wraps the given dfa instance.
