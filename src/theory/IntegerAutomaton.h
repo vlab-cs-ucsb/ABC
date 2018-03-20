@@ -34,6 +34,8 @@
 #include "SemilinearSet.h"
 #include "UnaryAutomaton.h"
 
+#include "IntegerAutomatonBuilder.h"
+
 namespace Vlab
 {
   namespace Theory

@@ -6,7 +6,6 @@
  */
 
 #include "Automaton.h"
-#include "AutomatonBuilder.h"
 
 namespace Vlab
 {

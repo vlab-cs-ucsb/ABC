@@ -14,7 +14,6 @@ namespace Vlab
 {
   namespace Theory
   {
-
     class IntegerAutomaton::Builder : public Automaton::Builder
     {
        public:
@@ -101,6 +100,11 @@ namespace Vlab
         virtual IntegerAutomaton_ptr Build() override;
 
        protected:
+
+        /**
+         * Reinitializes members to avoid holder larger memory.
+         */
+        virtual void ResetBuilder() override;
 
         /**
          * Builds binary encoded integer DFA.

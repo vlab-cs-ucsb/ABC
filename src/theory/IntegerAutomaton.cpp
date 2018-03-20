@@ -48,7 +48,7 @@ namespace Vlab
       return cloned_auto;
     }
 
-    IntegerAutomaton::Builder& IntegerAutomaton::DynamicBuilder()
+    IntegerAutomaton::Builder& IntegerAutomaton::DynamicBuilder() const
     {
       delete dynamic_builder_;
       this->dynamic_builder_ = new IntegerAutomaton::Builder();

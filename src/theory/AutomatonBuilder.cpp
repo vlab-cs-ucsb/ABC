@@ -5,7 +5,7 @@
  *      Author: baki
  */
 
-#include "AutomatonBuilder.h"
+#include "Automaton.h"
 
 namespace Vlab
 {
