@@ -1146,22 +1146,75 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(
 }
 
 StringAutomaton_ptr StringAutomaton::MakeLessThan(StringFormula_ptr formula) {
-	LOG(FATAL) << "IMPLEMENT ME";
+	StringAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
+	StringAutomaton_ptr constant_string_auto = nullptr;
+	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
+	std::map<std::string,int> trackmap = formula->GetVariableCoefficientMap();
+
+	int num_tracks = formula->GetNumberOfVariables();
+	int left_track = formula->GetVariableIndex(1);
+	int right_track = formula->GetVariableIndex(2);
+
+
+	result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::LT,VAR_PER_TRACK,num_tracks,left_track,right_track);
+	result_auto = new StringAutomaton(result_dfa,formula,num_tracks*VAR_PER_TRACK);
+
+
+	return result_auto;
 }
 
-StringAutomaton_ptr StringAutomaton::MakeLessThanOrEqual(
-		StringFormula_ptr formula) {
-	LOG(FATAL) << "IMPLEMENT ME";
+StringAutomaton_ptr StringAutomaton::MakeLessThanOrEqual(StringFormula_ptr formula) {
+	StringAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
+	StringAutomaton_ptr constant_string_auto = nullptr;
+	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
+	std::map<std::string,int> trackmap = formula->GetVariableCoefficientMap();
+
+	int num_tracks = formula->GetNumberOfVariables();
+	int left_track = formula->GetVariableIndex(1);
+	int right_track = formula->GetVariableIndex(2);
+
+
+	result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::LE,VAR_PER_TRACK,num_tracks,left_track,right_track);
+	result_auto = new StringAutomaton(result_dfa,formula,num_tracks*VAR_PER_TRACK);
+
+
+	return result_auto;
 }
 
-StringAutomaton_ptr StringAutomaton::MakeGreaterThan(
-		StringFormula_ptr formula) {
-	LOG(FATAL) << "IMPLEMENT ME";
+StringAutomaton_ptr StringAutomaton::MakeGreaterThan(StringFormula_ptr formula) {
+	StringAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
+	StringAutomaton_ptr constant_string_auto = nullptr;
+	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
+	std::map<std::string,int> trackmap = formula->GetVariableCoefficientMap();
+
+	int num_tracks = formula->GetNumberOfVariables();
+	int left_track = formula->GetVariableIndex(1);
+	int right_track = formula->GetVariableIndex(2);
+
+
+	result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::GT,VAR_PER_TRACK,num_tracks,left_track,right_track);
+	result_auto = new StringAutomaton(result_dfa,formula,num_tracks*VAR_PER_TRACK);
+
+
+	return result_auto;
 }
 
-StringAutomaton_ptr StringAutomaton::MakeGreaterThanOrEqual(
-		StringFormula_ptr formula) {
-	LOG(FATAL) << "IMPLEMENT ME";
+StringAutomaton_ptr StringAutomaton::MakeGreaterThanOrEqual(StringFormula_ptr formula) {
+	StringAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
+	StringAutomaton_ptr constant_string_auto = nullptr;
+	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
+	std::map<std::string,int> trackmap = formula->GetVariableCoefficientMap();
+
+	int num_tracks = formula->GetNumberOfVariables();
+	int left_track = formula->GetVariableIndex(1);
+	int right_track = formula->GetVariableIndex(2);
+
+
+	result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::GE,VAR_PER_TRACK,num_tracks,left_track,right_track);
+	result_auto = new StringAutomaton(result_dfa,formula,num_tracks*VAR_PER_TRACK);
+
+
+	return result_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::MakeAnyStringUnaligned(StringFormula_ptr formula) {
@@ -1313,9 +1366,11 @@ StringAutomaton_ptr StringAutomaton::Difference(StringAutomaton_ptr other_auto) 
 
 StringAutomaton_ptr StringAutomaton::Concat(StringAutomaton_ptr other_auto) {
   CHECK_EQ(this->num_tracks_,other_auto->num_tracks_);
-//  StringAutomaton_ptr concat_auto = static_cast<StringAutomaton_ptr>(Automaton::Concat(other_auto));
-  auto concat_dfa = StringAutomaton::concat(dfa_, other_auto->dfa_,this->num_of_bdd_variables_);
-  auto concat_auto = new StringAutomaton(concat_dfa,this->num_of_bdd_variables_);
+  this->Minimize();
+  other_auto->Minimize();
+  StringAutomaton_ptr concat_auto = static_cast<StringAutomaton_ptr>(Automaton::Concat(other_auto));
+//  auto concat_dfa = StringAutomaton::concat(dfa_, other_auto->dfa_,this->num_of_bdd_variables_);
+//  auto concat_auto = new StringAutomaton(concat_dfa,this->num_of_bdd_variables_);
   return concat_auto;
 }
 
