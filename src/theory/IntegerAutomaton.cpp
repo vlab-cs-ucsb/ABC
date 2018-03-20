@@ -6,7 +6,6 @@
  */
 
 #include "IntegerAutomaton.h"
-#include "IntegerAutomatonBuilder.h"
 
 namespace Vlab
 {
@@ -66,22 +65,6 @@ namespace Vlab
       std::stringstream ss;
       ss << "IntegerAutomaton[" << id_ << "]";
       return ss.str();
-    }
-
-    IntegerAutomaton_ptr IntegerAutomaton::MakeAutomaton(int value, std::string var_name, ArithmeticFormula_ptr formula,
-                                                         bool add_leading_zeros)
-    {
-
-      auto constant_value_formula = formula->clone();
-      constant_value_formula->reset_coefficients();
-      constant_value_formula->set_variable_coefficient(var_name, 1);
-      constant_value_formula->set_constant(-value);
-      constant_value_formula->set_type(ArithmeticFormula::Type::EQ);
-      auto binary_auto = IntegerAutomaton::MakeAutomaton(constant_value_formula, not add_leading_zeros);
-
-      DVLOG(VLOG_LEVEL) << binary_auto->GetId() << " = IntegerAutomaton::MakeAutomaton(" << value << ", " << var_name
-                        << ", " << *formula << ", " << std::boolalpha << add_leading_zeros << ")";
-      return binary_auto;
     }
 
     IntegerAutomaton_ptr IntegerAutomaton::MakeAutomaton(SemilinearSet_ptr semilinear_set, std::string var_name,

@@ -22,7 +22,6 @@ namespace Vlab
 
     Automaton::Builder::~Builder()
     {
-
     }
 
     Automaton::Builder& Automaton::Builder::SetNumberOfStates(const int number_of_states)

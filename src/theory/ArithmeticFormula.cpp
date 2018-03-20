@@ -372,6 +372,16 @@ namespace Vlab
       return result;
     }
 
+    ArithmeticFormula_ptr ArithmeticFormula::ToConstantVariableFormula(const std::string var_name, const int value) const
+    {
+      ArithmeticFormula_ptr result = this->clone();
+      result->reset_coefficients();
+      result->set_variable_coefficient(var_name, 1);
+      result->set_constant(-value);
+      result->set_type(ArithmeticFormula::Type::EQ);
+      return result;
+    }
+
     ArithmeticFormula_ptr ArithmeticFormula::ToLessThanEquivalentFormula()
     {
       ArithmeticFormula_ptr result = nullptr;

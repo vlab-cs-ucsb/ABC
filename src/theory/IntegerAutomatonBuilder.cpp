@@ -5,8 +5,7 @@
  *      Author: baki
  */
 
-#include "AutomatonBuilder.h"
-#include "IntegerAutomatonBuilder.h"
+#include "IntegerAutomaton.h"
 
 namespace Vlab
 {
@@ -62,6 +61,18 @@ namespace Vlab
       return *this;
     }
 
+    IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetValue(const std::string variable_name, const int value)
+    {
+      this->values_as_constants_[variable_name] = value;
+      return *this;
+    }
+
+    IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetValue(const std::string variable_name, const SemilinearSet_ptr semilinear_set)
+    {
+      this->values_as_semilinear_set_[variable_name] = semilinear_set;
+      return *this;
+    }
+
     IntegerAutomaton::Builder& IntegerAutomaton::Builder::AcceptAllIntegers()
     {
       return static_cast<IntegerAutomaton::Builder&>(Automaton::Builder::AcceptAllExceptEmptyInput());
@@ -96,6 +107,8 @@ namespace Vlab
     {
       this->Automaton::Builder::ResetBuilder();
       this->formula_ = nullptr;
+      this->values_as_constants_ = std::unordered_map<std::string, int>();
+      this->values_as_semilinear_set_ = std::unordered_map<std::string, SemilinearSet_ptr>();
     }
 
     void IntegerAutomaton::Builder::BuildDFA()

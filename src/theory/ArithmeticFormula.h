@@ -93,6 +93,15 @@ namespace Vlab
         ArithmeticFormula_ptr negate();
 
         /**
+         * Sets all coefficients to 0 except the given variable which is set to 1.
+         * And sets the value of the given variable to given value.
+         * @param var_name
+         * @param value
+         * @return
+         */
+        ArithmeticFormula_ptr ToConstantVariableFormula(const std::string var_name, const int value) const;
+
+        /**
          * Converts GT, GE, and LE into LT equivalent formula.
          * @return
          */

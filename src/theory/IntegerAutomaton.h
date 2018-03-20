@@ -34,8 +34,6 @@
 #include "SemilinearSet.h"
 #include "UnaryAutomaton.h"
 
-#include "IntegerAutomatonBuilder.h"
-
 namespace Vlab
 {
   namespace Theory
@@ -57,7 +55,146 @@ namespace Vlab
         /**
          * Binary encoded integer automaton builder.
          */
-        class Builder;
+        class Builder : public Automaton::Builder
+        {
+           public:
+
+            /**
+             * Initializes a new instance of the Builder class.
+             */
+            Builder();
+
+            /**
+             * Destructor.
+             */
+            virtual ~Builder();
+
+            /**
+             * Sets the number of states.
+             * @param number_of_states
+             * @return
+             */
+            virtual Builder& SetNumberOfStates(const int number_of_states) override;
+
+            /**
+             * Sets the given state as sink state.
+             * @param state
+             * @return
+             */
+            virtual Builder& SetSinkState(const int state) override;
+
+            /**
+             * Sets the given state as accepting state.
+             * @param state
+             * @return
+             */
+            virtual Builder& SetAcceptingState(const int state) override;
+
+            /**
+             * Sets the number of bdd variables.
+             * @param number_of_bdd_variables
+             * @return
+             */
+            virtual Builder& SetNumberOfBddVariables(const int number_of_bdd_variables) override;
+
+            /**
+             * Sets a transition from source to given target.
+             * @param source
+             * @param transition is bdd transition string, e.g.; 1XX means 100,101, 110,111 where there are three BDD variables.
+             * @param target
+             * @return
+             */
+            virtual Builder& SetTransition(const int source, const std::string& transition, const int target) override;
+
+            /**
+             * Sets transitions from a source state.
+             * @param source
+             * @param transitions
+             * @return
+             */
+            virtual Builder& SetTransitions(const int source, const std::unordered_map<std::string, int>& transitions) override;
+
+            /**
+             * Sets the dfa.
+             * @param dfa
+             * @return
+             */
+            virtual Builder& SetDfa(const Libs::MONALib::DFA_ptr dfa) override;
+
+            /**
+             * TODO tmp solution for binary int automaton formula
+             * @param formula
+             * @return
+             */
+            Builder& SetFormula(ArithmeticFormula_ptr formula);
+
+            /**
+             * Sets the track of the given variable to the given integer constant.
+             * @param variable_name
+             * @param value
+             * @return
+             */
+            Builder& SetValue(const std::string variable_name, const int value);
+
+            /**
+             * Sets the track of the given variable to the value(s) defined by the given semilinear set.
+             * @param variable_name
+             * @param semilinear_set
+             * @return
+             */
+            Builder& SetValue(const std::string variable_name, const SemilinearSet_ptr semilinear_set);
+
+            /**
+             * Generates an automaton that accepts all integers.
+             * @return
+             */
+            Builder& AcceptAllIntegers();
+
+            /**
+             * Builds an instance of the IntegerAutomaton class.
+             * @return
+             */
+            virtual IntegerAutomaton_ptr Build() override;
+
+           protected:
+
+            /**
+             * Reinitializes members to avoid holder larger memory.
+             */
+            virtual void ResetBuilder() override;
+
+            /**
+             * Builds binary encoded integer DFA.
+             */
+            virtual void BuildDFA() override;
+
+            /**
+             * Builds an equality or disequality DFA.
+             */
+            void BuildEqualityDFA();
+
+            /**
+             * Builds an inequality DFA.
+             */
+            void BuildInEqualityDFA();
+
+            /**
+             * TODO try to improve usage
+             * Arithmetic formula
+             */
+            ArithmeticFormula_ptr formula_;
+
+            /**
+             * Constant values set for variables in the formula
+             */
+            std::unordered_map<std::string, int> values_as_constants_;
+
+            /**
+             * TODO try to improve usage
+             * Semilinear sets defined for variables in the formula.
+             */
+            std::unordered_map<std::string, SemilinearSet_ptr> values_as_semilinear_set_;
+        };
 
         /**
          * Constructs a binary encoded integer automaton given binary encoded dfa.
@@ -111,8 +248,6 @@ namespace Vlab
          */
         virtual std::string Str() const override;
 
-        static IntegerAutomaton_ptr MakeAutomaton(int value, std::string var_name, ArithmeticFormula_ptr formula,
-                                                  bool add_leading_zeros = false);
         static IntegerAutomaton_ptr MakeAutomaton(SemilinearSet_ptr semilinear_set, std::string var_name,
                                                   ArithmeticFormula_ptr formula, bool add_leading_zeros = false);
 
