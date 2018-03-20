@@ -251,7 +251,7 @@ namespace Vlab
       }
 
       DVLOG(VLOG_LEVEL) << binary_auto->GetId() << " = [" << this->id_ << "]->toIntegerAutomaton(" << var_name << ", "
-                        << *binary_auto->get_formula() << ", " << add_minus_one << ")";
+                        << *binary_auto->GetFormula() << ", " << add_minus_one << ")";
 
       return binary_auto;
     }

@@ -876,8 +876,8 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
 
       Optimization::ConstraintQuerier query;
       // checks if the integer parameter is an index of operation (currently works for indexof only)
-      if (index_var and bin_end_index_auto->get_formula()->has_relation_to_mixed_term(index_var->getVarName())) {
-        auto relation = bin_end_index_auto->get_formula()->get_relation_to_mixed_term(index_var->getVarName());
+      if (index_var and bin_end_index_auto->GetFormula()->has_relation_to_mixed_term(index_var->getVarName())) {
+        auto relation = bin_end_index_auto->GetFormula()->get_relation_to_mixed_term(index_var->getVarName());
         if (relation.first == Theory::ArithmeticFormula::Type::EQ and
             query.is_param_equal_to(sub_string_term->subject_term, relation.second, 1)) {
           // Refactor below flow into a function
@@ -1254,7 +1254,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     if (not is_satisfiable) {
       auto binary_auto = arithmetic_result->getIntegerAutomaton();
       arithmetic_result = new Value(
-          IntegerAutomaton::MakePhi(binary_auto->get_formula()->clone(), binary_auto->is_natural_number()));
+          IntegerAutomaton::MakePhi(binary_auto->GetFormula()->clone(), binary_auto->is_natural_number()));
       arithmetic_constraint_solver_.set_group_value(term, arithmetic_result);
       break;
     }
@@ -1266,7 +1266,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
       // first convert integer result to unary, then unary to binary
       string_term_unary_auto = string_term_result->getIntAutomaton()->toUnaryAutomaton();
       string_term_binary_auto = string_term_unary_auto->ConvertToIntegerAutomaton(
-          string_term_var_name, arithmetic_result->getIntegerAutomaton()->get_formula()->clone(), has_minus_one);
+          string_term_var_name, arithmetic_result->getIntegerAutomaton()->GetFormula()->clone(), has_minus_one);
       delete string_term_unary_auto;
       string_term_unary_auto = nullptr;
     } else if (Value::Type::INT_CONSTANT == string_term_result->getType()) {
@@ -1274,7 +1274,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
       has_minus_one = (value < 0);
       number_of_variables_for_int_auto = Theory::IntAutomaton::DEFAULT_NUM_OF_VARIABLES;
       string_term_binary_auto = Theory::IntegerAutomaton::MakeAutomaton(
-          value, string_term_var_name, arithmetic_result->getIntegerAutomaton()->get_formula()->clone(), true);
+          value, string_term_var_name, arithmetic_result->getIntegerAutomaton()->GetFormula()->clone(), true);
     } else {
       LOG(FATAL)<< "unexpected type";
     }
@@ -1295,7 +1295,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     string_term_binary_auto = updated_arith_auto->GetBinaryAutomatonFor(string_term_var_name);
 
     if (has_minus_one) {
-      has_minus_one = string_term_binary_auto->HasNegative1();
+      has_minus_one = string_term_binary_auto->IsAcceptingNegativeOne();
       IntegerAutomaton_ptr positive_values_auto = string_term_binary_auto->GetPositiveValuesFor(string_term_var_name);
       delete string_term_binary_auto;
       string_term_binary_auto = positive_values_auto;
@@ -1316,7 +1316,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     if (not is_satisfiable) {
       auto binary_auto = arithmetic_result->getIntegerAutomaton();
       arithmetic_result = new Value(
-          IntegerAutomaton::MakePhi(binary_auto->get_formula()->clone(), binary_auto->is_natural_number()));
+          IntegerAutomaton::MakePhi(binary_auto->GetFormula()->clone(), binary_auto->is_natural_number()));
       arithmetic_constraint_solver_.set_group_value(term, arithmetic_result);
       break;
     }

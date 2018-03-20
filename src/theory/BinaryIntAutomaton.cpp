@@ -322,7 +322,7 @@ num
       return binary_auto;
     }
 
-    ArithmeticFormula_ptr IntegerAutomaton::get_formula()
+    ArithmeticFormula_ptr IntegerAutomaton::GetFormula()
     {
       return formula_;
     }
@@ -337,7 +337,7 @@ num
       return is_natural_number_;
     }
 
-    bool IntegerAutomaton::HasNegative1()
+    bool IntegerAutomaton::IsAcceptingNegativeOne()
     {
       CHECK_EQ(1, number_of_bdd_variables_)<< "implemented for single track binary automaton";
 
@@ -375,7 +375,7 @@ num
       auto complement_auto = any_int_auto->Intersect(tmp_auto);
       delete any_int_auto;
       delete tmp_auto;
-      auto formula = complement_auto->get_formula();
+      auto formula = complement_auto->GetFormula();
       delete formula;
       complement_auto->set_formula(this->formula_->negate());
 

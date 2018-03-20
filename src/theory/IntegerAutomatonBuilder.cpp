@@ -35,7 +35,8 @@ namespace Vlab
 
     IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetNumberOfBddVariables(const int number_of_bdd_variables)
     {
-      return static_cast<IntegerAutomaton::Builder&>(Automaton::Builder::SetNumberOfBddVariables(number_of_bdd_variables));
+      return static_cast<IntegerAutomaton::Builder&>(Automaton::Builder::SetNumberOfBddVariables(
+                                                                                                 number_of_bdd_variables));
     }
 
     IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetTransition(const int source, const std::string& transition,
@@ -44,7 +45,8 @@ namespace Vlab
       return static_cast<IntegerAutomaton::Builder&>(Automaton::Builder::SetTransition(source, transition, target));
     }
 
-    IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetTransitions(const int source, const std::unordered_map<std::string, int>& transitions)
+    IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetTransitions(
+        const int source, const std::unordered_map<std::string, int>& transitions)
     {
       return static_cast<IntegerAutomaton::Builder&>(Automaton::Builder::SetTransitions(source, transitions));
     }
@@ -67,7 +69,8 @@ namespace Vlab
       return *this;
     }
 
-    IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetValue(const std::string variable_name, const SemilinearSet_ptr semilinear_set)
+    IntegerAutomaton::Builder& IntegerAutomaton::Builder::SetValue(const std::string variable_name,
+                                                                   const SemilinearSet_ptr semilinear_set)
     {
       this->values_as_semilinear_set_[variable_name] = semilinear_set;
       return *this;
@@ -115,16 +118,20 @@ namespace Vlab
     {
       // TODO add an option to to call and return base bulder
 //      this->Automaton::Builder::BuildDFA();
+      LOG(FATAL)<< "implement logic based on semilinear set or constants";
+
       switch (formula_->get_type())
       {
         case ArithmeticFormula::Type::EQ:
-        case ArithmeticFormula::Type::NOTEQ: {
+        case ArithmeticFormula::Type::NOTEQ:
+        {
           this->BuildEqualityDFA();
           break;
         }
         case ArithmeticFormula::Type::GT:
         case ArithmeticFormula::Type::GE:
-        case ArithmeticFormula::Type::LE: {
+        case ArithmeticFormula::Type::LE:
+        {
           auto tmp_formula = formula_;
           this->formula_ = formula_->ToLessThanEquivalentFormula();
           this->BuildInEqualityDFA();
@@ -132,19 +139,21 @@ namespace Vlab
           this->formula_ = tmp_formula;
           break;
         }
-        case ArithmeticFormula::Type::LT: {
+        case ArithmeticFormula::Type::LT:
+        {
           this->BuildInEqualityDFA();
           break;
         }
-        case ArithmeticFormula::Type::VAR: {
+        case ArithmeticFormula::Type::VAR:
+        {
           this->AcceptAllIntegers();
           break;
         }
         default:
-          LOG(FATAL)<< "Equation type is not specified, please set type for input formula: " << *formula_;
-          break;
-        }
+        LOG(FATAL)<< "Equation type is not specified, please set type for input formula: " << *formula_;
+        break;
       }
+    }
 
     void IntegerAutomaton::Builder::BuildEqualityDFA()
     {
@@ -167,8 +176,8 @@ namespace Vlab
 
       unsigned max_states_allowed = 0x80000000;
       unsigned mona_check = 8 * number_of_states;
-      CHECK_LE(mona_check, max_states_allowed); // MONA bug/limit, infinite loops
-      CHECK_LT(active_number_of_variables, 64); // avoid overflow below
+      CHECK_LE(mona_check, max_states_allowed);  // MONA bug/limit, infinite loops
+      CHECK_LT(active_number_of_variables, 64);  // avoid overflow below
 
       const unsigned long number_of_transitions = 1 << active_number_of_variables;
 
@@ -341,8 +350,8 @@ namespace Vlab
 
       unsigned max_states_allowed = 0x80000000;
       unsigned mona_check = 8 * number_of_states;
-      CHECK_LE(mona_check, max_states_allowed); // MONA bug/limit, infinite loops
-      CHECK_LT(active_number_of_variables, 64); // avoid overflow below
+      CHECK_LE(mona_check, max_states_allowed);  // MONA bug/limit, infinite loops
+      CHECK_LT(active_number_of_variables, 64);  // avoid overflow below
 
       const unsigned long number_of_transitions = 1 << active_number_of_variables;
 
@@ -390,7 +399,7 @@ namespace Vlab
           {
             label1 = label2;
             result = label1 + ones;
-            label2 = (result >= 0) ? (result / 2) : ( result - 1) / 2;
+            label2 = (result >= 0) ? (result / 2) : (result - 1) / 2;
             write1 = result & 1;
           }
 
@@ -436,8 +445,7 @@ namespace Vlab
         //find next state to expand
         for (next_label = min;
             (next_label <= max) and (carry_map[next_label].i != current_state)
-                and (carry_map[next_label].ir != current_state);
-            ++next_label)
+                and (carry_map[next_label].ir != current_state); ++next_label)
         {
         }
 
@@ -464,5 +472,145 @@ namespace Vlab
       this->dfa_ = Libs::MONALib::DFABuildAndMinimize(statuses);
     }
 
+    void IntegerAutomaton::Builder::BuildConstantsDFA()
+    {
+      LOG(FATAL)<< "implement me";
+    }
+
+    void IntegerAutomaton::Builder::BuildSemilinearSetsDFA()
+    {
+      LOG(FATAL)<< "implement me";
+    }
+
+    Libs::MONALib::DFA_ptr IntegerAutomaton::Builder::BuildSemilinearSetDFA(const std::string variable_name,
+                                                                            const SemilinearSet_ptr semilinear_set)
+    {
+      const int var_index = formula_->get_variable_index(variable_name);
+      const int number_of_variables = number_of_bdd_variables_ + 1;
+      const int lz_index = number_of_variables - 1;
+
+      std::string bit_transition(number_of_variables + 1, 'X');
+      bit_transition[number_of_variables] = '\0';
+
+      std::vector<BinaryState_ptr> binary_states;
+      // TODO refactor that call, especially for the constants
+      IntegerAutomaton::ComputeBinaryStates(binary_states, semilinear_set);
+
+      const int number_of_binary_states = binary_states.size();
+      const int number_of_states = number_of_binary_states + 2;
+      const int leading_zero_state = number_of_states - 2;
+      const int sink_state = number_of_states - 1;
+
+      std::string statuses(number_of_states, '-');
+      Libs::MONALib::DFASetup(number_of_states, number_of_variables);
+
+      for (int i = 0; i < number_of_binary_states; i++)
+      {
+        if (IntegerAutomaton::is_accepting_binary_state(binary_states[i], semilinear_set))
+        {
+          if (binary_states[i]->getd0() >= 0 && binary_states[i]->getd1() >= 0)
+          {
+            Libs::MONALib::DFASetNumberOfExceptionalTransitions(3);
+            bit_transition[var_index] = '0';
+            bit_transition[lz_index] = '0';
+            Libs::MONALib::DFASetExceptionalTransition(bit_transition, binary_states[i]->getd0());
+            bit_transition[var_index] = '1';
+            bit_transition[lz_index] = 'X';
+            Libs::MONALib::DFASetExceptionalTransition(bit_transition, binary_states[i]->getd1());
+            bit_transition[var_index] = '0';
+            bit_transition[lz_index] = '1';
+            Libs::MONALib::DFASetExceptionalTransition(bit_transition, leading_zero_state);
+          }
+          else if (binary_states[i]->getd0() >= 0 && binary_states[i]->getd1() < 0)
+          {
+            Libs::MONALib::DFASetNumberOfExceptionalTransitions(2);
+            bit_transition[var_index] = '0';
+            bit_transition[lz_index] = '0';
+            Libs::MONALib::DFASetExceptionalTransition(bit_transition, binary_states[i]->getd0());
+            bit_transition[var_index] = '0';
+            bit_transition[lz_index] = '1';
+            Libs::MONALib::DFASetExceptionalTransition(bit_transition, leading_zero_state);
+          }
+          else if (binary_states[i]->getd0() < 0 && binary_states[i]->getd1() >= 0)
+          {
+            Libs::MONALib::DFASetNumberOfExceptionalTransitions(2);
+            bit_transition[var_index] = '1';
+            bit_transition[lz_index] = 'X';
+            Libs::MONALib::DFASetExceptionalTransition(bit_transition, binary_states[i]->getd1());
+            bit_transition[var_index] = '0';
+            bit_transition[lz_index] = '1';
+            Libs::MONALib::DFASetExceptionalTransition(bit_transition, leading_zero_state);
+          }
+          else
+          {
+            Libs::MONALib::DFASetNumberOfExceptionalTransitions(1);
+            bit_transition[var_index] = '0';
+            bit_transition[lz_index] = '1';
+            Libs::MONALib::DFASetExceptionalTransition(bit_transition, leading_zero_state);
+          }
+          bit_transition[lz_index] = 'X';
+        }
+        else
+        {
+          if (binary_states[i]->getd0() >= 0 && binary_states[i]->getd1() >= 0)
+          {
+            Libs::MONALib::DFASetNumberOfExceptionalTransitions(2);
+            bit_transition[var_index] = '0';
+            Libs::MONALib::DFASetExceptionalTransition(bit_transition, binary_states[i]->getd0());
+            bit_transition[var_index] = '1';
+            Libs::MONALib::DFASetExceptionalTransition(bit_transition, binary_states[i]->getd1());
+          }
+          else if (binary_states[i]->getd0() >= 0 && binary_states[i]->getd1() < 0)
+          {
+            Libs::MONALib::DFASetNumberOfExceptionalTransitions(1);
+            bit_transition[var_index] = '0';
+            Libs::MONALib::DFASetExceptionalTransition(bit_transition, binary_states[i]->getd0());
+          }
+          else if (binary_states[i]->getd0() < 0 && binary_states[i]->getd1() >= 0)
+          {
+            Libs::MONALib::DFASetNumberOfExceptionalTransitions(1);
+            bit_transition[var_index] = '1';
+            Libs::MONALib::DFASetExceptionalTransition(bit_transition, binary_states[i]->getd1());
+          }
+          else
+          {
+            Libs::MONALib::DFASetNumberOfExceptionalTransitions(0);
+          }
+        }
+
+        Libs::MONALib::DFASetTargetForRemaningTransitions(sink_state);
+      }
+
+      // for the leading zero state
+      Libs::MONALib::DFASetNumberOfExceptionalTransitions(1);
+      bit_transition[var_index] = '0';
+      bit_transition[lz_index] = '1';
+      Libs::MONALib::DFASetExceptionalTransition(bit_transition, leading_zero_state);
+      Libs::MONALib::DFASetTargetForRemaningTransitions(sink_state);
+      statuses[leading_zero_state] = '+';
+
+      // for the sink state
+      Libs::MONALib::DFASetNumberOfExceptionalTransitions(1);
+      Libs::MONALib::DFASetTargetForRemaningTransitions(sink_state);
+
+      // TODO temporary removal, fix this control
+//      int zero_state = binary_states[0]->getd0();  // adding leading zeros makes accepting zero 00, fix here
+//      if (zero_state > -1 and is_accepting_binary_state(binary_states[zero_state], semilinear_set))
+//      {
+//        //    statuses[zero_state] = '+';
+//      }
+
+      for (auto bin_state : binary_states)
+      {
+        delete bin_state;
+      }
+      binary_states.clear();
+
+      Libs::MONALib::DFA_ptr binary_dfa = Libs::MONALib::DFABuildAndMinimize(statuses);
+      auto tmp_dfa = binary_dfa;
+      binary_dfa = Libs::MONALib::DFAProjectAway(binary_dfa, lz_index);
+      dfaFree(tmp_dfa);
+      return binary_dfa;
+    }
   } /* namespace Theory */
 } /* namespace Vlab */

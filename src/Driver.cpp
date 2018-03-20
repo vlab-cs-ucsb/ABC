@@ -197,7 +197,7 @@ void Driver::SetModelCounter() {
     switch (variable_entry.second->getType()) {
       case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
         auto binary_auto = variable_entry.second->getIntegerAutomaton();
-        auto formula = binary_auto->get_formula();
+        auto formula = binary_auto->GetFormula();
         for (auto& el : formula->get_variable_coefficient_map()) {
           if (symbol_table_->get_variable_unsafe(el.first) != nullptr) {
             ++num_bin_var;

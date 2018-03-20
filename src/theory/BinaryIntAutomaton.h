@@ -110,10 +110,10 @@ namespace Vlab
         static IntegerAutomaton_ptr MakeAutomaton(SemilinearSet_ptr semilinear_set, std::string var_name,
                                                     ArithmeticFormula_ptr formula, bool add_leading_zeros = false);
 
-        ArithmeticFormula_ptr get_formula();
+        ArithmeticFormula_ptr GetFormula();
         void set_formula(ArithmeticFormula_ptr formula);
         bool is_natural_number();
-        bool HasNegative1();
+        bool IsAcceptingNegativeOne();
         IntegerAutomaton_ptr Complement();
         IntegerAutomaton_ptr Intersect(IntegerAutomaton_ptr);
         IntegerAutomaton_ptr Union(IntegerAutomaton_ptr);

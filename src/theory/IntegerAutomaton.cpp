@@ -67,210 +67,23 @@ namespace Vlab
       return ss.str();
     }
 
-    IntegerAutomaton_ptr IntegerAutomaton::MakeAutomaton(SemilinearSet_ptr semilinear_set, std::string var_name,
-                                                         ArithmeticFormula_ptr formula, bool add_leading_zeros)
-    {
-      DVLOG(VLOG_LEVEL) << "IntegerAutomaton::MakeAutomaton(" << *semilinear_set << ", " << var_name;
-
-      int var_index = formula->get_variable_index(var_name);
-      int number_of_variables = formula->get_number_of_variables(), lz_index = 0;
-      if (add_leading_zeros)
-      {
-        ++number_of_variables;
-        lz_index = number_of_variables - 1;
-      }
-
-      std::string bit_transition(number_of_variables + 1, 'X');
-      bit_transition[number_of_variables] = '\0';
-
-      std::vector<BinaryState_ptr> binary_states;
-      IntegerAutomaton::ComputeBinaryStates(binary_states, semilinear_set);
-
-      int number_of_binary_states = binary_states.size();
-      int number_of_states = number_of_binary_states + 1;
-      int leading_zero_state = 0;  // only used if we add leading zeros
-      if (add_leading_zeros)
-      {
-        ++number_of_states;
-        leading_zero_state = number_of_states - 2;
-      }
-
-      int sink_state = number_of_states - 1;
-      int* indices = GetBddVariableIndices(number_of_variables);
-      std::string statuses(number_of_states + 1, '-');
-      statuses[number_of_states] = '\0';
-      dfaSetup(number_of_states, number_of_variables, indices);
-      bool is_final_state = false;
-      for (int i = 0; i < number_of_binary_states; i++)
-      {
-        is_final_state = is_accepting_binary_state(binary_states[i], semilinear_set);
-
-        if (add_leading_zeros and is_final_state)
-        {
-          if (binary_states[i]->getd0() >= 0 && binary_states[i]->getd1() >= 0)
-          {
-            dfaAllocExceptions(3);
-            bit_transition[var_index] = '0';
-            bit_transition[lz_index] = '0';
-            dfaStoreException(binary_states[i]->getd0(), &bit_transition[0]);
-            bit_transition[var_index] = '1';
-            bit_transition[lz_index] = 'X';
-            dfaStoreException(binary_states[i]->getd1(), &bit_transition[0]);
-            bit_transition[var_index] = '0';
-            bit_transition[lz_index] = '1';
-            dfaStoreException(leading_zero_state, &bit_transition[0]);
-          }
-          else if (binary_states[i]->getd0() >= 0 && binary_states[i]->getd1() < 0)
-          {
-            dfaAllocExceptions(2);
-            bit_transition[var_index] = '0';
-            bit_transition[lz_index] = '0';
-            dfaStoreException(binary_states[i]->getd0(), &bit_transition[0]);
-            bit_transition[var_index] = '0';
-            bit_transition[lz_index] = '1';
-            dfaStoreException(leading_zero_state, &bit_transition[0]);
-          }
-          else if (binary_states[i]->getd0() < 0 && binary_states[i]->getd1() >= 0)
-          {
-            dfaAllocExceptions(2);
-            bit_transition[var_index] = '1';
-            bit_transition[lz_index] = 'X';
-            dfaStoreException(binary_states[i]->getd1(), &bit_transition[0]);
-            bit_transition[var_index] = '0';
-            bit_transition[lz_index] = '1';
-            dfaStoreException(leading_zero_state, &bit_transition[0]);
-          }
-          else
-          {
-            dfaAllocExceptions(1);
-            bit_transition[var_index] = '0';
-            bit_transition[lz_index] = '1';
-            dfaStoreException(leading_zero_state, &bit_transition[0]);
-          }
-          bit_transition[lz_index] = 'X';
-        }
-        else
-        {
-          if (binary_states[i]->getd0() >= 0 && binary_states[i]->getd1() >= 0)
-          {
-            dfaAllocExceptions(2);
-            bit_transition[var_index] = '0';
-            dfaStoreException(binary_states[i]->getd0(), &bit_transition[0]);
-            bit_transition[var_index] = '1';
-            dfaStoreException(binary_states[i]->getd1(), &bit_transition[0]);
-          }
-          else if (binary_states[i]->getd0() >= 0 && binary_states[i]->getd1() < 0)
-          {
-            dfaAllocExceptions(1);
-            bit_transition[var_index] = '0';
-            dfaStoreException(binary_states[i]->getd0(), &bit_transition[0]);
-          }
-          else if (binary_states[i]->getd0() < 0 && binary_states[i]->getd1() >= 0)
-          {
-            dfaAllocExceptions(1);
-            bit_transition[var_index] = '1';
-            dfaStoreException(binary_states[i]->getd1(), &bit_transition[0]);
-          }
-          else
-          {
-            dfaAllocExceptions(0);
-          }
-        }
-
-        dfaStoreState(sink_state);
-
-        if (is_final_state and (not add_leading_zeros))
-        {
-          statuses[i] = '+';
-        }
-      }
-
-      // for the leading zero state
-      if (add_leading_zeros)
-      {
-        dfaAllocExceptions(1);
-        bit_transition[var_index] = '0';
-        bit_transition[lz_index] = '1';
-        dfaStoreException(leading_zero_state, &bit_transition[0]);
-        dfaStoreState(sink_state);
-        statuses[leading_zero_state] = '+';
-      }
-
-      // for the sink state
-      dfaAllocExceptions(0);
-      dfaStoreState(sink_state);
-
-      int zero_state = binary_states[0]->getd0();  // adding leading zeros makes accepting zero 00, fix here
-      if (zero_state > -1 and is_accepting_binary_state(binary_states[zero_state], semilinear_set))
-      {
-        // TODO temporary removal
-        //    statuses[zero_state] = '+';
-      }
-
-      auto binary_dfa = dfaBuild(&statuses[0]);
-      // cleanup
-      for (auto bin_state : binary_states)
-      {
-        delete bin_state;
-      }
-      binary_states.clear();
-      delete[] indices;
-      if (add_leading_zeros)
-      {
-        auto tmp_dfa = binary_dfa;
-        binary_dfa = dfaProject(binary_dfa, (unsigned) (lz_index));
-        dfaFree(tmp_dfa);
-        tmp_dfa = nullptr;
-        number_of_variables = number_of_variables - 1;
-      }
-
-      auto binary_auto = new IntegerAutomaton(dfaMinimize(binary_dfa), formula, not add_leading_zeros);
-      dfaFree(binary_dfa);
-      binary_dfa = nullptr;
-
-      // binary state computation for semilinear sets may have leading zeros, remove them
-      if ((not add_leading_zeros) and (not semilinear_set->has_only_constants()))
-      {
-        auto trim_helper_auto = IntegerAutomaton::MakeTrimHelperAuto(var_index, number_of_variables);
-        trim_helper_auto->set_formula(formula->clone());
-        auto tmp_auto = binary_auto;
-        binary_auto = binary_auto->Intersect(trim_helper_auto);
-        delete trim_helper_auto;
-        delete tmp_auto;
-      }
-
-      DVLOG(VLOG_LEVEL) << binary_auto->GetId() << " = IntegerAutomaton::MakeAutomaton(<semilinear_set>, " << var_name
-                        << ", " << *(binary_auto->formula_) << ", " << std::boolalpha << add_leading_zeros << ")";
-      return binary_auto;
-    }
-
-    ArithmeticFormula_ptr IntegerAutomaton::get_formula()
+    ArithmeticFormula_ptr IntegerAutomaton::GetFormula() const
     {
       return formula_;
     }
 
-    void IntegerAutomaton::set_formula(ArithmeticFormula_ptr formula)
-    {
-      this->formula_ = formula;
-    }
-
-    bool IntegerAutomaton::HasNegative1()
+    bool IntegerAutomaton::IsAcceptingNegativeOne() const
     {
       CHECK_EQ(1, number_of_bdd_variables_)<< "implemented for single track binary automaton";
 
-      if (is_natural_number_)
-      {
-        return false;
-      }
-
-      std::vector<char> exception =
+      std::string transition =
       { '1'};
-      std::map<int, bool> is_visited;
-      int current_state = this->dfa_->s;
+      std::unordered_map<int, bool> is_visited;
+      int current_state = this->GetInitialState();
       while (not is_visited[current_state])
       {
         is_visited[current_state] = true;
-        current_state = GetNextState(current_state, exception);
+        current_state = this->GetNextState(current_state, transition);
         if (current_state > -1 and IsAcceptingState(current_state))
         {
           return true;
@@ -292,7 +105,7 @@ namespace Vlab
       auto complement_auto = any_int_auto->Intersect(tmp_auto);
       delete any_int_auto;
       delete tmp_auto;
-      auto formula = complement_auto->get_formula();
+      auto formula = complement_auto->GetFormula();
       delete formula;
       complement_auto->set_formula(this->formula_->negate());
 
@@ -454,7 +267,7 @@ namespace Vlab
         leading_zero_exception.push_back('0');
       }
 
-      DVLOG(VLOG_LEVEL) << leading_zero_auto->id_ << " = [" << this->id_ << "]->TrimLeadingZeros()";
+      DVLOG(VLOG_LEVEL) << leading_zero_auto->id_ << " = [" << this->id_ << "]->AddLeadingZeros()";
       return leading_zero_auto;
     }
 

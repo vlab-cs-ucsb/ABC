@@ -1338,7 +1338,7 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
       auto variable_value = symbol_table->get_value(variable);
 
       auto term_binary_auto = unary_auto->ConvertToIntegerAutomaton(qi_term->getVarName(),
-                                                               variable_value->getIntegerAutomaton()->get_formula()->clone(),
+                                                               variable_value->getIntegerAutomaton()->GetFormula()->clone(),
                                                                false);
       delete unary_auto;
       term_pre_value = new Value(term_binary_auto);

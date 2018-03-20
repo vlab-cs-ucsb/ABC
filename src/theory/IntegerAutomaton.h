@@ -179,6 +179,24 @@ namespace Vlab
             void BuildInEqualityDFA();
 
             /**
+             * Builds a dfa using the constant values map.
+             */
+            void BuildConstantsDFA();
+
+            /**
+             * Builds a dfa using the semilinear sets map.
+             */
+            void BuildSemilinearSetsDFA();
+
+            /**
+             * Builds a dfa for the given variable with the given semilinear set.
+             * @param
+             * @param semilinear_set
+             * @return
+             */
+            Libs::MONALib::DFA_ptr BuildSemilinearSetDFA(const std::string variable_name, const SemilinearSet_ptr semilinear_set);
+
+            /**
              * TODO try to improve usage
              * Arithmetic formula
              */
@@ -248,12 +266,21 @@ namespace Vlab
          */
         virtual std::string Str() const override;
 
-        static IntegerAutomaton_ptr MakeAutomaton(SemilinearSet_ptr semilinear_set, std::string var_name,
-                                                  ArithmeticFormula_ptr formula, bool add_leading_zeros = false);
+        /**
+         * Gets the formula.
+         * @return
+         */
+        ArithmeticFormula_ptr GetFormula() const;
 
-        ArithmeticFormula_ptr get_formula();
-        void set_formula(ArithmeticFormula_ptr formula);
-        bool HasNegative1();
+        /**
+         * Checks if the automaton accepts -1.
+         * -1 is used a special value for negative numbers for the unary domain.
+         * For example to handle s.indexof = -1.
+         * This check is only supported on a single track binary automaton.
+         * @return
+         */
+        bool IsAcceptingNegativeOne() const;
+
         IntegerAutomaton_ptr Complement();
         IntegerAutomaton_ptr Intersect(IntegerAutomaton_ptr);
         IntegerAutomaton_ptr Union(IntegerAutomaton_ptr);
