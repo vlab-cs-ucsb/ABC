@@ -463,24 +463,24 @@ void StringFormulaGenerator::visitGt(Gt_ptr gt_term) {
 //			formula->SetVariableCoefficient(left_var,2);
 //			formula->SetConstant(left_formula->GetConstant());
 //			constraint_information_->add_string_constraint(gt_term);
-//		} else if(StringFormula::Type::VAR == left_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
-//						&& (StringFormula::Type::STRING_CONSTANT == right_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == right_formula->GetType())) {
-//			formula = left_formula->clone();
-//			formula->MergeVariables(right_formula);
-//			formula->SetType(StringFormula::Type::EQ);
-//			auto left_var = left_formula->GetVariableAtIndex(0);
-//			formula->SetVariableCoefficient(left_var,1);
-//			formula->SetConstant(right_formula->GetConstant());
-//			constraint_information_->add_string_constraint(gt_term);
-//		}	else if(StringFormula::Type::VAR == right_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
-//							&& (StringFormula::Type::STRING_CONSTANT == left_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == left_formula->GetType())) {
-//			formula = right_formula->clone();
-//			formula->MergeVariables(left_formula);
-//			formula->SetType(StringFormula::Type::EQ);
-//			auto right_var = right_formula->GetVariableAtIndex(0);
-//			formula->SetVariableCoefficient(right_var,1);
-//			formula->SetConstant(left_formula->GetConstant());
-//			constraint_information_->add_string_constraint(gt_term);
+		} else if(StringFormula::Type::VAR == left_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
+						&& (StringFormula::Type::STRING_CONSTANT == right_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == right_formula->GetType())) {
+			formula = left_formula->clone();
+			formula->MergeVariables(right_formula);
+			formula->SetType(StringFormula::Type::GT);
+			auto left_var = left_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(left_var,1);
+			formula->SetConstant(right_formula->GetConstant());
+			constraint_information_->add_string_constraint(gt_term);
+		}	else if(StringFormula::Type::VAR == right_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
+							&& (StringFormula::Type::STRING_CONSTANT == left_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == left_formula->GetType())) {
+			formula = right_formula->clone();
+			formula->MergeVariables(left_formula);
+			formula->SetType(StringFormula::Type::GT);
+			auto right_var = right_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(right_var,1);
+			formula->SetConstant(left_formula->GetConstant());
+			constraint_information_->add_string_constraint(gt_term);
 //		} else if(StringFormula::Type::CHARAT == left_formula->GetType() && StringFormula::Type::CHARAT == right_formula->GetType()
 //							&& (left_formula->GetConstant() == right_formula->GetConstant())) {
 //			formula = left_formula->clone();
@@ -567,24 +567,24 @@ void StringFormulaGenerator::visitGe(Ge_ptr ge_term) {
 //			formula->SetVariableCoefficient(left_var,2);
 //			formula->SetConstant(left_formula->GetConstant());
 //			constraint_information_->add_string_constraint(gt_term);
-//		} else if(StringFormula::Type::VAR == left_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
-//						&& (StringFormula::Type::STRING_CONSTANT == right_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == right_formula->GetType())) {
-//			formula = left_formula->clone();
-//			formula->MergeVariables(right_formula);
-//			formula->SetType(StringFormula::Type::EQ);
-//			auto left_var = left_formula->GetVariableAtIndex(0);
-//			formula->SetVariableCoefficient(left_var,1);
-//			formula->SetConstant(right_formula->GetConstant());
-//			constraint_information_->add_string_constraint(gt_term);
-//		}	else if(StringFormula::Type::VAR == right_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
-//							&& (StringFormula::Type::STRING_CONSTANT == left_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == left_formula->GetType())) {
-//			formula = right_formula->clone();
-//			formula->MergeVariables(left_formula);
-//			formula->SetType(StringFormula::Type::EQ);
-//			auto right_var = right_formula->GetVariableAtIndex(0);
-//			formula->SetVariableCoefficient(right_var,1);
-//			formula->SetConstant(left_formula->GetConstant());
-//			constraint_information_->add_string_constraint(gt_term);
+		} else if(StringFormula::Type::VAR == left_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
+						&& (StringFormula::Type::STRING_CONSTANT == right_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == right_formula->GetType())) {
+			formula = left_formula->clone();
+			formula->MergeVariables(right_formula);
+			formula->SetType(StringFormula::Type::GE);
+			auto left_var = left_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(left_var,1);
+			formula->SetConstant(right_formula->GetConstant());
+			constraint_information_->add_string_constraint(ge_term);
+		}	else if(StringFormula::Type::VAR == right_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
+							&& (StringFormula::Type::STRING_CONSTANT == left_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == left_formula->GetType())) {
+			formula = right_formula->clone();
+			formula->MergeVariables(left_formula);
+			formula->SetType(StringFormula::Type::GE);
+			auto right_var = right_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(right_var,1);
+			formula->SetConstant(left_formula->GetConstant());
+			constraint_information_->add_string_constraint(ge_term);
 //		} else if(StringFormula::Type::CHARAT == left_formula->GetType() && StringFormula::Type::CHARAT == right_formula->GetType()
 //							&& (left_formula->GetConstant() == right_formula->GetConstant())) {
 //			formula = left_formula->clone();
@@ -670,24 +670,24 @@ void StringFormulaGenerator::visitLt(Lt_ptr lt_term) {
 //			formula->SetVariableCoefficient(left_var,2);
 //			formula->SetConstant(left_formula->GetConstant());
 //			constraint_information_->add_string_constraint(gt_term);
-//		} else if(StringFormula::Type::VAR == left_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
-//						&& (StringFormula::Type::STRING_CONSTANT == right_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == right_formula->GetType())) {
-//			formula = left_formula->clone();
-//			formula->MergeVariables(right_formula);
-//			formula->SetType(StringFormula::Type::EQ);
-//			auto left_var = left_formula->GetVariableAtIndex(0);
-//			formula->SetVariableCoefficient(left_var,1);
-//			formula->SetConstant(right_formula->GetConstant());
-//			constraint_information_->add_string_constraint(gt_term);
-//		}	else if(StringFormula::Type::VAR == right_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
-//							&& (StringFormula::Type::STRING_CONSTANT == left_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == left_formula->GetType())) {
-//			formula = right_formula->clone();
-//			formula->MergeVariables(left_formula);
-//			formula->SetType(StringFormula::Type::EQ);
-//			auto right_var = right_formula->GetVariableAtIndex(0);
-//			formula->SetVariableCoefficient(right_var,1);
-//			formula->SetConstant(left_formula->GetConstant());
-//			constraint_information_->add_string_constraint(gt_term);
+		} else if(StringFormula::Type::VAR == left_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
+						&& (StringFormula::Type::STRING_CONSTANT == right_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == right_formula->GetType())) {
+			formula = left_formula->clone();
+			formula->MergeVariables(right_formula);
+			formula->SetType(StringFormula::Type::LT);
+			auto left_var = left_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(left_var,1);
+			formula->SetConstant(right_formula->GetConstant());
+			constraint_information_->add_string_constraint(lt_term);
+		}	else if(StringFormula::Type::VAR == right_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
+							&& (StringFormula::Type::STRING_CONSTANT == left_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == left_formula->GetType())) {
+			formula = right_formula->clone();
+			formula->MergeVariables(left_formula);
+			formula->SetType(StringFormula::Type::LT);
+			auto right_var = right_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(right_var,1);
+			formula->SetConstant(left_formula->GetConstant());
+			constraint_information_->add_string_constraint(lt_term);
 //		} else if(StringFormula::Type::CHARAT == left_formula->GetType() && StringFormula::Type::CHARAT == right_formula->GetType()
 //							&& (left_formula->GetConstant() == right_formula->GetConstant())) {
 //			formula = left_formula->clone();
@@ -773,24 +773,24 @@ void StringFormulaGenerator::visitLe(Le_ptr le_term) {
 //			formula->SetVariableCoefficient(left_var,2);
 //			formula->SetConstant(left_formula->GetConstant());
 //			constraint_information_->add_string_constraint(gt_term);
-//		} else if(StringFormula::Type::VAR == left_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
-//						&& (StringFormula::Type::STRING_CONSTANT == right_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == right_formula->GetType())) {
-//			formula = left_formula->clone();
-//			formula->MergeVariables(right_formula);
-//			formula->SetType(StringFormula::Type::EQ);
-//			auto left_var = left_formula->GetVariableAtIndex(0);
-//			formula->SetVariableCoefficient(left_var,1);
-//			formula->SetConstant(right_formula->GetConstant());
-//			constraint_information_->add_string_constraint(gt_term);
-//		}	else if(StringFormula::Type::VAR == right_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
-//							&& (StringFormula::Type::STRING_CONSTANT == left_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == left_formula->GetType())) {
-//			formula = right_formula->clone();
-//			formula->MergeVariables(left_formula);
-//			formula->SetType(StringFormula::Type::EQ);
-//			auto right_var = right_formula->GetVariableAtIndex(0);
-//			formula->SetVariableCoefficient(right_var,1);
-//			formula->SetConstant(left_formula->GetConstant());
-//			constraint_information_->add_string_constraint(gt_term);
+		} else if(StringFormula::Type::VAR == left_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
+						&& (StringFormula::Type::STRING_CONSTANT == right_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == right_formula->GetType())) {
+			formula = left_formula->clone();
+			formula->MergeVariables(right_formula);
+			formula->SetType(StringFormula::Type::LE);
+			auto left_var = left_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(left_var,1);
+			formula->SetConstant(right_formula->GetConstant());
+			constraint_information_->add_string_constraint(le_term);
+		}	else if(StringFormula::Type::VAR == right_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
+							&& (StringFormula::Type::STRING_CONSTANT == left_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == left_formula->GetType())) {
+			formula = right_formula->clone();
+			formula->MergeVariables(left_formula);
+			formula->SetType(StringFormula::Type::LE);
+			auto right_var = right_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(right_var,2);
+			formula->SetConstant(left_formula->GetConstant());
+			constraint_information_->add_string_constraint(le_term);
 //		} else if(StringFormula::Type::CHARAT == left_formula->GetType() && StringFormula::Type::CHARAT == right_formula->GetType()
 //							&& (left_formula->GetConstant() == right_formula->GetConstant())) {
 //			formula = left_formula->clone();

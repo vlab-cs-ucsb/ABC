@@ -1155,9 +1155,36 @@ StringAutomaton_ptr StringAutomaton::MakeLessThan(StringFormula_ptr formula) {
 	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
 	std::map<std::string,int> trackmap = formula->GetVariableCoefficientMap();
 
+	auto coeff_map = formula->GetVariableCoefficientMap();
 	int num_tracks = formula->GetNumberOfVariables();
-	int left_track = formula->GetVariableIndex(1);
-	int right_track = formula->GetVariableIndex(2);
+	int left_track = -1, right_track = -1;
+	int num_vars = 0;
+	for(auto it : coeff_map) {
+		if(it.second != 0) {
+			num_vars++;
+		}
+	}
+
+	if(num_vars == 1) {
+		std::string var_name = formula->GetVariableAtIndex(0);
+		int var_coeff = formula->GetVariableCoefficient(var_name);
+		if(var_coeff == 1) {
+			// var on left
+			left_track = formula->GetVariableIndex(1);
+			right_track = num_tracks;
+		} else {
+			// var on right
+			left_track = num_tracks;
+			right_track = formula->GetVariableIndex(1);
+		}
+		constant_string_auto = StringAutomaton::MakeString(formula->GetConstant());
+		num_tracks++;
+	} else {
+		left_track = formula->GetVariableIndex(1);
+		right_track = formula->GetVariableIndex(2);
+	}
+
+
 
 	if(formula->GetType() == StringFormula::Type::LT_CHARAT) {
 		// #states = (#index+1)+4
@@ -1297,11 +1324,19 @@ StringAutomaton_ptr StringAutomaton::MakeLessThan(StringFormula_ptr formula) {
 		DVLOG(VLOG_LEVEL) << result_auto->id_ << " = MakeEquality(" << formula->str() << ")";
 		return result_auto;
 	}
-
+	//auto tmp_formula = formula->clone();
 	result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::LT,VAR_PER_TRACK,num_tracks,left_track,right_track);
-	result_auto = new StringAutomaton(result_dfa,formula,num_tracks*VAR_PER_TRACK);
 
-
+	if(constant_string_auto != nullptr) {
+		StringAutomaton_ptr constant_multi_auto = new StringAutomaton(constant_string_auto->dfa_,num_tracks-1,num_tracks,DEFAULT_NUM_OF_VARIABLES);
+		auto tmp_d = DFAIntersect(result_dfa,constant_multi_auto->dfa_);
+		temp_auto = new StringAutomaton(tmp_d,num_tracks,num_tracks*VAR_PER_TRACK);
+		result_auto = temp_auto->ProjectKTrack(num_tracks-1);
+		result_auto->SetFormula(formula);
+		LOG(INFO) << result_auto->num_of_bdd_variables_;
+	} else {
+		result_auto = new StringAutomaton(result_dfa,formula,num_tracks*VAR_PER_TRACK);
+	}
 	return result_auto;
 }
 
@@ -3752,6 +3787,7 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 		dfaFree(result);
 		result_auto = StringAutomaton::MakeAnyString();
 	}
+
   //LOG(INFO) << "Done";
 	delete[] map;
 	return result_auto;
