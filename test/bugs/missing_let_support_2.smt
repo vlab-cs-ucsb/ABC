@@ -1,0 +1,5 @@
+(set-logic ALL)
+(declare-const symb_subst String)
+(assert (let ((.def_0 (= ( str.substr symb_subst 1 2) "o"))) .def_0))
+(check-sat)
+(get-model)

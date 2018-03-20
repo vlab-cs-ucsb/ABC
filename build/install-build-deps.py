@@ -106,7 +106,7 @@ _project_dep = (
      'checkout' : False,     
      'patch'    : os.path.abspath(os.path.join(ABC_PATH, 'external', 'glog', 'glog_abc_autotools.patch')),
      'path'     : os.path.abspath(os.path.join(TMP_PATH, 'glog')),
-     'autogen'  : False,
+     'autogen'  : True,
      'autotools': True,
      'install'  : True
  },
