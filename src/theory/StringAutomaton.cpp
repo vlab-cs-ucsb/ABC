@@ -464,15 +464,19 @@ StringAutomaton_ptr StringAutomaton::MakeAutomaton(StringFormula_ptr formula) {
 			result_auto = StringAutomaton::MakeNotEquality(formula);
 			break;
 		case StringFormula::Type::GT:
+		case StringFormula::Type::GT_CHARAT:
 			result_auto = StringAutomaton::MakeGreaterThan(formula);
 			break;
 		case StringFormula::Type::GE:
+		case StringFormula::Type::GE_CHARAT:
 			result_auto = StringAutomaton::MakeGreaterThanOrEqual(formula);
 			break;
 		case StringFormula::Type::LT:
+		case StringFormula::Type::LT_CHARAT:
 			result_auto = StringAutomaton::MakeLessThan(formula);
 			break;
 		case StringFormula::Type::LE:
+		case StringFormula::Type::LE_CHARAT:
 			result_auto = StringAutomaton::MakeLessThanOrEqual(formula);
 			break;
 		case StringFormula::Type::BEGINS:
@@ -1155,6 +1159,144 @@ StringAutomaton_ptr StringAutomaton::MakeLessThan(StringFormula_ptr formula) {
 	int left_track = formula->GetVariableIndex(1);
 	int right_track = formula->GetVariableIndex(2);
 
+	if(formula->GetType() == StringFormula::Type::LT_CHARAT) {
+		// #states = (#index+1)+4
+		// e.g, index = 2 --> #states = 2+1 (for 0-based indexing) + 1 (initial) + 3 (for lambda states) + 1 (sink)
+		int index = std::stoi(formula->GetConstant()); // will be string version of integer
+		int ns = index+6;
+		int sink = ns-1;
+		char *statuses = new char[ns+1];
+		int var = VAR_PER_TRACK;
+		int len = num_tracks * var;
+		int *mindices = Automaton::GetBddVariableIndices(len);
+		std::vector<char> exep_lambda(var,'1');
+		TransitionVector tv = GenerateTransitionsForRelation(StringFormula::Type::LT,VAR_PER_TRACK);
+
+		dfaSetup(ns,len,mindices);
+		// till index state, dont care
+		for(int i = 0; i < index; i++) {
+			dfaAllocExceptions(0);
+			dfaStoreState(i+1);
+			statuses[i] = '-';
+		}
+		// index state
+		dfaAllocExceptions(tv.size());
+		for(int i = 0; i < tv.size(); i++) {
+			std::vector<char> str(len,'X');
+			for(int k = 0; k < VAR_PER_TRACK; k++ ){
+				str[left_track+num_tracks*k] = tv[i].first[k];
+				str[right_track+num_tracks*k] = tv[i].second[k];
+			}
+			str.push_back('\0');
+			dfaStoreException(index+1,&str[0]);
+		}
+		dfaStoreState(sink);
+		statuses[index] = '-';
+
+		int lambda_star = index+2;
+		int star_lambda = index+3;
+		int lambda_lambda = index+4;
+		//lambda_star -> state = index+2
+		//star_lambda -> state = index+3
+		//lambda_lambda -> state = index+4
+		//sink -> state = index+5
+
+		// index+1 -> lambda_star,
+		//         -> star_lambda,
+		//         -> lambda_lambda
+
+		dfaAllocExceptions(tv.size()*2+1);
+		for(int i = 0; i < tv.size(); i++) {
+			std::vector<char> str(len,'X');
+			for (int k = 0; k < var; k++) {
+				str[left_track+num_tracks*k] = exep_lambda[k];
+				str[right_track+num_tracks*k] = tv[i].first[k];
+			}
+			str.push_back('\0');
+			dfaStoreException(lambda_star,&str[0]);
+
+			for (int k = 0; k < var; k++) {
+				str[left_track+num_tracks*k] = tv[i].first[k];
+				str[right_track+num_tracks*k] = exep_lambda[k];
+			}
+			dfaStoreException(star_lambda,&str[0]);
+		}
+
+		// if both are lambda, go to sink
+		std::vector<char> str(len,'X');
+		str = std::vector<char>(len,'X');
+		for(int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = exep_lambda[k];
+			str[right_track+num_tracks*k] = exep_lambda[k];
+		}
+		str.push_back('\0');
+		dfaStoreException(lambda_lambda,&str[0]);
+		dfaStoreState(index+1);
+		statuses[index+1] = '-';
+
+		// lambda_star state
+		dfaAllocExceptions(tv.size()+1);
+		for(int i = 0; i < tv.size(); i++) {
+			std::vector<char> str2(len,'X');
+			for (int k = 0; k < var; k++) {
+				str2[left_track+num_tracks*k] = exep_lambda[k];
+				str2[right_track+num_tracks*k] = tv[i].first[k];
+			}
+			str2.push_back('\0');
+			dfaStoreException(lambda_star,&str2[0]);
+		}
+
+		for(int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = exep_lambda[k];
+			str[right_track+num_tracks*k] = exep_lambda[k];
+		}
+		dfaStoreException(lambda_lambda,&str[0]);
+		dfaStoreState(sink);
+		statuses[lambda_star] = '-';
+
+		// star_lambda state
+		dfaAllocExceptions(tv.size()+1);
+		for(int i = 0; i < tv.size(); i++) {
+			std::vector<char> str2(len,'X');
+			for (int k = 0; k < var; k++) {
+				str2[left_track+num_tracks*k] = tv[i].first[k];
+				str2[right_track+num_tracks*k] = exep_lambda[k];
+			}
+			str2.push_back('\0');
+			dfaStoreException(star_lambda,&str2[0]);
+		}
+		for(int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = exep_lambda[k];
+			str[right_track+num_tracks*k] = exep_lambda[k];
+		}
+		dfaStoreException(lambda_lambda,&str[0]);
+		dfaStoreState(sink);
+		statuses[star_lambda] = '-';
+
+		// lambda_lambda state
+		dfaAllocExceptions(1);
+		dfaStoreException(lambda_lambda,&str[0]);
+		dfaStoreState(sink);
+		statuses[lambda_lambda] = '+';
+
+		// sink state
+		dfaAllocExceptions(0);
+		dfaStoreState(sink);
+		statuses[sink] = '-';
+		statuses[ns] = '\0';
+
+		DFA_ptr temp_dfa = dfaBuild(statuses);
+		DFA_ptr result_dfa = dfaMinimize(temp_dfa);
+		dfaFree(temp_dfa);
+		StringAutomaton_ptr result_auto = new StringAutomaton(result_dfa,formula->clone(),var*num_tracks);
+		StringAutomaton_ptr any_string_auto = StringAutomaton::MakeAnyStringAligned(formula->clone());
+		StringAutomaton_ptr intersect_auto = result_auto->Intersect(any_string_auto);
+		delete result_auto;
+		delete any_string_auto;
+		result_auto = intersect_auto;
+		DVLOG(VLOG_LEVEL) << result_auto->id_ << " = MakeEquality(" << formula->str() << ")";
+		return result_auto;
+	}
 
 	result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::LT,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	result_auto = new StringAutomaton(result_dfa,formula,num_tracks*VAR_PER_TRACK);
@@ -1173,6 +1315,144 @@ StringAutomaton_ptr StringAutomaton::MakeLessThanOrEqual(StringFormula_ptr formu
 	int left_track = formula->GetVariableIndex(1);
 	int right_track = formula->GetVariableIndex(2);
 
+	if(formula->GetType() == StringFormula::Type::LE_CHARAT) {
+		// #states = (#index+1)+4
+		// e.g, index = 2 --> #states = 2+1 (for 0-based indexing) + 1 (initial) + 3 (for lambda states) + 1 (sink)
+		int index = std::stoi(formula->GetConstant()); // will be string version of integer
+		int ns = index+6;
+		int sink = ns-1;
+		char *statuses = new char[ns+1];
+		int var = VAR_PER_TRACK;
+		int len = num_tracks * var;
+		int *mindices = Automaton::GetBddVariableIndices(len);
+		std::vector<char> exep_lambda(var,'1');
+		TransitionVector tv = GenerateTransitionsForRelation(StringFormula::Type::LE,VAR_PER_TRACK);
+
+		dfaSetup(ns,len,mindices);
+		// till index state, dont care
+		for(int i = 0; i < index; i++) {
+			dfaAllocExceptions(0);
+			dfaStoreState(i+1);
+			statuses[i] = '-';
+		}
+		// index state
+		dfaAllocExceptions(tv.size());
+		for(int i = 0; i < tv.size(); i++) {
+			std::vector<char> str(len,'X');
+			for(int k = 0; k < VAR_PER_TRACK; k++ ){
+				str[left_track+num_tracks*k] = tv[i].first[k];
+				str[right_track+num_tracks*k] = tv[i].second[k];
+			}
+			str.push_back('\0');
+			dfaStoreException(index+1,&str[0]);
+		}
+		dfaStoreState(sink);
+		statuses[index] = '-';
+
+		int lambda_star = index+2;
+		int star_lambda = index+3;
+		int lambda_lambda = index+4;
+		//lambda_star -> state = index+2
+		//star_lambda -> state = index+3
+		//lambda_lambda -> state = index+4
+		//sink -> state = index+5
+
+		// index+1 -> lambda_star,
+		//         -> star_lambda,
+		//         -> lambda_lambda
+
+		dfaAllocExceptions(tv.size()*2+1);
+		for(int i = 0; i < tv.size(); i++) {
+			std::vector<char> str(len,'X');
+			for (int k = 0; k < var; k++) {
+				str[left_track+num_tracks*k] = exep_lambda[k];
+				str[right_track+num_tracks*k] = tv[i].first[k];
+			}
+			str.push_back('\0');
+			dfaStoreException(lambda_star,&str[0]);
+
+			for (int k = 0; k < var; k++) {
+				str[left_track+num_tracks*k] = tv[i].first[k];
+				str[right_track+num_tracks*k] = exep_lambda[k];
+			}
+			dfaStoreException(star_lambda,&str[0]);
+		}
+
+		// if both are lambda, go to sink
+		std::vector<char> str(len,'X');
+		str = std::vector<char>(len,'X');
+		for(int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = exep_lambda[k];
+			str[right_track+num_tracks*k] = exep_lambda[k];
+		}
+		str.push_back('\0');
+		dfaStoreException(lambda_lambda,&str[0]);
+		dfaStoreState(index+1);
+		statuses[index+1] = '-';
+
+		// lambda_star state
+		dfaAllocExceptions(tv.size()+1);
+		for(int i = 0; i < tv.size(); i++) {
+			std::vector<char> str2(len,'X');
+			for (int k = 0; k < var; k++) {
+				str2[left_track+num_tracks*k] = exep_lambda[k];
+				str2[right_track+num_tracks*k] = tv[i].first[k];
+			}
+			str2.push_back('\0');
+			dfaStoreException(lambda_star,&str2[0]);
+		}
+
+		for(int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = exep_lambda[k];
+			str[right_track+num_tracks*k] = exep_lambda[k];
+		}
+		dfaStoreException(lambda_lambda,&str[0]);
+		dfaStoreState(sink);
+		statuses[lambda_star] = '-';
+
+		// star_lambda state
+		dfaAllocExceptions(tv.size()+1);
+		for(int i = 0; i < tv.size(); i++) {
+			std::vector<char> str2(len,'X');
+			for (int k = 0; k < var; k++) {
+				str2[left_track+num_tracks*k] = tv[i].first[k];
+				str2[right_track+num_tracks*k] = exep_lambda[k];
+			}
+			str2.push_back('\0');
+			dfaStoreException(star_lambda,&str2[0]);
+		}
+		for(int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = exep_lambda[k];
+			str[right_track+num_tracks*k] = exep_lambda[k];
+		}
+		dfaStoreException(lambda_lambda,&str[0]);
+		dfaStoreState(sink);
+		statuses[star_lambda] = '-';
+
+		// lambda_lambda state
+		dfaAllocExceptions(1);
+		dfaStoreException(lambda_lambda,&str[0]);
+		dfaStoreState(sink);
+		statuses[lambda_lambda] = '+';
+
+		// sink state
+		dfaAllocExceptions(0);
+		dfaStoreState(sink);
+		statuses[sink] = '-';
+		statuses[ns] = '\0';
+
+		DFA_ptr temp_dfa = dfaBuild(statuses);
+		DFA_ptr result_dfa = dfaMinimize(temp_dfa);
+		dfaFree(temp_dfa);
+		StringAutomaton_ptr result_auto = new StringAutomaton(result_dfa,formula->clone(),var*num_tracks);
+		StringAutomaton_ptr any_string_auto = StringAutomaton::MakeAnyStringAligned(formula->clone());
+		StringAutomaton_ptr intersect_auto = result_auto->Intersect(any_string_auto);
+		delete result_auto;
+		delete any_string_auto;
+		result_auto = intersect_auto;
+		DVLOG(VLOG_LEVEL) << result_auto->id_ << " = MakeEquality(" << formula->str() << ")";
+		return result_auto;
+	}
 
 	result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::LE,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	result_auto = new StringAutomaton(result_dfa,formula,num_tracks*VAR_PER_TRACK);
@@ -1191,6 +1471,144 @@ StringAutomaton_ptr StringAutomaton::MakeGreaterThan(StringFormula_ptr formula) 
 	int left_track = formula->GetVariableIndex(1);
 	int right_track = formula->GetVariableIndex(2);
 
+	if(formula->GetType() == StringFormula::Type::GT_CHARAT) {
+		// #states = (#index+1)+4
+		// e.g, index = 2 --> #states = 2+1 (for 0-based indexing) + 1 (initial) + 3 (for lambda states) + 1 (sink)
+		int index = std::stoi(formula->GetConstant()); // will be string version of integer
+		int ns = index+6;
+		int sink = ns-1;
+		char *statuses = new char[ns+1];
+		int var = VAR_PER_TRACK;
+		int len = num_tracks * var;
+		int *mindices = Automaton::GetBddVariableIndices(len);
+		std::vector<char> exep_lambda(var,'1');
+		TransitionVector tv = GenerateTransitionsForRelation(StringFormula::Type::GT,VAR_PER_TRACK);
+
+		dfaSetup(ns,len,mindices);
+		// till index state, dont care
+		for(int i = 0; i < index; i++) {
+			dfaAllocExceptions(0);
+			dfaStoreState(i+1);
+			statuses[i] = '-';
+		}
+		// index state
+		dfaAllocExceptions(tv.size());
+		for(int i = 0; i < tv.size(); i++) {
+			std::vector<char> str(len,'X');
+			for(int k = 0; k < VAR_PER_TRACK; k++ ){
+				str[left_track+num_tracks*k] = tv[i].first[k];
+				str[right_track+num_tracks*k] = tv[i].second[k];
+			}
+			str.push_back('\0');
+			dfaStoreException(index+1,&str[0]);
+		}
+		dfaStoreState(sink);
+		statuses[index] = '-';
+
+		int lambda_star = index+2;
+		int star_lambda = index+3;
+		int lambda_lambda = index+4;
+		//lambda_star -> state = index+2
+		//star_lambda -> state = index+3
+		//lambda_lambda -> state = index+4
+		//sink -> state = index+5
+
+		// index+1 -> lambda_star,
+		//         -> star_lambda,
+		//         -> lambda_lambda
+
+		dfaAllocExceptions(tv.size()*2+1);
+		for(int i = 0; i < tv.size(); i++) {
+			std::vector<char> str(len,'X');
+			for (int k = 0; k < var; k++) {
+				str[left_track+num_tracks*k] = exep_lambda[k];
+				str[right_track+num_tracks*k] = tv[i].first[k];
+			}
+			str.push_back('\0');
+			dfaStoreException(lambda_star,&str[0]);
+
+			for (int k = 0; k < var; k++) {
+				str[left_track+num_tracks*k] = tv[i].first[k];
+				str[right_track+num_tracks*k] = exep_lambda[k];
+			}
+			dfaStoreException(star_lambda,&str[0]);
+		}
+
+		// if both are lambda, go to sink
+		std::vector<char> str(len,'X');
+		str = std::vector<char>(len,'X');
+		for(int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = exep_lambda[k];
+			str[right_track+num_tracks*k] = exep_lambda[k];
+		}
+		str.push_back('\0');
+		dfaStoreException(lambda_lambda,&str[0]);
+		dfaStoreState(index+1);
+		statuses[index+1] = '-';
+
+		// lambda_star state
+		dfaAllocExceptions(tv.size()+1);
+		for(int i = 0; i < tv.size(); i++) {
+			std::vector<char> str2(len,'X');
+			for (int k = 0; k < var; k++) {
+				str2[left_track+num_tracks*k] = exep_lambda[k];
+				str2[right_track+num_tracks*k] = tv[i].first[k];
+			}
+			str2.push_back('\0');
+			dfaStoreException(lambda_star,&str2[0]);
+		}
+
+		for(int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = exep_lambda[k];
+			str[right_track+num_tracks*k] = exep_lambda[k];
+		}
+		dfaStoreException(lambda_lambda,&str[0]);
+		dfaStoreState(sink);
+		statuses[lambda_star] = '-';
+
+		// star_lambda state
+		dfaAllocExceptions(tv.size()+1);
+		for(int i = 0; i < tv.size(); i++) {
+			std::vector<char> str2(len,'X');
+			for (int k = 0; k < var; k++) {
+				str2[left_track+num_tracks*k] = tv[i].first[k];
+				str2[right_track+num_tracks*k] = exep_lambda[k];
+			}
+			str2.push_back('\0');
+			dfaStoreException(star_lambda,&str2[0]);
+		}
+		for(int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = exep_lambda[k];
+			str[right_track+num_tracks*k] = exep_lambda[k];
+		}
+		dfaStoreException(lambda_lambda,&str[0]);
+		dfaStoreState(sink);
+		statuses[star_lambda] = '-';
+
+		// lambda_lambda state
+		dfaAllocExceptions(1);
+		dfaStoreException(lambda_lambda,&str[0]);
+		dfaStoreState(sink);
+		statuses[lambda_lambda] = '+';
+
+		// sink state
+		dfaAllocExceptions(0);
+		dfaStoreState(sink);
+		statuses[sink] = '-';
+		statuses[ns] = '\0';
+
+		DFA_ptr temp_dfa = dfaBuild(statuses);
+		DFA_ptr result_dfa = dfaMinimize(temp_dfa);
+		dfaFree(temp_dfa);
+		StringAutomaton_ptr result_auto = new StringAutomaton(result_dfa,formula->clone(),var*num_tracks);
+		StringAutomaton_ptr any_string_auto = StringAutomaton::MakeAnyStringAligned(formula->clone());
+		StringAutomaton_ptr intersect_auto = result_auto->Intersect(any_string_auto);
+		delete result_auto;
+		delete any_string_auto;
+		result_auto = intersect_auto;
+		DVLOG(VLOG_LEVEL) << result_auto->id_ << " = MakeEquality(" << formula->str() << ")";
+		return result_auto;
+	}
 
 	result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::GT,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	result_auto = new StringAutomaton(result_dfa,formula,num_tracks*VAR_PER_TRACK);
@@ -1209,6 +1627,144 @@ StringAutomaton_ptr StringAutomaton::MakeGreaterThanOrEqual(StringFormula_ptr fo
 	int left_track = formula->GetVariableIndex(1);
 	int right_track = formula->GetVariableIndex(2);
 
+	if(formula->GetType() == StringFormula::Type::GE_CHARAT) {
+		// #states = (#index+1)+4
+		// e.g, index = 2 --> #states = 2+1 (for 0-based indexing) + 1 (initial) + 3 (for lambda states) + 1 (sink)
+		int index = std::stoi(formula->GetConstant()); // will be string version of integer
+		int ns = index+6;
+		int sink = ns-1;
+		char *statuses = new char[ns+1];
+		int var = VAR_PER_TRACK;
+		int len = num_tracks * var;
+		int *mindices = Automaton::GetBddVariableIndices(len);
+		std::vector<char> exep_lambda(var,'1');
+		TransitionVector tv = GenerateTransitionsForRelation(StringFormula::Type::GE,VAR_PER_TRACK);
+
+		dfaSetup(ns,len,mindices);
+		// till index state, dont care
+		for(int i = 0; i < index; i++) {
+			dfaAllocExceptions(0);
+			dfaStoreState(i+1);
+			statuses[i] = '-';
+		}
+		// index state
+		dfaAllocExceptions(tv.size());
+		for(int i = 0; i < tv.size(); i++) {
+			std::vector<char> str(len,'X');
+			for(int k = 0; k < VAR_PER_TRACK; k++ ){
+				str[left_track+num_tracks*k] = tv[i].first[k];
+				str[right_track+num_tracks*k] = tv[i].second[k];
+			}
+			str.push_back('\0');
+			dfaStoreException(index+1,&str[0]);
+		}
+		dfaStoreState(sink);
+		statuses[index] = '-';
+
+		int lambda_star = index+2;
+		int star_lambda = index+3;
+		int lambda_lambda = index+4;
+		//lambda_star -> state = index+2
+		//star_lambda -> state = index+3
+		//lambda_lambda -> state = index+4
+		//sink -> state = index+5
+
+		// index+1 -> lambda_star,
+		//         -> star_lambda,
+		//         -> lambda_lambda
+
+		dfaAllocExceptions(tv.size()*2+1);
+		for(int i = 0; i < tv.size(); i++) {
+			std::vector<char> str(len,'X');
+			for (int k = 0; k < var; k++) {
+				str[left_track+num_tracks*k] = exep_lambda[k];
+				str[right_track+num_tracks*k] = tv[i].first[k];
+			}
+			str.push_back('\0');
+			dfaStoreException(lambda_star,&str[0]);
+
+			for (int k = 0; k < var; k++) {
+				str[left_track+num_tracks*k] = tv[i].first[k];
+				str[right_track+num_tracks*k] = exep_lambda[k];
+			}
+			dfaStoreException(star_lambda,&str[0]);
+		}
+
+		// if both are lambda, go to sink
+		std::vector<char> str(len,'X');
+		str = std::vector<char>(len,'X');
+		for(int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = exep_lambda[k];
+			str[right_track+num_tracks*k] = exep_lambda[k];
+		}
+		str.push_back('\0');
+		dfaStoreException(lambda_lambda,&str[0]);
+		dfaStoreState(index+1);
+		statuses[index+1] = '-';
+
+		// lambda_star state
+		dfaAllocExceptions(tv.size()+1);
+		for(int i = 0; i < tv.size(); i++) {
+			std::vector<char> str2(len,'X');
+			for (int k = 0; k < var; k++) {
+				str2[left_track+num_tracks*k] = exep_lambda[k];
+				str2[right_track+num_tracks*k] = tv[i].first[k];
+			}
+			str2.push_back('\0');
+			dfaStoreException(lambda_star,&str2[0]);
+		}
+
+		for(int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = exep_lambda[k];
+			str[right_track+num_tracks*k] = exep_lambda[k];
+		}
+		dfaStoreException(lambda_lambda,&str[0]);
+		dfaStoreState(sink);
+		statuses[lambda_star] = '-';
+
+		// star_lambda state
+		dfaAllocExceptions(tv.size()+1);
+		for(int i = 0; i < tv.size(); i++) {
+			std::vector<char> str2(len,'X');
+			for (int k = 0; k < var; k++) {
+				str2[left_track+num_tracks*k] = tv[i].first[k];
+				str2[right_track+num_tracks*k] = exep_lambda[k];
+			}
+			str2.push_back('\0');
+			dfaStoreException(star_lambda,&str2[0]);
+		}
+		for(int k = 0; k < var; k++) {
+			str[left_track+num_tracks*k] = exep_lambda[k];
+			str[right_track+num_tracks*k] = exep_lambda[k];
+		}
+		dfaStoreException(lambda_lambda,&str[0]);
+		dfaStoreState(sink);
+		statuses[star_lambda] = '-';
+
+		// lambda_lambda state
+		dfaAllocExceptions(1);
+		dfaStoreException(lambda_lambda,&str[0]);
+		dfaStoreState(sink);
+		statuses[lambda_lambda] = '+';
+
+		// sink state
+		dfaAllocExceptions(0);
+		dfaStoreState(sink);
+		statuses[sink] = '-';
+		statuses[ns] = '\0';
+
+		DFA_ptr temp_dfa = dfaBuild(statuses);
+		DFA_ptr result_dfa = dfaMinimize(temp_dfa);
+		dfaFree(temp_dfa);
+		StringAutomaton_ptr result_auto = new StringAutomaton(result_dfa,formula->clone(),var*num_tracks);
+		StringAutomaton_ptr any_string_auto = StringAutomaton::MakeAnyStringAligned(formula->clone());
+		StringAutomaton_ptr intersect_auto = result_auto->Intersect(any_string_auto);
+		delete result_auto;
+		delete any_string_auto;
+		result_auto = intersect_auto;
+		DVLOG(VLOG_LEVEL) << result_auto->id_ << " = MakeEquality(" << formula->str() << ")";
+		return result_auto;
+	}
 
 	result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::GE,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	result_auto = new StringAutomaton(result_dfa,formula,num_tracks*VAR_PER_TRACK);
