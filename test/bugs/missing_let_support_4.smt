@@ -1,0 +1,5 @@
+(set-logic ALL)
+(declare-const symb_ne String)
+(assert (let ((.def_0 (= symb_ne "concrete"))) (let ((.def_1 (not .def_0))) .def_1)))
+(check-sat)
+(get-model)
