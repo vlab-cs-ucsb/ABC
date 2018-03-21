@@ -57,7 +57,8 @@ namespace Vlab
     IntegerAutomaton_ptr IntegerAutomaton::MakeAutomaton(const Libs::MONALib::DFA_ptr dfa,
                                                          const int number_of_bdd_variables) const
     {
-      return new IntegerAutomaton(dfa, number_of_bdd_variables);
+      CHECK_EQ(number_of_bdd_variables, this->formula_->get_number_of_variables());
+      return new IntegerAutomaton(dfa, this->formula_->clone());
     }
 
     std::string IntegerAutomaton::Str() const
@@ -93,122 +94,58 @@ namespace Vlab
       return false;
     }
 
-    IntegerAutomaton_ptr IntegerAutomaton::Complement()
+    void IntegerAutomaton::Complement()
     {
-      DFA_ptr complement_dfa = dfaCopy(this->dfa_);
-
-      dfaNegation(complement_dfa);
-
-      auto tmp_auto = new IntegerAutomaton(complement_dfa, this->formula_->clone(), is_natural_number_);
+      this->Automaton::Complement();
       // a complemented auto may have initial state accepting, we should be safely avoided from that
-      auto any_int_auto = IntegerAutomaton::MakeAnyInt(this->formula_->clone(), is_natural_number_);
-      auto complement_auto = any_int_auto->Intersect(tmp_auto);
-      delete any_int_auto;
-      delete tmp_auto;
-      auto formula = complement_auto->GetFormula();
-      delete formula;
-      complement_auto->set_formula(this->formula_->negate());
-
-      DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->Complement()";
-      return complement_auto;
-    }
-
-    IntegerAutomaton_ptr IntegerAutomaton::Intersect(IntegerAutomaton_ptr other_auto)
-    {
-      auto intersect_dfa = Automaton::DFAIntersect(this->dfa_, other_auto->dfa_);
-      auto intersect_formula = this->formula_->clone();
-      intersect_formula->reset_coefficients();
-      intersect_formula->set_type(ArithmeticFormula::Type::INTERSECT);
-      auto intersect_auto = new IntegerAutomaton(intersect_dfa, intersect_formula, is_natural_number_);
-
-      DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << other_auto->id_ << ")";
-      return intersect_auto;
-    }
-
-    IntegerAutomaton_ptr IntegerAutomaton::Union(IntegerAutomaton_ptr other_auto)
-    {
-      auto union_dfa = Libs::MONALib::DFAUnion(this->dfa_, other_auto->dfa_);
-      auto union_formula = this->formula_->clone();
-      union_formula->reset_coefficients();
-      union_formula->set_type(ArithmeticFormula::Type::UNION);
-      auto union_auto = new IntegerAutomaton(union_dfa, union_formula);
-
-      DVLOG(VLOG_LEVEL) << union_auto->id_ << " = [" << this->id_ << "]->Union(" << other_auto->id_ << ")";
-      return union_auto;
-    }
-
-    IntegerAutomaton_ptr IntegerAutomaton::Difference(IntegerAutomaton_ptr other_auto)
-    {
-      auto complement_auto = other_auto->Complement();
-      auto difference_auto = this->Intersect(complement_auto);
-      delete complement_auto;
-
-      DVLOG(VLOG_LEVEL) << difference_auto->id_ << " = [" << this->id_ << "]->Difference(" << other_auto->id_ << ")";
-      return difference_auto;
-    }
-
-    IntegerAutomaton_ptr IntegerAutomaton::Exists(std::string var_name)
-    {
-      LOG(FATAL)<< "implement me";
-      return nullptr;
+      IntegerAutomaton_ptr accepts_all = Builder().SetFormula(this->GetFormula()->clone())
+          .AcceptAll().Build();
+      IntegerAutomaton_ptr tmp = this->Intersect(accepts_all);
+      delete this->dfa_;
+      delete accepts_all;
+      this->dfa_ = tmp->dfa_;
+      tmp->dfa_ = nullptr;
+      delete tmp;
+      auto frml = this->GetFormula();
+      this->formula_ = frml->negate();
+      delete frml;
     }
 
     IntegerAutomaton_ptr IntegerAutomaton::GetBinaryAutomatonFor(std::string var_name)
     {
       CHECK_EQ(number_of_bdd_variables_, formula_->get_number_of_variables())<< "number of variables is not consistent with formula";
       int bdd_var_index = formula_->get_variable_index(var_name);;
-      auto single_var_dfa = Automaton::DFAProjectTo(this->dfa_, number_of_bdd_variables_, bdd_var_index);
+      auto single_var_dfa = Libs::MONALib::DFAProjectTo(this->dfa_, number_of_bdd_variables_, bdd_var_index);
       auto single_var_formula = new ArithmeticFormula();
       single_var_formula->set_type(ArithmeticFormula::Type::INTERSECT);
       single_var_formula->add_variable(var_name, 1);
-      auto single_var_auto = new IntegerAutomaton(single_var_dfa, single_var_formula, is_natural_number_);
-
+      IntegerAutomaton_ptr single_var_auto = Builder().SetFormula(single_var_formula).SetDfa(single_var_dfa).Build();
       DVLOG(VLOG_LEVEL) << single_var_auto->id_ << " = [" << this->id_ << "]->GetBinaryAutomatonOf(" << var_name << ")";
       return single_var_auto;
     }
 
-    IntegerAutomaton_ptr IntegerAutomaton::GetPositiveValuesFor(std::string var_name)
-    {
-      std::vector<int> indexes;
-      int var_index = formula_->get_variable_index(var_name);
-      indexes.push_back(var_index);
-
-      auto greater_than_or_equalt_to_zero_auto = IntegerAutomaton::MakeIntGraterThanOrEqualToZero(
-          indexes, formula_->get_number_of_variables());
-      greater_than_or_equalt_to_zero_auto->set_formula(formula_->clone());
-      auto positives_auto = this->Intersect(greater_than_or_equalt_to_zero_auto);
-      delete greater_than_or_equalt_to_zero_auto;
-
-      DVLOG(VLOG_LEVEL) << positives_auto->id_ << " = [" << this->id_ << "]->GetPositiveValuesFor(" << var_name << ")";
-      return positives_auto;
-    }
-
-    IntegerAutomaton_ptr IntegerAutomaton::GetNegativeValuesFor(std::string var_name)
-    {
-      IntegerAutomaton_ptr negatives_auto = nullptr;
-
-      LOG(FATAL)<< "implement me";
-
-      DVLOG(VLOG_LEVEL) << negatives_auto->id_ << " = [" << this->id_ << "]->GetNegativeValuesFor(" << var_name << ")";
-      return negatives_auto;
-    }
-
     IntegerAutomaton_ptr IntegerAutomaton::TrimLeadingZeros()
     {
+      // TODO
+      // carefully understand each step here
+      // before trimming make sure automaton only accepts positive numbers
+      // try to figure out an easier way to do this, if possible.
+      // try to understan if we really need this for unary conversion,
+      // we might have an algorithm that works with leading zeros...
+
       CHECK_EQ(1, number_of_bdd_variables_)<< "trimming is implemented for single track positive binary automaton";
 
       auto tmp_auto = this->Clone();
 
       // identify leading zeros
-      std::vector<char> exception =
-      { '0'};
+      std::string transition = {'0'};
       int next_state = -1;
       int sink_state = tmp_auto->GetSinkState();
       std::map<int, std::vector<int>> possible_final_states;
       std::stack<int> final_states;
       for (int i = 0; i < tmp_auto->dfa_->ns; i++)
       {
-        next_state = GetNextState(i, exception);
+        next_state = GetNextState(i, transition);
         if ((sink_state not_eq next_state) and (i not_eq next_state))
         {
           possible_final_states[next_state].push_back(i);
@@ -235,7 +172,7 @@ namespace Vlab
       tmp_auto->Minimize();
 
       auto trim_helper_auto = IntegerAutomaton::MakeTrimHelperAuto(0,number_of_bdd_variables_);
-      trim_helper_auto->set_formula(tmp_auto->formula_->clone());
+      trim_helper_auto->formula_ = tmp_auto->formula_->clone();
       auto trimmed_auto = tmp_auto->Intersect(trim_helper_auto);
       delete tmp_auto;
       delete trim_helper_auto;
@@ -244,37 +181,11 @@ namespace Vlab
       return trimmed_auto;
     }
 
-    IntegerAutomaton_ptr IntegerAutomaton::AddLeadingZeros()
-    {
-      LOG(FATAL)<< "implement me (similar to string->toUnary function)";
-      IntegerAutomaton_ptr leading_zero_auto = nullptr;
-      DFA_ptr leading_zero_dfa = nullptr, tmp_dfa = nullptr;
-
-      int number_of_variables = number_of_bdd_variables_ + 1,
-      leading_zero_state = number_of_variables - 1,
-      to_state = 0;
-      int* indices = GetBddVariableIndices(number_of_variables);
-
-      std::vector<char> leading_zero_exception;
-      std::map<std::vector<char>*, int> exceptions;
-      std::vector<char>* current_exception = nullptr;
-
-      paths state_paths = nullptr, pp = nullptr;
-      trace_descr tp = nullptr;
-
-      for (int i = 0; i < number_of_variables; i++)
-      {
-        leading_zero_exception.push_back('0');
-      }
-
-      DVLOG(VLOG_LEVEL) << leading_zero_auto->id_ << " = [" << this->id_ << "]->AddLeadingZeros()";
-      return leading_zero_auto;
-    }
-
     /*
      *  TODO options to fix problems, works for automaton that has 1 variable
      *  Search to improve period search part to make it sound
-     *
+     * TRY to move this code into a common place where both integer automaton
+     * and natural number automaton benefits
      */
     SemilinearSet_ptr IntegerAutomaton::GetSemilinearSet()
     {
@@ -322,7 +233,7 @@ namespace Vlab
         }
         semilinear_set->set_constants(constants);
         constants.clear();
-        tmp_1_auto = IntegerAutomaton::MakeAutomaton(semilinear_set, var_name, formula_->clone(), false);
+        tmp_1_auto = Builder().SetFormula(formula_->clone()).SetValue(var_name, semilinear_set).Build();
         semilinear_set->clear();
 
         tmp_2_auto = this->Intersect(tmp_1_auto);
@@ -401,7 +312,7 @@ namespace Vlab
                 current_set->set_period(possible_period);
                 current_set->add_periodic_constant(0);
 
-                tmp_1_auto = IntegerAutomaton::MakeAutomaton(current_set, var_name, formula_->clone(), false);
+                tmp_1_auto = Builder().SetFormula(formula_->clone()).SetValue(var_name, current_set).Build();
                 tmp_2_auto = subject_auto->Intersect(tmp_1_auto);
                 diff_auto = tmp_1_auto->Difference(tmp_2_auto);
                 delete tmp_1_auto;
@@ -459,7 +370,7 @@ namespace Vlab
         {
           LOG(FATAL)<< "Automaton must have an accepting state, check base extraction algorithm";
         }
-        tmp_1_auto = IntegerAutomaton::MakeAutomaton(semilinear_set, var_name, formula_->clone(), false);
+        tmp_1_auto = Builder().SetFormula(formula_->clone()).SetValue(var_name, semilinear_set).Build();
         tmp_2_auto = subject_auto;
         subject_auto = tmp_2_auto->Difference(tmp_1_auto);
         delete tmp_1_auto;
@@ -500,9 +411,7 @@ namespace Vlab
       delete trimmed_auto;
       trimmed_auto = nullptr;
 
-      unary_auto = UnaryAutomaton::MakeAutomaton(semilinear_set);
-      delete semilinear_set;
-      semilinear_set = nullptr;
+      unary_auto = UnaryAutomaton::Builder().SetSemilinearSet(semilinear_set).Build();
       DVLOG(VLOG_LEVEL) << unary_auto->GetId() << " = [" << this->id_ << "]->ToUnaryAutomaton()";
       return unary_auto;
     }
@@ -516,21 +425,18 @@ namespace Vlab
       // Reads from most significant bits
 
       auto rit = example->rbegin();
-      if (not is_natural_number_)
+      // read the sign bit for integers
+      for (int var_index = number_of_bdd_variables_ - 1; var_index >= 0; --var_index)
       {
-        // read the sign bit for integers
-        for (int var_index = number_of_bdd_variables_ - 1; var_index >= 0; --var_index)
+        if (*rit)
         {
-          if (*rit)
-          {
-            values[var_index] = -1;
-          }
-          else
-          {
-            values[var_index] = 0;
-          }
-          rit++;
+          values[var_index] = -1;
         }
+        else
+        {
+          values[var_index] = 0;
+        }
+        rit++;
       }
 
       // read value bits
@@ -568,14 +474,7 @@ namespace Vlab
 
     void IntegerAutomaton::decide_counting_schema(Eigen::SparseMatrix<BigInteger>& count_matrix)
     {
-      if (is_natural_number_)
-      {
-        counter_.set_type(SymbolicCounter::Type::BINARYUNSIGNEDINT);
-      }
-      else
-      {
-        counter_.set_type(SymbolicCounter::Type::BINARYINT);
-      }
+      counter_.set_type(SymbolicCounter::Type::BINARYINT);
     }
 
     BigInteger IntegerAutomaton::SymbolicCount(double bound, bool count_less_than_or_equal_to_bound)
@@ -596,10 +495,7 @@ namespace Vlab
 
       cmd << "math -script " << math_script_path << " " << tmp_result_file << " ";
 
-      if (not is_natural_number_)
-      {
-        ++bound;  // consider sign bit
-      }
+      ++bound;  // consider sign bit
 
       if (std::floor(bound) == bound)
       {
@@ -626,7 +522,6 @@ namespace Vlab
     IntegerAutomaton_ptr IntegerAutomaton::MakeIntGraterThanOrEqualToZero(std::vector<int> indexes,
                                                                           int number_of_variables)
     {
-      int* bin_variable_indices = GetBddVariableIndices(number_of_variables);
       int number_of_states = 3;
       char statuses[3] { '-', '+', '-' };
       std::vector<char> exception;
@@ -637,7 +532,7 @@ namespace Vlab
       }
       exception.push_back('\0');
 
-      dfaSetup(3, number_of_variables, bin_variable_indices);
+      Libs::MONALib::DFASetup(number_of_states, number_of_variables);
       dfaAllocExceptions(1);
       for (int i : indexes)
       {
@@ -658,9 +553,7 @@ namespace Vlab
       dfaStoreState(2);
 
       auto positive_numbers_dfa = dfaBuild(statuses);
-      auto postivie_numbers_auto = new IntegerAutomaton(positive_numbers_dfa, number_of_variables, false);
-
-      delete[] bin_variable_indices;
+      auto postivie_numbers_auto = new IntegerAutomaton(positive_numbers_dfa, number_of_variables);
 
       DVLOG(VLOG_LEVEL) << postivie_numbers_auto->id_
                         << " = [IntegerAutomaton]->MakeIntGraterThanOrEqualToZero(<indexes>, " << number_of_variables
@@ -670,52 +563,45 @@ namespace Vlab
 
     IntegerAutomaton_ptr IntegerAutomaton::MakeTrimHelperAuto(int var_index, int number_of_variables)
     {
-      char statuses[5] = { '-', '+', '+', '-', '-' };
-      char* exception = new char[number_of_variables + 1];
-      for (int i = 0; i < number_of_variables; i++)
-      {
-        exception[i] = 'X';
-      }
+      std::string statuses = { '-', '+', '+', '-', '-' };
+      std::string exception(number_of_variables + 1, 'X');
       exception[number_of_variables] = '\0';
 
-      int* indices = GetBddVariableIndices(number_of_variables);
-      int number_of_states = 5;
-      dfaSetup(number_of_states, number_of_variables, indices);
+      const int number_of_states = 5;
+      Libs::MONALib::DFASetup(number_of_states, number_of_variables);
+
       // state 0
-      dfaAllocExceptions(2);
+      Libs::MONALib::DFASetNumberOfExceptionalTransitions(2);
       exception[var_index] = '0';
-      dfaStoreException(1, exception);
+      Libs::MONALib::DFASetExceptionalTransition(exception, 1);
       exception[var_index] = '1';
-      dfaStoreException(2, exception);
-      dfaStoreState(0);
+      Libs::MONALib::DFASetExceptionalTransition(exception, 2);
+      Libs::MONALib::DFASetTargetForRemaningTransitions(0);
       // state 1
-      dfaAllocExceptions(2);
+      Libs::MONALib::DFASetNumberOfExceptionalTransitions(2);
       exception[var_index] = '0';
-      dfaStoreException(3, exception);
+      Libs::MONALib::DFASetExceptionalTransition(exception, 3);
       exception[var_index] = '1';
-      dfaStoreException(2, exception);
-      dfaStoreState(1);
+      Libs::MONALib::DFASetExceptionalTransition(exception, 2);
+      Libs::MONALib::DFASetTargetForRemaningTransitions(1);
       // state 2
-      dfaAllocExceptions(1);
+      Libs::MONALib::DFASetNumberOfExceptionalTransitions(1);
       exception[var_index] = '0';
-      dfaStoreException(4, exception);
-      dfaStoreState(2);
+      Libs::MONALib::DFASetExceptionalTransition(exception, 4);
+      Libs::MONALib::DFASetTargetForRemaningTransitions(2);
       // state 3
-      dfaAllocExceptions(1);
+      Libs::MONALib::DFASetNumberOfExceptionalTransitions(1);
       exception[var_index] = '1';
-      dfaStoreException(2, exception);
-      dfaStoreState(3);
+      Libs::MONALib::DFASetExceptionalTransition(exception, 2);
+      Libs::MONALib::DFASetTargetForRemaningTransitions(3);
       // state 4
-      dfaAllocExceptions(1);
+      Libs::MONALib::DFASetNumberOfExceptionalTransitions(1);
       exception[var_index] = '1';
-      dfaStoreException(2, exception);
-      dfaStoreState(4);
+      Libs::MONALib::DFASetExceptionalTransition(exception, 2);
+      Libs::MONALib::DFASetTargetForRemaningTransitions(4);
 
-      auto trim_helper_dfa = dfaBuild(statuses);
-      auto trim_helper_auto = new IntegerAutomaton(trim_helper_dfa, number_of_variables, false);
-
-      delete[] indices;
-      delete[] exception;
+      auto trim_helper_dfa = Libs::MONALib::DFABuild(statuses);
+      auto trim_helper_auto = new IntegerAutomaton(trim_helper_dfa, number_of_variables);
 
       DVLOG(VLOG_LEVEL) << trim_helper_auto->id_ << " = [IntegerAutomaton]->MakeTrimHelperAuto(" << var_index << ", "
                         << number_of_variables << ")";
@@ -903,7 +789,7 @@ namespace Vlab
                                           std::map<int, bool>& cycle_status, int& time)
     {
       int next_state = 0;
-      std::vector<char> exception = { '0' };
+      std::string exception = { '0' };
       int l, r;
 //  std::cout << "visiting: " << state << std::endl;
       disc[state] = low[state] = time;
@@ -973,7 +859,7 @@ namespace Vlab
                                         std::vector<int>& constants)
     {
       int next_state = 0;
-      std::vector<char> exception = { '0' };
+      std::string exception = { '0' };
       int l, r;
 
       if (path.size() > 31)
@@ -1132,7 +1018,7 @@ namespace Vlab
                                             std::vector<int>& constants, unsigned max_number_of_bit_limit)
     {
       int next_state = 0;
-      std::vector<char> exception = { '0' };
+      std::string exception = { '0' };
 
       if (path.size() > max_number_of_bit_limit)
       {  // limit samples to integer length for now

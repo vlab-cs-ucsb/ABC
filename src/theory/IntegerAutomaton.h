@@ -281,17 +281,29 @@ namespace Vlab
          */
         bool IsAcceptingNegativeOne() const;
 
-        IntegerAutomaton_ptr Complement();
-        IntegerAutomaton_ptr Intersect(IntegerAutomaton_ptr);
-        IntegerAutomaton_ptr Union(IntegerAutomaton_ptr);
-        IntegerAutomaton_ptr Difference(IntegerAutomaton_ptr);
-        IntegerAutomaton_ptr Exists(std::string var_name);
+        /**
+         * Complements an integer auto.
+         * Makes sure that initial state never accepts after the complement.
+         * @return
+         */
+        void Complement() override;
+
+        /**
+         * Projects onto the variable.
+         * TODO make project onto method available for all automaton.
+         * @param var_name
+         * @return
+         */
         IntegerAutomaton_ptr GetBinaryAutomatonFor(std::string var_name);
-        IntegerAutomaton_ptr GetPositiveValuesFor(std::string var_name);
-        IntegerAutomaton_ptr GetNegativeValuesFor(std::string var_name);
+
+        /**
+         * TODO improve coding here, based on test cases
+         * @return
+         */
         IntegerAutomaton_ptr TrimLeadingZeros();
-        IntegerAutomaton_ptr AddLeadingZeros();
+
         SemilinearSet_ptr GetSemilinearSet();
+
         UnaryAutomaton_ptr ToUnaryAutomaton();
 
         std::map<std::string, int> GetAnAcceptingIntForEachVar();
@@ -301,6 +313,13 @@ namespace Vlab
        protected:
         IntegerAutomaton(ArithmeticFormula_ptr formula);
         static IntegerAutomaton_ptr MakeIntGraterThanOrEqualToZero(std::vector<int> indexes, int number_of_variables);
+
+        /**
+         * TODO refactor that into builder and use cache
+         * @param var_index
+         * @param number_of_variables
+         * @return
+         */
         static IntegerAutomaton_ptr MakeTrimHelperAuto(int var_index, int number_of_variables);
         static void ComputeBinaryStates(std::vector<BinaryState_ptr>& binary_states, SemilinearSet_ptr semilinear_set);
         static void AddBinaryState(std::vector<BinaryState_ptr>& binary_states, std::vector<int>& constants);

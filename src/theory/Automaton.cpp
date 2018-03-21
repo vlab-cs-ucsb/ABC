@@ -166,12 +166,10 @@ namespace Vlab
       return result;
     }
 
-    Automaton_ptr Automaton::Complement() const
+    void Automaton::Complement()
     {
-      Libs::MONALib::DFA_ptr complement_dfa = Libs::MONALib::DFAComplement(this->dfa_);
-      Automaton_ptr complement_auto = this->MakeAutomaton(complement_dfa, number_of_bdd_variables_);
-      DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->Complement()";
-      return complement_auto;
+      Libs::MONALib::DFAComplement(this->dfa_);
+      DVLOG(VLOG_LEVEL) << this->id_ << " = [" << this->id_ << "]->Complement()";
     }
 
     Automaton_ptr Automaton::Union(Automaton_ptr other_automaton) const

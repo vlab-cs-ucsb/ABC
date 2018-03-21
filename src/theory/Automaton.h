@@ -341,10 +341,10 @@ namespace Vlab
         bool IsEqual(const Automaton_ptr other_automaton) const;
 
         /**
-         * Complements an automaton
+         * Complements the current automaton.
          * @return
          */
-        virtual Automaton_ptr Complement() const;
+        virtual void Complement();
 
         /**
          * Generates an automaton that is the result of union product of the two automata.
@@ -486,18 +486,18 @@ namespace Vlab
         static std::vector<char> getReservedWord(char last_char, int length, bool extra_bit = false);
 
         /**
-         * Minimizes the automaton
+         * Minimizes the automaton.
          */
         void Minimize();
 
         /**
-         * Projects away the bdd variable at given index
+         * Projects away the bdd variable at given index.
          * @param index
          */
         void ProjectAway(const int index);
 
         /**
-         * Projects away the bdd variable at given index and re assigns the index nummbers
+         * Projects away the bdd variable at given index and re assigns the index nummbers.
          * @param index
          */
         void ProjectAwayAndReMap(const int index);

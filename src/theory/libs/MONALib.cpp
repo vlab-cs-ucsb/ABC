@@ -234,11 +234,9 @@ namespace Vlab
         return dfaBuild(statuses);
       }
 
-      MONALib::DFA_ptr MONALib::DFAComplement(const MONALib::DFA_ptr dfa)
+      void MONALib::DFAComplement(MONALib::DFA_ptr dfa)
       {
-        MONALib::DFA_ptr complement_dfa = dfaCopy(dfa);
-        dfaNegation(complement_dfa);
-        return complement_dfa;
+        dfaNegation(dfa);
       }
 
       MONALib::DFA_ptr MONALib::DFAUnion(const MONALib::DFA_ptr dfa1, const MONALib::DFA_ptr dfa2)

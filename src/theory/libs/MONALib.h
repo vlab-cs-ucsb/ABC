@@ -207,11 +207,10 @@ namespace Vlab
           static DFA_ptr DFAMakeEmpty(const int number_of_bdd_variables);
 
           /**
-           * Generates a dfa that accepts strings that are not accepted by the given dfa
+           * Negates the current dfa.
            * @param
-           * @return
            */
-          static DFA_ptr DFAComplement(const DFA_ptr dfa);
+          static void DFAComplement(DFA_ptr dfa);
 
           /**
            * Generates a dfa with the union of the two given dfas
