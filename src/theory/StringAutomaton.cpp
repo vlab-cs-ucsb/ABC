@@ -944,8 +944,7 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
 	return equality_auto;
 }
 
-StringAutomaton_ptr StringAutomaton::MakeNotEquality(
-		StringFormula_ptr formula) {
+StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula) {
 	StringAutomaton_ptr not_equality_auto = nullptr;
 
 	auto coeff_map = formula->GetVariableCoefficientMap();
@@ -1170,12 +1169,12 @@ StringAutomaton_ptr StringAutomaton::MakeLessThan(StringFormula_ptr formula) {
 		int var_coeff = formula->GetVariableCoefficient(var_name);
 		if(var_coeff == 1) {
 			// var on left
-			left_track = formula->GetVariableIndex(1);
+			left_track = formula->GetVariableIndex(var_coeff);
 			right_track = num_tracks;
 		} else {
 			// var on right
 			left_track = num_tracks;
-			right_track = formula->GetVariableIndex(1);
+			right_track = formula->GetVariableIndex(var_coeff);
 		}
 		constant_string_auto = StringAutomaton::MakeString(formula->GetConstant());
 		num_tracks++;
@@ -1329,11 +1328,15 @@ StringAutomaton_ptr StringAutomaton::MakeLessThan(StringFormula_ptr formula) {
 
 	if(constant_string_auto != nullptr) {
 		StringAutomaton_ptr constant_multi_auto = new StringAutomaton(constant_string_auto->dfa_,num_tracks-1,num_tracks,DEFAULT_NUM_OF_VARIABLES);
-		auto tmp_d = DFAIntersect(result_dfa,constant_multi_auto->dfa_);
-		temp_auto = new StringAutomaton(tmp_d,num_tracks,num_tracks*VAR_PER_TRACK);
-		result_auto = temp_auto->ProjectKTrack(num_tracks-1);
+		temp_dfa = DFAIntersect(result_dfa,constant_multi_auto->dfa_);
+		temp_auto = new StringAutomaton(temp_dfa,num_tracks,num_tracks*VAR_PER_TRACK);
+		dfaFree(result_dfa);
+    result_dfa = temp_dfa;
+    result_auto = temp_auto->ProjectKTrack(num_tracks-1);
+    delete temp_auto;
+    delete constant_multi_auto;
+    delete constant_string_auto;
 		result_auto->SetFormula(formula);
-		LOG(INFO) << result_auto->num_of_bdd_variables_;
 	} else {
 		result_auto = new StringAutomaton(result_dfa,formula,num_tracks*VAR_PER_TRACK);
 	}

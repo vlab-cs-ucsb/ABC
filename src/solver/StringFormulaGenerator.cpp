@@ -685,7 +685,7 @@ void StringFormulaGenerator::visitLt(Lt_ptr lt_term) {
 			formula->MergeVariables(left_formula);
 			formula->SetType(StringFormula::Type::LT);
 			auto right_var = right_formula->GetVariableAtIndex(0);
-			formula->SetVariableCoefficient(right_var,1);
+			formula->SetVariableCoefficient(right_var,2);
 			formula->SetConstant(left_formula->GetConstant());
 			constraint_information_->add_string_constraint(lt_term);
 //		} else if(StringFormula::Type::CHARAT == left_formula->GetType() && StringFormula::Type::CHARAT == right_formula->GetType()
@@ -702,7 +702,7 @@ void StringFormulaGenerator::visitLt(Lt_ptr lt_term) {
 			formula->MergeVariables(right_formula);
 			formula->SetType(StringFormula::Type::LT_CHARAT);
 			auto right_var = right_formula->GetVariableAtIndex(0);
-			formula->SetVariableCoefficient(right_var,2);
+			formula->SetVariableCoefficient(right_var,1);
 			constraint_information_->add_string_constraint(lt_term);
 		} else {
 			formula = left_formula->clone();
