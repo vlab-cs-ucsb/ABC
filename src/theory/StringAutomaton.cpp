@@ -1899,7 +1899,7 @@ StringAutomaton_ptr StringAutomaton::MakeGreaterThanOrEqual(StringFormula_ptr fo
 		return result_auto;
 	}
 
-	result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::LE,VAR_PER_TRACK,num_tracks,left_track,right_track);
+	result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::GE,VAR_PER_TRACK,num_tracks,left_track,right_track);
 
 	if(constant_string_auto != nullptr) {
 		StringAutomaton_ptr constant_multi_auto = new StringAutomaton(constant_string_auto->dfa_,num_tracks-1,num_tracks,DEFAULT_NUM_OF_VARIABLES);
