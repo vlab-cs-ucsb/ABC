@@ -478,7 +478,7 @@ void StringFormulaGenerator::visitGt(Gt_ptr gt_term) {
 			formula->MergeVariables(left_formula);
 			formula->SetType(StringFormula::Type::GT);
 			auto right_var = right_formula->GetVariableAtIndex(0);
-			formula->SetVariableCoefficient(right_var,1);
+			formula->SetVariableCoefficient(right_var,2);
 			formula->SetConstant(left_formula->GetConstant());
 			constraint_information_->add_string_constraint(gt_term);
 //		} else if(StringFormula::Type::CHARAT == left_formula->GetType() && StringFormula::Type::CHARAT == right_formula->GetType()
@@ -582,7 +582,7 @@ void StringFormulaGenerator::visitGe(Ge_ptr ge_term) {
 			formula->MergeVariables(left_formula);
 			formula->SetType(StringFormula::Type::GE);
 			auto right_var = right_formula->GetVariableAtIndex(0);
-			formula->SetVariableCoefficient(right_var,1);
+			formula->SetVariableCoefficient(right_var,2);
 			formula->SetConstant(left_formula->GetConstant());
 			constraint_information_->add_string_constraint(ge_term);
 //		} else if(StringFormula::Type::CHARAT == left_formula->GetType() && StringFormula::Type::CHARAT == right_formula->GetType()

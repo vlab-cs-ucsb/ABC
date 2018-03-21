@@ -1347,11 +1347,34 @@ StringAutomaton_ptr StringAutomaton::MakeLessThanOrEqual(StringFormula_ptr formu
 	StringAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
 	StringAutomaton_ptr constant_string_auto = nullptr;
 	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
-	std::map<std::string,int> trackmap = formula->GetVariableCoefficientMap();
-
+	auto coeff_map = formula->GetVariableCoefficientMap();
 	int num_tracks = formula->GetNumberOfVariables();
-	int left_track = formula->GetVariableIndex(1);
-	int right_track = formula->GetVariableIndex(2);
+	int left_track = -1, right_track = -1;
+	int num_vars = 0;
+	for(auto it : coeff_map) {
+		if(it.second != 0) {
+			num_vars++;
+		}
+	}
+
+	if(num_vars == 1) {
+		std::string var_name = formula->GetVariableAtIndex(0);
+		int var_coeff = formula->GetVariableCoefficient(var_name);
+		if(var_coeff == 1) {
+			// var on left
+			left_track = formula->GetVariableIndex(var_coeff);
+			right_track = num_tracks;
+		} else {
+			// var on right
+			left_track = num_tracks;
+			right_track = formula->GetVariableIndex(var_coeff);
+		}
+		constant_string_auto = StringAutomaton::MakeString(formula->GetConstant());
+		num_tracks++;
+	} else {
+		left_track = formula->GetVariableIndex(1);
+		right_track = formula->GetVariableIndex(2);
+	}
 
 	if(formula->GetType() == StringFormula::Type::LE_CHARAT) {
 		// #states = (#index+1)+4
@@ -1493,9 +1516,21 @@ StringAutomaton_ptr StringAutomaton::MakeLessThanOrEqual(StringFormula_ptr formu
 	}
 
 	result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::LE,VAR_PER_TRACK,num_tracks,left_track,right_track);
-	result_auto = new StringAutomaton(result_dfa,formula,num_tracks*VAR_PER_TRACK);
 
-
+	if(constant_string_auto != nullptr) {
+		StringAutomaton_ptr constant_multi_auto = new StringAutomaton(constant_string_auto->dfa_,num_tracks-1,num_tracks,DEFAULT_NUM_OF_VARIABLES);
+		temp_dfa = DFAIntersect(result_dfa,constant_multi_auto->dfa_);
+		temp_auto = new StringAutomaton(temp_dfa,num_tracks,num_tracks*VAR_PER_TRACK);
+		dfaFree(result_dfa);
+		result_dfa = temp_dfa;
+		result_auto = temp_auto->ProjectKTrack(num_tracks-1);
+		delete temp_auto;
+		delete constant_multi_auto;
+		delete constant_string_auto;
+		result_auto->SetFormula(formula);
+	} else {
+		result_auto = new StringAutomaton(result_dfa,formula,num_tracks*VAR_PER_TRACK);
+	}
 	return result_auto;
 }
 
@@ -1503,11 +1538,34 @@ StringAutomaton_ptr StringAutomaton::MakeGreaterThan(StringFormula_ptr formula) 
 	StringAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
 	StringAutomaton_ptr constant_string_auto = nullptr;
 	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
-	std::map<std::string,int> trackmap = formula->GetVariableCoefficientMap();
-
+	auto coeff_map = formula->GetVariableCoefficientMap();
 	int num_tracks = formula->GetNumberOfVariables();
-	int left_track = formula->GetVariableIndex(1);
-	int right_track = formula->GetVariableIndex(2);
+	int left_track = -1, right_track = -1;
+	int num_vars = 0;
+	for(auto it : coeff_map) {
+		if(it.second != 0) {
+			num_vars++;
+		}
+	}
+
+	if(num_vars == 1) {
+		std::string var_name = formula->GetVariableAtIndex(0);
+		int var_coeff = formula->GetVariableCoefficient(var_name);
+		if(var_coeff == 1) {
+			// var on left
+			left_track = formula->GetVariableIndex(var_coeff);
+			right_track = num_tracks;
+		} else {
+			// var on right
+			left_track = num_tracks;
+			right_track = formula->GetVariableIndex(var_coeff);
+		}
+		constant_string_auto = StringAutomaton::MakeString(formula->GetConstant());
+		num_tracks++;
+	} else {
+		left_track = formula->GetVariableIndex(1);
+		right_track = formula->GetVariableIndex(2);
+	}
 
 	if(formula->GetType() == StringFormula::Type::GT_CHARAT) {
 		// #states = (#index+1)+4
@@ -1649,7 +1707,21 @@ StringAutomaton_ptr StringAutomaton::MakeGreaterThan(StringFormula_ptr formula) 
 	}
 
 	result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::GT,VAR_PER_TRACK,num_tracks,left_track,right_track);
-	result_auto = new StringAutomaton(result_dfa,formula,num_tracks*VAR_PER_TRACK);
+
+	if(constant_string_auto != nullptr) {
+		StringAutomaton_ptr constant_multi_auto = new StringAutomaton(constant_string_auto->dfa_,num_tracks-1,num_tracks,DEFAULT_NUM_OF_VARIABLES);
+		temp_dfa = DFAIntersect(result_dfa,constant_multi_auto->dfa_);
+		temp_auto = new StringAutomaton(temp_dfa,num_tracks,num_tracks*VAR_PER_TRACK);
+		dfaFree(result_dfa);
+		result_dfa = temp_dfa;
+		result_auto = temp_auto->ProjectKTrack(num_tracks-1);
+		delete temp_auto;
+		delete constant_multi_auto;
+		delete constant_string_auto;
+		result_auto->SetFormula(formula);
+	} else {
+		result_auto = new StringAutomaton(result_dfa,formula,num_tracks*VAR_PER_TRACK);
+	}
 
 
 	return result_auto;
@@ -1659,11 +1731,34 @@ StringAutomaton_ptr StringAutomaton::MakeGreaterThanOrEqual(StringFormula_ptr fo
 	StringAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
 	StringAutomaton_ptr constant_string_auto = nullptr;
 	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
-	std::map<std::string,int> trackmap = formula->GetVariableCoefficientMap();
-
+	auto coeff_map = formula->GetVariableCoefficientMap();
 	int num_tracks = formula->GetNumberOfVariables();
-	int left_track = formula->GetVariableIndex(1);
-	int right_track = formula->GetVariableIndex(2);
+	int left_track = -1, right_track = -1;
+	int num_vars = 0;
+	for(auto it : coeff_map) {
+		if(it.second != 0) {
+			num_vars++;
+		}
+	}
+
+	if(num_vars == 1) {
+		std::string var_name = formula->GetVariableAtIndex(0);
+		int var_coeff = formula->GetVariableCoefficient(var_name);
+		if(var_coeff == 1) {
+			// var on left
+			left_track = formula->GetVariableIndex(var_coeff);
+			right_track = num_tracks;
+		} else {
+			// var on right
+			left_track = num_tracks;
+			right_track = formula->GetVariableIndex(var_coeff);
+		}
+		constant_string_auto = StringAutomaton::MakeString(formula->GetConstant());
+		num_tracks++;
+	} else {
+		left_track = formula->GetVariableIndex(1);
+		right_track = formula->GetVariableIndex(2);
+	}
 
 	if(formula->GetType() == StringFormula::Type::GE_CHARAT) {
 		// #states = (#index+1)+4
@@ -1804,10 +1899,22 @@ StringAutomaton_ptr StringAutomaton::MakeGreaterThanOrEqual(StringFormula_ptr fo
 		return result_auto;
 	}
 
-	result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::GE,VAR_PER_TRACK,num_tracks,left_track,right_track);
-	result_auto = new StringAutomaton(result_dfa,formula,num_tracks*VAR_PER_TRACK);
+	result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::LE,VAR_PER_TRACK,num_tracks,left_track,right_track);
 
-
+	if(constant_string_auto != nullptr) {
+		StringAutomaton_ptr constant_multi_auto = new StringAutomaton(constant_string_auto->dfa_,num_tracks-1,num_tracks,DEFAULT_NUM_OF_VARIABLES);
+		temp_dfa = DFAIntersect(result_dfa,constant_multi_auto->dfa_);
+		temp_auto = new StringAutomaton(temp_dfa,num_tracks,num_tracks*VAR_PER_TRACK);
+		dfaFree(result_dfa);
+		result_dfa = temp_dfa;
+		result_auto = temp_auto->ProjectKTrack(num_tracks-1);
+		delete temp_auto;
+		delete constant_multi_auto;
+		delete constant_string_auto;
+		result_auto->SetFormula(formula);
+	} else {
+		result_auto = new StringAutomaton(result_dfa,formula,num_tracks*VAR_PER_TRACK);
+	}
 	return result_auto;
 }
 
