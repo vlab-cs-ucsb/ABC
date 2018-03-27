@@ -57,7 +57,12 @@ IntAutomaton_ptr IntAutomaton::clone() const {
 }
 
 IntAutomaton_ptr IntAutomaton::MakeAutomaton(DFA_ptr dfa, Formula_ptr formula, const int number_of_variables) {
+	auto arith_formula = dynamic_cast<ArithmeticFormula_ptr>(formula);
 	IntAutomaton_ptr int_auto = new IntAutomaton(dfa,number_of_variables);
+	if(arith_formula == nullptr) {
+		LOG(FATAL) << "NOT ARITH FORMULA";
+	}
+	int_auto->SetFormula(arith_formula);
 	return int_auto;
 }
 
@@ -773,7 +778,10 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
     number_of_states++;
   }
 
-  std::vector<char> unary_exception = {'1'};
+  std::vector<char> unary_exception;
+  unary_exception.push_back('1');
+  unary_exception.push_back('\0');
+
   char* statuses = new char[number_of_states + 1];
   std::vector<char> exception = {'0', '0', '0', '0', '0', '0', '0', '0'};
 
@@ -823,6 +831,9 @@ ArithmeticFormula_ptr IntAutomaton::GetFormula() {
 }
 
 void IntAutomaton::SetFormula(ArithmeticFormula_ptr formula) {
+	if(formula_ != nullptr) {
+		delete formula_;
+	}
 	formula_ = formula;
 }
 

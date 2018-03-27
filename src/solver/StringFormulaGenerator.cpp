@@ -1376,8 +1376,8 @@ void StringFormulaGenerator::set_group_mappings() {
     Value_ptr val = new Value(init_val);
     symbol_table_->push_scope(root_);
     symbol_table_->set_value(el.first,val);
+    delete val;
 		symbol_table_->pop_scope();
-		delete val;
 
     //LOG(INFO) << "Group " << el.first << " Initial Value: " << symbol_table_->get_value_at_scope(root_,symbol_table_->get_variable(el.first));
     for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {

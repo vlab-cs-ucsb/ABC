@@ -187,8 +187,10 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
 //      symbol_table_->set_value(group_name, value);
 //    }
 //    delete and_value;
-  	symbol_table_->IntersectValue(group_name,new Value(is_satisfiable));
-  //}
+  	auto satisfiable_value = new Value(is_satisfiable);
+  	symbol_table_->IntersectValue(group_name,satisfiable_value);
+  	delete satisfiable_value;
+  	//}
   DVLOG(VLOG_LEVEL) << "post visit component end: " << *and_term << "@" << and_term;
 }
 
@@ -265,7 +267,9 @@ void StringConstraintSolver::visitOr(Or_ptr or_term) {
   	is_satisfiable = true;
   }
 
-	symbol_table_->UnionValue(group_name,new Value(is_satisfiable));
+  auto satisfiable_value = new Value(is_satisfiable);
+	symbol_table_->UnionValue(group_name,satisfiable_value);
+	delete satisfiable_value;
 	//}
 
   DVLOG(VLOG_LEVEL) << "post visit component end: " << *or_term << "@" << or_term;
@@ -303,7 +307,9 @@ void StringConstraintSolver::postVisitAnd(And_ptr and_term) {
 		Value_ptr subgroup_value = symbol_table_->get_value(subgroup_variable);
 		is_satisfiable = subgroup_value->is_satisfiable() and is_satisfiable;
 	}
-	symbol_table_->IntersectValue(group_name, new Value(is_satisfiable));
+	auto satisfiable_value = new Value(is_satisfiable);
+	symbol_table_->IntersectValue(group_name,satisfiable_value);
+	delete satisfiable_value;
   DVLOG(VLOG_LEVEL) << "update result end: " << *and_term << "@" << and_term;
 }
 
@@ -367,7 +373,9 @@ void StringConstraintSolver::postVisitOr(Or_ptr or_term) {
   		}
   	}
 
-  	symbol_table_->IntersectValue(group_name,new Value(is_satisfiable));
+  	auto satisfiable_value = new Value(is_satisfiable);
+		symbol_table_->IntersectValue(group_name,satisfiable_value);
+		delete satisfiable_value;
   }
   DVLOG(VLOG_LEVEL) << "update result end: " << *or_term << "@" << or_term;
 }

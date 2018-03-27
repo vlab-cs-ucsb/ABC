@@ -165,13 +165,14 @@ StringAutomaton::StringAutomaton(const StringAutomaton& other)
 }
 
 StringAutomaton::~StringAutomaton() {
+	LOG(INFO) << "DELETING: " << id_;
 	delete formula_;
 }
 
 StringAutomaton_ptr StringAutomaton::clone() const {
   StringAutomaton_ptr result_auto = new StringAutomaton(*this);
   DVLOG(VLOG_LEVEL) << result_auto->id_ << " = [" << this->id_ << "]->clone()";
-	return new StringAutomaton(*this);
+	return result_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::MakePhi(const int number_of_bdd_variables) {
@@ -231,7 +232,9 @@ StringAutomaton_ptr StringAutomaton::MakeString(const std::string str, const int
   dfaStoreState(str_length + 1);
   statuses[str_length + 1] = '-';
 
-  DFA_ptr result_dfa = dfaMinimize(dfaBuild(statuses));
+  DFA_ptr temp_dfa = dfaBuild(statuses);
+  DFA_ptr result_dfa = dfaMinimize(temp_dfa);
+  dfaFree(temp_dfa);
   StringAutomaton_ptr result_auto = new StringAutomaton(result_dfa, number_of_bdd_variables);
   delete[] statuses;
 
@@ -241,12 +244,12 @@ StringAutomaton_ptr StringAutomaton::MakeString(const std::string str, const int
 }
 
 StringAutomaton_ptr StringAutomaton::MakeAnyString(const int number_of_bdd_variables) {
-  char statuses[2] { '+', '-' };
+  //char statuses[2] { '+', '\0' };
   int *variable_indices = GetBddVariableIndices(number_of_bdd_variables);
   dfaSetup(1, number_of_bdd_variables, variable_indices);
   dfaAllocExceptions(0);
   dfaStoreState(0);
-  DFA_ptr any_string_dfa = dfaBuild(statuses);
+  DFA_ptr any_string_dfa = dfaBuild("+");
   StringAutomaton_ptr any_string = new StringAutomaton(any_string_dfa, number_of_bdd_variables);
   DVLOG(VLOG_LEVEL) << any_string->id_ << " = MakeAnyString()";
   return any_string;
@@ -1116,7 +1119,7 @@ StringAutomaton_ptr StringAutomaton::MakeAnyStringUnaligned(StringFormula_ptr fo
   // if only one variable, don't complicate with lambda transitions
   if(formula->GetNumberOfVariables() == 1) {
     result_auto = StringAutomaton::MakeAnyString();
-    result_auto->SetFormula(formula->clone());
+    result_auto->SetFormula(formula);
     return result_auto;
   }
 
@@ -1142,14 +1145,14 @@ StringAutomaton_ptr StringAutomaton::MakeAnyStringAligned(StringFormula_ptr form
   // if only one variable, don't complicate with lambda transitions
   if(formula->GetNumberOfVariables() == 1) {
     result_auto = StringAutomaton::MakeAnyString();
-    result_auto->SetFormula(formula->clone());
+    result_auto->SetFormula(formula);
     return result_auto;
   }
 
   StringAutomaton_ptr aligned_auto = nullptr, any_auto = nullptr, temp_auto = nullptr;
   StringAutomaton_ptr any_string_auto = nullptr;
 
-  aligned_auto = MakeAnyStringUnaligned(formula->clone());
+  aligned_auto = MakeAnyStringUnaligned(formula);
   any_string_auto = StringAutomaton::MakeAnyString();
   const int number_of_string_vars = formula->GetNumberOfVariables();
   for(unsigned i = 0; i < number_of_string_vars; i++) {
@@ -3044,7 +3047,6 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 	// interleaved with 1 less than current number of tracks
   
   
-  int* before_indices = CreateBddVariableIndices(this->num_tracks_*VAR_PER_TRACK);
 	int* map = CreateBddVariableIndices(this->num_tracks_*VAR_PER_TRACK);
 	std::vector<int> indices;
 	for(int i = 0; i < this->num_tracks_; i++) {

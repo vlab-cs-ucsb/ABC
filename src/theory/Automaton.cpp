@@ -794,6 +794,13 @@ std::ostream& operator<<(std::ostream& os, const Automaton& automaton) {
   return os << automaton.str();
 }
 
+void Automaton::CleanUp() {
+	for(auto &it : bdd_variable_indices) {
+		delete[] it.second;
+		it.second = nullptr;
+	}
+}
+
 bool Automaton::DFAIsMinimizedEmtpy(const DFA_ptr minimized_dfa) {
     return (minimized_dfa->ns == 1 && minimized_dfa->f[minimized_dfa->s] == -1)? true : false;
 }

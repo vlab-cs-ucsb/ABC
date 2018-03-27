@@ -53,7 +53,13 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::clone() const {
 
 // What about natural number parameter?
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(DFA_ptr dfa, Formula_ptr formula, const int number_of_variables) {
-	return new BinaryIntAutomaton(dfa,number_of_variables, not Vlab::Option::Solver::USE_SIGNED_INTEGERS);
+	auto bin_auto = new BinaryIntAutomaton(dfa,number_of_variables, not Vlab::Option::Solver::USE_SIGNED_INTEGERS);
+	auto arith_formula = dynamic_cast<ArithmeticFormula_ptr>(formula);
+	if(arith_formula == nullptr) {
+		LOG(FATAL) << "NOT ARITH FORMULA";
+	}
+	bin_auto->SetFormula(arith_formula);
+	return bin_auto;
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakePhi(ArithmeticFormula_ptr formula, bool is_natural_number) {
@@ -123,7 +129,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(ArithmeticFormula_ptr f
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeAutomaton(int value, std::string var_name, ArithmeticFormula_ptr formula,
                                                          bool add_leading_zeros) {
 
-  auto constant_value_formula = formula->clone();
+  auto constant_value_formula = formula;
   constant_value_formula->ResetCoefficients();
   constant_value_formula->SetVariableCoefficient(var_name, 1);
   constant_value_formula->SetConstant(-value);
@@ -290,6 +296,9 @@ ArithmeticFormula_ptr BinaryIntAutomaton::GetFormula() {
 }
 
 void BinaryIntAutomaton::SetFormula(ArithmeticFormula_ptr formula) {
+	if(formula_ != nullptr) {
+		delete formula_;
+	}
   this->formula_ = formula;
 }
 
@@ -329,8 +338,6 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Complement() {
   auto complement_auto = any_int_auto->Intersect(tmp_auto);
   delete any_int_auto;
   delete tmp_auto;
-  auto formula = complement_auto->GetFormula();
-  delete formula;
   complement_auto->SetFormula(this->formula_->negate());
 
   DVLOG(VLOG_LEVEL) << complement_auto->id_ << " = [" << this->id_ << "]->Complement()";

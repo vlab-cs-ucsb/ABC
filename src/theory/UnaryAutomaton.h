@@ -57,6 +57,7 @@ public:
   BinaryIntAutomaton_ptr toBinaryIntAutomaton(std::string var_name, ArithmeticFormula_ptr formula, bool add_minus_one = false);
   StringAutomaton_ptr toStringAutomaton();
   ArithmeticFormula_ptr GetFormula();
+  void SetFormula(ArithmeticFormula_ptr formula);
 
 protected:
   void decide_counting_schema(Eigen::SparseMatrix<BigInteger>& count_matrix) override;

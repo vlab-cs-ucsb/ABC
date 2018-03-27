@@ -233,6 +233,8 @@ public:
 
   friend std::ostream& operator<<(std::ostream& os, const Automaton& automaton);
 
+  static void CleanUp();
+
 protected:
 
   /**

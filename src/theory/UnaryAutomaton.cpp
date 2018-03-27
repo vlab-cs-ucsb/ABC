@@ -49,7 +49,12 @@ UnaryAutomaton_ptr UnaryAutomaton::MakeAutomaton(DFA_ptr dfa, Formula_ptr formul
 	if(number_of_variables != 1) {
 		LOG(FATAL) << "unary auto cannot have more than one variable";
 	}
+	auto arith_formula = dynamic_cast<ArithmeticFormula_ptr>(formula);
+	if(arith_formula == nullptr) {
+		LOG(FATAL) << "NOT ARITH FORMULA";
+	}
 	UnaryAutomaton_ptr unary_auto = new UnaryAutomaton(dfa);
+	unary_auto->SetFormula(arith_formula);
 	return unary_auto;
 }
 
@@ -245,7 +250,8 @@ IntAutomaton_ptr UnaryAutomaton::toIntAutomaton(int number_of_variables, bool ad
   int_dfa = dfaMinimize(temp_dfa);
   dfaFree(temp_dfa);
 
-  int_auto = new IntAutomaton(int_dfa, formula_->clone(), number_of_variables);
+  int_auto = new IntAutomaton(int_dfa, number_of_variables);
+  int_auto->SetFormula(formula_->clone());
 
   if(!has_sink) {
     for(int i = 0; i < int_dfa->ns; i++) {
@@ -286,6 +292,8 @@ BinaryIntAutomaton_ptr UnaryAutomaton::toBinaryIntAutomaton(std::string var_name
     delete tmp_auto; tmp_auto = nullptr;
     delete minus_one_auto; minus_one_auto = nullptr;
   }
+
+  delete semilinear_set;
 
   DVLOG(VLOG_LEVEL)  << binary_auto->getId() << " = [" << this->id_ << "]->toBinaryIntAutomaton(" << var_name << ", " << binary_auto->GetFormula()->str() << ", " << add_minus_one << ")";
 
@@ -342,6 +350,13 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
 
 ArithmeticFormula_ptr UnaryAutomaton::GetFormula() {
 	return formula_;
+}
+
+void UnaryAutomaton::SetFormula(ArithmeticFormula_ptr formula) {
+	if(formula_ != nullptr) {
+		delete formula_;
+	}
+	formula_ = formula;
 }
 
 void UnaryAutomaton::decide_counting_schema(Eigen::SparseMatrix<BigInteger>& count_matrix) {

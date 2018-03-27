@@ -51,6 +51,10 @@ void ConstraintSolver::start(int iteration_count) {
 }
 
 void ConstraintSolver::end() {
+	for(auto &it : term_values_) {
+		delete it.second;
+		it.second = nullptr;
+	}
 	term_values_.clear();
 	arithmetic_constraint_solver_.clear_term_values();
 	string_constraint_solver_.clear_term_values();
@@ -1074,8 +1078,10 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   Variable_ptr variable = symbol_table_->get_variable(qi_term->getVarName());
 
   Value_ptr variable_value = symbol_table_->get_value(variable);
+
   Value_ptr result = nullptr;
   if (Value::Type::STRING_AUTOMATON == variable_value->getType()) {
+  	LOG(INFO) << "ID=" << variable_value->getStringAutomaton()->getId();
     result = new Value(variable_value->getStringAutomaton()->GetAutomatonForVariable(qi_term->getVarName()));
   } else if (Value::Type::BINARYINT_AUTOMATON == variable_value->getType()) {
   	// TODO baki: added for charat may need to fix it
@@ -1262,7 +1268,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
   bool has_minus_one = false;
   int number_of_variables_for_int_auto;
   bool is_satisfiable = true;
-
+  bool delete_extra_arithmetic_result = false;
   // get term value returns result from the symbol table (should return)
   auto arithmetic_result = arithmetic_constraint_solver_.get_term_value(term);
   for (auto& string_term : arithmetic_constraint_solver_.get_string_terms_in(term)) {
@@ -1302,8 +1308,13 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
     delete string_term_binary_auto;
     string_term_binary_auto = nullptr;
 
+    if(delete_extra_arithmetic_result) {
+    	delete arithmetic_result;
+    }
     arithmetic_result = new Value(updated_arith_auto);
+    delete_extra_arithmetic_result = true;
     is_satisfiable = arithmetic_constraint_solver_.set_group_value(term, arithmetic_result);  // in turn, update group variable
+
     if (not is_satisfiable) {
       break;
     }
@@ -1339,6 +1350,10 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
       break;
     }
   }
+  if(delete_extra_arithmetic_result) {
+		delete arithmetic_result;
+	}
+
   return is_satisfiable;
 }
 

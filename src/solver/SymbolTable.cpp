@@ -24,6 +24,7 @@ SymbolTable::~SymbolTable() {
     for (auto& value_pair : map_pair.second) {
     	delete value_pair.second;
     }
+
   }
   variable_value_table_.clear();
 
@@ -33,13 +34,15 @@ SymbolTable::~SymbolTable() {
     }
   }
   variable_projected_value_table_.clear();
+
   std::set<EquivalenceClass_ptr> equivalence_classes;
   for (auto& map_pair : variable_equivalence_table_) {
     for (auto& value_pair : map_pair.second) {
       equivalence_classes.insert(value_pair.second);
     }
   }
-  variable_projected_value_table_.clear();
+
+  variable_equivalence_table_.clear();
   for (auto& eq : equivalence_classes) {
     delete eq;
   }
@@ -323,7 +326,8 @@ Value_ptr SymbolTable::get_value(Variable_ptr variable) {
   }
 
   set_value(variable, result);
-  return result;
+  delete result;
+  return get_value(variable);
 }
 
 Value_ptr SymbolTable::get_value_at_scope(Visitable_ptr scope, Variable_ptr variable) {
@@ -408,7 +412,7 @@ bool SymbolTable::set_value(Variable_ptr variable, Value_ptr value) {
   auto& current_scope_values = variable_value_table_[top_scope()];
   auto it = current_scope_values.find(group_variable);
   if (it not_eq current_scope_values.end()) {
-    delete it->second;
+  	delete it->second;
     it->second = value->clone();
   } else {
     current_scope_values[group_variable] = value->clone();
@@ -438,7 +442,9 @@ bool SymbolTable::IntersectValue(Variable_ptr variable, Value_ptr value) {
     variable_new_value = value->clone();
   }
 
-  return set_value(variable, variable_new_value);
+  bool res = set_value(variable, variable_new_value);
+  delete variable_new_value;
+  return res;
 }
 
 bool SymbolTable::UnionValue(std::string var_name, Value_ptr value) {

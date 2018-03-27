@@ -23,6 +23,7 @@ Driver::~Driver() {
   delete symbol_table_;
   delete script_;
   delete constraint_information_;
+  Theory::Automaton::CleanUp();
 }
 
 void Driver::InitializeLogger(int log_level) {

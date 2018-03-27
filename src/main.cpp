@@ -45,7 +45,7 @@ int main(const int argc, const char **argv) {
 //  std::string output_root = get_default_output_dir();
 //  std::string log_root = get_default_log_dir();
 
-  std::string output_root {"./output"};
+  std::string output_root = "";//{"./output"};
   std::string log_root {"./log"};
 
   FLAGS_log_dir = log_root;
@@ -181,7 +181,7 @@ int main(const int argc, const char **argv) {
   driver.Parse(in);
 
 #ifndef NDEBUG
-  if (VLOG_IS_ON(30)) {
+  if (VLOG_IS_ON(30) and not output_root.empty()) {
     driver.ast2dot(output_root + "/parser_out.dot");
   }
 #endif
@@ -194,7 +194,7 @@ int main(const int argc, const char **argv) {
   }
 
 #ifndef NDEBUG
-  if (VLOG_IS_ON(30)) {
+  if (VLOG_IS_ON(30) and not output_root.empty()) {
     driver.ast2dot(output_root + "/optimized.dot");
   }
 #endif

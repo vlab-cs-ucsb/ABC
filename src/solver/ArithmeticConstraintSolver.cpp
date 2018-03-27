@@ -220,8 +220,9 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 //    delete and_value;
   //LOG(INFO) << "***** SETTING VALUE OF " << group_name << " to " << is_satisfiable;
 
-  symbol_table_->IntersectValue(group_name,new Value(is_satisfiable));
-
+  auto satisfiable_value = new Value(is_satisfiable);
+  symbol_table_->IntersectValue(group_name,satisfiable_value);
+  delete satisfiable_value;
   //}
   DVLOG(VLOG_LEVEL) << "post visit component end: " << *and_term << "@" << and_term;
 }
@@ -332,7 +333,9 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
 //		}
 //		delete or_value;
   //LOG(INFO) << "Sat: " << is_satisfiable;
-  symbol_table_->UnionValue(group_name,new Value(is_satisfiable));
+  auto satisfiable_value = new Value(is_satisfiable);
+	symbol_table_->UnionValue(group_name,satisfiable_value);
+	delete satisfiable_value;
   //}
 
   DVLOG(VLOG_LEVEL) << "post visit component end: " << *or_term << "@" << or_term;
@@ -417,7 +420,9 @@ void ArithmeticConstraintSolver::postVisitAnd(And_ptr and_term) {
 //    }
 //    delete and_value;
   	//LOG(INFO) << "Sat: " << is_satisfiable;
-  	symbol_table_->IntersectValue(group_name, new Value(is_satisfiable));
+  	auto satisfiable_value = new Value(is_satisfiable);
+		symbol_table_->IntersectValue(group_name,satisfiable_value);
+		delete satisfiable_value;
   //}
   DVLOG(VLOG_LEVEL) << "update result end: " << *and_term << "@" << and_term;
 }
@@ -515,7 +520,9 @@ void ArithmeticConstraintSolver::postVisitOr(Or_ptr or_term) {
 				break;
 			}
 		}
-		symbol_table_->IntersectValue(group_name,new Value(is_satisfiable));
+  	auto satisfiable_value = new Value(is_satisfiable);
+		symbol_table_->IntersectValue(group_name,satisfiable_value);
+		delete satisfiable_value;
   }
   //LOG(INFO) << "Sat: " << is_satisfiable;
   DVLOG(VLOG_LEVEL) << "update result end: " << *or_term << "@" << or_term;

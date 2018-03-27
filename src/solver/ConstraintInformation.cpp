@@ -17,11 +17,14 @@ using namespace SMT;
 
 ConstraintInformation::ConstraintInformation() {
   // TODO Auto-generated constructor stub
-
 }
 
 ConstraintInformation::~ConstraintInformation() {
   // TODO Auto-generated destructor stub
+	for(auto &it : string_formulas) {
+		delete it.second;
+		it.second = nullptr;
+	}
 }
 
 bool ConstraintInformation::is_component(const Visitable_ptr node) const {
