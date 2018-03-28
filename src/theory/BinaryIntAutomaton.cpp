@@ -628,6 +628,8 @@ SemilinearSet_ptr BinaryIntAutomaton::GetSemilinearSet() {
               semilinears.push_back(current_set);
               tmp_periods.push_back(possible_period);
               period_found = true;
+              delete diff_auto;
+              diff_auto = nullptr;
               break;
             } else {
               delete current_set;
@@ -2006,7 +2008,6 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeLessThanOrEqual(ArithmeticFormula
 
   auto less_than_or_equal_auto = BinaryIntAutomaton::MakeLessThan(less_than_formula, is_natural_number);
   less_than_or_equal_auto->SetFormula(formula);
-  delete less_than_formula;
 
   DVLOG(VLOG_LEVEL) << less_than_or_equal_auto->id_ << " = MakeLessThanOrEqual(" << *formula << ")";
   return less_than_or_equal_auto;
@@ -2018,7 +2019,6 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeGreaterThan(ArithmeticFormula_ptr
 
   auto greater_than_auto = BinaryIntAutomaton::MakeLessThan(less_than_formula, is_natural_number);
   greater_than_auto->SetFormula(formula);
-  delete less_than_formula;
 
   DVLOG(VLOG_LEVEL) << greater_than_auto->id_ << " = MakeGreaterThan(" << *formula << ")";
   return greater_than_auto;
@@ -2032,7 +2032,6 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeGreaterThanOrEqual(ArithmeticForm
 
   auto greater_than_or_equal_auto = BinaryIntAutomaton::MakeLessThan(less_than_formula, is_natural_number);
   greater_than_or_equal_auto->SetFormula(formula);
-  delete less_than_formula;
 
   DVLOG(VLOG_LEVEL) << greater_than_or_equal_auto->id_ << " = MakeGreaterThanOrEqual(" << *formula << ")";
   return greater_than_or_equal_auto;

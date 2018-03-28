@@ -144,7 +144,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 			} else {
 				constant = iter->second->getIntConstant();
 			}
-			auto bin_auto = BinaryIntAutomaton::MakeAutomaton(constant,iter->first->getName(),group_formula,not use_unsigned_integers_);
+			auto bin_auto = BinaryIntAutomaton::MakeAutomaton(constant,iter->first->getName(),group_formula->clone(),not use_unsigned_integers_);
 			auto bin_value = new Value(bin_auto);
 //			LOG(INFO) << "Before value: " << symbol_table_->get_value(variable_group)->is_satisfiable();
 			symbol_table_->IntersectValue(variable_group,bin_value);
@@ -515,11 +515,16 @@ void ArithmeticConstraintSolver::postVisitOr(Or_ptr or_term) {
   	for(auto& iter : or_values) {
 			symbol_table_->IntersectValue(iter.first,iter.second);
 			is_satisfiable = symbol_table_->get_value(iter.first)->is_satisfiable() and is_satisfiable;
-			delete iter.second; iter.second = nullptr;
 			if(not is_satisfiable) {
 				break;
 			}
 		}
+
+  	for(auto &iter : or_values) {
+			delete iter.second;
+			iter.second = nullptr;
+		}
+
   	auto satisfiable_value = new Value(is_satisfiable);
 		symbol_table_->IntersectValue(group_name,satisfiable_value);
 		delete satisfiable_value;

@@ -50,6 +50,10 @@ SymbolTable::~SymbolTable() {
   for (auto& entry : variables_) {
     delete entry.second;
   }
+
+  if(count_symbol_ != nullptr) {
+  	delete count_symbol_;
+  }
 }
 
 bool SymbolTable::isSatisfiable() {
@@ -456,14 +460,12 @@ bool SymbolTable::UnionValue(Variable_ptr variable, Value_ptr value) {
   Value_ptr variable_new_value = nullptr;
   if (variable_old_value not_eq nullptr) {
     variable_new_value = variable_old_value->union_(value);
-    //auto it = variable_value_table_[top_scope()].find(variable);
-//    if (it != variable_value_table_[top_scope()].end() and it->second == variable_old_value) {
-//      delete variable_old_value;
-//    }
   } else {
     variable_new_value = value->clone();
   }
-  return set_value(variable, variable_new_value);
+  bool res = set_value(variable, variable_new_value);
+  delete variable_new_value;
+  return res;
 }
 
 bool SymbolTable::clear_value(std::string var_name, Visitable_ptr scope) {
@@ -613,6 +615,8 @@ void SymbolTable::merge_scopes(SMT::Visitable_ptr parent_scope, SMT::Visitable_p
 	EquivClassMap equiv_class_map;
 	EquivClassMap child_equiv_class_map = variable_equivalence_table_[child_scope];
 	EquivClassMap parent_equiv_class_map = variable_equivalence_table_[parent_scope];
+
+	std::set<EquivalenceClass_ptr> equiv_to_be_deleted;
 	for(auto iter : parent_equiv_class_map) {
 		// if variable hasn't already been inserted
 		if(equiv_class_map.find(iter.first) == equiv_class_map.end()) {
@@ -625,10 +629,22 @@ void SymbolTable::merge_scopes(SMT::Visitable_ptr parent_scope, SMT::Visitable_p
 			for(auto var : child_variable_equiv->get_variables()) {
 				equiv_class_map[var] = equiv_class_map[iter.first];
 			}
+
 		}
 	}
 
-	// delete the old equiv class map for parent scope, point to new one
+	// delete old equiv classes for parent scope
+	for(auto &iter : parent_equiv_class_map) {
+		equiv_to_be_deleted.insert(iter.second);
+	}
+
+	for(auto &it : equiv_to_be_deleted) {
+		delete it;
+	}
+
+	child_equiv_class_map.clear();
+
+	// parent scope map points to new equiv class map
 	variable_equivalence_table_[parent_scope] = equiv_class_map;
 }
 

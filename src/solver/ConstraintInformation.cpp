@@ -21,9 +21,17 @@ ConstraintInformation::ConstraintInformation() {
 
 ConstraintInformation::~ConstraintInformation() {
   // TODO Auto-generated destructor stub
+	std::set<Theory::StringFormula_ptr> formulas_to_delete;
 	for(auto &it : string_formulas) {
-		delete it.second;
-		it.second = nullptr;
+		if(it.second != nullptr) {
+			formulas_to_delete.insert(it.second);
+			it.second = nullptr;
+		}
+	}
+	string_formulas.clear();
+
+	for(auto &it : formulas_to_delete) {
+		delete it;
 	}
 }
 

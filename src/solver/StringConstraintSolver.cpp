@@ -367,10 +367,14 @@ void StringConstraintSolver::postVisitOr(Or_ptr or_term) {
   	for(auto& iter : or_values) {
   		symbol_table_->IntersectValue(iter.first,iter.second);
   		is_satisfiable = symbol_table_->get_value(iter.first)->is_satisfiable() and is_satisfiable;
-  		delete iter.second; iter.second = nullptr;
   		if(not is_satisfiable) {
   			break;
   		}
+  	}
+
+  	for(auto &iter : or_values) {
+  		delete iter.second;
+  		iter.second = nullptr;
   	}
 
   	auto satisfiable_value = new Value(is_satisfiable);

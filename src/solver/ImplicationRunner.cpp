@@ -132,6 +132,7 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
 							current_and_->term_list->push_back(implication_term_begins);
 						} else {
 							DVLOG(VLOG_LEVEL) << "Can't add begins implication, would cause too many variables in one formula";
+
 							delete formula;
 						}
 					}

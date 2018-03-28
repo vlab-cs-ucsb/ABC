@@ -414,6 +414,7 @@ void EquivClassRuleRunner::set_variable_value(Variable_ptr variable, TermConstan
   }
   symbol_table_->set_value(variable, result);
   DVLOG(VLOG_LEVEL)<< "value updated for variable: " << *variable << " -> " << *result;
+  delete result;
 }
 
 } /* namespace Solver */

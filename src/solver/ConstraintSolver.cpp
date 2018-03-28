@@ -1081,7 +1081,6 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 
   Value_ptr result = nullptr;
   if (Value::Type::STRING_AUTOMATON == variable_value->getType()) {
-  	LOG(INFO) << "ID=" << variable_value->getStringAutomaton()->getId();
     result = new Value(variable_value->getStringAutomaton()->GetAutomatonForVariable(qi_term->getVarName()));
   } else if (Value::Type::BINARYINT_AUTOMATON == variable_value->getType()) {
   	// TODO baki: added for charat may need to fix it

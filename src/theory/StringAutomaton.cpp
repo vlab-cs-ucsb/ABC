@@ -165,7 +165,6 @@ StringAutomaton::StringAutomaton(const StringAutomaton& other)
 }
 
 StringAutomaton::~StringAutomaton() {
-	LOG(INFO) << "DELETING: " << id_;
 	delete formula_;
 }
 
@@ -2269,7 +2268,8 @@ StringAutomaton_ptr StringAutomaton::Begins(StringAutomaton_ptr search_auto) {
   tmp_auto_1 = search_auto->Concat(any_string_auto);
 
   begins_auto = this->Intersect(tmp_auto_1);
-
+  delete tmp_auto_1;
+  delete any_string_auto;
   DVLOG(VLOG_LEVEL) << begins_auto->id_ << " = [" << this->id_ << "]->begins(" << search_auto->id_ << ")";
 
   return begins_auto;
@@ -2284,6 +2284,8 @@ StringAutomaton_ptr StringAutomaton::Ends(StringAutomaton_ptr search_auto) {
   tmp_auto_1 = any_string_auto->Concat(search_auto);
 
   ends_auto = this->Intersect(tmp_auto_1);
+  delete tmp_auto_1;
+  delete any_string_auto;
 
   DVLOG(VLOG_LEVEL) << ends_auto->id_ << " = [" << this->id_ << "]->ends(" << search_auto->id_ << ")";
 
@@ -4263,7 +4265,7 @@ StringAutomaton_ptr StringAutomaton::MakeConcatExtraTrack(int left_track, int ri
   delete const_string_auto;
   // has string constant on last track (prepended with lambda)
   auto temp_auto = new StringAutomaton(temp_dfa,num_tracks,num_tracks+1,VAR_PER_TRACK);
-  delete temp_dfa;
+  dfaFree(temp_dfa);
   // has any-string on correct track
   auto any_string_extended_auto = new StringAutomaton(any_string_auto->getDFA(),right_track,num_tracks+1,DEFAULT_NUM_OF_VARIABLES);
   delete any_string_auto;
