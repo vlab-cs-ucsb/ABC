@@ -1,0 +1,5 @@
+(set-logic ALL)
+(declare-const Symb_or String)
+(assert (let ((.def_0 (= Symb_or "ciao"))) (let ((.def_1 (= Symb_or "abc"))) (let ((.def_2 (or .def_1 .def_0))) .def_2))))
+(check-sat)
+(get-model)
