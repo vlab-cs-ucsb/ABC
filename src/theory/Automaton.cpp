@@ -799,6 +799,7 @@ void Automaton::CleanUp() {
 		delete[] it.second;
 		it.second = nullptr;
 	}
+	bdd_variable_indices.clear();
 }
 
 bool Automaton::DFAIsMinimizedEmtpy(const DFA_ptr minimized_dfa) {
