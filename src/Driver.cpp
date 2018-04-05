@@ -576,7 +576,7 @@ std::map<std::string, std::string> Driver::getSatisfyingExamples() {
     		delete single_string_auto;
     	}
 
-    	break;
+    	
     } else {
       results[variable_entry.first->getName()] = variable_entry.second->getASatisfyingExample();
     }

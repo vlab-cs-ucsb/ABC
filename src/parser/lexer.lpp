@@ -56,7 +56,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "let"               { return Parser::make_LET             (loc);  }
 "par"               { return Parser::make_PAR             (loc);  }
 "implies"           { return Parser::make_IMPLIES             (loc);  }
-
+"=>"                { return Parser::make_IMPLIES             (loc);  }
 
 
 "and"               { return Parser::make_AND             (loc);  }
@@ -123,7 +123,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "str.indexof"       { return Parser::make_INDEXOF         (loc);  }
 "str.replace"       { return Parser::make_REPLACE         (loc);  }
 "str.substr"        { return Parser::make_SUBSTRINGLENGTH (loc);  }
-"str.prefixof"      { return Parser::make_BEGINS          (loc);  }
+"str.prefixof"      { return Parser::make_PREFIXOF          (loc);  }
 "str.suffixof"      { return Parser::make_ENDS            (loc);  }
 "str.to.int"        { return Parser::make_TOINT           (loc);  }
 "int.to.str"        { return Parser::make_TOSTRING        (loc);  }
@@ -157,6 +157,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "check-sat-and-count" { return Parser::make_CHECK_SAT_AND_COUNT  (loc);  }
 "declare-fun"       { return Parser::make_DECLARE_FUN     (loc);  }
 "declare-variable"  { return Parser::make_DECLARE_FUN     (loc);  }
+"declare-const"     { return Parser::make_DECLARE_FUN     (loc);  }
 "declare-sort"      { return Parser::make_DECLARE_SORT    (loc);  }
 "define-fun"        { return Parser::make_DEFINE_FUN      (loc);  }
 "define-sort"       { return Parser::make_DEFINE_SORT     (loc);  }

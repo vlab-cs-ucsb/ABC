@@ -203,6 +203,10 @@ int main(const int argc, const char **argv) {
   auto solving_time = end - start;
   LOG(INFO) << "Done solving";
 
+  std::cout << (driver.is_sat() ? "sat" : "unsat") << std::endl;
+
+
+
   if (driver.is_sat()) {
     if (VLOG_IS_ON(30)) {
 //      for (auto& variable_entry : driver.getSatisfyingVariables()) {

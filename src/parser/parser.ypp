@@ -77,6 +77,7 @@
   LEN                  "len"
   CONTAINS             "contains"
   NOTCONTAINS          "notContains"
+  PREFIXOF               "prefixof"
   BEGINS               "begins"
   NOTBEGINS            "notBegins"
   ENDS                 "ends"
@@ -267,6 +268,7 @@ term                  :
                       | "(" LEN term ")"                                                { $$ = new Len($3); }
                       | "(" CONTAINS term term ")"                                      { $$ = new Contains($3, $4); }
                       | "(" NOTCONTAINS term term ")"                                   { $$ = new NotContains($3, $4); }
+                      | "(" PREFIXOF term term ")"                                      { $$ = new Begins($4, $3); }
                       | "(" BEGINS term term ")"                                        { $$ = new Begins($3, $4); }
                       | "(" NOTBEGINS term term ")"                                     { $$ = new NotBegins($3, $4); }
                       | "(" ENDS term term ")"                                          { $$ = new Ends($3, $4); }
