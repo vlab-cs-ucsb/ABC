@@ -478,6 +478,8 @@ namespace Vlab
          */
         static std::string GetBinaryStringLSB(unsigned long n, const int bit_length);
 
+        static void SetBitsForTransition();
+
         // TODO remove vector<char> version of binary format and use string version below
         static std::vector<char> GetBinaryFormat(unsigned long n, int bit_length);
         static std::vector<char> GetReversedBinaryFormat(unsigned long n, int bit_length);
