@@ -23,6 +23,11 @@ Automata Construction Tasks:
 
   9 - Implement a track map, or formula class that each automaton has as a member where variable to track map is kept. Extend formula/track map class per automaton type as needed, remove current formula
 
+  10 - create a stats class to collect the status information for each method call with params. Use it for further optimizations, cache decision.
+
+  11 - Add a cache class to cache dfas for the builder operations.
+  
+  12 - Add a mixed automaton class that combines all types of automaton into one. That will be mainly used for OR operations.
 Solver Tasks:
   1- Make sure disjucntions are not treated as a component.
   2- Using the refactoring automata construction create a disjunct automata that contains all variables under disjunction.

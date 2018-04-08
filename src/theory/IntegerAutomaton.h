@@ -282,7 +282,7 @@ namespace Vlab
         bool IsAcceptingNegativeOne() const;
 
         /**
-         * Complements an integer auto.
+         * Complements the automaton.
          * Makes sure that initial state never accepts after the complement.
          * @return
          */
@@ -311,7 +311,6 @@ namespace Vlab
         BigInteger SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = false) override;
 
        protected:
-        IntegerAutomaton(ArithmeticFormula_ptr formula);
         static IntegerAutomaton_ptr MakeIntGraterThanOrEqualToZero(std::vector<int> indexes, int number_of_variables);
 
         /**

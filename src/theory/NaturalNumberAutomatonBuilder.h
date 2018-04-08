@@ -14,7 +14,14 @@ namespace Vlab
 {
   namespace Theory
   {
+    class NaturalNUmberAutomaton;
+    using NaturalNumberAutomaton_ptr = NaturalNUmberAutomaton*;
 
+    /**
+     * Binary encoded natural number automaton class.
+     * Represents numbers greater than or equal to zero.
+     * There is no sign bit used.
+     */
     class NaturalNumberAutomaton::Builder : public Automaton::Builder
     {
        public:

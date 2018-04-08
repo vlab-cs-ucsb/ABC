@@ -1258,6 +1258,7 @@ num
                 ++k;
               }
             }
+
             // hack to avoid an accepting initial state
             int to_state = carry_map[target].i;
             if (needs_shift_state)
@@ -1662,7 +1663,7 @@ num
         }
 
       }
-
+      // baki left here
       for (; current_state < num_of_states; ++current_state)
       {
         if (is_initial_state_in_cycle and current_state == shifted_initial_state)

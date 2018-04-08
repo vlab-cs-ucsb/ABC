@@ -116,7 +116,7 @@ namespace Vlab
 
     void IntegerAutomaton::Builder::BuildDFA()
     {
-      // TODO add an option to to call and return base bulder
+      // TODO add an option to to call and return base builder
 //      this->Automaton::Builder::BuildDFA();
       LOG(FATAL)<< "implement logic based on semilinear set or constants";
 
@@ -182,9 +182,9 @@ namespace Vlab
       const unsigned long number_of_transitions = 1 << active_number_of_variables;
 
       // populated and used if initial state is in cycle and accepting.
-      std::map<std::string, int> transitions_from_initial_state;
+      std::unordered_map<std::string, int> transitions_from_initial_state;
 
-      std::map<int, StateIndices> carry_map;  // maps carries to state indices
+      std::unordered_map<int, StateIndices> carry_map;  // maps carries to state indices
       carry_map[constant].sr = 1;
       carry_map[constant].i = -1;
       carry_map[constant].ir = 0;
@@ -265,6 +265,7 @@ namespace Vlab
                 to_state = shifted_initial_state;
                 is_initial_state_shifted = true;
               }
+
               if (current_state == 0)
               {  // save transition for shifted initial start
                 transitions_from_initial_state[current_exception] = to_state;
@@ -345,8 +346,6 @@ namespace Vlab
       const int total_number_of_variables = coefficients.size();
       const int active_number_of_variables = total_number_of_variables - coefficient_info.number_of_zero_coefficients_;
       const int number_of_states = 2 * (max - min + 2);
-      const int sink_state = number_of_states - 2;
-      const int shifted_initial_state = number_of_states - 1;
 
       unsigned max_states_allowed = 0x80000000;
       unsigned mona_check = 8 * number_of_states;
@@ -366,7 +365,8 @@ namespace Vlab
 
       Libs::MONALib::DFASetup(number_of_states, total_number_of_variables);
       while (next_label < max + 1)
-      {  //there is a state to expand (excuding sink)
+      {
+        //there is a state to expand (excuding sink)
         if (carry_map[next_label].i == current_state)
         {
           carry_map[next_label].s = 2;

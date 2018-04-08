@@ -49,7 +49,164 @@ namespace Vlab
         /**
          * Binary encoded natural number automaton builder
          */
-        class Builder;
+        class Builder : public Automaton::Builder
+        {
+           public:
+
+            /**
+             * Initializes a new instance of the Builder class.
+             */
+            Builder();
+
+            /**
+             * Destructor.
+             */
+            virtual ~Builder();
+
+            /**
+             * Sets the number of states.
+             * @param number_of_states
+             * @return
+             */
+            virtual Builder& SetNumberOfStates(const int number_of_states) override;
+
+            /**
+             * Sets the given state as sink state.
+             * @param state
+             * @return
+             */
+            virtual Builder& SetSinkState(const int state) override;
+
+            /**
+             * Sets the given state as accepting state.
+             * @param state
+             * @return
+             */
+            virtual Builder& SetAcceptingState(const int state) override;
+
+            /**
+             * Sets the number of bdd variables.
+             * @param number_of_bdd_variables
+             * @return
+             */
+            virtual Builder& SetNumberOfBddVariables(const int number_of_bdd_variables) override;
+
+            /**
+             * Sets a transition from source to given target.
+             * @param source
+             * @param transition is bdd transition string, e.g.; 1XX means 100,101, 110,111 where there are three BDD variables.
+             * @param target
+             * @return
+             */
+            virtual Builder& SetTransition(const int source, const std::string& transition, const int target) override;
+
+            /**
+             * Sets transitions from a source state.
+             * @param source
+             * @param transitions
+             * @return
+             */
+            virtual Builder& SetTransitions(const int source, const std::unordered_map<std::string, int>& transitions) override;
+
+            /**
+             * Sets the dfa.
+             * @param dfa
+             * @return
+             */
+            virtual Builder& SetDfa(const Libs::MONALib::DFA_ptr dfa) override;
+
+            /**
+             * TODO tmp solution for binary int automaton formula
+             * @param formula
+             * @return
+             */
+            Builder& SetFormula(ArithmeticFormula_ptr formula);
+
+            /**
+             * Sets the track of the given variable to the given integer constant.
+             * @param variable_name
+             * @param value
+             * @return
+             */
+            Builder& SetValue(const std::string variable_name, const int value);
+
+            /**
+             * Sets the track of the given variable to the value(s) defined by the given semilinear set.
+             * @param variable_name
+             * @param semilinear_set
+             * @return
+             */
+            Builder& SetValue(const std::string variable_name, const SemilinearSet_ptr semilinear_set);
+
+            /**
+             * Generates an automaton that accepts all natural numbers.
+             * @return
+             */
+            Builder& AcceptAllNaturalNumbers();
+
+            /**
+             * Builds an instance of the IntegerAutomaton class.
+             * @return
+             */
+            virtual IntegerAutomaton_ptr Build() override;
+
+           protected:
+
+            /**
+             * Reinitializes members to avoid holder larger memory.
+             */
+            virtual void ResetBuilder() override;
+
+            /**
+             * Builds binary encoded integer DFA.
+             */
+            virtual void BuildDFA() override;
+
+            /**
+             * Builds an equality or disequality DFA.
+             */
+            void BuildEqualityDFA();
+
+            /**
+             * Builds an inequality DFA.
+             */
+            void BuildInEqualityDFA();
+
+            /**
+             * Builds a dfa using the constant values map.
+             */
+            void BuildConstantsDFA();
+
+            /**
+             * Builds a dfa using the semilinear sets map.
+             */
+            void BuildSemilinearSetsDFA();
+
+            /**
+             * Builds a dfa for the given variable with the given semilinear set.
+             * @param
+             * @param semilinear_set
+             * @return
+             */
+            Libs::MONALib::DFA_ptr BuildSemilinearSetDFA(const std::string variable_name, const SemilinearSet_ptr semilinear_set);
+
+            /**
+             * TODO try to improve usage
+             * Arithmetic formula
+             */
+            ArithmeticFormula_ptr formula_;
+
+            /**
+             * Constant values set for variables in the formula
+             */
+            std::unordered_map<std::string, int> values_as_constants_;
+
+            /**
+             * TODO try to improve usage
+             * Semilinear sets defined for variables in the formula.
+             */
+            std::unordered_map<std::string, SemilinearSet_ptr> values_as_semilinear_set_;
+        };
 
         /**
          * Constructs a binary encoded natural number automaton given binary encoded dfa.
@@ -83,13 +240,18 @@ namespace Vlab
         virtual NaturalNumberAutomaton_ptr Clone() const override;
 
         /**
+         * Generates an NaturalNumberAutomatonBuilder.
+         * @return
+         */
+        virtual Builder& DynamicBuilder() const override;
+
+        /**
          * Generates a binary automaton that wraps the given dfa instance.
-         * TODO need a parameter to specifiy integer or natural numbers; will separate into two classes.
          * @param dfa
          * @param number_of_variables
          * @return
          */
-        virtual NaturalNumberAutomaton_ptr MakeAutomaton(Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const
+        virtual IntegerAutomaton_ptr MakeAutomaton(Libs::MONALib::DFA_ptr dfa, const int number_of_variables) const
             override;
 
         /**
@@ -98,29 +260,45 @@ namespace Vlab
          */
         virtual std::string Str() const override;
 
-        static NaturalNumberAutomaton_ptr MakePhi(ArithmeticFormula_ptr, bool is_natural_number);
-        static NaturalNumberAutomaton_ptr MakeAnyInt(ArithmeticFormula_ptr, bool is_natural_number);
-        static NaturalNumberAutomaton_ptr MakeAutomaton(ArithmeticFormula_ptr, bool is_natural_number);
-        static NaturalNumberAutomaton_ptr MakeAutomaton(int value, std::string var_name, ArithmeticFormula_ptr formula,
-                                                  bool add_leading_zeros = false);
-        static NaturalNumberAutomaton_ptr MakeAutomaton(SemilinearSet_ptr semilinear_set, std::string var_name,
-                                                  ArithmeticFormula_ptr formula, bool add_leading_zeros = false);
+        /**
+         * Gets the formula.
+         * @return
+         */
+        ArithmeticFormula_ptr GetFormula() const;
 
-        ArithmeticFormula_ptr get_formula();
-        void set_formula(ArithmeticFormula_ptr formula);
-        bool is_natural_number();
-        bool HasNegative1();
-        NaturalNumberAutomaton_ptr Complement();
-        NaturalNumberAutomaton_ptr Intersect(NaturalNumberAutomaton_ptr);
-        NaturalNumberAutomaton_ptr Union(NaturalNumberAutomaton_ptr);
-        NaturalNumberAutomaton_ptr Difference(NaturalNumberAutomaton_ptr);
-        NaturalNumberAutomaton_ptr Exists(std::string var_name);
-        NaturalNumberAutomaton_ptr GetBinaryAutomatonFor(std::string var_name);
-        NaturalNumberAutomaton_ptr GetPositiveValuesFor(std::string var_name);
-        NaturalNumberAutomaton_ptr GetNegativeValuesFor(std::string var_name);
-        NaturalNumberAutomaton_ptr TrimLeadingZeros();
-        NaturalNumberAutomaton_ptr AddLeadingZeros();
+        /**
+         * Checks if the automaton accepts -1.
+         * -1 is used a special value for negative numbers for the unary domain.
+         * For example to handle s.indexof = -1.
+         * -1 is represented with a bool variable along with the dfa.
+         * @return
+         */
+        bool IsAcceptingNegativeOne() const;
+
+        /**
+         * Complements the automaton.
+         * Makes sure that initial state never accepts after the complement.
+         * @return
+         */
+        void Complement() override;
+
+
+        /**
+         * Projects onto the variable.
+         * TODO make project onto method available for all automaton.
+         * @param var_name
+         * @return
+         */
+        IntegerAutomaton_ptr GetBinaryAutomatonFor(std::string var_name);
+
+        /**
+         * TODO improve coding here, based on test cases
+         * @return
+         */
+        IntegerAutomaton_ptr TrimLeadingZeros();
+
         SemilinearSet_ptr GetSemilinearSet();
+
         UnaryAutomaton_ptr ToUnaryAutomaton();
 
         std::map<std::string, int> GetAnAcceptingIntForEachVar();
@@ -128,17 +306,7 @@ namespace Vlab
         BigInteger SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = false) override;
 
        protected:
-        NaturalNumberAutomaton(ArithmeticFormula_ptr formula);
         static NaturalNumberAutomaton_ptr MakeIntGraterThanOrEqualToZero(std::vector<int> indexes, int number_of_variables);
-        static NaturalNumberAutomaton_ptr MakeEquality(ArithmeticFormula_ptr, bool is_natural_number);
-        static NaturalNumberAutomaton_ptr MakeIntEquality(ArithmeticFormula_ptr);
-        static NaturalNumberAutomaton_ptr MakeNaturalNumberEquality(ArithmeticFormula_ptr);
-        static NaturalNumberAutomaton_ptr MakeLessThan(ArithmeticFormula_ptr, bool is_natural_number);
-        static NaturalNumberAutomaton_ptr MakeIntLessThan(ArithmeticFormula_ptr);
-        static NaturalNumberAutomaton_ptr MakeNaturalNumberLessThan(ArithmeticFormula_ptr);
-        static NaturalNumberAutomaton_ptr MakeLessThanOrEqual(ArithmeticFormula_ptr, bool is_natural_number);
-        static NaturalNumberAutomaton_ptr MakeGreaterThan(ArithmeticFormula_ptr, bool is_natural_number);
-        static NaturalNumberAutomaton_ptr MakeGreaterThanOrEqual(ArithmeticFormula_ptr, bool is_natural_number);
         static NaturalNumberAutomaton_ptr MakeTrimHelperAuto(int var_index, int number_of_variables);
         static void ComputeBinaryStates(std::vector<BinaryState_ptr>& binary_states, SemilinearSet_ptr semilinear_set);
         static void AddBinaryState(std::vector<BinaryState_ptr>& binary_states, std::vector<int>& constants);
