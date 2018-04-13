@@ -91,6 +91,7 @@ public:
   void inspectResult(Solver::Value_ptr value, std::string file_name);
   std::map<SMT::Variable_ptr, Solver::Value_ptr> getSatisfyingVariables() const;
   std::map<std::string, std::string> getSatisfyingExamples();
+  std::map<std::string, std::string> getSatisfyingExamplesRandom();
   void reset();
 //	void solveAst();
 

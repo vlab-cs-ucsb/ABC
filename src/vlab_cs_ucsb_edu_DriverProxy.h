@@ -153,6 +153,14 @@ JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getSatisfyingExample
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    getSatisfyingExamplesRandom
+ * Signature: ()Ljava/util/Map;
+ */
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getSatisfyingExamplesRandom
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    reset
  * Signature: ()V
  */

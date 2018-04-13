@@ -584,6 +584,31 @@ std::map<std::string, std::string> Driver::getSatisfyingExamples() {
   return results;
 }
 
+std::map<std::string, std::string> Driver::getSatisfyingExamplesRandom() {
+  std::map<std::string, std::string> results;
+  for (auto& variable_entry : getSatisfyingVariables()) {
+    if (Solver::Value::Type::BINARYINT_AUTOMATON == variable_entry.second->getType()) {
+      std::map<std::string, int> values = variable_entry.second->getBinaryIntAutomaton()->GetAnAcceptingIntForEachVar();
+      for (auto& entry : values) {
+        results[entry.first] = std::to_string(entry.second);
+      }
+    } else if(Solver::Value::Type::STRING_AUTOMATON == variable_entry.second->getType()) {
+    	auto string_auto = variable_entry.second->getStringAutomaton();
+    	auto string_formula = string_auto->GetFormula();
+    	for(auto it : string_formula->GetVariableCoefficientMap()) {
+    		auto single_string_auto = string_auto->GetAutomatonForVariable(it.first);
+    		results[it.first] = single_string_auto->GetAnAcceptingStringRandom();
+    		delete single_string_auto;
+    	}
+
+
+    } else {
+      results[variable_entry.first->getName()] = variable_entry.second->getASatisfyingExample();
+    }
+  }
+  return results;
+}
+
 void Driver::reset() {
   delete symbol_table_;
   delete script_;

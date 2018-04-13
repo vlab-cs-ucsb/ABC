@@ -370,6 +370,30 @@ JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getSatisfyingExample
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    getSatisfyingExamplesRandom
+ * Signature: ()Ljava/util/Map;
+ */
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getSatisfyingExamplesRandom (JNIEnv *env, jobject obj) {
+  Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
+  jclass hashMapClass = env->FindClass("java/util/HashMap");
+  jmethodID hashMapCtor = env->GetMethodID(hashMapClass, "<init>", "()V");
+  jobject map = env->NewObject(hashMapClass, hashMapCtor);
+
+  std::map<std::string, std::string> results = abc_driver->getSatisfyingExamplesRandom();
+
+  jmethodID hasMapPut = env->GetMethodID(hashMapClass, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+
+  for (auto var_entry : results) {
+    jstring var_name = env->NewStringUTF(var_entry.first.c_str());
+    jstring var_value = env->NewStringUTF(var_entry.second.c_str());
+    env->CallObjectMethod(map, hasMapPut, var_name, var_value);
+  }
+
+  return map;
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    reset
  * Signature: ()V
  */
