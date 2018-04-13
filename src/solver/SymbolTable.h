@@ -23,6 +23,7 @@
 #include "../smt/typedefs.h"
 #include "../theory/IntAutomaton.h"
 #include "../theory/StringAutomaton.h"
+#include "../theory/Formula.h"
 #include "Ast2Dot.h"
 #include "EquivalenceClass.h"
 #include "options/Solver.h"
@@ -37,6 +38,7 @@ using VariableCounterTable = std::map<SMT::Visitable_ptr, VariableCounterMap>;
 using EquivClassMap = std::map<SMT::Variable_ptr, EquivalenceClass_ptr>;
 using EquivClassTable = std::map<SMT::Visitable_ptr, EquivClassMap>;
 using GroupMap = std::map<SMT::Variable_ptr, SMT::Variable_ptr>;
+using GroupFormulaMap = std::map<std::string, Theory::Formula_ptr>;
 using VariableValueMap = std::map<SMT::Variable_ptr, Value_ptr>;
 using VariableValueTable = std::map<SMT::Visitable_ptr, VariableValueMap>;
 using TermChildrenTable = std::map<SMT::Visitable_ptr, std::set<std::string>>;
@@ -88,6 +90,7 @@ public:
   void add_variable_group_mapping(std::string variable_name, std::string group_name);
   void add_variable_group_mapping(SMT::Variable_ptr, SMT::Variable_ptr);
   SMT::Variable_ptr get_group_variable_of(SMT::Variable_ptr);
+  bool has_group_variable(std::string variable_name);
 
   Value_ptr get_value(std::string var_name);
   Value_ptr get_value(SMT::Variable_ptr variable);
@@ -133,6 +136,11 @@ public:
   bool is_unsorted_constraint(SMT::Visitable_ptr term);
   void remove_unsorted_constraint(SMT::Visitable_ptr term);
 
+  void update_group_formula(std::string group_name, Theory::Formula_ptr formula);
+  Theory::Formula_ptr get_group_formula(std::string group_name);
+  bool has_group_formula(std::string group_name);
+
+  void merge_groups(std::string group1, std::string group2);
 
 private:
   std::string generate_internal_name(std::string, SMT::Variable::Type);
@@ -166,6 +174,11 @@ private:
   GroupMap variable_group_map_;
 
   /**
+   * Stores group formulae for incremental solving
+   */
+  GroupFormulaMap group_formula_map_;
+
+  /**
    * Projected values of variables that appear in multitrack automata
    * Stored only when necessary
    */
@@ -175,6 +188,8 @@ private:
    * Values of each variable for each scope
    */
   VariableValueTable variable_value_table_;
+
+
 
   /**
     * string names of a terms children, mainly for ANDS

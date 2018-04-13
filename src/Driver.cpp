@@ -16,7 +16,8 @@ Driver::Driver()
     : script_(nullptr),
       symbol_table_(nullptr),
       constraint_information_(nullptr),
-      is_model_counter_cached_ { false } {
+      is_model_counter_cached_ { false },
+			current_id_ {""} {
 }
 
 Driver::~Driver() {
@@ -68,7 +69,18 @@ void Driver::ast2dot(std::string file_name) {
 
 void Driver::InitializeSolver() {
 
-  symbol_table_ = new Solver::SymbolTable();
+
+	if(current_id_ == nullptr) {
+		IncrementalState_ptr inc_state = new IncrementalState();
+		symbol_table_ = new Solver::SymbolTable();
+		inc_state->symbol_table_ = symbol_table_;
+		inc_state->script_ = script_;
+		current_id_ = symbol_table_->get_var_name_for_node(script_,Vlab::SMT::TVariable::Type::NONE);
+		incremental_states_[current_id_] = inc_state;
+	} else {
+		symbol_table_ = incremental_states_[current_id_]->symbol_table_;
+	}
+
   constraint_information_ = new Solver::ConstraintInformation();
 
   Solver::Initializer initializer(script_, symbol_table_);
@@ -133,8 +145,9 @@ void Driver::Solve() {
 //  Solver::ArithmeticFormulaGenerator arithmetic_formula_generator(script_, symbol_table_, constraint_information_);
 //  arithmetic_formula_generator.start();
 
-  Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
-  constraint_solver.start();
+  Solver::ConstraintSolver_ptr constraint_solver = new Solver::ConstraintSolver(script_, symbol_table_, constraint_information_);
+  constraint_solver->start();
+  delete constraint_solver;
 }
 
 bool Driver::is_sat() {
@@ -670,6 +683,18 @@ void Driver::set_option(const Option::Name option, const std::string value) {
       LOG(ERROR)<< "option is not recognized: " << static_cast<int>(option) << " -> " << value;
       break;
     }
+}
+
+void Driver::loadID(std::string id) {
+	if(incremental_states_.find(id) != incremental_states_.end()) {
+		current_id_ = id;
+	} else {
+		current_id_ = "";
+	}
+}
+
+std::string Driver::getCurrentID() {
+	return current_id_;
 }
 
 void Driver::test() {

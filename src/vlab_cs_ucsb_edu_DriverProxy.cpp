@@ -128,6 +128,57 @@ JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    isSatisfiable
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable
+  (JNIEnv *env, jobject obj, jstring constraint, jstring id) {
+
+	Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
+	std::istringstream input_constraint;
+	const char* constraint_str = env->GetStringUTFChars(constraint, JNI_FALSE);
+	input_constraint.str(constraint_str);
+
+	const char* id_arr = env->GetStringUTFChars(id, JNI_FALSE);
+	std::string id_str {id_arr};
+	abc_driver->loadID(id_str);
+
+	abc_driver->Parse(&input_constraint);
+	env->ReleaseStringUTFChars(constraint, constraint_str);
+	abc_driver->InitializeSolver();
+	abc_driver->Solve();
+	bool result = abc_driver->is_sat();
+	return (jboolean)result;
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    loadID
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_loadID
+  (JNIEnv *env, jobject obj, jstring id) {
+	Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
+	const char* id_arr = env->GetStringUTFChars(id, JNI_FALSE);
+	std::string id_str {id_arr};
+	abc_driver->loadID(id_str);
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    getCurrentID
+ * Signature: ()V
+ */
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getCurrentID
+  (JNIEnv *env, jobject obj) {
+	Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
+	std::string id = abc_driver->getCurrentID();
+	jstring j_id = env->NewStringUTF(id.c_str());
+	return j_id;
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    countVariable
  * Signature: (Ljava/lang/String;J)Ljava/math/BigInteger;
  */

@@ -49,6 +49,30 @@ JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    isSatisfiable
+ * Signature: (Ljava/lang/String;LJava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable
+  (JNIEnv *, jobject, jstring, jstring);
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    loadID
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_loadID
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    getCurrentID
+ * Signature: ()V
+ */
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getCurrentID
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    countVariable
  * Signature: (Ljava/lang/String;J)Ljava/math/BigInteger;
  */

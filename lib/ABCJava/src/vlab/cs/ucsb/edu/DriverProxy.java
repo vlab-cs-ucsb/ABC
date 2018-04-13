@@ -118,6 +118,12 @@ public class DriverProxy {
 
 	public native boolean isSatisfiable(final String constraint);
 
+	public native boolean isSatisfiable(final String constraint, final String id);
+
+	public native void loadID(final String id);
+
+	public native String getCurrentID();
+
 	public native BigInteger countVariable(final String varName, final long bound);
 	
 	public native BigInteger countInts(final long bound);

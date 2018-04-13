@@ -62,8 +62,21 @@ namespace Vlab {
 
 class Driver {
 public:
+	class IncrementalState;
+	typedef IncrementalState* IncrementalState_ptr;
+
   Driver();
   ~Driver();
+
+
+
+  class IncrementalState {
+  public:
+  	IncrementalState() {script_ = nullptr; symbol_table_ = nullptr; constraint_solver_ = nullptr;}
+  	SMT::Script_ptr script_;
+		Solver::SymbolTable_ptr symbol_table_;
+		Solver::ConstraintSolver_ptr constraint_solver_;
+  };
 
   void InitializeLogger(int log_level);
   // Error handling.
@@ -98,6 +111,9 @@ public:
   void set_option(const Option::Name option, const int value);
   void set_option(const Option::Name option, const std::string value);
 
+  void loadID(std::string id);
+	std::string getCurrentID();
+
   void test();
 
   SMT::Script_ptr script_;
@@ -112,6 +128,7 @@ protected:
   void SetModelCounterForVariable(const std::string var_name, bool project = true);
   void SetModelCounter();
 
+
   bool is_model_counter_cached_;
   Solver::ModelCounter model_counter_;
   /**
@@ -119,10 +136,14 @@ protected:
    */
   std::map<SMT::Variable_ptr, Solver::ModelCounter> variable_model_counter_;
 
+  std::map<std::string, IncrementalState_ptr> incremental_states_;
+  std::string current_id_;
+
 private:
   static bool IS_LOGGING_INITIALIZED;
 
 };
+
 
 }
 

@@ -147,6 +147,8 @@ class ConstraintSolver: public SMT::Visitor {
   static const int VLOG_LEVEL;
 };
 
+using ConstraintSolver_ptr = ConstraintSolver*;
+
 } /* namespace Solver */
 } /* namespace Vlab */
 
