@@ -809,7 +809,7 @@ bool Automaton::getAnAcceptingWord(NextState& state, std::map<int, bool>& is_sta
   path.insert(path.end(), state.second.begin(), state.second.end());
 
 
-  if (this->IsAcceptingState(state.first) and rand()%2 == 1) {
+  if (this->IsAcceptingState(state.first)) {
     return true;
   }
 
