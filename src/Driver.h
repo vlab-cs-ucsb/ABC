@@ -92,6 +92,8 @@ public:
   std::map<SMT::Variable_ptr, Solver::Value_ptr> getSatisfyingVariables() const;
   std::map<std::string, std::string> getSatisfyingExamples();
   std::map<std::string, std::string> getSatisfyingExamplesRandom();
+  std::map<std::string, std::string> getSatisfyingExamplesRandomBounded(const int bound);
+
   void reset();
 //	void solveAst();
 
@@ -119,6 +121,16 @@ protected:
    * Keeps projected model counters for a variable
    */
   std::map<SMT::Variable_ptr, Solver::ModelCounter> variable_model_counter_;
+
+  /**
+   * Keeps automata for variables (string vars are projected)
+   */
+  std::map<std::string, Solver::Value_ptr> cached_values_;
+
+  /**
+   * Keeps bounded projected automata for variables
+   */
+  std::map<std::string, Solver::Value_ptr> cached_bounded_values_;
 
 private:
   static bool IS_LOGGING_INITIALIZED;
