@@ -3697,9 +3697,12 @@ std::string StringAutomaton::GetAnAcceptingStringRandom() {
   CHECK_EQ(this->num_tracks_,1);
   std::stringstream ss;
 
-  srand(time(NULL));
-  auto random_heuristic = [](unsigned& index) -> bool {
-  	return rand() % 2 == 1;
+  std::mt19937 rng;
+	rng.seed(std::random_device()());
+	std::uniform_int_distribution<int> dist(1,2);
+
+	auto random_heuristic = [&dist,&rng](unsigned& index) -> bool {
+  	return dist(rng) == 1;
   };
 
   std::vector<bool>* example = getAnAcceptingWordRandom(random_heuristic);
