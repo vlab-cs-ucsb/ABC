@@ -397,7 +397,7 @@ JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getSatisfyingExample
  * Method:    getSatisfyingExamplesRandomBounded
  * Signature: (I)Ljava/util/Map;
  */
-JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getSatisfyingExamplesRandom (JNIEnv *env, jobject obj, jint bound) {
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getSatisfyingExamplesRandomBounded (JNIEnv *env, jobject obj, jint bound) {
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
   jclass hashMapClass = env->FindClass("java/util/HashMap");
   jmethodID hashMapCtor = env->GetMethodID(hashMapClass, "<init>", "()V");
