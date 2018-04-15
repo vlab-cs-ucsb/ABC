@@ -598,8 +598,8 @@ std::map<std::string, std::string> Driver::getSatisfyingExamples() {
 }
 
 void Driver::reset() {
-  delete symbol_table_;
-  delete script_;
+//  delete symbol_table_;
+//  delete script_;
   script_ = nullptr;
   symbol_table_ = nullptr;
 //  LOG(INFO) << "Driver reseted.";
