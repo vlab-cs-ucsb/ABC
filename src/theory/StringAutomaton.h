@@ -268,6 +268,8 @@ public:
   StringAutomaton_ptr GetKTrack(int track);
   StringAutomaton_ptr ProjectAwayVariable(std::string var_name);
   StringAutomaton_ptr ProjectKTrack(int track);
+  StringAutomaton_ptr ChangeIndicesMap(StringFormula_ptr new_formula);
+
   void SetSymbolicCounter() override;
   std::vector<std::string> GetAnAcceptingStringForEachTrack();
   std::map<std::string,std::vector<std::string>> GetModelsWithinBound(int num_models, int bound) override;

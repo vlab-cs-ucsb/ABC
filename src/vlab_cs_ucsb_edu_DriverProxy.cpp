@@ -129,9 +129,9 @@ JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    isSatisfiable
- * Signature: (Ljava/lang/String;Ljava/lang/String;)Z
+ * Signature: (Ljava/lang/StringLjava/lang/String;)Z
  */
-JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable
+JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable2
   (JNIEnv *env, jobject obj, jstring constraint, jstring id) {
 
 	Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);

@@ -27,6 +27,27 @@ StringFormulaGenerator::StringFormulaGenerator(Script_ptr script, SymbolTable_pt
       constraint_information_(constraint_information),
       has_mixed_constraint_{false} {
 
+
+	std::string current_group_ = symbol_table_->get_var_name_for_node(root_, Variable::Type::STRING);
+  subgroups_[current_group_] = std::set<std::string>();
+	auto var_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
+  for(auto& iter : var_values) {
+  	// only care about string vars
+  	if(iter.first->getType() != Variable::Type::STRING) {
+  		continue;
+  	}
+
+  	auto group_var = symbol_table_->get_group_variable_of(iter.first);
+  	auto group_formula = iter.second->getStringAutomaton()->GetFormula();
+
+  	if(group_var != iter.first and group_formula != nullptr) {
+  		subgroups_[current_group_].insert(group_var->getName());
+  		variable_group_map_[iter.first->getName()] = group_var->getName();
+  		if(group_formula_.find(group_var->getName()) == group_formula_.end()) {
+				group_formula_[group_var->getName()] = group_formula->clone();
+			}
+  	}
+  }
 }
 
 StringFormulaGenerator::~StringFormulaGenerator() {
@@ -1228,121 +1249,9 @@ std::set<std::string> StringFormulaGenerator::get_group_subgroups(std::string gr
 	return subgroups_[group_name];
 }
 
-// if FORCE_DNF_FORMULA is enabled, we only put variables together into a StringAutomaton when
-// they appear together in relational word equations (Begins, X=Y.c, X=!Y,etc..).
-// Otherwise, we put all string variables into one automata under the current component.
-void StringFormulaGenerator::add_string_variables(std::string group_name, Term_ptr term) {
-//	StringFormula_ptr group_formula = nullptr;
-//	auto it = group_formula_.find(group_name);
-//	if (it == group_formula_.end()) {
-//		group_formula = new StringFormula();
-//		group_formula_[group_name] = group_formula;
-//	} else {
-//		group_formula = it->second;
-//	}
-//	auto formula = get_term_formula(term);
-//	group_formula->MergeVariables(formula);
-//	// TODO if there is an or we need to add single variables into one group, uncomment above
-//	// line and remove the same line from else branch.
-//	// find a way to optimize that, if all constraints are nonrelational, we only need that
-//	// if we have disjunction
-//	if (StringFormula::Type::NONRELATIONAL == formula->GetType()) {
-//		clear_term_formula(term);
-//	} else {
-//		//group_formula->MergeVariables(formula);
-//		term_group_map_[term] = group_name;
-//	}
-
-	auto formula = get_term_formula(term);
-	if(StringFormula::Type::NONRELATIONAL == formula->GetType()) {
-		// just make sure each variable has a group, and if not, create a lone group for it
-		auto variables = formula->GetVariableCoefficientMap();
-		for(auto &var : variables) {
-			//if(variable_group_map_.find(var.first) == variable_group_map_.end()) {
-			if(not symbol_table_->has_group_variable(var.first)) {
-				std::string var_group = var.first + generate_group_name(term,var.first);
-				StringFormula_ptr var_formula = new StringFormula();
-				var_formula->SetType(StringFormula::Type::VAR);
-				var_formula->AddVariable(var.first,1);
-				symbol_table_->add_variable_group_mapping(var.first,var_group);
-				symbol_table_->update_group_formula(var_group,var_formula);
-
-				subgroups_[group_name].insert(var_group);
-			}
-		}
-		clear_term_formula(term);
-	} else {
-		std::string start_group;
-		StringFormula_ptr group_formula = nullptr;
-		std::vector<std::string> groups_to_be_removed;
-		auto variables = formula->GetVariableCoefficientMap();
-		// get a starting group for the variable list
-		for(auto &var : variables) {
-			if(symbol_table_->has_group_variable(var.first)) {
-				start_group = symbol_table_->get_group_variable_of(symbol_table_->get_variable(var.first))->getName();
-				group_formula = symbol_table_->get_group_formula(start_group);
-				if(group_formula == nullptr) {
-					LOG(FATAL) << "BAD";
-				}
-				break;
-			}
-		}
-		// if no group is found, create one
-		if (start_group.empty()) {
-			start_group = generate_group_name(term,variables.begin()->first);
-			group_formula = new StringFormula();
-			symbol_table_->update_group_formula(start_group,group_formula);
-
-			subgroups_[group_name].insert(start_group);
-		}
-		if(group_formula == nullptr) {
-			LOG(FATAL) << "BAD";
-		}
-		// merge each variable's groups together into start group
-		for(auto &var : variables) {
-			if(not symbol_table_->has_group_variable(var.first)) {
-				// variable has no group, add it
-				symbol_table_->add_variable_group_mapping(var.first,start_group);
-				group_formula->AddVariable(var.first,0);
-				continue;
-			}
-
-			std::string var_group = symbol_table_->get_group_variable_of(symbol_table_->get_variable(var.first))->getName();
-			if(var_group != start_group) {
-				// merge the two groups into one
-				symbol_table_->merge_groups(start_group,var_group);
-
-
-
-				auto var_group_formula = group_formula_[var_group];
-				group_formula->MergeVariables(var_group_formula);
-				for(auto &var_group_iter : variable_group_map_) {
-					if(var_group_iter.second == var_group) {
-						var_group_iter.second = start_group;
-					}
-				}
-				for(auto &var_group_iter : term_group_map_) {
-					if(var_group_iter.second == var_group) {
-						var_group_iter.second = start_group;
-					}
-				}
-				// keep relational formulas so we can construct them; they will get destroyed afterwards.
-				auto formula_iter = group_formula_.find(var_group);
-				if(StringFormula::Type::NONE == formula_iter->second->GetType() ||
-								StringFormula::Type::VAR == formula_iter->second->GetType()) {
-					delete formula_iter->second; formula_iter->second = nullptr;
-					group_formula_.erase(formula_iter);
-					subgroups_[group_name].erase(var_group);
-				}
-			}
-		}
-		term_group_map_[term] = start_group;
-	}
-}
-
-
-// OLD
-
+//// if FORCE_DNF_FORMULA is enabled, we only put variables together into a StringAutomaton when
+//// they appear together in relational word equations (Begins, X=Y.c, X=!Y,etc..).
+//// Otherwise, we put all string variables into one automata under the current component.
 //void StringFormulaGenerator::add_string_variables(std::string group_name, Term_ptr term) {
 ////	StringFormula_ptr group_formula = nullptr;
 ////	auto it = group_formula_.find(group_name);
@@ -1370,13 +1279,15 @@ void StringFormulaGenerator::add_string_variables(std::string group_name, Term_p
 //		// just make sure each variable has a group, and if not, create a lone group for it
 //		auto variables = formula->GetVariableCoefficientMap();
 //		for(auto &var : variables) {
-//			if(variable_group_map_.find(var.first) == variable_group_map_.end()) {
+//			//if(variable_group_map_.find(var.first) == variable_group_map_.end()) {
+//			if(not symbol_table_->has_group_variable(var.first)) {
 //				std::string var_group = var.first + generate_group_name(term,var.first);
 //				StringFormula_ptr var_formula = new StringFormula();
 //				var_formula->SetType(StringFormula::Type::VAR);
 //				var_formula->AddVariable(var.first,1);
-//				variable_group_map_[var.first] = var_group;
-//				group_formula_[var_group] = var_formula;
+//				symbol_table_->add_variable_group_mapping(var.first,var_group);
+//				symbol_table_->update_group_formula(var_group,var_formula);
+//
 //				subgroups_[group_name].insert(var_group);
 //			}
 //		}
@@ -1388,9 +1299,9 @@ void StringFormulaGenerator::add_string_variables(std::string group_name, Term_p
 //		auto variables = formula->GetVariableCoefficientMap();
 //		// get a starting group for the variable list
 //		for(auto &var : variables) {
-//			if(variable_group_map_.find(var.first) != variable_group_map_.end()) {
-//				start_group = variable_group_map_[var.first];
-//				group_formula = group_formula_[start_group];
+//			if(symbol_table_->has_group_variable(var.first)) {
+//				start_group = symbol_table_->get_group_variable_of(symbol_table_->get_variable(var.first))->getName();
+//				group_formula = symbol_table_->get_group_formula(start_group);
 //				if(group_formula == nullptr) {
 //					LOG(FATAL) << "BAD";
 //				}
@@ -1401,7 +1312,8 @@ void StringFormulaGenerator::add_string_variables(std::string group_name, Term_p
 //		if (start_group.empty()) {
 //			start_group = generate_group_name(term,variables.begin()->first);
 //			group_formula = new StringFormula();
-//			group_formula_[start_group] = group_formula;
+//			symbol_table_->update_group_formula(start_group,group_formula);
+//
 //			subgroups_[group_name].insert(start_group);
 //		}
 //		if(group_formula == nullptr) {
@@ -1409,13 +1321,20 @@ void StringFormulaGenerator::add_string_variables(std::string group_name, Term_p
 //		}
 //		// merge each variable's groups together into start group
 //		for(auto &var : variables) {
-//			if(variable_group_map_.find(var.first) == variable_group_map_.end()) {
+//			if(not symbol_table_->has_group_variable(var.first)) {
 //				// variable has no group, add it
-//				variable_group_map_[var.first] = start_group;
+//				symbol_table_->add_variable_group_mapping(var.first,start_group);
 //				group_formula->AddVariable(var.first,0);
-//			} else if(variable_group_map_[var.first] != start_group) {
-//				// merge the two groups
-//				std::string var_group = variable_group_map_[var.first];
+//				continue;
+//			}
+//
+//			std::string var_group = symbol_table_->get_group_variable_of(symbol_table_->get_variable(var.first))->getName();
+//			if(var_group != start_group) {
+//				// merge the two groups into one
+//				symbol_table_->merge_groups(start_group,var_group);
+//
+//
+//
 //				auto var_group_formula = group_formula_[var_group];
 //				group_formula->MergeVariables(var_group_formula);
 //				for(auto &var_group_iter : variable_group_map_) {
@@ -1442,6 +1361,85 @@ void StringFormulaGenerator::add_string_variables(std::string group_name, Term_p
 //	}
 //}
 
+
+void StringFormulaGenerator::add_string_variables(std::string group_name, Term_ptr term) {
+	auto formula = get_term_formula(term);
+	if(StringFormula::Type::NONRELATIONAL == formula->GetType()) {
+		// just make sure each variable has a group, and if not, create a lone group for it
+		auto variables = formula->GetVariableCoefficientMap();
+		for(auto &var : variables) {
+			if(variable_group_map_.find(var.first) == variable_group_map_.end()) {
+				std::string var_group = var.first + generate_group_name(term,var.first);
+				StringFormula_ptr var_formula = new StringFormula();
+				var_formula->SetType(StringFormula::Type::VAR);
+				var_formula->AddVariable(var.first,1);
+				variable_group_map_[var.first] = var_group;
+				group_formula_[var_group] = var_formula;
+				subgroups_[group_name].insert(var_group);
+			}
+		}
+		clear_term_formula(term);
+	} else {
+		std::string start_group;
+		StringFormula_ptr group_formula = nullptr;
+		std::vector<std::string> groups_to_be_removed;
+		auto variables = formula->GetVariableCoefficientMap();
+		// get a starting group for the variable list
+		for(auto &var : variables) {
+			if(variable_group_map_.find(var.first) != variable_group_map_.end()) {
+				start_group = variable_group_map_[var.first];
+				group_formula = group_formula_[start_group];
+				if(group_formula == nullptr) {
+					LOG(FATAL) << "BAD";
+				}
+				break;
+			}
+		}
+		// if no group is found, create one
+		if (start_group.empty()) {
+			start_group = generate_group_name(term,variables.begin()->first);
+			group_formula = new StringFormula();
+			group_formula_[start_group] = group_formula;
+			subgroups_[group_name].insert(start_group);
+		}
+		if(group_formula == nullptr) {
+			LOG(FATAL) << "BAD";
+		}
+		// merge each variable's groups together into start group
+		for(auto &var : variables) {
+			if(variable_group_map_.find(var.first) == variable_group_map_.end()) {
+				// variable has no group, add it
+				variable_group_map_[var.first] = start_group;
+				group_formula->AddVariable(var.first,0);
+			} else if(variable_group_map_[var.first] != start_group) {
+				// merge the two groups
+				std::string var_group = variable_group_map_[var.first];
+				auto var_group_formula = group_formula_[var_group];
+				group_formula->MergeVariables(var_group_formula);
+				for(auto &var_group_iter : variable_group_map_) {
+					if(var_group_iter.second == var_group) {
+						var_group_iter.second = start_group;
+					}
+				}
+				for(auto &var_group_iter : term_group_map_) {
+					if(var_group_iter.second == var_group) {
+						var_group_iter.second = start_group;
+					}
+				}
+				// keep relational formulas so we can construct them; they will get destroyed afterwards.
+				auto formula_iter = group_formula_.find(var_group);
+				if(StringFormula::Type::NONE == formula_iter->second->GetType() ||
+								StringFormula::Type::VAR == formula_iter->second->GetType()) {
+					delete formula_iter->second; formula_iter->second = nullptr;
+					group_formula_.erase(formula_iter);
+					subgroups_[group_name].erase(var_group);
+				}
+			}
+		}
+		term_group_map_[term] = start_group;
+	}
+}
+
 std::string StringFormulaGenerator::generate_group_name(SMT::Term_ptr term, std::string var_name) {
   std::string group_name = symbol_table_->get_var_name_for_node(term,SMT::Variable::Type::STRING);
   group_name += var_name;
@@ -1467,38 +1465,47 @@ void StringFormulaGenerator::delete_term_formula(Term_ptr term) {
 void StringFormulaGenerator::set_group_mappings() {
   DVLOG(VLOG_LEVEL)<< "start setting string group for components";
   for (auto& el : term_group_map_) {
-  	//LOG(INFO) << *el.first << "@" << el.first;
   	// only subgroups have formulas
     if(subgroups_.find(el.second) == subgroups_.end()) {
-    	//LOG(INFO) << "group: " << el.second;
     	term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
     }
-    //LOG(INFO) << "";
   }
 
   for (auto& el: subgroups_) {
   	symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
   }
+
+
   // add a variable entry to symbol table for each group
   // define a variable mapping for a group
   for (auto& el : group_formula_) {
-  	//LOG(INFO) << "Formula : " << el.first;
-    symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
-    auto init_val = StringAutomaton::MakeAnyStringUnaligned(el.second->clone());
-    Value_ptr val = new Value(init_val);
-    symbol_table_->push_scope(root_);
-    symbol_table_->set_value(el.first,val);
-    delete val;
-		symbol_table_->pop_scope();
+  	Value_ptr var_value = nullptr;
+  	auto init_auto = StringAutomaton::MakeAnyStringUnaligned(el.second->clone());
+  	auto group_variable = symbol_table_->get_variable_unsafe(el.first);
 
-    //LOG(INFO) << "Group " << el.first << " Initial Value: " << symbol_table_->get_value_at_scope(root_,symbol_table_->get_variable(el.first));
+  	// if already in symbol table, means we have previous value, must address
+  	// since group formulae may be different between previous group and current group,
+  	// must remap indices from previous automata
+  	if(group_variable != nullptr) {
+  		auto previous_value_auto = symbol_table_->get_value(group_variable)->getStringAutomaton();
+  		auto remapped_previous_value_auto = previous_value_auto->ChangeIndicesMap(el.second->clone());
+  		auto updated_auto = init_auto->Intersect(remapped_previous_value_auto);
+  		delete init_auto;
+  		delete remapped_previous_value_auto;
+  		init_auto = updated_auto;
+  	} else {
+  		symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
+
+  	}
+
+  	Value_ptr init_val = new Value(init_auto);
+    symbol_table_->set_value(el.first,init_val);
+    delete init_val;
+
     for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
-    	//val->getStringAutomaton()->inspectAuto(false,true);
-      symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
-      //LOG(INFO) << "-- " << var_entry.first;
+      symbol_table_->set_variable_group_mapping(var_entry.first, el.first);
     }
 
-    //LOG(INFO) << "";
   }
 
   DVLOG(VLOG_LEVEL)<< "end setting string group for components";

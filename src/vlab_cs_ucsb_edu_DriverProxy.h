@@ -50,9 +50,9 @@ JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    isSatisfiable
- * Signature: (Ljava/lang/String;LJava/lang/String;)Z
+ * Signature: (Ljava/lang/StringLJava/lang/String;)Z
  */
-JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable
+JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable2
   (JNIEnv *, jobject, jstring, jstring);
 
 /*

@@ -3154,6 +3154,37 @@ StringAutomaton_ptr StringAutomaton::ProjectKTrack(int k_track) {
   return result_auto;
 }
 
+/**
+ * INVARIANT: new_formula variables contain at least those variables in current_formula
+ * 					  and if X1 and X2 in old formula with X1 < X2, then X1 and X2 in new formula
+ * 					  with X1 < X2 still holding (i.e., mapping is order-preserving)
+ * Remap indices so that generated automaton has the new indices mapping indicated by new_formula
+ *
+ * for strings, it gets tricky since tracks are interleaved... :(
+ */
+StringAutomaton_ptr StringAutomaton::ChangeIndicesMap(StringFormula_ptr new_formula) {
+	auto old_coeff_map = this->formula_->GetVariableCoefficientMap();
+	auto new_coeff_map = new_formula->GetVariableCoefficientMap();
+	int old_num_tracks = this->num_tracks_;
+	int new_num_tracks = new_formula->GetNumberOfVariables();
+	// though we're remapping indices, we're not adding any new variables right now
+	// (this will be done during intersection
+	int* map = CreateBddVariableIndices(this->num_tracks_*VAR_PER_TRACK);
+	for(auto iter : old_coeff_map) {
+		int old_index = this->formula_->GetVariableIndex(iter.first);
+		int new_index = new_formula->GetVariableIndex(iter.first);
+		for(int i = 0; i < VAR_PER_TRACK; i++) {
+			map[old_index+(i*old_num_tracks)] = new_index+(i*new_num_tracks);
+		}
+	}
+
+	auto remapped_dfa = dfaCopy(this->dfa_);
+	dfaReplaceIndices(remapped_dfa,map);
+	delete[] map;
+	auto remapped_auto = new StringAutomaton(remapped_dfa,new_formula,this->num_of_bdd_variables_);
+	return remapped_auto;
+}
+
 void StringAutomaton::SetSymbolicCounter() {
 	// normal symbolic counter for single-track
 	if(num_tracks_ == 1) {

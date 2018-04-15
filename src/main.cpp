@@ -205,6 +205,32 @@ int main(const int argc, const char **argv) {
 
   std::cout << (driver.is_sat() ? "sat" : "unsat") << std::endl;
 
+  // testing incremental capabilities
+  std::string solver_id = driver.getCurrentID();
+  LOG(INFO) << "solver_id = " << solver_id;
+
+  if (file != nullptr) {
+		delete file;
+	}
+
+  LOG(INFO) << "";
+  LOG(INFO) << "----------------- SECOND SOLVE -----------------";
+  LOG(INFO) << "";
+  std::cin.get();
+
+  file_name = "/home/will/workspace/file2.smt2";
+	file = new std::ifstream(file_name);
+	in = file;
+
+	LOG(INFO) << "Got file";
+	driver.Parse(in);
+	LOG(INFO) << "Parsed file";
+	driver.loadID(solver_id);
+	LOG(INFO) << "Loaded id";
+	driver.InitializeSolver();
+	LOG(INFO) << "Solver initialized";
+	driver.Solve();
+	LOG(INFO) << "Solved";
 
 
   if (driver.is_sat()) {

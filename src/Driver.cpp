@@ -70,13 +70,14 @@ void Driver::ast2dot(std::string file_name) {
 void Driver::InitializeSolver() {
 
 
-	if(current_id_ == nullptr) {
+	if(current_id_.empty()) {
 		IncrementalState_ptr inc_state = new IncrementalState();
 		symbol_table_ = new Solver::SymbolTable();
 		inc_state->symbol_table_ = symbol_table_;
 		inc_state->script_ = script_;
 		current_id_ = symbol_table_->get_var_name_for_node(script_,Vlab::SMT::TVariable::Type::NONE);
 		incremental_states_[current_id_] = inc_state;
+		symbol_table_->push_scope(script_);
 	} else {
 		symbol_table_ = incremental_states_[current_id_]->symbol_table_;
 	}
@@ -145,9 +146,8 @@ void Driver::Solve() {
 //  Solver::ArithmeticFormulaGenerator arithmetic_formula_generator(script_, symbol_table_, constraint_information_);
 //  arithmetic_formula_generator.start();
 
-  Solver::ConstraintSolver_ptr constraint_solver = new Solver::ConstraintSolver(script_, symbol_table_, constraint_information_);
-  constraint_solver->start();
-  delete constraint_solver;
+  Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
+  constraint_solver.start();
 }
 
 bool Driver::is_sat() {
