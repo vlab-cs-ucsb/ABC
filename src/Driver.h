@@ -62,21 +62,8 @@ namespace Vlab {
 
 class Driver {
 public:
-	class IncrementalState;
-	typedef IncrementalState* IncrementalState_ptr;
-
   Driver();
   ~Driver();
-
-
-
-  class IncrementalState {
-  public:
-  	IncrementalState() {script_ = nullptr; symbol_table_ = nullptr; constraint_solver_ = nullptr;}
-  	SMT::Script_ptr script_;
-		Solver::SymbolTable_ptr symbol_table_;
-		Solver::ConstraintSolver_ptr constraint_solver_;
-  };
 
   void InitializeLogger(int log_level);
   // Error handling.
@@ -136,7 +123,7 @@ protected:
    */
   std::map<SMT::Variable_ptr, Solver::ModelCounter> variable_model_counter_;
 
-  std::map<std::string, IncrementalState_ptr> incremental_states_;
+  std::map<std::string, Solver::SymbolTable_ptr> incremental_states_;
   std::string current_id_;
 
 private:
