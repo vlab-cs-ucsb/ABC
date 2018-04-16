@@ -76,8 +76,13 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
       symbol_table_->merge_scopes(symbol_table_->top_scope(),*iter);
       delete (*iter); *iter = nullptr;
       iter = and_term->term_list->erase(iter);
-    } else
-    	if (check_bool_constant_value(*iter, "false")) {
+    } else if (And_ptr sub_and_term = dynamic_cast<And_ptr>(*iter)) { // Associativity
+      and_term->term_list->erase(iter);
+      and_term->term_list->insert(iter, sub_and_term->term_list->begin(), sub_and_term->term_list->end());
+      sub_and_term->term_list->clear();
+      delete sub_and_term;
+      iter = and_term->term_list->begin() + pos; // insertion invalidates iter, reset it
+    } else if (check_bool_constant_value(*iter, "false")) {
       DVLOG(VLOG_LEVEL) << "has 'false' constant, UNSAT 'and'";
       has_false_term = true;
       break;
