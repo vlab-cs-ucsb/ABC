@@ -33,13 +33,14 @@ StringFormulaGenerator::StringFormulaGenerator(Script_ptr script, SymbolTable_pt
 
 	auto variables = symbol_table_->get_variables();
 	for(auto& iter : variables) {
-	  if(iter.second->getType() != Variable::Type::STRING) {
+	  auto group_var = symbol_table_->get_group_variable_of(iter.second);
+	  if(iter.second->getType() != Variable::Type::STRING or group_var == iter.second) {
 	    continue;
 	  }
 	  LOG(INFO) << "GOT ONE!";
     std::cin.get();
 
-  	auto group_var = symbol_table_->get_group_variable_of(iter.second);
+
   	auto group_value = symbol_table_->get_value(iter.first);
   	auto group_formula = group_value->getStringAutomaton()->GetFormula();
 
@@ -1497,9 +1498,46 @@ void StringFormulaGenerator::set_group_mappings() {
     }
   }
 
-  for (auto& el: subgroups_) {
-  	symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
+
+  auto variable_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
+  for(auto iter : variable_values) {
+    if(iter.first->getType() != )
   }
+
+  for(auto group_iter : group_formula_) {
+    if(symbol_table_->get_variable_unsafe(group_iter.first) == nullptr) {
+      symbol_table_->add_variable(new Variable(group_iter.first, Variable::Type::NONE));
+    }
+
+    std::set<Variable_ptr> previous_group_variables;
+    for (const auto& var_entry : group_iter.second->GetVariableCoefficientMap()) {
+      Variable_ptr variable = symbol_table_->get_variable(var_entry.first);
+      Variable_ptr group_variable = symbol_table_->get_group_variable_of(variable);
+
+      // if group variable in variable_values, then a previous value was computed;
+      if(variable_values.find(group_variable) != variable_values.end()) {
+        previous_group_variables.insert(group_variable);
+      }
+
+      // update variable group mapping in symbol table
+      symbol_table_->set_variable_group_mapping(var_entry.first, group_iter.first);
+    }
+
+
+  }
+
+
+
+  for(auto iter : variable_group_map_) {
+    if(symbol_table_->get_variable_unsafe(iter.second) == nullptr) {
+      symbol_table_->add_variable(new Variable(iter.second, Variable::Type::NONE));
+    }
+
+    Variable_ptr variable = symbol_table_->get_variable(iter.first);
+    Variable_ptr group_variable = symbol_table_->get_group_variable_of(variable);
+
+  }
+
 
 
   // add a variable entry to symbol table for each group
