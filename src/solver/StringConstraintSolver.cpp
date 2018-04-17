@@ -149,7 +149,9 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
 					LOG(FATAL) << "Term has no group!";
 				}
 				//LOG(INFO) << *term << "@" << term << " has " << "term group name: " << term_group_name;
+				LOG(INFO) << "Before!";
 				symbol_table_->IntersectValue(term_group_name,param);
+				LOG(INFO) << "After!";
 				is_satisfiable = symbol_table_->get_value(term_group_name)->is_satisfiable();
       }
       clear_term_value(term);

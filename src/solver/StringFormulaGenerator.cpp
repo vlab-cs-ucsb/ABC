@@ -1498,11 +1498,7 @@ void StringFormulaGenerator::set_group_mappings() {
     }
   }
 
-
   auto variable_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
-  for(auto iter : variable_values) {
-    if(iter.first->getType() != )
-  }
 
   for(auto group_iter : group_formula_) {
     if(symbol_table_->get_variable_unsafe(group_iter.first) == nullptr) {
@@ -1523,62 +1519,24 @@ void StringFormulaGenerator::set_group_mappings() {
       symbol_table_->set_variable_group_mapping(var_entry.first, group_iter.first);
     }
 
+    StringAutomaton_ptr initial_auto = StringAutomaton::MakeAnyStringUnaligned(group_iter.second->clone());
+    for(auto previous_group: previous_group_variables) {
+      StringAutomaton_ptr previous_group_auto = variable_values[previous_group]->getStringAutomaton();
+      StringAutomaton_ptr remapped_auto = previous_group_auto->ChangeIndicesMap(group_iter.second->clone());
+      StringAutomaton_ptr temp_auto = initial_auto->Intersect(remapped_auto);
+      delete initial_auto;
+      delete remapped_auto;
+      initial_auto = temp_auto;
 
-  }
-
-
-
-  for(auto iter : variable_group_map_) {
-    if(symbol_table_->get_variable_unsafe(iter.second) == nullptr) {
-      symbol_table_->add_variable(new Variable(iter.second, Variable::Type::NONE));
+      // remove previous variable value from symbol table's value map
+      delete variable_values[previous_group];
+      variable_values[previous_group] = nullptr;
+      variable_values.erase(previous_group);
     }
 
-    Variable_ptr variable = symbol_table_->get_variable(iter.first);
-    Variable_ptr group_variable = symbol_table_->get_group_variable_of(variable);
-
-  }
-
-
-
-  // add a variable entry to symbol table for each group
-  // define a variable mapping for a group
-  for (auto& el : group_formula_) {
-  	Value_ptr var_value = nullptr;
-		StringAutomaton_ptr init_auto = nullptr;
-
-  	auto group_variable = symbol_table_->get_variable_unsafe(el.first);
-		// incremental solving means variables may have previous values/groups/formula. either:
-		// (1) group variables are the same (do nothing)
-		// (2) group variables are different (remap and intersect auto)
-		// (3) no previous value, set initial value
-		if(group_variable != nullptr) {
-			auto previous_value_auto = symbol_table_->get_value(group_variable)->getStringAutomaton();
-			if(el.second->GetNumberOfVariables() == previous_value_auto->GetFormula()->GetNumberOfVariables()) {
-				// same auto/group/variables; leave
-				LOG(INFO) << "SAME!";
-				continue;
-			}
-			LOG(INFO) << "DIFFERENT!";
-			auto remapped_previous_value_auto = previous_value_auto->ChangeIndicesMap(el.second->clone());
-			auto updated_auto = init_auto->Intersect(remapped_previous_value_auto);
-			delete init_auto;
-			delete remapped_previous_value_auto;
-			init_auto = updated_auto;
-  	} else {
-  		LOG(INFO) << "NONE!";
-  		init_auto = StringAutomaton::MakeAnyStringUnaligned(el.second->clone());
-  		symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
-  	}
-
-  	Value_ptr init_val = new Value(init_auto);
-    symbol_table_->set_value(el.first,init_val);
-    delete init_val;
-    LOG(INFO) << "group: " << el.first;
-    for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
-      LOG(INFO) << "--> " << var_entry.first;
-      symbol_table_->set_variable_group_mapping(var_entry.first, el.first);
-    }
-
+    Value_ptr initial_value = new Value(initial_auto);
+    symbol_table_->set_value(group_iter.first,initial_value);
+    delete initial_value;
   }
 
   DVLOG(VLOG_LEVEL)<< "end setting string group for components";
