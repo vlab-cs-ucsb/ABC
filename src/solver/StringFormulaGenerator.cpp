@@ -28,7 +28,7 @@ StringFormulaGenerator::StringFormulaGenerator(Script_ptr script, SymbolTable_pt
       has_mixed_constraint_{false} {
 
 
-	std::string current_group_ = symbol_table_->get_var_name_for_node(root_, Variable::Type::STRING);
+	current_group_ = symbol_table_->get_var_name_for_node(root_, Variable::Type::STRING);
   subgroups_[current_group_] = std::set<std::string>();
 
 	auto variables = symbol_table_->get_variables();
@@ -52,29 +52,6 @@ StringFormulaGenerator::StringFormulaGenerator(Script_ptr script, SymbolTable_pt
 			}
   	}
 	}
-
-
-
-//	auto var_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
-//  for(auto& iter : var_values) {
-//  	// only care about string vars
-//  	if(iter.first->getType() != Variable::Type::STRING) {
-//  		continue;
-//  	}
-//
-//  	LOG(INFO) << "GOT ONE!";
-//    std::cin.get();
-//  	auto group_var = symbol_table_->get_group_variable_of(iter.first);
-//  	auto group_formula = iter.second->getStringAutomaton()->GetFormula();
-//
-//  	if(group_var != iter.first and group_formula != nullptr) {
-//  		subgroups_[current_group_].insert(group_var->getName());
-//  		variable_group_map_[iter.first->getName()] = group_var->getName();
-//  		if(group_formula_.find(group_var->getName()) == group_formula_.end()) {
-//				group_formula_[group_var->getName()] = group_formula->clone();
-//			}
-//  	}
-//  }
 }
 
 StringFormulaGenerator::~StringFormulaGenerator() {
@@ -135,6 +112,7 @@ void StringFormulaGenerator::visitLet(Let_ptr let_term) {
 void StringFormulaGenerator::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
   if (constraint_information_->is_component(and_term) and current_group_.empty()) {
+    LOG(INFO) << "Current group empty!";
     current_group_ = symbol_table_->get_var_name_for_node(and_term, Variable::Type::STRING);
     subgroups_[current_group_] = std::set<std::string>();
     has_mixed_constraint_ = false;
@@ -1424,6 +1402,7 @@ void StringFormulaGenerator::add_string_variables(std::string group_name, Term_p
 		}
 		// if no group is found, create one
 		if (start_group.empty()) {
+		  LOG(INFO) << "NO START GROUP";
 			start_group = generate_group_name(term,variables.begin()->first);
 			group_formula = new StringFormula();
 			group_formula_[start_group] = group_formula;
@@ -1498,15 +1477,23 @@ void StringFormulaGenerator::set_group_mappings() {
     }
   }
 
+  for (auto& el: subgroups_) {
+  	symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
+  }
+
+
   auto variable_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
 
   for(auto group_iter : group_formula_) {
+    LOG(INFO) << "Group : " << group_iter.first;
     if(symbol_table_->get_variable_unsafe(group_iter.first) == nullptr) {
+      LOG(INFO) << "Group var does not exist yet for: " << group_iter.first;
       symbol_table_->add_variable(new Variable(group_iter.first, Variable::Type::NONE));
     }
 
     std::set<Variable_ptr> previous_group_variables;
     for (const auto& var_entry : group_iter.second->GetVariableCoefficientMap()) {
+      LOG(INFO) << "--> " << var_entry.first;
       Variable_ptr variable = symbol_table_->get_variable(var_entry.first);
       Variable_ptr group_variable = symbol_table_->get_group_variable_of(variable);
 

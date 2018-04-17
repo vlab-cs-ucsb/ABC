@@ -124,6 +124,7 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
   bool has_string_formula = false;
 
   std::string group_name = string_formula_generator_.get_term_group_name(and_term);
+  LOG(INFO) << "  group_name = " << group_name;
   Value_ptr and_value = nullptr;
 
 
@@ -148,6 +149,7 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
 				if(term_group_name.empty()) {
 					LOG(FATAL) << "Term has no group!";
 				}
+				LOG(INFO) << "  term_group_name = " << term_group_name;
 				//LOG(INFO) << *term << "@" << term << " has " << "term group name: " << term_group_name;
 				LOG(INFO) << "Before!";
 				symbol_table_->IntersectValue(term_group_name,param);
