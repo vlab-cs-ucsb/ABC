@@ -37,9 +37,6 @@ StringFormulaGenerator::StringFormulaGenerator(Script_ptr script, SymbolTable_pt
 	  if(iter.second->getType() != Variable::Type::STRING or group_var == iter.second) {
 	    continue;
 	  }
-	  LOG(INFO) << "GOT ONE!";
-    std::cin.get();
-
 
   	auto group_value = symbol_table_->get_value(iter.first);
   	auto group_formula = group_value->getStringAutomaton()->GetFormula();
@@ -49,6 +46,7 @@ StringFormulaGenerator::StringFormulaGenerator(Script_ptr script, SymbolTable_pt
   		variable_group_map_[iter.second->getName()] = group_var->getName();
   		if(group_formula_.find(group_var->getName()) == group_formula_.end()) {
 				group_formula_[group_var->getName()] = group_formula->clone();
+				group_formula_[group_var->getName()]->SetType(StringFormula::Type::NONE);
 			}
   	}
 	}
@@ -1478,22 +1476,18 @@ void StringFormulaGenerator::set_group_mappings() {
   }
 
   for (auto& el: subgroups_) {
-  	symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
+    symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
   }
 
-
-  auto variable_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
+  auto  &variable_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
 
   for(auto group_iter : group_formula_) {
-    LOG(INFO) << "Group : " << group_iter.first;
     if(symbol_table_->get_variable_unsafe(group_iter.first) == nullptr) {
-      LOG(INFO) << "Group var does not exist yet for: " << group_iter.first;
       symbol_table_->add_variable(new Variable(group_iter.first, Variable::Type::NONE));
     }
 
     std::set<Variable_ptr> previous_group_variables;
     for (const auto& var_entry : group_iter.second->GetVariableCoefficientMap()) {
-      LOG(INFO) << "--> " << var_entry.first;
       Variable_ptr variable = symbol_table_->get_variable(var_entry.first);
       Variable_ptr group_variable = symbol_table_->get_group_variable_of(variable);
 
@@ -1525,10 +1519,6 @@ void StringFormulaGenerator::set_group_mappings() {
     symbol_table_->set_value(group_iter.first,initial_value);
     delete initial_value;
   }
-
-  DVLOG(VLOG_LEVEL)<< "end setting string group for components";
-  std::cin.get();
-
 }
 
 } /* namespace Solver */

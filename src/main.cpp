@@ -212,27 +212,27 @@ int main(const int argc, const char **argv) {
 		delete file;
 	}
 
-  LOG(INFO) << "";
-  LOG(INFO) << "----------------- SECOND SOLVE -----------------";
-  LOG(INFO) << "";
-  std::cin.get();
+//  LOG(INFO) << "";
+//  LOG(INFO) << "----------------- SECOND SOLVE -----------------";
+//  LOG(INFO) << "";
+//  std::cin.get();
 
-  driver.reset();
-  LOG(INFO) << "Driver reset";
-
-  file_name = "/home/will/workspace/file2.smt2";
-	file = new std::ifstream(file_name);
-	in = file;
-
-	LOG(INFO) << "Got file";
-	driver.Parse(in);
-	LOG(INFO) << "Parsed file";
-	driver.InitializeSolver();
-	LOG(INFO) << "Solver initialized";
-	driver.Solve();
-	LOG(INFO) << "Solved! solver_id = " << driver.getCurrentID();
-
-	std::string solver_id2 = driver.getCurrentID();
+//  driver.reset();
+//  LOG(INFO) << "Driver reset";
+//
+//  file_name = "/home/will/workspace/file2.smt2";
+//	file = new std::ifstream(file_name);
+//	in = file;
+//
+//	LOG(INFO) << "Got file";
+//	driver.Parse(in);
+//	LOG(INFO) << "Parsed file";
+//	driver.InitializeSolver();
+//	LOG(INFO) << "Solver initialized";
+//	driver.Solve();
+//	LOG(INFO) << "Solved! solver_id = " << driver.getCurrentID();
+//
+//	std::string solver_id2 = driver.getCurrentID();
 
 	LOG(INFO) << "";
   LOG(INFO) << "----------------- THIRD SOLVE -----------------";
@@ -256,25 +256,25 @@ int main(const int argc, const char **argv) {
 	driver.Solve();
 	LOG(INFO) << "Solved! solver_id = " << driver.getCurrentID();
 
-	LOG(INFO) << "";
-  LOG(INFO) << "----------------- FOURTH SOLVE -----------------";
-  LOG(INFO) << "";
-  std::cin.get();
+//	LOG(INFO) << "";
+//  LOG(INFO) << "----------------- FOURTH SOLVE -----------------";
+//  LOG(INFO) << "";
+//  std::cin.get();
 
-  driver.loadID(solver_id2);
-  LOG(INFO) << "Loaded ID = " << solver_id2;
-
-  file_name = "/home/will/workspace/file4.smt2";
-	file = new std::ifstream(file_name);
-	in = file;
-
-	LOG(INFO) << "Got file";
-	driver.Parse(in);
-	LOG(INFO) << "Parsed file";
-	driver.InitializeSolver();
-	LOG(INFO) << "Solver initialized";
-	driver.Solve();
-	LOG(INFO) << "Solved! solver_id = " << driver.getCurrentID();
+//  driver.loadID(solver_id2);
+//  LOG(INFO) << "Loaded ID = " << solver_id2;
+//
+//  file_name = "/home/will/workspace/file4.smt2";
+//	file = new std::ifstream(file_name);
+//	in = file;
+//
+//	LOG(INFO) << "Got file";
+//	driver.Parse(in);
+//	LOG(INFO) << "Parsed file";
+//	driver.InitializeSolver();
+//	LOG(INFO) << "Solver initialized";
+//	driver.Solve();
+//	LOG(INFO) << "Solved! solver_id = " << driver.getCurrentID();
 
   if (driver.is_sat()) {
     if (VLOG_IS_ON(30)) {
