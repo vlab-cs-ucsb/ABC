@@ -407,15 +407,24 @@ void VariableValueComputer::visitNotEq(NotEq_ptr not_eq_term) {
 
   Value_ptr term_value = getTermPreImage(not_eq_term);
 
-  if (Value::Type::BOOL_CONSTANT == term_value->getType()){
-    CHECK_EQ(true, term_value->getBoolConstant());
-    child_value = getTermPostImage(child_term)->clone();
-  } else {
-    if (term_value->isSingleValue()) {
-      child_value = getTermPostImage(child_term)->difference(term_value);
-    } else {
+  // if the result is a single value AND only one of either left or right is a single value,
+  // then we can safely remove the result value from whichever side is NOT a single value
+  auto left_val = getTermPostImage(not_eq_term->left_term);
+  auto right_val = getTermPostImage(not_eq_term->right_term);
+
+  if(left_val->isSingleValue() or right_val->isSingleValue()) {
+    if (Value::Type::BOOL_CONSTANT == term_value->getType()) {
+      CHECK_EQ(true, term_value->getBoolConstant());
       child_value = getTermPostImage(child_term)->clone();
+    } else {
+      if (term_value->isSingleValue() and not getTermPostImage(child_term)->isSingleValue()) {
+        child_value = getTermPostImage(child_term)->difference(term_value);
+      } else {
+        child_value = getTermPostImage(child_term)->clone();
+      }
     }
+  } else {
+    child_value = getTermPostImage(child_term)->clone();
   }
 
   setTermPreImage(child_term, child_value);

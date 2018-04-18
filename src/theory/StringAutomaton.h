@@ -279,6 +279,7 @@ public:
   bool IsEmptyString();
   bool IsAcceptingSingleString();
   std::string GetAnAcceptingString();
+  std::string GetAnAcceptingStringRandom();
 
   StringFormula_ptr GetFormula();
   void SetFormula(StringFormula_ptr formula);

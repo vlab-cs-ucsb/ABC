@@ -10,6 +10,8 @@
 
 #include <algorithm>
 #include <array>
+#include <random>
+#include <ctime>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -450,6 +452,7 @@ protected:
   bool isAcceptingSingleWord();
   // TODO update it to work for non-accepting inputs
   std::vector<bool>* getAnAcceptingWord(std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
+  std::vector<bool>* getAnAcceptingWordRandom(std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
   std::vector<char> decodeException(std::vector<char>& exception);
   virtual void add_print_label(std::ostream& out);
 

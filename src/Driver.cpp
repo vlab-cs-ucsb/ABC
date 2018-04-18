@@ -574,7 +574,74 @@ std::map<std::string, std::string> Driver::getSatisfyingExamples() {
   return results;
 }
 
+std::map<std::string, std::string> Driver::getSatisfyingExamplesRandom() {
+  std::map<std::string, std::string> results;
+
+
+  // check to see if we've cached automata/projected-automata for variables first
+  // otherwise get from symbol table
+  // SHOULD ONLY BE EMPTY RIGHT AFTER SOLVING, ONLY STRING AUTOMATA
+  if(not cached_values_.empty()) {
+  	for(auto it : cached_values_) {
+  		results[it.first] = cached_values_[it.first]->getStringAutomaton()->GetAnAcceptingStringRandom();
+  	}
+  } else {
+		for (auto& variable_entry : getSatisfyingVariables()) {
+			if(Solver::Value::Type::STRING_AUTOMATON == variable_entry.second->getType()) {
+				auto string_auto = variable_entry.second->getStringAutomaton();
+				auto string_formula = string_auto->GetFormula();
+				for(auto it : string_formula->GetVariableCoefficientMap()) {
+					auto single_string_auto = string_auto->GetAutomatonForVariable(it.first);
+					results[it.first] = single_string_auto->GetAnAcceptingStringRandom();
+					cached_values_[it.first] = new Solver::Value(single_string_auto);
+				}
+			}
+		}
+  }
+  return results;
+}
+
+std::map<std::string, std::string> Driver::getSatisfyingExamplesRandomBounded(const int bound) {
+  std::map<std::string, std::string> results;
+
+  // check to see if we've cached automata/projected-automata for variables first
+  // otherwise get from symbol table
+  // SHOULD ONLY BE EMPTY RIGHT AFTER SOLVING, ONLY STRING AUTOMATA
+  if(not cached_bounded_values_.empty()) {
+  	for(auto it : cached_bounded_values_) {
+  		results[it.first] = cached_bounded_values_[it.first]->getStringAutomaton()->GetAnAcceptingStringRandom();
+  	}
+  } else {
+		for (auto& variable_entry : getSatisfyingVariables()) {
+			if(Solver::Value::Type::STRING_AUTOMATON == variable_entry.second->getType()) {
+				auto string_auto = variable_entry.second->getStringAutomaton();
+				auto string_formula = string_auto->GetFormula();
+				for(auto it : string_formula->GetVariableCoefficientMap()) {
+					auto single_string_auto = string_auto->GetAutomatonForVariable(it.first);
+					auto single_string_auto_bounded = single_string_auto->RestrictLengthTo(bound);
+					delete single_string_auto;
+					results[it.first] = single_string_auto_bounded->GetAnAcceptingStringRandom();
+					cached_bounded_values_[it.first] = new Solver::Value(single_string_auto_bounded);
+				}
+			}
+		}
+  }
+  return results;
+}
+
 void Driver::reset() {
+	for(auto &iter : cached_values_) {
+		delete iter.second;
+		iter.second = nullptr;
+	}
+	cached_values_.clear();
+
+	for(auto &iter : cached_bounded_values_) {
+		delete iter.second;
+		iter.second = nullptr;
+	}
+	cached_bounded_values_.clear();
+
   script_ = nullptr;
   symbol_table_ = nullptr;
   current_id_ = "";
@@ -675,6 +742,17 @@ std::string Driver::getCurrentID() {
 void Driver::destroyID(std::string id) {
   if(incremental_states_.find(id) != incremental_states_.end()) {
     if(current_id_ == id) {
+    for(auto &iter : cached_values_) {
+				delete iter.second;
+				iter.second = nullptr;
+			}
+			cached_values_.clear();
+
+			for(auto &iter : cached_bounded_values_) {
+				delete iter.second;
+				iter.second = nullptr;
+			}
+			cached_bounded_values_.clear();
       current_id_ = "";
       symbol_table_ = nullptr;
     }

@@ -744,6 +744,45 @@ std::vector<bool>* Automaton::getAnAcceptingWord(std::function<bool(unsigned& in
   return nullptr;
 }
 
+std::vector<bool>* Automaton::getAnAcceptingWordRandom(std::function<bool(unsigned& index)> next_node_heuristic) {
+	int sink_state = GetSinkState();
+	NextState state = std::make_pair(this->dfa_->s, std::vector<bool>());
+	std::vector<bool>* path = new std::vector<bool>();
+
+	int k = 0;
+	double r = 1.5;
+	double thresh = 0.1;
+	std::mt19937 rng;
+	rng.seed(std::random_device()());
+	std::uniform_real_distribution<double> dist(0.0,1.0);
+
+	int t = 0;
+	while(true) {
+		auto states = getNextStatesOrdered(state.first, next_node_heuristic);
+
+		// if accepting state, determine whether to stop or continue.
+		// if accepting state, only go on if there are more states to visit besides sink state
+		if(this->IsAcceptingState(state.first)) {
+			double x = dist(rng);
+			if(x < thresh || (states.size() == 1 and states[0].first == sink_state)) {
+				// stop here, report solution
+				break;
+			} else {
+				// keep going, but increase probability we will stop in the future
+				thresh *= r;
+			}
+		}
+
+		do {
+			k = rand() % states.size();
+		} while(states[k].first == sink_state);
+		state = states[k];
+		path->insert(path->end(),state.second.begin(),state.second.end());
+	}
+
+	return path;
+}
+
 std::vector<char> Automaton::decodeException(std::vector<char>& exception) {
   std::vector<char> decoded_exceptions_in_ascii;
   std::vector<char> tmp_holder;
@@ -769,9 +808,11 @@ bool Automaton::getAnAcceptingWord(NextState& state, std::map<int, bool>& is_sta
   is_stack_member[state.first] = true;
   path.insert(path.end(), state.second.begin(), state.second.end());
 
+
   if (this->IsAcceptingState(state.first)) {
     return true;
   }
+
 
   for (auto& next_state : getNextStatesOrdered(state.first, next_node_heuristic)) {
     if (not is_stack_member[next_state.first]) {

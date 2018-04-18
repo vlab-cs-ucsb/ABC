@@ -91,6 +91,9 @@ public:
   void inspectResult(Solver::Value_ptr value, std::string file_name);
   std::map<SMT::Variable_ptr, Solver::Value_ptr> getSatisfyingVariables() const;
   std::map<std::string, std::string> getSatisfyingExamples();
+  std::map<std::string, std::string> getSatisfyingExamplesRandom();
+  std::map<std::string, std::string> getSatisfyingExamplesRandomBounded(const int bound);
+
   void reset();
 //	void solveAst();
 
@@ -126,6 +129,15 @@ protected:
 
   std::map<std::string, Solver::SymbolTable_ptr> incremental_states_;
   std::string current_id_;
+  /**
+   * Keeps automata for variables (string vars are projected)
+   */
+  std::map<std::string, Solver::Value_ptr> cached_values_;
+
+  /**
+   * Keeps bounded projected automata for variables
+   */
+  std::map<std::string, Solver::Value_ptr> cached_bounded_values_;
 
 private:
   static bool IS_LOGGING_INITIALIZED;
