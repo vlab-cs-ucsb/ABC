@@ -3167,6 +3167,24 @@ StringAutomaton_ptr StringAutomaton::ChangeIndicesMap(StringFormula_ptr new_form
 	auto new_coeff_map = new_formula->GetVariableCoefficientMap();
 	int old_num_tracks = this->num_tracks_;
 	int new_num_tracks = new_formula->GetNumberOfVariables();
+
+	// if previously only one track, we need to add lambda (9th bdd variable)
+	// just make new auto and return that
+	if(old_num_tracks == 1) {
+	  // should ALWAYS have formula, but add check just to make sure
+	  if(this->formula_ == nullptr || this->formula_->GetNumberOfVariables() == 0) {
+	    LOG(FATAL) << "Can't remap indices! Automaton has no formula or formula has no variables!";
+	  }
+	  std::string var_name = this->formula_->GetVariableAtIndex(0);
+	  auto extended_auto = new StringAutomaton(this->dfa_,
+	                                           new_formula->GetVariableIndex(var_name),
+	                                           new_num_tracks,
+	                                           DEFAULT_NUM_OF_VARIABLES);
+	  extended_auto->SetFormula(new_formula);
+	  return extended_auto;
+
+	}
+
 	// though we're remapping indices, we're not adding any new variables right now
 	// (this will be done during intersection
 	int* map = CreateBddVariableIndices(this->num_tracks_*VAR_PER_TRACK);
