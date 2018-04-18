@@ -117,7 +117,7 @@ JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable
   std::istringstream input_constraint;
   const char* constraint_str = env->GetStringUTFChars(constraint, JNI_FALSE);
   input_constraint.str(constraint_str);
-  abc_driver->reset();
+  //abc_driver->reset();
   abc_driver->Parse(&input_constraint);
   env->ReleaseStringUTFChars(constraint, constraint_str);
   abc_driver->InitializeSolver();
@@ -132,17 +132,16 @@ JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable
  * Signature: (Ljava/lang/StringLjava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable2
-  (JNIEnv *env, jobject obj, jstring constraint, jstring id) {
+  (JNIEnv *env, jobject obj, jstring constraint, jboolean branch) {
 
 	Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
 	std::istringstream input_constraint;
 	const char* constraint_str = env->GetStringUTFChars(constraint, JNI_FALSE);
 	input_constraint.str(constraint_str);
 
-	const char* id_arr = env->GetStringUTFChars(id, JNI_FALSE);
-	std::string id_str {id_arr};
-	abc_driver->loadID(id_str);
-
+  if((bool)jboolean) {
+    abc_driver->saveStateAndBranch();
+  }
 	abc_driver->Parse(&input_constraint);
 	env->ReleaseStringUTFChars(constraint, constraint_str);
 	abc_driver->InitializeSolver();

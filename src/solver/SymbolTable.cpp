@@ -19,6 +19,42 @@ SymbolTable::SymbolTable()
   count_symbol_ = nullptr;
 }
 
+SymbolTable::SymbolTable(const SymbolTable &symbol_table) {
+  // can copy scopes
+  for(auto &iter : symbol_table.scope_stack_) {
+    this->scope_stack_.push_back(iter);
+
+  }
+
+  for(auto &iter : symbol_table.scopes_) {
+    this->scopes_.insert(iter);
+  }
+
+  for(auto &equiv_iter : symbol_table.variable_equivalence_table_) {
+    for (auto &equiv_table : equiv_iter.second) {
+      variable_equivalence_table_[equiv_iter.first][equiv_table.first] = equiv_table.second->clone();
+    }
+  }
+
+  for(auto &value_iter : symbol_table.variable_value_table_) {
+    for(auto &value_table : value_iter.second) {
+      variable_value_table_[value_iter.first][value_table.first] = value_table.second->clone();
+    }
+  }
+
+  for(auto &value_iter : symbol_table.variable_projected_value_table_) {
+    for(auto &value_table : value_iter.second) {
+      variable_projected_value_table_[value_iter.first][value_table.first] = value_table.second->clone();
+    }
+  }
+
+  for(auto &group_iter : symbol_table.variable_group_map_) {
+    variable_group_map_[group_iter.first] = group_iter.second;
+  }
+
+  count_symbol_ = symbol_table.count_symbol_;
+}
+
 SymbolTable::~SymbolTable() {
 	for (auto& map_pair : variable_value_table_) {
     for (auto& value_pair : map_pair.second) {
@@ -54,6 +90,10 @@ SymbolTable::~SymbolTable() {
   if(count_symbol_ != nullptr) {
   	delete count_symbol_;
   }
+}
+
+SymbolTable_ptr SymbolTable::clone() const {
+  return new SymbolTable(*this);
 }
 
 bool SymbolTable::isSatisfiable() {
@@ -691,52 +731,6 @@ void SymbolTable::remove_unsorted_constraint(Visitable_ptr term) {
 	last_constraints.erase(Ast2Dot::toString(term));
 }
 
-void SymbolTable::update_group_formula(std::string group_name, Theory::Formula_ptr formula) {
-	if(not has_group_formula(group_name)) {
-		group_formula_map_[group_name] = formula->clone();
-	} else {
-		group_formula_map_[group_name]->MergeVariables(formula);
-	}
-}
-
-Theory::Formula_ptr SymbolTable::get_group_formula(std::string group_name) {
-	if(not has_group_formula(group_name)) {
-		LOG(FATAL) << "Group [" << group_name << "] has no formula!";
-	}
-	return group_formula_map_[group_name];
-}
-
-bool SymbolTable::has_group_formula(std::string group_name) {
-	return group_formula_map_.find(group_name) != group_formula_map_.end();
-}
-
-/**
- * merges group2 into group1, gets rid of group2
- */
-//void SymbolTable::merge_groups(std::string group1, std::string group2) {
-//	if(group_formula_map_.find(group1) == group_formula_map_.end()
-//					|| group_formula_map_.find(group2) == group_formula_map_.end()) {
-//		LOG(FATAL) << "Cannot merge groups: one of them has no formula";
-//	}
-//	auto g1_formula = group_formula_map_[group1];
-//	g1_formula->MergeVariables(group_formula_map_[group2]);
-//
-//	// make sure all variables in pointing to group2 point to group1 instead
-//	auto g1_variable = get_variable(group1);
-//	for(auto &var_group_iter : variable_group_map_) {
-//		if(var_group_iter.second->getName() == group2) {
-//			var_group_iter.second = g1_variable;
-//		}
-//	}
-//
-//	auto formula_iter = group_formula_map_.find(group2);
-//
-//	if(Theory::StringFormula::Type::NONE == formula_iter->second->GetType() ||
-//					Theory::StringFormula::Type::VAR == formula_iter->second->GetType()) {
-//		delete formula_iter->second; formula_iter->second = nullptr;
-//		group_formula_map_.erase(formula_iter);
-//	}
-//}
 
 std::string SymbolTable::generate_internal_name(std::string name, Variable::Type type) {
   std::stringstream ss;

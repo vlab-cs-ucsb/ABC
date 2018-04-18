@@ -118,7 +118,7 @@ public class DriverProxy {
 
 	public native boolean isSatisfiable(final String constraint);
 
-	public native boolean isSatisfiable(final String constraint, final String id);
+	public native boolean isSatisfiable2(final String constraint, final bool branch);
 
 	public native void loadID(final String id);
 

@@ -38,17 +38,21 @@ using VariableCounterTable = std::map<SMT::Visitable_ptr, VariableCounterMap>;
 using EquivClassMap = std::map<SMT::Variable_ptr, EquivalenceClass_ptr>;
 using EquivClassTable = std::map<SMT::Visitable_ptr, EquivClassMap>;
 using GroupMap = std::map<SMT::Variable_ptr, SMT::Variable_ptr>;
-using GroupFormulaMap = std::map<std::string, Theory::Formula_ptr>;
 using VariableValueMap = std::map<SMT::Variable_ptr, Value_ptr>;
 using VariableValueTable = std::map<SMT::Visitable_ptr, VariableValueMap>;
 using TermChildrenTable = std::map<SMT::Visitable_ptr, std::set<std::string>>;
 
-
+class SymbolTable;
+using SymbolTable_ptr = SymbolTable*;
 
 class SymbolTable {
 public:
   SymbolTable();
+  SymbolTable(const SymbolTable&);
   virtual ~SymbolTable();
+
+  virtual SymbolTable_ptr clone() const;
+
 
   bool isSatisfiable();
   void update_satisfiability_result(bool value);
@@ -137,12 +141,6 @@ public:
   bool is_unsorted_constraint(SMT::Visitable_ptr term);
   void remove_unsorted_constraint(SMT::Visitable_ptr term);
 
-  void update_group_formula(std::string group_name, Theory::Formula_ptr formula);
-  Theory::Formula_ptr get_group_formula(std::string group_name);
-  bool has_group_formula(std::string group_name);
-
-  void merge_groups(std::string group1, std::string group2);
-
 private:
   std::string generate_internal_name(std::string, SMT::Variable::Type);
 
@@ -173,11 +171,6 @@ private:
    * Has a mapping from a variable to its group variable if any; case occurs with multitrack auto
    */
   GroupMap variable_group_map_;
-
-  /**
-   * Stores group formulae for incremental solving
-   */
-  GroupFormulaMap group_formula_map_;
 
   /**
    * Projected values of variables that appear in multitrack automata
@@ -214,7 +207,7 @@ private:
 
 };
 
-using SymbolTable_ptr = SymbolTable*;
+
 
 } /* namespace Solver */
 } /* namespace Vlab */

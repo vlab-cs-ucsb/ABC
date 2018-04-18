@@ -104,6 +104,7 @@ public:
   void loadID(std::string id);
 	std::string getCurrentID();
 	void destroyID(std::string id);
+	void saveStateAndBranch();
 
   void test();
 

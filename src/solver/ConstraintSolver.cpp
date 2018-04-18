@@ -892,6 +892,7 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
 
     // Based on the type handle it;
     // TODO need to generalize the cases below, a substringhelper class can be used
+
     if (Value::Type::BINARYINT_AUTOMATON == param_end_index->getType()) {
       auto bin_end_index_auto = param_end_index->getBinaryIntAutomaton();
       // if end index is a variable (TODO make sure it is always a variable)
@@ -933,6 +934,7 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
 
       }
     } else {
+      LOG(INFO) << *param_end_index;
       LOG(FATAL) << "implement and fix me";
     }
 

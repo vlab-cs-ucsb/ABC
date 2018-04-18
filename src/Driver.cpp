@@ -762,6 +762,16 @@ void Driver::destroyID(std::string id) {
   }
 }
 
+void Driver::saveStateAndBranch() {
+  static int counter = 0;
+  if(current_id_.empty()) {
+    return;
+  }
+  std::string next_id = current_id_.append(std::to_string(counter));
+  current_id_ = next_id;
+  incremental_states_[current_id_] = symbol_table_->clone();
+}
+
 void Driver::test() {
   return;
 //  LOG(INFO) << "DRIVER TEST METHOD";
