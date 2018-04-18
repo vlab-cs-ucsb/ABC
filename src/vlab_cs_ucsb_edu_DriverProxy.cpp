@@ -179,6 +179,19 @@ JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getCurrentID
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    destroyID
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_destroyID
+  (JNIEnv *env, jobject obj, jstring id) {
+	Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
+	const char* id_arr = env->GetStringUTFChars(id, JNI_FALSE);
+	std::string id_str {id_arr};
+	abc_driver->destroyID(id_str);
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    countVariable
  * Signature: (Ljava/lang/String;J)Ljava/math/BigInteger;
  */

@@ -672,6 +672,18 @@ std::string Driver::getCurrentID() {
 	return current_id_;
 }
 
+void Driver::destroyID(std::string id) {
+  if(incremental_states_.find(id) != incremental_states_.end()) {
+    if(current_id_ == id) {
+      current_id_ = "";
+      symbol_table_ = nullptr;
+    }
+    delete incremental_states_[id];
+    incremental_states_[id] = nullptr;
+    incremental_states_.erase(id);
+  }
+}
+
 void Driver::test() {
   return;
 //  LOG(INFO) << "DRIVER TEST METHOD";

@@ -71,6 +71,14 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_loadID
 JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getCurrentID
   (JNIEnv *, jobject);
 
+  /*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    destroyID
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_destroyID
+  (JNIEnv *, jobject, jstring);
+
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    countVariable
