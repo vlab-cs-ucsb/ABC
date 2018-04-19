@@ -1799,8 +1799,6 @@ StringAutomaton_ptr StringAutomaton::CharAt(const int index) {
     return charat_auto;
   }
 
-	this->inspectAuto(false,true);
-
 
   std::set<int> states_at_index = getStatesReachableBy(index);
   for(auto it : states_at_index) {
