@@ -51,11 +51,11 @@ StringFormulaGenerator::StringFormulaGenerator(Script_ptr script, SymbolTable_pt
   	}
 	}
 
-	LOG(INFO) << "Imported " << group_formula_.size() << " groups from last solve";
+	//LOG(INFO) << "Imported " << group_formula_.size() << " groups from last solve";
 	for(auto it : group_formula_) {
-	  LOG(INFO) << "Imported group = " << it.first;
+	  //LOG(INFO) << "Imported group = " << it.first;
 	  for(auto var : it.second->GetVariableCoefficientMap()) {
-	    LOG(INFO) << "--> " << var.first;
+	    //LOG(INFO) << "--> " << var.first;
 	  }
 	}
 
@@ -1383,14 +1383,14 @@ void StringFormulaGenerator::set_group_mappings() {
   auto  &variable_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
   // update groups and their values in symbol table
   for(auto group_iter : group_formula_) {
-    LOG(INFO) << "Group: " << group_iter.first;
+    //LOG(INFO) << "Group: " << group_iter.first;
     if(symbol_table_->get_variable_unsafe(group_iter.first) == nullptr) {
       symbol_table_->add_variable(new Variable(group_iter.first, Variable::Type::NONE));
     }
 
     std::set<Variable_ptr> previous_group_variables;
     for (const auto& var_entry : group_iter.second->GetVariableCoefficientMap()) {
-      LOG(INFO) << "--> " << var_entry.first;
+      //LOG(INFO) << "--> " << var_entry.first;
       Variable_ptr variable = symbol_table_->get_variable(var_entry.first);
       Variable_ptr group_variable = symbol_table_->get_group_variable_of(variable);
 
@@ -1402,10 +1402,10 @@ void StringFormulaGenerator::set_group_mappings() {
       symbol_table_->set_variable_group_mapping(var_entry.first, group_iter.first);
     }
 
-    LOG(INFO) << "# previous group vars: " << previous_group_variables.size();
+    //LOG(INFO) << "# previous group vars: " << previous_group_variables.size();
     StringAutomaton_ptr initial_auto = StringAutomaton::MakeAnyStringUnaligned(group_iter.second->clone());
     for(auto previous_group: previous_group_variables) {
-      LOG(INFO) << "--> previous group = " << previous_group->getName();
+      //LOG(INFO) << "--> previous group = " << previous_group->getName();
       StringAutomaton_ptr previous_group_auto = variable_values[previous_group]->getStringAutomaton();
       StringAutomaton_ptr remapped_auto = previous_group_auto->ChangeIndicesMap(group_iter.second->clone());
       StringAutomaton_ptr temp_auto = initial_auto->Intersect(remapped_auto);
@@ -1426,7 +1426,7 @@ void StringFormulaGenerator::set_group_mappings() {
   }
 
   for(auto iter : term_group_map_) {
-    LOG(INFO) << *iter.first << "," << iter.second;
+    //LOG(INFO) << *iter.first << "," << iter.second;
   }
 
   DVLOG(VLOG_LEVEL) << "done setting string group for components";

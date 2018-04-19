@@ -11,59 +11,71 @@ public class ExampleUsage {
 
     DriverProxy abcDriver = new DriverProxy();
     
-    abcDriver.setOption(Option.ENABLE_IMPLICATIONS);
-    abcDriver.setOption(Option.USE_SIGNED_INTEGERS);
     
-    String constraint = "(set-logic QF_S)\n"
-        + "(declare-fun var_abc () String)\n"
-        + "(assert (not (= var_abc \"abc\")))\n"
+    String core_constraint = "(set-logic QF_S)\n"
+        + "(declare-fun h () String)\n"
+        + "(declare-fun l () String)\n"
+        + "(assert (in h /[A-Z]{4,}/))\n"
+        + "(assert (in l /[A-Z]{4,}/))\n"
+        + "(assert (= (charAt h 0) (charAt l 0)))\n"
         + "(check-sat)";
+    // solve initial constraint, 
     
-    boolean result = abcDriver.isSatisfiable(constraint);
-    
-    if (result) {
-      System.out.println("Satisfiable");
-      long bound = 30;
-      BigInteger count = abcDriver.countVariable("var_abc",bound);
-      byte[] func = abcDriver.getModelCounterForVariable("var_abc");
-      if (count != null) {
-        System.out.println("Number of solutions within bound: " + bound + " is " + count.toString());
-      } else {
-        System.out.println("An error occured during counting, please contact vlab@cs.ucsb.edu");
-      }
-      
-      BigInteger count2 = abcDriver.countVariable("var_abc", bound, func);
-      System.out.println("cache count: " + count2);
-      
-//      abcDriver.printResultAutomaton();
-      
-      Map<String, String> results = abcDriver.getSatisfyingExamples();
-      for (Entry<String, String> var_result : results.entrySet()) {
-        System.out.println(var_result.getKey() + " : \"" + var_result.getValue() + "\"");
-      }
-    } else {
-      System.out.println("Unsatisfiable");
-    }
-    
-    constraint = "(declare-fun x () Int)\n"
-            + "(declare-fun y () Int)\n"
-            + "(assert (= x (* 2 y)))\n"
-            + "(assert (> x 0))\n"
-            + "(check-sat)"; 
+    boolean result = abcDriver.isSatisfiable(core_constraint);
+    System.out.println("----------DONE CORE-----------");
+    // get id of core constraint
+    String core_constraint_id = abcDriver.getCurrentID();
 
-    result = abcDriver.isSatisfiable(constraint);
-//    String func = abcDriver.getModelCounterForInts();
-//    System.out.println("func: " + func);
-    if (result) {
-      System.out.println("Satisfiable");
-          
-      Map<String, String> results = abcDriver.getSatisfyingExamples();
-      for (Entry<String, String> var_result : results.entrySet()) {
-        System.out.println(var_result.getKey() + " : \"" + var_result.getValue() + "\"");
-      }
-    } else {
-      System.out.println("Unsatisfiable");
+    // from core constraint, we have two branches we want to build off of
+    String branch1 = "(assert (< l h))";
+    String branch2 = "(assert (> l h))";
+
+
+    // isSatisfiable2 assumes incremental mode; takes two params: constraint, and branch
+    // if branch = true, then ABC will save the current ID, clone it, give the clone a new ID,
+    //                   and continue from there in incremental mode
+    // if branch = false, then ABC will use the state associated with the current ID and
+    //                   continue from there in incremental mode; e.g., the current state is
+    //                   taken as the "initial" state for the next solve, and is modified from thereon
+    result = abcDriver.isSatisfiable2(branch1, true);
+    // since branch=true, we gotta get the ID if we want to come back to this state
+    String branch1_id = abcDriver.getCurrentID();
+
+
+    // lets get a random example, bounded, for h with bound of 5
+    Map<String, String> results = abcDriver.getSatisfyingExamplesRandomBounded(5);
+    for (Entry<String, String> var_result : results.entrySet()) {
+      System.out.println(var_result.getKey() + " : \"" + var_result.getValue() + "\"");
     }
+    System.out.println("----------DONE BRANCH1------------");
+
+
+    // lets go back and solve for branch 2 now
+    // load core id
+    abcDriver.loadID(core_constraint_id);
+    // tell ABC to branch and solve for branch2 constraint
+    result = abcDriver.isSatisfiable2(branch2, true);
+    // lets get a random example, bounded, for h with bound of 5
+    results = abcDriver.getSatisfyingExamplesRandomBounded(5);
+    for (Entry<String, String> var_result : results.entrySet()) {
+      System.out.println(var_result.getKey() + " : \"" + var_result.getValue() + "\"");
+    }
+    System.out.println("-----------DONE BRANCH2-----------");
+
+
+    // lets go back to branch1
+    abcDriver.loadID(branch1_id);
+    // lets go incremental, but make branch=false; this will take branch1_id's state
+    // and continue on with it, without making a copy
+    String branch1_constraint2 = "(assert (= (charAt h 1) \"Z\"))";
+    result = abcDriver.isSatisfiable2(branch1_constraint2,false);
+
+    results = abcDriver.getSatisfyingExamplesRandomBounded(5);
+    for (Entry<String, String> var_result : results.entrySet()) {
+      System.out.println(var_result.getKey() + " : \"" + var_result.getValue() + "\"");
+    }
+    System.out.println("-----------END-----------");
+    
     
     abcDriver.dispose(); // release resources
   }

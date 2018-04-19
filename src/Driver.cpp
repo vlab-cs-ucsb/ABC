@@ -620,6 +620,10 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandomBounded(co
 					auto single_string_auto = string_auto->GetAutomatonForVariable(it.first);
 					auto single_string_auto_bounded = single_string_auto->RestrictLengthTo(bound);
 					delete single_string_auto;
+          if(single_string_auto_bounded->IsEmptyLanguage()) {
+            delete single_string_auto_bounded;
+            continue;
+          }
 					results[it.first] = single_string_auto_bounded->GetAnAcceptingStringRandom();
 					cached_bounded_values_[it.first] = new Solver::Value(single_string_auto_bounded);
 				}
@@ -729,10 +733,29 @@ void Driver::set_option(const Option::Name option, const std::string value) {
 
 void Driver::loadID(std::string id) {
 	if(incremental_states_.find(id) != incremental_states_.end()) {
-		current_id_ = id;
+		LOG(INFO) << "FOUND IT!";
+    current_id_ = id;
+    symbol_table_ = incremental_states_[current_id_];
 	} else {
+    LOG(INFO) << "NO FIND!";
 		current_id_ = "";
+    symbol_table_ = nullptr;
 	}
+
+  for(auto &iter : cached_values_) {
+		delete iter.second;
+		iter.second = nullptr;
+	}
+	cached_values_.clear();
+
+	for(auto &iter : cached_bounded_values_) {
+		delete iter.second;
+		iter.second = nullptr;
+	}
+	cached_bounded_values_.clear();
+  
+  script_ = nullptr;
+
 }
 
 std::string Driver::getCurrentID() {
@@ -742,7 +765,7 @@ std::string Driver::getCurrentID() {
 void Driver::destroyID(std::string id) {
   if(incremental_states_.find(id) != incremental_states_.end()) {
     if(current_id_ == id) {
-    for(auto &iter : cached_values_) {
+      for(auto &iter : cached_values_) {
 				delete iter.second;
 				iter.second = nullptr;
 			}
@@ -767,6 +790,16 @@ void Driver::saveStateAndBranch() {
   if(current_id_.empty()) {
     return;
   }
+  for(auto &iter : cached_values_) {
+    delete iter.second;
+    iter.second = nullptr;
+  }
+  cached_values_.clear();
+  for(auto &iter : cached_bounded_values_) {
+    delete iter.second;
+    iter.second = nullptr;
+  }
+  cached_bounded_values_.clear();
   std::string next_id = current_id_.append(std::to_string(counter));
   current_id_ = next_id;
   incremental_states_[current_id_] = symbol_table_->clone();

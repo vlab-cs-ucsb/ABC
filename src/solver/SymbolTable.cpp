@@ -21,13 +21,17 @@ SymbolTable::SymbolTable()
 
 SymbolTable::SymbolTable(const SymbolTable &symbol_table) {
   // can copy scopes
+  
   for(auto &iter : symbol_table.scope_stack_) {
     this->scope_stack_.push_back(iter);
-
   }
 
   for(auto &iter : symbol_table.scopes_) {
     this->scopes_.insert(iter);
+  }
+
+  for(auto &iter : symbol_table.variables_) {
+    variables_.insert(std::make_pair(iter.first, iter.second));
   }
 
   for(auto &equiv_iter : symbol_table.variable_equivalence_table_) {
