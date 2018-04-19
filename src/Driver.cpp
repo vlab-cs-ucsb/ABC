@@ -630,6 +630,11 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandomBounded(co
 					auto single_string_auto = string_auto->GetAutomatonForVariable(it.first);
 					auto single_string_auto_bounded = single_string_auto->RestrictLengthTo(bound);
 					delete single_string_auto;
+          if(single_string_auto_bounded->IsEmptyLanguage()) {
+            delete single_string_auto_bounded;
+            single_string_auto_bounded = nullptr;
+            continue;
+          }
 					results[it.first] = single_string_auto_bounded->GetAnAcceptingStringRandom();
 					cached_bounded_values_[it.first] = new Solver::Value(single_string_auto_bounded);
 				}
