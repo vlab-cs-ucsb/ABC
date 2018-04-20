@@ -618,10 +618,13 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandomBounded(co
 				auto string_formula = string_auto->GetFormula();
 				for(auto it : string_formula->GetVariableCoefficientMap()) {
 					auto single_string_auto = string_auto->GetAutomatonForVariable(it.first);
-					auto single_string_auto_bounded = single_string_auto->RestrictLengthTo(bound);
+          auto length_auto = Theory::StringAutomaton::MakeAnyStringLengthLessThanOrEqualTo(bound);
+					auto single_string_auto_bounded = single_string_auto->Intersect(length_auto);
+          delete length_auto;
 					delete single_string_auto;
           if(single_string_auto_bounded->IsEmptyLanguage()) {
             delete single_string_auto_bounded;
+            single_string_auto_bounded = nullptr;
             continue;
           }
 					results[it.first] = single_string_auto_bounded->GetAnAcceptingStringRandom();

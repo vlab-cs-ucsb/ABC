@@ -1799,6 +1799,7 @@ StringAutomaton_ptr StringAutomaton::CharAt(const int index) {
     return charat_auto;
   }
 
+
   std::set<int> states_at_index = getStatesReachableBy(index);
   unsigned max = states_at_index.size();
   if (max == 0) {
@@ -2841,11 +2842,11 @@ StringAutomaton_ptr StringAutomaton::RestrictAtIndexTo(
 	CHECK_EQ(this->num_tracks_,1);
   StringAutomaton_ptr restricted_auto = nullptr, tmp_auto_1 = nullptr, tmp_auto_2;
   StringAutomaton_ptr length_string_auto = new StringAutomaton(index_auto->getDFA(),index_auto->get_number_of_bdd_variables());
+  StringAutomaton_ptr temp_auto = this->Intersect(length_string_auto);
 //  UnaryAutomaton_ptr unary_auto = index_auto->toUnaryAutomaton();
 //  StringAutomaton_ptr length_string_auto = unary_auto->toStringAutomaton();
 //  delete unary_auto;
   StringAutomaton_ptr any_string = StringAutomaton::MakeAnyString();
-
   tmp_auto_1 = length_string_auto->Concat(sub_string_auto);
   if (tmp_auto_1->IsEmptyString()) {
     // restricting string to be an empty string, a special case for index 0 and sub_string_auto is empty
@@ -2853,13 +2854,22 @@ StringAutomaton_ptr StringAutomaton::RestrictAtIndexTo(
   } else {
     tmp_auto_2 = tmp_auto_1->Concat(any_string);
   }
-  length_string_auto->dfa_ = nullptr; // it is index_auto's dfa
 
-  delete length_string_auto; length_string_auto = nullptr;
+
   delete tmp_auto_1; tmp_auto_1 = nullptr;
   delete any_string; any_string = nullptr;
   restricted_auto = this->Intersect(tmp_auto_2);
   delete tmp_auto_2; tmp_auto_2 = nullptr;
+
+  if(not temp_auto->IsEmptyLanguage()) {
+    tmp_auto_2 = restricted_auto->Union(temp_auto);
+    delete restricted_auto;
+    restricted_auto = tmp_auto_2;
+  }
+
+  length_string_auto->dfa_ = nullptr; // it is index_auto's dfa
+  delete length_string_auto; length_string_auto = nullptr;
+
 
   DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictIndexTo(" << index_auto->getId() << ", " << sub_string_auto->id_ << ")";
 
