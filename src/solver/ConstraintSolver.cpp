@@ -457,6 +457,9 @@ void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
     if (not intersection->is_satisfiable()) {
       result = new Value(true);
       delete intersection;
+    } else if(param_left->isSingleValue() and param_right->isSingleValue() and intersection->is_satisfiable()) {
+      result = new Value(false);
+      delete intersection;
     } else {
       result = intersection;
     }
@@ -867,11 +870,11 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *sub_string_term;
   Value_ptr result = nullptr, param_subject = getTermValue(sub_string_term->subject_term), param_start_index =
       getTermValue(sub_string_term->start_index_term), param_end_index = nullptr;
-
+  int start_index_value = 0;
   // First calculate substring from start to end index
   Theory::StringAutomaton_ptr substring_auto = nullptr;
   if (Value::Type::INT_CONSTANT == param_start_index->getType()) {
-    int start_index_value = param_start_index->getIntConstant();
+    start_index_value = param_start_index->getIntConstant();
     if (start_index_value == 0) {
       substring_auto = param_subject->getStringAutomaton()->clone();
     }
@@ -930,12 +933,16 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
           delete string_len_end_index_auto;
           string_len_end_index_auto = nullptr;
         }
-
       }
+    } else if(Value::Type::INT_CONSTANT == param_start_index->getType()) {
+      int end_index_value = param_end_index->getIntConstant();
+      LOG(INFO) << "Start index = " << start_index_value;
+      LOG(INFO) << "End index   = " << end_index_value;
+      substring_auto = sub_str_start_auto->SubString(0,end_index_value-start_index_value);
+      LOG(INFO) << "After substring";
     } else {
       LOG(FATAL) << "implement and fix me";
     }
-
   } else {
     LOG(FATAL) << "implement me";
   }
