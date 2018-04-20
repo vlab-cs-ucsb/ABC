@@ -936,10 +936,7 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
       }
     } else if(Value::Type::INT_CONSTANT == param_start_index->getType()) {
       int end_index_value = param_end_index->getIntConstant();
-      LOG(INFO) << "Start index = " << start_index_value;
-      LOG(INFO) << "End index   = " << end_index_value;
       substring_auto = sub_str_start_auto->SubString(0,end_index_value-start_index_value);
-      LOG(INFO) << "After substring";
     } else {
       LOG(FATAL) << "implement and fix me";
     }
