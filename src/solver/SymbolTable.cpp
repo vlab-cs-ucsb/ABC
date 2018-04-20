@@ -14,14 +14,16 @@ using namespace SMT;
 
 const int SymbolTable::VLOG_LEVEL = 10;
 
-SymbolTable::SymbolTable()
+SymbolTable::SymbolTable(bool is_root)
   : global_assertion_result_(true) {
+  is_root_table_ = is_root;
   count_symbol_ = nullptr;
 }
 
 SymbolTable::SymbolTable(const SymbolTable &symbol_table) {
+  is_root_table_ = false;
+
   // can copy scopes
-  
   for(auto &iter : symbol_table.scope_stack_) {
     this->scope_stack_.push_back(iter);
   }
@@ -87,8 +89,11 @@ SymbolTable::~SymbolTable() {
     delete eq;
   }
   equivalence_classes.clear();
-  for (auto& entry : variables_) {
-    delete entry.second;
+
+  if(is_root_table_) {
+    for (auto &entry : variables_) {
+      delete entry.second;
+    }
   }
 
   if(count_symbol_ != nullptr) {

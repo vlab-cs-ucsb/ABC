@@ -21,7 +21,7 @@ Driver::Driver()
 }
 
 Driver::~Driver() {
-  delete symbol_table_;
+  if(symbol_table_ != nullptr) delete symbol_table_;
   delete script_;
   delete constraint_information_;
   Theory::Automaton::CleanUp();
@@ -649,9 +649,20 @@ void Driver::reset() {
 	}
 	cached_bounded_values_.clear();
 
-  script_ = nullptr;
-  symbol_table_ = nullptr;
-  current_id_ = "";
+	if(Option::Solver::INCREMENTAL) {
+		script_ = nullptr;
+		symbol_table_ = nullptr;
+		current_id_ = "";
+	} else {
+		if(incremental_states_.find(current_id_) != incremental_states_.end()) {
+			incremental_states_.erase(current_id_);
+		}
+		current_id_ = "";
+		delete symbol_table_;
+		delete script_;
+		script_ = nullptr;
+		symbol_table_ = nullptr;
+	}
 }
 
 void Driver::set_option(const Option::Name option) {
@@ -701,6 +712,9 @@ void Driver::set_option(const Option::Name option) {
     case Option::Name::COUNT_BOUND_EXACT:
     	Option::Solver::COUNT_BOUND_EXACT = true;
     	break;
+		case Option::Name::INCREMENTAL:
+			Option::Solver::INCREMENTAL = true;
+			break;
     default:
       LOG(ERROR)<< "option is not recognized: " << static_cast<int>(option);
       break;
@@ -736,11 +750,9 @@ void Driver::set_option(const Option::Name option, const std::string value) {
 
 void Driver::loadID(std::string id) {
 	if(incremental_states_.find(id) != incremental_states_.end()) {
-		LOG(INFO) << "FOUND IT!";
     current_id_ = id;
     symbol_table_ = incremental_states_[current_id_];
 	} else {
-    LOG(INFO) << "NO FIND!";
 		current_id_ = "";
     symbol_table_ = nullptr;
 	}

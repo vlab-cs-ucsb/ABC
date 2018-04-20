@@ -47,7 +47,7 @@ using SymbolTable_ptr = SymbolTable*;
 
 class SymbolTable {
 public:
-  SymbolTable();
+  SymbolTable(bool is_root = true);
   SymbolTable(const SymbolTable&);
   virtual ~SymbolTable();
 
@@ -200,6 +200,8 @@ private:
    * Count variable for kaluza tests
    */ 
   SMT::Primitive_ptr count_symbol_;
+
+  bool is_root_table_;
 
 
   static const int VLOG_LEVEL;

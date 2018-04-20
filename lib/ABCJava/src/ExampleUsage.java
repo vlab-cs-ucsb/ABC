@@ -63,8 +63,15 @@ public class ExampleUsage {
     System.out.println("-----------DONE BRANCH2-----------");
 
 
+    System.out.println("Before destroy");
+    String id_to_delete = abcDriver.getCurrentID();
+    abcDriver.destroyID(id_to_delete);
+    System.out.println("After destroy");
+
+
+
     // lets go back to branch1
-    abcDriver.loadID(branch1_id);
+    abcDriver.loadID(core_constraint_id);
     // lets go incremental, but make branch=false; this will take branch1_id's state
     // and continue on with it, without making a copy
     String branch1_constraint2 = "(assert (= (charAt h 1) \"Z\"))";
