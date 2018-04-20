@@ -1801,10 +1801,6 @@ StringAutomaton_ptr StringAutomaton::CharAt(const int index) {
 
 
   std::set<int> states_at_index = getStatesReachableBy(index);
-  for(auto it : states_at_index) {
-  	LOG(INFO) << it;
-  }
-  std::cin.get();
   unsigned max = states_at_index.size();
   if (max == 0) {
     auto charat_auto = StringAutomaton::MakePhi();
