@@ -409,9 +409,9 @@ Solver::ModelCounter& Driver::GetModelCounterForVariable(const std::string var_n
 }
 
 Solver::ModelCounter& Driver::GetModelCounter() {
-  if (not is_model_counter_cached_) {
+  //if (not is_model_counter_cached_) {
     SetModelCounter();
-  }
+  //}
   return model_counter_;
 }
 
