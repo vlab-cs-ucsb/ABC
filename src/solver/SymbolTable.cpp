@@ -22,6 +22,7 @@ SymbolTable::SymbolTable(bool is_root)
 
 SymbolTable::SymbolTable(const SymbolTable &symbol_table) {
   is_root_table_ = false;
+  global_assertion_result_ = true;
 
   // can copy scopes
   for(auto &iter : symbol_table.scope_stack_) {

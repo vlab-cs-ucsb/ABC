@@ -28,7 +28,7 @@ void EquivClassRuleRunner::start() {
   if (not has_optimization_rules()) {
     return;
   }
-  symbol_table_->push_scope(root, false);
+  symbol_table_->push_scope(root);
   visit(root);
   symbol_table_->pop_scope();
 
@@ -412,7 +412,7 @@ void EquivClassRuleRunner::set_variable_value(Variable_ptr variable, TermConstan
       LOG(FATAL)<< "constant is not supported for substitution: " << term_constant->getValue();
       break;
   }
-  symbol_table_->set_value(variable, result);
+  symbol_table_->IntersectValue(variable, result);
   DVLOG(VLOG_LEVEL)<< "value updated for variable: " << *variable << " -> " << *result;
   delete result;
 }
