@@ -1300,7 +1300,7 @@ void StringFormulaGenerator::add_string_variables(std::string group_name, Term_p
 		}
 		// if no group is found, create one
 		if (start_group.empty()) {
-		  LOG(INFO) << "NO START GROUP";
+		  //LOG(INFO) << "NO START GROUP";
 			start_group = generate_group_name(term,variables.begin()->first);
 			group_formula = new StringFormula();
 			group_formula_[start_group] = group_formula;
