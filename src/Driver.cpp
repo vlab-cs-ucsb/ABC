@@ -649,20 +649,21 @@ void Driver::reset() {
 	}
 	cached_bounded_values_.clear();
 
-	if(Option::Solver::INCREMENTAL) {
-		script_ = nullptr;
-		symbol_table_ = nullptr;
-		current_id_ = "";
-	} else {
-		if(incremental_states_.find(current_id_) != incremental_states_.end()) {
-			incremental_states_.erase(current_id_);
-		}
-		current_id_ = "";
-		delete symbol_table_;
-		delete script_;
-		script_ = nullptr;
-		symbol_table_ = nullptr;
+	if(symbol_table_ != nullptr) {
+	  delete symbol_table_;
+	  symbol_table_ = nullptr;
 	}
+
+	if(script_ != nullptr) {
+	  delete script_;
+	  script_ = nullptr;
+	}
+
+  if(incremental_states_.find(current_id_) != incremental_states_.end()) {
+    incremental_states_.erase(current_id_);
+  }
+  current_id_ = "";
+
 }
 
 void Driver::set_option(const Option::Name option) {
