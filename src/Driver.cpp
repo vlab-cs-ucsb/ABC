@@ -819,6 +819,7 @@ void Driver::saveStateAndBranch() {
   std::string next_id = current_id_.append(std::to_string(counter));
   current_id_ = next_id;
   incremental_states_[current_id_] = symbol_table_->clone();
+  counter++;
 }
 
 void Driver::test() {
