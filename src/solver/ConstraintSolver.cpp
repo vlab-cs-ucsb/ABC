@@ -943,7 +943,7 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
       LOG(FATAL) << "implement and fix me";
     }
   } else {
-    LOG(FATAL) << "implement me";
+    //LOG(FATAL) << "implement me";
   }
 
   CHECK_NOTNULL(substring_auto);

@@ -1002,19 +1002,20 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
 
   // TODO baki implement the rest of the logic based on the latest results
   // consider multi-track int and string automata
-  return;
   Theory::StringAutomaton_ptr child_pre_auto = nullptr;
   Value_ptr term_value = getTermPreImage(sub_string_term);
   Value_ptr child_post_value = getTermPostImage(child_term);
   Value_ptr start_index_value = getTermPostImage(sub_string_term->start_index_term);
   Value_ptr end_index_value = nullptr;
 
-  // result of substring
-//  term_value->getStringAutomaton()->inspectAuto(false, true);
-  // subject auto
-//  child_post_value->getStringAutomaton()->inspectAuto(false, true);
-
-
+  if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
+    child_value = new Value(child_post_value->getStringAutomaton()
+            ->RestrictFromIndexToEndTo(start_index_value->getIntConstant(), term_value->getStringAutomaton()));
+  }
+  setTermPreImage(child_term, child_value);
+  visit(child_term);
+  return;
+  /*
   switch (sub_string_term->getMode()) {
     case SubString::Mode::FROMINDEX: {
       if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
@@ -1093,6 +1094,7 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
 
   setTermPreImage(child_term, child_value);
   visit(child_term);
+  */
 }
 
 /**
