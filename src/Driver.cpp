@@ -405,7 +405,7 @@ Theory::BigInteger Driver::Count(const unsigned long int_bound, const unsigned l
 
 Solver::ModelCounter& Driver::GetModelCounterForVariable(const std::string var_name, bool project) {
   auto variable = symbol_table_->get_variable(var_name);
-  auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(script_, variable);
+  auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(), variable);
 
 //  auto it = variable_model_counter_.find(representative_variable);
 //  if (it == variable_model_counter_.end()) {
@@ -424,13 +424,13 @@ Solver::ModelCounter& Driver::GetModelCounter() {
 
 void Driver::SetModelCounterForVariable(const std::string var_name, bool project) {
   auto variable = symbol_table_->get_variable(var_name);
-  auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(script_, variable);
+  auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(), variable);
   Solver::Value_ptr var_value = nullptr;
 
   if(project) {
-  	var_value = symbol_table_->get_projected_value_at_scope(script_, representative_variable);
+  	var_value = symbol_table_->get_projected_value_at_scope(symbol_table_->top_scope(), representative_variable);
   } else {
-  	var_value = symbol_table_->get_value_at_scope(script_, representative_variable);
+  	var_value = symbol_table_->get_value_at_scope(symbol_table_->top_scope(), representative_variable);
   }
 
   // test get_models
@@ -512,7 +512,7 @@ void Driver::SetModelCounter() {
   }
 
   int number_of_int_variables = symbol_table_->get_num_of_variables(SMT::Variable::Type::INT);
-  int number_of_substituted_int_variables = symbol_table_->get_num_of_substituted_variables(script_,
+  int number_of_substituted_int_variables = symbol_table_->get_num_of_substituted_variables(symbol_table_->top_scope(),
                                                                                             SMT::Variable::Type::INT);
   int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables - num_bin_var;
   model_counter_.set_num_of_unconstraint_int_vars(number_of_untracked_int_variables);
@@ -553,7 +553,7 @@ void Driver::printResult(Solver::Value_ptr value, std::ostream& out) {
 }
 
 std::map<SMT::Variable_ptr, Solver::Value_ptr> Driver::getSatisfyingVariables() const {
-  return symbol_table_->get_values_at_scope(script_);
+  return symbol_table_->get_values_at_scope(symbol_table_->top_scope());
 }
 
 std::map<std::string, std::string> Driver::getSatisfyingExamples() {
