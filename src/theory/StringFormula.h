@@ -52,7 +52,9 @@ class StringFormula : public Formula {
   void SetType(Type type);
   StringFormula::Type GetType() const;
   std::string GetConstant() const;
+  std::string GetConstant2() const;
   void SetConstant(std::string constant);
+  void SetConstant2(std::string constant);
   bool IsConstant() const;
 
   bool HasRelationToMixedTerm(const std::string var_name) const;
@@ -70,6 +72,8 @@ protected:
 
   StringFormula::Type type_;
   std::string constant_;
+  // BAD! Rework instead of this hack!
+  std::string constant2_;
 
   // TODO a quick solution for a restricted set of cases in mixed constraints
   // generalize it as much as possible

@@ -25,7 +25,8 @@ StringFormula::~StringFormula() {
 StringFormula::StringFormula(const StringFormula& other)
     : Formula(other),
     	type_(other.type_),
-      constant_(other.constant_) {
+      constant_(other.constant_),
+      constant2_(other.constant2_) {
   this->mixed_terms_ = other.mixed_terms_;
 }
 
@@ -186,8 +187,16 @@ std::string StringFormula::GetConstant() const {
   return constant_;
 }
 
+std::string StringFormula::GetConstant2() const {
+  return constant2_;
+}
+
 void StringFormula::SetConstant(std::string constant) {
   this->constant_ = constant;
+}
+
+void StringFormula::SetConstant2(std::string constant) {
+  this->constant2_ = constant;
 }
 
 bool StringFormula::IsConstant() const {

@@ -24,7 +24,7 @@ Driver::Driver()
 }
 
 Driver::~Driver() {
-  if(symbol_table_ != nullptr) delete symbol_table_;
+  //if(symbol_table_ != nullptr) delete symbol_table_;
   if(script_ != nullptr) delete script_;
   for(auto& it : incremental_states_) {
     if(it.second != nullptr) {

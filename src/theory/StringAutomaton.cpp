@@ -908,7 +908,22 @@ StringAutomaton_ptr StringAutomaton::MakeLessThan(StringFormula_ptr formula) {
 			left_track = num_tracks;
 			right_track = formula->GetVariableIndex(var_coeff);
 		}
-		constant_string_auto = StringAutomaton::MakeString(formula->GetConstant());
+		if(formula->GetType() == StringFormula::Type::LT_CHARAT) {
+      // GetConstant has index
+      // GetConstant2 has string
+      auto len_auto = StringAutomaton::MakeAnyStringLengthEqualTo(std::stoi(formula->GetConstant()));
+      auto any_auto = StringAutomaton::MakeAnyString();
+      auto char_auto = StringAutomaton::MakeString(formula->GetConstant2());
+      constant_string_auto = len_auto->Concat(char_auto);
+      delete len_auto;
+      delete char_auto; 
+      char_auto = constant_string_auto->Concat(any_auto);
+      constant_string_auto = char_auto;
+      delete any_auto;
+      
+    } else {
+      constant_string_auto = StringAutomaton::MakeString(formula->GetConstant());
+    }
 		num_tracks++;
 	} else {
 		left_track = formula->GetVariableIndex(1);
@@ -965,7 +980,22 @@ StringAutomaton_ptr StringAutomaton::MakeLessThanOrEqual(StringFormula_ptr formu
 			left_track = num_tracks;
 			right_track = formula->GetVariableIndex(var_coeff);
 		}
-		constant_string_auto = StringAutomaton::MakeString(formula->GetConstant());
+		if(formula->GetType() == StringFormula::Type::LE_CHARAT) {
+      // GetConstant has index
+      // GetConstant2 has string
+      auto len_auto = StringAutomaton::MakeAnyStringLengthEqualTo(std::stoi(formula->GetConstant()));
+      auto any_auto = StringAutomaton::MakeAnyString();
+      auto char_auto = StringAutomaton::MakeString(formula->GetConstant2());
+      constant_string_auto = len_auto->Concat(char_auto);
+      delete len_auto;
+      delete char_auto; 
+      char_auto = constant_string_auto->Concat(any_auto);
+      constant_string_auto = char_auto;
+      delete any_auto;
+      
+    } else {
+      constant_string_auto = StringAutomaton::MakeString(formula->GetConstant());
+    }
 		num_tracks++;
 	} else {
 		left_track = formula->GetVariableIndex(1);
@@ -1022,7 +1052,23 @@ StringAutomaton_ptr StringAutomaton::MakeGreaterThan(StringFormula_ptr formula) 
 			left_track = num_tracks;
 			right_track = formula->GetVariableIndex(var_coeff);
 		}
-		constant_string_auto = StringAutomaton::MakeString(formula->GetConstant());
+    if(formula->GetType() == StringFormula::Type::GT_CHARAT) {
+      // GetConstant has index
+      // GetConstant2 has string
+      auto len_auto = StringAutomaton::MakeAnyStringLengthEqualTo(std::stoi(formula->GetConstant()));
+      auto any_auto = StringAutomaton::MakeAnyString();
+      auto char_auto = StringAutomaton::MakeString(formula->GetConstant2());
+      constant_string_auto = len_auto->Concat(char_auto);
+      delete len_auto;
+      delete char_auto; 
+      char_auto = constant_string_auto->Concat(any_auto);
+      constant_string_auto = char_auto;
+      delete any_auto;
+      
+    } else {
+      constant_string_auto = StringAutomaton::MakeString(formula->GetConstant());
+    }
+		
 		num_tracks++;
 	} else {
 		left_track = formula->GetVariableIndex(1);
@@ -1081,7 +1127,21 @@ StringAutomaton_ptr StringAutomaton::MakeGreaterThanOrEqual(StringFormula_ptr fo
 			left_track = num_tracks;
 			right_track = formula->GetVariableIndex(var_coeff);
 		}
-		constant_string_auto = StringAutomaton::MakeString(formula->GetConstant());
+		if(formula->GetType() == StringFormula::Type::GE_CHARAT) {
+      // GetConstant has index
+      // GetConstant2 has string
+      auto len_auto = StringAutomaton::MakeAnyStringLengthEqualTo(std::stoi(formula->GetConstant()));
+      auto any_auto = StringAutomaton::MakeAnyString();
+      auto char_auto = StringAutomaton::MakeString(formula->GetConstant2());
+      constant_string_auto = len_auto->Concat(char_auto);
+      delete len_auto;
+      delete char_auto; 
+      char_auto = constant_string_auto->Concat(any_auto);
+      constant_string_auto = char_auto;
+      delete any_auto; 
+    } else {
+      constant_string_auto = StringAutomaton::MakeString(formula->GetConstant());
+    }
 		num_tracks++;
 	} else {
 		left_track = formula->GetVariableIndex(1);
