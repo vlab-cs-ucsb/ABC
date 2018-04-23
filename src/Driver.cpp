@@ -18,11 +18,33 @@ Driver::Driver()
       constraint_information_(nullptr),
       is_model_counter_cached_ { false },
 			current_id_ {""} {
+  incremental_states_.clear();
+  cached_values_.clear();
+  cached_bounded_values_.clear();
 }
 
 Driver::~Driver() {
   if(symbol_table_ != nullptr) delete symbol_table_;
-  delete script_;
+  if(script_ != nullptr) delete script_;
+  for(auto& it : incremental_states_) {
+    if(it.second != nullptr) {
+      delete it.second;
+    }
+    it.second = nullptr;
+  }
+  incremental_states_.clear();
+
+  for(auto &iter : cached_values_) {
+		delete iter.second;
+		iter.second = nullptr;
+	}
+	cached_values_.clear();
+
+	for(auto &iter : cached_bounded_values_) {
+		delete iter.second;
+		iter.second = nullptr;
+	}
+	cached_bounded_values_.clear();
   delete constraint_information_;
   Theory::Automaton::CleanUp();
 }
