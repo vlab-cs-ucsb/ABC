@@ -126,12 +126,25 @@ void Driver::Solve() {
   Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
   constraint_solver.start();
   if(symbol_table_->top_scope() != script_) {
-    //LOG(INFO) << "UPDATING SCOPE VALUES";
+    // LOG(INFO) << "UPDATING SCOPE VALUES";
     auto values = symbol_table_->get_values_at_scope(script_);
     for(auto &var_iter : values) {
-      symbol_table_->IntersectValue(var_iter.first,var_iter.second);
+      bool rez = symbol_table_->IntersectValue(var_iter.first,var_iter.second);
+      symbol_table_->update_satisfiability_result(rez);
     }
   }
+
+  for(auto &iter : cached_values_) {
+		delete iter.second;
+		iter.second = nullptr;
+	}
+	cached_values_.clear();
+
+	for(auto &iter : cached_bounded_values_) {
+		delete iter.second;
+		iter.second = nullptr;
+	}
+	cached_bounded_values_.clear();
 }
 
 bool Driver::is_sat() {
