@@ -1267,8 +1267,6 @@ StringAutomaton_ptr StringAutomaton::MakeGreaterThanOrEqual(StringFormula_ptr fo
 		result_auto = new StringAutomaton(result_dfa,formula,num_tracks*VAR_PER_TRACK);
 	}
 
-  LOG(INFO) << "C = " << formula->GetConstant();
-  LOG(INFO) << "C2= " << formula->GetConstant2();
 	return result_auto;
 }
 
