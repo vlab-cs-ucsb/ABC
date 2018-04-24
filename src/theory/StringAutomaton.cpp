@@ -933,7 +933,23 @@ StringAutomaton_ptr StringAutomaton::MakeLessThan(StringFormula_ptr formula) {
 
 	if(formula->GetType() == StringFormula::Type::LT_CHARAT) {
 		result_dfa = StringAutomaton::MakeRelationalCharAtDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
-	} else {
+	} else if(formula->GetConstant() != "" and num_vars > 1) {
+		// if string is not empty, ineq is of form X > Y.c
+    int temp_left = num_tracks;
+    int temp_right = right_track;
+    int temp_num_tracks = num_tracks+1;
+
+    StringAutomaton_ptr concat_auto = StringAutomaton::MakeConcatExtraTrack(temp_left,temp_right,temp_num_tracks,formula->GetConstant());
+    DFA_ptr eq_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::LT, VAR_PER_TRACK, num_tracks+1, left_track, temp_left);
+    StringAutomaton_ptr eq_auto = new StringAutomaton(eq_dfa,num_tracks+1,(num_tracks+1)*VAR_PER_TRACK);
+    auto temp_auto = concat_auto->Intersect(eq_auto);
+    delete eq_auto;
+    delete concat_auto;
+    result_auto = temp_auto->ProjectKTrack(num_tracks);
+    delete temp_auto;
+    result_auto->SetFormula(formula);
+    return result_auto;
+  } else {
 		result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::LT,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	}
 
@@ -1005,7 +1021,23 @@ StringAutomaton_ptr StringAutomaton::MakeLessThanOrEqual(StringFormula_ptr formu
 
 	if(formula->GetType() == StringFormula::Type::LE_CHARAT) {
 		result_dfa = StringAutomaton::MakeRelationalCharAtDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
-	} else {
+	} else if(formula->GetConstant() != "" and num_vars > 1) {
+		// if string is not empty, ineq is of form X > Y.c
+    int temp_left = num_tracks;
+    int temp_right = right_track;
+    int temp_num_tracks = num_tracks+1;
+
+    StringAutomaton_ptr concat_auto = StringAutomaton::MakeConcatExtraTrack(temp_left,temp_right,temp_num_tracks,formula->GetConstant());
+    DFA_ptr eq_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::LE, VAR_PER_TRACK, num_tracks+1, left_track, temp_left);
+    StringAutomaton_ptr eq_auto = new StringAutomaton(eq_dfa,num_tracks+1,(num_tracks+1)*VAR_PER_TRACK);
+    auto temp_auto = concat_auto->Intersect(eq_auto);
+    delete eq_auto;
+    delete concat_auto;
+    result_auto = temp_auto->ProjectKTrack(num_tracks);
+    delete temp_auto;
+    result_auto->SetFormula(formula);
+    return result_auto;
+  } else {
 		result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::LE,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	}
 
@@ -1078,7 +1110,23 @@ StringAutomaton_ptr StringAutomaton::MakeGreaterThan(StringFormula_ptr formula) 
 
 	if(formula->GetType() == StringFormula::Type::GT_CHARAT) {
 		result_dfa = StringAutomaton::MakeRelationalCharAtDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
-	} else {
+	} else if(formula->GetConstant() != "" and num_vars > 1) {
+		// if string is not empty, ineq is of form X > Y.c
+    int temp_left = num_tracks;
+    int temp_right = right_track;
+    int temp_num_tracks = num_tracks+1;
+
+    StringAutomaton_ptr concat_auto = StringAutomaton::MakeConcatExtraTrack(temp_left,temp_right,temp_num_tracks,formula->GetConstant());
+    DFA_ptr eq_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::GT, VAR_PER_TRACK, num_tracks+1, left_track, temp_left);
+    StringAutomaton_ptr eq_auto = new StringAutomaton(eq_dfa,num_tracks+1,(num_tracks+1)*VAR_PER_TRACK);
+    auto temp_auto = concat_auto->Intersect(eq_auto);
+    delete eq_auto;
+    delete concat_auto;
+    result_auto = temp_auto->ProjectKTrack(num_tracks);
+    delete temp_auto;
+    result_auto->SetFormula(formula);
+    return result_auto;
+  } else {
 		result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::GT,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	}
 
@@ -1151,7 +1199,23 @@ StringAutomaton_ptr StringAutomaton::MakeGreaterThanOrEqual(StringFormula_ptr fo
 
 	if(formula->GetType() == StringFormula::Type::GE_CHARAT) {
 		result_dfa = StringAutomaton::MakeRelationalCharAtDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
-	} else {
+	} else if(formula->GetConstant() != "" and num_vars > 1) {
+		// if string is not empty, ineq is of form X > Y.c
+    int temp_left = num_tracks;
+    int temp_right = right_track;
+    int temp_num_tracks = num_tracks+1;
+
+    StringAutomaton_ptr concat_auto = StringAutomaton::MakeConcatExtraTrack(temp_left,temp_right,temp_num_tracks,formula->GetConstant());
+    DFA_ptr eq_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::GE, VAR_PER_TRACK, num_tracks+1, left_track, temp_left);
+    StringAutomaton_ptr eq_auto = new StringAutomaton(eq_dfa,num_tracks+1,(num_tracks+1)*VAR_PER_TRACK);
+    auto temp_auto = concat_auto->Intersect(eq_auto);
+    delete eq_auto;
+    delete concat_auto;
+    result_auto = temp_auto->ProjectKTrack(num_tracks);
+    delete temp_auto;
+    result_auto->SetFormula(formula);
+    return result_auto;
+  } else {
 		result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::GE,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	}
 
