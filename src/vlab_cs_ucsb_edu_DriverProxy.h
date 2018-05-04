@@ -201,6 +201,14 @@ JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getSatisfyingExample
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    mutateModel
+ * Signature: (Ljava/lang/StringLjava/lang/String;)Ljava/lang/String
+ */
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_mutateModel
+  (JNIEnv *, jobject, jstring, jstring);
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    reset
  * Signature: ()V
  */

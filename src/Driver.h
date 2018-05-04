@@ -93,6 +93,7 @@ public:
   std::map<std::string, std::string> getSatisfyingExamples();
   std::map<std::string, std::string> getSatisfyingExamplesRandom();
   std::map<std::string, std::string> getSatisfyingExamplesRandomBounded(const int bound);
+  std::string getMutatedModel(std::string var_name, std::string model);
 
   void reset();
 //	void solveAst();

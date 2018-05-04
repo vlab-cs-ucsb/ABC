@@ -280,6 +280,7 @@ public:
   bool IsAcceptingSingleString();
   std::string GetAnAcceptingString();
   std::string GetAnAcceptingStringRandom();
+  std::string GetMutatedAcceptingString(std::string model);
 
   StringFormula_ptr GetFormula();
   void SetFormula(StringFormula_ptr formula);

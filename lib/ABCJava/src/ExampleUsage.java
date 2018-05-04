@@ -80,6 +80,8 @@ public class ExampleUsage {
     results = abcDriver.getSatisfyingExamplesRandomBounded(5);
     for (Entry<String, String> var_result : results.entrySet()) {
       System.out.println(var_result.getKey() + " : \"" + var_result.getValue() + "\"");
+      String mutated_model = abcDriver.mutateModel(var_result.getKey(),var_result.getValue());
+      System.out.println(var_result.getKey() + "(mutated) : \"" + mutated_model + "\"");
     }
     System.out.println("-----------END-----------");
     

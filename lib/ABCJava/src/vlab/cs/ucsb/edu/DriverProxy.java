@@ -155,6 +155,8 @@ public class DriverProxy {
 	public native Map<String, String> getSatisfyingExamplesRandom();
 
 	public native Map<String, String> getSatisfyingExamplesRandomBounded(final int bound);
+	
+    public native String mutateModel(final String varName, final String model);
 
 	public native void reset();
 

@@ -5,6 +5,7 @@
  *      Author: Baki,Will
  */
 
+#include <mona/dfa.h>
 #include "StringAutomaton.h"
 
 namespace Vlab {
@@ -3952,6 +3953,93 @@ std::string StringAutomaton::GetAnAcceptingStringRandom() {
   }
   delete example;
   return ss.str();
+}
+
+/*
+ * for now, give back model with same length
+ */
+std::string StringAutomaton::GetMutatedAcceptingString(std::string model) {
+  CHECK_EQ(this->num_tracks_,1);
+
+  int length = model.length();
+  std::string mutated_model = model;
+  std::vector<int> original_path;
+	std::map<int, std::set<std::string>> possible_mutations;
+	std::vector<int> eligible_positions;
+//LOG(INFO) << "NUM_STATES: " << this->dfa_->ns;
+	original_path.push_back(dfa_->s);
+//LOG(INFO) << 1;
+  for(int i = 0; i < length; i++) {
+    int s1 = original_path.back();
+		std::string decoded_c = GetBinaryStringMSB((unsigned long)model[i],this->num_of_bdd_variables_);
+		std::vector<char> decoded_c_vector(decoded_c.begin(),decoded_c.end()-1);
+		int s2 = getNextState(original_path.back(),decoded_c_vector);
+		original_path.push_back(s2);
+
+
+    possible_mutations[s1] = (DFAGetTransitionsFromTo(this->dfa_,s1,s2,this->num_of_bdd_variables_));
+    // a position is only eligible for mutation if there is more than one transition to choose from
+    if(possible_mutations[s1].size() > 1) {
+      eligible_positions.push_back(i);
+    }
+  }
+//LOG(INFO) << 2;
+  // if no eligible positions, we can't mutate! return original string
+  if(eligible_positions.size() == 0) {
+    return mutated_model;
+  }
+//LOG(INFO) << 3;
+  std::mt19937 rng;
+	rng.seed(std::random_device()());
+	std::uniform_int_distribution<int> dist(1,eligible_positions.size());
+	std::uniform_int_distribution<int> coin_flip(0,1);
+//LOG(INFO) << 4;
+  int num_to_mutate = dist(rng);
+  while(num_to_mutate > 0) {
+//    LOG(INFO) << "--------num_to_mutate = " << num_to_mutate;
+    std::uniform_int_distribution<int> rand_position_gen(0,eligible_positions.size()-1);
+    int rand_num = rand_position_gen(rng);
+//    LOG(INFO) << "rand_num = " << rand_num;
+    int rand_pos = eligible_positions[rand_num];
+    eligible_positions.erase(eligible_positions.begin()+rand_num);
+//    LOG(INFO) << "rand_pos = " << rand_pos;
+
+    // get start state from original path
+    int rand_pos_state = original_path[rand_pos];
+//    LOG(INFO) << "rand_pos_state = " << rand_pos_state;
+//    LOG(INFO) << "possible_mutations.size() = " << possible_mutations.size();
+
+    std::uniform_int_distribution<int> rand_transition_gen(0,possible_mutations[rand_pos_state].size()-1);
+    // get random transition from set of transitions
+    int rand_transition_index = rand_transition_gen(rng);
+//    LOG(INFO) << "rand_transition_index = " << rand_transition_index;
+//    LOG(INFO) << "total num possible mutations = " << possible_mutations[rand_pos_state].size();
+    std::set<std::string>::iterator set_it = possible_mutations[rand_pos_state].begin();
+    std::advance(set_it,rand_transition_index);
+    std::string rand_transition_char = *set_it;
+    //std::string rand_transition_char = *std::next(possible_mutations[rand_pos_state].begin(),rand_transition_index);
+//    LOG(INFO) << "rand_transition_char = " << rand_transition_char;
+    for(int i = 0; i < rand_transition_char.length(); i++) {
+      if(rand_transition_char[i] == 'X') {
+        if(coin_flip(rng)) {
+          rand_transition_char[i] = '1';
+        } else {
+          rand_transition_char[i] = '0';
+        }
+      }
+    }
+    rand_transition_char.push_back('\0');
+//    LOG(INFO) << "rand_transition_char = " << rand_transition_char;
+    unsigned char rand_char = Automaton::strtobin(&rand_transition_char[0],this->num_of_bdd_variables_);
+//    LOG(INFO) << "rand_char = " << rand_char;
+    mutated_model[rand_pos] = rand_char;
+    num_to_mutate--;
+  }
+//LOG(INFO) << 5;
+
+//  LOG(INFO) << "Mutated_model: " << mutated_model;
+
+	return mutated_model;
 }
 
 StringFormula_ptr StringAutomaton::GetFormula() {

@@ -678,6 +678,23 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandomBounded(co
   return results;
 }
 
+std::string Driver::getMutatedModel(std::string var_name, std::string model) {
+  auto var_value = (cached_bounded_values_.find(var_name) != cached_bounded_values_.end()) ?
+                            cached_bounded_values_[var_name] : symbol_table_->get_value(var_name);
+
+
+  if(var_value == nullptr || var_value->getType() != Vlab::Solver::Value::Type::STRING_AUTOMATON) {
+    return model;
+  }
+
+  if(var_value->getStringAutomaton()->GetNumTracks() > 1) {
+    auto var_projected_auto = var_value->getStringAutomaton()->GetAutomatonForVariable(var_name);
+    return var_projected_auto->GetMutatedAcceptingString(model);
+  } else {
+    return var_value->getStringAutomaton()->GetMutatedAcceptingString(model);
+  }
+}
+
 void Driver::reset() {
 	for(auto &iter : cached_values_) {
 		delete iter.second;

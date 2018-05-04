@@ -208,6 +208,13 @@ int main(const int argc, const char **argv) {
 
   if (driver.is_sat()) {
     if (VLOG_IS_ON(30)) {
+//      for(auto& var_value : driver.getSatisfyingExamplesRandomBounded(4)) {
+//        LOG(INFO) << "Original string: " << var_value.first << " = " << var_value.second;
+//        for(int i = 0; i < 10; i++) {
+//          std::string mutated_string = driver.getMutatedModel(var_value.first, var_value.second);
+//          LOG(INFO) << "Mutated  string: " << var_value.first << " = " << mutated_string;
+//        }
+//      }
 //      for (auto& variable_entry : driver.getSatisfyingVariables()) {
 //        variable_entry.second->getStringAutomaton()->inspectAuto(false, true);
 //      }

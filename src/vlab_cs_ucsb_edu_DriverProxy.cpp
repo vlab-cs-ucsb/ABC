@@ -481,6 +481,24 @@ JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_getSatisfyingExample
 
 /*
  * Class:     vlab_cs_ucsb_edu_DriverProxy
+ * Method:    mutateModel
+ * Signature: (Ljava/lang/StringLjava/lang/String;)Ljava/lang/String
+ */
+JNIEXPORT jobject JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_mutateModel(JNIEnv *env, jobject obj, jstring varName, jstring model) {
+  Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
+  const char* varName_arr = env->GetStringUTFChars(varName, JNI_FALSE);
+	std::string varName_str {varName_arr};
+
+	const char* model_arr = env->GetStringUTFChars(model, JNI_FALSE);
+	std::string model_str {model_arr};
+
+	std::string mutated_model = abc_driver->getMutatedModel(varName_str,model_str);
+	jstring j_mutated_model = env->NewStringUTF(mutated_model.c_str());
+	return j_mutated_model;
+}
+
+/*
+ * Class:     vlab_cs_ucsb_edu_DriverProxy
  * Method:    reset
  * Signature: ()V
  */
