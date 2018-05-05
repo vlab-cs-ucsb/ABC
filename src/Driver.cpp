@@ -649,11 +649,11 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandomBounded(co
   // check to see if we've cached automata/projected-automata for variables first
   // otherwise get from symbol table
   // SHOULD ONLY BE EMPTY RIGHT AFTER SOLVING, ONLY STRING AUTOMATA
-  if(not cached_bounded_values_.empty()) {
-  	for(auto it : cached_bounded_values_) {
-  		results[it.first] = cached_bounded_values_[it.first]->getStringAutomaton()->GetAnAcceptingStringRandom();
-  	}
-  } else {
+  // if(not cached_bounded_values_.empty()) {
+  // 	for(auto it : cached_bounded_values_) {
+  // 		results[it.first] = cached_bounded_values_[it.first]->getStringAutomaton()->GetAnAcceptingStringRandom();
+  // 	}
+  // } else {
 		for (auto& variable_entry : getSatisfyingVariables()) {
 			if(Solver::Value::Type::STRING_AUTOMATON == variable_entry.second->getType()) {
 				auto string_auto = variable_entry.second->getStringAutomaton();
@@ -674,7 +674,7 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandomBounded(co
 				}
 			}
 		}
-  }
+  // }
   return results;
 }
 
