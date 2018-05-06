@@ -1077,6 +1077,15 @@ void StringFormulaGenerator::visitBegins(Begins_ptr begins_term) {
 			auto right_var = right_formula->GetVariableAtIndex(0);
 			formula->SetVariableCoefficient(right_var,2);
 			constraint_information_->add_string_constraint(begins_term);
+		} else if(StringFormula::Type::VAR == left_formula->GetType() and StringFormula::Type::SUBSTRING == right_formula->GetType()) {
+			formula = left_formula->clone();
+			formula->MergeVariables(right_formula);
+			formula->SetType(StringFormula::Type::BEGINS_SUBSTRING);
+			auto right_var = right_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(right_var,2);
+			formula->SetConstant(right_formula->GetConstant());
+			formula->SetConstant2(right_formula->GetConstant2());
+			constraint_information_->add_string_constraint(begins_term);
 		} else {
 			formula = left_formula->clone();
 			formula->MergeVariables(right_formula);
@@ -1124,6 +1133,15 @@ void StringFormulaGenerator::visitNotBegins(NotBegins_ptr not_begins_term) {
 			formula->SetType(StringFormula::Type::NOTBEGINS);
 			auto right_var = right_formula->GetVariableAtIndex(0);
 			formula->SetVariableCoefficient(right_var,2);
+			constraint_information_->add_string_constraint(not_begins_term);
+		} else if(StringFormula::Type::VAR == left_formula->GetType() and StringFormula::Type::SUBSTRING == right_formula->GetType()) {
+			formula = left_formula->clone();
+			formula->MergeVariables(right_formula);
+			formula->SetType(StringFormula::Type::NOTBEGINS_SUBSTRING);
+			auto right_var = right_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(right_var,2);
+			formula->SetConstant(right_formula->GetConstant());
+			formula->SetConstant2(right_formula->GetConstant2());
 			constraint_information_->add_string_constraint(not_begins_term);
 		} else {
 			formula = left_formula->clone();
@@ -1249,11 +1267,28 @@ void StringFormulaGenerator::visitSubString(SubString_ptr sub_string_term) {
   DVLOG(VLOG_LEVEL) << "post visit start: " << *sub_string_term << "@" << sub_string_term;
 
   auto left_formula = get_term_formula(sub_string_term->subject_term);
-  if (left_formula not_eq nullptr) {
-    auto formula = left_formula->clone();
-    formula->SetType(StringFormula::Type::NONRELATIONAL);
-    delete_term_formula(sub_string_term->subject_term);
-    set_term_formula(sub_string_term, formula);
+  auto start_index_formula = get_term_formula(sub_string_term->start_index_term);
+  auto end_index_formula = get_term_formula(sub_string_term->end_index_term);
+
+  if (left_formula not_eq nullptr and start_index_formula not_eq nullptr and end_index_formula not_eq nullptr) {
+		if(StringFormula::Type::VAR == left_formula->GetType() and StringFormula::Type::INTEGER_CONSTANT == start_index_formula->GetType()
+																and start_index_formula->GetConstant() == "0"
+																and StringFormula::Type::INTEGER_CONSTANT == end_index_formula->GetType()) {
+			auto formula = left_formula->clone();
+			formula->SetType(StringFormula::Type::SUBSTRING);
+			formula->SetConstant(start_index_formula->GetConstant());
+			formula->SetConstant2(end_index_formula->GetConstant());
+			set_term_formula(sub_string_term,formula);
+			delete_term_formula(sub_string_term->subject_term);
+			delete_term_formula(sub_string_term->start_index_term);
+			delete_term_formula(sub_string_term->end_index_term);
+			constraint_information_->add_string_constraint(sub_string_term);
+		} else {
+			auto formula = left_formula->clone();
+			formula->SetType(StringFormula::Type::NONRELATIONAL);
+			delete_term_formula(sub_string_term->subject_term);
+			set_term_formula(sub_string_term, formula);
+		}
   }
 
   DVLOG(VLOG_LEVEL) << "post visit end: " << *sub_string_term << "@" << sub_string_term;

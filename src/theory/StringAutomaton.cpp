@@ -483,9 +483,11 @@ StringAutomaton_ptr StringAutomaton::MakeAutomaton(StringFormula_ptr formula) {
 			result_auto = StringAutomaton::MakeLessThanOrEqual(formula);
 			break;
 		case StringFormula::Type::BEGINS:
+    case StringFormula::Type::BEGINS_SUBSTRING:
 			result_auto = StringAutomaton::MakeBegins(formula);
 			break;
 		case StringFormula::Type::NOTBEGINS:
+    case StringFormula::Type::NOTBEGINS_SUBSTRING:
 			result_auto = StringAutomaton::MakeNotBegins(formula);
 			break;
 		default:
@@ -512,6 +514,85 @@ StringAutomaton_ptr StringAutomaton::MakeBegins(StringFormula_ptr formula) {
 
 	std::vector<char> exep_lambda(var,'1');
 	tv = GenerateTransitionsForRelation(StringFormula::Type::EQ,var);
+
+  // begins w/ substring term
+  if(formula->GetConstant() != "" and formula->GetConstant2() != "") {
+    int start_index = std::stoi(formula->GetConstant());
+    if(start_index != 0) {
+      LOG(FATAL) << "Cannot continue, start_index is not zero!";
+    }
+    int end_index = std::stoi(formula->GetConstant2());
+    int length = end_index - start_index;
+
+    int num_states = length + 2; //final state + sink state... lambda transitions will be taken care of later
+    char *statuses = new char[num_states+1];
+    int final_state = length;
+    int sink_state = length+1;
+    dfaSetup(num_states,len,mindices);
+    for(int j = 0; j < length; j++) {
+      dfaAllocExceptions(2*tv.size()+1); // 1 for lambda,lambda
+      // first compute transitions where they equal
+      for(int i = 0; i < tv.size(); i++) { 
+        std::vector<char> str(len,'X');
+        for(int k = 0; k < var; k++) {
+          str[left_track+num_tracks*k] = tv[i].first[k];
+          str[right_track+num_tracks*k] = tv[i].second[k];
+        }
+        str.push_back('\0');
+        dfaStoreException(j+1,&str[0]);
+      }
+
+      // next compute transitions where right_side stops first
+      for(int i = 0; i < tv.size(); i++) { 
+        std::vector<char> str(len,'X');
+        for(int k = 0; k < var; k++) {
+          str[left_track+num_tracks*k] = tv[i].first[k];
+          str[right_track+num_tracks*k] = exep_lambda[k];
+        }
+        str.push_back('\0');
+        dfaStoreException(final_state,&str[0]);
+      }
+      
+      // next compute transition where both sides stop
+      std::vector<char> lambda_lambda(len,'X');
+      for(int k = 0; k < var; k++) {
+        lambda_lambda[left_track+num_tracks*k] = exep_lambda[k];
+        lambda_lambda[right_track+num_tracks*k] = exep_lambda[k];
+      }
+      lambda_lambda.push_back('\0');
+      dfaStoreException(final_state,&lambda_lambda[0]);
+      dfaStoreState(sink_state);
+      statuses[j] = '-';
+    }
+
+    // store final state
+    dfaAllocExceptions(0);
+    dfaStoreState(final_state);
+    statuses[final_state] = '+';
+    
+
+    // store sink state
+    dfaAllocExceptions(0);
+    dfaStoreState(sink_state);
+    statuses[sink_state] = '-';
+
+    statuses[num_states] = '\0';
+    temp_dfa = dfaBuild(statuses);
+    result_dfa = dfaMinimize(temp_dfa);
+    dfaFree(temp_dfa);
+    
+    // align automata by intersecting with universal_aligned auto
+    auto temp_auto = new StringAutomaton(result_dfa,formula,var*num_tracks);
+    auto universe_auto = StringAutomaton::MakeAnyStringAligned(formula->clone());
+    result_auto = temp_auto->Intersect(universe_auto);
+    
+    delete temp_auto;
+    delete universe_auto;
+    delete[] statuses;
+    return result_auto;
+  }
+
+
 	dfaSetup(4,len,mindices);
 	dfaAllocExceptions(2*tv.size() + 1); // 1 extra for lambda stuff below
 	for(int i = 0; i < tv.size(); i++) {
@@ -591,6 +672,15 @@ StringAutomaton_ptr StringAutomaton::MakeNotBegins(StringFormula_ptr formula) {
 			left_track,right_track;
 	std::string left_data,right_data;
 	TransitionVector tv;
+
+  // notbegins w/ substring term
+  if(formula->GetConstant() != "" and formula->GetConstant2() != "") {
+    auto begins_auto = StringAutomaton::MakeBegins(formula);
+    auto not_begins_auto = begins_auto->Complement();
+    //not_begins_auto->inspectAuto(false,true);
+    delete begins_auto;
+    return not_begins_auto;
+  }
 
 	left_track = formula->GetVariableIndex(1);
 	right_track = formula->GetVariableIndex(2);
