@@ -745,7 +745,11 @@ std::vector<bool>* Automaton::getAnAcceptingWord(std::function<bool(unsigned& in
 }
 
 std::vector<bool>* Automaton::getAnAcceptingWordRandom(std::function<bool(unsigned& index)> next_node_heuristic) {
+
+  //LOG(INFO) << "----------BEGIN Automaton::getAnAcceptingWordRandom-----------";
+
 	int sink_state = GetSinkState();
+	//LOG(INFO) << "sink_state = " << sink_state;
 	NextState state = std::make_pair(this->dfa_->s, std::vector<bool>());
 	std::vector<bool>* path = new std::vector<bool>();
 
@@ -758,6 +762,7 @@ std::vector<bool>* Automaton::getAnAcceptingWordRandom(std::function<bool(unsign
 
 	int t = 0;
 	while(true) {
+	  //LOG(INFO) << "begin while loop iteration";
 		auto states = getNextStatesOrdered(state.first, next_node_heuristic);
 
 		// if accepting state, determine whether to stop or continue.
@@ -772,14 +777,18 @@ std::vector<bool>* Automaton::getAnAcceptingWordRandom(std::function<bool(unsign
 				thresh *= r;
 			}
 		}
-
+    //LOG(INFO) << "get k";
+    std::uniform_int_distribution<int> dist2(0,states.size()-1);
 		do {
-			k = rand() % states.size();
+			k = dist2(rng);
+		  //LOG(INFO) << "  k = " << k;
 		} while(states[k].first == sink_state);
 		state = states[k];
 		path->insert(path->end(),state.second.begin(),state.second.end());
+	  //LOG(INFO) << "end while loop iteration";
 	}
 
+  //LOG(INFO) << "Got random!";
 	return path;
 }
 
