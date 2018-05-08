@@ -4056,10 +4056,11 @@ std::string StringAutomaton::GetMutatedAcceptingString(std::string model) {
   std::vector<int> original_path;
 	std::map<int, std::set<std::string>> possible_mutations;
 	std::vector<int> eligible_positions;
+  bool abort_mutation = false;
 //LOG(INFO) << "NUM_STATES: " << this->dfa_->ns;
 	original_path.push_back(dfa_->s);
 //LOG(INFO) << 1;
-  for(int i = 0; i < length; i++) {
+  for(int i = 0; i < length and !abort_mutation; i++) {
     int s1 = original_path.back();
 		std::string decoded_c = GetBinaryStringMSB((unsigned long)model[i],this->num_of_bdd_variables_);
 //		LOG(INFO) << "originalc = " << model[i];
@@ -4071,24 +4072,25 @@ std::string StringAutomaton::GetMutatedAcceptingString(std::string model) {
 
 
     possible_mutations[s1] = (DFAGetTransitionsFromTo(this->dfa_,s1,s2,this->num_of_bdd_variables_));
-//    for(auto it : possible_mutations[s1]) {
-//      LOG(INFO) << "Mutation: " << it;
-//    }
-//    if(possible_mutations[s1].find(decoded_c) != possible_mutations[s1].end()) {
-//      LOG(INFO) << "IN SET";
-//    }
     // a position is only eligible for mutation if there is more than one transition to choose from
     if(possible_mutations[s1].size() > 1) {
       eligible_positions.push_back(i);
+    } else if(i != length-1) {
+      // if there's more than one state to go to, then abort mutation and just choose a random model
+      std::set<int> next_states = Automaton::getNextStates(s1);
+      if(next_states.size() > 1) {
+        abort_mutation = true;
+      }
     }
   }
-//LOG(INFO) << 2;
-  // if no eligible positions, we can't mutate! return original string
-//  LOG(INFO) << "Num possible mutations: " << eligible_positions.size();
-  if(eligible_positions.size() == 0) {
+
+  // if abort_mutation = true, then we couldn't find a successful mutation in the current approach
+  // so just return a random model 
+  if(abort_mutation || eligible_positions.size() == 0) {
+    mutated_model = GetAnAcceptingStringRandom();
     return mutated_model;
   }
-//LOG(INFO) << 3;
+
   std::mt19937 rng;
 	rng.seed(std::random_device()());
 	std::uniform_int_distribution<int> dist(1,eligible_positions.size());
