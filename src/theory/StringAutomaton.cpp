@@ -4062,12 +4062,21 @@ std::string StringAutomaton::GetMutatedAcceptingString(std::string model) {
   for(int i = 0; i < length; i++) {
     int s1 = original_path.back();
 		std::string decoded_c = GetBinaryStringMSB((unsigned long)model[i],this->num_of_bdd_variables_);
+//		LOG(INFO) << "originalc = " << model[i];
+//		LOG(INFO) << "decoded_c = " << decoded_c;
+
 		std::vector<char> decoded_c_vector(decoded_c.begin(),decoded_c.end()-1);
 		int s2 = getNextState(original_path.back(),decoded_c_vector);
 		original_path.push_back(s2);
 
 
     possible_mutations[s1] = (DFAGetTransitionsFromTo(this->dfa_,s1,s2,this->num_of_bdd_variables_));
+//    for(auto it : possible_mutations[s1]) {
+//      LOG(INFO) << "Mutation: " << it;
+//    }
+//    if(possible_mutations[s1].find(decoded_c) != possible_mutations[s1].end()) {
+//      LOG(INFO) << "IN SET";
+//    }
     // a position is only eligible for mutation if there is more than one transition to choose from
     if(possible_mutations[s1].size() > 1) {
       eligible_positions.push_back(i);
@@ -4075,6 +4084,7 @@ std::string StringAutomaton::GetMutatedAcceptingString(std::string model) {
   }
 //LOG(INFO) << 2;
   // if no eligible positions, we can't mutate! return original string
+//  LOG(INFO) << "Num possible mutations: " << eligible_positions.size();
   if(eligible_positions.size() == 0) {
     return mutated_model;
   }
@@ -4098,29 +4108,34 @@ std::string StringAutomaton::GetMutatedAcceptingString(std::string model) {
     int rand_pos_state = original_path[rand_pos];
 //    LOG(INFO) << "rand_pos_state = " << rand_pos_state;
 //    LOG(INFO) << "possible_mutations.size() = " << possible_mutations.size();
-
-    std::uniform_int_distribution<int> rand_transition_gen(0,possible_mutations[rand_pos_state].size()-1);
-    // get random transition from set of transitions
-    int rand_transition_index = rand_transition_gen(rng);
+    unsigned char rand_char = '0';
+    while(true) {
+      std::uniform_int_distribution<int> rand_transition_gen(0, possible_mutations[rand_pos_state].size() - 1);
+      // get random transition from set of transitions
+      int rand_transition_index = rand_transition_gen(rng);
 //    LOG(INFO) << "rand_transition_index = " << rand_transition_index;
 //    LOG(INFO) << "total num possible mutations = " << possible_mutations[rand_pos_state].size();
-    std::set<std::string>::iterator set_it = possible_mutations[rand_pos_state].begin();
-    std::advance(set_it,rand_transition_index);
-    std::string rand_transition_char = *set_it;
-    //std::string rand_transition_char = *std::next(possible_mutations[rand_pos_state].begin(),rand_transition_index);
+      std::set<std::string>::iterator set_it = possible_mutations[rand_pos_state].begin();
+      std::advance(set_it, rand_transition_index);
+      std::string rand_transition_char = *set_it;
+      //std::string rand_transition_char = *std::next(possible_mutations[rand_pos_state].begin(),rand_transition_index);
 //    LOG(INFO) << "rand_transition_char = " << rand_transition_char;
-    for(int i = 0; i < rand_transition_char.length(); i++) {
-      if(rand_transition_char[i] == 'X') {
-        if(coin_flip(rng)) {
-          rand_transition_char[i] = '1';
-        } else {
-          rand_transition_char[i] = '0';
+      for (int i = 0; i < rand_transition_char.length(); i++) {
+        if (rand_transition_char[i] == 'X') {
+          if (coin_flip(rng)) {
+            rand_transition_char[i] = '1';
+          } else {
+            rand_transition_char[i] = '0';
+          }
         }
       }
-    }
-    rand_transition_char.push_back('\0');
+      rand_transition_char.push_back('\0');
 //    LOG(INFO) << "rand_transition_char = " << rand_transition_char;
-    unsigned char rand_char = Automaton::strtobin(&rand_transition_char[0],this->num_of_bdd_variables_);
+      rand_char = Automaton::strtobin(&rand_transition_char[0], this->num_of_bdd_variables_);
+      if(rand_char != mutated_model[rand_pos]) {
+        break;
+      }
+    }
 //    LOG(INFO) << "rand_char = " << rand_char;
     mutated_model[rand_pos] = rand_char;
     num_to_mutate--;
