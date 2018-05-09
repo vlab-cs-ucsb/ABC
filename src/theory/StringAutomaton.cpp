@@ -4087,7 +4087,11 @@ std::string StringAutomaton::GetMutatedAcceptingString(std::string model) {
   // if abort_mutation = true, then we couldn't find a successful mutation in the current approach
   // so just return a random model 
   if(abort_mutation || eligible_positions.size() == 0) {
-    mutated_model = GetAnAcceptingStringRandom();
+    StringAutomaton_ptr len_auto = MakeAnyStringLengthEqualTo(model.length());
+    StringAutomaton_ptr temp_auto = this->Intersect(len_auto);
+    mutated_model = temp_auto->GetAnAcceptingStringRandom();
+    delete len_auto;
+    delete temp_auto;
     return mutated_model;
   }
 
