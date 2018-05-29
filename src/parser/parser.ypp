@@ -106,6 +106,8 @@
   RE_OPT               "re.opt"
   RE_RANGE             "re.range"
   TO_REGEX             "str.to.re"  
+  RE_ALLCHAR           "re.allchar"
+  RE_ALL               "re.all"
 
   TBOOL                 "TBool"
   TINT                  "TInt"
@@ -415,6 +417,8 @@ spec_constant         :
                       | DECIMAL             { $$ = new Primitive($1, Primitive::Type::DECIMAL); }
                       | STRING              { $$ = new Primitive($1, Primitive::Type::STRING); }
                       | REGEX               { $$ = new Primitive($1, Primitive::Type::REGEX); }
+                      | RE_ALLCHAR          { $$ = new Primitive(".", Primitive::Type::REGEX); }
+                      | RE_ALL              { $$ = new Primitive(".*", Primitive::Type::REGEX); }
                       ;
 
 

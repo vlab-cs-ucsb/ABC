@@ -1289,15 +1289,25 @@ StringAutomaton_ptr StringAutomaton::Closure() {
   paths state_paths, pp;
   trace_descr tp;
   int sink = GetSinkState();
-  CHECK_GT(sink,-1);
+  int ns = dfa_->ns;
+  bool has_sink = true;
+
+	//  CHECK_GT(sink,-1);
+	if(sink < 0) {
+		has_sink = false;
+		sink = ns;
+		ns++;
+	}
+
   int var = DEFAULT_NUM_OF_VARIABLES;
+
   int len = var + 1; //one extra bit
   int *indices = GetBddVariableIndices(len);
-  char *statuses = new char[dfa_->ns+1];
+  char *statuses = new char[ns+1];
   std::vector<std::pair<int,std::vector<char>>> added_exeps, original_exeps;
   std::vector<char> exep;
 
-  dfaSetup(dfa_->ns, len, indices);
+  dfaSetup(ns, len, indices);
   //construct the added paths
   state_paths = pp = make_paths(dfa_->bddm, dfa_->q[dfa_->s]);
   exep = std::vector<char>(len,'X');
@@ -1368,7 +1378,15 @@ StringAutomaton_ptr StringAutomaton::Closure() {
     kill_paths(state_paths);
     original_exeps.clear();
   }
-  statuses[dfa_->ns] = '\0';
+
+  // store sink state
+  if(not has_sink) {
+  	dfaAllocExceptions(0);
+  	dfaStoreState(sink);
+  	statuses[sink] = '-';
+  }
+
+  statuses[ns] = '\0';
   temp_dfa = dfaBuild(statuses);
   result_dfa = dfaProject(temp_dfa, (unsigned) var); //var is the index of the extra bit
   dfaFree(temp_dfa);
