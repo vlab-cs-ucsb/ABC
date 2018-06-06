@@ -1628,12 +1628,20 @@ StringAutomaton_ptr StringAutomaton::SuffixesFromTo(int start, int end) {
   } else if (max == 1) {
     max = 2; // that will increase the number_of_variables by 1, by doing so we get a perfectly minimized auto at the end
   }
-
   // if number of variables are too large for mona, implement an algorithm that find suffixes by finding
   // sub suffixes and union them
-  const int number_of_variables = this->num_of_bdd_variables_ + std::ceil(std::log2(max)), // number of variables required
-          number_of_states = this->dfa_->ns + 1; // one extra start for the new start state
+  const int number_of_variables = this->num_of_bdd_variables_ + std::ceil(std::log2(max)); // number of variables required
+  int number_of_states = this->dfa_->ns + 1; // one extra start for the new start state
+
+  bool has_sink_state = true;
   int sink_state = this->GetSinkState();
+
+  // if no sink state, create artificial one
+  if(sink_state < 0) {
+    has_sink_state = false;
+    sink_state = number_of_states;
+    number_of_states++;
+  }
 
   int* indices = GetBddVariableIndices(number_of_variables);
   char* statuses = new char[number_of_states + 1];
@@ -1643,7 +1651,6 @@ StringAutomaton_ptr StringAutomaton::SuffixesFromTo(int start, int end) {
 
   std::vector<char>* current_exception = nullptr;
   std::map<int, std::map<std::vector<char>*, int>> exception_map;
-
   paths state_paths = nullptr, pp = nullptr;
   trace_descr tp = nullptr;
   for (int s = 0; s < this->dfa_->ns; s++) {
@@ -1704,7 +1711,7 @@ StringAutomaton_ptr StringAutomaton::SuffixesFromTo(int start, int end) {
     }
   }
 
-  if (sink_state != -1) {
+  if (has_sink_state) {
     ++sink_state; // old states are off by one
   }
 
@@ -1731,6 +1738,12 @@ StringAutomaton_ptr StringAutomaton::SuffixesFromTo(int start, int end) {
       dfaStoreState(s);
     }
   }
+  // store sink state if necessary
+  if(not has_sink_state) {
+    dfaAllocExceptions(0);
+    dfaStoreState(sink_state);
+    statuses[sink_state] = '-';
+  }
 
   statuses[number_of_states] = '\0';
   DFA_ptr result_dfa = dfaBuild(statuses);
@@ -1738,12 +1751,10 @@ StringAutomaton_ptr StringAutomaton::SuffixesFromTo(int start, int end) {
   delete[] statuses;
   suffixes_auto = new StringAutomaton(dfaMinimize(result_dfa), number_of_variables);
   dfaFree(result_dfa); result_dfa = nullptr;
-
   for ( int i = 0; i < number_of_extra_bits_needed; ++i) {
     suffixes_auto->ProjectAway((unsigned)(suffixes_auto->num_of_bdd_variables_ - 1));
     suffixes_auto->Minimize();
   }
-
   DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->suffixes(" << start << ", " << end << ")";
   return suffixes_auto;
 }
@@ -1773,7 +1784,7 @@ StringAutomaton_ptr StringAutomaton::PrefixesUntilIndex(int index) {
   StringAutomaton_ptr prefixesUntil_auto = nullptr;
 
   prefixes_auto = this->Prefixes();
-  length_auto = MakeAnyStringLengthLessThan(index);
+  length_auto = MakeAnyStringLengthLessThanOrEqualTo(index);
 
   prefixesUntil_auto = prefixes_auto->Intersect(length_auto);
   DVLOG(VLOG_LEVEL) << prefixesUntil_auto->id_ << " = [" << this->id_ << "]->prefixesUntilIndex("<<index<<")";
@@ -1781,6 +1792,7 @@ StringAutomaton_ptr StringAutomaton::PrefixesUntilIndex(int index) {
 }
 
 StringAutomaton_ptr StringAutomaton::PrefixesAtIndex(int index) {
+  LOG(FATAL) << "Broken due to new substring spec; FIX ME";
 	CHECK_EQ(this->num_tracks_,1);
   StringAutomaton_ptr length_auto = nullptr;
   auto prefixes_auto = this->Prefixes();
@@ -1963,16 +1975,16 @@ StringAutomaton_ptr StringAutomaton::CharAt(IntAutomaton_ptr index_auto) {
 
 StringAutomaton_ptr StringAutomaton::SubString(const int start) {
   CHECK_EQ(this->num_tracks_,1);
-  StringAutomaton_ptr substring_auto = nullptr;
-  substring_auto = this->SuffixesAtIndex(start);
+  StringAutomaton_ptr substring_auto = nullptr, suffixes_auto = nullptr;
+  suffixes_auto = this->SuffixesAtIndex(start);
+  substring_auto = suffixes_auto->Prefixes();
+  delete suffixes_auto;
   DVLOG(VLOG_LEVEL) << substring_auto->id_ << " = [" << this->id_ << "]->subString(" << start << ")";
   return substring_auto;
 }
 
 /**
- * TODO decide on substring second param; which one is better:
- * end index, or length of substring
- * subString returns empty when start == end, start is inclusive, end is exclusive
+ * returns substrings of this auto from position start up to end
  */
 StringAutomaton_ptr StringAutomaton::SubString(const int start, const int end) {
   CHECK_EQ(this->num_tracks_,1);
@@ -1982,13 +1994,8 @@ StringAutomaton_ptr StringAutomaton::SubString(const int start, const int end) {
     return substring_auto;
   }
 
-  int adjusted_end = end;
-  if (start < end) {
-    --adjusted_end;
-  }
-
   auto suffixes_auto = this->SuffixesAtIndex(start);
-  auto substring_auto = suffixes_auto->PrefixesAtIndex(adjusted_end - start);
+  auto substring_auto = suffixes_auto->PrefixesUntilIndex(end);
   delete suffixes_auto;
   DVLOG(VLOG_LEVEL) << substring_auto->id_ << " = [" << this->id_ << "]->subString(" << start << "," << end << ")";
   return substring_auto;
@@ -2011,19 +2018,24 @@ StringAutomaton_ptr StringAutomaton::SubString(IntAutomaton_ptr length_auto, Str
   return substring_auto;
 }
 
-StringAutomaton_ptr StringAutomaton::SubString(int start,
-		IntAutomaton_ptr end_auto) {
+StringAutomaton_ptr StringAutomaton::SubString(int start, IntAutomaton_ptr end_auto) {
 	CHECK_EQ(this->num_tracks_,1);
-  IntAutomaton_ptr valid_indexes = IntAutomaton::makeIntGreaterThan(start);
-  IntAutomaton_ptr valid_end_indexes = static_cast<IntAutomaton_ptr>(end_auto->Intersect(valid_indexes));
-  delete valid_indexes;
-  if (valid_end_indexes->IsEmptyLanguage()) {
+  if (end_auto->IsEmptyLanguage()) {
     return StringAutomaton::MakePhi();
-  } else if (valid_end_indexes->isAcceptingSingleInt()) {
-    return SubString(start, valid_end_indexes->getAnAcceptingInt());
+  } else if (end_auto->isAcceptingSingleInt()) {
+    return SubString(start, end_auto->getAnAcceptingInt());
+  } else {
+    auto suffixes_auto = this->SuffixesAtIndex(start);
+    auto prefixes_of_suffixes_auto = suffixes_auto->Prefixes();
+    auto string_end_indices = new StringAutomaton(dfaCopy(end_auto->getDFA()),DEFAULT_NUM_OF_VARIABLES);
+    auto string_length_auto = string_end_indices->Prefixes();
+    auto ret_auto = prefixes_of_suffixes_auto->Intersect(string_length_auto);
+
+    delete string_length_auto;
+    delete prefixes_of_suffixes_auto;
+    delete string_end_indices;
+    return ret_auto;
   }
-  LOG (FATAL) << "Fully implement substring with symbolic ints";
-  return nullptr;
 }
 
 /**

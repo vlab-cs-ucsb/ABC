@@ -716,13 +716,17 @@ void VariableValueComputer::visitContains(Contains_ptr contains_term) {
   Value_ptr term_value = getTermPreImage(contains_term);
 
   if (child_term == contains_term->subject_term) {
+    LOG(INFO) << "CHILD = SUBJECT";
     child_value = term_value->clone();
   } else {
+    LOG(INFO) << "CHILD = SEARCH";
     Value_ptr child_post_value = getTermPostImage(child_term);
     Theory::StringAutomaton_ptr sub_strings_auto = term_value->getStringAutomaton()->SubStrings();
     child_value = new Value(child_post_value->getStringAutomaton()->Intersect(sub_strings_auto));
     delete sub_strings_auto; sub_strings_auto = nullptr;
   }
+
+  std::cin.get();
 
   setTermPreImage(child_term, child_value);
   visit(child_term);

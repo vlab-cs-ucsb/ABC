@@ -872,17 +872,9 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
       getTermValue(sub_string_term->start_index_term), param_end_index = nullptr;
   int start_index_value = 0;
   // First calculate substring from start to end index
-  Theory::StringAutomaton_ptr substring_auto = nullptr;
+  Theory::StringAutomaton_ptr substring_auto = param_subject->getStringAutomaton()->clone();
   if (Value::Type::INT_CONSTANT == param_start_index->getType()) {
     start_index_value = param_start_index->getIntConstant();
-    if (start_index_value == 0) {
-      substring_auto = param_subject->getStringAutomaton()->clone();
-    }
-    else if (start_index_value > 0) {
-      substring_auto = param_subject->getStringAutomaton()->SubString(start_index_value);
-    } else {
-      LOG(FATAL) << "substring start index can't be negative, handle case";
-    }
   } else {
     LOG(FATAL) << "add more cases here";
   }
@@ -934,9 +926,12 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
           string_len_end_index_auto = nullptr;
         }
       }
+    } else if(Value::Type::INT_AUTOMATON == param_end_index->getType()) {
+      Theory::IntAutomaton_ptr param_end_index_auto = param_end_index->getIntAutomaton();
+      substring_auto = sub_str_start_auto->SubString(start_index_value,param_end_index_auto);
     } else if(Value::Type::INT_CONSTANT == param_start_index->getType()) {
       int end_index_value = param_end_index->getIntConstant();
-      substring_auto = sub_str_start_auto->SubString(0,end_index_value-start_index_value);
+      substring_auto = sub_str_start_auto->SubString(start_index_value,end_index_value-start_index_value);
     } else {
       LOG(FATAL) << "implement and fix me";
     }
