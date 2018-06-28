@@ -212,13 +212,9 @@ public:
   StringAutomaton_ptr CharAt(const int index);
   StringAutomaton_ptr CharAt(IntAutomaton_ptr index_auto);
   StringAutomaton_ptr SubString(const int start);
-  /**
-   * TODO decide on substring second param; which one is better:
-   * end index, or length of substring
-   */
-  StringAutomaton_ptr SubString(const int start, const int end);
+  StringAutomaton_ptr SubString(const int start, const int n);
   StringAutomaton_ptr SubString(IntAutomaton_ptr length_auto, StringAutomaton_ptr search_auto);
-  StringAutomaton_ptr SubString(int start, IntAutomaton_ptr end_auto);
+  StringAutomaton_ptr SubString(int start, IntAutomaton_ptr length_auto);
   StringAutomaton_ptr SubStringLastOf(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr SubStringFirstOf(StringAutomaton_ptr search_auto);
 

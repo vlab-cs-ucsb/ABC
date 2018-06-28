@@ -931,7 +931,7 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
       substring_auto = sub_str_start_auto->SubString(start_index_value,param_end_index_auto);
     } else if(Value::Type::INT_CONSTANT == param_start_index->getType()) {
       int end_index_value = param_end_index->getIntConstant();
-      substring_auto = sub_str_start_auto->SubString(start_index_value,end_index_value-start_index_value);
+      substring_auto = sub_str_start_auto->SubString(start_index_value,end_index_value);
     } else {
       LOG(FATAL) << "implement and fix me";
     }

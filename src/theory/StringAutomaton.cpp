@@ -1792,7 +1792,7 @@ StringAutomaton_ptr StringAutomaton::PrefixesUntilIndex(int index) {
 }
 
 StringAutomaton_ptr StringAutomaton::PrefixesAtIndex(int index) {
-  LOG(FATAL) << "Broken due to new substring spec; FIX ME";
+  //LOG(FATAL) << "Broken due to new substring spec; FIX ME";
 	CHECK_EQ(this->num_tracks_,1);
   StringAutomaton_ptr length_auto = nullptr;
   auto prefixes_auto = this->Prefixes();
@@ -1800,7 +1800,7 @@ StringAutomaton_ptr StringAutomaton::PrefixesAtIndex(int index) {
     // when index is 0, result should also accept empty string if subject automaton accepts empty string
     length_auto = StringAutomaton::MakeAnyStringLengthLessThanOrEqualTo(1);
   } else {
-    length_auto = MakeAnyStringLengthEqualTo(index + 1);
+    length_auto = MakeAnyStringLengthEqualTo(index);
   }
   auto prefixesAt_auto = prefixes_auto->Intersect(length_auto);
   delete prefixes_auto; prefixes_auto = nullptr;
@@ -1984,20 +1984,32 @@ StringAutomaton_ptr StringAutomaton::SubString(const int start) {
 }
 
 /**
- * returns substrings of this auto from position start up to end
+ * returns substrings of this auto from position start with length up to n
  */
-StringAutomaton_ptr StringAutomaton::SubString(const int start, const int end) {
+StringAutomaton_ptr StringAutomaton::SubString(const int start, const int n) {
   CHECK_EQ(this->num_tracks_,1);
-  if (start == end) {
-    auto substring_auto = StringAutomaton::MakeEmptyString();
-    DVLOG(VLOG_LEVEL) << substring_auto->id_ << " = [" << this->id_ << "]->subString(" << start << "," << end << ")";
-    return substring_auto;
-  }
+//  if (start == n) {
+//    auto substring_auto = StringAutomaton::MakeEmptyString();
+//    DVLOG(VLOG_LEVEL) << substring_auto->id_ << " = [" << this->id_ << "]->subString(" << start << "," << end << ")";
+//    return substring_auto;
+//  }
 
+  // Shift auto to begin at index start
   auto suffixes_auto = this->SuffixesAtIndex(start);
-  auto substring_auto = suffixes_auto->PrefixesUntilIndex(end);
+
+  auto length_auto = StringAutomaton::MakeAnyStringLengthLessThanOrEqualTo(n);
+  // s1 represents the substrings from position start with length up to but not equal to n
+  auto s1 = suffixes_auto->Intersect(length_auto);
+  // s2 represents the substrings from position start with length equal to n
+  auto s2 = suffixes_auto->PrefixesAtIndex(n);
+  // s1 union s2 is the substrings from position start with length up to or equal to n
+  auto substring_auto = s1->Union(s2);
   delete suffixes_auto;
-  DVLOG(VLOG_LEVEL) << substring_auto->id_ << " = [" << this->id_ << "]->subString(" << start << "," << end << ")";
+  delete length_auto;
+  delete s1;
+  delete s2;
+
+  DVLOG(VLOG_LEVEL) << substring_auto->id_ << " = [" << this->id_ << "]->subString(" << start << "," << n << ")";
   return substring_auto;
 }
 
@@ -2018,21 +2030,26 @@ StringAutomaton_ptr StringAutomaton::SubString(IntAutomaton_ptr length_auto, Str
   return substring_auto;
 }
 
-StringAutomaton_ptr StringAutomaton::SubString(int start, IntAutomaton_ptr end_auto) {
+StringAutomaton_ptr StringAutomaton::SubString(int start, IntAutomaton_ptr length_auto) {
 	CHECK_EQ(this->num_tracks_,1);
-  if (end_auto->IsEmptyLanguage()) {
+  if (length_auto->IsEmptyLanguage()) {
     return StringAutomaton::MakePhi();
-  } else if (end_auto->isAcceptingSingleInt()) {
-    return SubString(start, end_auto->getAnAcceptingInt());
+  } else if (length_auto->isAcceptingSingleInt()) {
+    return SubString(start, length_auto->getAnAcceptingInt());
   } else {
     auto suffixes_auto = this->SuffixesAtIndex(start);
-    auto prefixes_of_suffixes_auto = suffixes_auto->Prefixes();
-    auto string_end_indices = new StringAutomaton(dfaCopy(end_auto->getDFA()),DEFAULT_NUM_OF_VARIABLES);
+    auto string_end_indices = new StringAutomaton(dfaCopy(length_auto->getDFA()),DEFAULT_NUM_OF_VARIABLES);
     auto string_length_auto = string_end_indices->Prefixes();
-    auto ret_auto = prefixes_of_suffixes_auto->Intersect(string_length_auto);
 
+    // s1 is prefixesAtIndex
+    // s2 is prefixesBeforeIndex
+    auto s1 = suffixes_auto->Intersect(string_length_auto);
+    auto s2 = suffixes_auto->Intersect(string_end_indices);
+    auto ret_auto = s1->Union(s2);
+
+    delete s1;
+    delete s2;
     delete string_length_auto;
-    delete prefixes_of_suffixes_auto;
     delete string_end_indices;
     return ret_auto;
   }
