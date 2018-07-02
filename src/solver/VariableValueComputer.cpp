@@ -716,17 +716,13 @@ void VariableValueComputer::visitContains(Contains_ptr contains_term) {
   Value_ptr term_value = getTermPreImage(contains_term);
 
   if (child_term == contains_term->subject_term) {
-    LOG(INFO) << "CHILD = SUBJECT";
     child_value = term_value->clone();
   } else {
-    LOG(INFO) << "CHILD = SEARCH";
     Value_ptr child_post_value = getTermPostImage(child_term);
     Theory::StringAutomaton_ptr sub_strings_auto = term_value->getStringAutomaton()->SubStrings();
     child_value = new Value(child_post_value->getStringAutomaton()->Intersect(sub_strings_auto));
     delete sub_strings_auto; sub_strings_auto = nullptr;
   }
-
-  std::cin.get();
 
   setTermPreImage(child_term, child_value);
   visit(child_term);
@@ -1016,11 +1012,12 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
   Value_ptr end_index_value = nullptr;//getTermPostImage(sub_string_term->end_index_term);
 
 
-  // result of substring
-  //term_value->getStringAutomaton()->inspectAuto(false, false);
-  // subject auto
-  //child_post_value->getStringAutomaton()->inspectAuto(false, false);
-  //std::cin.get();
+//  // result of substring
+//  term_value->getStringAutomaton()->inspectAuto(false, false);
+//  // subject auto
+//  child_post_value->getStringAutomaton()->inspectAuto(false, false);
+//  end_index_value->getIntAutomaton()->inspectAuto(false,true);
+//  std::cin.get();
 
   if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
     child_value = new Value(child_post_value->getStringAutomaton()

@@ -659,6 +659,7 @@ void ConstraintSolver::visitLen(Len_ptr len_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *len_term;
   Value_ptr result = nullptr, param = getTermValue(len_term->term);
   Theory::IntAutomaton_ptr int_auto = param->getStringAutomaton()->Length();
+
   if (int_auto->isAcceptingSingleInt()) {
     result = new Value(int_auto->getAnAcceptingInt());
     delete int_auto;
