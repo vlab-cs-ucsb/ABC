@@ -982,8 +982,12 @@ void VariableValueComputer::visitCharAt(CharAt_ptr char_at_term) {
   visit(child_term);
 }
 
+
 /**
- * TODO check if we can do preimage with endswith ??
+ * (str.substr s i n)
+ * s: string
+ * i: starting index
+ * n: length of substring
  */
 void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *sub_string_term;
@@ -993,8 +997,7 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
   if (child_term == sub_string_term->start_index_term or
           child_term == sub_string_term->end_index_term) {
     // TODO !!! need to implement logic here
-    // assume string is constant and indexes are symbolic??
-    //    LOG(FATAL) << "implement me";
+    // even if indices are symbolic, do we need to update?
     return; // subString operation does not have any restriction on indexes
   }
 
@@ -1004,23 +1007,33 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
     return;
   }
 
-  // TODO baki implement the rest of the logic based on the latest results
   // consider multi-track int and string automata
-  return;
+
   Theory::StringAutomaton_ptr child_pre_auto = nullptr;
   Value_ptr term_value = getTermPreImage(sub_string_term);
   Value_ptr child_post_value = getTermPostImage(child_term);
   Value_ptr start_index_value = getTermPostImage(sub_string_term->start_index_term);
-  Value_ptr end_index_value = nullptr;
+  Value_ptr end_index_value = nullptr;//getTermPostImage(sub_string_term->end_index_term);
+
 
   // result of substring
-//  term_value->getStringAutomaton()->inspectAuto(false, true);
+  //term_value->getStringAutomaton()->inspectAuto(false, false);
   // subject auto
-//  child_post_value->getStringAutomaton()->inspectAuto(false, true);
+  //child_post_value->getStringAutomaton()->inspectAuto(false, false);
+  //std::cin.get();
 
+  if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
+    child_value = new Value(child_post_value->getStringAutomaton()
+            ->RestrictAtIndexTo(start_index_value->getIntConstant(), term_value->getStringAutomaton()));
+  } else {
+    child_value = new Value(child_post_value->getStringAutomaton()
+            ->RestrictAtIndexTo(start_index_value->getIntAutomaton(), term_value->getStringAutomaton()));
+  }
 
+  /*
   switch (sub_string_term->getMode()) {
     case SubString::Mode::FROMINDEX: {
+      LOG(INFO) << "FROMINDEX";
       if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
         child_value = new Value(child_post_value->getStringAutomaton()
                 ->RestrictFromIndexToEndTo(start_index_value->getIntConstant(), term_value->getStringAutomaton()));
@@ -1031,6 +1044,7 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
       break;
     }
     case SubString::Mode::FROMFIRSTOF: {
+    LOG(INFO) << "FROMFIRSTOF";
       Value_ptr index_value = getTermPostImage(sub_string_term->start_index_term);
       Theory::StringAutomaton_ptr any_string_not_contains_search = index_value->getStringAutomaton()->GetAnyStringNotContainsMe();
       Theory::StringAutomaton_ptr general_pre_substring = any_string_not_contains_search->Concat(term_value->getStringAutomaton());
@@ -1042,11 +1056,13 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
       break;
     }
     case SubString::Mode::FROMLASTOF: {
+    LOG(INFO) << "FROMLASTOF";
       child_value = new Value(child_post_value->getStringAutomaton()
               ->Ends(term_value->getStringAutomaton()));
       break;
     }
     case SubString::Mode::FROMINDEXTOINDEX: {
+    LOG(INFO) << "FROMINDEXTOINDEX";
 //      end_index_value = getTermPostImage(sub_string_term->end_index_term);
       //term_value already contains end index
       if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
@@ -1059,34 +1075,42 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
       break;
     }
     case SubString::Mode::FROMINDEXTOFIRSTOF: {
+    LOG(INFO) << "FROMINDEXTOFIRSTOF";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMINDEXTOLASTOF: {
+    LOG(INFO) << "FROMINDEXTOLASTOF";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMFIRSTOFTOINDEX: {
+    LOG(INFO) << "FROMFIRSTOFTOINDEX";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMFIRSTOFTOFIRSTOF: {
+    LOG(INFO) << "FROMFIRSTOFTOFIRSTOF";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMFIRSTOFTOLASTOF: {
+    LOG(INFO) << "FROMFIRSTOFTOLASTOF";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMLASTOFTOINDEX: {
+    LOG(INFO) << "FROMLASTOFTOINDEX";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMLASTOFTOFIRSTOF: {
+    LOG(INFO) << "FROMLASTOFTOFIRSTOF";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMLASTOFTOLASTOF: {
+    LOG(INFO) << "FROMLASTOFTOLASTOF";
       LOG(FATAL)<< "implement me";
       break;
     }
@@ -1094,6 +1118,10 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
       LOG(FATAL)<< "Undefined subString semantic";
       break;
   }
+   */
+
+//  child_value->getStringAutomaton()->inspectAuto(false,false);
+//  std::cin.get();
 
   setTermPreImage(child_term, child_value);
   visit(child_term);
