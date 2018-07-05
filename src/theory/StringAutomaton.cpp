@@ -1622,7 +1622,9 @@ StringAutomaton_ptr StringAutomaton::SuffixesFromTo(int start, int end) {
   std::set<int> suffixes_from = getStatesReachableBy(start, end);
   unsigned max = suffixes_from.size();
   if (max == 0) {
-    suffixes_auto = StringAutomaton::MakePhi();
+    //TODO: Will; decide on returning emtpy language or empty string. empty string makes more sense tbh (07/03)
+    //suffixes_auto = StringAutomaton::MakePhi();
+    suffixes_auto = StringAutomaton::MakeEmptyString();
     DVLOG(VLOG_LEVEL) << suffixes_auto->id_ << " = [" << this->id_ << "]->suffixes(" << start << ", " << end << ")";
     return suffixes_auto;
   } else if (max == 1) {
@@ -1988,22 +1990,23 @@ StringAutomaton_ptr StringAutomaton::SubString(const int start) {
  */
 StringAutomaton_ptr StringAutomaton::SubString(const int start, const int n) {
   CHECK_EQ(this->num_tracks_,1);
-//  if (start == n) {
-//    auto substring_auto = StringAutomaton::MakeEmptyString();
-//    DVLOG(VLOG_LEVEL) << substring_auto->id_ << " = [" << this->id_ << "]->subString(" << start << "," << end << ")";
-//    return substring_auto;
-//  }
-
+  StringAutomaton_ptr substring_auto = nullptr;
   // Shift auto to begin at index start
-  auto suffixes_auto = this->SuffixesAtIndex(start);
 
+
+  // return empty string if n <= 0 (TODO: Check with SMTLIB folks to make sure)
+  if (n <= 0) {
+    substring_auto = StringAutomaton::MakeEmptyString();
+    return substring_auto;
+  }
+  auto suffixes_auto = this->SuffixesAtIndex(start);
   auto length_auto = StringAutomaton::MakeAnyStringLengthLessThanOrEqualTo(n);
   // s1 represents the substrings from position start with length up to but not equal to n
   auto s1 = suffixes_auto->Intersect(length_auto);
   // s2 represents the substrings from position start with length equal to n
   auto s2 = suffixes_auto->PrefixesAtIndex(n);
   // s1 union s2 is the substrings from position start with length up to or equal to n
-  auto substring_auto = s1->Union(s2);
+  substring_auto = s1->Union(s2);
   delete suffixes_auto;
   delete length_auto;
   delete s1;
@@ -2031,6 +2034,7 @@ StringAutomaton_ptr StringAutomaton::SubString(IntAutomaton_ptr length_auto, Str
 }
 
 StringAutomaton_ptr StringAutomaton::SubString(int start, IntAutomaton_ptr length_auto) {
+
 	CHECK_EQ(this->num_tracks_,1);
   if (length_auto->IsEmptyLanguage()) {
     return StringAutomaton::MakePhi();
@@ -2043,10 +2047,16 @@ StringAutomaton_ptr StringAutomaton::SubString(int start, IntAutomaton_ptr lengt
 
     // s1 is prefixesAtIndex
     // s2 is prefixesBeforeIndex
-    auto s1 = suffixes_auto->Intersect(string_length_auto);
-    auto s2 = suffixes_auto->Intersect(string_end_indices);
+    auto s0 = suffixes_auto->Prefixes();
+    auto s1 = s0->Intersect(string_end_indices);
+    auto s2 = suffixes_auto->Intersect(string_length_auto);
     auto ret_auto = s1->Union(s2);
 
+
+    ret_auto->inspectAuto(false,false);
+    std::cin.get();
+
+    delete s0;
     delete s1;
     delete s2;
     delete string_length_auto;
@@ -2908,11 +2918,12 @@ StringAutomaton_ptr StringAutomaton::RestrictAtIndexTo(
   restricted_auto = this->Intersect(tmp_auto_2);
   delete tmp_auto_2; tmp_auto_2 = nullptr;
 
-  if(not temp_auto->IsEmptyLanguage()) {
-    tmp_auto_2 = restricted_auto->Union(temp_auto);
-    delete restricted_auto;
-    restricted_auto = tmp_auto_2;
-  }
+  // TODO: Will, ask baki why this is here? shouldn't be here. commenting for now (7/03/18)
+//  if(not temp_auto->IsEmptyLanguage()) {
+//    tmp_auto_2 = restricted_auto->Union(temp_auto);
+//    delete restricted_auto;
+//    restricted_auto = tmp_auto_2;
+//  }
 
   length_string_auto->dfa_ = nullptr; // it is index_auto's dfa
   delete length_string_auto; length_string_auto = nullptr;
