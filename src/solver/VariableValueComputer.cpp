@@ -872,8 +872,10 @@ void VariableValueComputer::visitIndexOf(IndexOf_ptr index_of_term) {
   popTerm(index_of_term);
   Term_ptr child_term = current_path->back();
 
-  if (child_term == index_of_term->search_term) {
-    return; // indexOf operation does not have any restriction on right hand side
+  if (child_term == index_of_term->search_term or child_term == index_of_term->from_index) {
+    // indexOf operation does not have any restriction on right hand side
+    // likewise, term_value will have from_index encoded in it
+    return;
   }
 
   Value_ptr child_value = getTermPreImage(child_term);
@@ -885,6 +887,7 @@ void VariableValueComputer::visitIndexOf(IndexOf_ptr index_of_term) {
   Value_ptr term_value = getTermPreImage(index_of_term);
   Value_ptr child_post_value = getTermPostImage(child_term);
   Value_ptr param_search = getTermPostImage(index_of_term->search_term);
+
 
   if (Value::Type::INT_CONSTANT == term_value->getType()) {
     child_value = new Value(child_post_value->getStringAutomaton()

@@ -813,7 +813,21 @@ void ConstraintSolver::visitIndexOf(IndexOf_ptr index_of_term) {
   Value_ptr result = nullptr, param_left = getTermValue(index_of_term->subject_term), param_right = getTermValue(
       index_of_term->search_term);
 
-  Theory::IntAutomaton_ptr index_of_auto = param_left->getStringAutomaton()->IndexOf(param_right->getStringAutomaton());
+  Theory::IntAutomaton_ptr index_of_auto = nullptr;
+  if(index_of_term->from_index != nullptr) {
+    Value_ptr param_from_index = getTermValue(index_of_term->from_index);
+    if(Value::Type::INT_AUTOMATON == param_from_index->getType()) {
+    index_of_auto = param_left->getStringAutomaton()->IndexOf(param_right->getStringAutomaton(),param_from_index->getIntAutomaton());
+    } else if(Value::Type::INT_CONSTANT == param_from_index->getType()) {
+      index_of_auto = param_left->getStringAutomaton()->IndexOf(param_right->getStringAutomaton(),param_from_index->getIntConstant());
+    } else {
+      LOG(FATAL) << "handle more cases here";
+    }
+  } else {
+    index_of_auto = param_left->getStringAutomaton()->IndexOf(param_right->getStringAutomaton());
+  }
+
+
   if (index_of_auto->isAcceptingSingleInt()) {
     result = new Value(index_of_auto->getAnAcceptingInt());
     delete index_of_auto;

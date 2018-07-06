@@ -224,6 +224,8 @@ public:
   StringAutomaton_ptr SubStringFirstOf(StringAutomaton_ptr search_auto);
 
   IntAutomaton_ptr IndexOf(StringAutomaton_ptr search_auto);
+  IntAutomaton_ptr IndexOf(StringAutomaton_ptr search_auto, int from_index);
+  IntAutomaton_ptr IndexOf(StringAutomaton_ptr search_auto, IntAutomaton_ptr from_index_auto);
   IntAutomaton_ptr LastIndexOf(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr Contains(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr Begins(StringAutomaton_ptr search_auto);

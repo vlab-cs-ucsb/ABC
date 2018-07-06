@@ -2202,6 +2202,7 @@ StringAutomaton_ptr StringAutomaton::SubStringFirstOf(
  */
 IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto) {
 	CHECK_EQ(this->num_tracks_,1);
+	/*
   StringAutomaton_ptr contains_auto = nullptr, difference_auto = nullptr,
       index_of_auto = nullptr, search_param_auto = search_auto;
   IntAutomaton_ptr length_auto = nullptr;
@@ -2256,9 +2257,110 @@ IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto) {
     }
     delete search_param_auto; search_param_auto = nullptr; // search_param_auto auto is not the parameter search auto, it is updated, delete it
   }
+*/
 
-  DVLOG(VLOG_LEVEL) << length_auto->getId() << " = [" << this->id_ << "]->indexOf(" << search_auto->id_  << ")";
-  return length_auto;
+  IntAutomaton_ptr from_index_auto = IntAutomaton::makeInt(0);
+  IntAutomaton_ptr indexof_auto = this->IndexOf(search_auto,from_index_auto);
+  delete from_index_auto;
+
+  DVLOG(VLOG_LEVEL) << indexof_auto->getId() << " = [" << this->id_ << "]->indexOf(" << search_auto->id_  << ")";
+  return indexof_auto;
+}
+
+IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto, int from_index) {
+  IntAutomaton_ptr from_index_auto = IntAutomaton::makeInt(from_index);
+  IntAutomaton_ptr indexof_auto = this->IndexOf(search_auto,from_index_auto);
+  delete from_index_auto;
+
+  DVLOG(VLOG_LEVEL) << indexof_auto->getId() << " = [" << this->id_ << "]->indexOf(" << search_auto->id_ << "," << from_index << ")";
+  return indexof_auto;
+}
+
+IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto, IntAutomaton_ptr from_index_auto) {
+	IntAutomaton_ptr indexof_auto = nullptr;
+	StringAutomaton_ptr search_param_auto = search_auto;
+	bool search_has_empty_string = false;
+
+	// make sure from_index_auto is restricted to [0,|this->length|]
+	StringAutomaton_ptr prefixes_auto = this->Prefixes();
+	IntAutomaton_ptr length_auto = prefixes_auto->Length();
+	IntAutomaton_ptr valid_lengths_auto = static_cast<IntAutomaton_ptr>(length_auto->Intersect(from_index_auto));
+	// string_length_auto will have only lengths <= this->length
+	StringAutomaton_ptr string_length_auto = new StringAutomaton(dfaCopy(valid_lengths_auto->getDFA()),DEFAULT_NUM_OF_VARIABLES);
+  delete valid_lengths_auto;
+  delete prefixes_auto;
+	delete length_auto;
+
+  // if no valid lengths, then regardless of search_auto, automatically return -1
+	if(string_length_auto->IsEmptyLanguage()) {
+	  delete string_length_auto;
+	  indexof_auto = IntAutomaton::makeInt(-1);
+	  return indexof_auto;
+	}
+
+	// if search auto has empty string, then remove it but remember to include the currently valid lengths as valid indices
+	if (search_param_auto->HasEmptyString()) {
+    StringAutomaton_ptr non_empty_string = MakeAnyStringLengthGreaterThan(0);
+    search_param_auto = search_param_auto->Intersect(non_empty_string);
+    delete non_empty_string; non_empty_string = nullptr;
+    search_has_empty_string = true;
+  }
+
+	StringAutomaton_ptr any_string_auto = StringAutomaton::MakeAnyString();
+	StringAutomaton_ptr contains_auto = any_string_auto->Contains(search_auto);
+	StringAutomaton_ptr difference_auto = any_string_auto->Difference(contains_auto);
+
+	StringAutomaton_ptr concat1_auto = string_length_auto->Concat(difference_auto);
+	StringAutomaton_ptr concat2_auto = search_auto->Concat(any_string_auto);
+
+	auto prefix_suffix_auto = MakePrefixSuffix(0,1,2,3);
+	auto original_string_auto = new StringAutomaton(this->getDFA(),0,3,DEFAULT_NUM_OF_VARIABLES);
+	auto prefix_auto = new StringAutomaton(concat1_auto->getDFA(),1,3,DEFAULT_NUM_OF_VARIABLES);
+	DFA_ptr suffix_dfa = PrependLambda(concat2_auto->getDFA(),DEFAULT_NUM_OF_VARIABLES);
+	auto suffix_auto = new StringAutomaton(suffix_dfa,2,3,VAR_PER_TRACK);
+
+	auto intersect_auto = prefix_suffix_auto->Intersect(original_string_auto);
+	auto temp_auto = intersect_auto;
+
+	intersect_auto = temp_auto->Intersect(prefix_auto);
+	delete temp_auto;
+	temp_auto = intersect_auto;
+
+	intersect_auto = temp_auto->Intersect(suffix_auto);
+	delete temp_auto;
+
+	temp_auto = intersect_auto->GetKTrack(1);
+
+	// if no match is found, return -1 as the result
+	if(temp_auto->IsEmptyLanguage()) {
+	  indexof_auto = IntAutomaton::makeInt(-1);
+	} else {
+    indexof_auto = temp_auto->Length();
+  }
+
+  // if search has empty string indexOf also returns the valid lengths from above
+  if (search_has_empty_string) {
+    IntAutomaton_ptr temp_int_auto = static_cast<IntAutomaton_ptr>(indexof_auto->Union(string_length_auto));
+    delete indexof_auto;
+    indexof_auto = temp_int_auto;
+    delete search_param_auto; search_param_auto = nullptr; // search_param_auto auto is not the parameter search auto, it is updated, delete it
+  }
+
+	delete temp_auto;
+	delete prefix_suffix_auto;
+	delete prefix_auto;
+	delete suffix_auto;
+	delete contains_auto;
+	delete string_length_auto;
+	dfaFree(suffix_dfa);
+
+//	this->inspectAuto(false,false);
+//	indexof_auto->inspectAuto(false,false);
+//	std::cin.get();
+
+  DVLOG(VLOG_LEVEL) << indexof_auto->getId() << " = [" << this->id_ << "]->indexOf(" << search_auto->id_ << "," << from_index_auto->getId() << ")";
+	return indexof_auto;
+
 }
 
 /**
