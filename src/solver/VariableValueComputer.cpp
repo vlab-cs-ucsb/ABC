@@ -974,9 +974,6 @@ void VariableValueComputer::visitCharAt(CharAt_ptr char_at_term) {
     delete indexes_auto;
   }
 
-  child_value->getStringAutomaton()->inspectAuto(false,false);
-  std::cin.get();
-
   setTermPreImage(child_term, child_value);
   visit(child_term);
 }
@@ -1030,8 +1027,8 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
             ->RestrictAtIndexTo(start_index_value->getIntAutomaton(), term_value->getStringAutomaton()));
   }
 
-  child_value->getStringAutomaton()->inspectAuto(false,false);
-  std::cin.get();
+  // child_value->getStringAutomaton()->inspectAuto(false,false);
+  // std::cin.get();
 
   /*
   switch (sub_string_term->getMode()) {

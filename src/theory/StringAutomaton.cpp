@@ -1604,6 +1604,25 @@ StringAutomaton_ptr StringAutomaton::SuffixesAtIndex(int index) {
   return SuffixesFromTo(index, index);
 }
 
+StringAutomaton_ptr StringAutomaton::SuffixesAtIndex(IntAutomaton_ptr indices_auto) {
+  StringAutomaton_ptr prefix_suffix_auto = MakePrefixSuffix(0,1,2,3);
+  StringAutomaton_ptr original_string_auto = new StringAutomaton(this->getDFA(),0,3,DEFAULT_NUM_OF_VARIABLES);
+  StringAutomaton_ptr position_auto = new StringAutomaton(indices_auto->getDFA(),1,3,DEFAULT_NUM_OF_VARIABLES);
+  
+  auto intersect_auto = prefix_suffix_auto->Intersect(original_string_auto);
+  auto t1 = intersect_auto;
+  intersect_auto = t1->Intersect(position_auto);
+  delete t1;
+
+  auto suffixes_auto = intersect_auto->GetKTrack(2);
+  delete intersect_auto;
+  delete prefix_suffix_auto;
+  delete original_string_auto;
+  delete position_auto;
+
+  return suffixes_auto;
+}
+
 StringAutomaton_ptr StringAutomaton::SuffixesFromIndex(int start) {
 	CHECK_EQ(this->num_tracks_,1);
   return SuffixesFromTo(start, this->dfa_->ns);
@@ -1977,6 +1996,7 @@ StringAutomaton_ptr StringAutomaton::CharAt(IntAutomaton_ptr index_auto) {
 
 StringAutomaton_ptr StringAutomaton::SubString(const int start) {
   CHECK_EQ(this->num_tracks_,1);
+
   StringAutomaton_ptr substring_auto = nullptr, suffixes_auto = nullptr;
   suffixes_auto = this->SuffixesAtIndex(start);
   substring_auto = suffixes_auto->Prefixes();
@@ -1990,27 +2010,34 @@ StringAutomaton_ptr StringAutomaton::SubString(const int start) {
  */
 StringAutomaton_ptr StringAutomaton::SubString(const int start, const int n) {
   CHECK_EQ(this->num_tracks_,1);
-  StringAutomaton_ptr substring_auto = nullptr;
-  // Shift auto to begin at index start
+
+  // StringAutomaton_ptr substring_auto = nullptr;
+  // // Shift auto to begin at index start
 
 
-  // return empty string if n <= 0 (TODO: Check with SMTLIB folks to make sure)
-  if (n <= 0) {
-    substring_auto = StringAutomaton::MakeEmptyString();
-    return substring_auto;
-  }
-  auto suffixes_auto = this->SuffixesAtIndex(start);
-  auto length_auto = StringAutomaton::MakeAnyStringLengthLessThanOrEqualTo(n);
-  // s1 represents the substrings from position start with length up to but not equal to n
-  auto s1 = suffixes_auto->Intersect(length_auto);
-  // s2 represents the substrings from position start with length equal to n
-  auto s2 = suffixes_auto->PrefixesAtIndex(n);
-  // s1 union s2 is the substrings from position start with length up to or equal to n
-  substring_auto = s1->Union(s2);
-  delete suffixes_auto;
-  delete length_auto;
-  delete s1;
-  delete s2;
+  // // return empty string if n <= 0 (TODO: Check with SMTLIB folks to make sure)
+  // if (n <= 0) {
+  //   substring_auto = StringAutomaton::MakeEmptyString();
+  //   return substring_auto;
+  // }
+  // auto suffixes_auto = this->SuffixesAtIndex(start);
+  // auto length_auto = StringAutomaton::MakeAnyStringLengthLessThanOrEqualTo(n);
+  // // s1 represents the substrings from position start with length up to but not equal to n
+  // auto s1 = suffixes_auto->Intersect(length_auto);
+  // // s2 represents the substrings from position start with length equal to n
+  // auto s2 = suffixes_auto->PrefixesAtIndex(n);
+  // // s1 union s2 is the substrings from position start with length up to or equal to n
+  // substring_auto = s1->Union(s2);
+  // delete suffixes_auto;
+  // delete length_auto;
+  // delete s1;
+  // delete s2;
+
+  auto i1 = IntAutomaton::makeInt(start);
+  auto i2 = IntAutomaton::makeInt(n);
+  auto substring_auto = this->SubString(i1,i2);
+  delete i1;
+  delete i2;
 
   DVLOG(VLOG_LEVEL) << substring_auto->id_ << " = [" << this->id_ << "]->subString(" << start << "," << n << ")";
   return substring_auto;
@@ -2036,33 +2063,66 @@ StringAutomaton_ptr StringAutomaton::SubString(IntAutomaton_ptr length_auto, Str
 StringAutomaton_ptr StringAutomaton::SubString(int start, IntAutomaton_ptr length_auto) {
 
 	CHECK_EQ(this->num_tracks_,1);
-  if (length_auto->IsEmptyLanguage()) {
-    return StringAutomaton::MakePhi();
-  } else if (length_auto->isAcceptingSingleInt()) {
-    return SubString(start, length_auto->getAnAcceptingInt());
-  } else {
-    auto suffixes_auto = this->SuffixesAtIndex(start);
-    auto string_end_indices = new StringAutomaton(dfaCopy(length_auto->getDFA()),DEFAULT_NUM_OF_VARIABLES);
-    auto string_length_auto = string_end_indices->Prefixes();
 
-    // s1 is prefixesAtIndex
-    // s2 is prefixesBeforeIndex
-    auto s0 = suffixes_auto->Prefixes();
-    auto s1 = s0->Intersect(string_end_indices);
-    auto s2 = suffixes_auto->Intersect(string_length_auto);
-    auto ret_auto = s1->Union(s2);
+  // if (length_auto->IsEmptyLanguage()) {
+  //   return StringAutomaton::MakePhi();
+  // } else if (length_auto->isAcceptingSingleInt()) {
+  //   return SubString(start, length_auto->getAnAcceptingInt());
+  // } else {
+  //   auto suffixes_auto = this->SuffixesAtIndex(start);
+  //   auto string_end_indices = new StringAutomaton(dfaCopy(length_auto->getDFA()),DEFAULT_NUM_OF_VARIABLES);
+  //   auto string_length_auto = string_end_indices->Prefixes();
+
+  //   // s1 is prefixesAtIndex
+  //   // s2 is prefixesBeforeIndex
+  //   auto s0 = suffixes_auto->Prefixes();
+  //   auto s1 = s0->Intersect(string_end_indices);
+  //   auto s2 = suffixes_auto->Intersect(string_length_auto);
+  //   auto ret_auto = s1->Union(s2);
 
 
-    ret_auto->inspectAuto(false,false);
-    std::cin.get();
+  //   ret_auto->inspectAuto(false,false);
+  //   std::cin.get();
 
-    delete s0;
-    delete s1;
-    delete s2;
-    delete string_length_auto;
-    delete string_end_indices;
-    return ret_auto;
-  }
+  //   delete s0;
+  //   delete s1;
+  //   delete s2;
+  //   delete string_length_auto;
+  //   delete string_end_indices;
+  //   return ret_auto;
+  // }
+
+  auto i1 = IntAutomaton::makeInt(start);
+  auto substring_auto = this->SubString(i1, length_auto);
+  delete i1;
+  return substring_auto;
+
+  
+}
+
+StringAutomaton_ptr StringAutomaton::SubString(IntAutomaton_ptr start_auto, IntAutomaton_ptr length_auto) {
+  StringAutomaton_ptr suffixes_auto = this->SuffixesAtIndex(start_auto);
+  auto string_end_indices = new StringAutomaton(dfaCopy(length_auto->getDFA()),DEFAULT_NUM_OF_VARIABLES);
+  auto string_length_auto = string_end_indices->Prefixes();
+
+  // s1 is prefixesAtIndex
+  // s2 is prefixesBeforeIndex
+  auto s0 = suffixes_auto->Prefixes();
+  auto s1 = s0->Intersect(string_end_indices);
+  auto s2 = suffixes_auto->Intersect(string_length_auto);
+  auto ret_auto = s1->Union(s2);
+
+
+  // ret_auto->inspectAuto(false,false);
+  // std::cin.get();
+
+  delete s0;
+  delete s1;
+  delete s2;
+  delete string_length_auto;
+  delete string_end_indices;
+  return ret_auto;
+  
 }
 
 /**
@@ -2730,6 +2790,21 @@ StringAutomaton_ptr StringAutomaton::RestrictIndexOfTo(IntAutomaton_ptr index_au
   bool has_negative_1 = index_auto->hasNegative1();
 
   StringAutomaton_ptr length_string_auto = new StringAutomaton(index_auto->getDFA(),index_auto->get_number_of_bdd_variables());
+
+
+  auto prefix_suffix_auto = MakePrefixSuffix(0,1,2,3);
+  auto original_auto = new StringAutomaton(this->getDFA(),0,3,DEFAULT_NUM_OF_VARIABLES);
+  auto concat_auto = length_string_auto->Concat(search_auto);
+  auto prefix_auto = new StringAutomaton(concat_auto->getDFA(),1,3,DEFAULT_NUM_OF_VARIABLES);
+  auto t1 = prefix_suffix_auto->Intersect(original_auto);
+  auto t2 = t1->Intersect(concat_auto);
+  auto t3 = t2->GetKTrack(0);
+
+  t3->inspectAuto(false,false);
+  LOG(INFO) << "HERE!";
+  std::cin.get();
+
+
 //  UnaryAutomaton_ptr unary_auto = index_auto->toUnaryAutomaton();
 //	StringAutomaton_ptr length_string_auto = unary_auto->toStringAutomaton();
 //	delete unary_auto;
@@ -2903,6 +2978,21 @@ StringAutomaton_ptr StringAutomaton::RestrictAtIndexTo(
 //  UnaryAutomaton_ptr unary_auto = index_auto->toUnaryAutomaton();
 //  StringAutomaton_ptr length_string_auto = unary_auto->toStringAutomaton();
 //  delete unary_auto;
+
+  auto prefix_suffix_auto = MakePrefixSuffix(0,1,2,3);
+  auto original_auto = new StringAutomaton(this->getDFA(),0,3,DEFAULT_NUM_OF_VARIABLES);
+  auto concat_auto = length_string_auto->Concat(sub_string_auto);
+  auto prefix_auto = new StringAutomaton(concat_auto->getDFA(),1,3,DEFAULT_NUM_OF_VARIABLES);
+  auto t1 = prefix_suffix_auto->Intersect(original_auto);
+  auto t2 = t1->Intersect(prefix_auto);
+  auto t3 = t2->GetKTrack(0);
+
+  t3->inspectAuto(false,false);
+  LOG(INFO) << "HERE!";
+  std::cin.get();
+
+
+
   StringAutomaton_ptr any_string = StringAutomaton::MakeAnyString();
   tmp_auto_1 = length_string_auto->Concat(sub_string_auto);
   if (tmp_auto_1->IsEmptyString()) {

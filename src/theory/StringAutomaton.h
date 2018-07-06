@@ -202,6 +202,7 @@ public:
 
   StringAutomaton_ptr Suffixes();
   StringAutomaton_ptr SuffixesAtIndex(int index);
+  StringAutomaton_ptr SuffixesAtIndex(IntAutomaton_ptr indices_auto);
   StringAutomaton_ptr SuffixesFromIndex(int start);
   StringAutomaton_ptr SuffixesFromTo(int start, int end);
   StringAutomaton_ptr Prefixes();
@@ -215,6 +216,7 @@ public:
   StringAutomaton_ptr SubString(const int start, const int n);
   StringAutomaton_ptr SubString(IntAutomaton_ptr length_auto, StringAutomaton_ptr search_auto);
   StringAutomaton_ptr SubString(int start, IntAutomaton_ptr length_auto);
+  StringAutomaton_ptr SubString(IntAutomaton_ptr start_auto, IntAutomaton_ptr length_auto);
   StringAutomaton_ptr SubStringLastOf(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr SubStringFirstOf(StringAutomaton_ptr search_auto);
 
