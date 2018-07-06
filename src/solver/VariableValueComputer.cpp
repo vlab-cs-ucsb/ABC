@@ -1027,8 +1027,8 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
             ->RestrictAtIndexTo(start_index_value->getIntAutomaton(), term_value->getStringAutomaton()));
   }
 
-  // child_value->getStringAutomaton()->inspectAuto(false,false);
-  // std::cin.get();
+   child_value->getStringAutomaton()->inspectAuto(false,false);
+   std::cin.get();
 
   /*
   switch (sub_string_term->getMode()) {

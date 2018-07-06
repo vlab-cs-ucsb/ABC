@@ -861,84 +861,94 @@ void ConstraintSolver::visitCharAt(CharAt_ptr char_at_term) {
   setTermValue(char_at_term, result);
 }
 
-/**
- * TODO instead of having optional substring parameters,
- * add new substring terms to ast (indexof, lastindexof as well)
- * Below code should go inside a SubStringHelper class
- */
 void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
   visit_children_of(sub_string_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *sub_string_term;
   Value_ptr result = nullptr, param_subject = getTermValue(sub_string_term->subject_term), param_start_index =
-      getTermValue(sub_string_term->start_index_term), param_end_index = nullptr;
-  int start_index_value = 0;
-  // First calculate substring from start to end index
-  Theory::StringAutomaton_ptr substring_auto = param_subject->getStringAutomaton()->clone();
-  if (Value::Type::INT_CONSTANT == param_start_index->getType()) {
-    start_index_value = param_start_index->getIntConstant();
+      getTermValue(sub_string_term->start_index_term), param_end_index = getTermValue(sub_string_term->end_index_term);
+
+  Theory::StringAutomaton_ptr substring_auto = nullptr;
+  if(Value::Type::INT_AUTOMATON == param_start_index->getType() and Value::Type::INT_AUTOMATON == param_end_index->getType()) {
+    substring_auto = param_subject->getStringAutomaton()->SubString(param_start_index->getIntAutomaton(),param_end_index->getIntAutomaton());
+  } else if(Value::Type::INT_CONSTANT == param_start_index->getType() and Value::Type::INT_AUTOMATON == param_end_index->getType()) {
+    substring_auto = param_subject->getStringAutomaton()->SubString(param_start_index->getIntConstant(),param_end_index->getIntAutomaton());
+  } else if(Value::Type::INT_AUTOMATON == param_start_index->getType() and Value::Type::INT_CONSTANT == param_end_index->getType()) {
+    substring_auto = param_subject->getStringAutomaton()->SubString(param_start_index->getIntAutomaton(),param_end_index->getIntConstant());
+  } else if(Value::Type::INT_CONSTANT == param_start_index->getType() and Value::Type::INT_CONSTANT == param_end_index->getType()) {
+    substring_auto = param_subject->getStringAutomaton()->SubString(param_start_index->getIntConstant(),param_end_index->getIntConstant());
   } else {
     LOG(FATAL) << "add more cases here";
   }
 
-  // If there is an end index handle it
-  if (sub_string_term->end_index_term) {
-    param_end_index = getTermValue(sub_string_term->end_index_term);
-    Theory::StringAutomaton_ptr sub_str_start_auto = substring_auto;
-    substring_auto = nullptr;
-
-    // Based on the type handle it;
-    // TODO need to generalize the cases below, a substringhelper class can be used
-    if (Value::Type::BINARYINT_AUTOMATON == param_end_index->getType()) {
-      auto bin_end_index_auto = param_end_index->getBinaryIntAutomaton();
-      // if end index is a variable (TODO make sure it is always a variable)
-      QualIdentifier_ptr index_var = dynamic_cast<QualIdentifier_ptr>(sub_string_term->end_index_term);
-
-      Optimization::ConstraintQuerier query;
-      // checks if the integer parameter is an index of operation (currently works for indexof only)
-      if (index_var and bin_end_index_auto->GetFormula()->HasRelationToMixedTerm(index_var->getVarName())) {
-        auto relation = bin_end_index_auto->GetFormula()->GetRelationToMixedTerm(index_var->getVarName());
-        if (relation.first == Theory::ArithmeticFormula::Type::EQ and
-            query.is_param_equal_to(sub_string_term->subject_term, relation.second, 1)) {
-          // Refactor below flow into a function
-          auto positive_bin_end_index_var_auto = bin_end_index_auto->GetPositiveValuesFor(index_var->getVarName());
-          auto bin_end_index_var_auto = positive_bin_end_index_var_auto->GetBinaryAutomatonFor(index_var->getVarName());
-          delete positive_bin_end_index_var_auto;
-          positive_bin_end_index_var_auto = nullptr;
-          auto unary_end_index_var_auto = bin_end_index_var_auto->ToUnaryAutomaton();
-          delete bin_end_index_var_auto;
-          bin_end_index_var_auto = nullptr;
-          auto string_len_end_index_auto = unary_end_index_var_auto->toIntAutomaton(param_subject->getStringAutomaton()->get_number_of_bdd_variables(), false);
-          delete unary_end_index_var_auto;
-          unary_end_index_var_auto = nullptr;
-
-          // TODO more cases here to handle
-          auto string_search_term = query.get_parameter(relation.second, 2);
-          auto string_search_term_value = getTermValue(string_search_term);
-          if (string_search_term_value == nullptr) {
-            visit(string_search_term); // generate automata for it
-            string_search_term_value = getTermValue(string_search_term);
-          }
-
-          // if there is an additional from index parameter, we need to consider it
-          // I guess the best way to handle it is to add a substring variable from from
-          // index and then to implement the rest
-          substring_auto = sub_str_start_auto->SubString(string_len_end_index_auto, string_search_term_value->getStringAutomaton());
-          delete string_len_end_index_auto;
-          string_len_end_index_auto = nullptr;
-        }
-      }
-    } else if(Value::Type::INT_AUTOMATON == param_end_index->getType()) {
-      Theory::IntAutomaton_ptr param_end_index_auto = param_end_index->getIntAutomaton();
-      substring_auto = sub_str_start_auto->SubString(start_index_value,param_end_index_auto);
-    } else if(Value::Type::INT_CONSTANT == param_start_index->getType()) {
-      int end_index_value = param_end_index->getIntConstant();
-      substring_auto = sub_str_start_auto->SubString(start_index_value,end_index_value);
-    } else {
-      LOG(FATAL) << "implement and fix me";
-    }
-  } else {
-    LOG(FATAL) << "implement me";
-  }
+//  int start_index_value = 0;
+//  // First calculate substring from start to end index
+//  //Theory::StringAutomaton_ptr substring_auto = param_subject->getStringAutomaton()->clone();
+//  Theory::IntAutomaton_ptr start_index_auto = nullptr;
+//  if (Value::Type::INT_CONSTANT == param_start_index->getType()) {
+//    start_index_value = param_start_index->getIntConstant();
+//  } else {
+//    LOG(FATAL) << "add more cases here";
+//  }
+//
+//  // If there is an end index handle it
+//  if (sub_string_term->end_index_term) {
+//    param_end_index = getTermValue(sub_string_term->end_index_term);
+//    Theory::StringAutomaton_ptr sub_str_start_auto = substring_auto;
+//    substring_auto = nullptr;
+//
+//    // Based on the type handle it;
+//    // TODO need to generalize the cases below, a substringhelper class can be used
+//    if (Value::Type::BINARYINT_AUTOMATON == param_end_index->getType()) {
+//      auto bin_end_index_auto = param_end_index->getBinaryIntAutomaton();
+//      // if end index is a variable (TODO make sure it is always a variable)
+//      QualIdentifier_ptr index_var = dynamic_cast<QualIdentifier_ptr>(sub_string_term->end_index_term);
+//
+//      Optimization::ConstraintQuerier query;
+//      // checks if the integer parameter is an index of operation (currently works for indexof only)
+//      if (index_var and bin_end_index_auto->GetFormula()->HasRelationToMixedTerm(index_var->getVarName())) {
+//        auto relation = bin_end_index_auto->GetFormula()->GetRelationToMixedTerm(index_var->getVarName());
+//        if (relation.first == Theory::ArithmeticFormula::Type::EQ and
+//            query.is_param_equal_to(sub_string_term->subject_term, relation.second, 1)) {
+//          // Refactor below flow into a function
+//          auto positive_bin_end_index_var_auto = bin_end_index_auto->GetPositiveValuesFor(index_var->getVarName());
+//          auto bin_end_index_var_auto = positive_bin_end_index_var_auto->GetBinaryAutomatonFor(index_var->getVarName());
+//          delete positive_bin_end_index_var_auto;
+//          positive_bin_end_index_var_auto = nullptr;
+//          auto unary_end_index_var_auto = bin_end_index_var_auto->ToUnaryAutomaton();
+//          delete bin_end_index_var_auto;
+//          bin_end_index_var_auto = nullptr;
+//          auto string_len_end_index_auto = unary_end_index_var_auto->toIntAutomaton(param_subject->getStringAutomaton()->get_number_of_bdd_variables(), false);
+//          delete unary_end_index_var_auto;
+//          unary_end_index_var_auto = nullptr;
+//
+//          // TODO more cases here to handle
+//          auto string_search_term = query.get_parameter(relation.second, 2);
+//          auto string_search_term_value = getTermValue(string_search_term);
+//          if (string_search_term_value == nullptr) {
+//            visit(string_search_term); // generate automata for it
+//            string_search_term_value = getTermValue(string_search_term);
+//          }
+//
+//          // if there is an additional from index parameter, we need to consider it
+//          // I guess the best way to handle it is to add a substring variable from from
+//          // index and then to implement the rest
+//          substring_auto = sub_str_start_auto->SubString(string_len_end_index_auto, string_search_term_value->getStringAutomaton());
+//          delete string_len_end_index_auto;
+//          string_len_end_index_auto = nullptr;
+//        }
+//      }
+//    } else if(Value::Type::INT_AUTOMATON == param_end_index->getType()) {
+//      Theory::IntAutomaton_ptr param_end_index_auto = param_end_index->getIntAutomaton();
+//      substring_auto = sub_str_start_auto->SubString(start_index_value,param_end_index_auto);
+//    } else if(Value::Type::INT_CONSTANT == param_start_index->getType()) {
+//      int end_index_value = param_end_index->getIntConstant();
+//      substring_auto = sub_str_start_auto->SubString(start_index_value,end_index_value);
+//    } else {
+//      LOG(FATAL) << "implement and fix me";
+//    }
+//  } else {
+//    LOG(FATAL) << "implement me";
+//  }
 
   CHECK_NOTNULL(substring_auto);
   result = new Value(substring_auto);
