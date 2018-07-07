@@ -1296,8 +1296,11 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
   auto arithmetic_result = arithmetic_constraint_solver_.get_term_value(term);
   for (auto& string_term : arithmetic_constraint_solver_.get_string_terms_in(term)) {
     visit(string_term);
+
     auto string_term_result = getTermValue(string_term);
     is_satisfiable = string_term_result->is_satisfiable();
+    LOG(INFO) << *string_term_result;
+    LOG(FATAL) << "HERE!";
     if (not is_satisfiable) {
       auto binary_auto = arithmetic_result->getBinaryIntAutomaton();
       arithmetic_result = new Value(

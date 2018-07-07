@@ -2044,9 +2044,17 @@ StringAutomaton_ptr StringAutomaton::SubString(IntAutomaton_ptr start_auto, IntA
   CHECK_EQ(this->num_tracks_,1);
 
 //  this->inspectAuto(false,false);
-//  start_auto->inspectAuto(false,false);
-//  length_auto->inspectAuto(false,false);
-//  std::cin.get();
+  start_auto->inspectAuto(false,false);
+  length_auto->inspectAuto(false,false);
+  std::cin.get();
+
+  // if start_auto or length_auto is empty language, return empty string
+  if(start_auto->IsEmptyLanguage() or length_auto->IsEmptyLanguage()
+            or (start_auto->hasNegative1() and start_auto->isAcceptingSingleInt())
+            or (length_auto->hasNegative1() and length_auto->isAcceptingSingleInt())) {
+    LOG(FATAL) << "HI";
+    return StringAutomaton::MakeEmptyString();
+  }
 
   StringAutomaton_ptr suffixes_auto = this->SuffixesAtIndex(start_auto);
   auto string_end_indices = new StringAutomaton(dfaCopy(length_auto->getDFA()),DEFAULT_NUM_OF_VARIABLES);
@@ -2292,7 +2300,7 @@ IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto, IntAu
 	delete length_auto;
 
   // if no valid lengths, then regardless of search_auto, automatically return -1
-	if(string_length_auto->IsEmptyLanguage()) {
+	if(string_length_auto->IsEmptyLanguage() or from_index_auto->IsEmptyLanguage()) {
 	  delete string_length_auto;
 	  indexof_auto = IntAutomaton::makeInt(-1);
 	  return indexof_auto;
@@ -2355,8 +2363,9 @@ IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto, IntAu
 	dfaFree(suffix_dfa);
 
 //	this->inspectAuto(false,false);
-//	indexof_auto->inspectAuto(false,false);
-//	std::cin.get();
+  LOG(INFO) << "INDEXOF";
+	indexof_auto->inspectAuto(false,false);
+	std::cin.get();
 
   DVLOG(VLOG_LEVEL) << indexof_auto->getId() << " = [" << this->id_ << "]->indexOf(" << search_auto->id_ << "," << from_index_auto->getId() << ")";
 	return indexof_auto;

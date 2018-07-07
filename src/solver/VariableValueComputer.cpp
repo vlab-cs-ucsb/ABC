@@ -1016,11 +1016,11 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
 
 
 //  // result of substring
-  term_value->getStringAutomaton()->inspectAuto(false, false);
+//  term_value->getStringAutomaton()->inspectAuto(false, false);
 //  // subject auto
-  child_post_value->getStringAutomaton()->inspectAuto(false, false);
+//  child_post_value->getStringAutomaton()->inspectAuto(false, false);
 //  end_index_value->getIntAutomaton()->inspectAuto(false,true);
-  std::cin.get();
+//  std::cin.get();
 
   if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
     child_value = new Value(child_post_value->getStringAutomaton()
@@ -1030,8 +1030,8 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
             ->RestrictAtIndexTo(start_index_value->getIntAutomaton(), term_value->getStringAutomaton()));
   }
 
-   child_value->getStringAutomaton()->inspectAuto(false,false);
-   std::cin.get();
+//   child_value->getStringAutomaton()->inspectAuto(false,false);
+//   std::cin.get();
 
   /*
   switch (sub_string_term->getMode()) {
@@ -1384,6 +1384,7 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
     	Variable_ptr variable = symbol_table->get_variable(qi_term->getVarName());
     	auto variable_value = symbol_table->get_value(variable);
       if(Value::Type::BINARYINT_AUTOMATON == variable_value->getType()) {
+
       	auto unary_auto = term_pre_value->getIntAutomaton()->toUnaryAutomaton();
       	auto term_binary_auto = unary_auto->toBinaryIntAutomaton(qi_term->getVarName(),
 																																 variable_value->getIntAutomaton()->GetFormula()->clone(),
