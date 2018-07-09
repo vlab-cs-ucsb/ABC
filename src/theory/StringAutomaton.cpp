@@ -1942,6 +1942,12 @@ StringAutomaton_ptr StringAutomaton::CharAt(const int index) {
 
 StringAutomaton_ptr StringAutomaton::CharAt(IntAutomaton_ptr index_auto) {
   CHECK_EQ(this->num_tracks_,1);
+
+  // if index auto is negative 1, then just return empty string
+  if(index_auto->hasNegative1() and index_auto->isAcceptingSingleInt()) {
+    return StringAutomaton::MakeEmptyString();
+  }
+
   StringAutomaton_ptr prefixes_auto = this->Prefixes();
   StringAutomaton_ptr string_length_auto = new StringAutomaton(index_auto->getDFA(),index_auto->get_number_of_bdd_variables());
   StringAutomaton_ptr any_char_auto = StringAutomaton::MakeAnyChar();
@@ -2043,18 +2049,13 @@ StringAutomaton_ptr StringAutomaton::SubString(IntAutomaton_ptr start_auto, int 
 StringAutomaton_ptr StringAutomaton::SubString(IntAutomaton_ptr start_auto, IntAutomaton_ptr length_auto) {
   CHECK_EQ(this->num_tracks_,1);
 
-//  this->inspectAuto(false,false);
-  start_auto->inspectAuto(false,false);
-  length_auto->inspectAuto(false,false);
-  std::cin.get();
-
+  // TODO: Will; should not be needed but kept here just in case for now
   // if start_auto or length_auto is empty language, return empty string
-  if(start_auto->IsEmptyLanguage() or length_auto->IsEmptyLanguage()
-            or (start_auto->hasNegative1() and start_auto->isAcceptingSingleInt())
-            or (length_auto->hasNegative1() and length_auto->isAcceptingSingleInt())) {
-    LOG(FATAL) << "HI";
-    return StringAutomaton::MakeEmptyString();
-  }
+  // if(start_auto->IsEmptyLanguage() or length_auto->IsEmptyLanguage()
+  //           or (start_auto->hasNegative1() and start_auto->isAcceptingSingleInt())
+  //           or (length_auto->hasNegative1() and length_auto->isAcceptingSingleInt())) {
+  //   return StringAutomaton::MakeEmptyString();
+  // }
 
   StringAutomaton_ptr suffixes_auto = this->SuffixesAtIndex(start_auto);
   auto string_end_indices = new StringAutomaton(dfaCopy(length_auto->getDFA()),DEFAULT_NUM_OF_VARIABLES);
@@ -2072,6 +2073,16 @@ StringAutomaton_ptr StringAutomaton::SubString(IntAutomaton_ptr start_auto, IntA
   delete s2;
   delete string_length_auto;
   delete string_end_indices;
+
+  // if either length_auto or start_auto has negative1, substring should
+  // also contain the empty string (per SMT specs)
+  if(length_auto->hasNegative1() || start_auto->hasNegative1()) {
+    auto empty_string_auto = StringAutomaton::MakeEmptyString();
+    auto temp_auto = ret_auto->Union(empty_string_auto);
+    delete ret_auto;
+    delete empty_string_auto;
+    ret_auto = temp_auto;
+  }
 
   ret_auto->inspectAuto(false,false);
   std::cin.get();
@@ -3033,12 +3044,19 @@ StringAutomaton_ptr StringAutomaton::RestrictAtIndexTo(
 		IntAutomaton_ptr index_auto, StringAutomaton_ptr sub_string_auto) {
 	CHECK_EQ(this->num_tracks_,1);
   StringAutomaton_ptr restricted_auto = nullptr, tmp_auto_1 = nullptr, tmp_auto_2;
-  StringAutomaton_ptr length_string_auto = new StringAutomaton(index_auto->getDFA(),index_auto->get_number_of_bdd_variables());
-  StringAutomaton_ptr temp_auto = this->Intersect(length_string_auto);
+  StringAutomaton_ptr length_string_auto = new StringAutomaton(dfaCopy(index_auto->getDFA()),index_auto->get_number_of_bdd_variables());
+  //StringAutomaton_ptr temp_auto = this->Intersect(length_string_auto);
 //  UnaryAutomaton_ptr unary_auto = index_auto->toUnaryAutomaton();
 //  StringAutomaton_ptr length_string_auto = unary_auto->toStringAutomaton();
 //  delete unary_auto;
-
+  if(index_auto->hasNegative1()) {
+    tmp_auto_1 = StringAutomaton::MakeEmptyString();
+    tmp_auto_2 = length_string_auto->Union(tmp_auto_1);
+    delete tmp_auto_1;
+    delete length_string_auto;
+    length_string_auto = tmp_auto_2;
+    tmp_auto_2 = nullptr;
+  }
   auto prefix_suffix_auto = MakePrefixSuffix(0,1,2,3);
   auto original_auto = new StringAutomaton(this->getDFA(),0,3,DEFAULT_NUM_OF_VARIABLES);
   auto concat_auto = length_string_auto->Concat(sub_string_auto);
@@ -3048,25 +3066,31 @@ StringAutomaton_ptr StringAutomaton::RestrictAtIndexTo(
   auto t3 = t2->GetKTrack(0);
 
 //  t3->inspectAuto(false,false);
-//  LOG(INFO) << "HERE!";
+ 
 //  std::cin.get();
 
+  delete prefix_suffix_auto;
+  delete original_auto;
+  delete concat_auto;
+  delete prefix_auto;
+  delete t1;
+  delete t2;
+  restricted_auto = t3;
+
+  // StringAutomaton_ptr any_string = StringAutomaton::MakeAnyString();
+  // tmp_auto_1 = length_string_auto->Concat(sub_string_auto);
+  // if (tmp_auto_1->IsEmptyString()) {
+  //   // restricting string to be an empty string, a special case for index 0 and sub_string_auto is empty
+  //   tmp_auto_2 = tmp_auto_1->clone();
+  // } else {
+  //   tmp_auto_2 = tmp_auto_1->Concat(any_string);
+  // }
 
 
-  StringAutomaton_ptr any_string = StringAutomaton::MakeAnyString();
-  tmp_auto_1 = length_string_auto->Concat(sub_string_auto);
-  if (tmp_auto_1->IsEmptyString()) {
-    // restricting string to be an empty string, a special case for index 0 and sub_string_auto is empty
-    tmp_auto_2 = tmp_auto_1->clone();
-  } else {
-    tmp_auto_2 = tmp_auto_1->Concat(any_string);
-  }
-
-
-  delete tmp_auto_1; tmp_auto_1 = nullptr;
-  delete any_string; any_string = nullptr;
-  restricted_auto = this->Intersect(tmp_auto_2);
-  delete tmp_auto_2; tmp_auto_2 = nullptr;
+  // delete tmp_auto_1; tmp_auto_1 = nullptr;
+  // delete any_string; any_string = nullptr;
+  // restricted_auto = this->Intersect(tmp_auto_2);
+  // delete tmp_auto_2; tmp_auto_2 = nullptr;
 
   // TODO: Will, ask baki why this is here? shouldn't be here. commenting for now (7/03/18)
 //  if(not temp_auto->IsEmptyLanguage()) {
@@ -3075,7 +3099,7 @@ StringAutomaton_ptr StringAutomaton::RestrictAtIndexTo(
 //    restricted_auto = tmp_auto_2;
 //  }
 
-  length_string_auto->dfa_ = nullptr; // it is index_auto's dfa
+  //length_string_auto->dfa_ = nullptr; // it is index_auto's dfa
   delete length_string_auto; length_string_auto = nullptr;
 
 

@@ -1109,9 +1109,11 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   } else if (Value::Type::BINARYINT_AUTOMATON == variable_value->getType()) {
   	// TODO baki: added for charat may need to fix it
     auto var_auto = variable_value->getBinaryIntAutomaton()->GetBinaryAutomatonFor(qi_term->getVarName());
-    auto unary_auto = var_auto->ToUnaryAutomaton();
-    result = new Value(unary_auto->toIntAutomaton(8));
+    auto positive_var_auto = var_auto->GetPositiveValuesFor(qi_term->getVarName());
+    auto unary_auto = positive_var_auto->ToUnaryAutomaton();
+    result = new Value(unary_auto->toIntAutomaton(8,var_auto->HasNegative1()));
     delete var_auto;
+    delete positive_var_auto;
     delete unary_auto;
   } else
   {
@@ -1299,8 +1301,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
 
     auto string_term_result = getTermValue(string_term);
     is_satisfiable = string_term_result->is_satisfiable();
-    LOG(INFO) << *string_term_result;
-    LOG(FATAL) << "HERE!";
+    
     if (not is_satisfiable) {
       auto binary_auto = arithmetic_result->getBinaryIntAutomaton();
       arithmetic_result = new Value(
@@ -1375,6 +1376,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
       arithmetic_constraint_solver_.set_group_value(term, arithmetic_result);
       break;
     }
+
   }
   if(delete_extra_arithmetic_result) {
 		delete arithmetic_result;
