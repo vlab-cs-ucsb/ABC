@@ -243,8 +243,15 @@ public:
   IntAutomaton_ptr Length();
   StringAutomaton_ptr RestrictLengthTo(int length);
   StringAutomaton_ptr RestrictLengthTo(IntAutomaton_ptr length_auto);
+
   StringAutomaton_ptr RestrictIndexOfTo(int index, StringAutomaton_ptr search_auto);
   StringAutomaton_ptr RestrictIndexOfTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto);
+
+  StringAutomaton_ptr RestrictIndexOfTo(int index, int from_index, StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr RestrictIndexOfTo(IntAutomaton_ptr index_auto, int from_index, StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr RestrictIndexOfTo(int index, IntAutomaton_ptr from_index_auto, StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr RestrictIndexOfTo(IntAutomaton_ptr index_auto, IntAutomaton_ptr from_index_auto, StringAutomaton_ptr search_auto);
+
   StringAutomaton_ptr RestrictLastIndexOfTo(int index, StringAutomaton_ptr search_auto);
   StringAutomaton_ptr RestrictLastIndexOfTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto);
   StringAutomaton_ptr RestrictLastOccuranceOf(StringAutomaton_ptr search_auto);

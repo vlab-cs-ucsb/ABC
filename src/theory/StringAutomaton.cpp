@@ -2084,8 +2084,8 @@ StringAutomaton_ptr StringAutomaton::SubString(IntAutomaton_ptr start_auto, IntA
     ret_auto = temp_auto;
   }
 
-  ret_auto->inspectAuto(false,false);
-  std::cin.get();
+//  ret_auto->inspectAuto(false,false);
+//  std::cin.get();
 
   DVLOG(VLOG_LEVEL) << ret_auto->id_ << " = [" << this->id_ << "]->subString(" << start_auto->getId() << "," << length_auto->getId() << ")";
   return ret_auto;
@@ -2373,10 +2373,15 @@ IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto, IntAu
 	delete string_length_auto;
 	dfaFree(suffix_dfa);
 
+  // additionally, if from_index_auto has -1, then result can have -1 as well
+  if(from_index_auto->hasNegative1()) {
+    indexof_auto->setMinus1(true);
+  }
+
 //	this->inspectAuto(false,false);
-  LOG(INFO) << "INDEXOF";
-	indexof_auto->inspectAuto(false,false);
-	std::cin.get();
+//  LOG(INFO) << "INDEXOF";
+//	indexof_auto->inspectAuto(false,false);
+//	std::cin.get();
 
   DVLOG(VLOG_LEVEL) << indexof_auto->getId() << " = [" << this->id_ << "]->indexOf(" << search_auto->id_ << "," << from_index_auto->getId() << ")";
 	return indexof_auto;
@@ -2873,6 +2878,8 @@ StringAutomaton_ptr StringAutomaton::RestrictIndexOfTo(IntAutomaton_ptr index_au
           not_contains_length_auto = nullptr, not_contains_subject_auto = nullptr,
           tmp_auto_1 = nullptr, tmp_auto_2 = nullptr;
 
+	// if index_auto is -1, then no match was found, OR the original index was out of bounds
+
   bool has_negative_1 = index_auto->hasNegative1();
 
   StringAutomaton_ptr length_string_auto = new StringAutomaton(index_auto->getDFA(),index_auto->get_number_of_bdd_variables());
@@ -2909,6 +2916,119 @@ StringAutomaton_ptr StringAutomaton::RestrictIndexOfTo(IntAutomaton_ptr index_au
 
   DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictIndexOfTo(" << index_auto->getId() << ", " << search_auto->id_ << ")";
 
+  return restricted_auto;
+}
+
+
+StringAutomaton_ptr StringAutomaton::RestrictIndexOfTo(int index, int from_index, StringAutomaton_ptr search_auto) {
+  IntAutomaton_ptr index_auto = IntAutomaton::makeInt(index);
+  IntAutomaton_ptr from_index_auto = IntAutomaton::makeInt(from_index);
+  StringAutomaton_ptr restricted_auto = this->RestrictIndexOfTo(index_auto, from_index_auto, search_auto);
+  delete index_auto;
+  delete from_index_auto;
+
+  DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictIndexOfTo(" << index_auto->getId() << ", " << search_auto->id_ << ")";
+  return restricted_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::RestrictIndexOfTo(IntAutomaton_ptr index_auto, int from_index, StringAutomaton_ptr search_auto) {
+  IntAutomaton_ptr from_index_auto = IntAutomaton::makeInt(from_index);
+  StringAutomaton_ptr restricted_auto = this->RestrictIndexOfTo(index_auto, from_index_auto, search_auto);
+  delete from_index_auto;
+
+  DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictIndexOfTo(" << index_auto->getId() << ", " << search_auto->id_ << ")";
+  return restricted_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::RestrictIndexOfTo(int index, IntAutomaton_ptr from_index_auto, StringAutomaton_ptr search_auto) {
+  IntAutomaton_ptr index_auto = IntAutomaton::makeInt(index);
+  StringAutomaton_ptr restricted_auto = this->RestrictIndexOfTo(index_auto, from_index_auto, search_auto);
+  delete index_auto;
+
+  DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictIndexOfTo(" << index_auto->getId() << ", " << search_auto->id_ << ")";
+  return restricted_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::RestrictIndexOfTo(IntAutomaton_ptr index_auto, IntAutomaton_ptr from_index_auto, StringAutomaton_ptr search_auto) {
+  StringAutomaton_ptr restricted_auto = nullptr;
+
+//  LOG(INFO) << index_auto->hasNegative1() << "," << from_index_auto->hasNegative1();
+//  index_auto->inspectAuto(false,false);
+//  from_index_auto->inspectAuto(false,false);
+//  std::cin.get();
+
+  // if index_auto is -1, then either from_index_auto is out of range, or there was no match
+  StringAutomaton_ptr prefixes_auto = this->Prefixes();
+	IntAutomaton_ptr length_auto = prefixes_auto->Length();
+	IntAutomaton_ptr valid_lengths_auto = static_cast<IntAutomaton_ptr>(length_auto->Intersect(from_index_auto));
+	IntAutomaton_ptr valid_index_auto = static_cast<IntAutomaton_ptr>(length_auto->Intersect(index_auto));
+	// string_length_auto will have only lengths <= this->length
+	StringAutomaton_ptr string_length_auto = new StringAutomaton(dfaCopy(valid_lengths_auto->getDFA()),DEFAULT_NUM_OF_VARIABLES);
+  StringAutomaton_ptr string_index_auto = new StringAutomaton(dfaCopy(valid_index_auto->getDFA()),DEFAULT_NUM_OF_VARIABLES);
+  delete valid_index_auto;
+  delete valid_lengths_auto;
+  delete prefixes_auto;
+	delete length_auto;
+
+  /*
+   * if string_length_auto and string_index_auto both empty, then return this->clone
+   * if index_auto has -1,
+   */
+  StringAutomaton_ptr temp_auto = nullptr, temp2_auto = nullptr, temp3_auto = nullptr;
+  StringAutomaton_ptr negative1_auto = nullptr;
+  StringAutomaton_ptr any_string_auto = StringAutomaton::MakeAnyString();
+  StringAutomaton_ptr contains_auto = any_string_auto->Contains(search_auto);
+  StringAutomaton_ptr not_contains_auto = any_string_auto->Difference(contains_auto);
+  StringAutomaton_ptr not_contains_at_index_auto = string_length_auto->Concat(not_contains_auto);
+
+
+  // if index_auto has -1, then this_auto does not contain search_auto at from_index_auto,
+  // or from_index_auto is out of range
+  if(index_auto->hasNegative1()) {
+    negative1_auto = this->Intersect(not_contains_at_index_auto);
+    // from_index_auto is out of range if it has -1 or no valid lengths
+    if(from_index_auto->hasNegative1() or string_index_auto->IsEmptyLanguage()) {
+      temp_auto = negative1_auto->Union(this);
+      delete negative1_auto;
+      negative1_auto = temp_auto;
+    }
+  }
+
+  // from 0...from_index-1, can contain anything in the original automata
+  // from_index...index-1, cannot contain search_auto
+  // at index, next character sequence must be search_auto
+  // index+search_auto.length...end, anything from original automata
+
+  temp_auto = not_contains_at_index_auto->Concat(any_string_auto);
+  temp2_auto = string_index_auto->Concat(search_auto);
+  temp3_auto = temp2_auto->Concat(any_string_auto);
+  delete temp2_auto; temp2_auto = nullptr;
+
+  temp2_auto = temp_auto->Intersect(temp3_auto);
+  delete temp_auto; temp_auto = nullptr;
+  delete temp3_auto; temp3_auto = nullptr;
+
+  restricted_auto = this->Intersect(temp2_auto);
+  delete temp2_auto; temp2_auto = nullptr;
+
+  // if there were any negatives, take care of them
+  if(negative1_auto not_eq nullptr) {
+    temp_auto = restricted_auto->Union(negative1_auto);
+    delete restricted_auto;
+    delete negative1_auto;
+    restricted_auto = temp_auto;
+  }
+
+  delete any_string_auto;
+  delete contains_auto;
+  delete not_contains_auto;
+  delete not_contains_at_index_auto;
+
+//  LOG(INFO) << "RESTRICTED AUTO";
+//  restricted_auto->inspectAuto(false,false);
+//  std::cin.get();
+
+  DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictIndexOfTo(" << index_auto->getId() << ", " << search_auto->id_ << ")";
   return restricted_auto;
 }
 
