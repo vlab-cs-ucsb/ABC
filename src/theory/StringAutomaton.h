@@ -202,6 +202,7 @@ public:
 
   StringAutomaton_ptr Suffixes();
   StringAutomaton_ptr SuffixesAtIndex(int index);
+  StringAutomaton_ptr SuffixesAtIndex(IntAutomaton_ptr indices_auto);
   StringAutomaton_ptr SuffixesFromIndex(int start);
   StringAutomaton_ptr SuffixesFromTo(int start, int end);
   StringAutomaton_ptr Prefixes();
@@ -211,18 +212,20 @@ public:
 
   StringAutomaton_ptr CharAt(const int index);
   StringAutomaton_ptr CharAt(IntAutomaton_ptr index_auto);
+
   StringAutomaton_ptr SubString(const int start);
-  /**
-   * TODO decide on substring second param; which one is better:
-   * end index, or length of substring
-   */
-  StringAutomaton_ptr SubString(const int start, const int end);
+  StringAutomaton_ptr SubString(const int start, const int n);
+  StringAutomaton_ptr SubString(int start, IntAutomaton_ptr length_auto);
+  StringAutomaton_ptr SubString(IntAutomaton_ptr start_auto, int n);
+  StringAutomaton_ptr SubString(IntAutomaton_ptr start_auto, IntAutomaton_ptr length_auto);
+
   StringAutomaton_ptr SubString(IntAutomaton_ptr length_auto, StringAutomaton_ptr search_auto);
-  StringAutomaton_ptr SubString(int start, IntAutomaton_ptr end_auto);
   StringAutomaton_ptr SubStringLastOf(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr SubStringFirstOf(StringAutomaton_ptr search_auto);
 
   IntAutomaton_ptr IndexOf(StringAutomaton_ptr search_auto);
+  IntAutomaton_ptr IndexOf(StringAutomaton_ptr search_auto, int from_index);
+  IntAutomaton_ptr IndexOf(StringAutomaton_ptr search_auto, IntAutomaton_ptr from_index_auto);
   IntAutomaton_ptr LastIndexOf(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr Contains(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr Begins(StringAutomaton_ptr search_auto);
@@ -240,8 +243,15 @@ public:
   IntAutomaton_ptr Length();
   StringAutomaton_ptr RestrictLengthTo(int length);
   StringAutomaton_ptr RestrictLengthTo(IntAutomaton_ptr length_auto);
+
   StringAutomaton_ptr RestrictIndexOfTo(int index, StringAutomaton_ptr search_auto);
   StringAutomaton_ptr RestrictIndexOfTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto);
+
+  StringAutomaton_ptr RestrictIndexOfTo(int index, int from_index, StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr RestrictIndexOfTo(IntAutomaton_ptr index_auto, int from_index, StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr RestrictIndexOfTo(int index, IntAutomaton_ptr from_index_auto, StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr RestrictIndexOfTo(IntAutomaton_ptr index_auto, IntAutomaton_ptr from_index_auto, StringAutomaton_ptr search_auto);
+
   StringAutomaton_ptr RestrictLastIndexOfTo(int index, StringAutomaton_ptr search_auto);
   StringAutomaton_ptr RestrictLastIndexOfTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto);
   StringAutomaton_ptr RestrictLastOccuranceOf(StringAutomaton_ptr search_auto);

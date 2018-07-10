@@ -1992,7 +1992,7 @@ void Automaton::generateMatrixScript(int bound, std::ostream& out, bool count_le
  *
  */
 void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
-
+/*
   print_sink = print_sink || (dfa_->ns == 1 and dfa_->f[0] == -1);
   int sink_state = GetSinkState();
 
@@ -2031,109 +2031,289 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
   out << "\n init [shape = plaintext, label = \"\"];\n" << " init -> " << dfa_->s << ";\n";
 
   LOG(FATAL) << "Reimplement toDotAscii";
-//  paths state_paths, pp;
-//  trace_descr tp;
-//
-//  for (int i = 0; i < dfa_->ns; i++) {
-//    state_paths = pp = make_paths(dfa_->bddm, dfa_->q[i]);
-//    while (pp) {
-//      if ((int)pp->to == sink_state && not print_sink) {
-//        pp = pp->next;
-//        continue;
-//      }
-//
-//      for (j = 0; j < num_of_variables; j++) {
-//        for (tp = pp->trace; tp && (tp->index != (unsigned) variable_indices[j]); tp = tp->next)
-//          ;
-//
-//        if (tp) {
-//          if (tp->value)
-//            character[j] = '1';
-//          else
-//            character[j] = '0';
-//        } else
-//          character[j] = 'X';
-//      }
-//      character[j] = '\0';
-//      if (num_of_variables == 8) {
-//        //break mona character into ranges of ascii chars (example: "0XXX000X" -> [\s-!], [0-1], [@-A], [P-Q])
-//        size = 0;
-//        getTransitionChars(character, num_of_variables, buffer, &size);
-//        //get current index
+  paths state_paths, pp;
+  trace_descr tp;
+
+  for (int i = 0; i < dfa_->ns; i++) {
+    state_paths = pp = make_paths(dfa_->bddm, dfa_->q[i]);
+    while (pp) {
+      if ((int)pp->to == sink_state && not print_sink) {
+        pp = pp->next;
+        continue;
+      }
+
+      for (j = 0; j < num_of_variables; j++) {
+        for (tp = pp->trace; tp && (tp->index != (unsigned) variable_indices[j]); tp = tp->next)
+          ;
+
+        if (tp) {
+          if (tp->value)
+            character[j] = '1';
+          else
+            character[j] = '0';
+        } else
+          character[j] = 'X';
+      }
+      character[j] = '\0';
+      if (num_of_variables == 8) {
+        //break mona character into ranges of ascii chars (example: "0XXX000X" -> [\s-!], [0-1], [@-A], [P-Q])
+        size = 0;
+        getTransitionChars(character, num_of_variables, buffer, &size);
+        //get current index
+        k = toTransIndecies[pp->to];
+        //print ranges
+        for (l = 0; l < size; l++) {
+          toTrans[pp->to][k++] = buffer[l];
+          buffer[l] = 0;    //do not free just detach
+        }
+        toTransIndecies[pp->to] = k;
+      } else {
 //        k = toTransIndecies[pp->to];
-//        //print ranges
-//        for (l = 0; l < size; l++) {
-//          toTrans[pp->to][k++] = buffer[l];
-//          buffer[l] = 0;    //do not free just detach
-//        }
-//        toTransIndecies[pp->to] = k;
-//      } else {
-////        k = toTransIndecies[pp->to];
-////        toTrans[pp->to][k] = (char*) malloc(sizeof(char) * (strlen(character) + 1));
-////        strcpy(toTrans[pp->to][k], character);
-////        toTransIndecies[pp->to] = k + 1;
-//      }
-//      pp = pp->next;
-//    }
-//
-//    //print transitions out of state i
-//    for (j = 0; j < dfa->ns; j++) {
-//      size = toTransIndecies[j];
-//      if (size == 0 || (sink_state == j && not print_sink)) {
-//        continue;
-//      }
-//      ranges = mergeCharRanges(toTrans[j], &size);
-//      //print edge from i to j
-//      out << " " << i << " -> " << j << " [label=\"";
-//      bool print_label = (j != sink_state || print_sink);
-//      l = 0;    //to help breaking into new line
-//      //for each trans k on char/range from i to j
-//      for (k = 0; k < size; k++) {
-//        //print char/range
-//        if (print_label) {
-//          out << " " << ranges[k];
-//        }
-//        l += strlen(ranges[k]);
-//        if (l > 18) {
-//          if (print_label) {
-//            out << "\\n";
-//          }
-//          l = 0;
-//        } else if (k < (size - 1)) {
-//          if (print_label) {
-//            out << ",";
-//          }
-//        }
-//        free(ranges[k]);
-//      }      //for
-//      out << "\"];\n";
-//      if (size > 0)
-//        free(ranges);
-//    }
-//    //for each state free charRange
-//    //merge with loop above for better performance
-//    for (j = 0; j < dfa->ns; j++) {
-//      if (j == sink_state && not print_sink) {
-//        continue;
-//      }
-//      size = toTransIndecies[j];
-//      for (k = 0; k < size; k++) {
-//        free(toTrans[j][k]);
-//      }
-//    }
-//
-//    kill_paths(state_paths);
-//  }    //end for each state
-//
-//  free(character);
-//  free(buffer);
-//  for (i = 0; i < dfa->ns; i++) {
-//    free(toTrans[i]);
-//  }
-//  free(toTrans);
-//  free(toTransIndecies);
+//        toTrans[pp->to][k] = (char*) malloc(sizeof(char) * (strlen(character) + 1));
+//        strcpy(toTrans[pp->to][k], character);
+//        toTransIndecies[pp->to] = k + 1;
+      }
+      pp = pp->next;
+    }
+
+    //print transitions out of state i
+    for (j = 0; j < dfa->ns; j++) {
+      size = toTransIndecies[j];
+      if (size == 0 || (sink_state == j && not print_sink)) {
+        continue;
+      }
+      ranges = mergeCharRanges(toTrans[j], &size);
+      //print edge from i to j
+      out << " " << i << " -> " << j << " [label=\"";
+      bool print_label = (j != sink_state || print_sink);
+      l = 0;    //to help breaking into new line
+      //for each trans k on char/range from i to j
+      for (k = 0; k < size; k++) {
+        //print char/range
+        if (print_label) {
+          out << " " << ranges[k];
+        }
+        l += strlen(ranges[k]);
+        if (l > 18) {
+          if (print_label) {
+            out << "\\n";
+          }
+          l = 0;
+        } else if (k < (size - 1)) {
+          if (print_label) {
+            out << ",";
+          }
+        }
+        free(ranges[k]);
+      }      //for
+      out << "\"];\n";
+      if (size > 0)
+        free(ranges);
+    }
+    //for each state free charRange
+    //merge with loop above for better performance
+    for (j = 0; j < dfa->ns; j++) {
+      if (j == sink_state && not print_sink) {
+        continue;
+      }
+      size = toTransIndecies[j];
+      for (k = 0; k < size; k++) {
+        free(toTrans[j][k]);
+      }
+    }
+
+    kill_paths(state_paths);
+  }    //end for each state
+
+  free(character);
+  free(buffer);
+  for (i = 0; i < dfa->ns; i++) {
+    free(toTrans[i]);
+  }
+  free(toTrans);
+  free(toTransIndecies);
 
   out << "}" << std::endl;
+*/
+
+  paths state_paths, pp;
+  trace_descr tp;
+  DFA_ptr dfa = dfa_;
+
+  int i, j, k, l, size, maxexp, sink;
+  pCharPair *buffer; //array of charpairs references
+  char *character;
+  pCharPair **toTrans; //array for all states, each entry is an array of charpair references
+  int *toTransIndecies;
+  char** ranges;
+
+  print_sink = print_sink || (dfa->ns == 1 and dfa->f[0] == -1);
+  sink = find_sink(dfa);
+
+  out << "digraph MONA_DFA {\n"
+          " rankdir = LR;\n "
+          " center = true;\n"
+          " size = \"700.5,1000.5\";\n"
+          " edge [fontname = Courier];\n"
+          " node [height = .5, width = .5];\n"
+          " node [shape = doublecircle];";
+
+  for (i = 0; i < dfa->ns; i++) {
+    if (dfa->f[i] == 1) {
+      out << " " << i << ";";
+    }
+  }
+
+  out << "\n node [shape = circle];";
+
+  for (i = 0; i < dfa->ns; i++) {
+    if (dfa->f[i] == -1) {
+      if (i != sink || print_sink) {
+        out << " " << i << ";";
+      }
+    }
+  }
+
+  out << "\n node [shape = box];";
+
+  for (i = 0; i < dfa->ns; i++) {
+    if (dfa->f[i] == 0) {
+      out << " " << i << ";";
+    }
+  }
+
+  out << "\n init [shape = plaintext, label = \"\"];\n" << " init -> " << dfa->s << ";\n";
+
+  int num_of_variables = this->num_of_bdd_variables_;
+  int* variable_indices = Automaton::GetBddVariableIndices(num_of_variables);
+
+  maxexp = 1 << num_of_variables;
+  //TODO convert into c++ style memory management
+  buffer = (pCharPair*) malloc(sizeof(pCharPair) * maxexp); //max no of chars from Si to Sj = 2^num_of_variables
+  character = (char*) malloc((num_of_variables + 1) * sizeof(char));
+  toTrans = (pCharPair**) malloc(sizeof(pCharPair*) * dfa->ns); //need this to gather all edges out to state Sj from Si
+  for (i = 0; i < dfa->ns; i++) {
+    toTrans[i] = (pCharPair*) malloc(maxexp * sizeof(pCharPair));
+  }
+  toTransIndecies = (int*) malloc(dfa->ns * sizeof(int)); //for a state Si, how many edges out to each state Sj
+
+  for (i = 0; i < dfa->ns; i++) {
+    //get transitions out from state i
+    state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
+
+    //init buffer
+    for (j = 0; j < dfa->ns; j++) {
+      toTransIndecies[j] = 0;
+    }
+
+    for (j = 0; j < maxexp; j++) {
+      for (k = 0; k < dfa->ns; k++) {
+        toTrans[k][j] = 0;
+      }
+      buffer[j] = 0;
+    }
+
+    //gather transitions out from state i
+    //for each transition pp out from state i
+    while (pp) {
+      if (pp->to == (unsigned) sink && not print_sink) {
+        pp = pp->next;
+        continue;
+      }
+      //get mona character on transition pp
+      for (j = 0; j < num_of_variables; j++) {
+        for (tp = pp->trace; tp && (tp->index != (unsigned) variable_indices[j]); tp = tp->next)
+          ;
+
+        if (tp) {
+          if (tp->value)
+            character[j] = '1';
+          else
+            character[j] = '0';
+        } else
+          character[j] = 'X';
+      }
+      character[j] = '\0';
+      if (num_of_variables == 8) {
+        //break mona character into ranges of ascii chars (example: "0XXX000X" -> [\s-!], [0-1], [@-A], [P-Q])
+        size = 0;
+        getTransitionChars(character, num_of_variables, buffer, &size);
+        //get current index
+        k = toTransIndecies[pp->to];
+        //print ranges
+        for (l = 0; l < size; l++) {
+          toTrans[pp->to][k++] = buffer[l];
+          buffer[l] = 0;    //do not free just detach
+        }
+        toTransIndecies[pp->to] = k;
+      } else {
+//        k = toTransIndecies[pp->to];
+//        toTrans[pp->to][k] = (char*) malloc(sizeof(char) * (strlen(character) + 1));
+//        strcpy(toTrans[pp->to][k], character);
+//        toTransIndecies[pp->to] = k + 1;
+      }
+      pp = pp->next;
+    }
+
+    //print transitions out of state i
+    for (j = 0; j < dfa->ns; j++) {
+      size = toTransIndecies[j];
+      if (size == 0 || (sink == j && not print_sink)) {
+        continue;
+      }
+      ranges = mergeCharRanges(toTrans[j], &size);
+      //print edge from i to j
+      out << " " << i << " -> " << j << " [label=\"";
+      bool print_label = (j != sink || print_sink);
+      l = 0;    //to help breaking into new line
+      //for each trans k on char/range from i to j
+      for (k = 0; k < size; k++) {
+        //print char/range
+        if (print_label) {
+          out << " " << ranges[k];
+        }
+        l += strlen(ranges[k]);
+        if (l > 18) {
+          if (print_label) {
+            out << "\\n";
+          }
+          l = 0;
+        } else if (k < (size - 1)) {
+          if (print_label) {
+            out << ",";
+          }
+        }
+        free(ranges[k]);
+      }      //for
+      out << "\"];\n";
+      if (size > 0)
+        free(ranges);
+    }
+    //for each state free charRange
+    //merge with loop above for better performance
+    for (j = 0; j < dfa->ns; j++) {
+      if (j == sink && not print_sink) {
+        continue;
+      }
+      size = toTransIndecies[j];
+      for (k = 0; k < size; k++) {
+        free(toTrans[j][k]);
+      }
+    }
+
+    kill_paths(state_paths);
+  }    //end for each state
+
+  free(character);
+  free(buffer);
+  for (i = 0; i < dfa->ns; i++) {
+    free(toTrans[i]);
+  }
+  free(toTrans);
+  free(toTransIndecies);
+
+  out << "}" << std::endl;
+
 }
 
 void Automaton::ToDot(std::ostream& out, bool print_sink) {
@@ -2360,7 +2540,8 @@ int Automaton::inspectAuto(bool print_sink, bool force_mona_format) {
     std::cout << "cannot open file: " << file << std::endl;
     exit(2);
   }
-  if (Automaton::Type::INT == type_ or Automaton::Type::STRING == type_) {
+  if (Automaton::Type::INT == type_ or Automaton::Type::STRING == type_
+                                    or (Automaton::Type::MULTITRACK == type_ && num_of_bdd_variables_ == 8)) {
     if (force_mona_format) {
       ToDot(outfile, print_sink);
     } else {

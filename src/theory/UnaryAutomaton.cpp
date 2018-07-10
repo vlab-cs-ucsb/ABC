@@ -306,6 +306,7 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
           tmp_2_auto = nullptr;
 
   int sink_state = this->GetSinkState();
+
   int curr_state {this->dfa_->s};
 
   std::map<int, bool> is_visited;
@@ -321,6 +322,10 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
     if (is_visited[curr_state]) { // cycle over approximate rest, an algorithm can be found to map between encodings (from semilinear set to string encoding)
       std::string value_str = std::to_string(value);
       std::string regex_str = "[0-9]{" + std::to_string(value_str.length()) + ",}";
+      LOG(INFO) << value;
+      LOG(INFO) << value_str;
+      LOG(INFO) << value_str.length();
+
       tmp_1_auto = StringAutomaton::MakeRegexAuto(regex_str);
       tmp_2_auto = result_auto;
       result_auto = static_cast<StringAutomaton_ptr>(tmp_2_auto->Concat(tmp_1_auto));
@@ -342,6 +347,7 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
         work_list.push(next_state);
       }
     }
+    is_visited[curr_state] = true;
   }
 
   DVLOG(VLOG_LEVEL)  << result_auto->getId() << " = [" << this->id_ << "]->toStringAutomaton()";
