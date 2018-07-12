@@ -135,6 +135,8 @@ void Driver::Solve() {
 
   Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
   constraint_solver.start();
+  is_model_counter_cached_ = false;
+  model_counter_ = Solver::ModelCounter();
 }
 
 bool Driver::is_sat() {
@@ -395,7 +397,9 @@ Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsig
 }
 
 Theory::BigInteger Driver::CountInts(const unsigned long bound) {
-  return GetModelCounter().CountInts(bound);
+  auto i = GetModelCounter().CountInts(bound);
+  std::cout << i << std::endl;
+  return i;
 }
 
 Theory::BigInteger Driver::CountStrs(const unsigned long bound) {
