@@ -729,11 +729,24 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
   		symbol_table_->increment_variable_usage(right_var->getName());
   	}
   }
-  else if(Term::Type::TERMCONSTANT != eq_term->right_term->type() and Term::Type::QUALIDENTIFIER != eq_term->right_term->type()
-  								and Term::Type::QUALIDENTIFIER == eq_term->left_term->type()) {
-  	auto left_var = symbol_table_->get_variable(eq_term->left_term);
-  	symbol_table_->increment_variable_usage(left_var->getName());
-  } else if(Len_ptr len_term = dynamic_cast<Len_ptr>(eq_term->left_term)) {
+  else if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type()) {
+    auto left_var = symbol_table_->get_variable(eq_term->left_term);
+    if(left_var->getType() == Variable::Type::STRING) {
+      symbol_table_->increment_variable_usage(left_var->getName());
+    }
+  }
+  else if(Term::Type::QUALIDENTIFIER == eq_term->right_term->type()) {
+    auto right_var = symbol_table_->get_variable(eq_term->right_term);
+    if(right_var->getType() == Variable::Type::STRING) {
+      symbol_table_->increment_variable_usage(right_var->getName());
+    }
+  }
+  // else if(Term::Type::TERMCONSTANT != eq_term->right_term->type() and Term::Type::QUALIDENTIFIER != eq_term->right_term->type()
+  // 								and Term::Type::QUALIDENTIFIER == eq_term->left_term->type()) {
+  // 	auto left_var = symbol_table_->get_variable(eq_term->left_term);
+  // 	symbol_table_->increment_variable_usage(left_var->getName());
+  // } 
+  else if(Len_ptr len_term = dynamic_cast<Len_ptr>(eq_term->left_term)) {
     QualIdentifier_ptr qualid_term = dynamic_cast<QualIdentifier_ptr>(len_term->term);
     if(qualid_term != nullptr) {
       auto left_var = symbol_table_->get_variable(qualid_term);
