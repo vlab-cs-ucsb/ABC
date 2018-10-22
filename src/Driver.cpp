@@ -137,6 +137,12 @@ void Driver::InitializeSolver() {
     Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
     constraint_sorter.start();
   }
+
+  /*
+   * Variable and char renaming here?
+   */
+  Solver::Renamer renamer(script_, symbol_table_);
+  renamer.start();
 }
 
 void Driver::Solve() {

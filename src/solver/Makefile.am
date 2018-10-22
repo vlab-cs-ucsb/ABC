@@ -65,7 +65,9 @@ libabcsolver_la_SOURCES = \
   ConstraintSolver.cpp \
   ConstraintSolver.h \
   ModelCounter.cpp \
-  ModelCounter.h
+  ModelCounter.h \
+  Renamer.cpp \
+  Renamer.h
 
 libabcsolver_la_LIBADD = \
 	../parser/libabcparser.la \

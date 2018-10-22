@@ -38,6 +38,7 @@
 #include "solver/Initializer.h"
 #include "solver/ModelCounter.h"
 #include "solver/options/Solver.h"
+#include "solver/Renamer.h"
 #include "solver/SymbolTable.h"
 #include "solver/SyntacticOptimizer.h"
 #include "solver/SyntacticProcessor.h"
