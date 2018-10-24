@@ -290,10 +290,18 @@ protected:
 
   class TermNode {
   public:
+    enum class Type : unsigned char {
+      STRING,
+      INT,
+      BOOL
+    };
     TermNode();
     TermNode(SMT::Term_ptr node);
     ~TermNode();
     std::string str();
+
+    void setType(TermNode::Type type);
+    TermNode::Type getType();
 
     void setNode(SMT::Term_ptr node);
     SMT::Term_ptr getNode();
@@ -316,6 +324,7 @@ protected:
     static std::string count_var;
   protected:
     SMT::Term_ptr _node;
+    TermNode::Type _type;
     bool _has_symbolic_var_on_left;
     bool _has_symbolic_var_on_right;
     std::vector<SMT::Term_ptr> _next_node_list;

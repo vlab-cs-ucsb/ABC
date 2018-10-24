@@ -293,6 +293,8 @@ void Renamer::visitTermConstant(TermConstant_ptr term_constant) {
       }
       new_value += cnew;
     }
+  } else {
+    new_value = value;
   }
 
   term_constant->primitive->setData(new_value);
