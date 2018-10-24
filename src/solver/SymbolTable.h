@@ -141,6 +141,10 @@ public:
   bool is_unsorted_constraint(SMT::Visitable_ptr term);
   void remove_unsorted_constraint(SMT::Visitable_ptr term);
 
+  // for normalization (variable/alphabet renaming)
+  // for root scope only?
+  void SetVariableMapping(std::map<SMT::Visitable_ptr,std::map<std::string,std::string>>);
+
 private:
   std::string generate_internal_name(std::string, SMT::Variable::Type);
 
@@ -193,6 +197,11 @@ private:
 
   std::map<SMT::Visitable_ptr,std::pair<SMT::Visitable_ptr, SMT::Visitable_ptr>> ite_conditions_;
 
+  /**
+   * Variable mapping (for normalization procedure)
+   */
+  std::map<SMT::Visitable_ptr, std::map<std::string,std::string>> variable_mapping_;
+  std::map<SMT::Visitable_ptr, std::map<std::string,std::string>> reverse_variable_mapping_;
 
   std::set<std::string> last_constraints;
 

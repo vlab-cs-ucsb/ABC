@@ -176,7 +176,7 @@
  * ConstraintSorter.h
  *
  *  Created on: May 18, 2015
- *      Author: baki
+ *      Author: baki, will
  */
 
 #ifndef SOLVER_CONSTRAINTSORTER_H_

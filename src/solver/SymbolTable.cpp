@@ -141,8 +141,15 @@ void SymbolTable::add_variable(Variable_ptr variable) {
 }
 
 Variable_ptr SymbolTable::get_variable(std::string name) {
-  auto it = variables_.find(name);
-  CHECK(it != variables_.end()) << "Variable is not found: " << name;
+  // get original variable name, from normalization mapping
+  std::string original_name = name;
+  // if normalization has completed, compute mapping
+  if(reverse_variable_mapping_[scope_stack_[0]].find(name) != reverse_variable_mapping_[scope_stack_[0]].end()) {
+    original_name = reverse_variable_mapping_[scope_stack_[0]][name];
+  }
+  auto it = variables_.find(original_name);
+  CHECK(it != variables_.end()) << "Variable is not found: " << name << " (original name = " << original_name << ")";
+  LOG(INFO) << name << " found! Returning " << it->second;
   return it->second;
 }
 
@@ -741,6 +748,18 @@ void SymbolTable::remove_unsorted_constraint(Visitable_ptr term) {
 	last_constraints.erase(Ast2Dot::toString(term));
 }
 
+void SymbolTable::SetVariableMapping(std::map<SMT::Visitable_ptr,std::map<std::string,std::string>> variable_mapping) {
+  // store original map
+  variable_mapping_ = variable_mapping;
+  // store reverse map (for easy var lookup)
+  for(auto term_it : variable_mapping) {
+    for(auto map_it : term_it.second) {
+      reverse_variable_mapping_[term_it.first][map_it.second] = map_it.first;
+    }
+  }
+
+
+}
 
 std::string SymbolTable::generate_internal_name(std::string name, Variable::Type type) {
   std::stringstream ss;

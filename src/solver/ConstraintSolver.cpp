@@ -1087,10 +1087,10 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 
   Value_ptr result = nullptr;
   if (Value::Type::STRING_AUTOMATON == variable_value->getType()) {
-    result = new Value(variable_value->getStringAutomaton()->GetAutomatonForVariable(qi_term->getVarName()));
+    result = new Value(variable_value->getStringAutomaton()->GetAutomatonForVariable(variable->getName()));
   } else if (Value::Type::BINARYINT_AUTOMATON == variable_value->getType()) {
   	// TODO baki: added for charat may need to fix it
-    auto var_auto = variable_value->getBinaryIntAutomaton()->GetBinaryAutomatonFor(qi_term->getVarName());
+    auto var_auto = variable_value->getBinaryIntAutomaton()->GetBinaryAutomatonFor(variable->getName());
     auto unary_auto = var_auto->ToUnaryAutomaton();
     result = new Value(unary_auto->toIntAutomaton(8));
     delete var_auto;

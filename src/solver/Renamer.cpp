@@ -22,10 +22,14 @@ void Renamer::start () {
   symbol_table_->push_scope(root_, false);
   visitScript(root_);
   symbol_table_->pop_scope();
+  end();
   LOG(INFO) << "End Renamer";
+
 }
 
 void Renamer::end() {
+  // add mapping to symbol table
+  symbol_table_->SetVariableMapping(variable_mapping_);
 }
 
 void Renamer::visitScript(Script_ptr script) {

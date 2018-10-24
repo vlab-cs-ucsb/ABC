@@ -1327,6 +1327,8 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
    * and let automaton side figure out if it is needed to be extended
    *
    */
+  Variable_ptr variable = symbol_table->get_variable(qi_term);
+
   switch (term_pre_value->getType()) {
     case Value::Type::STRING_AUTOMATON:
     {
@@ -1335,7 +1337,7 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
       if (formula == nullptr || string_auto->GetNumTracks() == 1) {
         formula = new Theory::StringFormula();
         formula->SetType(Theory::StringFormula::Type::VAR);
-        formula->AddVariable(qi_term->getVarName(), 1);
+        formula->AddVariable(variable->getName(), 1);
         string_auto->SetFormula(formula);
       } else if (Theory::StringFormula::Type::VAR != formula->GetType()) {
       	LOG(FATAL) << "fix me";
@@ -1348,11 +1350,10 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
     case Value::Type::INT_AUTOMATON:
     {
       //TODO !!!! improve mixing constraints by design
-    	Variable_ptr variable = symbol_table->get_variable(qi_term->getVarName());
     	auto variable_value = symbol_table->get_value(variable);
       if(Value::Type::BINARYINT_AUTOMATON == variable_value->getType()) {
       	auto unary_auto = term_pre_value->getIntAutomaton()->toUnaryAutomaton();
-      	auto term_binary_auto = unary_auto->toBinaryIntAutomaton(qi_term->getVarName(),
+      	auto term_binary_auto = unary_auto->toBinaryIntAutomaton(variable->getName(),
 																																 variable_value->getIntAutomaton()->GetFormula()->clone(),
 																																 false);
 				delete unary_auto;
@@ -1367,7 +1368,7 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
       break;
   }
 
-  is_satisfiable_ = symbol_table->IntersectValue(qi_term->getVarName(), term_pre_value) and is_satisfiable_;
+  is_satisfiable_ = symbol_table->IntersectValue(variable->getName(), term_pre_value) and is_satisfiable_;
 }
 
 void VariableValueComputer::visitTermConstant(TermConstant_ptr term_constant) {

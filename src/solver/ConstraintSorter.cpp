@@ -2,7 +2,7 @@
  * ConstraintSorter.cpp
  *
  *  Created on: May 18, 2015
- *      Author: baki
+ *      Author: baki, will
  */
 
 #include "ConstraintSorter.h"
