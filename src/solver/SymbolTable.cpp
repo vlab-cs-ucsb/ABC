@@ -754,6 +754,10 @@ void SymbolTable::SetVariableMapping(std::map<SMT::Visitable_ptr,std::map<std::s
   // store reverse map (for easy var lookup)
   for(auto term_it : variable_mapping) {
     for(auto map_it : term_it.second) {
+      if(map_it.first == count_symbol_->getData()) {
+        LOG(INFO) << map_it.first << " -> " << map_it.second;
+        std::cin.get();
+      }
       reverse_variable_mapping_[term_it.first][map_it.second] = map_it.first;
     }
   }

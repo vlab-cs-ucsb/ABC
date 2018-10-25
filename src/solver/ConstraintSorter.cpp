@@ -114,11 +114,11 @@ void ConstraintSorter::visitAnd(And_ptr and_term) {
 
   for(auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
   //for (auto& term : *(and_term->term_list)) {
-  	if(symbol_table->is_unsorted_constraint(*iter) and false) {
-  		unsorted_constraints.push_back((*iter)->clone());
-  		delete (*iter);
-			iter = and_term->term_list->erase(iter);
-  	} else {
+//  	if(symbol_table->is_unsorted_constraint(*iter) and false) {
+//  		unsorted_constraints.push_back((*iter)->clone());
+//  		delete (*iter);
+//			iter = and_term->term_list->erase(iter);
+//  	} else {
 			term_node = nullptr;
 			visit(*iter);
 			if (term_node == nullptr) {
@@ -130,11 +130,13 @@ void ConstraintSorter::visitAnd(And_ptr and_term) {
 			term_node->updateSymbolicVariableInfo();
 			local_dependency_node_list.push_back(term_node);
 			iter++;
-  	}
+//  	}
   }
   term_node = nullptr;
 
+  LOG(INFO) << "total size: " << and_term->term_list->size();
   sort_terms(local_dependency_node_list);
+  std::cin.get();
 
   if (VLOG_IS_ON(VLOG_LEVEL)) {
     for (auto& node : local_dependency_node_list) {
@@ -234,12 +236,21 @@ void ConstraintSorter::visitEq(Eq_ptr eq_term) {
   visit(eq_term->right_term);
   TermNode_ptr right_node = term_node;
 
-  term_node = process_child_nodes(left_node, right_node);
-  if(left_node->getType() != right_node->getType()) {
-    LOG(FATAL) << "Term Types do not match, can't sort properly!";
-  } else {
-    term_node->setType(left_node->getType());
+  TermNode::Type term_type = TermNode::Type::NONE;
+  if(left_node != nullptr and right_node != nullptr) {
+    if(left_node->getType() != right_node->getType()) {
+      LOG(FATAL) << "Term Types do not match, can't sort properly!";
+    }
+    term_type = left_node->getType();
+  } else if(left_node != nullptr) {
+    term_type = left_node->getType();
+  } else if(right_node != nullptr) {
+    term_type = right_node->getType();
   }
+
+
+  term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(term_type);
 }
 
 void ConstraintSorter::visitNotEq(NotEq_ptr not_eq_term) {
@@ -250,12 +261,21 @@ void ConstraintSorter::visitNotEq(NotEq_ptr not_eq_term) {
   visit(not_eq_term->right_term);
   TermNode_ptr right_node = term_node;
 
-  term_node = process_child_nodes(left_node, right_node);
-  if(left_node->getType() != right_node->getType()) {
-    LOG(FATAL) << "Term Types do not match, can't sort properly!";
-  } else {
-    term_node->setType(left_node->getType());
+  TermNode::Type term_type = TermNode::Type::NONE;
+  if(left_node != nullptr and right_node != nullptr) {
+    if(left_node->getType() != right_node->getType()) {
+      LOG(FATAL) << "Term Types do not match, can't sort properly!";
+    }
+    term_type = left_node->getType();
+  } else if(left_node != nullptr) {
+    term_type = left_node->getType();
+  } else if(right_node != nullptr) {
+    term_type = right_node->getType();
   }
+
+  term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(term_type);
+//  term_node->setNode(not_eq_term);
 }
 
 
@@ -267,12 +287,20 @@ void ConstraintSorter::visitGt(Gt_ptr gt_term) {
   visit(gt_term->right_term);
   TermNode_ptr right_node = term_node;
 
-  term_node = process_child_nodes(left_node, right_node);
-  if(left_node->getType() != right_node->getType()) {
-    LOG(FATAL) << "Term Types do not match, can't sort properly!";
-  } else {
-    term_node->setType(left_node->getType());
+  TermNode::Type term_type = TermNode::Type::NONE;
+  if(left_node != nullptr and right_node != nullptr) {
+    if(left_node->getType() != right_node->getType()) {
+      LOG(FATAL) << "Term Types do not match, can't sort properly!";
+    }
+    term_type = left_node->getType();
+  } else if(left_node != nullptr) {
+    term_type = left_node->getType();
+  } else if(right_node != nullptr) {
+    term_type = right_node->getType();
   }
+
+  term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(term_type);
 }
 
 void ConstraintSorter::visitGe(Ge_ptr ge_term) {
@@ -283,12 +311,20 @@ void ConstraintSorter::visitGe(Ge_ptr ge_term) {
   visit(ge_term->right_term);
   TermNode_ptr right_node = term_node;
 
-  term_node = process_child_nodes(left_node, right_node);
-  if(left_node->getType() != right_node->getType()) {
-    LOG(FATAL) << "Term Types do not match, can't sort properly!";
-  } else {
-    term_node->setType(left_node->getType());
+  TermNode::Type term_type = TermNode::Type::NONE;
+  if(left_node != nullptr and right_node != nullptr) {
+    if(left_node->getType() != right_node->getType()) {
+      LOG(FATAL) << "Term Types do not match, can't sort properly!";
+    }
+    term_type = left_node->getType();
+  } else if(left_node != nullptr) {
+    term_type = left_node->getType();
+  } else if(right_node != nullptr) {
+    term_type = right_node->getType();
   }
+
+  term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(term_type);
 }
 
 void ConstraintSorter::visitLt(Lt_ptr lt_term) {
@@ -299,12 +335,20 @@ void ConstraintSorter::visitLt(Lt_ptr lt_term) {
   visit(lt_term->right_term);
   TermNode_ptr right_node = term_node;
 
-  term_node = process_child_nodes(left_node, right_node);
-  if(left_node->getType() != right_node->getType()) {
-    LOG(FATAL) << "Term Types do not match, can't sort properly!";
-  } else {
-    term_node->setType(left_node->getType());
+  TermNode::Type term_type = TermNode::Type::NONE;
+  if(left_node != nullptr and right_node != nullptr) {
+    if(left_node->getType() != right_node->getType()) {
+      LOG(FATAL) << "Term Types do not match, can't sort properly!";
+    }
+    term_type = left_node->getType();
+  } else if(left_node != nullptr) {
+    term_type = left_node->getType();
+  } else if(right_node != nullptr) {
+    term_type = right_node->getType();
   }
+
+  term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(term_type);
 }
 
 void ConstraintSorter::visitLe(Le_ptr le_term) {
@@ -315,12 +359,20 @@ void ConstraintSorter::visitLe(Le_ptr le_term) {
   visit(le_term->right_term);
   TermNode_ptr right_node = term_node;
 
-  term_node = process_child_nodes(left_node, right_node);
-  if(left_node->getType() != right_node->getType()) {
-    LOG(FATAL) << "Term Types do not match, can't sort properly!";
-  } else {
-    term_node->setType(left_node->getType());
+  TermNode::Type term_type = TermNode::Type::NONE;
+  if(left_node != nullptr and right_node != nullptr) {
+    if(left_node->getType() != right_node->getType()) {
+      LOG(FATAL) << "Term Types do not match, can't sort properly!";
+    }
+    term_type = left_node->getType();
+  } else if(left_node != nullptr) {
+    term_type = left_node->getType();
+  } else if(right_node != nullptr) {
+    term_type = right_node->getType();
   }
+
+  term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(term_type);
 }
 
 void ConstraintSorter::visitConcat(Concat_ptr concat_term) {
@@ -716,78 +768,129 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
 	 * -- NOT DOING -- (10) operation vector types
 	 * (11) lexigraphic string
 	 */
-	auto compare_function = [](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
-	  bool result = left_node->getType() < right_node->getType();
-    if(result) {
-      return result;
-    }
-    result = left_node->getNode()->type() < right_node->getNode()->type();
-    if(result) {
-      return result;
-    }
-    if(left_node->numOfTotalVars() < right_node->numOfTotalVars()) {
-      return 1;
-    }
-    if(left_node->numOfLeftVars() < right_node->numOfLeftVars()) {
-      return 1;
-    }
-    if(left_node->numOfRightVars() < right_node->numOfRightVars()) {
-      return 1;
-    }
-
-    return left_node->str() < right_node->str();
-	};
-
-  std::stable_sort(term_node_list.begin(), term_node_list.end(),compare_function);
-
+//	auto compare_function = [](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
+//
+//	  bool result = true;//left_node->getType() < right_node->getType();
+//
+////    if(left_node->getType() == TermNode::Type::INT and right_node->getType() == TermNode::Type::STRING) {
+////	    return 0;
+////	  } else if(left_node->getType() == TermNode::Type::STRING and right_node->getType() == TermNode::Type::INT) {
+////	    return 1;
+////	  }
+//
+//	  if(left_node->getType() < right_node->getType()) {
+//      return 1;
+//	  }
+//	  if(left_node->getType() > right_node->getType()) {
+//	    return 0;
+//	  }
+//
+//    if(left_node->getNode()->type() < right_node->getNode()->type()) {
+//      if(left_node->getNode()->type() == Term::Type::CONCAT and right_node->getNode()->type() == Term::Type::NOTEQ) {
+//        LOG(FATAL) << "WAT";
+//      }
+//      return 1;
+//    }
+//    if(left_node->getNode()->type() > right_node->getNode()->type()) {
+//      if(left_node->getNode()->type() == Term::Type::CONCAT and right_node->getNode()->type() == Term::Type::NOTEQ) {
+//        LOG(FATAL) << " GOOD WAT";
+//      }
+//      return 0;
+//    }
+//
+//    if(left_node->numOfTotalVars() < right_node->numOfTotalVars()) {
+//      return 1;
+//    }
+//    if(left_node->numOfTotalVars() > right_node->numOfTotalVars()) {
+//      return 0;
+//    }
+//
+//    if(left_node->numOfLeftVars() < right_node->numOfLeftVars()) {
+//      return 1;
+//    }
+//    if(left_node->numOfLeftVars() > right_node->numOfLeftVars()) {
+//      return 0;
+//    }
+//
+//    if(left_node->numOfRightVars() < right_node->numOfRightVars()) {
+//      return 1;
+//    }
+//    if(left_node->numOfRightVars() > right_node->numOfRightVars()) {
+//      return 0;
+//    }
+//
+//    return left_node->str() < right_node->str();
+//	};
+//
+//  std::stable_sort(term_node_list.begin(), term_node_list.end(),compare_function);
+//  int num_none = 0;
+//  int num_int = 0;
+//  int num_string = 0;
+//  int num_bool = 0;
+//  for(auto it : term_node_list) {
+//    if(it->getType() == TermNode::Type::NONE) {
+//      num_none++;
+//    } else if(it->getType() == TermNode::Type::STRING) {
+//      num_string++;
+//    } else if(it->getType() == TermNode::Type::INT) {
+//      num_int++;
+//    } else {
+//      num_bool++;
+//    }
+//  }
+//  LOG(INFO) << "size during sorting: " << term_node_list.size();
+//  LOG(INFO) << "num none: " << num_none;
+//  LOG(INFO) << "num int : " << num_int;
+//  LOG(INFO) << "num str : " << num_string;
+//  LOG(INFO) << "num bool: " << num_bool;
 
 //	if(ConstraintSorter::TermNode::count_var.empty()) {
 //		std::stable_sort(term_node_list.begin(), term_node_list.end(),compare_function);
 //		return;
 //	}
-//
-//	// otherwise, sort based on count variable
-//  std::vector<TermNode_ptr> sorted_term_node_list;
-//
-//  for (auto it = term_node_list.begin(); it != term_node_list.end(); ) {
-//    if ((*it)->numOfTotalVars() == 0) {
-//      sorted_term_node_list.push_back((*it));
-//      it = term_node_list.erase(it);
-//    }
-//    else if(not (*it)->hasSymbolicVar()) {
-//      sorted_term_node_list.push_back((*it));
-//      it = term_node_list.erase(it);
-//    }
-//    else {
-//      it++;
-//    }
-//  }
-//
-//  std::sort(term_node_list.begin(), term_node_list.end(),
-//          [](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
-//            return (left_node->numOfTotalVars() < right_node->numOfTotalVars());
-//          });
-//
-//  for (auto it = term_node_list.begin(); it != term_node_list.end(); ) {
-//    if (not (*it)->hasSymbolicVar()) {
-//      sorted_term_node_list.push_back((*it));
-//      it = term_node_list.erase(it);
-//    } else {
-//      it++;
-//    }
-//  }
-//
-//  term_node_list.insert(term_node_list.begin(), sorted_term_node_list.begin(), sorted_term_node_list.end());
+
+	// otherwise, sort based on count variable
+  std::vector<TermNode_ptr> sorted_term_node_list;
+
+  for (auto it = term_node_list.begin(); it != term_node_list.end(); ) {
+    if ((*it)->numOfTotalVars() == 0) {
+      sorted_term_node_list.push_back((*it));
+      it = term_node_list.erase(it);
+    }
+    else if(not (*it)->hasSymbolicVar()) {
+      sorted_term_node_list.push_back((*it));
+      it = term_node_list.erase(it);
+    }
+    else {
+      it++;
+    }
+  }
+
+  std::sort(term_node_list.begin(), term_node_list.end(),
+          [](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
+            return (left_node->numOfTotalVars() < right_node->numOfTotalVars());
+          });
+
+  for (auto it = term_node_list.begin(); it != term_node_list.end(); ) {
+    if (not (*it)->hasSymbolicVar()) {
+      sorted_term_node_list.push_back((*it));
+      it = term_node_list.erase(it);
+    } else {
+      it++;
+    }
+  }
+
+  term_node_list.insert(term_node_list.begin(), sorted_term_node_list.begin(), sorted_term_node_list.end());
 
   DVLOG(VLOG_LEVEL) << "node list sorted";
 }
 
 ConstraintSorter::TermNode::TermNode()
-        : _node(nullptr), _has_symbolic_var_on_left(false), _has_symbolic_var_on_right(false) {
+        : _node(nullptr), _has_symbolic_var_on_left(false), _has_symbolic_var_on_right(false), _type(Type::NONE) {
 }
 
 ConstraintSorter::TermNode::TermNode(Term_ptr node)
-        : _node(node), _has_symbolic_var_on_left(false), _has_symbolic_var_on_right(false) {
+        : _node(node), _has_symbolic_var_on_left(false), _has_symbolic_var_on_right(false), _type(Type::NONE) {
 }
 
 ConstraintSorter::TermNode::~TermNode() {
