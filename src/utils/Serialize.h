@@ -8,6 +8,7 @@
 #ifndef SRC_UTILS_SERIALIZE_H_
 #define SRC_UTILS_SERIALIZE_H_
 
+#include "../theory/StringAutomaton.h"
 #include "../boost/multiprecision/cpp_int.hpp"
 #include "../Eigen/SparseCore"
 #include "../cereal/archives/binary.hpp"
@@ -16,6 +17,17 @@
 namespace Vlab {
 namespace Util {
 namespace Serialize {
+
+template<class Archive>
+void save(Archive& ar, const Theory::StringAutomaton& string_automaton) {
+
+}
+
+
+template<class Archive>
+void load(Archive& ar, const Theory::StringAutomaton& string_automaton) {
+
+}
 
 template<class Archive>
 void save(Archive& ar, const Theory::BigInteger& big_integer) {

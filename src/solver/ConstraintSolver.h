@@ -15,6 +15,7 @@
 #include <vector>
 
 #include <glog/logging.h>
+#include <redox.hpp>
 
 #include "../smt/ast.h"
 #include "../smt/typedefs.h"
@@ -143,6 +144,10 @@ class ConstraintSolver: public SMT::Visitor {
 
   // for relational variables that need to be updated
   std::vector<SMT::Variable_ptr> tagged_variables;
+
+  // redox client for redis cache
+  redox::Redox rdx_;
+
  private:
   static const int VLOG_LEVEL;
 };

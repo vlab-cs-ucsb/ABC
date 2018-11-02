@@ -32,6 +32,14 @@ ConstraintSolver::~ConstraintSolver() {
 
 void ConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "start";
+
+  Theory::StringAutomaton_ptr test_auto = Theory::StringAutomaton::MakeString("this");
+  LOG(INFO) << "Size = " << sizeof(*test_auto->getDFA()->bddm);
+
+  if(!rdx_.connect("localhost", 6379)) {
+    LOG(FATAL) << "Could not connect to redis server";
+  }
+
   arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
   string_constraint_solver_.collect_string_constraint_info();
   visit(root_);
@@ -142,6 +150,21 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   bool is_satisfiable = true;
   bool is_component = constraint_information_->is_component(and_term);
 
+
+
+  rdx_.set("hello", "world");
+  LOG(INFO) << rdx_.get("hello2");
+  std::cin.get();
+
+  try {
+    LOG(INFO) << rdx_.get("hello2");
+  } catch(std::exception e) {
+    LOG(FATAL) << "failed!";
+
+  }
+  std::string constraint_string = Ast2Dot::toString(and_term);
+  LOG(INFO) << constraint_string;
+  std::cin.get();
 
   if (is_component) {
     if (constraint_information_->has_arithmetic_constraint(and_term)) {

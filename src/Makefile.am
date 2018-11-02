@@ -1,7 +1,7 @@
 SUBDIRS = solver 
 AM_CXXFLAGS =
 
-#AM_LDFLAGS = 
+AM_LDFLAGS = 
 	
 lib_LTLIBRARIES = libabc.la
 libabc_la_LDFLAGS = -version-info 0:1:0
