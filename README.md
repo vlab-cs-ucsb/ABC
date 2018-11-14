@@ -130,13 +130,22 @@ Usage
 ============
 
 ####C++
+    You can link to dynamic library generated in your program. An example executable for mtabc is generated for you and install in your system. You can run mtabc executable at your home directory as:
+  
+  $ abc -i  <input_file_path>
+  $ abc --help #lists available command line options
 
-  You can link to dynamic library generated in your program. An example executable for *__abc__* is generated for you and install in your system. You can run *__abc__* executable at your home directory as:
-  
-    $ abc -i  <input_file_path>
-    $ abc --help #lists available command line options
-  
-  You can find example constraints at *__&lt;abc source folder&gt;/test/fixtures__*. 
+  E.g.,
+
+  $ abc -i <abc source folder>/test/fixtures/solver/ConstraintSolver/test_visitBegins_01.smt2
+
+  For an example of model counting a string with bound <= 5:
+
+  $ abc -i <abc source folder>/test/fixtures/solver/ConstraintSolver/test_visitBegins_01.smt2 -v 0 -bs 5
+
+  where -v 0 disables debugging output, and -bs 5 means count solutions with bound <= 5
+
+  If there are more than one string variables, you can specify which one you want to model count with the argument: --count-variable <VARIABLE_NAME>
   
   You can take a look at *__&lt;abc source folder&gt;/src/main.cpp__* to see how *__abc__* is used in a C++ program as a shared library. 
   
