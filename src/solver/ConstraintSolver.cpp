@@ -817,7 +817,7 @@ void ConstraintSolver::visitIndexOf(IndexOf_ptr index_of_term) {
   if(index_of_term->from_index != nullptr) {
     Value_ptr param_from_index = getTermValue(index_of_term->from_index);
     if(Value::Type::INT_AUTOMATON == param_from_index->getType()) {
-    index_of_auto = param_left->getStringAutomaton()->IndexOf(param_right->getStringAutomaton(),param_from_index->getIntAutomaton());
+      index_of_auto = param_left->getStringAutomaton()->IndexOf(param_right->getStringAutomaton(),param_from_index->getIntAutomaton());
     } else if(Value::Type::INT_CONSTANT == param_from_index->getType()) {
       index_of_auto = param_left->getStringAutomaton()->IndexOf(param_right->getStringAutomaton(),param_from_index->getIntConstant());
     } else {

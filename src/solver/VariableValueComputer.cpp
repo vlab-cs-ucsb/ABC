@@ -888,13 +888,18 @@ void VariableValueComputer::visitIndexOf(IndexOf_ptr index_of_term) {
   Value_ptr term_value = getTermPreImage(index_of_term);
   Value_ptr child_post_value = getTermPostImage(child_term);
   Value_ptr param_search = getTermPostImage(index_of_term->search_term);
-  Value_ptr from_index = getTermPostImage(index_of_term->from_index);
+  Value_ptr from_index = nullptr;
+  if(index_of_term->from_index != nullptr) {
+    Value_ptr from_index = getTermPostImage(index_of_term->from_index);
+  }
+
 
   if (Value::Type::INT_CONSTANT == term_value->getType()) {
-    if(Value::Type::INT_CONSTANT == from_index->getType()) {
+
+    if(from_index != nullptr and Value::Type::INT_CONSTANT == from_index->getType()) {
       child_value = new Value(child_post_value->getStringAutomaton()
                                 ->RestrictIndexOfTo(term_value->getIntConstant(), from_index->getIntConstant(), param_search->getStringAutomaton()));
-    } else if(Value::Type::INT_AUTOMATON == from_index->getType()) {
+    } else if(from_index != nullptr and Value::Type::INT_AUTOMATON == from_index->getType()) {
       child_value = new Value(child_post_value->getStringAutomaton()
                                 ->RestrictIndexOfTo(term_value->getIntConstant(), from_index->getIntAutomaton(), param_search->getStringAutomaton()));
     } else {
@@ -902,10 +907,10 @@ void VariableValueComputer::visitIndexOf(IndexOf_ptr index_of_term) {
                                 ->RestrictIndexOfTo(term_value->getIntConstant(), param_search->getStringAutomaton()));
     }
   } else {
-    if(Value::Type::INT_CONSTANT == from_index->getType()) {
+    if(from_index != nullptr and Value::Type::INT_CONSTANT == from_index->getType()) {
       child_value = new Value(child_post_value->getStringAutomaton()
                                 ->RestrictIndexOfTo(term_value->getIntAutomaton(), from_index->getIntConstant(), param_search->getStringAutomaton()));
-    } else if(Value::Type::INT_AUTOMATON == from_index->getType()) {
+    } else if(from_index != nullptr and Value::Type::INT_AUTOMATON == from_index->getType()) {
       child_value = new Value(child_post_value->getStringAutomaton()
                                 ->RestrictIndexOfTo(term_value->getIntAutomaton(), from_index->getIntAutomaton(), param_search->getStringAutomaton()));
     } else {
