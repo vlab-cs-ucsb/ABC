@@ -218,7 +218,6 @@ void DependencySlicer::visitEq(Eq_ptr eq_term) {
 void DependencySlicer::visitNotEq(NotEq_ptr not_eq_term) {
 	visit(not_eq_term->left_term);
 	visit(not_eq_term->right_term);
-
 	if (Concat_ptr left_id = dynamic_cast<Concat_ptr>(not_eq_term->left_term)) {
 		if (Option::Solver::USE_MULTITRACK_AUTO) {
 			QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(left_id->term_list->front());
@@ -239,7 +238,6 @@ void DependencySlicer::visitNotEq(NotEq_ptr not_eq_term) {
 		}
 		return;
 	}
-
 	if (Concat_ptr right_id = dynamic_cast<Concat_ptr>(not_eq_term->right_term)) {
 		if (Option::Solver::USE_MULTITRACK_AUTO) {
 			QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term);
@@ -285,6 +283,7 @@ void DependencySlicer::visitNotEq(NotEq_ptr not_eq_term) {
 			constraint_information_->strings[term_constant->getValue()] = constraint_information_->strings[term_constant->getValue()] + 1;
 			constraint_information_->add_var_constraint(symbol_table_->get_variable(left_variable),not_eq_term);
 		}
+
 	}
 }
 

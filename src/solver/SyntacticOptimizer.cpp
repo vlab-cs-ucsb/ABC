@@ -624,6 +624,45 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
     LOG(FATAL) << "Operation not supported";
   }
 
+  // check for equality with concat where prefix var is same on both sides
+  if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type() && Term::Type::CONCAT == eq_term->right_term->type()) {
+    Concat_ptr concat_term = dynamic_cast<Concat_ptr>(eq_term->right_term);
+    if(Term::Type::QUALIDENTIFIER == concat_term->term_list->at(0)->type()) {
+      QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term);
+      QualIdentifier_ptr right_var = dynamic_cast<QualIdentifier_ptr>(concat_term->term_list->at(0));
+      // if same variable, replace term
+      if(left_var->getVarName() == right_var->getVarName()) {
+        callback_ = [this, eq_term](Term_ptr & term) mutable {
+          Concat_ptr concat_term = dynamic_cast<Concat_ptr>(eq_term->right_term);
+          delete eq_term->left_term;
+          eq_term->left_term = generate_term_constant("",Primitive::Type::STRING);
+          delete concat_term->term_list->at(0);
+          concat_term->term_list->at(0) = nullptr;
+          concat_term->term_list->erase(concat_term->term_list->begin());
+        };
+        return;
+      }
+    }
+  } else if(Term::Type::QUALIDENTIFIER == eq_term->right_term->type() && Term::Type::CONCAT == eq_term->left_term->type()) {
+    Concat_ptr concat_term = dynamic_cast<Concat_ptr>(eq_term->left_term);
+    if(Term::Type::QUALIDENTIFIER == concat_term->term_list->at(0)->type()) {
+      QualIdentifier_ptr right_var = dynamic_cast<QualIdentifier_ptr>(eq_term->right_term);
+      QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(concat_term->term_list->at(0));
+      // if same variable, replace term
+      if(left_var->getVarName() == right_var->getVarName()) {
+        callback_ = [this, eq_term](Term_ptr & term) mutable {
+          Concat_ptr concat_term = dynamic_cast<Concat_ptr>(eq_term->left_term);
+          delete eq_term->right_term;
+          eq_term->right_term = generate_term_constant("",Primitive::Type::STRING);
+          delete concat_term->term_list->at(0);
+          concat_term->term_list->at(0) = nullptr;
+          concat_term->term_list->erase(concat_term->term_list->begin());
+        };
+        return;
+      }
+    }
+  }
+
   // EXPERIMENTAL!
 //    else if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type() and Term::Type::QUALIDENTIFIER == eq_term->right_term->type()) {
 //    auto count_var = symbol_table_->get_count_variable();
@@ -763,6 +802,45 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
         not_eq_term->left_term = nullptr;
         delete not_eq_term;
       };
+    }
+  }
+
+  // check for equality with concat where prefix var is same on both sides
+  if(Term::Type::QUALIDENTIFIER == not_eq_term->left_term->type() && Term::Type::CONCAT == not_eq_term->right_term->type()) {
+    Concat_ptr concat_term = dynamic_cast<Concat_ptr>(not_eq_term->right_term);
+    if(Term::Type::QUALIDENTIFIER == concat_term->term_list->at(0)->type()) {
+      QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term);
+      QualIdentifier_ptr right_var = dynamic_cast<QualIdentifier_ptr>(concat_term->term_list->at(0));
+      // if same variable, replace term
+      if(left_var->getVarName() == right_var->getVarName()) {
+        callback_ = [this, not_eq_term](Term_ptr & term) mutable {
+          Concat_ptr concat_term = dynamic_cast<Concat_ptr>(not_eq_term->right_term);
+          delete not_eq_term->left_term;
+          not_eq_term->left_term = generate_term_constant("",Primitive::Type::STRING);
+          delete concat_term->term_list->at(0);
+          concat_term->term_list->at(0) = nullptr;
+          concat_term->term_list->erase(concat_term->term_list->begin());
+        };
+        return;
+      }
+    }
+  } else if(Term::Type::QUALIDENTIFIER == not_eq_term->right_term->type() && Term::Type::CONCAT == not_eq_term->left_term->type()) {
+    Concat_ptr concat_term = dynamic_cast<Concat_ptr>(not_eq_term->left_term);
+    if(Term::Type::QUALIDENTIFIER == concat_term->term_list->at(0)->type()) {
+      QualIdentifier_ptr right_var = dynamic_cast<QualIdentifier_ptr>(not_eq_term->right_term);
+      QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(concat_term->term_list->at(0));
+      // if same variable, replace term
+      if(left_var->getVarName() == right_var->getVarName()) {
+        callback_ = [this, not_eq_term](Term_ptr & term) mutable {
+          Concat_ptr concat_term = dynamic_cast<Concat_ptr>(not_eq_term->left_term);
+          delete not_eq_term->right_term;
+          not_eq_term->right_term = generate_term_constant("",Primitive::Type::STRING);
+          delete concat_term->term_list->at(0);
+          concat_term->term_list->at(0) = nullptr;
+          concat_term->term_list->erase(concat_term->term_list->begin());
+        };
+      }
+      return;
     }
   }
 
