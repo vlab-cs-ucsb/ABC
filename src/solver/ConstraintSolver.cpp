@@ -879,10 +879,17 @@ void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
   visit_children_of(sub_string_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *sub_string_term;
   Value_ptr result = nullptr, param_subject = getTermValue(sub_string_term->subject_term), param_start_index =
-      getTermValue(sub_string_term->start_index_term), param_end_index = getTermValue(sub_string_term->end_index_term);
+      getTermValue(sub_string_term->start_index_term);
+
+  Value_ptr param_end_index = nullptr;
+  if(sub_string_term->end_index_term != nullptr) {
+    param_end_index = getTermValue(sub_string_term->end_index_term);
+  }
 
   Theory::StringAutomaton_ptr substring_auto = nullptr;
-  if(Value::Type::INT_AUTOMATON == param_start_index->getType() and Value::Type::INT_AUTOMATON == param_end_index->getType()) {
+  if(Value::Type::INT_CONSTANT == param_start_index->getType() and param_end_index == nullptr) {
+    substring_auto = param_subject->getStringAutomaton()->SubString(param_start_index->getIntConstant());
+  } else if(Value::Type::INT_AUTOMATON == param_start_index->getType() and Value::Type::INT_AUTOMATON == param_end_index->getType()) {
     substring_auto = param_subject->getStringAutomaton()->SubString(param_start_index->getIntAutomaton(),param_end_index->getIntAutomaton());
   } else if(Value::Type::INT_CONSTANT == param_start_index->getType() and Value::Type::INT_AUTOMATON == param_end_index->getType()) {
     substring_auto = param_subject->getStringAutomaton()->SubString(param_start_index->getIntConstant(),param_end_index->getIntAutomaton());
