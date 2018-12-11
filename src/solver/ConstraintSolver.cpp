@@ -151,19 +151,59 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   bool is_component = constraint_information_->is_component(and_term);
 
 
+  Theory::StringAutomaton_ptr export_auto = Theory::StringAutomaton::MakeString("abcd");
+  Theory::DFA_ptr export_dfa = nullptr;
 
-  rdx_.set("hello", "world");
-  LOG(INFO) << rdx_.get("hello2");
-  std::cin.get();
-
-  try {
-    LOG(INFO) << rdx_.get("hello2");
-  } catch(std::exception e) {
-    LOG(FATAL) << "failed!";
-
+  export_dfa = export_auto->getDFA();
+  std::stringstream os;
+  LOG(INFO) << "Before serialize save";
+  {
+    cereal::BinaryOutputArchive ar(os);
+    Util::Serialize::save(ar,*export_dfa);
   }
-  std::string constraint_string = Ast2Dot::toString(and_term);
-  LOG(INFO) << constraint_string;
+  LOG(INFO) << "After serialize save";
+
+  LOG(INFO) << "Putting into Redis...";
+
+  std::string key = "abc";
+  std::string export_string = os.str();
+
+  auto& c = rdx_.commandSync<std::string>({"SET", key, export_string});
+  if(c.ok()) std::cout << "Reply: " << c.reply() << std::endl;
+  else std::cerr << "Failed to set key! Status: " << c.status() << std::endl;
+  c.free();
+
+  LOG(INFO) << "Successfully stored in Redis";
+
+
+  auto& c2 = rdx_.commandSync<std::string>({"GET", key});
+  if(c2.ok()) {
+    if(c2.reply() == export_string) std::cout << "Binary data matches!" << std::endl;
+    else LOG(FATAL) << "Binary data differs!";
+  }
+  else LOG(FATAL)<< "Failed to get key! Status: " << c2.status();
+
+  std::string imported_string = c2.reply();
+  c2.free();
+
+  std::stringstream is(imported_string);
+
+  LOG(INFO) << "Before serialize load";
+  DFA test_dfa;
+  {
+    cereal::BinaryInputArchive ar(is);
+    Util::Serialize::load(ar, test_dfa);
+  }
+  LOG(INFO) << "After serialize load";
+
+  Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(&test_dfa, 8);
+  import_auto->inspectAuto(false,true);
+
+
+
+
+
+
   std::cin.get();
 
   if (is_component) {

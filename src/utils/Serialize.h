@@ -8,26 +8,82 @@
 #ifndef SRC_UTILS_SERIALIZE_H_
 #define SRC_UTILS_SERIALIZE_H_
 
-#include "../theory/StringAutomaton.h"
+//#include "../theory/StringAutomaton.h"
 #include "../boost/multiprecision/cpp_int.hpp"
 #include "../Eigen/SparseCore"
 #include "../cereal/archives/binary.hpp"
 #include "Math.h"
+#include <mona/bdd.h>
+#include <mona/bdd_external.h>
+#include <mona/dfa.h>
+#include <mona/mem.h>
+
+extern BddNode *table;
+extern bdd_manager *import_bddm;
 
 namespace Vlab {
 namespace Util {
 namespace Serialize {
 
 template<class Archive>
-void save(Archive& ar, const Theory::StringAutomaton& string_automaton) {
+void save(Archive& ar, const DFA& a) {
+  Table *table = tableInit();
+  /* remove all marks in a->bddm */
+  bdd_prepare_apply1(a.bddm);
 
+  /* build table of tuples (idx,lo,hi) */
+  for (int i = 0; i < a.ns; i++)
+    _export(a.bddm, a.q[i], table);
+
+  /* renumber lo/hi pointers to new table ordering */
+  for (int i = 0; i < table->noelems; i++) {
+    if (table->elms[i].idx != -1) {
+      table->elms[i].lo = bdd_mark(a.bddm, table->elms[i].lo) - 1;
+      table->elms[i].hi = bdd_mark(a.bddm, table->elms[i].hi) - 1;
+    }
+  }
+
+  ar((unsigned)a.ns);
+  ar(a.s);
+  ar(table->noelems);
+  ar(cereal::binary_data(a.f,a.ns * sizeof(int)));
+  for(int i = 0; i < a.ns; i++) {
+    ar(bdd_mark(a.bddm, a.q[i])-1);
+  }
+
+  ar(cereal::binary_data(table->elms,sizeof(_BddNode) * table->noelems));
 }
-
 
 template<class Archive>
-void load(Archive& ar, const Theory::StringAutomaton& string_automaton) {
+void load(Archive& ar, DFA& a) {
+  unsigned int bdd_nodes, ns, s;
 
+  std::cout << 1 << std::endl;
+  ar(ns);
+  std::cout << 2 << std::endl;
+  ar(s);
+  ar(bdd_nodes);
+
+  a = *dfaMake(ns);
+  a.s = s;
+
+  ar(cereal::binary_data(a.f, a.ns * sizeof(int)));
+  ar(cereal::binary_data(a.q, a.ns * sizeof(int)));
+
+  table = (BddNode *) mem_alloc(sizeof(BddNode)*bdd_nodes);
+  ar(cereal::binary_data(table,sizeof(BddNode) * bdd_nodes));
+
+  for(int i = 0; i < bdd_nodes; i++) {
+    table[i].p = -1;
+  }
+
+  import_bddm = a.bddm;
+  for(int i = 0; i < a.ns; i++) {
+    a.q[i] = make_node(a.q[i]);
+  }
+  mem_free(table);
 }
+
 
 template<class Archive>
 void save(Archive& ar, const Theory::BigInteger& big_integer) {
