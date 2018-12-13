@@ -3429,25 +3429,25 @@ StringAutomaton_ptr StringAutomaton::ChangeIndicesMap(StringFormula_ptr new_form
 
 	// if previously only one track, we need to add lambda (9th bdd variable)
 	// just make new auto and return that
-	if(old_num_tracks == 1) {
-    if(new_num_tracks == 1) {
-      auto ret_auto = this->clone();
-      ret_auto->SetFormula(new_formula);
-      return ret_auto;
-    }
-    // should ALWAYS have formula, but add check just to make sure
-	  if(this->formula_ == nullptr || this->formula_->GetNumberOfVariables() == 0) {
-	    LOG(FATAL) << "Can't remap indices! Automaton has no formula or formula has no variables!";
-	  }
-	  std::string var_name = this->formula_->GetVariableAtIndex(0);
-	  auto extended_auto = new StringAutomaton(this->dfa_,
-	                                           new_formula->GetVariableIndex(var_name),
-	                                           new_num_tracks,
-	                                           DEFAULT_NUM_OF_VARIABLES);
-	  extended_auto->SetFormula(new_formula);
-	  return extended_auto;
-
-	}
+//	if(old_num_tracks == 1) {
+//    if(new_num_tracks == 1) {
+//      auto ret_auto = this->clone();
+//      ret_auto->SetFormula(new_formula);
+//      return ret_auto;
+//    }
+//    // should ALWAYS have formula, but add check just to make sure
+//	  if(this->formula_ == nullptr || this->formula_->GetNumberOfVariables() == 0) {
+//	    LOG(FATAL) << "Can't remap indices! Automaton has no formula or formula has no variables!";
+//	  }
+//	  std::string var_name = this->formula_->GetVariableAtIndex(0);
+//	  auto extended_auto = new StringAutomaton(this->dfa_,
+//	                                           new_formula->GetVariableIndex(var_name),
+//	                                           new_num_tracks,
+//	                                           DEFAULT_NUM_OF_VARIABLES);
+//	  extended_auto->SetFormula(new_formula);
+//	  return extended_auto;
+//
+//	}
 
 	// though we're remapping indices, we're not adding any new variables right now
 	// (this will be done during intersection

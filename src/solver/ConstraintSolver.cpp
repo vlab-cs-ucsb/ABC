@@ -23,7 +23,8 @@ ConstraintSolver::ConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_tab
       constraint_information_(constraint_information),
       arithmetic_constraint_solver_(script, symbol_table, constraint_information,
                                     Option::Solver::USE_SIGNED_INTEGERS),
-      string_constraint_solver_(script, symbol_table, constraint_information) {
+      string_constraint_solver_(script, symbol_table, constraint_information),
+      rdx_(std::cout,redox::log::Level::Off) {
 	Automaton::SetCountBoundExact(Option::Solver::COUNT_BOUND_EXACT);
 }
 
@@ -32,9 +33,6 @@ ConstraintSolver::~ConstraintSolver() {
 
 void ConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "start";
-
-  Theory::StringAutomaton_ptr test_auto = Theory::StringAutomaton::MakeString("this");
-  LOG(INFO) << "Size = " << sizeof(*test_auto->getDFA()->bddm);
 
   if(!rdx_.connect("localhost", 6379)) {
     LOG(FATAL) << "Could not connect to redis server";
@@ -150,61 +148,145 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   bool is_satisfiable = true;
   bool is_component = constraint_information_->is_component(and_term);
 
+//  setTermValue(and_term, new Value(true));
+//  return;
 
-  Theory::StringAutomaton_ptr export_auto = Theory::StringAutomaton::MakeString("abcd");
-  Theory::DFA_ptr export_dfa = nullptr;
-
-  export_dfa = export_auto->getDFA();
-  std::stringstream os;
-  LOG(INFO) << "Before serialize save";
-  {
-    cereal::BinaryOutputArchive ar(os);
-    Util::Serialize::save(ar,*export_dfa);
-  }
-  LOG(INFO) << "After serialize save";
-
-  LOG(INFO) << "Putting into Redis...";
-
-  std::string key = "abc";
-  std::string export_string = os.str();
-
-  auto& c = rdx_.commandSync<std::string>({"SET", key, export_string});
-  if(c.ok()) std::cout << "Reply: " << c.reply() << std::endl;
-  else std::cerr << "Failed to set key! Status: " << c.status() << std::endl;
-  c.free();
-
-  LOG(INFO) << "Successfully stored in Redis";
+//auto start = std::chrono::steady_clock::now();
 
 
-  auto& c2 = rdx_.commandSync<std::string>({"GET", key});
-  if(c2.ok()) {
-    if(c2.reply() == export_string) std::cout << "Binary data matches!" << std::endl;
-    else LOG(FATAL) << "Binary data differs!";
-  }
-  else LOG(FATAL)<< "Failed to get key! Status: " << c2.status();
+//  Theory::StringFormula_ptr formula1 = new Theory::StringFormula();
+//  formula1->AddVariable("x",1);
+//  formula1->AddVariable("y",2);
+//  formula1->AddVariable("z",0);
+//  formula1->SetType(Theory::StringFormula::Type::EQ);
 
-  std::string imported_string = c2.reply();
-  c2.free();
+//  Theory::StringAutomaton_ptr t1 = Theory::StringAutomaton::MakeEquality(formula1->clone());
+//  t1->inspectAuto(false,true);
 
-  std::stringstream is(imported_string);
-
-  LOG(INFO) << "Before serialize load";
-  DFA test_dfa;
-  {
-    cereal::BinaryInputArchive ar(is);
-    Util::Serialize::load(ar, test_dfa);
-  }
-  LOG(INFO) << "After serialize load";
-
-  Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(&test_dfa, 8);
-  import_auto->inspectAuto(false,true);
-
-
-
-
+//  Theory::StringFormula_ptr formula2 = new Theory::StringFormula();
+//  formula1->AddVariable("x",1);
+//  formula2->AddVariable("z",1);
+//  formula2->AddVariable("y",2);
+//  formula2->SetType(Theory::StringFormula::Type::VAR);
+//  auto t22 = Theory::StringAutomaton::MakeString("ab");
+//  auto t2 = new Theory::StringAutomaton(t22->getDFA(),1,2,8);
+//  t2->SetFormula(formula2->clone());
+//
+//  auto t3 = t2->ChangeIndicesMap(formula1->clone());
+//  auto t4 = dfaMinimize(dfaProduct(t1->getDFA(),t3->getDFA(),dfaAND));
+//  auto t5 = new Theory::StringAutomaton(t4,formula1->clone(),27);
+//
+//  t5->inspectAuto(false,true);
+//  std::cin.get();
 
 
-  std::cin.get();
+//auto end = std::chrono::steady_clock::now();
+//auto construct_time = end-start;
+//
+////  Theory::DFA_ptr export_dfa = nullptr;
+////  export_dfa = export_auto->getDFA();
+//
+//  LOG(INFO) << "Before serialize save";
+//
+//  start = std::chrono::steady_clock::now();
+//  std::stringstream os;
+//  {
+//    cereal::BinaryOutputArchive ar(os);
+//    export_auto->save(ar);
+////    Util::Serialize::save(ar,*export_dfa);
+//  }
+//  end = std::chrono::steady_clock::now();
+//  auto serialize_time = end-start;
+//
+//  LOG(INFO) << "After serialize save";
+//  LOG(INFO) << "Putting into Redis...";
+//
+//  std::string key = Ast2Dot::toString(and_term);
+//  std::string export_string = os.str();
+//
+//  start = std::chrono::steady_clock::now();
+//  auto& c = rdx_.commandSync<std::string>({"SET", key, export_string});
+//  if(c.ok()) end = std::chrono::steady_clock::now();
+//  else LOG(FATAL) << "Failed to set key!";
+//  c.free();
+//  auto store_time = end-start;
+//
+//  LOG(INFO) << "Successfully stored in Redis";
+//
+//  std::string key;
+//
+//  auto old_term_list = and_term->term_list;
+//  int len = and_term->term_list->size();
+//
+//  auto start = std::chrono::steady_clock::now();
+//  for(int i = 0; i < len; i++) {
+//    and_term->term_list->pop_back();
+//    key = Ast2Dot::toString(and_term);
+//    auto& c2 = rdx_.commandSync<std::string>({"GET", key});
+//    c2.free();
+//  }
+//  auto end = std::chrono::steady_clock::now();
+//  auto total_time = end-start;
+//  LOG(INFO) << "Total time: " << std::chrono::duration<long double, std::milli>(total_time).count();
+//  std::cin.get();
+//  auto start = std::chrono::steady_clock::now();
+//  auto& c2 = rdx_.commandSync<std::string>({"GET", key});
+//  if(c2.ok()) {
+//
+//  }
+//
+//  auto end = std::chrono::steady_clock::now();
+//  auto fetch_time = end-start;
+//
+//  std::string imported_string = c2.reply();
+//  c2.free();
+//
+//  LOG(INFO) << "Before serialize load";
+//
+//  start = std::chrono::steady_clock::now();
+//  std::stringstream is(imported_string);
+////  DFA test_dfa;
+//  Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(nullptr,8);
+//  {
+//    cereal::BinaryInputArchive ar(is);
+//    import_auto->load(ar);
+////    Util::Serialize::load(ar, test_dfa);
+//  }
+//  end = std::chrono::steady_clock::now();
+//  auto deserialize_time = end-start;
+//  LOG(INFO) << "After serialize load";
+//
+////  Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(&test_dfa, 8);
+//  LOG(INFO) << "Key length           = " << key.length();
+//  LOG(INFO) << "Export string length = " << export_string.length();
+//  LOG(INFO) << "construct time   : " << std::chrono::duration<long double, std::milli>(construct_time).count();
+//  LOG(INFO) << "serialize time   : " << std::chrono::duration<long double, std::milli>(serialize_time).count();
+//  LOG(INFO) << "store time       : " << std::chrono::duration<long double, std::milli>(store_time).count();
+//  LOG(INFO) << "fetch time       : " << std::chrono::duration<long double, std::milli>(fetch_time).count();
+//  LOG(INFO) << "deserialize time : " << std::chrono::duration<long double, std::milli>(deserialize_time).count();
+//
+//  std::cin.get();
+//
+//
+//
+//
+//  std::cin.get();
+//
+//  std::string key = Ast2Dot::toString(and_term);
+//  //rdx_.del(key);
+//  bool has_key = false;
+//  auto& c1 = rdx_.commandSync<std::string>({"GET", key});
+//  if(c1.ok()) {
+//    has_key = true;
+//    LOG(INFO) << "Key in cache";
+//  } else {
+//    LOG(INFO) << "Key not in cache";
+//  }
+//  c1.free();
+
+
+  auto start = std::chrono::steady_clock::now();
+
 
   if (is_component) {
     if (constraint_information_->has_arithmetic_constraint(and_term)) {
@@ -260,7 +342,86 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   }
 
   Value_ptr result = new Value(is_satisfiable);
+
   setTermValue(and_term, result);
+
+  auto end = std::chrono::steady_clock::now();
+  auto solve_time = end-start;
+  LOG(INFO) << "solve_time   : " << std::chrono::duration<long double, std::milli>(solve_time).count();
+
+
+//  std::string key = Ast2Dot::toString(and_term);
+//  std::string export_string = os.str();
+//
+//  start = std::chrono::steady_clock::now();
+//  auto& c = rdx_.commandSync<std::string>({"SET", key, export_string});
+//  if(c.ok()) end = std::chrono::steady_clock::now();
+//  else LOG(FATAL) << "Failed to set key!";
+//  c.free();
+//  auto store_time = end-start;
+
+  auto value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
+  LOG(INFO) << "Number of values: " << value_map.size();
+  for(auto iter : value_map) {
+    if(iter.second->getType() == Value::Type::STRING_AUTOMATON) {
+
+
+
+        auto export_auto = iter.second->getStringAutomaton();
+        std::stringstream os;
+        {
+          cereal::BinaryOutputArchive ar(os);
+          export_auto->save(ar);
+        }
+        std::string key = Ast2Dot::toString(and_term);
+        rdx_.del(key);
+
+        auto& c = rdx_.commandSync<std::string>({"SET", key, os.str()});
+        if(c.ok()) {
+          c.free();
+        } else {
+          LOG(FATAL) << "Bad";
+        }
+
+
+        auto start = std::chrono::steady_clock::now();
+        auto& c2 = rdx_.commandSync<std::string>({"GET", key});
+        if(c2.ok()) {
+          key += "i";
+        } else {
+          LOG(FATAL) << "Bad";
+        }
+
+        Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(nullptr,27);
+        std::string imported_string = c2.reply();
+        std::stringstream is(imported_string);
+        LOG(INFO) << imported_string.length();
+        {
+          cereal::BinaryInputArchive ar(is);
+          import_auto->load(ar);
+        }
+        c2.free();
+        auto end = std::chrono::steady_clock::now();
+
+
+        auto time_elapsed = end-start;
+        LOG(INFO) << "cache_time   : " << std::chrono::duration<long double, std::milli>(time_elapsed).count();
+
+        if(import_auto->getDFA() == nullptr) {
+          LOG(FATAL) << "null";
+        }
+
+    }
+  }
+//  std::cin.get();
+
+//  if(not has_key) {
+//    auto& c = rdx_.commandSync<std::string>({"SET", key, "1"});
+//    if(c.ok()) {
+//      LOG(INFO) << "Cached result";
+//    }
+//    c.free();
+//  }
 }
 
 /**

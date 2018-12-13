@@ -141,8 +141,8 @@ void Driver::InitializeSolver() {
   /*
    * Variable and char renaming here?
    */
-//  Solver::Renamer renamer(script_, symbol_table_);
-//  renamer.start();
+  Solver::Renamer renamer(script_, symbol_table_);
+  renamer.start();
 }
 
 void Driver::Solve() {

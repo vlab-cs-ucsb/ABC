@@ -149,7 +149,7 @@ Variable_ptr SymbolTable::get_variable(std::string name) {
   }
   auto it = variables_.find(original_name);
   CHECK(it != variables_.end()) << "Variable is not found: " << name << " (original name = " << original_name << ")";
-  LOG(INFO) << name << " found! Returning " << it->second;
+//  LOG(INFO) << name << " found! Returning " << it->second;
   return it->second;
 }
 
@@ -754,10 +754,10 @@ void SymbolTable::SetVariableMapping(std::map<SMT::Visitable_ptr,std::map<std::s
   // store reverse map (for easy var lookup)
   for(auto term_it : variable_mapping) {
     for(auto map_it : term_it.second) {
-      if(map_it.first == count_symbol_->getData()) {
-        LOG(INFO) << map_it.first << " -> " << map_it.second;
-        std::cin.get();
-      }
+//      if(map_it.first == count_symbol_->getData()) {
+//        LOG(INFO) << map_it.first << " -> " << map_it.second;
+//        std::cin.get();
+//      }
       reverse_variable_mapping_[term_it.first][map_it.second] = map_it.first;
     }
   }

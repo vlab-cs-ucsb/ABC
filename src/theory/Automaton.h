@@ -43,6 +43,8 @@
 #include "options/Theory.h"
 #include "SymbolicCounter.h"
 #include "Formula.h"
+#include "../utils/Serialize.h"
+#include <cereal/types/polymorphic.hpp>
 
 namespace Vlab {
 namespace Theory {
@@ -84,6 +86,14 @@ public:
   Automaton(const Automaton&);
   virtual ~Automaton();
   virtual Automaton_ptr clone() const = 0;
+
+//  template <class Archive>
+//  void save(Archive& ar) const {
+//  }
+//
+//  template <class Archive>
+//  void load(Archive& ar) {
+//  }
 
   virtual std::string str() const;
   virtual Automaton::Type getType() const;

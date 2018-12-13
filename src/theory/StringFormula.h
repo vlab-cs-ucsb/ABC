@@ -19,6 +19,7 @@
 #include <utility>
 
 #include <glog/logging.h>
+#include <cereal/types/map.hpp>
 
 #include "Formula.h"
 #include "../smt/ast.h"
@@ -43,6 +44,19 @@ class StringFormula : public Formula {
 
   StringFormula(const StringFormula&);
   virtual StringFormula_ptr clone() const;
+
+  template <class Archive>
+  void save(Archive& ar) const {
+    ar(type_);
+    ar(variable_coefficient_map_);
+  }
+
+  template <class Archive>
+  void load(Archive& ar) {
+    ar(type_);
+    ar(variable_coefficient_map_);
+  }
+
   virtual std::string str() const;
 
   virtual StringFormula_ptr Intersect(Formula_ptr);

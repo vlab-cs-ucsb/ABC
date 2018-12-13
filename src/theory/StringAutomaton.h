@@ -28,6 +28,7 @@
 #include "GraphNode.h"
 #include "IntAutomaton.h"
 #include "StringFormula.h"
+#include "../utils/Serialize.h"
 
 namespace Vlab {
 namespace Theory {
@@ -47,6 +48,23 @@ public:
   virtual ~StringAutomaton();
 
   virtual StringAutomaton_ptr clone() const;
+
+  template <class Archive>
+  void save(Archive& ar) const {
+    ar(num_tracks_);
+    ar(*formula_);
+    Util::Serialize::save(ar,dfa_);
+  }
+
+  template <class Archive>
+  void load(Archive& ar) {
+    ar(num_tracks_);
+    ar(*formula_);
+    Util::Serialize::load(ar,dfa_);
+    if(dfa_ == nullptr) {
+      LOG(INFO) << "Null!?";
+    }
+  }
 
   /**
    * Generates a string automaton that does not recognize any string
