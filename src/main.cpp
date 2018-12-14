@@ -198,9 +198,13 @@ int main(const int argc, const char **argv) {
     driver.ast2dot(output_root + "/optimized.dot");
   }
 #endif
+
+
   driver.Solve();
   auto end = std::chrono::steady_clock::now();
+
   auto solving_time = end - start;
+  LOG(INFO)<< "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
   LOG(INFO) << "Solved! solver_id = " << driver.getCurrentID();
 
   std::cout << (driver.is_sat() ? "sat" : "unsat") << std::endl;
@@ -295,7 +299,7 @@ int main(const int argc, const char **argv) {
 //      }
     }
 
-    LOG(INFO)<< "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
+//    LOG(INFO)<< "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
     if(num_models > 0) {
     	start = std::chrono::steady_clock::now();
     	driver.GetModels(0,num_models);

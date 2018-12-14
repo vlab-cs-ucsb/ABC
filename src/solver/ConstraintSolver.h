@@ -45,7 +45,7 @@ class ConstraintSolver: public SMT::Visitor {
   typedef std::map<SMT::Term_ptr, Value_ptr> TermValueMap;
   typedef std::vector<std::vector<SMT::Term_ptr>> VariablePathTable;
  public:
-  ConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr);
+  ConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr, redox::Redox *);
   virtual ~ConstraintSolver();
 
   void start() override;
@@ -147,7 +147,7 @@ class ConstraintSolver: public SMT::Visitor {
   std::vector<SMT::Variable_ptr> tagged_variables;
 
   // redox client for redis cache
-  redox::Redox rdx_;
+  redox::Redox *rdx_;
 
  private:
   static const int VLOG_LEVEL;

@@ -21,6 +21,13 @@ Driver::Driver()
   incremental_states_.clear();
   cached_values_.clear();
   cached_bounded_values_.clear();
+  rdx_ = new redox::Redox(std::cout,redox::log::Level::Off);
+
+  if(!rdx_->connect("localhost", 6379)) {
+    LOG(FATAL) << "Could not connect to redis server";
+  }
+
+
 }
 
 Driver::~Driver() {
@@ -47,6 +54,8 @@ Driver::~Driver() {
 	cached_bounded_values_.clear();
   delete constraint_information_;
   Theory::Automaton::CleanUp();
+
+  delete rdx_;
 }
 
 void Driver::InitializeLogger(int log_level) {
@@ -69,7 +78,15 @@ int Driver::Parse(std::istream* in) {
   //  parser.set_debug_level (trace_parsing);
   int res = parser.parse();
   CHECK_EQ(0, res)<< "Syntax error";
-  
+
+  auto &c = rdx_->commandSync<std::string>({"FLUSHDB"});
+  if (c.ok()) {
+    c.free();
+    LOG(INFO) << "DB flushed";
+  } else {
+    LOG(FATAL) << "Bad";
+  }
+
   return res;
 }
 
@@ -101,6 +118,8 @@ void Driver::InitializeSolver() {
 		symbol_table_ = incremental_states_[current_id_];
 	}
 
+
+
   constraint_information_ = new Solver::ConstraintInformation();
 
   Solver::Initializer initializer(script_, symbol_table_);
@@ -114,13 +133,15 @@ void Driver::InitializeSolver() {
   Solver::SyntacticOptimizer syntactic_optimizer(script_, symbol_table_);
   syntactic_optimizer.start();
 
+
+
   if (Option::Solver::ENABLE_EQUIVALENCE_CLASSES) {
     Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
     do {
       equivalence_generator.start();
     } while (equivalence_generator.has_constant_substitution());
   }
-
+  auto start = std::chrono::steady_clock::now();
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
 	dependency_slicer.start();
 
@@ -143,6 +164,11 @@ void Driver::InitializeSolver() {
    */
   Solver::Renamer renamer(script_, symbol_table_);
   renamer.start();
+
+  auto end = std::chrono::steady_clock::now();
+  auto time2 = end-start;
+
+  LOG(INFO) << "Initalize time   : " << std::chrono::duration<long double, std::milli>(time2).count();
 }
 
 void Driver::Solve() {
@@ -151,8 +177,11 @@ void Driver::Solve() {
 //  Solver::ArithmeticFormulaGenerator arithmetic_formula_generator(script_, symbol_table_, constraint_information_);
 //  arithmetic_formula_generator.start();
 
-  Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
-  constraint_solver.start();
+  auto start = std::chrono::steady_clock::now();
+  Solver::ConstraintSolver* constraint_solver = new Solver::ConstraintSolver(script_, symbol_table_, constraint_information_, rdx_);
+  constraint_solver->start();
+
+
   if(symbol_table_->top_scope() != script_) {
     // LOG(INFO) << "UPDATING SCOPE VALUES";
     auto values = symbol_table_->get_values_at_scope(script_);
@@ -173,6 +202,11 @@ void Driver::Solve() {
 		iter.second = nullptr;
 	}
 	cached_bounded_values_.clear();
+
+	auto end = std::chrono::steady_clock::now();
+  auto time2 = end-start;
+
+  LOG(INFO) << "Driver::Solve() time   : " << std::chrono::duration<long double, std::milli>(time2).count();
 }
 
 bool Driver::is_sat() {
@@ -337,7 +371,7 @@ void Driver::GetModels(const unsigned long bound,const unsigned long num_models)
 		symbol_table_->set_value(var.first,new Solver::Value(union_val));
 	}
 	symbol_table_->pop_scope();
-	Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
+	Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_, rdx_);
 	constraint_solver.start();
 	if(symbol_table_->isSatisfiable()) {
 		LOG(INFO) << "SAT!";
@@ -407,7 +441,7 @@ void Driver::GetModels(const unsigned long bound,const unsigned long num_models)
 			symbol_table_->set_value(var.first,new Solver::Value(str_auto));
 		}
 		symbol_table_->pop_scope();
-		Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
+		Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_, rdx_);
 		constraint_solver.start();
 		if(symbol_table_->isSatisfiable()) {
 			sat++;

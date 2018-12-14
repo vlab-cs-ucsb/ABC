@@ -277,7 +277,6 @@ void Initializer::visitAsQualIdentifier(AsQualIdentifier_ptr as_qid_term) {
 }
 
 void Initializer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
-  LOG(INFO) << "Here in qualid";
 }
 
 void Initializer::visitTermConstant(TermConstant_ptr term_constant) {
@@ -288,7 +287,6 @@ void Initializer::visitIdentifier(Identifier_ptr identifier) {
 
 void Initializer::visitPrimitive(Primitive_ptr primitive) {
   primitives_.push(primitive);
-  LOG(INFO) << "here in primitive";
 }
 
 void Initializer::visitTVariable(TVariable_ptr t_variable) {

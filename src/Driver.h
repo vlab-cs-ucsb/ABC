@@ -16,9 +16,11 @@
 #include <sstream>
 #include <string>
 #include <utility>
+#include <chrono>
 
 #include <glog/logging.h>
 
+#include <redox.hpp>
 #include "boost/multiprecision/cpp_int.hpp"
 #include "Eigen/SparseCore"
 #include "cereal/archives/binary.hpp"
@@ -141,6 +143,7 @@ protected:
    * Keeps bounded projected automata for variables
    */
   std::map<std::string, Solver::Value_ptr> cached_bounded_values_;
+  redox::Redox *rdx_;
 
 private:
   static bool IS_LOGGING_INITIALIZED;

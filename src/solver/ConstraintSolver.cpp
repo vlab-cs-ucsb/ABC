@@ -16,7 +16,8 @@ using namespace Theory;
 const int ConstraintSolver::VLOG_LEVEL = 11;
 
 ConstraintSolver::ConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_table,
-                                   ConstraintInformation_ptr constraint_information)
+                                   ConstraintInformation_ptr constraint_information,
+                                   redox::Redox *rdx)
     : iteration_count_ { 0 },
       root_(script),
       symbol_table_(symbol_table),
@@ -24,7 +25,7 @@ ConstraintSolver::ConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_tab
       arithmetic_constraint_solver_(script, symbol_table, constraint_information,
                                     Option::Solver::USE_SIGNED_INTEGERS),
       string_constraint_solver_(script, symbol_table, constraint_information),
-      rdx_(std::cout,redox::log::Level::Off) {
+      rdx_(rdx) {
 	Automaton::SetCountBoundExact(Option::Solver::COUNT_BOUND_EXACT);
 }
 
@@ -34,26 +35,36 @@ ConstraintSolver::~ConstraintSolver() {
 void ConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "start";
 
-  if(!rdx_.connect("localhost", 6379)) {
-    LOG(FATAL) << "Could not connect to redis server";
-  }
+  auto start = std::chrono::steady_clock::now();
 
   arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
   string_constraint_solver_.collect_string_constraint_info();
+
   visit(root_);
 
   end();
+
+  auto end = std::chrono::steady_clock::now();
+  auto time2 = end-start;
+
+  LOG(INFO) << "solver.solve() time   : " << std::chrono::duration<long double, std::milli>(time2).count();
+
 }
 
 void ConstraintSolver::start(int iteration_count) {
   DVLOG(VLOG_LEVEL) << "start" << iteration_count;
+
   arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
   string_constraint_solver_.collect_string_constraint_info();
+
+
   iteration_count_ = iteration_count;
   for (iteration_count_ = 0; iteration_count_ < iteration_count; ++iteration_count_) {
     visit(root_);
   }
   end();
+
+
 }
 
 void ConstraintSolver::end() {
@@ -347,72 +358,145 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
   auto end = std::chrono::steady_clock::now();
   auto solve_time = end-start;
-  LOG(INFO) << "solve_time   : " << std::chrono::duration<long double, std::milli>(solve_time).count();
-
-
-//  std::string key = Ast2Dot::toString(and_term);
-//  std::string export_string = os.str();
-//
-//  start = std::chrono::steady_clock::now();
-//  auto& c = rdx_.commandSync<std::string>({"SET", key, export_string});
-//  if(c.ok()) end = std::chrono::steady_clock::now();
-//  else LOG(FATAL) << "Failed to set key!";
-//  c.free();
-//  auto store_time = end-start;
-
-  auto value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
-  LOG(INFO) << "Number of values: " << value_map.size();
-  for(auto iter : value_map) {
-    if(iter.second->getType() == Value::Type::STRING_AUTOMATON) {
 
 
 
+
+  if(is_component) {
+    std::string key = Ast2Dot::toString(and_term);
+    rdx_->del(key);
+    auto value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
+    LOG(INFO) << "Number of values: " << value_map.size();
+
+    auto start = std::chrono::steady_clock::now();
+    std::stringstream os;
+
+    // serialize
+
+    for (auto iter : value_map) {
+      if (iter.second->getType() == Value::Type::STRING_AUTOMATON) {
         auto export_auto = iter.second->getStringAutomaton();
-        std::stringstream os;
         {
           cereal::BinaryOutputArchive ar(os);
           export_auto->save(ar);
         }
-        std::string key = Ast2Dot::toString(and_term);
-        rdx_.del(key);
-
-        auto& c = rdx_.commandSync<std::string>({"SET", key, os.str()});
-        if(c.ok()) {
-          c.free();
-        } else {
-          LOG(FATAL) << "Bad";
-        }
+      }
+    }
+    auto end = std::chrono::steady_clock::now();
+    auto serialize_time = end - start;
 
 
-        auto start = std::chrono::steady_clock::now();
-        auto& c2 = rdx_.commandSync<std::string>({"GET", key});
-        if(c2.ok()) {
-          key += "i";
-        } else {
-          LOG(FATAL) << "Bad";
-        }
+    // store
 
-        Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(nullptr,27);
-        std::string imported_string = c2.reply();
-        std::stringstream is(imported_string);
-        LOG(INFO) << imported_string.length();
+    LOG(INFO) << "Key size  = " << key.length();
+    LOG(INFO) << "data size = " << os.str().length();
+    start = std::chrono::steady_clock::now();
+    auto &c = rdx_->commandSync<std::string>({"SET", key, os.str()});
+    if (c.ok()) {
+      c.free();
+    } else {
+      LOG(FATAL) << "Bad";
+    }
+    end = std::chrono::steady_clock::now();
+    auto store_time = end - start;
+
+    // fetch
+    start = std::chrono::steady_clock::now();
+    auto &c2 = rdx_->commandSync<std::string>({"GET", key});
+    if (c2.ok()) {
+      key += "i";
+    } else {
+      LOG(FATAL) << "Bad";
+    }
+    end = std::chrono::steady_clock::now();
+    auto fetch_time = end - start;
+
+    // deserialize & construct
+    start = std::chrono::steady_clock::now();
+    std::string imported_string = c2.reply();
+    std::stringstream is(imported_string);
+    c2.free();
+
+    for (auto iter : value_map) {
+      if (iter.second->getType() == Value::Type::STRING_AUTOMATON) {
+        Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(nullptr, 27);
         {
           cereal::BinaryInputArchive ar(is);
           import_auto->load(ar);
         }
-        c2.free();
-        auto end = std::chrono::steady_clock::now();
-
-
-        auto time_elapsed = end-start;
-        LOG(INFO) << "cache_time   : " << std::chrono::duration<long double, std::milli>(time_elapsed).count();
-
-        if(import_auto->getDFA() == nullptr) {
-          LOG(FATAL) << "null";
-        }
-
+      }
     }
+    end = std::chrono::steady_clock::now();
+    auto deserialize_time = end - start;
+    LOG(INFO) << "solve_no_cache_time: " << std::chrono::duration<long double, std::milli>(solve_time).count();
+    LOG(INFO) << "serialize_time     : " << std::chrono::duration<long double, std::milli>(serialize_time).count();
+    LOG(INFO) << "store_time         : " << std::chrono::duration<long double, std::milli>(store_time).count();
+    LOG(INFO) << "fetch_time         : " << std::chrono::duration<long double, std::milli>(fetch_time).count();
+    LOG(INFO) << "deserialize_time   : " << std::chrono::duration<long double, std::milli>(deserialize_time).count();
   }
+
+//    for (auto iter : value_map) {
+//      if (iter.second->getType() == Value::Type::STRING_AUTOMATON) {
+//
+//        auto export_auto = iter.second->getStringAutomaton();
+//
+//        {
+//          cereal::BinaryOutputArchive ar(os);
+//          export_auto->save(ar);
+//        }
+//
+//        auto end = std::chrono::steady_clock::now();
+//        auto serialize_time = end - start;
+//
+//        std::string key = Ast2Dot::toString(and_term);
+//        rdx_->del(key);
+//
+//        start = std::chrono::steady_clock::now();
+//        auto &c = rdx_->commandSync<std::string>({"SET", key, os.str()});
+//        if (c.ok()) {
+//          c.free();
+//        } else {
+//          LOG(FATAL) << "Bad";
+//        }
+//        end = std::chrono::steady_clock::now();
+//        auto store_time = end - start;
+//
+//        start = std::chrono::steady_clock::now();
+//        auto &c2 = rdx_->commandSync<std::string>({"GET", key});
+//        if (c2.ok()) {
+//          key += "i";
+//        } else {
+//          LOG(FATAL) << "Bad";
+//        }
+//        end = std::chrono::steady_clock::now();
+//        auto fetch_time = end - start;
+//
+//        std::chrono::steady_clock::now();
+//        Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(nullptr, 27);
+//        std::string imported_string = c2.reply();
+//        std::stringstream is(imported_string);
+//
+//        {
+//          cereal::BinaryInputArchive ar(is);
+//          import_auto->load(ar);
+//        }
+//        c2.free();
+//        end = std::chrono::steady_clock::now();
+//        auto deserialize_time = end - start;
+//
+//
+//        LOG(INFO) << "serialize_time     : " << std::chrono::duration<long double, std::milli>(serialize_time).count();
+//        LOG(INFO) << "store_time         : " << std::chrono::duration<long double, std::milli>(store_time).count();
+//        LOG(INFO) << "fetch_time         : " << std::chrono::duration<long double, std::milli>(fetch_time).count();
+//        LOG(INFO) << "deserialize_time   : " << std::chrono::duration<long double, std::milli>(deserialize_time).count();
+//
+//
+//        if (import_auto->getDFA() == nullptr) {
+//          LOG(FATAL) << "null";
+//        }
+//
+//      }
+//    }
 //  std::cin.get();
 
 //  if(not has_key) {

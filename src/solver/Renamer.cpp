@@ -18,13 +18,10 @@ Renamer::~Renamer() {
 }
 
 void Renamer::start () {
-  LOG(INFO) << "Begin Renamer";
   symbol_table_->push_scope(root_, false);
   visitScript(root_);
   symbol_table_->pop_scope();
   end();
-  LOG(INFO) << "End Renamer";
-
 }
 
 void Renamer::end() {
