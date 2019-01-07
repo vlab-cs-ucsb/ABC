@@ -120,6 +120,8 @@ public:
   int trace_scanning_ = 0;
   std::string file_;
 
+  void stats() {std::cout << total_hits_ << "," << total_misses_ << std::endl;}
+
 protected:
   void SetModelCounterForVariable(const std::string var_name, bool project = true);
   void SetModelCounter();
@@ -144,6 +146,9 @@ protected:
    */
   std::map<std::string, Solver::Value_ptr> cached_bounded_values_;
   redox::Redox *rdx_;
+
+  int total_hits_;
+  int total_misses_;
 
 private:
   static bool IS_LOGGING_INITIALIZED;

@@ -134,9 +134,9 @@ void ConstraintSorter::visitAnd(And_ptr and_term) {
   }
   term_node = nullptr;
 
-  LOG(INFO) << "total size: " << and_term->term_list->size();
+  // LOG(INFO) << "total size: " << and_term->term_list->size();
   sort_terms(local_dependency_node_list);
-  std::cin.get();
+  // std::cin.get();
 
   if (VLOG_IS_ON(VLOG_LEVEL)) {
     for (auto& node : local_dependency_node_list) {
@@ -768,61 +768,60 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
 	 * -- NOT DOING -- (10) operation vector types
 	 * (11) lexigraphic string
 	 */
-//	auto compare_function = [](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
-//
-//	  bool result = true;//left_node->getType() < right_node->getType();
-//
-////    if(left_node->getType() == TermNode::Type::INT and right_node->getType() == TermNode::Type::STRING) {
-////	    return 0;
-////	  } else if(left_node->getType() == TermNode::Type::STRING and right_node->getType() == TermNode::Type::INT) {
-////	    return 1;
-////	  }
-//
-//	  if(left_node->getType() < right_node->getType()) {
-//      return 1;
-//	  }
-//	  if(left_node->getType() > right_node->getType()) {
+	auto compare_function = [](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
+	  bool result = true;//left_node->getType() < right_node->getType();
+
+//    if(left_node->getType() == TermNode::Type::INT and right_node->getType() == TermNode::Type::STRING) {
 //	    return 0;
+//	  } else if(left_node->getType() == TermNode::Type::STRING and right_node->getType() == TermNode::Type::INT) {
+//	    return 1;
 //	  }
-//
-//    if(left_node->getNode()->type() < right_node->getNode()->type()) {
-//      if(left_node->getNode()->type() == Term::Type::CONCAT and right_node->getNode()->type() == Term::Type::NOTEQ) {
-//        LOG(FATAL) << "WAT";
-//      }
-//      return 1;
-//    }
-//    if(left_node->getNode()->type() > right_node->getNode()->type()) {
-//      if(left_node->getNode()->type() == Term::Type::CONCAT and right_node->getNode()->type() == Term::Type::NOTEQ) {
-//        LOG(FATAL) << " GOOD WAT";
-//      }
-//      return 0;
-//    }
-//
-//    if(left_node->numOfTotalVars() < right_node->numOfTotalVars()) {
-//      return 1;
-//    }
-//    if(left_node->numOfTotalVars() > right_node->numOfTotalVars()) {
-//      return 0;
-//    }
-//
-//    if(left_node->numOfLeftVars() < right_node->numOfLeftVars()) {
-//      return 1;
-//    }
-//    if(left_node->numOfLeftVars() > right_node->numOfLeftVars()) {
-//      return 0;
-//    }
-//
-//    if(left_node->numOfRightVars() < right_node->numOfRightVars()) {
-//      return 1;
-//    }
-//    if(left_node->numOfRightVars() > right_node->numOfRightVars()) {
-//      return 0;
-//    }
-//
-//    return left_node->str() < right_node->str();
-//	};
-//
-//  std::stable_sort(term_node_list.begin(), term_node_list.end(),compare_function);
+
+	  if(left_node->getType() < right_node->getType()) {
+     return 1;
+	  }
+	  if(left_node->getType() > right_node->getType()) {
+	    return 0;
+	  }
+
+   if(left_node->getNode()->type() < right_node->getNode()->type()) {
+     if(left_node->getNode()->type() == Term::Type::CONCAT and right_node->getNode()->type() == Term::Type::NOTEQ) {
+       LOG(FATAL) << "WAT";
+     }
+     return 1;
+   }
+   if(left_node->getNode()->type() > right_node->getNode()->type()) {
+     if(left_node->getNode()->type() == Term::Type::CONCAT and right_node->getNode()->type() == Term::Type::NOTEQ) {
+       LOG(FATAL) << " GOOD WAT";
+     }
+     return 0;
+   }
+
+   if(left_node->numOfTotalVars() < right_node->numOfTotalVars()) {
+     return 1;
+   }
+   if(left_node->numOfTotalVars() > right_node->numOfTotalVars()) {
+     return 0;
+   }
+
+   if(left_node->numOfLeftVars() < right_node->numOfLeftVars()) {
+     return 1;
+   }
+   if(left_node->numOfLeftVars() > right_node->numOfLeftVars()) {
+     return 0;
+   }
+
+   if(left_node->numOfRightVars() < right_node->numOfRightVars()) {
+     return 1;
+   }
+   if(left_node->numOfRightVars() > right_node->numOfRightVars()) {
+     return 0;
+   }
+
+   return left_node->str() < right_node->str();
+	};
+
+ std::stable_sort(term_node_list.begin(), term_node_list.end(),compare_function);
 //  int num_none = 0;
 //  int num_int = 0;
 //  int num_string = 0;
@@ -850,37 +849,37 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
 //	}
 
 	// otherwise, sort based on count variable
-  std::vector<TermNode_ptr> sorted_term_node_list;
+  // std::vector<TermNode_ptr> sorted_term_node_list;
 
-  for (auto it = term_node_list.begin(); it != term_node_list.end(); ) {
-    if ((*it)->numOfTotalVars() == 0) {
-      sorted_term_node_list.push_back((*it));
-      it = term_node_list.erase(it);
-    }
-    else if(not (*it)->hasSymbolicVar()) {
-      sorted_term_node_list.push_back((*it));
-      it = term_node_list.erase(it);
-    }
-    else {
-      it++;
-    }
-  }
+  // for (auto it = term_node_list.begin(); it != term_node_list.end(); ) {
+  //   if ((*it)->numOfTotalVars() == 0) {
+  //     sorted_term_node_list.push_back((*it));
+  //     it = term_node_list.erase(it);
+  //   }
+  //   else if(not (*it)->hasSymbolicVar()) {
+  //     sorted_term_node_list.push_back((*it));
+  //     it = term_node_list.erase(it);
+  //   }
+  //   else {
+  //     it++;
+  //   }
+  // }
 
-  std::sort(term_node_list.begin(), term_node_list.end(),
-          [](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
-            return (left_node->numOfTotalVars() < right_node->numOfTotalVars());
-          });
+  // std::sort(term_node_list.begin(), term_node_list.end(),
+  //         [](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
+  //           return (left_node->numOfTotalVars() < right_node->numOfTotalVars());
+  //         });
 
-  for (auto it = term_node_list.begin(); it != term_node_list.end(); ) {
-    if (not (*it)->hasSymbolicVar()) {
-      sorted_term_node_list.push_back((*it));
-      it = term_node_list.erase(it);
-    } else {
-      it++;
-    }
-  }
+  // for (auto it = term_node_list.begin(); it != term_node_list.end(); ) {
+  //   if (not (*it)->hasSymbolicVar()) {
+  //     sorted_term_node_list.push_back((*it));
+  //     it = term_node_list.erase(it);
+  //   } else {
+  //     it++;
+  //   }
+  // }
 
-  term_node_list.insert(term_node_list.begin(), sorted_term_node_list.begin(), sorted_term_node_list.end());
+  // term_node_list.insert(term_node_list.begin(), sorted_term_node_list.begin(), sorted_term_node_list.end());
 
   DVLOG(VLOG_LEVEL) << "node list sorted";
 }

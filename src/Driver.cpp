@@ -26,7 +26,8 @@ Driver::Driver()
   if(!rdx_->connect("localhost", 6379)) {
     LOG(FATAL) << "Could not connect to redis server";
   }
-
+  total_hits_ = 0;
+  total_misses_ = 0;
 
 }
 
@@ -79,13 +80,13 @@ int Driver::Parse(std::istream* in) {
   int res = parser.parse();
   CHECK_EQ(0, res)<< "Syntax error";
 
-  auto &c = rdx_->commandSync<std::string>({"FLUSHDB"});
-  if (c.ok()) {
-    c.free();
-    LOG(INFO) << "DB flushed";
-  } else {
-    LOG(FATAL) << "Bad";
-  }
+  // auto &c = rdx_->commandSync<std::string>({"FLUSHDB"});
+  // if (c.ok()) {
+  //   c.free();
+  //   LOG(INFO) << "DB flushed";
+  // } else {
+  //   LOG(FATAL) << "Bad";
+  // }
 
   return res;
 }
@@ -180,7 +181,8 @@ void Driver::Solve() {
   auto start = std::chrono::steady_clock::now();
   Solver::ConstraintSolver* constraint_solver = new Solver::ConstraintSolver(script_, symbol_table_, constraint_information_, rdx_);
   constraint_solver->start();
-
+  total_hits_ += constraint_solver->num_hits();
+  total_misses_ += constraint_solver->num_misses();
 
   if(symbol_table_->top_scope() != script_) {
     // LOG(INFO) << "UPDATING SCOPE VALUES";

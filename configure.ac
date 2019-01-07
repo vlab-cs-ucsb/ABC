@@ -57,9 +57,9 @@ AC_SUBST([JAVA_HEADERS])
 # Check for programs
 AC_LANG([C++])
 AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX_14([noext])
+# AX_CXX_COMPILE_STDCXX_14([noext])
 AX_CHECK_COMPILE_FLAG([-Wall -Wextra -Wno-uninitialized -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter],\
-    [CXXFLAGS="$CXXFLAGS -Wall -Wextra -Wno-uninitialized -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter"])
+    [CXXFLAGS="$CXXFLAGS -std=c++17 -Wall -Wextra -Wno-uninitialized -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter"])
 
 #if test x"$debugit" = x"yes"; then
 #    AC_DEFINE([DEBUG],[],[Debug Mode])

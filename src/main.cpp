@@ -18,6 +18,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <experimental/filesystem>
 
 #include <glog/logging.h>
 #include <glog/vlog_is_on.h>
@@ -64,8 +65,8 @@ int main(const int argc, const char **argv) {
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == std::string("-i") or argv[i] == std::string("--input-file")) {
       file_name = argv[i + 1];
-      file = new std::ifstream(file_name);
-      in = file;
+      // file = new std::ifstream(file_name);
+      // in = file;
       ++i;
     } else if (argv[i] == std::string("--use-unsigned")) {
       driver.set_option(Vlab::Option::Name::USE_UNSIGNED_INTEGERS);
@@ -160,6 +161,14 @@ int main(const int argc, const char **argv) {
     }
   }
 
+  std::vector<std::string> files;
+  for(const auto & entry : std::experimental::filesystem::directory_iterator(file_name)) {
+    files.push_back(entry.path());
+  }
+
+  file = new std::ifstream(files[0]);
+  in = file;
+  
 
   google::InitGoogleLogging(argv[0]);
 
@@ -178,32 +187,66 @@ int main(const int argc, const char **argv) {
   }
 
   driver.test();
-  driver.Parse(in);
+//   driver.Parse(in);
 
-#ifndef NDEBUG
-  if (VLOG_IS_ON(30) and not output_root.empty()) {
-    driver.ast2dot(output_root + "/parser_out.dot");
-  }
-#endif
+// #ifndef NDEBUG
+//   if (VLOG_IS_ON(30) and not output_root.empty()) {
+//     driver.ast2dot(output_root + "/parser_out.dot");
+//   }
+// #endif
 
   auto start = std::chrono::steady_clock::now();
-  driver.InitializeSolver();
+//   driver.InitializeSolver();
 
-  if(driver.symbol_table_->has_count_variable() and count_variable.empty()) {
-    count_variable = driver.symbol_table_->get_count_variable()->getName();
+//   if(driver.symbol_table_->has_count_variable() and count_variable.empty()) {
+//     count_variable = driver.symbol_table_->get_count_variable()->getName();
+//   }
+
+// #ifndef NDEBUG
+//   if (VLOG_IS_ON(30) and not output_root.empty()) {
+//     driver.ast2dot(output_root + "/optimized.dot");
+//   }
+// #endif
+
+
+//   driver.Solve();
+  auto end = std::chrono::steady_clock::now();
+  auto solving_time = end - start;
+
+
+  int total_hits = 0;
+  int total_misses = 0;
+  for(auto iter : files) {
+    file = new std::ifstream(iter);
+    in = file;
+    driver.Parse(in);
+    driver.InitializeSolver();
+    driver.Solve();
+
+    driver.reset();
+    delete file;
   }
+  driver.stats();
+  return 3;
+  // driver.reset();
+  // delete file;
+  // file = new std::ifstream(files[1]);
+  // in = file;
+  
+  // LOG(INFO) << "Solving second...";
 
-#ifndef NDEBUG
+  // driver.Parse(in);
+  // driver.InitializeSolver();
+
+  #ifndef NDEBUG
   if (VLOG_IS_ON(30) and not output_root.empty()) {
     driver.ast2dot(output_root + "/optimized.dot");
   }
 #endif
 
+  // driver.Solve();?
 
-  driver.Solve();
-  auto end = std::chrono::steady_clock::now();
 
-  auto solving_time = end - start;
   LOG(INFO)<< "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
   LOG(INFO) << "Solved! solver_id = " << driver.getCurrentID();
 

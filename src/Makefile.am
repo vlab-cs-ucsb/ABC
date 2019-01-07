@@ -1,5 +1,5 @@
 SUBDIRS = solver 
-AM_CXXFLAGS =
+AM_CXXFLAGS = -std=c++17
 
 AM_LDFLAGS = 
 	

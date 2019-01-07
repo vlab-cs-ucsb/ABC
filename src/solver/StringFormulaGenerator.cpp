@@ -1639,11 +1639,13 @@ void StringFormulaGenerator::set_group_mappings() {
 
     //LOG(INFO) << "# previous group vars: " << previous_group_variables.size();
     StringAutomaton_ptr initial_auto = StringAutomaton::MakeAnyStringUnaligned(group_iter.second->clone());
+	initial_auto->GetFormula()->SetType(StringFormula::Type::NA);
     for(auto previous_group: previous_group_variables) {
       //LOG(INFO) << "--> previous group = " << previous_group->getName();
       StringAutomaton_ptr previous_group_auto = variable_values[previous_group]->getStringAutomaton();
       StringAutomaton_ptr remapped_auto = previous_group_auto->ChangeIndicesMap(group_iter.second->clone());
       StringAutomaton_ptr temp_auto = initial_auto->Intersect(remapped_auto);
+	  temp_auto->GetFormula()->SetType(StringFormula::Type::NA);
       //temp_auto->inspectAuto(false,true);
       delete initial_auto;
       delete remapped_auto;

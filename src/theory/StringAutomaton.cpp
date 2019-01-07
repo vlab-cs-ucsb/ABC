@@ -873,6 +873,10 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
 	int left_track = formula->GetVariableIndex(1); // variable on the left of equality
 	int right_track = formula->GetVariableIndex(2); // variable on the right of equality
 
+  StringFormula_ptr temp_formula = new StringFormula();
+  temp_formula->SetType(StringFormula::Type::NOTEQ);
+  temp_formula->AddVariable(formula->GetVariableAtIndex(left_track),1);
+  temp_formula->AddVariable(formula->GetVariableAtIndex(right_track),2);
 
 	if(formula->GetType() == StringFormula::Type::EQ_CHARAT) {
 		// if charAt() == charAt() and constants are the same (such as charAt(X,0) == charAt(Y,0))
@@ -880,6 +884,10 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
 		equality_auto = new StringAutomaton(equality_dfa,formula,num_tracks*VAR_PER_TRACK);
 	} else if(formula->GetConstant() != "") {
 		// if string is not empty, eq is of form X = Y.c
+    int nnum = num_tracks;
+    num_tracks = 2;
+    left_track = 0;
+    right_track = 1;
     int temp_left = num_tracks;
     int temp_right = right_track;
     int temp_num_tracks = num_tracks+1;
@@ -892,7 +900,7 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
     delete concat_auto;
     equality_auto = temp_auto->ProjectKTrack(num_tracks);
     delete temp_auto;
-    equality_auto->SetFormula(formula);
+    equality_auto->ChangeIndicesMap(formula);
   } else {
     auto equality_dfa = MakeBinaryRelationDfa(StringFormula::Type::EQ, VAR_PER_TRACK, num_tracks, left_track, right_track);
     equality_auto = new StringAutomaton(equality_dfa,formula,num_tracks*VAR_PER_TRACK);
@@ -931,17 +939,31 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
 		if(num_tracks == 1) {
 			not_equality_auto = new StringAutomaton(dfaCopy(complement_auto->getDFA()),num_tracks,DEFAULT_NUM_OF_VARIABLES);
 		} else {
-			not_equality_auto = new StringAutomaton(complement_auto->getDFA(),left_track,num_tracks,DEFAULT_NUM_OF_VARIABLES);
+			not_equality_auto = new StringAutomaton(complement_auto->getDFA(),0,1,DEFAULT_NUM_OF_VARIABLES);
 		}
-		not_equality_auto->SetFormula(formula);
+    StringFormula_ptr temp_formula = new StringFormula();
+    temp_formula->SetType(StringFormula::Type::NOTEQ);
+    temp_formula->AddVariable(formula->GetVariableAtIndex(left_track),1);
+    auto not_equality_dfa = MakeBinaryRelationDfa(StringFormula::Type::NOTEQ, VAR_PER_TRACK, 2, 0, 1);
+    not_equality_auto = new StringAutomaton(not_equality_dfa,temp_formula,2*VAR_PER_TRACK);
+    LOG(INFO) << "BEFORE";
+    not_equality_auto->ChangeIndicesMap(formula);
+    LOG(INFO) << "AFTER";
 		delete complement_auto;
 		return not_equality_auto;
 	}
+
+  
+
 
   int num_tracks = formula->GetNumberOfVariables();
   int left_track = formula->GetVariableIndex(1); // variable on the left of equality
 	int right_track = formula->GetVariableIndex(2); // variable on the right of equality
 
+  StringFormula_ptr temp_formula = new StringFormula();
+  temp_formula->SetType(StringFormula::Type::NOTEQ);
+  temp_formula->AddVariable(formula->GetVariableAtIndex(left_track),1);
+  temp_formula->AddVariable(formula->GetVariableAtIndex(right_track),2);
 
 	if(formula->GetType() == StringFormula::Type::NOTEQ_CHARAT) {
 		// if charAt() == charAt() and constants are the same (such as charAt(X,0) == charAt(Y,0))
@@ -949,22 +971,31 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
 		not_equality_auto = new StringAutomaton(not_equality_dfa,formula,num_tracks*VAR_PER_TRACK);
 	} else if(formula->GetConstant() != "") {
 		// if string is not empty, eq is of form X = Y.c
+    int nnum = num_tracks;
+    num_tracks = 2;
+    left_track = 0;
+    right_track = 1;
+
     int temp_left = num_tracks;
     int temp_right = right_track;
     int temp_num_tracks = num_tracks+1;
 
     StringAutomaton_ptr concat_auto = StringAutomaton::MakeConcatExtraTrack(temp_left,temp_right,temp_num_tracks,formula->GetConstant());
     DFA_ptr eq_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::NOTEQ, VAR_PER_TRACK, num_tracks+1, left_track, temp_left);
+    
     StringAutomaton_ptr eq_auto = new StringAutomaton(eq_dfa,num_tracks+1,(num_tracks+1)*VAR_PER_TRACK);
     auto temp_auto = concat_auto->Intersect(eq_auto);
     delete eq_auto;
     delete concat_auto;
     not_equality_auto = temp_auto->ProjectKTrack(num_tracks);
     delete temp_auto;
-    not_equality_auto->SetFormula(formula);
+    not_equality_auto->ChangeIndicesMap(formula);
   } else {
-    auto not_equality_dfa = MakeBinaryRelationDfa(StringFormula::Type::NOTEQ, VAR_PER_TRACK, num_tracks, left_track, right_track);
-    not_equality_auto = new StringAutomaton(not_equality_dfa,formula,num_tracks*VAR_PER_TRACK);
+    // auto not_equality_dfa = MakeBinaryRelationDfa(StringFormula::Type::NOTEQ, VAR_PER_TRACK, num_tracks, left_track, right_track);
+    
+    auto not_equality_dfa = MakeBinaryRelationDfa(StringFormula::Type::NOTEQ, VAR_PER_TRACK, 2, 0, 1);
+    not_equality_auto = new StringAutomaton(not_equality_dfa,temp_formula,num_tracks*VAR_PER_TRACK);
+    not_equality_auto->ChangeIndicesMap(formula);
   }
 
   DVLOG(VLOG_LEVEL) << not_equality_auto->id_ << " = MakeNotEquality(" << formula->str() << ")";
@@ -1452,26 +1483,30 @@ StringAutomaton_ptr StringAutomaton::Complement() {
 StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
 	// if both autos are same size, we're good. Otherwise, if one auto has one track
 	// put it in a multi-track with the correct track.
-  if(this->num_tracks_ != other_auto->num_tracks_) {
-    StringAutomaton_ptr small_auto, big_auto;
-		if(this->num_tracks_ == 1 && other_auto->num_tracks_ != 1 && !this->formula_->IsConstant()) {
-			small_auto = this;
-			big_auto = other_auto;
-		} else if(other_auto->num_tracks_ == 1 && !other_auto->formula_->IsConstant()) {
-			small_auto = other_auto;
-			big_auto = this;
-		} else {
-			LOG(FATAL) << "Intersection between incompatible StringAutomata";
-		}
+  // if(this->num_tracks_ != other_auto->num_tracks_) {
+  //   StringAutomaton_ptr small_auto, big_auto;
+	// 	if(this->num_tracks_ == 1 && other_auto->num_tracks_ != 1 && !this->formula_->IsConstant()) {
+	// 		small_auto = this;
+	// 		big_auto = other_auto;
+	// 	} else if(other_auto->num_tracks_ == 1 && !other_auto->formula_->IsConstant()) {
+	// 		small_auto = other_auto;
+	// 		big_auto = this;
+	// 	} else {
+	// 		LOG(FATAL) << "Intersection between incompatible StringAutomata";
+	// 	}
 
-		std::string variable_name = small_auto->formula_->GetVariableAtIndex(0);
-    int index = big_auto->formula_->GetVariableIndex(variable_name);
-    auto relation_other_auto = new StringAutomaton(small_auto->dfa_,index,big_auto->num_tracks_,small_auto->num_of_bdd_variables_);
-    relation_other_auto->SetFormula(big_auto->GetFormula()->clone());
-    auto intersect_auto = big_auto->Intersect(relation_other_auto);
-    delete relation_other_auto;
-    return intersect_auto;
-  }
+	// 	std::string variable_name = small_auto->formula_->GetVariableAtIndex(0);
+  //   int index = big_auto->formula_->GetVariableIndex(variable_name);
+  //   auto relation_other_auto = new StringAutomaton(small_auto->dfa_,index,big_auto->num_tracks_,small_auto->num_of_bdd_variables_);
+  //   relation_other_auto->SetFormula(big_auto->GetFormula()->clone());
+  //   auto intersect_auto = big_auto->Intersect(relation_other_auto);
+  //   delete relation_other_auto;
+  //   return intersect_auto;
+  // }
+
+  // LOG(INFO) << this->num_tracks_ << " , " << other_auto->num_tracks_;
+  // std::cin.get();
+
 	auto intersect_dfa = Automaton::DFAIntersect(this->dfa_, other_auto->dfa_);
   StringFormula_ptr intersect_formula = nullptr;
   if(formula_ != nullptr && other_auto->formula_ != nullptr) {

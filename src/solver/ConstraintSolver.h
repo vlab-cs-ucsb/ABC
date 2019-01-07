@@ -9,6 +9,7 @@
 #define SOLVER_CONSTRAINTSOLVER_H_
 
 #include <map>
+#include <stack>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -119,6 +120,9 @@ class ConstraintSolver: public SMT::Visitor {
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
 
+  int num_hits() {return num_hits_;}
+  int num_misses() {return num_misses_;}
+
  protected:
   Value_ptr getTermValue(SMT::Term_ptr term);
   bool setTermValue(SMT::Term_ptr term, Value_ptr value);
@@ -148,6 +152,8 @@ class ConstraintSolver: public SMT::Visitor {
 
   // redox client for redis cache
   redox::Redox *rdx_;
+  int num_hits_;
+  int num_misses_;
 
  private:
   static const int VLOG_LEVEL;
