@@ -944,8 +944,8 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
     StringFormula_ptr temp_formula = new StringFormula();
     temp_formula->SetType(StringFormula::Type::NOTEQ);
     temp_formula->AddVariable(formula->GetVariableAtIndex(left_track),1);
-    auto not_equality_dfa = MakeBinaryRelationDfa(StringFormula::Type::NOTEQ, VAR_PER_TRACK, 2, 0, 1);
-    not_equality_auto = new StringAutomaton(not_equality_dfa,temp_formula,2*VAR_PER_TRACK);
+//    auto not_equality_dfa = MakeBinaryRelationDfa(StringFormula::Type::NOTEQ, VAR_PER_TRACK, 2, 0, 1);
+//    not_equality_auto = new StringAutomaton(not_equality_dfa,temp_formula,2*VAR_PER_TRACK);
     LOG(INFO) << "BEFORE";
     not_equality_auto->ChangeIndicesMap(formula);
     LOG(INFO) << "AFTER";
@@ -3488,12 +3488,17 @@ StringAutomaton_ptr StringAutomaton::ChangeIndicesMap(StringFormula_ptr new_form
 	// (this will be done during intersection
 	int* map = CreateBddVariableIndices(this->num_tracks_*VAR_PER_TRACK);
 	for(auto iter : old_coeff_map) {
+
 		int old_index = this->formula_->GetVariableIndex(iter.first);
 		int new_index = new_formula->GetVariableIndex(iter.first);
 		for(int i = 0; i < VAR_PER_TRACK; i++) {
 			map[old_index+(i*old_num_tracks)] = new_index+(i*new_num_tracks);
 		}
 	}
+
+  for(int i = 0; i < this->num_tracks_*VAR_PER_TRACK; i++) {
+    LOG(INFO) << "map[" << i << "] = " << map[i];
+  }
 
 	auto remapped_dfa = dfaCopy(this->dfa_);
 	dfaReplaceIndices(remapped_dfa,map);
