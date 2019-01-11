@@ -70,11 +70,11 @@ void StringConstraintSolver::setCallbacks() {
           auto relational_str_auto = StringAutomaton::MakeAutomaton(formula->clone());
           auto result = new Value(relational_str_auto);
           set_term_value(term, result);
-          auto term_group_name = string_formula_generator_.get_term_group_name(term);
-          if(term_group_name.empty()) {
-            LOG(FATAL) << "Term has no group!";
-          }
-          symbol_table_->IntersectValue(term_group_name,result);
+//          auto term_group_name = string_formula_generator_.get_term_group_name(term);
+//          if(term_group_name.empty()) {
+//            LOG(FATAL) << "Term has no group!";
+//          }
+//          symbol_table_->IntersectValue(term_group_name,result);
           // once we solve an atomic string constraint,
           // we delete its formula to avoid solving it again.
           // Atomic string constraints solved precisely,

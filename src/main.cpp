@@ -46,7 +46,7 @@ int main(const int argc, const char **argv) {
 //  std::string output_root = get_default_output_dir();
 //  std::string log_root = get_default_log_dir();
 
-  std::string output_root = "";//{"./output"};
+  std::string output_root = {"./output"};
   std::string log_root {"./log"};
 
   FLAGS_log_dir = log_root;
@@ -168,7 +168,7 @@ int main(const int argc, const char **argv) {
 
   file = new std::ifstream(files[0]);
   in = file;
-  
+
 
   google::InitGoogleLogging(argv[0]);
 
@@ -210,29 +210,43 @@ int main(const int argc, const char **argv) {
 
 
 //   driver.Solve();
-  auto end = std::chrono::steady_clock::now();
-  auto solving_time = end - start;
 
+
+  int num_files = files.size();
+  int i = 0;
 
   int total_hits = 0;
   int total_misses = 0;
   for(auto iter : files) {
+//    LOG(INFO) << iter;
     file = new std::ifstream(iter);
     in = file;
     driver.Parse(in);
     driver.InitializeSolver();
+//    if (i > 1200 or false and VLOG_IS_ON(30) and not output_root.empty()) {
+     driver.ast2dot(output_root + "/optimized.dot");
+//   }
     driver.Solve();
 
     driver.reset();
     delete file;
+    i++;
+
+    if(i % 100 == 0) {
+      LOG(INFO) << i << " constraints done";
+    }
+//    driver.stats();
   }
   driver.stats();
+  auto end = std::chrono::steady_clock::now();
+  auto solving_time = end - start;
+  LOG(INFO)<< "time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
   return 3;
   // driver.reset();
   // delete file;
   // file = new std::ifstream(files[1]);
   // in = file;
-  
+
   // LOG(INFO) << "Solving second...";
 
   // driver.Parse(in);
@@ -369,7 +383,7 @@ int main(const int argc, const char **argv) {
         auto count_time = end - start;
         LOG(INFO) << "report bound: " << b << " count: " << count_result << " time: "
                   << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
-        
+
       }
     } else {
       for (auto b : int_bounds) {

@@ -135,11 +135,14 @@ void Driver::InitializeSolver() {
   syntactic_optimizer.start();
 
 
-
+//  ast2dot(output_root + "/post_syntactic_optimizer.dot");
+  int i = 0;
   if (Option::Solver::ENABLE_EQUIVALENCE_CLASSES) {
     Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
     do {
       equivalence_generator.start();
+//      ast2dot(output_root + "/post_eq" + std::to_string(i) + ".dot");
+//      i++;
     } while (equivalence_generator.has_constant_substitution());
   }
   auto start = std::chrono::steady_clock::now();
@@ -169,7 +172,7 @@ void Driver::InitializeSolver() {
   auto end = std::chrono::steady_clock::now();
   auto time2 = end-start;
 
-  LOG(INFO) << "Initalize time   : " << std::chrono::duration<long double, std::milli>(time2).count();
+//  LOG(INFO) << "Initalize time   : " << std::chrono::duration<long double, std::milli>(time2).count();
 }
 
 void Driver::Solve() {
@@ -208,7 +211,7 @@ void Driver::Solve() {
 	auto end = std::chrono::steady_clock::now();
   auto time2 = end-start;
 
-  LOG(INFO) << "Driver::Solve() time   : " << std::chrono::duration<long double, std::milli>(time2).count();
+//  LOG(INFO) << "Driver::Solve() time   : " << std::chrono::duration<long double, std::milli>(time2).count();
 }
 
 bool Driver::is_sat() {

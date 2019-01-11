@@ -18,10 +18,10 @@ std::string ConstraintSorter::TermNode::count_var;
 ConstraintSorter::ConstraintSorter(Script_ptr script, SymbolTable_ptr symbol_table)
         : root(script), symbol_table(symbol_table), term_node(nullptr) {
 
-	if(symbol_table->has_count_variable()) {
-		auto var = symbol_table->get_count_variable();
-		ConstraintSorter::TermNode::count_var = var->getName();
-	}
+//	if(symbol_table->has_count_variable()) {
+//		auto var = symbol_table->get_count_variable();
+//		ConstraintSorter::TermNode::count_var = var->getName();
+//	}
 }
 
 ConstraintSorter::~ConstraintSorter() {
@@ -106,11 +106,11 @@ void ConstraintSorter::visitAnd(And_ptr and_term) {
   std::vector<TermNode_ptr> local_dependency_node_list;
   std::vector<Term_ptr> unsorted_constraints;
 
-  if(symbol_table->has_count_variable()) {
-		auto count_var = symbol_table->get_count_variable();
-		auto rep_count_var = symbol_table->get_representative_variable_of_at_scope(symbol_table->top_scope(),count_var);
-		ConstraintSorter::TermNode::count_var = rep_count_var->getName();
-	}
+//  if(symbol_table->has_count_variable()) {
+//		auto count_var = symbol_table->get_count_variable();
+//		auto rep_count_var = symbol_table->get_representative_variable_of_at_scope(symbol_table->top_scope(),count_var);
+//		ConstraintSorter::TermNode::count_var = rep_count_var->getName();
+//	}
 
   for(auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
   //for (auto& term : *(and_term->term_list)) {
@@ -688,6 +688,21 @@ void ConstraintSorter::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 }
 
 void ConstraintSorter::visitTermConstant(TermConstant_ptr term_constant) {
+  term_node = new TermNode(term_constant);
+  switch(term_constant->getValueType()) {
+    case Primitive::Type::STRING:
+    case Primitive::Type::REGEX:
+      term_node->setType(TermNode::Type::STRING);
+      break;
+    case Primitive::Type::NUMERAL:
+      term_node->setType(TermNode::Type::INT);
+      break;
+    case Primitive::Type::BOOL:
+      term_node->setType(TermNode::Type::BOOL);
+      break;
+    default:
+      break;
+  }
 }
 
 void ConstraintSorter::visitIdentifier(Identifier_ptr identifier) {
@@ -818,7 +833,7 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
      return 0;
    }
 
-   return left_node->str() < right_node->str();
+   return Ast2Dot::toString(left_node->getNode()) < Ast2Dot::toString(right_node->getNode());
 	};
 
  std::stable_sort(term_node_list.begin(), term_node_list.end(),compare_function);
