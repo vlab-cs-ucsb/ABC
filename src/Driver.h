@@ -17,6 +17,8 @@
 #include <string>
 #include <utility>
 #include <chrono>
+#include <vector>
+#include <tuple>
 
 #include <glog/logging.h>
 
@@ -120,7 +122,7 @@ public:
   int trace_scanning_ = 0;
   std::string file_;
 
-  void stats() {std::cout << total_hits_ << "," << total_misses_ << std::endl;}
+  void print_statistics();
 
 protected:
   void SetModelCounterForVariable(const std::string var_name, bool project = true);
@@ -149,6 +151,7 @@ protected:
 
   int total_hits_;
   int total_misses_;
+  std::vector<std::tuple<int,int>> hit_statistics_;
 
 private:
   static bool IS_LOGGING_INITIALIZED;

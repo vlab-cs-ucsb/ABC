@@ -1512,13 +1512,6 @@ StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
 
 	auto intersect_auto = new StringAutomaton(intersect_dfa,intersect_formula,left_auto->num_of_bdd_variables_);
 
-//  if(intersect_auto->IsEmptyLanguage()) {
-//    left_auto->GetKTrack(0)->inspectAuto(false,true);
-//    right_auto->inspectAuto(false,true);
-//
-//    LOG(FATAL) << this->num_tracks_ << "," << other_auto->num_tracks_;
-//  }
-
   if(right_auto != other_auto) {
     delete right_auto;
     right_auto = nullptr;

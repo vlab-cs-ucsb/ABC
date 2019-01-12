@@ -224,9 +224,12 @@ int main(const int argc, const char **argv) {
     driver.Parse(in);
     driver.InitializeSolver();
 //    if (i > 1200 or false and VLOG_IS_ON(30) and not output_root.empty()) {
-     driver.ast2dot(output_root + "/optimized.dot");
+//     driver.ast2dot(output_root + "/optimized.dot");
 //   }
     driver.Solve();
+    if(not driver.is_sat()) {
+      LOG(INFO) << "UNSAT: " << iter;
+    }
 
     driver.reset();
     delete file;
@@ -237,10 +240,11 @@ int main(const int argc, const char **argv) {
     }
 //    driver.stats();
   }
-  driver.stats();
+
   auto end = std::chrono::steady_clock::now();
   auto solving_time = end - start;
   LOG(INFO)<< "time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
+  driver.print_statistics();
   return 3;
   // driver.reset();
   // delete file;

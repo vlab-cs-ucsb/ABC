@@ -186,6 +186,7 @@ void Driver::Solve() {
   constraint_solver->start();
   total_hits_ += constraint_solver->num_hits();
   total_misses_ += constraint_solver->num_misses();
+  if(constraint_solver->num_hits() > 0) hit_statistics_.push_back(constraint_solver->hit_statistic());
 
   if(symbol_table_->top_scope() != script_) {
     // LOG(INFO) << "UPDATING SCOPE VALUES";
@@ -932,6 +933,36 @@ void Driver::saveStateAndBranch() {
   current_id_ = next_id;
   incremental_states_[current_id_] = symbol_table_->clone();
   counter++;
+}
+
+void Driver::print_statistics() {
+
+  int full_formula_hits = 0;
+  int total_hit_size = 0;
+  int total_full_formula_size = 0;
+
+  for(auto iter: hit_statistics_) {
+    int hit_size = std::get<0>(iter);
+    int full_size = std::get<1>(iter);
+    if(hit_size == full_size) {
+      full_formula_hits++;
+    }
+    total_hit_size += hit_size;
+    total_full_formula_size += full_size;
+  }
+
+  double average_ratio = double(total_hit_size) / double(total_full_formula_size);
+  double average_hit_size = double(total_hit_size) / double(hit_statistics_.size());
+  double average_formula_size = double(total_full_formula_size) / double(hit_statistics_.size());
+
+  LOG(INFO) << "";
+  LOG(INFO) << "--- cache statistics --- " << hit_statistics_.size();
+  LOG(INFO) << "num hits                         = " << total_hits_;
+  LOG(INFO) << "num misses                       = " << total_misses_;
+  LOG(INFO) << "num full formula hit             = " << full_formula_hits;
+  LOG(INFO) << "avg hit size / full formula size = " << average_ratio;
+  LOG(INFO) << "avg hit size                     = " << average_hit_size;
+  LOG(INFO) << "avg formula size                 = " << average_formula_size;
 }
 
 void Driver::test() {

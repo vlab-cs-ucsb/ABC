@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 #include <chrono>
+#include <tuple>
 
 #include <glog/logging.h>
 #include <redox.hpp>
@@ -122,6 +123,7 @@ class ConstraintSolver: public SMT::Visitor {
 
   int num_hits() {return num_hits_;}
   int num_misses() {return num_misses_;}
+  std::tuple<int,int> hit_statistic() {return hit_statistic_;};
 
  protected:
   Value_ptr getTermValue(SMT::Term_ptr term);
@@ -154,6 +156,7 @@ class ConstraintSolver: public SMT::Visitor {
   redox::Redox *rdx_;
   int num_hits_;
   int num_misses_;
+  std::tuple<int,int> hit_statistic_;
 
  private:
   static const int VLOG_LEVEL;
