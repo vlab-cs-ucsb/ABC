@@ -18,10 +18,10 @@ std::string ConstraintSorter::TermNode::count_var;
 ConstraintSorter::ConstraintSorter(Script_ptr script, SymbolTable_ptr symbol_table)
         : root(script), symbol_table(symbol_table), term_node(nullptr) {
 
-//	if(symbol_table->has_count_variable()) {
-//		auto var = symbol_table->get_count_variable();
-//		ConstraintSorter::TermNode::count_var = var->getName();
-//	}
+	if(symbol_table->has_count_variable()) {
+		auto var = symbol_table->get_count_variable();
+		ConstraintSorter::TermNode::count_var = var->getName();
+	}
 }
 
 ConstraintSorter::~ConstraintSorter() {
@@ -106,11 +106,11 @@ void ConstraintSorter::visitAnd(And_ptr and_term) {
   std::vector<TermNode_ptr> local_dependency_node_list;
   std::vector<Term_ptr> unsorted_constraints;
 
-//  if(symbol_table->has_count_variable()) {
-//		auto count_var = symbol_table->get_count_variable();
-//		auto rep_count_var = symbol_table->get_representative_variable_of_at_scope(symbol_table->top_scope(),count_var);
-//		ConstraintSorter::TermNode::count_var = rep_count_var->getName();
-//	}
+  if(symbol_table->has_count_variable()) {
+		auto count_var = symbol_table->get_count_variable();
+		auto rep_count_var = symbol_table->get_representative_variable_of_at_scope(symbol_table->top_scope(),count_var);
+		ConstraintSorter::TermNode::count_var = rep_count_var->getName();
+	}
 
   for(auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
   //for (auto& term : *(and_term->term_list)) {
@@ -769,6 +769,63 @@ ConstraintSorter::TermNode_ptr ConstraintSorter::process_child_nodes(TermNode_pt
 }
 
 void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
+
+  std::vector<TermNode_ptr> leftover;
+//  std::vector<std::pair<TermNode_ptr,TermNode_ptr>> edges;
+
+  std::map<TermNode_ptr, std::vector<TermNode_ptr>> edges;
+  std::map<TermNode_ptr, std::vector<TermNode_ptr>> back_edges;
+
+
+  std::queue<std::vector<TermNode_ptr>> terms_to_process;
+  std::vector<TermNode_ptr> term_group;
+  for(auto iter = term_node_list.begin(); iter != term_node_list.end();) {
+    if((*iter)->hasSymbolicVar()) {
+      term_group.push_back(*iter);
+      iter = term_node_list.erase(iter);
+    } else {
+      iter++;
+    }
+  }
+
+  terms_to_process.push(term_group);
+  std::vector<TermNode_ptr> start_group;
+
+  // compute dependency graph
+  // compute graph for the nodes, starting with terms that have query variable
+  // all other terms that share variables other than query variable, add edges between the nodes
+  while(not terms_to_process.empty()) {
+    auto current_group = terms_to_process.front();
+    terms_to_process.pop();
+    std::vector<TermNode_ptr> next_group;
+
+    for(auto iter = term_node_list.begin(); iter != term_node_list.end();) {
+      bool edge_added = false;
+      for(auto current_group_iter : current_group) {
+        if(has_shared_variables(*iter, current_group_iter)) {
+          // add edge
+          edge_added = true;
+          edges[*iter].push_back(current_group_iter);
+          back_edges[current_group_iter].push_back(*iter);
+        }
+      }
+
+      if(edge_added) {
+        next_group.push_back(*iter);
+      }
+    }
+
+    if(not next_group.empty()) {
+      terms_to_process.push(next_group);
+    } else {
+      start_group = next_group;
+    }
+  }
+
+  // now to do the actual topological sort!
+
+
+
 	/*
 	 * compare by
 	 * (1) operation type (string/int)

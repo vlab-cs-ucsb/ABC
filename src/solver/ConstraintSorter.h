@@ -280,6 +280,7 @@ protected:
   VariableNode_ptr get_variable_node(SMT::Variable_ptr);
   TermNode_ptr process_child_nodes(TermNode_ptr, TermNode_ptr);
   void sort_terms(std::vector<TermNode_ptr>& term_list);
+  bool has_shared_variables(TermNode_ptr, TermNode_ptr);
 
   SMT::Script_ptr root;
   SymbolTable_ptr symbol_table;
