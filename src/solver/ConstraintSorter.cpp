@@ -774,7 +774,7 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
 //  std::vector<std::pair<TermNode_ptr,TermNode_ptr>> edges;
 
   std::map<TermNode_ptr, std::vector<TermNode_ptr>> edges;
-  std::map<TermNode_ptr, std::vector<TermNode_ptr>> back_edges;
+  std::map<TermNode_ptr, int> back_edge_counter;
 
 
   std::queue<std::vector<TermNode_ptr>> terms_to_process;
@@ -789,7 +789,7 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
   }
 
   terms_to_process.push(term_group);
-  std::vector<TermNode_ptr> start_group;
+  std::queue<TermNode_ptr> start_group;
 
   // compute dependency graph
   // compute graph for the nodes, starting with terms that have query variable
@@ -806,7 +806,12 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
           // add edge
           edge_added = true;
           edges[*iter].push_back(current_group_iter);
-          back_edges[current_group_iter].push_back(*iter);
+          
+          if(back_edge_counter.find(current_group_iter) == back_edge_counter.end()) {
+            back_edge_counter[current_group_iter] = 1;
+          } else {
+            back_edge_counter[current_group_iter]++;
+          }
         }
       }
 
@@ -818,11 +823,31 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
     if(not next_group.empty()) {
       terms_to_process.push(next_group);
     } else {
-      start_group = next_group;
+      for(auto it : next_group) {
+        start_group.push(it);
+      }
     }
   }
 
+
+  if(not term_node_list.empty()) {
+    LOG(FATAL) << "Leftover?";
+  }
+
   // now to do the actual topological sort!
+  while(not start_group.empty()) {
+    TermNode_ptr node = start_group.front();
+    start_group.pop();
+
+    term_node_list.push_back(node);
+    for(auto node_iter : edges[node]) {
+      back_edge_counter[node_iter]--;
+      if(back_edge_counter[node_iter] == 0) {
+        start_group.push(node_iter);
+        node_iter->setDepth(node->getDepth()+1);
+      }
+    }
+  }
 
 
 
@@ -848,6 +873,14 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
 //	  } else if(left_node->getType() == TermNode::Type::STRING and right_node->getType() == TermNode::Type::INT) {
 //	    return 1;
 //	  }
+
+    // topo sort depth level; sort in increasing depth
+    if(left_node->getDepth() < right_node->getDepth()) {
+      return 1;
+    }
+    if(left_node->getDepth() > right_node->getDepth()) {
+      return 0;
+    }
 
 	  if(left_node->getType() < right_node->getType()) {
      return 1;
@@ -954,6 +987,21 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
   // term_node_list.insert(term_node_list.begin(), sorted_term_node_list.begin(), sorted_term_node_list.end());
 
   DVLOG(VLOG_LEVEL) << "node list sorted";
+}
+
+bool ConstraintSorter::has_shared_variables(TermNode_ptr term1, TermNode_ptr term2) {
+  for(auto iter1 : term1->getAllNodes()) {
+    for(auto iter2 : term2->getAllNodes()) {
+      if(iter1 == iter2) {
+        LOG(INFO) << "Var pointers equal";
+        return true;
+      } else if(iter1->getVarName() == iter2->getVarName()) {
+        LOG(INFO) << "Var names equal";
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 ConstraintSorter::TermNode::TermNode()
@@ -1086,6 +1134,14 @@ bool ConstraintSorter::TermNode::hasSymbolicVarOnRight() {
 
 bool ConstraintSorter::TermNode::hasSymbolicVar() {
   return _has_symbolic_var_on_left || _has_symbolic_var_on_right;
+}
+
+int ConstraintSorter::TermNode::getDepth() {
+  return _depth;
+}
+
+void ConstraintSorter::TermNode::setDepth(int depth) {
+  _depth = depth;
 }
 
 void ConstraintSorter::TermNode::merge_vectors(std::vector<VariableNode_ptr>& vector_1,

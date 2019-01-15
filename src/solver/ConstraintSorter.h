@@ -322,6 +322,8 @@ protected:
     bool hasSymbolicVarOnLeft();
     bool hasSymbolicVarOnRight();
     bool hasSymbolicVar();
+    int getDepth();
+    void setDepth(int);
 
     static std::string count_var;
   protected:
@@ -333,6 +335,7 @@ protected:
     std::vector<VariableNode_ptr> _all_child_node_list;
     std::vector<VariableNode_ptr> _left_child_node_list;
     std::vector<VariableNode_ptr> _right_child_node_list;
+    int _depth;
   private:
     void merge_vectors(std::vector<VariableNode_ptr>&, std::vector<VariableNode_ptr>&);
   };
