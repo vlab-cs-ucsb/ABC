@@ -822,9 +822,9 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
 //    hops++;
   }
 
-  if(not temp_term_node_list.empty()) {
-    LOG(FATAL) << "Not empty";
-  }
+//  if(not temp_term_node_list.empty()) {
+//    LOG(FATAL) << "Not empty";
+//  }
 
 	/*
 	 * compare by
@@ -844,12 +844,7 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
 	auto compare_function = [](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
 
 	  // topo sort depth level; sort in decreasing depth
-    if(left_node->getDepth() < right_node->getDepth()) {
-      return 0;
-    }
-    if(left_node->getDepth() > right_node->getDepth()) {
-      return 1;
-    }
+
 
 	  if(left_node->getType() < right_node->getType()) {
      return 1;
@@ -858,7 +853,12 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
 	    return 0;
 	  }
 
-
+    if(left_node->getDepth() < right_node->getDepth()) {
+      return 0;
+    }
+    if(left_node->getDepth() > right_node->getDepth()) {
+      return 1;
+    }
 
    if(left_node->getNode()->type() < right_node->getNode()->type()) {
      if(left_node->getNode()->type() == Term::Type::CONCAT and right_node->getNode()->type() == Term::Type::NOTEQ) {
@@ -906,10 +906,10 @@ bool ConstraintSorter::has_shared_variables(TermNode_ptr term1, TermNode_ptr ter
   for(auto iter1 : term1->getAllNodes()) {
     for(auto iter2 : term2->getAllNodes()) {
       if(iter1 == iter2) {
-        LOG(INFO) << "Var pointers equal";
+//        LOG(INFO) << "Var pointers equal";
         return true;
       } else if(iter1->getVariable()->getName() == iter2->getVariable()->getName()) {
-        LOG(INFO) << "Var names equal";
+//        LOG(INFO) << "Var names equal";
         return true;
       }
     }

@@ -1868,8 +1868,8 @@ bool SyntacticOptimizer::check_and_process_len_transformation(Term_ptr operation
 //  if (Option::Solver::LIA_ENGINE_ENABLED) {
 //    return false;
 //  }
-  return false;// __check_and_process_len_transformation(operation->type(), left_term, right_term)
-               // || __check_and_process_len_transformation(syntactic_reverse_relation(operation->type()), right_term, left_term);
+  return __check_and_process_len_transformation(operation->type(), left_term, right_term)
+                || __check_and_process_len_transformation(syntactic_reverse_relation(operation->type()), right_term, left_term);
 }
 
 bool SyntacticOptimizer::__check_and_process_len_transformation(Term::Type operation, Term_ptr & left_term,

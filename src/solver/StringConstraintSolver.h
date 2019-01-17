@@ -37,7 +37,9 @@ class StringConstraintSolver: public AstTraverser {
   void start(SMT::Visitable_ptr);
   void start();
   void end();
+  void collect_string_constraint_info(SMT::Visitable_ptr);
   void collect_string_constraint_info();
+
 
   void setCallbacks();
 

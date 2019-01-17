@@ -1545,6 +1545,9 @@ void StringFormulaGenerator::add_string_variables(std::string group_name, Term_p
 			LOG(FATAL) << "BAD";
 		}
 		// merge each variable's groups together into start group
+
+		//TODO: Update Automata here!?
+
 		for(auto &var : variables) {
 			if(variable_group_map_.find(var.first) == variable_group_map_.end()) {
 				// variable has no group, add it
@@ -1603,17 +1606,16 @@ void StringFormulaGenerator::delete_term_formula(Term_ptr term) {
 
 void StringFormulaGenerator::set_group_mappings() {
   DVLOG(VLOG_LEVEL)<< "start setting string group for components";
-  for (auto& el : term_group_map_) {
-  	// only subgroups have formulas
-    if(subgroups_.find(el.second) == subgroups_.end()) {
-    	term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
-    }
-  }
 
+//  for (auto& el : term_group_map_) {
+//  	// only subgroups have formulas
+//    if(subgroups_.find(el.second) == subgroups_.end()) {
+//    	term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
+//    }
+//  }
   for (auto& el: subgroups_) {
     symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
   }
-
   // get values of previous solve (if any)
   auto  &variable_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
   // update groups and their values in symbol table
@@ -1645,7 +1647,7 @@ void StringFormulaGenerator::set_group_mappings() {
       StringAutomaton_ptr previous_group_auto = variable_values[previous_group]->getStringAutomaton();
       StringAutomaton_ptr remapped_auto = previous_group_auto->ChangeIndicesMap(group_iter.second->clone());
       StringAutomaton_ptr temp_auto = initial_auto->Intersect(remapped_auto);
-	  temp_auto->GetFormula()->SetType(StringFormula::Type::NA);
+	    //temp_auto->GetFormula()->SetType(StringFormula::Type::NA);
       //temp_auto->inspectAuto(false,true);
       delete initial_auto;
       delete remapped_auto;

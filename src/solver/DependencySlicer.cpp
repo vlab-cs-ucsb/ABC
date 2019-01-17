@@ -96,11 +96,14 @@ void DependencySlicer::visitAssert(Assert_ptr assert_command) {
 }
 
 void DependencySlicer::visitAnd(And_ptr and_term) {
-  for (auto& term : *(and_term->term_list)) {
-		current_term_ = term;
-		visit(term);
-		current_term_ = nullptr;
-  }
+
+	if(Option::Solver::ENABLE_DEPENDENCY_ANALYSIS) {
+		for (auto &term : *(and_term->term_list)) {
+			current_term_ = term;
+			visit(term);
+			current_term_ = nullptr;
+		}
+	}
 
   constraint_information_->add_component(and_term);
 

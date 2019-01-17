@@ -44,6 +44,11 @@ void StringConstraintSolver::end() {
   string_formula_generator_.end();
 }
 
+void StringConstraintSolver::collect_string_constraint_info(Visitable_ptr node) {
+  string_formula_generator_.start(node);
+  integer_terms_map_ = string_formula_generator_.get_integer_terms_map();
+}
+
 void StringConstraintSolver::collect_string_constraint_info() {
   string_formula_generator_.start();
   integer_terms_map_ = string_formula_generator_.get_integer_terms_map();
@@ -67,14 +72,26 @@ void StringConstraintSolver::setCallbacks() {
         auto formula = string_formula_generator_.get_term_formula(term);
         if (formula != nullptr && formula->GetType() != Theory::StringFormula::Type::NONRELATIONAL) {
           DVLOG(VLOG_LEVEL) << "Relational String Formula: " << *formula << "@" << term;
+//          for(auto it : formula->GetVariableCoefficientMap()) {
+//            LOG(INFO) << it.first;
+//          }
+//          LOG(INFO) << "";
           auto relational_str_auto = StringAutomaton::MakeAutomaton(formula->clone());
           auto result = new Value(relational_str_auto);
           set_term_value(term, result);
-//          auto term_group_name = string_formula_generator_.get_term_group_name(term);
-//          if(term_group_name.empty()) {
-//            LOG(FATAL) << "Term has no group!";
+          auto term_group_name = string_formula_generator_.get_term_group_name(term);
+          if(term_group_name.empty()) {
+            LOG(FATAL) << "Term has no group!";
+          }
+
+          auto before_value = symbol_table_->get_value(term_group_name);
+//          for(auto it : before_value->getStringAutomaton()->GetFormula()->GetVariableCoefficientMap()) {
+//            LOG(INFO) << it.first;
 //          }
-//          symbol_table_->IntersectValue(term_group_name,result);
+//          LOG(INFO) << "";
+
+          symbol_table_->IntersectValue(term_group_name,result);
+
           // once we solve an atomic string constraint,
           // we delete its formula to avoid solving it again.
           // Atomic string constraints solved precisely,

@@ -52,14 +52,14 @@ public:
   template <class Archive>
   void save(Archive& ar) const {
     ar(num_tracks_);
-    ar(*formula_);
+    formula_->save(ar);
     Util::Serialize::save(ar,dfa_);
   }
 
   template <class Archive>
   void load(Archive& ar) {
     ar(num_tracks_);
-    ar(*formula_);
+    formula_->load(ar);
     Util::Serialize::load(ar,dfa_);
     if(dfa_ == nullptr) {
       LOG(INFO) << "Null!?";

@@ -211,7 +211,10 @@ Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
 		}
 	}
 
-	for(int i = 0; i < left_dfa->ns; i++) {
+	for(int i = 0; i < left_dfa->ns; i++)
+//	for(int i = left_dfa->ns - 1; i >= 0; i--)
+	{
+
 		if(left_dfa->f[i] == 1) {
 			next_state = i;
 			DFA_ptr d = DFAConcat(left_dfa, other_automaton->dfa_,num_of_bdd_variables_);
