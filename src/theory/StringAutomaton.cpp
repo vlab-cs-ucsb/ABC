@@ -1543,11 +1543,62 @@ StringAutomaton_ptr StringAutomaton::Difference(StringAutomaton_ptr other_auto) 
 
 StringAutomaton_ptr StringAutomaton::Concat(StringAutomaton_ptr other_auto) {
   CHECK_EQ(this->num_tracks_,other_auto->num_tracks_);
+
 //  this->Minimize();
 //  other_auto->Minimize();
-  StringAutomaton_ptr concat_auto = static_cast<StringAutomaton_ptr>(Automaton::Concat(other_auto));
-//  auto concat_dfa = StringAutomaton::concat(dfa_, other_auto->dfa_,this->num_of_bdd_variables_);
-//  auto concat_auto = new StringAutomaton(concat_dfa,this->num_of_bdd_variables_);
+//  if(other_auto->dfa_->ns >= 27) {
+//
+//    LOG(INFO) << "Left num states  = " << this->dfa_->ns;
+//    LOG(INFO) << "Right num states = " << other_auto->dfa_->ns;
+//    this->inspectAuto(false,true);
+//    other_auto->inspectAuto(false,true);
+//    std::cin.get();
+////    auto tat = StringAutomaton::MakeAnyStringLengthGreaterThan(0);
+//    DFA_ptr r_tat_dfa = Automaton::DFAReverse(dfa_,num_of_bdd_variables_);
+//    auto r_tat_auto = new StringAutomaton(r_tat_dfa,num_of_bdd_variables_);
+//    r_tat_auto->inspectAuto(false,true);
+//    std::cin.get();
+//
+//
+//    DFA_ptr reversed_dfa = Automaton::DFAReverse(other_auto->dfa_,other_auto->get_number_of_bdd_variables());
+//    auto s_auto = new StringAutomaton(reversed_dfa, num_of_bdd_variables_);
+//    s_auto->inspectAuto(false,true);
+//    std::cin.get();
+//
+//    StringAutomaton_ptr concat_auto = static_cast<StringAutomaton_ptr>(s_auto->Concat(r_tat_auto));
+//    concat_auto->inspectAuto(false,true);
+//    std::cin.get();
+//
+//    DFA_ptr reversed_concat_dfa = Automaton::DFAReverse(concat_auto->dfa_, concat_auto->num_of_bdd_variables_);
+//    StringAutomaton_ptr final_concat_auto = new StringAutomaton(reversed_concat_dfa, concat_auto->num_of_bdd_variables_);
+//    final_concat_auto->inspectAuto(false,true);
+//    std::cin.get();
+//
+//  }
+//  StringAutomaton_ptr concat_auto = static_cast<StringAutomaton_ptr>(Automaton::Concat(other_auto));
+//  if(concat_auto->IsEmptyLanguage()) {
+//    this->inspectAuto(false,true);
+//    other_auto->inspectAuto(false,true);
+//    std::cin.get();
+//  }
+
+//  if(other_auto->dfa_->ns >= 25) {
+//    this->inspectAuto(false,true);
+//    other_auto->inspectAuto(false,true);
+//    std::cin.get();
+//    StringAutomaton_ptr length_auto = StringAutomaton::MakeAnyStringLengthLessThanOrEqualTo(10);
+//    auto suffix_dfa = StringAutomaton::TrimPrefix(other_auto->dfa_,length_auto->dfa_, DEFAULT_NUM_OF_VARIABLES);
+//    auto prefix_dfa = StringAutomaton::TrimSuffix(other_auto->dfa_,suffix_dfa,DEFAULT_NUM_OF_VARIABLES);
+//    auto concat_dfa_1 = StringAutomaton::concat(dfa_,prefix_dfa,this->num_of_bdd_variables_);
+//    auto concat_dfa_2 = StringAutomaton::concat(concat_dfa_1, suffix_dfa,this->num_of_bdd_variables_);
+//    dfaFree(suffix_dfa);
+//    dfaFree(prefix_dfa);
+//    dfaFree(concat_dfa_1);
+//    return new StringAutomaton(concat_dfa_2,this->num_of_bdd_variables_);
+//  }
+
+  auto concat_dfa = StringAutomaton::concat(dfa_, other_auto->dfa_,this->num_of_bdd_variables_);
+  auto concat_auto = new StringAutomaton(concat_dfa,this->num_of_bdd_variables_);
   return concat_auto;
 }
 
@@ -3488,6 +3539,17 @@ StringAutomaton_ptr StringAutomaton::ChangeIndicesMap(StringFormula_ptr new_form
 	// though we're remapping indices, we're not adding any new variables right now
 	// (this will be done during intersection
 	int* map = CreateBddVariableIndices(unmapped_auto->num_tracks_*VAR_PER_TRACK);
+
+//	LOG(INFO) << "Old map:";
+//	for(auto iter : old_coeff_map) {
+//	  LOG(INFO) << "  " << iter.first;
+//	}
+//
+//	LOG(INFO) << "New map:";
+//	for(auto iter : new_coeff_map) {
+//	  LOG(INFO) << "  " << iter.first;
+//	}
+
 	for(auto iter : old_coeff_map) {
 
 		int old_index = unmapped_auto->formula_->GetVariableIndex(iter.first);
@@ -5268,7 +5330,42 @@ DFA_ptr StringAutomaton::concat(DFA_ptr prefix_dfa, DFA_ptr suffix_dfa, int var)
   // (x,lambda,x) until end
 //  LOG(FATAL) << "HERE";
 
+
+
   temp_multi = MakePrefixSuffix(0,1,2,3);
+
+//  if(suffix_dfa->ns >= 35) {
+//
+//    StringAutomaton_ptr length_auto = StringAutomaton::MakeAnyStringLengthGreaterThanOrEqualTo(5);
+//
+//    temp_dfa = PrependLambda(length_auto->dfa_,var);
+//    prefix_multi = new StringAutomaton(temp_dfa,2,3,VAR_PER_TRACK);
+//    auto temp_multi_1 = new StringAutomaton(suffix_dfa,0,3,var);
+//    intersect_multi = temp_multi->Intersect(prefix_multi);
+//    auto temp_multi_2 = intersect_multi;
+//    intersect_multi = temp_multi_1->Intersect(temp_multi_2);
+//
+//    delete temp_multi_1;
+//    delete temp_multi_2;
+//    delete length_auto;
+//    delete prefix_multi;
+//
+//    temp_multi_1 = intersect_multi->GetKTrack(1);
+//    temp_multi_2 = intersect_multi->GetKTrack(2);
+//
+//    delete intersect_multi;
+//    delete temp_multi;
+//
+//    temp_dfa = concat(prefix_dfa,temp_multi_1->dfa_,var);
+//    result_dfa = concat(temp_dfa,temp_multi_2->dfa_,var);
+//
+//    delete temp_multi_1;
+//    delete temp_multi_2;
+//    dfaFree(temp_dfa);
+//
+//    return result_dfa;
+//  }
+
   prefix_multi = new StringAutomaton(prefix_dfa,1,3,var);
   temp_dfa = PrependLambda(suffix_dfa,var);
   suffix_multi = new StringAutomaton(temp_dfa,2,3,VAR_PER_TRACK);

@@ -166,8 +166,8 @@ void Driver::InitializeSolver() {
   /*
    * Variable and char renaming here?
    */
-//  Solver::Renamer renamer(script_, symbol_table_);
-//  renamer.start();
+  Solver::Renamer renamer(script_, symbol_table_);
+  renamer.start();
 
   auto end = std::chrono::steady_clock::now();
   auto time2 = end-start;
@@ -493,6 +493,7 @@ Theory::BigInteger Driver::Count(const unsigned long int_bound, const unsigned l
 }
 
 Solver::ModelCounter& Driver::GetModelCounterForVariable(const std::string var_name, bool project) {
+
   auto variable = symbol_table_->get_variable(var_name);
   auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(), variable);
 

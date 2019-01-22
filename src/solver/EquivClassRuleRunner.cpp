@@ -404,15 +404,17 @@ void EquivClassRuleRunner::set_variable_value(Variable_ptr variable, TermConstan
       break;
     case Primitive::Type::STRING: {
       result = new Value(Theory::StringAutomaton::MakeString(term_constant->getValue()));
-      result->getStringAutomaton()->GetFormula()->AddVariable(variable->getName(),1);
-      result->getStringAutomaton()->GetFormula()->SetType(Theory::StringFormula::Type::VAR);
+      //result->getStringAutomaton()->GetFormula()->AddVariable(variable->getName(),1);
+      result->getStringAutomaton()->GetFormula()->SetType(Theory::StringFormula::Type::NA);
     }
       break;
     default:
       LOG(FATAL)<< "constant is not supported for substitution: " << term_constant->getValue();
       break;
   }
-  symbol_table_->IntersectValue(variable, result);
+  //symbol_table_->IntersectValue(variable, result);
+  symbol_table_->set_value(variable,result);
+  
   DVLOG(VLOG_LEVEL)<< "value updated for variable: " << *variable << " -> " << *result;
   delete result;
 }

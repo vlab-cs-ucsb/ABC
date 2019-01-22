@@ -14,6 +14,7 @@ using namespace SMT;
 using namespace Theory;
 
 const int ConstraintSolver::VLOG_LEVEL = 11;
+bool ConstraintSolver::many_vars = false;
 
 ConstraintSolver::ConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_table,
                                    ConstraintInformation_ptr constraint_information,
@@ -40,7 +41,7 @@ void ConstraintSolver::start() {
   auto start = std::chrono::steady_clock::now();
 
   arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
-  //string_constraint_solver_.collect_string_constraint_info();
+//  string_constraint_solver_.collect_string_constraint_info();
 
   visit(root_);
 
@@ -56,8 +57,8 @@ void ConstraintSolver::start() {
 void ConstraintSolver::start(int iteration_count) {
   DVLOG(VLOG_LEVEL) << "start" << iteration_count;
 
-  arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
-  string_constraint_solver_.collect_string_constraint_info();
+//  arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
+//  string_constraint_solver_.collect_string_constraint_info();
 
 
   iteration_count_ = iteration_count;
@@ -116,6 +117,7 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 //  }
 }
 
+
 /*
 void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
@@ -147,17 +149,17 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
   // if we have cached result, import it and go from there
   if(has_cached_result) {
-    // LOG(INFO) << "Reading cached data...";
+//     LOG(INFO) << "Reading cached data...";
     std::stringstream is(cached_data);
 
     // if formula was UNSAT, we store a single 0 in cache
-    if(is.gcount() == 1) {
+    if(cached_data.size() == 1) {
       symbol_table_->update_satisfiability_result(false);
       return;
     }
 
     // deserialize automata one by one until none left
-    while(is.gcount() > 0) {
+    while(is.tellg() < cached_data.size()) {
       Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(nullptr, 0);
       {
         cereal::BinaryInputArchive ar(is);
@@ -167,6 +169,14 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
       // get one of the variables from import_auto's formula
       // we use this to update the correct variable in our symbol table
 
+      // variables should be normalized; unnormalize them
+      auto old_coeff_map = import_auto->GetFormula()->GetVariableCoefficientMap();
+      std::map<std::string,int> new_coeff_map;
+      for(auto it : old_coeff_map) {
+        new_coeff_map[symbol_table_->get_variable(it.first)->getName()] = it.second;
+      }
+
+      import_auto->GetFormula()->SetVariableCoefficientMap(new_coeff_map);
       std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
 
       // make sure the tracks match by remapping
@@ -180,7 +190,7 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
       // LOG(INFO) << "Read one automata!";
     }
     return;
-  }
+  } //else {LOG(INFO) << "Nope";}
 
   check_and_visit(assert_command->term);
 
@@ -217,23 +227,33 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
   } else {
     // first serialize
     for (auto iter : value_map) {
-      if (iter.second->getType() == Value::Type::STRING_AUTOMATON) {
+      if (iter.second->getType() == Value::Type::STRING_AUTOMATON and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
         auto export_auto = iter.second->getStringAutomaton();
         if (export_auto->GetFormula()->GetNumberOfVariables() == 0) {
           continue;
         }
-        // for(auto iter : export_auto->GetFormula()->GetVariableCoefficientMap()) {
-        //   LOG(INFO) << iter.first;
-        // }
+
+        auto variable_coefficient_map = export_auto->GetFormula()->GetVariableCoefficientMap();
+        std::map<std::string,int> remapped_map;
+        for(auto it : variable_coefficient_map) {
+//          LOG(INFO) << "CHANGING " << it.first << " to " << symbol_table_->GetMappedVariableName(it.first);
+          remapped_map[symbol_table_->GetMappedVariableName(it.first)] = it.second;
+        }
+
+        export_auto->GetFormula()->SetVariableCoefficientMap(remapped_map);
+
         {
           cereal::BinaryOutputArchive ar(os);
           export_auto->save(ar);
         }
+
+        export_auto->GetFormula()->SetVariableCoefficientMap(variable_coefficient_map);
 //      os << "a";
         // LOG(INFO) << "Serialized one...";
       }
 
     }
+
   }
   // auto end = std::chrono::steady_clock::now();
   // auto serialize_time = end - start;
@@ -355,15 +375,21 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     c.free();
   }
 
-LOG(INFO) << "Before collect and_term";
+//LOG(INFO) << "Before collect and_term";
   string_constraint_solver_.collect_string_constraint_info(and_term);
-LOG(INFO) << "After collect and_term";
+//LOG(INFO) << "After collect and_term";
 
   // if we have cached result, import it and go from there
   if(has_cached_result) {
     // LOG(INFO) << "Reading cached data...";
     std::stringstream is(cached_data);
-
+    std::map<char,char> char_mapping;
+    // first get character mapping
+    {
+      cereal::BinaryInputArchive ar(is);
+      ar(char_mapping);
+    }
+    symbol_table_->SetCharacterMapping(char_mapping);
     // deserialize automata one by one until none left
 
     while(is.tellg() < cached_data.size()) {
@@ -376,18 +402,21 @@ LOG(INFO) << "After collect and_term";
       }
       // get one of the variables from import_auto's formula
       // we use this to update the correct variable in our symbol table
-      std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
-      LOG(INFO) << "LOADING...";
-      for(auto names : import_auto->GetFormula()->GetVariableCoefficientMap()) {
-        LOG(INFO) << "   -> " << names.first;
+      auto old_coeff_map = import_auto->GetFormula()->GetVariableCoefficientMap();
+      std::map<std::string,int> new_coeff_map;
+      for(auto it : old_coeff_map) {
+        new_coeff_map[symbol_table_->get_variable(it.first)->getName()] = it.second;
       }
+
+      import_auto->GetFormula()->SetVariableCoefficientMap(new_coeff_map);
+      std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
 
       // make sure the tracks match by remapping
       auto new_formula = symbol_table_->get_value(rep_var)->getStringAutomaton()->GetFormula()->clone();
-      LOG(INFO) << "";
-      for(auto names : new_formula->GetVariableCoefficientMap()) {
-        LOG(INFO) << "   -> " << names.first;
-      }
+//      LOG(INFO) << "";
+//      for(auto names : new_formula->GetVariableCoefficientMap()) {
+//        LOG(INFO) << "   -> " << names.first;
+//      }
 
       auto remapped_import_auto = import_auto->ChangeIndicesMap(new_formula);
 
@@ -396,18 +425,26 @@ LOG(INFO) << "After collect and_term";
       delete rep_var_value;
       delete import_auto;
     }
-    std::cin.get();
+//    std::cin.get();
   }
 
   // at this point, we have the most updated values to start with
   // if terms_to_solve is empty, then we got the whole formula from the cache and we're done
   // otherwise, solve the rest and cache those values
+  Renamer renamer(root_, symbol_table_,
+                  symbol_table_->GetVariableMapping(),
+                  symbol_table_->GetCharacterMapping());
   while(not terms_to_solve.empty()) {
 
     // get the term to solve
     auto term = terms_to_solve.top();
     and_term->term_list->push_back(term);
     terms_to_solve.pop();
+
+    // rename alphabet characters (from imported mapping, if any)
+    if(has_cached_result) {
+      renamer.start(term,false);
+    }
 
     string_constraint_solver_.collect_string_constraint_info(term);
 
@@ -456,28 +493,43 @@ LOG(INFO) << "After collect and_term";
     std::stringstream os;
 
     // first serialize
-    for (auto iter : value_map) {
-      if (iter.second->getType() == Value::Type::STRING_AUTOMATON) {
-              //and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
-        auto export_auto = iter.second->getStringAutomaton();
-//        LOG(INFO) << "STORING " << iter.first->getName();
-//        for(auto names : export_auto->GetFormula()->GetVariableCoefficientMap()) {
-//          LOG(INFO) << "   -> " << names.first;
-//        }
 
-        // for(auto iter : export_auto->GetFormula()->GetVariableCoefficientMap()) {
-        //   LOG(INFO) << iter.first;
-        // }
+    // character mapping first
+    {
+      cereal::BinaryOutputArchive ar(os);
+      ar(symbol_table_->GetCharacterMapping());
+    }
+    // then values
+
+    for (auto iter : value_map) {
+      if (iter.second->getType() == Value::Type::STRING_AUTOMATON and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+        auto export_auto = iter.second->getStringAutomaton();
+        if (export_auto->GetFormula()->GetNumberOfVariables() == 0) {
+          continue;
+        }
+
+        auto variable_coefficient_map = export_auto->GetFormula()->GetVariableCoefficientMap();
+        std::map<std::string,int> remapped_map;
+        for(auto it : variable_coefficient_map) {
+//          LOG(INFO) << "CHANGING " << it.first << " to " << symbol_table_->GetMappedVariableName(it.first);
+          remapped_map[symbol_table_->GetMappedVariableName(it.first)] = it.second;
+        }
+
+        export_auto->GetFormula()->SetVariableCoefficientMap(remapped_map);
 
         {
-
           cereal::BinaryOutputArchive ar(os);
           export_auto->save(ar);
         }
+
+        export_auto->GetFormula()->SetVariableCoefficientMap(variable_coefficient_map);
+//      os << "a";
         // LOG(INFO) << "Serialized one...";
       }
 
     }
+
+
     // auto end = std::chrono::steady_clock::now();
     // auto serialize_time = end - start;
 
@@ -973,22 +1025,48 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *concat_term << " ...";
 
   Value_ptr result = nullptr, concat_value = nullptr, param = nullptr;
-	path_trace_.push_back(concat_term);
 
-  for(auto iter = concat_term->term_list->rbegin(); iter != concat_term->term_list->rend(); iter++) {
-//	for (auto& term_ptr : *(concat_term->term_list)) {
-		visit(*iter);
-		param = getTermValue(*iter);
-		if (result == nullptr) {
-			result = param->clone();
-		} else {
-			concat_value = param->concat(result);
-			delete result;
-			result = concat_value;
-		}
+  // value updating optimization
+  // if we're only concerned with counting the query variable, then
+  // we don't need to update "macro" variables (spurious variables taht are defined once through
+  // equality and substituted elsewhere)
+  if(concat_term->term_list->size() <= 10) {
+    path_trace_.push_back(concat_term);
+  } else if(symbol_table_->has_count_variable()) {
+    many_vars = true;
+  }
 
-	}
-	path_trace_.pop_back();
+  if(concat_term->term_list->at(0)->type() != Term::Type::TERMCONSTANT and concat_term->term_list->size() <= 10) {
+      many_vars = true;
+      for(auto iter = concat_term->term_list->rbegin(); iter != concat_term->term_list->rend(); iter++) {
+        visit(*iter);
+        param = getTermValue(*iter);
+        if (result == nullptr) {
+        result = param->clone();
+        } else {
+          concat_value = param->concat(result);
+          delete result;
+          result = concat_value;
+        }
+      }
+    } else {
+      for (auto& term_ptr : *(concat_term->term_list)) {
+        visit(term_ptr);
+        param = getTermValue(term_ptr);
+        if (result == nullptr) {
+          result = param->clone();
+        } else {
+          concat_value = result->concat(param);
+          delete result;
+          result = concat_value;
+        }
+
+      }
+    }
+  if(concat_term->term_list->size() <= 10) {
+    path_trace_.pop_back();
+  }
+  many_vars = false;
   setTermValue(concat_term, result);
 }
 
@@ -1480,7 +1558,10 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 
 
   setTermValue(qi_term, result);
-	setVariablePath(qi_term);
+
+	if(!many_vars) {
+	  setVariablePath(qi_term);
+	}
 }
 
 void ConstraintSolver::visitTermConstant(TermConstant_ptr term_constant) {

@@ -449,6 +449,8 @@ protected:
    */
   static std::set<std::string> DFAGetTransitionsFromTo(DFA_ptr dfa, const int from, const int to, const int num_of_variables);
 
+  static DFA_ptr DFAReverse(const DFA_ptr dfa1, int number_of_bdd_variables);
+
   /**
 	 * Generates a dfa that accepts that accepts the concatenated language of dfa1 and dfa2
 	 * @param dfa1
@@ -486,6 +488,7 @@ protected:
   static std::vector<char> GetReversedBinaryFormat(unsigned long n, int bit_length);
 
   static std::string GetBinaryStringMSB(unsigned long n, int bit_length);
+  static std::set<std::string> ExpandTransition(std::string);
 
   // TODO return string instead of vector<char>
   static std::vector<char> getReservedWord(char last_char, int length, bool extra_bit = false);

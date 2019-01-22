@@ -141,9 +141,19 @@ public:
   bool is_unsorted_constraint(SMT::Visitable_ptr term);
   void remove_unsorted_constraint(SMT::Visitable_ptr term);
 
+  void increment_variable_usage(std::string);
+  int get_variable_usage(std::string);
+  void reset_variable_usage();
+
   // for normalization (variable/alphabet renaming)
   // for root scope only?
-  void SetVariableMapping(std::map<SMT::Visitable_ptr,std::map<std::string,std::string>>);
+  void SetVariableMapping(std::map<std::string,std::string>);
+  std::map<std::string,std::string> GetVariableMapping();
+  std::string GetMappedVariableName(std::string);
+
+  std::map<char,char> GetCharacterMapping();
+  void SetCharacterMapping(std::map<char,char>);
+
 
 private:
   std::string generate_internal_name(std::string, SMT::Variable::Type);
@@ -200,8 +210,10 @@ private:
   /**
    * Variable mapping (for normalization procedure)
    */
-  std::map<SMT::Visitable_ptr, std::map<std::string,std::string>> variable_mapping_;
-  std::map<SMT::Visitable_ptr, std::map<std::string,std::string>> reverse_variable_mapping_;
+  std::map<std::string,std::string> variable_mapping_;
+  std::map<std::string,std::string> reverse_variable_mapping_;
+
+  std::map<char,char> character_mapping_;
 
   std::set<std::string> last_constraints;
 
@@ -212,6 +224,7 @@ private:
 
   bool is_root_table_;
 
+  std::map<std::string,int> variable_usage_;
 
   static const int VLOG_LEVEL;
   //int reuse; 

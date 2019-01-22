@@ -30,6 +30,7 @@
 #include "../theory/StringFormula.h"
 #include "../theory/UnaryAutomaton.h"
 #include "../theory/Formula.h"
+#include "Renamer.h"
 #include "optimization/ConstraintQuerier.h"
 #include "ArithmeticConstraintSolver.h"
 #include "ConstraintInformation.h"
@@ -157,6 +158,8 @@ class ConstraintSolver: public SMT::Visitor {
   int num_hits_;
   int num_misses_;
   std::tuple<int,int> hit_statistic_;
+
+  static bool many_vars;
 
  private:
   static const int VLOG_LEVEL;

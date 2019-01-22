@@ -24,6 +24,7 @@ SyntacticOptimizer::~SyntacticOptimizer() {
 }
 
 void SyntacticOptimizer::start() {
+  symbol_table_->reset_variable_usage();
 
   DVLOG(VLOG_LEVEL) << "Start SyntacticOptimizer";
   symbol_table_->push_scope(root_,false);
@@ -623,6 +624,46 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
     }
     LOG(FATAL) << "Operation not supported";
   }
+  else if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type() and Term::Type::QUALIDENTIFIER == eq_term->right_term->type()) {
+  	auto count_var = symbol_table_->get_count_variable();
+		auto rep_count_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),count_var);
+
+  	auto left_var = symbol_table_->get_variable(eq_term->left_term);
+  	auto right_var = symbol_table_->get_variable(eq_term->right_term);
+
+  	if(left_var->getType() == Variable::Type::STRING and left_var->getName() == rep_count_var->getName()) {
+  		symbol_table_->increment_variable_usage(left_var->getName());
+  		symbol_table_->increment_variable_usage(right_var->getName());
+  	}
+  	else if(right_var->getType() == Variable::Type::STRING and right_var->getName() == rep_count_var->getName()) {
+			symbol_table_->increment_variable_usage(left_var->getName());
+  		symbol_table_->increment_variable_usage(right_var->getName());
+  	}
+  }
+  else if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type()) {
+    auto left_var = symbol_table_->get_variable(eq_term->left_term);
+    if(left_var->getType() == Variable::Type::STRING) {
+      symbol_table_->increment_variable_usage(left_var->getName());
+    }
+  }
+  else if(Term::Type::QUALIDENTIFIER == eq_term->right_term->type()) {
+    auto right_var = symbol_table_->get_variable(eq_term->right_term);
+    if(right_var->getType() == Variable::Type::STRING) {
+      symbol_table_->increment_variable_usage(right_var->getName());
+    }
+  }
+  // else if(Term::Type::TERMCONSTANT != eq_term->right_term->type() and Term::Type::QUALIDENTIFIER != eq_term->right_term->type()
+  // 								and Term::Type::QUALIDENTIFIER == eq_term->left_term->type()) {
+  // 	auto left_var = symbol_table_->get_variable(eq_term->left_term);
+  // 	symbol_table_->increment_variable_usage(left_var->getName());
+  // }
+  else if(Len_ptr len_term = dynamic_cast<Len_ptr>(eq_term->left_term)) {
+    QualIdentifier_ptr qualid_term = dynamic_cast<QualIdentifier_ptr>(len_term->term);
+    if(qualid_term != nullptr) {
+      auto left_var = symbol_table_->get_variable(qualid_term);
+      symbol_table_->increment_variable_usage(left_var->getName());
+    }
+  }
 
   if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
     add_callback_to_replace_with_bool(eq_term, true);
@@ -721,6 +762,19 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
         not_eq_term->left_term = nullptr;
         delete not_eq_term;
       };
+    }
+  }
+
+  if(Term::Type::QUALIDENTIFIER == not_eq_term->left_term->type()) {
+    auto left_var = symbol_table_->get_variable(not_eq_term->left_term);
+    if(left_var->getType() == Variable::Type::STRING) {
+      symbol_table_->increment_variable_usage(left_var->getName());
+    }
+  }
+  if(Term::Type::QUALIDENTIFIER == not_eq_term->right_term->type()) {
+    auto right_var = symbol_table_->get_variable(not_eq_term->right_term);
+    if(right_var->getType() == Variable::Type::STRING) {
+      symbol_table_->increment_variable_usage(right_var->getName());
     }
   }
 

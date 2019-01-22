@@ -225,18 +225,21 @@ int main(const int argc, const char **argv) {
     driver.InitializeSolver();
 
     if(driver.symbol_table_->has_count_variable() and count_variable.empty()) {
+
       count_variable = driver.symbol_table_->get_count_variable()->getName();
+//      LOG(INFO) << count_variable;
+//      std::cin.get();
     }
 
 //    if (i > 1200 or false and VLOG_IS_ON(30) and not output_root.empty()) {
-     driver.ast2dot(output_root + "/optimized.dot");
+//     driver.ast2dot(output_root + "/optimized.dot");
 //   }
     driver.Solve();
     if(not driver.is_sat()) {
       LOG(INFO) << "UNSAT: " << iter;
+    } else {
+      auto count_result = driver.CountVariable(count_variable, 50);
     }
-
-//    auto count_result = driver.CountVariable(count_variable, 50);
     driver.reset();
     delete file;
     i++;
@@ -245,6 +248,7 @@ int main(const int argc, const char **argv) {
       LOG(INFO) << i << " constraints done";
     }
 //    driver.stats();
+    count_variable = "";
   }
 
   auto end = std::chrono::steady_clock::now();

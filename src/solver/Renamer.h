@@ -28,8 +28,11 @@ namespace Solver {
 class Renamer : public SMT::Visitor {
 public:
   Renamer(SMT::Script_ptr, SymbolTable_ptr);
+  Renamer(SMT::Script_ptr, SymbolTable_ptr, std::map<std::string,std::string> var_mapping,
+                                            std::map<char,char> char_mapping);
   virtual ~Renamer();
   void start() override;
+  void start(SMT::Term_ptr term, bool store_mapping = true);
   void end() override;
 
   void visitScript(SMT::Script_ptr) override;
@@ -106,8 +109,8 @@ protected:
   SymbolTable_ptr symbol_table_;
   std::set<char> special_chars_ = {'.','+','?','*','-','|','(',')','[',']','{','}','#'};
 
-  std::map<SMT::Visitable_ptr,std::map<std::string,std::string>> variable_mapping_;
-  std::map<SMT::Visitable_ptr,std::map<char,char>> alphabet_mapping_;
+  std::map<std::string,std::string> variable_mapping_;
+  std::map<char,char> alphabet_mapping_;
 
 private:
   static const int VLOG_LEVEL;

@@ -846,12 +846,7 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
 	  // topo sort depth level; sort in decreasing depth
 
 
-	  if(left_node->getType() < right_node->getType()) {
-     return 1;
-	  }
-	  if(left_node->getType() > right_node->getType()) {
-	    return 0;
-	  }
+
 
     if(left_node->getDepth() < right_node->getDepth()) {
       return 0;
@@ -859,6 +854,13 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
     if(left_node->getDepth() > right_node->getDepth()) {
       return 1;
     }
+
+    if(left_node->getType() < right_node->getType()) {
+     return 1;
+	  }
+	  if(left_node->getType() > right_node->getType()) {
+	    return 0;
+	  }
 
    if(left_node->getNode()->type() < right_node->getNode()->type()) {
      if(left_node->getNode()->type() == Term::Type::CONCAT and right_node->getNode()->type() == Term::Type::NOTEQ) {

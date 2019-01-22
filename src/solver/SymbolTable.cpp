@@ -144,8 +144,8 @@ Variable_ptr SymbolTable::get_variable(std::string name) {
   // get original variable name, from normalization mapping
   std::string original_name = name;
   // if normalization has completed, compute mapping
-  if(reverse_variable_mapping_[scope_stack_[0]].find(name) != reverse_variable_mapping_[scope_stack_[0]].end()) {
-    original_name = reverse_variable_mapping_[scope_stack_[0]][name];
+  if(reverse_variable_mapping_.find(name) != reverse_variable_mapping_.end()) {
+    original_name = reverse_variable_mapping_[name];
   }
   auto it = variables_.find(original_name);
   CHECK(it != variables_.end()) << "Variable is not found: " << name << " (original name = " << original_name << ")";
@@ -161,8 +161,15 @@ Variable_ptr SymbolTable::get_variable(Term_ptr term_ptr) {
 }
 
 Variable_ptr SymbolTable::get_variable_unsafe(std::string name) {
-  if (variables_.find(name) != variables_.end()) {
-    return variables_[name];
+  // get original variable name, from normalization mapping
+  std::string original_name = name;
+//  // if normalization has completed, compute mapping
+//  if(reverse_variable_mapping_[scope_stack_[0]].find(name) != reverse_variable_mapping_[scope_stack_[0]].end()) {
+//    original_name = reverse_variable_mapping_[scope_stack_[0]][name];
+//  }
+
+  if (variables_.find(original_name) != variables_.end()) {
+    return variables_[original_name];
   }
   return nullptr;
 }
@@ -748,22 +755,60 @@ void SymbolTable::remove_unsorted_constraint(Visitable_ptr term) {
 	last_constraints.erase(Ast2Dot::toString(term));
 }
 
-void SymbolTable::SetVariableMapping(std::map<SMT::Visitable_ptr,std::map<std::string,std::string>> variable_mapping) {
+void SymbolTable::increment_variable_usage(std::string var_name) {
+	if(variable_usage_.find(var_name) == variable_usage_.end()) {
+		variable_usage_[var_name] = 1;
+	} else {
+		variable_usage_[var_name] = variable_usage_[var_name] + 1;
+	}
+}
+
+int SymbolTable::get_variable_usage(std::string var_name) {
+	if(variable_usage_.find(var_name) == variable_usage_.end()) {
+		return 0;
+	}
+	return variable_usage_[var_name];
+}
+
+void SymbolTable::reset_variable_usage() {
+	variable_usage_.clear();
+}
+
+void SymbolTable::SetVariableMapping(std::map<std::string,std::string> variable_mapping) {
   // store original map
   variable_mapping_ = variable_mapping;
   // store reverse map (for easy var lookup)
-  for(auto term_it : variable_mapping) {
-    for(auto map_it : term_it.second) {
+  for(auto map_it : variable_mapping) {
+//    for(auto map_it : term_it.second) {
 //      if(map_it.first == count_symbol_->getData()) {
 //        LOG(INFO) << map_it.first << " -> " << map_it.second;
 //        std::cin.get();
 //      }
-      reverse_variable_mapping_[term_it.first][map_it.second] = map_it.first;
-    }
+      reverse_variable_mapping_[map_it.second] = map_it.first;
+//    }
   }
-
-
 }
+
+std::map<std::string,std::string> SymbolTable::GetVariableMapping() {
+  return variable_mapping_;
+}
+
+std::string SymbolTable::GetMappedVariableName(std::string name) {
+  if(variable_mapping_.find(name) != variable_mapping_.end()) {
+    return variable_mapping_[name];
+  }
+  LOG(FATAL) << name;
+  return name;
+}
+
+std::map<char,char> SymbolTable::GetCharacterMapping() {
+  return character_mapping_;
+}
+
+void SymbolTable::SetCharacterMapping(std::map<char,char> mapping) {
+  character_mapping_ = mapping;
+}
+
 
 std::string SymbolTable::generate_internal_name(std::string name, Variable::Type type) {
   std::stringstream ss;
