@@ -302,17 +302,23 @@ void Renamer::visitTermConstant(TermConstant_ptr term_constant) {
       } else if(escape) {
         cnew = AddToMap(root_scope, c);
         escape = false;
-//      } else if(range) {
-//        cnew = c;
-//        if(c == '}') {
-//          range = false;
-//        }
+      } else if(range) {
+        cnew = c;
+        if(c == '}') {
+          range = false;
+        }
       } else if(c == '\\') {
         escape = true;
         continue;
-//      } else if(c == '{') {
-//        range = true;
-//        cnew = c;
+      } else if(c == '{') {
+        range = true;
+        cnew = c;
+      } else if(c == '-') {
+        // e.g., [B-E]
+        for(char cc = value[i-1]; cc != value[i+1]; cc++) {
+          AddToMap(root_scope,cc);
+        }
+        cnew = c;
       } else if(special_chars_.find(c) != special_chars_.end()) {
         cnew = c;
       } else {

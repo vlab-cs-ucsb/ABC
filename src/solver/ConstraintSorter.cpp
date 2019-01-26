@@ -856,10 +856,10 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
     }
 
     if(left_node->getType() < right_node->getType()) {
-     return 1;
+     return 0;
 	  }
 	  if(left_node->getType() > right_node->getType()) {
-	    return 0;
+	    return 1;
 	  }
 
    if(left_node->getNode()->type() < right_node->getNode()->type()) {
