@@ -90,7 +90,7 @@ void ConstraintSolver::visitCommand(Command_ptr command) {
   LOG(ERROR)<< "'" << *command<< "' is not expected.";
 }
 
-
+/*
 void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
   DVLOG(VLOG_LEVEL) << "visit: " << *assert_command;
 
@@ -116,15 +116,16 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 //    LOG(FATAL) << "Failed to cache result";
 //  }
 }
+*/
 
 
-/*
 void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
   DVLOG(VLOG_LEVEL) << "visit: " << *assert_command;
 
   std::string key, cached_data;
   bool has_cached_result = false;
+
   key = Ast2Dot::toString(assert_command);
 //  std::cout << key << std::endl;
 //  LOG(INFO) << key;
@@ -136,7 +137,9 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
     cached_data = c.reply();
     has_cached_result = true;
     num_hits_++;
+    hit_statistic_ = std::make_tuple<int,int>(1,1);
     // LOG(INFO) << "Got cached data!";
+
   } else {
     // no cached value
     num_misses_++;
@@ -149,6 +152,8 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
   // if we have cached result, import it and go from there
   if(has_cached_result) {
+
+    string_constraint_solver_.collect_string_constraint_info();
 //     LOG(INFO) << "Reading cached data...";
     std::stringstream is(cached_data);
 
@@ -158,8 +163,66 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
       return;
     }
 
+    std::map<char,char> char_map;
+
+    int num_to_read=0;
+    {
+      cereal::BinaryInputArchive ar(is);
+      ar(char_map);
+      ar(num_to_read);
+    }
+
+    symbol_table_->SetCharacterMapping(char_map);
+
+    int num_model_counters = 0;
+    {
+      cereal::BinaryInputArchive ar(is);
+      ar(num_model_counters);
+    }
+
+    if(num_model_counters and symbol_table_->has_count_variable()) {
+      std::string var_name = symbol_table_->get_count_variable()->getName();
+      auto variable = symbol_table_->get_variable(var_name);
+      auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(), variable);
+      Solver::Value_ptr var_value = nullptr;
+
+
+      {
+        cereal::BinaryInputArchive ar(is);
+
+        SymbolicCounter sc1,sc2;
+
+        sc1.load(ar);
+        sc2.load(ar);
+        var_value = symbol_table_->get_projected_value_at_scope(symbol_table_->top_scope(), representative_variable);
+        if(var_value == nullptr) {
+          auto any_string = StringAutomaton::MakeAnyString();
+          any_string->SetSymbolicCounter(sc1);
+          var_value = new Value(any_string);
+          symbol_table_->set_value(representative_variable,var_value);
+          delete var_value;
+          var_value = nullptr;
+        } else {
+          var_value->getStringAutomaton()->SetSymbolicCounter(sc1);
+        }
+
+        var_value = symbol_table_->get_value_at_scope(symbol_table_->top_scope(), representative_variable);
+        if(var_value == nullptr) {
+          auto any_string = StringAutomaton::MakeAnyString();
+          any_string->SetSymbolicCounter(sc2);
+          var_value = new Value(any_string);
+          symbol_table_->set_value(representative_variable,var_value);
+          delete var_value;
+          var_value = nullptr;
+        } else {
+          var_value->getStringAutomaton()->SetSymbolicCounter(sc2);
+        }
+      }
+      return;
+    }
+
     // deserialize automata one by one until none left
-    while(is.tellg() < cached_data.size()) {
+    while(num_to_read-- > 0) {
       Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(nullptr, 0);
       {
         cereal::BinaryInputArchive ar(is);
@@ -189,8 +252,27 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
       // LOG(INFO) << "Read one automata!";
     }
+
+
+
+//    int num_model_counters = 0;
+//    {
+//      cereal::BinaryInputArchive ar(is);
+//      ar(num_model_counters);
+//      // if num_model_counters = 1, then only have projected
+//      // if 2, then have both projected & tuple model counters
+//      if(num_model_counters == 1) {
+//
+//      } else {
+//
+//      }
+//    }
+
+
+
     return;
   } //else {LOG(INFO) << "Nope";}
+
 
   check_and_visit(assert_command->term);
 
@@ -210,6 +292,7 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
   }
   clearTermValuesAndLocalLetVars();
 
+
   std::string temp = key;
   key = Ast2Dot::toString(assert_command);
 //  LOG(INFO) << "KEY SIZE = " << key.length();
@@ -226,6 +309,66 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
     os << "0";
   } else {
     // first serialize
+
+    int num_to_write = 0;
+    for (auto iter : value_map) {
+      if (iter.second->getType() == Value::Type::STRING_AUTOMATON and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+        if(iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
+          continue;
+        }
+        num_to_write++;
+      }
+    }
+
+    {
+      cereal::BinaryOutputArchive ar(os);
+      ar(symbol_table_->GetCharacterMapping());
+      ar(num_to_write);
+    }
+
+    // store model counters
+    if(symbol_table_->has_count_variable()) {
+      std::string var_name = symbol_table_->get_count_variable()->getName();
+      auto variable = symbol_table_->get_variable(var_name);
+      auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(), variable);
+      Solver::Value_ptr var_value = nullptr;
+
+
+      {
+        cereal::BinaryOutputArchive ar(os);
+        ar(2);
+
+        var_value = symbol_table_->get_projected_value_at_scope(symbol_table_->top_scope(), representative_variable);
+        if(var_value == nullptr) {
+          auto any_string = StringAutomaton::MakeAnyString();
+          var_value = new Value(any_string);
+          var_value->getStringAutomaton()->SetSymbolicCounter();
+          var_value->getStringAutomaton()->GetSymbolicCounter().save(ar);
+          delete var_value;
+        } else {
+          var_value->getStringAutomaton()->SetSymbolicCounter();
+          var_value->getStringAutomaton()->GetSymbolicCounter().save(ar);
+        }
+
+        var_value = symbol_table_->get_value_at_scope(symbol_table_->top_scope(), representative_variable);
+        if(var_value == nullptr) {
+          auto any_string = StringAutomaton::MakeAnyString();
+          var_value = new Value(any_string);
+          var_value->getStringAutomaton()->SetSymbolicCounter();
+          var_value->getStringAutomaton()->GetSymbolicCounter().save(ar);
+          delete var_value;
+        } else {
+          var_value->getStringAutomaton()->SetSymbolicCounter();
+          var_value->getStringAutomaton()->GetSymbolicCounter().save(ar);
+        }
+      }
+    } else {
+      {
+        cereal::BinaryOutputArchive ar(os);
+        ar(0);
+      }
+    }
+
     for (auto iter : value_map) {
       if (iter.second->getType() == Value::Type::STRING_AUTOMATON and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
         auto export_auto = iter.second->getStringAutomaton();
@@ -251,8 +394,11 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 //      os << "a";
         // LOG(INFO) << "Serialized one...";
       }
-
     }
+
+
+
+
 
   }
   // auto end = std::chrono::steady_clock::now();
@@ -266,8 +412,9 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
   } else {
     LOG(FATAL) << "Failed to cache result: " << c2.status();
   }
+
 }
-*/
+
 
 
 void ConstraintSolver::visitTerm(Term_ptr term) {
@@ -362,7 +509,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       cached_data = c.reply();
       has_cached_result = true;
       num_hits_++;
-      hit_statistic_ = std::make_tuple<int,int>(and_term->term_list->size(), and_term->term_list->size() + terms_to_solve.size());
+      hit_statistic_ = std::make_tuple<int,int>(and_term->term_list->size(), and_term->term_list->size() + terms_to_solve.size()+1);
 
       // LOG(INFO) << "Got cached data!";
     } else {
@@ -381,6 +528,18 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
   // if we have cached result, import it and go from there
   if(has_cached_result) {
+    // first check if key has only 0 in it. if so, formula unsat
+    if(cached_data.size() == 1) {
+      Value_ptr result = new Value(is_satisfiable);
+      if(not is_satisfiable) {
+        LOG(INFO) << "NO SAT";
+      }
+
+      setTermValue(and_term, result);
+      return;
+    }
+
+    int num_to_read = 0;
     // LOG(INFO) << "Reading cached data...";
     std::stringstream is(cached_data);
     std::map<char,char> char_mapping;
@@ -388,12 +547,15 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     {
       cereal::BinaryInputArchive ar(is);
       ar(char_mapping);
+      ar(num_to_read);
     }
+
+
     symbol_table_->SetCharacterMapping(char_mapping);
     // deserialize automata one by one until none left
 
-    while(is.tellg() < cached_data.size()) {
-
+    while(num_to_read > 0) {
+      num_to_read--;
       Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(nullptr, 0);
       std::string var_name;
       {
@@ -424,6 +586,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       symbol_table_->IntersectValue(rep_var,rep_var_value);
       delete rep_var_value;
       delete import_auto;
+
     }
 //    std::cin.get();
   }
@@ -494,13 +657,27 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
     // first serialize
 
+
+
+    int num_to_write = 0;
+    for (auto iter : value_map) {
+      if (iter.second->getType() == Value::Type::STRING_AUTOMATON and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+        if(iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
+          continue;
+        }
+        num_to_write++;
+      }
+    }
+
     // character mapping first
+    // then number of values
     {
       cereal::BinaryOutputArchive ar(os);
       ar(symbol_table_->GetCharacterMapping());
+      ar(num_to_write);
     }
-    // then values
 
+    // then values
     for (auto iter : value_map) {
       if (iter.second->getType() == Value::Type::STRING_AUTOMATON and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
         auto export_auto = iter.second->getStringAutomaton();
@@ -527,6 +704,11 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         // LOG(INFO) << "Serialized one...";
       }
 
+      // then 0, to signify no model counters are added
+//      {
+//      cereal::BinaryOutputArchive ar(os);
+//      ar(0);
+//      }
     }
 
 
@@ -563,6 +745,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
   setTermValue(and_term, result);
 }
+
 
 
 /*

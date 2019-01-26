@@ -289,6 +289,7 @@ public:
   StringAutomaton_ptr ChangeIndicesMap(StringFormula_ptr new_formula);
 
   void SetSymbolicCounter() override;
+  void SetSymbolicCounter(SymbolicCounter&);
   std::vector<std::string> GetAnAcceptingStringForEachTrack();
   std::map<std::string,std::vector<std::string>> GetModelsWithinBound(int num_models, int bound) override;
 	int GetNumTracks() const;
@@ -302,6 +303,7 @@ public:
 
   StringFormula_ptr GetFormula();
   void SetFormula(StringFormula_ptr formula);
+
 
   static const TransitionVector& GenerateTransitionsForRelation(StringFormula::Type type, int bits_per_var);
 	static DFA_ptr MakeBinaryRelationDfa(StringFormula::Type type, int bits_per_var, int num_tracks, int left_track, int right_track);

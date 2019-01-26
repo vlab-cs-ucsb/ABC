@@ -325,6 +325,7 @@ void Renamer::visitTermConstant(TermConstant_ptr term_constant) {
   }
 
   term_constant->primitive->setData(new_value);
+
 }
 
 void Renamer::visitIdentifier(Identifier_ptr identifier) {

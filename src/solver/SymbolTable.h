@@ -154,7 +154,6 @@ public:
   std::map<char,char> GetCharacterMapping();
   void SetCharacterMapping(std::map<char,char>);
 
-
 private:
   std::string generate_internal_name(std::string, SMT::Variable::Type);
 

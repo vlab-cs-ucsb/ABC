@@ -210,6 +210,11 @@ int main(const int argc, const char **argv) {
 
 
 //   driver.Solve();
+  auto end = std::chrono::steady_clock::now();
+  auto count_start = std::chrono::steady_clock::now();
+  auto count_end = std::chrono::steady_clock::now();
+  auto count_time = count_end-count_end;
+  auto mc_time = count_end-count_end;
 
 
   int num_files = files.size();
@@ -238,7 +243,22 @@ int main(const int argc, const char **argv) {
     if(not driver.is_sat()) {
       LOG(INFO) << "UNSAT: " << iter;
     } else {
-      auto count_result = driver.CountVariable(count_variable, 50);
+
+      count_start = std::chrono::steady_clock::now();
+      auto mc1 = driver.GetModelCounterForVariable(count_variable,false);
+      auto mc2 = driver.GetModelCounterForVariable(count_variable,true);
+      count_end = std::chrono::steady_clock::now();
+      mc_time += count_end-count_start;
+
+      count_start = std::chrono::steady_clock::now();
+      auto count1 = mc1.Count(50,50);
+      auto count2 = mc2.Count(50,50);
+      count_end = std::chrono::steady_clock::now();
+      count_time += count_end-count_start;
+
+
+      //auto count_result = driver.CountVariable(count_variable, 50);
+
     }
     driver.reset();
     delete file;
@@ -251,9 +271,11 @@ int main(const int argc, const char **argv) {
     count_variable = "";
   }
 
-  auto end = std::chrono::steady_clock::now();
+  end = std::chrono::steady_clock::now();
   auto solving_time = end - start;
-  LOG(INFO)<< "time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
+  LOG(INFO)<< "total time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
+  LOG(INFO)<< "count time: " << std::chrono::duration <long double, std::milli> (count_time).count() << " ms";
+  LOG(INFO)<< "mc    time: " << std::chrono::duration <long double, std::milli> (mc_time).count() << " ms";
   driver.print_statistics();
   return 3;
   // driver.reset();

@@ -466,8 +466,9 @@ void Driver::GetModels(const unsigned long bound,const unsigned long num_models)
 
 Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsigned long bound) {
   Theory::BigInteger projected_count, tuple_count, result_count;
-  tuple_count = GetModelCounterForVariable(var_name,false).Count(bound, bound);
   projected_count = GetModelCounterForVariable(var_name,true).Count(bound, bound);
+  tuple_count = GetModelCounterForVariable(var_name,false).Count(bound, bound);
+
 
   if(tuple_count == 0) {
     result_count = projected_count;

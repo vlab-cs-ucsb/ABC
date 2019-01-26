@@ -3656,6 +3656,11 @@ void StringAutomaton::SetSymbolicCounter() {
 	dfaFree(trimmed_dfa);
 }
 
+void StringAutomaton::SetSymbolicCounter(SymbolicCounter & sc) {
+  counter_ = sc;
+  is_counter_cached_ = true;
+}
+
 std::vector<std::string> StringAutomaton::GetAnAcceptingStringForEachTrack() {
 	LOG(FATAL) << "IMPLEMENT ME";
 //  std::vector<std::string> strings(num_tracks_, "");
