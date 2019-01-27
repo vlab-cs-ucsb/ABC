@@ -1607,6 +1607,7 @@ void StringFormulaGenerator::delete_term_formula(Term_ptr term) {
 void StringFormulaGenerator::set_group_mappings() {
   DVLOG(VLOG_LEVEL)<< "start setting string group for components";
 
+	//TODO: Is this necessary?
 //  for (auto& el : term_group_map_) {
 //  	// only subgroups have formulas
 //    if(subgroups_.find(el.second) == subgroups_.end()) {

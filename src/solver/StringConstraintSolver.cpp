@@ -84,12 +84,6 @@ void StringConstraintSolver::setCallbacks() {
             LOG(FATAL) << "Term has no group!";
           }
 
-          auto before_value = symbol_table_->get_value(term_group_name);
-//          for(auto it : before_value->getStringAutomaton()->GetFormula()->GetVariableCoefficientMap()) {
-//            LOG(INFO) << it.first;
-//          }
-//          LOG(INFO) << "";
-
           symbol_table_->IntersectValue(term_group_name,result);
 
           // once we solve an atomic string constraint,

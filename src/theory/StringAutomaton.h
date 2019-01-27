@@ -270,7 +270,7 @@ public:
   StringAutomaton_ptr RestrictAtIndexTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr sub_string_auto);
 
   /**
-   * TODO Pre image computations can be gudied by a range auto
+   * TODO Pre image computations can be guided by a range auto
    * which is the set that a pre image computation can takes values from,
    * it corresponds to post image value of the operation
    */

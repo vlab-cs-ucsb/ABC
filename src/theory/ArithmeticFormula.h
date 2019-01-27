@@ -18,6 +18,7 @@
 #include <utility>
 
 #include <glog/logging.h>
+#include <cereal/types/map.hpp>
 
 #include "Formula.h"
 #include "../smt/ast.h"
@@ -33,13 +34,28 @@ class ArithmeticFormula : public Formula {
 public:
   enum class Type :
           int {
-            NONE = 0, EQ, NOTEQ, GT, GE, LT, LE, INTERSECT, UNION, VAR, BOOL
+            NONE = 0, EQ, NOTEQ, GT, GE, LT, LE, INTERSECT, UNION, VAR, BOOL, NE
           };
   ArithmeticFormula();
   virtual ~ArithmeticFormula();
 
   ArithmeticFormula(const ArithmeticFormula&);
   virtual ArithmeticFormula_ptr clone() const;
+
+  template <class Archive>
+  void save(Archive& ar) const {
+    ar(type_);
+    ar(variable_coefficient_map_);
+    //ar(boolean_variable_value_map_);
+  }
+
+  template <class Archive>
+  void load(Archive& ar) {
+    ar(type_);
+    ar(variable_coefficient_map_);
+    //ar(boolean_variable_value_map_);
+  }
+
   virtual std::string str() const;
 
   virtual ArithmeticFormula_ptr Intersect(Formula_ptr);

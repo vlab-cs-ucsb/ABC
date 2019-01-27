@@ -46,6 +46,11 @@ void ArithmeticConstraintSolver::end() {
   arithmetic_formula_generator_.end();
 }
 
+void ArithmeticConstraintSolver::collect_arithmetic_constraint_info(Visitable_ptr node) {
+  arithmetic_formula_generator_.start(node);
+  string_terms_map_ = arithmetic_formula_generator_.get_string_terms_map();
+}
+
 void ArithmeticConstraintSolver::collect_arithmetic_constraint_info() {
   arithmetic_formula_generator_.start();
   string_terms_map_ = arithmetic_formula_generator_.get_string_terms_map();
@@ -71,6 +76,14 @@ void ArithmeticConstraintSolver::setCallbacks() {
           auto binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), use_unsigned_integers_);
           auto result = new Value(binary_int_auto);
           set_term_value(term, result);
+
+          auto term_group_name = arithmetic_formula_generator_.get_term_group_name(term);
+          if(term_group_name.empty()) {
+            LOG(FATAL) << "Term has no group!";
+          }
+
+          symbol_table_->IntersectValue(term_group_name,result);
+
           // once we solve an atomic linear integer arithmetic constraint,
           // we delete its formula to avoid solving it again.
           // Atomic arithmetic constraints solved precisely,

@@ -834,15 +834,17 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
 //      symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
 //    }
 //  }
-  for (auto& el : term_group_map_) {
-		//LOG(INFO) << *el.first << "@" << el.first;
-		// only subgroups have formulas
-		if(subgroups_.find(el.second) == subgroups_.end()) {
-			//LOG(INFO) << "group: " << el.second;
-			term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
-		}
-		//LOG(INFO) << "";
-	}
+
+  // TODO: Do we really need this?
+//  for (auto& el : term_group_map_) {
+//		//LOG(INFO) << *el.first << "@" << el.first;
+//		// only subgroups have formulas
+//		if(subgroups_.find(el.second) == subgroups_.end()) {
+//			//LOG(INFO) << "group: " << el.second;
+//			term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
+//		}
+//		//LOG(INFO) << "";
+//	}
 
 	for (auto& el: subgroups_) {
 		symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));

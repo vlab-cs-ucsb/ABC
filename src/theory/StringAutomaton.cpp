@@ -880,8 +880,11 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
 
 	if(formula->GetType() == StringFormula::Type::EQ_CHARAT) {
 		// if charAt() == charAt() and constants are the same (such as charAt(X,0) == charAt(Y,0))
-		auto equality_dfa = StringAutomaton::MakeRelationalCharAtDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
-		equality_auto = new StringAutomaton(equality_dfa,formula,num_tracks*VAR_PER_TRACK);
+		temp_formula->SetType(StringFormula::Type::EQ_CHARAT);
+		auto equality_dfa = StringAutomaton::MakeRelationalCharAtDfa(temp_formula,VAR_PER_TRACK,2,0,1);
+		auto temp_auto = new StringAutomaton(equality_dfa,temp_formula,2*VAR_PER_TRACK);
+		equality_auto = temp_auto->ChangeIndicesMap(formula);
+		delete temp_auto;
 	} else if(formula->GetConstant() != "") {
 		// if string is not empty, eq is of form X = Y.c
     int nnum = num_tracks;
@@ -907,8 +910,10 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
     delete equality_auto;
     equality_auto = temp_auto;
   } else {
-    auto equality_dfa = MakeBinaryRelationDfa(StringFormula::Type::EQ, VAR_PER_TRACK, num_tracks, left_track, right_track);
-    equality_auto = new StringAutomaton(equality_dfa,formula,num_tracks*VAR_PER_TRACK);
+    auto equality_dfa = MakeBinaryRelationDfa(StringFormula::Type::EQ, VAR_PER_TRACK, 2, 0, 1);
+    auto temp_auto = new StringAutomaton(equality_dfa,temp_formula,2*VAR_PER_TRACK);
+    equality_auto = temp_auto->ChangeIndicesMap(formula);
+    delete temp_auto;
   }
 
 	DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeEquality(" << formula->str() << ")";
@@ -965,8 +970,11 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
 
 	if(formula->GetType() == StringFormula::Type::NOTEQ_CHARAT) {
 		// if charAt() == charAt() and constants are the same (such as charAt(X,0) == charAt(Y,0))
-		auto not_equality_dfa = StringAutomaton::MakeRelationalCharAtDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
-		not_equality_auto = new StringAutomaton(not_equality_dfa,formula,num_tracks*VAR_PER_TRACK);
+    temp_formula->SetType(StringFormula::Type::NOTEQ_CHARAT);
+		auto not_equality_dfa = StringAutomaton::MakeRelationalCharAtDfa(temp_formula,VAR_PER_TRACK,2,0,1);
+		auto temp_auto = new StringAutomaton(not_equality_dfa,temp_formula,2*VAR_PER_TRACK);
+		not_equality_auto = temp_auto->ChangeIndicesMap(formula);
+    delete temp_auto;
 	} else if(formula->GetConstant() != "") {
 		// if string is not empty, eq is of form X = Y.c
     int nnum = num_tracks;
@@ -1007,6 +1015,7 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
 }
 
 StringAutomaton_ptr StringAutomaton::MakeLessThan(StringFormula_ptr formula) {
+
 	StringAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
 	StringAutomaton_ptr constant_string_auto = nullptr;
 	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
@@ -1063,7 +1072,7 @@ StringAutomaton_ptr StringAutomaton::MakeLessThan(StringFormula_ptr formula) {
 	if(formula->GetType() == StringFormula::Type::LT_CHARAT) {
 		result_dfa = StringAutomaton::MakeRelationalCharAtDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	} else if(formula->GetConstant() != "" and num_vars > 1  || (formula->GetConstant2() != "" and num_vars == 1)) {
-		// if string is not empty, ineq is of form X > Y.c
+		// if string is not empty, ineq is of form X < Y.c
     int temp_left = num_tracks;
     int temp_right = right_track;
     int temp_num_tracks = num_tracks+1;
@@ -1105,6 +1114,9 @@ StringAutomaton_ptr StringAutomaton::MakeLessThan(StringFormula_ptr formula) {
 }
 
 StringAutomaton_ptr StringAutomaton::MakeLessThanOrEqual(StringFormula_ptr formula) {
+
+  LOG(FATAL) << "Dont use me yet for subcaching";
+
 	StringAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
 	StringAutomaton_ptr constant_string_auto = nullptr;
 	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
@@ -1201,6 +1213,9 @@ StringAutomaton_ptr StringAutomaton::MakeLessThanOrEqual(StringFormula_ptr formu
 }
 
 StringAutomaton_ptr StringAutomaton::MakeGreaterThan(StringFormula_ptr formula) {
+
+  LOG(FATAL) << "Dont use me yet for subcaching";
+
 	StringAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
 	StringAutomaton_ptr constant_string_auto = nullptr;
 	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;
@@ -1301,6 +1316,9 @@ StringAutomaton_ptr StringAutomaton::MakeGreaterThan(StringFormula_ptr formula) 
 }
 
 StringAutomaton_ptr StringAutomaton::MakeGreaterThanOrEqual(StringFormula_ptr formula) {
+
+  LOG(FATAL) << "Dont use me yet for subcaching";
+
 	StringAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
 	StringAutomaton_ptr constant_string_auto = nullptr;
 	DFA_ptr temp_dfa = nullptr, result_dfa = nullptr, temp2_dfa = nullptr;

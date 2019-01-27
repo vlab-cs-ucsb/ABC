@@ -18,13 +18,13 @@ const int BinaryIntAutomaton::VLOG_LEVEL = 9;
 BinaryIntAutomaton::BinaryIntAutomaton(bool is_natural_number)
     : Automaton(Automaton::Type::BINARYINT),
       is_natural_number_ { is_natural_number },
-      formula_ { nullptr } {
+      formula_ { new ArithmeticFormula() } {
 }
 
 BinaryIntAutomaton::BinaryIntAutomaton(DFA_ptr dfa, int num_of_variables, bool is_natural_number)
     : Automaton(Automaton::Type::BINARYINT, dfa, num_of_variables),
       is_natural_number_ { is_natural_number },
-      formula_ { nullptr } {
+      formula_ { new ArithmeticFormula() } {
 }
 
 BinaryIntAutomaton::BinaryIntAutomaton(DFA_ptr dfa, ArithmeticFormula_ptr formula, bool is_natural_number)
@@ -405,6 +405,72 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::GetBinaryAutomatonFor(std::string var
 
   DVLOG(VLOG_LEVEL) << single_var_auto->id_ << " = [" << this->id_ << "]->GetBinaryAutomatonOf(" << var_name << ")";
   return single_var_auto;
+}
+
+BinaryIntAutomaton_ptr BinaryIntAutomaton::ChangeIndicesMap(ArithmeticFormula_ptr new_formula) {
+  BinaryIntAutomaton_ptr unmapped_auto = nullptr;
+
+	auto old_coeff_map = this->formula_->GetVariableCoefficientMap();
+	auto new_coeff_map = new_formula->GetVariableCoefficientMap();
+	int old_num_tracks = this->formula_->GetNumberOfVariables();
+	int new_num_tracks = new_formula->GetNumberOfVariables();
+
+	// if previously only one track, we need to add lambda (9th bdd variable)
+	// just make new auto and return that
+	if(old_num_tracks == 1) {
+    if(new_num_tracks == 1) {
+      auto ret_auto = this->clone();
+      ret_auto->SetFormula(new_formula);
+      return ret_auto;
+    }
+    // should ALWAYS have formula, but add check just to make sure
+	  if(this->formula_ == nullptr || this->formula_->GetNumberOfVariables() == 0) {
+	    LOG(FATAL) << "Can't remap indices! Automaton has no formula or formula has no variables!";
+	  }
+//	  std::string var_name = this->formula_->GetVariableAtIndex(0);
+	  unmapped_auto = new BinaryIntAutomaton(this->dfa_,1,this->is_natural_number_);
+	  unmapped_auto->SetFormula(this->formula_->clone());
+//	  unmapped_auto->SetFormula(new_formula);
+//	  return unmapped_auto;
+	} else {
+	  unmapped_auto = this->clone();
+	}
+
+	// though we're remapping indices, we're not adding any new variables right now
+	// (this will be done during intersection
+	int* map = CreateBddVariableIndices(old_num_tracks);
+
+//	LOG(INFO) << "Old map:";
+//	for(auto iter : old_coeff_map) {
+//	  LOG(INFO) << "  " << iter.first;
+//	}
+//
+//	LOG(INFO) << "New map:";
+//	for(auto iter : new_coeff_map) {
+//	  LOG(INFO) << "  " << iter.first;
+//	}
+
+	for(auto iter : old_coeff_map) {
+
+		int old_index = unmapped_auto->formula_->GetVariableIndex(iter.first);
+		int new_index = new_formula->GetVariableIndex(iter.first);
+
+//		for(int i = 0; i < VAR_PER_TRACK; i++) {
+			map[old_index] = new_index;
+//		}
+	}
+
+  for(int i = 0; i < old_num_tracks; i++) {
+    LOG(INFO) << "map[" << i << "] = " << map[i];
+  }
+
+	auto remapped_dfa = dfaCopy(unmapped_auto->dfa_);
+	dfaReplaceIndices(remapped_dfa,map);
+	delete[] map;
+	auto remapped_auto = new BinaryIntAutomaton(remapped_dfa,unmapped_auto->num_of_bdd_variables_,is_natural_number_);
+	remapped_auto->SetFormula(new_formula);
+	delete unmapped_auto;
+	return remapped_auto;
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::GetPositiveValuesFor(std::string var_name) {
@@ -1322,11 +1388,21 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeEquality(ArithmeticFormula_ptr fo
   }
 }
 
-BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr formula) {
-  if (not formula->Simplify()) {
-    auto equality_auto = BinaryIntAutomaton::MakePhi(formula, false);
-    DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeIntEquality(" << *formula << ")";
+BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr new_formula) {
+
+  if (not new_formula->Simplify()) {
+    auto equality_auto = BinaryIntAutomaton::MakePhi(new_formula, false);
+    DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeIntEquality(" << *new_formula << ")";
     return equality_auto;
+  }
+
+  auto new_coeff_map = new_formula->GetVariableCoefficientMap();
+  ArithmeticFormula_ptr formula = new ArithmeticFormula();
+  formula->SetType(new_formula->GetType());
+  for(auto variable_coeff : new_coeff_map) {
+    if(variable_coeff.second != 0) {
+      formula->AddVariable(variable_coeff.first, variable_coeff.second);
+    }
   }
 
   auto coeffs_map = formula->GetVariableCoefficientMap();
@@ -1502,16 +1578,32 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
   auto equality_auto = new BinaryIntAutomaton(equality_dfa, formula, false);
   CHECK_EQ(false, equality_auto->IsInitialStateAccepting());
 
-  DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeIntEquality(" << *formula << ")";
+  auto temp_auto = equality_auto->ChangeIndicesMap(new_formula);
+
+  delete equality_auto;
+  equality_auto = temp_auto;
+
+  DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeIntEquality(" << *new_formula << ")";
   return equality_auto;
 }
 
-BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticFormula_ptr formula) {
-  if (not formula->Simplify()) {
-    auto equality_auto = BinaryIntAutomaton::MakePhi(formula, true);
-    DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeNaturalNumberEquality(" << *formula << ")";
+BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticFormula_ptr new_formula) {
+  if (not new_formula->Simplify()) {
+    auto equality_auto = BinaryIntAutomaton::MakePhi(new_formula, true);
+    DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeNaturalNumberEquality(" << *new_formula << ")";
     return equality_auto;
   }
+
+  auto new_coeff_map = new_formula->GetVariableCoefficientMap();
+  ArithmeticFormula_ptr formula = new ArithmeticFormula();
+  formula->SetType(new_formula->GetType());
+  for(auto variable_coeff : new_coeff_map) {
+    if(variable_coeff.second != 0) {
+      formula->AddVariable(variable_coeff.first, variable_coeff.second);
+    }
+  }
+
+
 
   auto coeffs_map = formula->GetVariableCoefficientMap();
 	auto coeffs = formula->GetCoefficients();
@@ -1671,7 +1763,11 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberEquality(ArithmeticF
   auto equality_auto = new BinaryIntAutomaton(equality_dfa, formula, true);
   CHECK_EQ(false, equality_auto->IsInitialStateAccepting());
 
-  DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeNaturalNumberEquality(" << *formula << ")";
+  auto temp_auto = equality_auto->ChangeIndicesMap(new_formula);
+  delete equality_auto;
+  equality_auto = temp_auto;
+
+  DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeNaturalNumberEquality(" << *new_formula << ")";
   return equality_auto;
 }
 
@@ -1683,8 +1779,17 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeLessThan(ArithmeticFormula_ptr fo
   }
 }
 
-BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntLessThan(ArithmeticFormula_ptr formula) {
-  formula->Simplify();
+BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntLessThan(ArithmeticFormula_ptr new_formula) {
+  new_formula->Simplify();
+
+  auto new_coeff_map = new_formula->GetVariableCoefficientMap();
+  ArithmeticFormula_ptr formula = new ArithmeticFormula();
+  formula->SetType(new_formula->GetType());
+  for(auto variable_coeff : new_coeff_map) {
+    if(variable_coeff.second != 0) {
+      formula->AddVariable(variable_coeff.first, variable_coeff.second);
+    }
+  }
 
   auto coeffs_map = formula->GetVariableCoefficientMap();
 	auto boolean_variables = formula->GetBooleans();
@@ -1839,12 +1944,26 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntLessThan(ArithmeticFormula_ptr
   auto less_than_auto = new BinaryIntAutomaton(less_than_dfa, formula, false);
   CHECK_EQ(false, less_than_auto->IsInitialStateAccepting());
 
-  DVLOG(VLOG_LEVEL) << less_than_auto->id_ << " = MakeIntLessThan(" << *formula << ")";
+  auto temp_auto = less_than_auto->ChangeIndicesMap(new_formula);
+
+  delete less_than_auto;
+  less_than_auto = temp_auto;
+
+  DVLOG(VLOG_LEVEL) << less_than_auto->id_ << " = MakeIntLessThan(" << *new_formula << ")";
   return less_than_auto;
 }
 
-BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberLessThan(ArithmeticFormula_ptr formula) {
-  formula->Simplify();
+BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberLessThan(ArithmeticFormula_ptr new_formula) {
+  new_formula->Simplify();
+
+  auto new_coeff_map = new_formula->GetVariableCoefficientMap();
+  ArithmeticFormula_ptr formula = new ArithmeticFormula();
+  formula->SetType(new_formula->GetType());
+  for(auto variable_coeff : new_coeff_map) {
+    if(variable_coeff.second != 0) {
+      formula->AddVariable(variable_coeff.first, variable_coeff.second);
+    }
+  }
 
   auto coeffs_map = formula->GetVariableCoefficientMap();
 	auto boolean_variables = formula->GetBooleans();
@@ -1997,7 +2116,12 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeNaturalNumberLessThan(ArithmeticF
   auto less_than_auto = new BinaryIntAutomaton(less_than_dfa, formula, true);
   CHECK_EQ(false, less_than_auto->IsInitialStateAccepting());
 
-  DVLOG(VLOG_LEVEL) << less_than_auto->id_ << " = MakeNaturalNumberLessThan(" << *formula << ")";
+  auto temp_auto = less_than_auto->ChangeIndicesMap(new_formula);
+
+  delete less_than_auto;
+  less_than_auto = temp_auto;
+
+  DVLOG(VLOG_LEVEL) << less_than_auto->id_ << " = MakeNaturalNumberLessThan(" << *new_formula << ")";
   return less_than_auto;
 }
 

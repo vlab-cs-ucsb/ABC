@@ -40,7 +40,7 @@ void ConstraintSolver::start() {
   
   auto start = std::chrono::steady_clock::now();
 
-  arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
+//  arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
 //  string_constraint_solver_.collect_string_constraint_info();
 
   visit(root_);
@@ -153,7 +153,11 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
   // if we have cached result, import it and go from there
   if(has_cached_result) {
 
+    LOG(INFO) << "GOT CACHED RESULT!";
+
+    arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
     string_constraint_solver_.collect_string_constraint_info();
+
 //     LOG(INFO) << "Reading cached data...";
     std::stringstream is(cached_data);
 
@@ -165,11 +169,13 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
     std::map<char,char> char_map;
 
-    int num_to_read=0;
+    int num_string_to_read=0;
+    int num_int_to_read=0;
     {
       cereal::BinaryInputArchive ar(is);
       ar(char_map);
-      ar(num_to_read);
+      ar(num_string_to_read);
+      ar(num_int_to_read);
     }
 
     symbol_table_->SetCharacterMapping(char_map);
@@ -222,7 +228,7 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
     }
 
     // deserialize automata one by one until none left
-    while(num_to_read-- > 0) {
+    while(num_string_to_read-- > 0) {
       Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(nullptr, 0);
       {
         cereal::BinaryInputArchive ar(is);
@@ -252,6 +258,39 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
       // LOG(INFO) << "Read one automata!";
     }
+
+    while(num_int_to_read-- > 0) {
+      Theory::BinaryIntAutomaton_ptr import_auto = new Theory::BinaryIntAutomaton(nullptr, 0,true);
+      {
+        cereal::BinaryInputArchive ar(is);
+        import_auto->load(ar);
+      }
+
+      // get one of the variables from import_auto's formula
+      // we use this to update the correct variable in our symbol table
+
+      // variables should be normalized; unnormalize them
+      auto old_coeff_map = import_auto->GetFormula()->GetVariableCoefficientMap();
+      std::map<std::string,int> new_coeff_map;
+      for(auto it : old_coeff_map) {
+        new_coeff_map[symbol_table_->get_variable(it.first)->getName()] = it.second;
+      }
+
+      import_auto->GetFormula()->SetVariableCoefficientMap(new_coeff_map);
+      std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
+
+      // make sure the tracks match by remapping
+      auto new_formula = symbol_table_->get_value(rep_var)->getBinaryIntAutomaton()->GetFormula()->clone();
+      import_auto->ChangeIndicesMap(new_formula);
+
+      auto rep_var_value = new Value(import_auto);
+      symbol_table_->IntersectValue(rep_var,rep_var_value);
+      delete rep_var_value;
+
+      // LOG(INFO) << "Read one automata!";
+    }
+
+
 
 
 
@@ -310,21 +349,31 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
   } else {
     // first serialize
 
-    int num_to_write = 0;
+    int num_string_to_write = 0;
+    int num_int_to_write = 0;
     for (auto iter : value_map) {
       if (iter.second->getType() == Value::Type::STRING_AUTOMATON and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
         if(iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
           continue;
         }
-        num_to_write++;
+        num_string_to_write++;
+      } else if (iter.second->getType() == Value::Type::BINARYINT_AUTOMATON) {// and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+        if(iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
+          continue;
+        }
+        num_int_to_write++;
       }
     }
 
     {
       cereal::BinaryOutputArchive ar(os);
       ar(symbol_table_->GetCharacterMapping());
-      ar(num_to_write);
+      ar(num_string_to_write);
+      ar(num_int_to_write);
     }
+
+    LOG(INFO) << "num_string_to_write = " << num_string_to_write;
+    LOG(INFO) << "num_int_to_write    = " << num_int_to_write;
 
     // store model counters
     if(symbol_table_->has_count_variable()) {
@@ -369,11 +418,42 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
       }
     }
 
+    // write strings
     for (auto iter : value_map) {
       if (iter.second->getType() == Value::Type::STRING_AUTOMATON and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
         auto export_auto = iter.second->getStringAutomaton();
         if (export_auto->GetFormula()->GetNumberOfVariables() == 0) {
           continue;
+        }
+
+        auto variable_coefficient_map = export_auto->GetFormula()->GetVariableCoefficientMap();
+        std::map<std::string,int> remapped_map;
+        for(auto it : variable_coefficient_map) {
+//          LOG(INFO) << "CHANGING " << it.first << " to " << symbol_table_->GetMappedVariableName(it.first);
+          remapped_map[symbol_table_->GetMappedVariableName(it.first)] = it.second;
+        }
+
+        export_auto->GetFormula()->SetVariableCoefficientMap(remapped_map);
+
+        {
+          cereal::BinaryOutputArchive ar(os);
+          export_auto->save(ar);
+        }
+
+        export_auto->GetFormula()->SetVariableCoefficientMap(variable_coefficient_map);
+//      os << "a";
+        // LOG(INFO) << "Serialized one...";
+      }
+    }
+
+    // write ints
+    for (auto iter : value_map) {
+      if (iter.second->getType() == Value::Type::BINARYINT_AUTOMATON) {// and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+        auto export_auto = iter.second->getBinaryIntAutomaton();
+        if (export_auto->GetFormula()->GetNumberOfVariables() == 0) {
+          continue;
+        } else {
+          LOG(INFO) << export_auto->GetFormula()->GetNumberOfVariables();
         }
 
         auto variable_coefficient_map = export_auto->GetFormula()->GetVariableCoefficientMap();
@@ -471,6 +551,7 @@ void ConstraintSolver::visitLet(Let_ptr let_term) {
 
 
 void ConstraintSolver::visitAnd(And_ptr and_term) {
+  DVLOG(VLOG_LEVEL) << "start visit and";
   bool is_satisfiable = true;
   bool is_component = constraint_information_->is_component(and_term);
 
@@ -523,11 +604,13 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   }
 
 //LOG(INFO) << "Before collect and_term";
+  arithmetic_constraint_solver_.collect_arithmetic_constraint_info(and_term);
   string_constraint_solver_.collect_string_constraint_info(and_term);
 //LOG(INFO) << "After collect and_term";
 
   // if we have cached result, import it and go from there
   if(has_cached_result) {
+    LOG(INFO) << "Got Sub-Cached result!";
     // first check if key has only 0 in it. if so, formula unsat
     if(cached_data.size() == 1) {
       Value_ptr result = new Value(is_satisfiable);
@@ -539,7 +622,8 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       return;
     }
 
-    int num_to_read = 0;
+    int num_string_to_read = 0;
+    int num_int_to_read = 0;
     // LOG(INFO) << "Reading cached data...";
     std::stringstream is(cached_data);
     std::map<char,char> char_mapping;
@@ -547,15 +631,19 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     {
       cereal::BinaryInputArchive ar(is);
       ar(char_mapping);
-      ar(num_to_read);
+      ar(num_string_to_read);
+      ar(num_int_to_read);
     }
+
+    LOG(INFO) << "num_str_to_read = " << num_string_to_read;
+    LOG(INFO) << "num_int_to_read = " << num_int_to_read;
 
 
     symbol_table_->SetCharacterMapping(char_mapping);
     // deserialize automata one by one until none left
 
-    while(num_to_read > 0) {
-      num_to_read--;
+    while(num_string_to_read > 0) {
+      num_string_to_read--;
       Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(nullptr, 0);
       std::string var_name;
       {
@@ -588,6 +676,41 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       delete import_auto;
 
     }
+
+    while(num_int_to_read-- > 0) {
+      LOG(INFO) << "Reading int...";
+      Theory::BinaryIntAutomaton_ptr import_auto = new Theory::BinaryIntAutomaton(nullptr, 0,true);
+      std::string var_name;
+      {
+        cereal::BinaryInputArchive ar(is);
+        import_auto->load(ar);
+      }
+      // get one of the variables from import_auto's formula
+      // we use this to update the correct variable in our symbol table
+      auto old_coeff_map = import_auto->GetFormula()->GetVariableCoefficientMap();
+      std::map<std::string,int> new_coeff_map;
+      for(auto it : old_coeff_map) {
+        new_coeff_map[symbol_table_->get_variable(it.first)->getName()] = it.second;
+      }
+
+      import_auto->GetFormula()->SetVariableCoefficientMap(new_coeff_map);
+      std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
+
+      // make sure the tracks match by remapping
+      auto new_formula = symbol_table_->get_value(rep_var)->getBinaryIntAutomaton()->GetFormula()->clone();
+//      LOG(INFO) << "";
+//      for(auto names : new_formula->GetVariableCoefficientMap()) {
+//        LOG(INFO) << "   -> " << names.first;
+//      }
+
+      auto remapped_import_auto = import_auto->ChangeIndicesMap(new_formula);
+
+      auto rep_var_value = new Value(remapped_import_auto);
+      symbol_table_->IntersectValue(rep_var,rep_var_value);
+      delete rep_var_value;
+      delete import_auto;
+    LOG(INFO) << "Done reading int...";
+    }
 //    std::cin.get();
   }
 
@@ -609,6 +732,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       renamer.start(term,false);
     }
 
+    arithmetic_constraint_solver_.collect_arithmetic_constraint_info(term);
     string_constraint_solver_.collect_string_constraint_info(term);
 
     // solve term using normal constraint solving algorithm
@@ -656,16 +780,19 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     std::stringstream os;
 
     // first serialize
-
-
-
-    int num_to_write = 0;
+    int num_string_to_write = 0;
+    int num_int_to_write = 0;
     for (auto iter : value_map) {
       if (iter.second->getType() == Value::Type::STRING_AUTOMATON and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
         if(iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
           continue;
         }
-        num_to_write++;
+        num_string_to_write++;
+      } else if (iter.second->getType() == Value::Type::BINARYINT_AUTOMATON) {// and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+        if(iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
+          continue;
+        }
+        num_int_to_write++;
       }
     }
 
@@ -674,8 +801,12 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     {
       cereal::BinaryOutputArchive ar(os);
       ar(symbol_table_->GetCharacterMapping());
-      ar(num_to_write);
+      ar(num_string_to_write);
+      ar(num_int_to_write);
     }
+
+    LOG(INFO) << "num_str_to_write = " << num_string_to_write;
+    LOG(INFO) << "num_int_to_write = " << num_int_to_write;
 
     // then values
     for (auto iter : value_map) {
@@ -702,6 +833,33 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         export_auto->GetFormula()->SetVariableCoefficientMap(variable_coefficient_map);
 //      os << "a";
         // LOG(INFO) << "Serialized one...";
+      }
+
+      for (auto iter : value_map) {
+        if (iter.second->getType() == Value::Type::BINARYINT_AUTOMATON) {// and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+          auto export_auto = iter.second->getBinaryIntAutomaton();
+          if (export_auto->GetFormula()->GetNumberOfVariables() == 0) {
+            continue;
+          }
+
+          auto variable_coefficient_map = export_auto->GetFormula()->GetVariableCoefficientMap();
+          std::map<std::string, int> remapped_map;
+          for (auto it : variable_coefficient_map) {
+//          LOG(INFO) << "CHANGING " << it.first << " to " << symbol_table_->GetMappedVariableName(it.first);
+            remapped_map[symbol_table_->GetMappedVariableName(it.first)] = it.second;
+          }
+
+          export_auto->GetFormula()->SetVariableCoefficientMap(remapped_map);
+
+          {
+            cereal::BinaryOutputArchive ar(os);
+            export_auto->save(ar);
+          }
+
+          export_auto->GetFormula()->SetVariableCoefficientMap(variable_coefficient_map);
+//      os << "a";
+          // LOG(INFO) << "Serialized one...";
+        }
       }
 
       // then 0, to signify no model counters are added

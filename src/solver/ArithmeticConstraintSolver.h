@@ -38,6 +38,7 @@ class ArithmeticConstraintSolver : public AstTraverser {
   void start(SMT::Visitable_ptr);
   void start();
   void end();
+  void collect_arithmetic_constraint_info(SMT::Visitable_ptr);
   void collect_arithmetic_constraint_info();
 
   void setCallbacks();

@@ -37,6 +37,7 @@
 #include "options/Theory.h"
 #include "SemilinearSet.h"
 #include "UnaryAutomaton.h"
+#include "../utils/Serialize.h"
 
 namespace Vlab {
 namespace Theory {
@@ -54,6 +55,24 @@ public:
   virtual ~BinaryIntAutomaton();
 
   virtual BinaryIntAutomaton_ptr clone() const;
+
+  template <class Archive>
+  void save(Archive& ar) const {
+    ar(is_natural_number_);
+    formula_->save(ar);
+    Util::Serialize::save(ar,dfa_);
+  }
+
+  template <class Archive>
+  void load(Archive& ar) {
+    ar(is_natural_number_);
+    formula_->load(ar);
+    Util::Serialize::load(ar,dfa_);
+    if(dfa_ == nullptr) {
+      LOG(INFO) << "Null!?";
+    }
+  }
+
   // What about natural number parameter?
   virtual BinaryIntAutomaton_ptr MakeAutomaton(DFA_ptr dfa, Formula_ptr formula, const int number_of_variables);
 
@@ -75,6 +94,8 @@ public:
   BinaryIntAutomaton_ptr Difference(BinaryIntAutomaton_ptr);
   BinaryIntAutomaton_ptr Exists(std::string var_name);
   BinaryIntAutomaton_ptr GetBinaryAutomatonFor(std::string var_name);
+  BinaryIntAutomaton_ptr ChangeIndicesMap(ArithmeticFormula_ptr new_formula);
+
   BinaryIntAutomaton_ptr GetPositiveValuesFor(std::string var_name);
   BinaryIntAutomaton_ptr GetNegativeValuesFor(std::string var_name);
   BinaryIntAutomaton_ptr TrimLeadingZeros();

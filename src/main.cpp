@@ -230,7 +230,7 @@ int main(const int argc, const char **argv) {
     driver.InitializeSolver();
 
     if(driver.symbol_table_->has_count_variable() and count_variable.empty()) {
-
+      LOG(FATAL) << "SHOULD NOT HAVE";
       count_variable = driver.symbol_table_->get_count_variable()->getName();
 //      LOG(INFO) << count_variable;
 //      std::cin.get();
@@ -245,14 +245,14 @@ int main(const int argc, const char **argv) {
     } else {
 
       count_start = std::chrono::steady_clock::now();
-      auto mc1 = driver.GetModelCounterForVariable(count_variable,false);
-      auto mc2 = driver.GetModelCounterForVariable(count_variable,true);
+//      auto mc1 = driver.GetModelCounterForVariable(count_variable,false);
+//      auto mc2 = driver.GetModelCounterForVariable(count_variable,true);
       count_end = std::chrono::steady_clock::now();
       mc_time += count_end-count_start;
 
       count_start = std::chrono::steady_clock::now();
-      auto count1 = mc1.Count(50,50);
-      auto count2 = mc2.Count(50,50);
+//      auto count1 = mc1.Count(50,50);
+//      auto count2 = mc2.Count(50,50);
       count_end = std::chrono::steady_clock::now();
       count_time += count_end-count_start;
 
