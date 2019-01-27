@@ -797,7 +797,7 @@ std::string SymbolTable::GetMappedVariableName(std::string name) {
   if(variable_mapping_.find(name) != variable_mapping_.end()) {
     return variable_mapping_[name];
   }
-  LOG(FATAL) << name;
+  //LOG(FATAL) << name;
   return name;
 }
 

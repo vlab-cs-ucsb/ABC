@@ -1388,22 +1388,22 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeEquality(ArithmeticFormula_ptr fo
   }
 }
 
-BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr new_formula) {
+BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr formula) {
 
-  if (not new_formula->Simplify()) {
-    auto equality_auto = BinaryIntAutomaton::MakePhi(new_formula, false);
-    DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeIntEquality(" << *new_formula << ")";
+  if (not formula->Simplify()) {
+    auto equality_auto = BinaryIntAutomaton::MakePhi(formula, false);
+    DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeIntEquality(" << *formula << ")";
     return equality_auto;
   }
 
-  auto new_coeff_map = new_formula->GetVariableCoefficientMap();
-  ArithmeticFormula_ptr formula = new ArithmeticFormula();
-  formula->SetType(new_formula->GetType());
-  for(auto variable_coeff : new_coeff_map) {
-    if(variable_coeff.second != 0) {
-      formula->AddVariable(variable_coeff.first, variable_coeff.second);
-    }
-  }
+//  auto new_coeff_map = new_formula->GetVariableCoefficientMap();
+//  ArithmeticFormula_ptr formula = new ArithmeticFormula();
+//  formula->SetType(new_formula->GetType());
+//  for(auto variable_coeff : new_coeff_map) {
+//    if(variable_coeff.second != 0) {
+//      formula->AddVariable(variable_coeff.first, variable_coeff.second);
+//    }
+//  }
 
   auto coeffs_map = formula->GetVariableCoefficientMap();
   auto coeffs = formula->GetCoefficients();
@@ -1578,12 +1578,12 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr
   auto equality_auto = new BinaryIntAutomaton(equality_dfa, formula, false);
   CHECK_EQ(false, equality_auto->IsInitialStateAccepting());
 
-  auto temp_auto = equality_auto->ChangeIndicesMap(new_formula);
+//  auto temp_auto = equality_auto->ChangeIndicesMap(new_formula);
+//
+//  delete equality_auto;
+//  equality_auto = temp_auto;
 
-  delete equality_auto;
-  equality_auto = temp_auto;
-
-  DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeIntEquality(" << *new_formula << ")";
+  DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeIntEquality(" << *formula << ")";
   return equality_auto;
 }
 

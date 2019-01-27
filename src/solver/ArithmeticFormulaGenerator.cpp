@@ -459,6 +459,9 @@ void ArithmeticFormulaGenerator::visitLen(Len_ptr len_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *len_term;
 
   std::string name = symbol_table_->get_var_name_for_expression(len_term, Variable::Type::INT);
+  // not sure if this is a good idea, but it works for now...
+  symbol_table_->add_variable(new Variable(name,Variable::Type::INT));
+
 
   auto formula = new ArithmeticFormula();
   formula->AddVariable(name, 1);
