@@ -21,14 +21,14 @@ public class ExampleUsage {
         + "(check-sat)";
     // solve initial constraint, 
     
-    boolean result = abcDriver.isSatisfiable(core_constraint);
+    boolean result = abcDriver.isSatisfiable2(core_constraint, true);
     System.out.println("----------DONE CORE-----------");
     // get id of core constraint
     String core_constraint_id = abcDriver.getCurrentID();
 
     // from core constraint, we have two branches we want to build off of
-    String branch1 = "(assert (< l h))";
-    String branch2 = "(assert (> l h))";
+    String branch1 = core_constraint + "(assert (< l h))";
+    String branch2 = core_constraint + "(assert (> l h))";
 
 
     // isSatisfiable2 assumes incremental mode; takes two params: constraint, and branch
@@ -71,11 +71,11 @@ public class ExampleUsage {
 
 
     // lets go back to branch1
-    abcDriver.loadID(core_constraint_id);
+    //abcDriver.loadID(core_constraint_id);
     // lets go incremental, but make branch=false; this will take branch1_id's state
     // and continue on with it, without making a copy
-    String branch1_constraint2 = "(assert (= (charAt h 1) \"Z\"))";
-    result = abcDriver.isSatisfiable2(branch1_constraint2,false);
+    String branch1_constraint2 = branch2 + "(assert (= (charAt h 1) \"Z\"))";
+    result = abcDriver.isSatisfiable2(branch1_constraint2,true);
 
     results = abcDriver.getSatisfyingExamplesRandomBounded(5);
     for (Entry<String, String> var_result : results.entrySet()) {

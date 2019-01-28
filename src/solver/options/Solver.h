@@ -35,7 +35,7 @@ enum class Name: int {
 	INCREMENTAL,
   REGEX_FLAG,
   OUTPUT_PATH,
-  SCRIPT_PATH
+  SCRIPT_PATH,
 };
 
 class Solver {

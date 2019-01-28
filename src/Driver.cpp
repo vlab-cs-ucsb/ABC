@@ -73,6 +73,7 @@ void Driver::error(const std::string& m) {
 }
 
 int Driver::Parse(std::istream* in) {
+  reset();
   SMT::Scanner scanner(in);
   //  scanner.set_debug(trace_scanning);
   SMT::Parser parser(script_, scanner);
@@ -110,14 +111,14 @@ void Driver::ast2dot(std::string file_name) {
 void Driver::InitializeSolver() {
 
 
-	if(current_id_.empty()) {
+//	if(current_id_.empty()) {
 		symbol_table_ = new Solver::SymbolTable();
-		current_id_ = symbol_table_->get_var_name_for_node(script_,Vlab::SMT::TVariable::Type::NONE);
-		incremental_states_[current_id_] = symbol_table_;
-		symbol_table_->push_scope(script_);
-	} else {
-		symbol_table_ = incremental_states_[current_id_];
-	}
+//		current_id_ = symbol_table_->get_var_name_for_node(script_,Vlab::SMT::TVariable::Type::NONE);
+//		incremental_states_[current_id_] = symbol_table_;
+//		symbol_table_->push_scope(script_);
+//	} else {
+//		symbol_table_ = incremental_states_[current_id_];
+//	}
 
 
 
@@ -181,6 +182,7 @@ void Driver::Solve() {
 //  Solver::ArithmeticFormulaGenerator arithmetic_formula_generator(script_, symbol_table_, constraint_information_);
 //  arithmetic_formula_generator.start();
 
+
   auto start = std::chrono::steady_clock::now();
   Solver::ConstraintSolver* constraint_solver = new Solver::ConstraintSolver(script_, symbol_table_, constraint_information_, rdx_);
   constraint_solver->start();
@@ -212,6 +214,7 @@ void Driver::Solve() {
 	auto end = std::chrono::steady_clock::now();
   auto time2 = end-start;
 
+  Option::Solver::INCREMENTAL = false;
 //  LOG(INFO) << "Driver::Solve() time   : " << std::chrono::duration<long double, std::milli>(time2).count();
 }
 
@@ -865,27 +868,36 @@ void Driver::set_option(const Option::Name option, const std::string value) {
 }
 
 void Driver::loadID(std::string id) {
-	if(incremental_states_.find(id) != incremental_states_.end()) {
-    current_id_ = id;
-    symbol_table_ = incremental_states_[current_id_];
-	} else {
-		current_id_ = "";
-    symbol_table_ = nullptr;
-	}
 
-  for(auto &iter : cached_values_) {
-		delete iter.second;
-		iter.second = nullptr;
-	}
-	cached_values_.clear();
-
-	for(auto &iter : cached_bounded_values_) {
-		delete iter.second;
-		iter.second = nullptr;
-	}
-	cached_bounded_values_.clear();
-  
-  script_ = nullptr;
+  reset();
+  std::stringstream is;
+  is << id;
+Option::Solver::INCREMENTAL = true;
+  Parse(&is);
+  InitializeSolver();
+  Solve();
+Option::Solver::INCREMENTAL = false;
+//	if(incremental_states_.find(id) != incremental_states_.end()) {
+//    current_id_ = id;
+//    symbol_table_ = incremental_states_[current_id_];
+//	} else {
+//		current_id_ = "";
+//    symbol_table_ = nullptr;
+//	}
+//
+//  for(auto &iter : cached_values_) {
+//		delete iter.second;
+//		iter.second = nullptr;
+//	}
+//	cached_values_.clear();
+//
+//	for(auto &iter : cached_bounded_values_) {
+//		delete iter.second;
+//		iter.second = nullptr;
+//	}
+//	cached_bounded_values_.clear();
+//
+//  script_ = nullptr;
 
 }
 
@@ -917,24 +929,28 @@ void Driver::destroyID(std::string id) {
 }
 
 void Driver::saveStateAndBranch() {
-  static int counter = 0;
-  if(current_id_.empty()) {
-    return;
-  }
-  for(auto &iter : cached_values_) {
-    delete iter.second;
-    iter.second = nullptr;
-  }
-  cached_values_.clear();
-  for(auto &iter : cached_bounded_values_) {
-    delete iter.second;
-    iter.second = nullptr;
-  }
-  cached_bounded_values_.clear();
-  std::string next_id = current_id_.append(std::to_string(counter));
-  current_id_ = next_id;
-  incremental_states_[current_id_] = symbol_table_->clone();
-  counter++;
+
+//  reset();
+  Option::Solver::INCREMENTAL = true;
+
+//  static int counter = 0;
+//  if(current_id_.empty()) {
+//    return;
+//  }
+//  for(auto &iter : cached_values_) {
+//    delete iter.second;
+//    iter.second = nullptr;
+//  }
+//  cached_values_.clear();
+//  for(auto &iter : cached_bounded_values_) {
+//    delete iter.second;
+//    iter.second = nullptr;
+//  }
+//  cached_bounded_values_.clear();
+//  std::string next_id = current_id_.append(std::to_string(counter));
+//  current_id_ = next_id;
+//  incremental_states_[current_id_] = symbol_table_->clone();
+//  counter++;
 }
 
 void Driver::print_statistics() {

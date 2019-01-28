@@ -1116,7 +1116,7 @@ StringAutomaton_ptr StringAutomaton::MakeLessThan(StringFormula_ptr formula) {
 
 StringAutomaton_ptr StringAutomaton::MakeLessThanOrEqual(StringFormula_ptr formula) {
 
-  LOG(FATAL) << "Dont use me yet for subcaching";
+//  LOG(FATAL) << "Dont use me yet for subcaching";
 
 	StringAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
 	StringAutomaton_ptr constant_string_auto = nullptr;
@@ -1215,7 +1215,7 @@ StringAutomaton_ptr StringAutomaton::MakeLessThanOrEqual(StringFormula_ptr formu
 
 StringAutomaton_ptr StringAutomaton::MakeGreaterThan(StringFormula_ptr formula) {
 
-  LOG(FATAL) << "Dont use me yet for subcaching";
+//  LOG(FATAL) << "Dont use me yet for subcaching";
 
 	StringAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
 	StringAutomaton_ptr constant_string_auto = nullptr;
@@ -1318,7 +1318,7 @@ StringAutomaton_ptr StringAutomaton::MakeGreaterThan(StringFormula_ptr formula) 
 
 StringAutomaton_ptr StringAutomaton::MakeGreaterThanOrEqual(StringFormula_ptr formula) {
 
-  LOG(FATAL) << "Dont use me yet for subcaching";
+//  LOG(FATAL) << "Dont use me yet for subcaching";
 
 	StringAutomaton_ptr result_auto = nullptr, temp_auto = nullptr;
 	StringAutomaton_ptr constant_string_auto = nullptr;

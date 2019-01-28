@@ -228,6 +228,7 @@ int main(const int argc, const char **argv) {
     in = file;
     driver.Parse(in);
     driver.InitializeSolver();
+    driver.set_option(Vlab::Option::Name::INCREMENTAL);
 
     if(driver.symbol_table_->has_count_variable() and count_variable.empty()) {
       LOG(FATAL) << "SHOULD NOT HAVE";

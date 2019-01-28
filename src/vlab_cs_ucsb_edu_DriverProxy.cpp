@@ -139,10 +139,11 @@ JNIEXPORT jboolean JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_isSatisfiable2
 	const char* constraint_str = env->GetStringUTFChars(constraint, JNI_FALSE);
 	input_constraint.str(constraint_str);
 
-  if(branch) {
+
+	abc_driver->Parse(&input_constraint);
+	if(branch) {
     abc_driver->saveStateAndBranch();
   }
-	abc_driver->Parse(&input_constraint);
 	env->ReleaseStringUTFChars(constraint, constraint_str);
 	abc_driver->InitializeSolver();
 	abc_driver->Solve();
