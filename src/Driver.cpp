@@ -186,18 +186,19 @@ void Driver::Solve() {
   auto start = std::chrono::steady_clock::now();
   Solver::ConstraintSolver* constraint_solver = new Solver::ConstraintSolver(script_, symbol_table_, constraint_information_, rdx_);
   constraint_solver->start();
+  LOG(INFO) << "Done start";
   total_hits_ += constraint_solver->num_hits();
   total_misses_ += constraint_solver->num_misses();
   if(constraint_solver->num_hits() > 0) hit_statistics_.push_back(constraint_solver->hit_statistic());
-
-  if(symbol_table_->top_scope() != script_) {
-    // LOG(INFO) << "UPDATING SCOPE VALUES";
-    auto values = symbol_table_->get_values_at_scope(script_);
-    for(auto &var_iter : values) {
-      bool rez = symbol_table_->IntersectValue(var_iter.first,var_iter.second);
-      symbol_table_->update_satisfiability_result(rez);
-    }
-  }
+  LOG(INFO) << "almost...";
+//  if(symbol_table_->top_scope() != script_) {
+//    // LOG(INFO) << "UPDATING SCOPE VALUES";
+//    auto values = symbol_table_->get_values_at_scope(script_);
+//    for(auto &var_iter : values) {
+//      bool rez = symbol_table_->IntersectValue(var_iter.first,var_iter.second);
+//      symbol_table_->update_satisfiability_result(rez);
+//    }
+//  }
 
   for(auto &iter : cached_values_) {
 		delete iter.second;
@@ -215,6 +216,7 @@ void Driver::Solve() {
   auto time2 = end-start;
 
   Option::Solver::INCREMENTAL = false;
+  LOG(INFO) << "Done solve";
 //  LOG(INFO) << "Driver::Solve() time   : " << std::chrono::duration<long double, std::milli>(time2).count();
 }
 

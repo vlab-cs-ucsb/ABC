@@ -17,18 +17,22 @@ public class ExampleUsage {
         + "(declare-fun l () String)\n"
         + "(assert (in h /[A-Z]{4,}/))\n"
         + "(assert (in l /[A-Z]{4,}/))\n"
+        + "(assert (= (len h) 4))"
+        + "(assert (= (len l) 4))"
         + "(assert (= (charAt h 0) (charAt l 0)))\n"
+        + "(assert (= l \"XEZE\"))"
+        + "(assert (= h \"KLMN\"))"
         + "(check-sat)";
     // solve initial constraint, 
     
-    boolean result = abcDriver.isSatisfiable2(core_constraint, true);
+    boolean result = abcDriver.isSatisfiable(core_constraint);
     System.out.println("----------DONE CORE-----------");
     // get id of core constraint
     String core_constraint_id = abcDriver.getCurrentID();
 
     // from core constraint, we have two branches we want to build off of
-    String branch1 = core_constraint + "(assert (< l h))";
-    String branch2 = core_constraint + "(assert (> l h))";
+    String branch1 = core_constraint + "(assert (!= l h))";
+    String branch2 = core_constraint + "(assert (!= l h))";
 
 
     // isSatisfiable2 assumes incremental mode; takes two params: constraint, and branch
@@ -37,8 +41,16 @@ public class ExampleUsage {
     // if branch = false, then ABC will use the state associated with the current ID and
     //                   continue from there in incremental mode; e.g., the current state is
     //                   taken as the "initial" state for the next solve, and is modified from thereon
-    result = abcDriver.isSatisfiable2(branch1, true);
+
+
+
+
+    result = abcDriver.isSatisfiable2(branch1, false);
+    System.out.println("Done!");
+
     // since branch=true, we gotta get the ID if we want to come back to this state
+
+/*
     String branch1_id = abcDriver.getCurrentID();
 
 
@@ -84,7 +96,7 @@ public class ExampleUsage {
       System.out.println(var_result.getKey() + "(mutated) : \"" + mutated_model + "\"");
     }
     System.out.println("-----------END-----------");
-    
+    */
     
     abcDriver.dispose(); // release resources
   }

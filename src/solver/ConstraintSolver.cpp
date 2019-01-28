@@ -319,8 +319,10 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
     } //else {LOG(INFO) << "Nope";}
 
   }
-  check_and_visit(assert_command->term);
 
+LOG(INFO) << "Before visit assert->term";
+  check_and_visit(assert_command->term);
+LOG(INFO) << "After visit assert->term";
   Value_ptr result = getTermValue(assert_command->term);
   bool is_satisfiable = result->is_satisfiable();
 
@@ -337,6 +339,7 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
   }
   clearTermValuesAndLocalLetVars();
 
+LOG(INFO) << "almost done";
 
   if(Option::Solver::INCREMENTAL == true) {
 
@@ -505,6 +508,8 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
   }
 
+
+  LOG(INFO) << "done done";
 }
 
 
