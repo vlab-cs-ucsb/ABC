@@ -2785,6 +2785,7 @@ IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
           }
           // update path
           decoded_exception = decodeException(current_exception);
+
           for (auto ch : decoded_exception) {
             for (auto p : paths_to_state) {
               current_paths_to_state[pp->to].push_back(p + ch);
@@ -2799,7 +2800,7 @@ IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
       for (auto& entry : current_paths_to_state) {
         if (IsAcceptingState(entry.first)) {
           for (auto str_value : entry.second) {
-            int_values.push_back(std::stoi(str_value));
+            int_values.push_back(str_value.length());
           }
         }
         dfs_stack.push(std::make_pair(entry.first, entry.second));
