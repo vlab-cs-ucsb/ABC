@@ -115,7 +115,7 @@ void Driver::InitializeSolver() {
 		symbol_table_ = new Solver::SymbolTable();
 //		current_id_ = symbol_table_->get_var_name_for_node(script_,Vlab::SMT::TVariable::Type::NONE);
 //		incremental_states_[current_id_] = symbol_table_;
-//		symbol_table_->push_scope(script_);
+		symbol_table_->push_scope(script_);
 //	} else {
 //		symbol_table_ = incremental_states_[current_id_];
 //	}
@@ -217,6 +217,7 @@ void Driver::Solve() {
 
   Option::Solver::INCREMENTAL = false;
   LOG(INFO) << "Done solve";
+//  LOG(INFO) << getSatisfyingVariables().size();
 //  LOG(INFO) << "Driver::Solve() time   : " << std::chrono::duration<long double, std::milli>(time2).count();
 }
 
@@ -715,6 +716,8 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandomBounded(co
   // 		results[it.first] = cached_bounded_values_[it.first]->getStringAutomaton()->GetAnAcceptingStringRandom();
   // 	}
   // } else {
+
+//  LOG(INFO) << getSatisfyingVariables().size();
 		for (auto& variable_entry : getSatisfyingVariables()) {
 			if(Solver::Value::Type::STRING_AUTOMATON == variable_entry.second->getType()) {
 				auto string_auto = variable_entry.second->getStringAutomaton();
