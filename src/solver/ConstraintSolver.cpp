@@ -346,9 +346,9 @@ LOG(INFO) << "almost done";
     std::string temp = key;
     key = Ast2Dot::toString(assert_command);
 //  LOG(INFO) << "KEY SIZE = " << key.length();
-    if (temp != key) {
-      LOG(FATAL) << "NO MATCH!?";
-    }
+    // if (temp != key) {
+    //   LOG(FATAL) << "NO MATCH!?";
+    // }
     // LOG(INFO) << key;
     // std::cin.get();
     auto value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
