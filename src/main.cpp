@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 #include <experimental/filesystem>
+#include <algorithm>
 
 #include <glog/logging.h>
 #include <glog/vlog_is_on.h>
@@ -169,6 +170,7 @@ int main(const int argc, const char **argv) {
   file = new std::ifstream(files[0]);
   in = file;
 
+  std::sort(files.begin(),files.end());
 
   google::InitGoogleLogging(argv[0]);
 
@@ -231,7 +233,7 @@ int main(const int argc, const char **argv) {
     driver.set_option(Vlab::Option::Name::INCREMENTAL);
 
     if(driver.symbol_table_->has_count_variable() and count_variable.empty()) {
-      LOG(FATAL) << "SHOULD NOT HAVE";
+
       count_variable = driver.symbol_table_->get_count_variable()->getName();
 //      LOG(INFO) << count_variable;
 //      std::cin.get();

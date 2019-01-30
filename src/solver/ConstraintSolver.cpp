@@ -157,7 +157,7 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
     // if we have cached result, import it and go from there
     if (has_cached_result) {
 
-      LOG(INFO) << "GOT CACHED RESULT!";
+//      LOG(INFO) << "GOT CACHED RESULT!";
 
       arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
       string_constraint_solver_.collect_string_constraint_info();
@@ -320,15 +320,15 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
   }
 
-LOG(INFO) << "Before visit assert->term";
+//LOG(INFO) << "Before visit assert->term";
   check_and_visit(assert_command->term);
-LOG(INFO) << "After visit assert->term";
+//LOG(INFO) << "After visit assert->term";
   Value_ptr result = getTermValue(assert_command->term);
   bool is_satisfiable = result->is_satisfiable();
 
-  if(not is_satisfiable) {
-    LOG(INFO) << "BAD!";
-  }
+//  if(not is_satisfiable) {
+//    LOG(INFO) << "BAD!";
+//  }
 
   symbol_table_->update_satisfiability_result(is_satisfiable);
   if ((Term::Type::OR not_eq assert_command->term->type()) and (Term::Type::AND not_eq assert_command->term->type())) {
@@ -339,7 +339,7 @@ LOG(INFO) << "After visit assert->term";
   }
   clearTermValuesAndLocalLetVars();
 
-LOG(INFO) << "almost done";
+//LOG(INFO) << "almost done";
 
   if(Option::Solver::INCREMENTAL == true) {
 
@@ -468,8 +468,6 @@ LOG(INFO) << "almost done";
           auto export_auto = iter.second->getBinaryIntAutomaton();
           if (export_auto->GetFormula()->GetNumberOfVariables() == 0) {
             continue;
-          } else {
-            LOG(INFO) << export_auto->GetFormula()->GetNumberOfVariables();
           }
 
           auto variable_coefficient_map = export_auto->GetFormula()->GetVariableCoefficientMap();
@@ -509,7 +507,7 @@ LOG(INFO) << "almost done";
   }
 
 
-  LOG(INFO) << "done done";
+//  LOG(INFO) << "done done";
 }
 
 
@@ -636,9 +634,9 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       // first check if key has only 0 in it. if so, formula unsat
       if (cached_data.size() == 1) {
         Value_ptr result = new Value(is_satisfiable);
-        if (not is_satisfiable) {
-          LOG(INFO) << "NO SAT";
-        }
+//        if (not is_satisfiable) {
+//          LOG(INFO) << "NO SAT";
+//        }
 
         setTermValue(and_term, result);
         return;
@@ -704,7 +702,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 //      LOG(INFO) << "Done str, reading int...";
 
       while (num_int_to_read-- > 0) {
-        LOG(INFO) << "Reading int...";
+//        LOG(INFO) << "Reading int...";
         Theory::BinaryIntAutomaton_ptr import_auto = new Theory::BinaryIntAutomaton(nullptr, 0, true);
         std::string var_name;
         {
@@ -797,9 +795,9 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         clearTermValuesAndLocalLetVars();
       }
 
-      if (not is_satisfiable) {
-        LOG(INFO) << "Not sat!";
-      }
+//      if (not is_satisfiable) {
+//        LOG(INFO) << "Not sat!";
+//      }
 
       // now we need to cache what we've got so far
       key = Ast2Dot::toString(and_term);
@@ -933,9 +931,9 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     }
 
     Value_ptr result = new Value(is_satisfiable);
-    if (not is_satisfiable) {
-      LOG(INFO) << "NO SAT";
-    }
+//    if (not is_satisfiable) {
+//      LOG(INFO) << "NO SAT";
+//    }
 
     setTermValue(and_term, result);
 
