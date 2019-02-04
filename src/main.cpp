@@ -249,7 +249,7 @@ int main(const int argc, const char **argv) {
     }
 
 //    if (i > 1200 or false and VLOG_IS_ON(30) and not output_root.empty()) {
-     driver.ast2dot(output_root + "/optimized.dot");
+     // driver.ast2dot(output_root + "/optimized.dot");
 //   }
     driver.Solve();
     if(not driver.is_sat()) {

@@ -301,6 +301,7 @@ protected:
     TermNode(SMT::Term_ptr node);
     ~TermNode();
     std::string str();
+    int num_ops;
 
     void setType(TermNode::Type type);
     TermNode::Type getType();

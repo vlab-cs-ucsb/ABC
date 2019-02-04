@@ -587,6 +587,10 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
     bool result = (constant_term_checker_left.get_constant_as_string() == constant_term_checker_right.get_constant_as_string());
     add_callback_to_replace_with_bool(eq_term, result);
     return;
+  } else if(constant_term_checker_left.is_constant()) {
+    auto tmp = eq_term->right_term;
+    eq_term->right_term = eq_term->left_term;
+    eq_term->left_term = tmp;
   }
 //  else if(constant_term_checker_left.is_constant()) {
 //  	if(constant_term_checker_left.get_constant_as_string() == "false") {
@@ -763,6 +767,10 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
         delete not_eq_term;
       };
     }
+  } else if(constant_term_checker_left.is_constant()) {
+    auto tmp = not_eq_term->right_term;
+    not_eq_term->right_term = not_eq_term->left_term;
+    not_eq_term->left_term = tmp;
   }
 
   if(Term::Type::QUALIDENTIFIER == not_eq_term->left_term->type()) {
@@ -1932,7 +1940,7 @@ bool SyntacticOptimizer::__check_and_process_len_transformation(Term::Type opera
     if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(right_term)) {
       if (term_constant->getValueType() == Primitive::Type::NUMERAL) {
       	int value = std::stoi(term_constant->getValue());
-      	if(value != 0) return false;
+      	// if(value != 0) return false;
 				DVLOG(VLOG_LEVEL) << "Computing len transformation";
         std::string regex_template = ".{%s,%s}";
         std::string l_value = "";

@@ -171,11 +171,13 @@ void ConstraintSorter::visitOr(Or_ptr or_term) {
 void ConstraintSorter::visitNot(Not_ptr not_term) {
   term_node = nullptr;
   visit_children_of(not_term);
+  term_node->num_ops++;
 }
 
 void ConstraintSorter::visitUMinus(UMinus_ptr u_minus_term) {
   term_node = nullptr;
   visit_children_of(u_minus_term);
+  term_node->num_ops++;
 }
 
 void ConstraintSorter::visitMinus(Minus_ptr minus_term) {
@@ -188,6 +190,7 @@ void ConstraintSorter::visitMinus(Minus_ptr minus_term) {
 
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(TermNode::Type::INT);
+  term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitPlus(Plus_ptr plus_term) {
@@ -195,16 +198,20 @@ void ConstraintSorter::visitPlus(Plus_ptr plus_term) {
   for (auto& term : *(plus_term->term_list)) {
     term_node = nullptr;
     visit(term);
+    
     if (result_node == nullptr and term_node != nullptr) {
       result_node = term_node;
+      result_node->num_ops++;
       result_node->shiftToRight();
     } else if (term_node != nullptr) {
       result_node->addVariableNodes(term_node->getAllNodes(), false);
+      result_node->num_ops = result_node->num_ops + term_node->num_ops +1;
       delete term_node;
     }
   }
   term_node = result_node;
   term_node->setType(TermNode::Type::INT);
+
 }
 
 void ConstraintSorter::visitTimes(Times_ptr times_term) {
@@ -214,9 +221,11 @@ void ConstraintSorter::visitTimes(Times_ptr times_term) {
     visit(term);
     if (result_node == nullptr and term_node != nullptr) {
       result_node = term_node;
+      result_node->num_ops++;
       result_node->shiftToRight();
     } else if (term_node != nullptr) {
       result_node->addVariableNodes(term_node->getAllNodes(), false);
+      result_node->num_ops = result_node->num_ops + term_node->num_ops +1;
       delete term_node;
     }
   }
@@ -251,6 +260,8 @@ void ConstraintSorter::visitEq(Eq_ptr eq_term) {
 
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(term_type);
+
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitNotEq(NotEq_ptr not_eq_term) {
@@ -275,6 +286,7 @@ void ConstraintSorter::visitNotEq(NotEq_ptr not_eq_term) {
 
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(term_type);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 //  term_node->setNode(not_eq_term);
 }
 
@@ -301,6 +313,7 @@ void ConstraintSorter::visitGt(Gt_ptr gt_term) {
 
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(term_type);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitGe(Ge_ptr ge_term) {
@@ -325,6 +338,7 @@ void ConstraintSorter::visitGe(Ge_ptr ge_term) {
 
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(term_type);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitLt(Lt_ptr lt_term) {
@@ -349,6 +363,7 @@ void ConstraintSorter::visitLt(Lt_ptr lt_term) {
 
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(term_type);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitLe(Le_ptr le_term) {
@@ -373,6 +388,7 @@ void ConstraintSorter::visitLe(Le_ptr le_term) {
 
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(term_type);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitConcat(Concat_ptr concat_term) {
@@ -382,9 +398,11 @@ void ConstraintSorter::visitConcat(Concat_ptr concat_term) {
     visit(term);
     if (result_node == nullptr and term_node != nullptr) {
       result_node = term_node;
+      result_node->num_ops++;
       result_node->shiftToRight();
     } else if (term_node != nullptr) {
       result_node->addVariableNodes(term_node->getAllNodes(), false);
+      result_node->num_ops = result_node->num_ops + term_node->num_ops+1;
       delete term_node;
     }
   }
@@ -402,6 +420,7 @@ void ConstraintSorter::visitIn(In_ptr in_term) {
 
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 
@@ -415,6 +434,7 @@ void ConstraintSorter::visitNotIn(NotIn_ptr not_in_term) {
 
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitLen(Len_ptr len_term) {
@@ -424,6 +444,7 @@ void ConstraintSorter::visitLen(Len_ptr len_term) {
     term_node->shiftToRight();
   }
   term_node->setType(TermNode::Type::INT);
+  term_node->num_ops++;
 }
 
 void ConstraintSorter::visitContains(Contains_ptr contains_term) {
@@ -436,6 +457,7 @@ void ConstraintSorter::visitContains(Contains_ptr contains_term) {
 
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitNotContains(NotContains_ptr not_contains_term) {
@@ -448,6 +470,7 @@ void ConstraintSorter::visitNotContains(NotContains_ptr not_contains_term) {
 
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitBegins(Begins_ptr begins_term) {
@@ -460,6 +483,7 @@ void ConstraintSorter::visitBegins(Begins_ptr begins_term) {
 
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitNotBegins(NotBegins_ptr not_begins_term) {
@@ -472,6 +496,7 @@ void ConstraintSorter::visitNotBegins(NotBegins_ptr not_begins_term) {
 
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitEnds(Ends_ptr ends_term) {
@@ -484,6 +509,7 @@ void ConstraintSorter::visitEnds(Ends_ptr ends_term) {
 
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitNotEnds(NotEnds_ptr not_ends_term) {
@@ -496,6 +522,7 @@ void ConstraintSorter::visitNotEnds(NotEnds_ptr not_ends_term) {
 
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitIndexOf(IndexOf_ptr index_of_term) {
@@ -517,6 +544,7 @@ void ConstraintSorter::visitIndexOf(IndexOf_ptr index_of_term) {
   }
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(TermNode::Type::INT);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
@@ -539,6 +567,7 @@ void ConstraintSorter::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
 
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(TermNode::Type::INT);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitCharAt(CharAt_ptr char_at_term) {
@@ -551,6 +580,7 @@ void ConstraintSorter::visitCharAt(CharAt_ptr char_at_term) {
 
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitSubString(SubString_ptr sub_string_term) {
@@ -573,11 +603,13 @@ void ConstraintSorter::visitSubString(SubString_ptr sub_string_term) {
 
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitToUpper(ToUpper_ptr to_upper_term) {
   term_node = nullptr;
   visit_children_of(to_upper_term);
+  term_node->num_ops++;
 }
 
 void ConstraintSorter::visitToLower(ToLower_ptr to_lower_term) {
@@ -588,16 +620,19 @@ void ConstraintSorter::visitToLower(ToLower_ptr to_lower_term) {
 void ConstraintSorter::visitTrim(Trim_ptr trim_term) {
   term_node = nullptr;
   visit_children_of(trim_term);
+  term_node->num_ops++;
 }
 
 void ConstraintSorter::visitToString(ToString_ptr to_string_term) {
   term_node = nullptr;
   visit_children_of(to_string_term);
+  term_node->num_ops++;
 }
 
 void ConstraintSorter::visitToInt(ToInt_ptr to_int_term) {
   term_node = nullptr;
   visit_children_of(to_int_term);
+  term_node->num_ops++;
 }
 
 void ConstraintSorter::visitReplace(Replace_ptr replace_term) {
@@ -615,8 +650,10 @@ void ConstraintSorter::visitReplace(Replace_ptr replace_term) {
   if (right_node != nullptr) {
     right_node->shiftToRight();
   }
+  //term_node->num_ops = left_node->num_ops+right_node_1->num_ops;
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(TermNode::Type::STRING);
+ // term_node->num_ops += right_node_1->num_ops;
 }
 
 void ConstraintSorter::visitCount(Count_ptr count_term) {
@@ -629,6 +666,7 @@ void ConstraintSorter::visitCount(Count_ptr count_term) {
 
   term_node = process_child_nodes(left_node, right_node);
   term_node->setType(TermNode::Type::INT);
+  //term_node->num_ops++;
 }
 
 void ConstraintSorter::visitIte(Ite_ptr ite_term) {
@@ -684,7 +722,9 @@ void ConstraintSorter::visitQualIdentifier(QualIdentifier_ptr qi_term) {
     } else if(variable->getType() == Variable::Type::STRING) {
       term_node->setType(TermNode::Type::STRING);
     }
+    term_node->num_ops++;
   }
+
 }
 
 void ConstraintSorter::visitTermConstant(TermConstant_ptr term_constant) {
@@ -703,6 +743,8 @@ void ConstraintSorter::visitTermConstant(TermConstant_ptr term_constant) {
     default:
       break;
   }
+  term_node->num_ops++;
+  
 }
 
 void ConstraintSorter::visitIdentifier(Identifier_ptr identifier) {
@@ -756,13 +798,16 @@ ConstraintSorter::TermNode_ptr ConstraintSorter::process_child_nodes(TermNode_pt
   if (left_node != nullptr and right_node != nullptr) {
     right_node->shiftToRight();
     right_node->addVariableNodes(left_node->getAllNodes(), true);
+    right_node->num_ops += left_node->num_ops + 1;
     delete left_node;
     result_node = right_node;
   } else if (left_node != nullptr) {
     left_node->shiftToLeft();
+    left_node->num_ops ++;
     result_node = left_node;
   } else if (right_node != nullptr) {
     right_node->shiftToRight();
+    right_node->num_ops++;
     result_node = right_node;
   }
   return result_node;
@@ -896,6 +941,13 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
      return 0;
    }
 
+   if(left_node->num_ops < right_node->num_ops) {
+     return 1 ;
+   }
+   if(left_node->num_ops > right_node->num_ops) {
+     return 0;
+   }
+
    return Ast2Dot::toString(left_node->getNode()) <= Ast2Dot::toString(right_node->getNode());
 	};
 
@@ -921,10 +973,12 @@ bool ConstraintSorter::has_shared_variables(TermNode_ptr term1, TermNode_ptr ter
 
 ConstraintSorter::TermNode::TermNode()
         : _node(nullptr), _has_symbolic_var_on_left(false), _has_symbolic_var_on_right(false), _type(Type::NONE), _depth(0) {
+  this->num_ops = 0;
 }
 
 ConstraintSorter::TermNode::TermNode(Term_ptr node)
         : _node(node), _has_symbolic_var_on_left(false), _has_symbolic_var_on_right(false), _type(Type::NONE),_depth(0) {
+  this->num_ops = 0;
 }
 
 ConstraintSorter::TermNode::~TermNode() {
