@@ -67,6 +67,9 @@ namespace Vlab {
 
 class Driver {
 public:
+
+  std::chrono::duration<double> diff;
+  std::chrono::duration<double> diff2;
   Driver();
   ~Driver();
 
@@ -152,6 +155,8 @@ protected:
   int total_hits_;
   int total_misses_;
   std::vector<std::tuple<int,int>> hit_statistics_;
+
+  ;
 
 private:
   static bool IS_LOGGING_INITIALIZED;

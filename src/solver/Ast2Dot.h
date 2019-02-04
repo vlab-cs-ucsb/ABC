@@ -105,6 +105,7 @@ public:
 
   static int inspectAST(SMT::Visitable_ptr node);
   static std::string toString(SMT::Visitable_ptr node);
+  static int numOps(SMT::Visitable_ptr node);
   static bool isEquivalent(SMT::Visitable_ptr x, SMT::Visitable_ptr y);
 
 private:
@@ -112,7 +113,7 @@ private:
   u_int64_t count; //used to give each node a uniq id
   std::stack<u_int64_t> s; //stack for tracking parent/child pairs
   static int name_counter;
-
+  static int num_ops;
 };
 
 } /* namespace Solver */

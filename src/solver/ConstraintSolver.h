@@ -41,6 +41,7 @@
 #include "Value.h"
 #include "VariableValueComputer.h"
 
+
 namespace Vlab {
 namespace Solver {
 
@@ -48,6 +49,10 @@ class ConstraintSolver: public SMT::Visitor {
   typedef std::map<SMT::Term_ptr, Value_ptr> TermValueMap;
   typedef std::vector<std::vector<SMT::Term_ptr>> VariablePathTable;
  public:
+
+  std::chrono::duration<double> diff;
+  std::chrono::duration<double> diff2;
+
   ConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr, redox::Redox *);
   virtual ~ConstraintSolver();
 

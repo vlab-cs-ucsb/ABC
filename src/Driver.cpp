@@ -29,6 +29,10 @@ Driver::Driver()
   total_hits_ = 0;
   total_misses_ = 0;
 
+  auto start = std::chrono::steady_clock::now();
+  auto end = std::chrono::steady_clock::now();
+  diff = end-start;
+
 }
 
 Driver::~Driver() {
@@ -186,6 +190,10 @@ void Driver::Solve() {
   auto start = std::chrono::steady_clock::now();
   Solver::ConstraintSolver* constraint_solver = new Solver::ConstraintSolver(script_, symbol_table_, constraint_information_, rdx_);
   constraint_solver->start();
+  auto end = std::chrono::steady_clock::now();
+  diff += constraint_solver->diff;
+  diff2 += constraint_solver->diff2;
+
 //  LOG(INFO) << "Done start";
   total_hits_ += constraint_solver->num_hits();
   total_misses_ += constraint_solver->num_misses();
@@ -212,9 +220,8 @@ void Driver::Solve() {
 	}
 	cached_bounded_values_.clear();
 
-	auto end = std::chrono::steady_clock::now();
-  auto time2 = end-start;
 
+  delete constraint_solver;
   Option::Solver::INCREMENTAL = false;
 //  LOG(INFO) << "Done solve";
 //  LOG(INFO) << getSatisfyingVariables().size();

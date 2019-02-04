@@ -30,6 +30,10 @@ ConstraintSolver::ConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_tab
 	Automaton::SetCountBoundExact(Option::Solver::COUNT_BOUND_EXACT);
   num_hits_ = 0;
   num_misses_ = 0;
+  auto start = std::chrono::steady_clock::now();
+  auto end = std::chrono::steady_clock::now();
+  diff = end-start;
+  diff2 = end-start;
 }
 
 ConstraintSolver::~ConstraintSolver() {
@@ -159,8 +163,12 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
 //      LOG(INFO) << "GOT CACHED RESULT!";
 
+
+
       arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
       string_constraint_solver_.collect_string_constraint_info();
+
+      auto cache_start = std::chrono::steady_clock::now();
 
 //     LOG(INFO) << "Reading cached data...";
       std::stringstream is(cached_data);
@@ -314,7 +322,9 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 //    }
 
 
-
+      auto cache_end = std::chrono::steady_clock::now();
+      auto cache_time = cache_end-cache_start;
+      diff = cache_time;
       return;
     } //else {LOG(INFO) << "Nope";}
 
@@ -342,6 +352,8 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 //LOG(INFO) << "almost done";
 
   if(Option::Solver::INCREMENTAL == true) {
+
+    auto cache_start = std::chrono::steady_clock::now();
 
     std::string temp = key;
     key = Ast2Dot::toString(assert_command);
@@ -504,6 +516,10 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
       LOG(FATAL) << "Failed to cache result: " << c2.status();
     }
 
+    auto cache_end = std::chrono::steady_clock::now();
+    auto cache_time = cache_end-cache_start;
+    diff = cache_time;
+
   }
 
 
@@ -588,8 +604,9 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 //
 //     DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *and_term << "@" << and_term;
 //   }
-
-
+  auto cache_start = std::chrono::steady_clock::now();
+  auto cache_end = std::chrono::steady_clock::now();
+  diff = cache_end-cache_start;
 
   std::stack<Term_ptr> terms_to_solve;
   std::string key, cached_data;
@@ -630,6 +647,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
     // if we have cached result, import it and go from there
     if (has_cached_result) {
+      cache_start = std::chrono::steady_clock::now();
 //      LOG(INFO) << "Got Sub-Cached result!";
       // first check if key has only 0 in it. if so, formula unsat
       if (cached_data.size() == 1) {
@@ -735,6 +753,9 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         delete import_auto;
 //        LOG(INFO) << "Done reading int...";
       }
+      cache_end = std::chrono::steady_clock::now();
+      diff += cache_end - cache_start;
+//
 //    std::cin.get();
     }
 
@@ -800,6 +821,9 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 //      }
 
       // now we need to cache what we've got so far
+
+      cache_start = std::chrono::steady_clock::now();
+
       key = Ast2Dot::toString(and_term);
 
       auto value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
@@ -915,6 +939,9 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         LOG(FATAL) << "Failed to cache result";
       }
 
+      cache_end = std::chrono::steady_clock::now();
+      diff += cache_end - cache_start;
+      diff2 += cache_end - cache_start;
       // LOG(INFO) << "Cached term";
     }
 

@@ -213,6 +213,9 @@ int main(const int argc, const char **argv) {
 
 //   driver.Solve();
   auto end = std::chrono::steady_clock::now();
+  auto init_start = std::chrono::steady_clock::now();
+  auto init_end = std::chrono::steady_clock::now();
+  auto init_time = init_end-init_start;
   auto count_start = std::chrono::steady_clock::now();
   auto count_end = std::chrono::steady_clock::now();
   auto count_time = count_end-count_end;
@@ -228,8 +231,14 @@ int main(const int argc, const char **argv) {
 //    LOG(INFO) << iter;
     file = new std::ifstream(iter);
     in = file;
+
+    init_start = std::chrono::steady_clock::now();
     driver.Parse(in);
     driver.InitializeSolver();
+    init_end = std::chrono::steady_clock::now();
+
+    init_time += init_end-init_start;
+
     driver.set_option(Vlab::Option::Name::INCREMENTAL);
 
     if(driver.symbol_table_->has_count_variable() and count_variable.empty()) {
@@ -277,6 +286,10 @@ int main(const int argc, const char **argv) {
   end = std::chrono::steady_clock::now();
   auto solving_time = end - start;
   LOG(INFO)<< "total time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
+  LOG(INFO)<< "init  time: " << std::chrono::duration <long double, std::milli> (init_time).count() << " ms";
+  LOG(INFO)<< "cache time: " << std::chrono::duration <long double, std::milli> (driver.diff).count() << " ms";
+  LOG(INFO)<< "cache2 time:" << std::chrono::duration <long double, std::milli> (driver.diff2).count() << " ms";
+  LOG(INFO) << "";
   LOG(INFO)<< "count time: " << std::chrono::duration <long double, std::milli> (count_time).count() << " ms";
   LOG(INFO)<< "mc    time: " << std::chrono::duration <long double, std::milli> (mc_time).count() << " ms";
   driver.print_statistics();
