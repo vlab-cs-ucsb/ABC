@@ -193,53 +193,53 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
       symbol_table_->SetCharacterMapping(char_map);
 
       int num_model_counters = 0;
-      {
-        cereal::BinaryInputArchive ar(is);
-        ar(num_model_counters);
-      }
+//      {
+//        cereal::BinaryInputArchive ar(is);
+//        ar(num_model_counters);
+//      }
 
-      if (num_model_counters and symbol_table_->has_count_variable()) {
-        std::string var_name = symbol_table_->get_count_variable()->getName();
-        auto variable = symbol_table_->get_variable(var_name);
-        auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(
-          symbol_table_->top_scope(), variable);
-        Solver::Value_ptr var_value = nullptr;
-
-
-        {
-          cereal::BinaryInputArchive ar(is);
-
-          SymbolicCounter sc1, sc2;
-
-          sc1.load(ar);
-          sc2.load(ar);
-          var_value = symbol_table_->get_projected_value_at_scope(symbol_table_->top_scope(), representative_variable);
-          if (var_value == nullptr) {
-            auto any_string = StringAutomaton::MakeAnyString();
-            any_string->SetSymbolicCounter(sc1);
-            var_value = new Value(any_string);
-            symbol_table_->set_value(representative_variable, var_value);
-            delete var_value;
-            var_value = nullptr;
-          } else {
-            var_value->getStringAutomaton()->SetSymbolicCounter(sc1);
-          }
-
-          var_value = symbol_table_->get_value_at_scope(symbol_table_->top_scope(), representative_variable);
-          if (var_value == nullptr) {
-            auto any_string = StringAutomaton::MakeAnyString();
-            any_string->SetSymbolicCounter(sc2);
-            var_value = new Value(any_string);
-            symbol_table_->set_value(representative_variable, var_value);
-            delete var_value;
-            var_value = nullptr;
-          } else {
-            var_value->getStringAutomaton()->SetSymbolicCounter(sc2);
-          }
-        }
-        // don't return early for attack synthesis
-        //return;
-      }
+//      if (num_model_counters and symbol_table_->has_count_variable()) {
+//        std::string var_name = symbol_table_->get_count_variable()->getName();
+//        auto variable = symbol_table_->get_variable(var_name);
+//        auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(
+//          symbol_table_->top_scope(), variable);
+//        Solver::Value_ptr var_value = nullptr;
+//
+//
+//        {
+//          cereal::BinaryInputArchive ar(is);
+//
+//          SymbolicCounter sc1, sc2;
+//
+//          sc1.load(ar);
+//          sc2.load(ar);
+//          var_value = symbol_table_->get_projected_value_at_scope(symbol_table_->top_scope(), representative_variable);
+//          if (var_value == nullptr) {
+//            auto any_string = StringAutomaton::MakeAnyString();
+//            any_string->SetSymbolicCounter(sc1);
+//            var_value = new Value(any_string);
+//            symbol_table_->set_value(representative_variable, var_value);
+//            delete var_value;
+//            var_value = nullptr;
+//          } else {
+//            var_value->getStringAutomaton()->SetSymbolicCounter(sc1);
+//          }
+//
+//          var_value = symbol_table_->get_value_at_scope(symbol_table_->top_scope(), representative_variable);
+//          if (var_value == nullptr) {
+//            auto any_string = StringAutomaton::MakeAnyString();
+//            any_string->SetSymbolicCounter(sc2);
+//            var_value = new Value(any_string);
+//            symbol_table_->set_value(representative_variable, var_value);
+//            delete var_value;
+//            var_value = nullptr;
+//          } else {
+//            var_value->getStringAutomaton()->SetSymbolicCounter(sc2);
+//          }
+//        }
+//        // don't return early for attack synthesis
+//        //return;
+//      }
 
       // deserialize automata one by one until none left
       while (num_string_to_read-- > 0) {
@@ -328,6 +328,9 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
       return;
     } //else {LOG(INFO) << "Nope";}
 
+  } else {
+    arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
+    string_constraint_solver_.collect_string_constraint_info();
   }
 
 //LOG(INFO) << "Before visit assert->term";
@@ -401,48 +404,48 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 //      LOG(INFO) << "num_int_to_write    = " << num_int_to_write;
 
       // store model counters
-      if (symbol_table_->has_count_variable()) {
-        std::string var_name = symbol_table_->get_count_variable()->getName();
-        auto variable = symbol_table_->get_variable(var_name);
-        auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(
-          symbol_table_->top_scope(), variable);
-        Solver::Value_ptr var_value = nullptr;
-
-
-        {
-          cereal::BinaryOutputArchive ar(os);
-          ar(2);
-
-          var_value = symbol_table_->get_projected_value_at_scope(symbol_table_->top_scope(), representative_variable);
-          if (var_value == nullptr) {
-            auto any_string = StringAutomaton::MakeAnyString();
-            var_value = new Value(any_string);
-            var_value->getStringAutomaton()->SetSymbolicCounter();
-            var_value->getStringAutomaton()->GetSymbolicCounter().save(ar);
-            delete var_value;
-          } else {
-            var_value->getStringAutomaton()->SetSymbolicCounter();
-            var_value->getStringAutomaton()->GetSymbolicCounter().save(ar);
-          }
-
-          var_value = symbol_table_->get_value_at_scope(symbol_table_->top_scope(), representative_variable);
-          if (var_value == nullptr) {
-            auto any_string = StringAutomaton::MakeAnyString();
-            var_value = new Value(any_string);
-            var_value->getStringAutomaton()->SetSymbolicCounter();
-            var_value->getStringAutomaton()->GetSymbolicCounter().save(ar);
-            delete var_value;
-          } else {
-            var_value->getStringAutomaton()->SetSymbolicCounter();
-            var_value->getStringAutomaton()->GetSymbolicCounter().save(ar);
-          }
-        }
-      } else {
-        {
-          cereal::BinaryOutputArchive ar(os);
-          ar(0);
-        }
-      }
+//      if (symbol_table_->has_count_variable()) {
+//        std::string var_name = symbol_table_->get_count_variable()->getName();
+//        auto variable = symbol_table_->get_variable(var_name);
+//        auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(
+//          symbol_table_->top_scope(), variable);
+//        Solver::Value_ptr var_value = nullptr;
+//
+//
+//        {
+//          cereal::BinaryOutputArchive ar(os);
+//          ar(2);
+//
+//          var_value = symbol_table_->get_projected_value_at_scope(symbol_table_->top_scope(), representative_variable);
+//          if (var_value == nullptr) {
+//            auto any_string = StringAutomaton::MakeAnyString();
+//            var_value = new Value(any_string);
+//            var_value->getStringAutomaton()->SetSymbolicCounter();
+//            var_value->getStringAutomaton()->GetSymbolicCounter().save(ar);
+//            delete var_value;
+//          } else {
+//            var_value->getStringAutomaton()->SetSymbolicCounter();
+//            var_value->getStringAutomaton()->GetSymbolicCounter().save(ar);
+//          }
+//
+//          var_value = symbol_table_->get_value_at_scope(symbol_table_->top_scope(), representative_variable);
+//          if (var_value == nullptr) {
+//            auto any_string = StringAutomaton::MakeAnyString();
+//            var_value = new Value(any_string);
+//            var_value->getStringAutomaton()->SetSymbolicCounter();
+//            var_value->getStringAutomaton()->GetSymbolicCounter().save(ar);
+//            delete var_value;
+//          } else {
+//            var_value->getStringAutomaton()->SetSymbolicCounter();
+//            var_value->getStringAutomaton()->GetSymbolicCounter().save(ar);
+//          }
+//        }
+//      } else {
+//        {
+//          cereal::BinaryOutputArchive ar(os);
+//          ar(0);
+//        }
+//      }
 
       // write strings
       for (auto iter : value_map) {

@@ -792,6 +792,9 @@ void Driver::reset() {
   if(incremental_states_.find(current_id_) != incremental_states_.end()) {
     incremental_states_.erase(current_id_);
   }
+
+  model_counter_ = Solver::ModelCounter();
+  variable_model_counter_.clear();
   current_id_ = "";
 
 }
