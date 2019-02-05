@@ -1427,7 +1427,6 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeEquality(ArithmeticFormula_ptr fo
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntEquality(ArithmeticFormula_ptr formula) {
 
-  LOG(FATAL) << "NO";
 
   if (not formula->Simplify()) {
     auto equality_auto = BinaryIntAutomaton::MakePhi(formula, false);
