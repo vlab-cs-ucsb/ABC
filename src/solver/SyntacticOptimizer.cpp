@@ -584,9 +584,38 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
   constant_term_checker_right.start(eq_term->right_term, Optimization::ConstantTermChecker::Mode::FULL);
 
   if (constant_term_checker_left.is_constant() and constant_term_checker_right.is_constant()) {
-    bool result = (constant_term_checker_left.get_constant_as_string() == constant_term_checker_right.get_constant_as_string());
+    bool result = (constant_term_checker_left.get_constant_as_string() ==
+                   constant_term_checker_right.get_constant_as_string());
     add_callback_to_replace_with_bool(eq_term, result);
     return;
+  } else if(Term::Type::TERMCONSTANT == eq_term->left_term->type() and
+                    Term::Type::TERMCONSTANT == eq_term->right_term->type()) {
+    // if left is regex, right is string, just do automata operation here
+    TermConstant_ptr left_term = dynamic_cast<TermConstant_ptr>(eq_term->left_term);
+    TermConstant_ptr right_term = dynamic_cast<TermConstant_ptr>(eq_term->right_term);
+    if(left_term->getValueType() == Primitive::Type::STRING and right_term->getValueType() == Primitive::Type::REGEX) {
+      auto left_auto = Theory::StringAutomaton::MakeString(left_term->getValue());
+      auto right_auto = Theory::StringAutomaton::MakeRegexAuto(right_term->getValue());
+      auto result_auto = left_auto->Intersect(right_auto);
+      add_callback_to_replace_with_bool(eq_term, not result_auto->IsEmptyLanguage());
+      delete left_auto;
+      delete right_auto;
+      delete result_auto;
+      return;
+    } else if(left_term->getValueType() == Primitive::Type::REGEX and right_term->getValueType() == Primitive::Type::STRING) {
+      auto right_auto = Theory::StringAutomaton::MakeString(right_term->getValue());
+      auto left_auto = Theory::StringAutomaton::MakeRegexAuto(left_term->getValue());
+      auto result_auto = left_auto->Intersect(right_auto);
+
+      add_callback_to_replace_with_bool(eq_term, not result_auto->IsEmptyLanguage());
+      delete left_auto;
+      delete right_auto;
+      delete result_auto;
+      return;
+    } else {
+      // shouldn't happen... unless regex = regex?
+      LOG(FATAL) << "How can this happen?";
+    }
   } else if(constant_term_checker_left.is_constant()) {
     auto tmp = eq_term->right_term;
     eq_term->right_term = eq_term->left_term;
@@ -766,6 +795,33 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
         not_eq_term->left_term = nullptr;
         delete not_eq_term;
       };
+    }
+  } else if(Term::Type::TERMCONSTANT == not_eq_term->left_term->type() and
+                    Term::Type::TERMCONSTANT == not_eq_term->right_term->type()) {
+    // if left is regex, right is string, just do automata operation here
+    TermConstant_ptr left_term = dynamic_cast<TermConstant_ptr>(not_eq_term->left_term);
+    TermConstant_ptr right_term = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term);
+    if(left_term->getValueType() == Primitive::Type::STRING and right_term->getValueType() == Primitive::Type::REGEX) {
+      auto left_auto = Theory::StringAutomaton::MakeString(left_term->getValue());
+      auto right_auto = Theory::StringAutomaton::MakeRegexAuto(right_term->getValue());
+      auto result_auto = left_auto->Intersect(right_auto);
+      add_callback_to_replace_with_bool(not_eq_term, result_auto->IsEmptyLanguage());
+      delete left_auto;
+      delete right_auto;
+      delete result_auto;
+      return;
+    } else if(left_term->getValueType() == Primitive::Type::REGEX and right_term->getValueType() == Primitive::Type::STRING) {
+      auto right_auto = Theory::StringAutomaton::MakeString(right_term->getValue());
+      auto left_auto = Theory::StringAutomaton::MakeRegexAuto(left_term->getValue());
+      auto result_auto = left_auto->Intersect(right_auto);
+      add_callback_to_replace_with_bool(not_eq_term, result_auto->IsEmptyLanguage());
+      delete left_auto;
+      delete right_auto;
+      delete result_auto;
+      return;
+    } else {
+      // shouldn't happen... unless regex = regex?
+      LOG(FATAL) << "How can this happen?";
     }
   } else if(constant_term_checker_left.is_constant()) {
     auto tmp = not_eq_term->right_term;

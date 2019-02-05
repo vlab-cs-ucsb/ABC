@@ -880,13 +880,15 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
 
 	if(formula->GetType() == StringFormula::Type::EQ_CHARAT) {
 		// if charAt() == charAt() and constants are the same (such as charAt(X,0) == charAt(Y,0))
-//		temp_formula->SetType(StringFormula::Type::EQ_CHARAT);
-//		auto equality_dfa = StringAutomaton::MakeRelationalCharAtDfa(temp_formula,VAR_PER_TRACK,2,0,1);
-//		auto temp_auto = new StringAutomaton(equality_dfa,temp_formula,2*VAR_PER_TRACK);
-//		equality_auto = temp_auto->ChangeIndicesMap(formula);
-//		delete temp_auto;
-    auto equality_dfa = StringAutomaton::MakeRelationalCharAtDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
-    equality_auto = new StringAutomaton(equality_dfa,formula,num_tracks*VAR_PER_TRACK);
+		temp_formula->SetType(StringFormula::Type::EQ_CHARAT);
+		temp_formula->SetConstant(formula->GetConstant());
+    temp_formula->SetConstant2(formula->GetConstant2());
+		auto equality_dfa = StringAutomaton::MakeRelationalCharAtDfa(temp_formula,VAR_PER_TRACK,2,0,1);
+		auto temp_auto = new StringAutomaton(equality_dfa,temp_formula,2*VAR_PER_TRACK);
+		equality_auto = temp_auto->ChangeIndicesMap(formula);
+		delete temp_auto;
+//    auto equality_dfa = StringAutomaton::MakeRelationalCharAtDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
+//    equality_auto = new StringAutomaton(equality_dfa,formula,num_tracks*VAR_PER_TRACK);
 	} else if(formula->GetConstant() != "") {
 		// if string is not empty, eq is of form X = Y.c
     int nnum = num_tracks;
@@ -973,6 +975,9 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
 	if(formula->GetType() == StringFormula::Type::NOTEQ_CHARAT) {
 		// if charAt() == charAt() and constants are the same (such as charAt(X,0) == charAt(Y,0))
     temp_formula->SetType(StringFormula::Type::NOTEQ_CHARAT);
+    temp_formula->SetConstant(formula->GetConstant());
+    temp_formula->SetConstant2(formula->GetConstant2());
+
 		auto not_equality_dfa = StringAutomaton::MakeRelationalCharAtDfa(temp_formula,VAR_PER_TRACK,2,0,1);
 		auto temp_auto = new StringAutomaton(not_equality_dfa,temp_formula,2*VAR_PER_TRACK);
 		not_equality_auto = temp_auto->ChangeIndicesMap(formula);
