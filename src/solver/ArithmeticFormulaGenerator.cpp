@@ -853,20 +853,48 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
 		symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
 	}
 	// add a variable entry to symbol table for each group
+  auto  &variable_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
 	// define a variable mapping for a group
-	for (auto& el : group_formula_) {
+	for (auto group_iter : group_formula_) {
+
+    //LOG(INFO) << "Group: " << group_iter.first;
+    if(symbol_table_->get_variable_unsafe(group_iter.first) == nullptr) {
+      symbol_table_->add_variable(new Variable(group_iter.first, Variable::Type::NONE));
+    }
+
+    std::set<Variable_ptr> previous_group_variables;
+    for (const auto& var_entry : group_iter.second->GetVariableCoefficientMap()) {
+      //LOG(INFO) << "--> " << var_entry.first;
+      Variable_ptr variable = symbol_table_->get_variable(var_entry.first);
+      Variable_ptr group_variable = symbol_table_->get_group_variable_of(variable);
+
+      // if group variable in variable_values, then a previous value was computed;
+      if(variable_values.find(group_variable) != variable_values.end()) {
+        previous_group_variables.insert(group_variable);
+      }
+      // update variable group mapping in symbol table
+      symbol_table_->set_variable_group_mapping(var_entry.first, group_iter.first);
+    }
+    auto init_auto = BinaryIntAutomaton::MakeAnyInt(group_iter.second->clone(),not Option::Solver::USE_SIGNED_INTEGERS);
+    for(auto previous_group: previous_group_variables) {
+      auto previous_group_auto = variable_values[previous_group]->getBinaryIntAutomaton();
+      auto remapped_auto = previous_group_auto->ChangeIndicesMap(group_iter.second->clone());
+      auto temp_auto = init_auto->Intersect(remapped_auto);
+
+      delete init_auto;
+      delete remapped_auto;
+      init_auto = temp_auto;
+
+      delete variable_values[previous_group];
+      variable_values[previous_group] = nullptr;
+      variable_values.erase(previous_group);
+    }
 		//LOG(INFO) << "Formula : " << el.first;
-		symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
-    auto init_auto = BinaryIntAutomaton::MakeAnyInt(el.second->clone(),not Option::Solver::USE_SIGNED_INTEGERS);
-    auto init_val = new Value(init_auto);
-    symbol_table_->push_scope(root_);
-    symbol_table_->set_value(el.first,init_val);
+		auto init_val = new Value(init_auto);
+    symbol_table_->set_value(group_iter.first,init_val);
     delete init_val;
-    symbol_table_->pop_scope();
-    for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
-			symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
-			//LOG(INFO) << "-- " << var_entry.first;
-		}
+
+    
 		//LOG(INFO) << "";
 	}
   DVLOG(VLOG_LEVEL)<< "end setting int group for components";

@@ -164,10 +164,8 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 //      LOG(INFO) << "GOT CACHED RESULT!";
 
 
-
       arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
       string_constraint_solver_.collect_string_constraint_info();
-
       auto cache_start = std::chrono::steady_clock::now();
 
 //     LOG(INFO) << "Reading cached data...";
@@ -191,7 +189,6 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
       }
 
       symbol_table_->SetCharacterMapping(char_map);
-
       int num_model_counters = 0;
 //      {
 //        cereal::BinaryInputArchive ar(is);
@@ -264,22 +261,21 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
         // make sure the tracks match by remapping
         auto new_formula = symbol_table_->get_value(rep_var)->getStringAutomaton()->GetFormula()->clone();
-        import_auto->ChangeIndicesMap(new_formula);
+        auto remapped_auto = import_auto->ChangeIndicesMap(new_formula);
 
-        auto rep_var_value = new Value(import_auto);
+        auto rep_var_value = new Value(remapped_auto);
         symbol_table_->IntersectValue(rep_var, rep_var_value);
         delete rep_var_value;
+        delete import_auto;
 
         // LOG(INFO) << "Read one automata!";
       }
-
       while (num_int_to_read-- > 0) {
         Theory::BinaryIntAutomaton_ptr import_auto = new Theory::BinaryIntAutomaton(nullptr, 0, true);
         {
           cereal::BinaryInputArchive ar(is);
           import_auto->load(ar);
         }
-
         // get one of the variables from import_auto's formula
         // we use this to update the correct variable in our symbol table
 
@@ -289,21 +285,25 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
         for (auto it : old_coeff_map) {
           new_coeff_map[symbol_table_->get_variable(it.first)->getName()] = it.second;
         }
-
         import_auto->GetFormula()->SetVariableCoefficientMap(new_coeff_map);
         std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
-
         // make sure the tracks match by remapping
         auto new_formula = symbol_table_->get_value(rep_var)->getBinaryIntAutomaton()->GetFormula()->clone();
-        import_auto->ChangeIndicesMap(new_formula);
+        //import_auto->inspectAuto(false,true);
+        auto remapped_auto = import_auto->ChangeIndicesMap(new_formula);
 
-        auto rep_var_value = new Value(import_auto);
+        // LOG(INFO) << "1";
+        auto rep_var_value = new Value(remapped_auto);
+        // std::cin.get();
+        // remapped_auto->inspectAuto(false,true);
+        // LOG(INFO) << "2";
         symbol_table_->IntersectValue(rep_var, rep_var_value);
+        // LOG(INFO) << "3";
         delete rep_var_value;
+        delete import_auto;;
 
         // LOG(INFO) << "Read one automata!";
       }
-
 
 
 
@@ -493,13 +493,14 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
           }
 
           export_auto->GetFormula()->SetVariableCoefficientMap(remapped_map);
-
+          
           {
             cereal::BinaryOutputArchive ar(os);
             export_auto->save(ar);
           }
 
           export_auto->GetFormula()->SetVariableCoefficientMap(variable_coefficient_map);
+          
 //      os << "a";
           // LOG(INFO) << "Serialized one...";
         }
@@ -616,6 +617,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   bool has_cached_result = false;
 
   if(Option::Solver::INCREMENTAL == true) {
+    
 
     key = Ast2Dot::toString(and_term);
 //   LOG(INFO) << key;
