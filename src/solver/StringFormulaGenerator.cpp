@@ -334,12 +334,18 @@ void StringFormulaGenerator::visitEq(Eq_ptr eq_term) {
 			constraint_information_->add_string_constraint(eq_term);					
 		} else if(StringFormula::Type::CHARAT == left_formula->GetType() && StringFormula::Type::CHARAT == right_formula->GetType()
 							&& (left_formula->GetConstant() == right_formula->GetConstant())) {
-			formula = left_formula->clone();
-			formula->MergeVariables(right_formula);
-			formula->SetType(StringFormula::Type::EQ_CHARAT);
-			auto right_var = right_formula->GetVariableAtIndex(0);
-			formula->SetVariableCoefficient(right_var,2);
-			constraint_information_->add_string_constraint(eq_term);
+      formula = left_formula->clone();
+      formula->MergeVariables(right_formula);
+      formula->SetType(StringFormula::Type::EQ_CHARAT);
+      auto right_var = right_formula->GetVariableAtIndex(0);
+      formula->SetVariableCoefficient(right_var, 2);
+      constraint_information_->add_string_constraint(eq_term);
+    } else if(StringFormula::Type::CHARAT == left_formula->GetType() && StringFormula::Type::STRING_CONSTANT == right_formula->GetType()) {
+      formula = left_formula->clone();
+      formula->SetConstant(right_formula->GetConstant());
+      formula->SetConstant2(left_formula->GetConstant());
+      formula->SetType(StringFormula::Type::EQ_CHARAT);
+      constraint_information_->add_string_constraint(eq_term);
 		} else {
       formula = left_formula->clone();
       formula->MergeVariables(right_formula);
@@ -425,12 +431,18 @@ void StringFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
 			constraint_information_->add_string_constraint(not_eq_term);
 		} else if(StringFormula::Type::CHARAT == left_formula->GetType() && StringFormula::Type::CHARAT == right_formula->GetType()
 							&& (left_formula->GetConstant() == right_formula->GetConstant())) {
-			formula = left_formula->clone();
-			formula->MergeVariables(right_formula);
-			formula->SetType(StringFormula::Type::NOTEQ_CHARAT);
-			auto right_var = right_formula->GetVariableAtIndex(0);
-			formula->SetVariableCoefficient(right_var,2);
-			constraint_information_->add_string_constraint(not_eq_term);
+      formula = left_formula->clone();
+      formula->MergeVariables(right_formula);
+      formula->SetType(StringFormula::Type::NOTEQ_CHARAT);
+      auto right_var = right_formula->GetVariableAtIndex(0);
+      formula->SetVariableCoefficient(right_var, 2);
+      constraint_information_->add_string_constraint(not_eq_term);
+    } else if(StringFormula::Type::CHARAT == left_formula->GetType() && StringFormula::Type::STRING_CONSTANT == right_formula->GetType()) {
+      formula = left_formula->clone();
+      formula->SetConstant(right_formula->GetConstant());
+      formula->SetConstant2(left_formula->GetConstant());
+      formula->SetType(StringFormula::Type::NOTEQ_CHARAT);
+      constraint_information_->add_string_constraint(not_eq_term);
 		} else {
 			formula = left_formula->clone();
 			formula->MergeVariables(right_formula);

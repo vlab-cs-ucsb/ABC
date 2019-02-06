@@ -150,7 +150,7 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
     } else {
       // no cached value
-      num_misses_++;
+//      num_misses_++;
       // LOG(INFO) << "Cache miss...";
     }
     c.free();
@@ -1312,31 +1312,32 @@ void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
 
   // optimization, bypasses variablevaluecomputation & extraction of singletrack from multitrack
   // which is prohibitively expensive
-//  if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term)) {
-//    if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term)) {
-//    	StringAutomaton_ptr temp,con;
-//      Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
-//
-//      if(right_constant->getValue() == "") {
-//      	con = StringAutomaton::MakeAnyStringLengthGreaterThan(0);
-//      } else {
-//      	auto t1 = StringAutomaton::MakeAnyString();
-//      	auto t2 = StringAutomaton::MakeString(right_constant->getValue());
-//        con = t1->Difference(t2);
-//        delete t1;
-//        delete t2;
-//      }
-//      StringFormula_ptr formula = new StringFormula();
-//      formula->SetType(StringFormula::Type::VAR);
-//      formula->AddVariable(var->getName(),1);
-//      con->SetFormula(formula);
-//      Value_ptr val = new Value(con);
-//      bool result = symbol_table_->IntersectValue(var,val);
-//      delete val;
-//      setTermValue(not_eq_term, new Value(result));
-//      return;
-//    }
-//  }
+  if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term)) {
+    if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term)) {
+    	LOG(FATAL) << "WTF";
+    	StringAutomaton_ptr temp,con;
+      Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
+
+      if(right_constant->getValue() == "") {
+      	con = StringAutomaton::MakeAnyStringLengthGreaterThan(0);
+      } else {
+      	auto t1 = StringAutomaton::MakeAnyString();
+      	auto t2 = StringAutomaton::MakeString(right_constant->getValue());
+        con = t1->Difference(t2);
+        delete t1;
+        delete t2;
+      }
+      StringFormula_ptr formula = new StringFormula();
+      formula->SetType(StringFormula::Type::VAR);
+      formula->AddVariable(var->getName(),1);
+      con->SetFormula(formula);
+      Value_ptr val = new Value(con);
+      bool result = symbol_table_->IntersectValue(var,val);
+      delete val;
+      setTermValue(not_eq_term, new Value(result));
+      return;
+    }
+  }
 
   visit_children_of(not_eq_term);
 
@@ -1769,6 +1770,7 @@ void ConstraintSolver::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
 }
 
 void ConstraintSolver::visitCharAt(CharAt_ptr char_at_term) {
+
   visit_children_of(char_at_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *char_at_term;
 

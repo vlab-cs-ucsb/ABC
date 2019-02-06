@@ -228,7 +228,7 @@ int main(const int argc, const char **argv) {
   int total_hits = 0;
   int total_misses = 0;
   for(auto iter : files) {
-   // LOG(INFO) << iter;
+//    LOG(INFO) << iter;
     file = new std::ifstream(iter);
     in = file;
 
@@ -249,7 +249,7 @@ int main(const int argc, const char **argv) {
     }
 
 //    if (i > 1200 or false and VLOG_IS_ON(30) and not output_root.empty()) {
-     // driver.ast2dot(output_root + "/optimized.dot");
+//      driver.ast2dot(output_root + "/optimized.dot");
 //   }
     driver.Solve();
     if(not driver.is_sat()) {

@@ -84,8 +84,11 @@ void StringConstraintSolver::setCallbacks() {
             LOG(FATAL) << "Term has no group!";
           }
 
+//          symbol_table_->get_value(term_group_name)->getStringAutomaton()->inspectAuto(false,true);
+//          relational_str_auto->inspectAuto(false,true);
           symbol_table_->IntersectValue(term_group_name,result);
-
+//          symbol_table_->get_value(term_group_name)->getStringAutomaton()->inspectAuto(false,true);
+//          std::cin.get();
           // once we solve an atomic string constraint,
           // we delete its formula to avoid solving it again.
           // Atomic string constraints solved precisely,

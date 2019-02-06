@@ -284,56 +284,56 @@ void Renamer::visitTermConstant(TermConstant_ptr term_constant) {
 //
 //
 //  // only for string constants atm?
-//  auto current_scope = symbol_table_->top_scope();
-//  auto root_scope = root_;
-//  std::string value = term_constant->primitive->getData();
-//  std::string new_value = "";
-//
-//  if(term_constant->getValueType() == Primitive::Type::STRING) {
-//    for(auto iter : term_constant->primitive->getData()) {
-//      new_value += AddToMap(root_scope,iter);
-//    }
-//  } else if(term_constant->getValueType() == Primitive::Type::REGEX) {
-//    bool escape = false;
-//    bool range = false;
-//    for(int i = 0; i < value.length(); i++) {
-//      char c = value[i];
-//      char cnew;
-//      if(i == 0 || i == value.length()-1) {
-//        cnew = c;
-//      } else if(escape) {
-//        cnew = AddToMap(root_scope, c);
-//        escape = false;
-//      } else if(range) {
-//        cnew = c;
-//        if(c == '}') {
-//          range = false;
-//        }
-//      } else if(c == '\\') {
-//        escape = true;
-//        continue;
-//      } else if(c == '{') {
-//        range = true;
-//        cnew = c;
-//      } else if(c == '-') {
-//        // e.g., [B-E]
-//        for(char cc = value[i-1]; cc != value[i+1]; cc++) {
-//          AddToMap(root_scope,cc);
-//        }
-//        cnew = c;
-//      } else if(special_chars_.find(c) != special_chars_.end()) {
-//        cnew = c;
-//      } else {
-//        cnew = AddToMap(root_scope,c);
-//      }
-//      new_value += cnew;
-//    }
-//  } else {
-//
-//    new_value = value;
-//  }
-//
-//  term_constant->primitive->setData(new_value);
+  auto current_scope = symbol_table_->top_scope();
+  auto root_scope = root_;
+  std::string value = term_constant->primitive->getData();
+  std::string new_value = "";
+
+  if(term_constant->getValueType() == Primitive::Type::STRING) {
+    for(auto iter : term_constant->primitive->getData()) {
+      new_value += AddToMap(root_scope,iter);
+    }
+  } else if(term_constant->getValueType() == Primitive::Type::REGEX) {
+    bool escape = false;
+    bool range = false;
+    for(int i = 0; i < value.length(); i++) {
+      char c = value[i];
+      char cnew;
+      if(i == 0 || i == value.length()-1) {
+        cnew = c;
+      } else if(escape) {
+        cnew = AddToMap(root_scope, c);
+        escape = false;
+      } else if(range) {
+        cnew = c;
+        if(c == '}') {
+          range = false;
+        }
+      } else if(c == '\\') {
+        escape = true;
+        continue;
+      } else if(c == '{') {
+        range = true;
+        cnew = c;
+      } else if(c == '-') {
+        // e.g., [B-E]
+        for(char cc = value[i-1]; cc != value[i+1]; cc++) {
+          AddToMap(root_scope,cc);
+        }
+        cnew = c;
+      } else if(special_chars_.find(c) != special_chars_.end()) {
+        cnew = c;
+      } else {
+        cnew = AddToMap(root_scope,c);
+      }
+      new_value += cnew;
+    }
+  } else {
+
+    new_value = value;
+  }
+
+  term_constant->primitive->setData(new_value);
 
 }
 
@@ -373,7 +373,7 @@ void Renamer::visitVarBinding(VarBinding_ptr var_binding) {
 char Renamer::AddToMap(Visitable_ptr term, char c) {
   if (alphabet_mapping_.find(c) == alphabet_mapping_.end()) {
     // not in map, add to map
-    int pos = alphabet_mapping_.size()+50;
+    int pos = alphabet_mapping_.size()+48;
     alphabet_mapping_[c] = (char)(pos);
   }
   return alphabet_mapping_[c];

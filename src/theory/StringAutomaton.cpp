@@ -858,13 +858,31 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
 		StringAutomaton_ptr string_auto;
 		string_auto = StringAutomaton::MakeRegexAuto(formula->GetConstant());
 
+    if(formula->GetType() == StringFormula::Type::EQ_CHARAT) {
+      std::string regex_string = std::string(std::stoi(formula->GetConstant2()),'.');
+      regex_string += formula->GetConstant() + ".*";
+      string_auto = StringAutomaton::MakeRegexAuto(regex_string);
+//      string_auto->inspectAuto(false,true);
+//      LOG(INFO) << "EQ: " << formula->GetConstant() << "," << formula->GetConstant2();
+//      std::cin.get();
+    }
+
 		formula->SetConstant("");
-		if(num_tracks == 1) {
-			equality_auto = new StringAutomaton(dfaCopy(string_auto->getDFA()),num_tracks,DEFAULT_NUM_OF_VARIABLES);
-		} else {
-			equality_auto = new StringAutomaton(string_auto->getDFA(),left_track,num_tracks,DEFAULT_NUM_OF_VARIABLES);
-		}
-		equality_auto->SetFormula(formula);
+//		if(num_tracks == 1) {
+//			equality_auto = new StringAutomaton(dfaCopy(string_auto->getDFA()),num_tracks,DEFAULT_NUM_OF_VARIABLES);
+//		} else {
+//			equality_auto = new StringAutomaton(string_auto->getDFA(),left_track,num_tracks,DEFAULT_NUM_OF_VARIABLES);
+//		}
+//		equality_auto->SetFormula(formula);
+//		delete string_auto;
+//		return equality_auto;
+    formula->SetConstant("");
+		StringFormula_ptr temp_formula = new StringFormula();
+		temp_formula->SetType(StringFormula::Type::EQ);
+    temp_formula->AddVariable(formula->GetVariableAtIndex(left_track),1);
+    string_auto->SetFormula(temp_formula);
+
+    equality_auto = string_auto->ChangeIndicesMap(formula);
 		delete string_auto;
 		return equality_auto;
 	}
@@ -939,7 +957,17 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
 		int num_tracks = formula->GetNumberOfVariables();
 		int left_track = formula->GetVariableIndex(1);
 		StringAutomaton_ptr string_auto,complement_auto;
-		if(formula->GetConstant() == "") {
+
+
+    if(formula->GetType() == StringFormula::Type::NOTEQ_CHARAT) {
+      std::string regex_string = std::string(std::stoi(formula->GetConstant2()), '.');
+//      LOG(INFO) << "Regex_string = {" << regex_string << "}";
+      regex_string += "[^" + formula->GetConstant() + "].*";
+      complement_auto = StringAutomaton::MakeRegexAuto(regex_string);
+//      complement_auto->inspectAuto(false,true);
+//      LOG(INFO) << "NOTEQ: " << formula->GetConstant() << "," << formula->GetConstant2();
+//      std::cin.get();
+    } else if(formula->GetConstant() == "") {
 			complement_auto = StringAutomaton::MakeAnyStringLengthGreaterThan(0);
 		} else {
 			auto t1 = StringAutomaton::MakeAnyString();

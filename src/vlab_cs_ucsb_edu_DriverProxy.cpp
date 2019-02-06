@@ -516,6 +516,7 @@ JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_reset (JNIEnv *env, job
 JNIEXPORT void JNICALL Java_vlab_cs_ucsb_edu_DriverProxy_dispose (JNIEnv *env, jobject obj) {
   Vlab::Driver *abc_driver = getHandle<Vlab::Driver>(env, obj);
   Vlab::Driver *tmp = abc_driver;
+  tmp->print_statistics();
   abc_driver = nullptr;
   setHandle(env, obj, abc_driver);
   delete tmp;
