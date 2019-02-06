@@ -150,7 +150,7 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
     } else {
       // no cached value
-//      num_misses_++;
+      num_misses_++;
       // LOG(INFO) << "Cache miss...";
     }
     c.free();
@@ -332,6 +332,8 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
     arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
     string_constraint_solver_.collect_string_constraint_info();
   }
+    arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
+    string_constraint_solver_.collect_string_constraint_info();
 
 //LOG(INFO) << "Before visit assert->term";
   check_and_visit(assert_command->term);
@@ -616,7 +618,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   std::string key, cached_data;
   bool has_cached_result = false;
 
-  if(Option::Solver::INCREMENTAL == true) {
+  if(false){//Option::Solver::INCREMENTAL == true) {
     
 
     key = Ast2Dot::toString(and_term);
