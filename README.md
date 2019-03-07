@@ -129,7 +129,7 @@ ABC testing depends on [googletest and googlemock](https://github.com/google/goo
 Usage
 ============
 
-####C++
+#### C++
     You can link to dynamic library generated in your program. An example executable for mtabc is generated for you and install in your system. You can run mtabc executable at your home directory as:
   
   $ abc -i  <input_file_path>
@@ -151,7 +151,7 @@ Usage
   
   (More documentation on ABC input language and format will be provided, please see *__&lt;abc-source-folder&gt;/test/fixtures__* folder for examples)
   
-####JAVA
+#### JAVA
 
   You have to compile *__ABC__* with your *__JAVA_HOME__* path is set to a valid java path. Once you set your *__JAVA_HOME__* path, you need to install/re-install *__ABC__* on your system. 
   
@@ -160,6 +160,10 @@ Usage
   You can use *__&lt;abc-source-folder&gt;/lib/ABCJava__* as an example Java program that calls __abc__.
 
   In your Java project all you have to do is to include the contents of *__&lt;abc-source-folder&gt;/lib/ABCJava/src/__*. *vlab.cs.ucsb.edu.DriverProxy.java* class is the class that makes abc calls.
+  
+#### SPF (Symbolic Execution)
+
+https://github.com/vlab-cs-ucsb/ABC/blob/master/spf-with-abc-readme.md
   
 ABC Language Specification
 ==========================
