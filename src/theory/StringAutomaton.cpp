@@ -459,26 +459,32 @@ StringAutomaton_ptr StringAutomaton::MakeAutomaton(StringFormula_ptr formula) {
 	switch(formula->GetType()) {
 		case StringFormula::Type::EQ:
     case StringFormula::Type::EQ_CHARAT:
+		case StringFormula::Type::EQ_LEN:
 			result_auto = StringAutomaton::MakeEquality(formula);
 			break;
 		case StringFormula::Type::NOTEQ:
     case StringFormula::Type::NOTEQ_CHARAT:
+		case StringFormula::Type::NOTEQ_LEN:
 			result_auto = StringAutomaton::MakeNotEquality(formula);
 			break;
 		case StringFormula::Type::GT:
 		case StringFormula::Type::GT_CHARAT:
+		case StringFormula::Type::GT_LEN:
 			result_auto = StringAutomaton::MakeGreaterThan(formula);
 			break;
 		case StringFormula::Type::GE:
 		case StringFormula::Type::GE_CHARAT:
+		case StringFormula::Type::GE_LEN:
 			result_auto = StringAutomaton::MakeGreaterThanOrEqual(formula);
 			break;
 		case StringFormula::Type::LT:
 		case StringFormula::Type::LT_CHARAT:
+		case StringFormula::Type::LT_LEN:
 			result_auto = StringAutomaton::MakeLessThan(formula);
 			break;
 		case StringFormula::Type::LE:
 		case StringFormula::Type::LE_CHARAT:
+		case StringFormula::Type::LE_LEN:
 			result_auto = StringAutomaton::MakeLessThanOrEqual(formula);
 			break;
 		case StringFormula::Type::BEGINS:
@@ -787,6 +793,9 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
 		// if charAt() == charAt() and constants are the same (such as charAt(X,0) == charAt(Y,0))
 		auto equality_dfa = StringAutomaton::MakeRelationalCharAtDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
 		equality_auto = new StringAutomaton(equality_dfa,formula,num_tracks*VAR_PER_TRACK);
+	} else if(formula->GetType() == StringFormula::Type::EQ_LEN) {
+		auto equality_dfa = StringAutomaton::MakeRelationalLenDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
+		equality_auto = new StringAutomaton(equality_dfa,formula,num_tracks*VAR_PER_TRACK);
 	} else if(formula->GetConstant() != "") {
 		// if string is not empty, eq is of form X = Y.c
     int temp_left = num_tracks;
@@ -856,6 +865,9 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
 		// if charAt() == charAt() and constants are the same (such as charAt(X,0) == charAt(Y,0))
 		auto not_equality_dfa = StringAutomaton::MakeRelationalCharAtDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
 		not_equality_auto = new StringAutomaton(not_equality_dfa,formula,num_tracks*VAR_PER_TRACK);
+	} else if(formula->GetType() == StringFormula::Type::NOTEQ_LEN) {
+		auto not_equality_dfa = StringAutomaton::MakeRelationalLenDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
+		not_equality_auto = new StringAutomaton(not_equality_dfa,formula,num_tracks*VAR_PER_TRACK);
 	} else if(formula->GetConstant() != "") {
 		// if string is not empty, eq is of form X = Y.c
     int temp_left = num_tracks;
@@ -918,6 +930,8 @@ StringAutomaton_ptr StringAutomaton::MakeLessThan(StringFormula_ptr formula) {
 
 	if(formula->GetType() == StringFormula::Type::LT_CHARAT) {
 		result_dfa = StringAutomaton::MakeRelationalCharAtDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
+	} else if(formula->GetType() == StringFormula::Type::LT_LEN) {
+		result_dfa = StringAutomaton::MakeRelationalLenDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	} else {
 		result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::LT,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	}
@@ -975,6 +989,8 @@ StringAutomaton_ptr StringAutomaton::MakeLessThanOrEqual(StringFormula_ptr formu
 
 	if(formula->GetType() == StringFormula::Type::LE_CHARAT) {
 		result_dfa = StringAutomaton::MakeRelationalCharAtDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
+	} else if(formula->GetType() == StringFormula::Type::LE_LEN) {
+		result_dfa = StringAutomaton::MakeRelationalLenDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	} else {
 		result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::LE,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	}
@@ -1032,6 +1048,8 @@ StringAutomaton_ptr StringAutomaton::MakeGreaterThan(StringFormula_ptr formula) 
 
 	if(formula->GetType() == StringFormula::Type::GT_CHARAT) {
 		result_dfa = StringAutomaton::MakeRelationalCharAtDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
+	} else if(formula->GetType() == StringFormula::Type::GT_LEN) {
+		result_dfa = StringAutomaton::MakeRelationalLenDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	} else {
 		result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::GT,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	}
@@ -1091,6 +1109,8 @@ StringAutomaton_ptr StringAutomaton::MakeGreaterThanOrEqual(StringFormula_ptr fo
 
 	if(formula->GetType() == StringFormula::Type::GE_CHARAT) {
 		result_dfa = StringAutomaton::MakeRelationalCharAtDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
+	} else if(formula->GetType() == StringFormula::Type::GE_LEN) {
+		result_dfa = StringAutomaton::MakeRelationalLenDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	} else {
 		result_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::GE,VAR_PER_TRACK,num_tracks,left_track,right_track);
 	}
@@ -1140,7 +1160,7 @@ StringAutomaton_ptr StringAutomaton::MakeAnyStringUnaligned(StringFormula_ptr fo
 
 StringAutomaton_ptr StringAutomaton::MakeAnyStringAligned(StringFormula_ptr formula) {
   StringAutomaton_ptr result_auto = nullptr;
-  
+
   // if only one variable, don't complicate with lambda transitions
   if(formula->GetNumberOfVariables() == 1) {
     result_auto = StringAutomaton::MakeAnyString();
@@ -1608,7 +1628,7 @@ StringAutomaton_ptr StringAutomaton::SuffixesAtIndex(IntAutomaton_ptr indices_au
   StringAutomaton_ptr prefix_suffix_auto = MakePrefixSuffix(0,1,2,3);
   StringAutomaton_ptr original_string_auto = new StringAutomaton(this->getDFA(),0,3,DEFAULT_NUM_OF_VARIABLES);
   StringAutomaton_ptr position_auto = new StringAutomaton(indices_auto->getDFA(),1,3,DEFAULT_NUM_OF_VARIABLES);
-  
+
   auto intersect_auto = prefix_suffix_auto->Intersect(original_string_auto);
   auto t1 = intersect_auto;
   intersect_auto = t1->Intersect(position_auto);
@@ -3187,7 +3207,7 @@ StringAutomaton_ptr StringAutomaton::RestrictAtIndexTo(
   auto t3 = t2->GetKTrack(0);
 
 //  t3->inspectAuto(false,false);
- 
+
 //  std::cin.get();
 
   delete prefix_suffix_auto;
@@ -3410,8 +3430,8 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 	// k_track needs to be mapped to indices 0-(VAR_PER_TRACK-1)
 	// while all others need to be pushed back by VAR_PER_TRACK, then
 	// interleaved with 1 less than current number of tracks
-  
-  
+
+
 	int* map = CreateBddVariableIndices(this->num_tracks_*VAR_PER_TRACK);
 	std::vector<int> indices;
 	for(int i = 0; i < this->num_tracks_; i++) {
@@ -3573,7 +3593,7 @@ void StringAutomaton::SetSymbolicCounter() {
 				lambda_states[pp->to] = true;
 				if(!lambda_states[i] || i == pp->to) {
 					statuses[i] = '+';
-				} 
+				}
 			} else {
 				exep.push_back('\0');
 				state_exeps.push_back(std::make_pair(exep,pp->to));
@@ -3773,7 +3793,7 @@ std::map<std::string,std::vector<std::string>> StringAutomaton::GetModelsWithinB
     if(shortest_accepting_path[current_state] + length > bound) {
     	continue;
     }
-    
+
     for(auto iter : next_states_matrix[current_state]) {
     // next_state is in first position
       int to_state = iter.first;
@@ -3789,7 +3809,7 @@ std::map<std::string,std::vector<std::string>> StringAutomaton::GetModelsWithinB
       // and don't new transitions!
       if(this->dfa_->f[to_state] == 1) {
         if((count_bound_exact_ and length == bound) or (not count_bound_exact_ and length <= bound)) {
-          
+
           int max_x = 0;
           // each track can have differing number of x's
           // find the max number of x's in all tracks
@@ -3813,7 +3833,7 @@ std::map<std::string,std::vector<std::string>> StringAutomaton::GetModelsWithinB
         }
       } else if(to_state != sink and (length < bound or bound == -1)) {
         std::vector<char> transition = iter.second;
-        
+
         // transition is in second position
         track_characters = current_model.second;
         for(int i = 0; i < num_tracks; i++) {
@@ -3822,7 +3842,7 @@ std::map<std::string,std::vector<std::string>> StringAutomaton::GetModelsWithinB
             track_characters[i].push_back(transition[i+num_tracks*k]);
           }
         }
-        
+
         models_to_process.push(std::make_pair(to_state,track_characters));
       }
     }
@@ -4563,10 +4583,460 @@ DFA_ptr StringAutomaton::MakeRelationalCharAtDfa(StringFormula_ptr formula, int 
 	dfaFree(temp_dfa);
 
 	temp_dfa = MakeBinaryAlignedDfa(left_track,right_track,num_tracks);
-	result_dfa = DFAIntersect(result_dfa,temp_dfa);
+	auto intersect_dfa = DFAIntersect(result_dfa,temp_dfa);
 	dfaFree(temp_dfa);
+	dfaFree(result_dfa);
+	result_dfa = intersect_dfa;
 
 	delete[] statuses;
+	return result_dfa;
+}
+
+DFA_ptr StringAutomaton::MakeRelationalLenDfa(StringFormula_ptr formula, int bits_per_var, int num_tracks, int left_track, int right_track) {
+
+	DFA_ptr result_dfa = nullptr;
+
+	if(formula->GetType() == StringFormula::Type::EQ_LEN) {
+		// LOG(FATAL) << "HERE!";
+		int ns = 3;
+		int sink = ns-1;
+		char *statuses = new char[ns+1];
+		int var = VAR_PER_TRACK;
+		int len = num_tracks * var;
+		int *mindices = Automaton::GetBddVariableIndices(len);
+		std::vector<char> exep_lambda(var,'1');
+		std::vector<char> exep_dont_care(var,'X');
+		exep_dont_care[var-1] = '0';
+		dfaSetup(ns,len,mindices);
+
+		std::vector<char> str(len, 'X');
+		str.push_back('\0');
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_dont_care[i];
+			str[right_track+num_tracks*i] = exep_dont_care[i];
+		}
+
+		dfaAllocExceptions(2);
+		// anything but lambda, just stay in init
+		dfaStoreException(0,&str[0]);
+
+		// lambda,lambda to final state
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_lambda[i];
+			str[right_track+num_tracks*i] = exep_lambda[i];
+		}
+		dfaStoreException(1,&str[0]);
+		dfaStoreState(sink);
+		statuses[0] = '-';
+
+		// final state
+		dfaAllocExceptions(1);
+		dfaStoreException(1,&str[0]);
+		dfaStoreState(sink);
+		statuses[1] = '+';
+
+		// sink state
+		dfaAllocExceptions(0);
+		dfaStoreState(sink);
+		statuses[2] = '-';
+
+		// build dfa
+		statuses[3] = '\0';
+		auto temp_dfa = dfaBuild(statuses);
+		result_dfa = dfaMinimize(temp_dfa);
+		dfaFree(temp_dfa);
+		delete[] statuses;
+	} else if(formula->GetType() == StringFormula::Type::NOTEQ_LEN) {
+		int ns = 5;
+		int sink = ns-1;
+		char *statuses = new char[ns+1];
+		int var = VAR_PER_TRACK;
+		int len = num_tracks * var;
+		int *mindices = Automaton::GetBddVariableIndices(len);
+		std::vector<char> exep_lambda(var,'1');
+		std::vector<char> exep_dont_care(var,'X');
+		exep_dont_care[var-1] = '0';
+		dfaSetup(ns,len,mindices);
+
+		std::vector<char> str(len, 'X');
+
+
+		dfaAllocExceptions(3);
+		// anything but lambda, just stay in init
+		str.push_back('\0');
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_dont_care[i];
+			str[right_track+num_tracks*i] = exep_dont_care[i];
+		}
+		dfaStoreException(0,&str[0]);
+
+		// lambda,star to state 1 (lambda,star state)
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_lambda[i];
+			str[right_track+num_tracks*i] = exep_dont_care[i];
+		}
+		dfaStoreException(1,&str[0]);
+
+		// star,lambda to state 2 (star,lambda state)
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_dont_care[i];
+			str[right_track+num_tracks*i] = exep_lambda[i];
+		}
+		dfaStoreException(2,&str[0]);
+		dfaStoreState(sink);
+		statuses[0] = '-';
+
+		// lambda,star state
+		dfaAllocExceptions(2);
+
+		// lambda,star to self
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_lambda[i];
+			str[right_track+num_tracks*i] = exep_dont_care[i];
+		}
+		dfaStoreException(1,&str[0]);
+
+		// lambda,lambda to state 3 (lambda,lambda state)
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_lambda[i];
+			str[right_track+num_tracks*i] = exep_lambda[i];
+		}
+		dfaStoreException(3,&str[0]);
+		dfaStoreState(sink);
+		statuses[1] = '-';
+
+		// star,lambda state
+		dfaAllocExceptions(2);
+
+		// star,lambda to self
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_dont_care[i];
+			str[right_track+num_tracks*i] = exep_lambda[i];
+		}
+		dfaStoreException(2,&str[0]);
+
+		// lambda,lambda to state 3 (lambda,lambda state)
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_lambda[i];
+			str[right_track+num_tracks*i] = exep_lambda[i];
+		}
+		dfaStoreException(3,&str[0]);
+		dfaStoreState(sink);
+		statuses[2] = '-';
+
+		// final state
+		dfaAllocExceptions(1);
+		dfaStoreException(3,&str[0]);
+		dfaStoreState(sink);
+		statuses[3] = '+';
+
+		// sink state
+		dfaAllocExceptions(0);
+		dfaStoreState(sink);
+		statuses[4] = '-';
+
+		// build dfa
+		statuses[5] = '\0';
+		auto temp_dfa = dfaBuild(statuses);
+		result_dfa = dfaMinimize(temp_dfa);
+		dfaFree(temp_dfa);
+		delete[] statuses;
+	} else if(formula->GetType() == StringFormula::Type::LT_LEN) {
+		int ns = 4;
+		int sink = ns-1;
+		char *statuses = new char[ns+1];
+		int var = VAR_PER_TRACK;
+		int len = num_tracks * var;
+		int *mindices = Automaton::GetBddVariableIndices(len);
+		std::vector<char> exep_lambda(var,'1');
+		std::vector<char> exep_dont_care(var,'X');
+		exep_dont_care[var-1] = '0';
+		dfaSetup(ns,len,mindices);
+
+		std::vector<char> str(len, 'X');
+
+		dfaAllocExceptions(2);
+		// anything but lambda, just stay in init
+		str.push_back('\0');
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_dont_care[i];
+			str[right_track+num_tracks*i] = exep_dont_care[i];
+		}
+		dfaStoreException(0,&str[0]);
+
+		// lambda,star to state 1 (lambda_star state)
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_lambda[i];
+			str[right_track+num_tracks*i] = exep_dont_care[i];
+		}
+		dfaStoreException(1,&str[0]);
+		dfaStoreState(sink);
+		statuses[0] = '-';
+
+		// lambda,star state
+		dfaAllocExceptions(2);
+		// lambda,star to self
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_lambda[i];
+			str[right_track+num_tracks*i] = exep_dont_care[i];
+		}
+		dfaStoreException(1,&str[0]);
+
+		// lambda,lambda to final state
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_lambda[i];
+			str[right_track+num_tracks*i] = exep_lambda[i];
+		}
+		dfaStoreException(2,&str[0]);
+		dfaStoreState(sink);
+		statuses[1] = '-';
+
+		// final state
+		dfaAllocExceptions(1);
+		dfaStoreException(2,&str[0]);
+		dfaStoreState(sink);
+		statuses[2] = '+';
+
+		// sink state
+		dfaAllocExceptions(0);
+		dfaStoreState(sink);
+		statuses[3] = '-';
+
+		// build dfa
+		statuses[4] = '\0';
+		auto temp_dfa = dfaBuild(statuses);
+		result_dfa = dfaMinimize(temp_dfa);
+		dfaFree(temp_dfa);
+		delete[] statuses;
+	} else if(formula->GetType() == StringFormula::Type::LE_LEN) {
+		int ns = 4;
+		int sink = ns-1;
+		char *statuses = new char[ns+1];
+		int var = VAR_PER_TRACK;
+		int len = num_tracks * var;
+		int *mindices = Automaton::GetBddVariableIndices(len);
+		std::vector<char> exep_lambda(var,'1');
+		std::vector<char> exep_dont_care(var,'X');
+		exep_dont_care[var-1] = '0';
+		dfaSetup(ns,len,mindices);
+
+		std::vector<char> str(len, 'X');
+
+		dfaAllocExceptions(3);
+		// anything but lambda, just stay in init
+		str.push_back('\0');
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_dont_care[i];
+			str[right_track+num_tracks*i] = exep_dont_care[i];
+		}
+		dfaStoreException(0,&str[0]);
+
+		// lambda,star to state 1 (lambda_star state)
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_lambda[i];
+			str[right_track+num_tracks*i] = exep_dont_care[i];
+		}
+		dfaStoreException(1,&str[0]);
+
+		// lambda,lambda to state 2 (lambda,lambda state)
+		// for the equal case
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_lambda[i];
+			str[right_track+num_tracks*i] = exep_lambda[i];
+		}
+		dfaStoreException(2,&str[0]);
+		dfaStoreState(sink);
+		statuses[0] = '-';
+
+		// lambda,star state
+		dfaAllocExceptions(2);
+		// lambda,star to self
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_lambda[i];
+			str[right_track+num_tracks*i] = exep_dont_care[i];
+		}
+		dfaStoreException(1,&str[0]);
+
+		// lambda,lambda to final state
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_lambda[i];
+			str[right_track+num_tracks*i] = exep_lambda[i];
+		}
+		dfaStoreException(2,&str[0]);
+		dfaStoreState(sink);
+		statuses[1] = '-';
+
+		// final state
+		dfaAllocExceptions(1);
+		dfaStoreException(2,&str[0]);
+		dfaStoreState(sink);
+		statuses[2] = '+';
+
+		// sink state
+		dfaAllocExceptions(0);
+		dfaStoreState(sink);
+		statuses[3] = '-';
+
+		// build dfa
+		statuses[4] = '\0';
+		auto temp_dfa = dfaBuild(statuses);
+		result_dfa = dfaMinimize(temp_dfa);
+		dfaFree(temp_dfa);
+		delete[] statuses;
+	} else if(formula->GetType() == StringFormula::Type::GT_LEN) {
+		int ns = 4;
+		int sink = ns-1;
+		char *statuses = new char[ns+1];
+		int var = VAR_PER_TRACK;
+		int len = num_tracks * var;
+		int *mindices = Automaton::GetBddVariableIndices(len);
+		std::vector<char> exep_lambda(var,'1');
+		std::vector<char> exep_dont_care(var,'X');
+		exep_dont_care[var-1] = '0';
+		dfaSetup(ns,len,mindices);
+
+		std::vector<char> str(len, 'X');
+
+		dfaAllocExceptions(2);
+		// anything but lambda, just stay in init
+		str.push_back('\0');
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_dont_care[i];
+			str[right_track+num_tracks*i] = exep_dont_care[i];
+		}
+		dfaStoreException(0,&str[0]);
+
+		// star,lambda to state 1 (star,lambda state)
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_dont_care[i];
+			str[right_track+num_tracks*i] = exep_lambda[i];
+		}
+		dfaStoreException(1,&str[0]);
+		dfaStoreState(sink);
+		statuses[0] = '-';
+
+		// star,lambda state
+		dfaAllocExceptions(2);
+		// star,lambda to self
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_dont_care[i];
+			str[right_track+num_tracks*i] = exep_lambda[i];
+		}
+		dfaStoreException(1,&str[0]);
+
+		// lambda,lambda to final state
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_lambda[i];
+			str[right_track+num_tracks*i] = exep_lambda[i];
+		}
+		dfaStoreException(2,&str[0]);
+		dfaStoreState(sink);
+		statuses[1] = '-';
+
+		// final state
+		dfaAllocExceptions(1);
+		dfaStoreException(2,&str[0]);
+		dfaStoreState(sink);
+		statuses[2] = '+';
+
+		// sink state
+		dfaAllocExceptions(0);
+		dfaStoreState(sink);
+		statuses[3] = '-';
+
+		// build dfa
+		statuses[4] = '\0';
+		auto temp_dfa = dfaBuild(statuses);
+		result_dfa = dfaMinimize(temp_dfa);
+		dfaFree(temp_dfa);
+		delete[] statuses;
+	} else if(formula->GetType() == StringFormula::Type::GE_LEN) {
+		int ns = 4;
+		int sink = ns-1;
+		char *statuses = new char[ns+1];
+		int var = VAR_PER_TRACK;
+		int len = num_tracks * var;
+		int *mindices = Automaton::GetBddVariableIndices(len);
+		std::vector<char> exep_lambda(var,'1');
+		std::vector<char> exep_dont_care(var,'X');
+		exep_dont_care[var-1] = '0';
+		dfaSetup(ns,len,mindices);
+
+		std::vector<char> str(len, 'X');
+
+		dfaAllocExceptions(3);
+		// anything but lambda, just stay in init
+		str.push_back('\0');
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_dont_care[i];
+			str[right_track+num_tracks*i] = exep_dont_care[i];
+		}
+		dfaStoreException(0,&str[0]);
+
+		// star,lambda to state 1 (star,lambda state)
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_dont_care[i];
+			str[right_track+num_tracks*i] = exep_lambda[i];
+		}
+		dfaStoreException(1,&str[0]);
+
+		// lambda,lambda to state 2 (lambda,lambda state)
+		// for the equal case
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_lambda[i];
+			str[right_track+num_tracks*i] = exep_lambda[i];
+		}
+		dfaStoreException(2,&str[0]);
+		dfaStoreState(sink);
+		statuses[0] = '-';
+
+		//  star,lambda state
+		dfaAllocExceptions(2);
+		//  star,lambda to self
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_dont_care[i];
+			str[right_track+num_tracks*i] = exep_lambda[i];
+		}
+		dfaStoreException(1,&str[0]);
+
+		// lambda,lambda to final state
+		for(int i = 0; i < var; i++) {
+			str[left_track+num_tracks*i] = exep_lambda[i];
+			str[right_track+num_tracks*i] = exep_lambda[i];
+		}
+		dfaStoreException(2,&str[0]);
+		dfaStoreState(sink);
+		statuses[1] = '-';
+
+		// final state
+		dfaAllocExceptions(1);
+		dfaStoreException(2,&str[0]);
+		dfaStoreState(sink);
+		statuses[2] = '+';
+
+		// sink state
+		dfaAllocExceptions(0);
+		dfaStoreState(sink);
+		statuses[3] = '-';
+
+		// build dfa
+		statuses[4] = '\0';
+		auto temp_dfa = dfaBuild(statuses);
+		result_dfa = dfaMinimize(temp_dfa);
+		dfaFree(temp_dfa);
+		delete[] statuses;
+	} else {
+		LOG(FATAL) << "Invalid string formula type";
+	}
+
+
+	auto temp_dfa = MakeBinaryAlignedDfa(left_track,right_track,num_tracks);
+	auto intersect_dfa = DFAIntersect(result_dfa,temp_dfa);
+	dfaFree(result_dfa);
+	dfaFree(temp_dfa);
+	result_dfa = intersect_dfa;
+
+
 	return result_dfa;
 }
 

@@ -295,7 +295,7 @@ void StringFormulaGenerator::visitEq(Eq_ptr eq_term) {
 			auto right_var = right_formula->GetVariableAtIndex(0);
 			formula->SetVariableCoefficient(right_var,1);
 			formula->SetConstant(left_formula->GetConstant());
-			constraint_information_->add_string_constraint(eq_term);					
+			constraint_information_->add_string_constraint(eq_term);
 		} else if(StringFormula::Type::CHARAT == left_formula->GetType() && StringFormula::Type::CHARAT == right_formula->GetType()
 							&& (left_formula->GetConstant() == right_formula->GetConstant())) {
 			formula = left_formula->clone();
@@ -304,6 +304,13 @@ void StringFormulaGenerator::visitEq(Eq_ptr eq_term) {
 			auto right_var = right_formula->GetVariableAtIndex(0);
 			formula->SetVariableCoefficient(right_var,2);
 			constraint_information_->add_string_constraint(eq_term);
+    } else if(StringFormula::Type::LEN == left_formula->GetType() && StringFormula::Type::LEN == right_formula->GetType()) {
+      formula = left_formula->clone();
+      formula->MergeVariables(right_formula);
+      formula->SetType(StringFormula::Type::EQ_LEN);
+      auto right_var = right_formula->GetVariableAtIndex(0);
+      formula->SetVariableCoefficient(right_var,2);
+      constraint_information_->add_string_constraint(eq_term);
 		} else {
       formula = left_formula->clone();
       formula->MergeVariables(right_formula);
@@ -395,6 +402,13 @@ void StringFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
 			auto right_var = right_formula->GetVariableAtIndex(0);
 			formula->SetVariableCoefficient(right_var,2);
 			constraint_information_->add_string_constraint(not_eq_term);
+		} else if(StringFormula::Type::LEN == left_formula->GetType() && StringFormula::Type::LEN == right_formula->GetType()) {
+      formula = left_formula->clone();
+      formula->MergeVariables(right_formula);
+      formula->SetType(StringFormula::Type::NOTEQ_LEN);
+      auto right_var = right_formula->GetVariableAtIndex(0);
+      formula->SetVariableCoefficient(right_var,2);
+      constraint_information_->add_string_constraint(not_eq_term);
 		} else {
 			formula = left_formula->clone();
 			formula->MergeVariables(right_formula);
@@ -469,6 +483,13 @@ void StringFormulaGenerator::visitGt(Gt_ptr gt_term) {
 			auto right_var = right_formula->GetVariableAtIndex(0);
 			formula->SetVariableCoefficient(right_var,2);
 			constraint_information_->add_string_constraint(gt_term);
+		} else if(StringFormula::Type::LEN == left_formula->GetType() && StringFormula::Type::LEN == right_formula->GetType()) {
+      formula = left_formula->clone();
+      formula->MergeVariables(right_formula);
+      formula->SetType(StringFormula::Type::GT_LEN);
+      auto right_var = right_formula->GetVariableAtIndex(0);
+      formula->SetVariableCoefficient(right_var,2);
+      constraint_information_->add_string_constraint(gt_term);
 		} else {
 			formula = left_formula->clone();
 			formula->MergeVariables(right_formula);
@@ -545,7 +566,14 @@ void StringFormulaGenerator::visitGe(Ge_ptr ge_term) {
 			auto right_var = right_formula->GetVariableAtIndex(0);
 			formula->SetVariableCoefficient(right_var,2);
 			constraint_information_->add_string_constraint(ge_term);
-		} else {
+		} else if(StringFormula::Type::LEN == left_formula->GetType() && StringFormula::Type::LEN == right_formula->GetType()) {
+      formula = left_formula->clone();
+      formula->MergeVariables(right_formula);
+      formula->SetType(StringFormula::Type::GE_LEN);
+      auto right_var = right_formula->GetVariableAtIndex(0);
+      formula->SetVariableCoefficient(right_var,2);
+      constraint_information_->add_string_constraint(ge_term);
+		}  else {
 			formula = left_formula->clone();
 			formula->MergeVariables(right_formula);
 			formula->SetType(StringFormula::Type::NONRELATIONAL);
@@ -620,6 +648,13 @@ void StringFormulaGenerator::visitLt(Lt_ptr lt_term) {
 			auto right_var = right_formula->GetVariableAtIndex(0);
 			formula->SetVariableCoefficient(right_var,2);
 			constraint_information_->add_string_constraint(lt_term);
+		} else if(StringFormula::Type::LEN == left_formula->GetType() && StringFormula::Type::LEN == right_formula->GetType()) {
+      formula = left_formula->clone();
+      formula->MergeVariables(right_formula);
+      formula->SetType(StringFormula::Type::LT_LEN);
+      auto right_var = right_formula->GetVariableAtIndex(0);
+      formula->SetVariableCoefficient(right_var,2);
+      constraint_information_->add_string_constraint(lt_term);
 		} else {
 			formula = left_formula->clone();
 			formula->MergeVariables(right_formula);
@@ -695,6 +730,13 @@ void StringFormulaGenerator::visitLe(Le_ptr le_term) {
 			auto right_var = right_formula->GetVariableAtIndex(0);
 			formula->SetVariableCoefficient(right_var,2);
 			constraint_information_->add_string_constraint(le_term);
+		} else if(StringFormula::Type::LEN == left_formula->GetType() && StringFormula::Type::LEN == right_formula->GetType()) {
+      formula = left_formula->clone();
+      formula->MergeVariables(right_formula);
+      formula->SetType(StringFormula::Type::LE_LEN);
+      auto right_var = right_formula->GetVariableAtIndex(0);
+      formula->SetVariableCoefficient(right_var,2);
+      constraint_information_->add_string_constraint(le_term);
 		} else {
 			formula = left_formula->clone();
 			formula->MergeVariables(right_formula);
@@ -767,6 +809,17 @@ void StringFormulaGenerator::visitNotIn(NotIn_ptr not_in_term) {
 }
 
 void StringFormulaGenerator::visitLen(Len_ptr len_term) {
+  visit(len_term->term);
+  auto inner_formula = get_term_formula(len_term->term);
+  if(inner_formula != nullptr) {
+    auto formula = inner_formula->clone();
+    formula->SetType(StringFormula::Type::LEN);
+    delete_term_formula(len_term->term);
+    set_term_formula(len_term,formula);
+    constraint_information_->add_string_constraint(len_term);
+  } else {
+    // I dont think we need anything here... right?
+  }
 //  DVLOG(VLOG_LEVEL) << "visit: " << *len_term;
 //
 //  std::string name = symbol_table_->get_var_name_for_expression(len_term, Variable::Type::INT);
