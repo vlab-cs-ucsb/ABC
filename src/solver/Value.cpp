@@ -241,7 +241,7 @@ Value_ptr Value::intersect(Value_ptr other_value) const {
   } else if (Type::BOOL_CONSTANT == type and Type::BOOL_CONSTANT == other_value->type) {
   	intersection_value = new Value((bool)(bool_constant & other_value->bool_constant));
   } else {
-  	this->getIntAutomaton()->inspectAuto(false,true);
+  	//this->getIntAutomaton()->inspectAuto(false,true);
     LOG(FATAL) << "cannot intersect types (implement me): " << *this << " & " << *other_value;
   }
   return intersection_value;

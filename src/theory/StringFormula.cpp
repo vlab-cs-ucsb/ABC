@@ -251,6 +251,9 @@ int StringFormula::CountOnes(unsigned long n) const {
 }
 
 void StringFormula::MergeVariables(Formula_ptr other) {
+  if(other == nullptr) {
+    return;
+  }
   for (auto& el : other->GetVariableCoefficientMap()) {
     if (variable_coefficient_map_.find(el.first) == variable_coefficient_map_.end()) {
       variable_coefficient_map_[el.first] = 0;
