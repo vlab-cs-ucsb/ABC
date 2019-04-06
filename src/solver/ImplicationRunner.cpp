@@ -191,13 +191,13 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
 
 
 void ImplicationRunner::visitContains(Contains_ptr contains) {
-  if (Term::Type::TERMCONSTANT not_eq contains->subject_term->type()
-      and Term::Type::TERMCONSTANT not_eq contains->search_term->type()) {
-    Term_ptr subject_length = get_length(contains->subject_term);
-    Term_ptr search_length = get_length(contains->search_term);
-    Term_ptr implication_term = new Ge(subject_length, search_length);
-    current_and_->term_list->push_back(implication_term);
-  }
+  // if (Term::Type::TERMCONSTANT not_eq contains->subject_term->type()
+  //     and Term::Type::TERMCONSTANT not_eq contains->search_term->type()) {
+  //   Term_ptr subject_length = get_length(contains->subject_term);
+  //   Term_ptr search_length = get_length(contains->search_term);
+  //   Term_ptr implication_term = new Ge(subject_length, search_length);
+  //   current_and_->term_list->push_back(implication_term);
+  // }
 }
 
 void ImplicationRunner::visitEnds(Ends_ptr ends) {

@@ -2,7 +2,7 @@
  * ConstraintSorter.cpp
  *
  *  Created on: May 18, 2015
- *      Author: baki
+ *      Author: baki, will
  */
 
 #include "ConstraintSorter.h"
@@ -12,16 +12,57 @@ namespace Solver {
 
 using namespace SMT;
 
+
+int ConstraintSorter::SORTING_LEVEL = 1;
 const int ConstraintSorter::VLOG_LEVEL = 13;
 std::string ConstraintSorter::TermNode::count_var;
 
 ConstraintSorter::ConstraintSorter(Script_ptr script, SymbolTable_ptr symbol_table)
         : root(script), symbol_table(symbol_table), term_node(nullptr) {
 
-	if(symbol_table->has_count_variable()) {
-		auto var = symbol_table->get_count_variable();
-		ConstraintSorter::TermNode::count_var = var->getName();
-	}
+  if(symbol_table->has_count_variable()) {
+    auto var = symbol_table->get_count_variable();
+    ConstraintSorter::TermNode::count_var = var->getName();
+  }
+
+  switch(SORTING_LEVEL) {
+    case 0: {
+      // no sorting, shouldn't be here but just in case
+      SORT_TOPOLOGICAL = false;
+      SORT_BY_TYPE = false;
+      SORT_BY_TERM_TYPE = false;
+      SORT_BY_TOTAL_VARS = false;
+      SORT_BY_LEFT_VARS = false;
+      SORT_BY_RIGHT_VARS = false;
+      SORT_BY_NUM_OPS = false;
+      SORT_BY_TOSTRING = false;
+      break;
+    }
+    case 1:
+      // sort based on type, num vars, num ops
+      SORT_TOPOLOGICAL = false;
+      SORT_BY_TYPE = true;
+      SORT_BY_TERM_TYPE = false;
+      SORT_BY_TOTAL_VARS = true;
+      SORT_BY_LEFT_VARS = false;
+      SORT_BY_RIGHT_VARS = false;
+      SORT_BY_NUM_OPS = true;
+      SORT_BY_TOSTRING = false;
+      break;
+    case 2:
+      // full sorting
+      SORT_TOPOLOGICAL = true;
+      SORT_BY_TYPE = true;
+      SORT_BY_TERM_TYPE = true;
+      SORT_BY_TOTAL_VARS = true;
+      SORT_BY_LEFT_VARS = true;
+      SORT_BY_RIGHT_VARS = true;
+      SORT_BY_NUM_OPS = true;
+      SORT_BY_TOSTRING = true;
+      break;
+    default:
+      break;
+  }
 }
 
 ConstraintSorter::~ConstraintSorter() {
@@ -107,34 +148,36 @@ void ConstraintSorter::visitAnd(And_ptr and_term) {
   std::vector<Term_ptr> unsorted_constraints;
 
   if(symbol_table->has_count_variable()) {
-		auto count_var = symbol_table->get_count_variable();
-		auto rep_count_var = symbol_table->get_representative_variable_of_at_scope(symbol_table->top_scope(),count_var);
-		ConstraintSorter::TermNode::count_var = rep_count_var->getName();
-	}
+    auto count_var = symbol_table->get_count_variable();
+    auto rep_count_var = symbol_table->get_representative_variable_of_at_scope(symbol_table->top_scope(),count_var);
+    ConstraintSorter::TermNode::count_var = rep_count_var->getName();
+  }
 
   for(auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
   //for (auto& term : *(and_term->term_list)) {
-  	if(symbol_table->is_unsorted_constraint(*iter) and false) {
-  		unsorted_constraints.push_back((*iter)->clone());
-  		delete (*iter);
-			iter = and_term->term_list->erase(iter);
-  	} else {
-			term_node = nullptr;
-			visit(*iter);
-			if (term_node == nullptr) {
-				term_node = new TermNode(*iter);
-			} else {
-				term_node->setNode(*iter);
-			}
-			term_node->addMeToChildVariableNodes();
-			term_node->updateSymbolicVariableInfo();
-			local_dependency_node_list.push_back(term_node);
-			iter++;
-  	}
+//    if(symbol_table->is_unsorted_constraint(*iter) and false) {
+//      unsorted_constraints.push_back((*iter)->clone());
+//      delete (*iter);
+//      iter = and_term->term_list->erase(iter);
+//    } else {
+      term_node = nullptr;
+      visit(*iter);
+      if (term_node == nullptr) {
+        term_node = new TermNode(*iter);
+      } else {
+        term_node->setNode(*iter);
+      }
+      term_node->addMeToChildVariableNodes();
+      term_node->updateSymbolicVariableInfo();
+      local_dependency_node_list.push_back(term_node);
+      iter++;
+//    }
   }
   term_node = nullptr;
 
+  // LOG(INFO) << "total size: " << and_term->term_list->size();
   sort_terms(local_dependency_node_list);
+  // std::cin.get();
 
   if (VLOG_IS_ON(VLOG_LEVEL)) {
     for (auto& node : local_dependency_node_list) {
@@ -153,9 +196,9 @@ void ConstraintSorter::visitAnd(And_ptr and_term) {
   }
 
   for(auto it = unsorted_constraints.cbegin(); it != unsorted_constraints.cend(); it++) {
-		and_term->term_list->push_back((*it)->clone());
-		delete *it;
-	}
+    and_term->term_list->push_back((*it)->clone());
+    delete *it;
+  }
 }
 
 void ConstraintSorter::visitOr(Or_ptr or_term) {
@@ -169,11 +212,13 @@ void ConstraintSorter::visitOr(Or_ptr or_term) {
 void ConstraintSorter::visitNot(Not_ptr not_term) {
   term_node = nullptr;
   visit_children_of(not_term);
+  term_node->num_ops++;
 }
 
 void ConstraintSorter::visitUMinus(UMinus_ptr u_minus_term) {
   term_node = nullptr;
   visit_children_of(u_minus_term);
+  term_node->num_ops++;
 }
 
 void ConstraintSorter::visitMinus(Minus_ptr minus_term) {
@@ -185,6 +230,8 @@ void ConstraintSorter::visitMinus(Minus_ptr minus_term) {
   TermNode_ptr right_node = term_node;
 
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(TermNode::Type::INT);
+  term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitPlus(Plus_ptr plus_term) {
@@ -192,15 +239,20 @@ void ConstraintSorter::visitPlus(Plus_ptr plus_term) {
   for (auto& term : *(plus_term->term_list)) {
     term_node = nullptr;
     visit(term);
+    
     if (result_node == nullptr and term_node != nullptr) {
       result_node = term_node;
+      result_node->num_ops++;
       result_node->shiftToRight();
     } else if (term_node != nullptr) {
       result_node->addVariableNodes(term_node->getAllNodes(), false);
+      result_node->num_ops = result_node->num_ops + term_node->num_ops +1;
       delete term_node;
     }
   }
   term_node = result_node;
+  term_node->setType(TermNode::Type::INT);
+
 }
 
 void ConstraintSorter::visitTimes(Times_ptr times_term) {
@@ -210,17 +262,20 @@ void ConstraintSorter::visitTimes(Times_ptr times_term) {
     visit(term);
     if (result_node == nullptr and term_node != nullptr) {
       result_node = term_node;
+      result_node->num_ops++;
       result_node->shiftToRight();
     } else if (term_node != nullptr) {
       result_node->addVariableNodes(term_node->getAllNodes(), false);
+      result_node->num_ops = result_node->num_ops + term_node->num_ops +1;
       delete term_node;
     }
   }
   term_node = result_node;
+  term_node->setType(TermNode::Type::INT);
 }
 
 void ConstraintSorter::visitDiv(Div_ptr div_term) {
-	LOG(FATAL) << "Implement me";
+  LOG(FATAL) << "Implement me";
 }
 
 void ConstraintSorter::visitEq(Eq_ptr eq_term) {
@@ -231,7 +286,23 @@ void ConstraintSorter::visitEq(Eq_ptr eq_term) {
   visit(eq_term->right_term);
   TermNode_ptr right_node = term_node;
 
+  TermNode::Type term_type = TermNode::Type::NONE;
+  if(left_node != nullptr and right_node != nullptr) {
+    if(left_node->getType() != right_node->getType()) {
+      LOG(FATAL) << "Term Types do not match, can't sort properly!";
+    }
+    term_type = left_node->getType();
+  } else if(left_node != nullptr) {
+    term_type = left_node->getType();
+  } else if(right_node != nullptr) {
+    term_type = right_node->getType();
+  }
+
+
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(term_type);
+
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitNotEq(NotEq_ptr not_eq_term) {
@@ -242,7 +313,22 @@ void ConstraintSorter::visitNotEq(NotEq_ptr not_eq_term) {
   visit(not_eq_term->right_term);
   TermNode_ptr right_node = term_node;
 
+  TermNode::Type term_type = TermNode::Type::NONE;
+  if(left_node != nullptr and right_node != nullptr) {
+    if(left_node->getType() != right_node->getType()) {
+      LOG(FATAL) << "Term Types do not match, can't sort properly!";
+    }
+    term_type = left_node->getType();
+  } else if(left_node != nullptr) {
+    term_type = left_node->getType();
+  } else if(right_node != nullptr) {
+    term_type = right_node->getType();
+  }
+
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(term_type);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
+//  term_node->setNode(not_eq_term);
 }
 
 
@@ -254,7 +340,21 @@ void ConstraintSorter::visitGt(Gt_ptr gt_term) {
   visit(gt_term->right_term);
   TermNode_ptr right_node = term_node;
 
+  TermNode::Type term_type = TermNode::Type::NONE;
+  if(left_node != nullptr and right_node != nullptr) {
+    if(left_node->getType() != right_node->getType()) {
+      LOG(FATAL) << "Term Types do not match, can't sort properly!";
+    }
+    term_type = left_node->getType();
+  } else if(left_node != nullptr) {
+    term_type = left_node->getType();
+  } else if(right_node != nullptr) {
+    term_type = right_node->getType();
+  }
+
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(term_type);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitGe(Ge_ptr ge_term) {
@@ -265,7 +365,21 @@ void ConstraintSorter::visitGe(Ge_ptr ge_term) {
   visit(ge_term->right_term);
   TermNode_ptr right_node = term_node;
 
+  TermNode::Type term_type = TermNode::Type::NONE;
+  if(left_node != nullptr and right_node != nullptr) {
+    if(left_node->getType() != right_node->getType()) {
+      LOG(FATAL) << "Term Types do not match, can't sort properly!";
+    }
+    term_type = left_node->getType();
+  } else if(left_node != nullptr) {
+    term_type = left_node->getType();
+  } else if(right_node != nullptr) {
+    term_type = right_node->getType();
+  }
+
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(term_type);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitLt(Lt_ptr lt_term) {
@@ -276,7 +390,21 @@ void ConstraintSorter::visitLt(Lt_ptr lt_term) {
   visit(lt_term->right_term);
   TermNode_ptr right_node = term_node;
 
+  TermNode::Type term_type = TermNode::Type::NONE;
+  if(left_node != nullptr and right_node != nullptr) {
+    if(left_node->getType() != right_node->getType()) {
+      LOG(FATAL) << "Term Types do not match, can't sort properly!";
+    }
+    term_type = left_node->getType();
+  } else if(left_node != nullptr) {
+    term_type = left_node->getType();
+  } else if(right_node != nullptr) {
+    term_type = right_node->getType();
+  }
+
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(term_type);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitLe(Le_ptr le_term) {
@@ -287,7 +415,21 @@ void ConstraintSorter::visitLe(Le_ptr le_term) {
   visit(le_term->right_term);
   TermNode_ptr right_node = term_node;
 
+  TermNode::Type term_type = TermNode::Type::NONE;
+  if(left_node != nullptr and right_node != nullptr) {
+    if(left_node->getType() != right_node->getType()) {
+      LOG(FATAL) << "Term Types do not match, can't sort properly!";
+    }
+    term_type = left_node->getType();
+  } else if(left_node != nullptr) {
+    term_type = left_node->getType();
+  } else if(right_node != nullptr) {
+    term_type = right_node->getType();
+  }
+
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(term_type);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitConcat(Concat_ptr concat_term) {
@@ -297,13 +439,16 @@ void ConstraintSorter::visitConcat(Concat_ptr concat_term) {
     visit(term);
     if (result_node == nullptr and term_node != nullptr) {
       result_node = term_node;
+      result_node->num_ops++;
       result_node->shiftToRight();
     } else if (term_node != nullptr) {
       result_node->addVariableNodes(term_node->getAllNodes(), false);
+      result_node->num_ops = result_node->num_ops + term_node->num_ops+1;
       delete term_node;
     }
   }
   term_node = result_node;
+  term_node->setType(TermNode::Type::STRING);
 }
 
 void ConstraintSorter::visitIn(In_ptr in_term) {
@@ -315,6 +460,8 @@ void ConstraintSorter::visitIn(In_ptr in_term) {
   TermNode_ptr right_node = term_node;
 
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 
@@ -327,6 +474,8 @@ void ConstraintSorter::visitNotIn(NotIn_ptr not_in_term) {
   TermNode_ptr right_node = term_node;
 
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitLen(Len_ptr len_term) {
@@ -335,6 +484,8 @@ void ConstraintSorter::visitLen(Len_ptr len_term) {
   if (term_node != nullptr) {
     term_node->shiftToRight();
   }
+  term_node->setType(TermNode::Type::INT);
+  term_node->num_ops++;
 }
 
 void ConstraintSorter::visitContains(Contains_ptr contains_term) {
@@ -346,6 +497,8 @@ void ConstraintSorter::visitContains(Contains_ptr contains_term) {
   TermNode_ptr right_node = term_node;
 
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitNotContains(NotContains_ptr not_contains_term) {
@@ -357,6 +510,8 @@ void ConstraintSorter::visitNotContains(NotContains_ptr not_contains_term) {
   TermNode_ptr right_node = term_node;
 
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitBegins(Begins_ptr begins_term) {
@@ -368,6 +523,8 @@ void ConstraintSorter::visitBegins(Begins_ptr begins_term) {
   TermNode_ptr right_node = term_node;
 
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitNotBegins(NotBegins_ptr not_begins_term) {
@@ -379,6 +536,8 @@ void ConstraintSorter::visitNotBegins(NotBegins_ptr not_begins_term) {
   TermNode_ptr right_node = term_node;
 
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitEnds(Ends_ptr ends_term) {
@@ -390,6 +549,8 @@ void ConstraintSorter::visitEnds(Ends_ptr ends_term) {
   TermNode_ptr right_node = term_node;
 
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitNotEnds(NotEnds_ptr not_ends_term) {
@@ -401,6 +562,8 @@ void ConstraintSorter::visitNotEnds(NotEnds_ptr not_ends_term) {
   TermNode_ptr right_node = term_node;
 
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitIndexOf(IndexOf_ptr index_of_term) {
@@ -421,6 +584,8 @@ void ConstraintSorter::visitIndexOf(IndexOf_ptr index_of_term) {
     }
   }
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(TermNode::Type::INT);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
@@ -442,6 +607,8 @@ void ConstraintSorter::visitLastIndexOf(LastIndexOf_ptr last_index_of_term) {
   }
 
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(TermNode::Type::INT);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitCharAt(CharAt_ptr char_at_term) {
@@ -453,6 +620,8 @@ void ConstraintSorter::visitCharAt(CharAt_ptr char_at_term) {
   TermNode_ptr right_node = term_node;
 
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitSubString(SubString_ptr sub_string_term) {
@@ -474,11 +643,14 @@ void ConstraintSorter::visitSubString(SubString_ptr sub_string_term) {
   }
 
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(TermNode::Type::STRING);
+  //term_node->num_ops = left_node->num_ops+right_node->num_ops +1;
 }
 
 void ConstraintSorter::visitToUpper(ToUpper_ptr to_upper_term) {
   term_node = nullptr;
   visit_children_of(to_upper_term);
+  term_node->num_ops++;
 }
 
 void ConstraintSorter::visitToLower(ToLower_ptr to_lower_term) {
@@ -489,16 +661,19 @@ void ConstraintSorter::visitToLower(ToLower_ptr to_lower_term) {
 void ConstraintSorter::visitTrim(Trim_ptr trim_term) {
   term_node = nullptr;
   visit_children_of(trim_term);
+  term_node->num_ops++;
 }
 
 void ConstraintSorter::visitToString(ToString_ptr to_string_term) {
   term_node = nullptr;
   visit_children_of(to_string_term);
+  term_node->num_ops++;
 }
 
 void ConstraintSorter::visitToInt(ToInt_ptr to_int_term) {
   term_node = nullptr;
   visit_children_of(to_int_term);
+  term_node->num_ops++;
 }
 
 void ConstraintSorter::visitReplace(Replace_ptr replace_term) {
@@ -516,7 +691,10 @@ void ConstraintSorter::visitReplace(Replace_ptr replace_term) {
   if (right_node != nullptr) {
     right_node->shiftToRight();
   }
+  //term_node->num_ops = left_node->num_ops+right_node_1->num_ops;
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(TermNode::Type::STRING);
+ // term_node->num_ops += right_node_1->num_ops;
 }
 
 void ConstraintSorter::visitCount(Count_ptr count_term) {
@@ -528,6 +706,8 @@ void ConstraintSorter::visitCount(Count_ptr count_term) {
   TermNode_ptr right_node = term_node;
 
   term_node = process_child_nodes(left_node, right_node);
+  term_node->setType(TermNode::Type::INT);
+  //term_node->num_ops++;
 }
 
 void ConstraintSorter::visitIte(Ite_ptr ite_term) {
@@ -578,10 +758,34 @@ void ConstraintSorter::visitQualIdentifier(QualIdentifier_ptr qi_term) {
     VariableNode_ptr variable_node = get_variable_node(variable);
     term_node = new TermNode();
     term_node->addVariableNode(variable_node, false);
+    if(variable->getType() == Variable::Type::INT) {
+      term_node->setType(TermNode::Type::INT);
+    } else if(variable->getType() == Variable::Type::STRING) {
+      term_node->setType(TermNode::Type::STRING);
+    }
+    term_node->num_ops++;
   }
+
 }
 
 void ConstraintSorter::visitTermConstant(TermConstant_ptr term_constant) {
+  term_node = new TermNode(term_constant);
+  switch(term_constant->getValueType()) {
+    case Primitive::Type::STRING:
+    case Primitive::Type::REGEX:
+      term_node->setType(TermNode::Type::STRING);
+      break;
+    case Primitive::Type::NUMERAL:
+      term_node->setType(TermNode::Type::INT);
+      break;
+    case Primitive::Type::BOOL:
+      term_node->setType(TermNode::Type::BOOL);
+      break;
+    default:
+      break;
+  }
+  term_node->num_ops++;
+  
 }
 
 void ConstraintSorter::visitIdentifier(Identifier_ptr identifier) {
@@ -635,70 +839,199 @@ ConstraintSorter::TermNode_ptr ConstraintSorter::process_child_nodes(TermNode_pt
   if (left_node != nullptr and right_node != nullptr) {
     right_node->shiftToRight();
     right_node->addVariableNodes(left_node->getAllNodes(), true);
+    right_node->num_ops += left_node->num_ops + 1;
     delete left_node;
     result_node = right_node;
   } else if (left_node != nullptr) {
     left_node->shiftToLeft();
+    left_node->num_ops ++;
     result_node = left_node;
   } else if (right_node != nullptr) {
     right_node->shiftToRight();
+    right_node->num_ops++;
     result_node = right_node;
   }
   return result_node;
 }
 
 void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
-	// if no count variable, just sort based on number of total variables in each term
-	if(ConstraintSorter::TermNode::count_var.empty()) {
-		std::stable_sort(term_node_list.begin(), term_node_list.end(),
-							[](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
-								return (left_node->numOfTotalVars() < right_node->numOfTotalVars());
-							});
-		return;
-	}
 
-	// otherwise, sort based on count variable
-  std::vector<TermNode_ptr> sorted_term_node_list;
+  
+  // if sorting topologically, compute depths for each node
+  if(SORT_TOPOLOGICAL) {
+    std::vector<TermNode_ptr> temp_term_node_list;
+    std::queue<std::vector<TermNode_ptr>> terms_to_process;
+    std::vector<TermNode_ptr> term_group;
+    for(auto iter = term_node_list.begin(); iter != term_node_list.end();) {
+      if((*iter)->hasSymbolicVar()) {
+        term_group.push_back(*iter);
+      } else {
+        temp_term_node_list.push_back(*iter);
+      }
+      iter++;
+    }
 
-  for (auto it = term_node_list.begin(); it != term_node_list.end(); ) {
-    if ((*it)->numOfTotalVars() == 0) {
-      sorted_term_node_list.push_back((*it));
-      it = term_node_list.erase(it);
-    }
-    else if(not (*it)->hasSymbolicVar()) {
-      sorted_term_node_list.push_back((*it));
-      it = term_node_list.erase(it);
-    }
-    else {
-      it++;
+    terms_to_process.push(term_group);
+
+    // compute dependency graph
+    // compute graph for the nodes, starting with terms that have query variable
+    // all other terms that share variables other than query variable, add edges between the nodes
+    while(not terms_to_process.empty()) {
+      auto current_group = terms_to_process.front();
+      terms_to_process.pop();
+      std::vector<TermNode_ptr> next_group;
+
+      for(auto iter = temp_term_node_list.begin(); iter != temp_term_node_list.end();) {
+        bool edge_added = false;
+        for(auto current_group_iter : current_group) {
+          if(has_shared_variables(*iter, current_group_iter)) {
+            edge_added = true;
+            (*iter)->setDepth(current_group_iter->getDepth()+1);
+            break;
+          }
+        }
+
+        if(edge_added) {
+  //        (*iter)->setDepth(hops);
+          next_group.push_back(*iter);
+          iter = temp_term_node_list.erase(iter);
+        } else {
+          iter++;
+        }
+      }
+
+      if(not next_group.empty()) {
+        terms_to_process.push(next_group);
+      }
+  //    hops++;
     }
   }
+  
 
-  std::sort(term_node_list.begin(), term_node_list.end(),
-          [](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
-            return (left_node->numOfTotalVars() < right_node->numOfTotalVars());
-          });
+  /*
+   * compare by
+   * (0) dependency hops to count variable
+   * (1) operation type (string/int)
+   * (2) operator
+   * -- NOT DOING -- (3) length of operation
+   * -- NOT DOING -- (4) left length
+   * -- NOT DOING -- (5) right length
+   * (6) num vars
+   * (7) num vars on left side
+   * (8) num vars on right side
+   * -- NOT DOING -- (9) operation vector length
+   * -- NOT DOING -- (10) operation vector types
+   * (11) lexigraphic string
+   */
+  auto compare_function = [this](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
 
-  for (auto it = term_node_list.begin(); it != term_node_list.end(); ) {
-    if (not (*it)->hasSymbolicVar()) {
-      sorted_term_node_list.push_back((*it));
-      it = term_node_list.erase(it);
-    } else {
-      it++;
+    // topo sort depth level; sort in decreasing depth
+
+    if(SORT_TOPOLOGICAL) {
+      if(left_node->getDepth() < right_node->getDepth()) {
+        return 0;
+      }
+      if(left_node->getDepth() > right_node->getDepth()) {
+        return 1;
+      }
     }
-  }
 
-  term_node_list.insert(term_node_list.begin(), sorted_term_node_list.begin(), sorted_term_node_list.end());
+    if(SORT_BY_TYPE) {
+      if(left_node->getType() < right_node->getType()) {
+        return 0;
+      }
+      if(left_node->getType() > right_node->getType()) {
+        return 1;
+      }
+    }
+    
+    if(SORT_BY_TERM_TYPE) {
+      if(left_node->getNode()->type() < right_node->getNode()->type()) {
+        if(left_node->getNode()->type() == Term::Type::CONCAT and right_node->getNode()->type() == Term::Type::NOTEQ) {
+          LOG(FATAL) << "WAT";
+        } 
+        return 1;
+      }
+      if(left_node->getNode()->type() > right_node->getNode()->type()) {
+        if(left_node->getNode()->type() == Term::Type::CONCAT and right_node->getNode()->type() == Term::Type::NOTEQ) {
+          LOG(FATAL) << " GOOD WAT";
+        }
+        return 0;
+      }
+    }
+    
+    if(SORT_BY_TOTAL_VARS) {
+      if(left_node->numOfTotalVars() < right_node->numOfTotalVars()) {
+        return 1;
+      }
+      if(left_node->numOfTotalVars() > right_node->numOfTotalVars()) {
+        return 0;
+      }
+    }
+    
+    if(SORT_BY_LEFT_VARS) {
+      if(left_node->numOfLeftVars() < right_node->numOfLeftVars()) {
+        return 1;
+      }
+      if(left_node->numOfLeftVars() > right_node->numOfLeftVars()) {
+        return 0;
+      }
+    }
+    
+    if(SORT_BY_RIGHT_VARS) {
+      if(left_node->numOfRightVars() < right_node->numOfRightVars()) {
+        return 1;
+      }
+      if(left_node->numOfRightVars() > right_node->numOfRightVars()) {
+        return 0;
+      }
+    }
+    
+    if(SORT_BY_NUM_OPS) {
+      if(left_node->num_ops < right_node->num_ops) {
+        return 1 ;
+      }
+      if(left_node->num_ops > right_node->num_ops) {
+        return 0;
+      }
+    }
+    
+    if(SORT_BY_TOSTRING) {
+      return Ast2Dot::toString(left_node->getNode()) <= Ast2Dot::toString(right_node->getNode());
+    }
+
+    // gotta return something!
+    return 0;
+    };
+
+  std::stable_sort(term_node_list.begin(), term_node_list.end(),compare_function);
 
   DVLOG(VLOG_LEVEL) << "node list sorted";
 }
 
+bool ConstraintSorter::has_shared_variables(TermNode_ptr term1, TermNode_ptr term2) {
+  for(auto iter1 : term1->getAllNodes()) {
+    for(auto iter2 : term2->getAllNodes()) {
+      if(iter1 == iter2) {
+//        LOG(INFO) << "Var pointers equal";
+        return true;
+      } else if(iter1->getVariable()->getName() == iter2->getVariable()->getName()) {
+//        LOG(INFO) << "Var names equal";
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 ConstraintSorter::TermNode::TermNode()
-        : _node(nullptr), _has_symbolic_var_on_left(false), _has_symbolic_var_on_right(false) {
+        : _node(nullptr), _has_symbolic_var_on_left(false), _has_symbolic_var_on_right(false), _type(Type::NONE), _depth(0) {
+  this->num_ops = 0;
 }
 
 ConstraintSorter::TermNode::TermNode(Term_ptr node)
-        : _node(node), _has_symbolic_var_on_left(false), _has_symbolic_var_on_right(false) {
+        : _node(node), _has_symbolic_var_on_left(false), _has_symbolic_var_on_right(false), _type(Type::NONE),_depth(0) {
+  this->num_ops = 0;
 }
 
 ConstraintSorter::TermNode::~TermNode() {
@@ -719,6 +1052,14 @@ std::string ConstraintSorter::TermNode::str() {
   }
 
   return ss.str();
+}
+
+void ConstraintSorter::TermNode::setType(TermNode::Type type) {
+  _type = type;
+}
+
+ConstraintSorter::TermNode::Type ConstraintSorter::TermNode::getType() {
+  return _type;
 }
 
 void ConstraintSorter::TermNode::setNode(Term_ptr node) {
@@ -787,11 +1128,11 @@ int ConstraintSorter::TermNode::numOfRightVars() {
 }
 
 void ConstraintSorter::TermNode::updateSymbolicVariableInfo() {
-	if(count_var.empty()) {
-  	return;
+  if(count_var.empty()) {
+    return;
   }
 
-	for (auto& left_node : _left_child_node_list) {
+  for (auto& left_node : _left_child_node_list) {
     if (left_node->getVariable()->getName() == count_var) {
       _has_symbolic_var_on_left = true;
       break;
@@ -815,6 +1156,14 @@ bool ConstraintSorter::TermNode::hasSymbolicVarOnRight() {
 
 bool ConstraintSorter::TermNode::hasSymbolicVar() {
   return _has_symbolic_var_on_left || _has_symbolic_var_on_right;
+}
+
+int ConstraintSorter::TermNode::getDepth() {
+  return _depth;
+}
+
+void ConstraintSorter::TermNode::setDepth(int depth) {
+  _depth = depth;
 }
 
 void ConstraintSorter::TermNode::merge_vectors(std::vector<VariableNode_ptr>& vector_1,
