@@ -1427,6 +1427,23 @@ void SyntacticOptimizer::visitIndexOf(IndexOf_ptr index_of_term) {
     if (IndexOf::Mode::NONE != mode) {
       index_of_term->setMode(mode);
     }
+  } else if(index_of_term->subject_term->type() == Term::Type::TERMCONSTANT
+              && index_of_term->search_term->type() == Term::Type::TERMCONSTANT) {
+    auto subject = dynamic_cast<TermConstant_ptr>(index_of_term->subject_term);
+    auto search = dynamic_cast<TermConstant_ptr>(index_of_term->search_term);
+    size_t found = subject->getValue().find(search->getValue());
+    std::string value = "";
+    if(found == std::string::npos) {
+      value = "-1";
+    } else {
+      value = std::to_string(found);
+    }
+    DVLOG(VLOG_LEVEL) << "Applying 'indexOf' transformation";
+    callback_ = [this, index_of_term, value](Term_ptr & term) mutable {
+      term = generate_term_constant(value, Primitive::Type::NUMERAL);
+      delete index_of_term;
+    };
+    return;
   }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *index_of_term << "@" << index_of_term;
 }
@@ -1492,6 +1509,31 @@ void SyntacticOptimizer::visitSubString(SubString_ptr sub_string_term) {
       delete sub_string_term;
     };
     return;
+  } else if(auto term_constant = dynamic_cast<TermConstant_ptr>(sub_string_term->subject_term)) {
+    if(term_constant->getValue() == "") {
+      std::string value = "";
+      DVLOG(VLOG_LEVEL) << "Applying 'subString' transformation";
+      callback_ = [this, sub_string_term, value](Term_ptr & term) mutable {
+        term = generate_term_constant(value, Primitive::Type::STRING);
+        delete sub_string_term;
+      };
+      return;
+    } else if(sub_string_term->start_index_term->type() == Term::Type::TERMCONSTANT
+                && sub_string_term->end_index_term->type() == Term::Type::TERMCONSTANT) {
+      auto index = dynamic_cast<TermConstant_ptr>(sub_string_term->start_index_term);
+      auto length = dynamic_cast<TermConstant_ptr>(sub_string_term->end_index_term);
+      int index_val = std::stoi(index->getValue());
+      int length_val = std::stoi(length->getValue());
+      if(index_val == 0 && length_val >= 0) {
+        std::string value = std::string(term_constant->getValue(),index_val,length_val);
+        DVLOG(VLOG_LEVEL) << "Applying 'subString' transformation";
+        callback_ = [this, sub_string_term, value](Term_ptr & term) mutable {
+          term = generate_term_constant(value, Primitive::Type::STRING);
+          delete sub_string_term;
+        };
+        return;
+      }
+    }
   }
 
   if (substring_optimizer.is_index_updated()) {
