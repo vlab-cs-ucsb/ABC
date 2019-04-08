@@ -41,7 +41,7 @@ ConstraintSolver::~ConstraintSolver() {
 
 void ConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "start";
-  
+
   auto start = std::chrono::steady_clock::now();
 
 //  arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
@@ -332,8 +332,8 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
     arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
     string_constraint_solver_.collect_string_constraint_info();
   }
-    arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
-    string_constraint_solver_.collect_string_constraint_info();
+    // arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
+    // string_constraint_solver_.collect_string_constraint_info();
 
 //LOG(INFO) << "Before visit assert->term";
   check_and_visit(assert_command->term);
@@ -495,14 +495,14 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
           }
 
           export_auto->GetFormula()->SetVariableCoefficientMap(remapped_map);
-          
+
           {
             cereal::BinaryOutputArchive ar(os);
             export_auto->save(ar);
           }
 
           export_auto->GetFormula()->SetVariableCoefficientMap(variable_coefficient_map);
-          
+
 //      os << "a";
           // LOG(INFO) << "Serialized one...";
         }
@@ -619,7 +619,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   bool has_cached_result = false;
 
   if(false){//Option::Solver::INCREMENTAL == true) {
-    
+
 
     key = Ast2Dot::toString(and_term);
 //   LOG(INFO) << key;
@@ -1108,7 +1108,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 void ConstraintSolver::visitOr(Or_ptr or_term) {
   bool is_satisfiable = false;
   bool is_component = constraint_information_->is_component(or_term);
-  
+
   if (is_component) {
     if (constraint_information_->has_arithmetic_constraint(or_term)) {
       arithmetic_constraint_solver_.start(or_term);

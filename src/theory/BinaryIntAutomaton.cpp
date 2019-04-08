@@ -3,7 +3,7 @@
  *
  *  Created on: Oct 16, 2015
  *      Author: baki
- *   Copyright: Copyright 2015 The ABC Authors. All rights reserved. 
+ *   Copyright: Copyright 2015 The ABC Authors. All rights reserved.
  *              Use of this source code is governed license that can
  *              be found in the COPYING file.
  */
@@ -362,9 +362,60 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr othe
 
   // left_auto->inspectAuto(false,true);
   // right_auto->inspectAuto(false,true);
-// 
+//
 
-  auto intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
+  std::string id1, id2;
+
+  std::stringstream os1;
+  // {
+  //   cereal::BinaryOutputArchive ar(os1);
+  //   Util::Serialize::save(ar,left_auto->dfa_);
+  // }
+  left_auto->ToDot(os1,false);
+  id1 = os1.str();
+
+  std::stringstream os2;
+  // {
+  //   cereal::BinaryOutputArchive ar(os2);
+  //   Util::Serialize::save(ar,right_auto->dfa_);
+  // }
+  right_auto->ToDot(os2,false);
+  id2 = os2.str();
+
+  //std::pair<std::string,std::string> stupid_key1(id1,id2);
+  //std::pair<std::string,std::string> stupid_key2(id2,id1);
+  std::string stupid_key1 = id1 + id2;
+  std::string stupid_key2 = id2 + id1;
+  DFA_ptr intersect_dfa = nullptr;
+  // LOG(FATAL) << "HERE";
+  if(stupid_cache.find(stupid_key1) != stupid_cache.end()) {
+    std::stringstream is(stupid_cache[stupid_key1]);
+    {
+      cereal::BinaryInputArchive ar(is);
+      Util::Serialize::load(ar,intersect_dfa);
+    }
+
+    num_hits++;
+  } else if (stupid_cache.find(stupid_key2) != stupid_cache.end()) {
+    std::stringstream is(stupid_cache[stupid_key2]);
+    {
+      cereal::BinaryInputArchive ar(is);
+      Util::Serialize::load(ar,intersect_dfa);
+    }
+    num_hits++;
+  } else {
+    intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
+    std::stringstream os;
+    {
+      cereal::BinaryOutputArchive ar(os);
+      Util::Serialize::save(ar,intersect_dfa);
+    }
+    stupid_cache[stupid_key1] = os.str();
+    // stupid_cache[stupid_key2] = os.str();
+    num_misses++;
+  }
+
+  // auto intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
   ArithmeticFormula_ptr intersect_formula = nullptr;
   if(left_auto->formula_ != nullptr && right_auto->formula_ != nullptr) {
 		intersect_formula = formula_->Intersect(right_auto->formula_);

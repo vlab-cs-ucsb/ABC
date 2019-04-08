@@ -13,6 +13,11 @@ namespace Theory {
 
 const int Automaton::VLOG_LEVEL = 9;
 
+int Automaton::num_misses = 0;
+int Automaton::num_hits = 0;
+//std::map<std::pair<std::string,std::string>,DFA> Automaton::stupid_cache;
+std::map<std::string,std::string> Automaton::stupid_cache;
+
 int Automaton::name_counter = 0;
 int Automaton::next_state = 0;
 
@@ -171,7 +176,28 @@ Automaton_ptr Automaton::Intersect(Automaton_ptr other_automaton) {
 	if(this->num_of_bdd_variables_ != other_automaton->num_of_bdd_variables_) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
-	DFA_ptr intersect_dfa = Automaton::DFAIntersect(this->dfa_, other_automaton->dfa_);
+
+  // std::string id1, id2;
+  // std::ostringstream stream1, stream2;
+  //
+  // this->ToDot(stream1, true);
+  // id1 = stream1.str();
+  // other_automaton->ToDot(stream2, true);
+  // id2 = stream2.str();
+  //
+  // std::pair<std::string,std::string> stupid_key(id1,id2);
+  // DFA_ptr intersect_dfa = nullptr;
+  // LOG(FATAL) << "HERE";
+  // if(stupid_cache.find(stupid_key) != stupid_cache.end()) {
+  //   intersect_dfa = dfaCopy(&stupid_cache[stupid_key]);
+  //   num_hits++;
+  // } else {
+  //   intersect_dfa = Automaton::DFAIntersect(this->dfa_, other_automaton->dfa_);
+  //   stupid_cache[stupid_key] = *(dfaCopy(intersect_dfa));
+  //   num_misses++;
+  // }
+  auto intersect_dfa = Automaton::DFAIntersect(this->dfa_, other_automaton->dfa_);
+
   Automaton_ptr intersect_auto =  MakeAutomaton(intersect_dfa, this->GetFormula()->Intersect(other_automaton->GetFormula()), num_of_bdd_variables_);
   DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << other_automaton->id_ << ")";
   return intersect_auto;
@@ -851,6 +877,10 @@ std::ostream& operator<<(std::ostream& os, const Automaton& automaton) {
 }
 
 void Automaton::CleanUp() {
+  LOG(INFO) << "num_hits    = " << num_hits;
+  LOG(INFO) << "num_misses  = " << num_misses;
+  LOG(INFO) << "hit ratio   = " << (double)num_hits / (double)(num_misses+num_hits);
+
 	for(auto &it : bdd_variable_indices) {
 		delete[] it.second;
 		it.second = nullptr;
@@ -1009,6 +1039,63 @@ DFA_ptr Automaton::DFAUnion(const DFA_ptr dfa1, const DFA_ptr dfa2) {
 }
 
 DFA_ptr Automaton::DFAIntersect(const DFA_ptr dfa1, const DFA_ptr dfa2) {
+
+  // std::string id1, id2;
+  //
+  // std::stringstream os1;
+  // {
+  //   cereal::BinaryOutputArchive ar(os1);
+  //   Util::Serialize::save(ar,dfa1);
+  // }
+  // id1 = os1.str();
+  //
+  // std::stringstream os2;
+  // {
+  //   cereal::BinaryOutputArchive ar(os2);
+  //   Util::Serialize::save(ar,dfa2);
+  // }
+  // id2 = os2.str();
+  //
+  //
+  //
+  // std::string stupid_key1 = id1 + id2;
+  // std::string stupid_key2 = id2 + id1;
+  // DFA_ptr intersect_dfa = nullptr, minimized_dfa = nullptr;
+  // // LOG(FATAL) << "HERE";
+  // if(stupid_cache.find(stupid_key1) != stupid_cache.end()) {
+  //   std::stringstream is(stupid_cache[stupid_key1]);
+  //   {
+  //     cereal::BinaryInputArchive ar(is);
+  //     Util::Serialize::load(ar,intersect_dfa);
+  //   }
+  //   minimized_dfa = dfaMinimize(intersect_dfa);
+  //   dfaFree(intersect_dfa);
+  //   num_hits++;
+  // } else if (stupid_cache.find(stupid_key2) != stupid_cache.end()) {
+  //   std::stringstream is(stupid_cache[stupid_key2]);
+  //   {
+  //     cereal::BinaryInputArchive ar(is);
+  //     Util::Serialize::load(ar,intersect_dfa);
+  //   }
+  //   minimized_dfa = dfaMinimize(intersect_dfa);
+  //   dfaFree(intersect_dfa);
+  //   num_hits++;
+  // } else {
+  //   intersect_dfa = dfaProduct(dfa1, dfa2, dfaAND);
+  //   minimized_dfa = dfaMinimize(intersect_dfa);
+  //   dfaFree(intersect_dfa);
+  //   intersect_dfa = minimized_dfa;
+  //
+  //   std::stringstream os;
+  //   {
+  //     cereal::BinaryOutputArchive ar(os);
+  //     Util::Serialize::save(ar,intersect_dfa);
+  //   }
+  //   stupid_cache[stupid_key1] = os.str();
+  //   // stupid_cache[stupid_key2] = os.str();
+  //   num_misses++;
+  // }
+
   DFA_ptr intersect_dfa = dfaProduct(dfa1, dfa2, dfaAND);
   DFA_ptr minimized_dfa = dfaMinimize(intersect_dfa);
   dfaFree(intersect_dfa);
@@ -1986,7 +2073,7 @@ std::vector<std::pair<int,std::vector<char>>> Automaton::GetNextTransitions(int 
       } else {
         next_states.insert(next_states.begin(),std::make_pair(to_state,current_transition));
       }
-      
+
     } else {
       while (current_transition.size() < index) {
         unsigned i = current_transition.size();
@@ -2500,127 +2587,190 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
 }
 
 void Automaton::ToDot(std::ostream& out, bool print_sink) {
+  DFA_ptr a = this->dfa_;
   paths state_paths, pp;
   trace_descr tp;
-  int i, j, k, l;
-  char **buffer;
-  int *used, *allocated;
-  int* offsets = GetBddVariableIndices(num_of_bdd_variables_);
-  int no_free_vars = num_of_bdd_variables_;
-  DFA_ptr a = this->dfa_;
-  int sink = GetSinkState();
+  int i;
 
-  print_sink = print_sink || (dfa_->ns == 1 and dfa_->f[0] == -1);
+  // printf ("Resulting DFA:\n");
+  out << "Resulting DFA:\n";
 
-  out << "digraph MONA_DFA {\n"
-          " rankdir = LR;\n"
-          " center = true;\n"
-          " size = \"7.5,10.5\";\n"
-          " edge [fontname = Courier];\n"
-          " node [height = .5, width = .5];\n"
-          " node [shape = doublecircle];";
-  for (i = 0; i < a->ns; i++) {
-    if (a->f[i] == 1) {
-      out << " " << i << ";";
-    }
-  }
-  out << "\n node [shape = circle];";
-  for (i = 0; i < a->ns; i++) {
-    if (a->f[i] == -1) {
-      if (i != sink || print_sink) {
-        out << " " << i << ";";
-      }
-    }
-  }
-  out << "\n node [shape = box];";
-  for (i = 0; i < a->ns; i++) {
-    if (a->f[i] == 0) {
-      out << " " << i << ";";
-    }
-  }
-  out << "\n init [shape = plaintext, label = \"\"];\n"
-          " init -> " << a->s << ";\n";
+  // printf("Initial state: %d\n", a->s);
+  // printf("Accepting states: ");
+  out << "Initial state: " << a->s << "\n";
+  for (i = 0; i < a->ns; i++)
+    if (a->f[i] == 1)
+      // printf ("%d ", i);
+      out << i << " ";
 
-  buffer = (char **) mem_alloc(sizeof(char *) * a->ns);
-  used = (int *) mem_alloc(sizeof(int) * a->ns);
-  allocated = (int *) mem_alloc(sizeof(int) * a->ns);
+  // printf("\n");
+  out << "\n";
+
+  // printf("Rejecting states: ");
+  out << "Rejecting states: ";
+  for (i = 0; i < a->ns; i++)
+    if (a->f[i] == -1)
+      // printf ("%d ", i);
+      out << i << " ";
+
+  // printf("\n");
+  out << "\n";
+
+  // printf("Don't-care states: ");
+  // for (i = 0; i < a->ns; i++)
+  //   if (a->f[i] == 0)
+  //     printf ("%d ", i);
+  //
+  // printf("\n");
+
+  // printf ("Transitions:\n");
+  out << "Transitions:\n";
 
   for (i = 0; i < a->ns; i++) {
-    if (i == sink && not print_sink) {
-      continue;
-    }
     state_paths = pp = make_paths(a->bddm, a->q[i]);
 
-    for (j = 0; j < a->ns; j++) {
-      if (i == sink && not print_sink) {
-        continue;
-      }
-      buffer[j] = 0;
-      used[j] = allocated[j] = 0;
-    }
-
     while (pp) {
-      if (pp->to == (unsigned) sink && not print_sink) {
-        pp = pp->next;
-        continue;
-      }
-      if (used[pp->to] >= allocated[pp->to]) {
-        allocated[pp->to] = allocated[pp->to] * 2 + 2;
-        buffer[pp->to] = (char *) mem_resize(buffer[pp->to], sizeof(char) * allocated[pp->to] * no_free_vars);
+      // printf ("State %d: ", i);
+      out << "State " << i << ": ";
+      for (tp = pp->trace; tp; tp = tp->next) {
+	// printf("@%d=%c", tp->index, tp->value ? '1' : '0');
+  out << "@" << tp->index << "=" << (tp->value ? "1" : "0");
+	if (tp->next)
+	  // printf(", ");
+    out << ", ";
       }
 
-      for (j = 0; j < no_free_vars; j++) {
-        char c;
-        for (tp = pp->trace; tp && (tp->index != (unsigned)offsets[j]); tp = tp->next)
-          ;
-
-        if (tp) {
-          if (tp->value) {
-            c = '1';
-          } else {
-            c = '0';
-          }
-        } else {
-          c = 'X';
-        }
-
-        buffer[pp->to][no_free_vars * used[pp->to] + j] = c;
-      }
-      used[pp->to]++;
+      // printf (" -> state %d\n", pp->to);
+      out << " -> state " << pp->to << "\n";
       pp = pp->next;
     }
 
-    for (j = 0; j < a->ns; j++) {
-      if (j == sink && not print_sink) {
-        continue;
-      }
-      if (buffer[j]) {
-        out << " " << i << " -> " << j << " [label=\"";
-        for (k = 0; k < no_free_vars; k++) {
-          for (l = 0; l < used[j]; l++) {
-            out << buffer[j][no_free_vars * l + k];
-            if (l + 1 < used[j]) {
-              if (k + 1 == no_free_vars)
-                out << ',';
-              else
-                out << ' ';
-            }
-          }
-          if (k + 1 < no_free_vars)
-            out << "\\n";
-        }
-        out << "\"];\n";
-        mem_free(buffer[j]);
-      }
-    }
     kill_paths(state_paths);
   }
+  // printf("\n");
+  out << "\n";
 
-  mem_free(allocated);
-  mem_free(used);
-  mem_free(buffer);
-  add_print_label(out);
-  out << "}" << std::endl;
+  // paths state_paths, pp;
+  // trace_descr tp;
+  // int i, j, k, l;
+  // char **buffer;
+  // int *used, *allocated;
+  // int* offsets = GetBddVariableIndices(num_of_bdd_variables_);
+  // int no_free_vars = num_of_bdd_variables_;
+  // DFA_ptr a = this->dfa_;
+  // int sink = GetSinkState();
+  //
+  // print_sink = print_sink || (dfa_->ns == 1 and dfa_->f[0] == -1);
+  //
+  // out << "digraph MONA_DFA {\n"
+  //         " rankdir = LR;\n"
+  //         " center = true;\n"
+  //         " size = \"7.5,10.5\";\n"
+  //         " edge [fontname = Courier];\n"
+  //         " node [height = .5, width = .5];\n"
+  //         " node [shape = doublecircle];";
+  // for (i = 0; i < a->ns; i++) {
+  //   if (a->f[i] == 1) {
+  //     out << " " << i << ";";
+  //   }
+  // }
+  // out << "\n node [shape = circle];";
+  // for (i = 0; i < a->ns; i++) {
+  //   if (a->f[i] == -1) {
+  //     if (i != sink || print_sink) {
+  //       out << " " << i << ";";
+  //     }
+  //   }
+  // }
+  // out << "\n node [shape = box];";
+  // for (i = 0; i < a->ns; i++) {
+  //   if (a->f[i] == 0) {
+  //     out << " " << i << ";";
+  //   }
+  // }
+  // out << "\n init [shape = plaintext, label = \"\"];\n"
+  //         " init -> " << a->s << ";\n";
+  //
+  // buffer = (char **) mem_alloc(sizeof(char *) * a->ns);
+  // used = (int *) mem_alloc(sizeof(int) * a->ns);
+  // allocated = (int *) mem_alloc(sizeof(int) * a->ns);
+  //
+  // for (i = 0; i < a->ns; i++) {
+  //   if (i == sink && not print_sink) {
+  //     continue;
+  //   }
+  //   state_paths = pp = make_paths(a->bddm, a->q[i]);
+  //
+  //   for (j = 0; j < a->ns; j++) {
+  //     if (i == sink && not print_sink) {
+  //       continue;
+  //     }
+  //     buffer[j] = 0;
+  //     used[j] = allocated[j] = 0;
+  //   }
+  //
+  //   while (pp) {
+  //     if (pp->to == (unsigned) sink && not print_sink) {
+  //       pp = pp->next;
+  //       continue;
+  //     }
+  //     if (used[pp->to] >= allocated[pp->to]) {
+  //       allocated[pp->to] = allocated[pp->to] * 2 + 2;
+  //       buffer[pp->to] = (char *) mem_resize(buffer[pp->to], sizeof(char) * allocated[pp->to] * no_free_vars);
+  //     }
+  //
+  //     for (j = 0; j < no_free_vars; j++) {
+  //       char c;
+  //       for (tp = pp->trace; tp && (tp->index != (unsigned)offsets[j]); tp = tp->next)
+  //         ;
+  //
+  //       if (tp) {
+  //         if (tp->value) {
+  //           c = '1';
+  //         } else {
+  //           c = '0';
+  //         }
+  //       } else {
+  //         c = 'X';
+  //       }
+  //
+  //       buffer[pp->to][no_free_vars * used[pp->to] + j] = c;
+  //     }
+  //     used[pp->to]++;
+  //     pp = pp->next;
+  //   }
+  //
+  //   for (j = 0; j < a->ns; j++) {
+  //     if (j == sink && not print_sink) {
+  //       continue;
+  //     }
+  //     if (buffer[j]) {
+  //       out << " " << i << " -> " << j << " [label=\"";
+  //       for (k = 0; k < no_free_vars; k++) {
+  //         for (l = 0; l < used[j]; l++) {
+  //           out << buffer[j][no_free_vars * l + k];
+  //           if (l + 1 < used[j]) {
+  //             if (k + 1 == no_free_vars)
+  //               out << ',';
+  //             else
+  //               out << ' ';
+  //           }
+  //         }
+  //         if (k + 1 < no_free_vars)
+  //           out << "\\n";
+  //       }
+  //       out << "\"];\n";
+  //       mem_free(buffer[j]);
+  //     }
+  //   }
+  //   kill_paths(state_paths);
+  // }
+  //
+  // mem_free(allocated);
+  // mem_free(used);
+  // mem_free(buffer);
+  // add_print_label(out);
+  // out << "}" << std::endl;
 }
 
 void Automaton::add_print_label(std::ostream& out) {

@@ -247,6 +247,13 @@ public:
 
   static void CleanUp();
 
+
+	//static std::map<std::pair<std::string,std::string>,DFA> stupid_cache;
+	static std::map<std::string,std::string> stupid_cache;
+	static int num_misses;
+	static int num_hits;
+	static int var1,var2;
+
 protected:
 
   /**
@@ -506,7 +513,7 @@ protected:
   std::set<int> getStatesReachableBy(int walk);
   std::set<int> getStatesReachableBy(int min_walk, int max_walk);
   bool getAnAcceptingWord(NextState& state, std::map<int, bool>& is_stack_member, std::vector<bool>& path, std::function<bool(unsigned& index)> next_node_heuristic = nullptr);
-  
+
 
   virtual void SetSymbolicCounter();
   virtual void decide_counting_schema(Eigen::SparseMatrix<BigInteger>& mm);
