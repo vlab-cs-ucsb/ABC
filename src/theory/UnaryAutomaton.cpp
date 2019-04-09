@@ -3,7 +3,7 @@
  *
  *  Created on: Nov 5, 2015
  *      Author: baki
- *   Copyright: Copyright 2015 The ABC Authors. All rights reserved. 
+ *   Copyright: Copyright 2015 The ABC Authors. All rights reserved.
  *              Use of this source code is governed license that can
  *              be found in the COPYING file.
  */
@@ -322,9 +322,9 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
     if (is_visited[curr_state]) { // cycle over approximate rest, an algorithm can be found to map between encodings (from semilinear set to string encoding)
       std::string value_str = std::to_string(value);
       std::string regex_str = "[0-9]{" + std::to_string(value_str.length()) + ",}";
-      LOG(INFO) << value;
-      LOG(INFO) << value_str;
-      LOG(INFO) << value_str.length();
+      // LOG(INFO) << value;
+      // LOG(INFO) << value_str;
+      // LOG(INFO) << value_str.length();
 
       tmp_1_auto = StringAutomaton::MakeRegexAuto(regex_str);
       tmp_2_auto = result_auto;

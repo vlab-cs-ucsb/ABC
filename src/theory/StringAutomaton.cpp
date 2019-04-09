@@ -2775,10 +2775,10 @@ IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
     std::map<int, std::vector<std::string>> current_paths_to_state; // <to state, paths>
     std::vector<char> current_exception;
     std::vector<char> decoded_exception;
-    std::vector<int> int_values;
+    std::set<int> int_values;
 
     if (IsAcceptingState(this->dfa_->s)) {
-      int_values.push_back(0);
+      int_values.insert(0);
     }
 
     const int *indices = GetBddVariableIndices(num_of_bdd_variables_);
@@ -2807,9 +2807,11 @@ IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
           decoded_exception = decodeException(current_exception);
 
           for (auto ch : decoded_exception) {
-            for (auto p : paths_to_state) {
-              current_paths_to_state[pp->to].push_back(p + ch);
-            }
+						if(ch >= '0' && ch <= '9') {
+							for (auto p : paths_to_state) {
+	              current_paths_to_state[pp->to].push_back(p + ch);
+	            }
+						}
           }
         }
         current_exception.clear();
@@ -2820,7 +2822,7 @@ IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
       for (auto& entry : current_paths_to_state) {
         if (IsAcceptingState(entry.first)) {
           for (auto str_value : entry.second) {
-            int_values.push_back(str_value.length());
+            int_values.insert(std::stoi(str_value));
           }
         }
         dfs_stack.push(std::make_pair(entry.first, entry.second));
@@ -2830,8 +2832,7 @@ IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
       state_paths = pp = nullptr;
       current_paths_to_state.clear();
     }
-
-    int_auto = IntAutomaton::makeInts(int_values);
+		int_auto = IntAutomaton::makeInts(std::vector<int>(int_values.begin(),int_values.end()));
   }
 
   DVLOG(VLOG_LEVEL) << int_auto->getId() << " = [" << this->id_ << "]->parseToIntAutomaton()";

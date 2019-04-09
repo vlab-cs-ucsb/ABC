@@ -208,7 +208,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 void ConstraintSolver::visitOr(Or_ptr or_term) {
   bool is_satisfiable = false;
   bool is_component = constraint_information_->is_component(or_term);
-  
+
   if (is_component) {
     if (constraint_information_->has_arithmetic_constraint(or_term)) {
       arithmetic_constraint_solver_.start(or_term);
@@ -1020,6 +1020,7 @@ void ConstraintSolver::visitToString(ToString_ptr to_string_term) {
   } else {
     auto unary_auto = param->getIntAutomaton()->toUnaryAutomaton();
     result = new Value(unary_auto->toStringAutomaton());
+
     delete unary_auto;
   }
 
@@ -1308,7 +1309,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
 
     auto string_term_result = getTermValue(string_term);
     is_satisfiable = string_term_result->is_satisfiable();
-    
+
     if (not is_satisfiable) {
       auto binary_auto = arithmetic_result->getBinaryIntAutomaton();
       arithmetic_result = new Value(

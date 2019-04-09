@@ -239,7 +239,7 @@ void ConstraintSorter::visitPlus(Plus_ptr plus_term) {
   for (auto& term : *(plus_term->term_list)) {
     term_node = nullptr;
     visit(term);
-    
+
     if (result_node == nullptr and term_node != nullptr) {
       result_node = term_node;
       result_node->num_ops++;
@@ -668,6 +668,7 @@ void ConstraintSorter::visitToString(ToString_ptr to_string_term) {
   term_node = nullptr;
   visit_children_of(to_string_term);
   term_node->num_ops++;
+  term_node->setType(TermNode::Type::STRING);
 }
 
 void ConstraintSorter::visitToInt(ToInt_ptr to_int_term) {
@@ -785,7 +786,7 @@ void ConstraintSorter::visitTermConstant(TermConstant_ptr term_constant) {
       break;
   }
   term_node->num_ops++;
-  
+
 }
 
 void ConstraintSorter::visitIdentifier(Identifier_ptr identifier) {
@@ -856,7 +857,7 @@ ConstraintSorter::TermNode_ptr ConstraintSorter::process_child_nodes(TermNode_pt
 
 void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
 
-  
+
   // if sorting topologically, compute depths for each node
   if(SORT_TOPOLOGICAL) {
     std::vector<TermNode_ptr> temp_term_node_list;
@@ -906,7 +907,7 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
   //    hops++;
     }
   }
-  
+
 
   /*
    * compare by
@@ -944,12 +945,12 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
         return 1;
       }
     }
-    
+
     if(SORT_BY_TERM_TYPE) {
       if(left_node->getNode()->type() < right_node->getNode()->type()) {
         if(left_node->getNode()->type() == Term::Type::CONCAT and right_node->getNode()->type() == Term::Type::NOTEQ) {
           LOG(FATAL) << "WAT";
-        } 
+        }
         return 1;
       }
       if(left_node->getNode()->type() > right_node->getNode()->type()) {
@@ -959,7 +960,7 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
         return 0;
       }
     }
-    
+
     if(SORT_BY_TOTAL_VARS) {
       if(left_node->numOfTotalVars() < right_node->numOfTotalVars()) {
         return 1;
@@ -968,7 +969,7 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
         return 0;
       }
     }
-    
+
     if(SORT_BY_LEFT_VARS) {
       if(left_node->numOfLeftVars() < right_node->numOfLeftVars()) {
         return 1;
@@ -977,7 +978,7 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
         return 0;
       }
     }
-    
+
     if(SORT_BY_RIGHT_VARS) {
       if(left_node->numOfRightVars() < right_node->numOfRightVars()) {
         return 1;
@@ -986,7 +987,7 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
         return 0;
       }
     }
-    
+
     if(SORT_BY_NUM_OPS) {
       if(left_node->num_ops < right_node->num_ops) {
         return 1 ;
@@ -995,7 +996,7 @@ void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
         return 0;
       }
     }
-    
+
     if(SORT_BY_TOSTRING) {
       return Ast2Dot::toString(left_node->getNode()) <= Ast2Dot::toString(right_node->getNode());
     }
