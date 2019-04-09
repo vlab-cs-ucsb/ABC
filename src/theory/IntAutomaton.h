@@ -106,6 +106,7 @@ public:
   int getAnAcceptingInt();
 
   UnaryAutomaton_ptr toUnaryAutomaton();
+  StringAutomaton_ptr stringifyDigits();
 
   ArithmeticFormula_ptr GetFormula();
   void SetFormula(ArithmeticFormula_ptr);

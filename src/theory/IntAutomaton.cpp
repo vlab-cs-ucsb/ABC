@@ -826,6 +826,49 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
   return unary_auto;
 }
 
+/* for toString (where the string needs to be digits, not the usual length representation)
+ * NOTE: according to smtlib 2.6, only non-negative digits; otherwise, empty string
+ *
+ * TODO: optimize case where finite, but maaaaany ints
+ */
+
+StringAutomaton_ptr IntAutomaton::stringifyDigits() {
+  StringAutomaton_ptr digits_auto = nullptr;
+  UnaryAutomaton_ptr unary_auto = this->toUnaryAutomaton();
+  SemilinearSet_ptr semilinear_set = unary_auto->getSemilinearSet();
+
+  std::string regex;
+
+  // if finite numberf of constants, just constuct string auto by unioning them
+  // otherwise, overapproximate by accepting any non-negative string of digits
+  if(!this->isEmptyLanguage() && semilinear_set->has_only_constants()) {
+    for(auto c : semilinear_set->get_constants()) {
+      if(c >= 0) {
+        if(regex.length() > 0) regex += "|";
+        regex += std::to_string(c);
+      }
+    }
+  } else if (!this->isEmptyLanguage()){
+    regex += "([0-9])|([1-9][0-9]*)";
+  } else {
+    // according to SMTlib 2.6, at least accept the empty string
+    regex = "#";
+  }
+
+  // regex string corresponds to strings where each string reprents a number in base 10
+  digits_auto = StringAutomaton::MakeRegexAuto(regex);
+
+  // LOG(INFO) << regex;
+  // this->inspectAuto(false,true);
+  // digits_auto->inspectAuto(false,true);
+  // std::cin.get();
+
+  delete unary_auto;
+  delete semilinear_set;
+
+  return digits_auto;
+}
+
 ArithmeticFormula_ptr IntAutomaton::GetFormula() {
 	return formula_;
 }

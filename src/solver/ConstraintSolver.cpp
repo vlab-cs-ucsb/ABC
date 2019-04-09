@@ -1018,10 +1018,10 @@ void ConstraintSolver::visitToString(ToString_ptr to_string_term) {
     ss << param->getIntConstant();
     result = new Value(StringAutomaton::MakeString(ss.str()));
   } else {
-    auto unary_auto = param->getIntAutomaton()->toUnaryAutomaton();
-    result = new Value(unary_auto->toStringAutomaton());
-
-    delete unary_auto;
+    // auto unary_auto = param->getIntAutomaton()->toUnaryAutomaton();
+    // result = new Value(unary_auto->toStringAutomaton());
+    result = new Value(param->getIntAutomaton()->stringifyDigits());
+    // delete unary_auto;
   }
 
   setTermValue(to_string_term, result);

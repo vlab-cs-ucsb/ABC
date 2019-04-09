@@ -1400,6 +1400,12 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 //      std::cin.get();
     }
       break;
+    case Value::Type::INT_CONSTANT: {
+      auto temp_auto = Theory::IntAutomaton::makeInt(term_pre_value->getIntConstant());
+      delete term_pre_value;
+      term_pre_value = new Value(temp_auto);
+      // intentionally fall through
+    }
     case Value::Type::INT_AUTOMATON:
     {
       //TODO !!!! improve mixing constraints by design

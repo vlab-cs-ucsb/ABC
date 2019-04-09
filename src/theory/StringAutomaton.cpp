@@ -2835,6 +2835,10 @@ IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
 		int_auto = IntAutomaton::makeInts(std::vector<int>(int_values.begin(),int_values.end()));
   }
 
+	// this->inspectAuto(false,true);
+	// int_auto->inspectAuto(false,true);
+	// std::cin.get();
+
   DVLOG(VLOG_LEVEL) << int_auto->getId() << " = [" << this->id_ << "]->parseToIntAutomaton()";
   return int_auto;
 }
