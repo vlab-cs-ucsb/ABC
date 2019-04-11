@@ -29,6 +29,30 @@ ArithmeticFormulaGenerator::ArithmeticFormulaGenerator(Script_ptr script, Symbol
       constraint_information_(constraint_information),
       has_mixed_constraint_{false} {
 
+
+  current_group_ = symbol_table_->get_var_name_for_node(root_, Variable::Type::INT);
+  subgroups_[current_group_] = std::set<std::string>();
+
+	auto variables = symbol_table_->get_variables();
+	for(auto& iter : variables) {
+	  auto group_var = symbol_table_->get_group_variable_of(iter.second);
+	  if(iter.second->getType() != Variable::Type::INT or group_var == iter.second) {
+	    continue;
+	  }
+
+  	auto group_value = symbol_table_->get_value(iter.first);
+  	auto group_formula = group_value->getBinaryIntAutomaton()->GetFormula();
+
+  	if(group_formula != nullptr) {
+  		subgroups_[current_group_].insert(group_var->getName());
+  		variable_group_map_[iter.second->getName()] = group_var->getName();
+  		if(group_formula_.find(group_var->getName()) == group_formula_.end()) {
+				group_formula_[group_var->getName()] = group_formula->clone();
+				group_formula_[group_var->getName()]->SetType(ArithmeticFormula::Type::NONE);
+			}
+  	}
+	}
+
 }
 
 ArithmeticFormulaGenerator::~ArithmeticFormulaGenerator() {
@@ -857,14 +881,14 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
 	// define a variable mapping for a group
 	for (auto group_iter : group_formula_) {
 
-    //LOG(INFO) << "Group: " << group_iter.first;
+//    LOG(INFO) << "Group: " << group_iter.first;
     if(symbol_table_->get_variable_unsafe(group_iter.first) == nullptr) {
       symbol_table_->add_variable(new Variable(group_iter.first, Variable::Type::NONE));
     }
 
     std::set<Variable_ptr> previous_group_variables;
     for (const auto& var_entry : group_iter.second->GetVariableCoefficientMap()) {
-      //LOG(INFO) << "--> " << var_entry.first;
+//      LOG(INFO) << "--> " << var_entry.first;
       Variable_ptr variable = symbol_table_->get_variable(var_entry.first);
       Variable_ptr group_variable = symbol_table_->get_group_variable_of(variable);
 

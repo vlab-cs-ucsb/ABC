@@ -249,7 +249,7 @@ public:
 
 
 	//static std::map<std::pair<std::string,std::string>,DFA> stupid_cache;
-	static std::map<std::string,std::string> stupid_cache;
+	static std::map<std::string,DFA_ptr> stupid_cache;
 	static int num_misses;
 	static int num_hits;
 	static int var1,var2;

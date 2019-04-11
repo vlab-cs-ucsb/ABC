@@ -67,6 +67,7 @@ public:
   void load(Archive& ar) {
     ar(is_natural_number_);
     formula_->load(ar);
+    num_of_bdd_variables_ = formula_->GetNumberOfVariables();
     Util::Serialize::load(ar,dfa_);
     if(dfa_ == nullptr) {
       LOG(INFO) << "Null!?";

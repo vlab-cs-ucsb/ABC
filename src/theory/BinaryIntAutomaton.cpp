@@ -345,8 +345,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Complement() {
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr other_auto) {
-
   BinaryIntAutomaton_ptr left_auto = nullptr, right_auto = nullptr;
+  if(this->is_natural_number_ != other_auto->is_natural_number_) {
+    LOG(FATAL) << "Numbers don't match";
+  }
   auto left_num_tracks = this->GetFormula()->GetNumberOfVariables();
   auto right_num_tracks = other_auto->GetFormula()->GetNumberOfVariables();
   if(left_num_tracks > right_num_tracks) {
@@ -362,24 +364,24 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr othe
 
   // left_auto->inspectAuto(false,true);
   // right_auto->inspectAuto(false,true);
-//
+
 
   std::string id1, id2;
 
   std::stringstream os1;
-  // {
-  //   cereal::BinaryOutputArchive ar(os1);
-  //   Util::Serialize::save(ar,left_auto->dfa_);
-  // }
-  left_auto->ToDot(os1,false);
+  //{
+  //  cereal::BinaryOutputArchive ar(os1);
+  //  Util::Serialize::save(ar,left_auto->dfa_);
+  //}
+  left_auto->toBDD(os1);
   id1 = os1.str();
 
   std::stringstream os2;
-  // {
-  //   cereal::BinaryOutputArchive ar(os2);
-  //   Util::Serialize::save(ar,right_auto->dfa_);
-  // }
-  right_auto->ToDot(os2,false);
+  //{
+  //  cereal::BinaryOutputArchive ar(os2);
+  //  Util::Serialize::save(ar,right_auto->dfa_);
+  //}
+  right_auto->toBDD(os2);
   id2 = os2.str();
 
   //std::pair<std::string,std::string> stupid_key1(id1,id2);
@@ -389,33 +391,34 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr othe
   DFA_ptr intersect_dfa = nullptr;
   // LOG(FATAL) << "HERE";
   if(stupid_cache.find(stupid_key1) != stupid_cache.end()) {
-    std::stringstream is(stupid_cache[stupid_key1]);
-    {
-      cereal::BinaryInputArchive ar(is);
-      Util::Serialize::load(ar,intersect_dfa);
-    }
-
+//    std::stringstream is(stupid_cache[stupid_key1]);
+//    {
+//      cereal::BinaryInputArchive ar(is);
+//      Util::Serialize::load(ar,intersect_dfa);
+//    }
+    intersect_dfa = dfaCopy(stupid_cache[stupid_key1]);
     num_hits++;
   } else if (stupid_cache.find(stupid_key2) != stupid_cache.end()) {
-    std::stringstream is(stupid_cache[stupid_key2]);
-    {
-      cereal::BinaryInputArchive ar(is);
-      Util::Serialize::load(ar,intersect_dfa);
-    }
+//    std::stringstream is(stupid_cache[stupid_key2]);
+//    {
+//      cereal::BinaryInputArchive ar(is);
+//      Util::Serialize::load(ar,intersect_dfa);
+//    }
+    intersect_dfa = dfaCopy(stupid_cache[stupid_key2]);
     num_hits++;
   } else {
     intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
-    std::stringstream os;
-    {
-      cereal::BinaryOutputArchive ar(os);
-      Util::Serialize::save(ar,intersect_dfa);
-    }
-    stupid_cache[stupid_key1] = os.str();
-    // stupid_cache[stupid_key2] = os.str();
+//    std::stringstream os;
+//    {
+//      cereal::BinaryOutputArchive ar(os);
+//      Util::Serialize::save(ar,intersect_dfa);
+//    }
+//    stupid_cache[stupid_key1] = os.str();
+    stupid_cache[stupid_key1] = dfaCopy(intersect_dfa);
     num_misses++;
   }
 
-  // auto intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
+//   auto intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
   ArithmeticFormula_ptr intersect_formula = nullptr;
   if(left_auto->formula_ != nullptr && right_auto->formula_ != nullptr) {
 		intersect_formula = formula_->Intersect(right_auto->formula_);
@@ -548,9 +551,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::ChangeIndicesMap(ArithmeticFormula_pt
 //		}
 	}
 
-  // for(int i = 0; i < old_num_tracks; i++) {
-  //   LOG(INFO) << "map[" << i << "] = " << map[i];
-  // }
+//   for(int i = 0; i < old_num_tracks; i++) {
+//     LOG(INFO) << "map[" << i << "] = " << map[i];
+//   }
 
 	auto remapped_dfa = dfaCopy(unmapped_auto->dfa_);
 	dfaReplaceIndices(remapped_dfa,map);
@@ -1869,7 +1872,12 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeLessThan(ArithmeticFormula_ptr fo
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::MakeIntLessThan(ArithmeticFormula_ptr formula) {
-  formula->Simplify();
+  if (not formula->Simplify()) {
+    DVLOG(VLOG_LEVEL) << "no simplify...";
+    auto equality_auto = BinaryIntAutomaton::MakePhi(formula, true);
+    DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeIntLessThan(" << *formula << ")";
+    return equality_auto;
+  }
 
   // auto new_coeff_map = new_formula->GetVariableCoefficientMap();
   // ArithmeticFormula_ptr formula = new ArithmeticFormula();

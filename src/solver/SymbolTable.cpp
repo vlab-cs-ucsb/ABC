@@ -144,11 +144,12 @@ Variable_ptr SymbolTable::get_variable(std::string name) {
   // get original variable name, from normalization mapping
   std::string original_name = name;
   // if normalization has completed, compute mapping
-  if(reverse_variable_mapping_.find(name) != reverse_variable_mapping_.end()) {
-    original_name = reverse_variable_mapping_[name];
-  }
+//  if(reverse_variable_mapping_.find(name) != reverse_variable_mapping_.end()) {
+//    original_name = reverse_variable_mapping_[name];
+//  }
   auto it = variables_.find(original_name);
   CHECK(it != variables_.end()) << "Variable is not found: " << name << " (original name = " << original_name << ")";
+//  LOG(INFO) << name << ", original = " << original_name;
 //  LOG(INFO) << name << " found! Returning " << it->second;
   return it->second;
 }
@@ -775,6 +776,16 @@ void SymbolTable::reset_variable_usage() {
 }
 
 void SymbolTable::SetVariableMapping(std::map<std::string,std::string> variable_mapping) {
+
+  original_variables_ = variables_;
+  variables_.clear();
+
+  for(auto it : original_variables_) {
+    std::string name = variable_mapping[it.first];
+    Variable_ptr variable = new Variable(name,it.second->getType());
+    variables_.insert(std::make_pair(name,variable));
+  }
+
   // store original map
   variable_mapping_ = variable_mapping;
   // store reverse map (for easy var lookup)
@@ -788,6 +799,21 @@ void SymbolTable::SetVariableMapping(std::map<std::string,std::string> variable_
 //    }
   }
 }
+
+//void SymbolTable::SetVariableMapping(std::map<std::string,std::string> variable_mapping) {
+//  // store original map
+//  variable_mapping_ = variable_mapping;
+//  // store reverse map (for easy var lookup)
+//  for(auto map_it : variable_mapping) {
+////    for(auto map_it : term_it.second) {
+////      if(map_it.first == count_symbol_->getData()) {
+////        LOG(INFO) << map_it.first << " -> " << map_it.second;
+////        std::cin.get();
+////      }
+//      reverse_variable_mapping_[map_it.second] = map_it.first;
+////    }
+//  }
+//}
 
 std::map<std::string,std::string> SymbolTable::GetVariableMapping() {
   return variable_mapping_;

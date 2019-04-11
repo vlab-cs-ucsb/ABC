@@ -81,10 +81,10 @@ void ArithmeticConstraintSolver::setCallbacks() {
           if(term_group_name.empty()) {
             LOG(FATAL) << "Term has no group!";
           }
-
+//          LOG(INFO) << "symbol table intersect";
           symbol_table_->IntersectValue(term_group_name,result);
-
-          // once we solve an atomic linear integer arithmetic constraint,
+//          LOG(INFO) << "dun";
+          // once we solve an atomic linear inte  ger arithmetic constraint,
           // we delete its formula to avoid solving it again.
           // Atomic arithmetic constraints solved precisely,
           // mixed constraints handled without resolving arithmetic part
@@ -557,14 +557,16 @@ std::string ArithmeticConstraintSolver::get_int_variable_name(SMT::Term_ptr term
 }
 
 Value_ptr ArithmeticConstraintSolver::get_term_value(Term_ptr term) {
-  auto it = term_values_.find(term);
-  if (it != term_values_.end()) {
-    return it->second;
-  }
+
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
 
   if (not group_name.empty()) {
     return symbol_table_->get_value(group_name);
+  }
+
+  auto it = term_values_.find(term);
+  if (it != term_values_.end()) {
+    return it->second;
   }
 
   return nullptr;

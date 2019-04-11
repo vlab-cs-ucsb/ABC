@@ -239,7 +239,7 @@ int main(const int argc, const char **argv) {
 
     init_time += init_end-init_start;
 
-    //driver.set_option(Vlab::Option::Name::INCREMENTAL);
+    driver.set_option(Vlab::Option::Name::INCREMENTAL);
 
     if(driver.symbol_table_->has_count_variable() and count_variable.empty()) {
 
@@ -249,11 +249,12 @@ int main(const int argc, const char **argv) {
     }
 
 //    if (i > 1200 or false and VLOG_IS_ON(30) and not output_root.empty()) {
-//      driver.ast2dot(output_root + "/optimized.dot");
+      driver.ast2dot(output_root + "/optimized.dot");
 //   }
     driver.Solve();
     if(not driver.is_sat()) {
       LOG(INFO) << "UNSAT: " << iter;
+      std::cin.get();
     } else {
 
       count_start = std::chrono::steady_clock::now();

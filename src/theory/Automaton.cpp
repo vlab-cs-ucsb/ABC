@@ -16,7 +16,7 @@ const int Automaton::VLOG_LEVEL = 9;
 int Automaton::num_misses = 0;
 int Automaton::num_hits = 0;
 //std::map<std::pair<std::string,std::string>,DFA> Automaton::stupid_cache;
-std::map<std::string,std::string> Automaton::stupid_cache;
+std::map<std::string,DFA_ptr> Automaton::stupid_cache;
 
 int Automaton::name_counter = 0;
 int Automaton::next_state = 0;
@@ -2592,62 +2592,25 @@ void Automaton::ToDot(std::ostream& out, bool print_sink) {
   trace_descr tp;
   int i;
 
-  // printf ("Resulting DFA:\n");
-  out << "Resulting DFA:\n";
-
-  // printf("Initial state: %d\n", a->s);
-  // printf("Accepting states: ");
-  out << "Initial state: " << a->s << "\n";
-  for (i = 0; i < a->ns; i++)
-    if (a->f[i] == 1)
-      // printf ("%d ", i);
-      out << i << " ";
-
-  // printf("\n");
-  out << "\n";
-
-  // printf("Rejecting states: ");
-  out << "Rejecting states: ";
-  for (i = 0; i < a->ns; i++)
-    if (a->f[i] == -1)
-      // printf ("%d ", i);
-      out << i << " ";
-
-  // printf("\n");
-  out << "\n";
-
-  // printf("Don't-care states: ");
-  // for (i = 0; i < a->ns; i++)
-  //   if (a->f[i] == 0)
-  //     printf ("%d ", i);
-  //
-  // printf("\n");
-
-  // printf ("Transitions:\n");
-  out << "Transitions:\n";
+  out << a->s << "," << a->ns << "\n";
 
   for (i = 0; i < a->ns; i++) {
-    state_paths = pp = make_paths(a->bddm, a->q[i]);
-
-    while (pp) {
-      // printf ("State %d: ", i);
-      out << "State " << i << ": ";
-      for (tp = pp->trace; tp; tp = tp->next) {
-	// printf("@%d=%c", tp->index, tp->value ? '1' : '0');
-  out << "@" << tp->index << "=" << (tp->value ? "1" : "0");
-	if (tp->next)
-	  // printf(", ");
-    out << ", ";
+      out << i << "(" << a->f[i] << "):";
+      state_paths = pp = make_paths(a->bddm, a->q[i]);
+      
+      while (pp) {
+          for (tp = pp->trace; tp; tp = tp->next) {
+          out << "@" << tp->index << "=" << (tp->value ? "1" : "0");
+          if (tp->next)
+            out << ", ";
       }
 
-      // printf (" -> state %d\n", pp->to);
-      out << " -> state " << pp->to << "\n";
+      out << "->" << pp->to << "\n";
       pp = pp->next;
     }
 
     kill_paths(state_paths);
   }
-  // printf("\n");
   out << "\n";
 
   // paths state_paths, pp;

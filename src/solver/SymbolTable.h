@@ -163,6 +163,8 @@ private:
    */
   VariableMap variables_;
 
+  VariableMap original_variables_;
+
   /**
    * There is a global scope
    * A new scope is generated when there is a disjuction

@@ -246,29 +246,11 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
           import_auto->load(ar);
         }
 
-        // get one of the variables from import_auto's formula
-        // we use this to update the correct variable in our symbol table
-
-        // variables should be normalized; unnormalize them
-        auto old_coeff_map = import_auto->GetFormula()->GetVariableCoefficientMap();
-        std::map<std::string, int> new_coeff_map;
-        for (auto it : old_coeff_map) {
-          new_coeff_map[symbol_table_->get_variable(it.first)->getName()] = it.second;
-        }
-
-        import_auto->GetFormula()->SetVariableCoefficientMap(new_coeff_map);
         std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
 
-        // make sure the tracks match by remapping
-        auto new_formula = symbol_table_->get_value(rep_var)->getStringAutomaton()->GetFormula()->clone();
-        auto remapped_auto = import_auto->ChangeIndicesMap(new_formula);
-
-        auto rep_var_value = new Value(remapped_auto);
-        symbol_table_->IntersectValue(rep_var, rep_var_value);
-        delete rep_var_value;
-        delete import_auto;
-
-        // LOG(INFO) << "Read one automata!";
+        auto import_value = new Value(import_auto);
+        symbol_table_->IntersectValue(rep_var,import_value);
+        delete import_value;
       }
       while (num_int_to_read-- > 0) {
         Theory::BinaryIntAutomaton_ptr import_auto = new Theory::BinaryIntAutomaton(nullptr, 0, true);
@@ -276,33 +258,12 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
           cereal::BinaryInputArchive ar(is);
           import_auto->load(ar);
         }
-        // get one of the variables from import_auto's formula
-        // we use this to update the correct variable in our symbol table
 
-        // variables should be normalized; unnormalize them
-        auto old_coeff_map = import_auto->GetFormula()->GetVariableCoefficientMap();
-        std::map<std::string, int> new_coeff_map;
-        for (auto it : old_coeff_map) {
-          new_coeff_map[symbol_table_->get_variable(it.first)->getName()] = it.second;
-        }
-        import_auto->GetFormula()->SetVariableCoefficientMap(new_coeff_map);
         std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
-        // make sure the tracks match by remapping
-        auto new_formula = symbol_table_->get_value(rep_var)->getBinaryIntAutomaton()->GetFormula()->clone();
-        //import_auto->inspectAuto(false,true);
-        auto remapped_auto = import_auto->ChangeIndicesMap(new_formula);
 
-        // LOG(INFO) << "1";
-        auto rep_var_value = new Value(remapped_auto);
-        // std::cin.get();
-        // remapped_auto->inspectAuto(false,true);
-        // LOG(INFO) << "2";
-        symbol_table_->IntersectValue(rep_var, rep_var_value);
-        // LOG(INFO) << "3";
-        delete rep_var_value;
-        delete import_auto;;
-
-        // LOG(INFO) << "Read one automata!";
+        auto import_value = new Value(import_auto);
+        symbol_table_->IntersectValue(rep_var,import_value);
+        delete import_value;
       }
 
 
@@ -332,18 +293,12 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
     arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
     string_constraint_solver_.collect_string_constraint_info();
   }
-    // arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
-    // string_constraint_solver_.collect_string_constraint_info();
 
-//LOG(INFO) << "Before visit assert->term";
   check_and_visit(assert_command->term);
-//LOG(INFO) << "After visit assert->term";
+
   Value_ptr result = getTermValue(assert_command->term);
   bool is_satisfiable = result->is_satisfiable();
 
-//  if(not is_satisfiable) {
-//    LOG(INFO) << "BAD!";
-//  }
 
   symbol_table_->update_satisfiability_result(is_satisfiable);
   if ((Term::Type::OR not_eq assert_command->term->type()) and (Term::Type::AND not_eq assert_command->term->type())) {
@@ -353,8 +308,6 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
     }
   }
   clearTermValuesAndLocalLetVars();
-
-//LOG(INFO) << "almost done";
 
   if(Option::Solver::INCREMENTAL == true) {
 
@@ -458,23 +411,10 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
             continue;
           }
 
-          auto variable_coefficient_map = export_auto->GetFormula()->GetVariableCoefficientMap();
-          std::map<std::string, int> remapped_map;
-          for (auto it : variable_coefficient_map) {
-//          LOG(INFO) << "CHANGING " << it.first << " to " << symbol_table_->GetMappedVariableName(it.first);
-            remapped_map[symbol_table_->GetMappedVariableName(it.first)] = it.second;
-          }
-
-          export_auto->GetFormula()->SetVariableCoefficientMap(remapped_map);
-
           {
             cereal::BinaryOutputArchive ar(os);
             export_auto->save(ar);
           }
-
-          export_auto->GetFormula()->SetVariableCoefficientMap(variable_coefficient_map);
-//      os << "a";
-          // LOG(INFO) << "Serialized one...";
         }
       }
 
@@ -487,24 +427,10 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
             continue;
           }
 
-          auto variable_coefficient_map = export_auto->GetFormula()->GetVariableCoefficientMap();
-          std::map<std::string, int> remapped_map;
-          for (auto it : variable_coefficient_map) {
-//          LOG(INFO) << "CHANGING " << it.first << " to " << symbol_table_->GetMappedVariableName(it.first);
-            remapped_map[symbol_table_->GetMappedVariableName(it.first)] = it.second;
-          }
-
-          export_auto->GetFormula()->SetVariableCoefficientMap(remapped_map);
-
           {
             cereal::BinaryOutputArchive ar(os);
             export_auto->save(ar);
           }
-
-          export_auto->GetFormula()->SetVariableCoefficientMap(variable_coefficient_map);
-
-//      os << "a";
-          // LOG(INFO) << "Serialized one...";
         }
       }
 
@@ -618,7 +544,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   std::string key, cached_data;
   bool has_cached_result = false;
 
-  if(false){//Option::Solver::INCREMENTAL == true) {
+  if(Option::Solver::INCREMENTAL == true) {
 
 
     key = Ast2Dot::toString(and_term);
@@ -636,7 +562,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         hit_statistic_ = std::make_tuple<int, int>(and_term->term_list->size(),
                                                    and_term->term_list->size() + terms_to_solve.size() + 1);
 
-        // LOG(INFO) << "Got cached data!";
+//         LOG(INFO) << "Got cached data!";
       } else {
         // no cached value
         terms_to_solve.push(and_term->term_list->back());
@@ -655,7 +581,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     // if we have cached result, import it and go from there
     if (has_cached_result) {
       cache_start = std::chrono::steady_clock::now();
-//      LOG(INFO) << "Got Sub-Cached result!";
+//      LOG(INFO) << "Got Sub-Cached result! (" << and_term->term_list->size() << ")";
       // first check if key has only 0 in it. if so, formula unsat
       if (cached_data.size() == 1) {
         Value_ptr result = new Value(is_satisfiable);
@@ -697,68 +623,28 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
           cereal::BinaryInputArchive ar(is);
           import_auto->load(ar);
         }
-        // get one of the variables from import_auto's formula
-        // we use this to update the correct variable in our symbol table
-        auto old_coeff_map = import_auto->GetFormula()->GetVariableCoefficientMap();
-        std::map<std::string, int> new_coeff_map;
-        for (auto it : old_coeff_map) {
-          new_coeff_map[symbol_table_->get_variable(it.first)->getName()] = it.second;
-        }
 
-        import_auto->GetFormula()->SetVariableCoefficientMap(new_coeff_map);
         std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
 
-        // make sure the tracks match by remapping
-        auto new_formula = symbol_table_->get_value(rep_var)->getStringAutomaton()->GetFormula()->clone();
-//      LOG(INFO) << "";
-//      for(auto names : new_formula->GetVariableCoefficientMap()) {
-//        LOG(INFO) << "   -> " << names.first;
-//      }
-
-        auto remapped_import_auto = import_auto->ChangeIndicesMap(new_formula);
-
-        auto rep_var_value = new Value(remapped_import_auto);
-        symbol_table_->IntersectValue(rep_var, rep_var_value);
-        delete rep_var_value;
-        delete import_auto;
+        auto import_value = new Value(import_auto);
+        symbol_table_->IntersectValue(rep_var,import_value);
+        delete import_value;
 
       }
 
-//      LOG(INFO) << "Done str, reading int...";
-
       while (num_int_to_read-- > 0) {
-//        LOG(INFO) << "Reading int...";
-        Theory::BinaryIntAutomaton_ptr import_auto = new Theory::BinaryIntAutomaton(nullptr, 0, true);
+        Theory::BinaryIntAutomaton_ptr import_auto = new Theory::BinaryIntAutomaton(nullptr, 0, false);
         std::string var_name;
         {
           cereal::BinaryInputArchive ar(is);
           import_auto->load(ar);
         }
-        // get one of the variables from import_auto's formula
-        // we use this to update the correct variable in our symbol table
-        auto old_coeff_map = import_auto->GetFormula()->GetVariableCoefficientMap();
-        std::map<std::string, int> new_coeff_map;
-        for (auto it : old_coeff_map) {
-          new_coeff_map[symbol_table_->get_variable(it.first)->getName()] = it.second;
-        }
 
-        import_auto->GetFormula()->SetVariableCoefficientMap(new_coeff_map);
         std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
 
-        // make sure the tracks match by remapping
-        auto new_formula = symbol_table_->get_value(rep_var)->getBinaryIntAutomaton()->GetFormula()->clone();
-//      LOG(INFO) << "";
-//      for(auto names : new_formula->GetVariableCoefficientMap()) {
-//        LOG(INFO) << "   -> " << names.first;
-//      }
-
-        auto remapped_import_auto = import_auto->ChangeIndicesMap(new_formula);
-
-        auto rep_var_value = new Value(remapped_import_auto);
-        symbol_table_->IntersectValue(rep_var, rep_var_value);
-        delete rep_var_value;
-        delete import_auto;
-//        LOG(INFO) << "Done reading int...";
+        auto import_value = new Value(import_auto);
+        symbol_table_->IntersectValue(rep_var,import_value);
+        delete import_value;
       }
       cache_end = std::chrono::steady_clock::now();
       diff += cache_end - cache_start;
@@ -771,9 +657,9 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     // at this point, we have the most updated values to start with
     // if terms_to_solve is empty, then we got the whole formula from the cache and we're done
     // otherwise, solve the rest and cache those values
-    Renamer renamer(root_, symbol_table_,
-                    symbol_table_->GetVariableMapping(),
-                    symbol_table_->GetCharacterMapping());
+//    Renamer renamer(root_, symbol_table_,
+//                    symbol_table_->GetVariableMapping(),
+//                    symbol_table_->GetCharacterMapping());
     while (not terms_to_solve.empty()) {
 
       // get the term to solve
@@ -783,7 +669,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
       // rename alphabet characters (from imported mapping, if any)
       if (has_cached_result) {
-        renamer.start(term, false);
+//        renamer.start(term, false);
       }
 
       arithmetic_constraint_solver_.collect_arithmetic_constraint_info(term);
@@ -792,7 +678,9 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       // solve term using normal constraint solving algorithm
       if (is_component) {
         if (constraint_information_->has_arithmetic_constraint(term)) {
+//          LOG(INFO) << "before";
           arithmetic_constraint_solver_.start(term);
+//          LOG(INFO) << "after";
           is_satisfiable = arithmetic_constraint_solver_.get_term_value(term)->is_satisfiable();
           DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *term << "@" << term;
         }
@@ -876,23 +764,10 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
             continue;
           }
 
-          auto variable_coefficient_map = export_auto->GetFormula()->GetVariableCoefficientMap();
-          std::map<std::string, int> remapped_map;
-          for (auto it : variable_coefficient_map) {
-//          LOG(INFO) << "CHANGING " << it.first << " to " << symbol_table_->GetMappedVariableName(it.first);
-            remapped_map[symbol_table_->GetMappedVariableName(it.first)] = it.second;
-          }
-
-          export_auto->GetFormula()->SetVariableCoefficientMap(remapped_map);
-
           {
             cereal::BinaryOutputArchive ar(os);
             export_auto->save(ar);
           }
-
-          export_auto->GetFormula()->SetVariableCoefficientMap(variable_coefficient_map);
-//      os << "a";
-          // LOG(INFO) << "Serialized one...";
         }
 
 
@@ -914,23 +789,10 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
             continue;
           }
 
-          auto variable_coefficient_map = export_auto->GetFormula()->GetVariableCoefficientMap();
-          std::map<std::string, int> remapped_map;
-          for (auto it : variable_coefficient_map) {
-//          LOG(INFO) << "CHANGING " << it.first << " to " << symbol_table_->GetMappedVariableName(it.first);
-            remapped_map[symbol_table_->GetMappedVariableName(it.first)] = it.second;
-          }
-
-          export_auto->GetFormula()->SetVariableCoefficientMap(remapped_map);
-
           {
             cereal::BinaryOutputArchive ar(os);
             export_auto->save(ar);
           }
-
-          export_auto->GetFormula()->SetVariableCoefficientMap(variable_coefficient_map);
-//      os << "a";
-          // LOG(INFO) << "Serialized one...";
         }
       }
 
