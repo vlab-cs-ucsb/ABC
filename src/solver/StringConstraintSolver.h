@@ -60,6 +60,12 @@ class StringConstraintSolver: public AstTraverser {
   SMT::TermList& get_integer_terms_in(SMT::Term_ptr term);
   std::map<SMT::Term_ptr, SMT::TermList>& get_integer_terms_map();
 
+  static std::map<std::string,Theory::DFA_ptr> stupid_cache;
+  std::chrono::duration<double> diff;
+  std::chrono::duration<double> diff2;
+	static int dfa_misses;
+	static int dfa_hits;
+
  protected:
   void visitOr(SMT::Or_ptr);
 

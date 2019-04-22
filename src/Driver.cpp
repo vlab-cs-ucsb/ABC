@@ -196,8 +196,8 @@ void Driver::Solve() {
   diff3 += constraint_solver->get_diff3();
   diff4 += constraint_solver->get_diff4();
 //  LOG(INFO) << "Done start";
-//LOG(INFO) << "num_hits    = " << Theory::Automaton::num_hits;
-//LOG(INFO) << "num_misses  = " << Theory::Automaton::num_misses;
+LOG(INFO) << "num_hits    = " << Solver::StringConstraintSolver::dfa_hits;
+LOG(INFO) << "num_misses  = " << Solver::StringConstraintSolver::dfa_misses;
 //LOG(INFO) << "hit ratio   = " << (double)Theory::Automaton::num_hits / (double)(Theory::Automaton::num_misses+Theory::Automaton::num_hits);
   total_hits_ += constraint_solver->num_hits();
   total_misses_ += constraint_solver->num_misses();

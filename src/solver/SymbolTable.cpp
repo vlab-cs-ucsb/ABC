@@ -786,6 +786,10 @@ void SymbolTable::SetVariableMapping(std::map<std::string,std::string> variable_
     variables_.insert(std::make_pair(name,variable));
   }
 
+  if(count_symbol_ != nullptr) {
+    count_symbol_->setData(variable_mapping[count_symbol_->getData()]);
+  }
+
   // store original map
   variable_mapping_ = variable_mapping;
   // store reverse map (for easy var lookup)

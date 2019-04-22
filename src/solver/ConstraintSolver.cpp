@@ -1415,8 +1415,6 @@ void ConstraintSolver::visitIn(In_ptr in_term) {
 
   if (Value::Type::STRING_AUTOMATON == param_left->getType()
       and Value::Type::STRING_AUTOMATON == param_right->getType()) {
-    param_right->getStringAutomaton()->inspectAuto(false,true);
-    std::cin.get();
     result = param_left->intersect(param_right);
   } else {
     LOG(FATAL)<< "unexpected parameter(s) of '" << *in_term << "' term";  // handle cases in a better way

@@ -164,7 +164,7 @@ void ArithmeticConstraintSolver::setCallbacks() {
 //            diff += cache_end - cache_start;
 //            dfa_misses++;
 //          }
-          symbol_table_->IntersectValue(term_group_name,result);
+          // symbol_table_->IntersectValue(term_group_name,result);
           // once we solve an atomic linear inte  ger arithmetic constraint,
           // we delete its formula to avoid solving it again.
           // Atomic arithmetic constraints solved precisely,

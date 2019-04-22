@@ -13,6 +13,10 @@ namespace Solver {
 using namespace SMT;
 using namespace Theory;
 
+int StringConstraintSolver::dfa_misses = 0;
+int StringConstraintSolver::dfa_hits = 0;
+std::map<std::string,DFA_ptr> StringConstraintSolver::stupid_cache;
+
 const int StringConstraintSolver::VLOG_LEVEL = 13;
 
 StringConstraintSolver::StringConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_table,
@@ -22,6 +26,11 @@ StringConstraintSolver::StringConstraintSolver(Script_ptr script, SymbolTable_pt
       constraint_information_(constraint_information),
       string_formula_generator_(script, symbol_table, constraint_information) {
   setCallbacks();
+
+  auto start = std::chrono::steady_clock::now();
+  auto end = std::chrono::steady_clock::now();
+  diff = end-start;
+  diff2 = end-start;
 }
 
 StringConstraintSolver::~StringConstraintSolver() {
@@ -83,10 +92,82 @@ void StringConstraintSolver::setCallbacks() {
           if(term_group_name.empty()) {
             LOG(FATAL) << "Term has no group!";
           }
+          // LOG(INFO) << "symbol table intersect";
 
-//          symbol_table_->get_value(term_group_name)->getStringAutomaton()->inspectAuto(false,true);
-//          relational_str_auto->inspectAuto(false,true);
-          symbol_table_->IntersectValue(term_group_name,result);
+          auto left_auto = symbol_table_->get_value(term_group_name)->getStringAutomaton();
+          auto right_auto = relational_str_auto;
+
+          auto bdd_start = std::chrono::steady_clock::now();
+
+          std::string id1, id2;
+          std::stringstream os1;
+  //        {
+  //          cereal::BinaryOutputArchive ar(os1);
+  //          Util::Serialize::save(ar, left_auto->getDFA());
+  //        }
+          left_auto->toBDD(os1);
+          id1 = os1.str();
+
+          std::stringstream os2;
+  //        {
+  //          cereal::BinaryOutputArchive ar(os1);
+  //          Util::Serialize::save(ar, right_auto->getDFA());
+  //        }
+          right_auto->toBDD(os2);
+          id2 = os2.str();
+
+  //        LOG(INFO) << id1.size();
+
+          auto bdd_end = std::chrono::steady_clock::now();
+          diff2 += bdd_end-bdd_start;
+
+          std::string stupid_key1 = id1 + id2;
+          std::string stupid_key2 = id2 + id1;
+          Theory::DFA_ptr intersect_dfa = nullptr;
+          Theory::StringAutomaton_ptr intersect_auto = nullptr;
+
+          if(stupid_cache.find(stupid_key1) != stupid_cache.end()) {
+            auto cache_start = std::chrono::steady_clock::now();
+
+            intersect_dfa = dfaCopy(stupid_cache[stupid_key1]);
+
+
+            auto new_formula = symbol_table_->get_value(term_group_name)->getStringAutomaton()->GetFormula()->Intersect(result->getStringAutomaton()->GetFormula());
+            intersect_auto = new Theory::StringAutomaton(intersect_dfa,new_formula,false);
+            symbol_table_->set_value(term_group_name,new Value(intersect_auto));
+            dfa_hits++;
+
+
+            auto cache_end = std::chrono::steady_clock::now();
+            diff += cache_end - cache_start;
+
+          } else if (stupid_cache.find(stupid_key2) != stupid_cache.end()) {
+            auto cache_start = std::chrono::steady_clock::now();
+
+            intersect_dfa = dfaCopy(stupid_cache[stupid_key2]);
+
+
+            auto new_formula = symbol_table_->get_value(term_group_name)->getStringAutomaton()->GetFormula()->Intersect(result->getStringAutomaton()->GetFormula());
+            intersect_auto = new Theory::StringAutomaton(intersect_dfa,new_formula,false);
+            symbol_table_->set_value(term_group_name,new Value(intersect_auto));
+            dfa_hits++;
+
+
+            auto cache_end = std::chrono::steady_clock::now();
+            diff += cache_end - cache_start;
+
+          } else {
+
+            symbol_table_->IntersectValue(term_group_name,result);
+            auto cache_start = std::chrono::steady_clock::now();
+            intersect_dfa = symbol_table_->get_value(term_group_name)->getStringAutomaton()->getDFA();
+            stupid_cache[stupid_key1] = dfaCopy(intersect_dfa);
+            auto cache_end = std::chrono::steady_clock::now();
+            diff += cache_end - cache_start;
+            dfa_misses++;
+          }
+
+          // symbol_table_->IntersectValue(term_group_name,result);
 //          symbol_table_->get_value(term_group_name)->getStringAutomaton()->inspectAuto(false,true);
 //          std::cin.get();
           // once we solve an atomic string constraint,
