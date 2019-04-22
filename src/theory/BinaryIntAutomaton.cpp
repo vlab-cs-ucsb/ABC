@@ -362,63 +362,60 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr othe
     right_auto = other_auto;
   }
 
-  // left_auto->inspectAuto(false,true);
-  // right_auto->inspectAuto(false,true);
 
+//  std::string id1, id2;
+//
+//  std::stringstream os1;
+//  //{
+//  //  cereal::BinaryOutputArchive ar(os1);
+//  //  Util::Serialize::save(ar,left_auto->dfa_);
+//  //}
+//  left_auto->toBDD(os1);
+//  id1 = os1.str();
+//
+//  std::stringstream os2;
+//  //{
+//  //  cereal::BinaryOutputArchive ar(os2);
+//  //  Util::Serialize::save(ar,right_auto->dfa_);
+//  //}
+//  right_auto->toBDD(os2);
+//  id2 = os2.str();
+//
+//  //std::pair<std::string,std::string> stupid_key1(id1,id2);
+//  //std::pair<std::string,std::string> stupid_key2(id2,id1);
+//  std::string stupid_key1 = id1 + id2;
+//  std::string stupid_key2 = id2 + id1;
+//  DFA_ptr intersect_dfa = nullptr;
+////   LOG(FATAL) << "HERE";
+//  if(stupid_cache.find(stupid_key1) != stupid_cache.end()) {
+////    std::stringstream is(stupid_cache[stupid_key1]);
+////    {
+////      cereal::BinaryInputArchive ar(is);
+////      Util::Serialize::load(ar,intersect_dfa);
+////    }
+//    intersect_dfa = dfaCopy(stupid_cache[stupid_key1]);
+//    num_hits++;
+//  } else if (stupid_cache.find(stupid_key2) != stupid_cache.end()) {
+////    std::stringstream is(stupid_cache[stupid_key2]);
+////    {
+////      cereal::BinaryInputArchive ar(is);
+////      Util::Serialize::load(ar,intersect_dfa);
+////    }
+//    intersect_dfa = dfaCopy(stupid_cache[stupid_key2]);
+//    num_hits++;
+//  } else {
+//    intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
+////    std::stringstream os;
+////    {
+////      cereal::BinaryOutputArchive ar(os);
+////      Util::Serialize::save(ar,intersect_dfa);
+////    }
+////    stupid_cache[stupid_key1] = os.str();
+//    stupid_cache[stupid_key1] = dfaCopy(intersect_dfa);
+//    num_misses++;
+//  }
 
-  std::string id1, id2;
-
-  std::stringstream os1;
-  //{
-  //  cereal::BinaryOutputArchive ar(os1);
-  //  Util::Serialize::save(ar,left_auto->dfa_);
-  //}
-  left_auto->toBDD(os1);
-  id1 = os1.str();
-
-  std::stringstream os2;
-  //{
-  //  cereal::BinaryOutputArchive ar(os2);
-  //  Util::Serialize::save(ar,right_auto->dfa_);
-  //}
-  right_auto->toBDD(os2);
-  id2 = os2.str();
-
-  //std::pair<std::string,std::string> stupid_key1(id1,id2);
-  //std::pair<std::string,std::string> stupid_key2(id2,id1);
-  std::string stupid_key1 = id1 + id2;
-  std::string stupid_key2 = id2 + id1;
-  DFA_ptr intersect_dfa = nullptr;
-  // LOG(FATAL) << "HERE";
-  if(stupid_cache.find(stupid_key1) != stupid_cache.end()) {
-//    std::stringstream is(stupid_cache[stupid_key1]);
-//    {
-//      cereal::BinaryInputArchive ar(is);
-//      Util::Serialize::load(ar,intersect_dfa);
-//    }
-    intersect_dfa = dfaCopy(stupid_cache[stupid_key1]);
-    num_hits++;
-  } else if (stupid_cache.find(stupid_key2) != stupid_cache.end()) {
-//    std::stringstream is(stupid_cache[stupid_key2]);
-//    {
-//      cereal::BinaryInputArchive ar(is);
-//      Util::Serialize::load(ar,intersect_dfa);
-//    }
-    intersect_dfa = dfaCopy(stupid_cache[stupid_key2]);
-    num_hits++;
-  } else {
-    intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
-//    std::stringstream os;
-//    {
-//      cereal::BinaryOutputArchive ar(os);
-//      Util::Serialize::save(ar,intersect_dfa);
-//    }
-//    stupid_cache[stupid_key1] = os.str();
-    stupid_cache[stupid_key1] = dfaCopy(intersect_dfa);
-    num_misses++;
-  }
-
-//   auto intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
+  auto intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
   ArithmeticFormula_ptr intersect_formula = nullptr;
   if(left_auto->formula_ != nullptr && right_auto->formula_ != nullptr) {
 		intersect_formula = formula_->Intersect(right_auto->formula_);
@@ -448,6 +445,12 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr othe
 
   // intersect_auto->inspectAuto(false,true);
   // std::cin.get();
+
+
+//  left_auto->inspectAuto(false,true);
+//  right_auto->inspectAuto(false,true);
+//  intersect_auto->inspectAuto(false,true);
+//  std::cin.get();
 
   DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << right_auto->id_ << ")";
   return intersect_auto;

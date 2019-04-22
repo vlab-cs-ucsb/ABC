@@ -193,7 +193,8 @@ void Driver::Solve() {
   auto end = std::chrono::steady_clock::now();
   diff += constraint_solver->diff;
   diff2 += constraint_solver->diff2;
-
+  diff3 += constraint_solver->get_diff3();
+  diff4 += constraint_solver->get_diff4();
 //  LOG(INFO) << "Done start";
 //LOG(INFO) << "num_hits    = " << Theory::Automaton::num_hits;
 //LOG(INFO) << "num_misses  = " << Theory::Automaton::num_misses;
@@ -1001,6 +1002,11 @@ void Driver::print_statistics() {
   LOG(INFO) << "avg hit size / full formula size = " << average_ratio;
   LOG(INFO) << "avg hit size                     = " << average_hit_size;
   LOG(INFO) << "avg formula size                 = " << average_formula_size;
+
+  LOG(INFO) << "num_hits    = " << Solver::ArithmeticConstraintSolver::dfa_hits;
+  LOG(INFO) << "num_misses  = " << Solver::ArithmeticConstraintSolver::dfa_misses;
+  LOG(INFO) << "hit ratio   = " << (double)Solver::ArithmeticConstraintSolver::dfa_hits / (double)(Solver::ArithmeticConstraintSolver::dfa_misses+Solver::ArithmeticConstraintSolver::dfa_hits);
+
 }
 
 void Driver::test() {

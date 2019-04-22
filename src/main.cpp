@@ -249,7 +249,7 @@ int main(const int argc, const char **argv) {
     }
 
 //    if (i > 1200 or false and VLOG_IS_ON(30) and not output_root.empty()) {
-      driver.ast2dot(output_root + "/optimized.dot");
+//      driver.ast2dot(output_root + "/optimized.dot");
 //   }
     driver.Solve();
     if(not driver.is_sat()) {
@@ -295,6 +295,8 @@ int main(const int argc, const char **argv) {
   LOG(INFO)<< "count time: " << std::chrono::duration <long double, std::milli> (count_time).count() << " ms";
   LOG(INFO)<< "mc    time: " << std::chrono::duration <long double, std::milli> (mc_time).count() << " ms";
   driver.print_statistics();
+  LOG(INFO)<< "arith time: " << std::chrono::duration <long double, std::milli> (driver.diff3).count() << " ms";
+  LOG(INFO)<< "bdd   time:" << std::chrono::duration <long double, std::milli> (driver.diff4).count() << " ms";
   return 3;
   // driver.reset();
   // delete file;

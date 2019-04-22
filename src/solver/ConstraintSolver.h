@@ -53,6 +53,10 @@ class ConstraintSolver: public SMT::Visitor {
   std::chrono::duration<double> diff;
   std::chrono::duration<double> diff2;
 
+  std::chrono::duration<double> get_diff3() { return this->arithmetic_constraint_solver_.diff;}
+  std::chrono::duration<double> get_diff4() { return this->arithmetic_constraint_solver_.diff2;}
+
+
   ConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr, redox::Redox *);
   virtual ~ConstraintSolver();
 
@@ -130,6 +134,7 @@ class ConstraintSolver: public SMT::Visitor {
   int num_hits() {return num_hits_;}
   int num_misses() {return num_misses_;}
   std::tuple<int,int> hit_statistic() {return hit_statistic_;};
+
 
  protected:
   Value_ptr getTermValue(SMT::Term_ptr term);

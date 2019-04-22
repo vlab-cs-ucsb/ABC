@@ -34,6 +34,8 @@ ConstraintSolver::ConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_tab
   auto end = std::chrono::steady_clock::now();
   diff = end-start;
   diff2 = end-start;
+
+  arithmetic_constraint_solver_.rdx_ = rdx_;
 }
 
 ConstraintSolver::~ConstraintSolver() {
@@ -550,7 +552,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     key = Ast2Dot::toString(and_term);
 //   LOG(INFO) << key;
 //   std::cin.get();
-
+cache_start = std::chrono::steady_clock::now();
     while (not has_cached_result and and_term->term_list->size() > 0) {
       key = Ast2Dot::toString(and_term);
       auto &c = rdx_->commandSync<std::string>({"GET", key});
@@ -572,7 +574,8 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       }
       c.free();
     }
-
+cache_end = std::chrono::steady_clock::now();
+      diff += cache_end - cache_start;
 //LOG(INFO) << "Before collect and_term";
     arithmetic_constraint_solver_.collect_arithmetic_constraint_info(and_term);
     string_constraint_solver_.collect_string_constraint_info(and_term);
@@ -580,7 +583,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
     // if we have cached result, import it and go from there
     if (has_cached_result) {
-      cache_start = std::chrono::steady_clock::now();
+
 //      LOG(INFO) << "Got Sub-Cached result! (" << and_term->term_list->size() << ")";
       // first check if key has only 0 in it. if so, formula unsat
       if (cached_data.size() == 1) {
@@ -646,8 +649,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         symbol_table_->IntersectValue(rep_var,import_value);
         delete import_value;
       }
-      cache_end = std::chrono::steady_clock::now();
-      diff += cache_end - cache_start;
+
 //
 //    std::cin.get();
     }
@@ -1413,6 +1415,8 @@ void ConstraintSolver::visitIn(In_ptr in_term) {
 
   if (Value::Type::STRING_AUTOMATON == param_left->getType()
       and Value::Type::STRING_AUTOMATON == param_right->getType()) {
+    param_right->getStringAutomaton()->inspectAuto(false,true);
+    std::cin.get();
     result = param_left->intersect(param_right);
   } else {
     LOG(FATAL)<< "unexpected parameter(s) of '" << *in_term << "' term";  // handle cases in a better way

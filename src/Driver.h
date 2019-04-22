@@ -70,6 +70,8 @@ public:
 
   std::chrono::duration<double> diff;
   std::chrono::duration<double> diff2;
+  std::chrono::duration<double> diff3;
+  std::chrono::duration<double> diff4;
   Driver();
   ~Driver();
 

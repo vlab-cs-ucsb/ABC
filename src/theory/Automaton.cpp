@@ -2587,153 +2587,127 @@ void Automaton::toDotAscii(bool print_sink, std::ostream& out) {
 }
 
 void Automaton::ToDot(std::ostream& out, bool print_sink) {
-  DFA_ptr a = this->dfa_;
   paths state_paths, pp;
   trace_descr tp;
-  int i;
+  int i, j, k, l;
+  char **buffer;
+  int *used, *allocated;
+  int* offsets = GetBddVariableIndices(num_of_bdd_variables_);
+  int no_free_vars = num_of_bdd_variables_;
+  DFA_ptr a = this->dfa_;
+  int sink = GetSinkState();
 
-  out << a->s << "," << a->ns << "\n";
+  print_sink = print_sink || (dfa_->ns == 1 and dfa_->f[0] == -1);
+
+  out << "digraph MONA_DFA {\n"
+          " rankdir = LR;\n"
+          " center = true;\n"
+          " size = \"7.5,10.5\";\n"
+          " edge [fontname = Courier];\n"
+          " node [height = .5, width = .5];\n"
+          " node [shape = doublecircle];";
+  for (i = 0; i < a->ns; i++) {
+    if (a->f[i] == 1) {
+      out << " " << i << ";";
+    }
+  }
+  out << "\n node [shape = circle];";
+  for (i = 0; i < a->ns; i++) {
+    if (a->f[i] == -1) {
+      if (i != sink || print_sink) {
+        out << " " << i << ";";
+      }
+    }
+  }
+  out << "\n node [shape = box];";
+  for (i = 0; i < a->ns; i++) {
+    if (a->f[i] == 0) {
+      out << " " << i << ";";
+    }
+  }
+  out << "\n init [shape = plaintext, label = \"\"];\n"
+          " init -> " << a->s << ";\n";
+
+  buffer = (char **) mem_alloc(sizeof(char *) * a->ns);
+  used = (int *) mem_alloc(sizeof(int) * a->ns);
+  allocated = (int *) mem_alloc(sizeof(int) * a->ns);
 
   for (i = 0; i < a->ns; i++) {
-      out << i << "(" << a->f[i] << "):";
-      state_paths = pp = make_paths(a->bddm, a->q[i]);
-      
-      while (pp) {
-          for (tp = pp->trace; tp; tp = tp->next) {
-          out << "@" << tp->index << "=" << (tp->value ? "1" : "0");
-          if (tp->next)
-            out << ", ";
+    if (i == sink && not print_sink) {
+      continue;
+    }
+    state_paths = pp = make_paths(a->bddm, a->q[i]);
+
+    for (j = 0; j < a->ns; j++) {
+      if (i == sink && not print_sink) {
+        continue;
+      }
+      buffer[j] = 0;
+      used[j] = allocated[j] = 0;
+    }
+
+    while (pp) {
+      if (pp->to == (unsigned) sink && not print_sink) {
+        pp = pp->next;
+        continue;
+      }
+      if (used[pp->to] >= allocated[pp->to]) {
+        allocated[pp->to] = allocated[pp->to] * 2 + 2;
+        buffer[pp->to] = (char *) mem_resize(buffer[pp->to], sizeof(char) * allocated[pp->to] * no_free_vars);
       }
 
-      out << "->" << pp->to << "\n";
+      for (j = 0; j < no_free_vars; j++) {
+        char c;
+        for (tp = pp->trace; tp && (tp->index != (unsigned)offsets[j]); tp = tp->next)
+          ;
+
+        if (tp) {
+          if (tp->value) {
+            c = '1';
+          } else {
+            c = '0';
+          }
+        } else {
+          c = 'X';
+        }
+
+        buffer[pp->to][no_free_vars * used[pp->to] + j] = c;
+      }
+      used[pp->to]++;
       pp = pp->next;
     }
 
+    for (j = 0; j < a->ns; j++) {
+      if (j == sink && not print_sink) {
+        continue;
+      }
+      if (buffer[j]) {
+        out << " " << i << " -> " << j << " [label=\"";
+        for (k = 0; k < no_free_vars; k++) {
+          for (l = 0; l < used[j]; l++) {
+            out << buffer[j][no_free_vars * l + k];
+            if (l + 1 < used[j]) {
+              if (k + 1 == no_free_vars)
+                out << ',';
+              else
+                out << ' ';
+            }
+          }
+          if (k + 1 < no_free_vars)
+            out << "\\n";
+        }
+        out << "\"];\n";
+        mem_free(buffer[j]);
+      }
+    }
     kill_paths(state_paths);
   }
-  out << "\n";
 
-  // paths state_paths, pp;
-  // trace_descr tp;
-  // int i, j, k, l;
-  // char **buffer;
-  // int *used, *allocated;
-  // int* offsets = GetBddVariableIndices(num_of_bdd_variables_);
-  // int no_free_vars = num_of_bdd_variables_;
-  // DFA_ptr a = this->dfa_;
-  // int sink = GetSinkState();
-  //
-  // print_sink = print_sink || (dfa_->ns == 1 and dfa_->f[0] == -1);
-  //
-  // out << "digraph MONA_DFA {\n"
-  //         " rankdir = LR;\n"
-  //         " center = true;\n"
-  //         " size = \"7.5,10.5\";\n"
-  //         " edge [fontname = Courier];\n"
-  //         " node [height = .5, width = .5];\n"
-  //         " node [shape = doublecircle];";
-  // for (i = 0; i < a->ns; i++) {
-  //   if (a->f[i] == 1) {
-  //     out << " " << i << ";";
-  //   }
-  // }
-  // out << "\n node [shape = circle];";
-  // for (i = 0; i < a->ns; i++) {
-  //   if (a->f[i] == -1) {
-  //     if (i != sink || print_sink) {
-  //       out << " " << i << ";";
-  //     }
-  //   }
-  // }
-  // out << "\n node [shape = box];";
-  // for (i = 0; i < a->ns; i++) {
-  //   if (a->f[i] == 0) {
-  //     out << " " << i << ";";
-  //   }
-  // }
-  // out << "\n init [shape = plaintext, label = \"\"];\n"
-  //         " init -> " << a->s << ";\n";
-  //
-  // buffer = (char **) mem_alloc(sizeof(char *) * a->ns);
-  // used = (int *) mem_alloc(sizeof(int) * a->ns);
-  // allocated = (int *) mem_alloc(sizeof(int) * a->ns);
-  //
-  // for (i = 0; i < a->ns; i++) {
-  //   if (i == sink && not print_sink) {
-  //     continue;
-  //   }
-  //   state_paths = pp = make_paths(a->bddm, a->q[i]);
-  //
-  //   for (j = 0; j < a->ns; j++) {
-  //     if (i == sink && not print_sink) {
-  //       continue;
-  //     }
-  //     buffer[j] = 0;
-  //     used[j] = allocated[j] = 0;
-  //   }
-  //
-  //   while (pp) {
-  //     if (pp->to == (unsigned) sink && not print_sink) {
-  //       pp = pp->next;
-  //       continue;
-  //     }
-  //     if (used[pp->to] >= allocated[pp->to]) {
-  //       allocated[pp->to] = allocated[pp->to] * 2 + 2;
-  //       buffer[pp->to] = (char *) mem_resize(buffer[pp->to], sizeof(char) * allocated[pp->to] * no_free_vars);
-  //     }
-  //
-  //     for (j = 0; j < no_free_vars; j++) {
-  //       char c;
-  //       for (tp = pp->trace; tp && (tp->index != (unsigned)offsets[j]); tp = tp->next)
-  //         ;
-  //
-  //       if (tp) {
-  //         if (tp->value) {
-  //           c = '1';
-  //         } else {
-  //           c = '0';
-  //         }
-  //       } else {
-  //         c = 'X';
-  //       }
-  //
-  //       buffer[pp->to][no_free_vars * used[pp->to] + j] = c;
-  //     }
-  //     used[pp->to]++;
-  //     pp = pp->next;
-  //   }
-  //
-  //   for (j = 0; j < a->ns; j++) {
-  //     if (j == sink && not print_sink) {
-  //       continue;
-  //     }
-  //     if (buffer[j]) {
-  //       out << " " << i << " -> " << j << " [label=\"";
-  //       for (k = 0; k < no_free_vars; k++) {
-  //         for (l = 0; l < used[j]; l++) {
-  //           out << buffer[j][no_free_vars * l + k];
-  //           if (l + 1 < used[j]) {
-  //             if (k + 1 == no_free_vars)
-  //               out << ',';
-  //             else
-  //               out << ' ';
-  //           }
-  //         }
-  //         if (k + 1 < no_free_vars)
-  //           out << "\\n";
-  //       }
-  //       out << "\"];\n";
-  //       mem_free(buffer[j]);
-  //     }
-  //   }
-  //   kill_paths(state_paths);
-  // }
-  //
-  // mem_free(allocated);
-  // mem_free(used);
-  // mem_free(buffer);
-  // add_print_label(out);
-  // out << "}" << std::endl;
+  mem_free(allocated);
+  mem_free(used);
+  mem_free(buffer);
+  add_print_label(out);
+  out << "}" << std::endl;
 }
 
 void Automaton::add_print_label(std::ostream& out) {
@@ -2758,6 +2732,15 @@ void Automaton::toBDD(std::ostream& out) {
       table->elms[i].hi = bdd_mark(this->dfa_->bddm, table->elms[i].hi) - 1;
     }
   }
+
+//  out << dfa_->ns << dfa_->s;
+//  for(int i = 0; i < this->dfa_->ns; i++) {
+//    out << dfa_->f[i] << (bdd_mark(dfa_->bddm, dfa_->q[i]) - 1);
+//  }
+//
+//  for(int i = 0; i < table->noelems; i++) {
+//    out << table->elms[i].idx << table->elms[i].lo << table->elms[i].hi;
+//  }
 
   out << "digraph MONA_DFA_BDD {\n"
           "  center = true;\n"
