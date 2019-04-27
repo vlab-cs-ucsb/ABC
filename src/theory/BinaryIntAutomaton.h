@@ -82,6 +82,7 @@ public:
   SemilinearSet_ptr GetSemilinearSet();
   UnaryAutomaton_ptr ToUnaryAutomaton();
 
+  int GetAnAcceptingIntRandom();
   std::map<std::string, int> GetAnAcceptingIntForEachVar();
 
   BigInteger SymbolicCount(double bound, bool count_less_than_or_equal_to_bound = false) override;

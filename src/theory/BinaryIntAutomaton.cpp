@@ -708,6 +708,48 @@ UnaryAutomaton_ptr BinaryIntAutomaton::ToUnaryAutomaton() {
   return unary_auto;
 }
 
+int BinaryIntAutomaton::GetAnAcceptingIntRandom() {
+  // CHECK_EQ(this->formula_->GetNumberOfVariables,1);
+  std::stringstream ss;
+
+  std::mt19937 rng;
+	rng.seed(std::random_device()());
+	std::uniform_int_distribution<int> dist(1,2);
+
+	auto random_heuristic = [&dist,&rng](unsigned& index) -> bool {
+  	return dist(rng) == 1;
+  };
+
+  std::vector<bool>* example = getAnAcceptingWordRandom(random_heuristic);
+
+  unsigned char c = 0;
+  unsigned bit_range = num_of_bdd_variables_ - 1;
+  unsigned read_count = 0;
+  for (auto bit: *example) {
+    ss << bit;
+    // if (bit) {
+    //   c |= 1;
+    // } else {
+    //   c |= 0;
+    // }
+
+    // if (read_count < (bit_range)) {
+    //   c <<= 1;
+    // }
+    // if (read_count == bit_range) {
+    //   ss << c;
+    //   c = 0;
+    //   read_count = 0;
+    // } else {
+    //   read_count++;
+    // }
+  }
+  delete example;
+  std::string result = ss.str();
+  std::reverse(result.begin(),result.end());
+  return std::stoi(result,nullptr,2);
+}
+
 std::map<std::string, int> BinaryIntAutomaton::GetAnAcceptingIntForEachVar() {
   std::map<std::string, int> var_values;
   std::map<int, int> values;
@@ -2550,6 +2592,7 @@ void BinaryIntAutomaton::add_print_label(std::ostream& out) {
   out << "\"]\n";
   out << " }";
 }
+
 
 } /* namespace Theory */
 } /* namespace Vlab */

@@ -680,7 +680,30 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandomBounded(co
 					results[it.first] = single_string_auto_bounded->GetAnAcceptingStringRandom();
 					cached_bounded_values_[it.first] = new Solver::Value(single_string_auto_bounded);
 				}
-			}
+			} else if(Solver::Value::Type::BINARYINT_AUTOMATON == variable_entry.second->getType()) {
+        auto binary_int_auto = variable_entry.second->getBinaryIntAutomaton();
+        auto binary_int_formula = binary_int_auto->GetFormula();
+        for(auto it : binary_int_formula->GetVariableCoefficientMap()) {
+          auto single_int_auto = binary_int_auto->GetBinaryAutomatonFor(it.first);
+
+          auto length_formula = new Theory::ArithmeticFormula();
+          length_formula->SetType(Theory::ArithmeticFormula::Type::LT);
+          length_formula->AddVariable(it.first, 1);
+          length_formula->SetConstant(-1 * (1 << bound));
+          auto length_auto = Theory::BinaryIntAutomaton::MakeAutomaton(length_formula, single_int_auto->is_natural_number());
+          auto single_int_auto_bounded =  single_int_auto->Intersect(length_auto);
+
+          delete length_auto;
+          delete single_int_auto;
+
+          if(single_int_auto_bounded->IsEmptyLanguage()) {
+            continue;
+          }
+
+          results[it.first] = std::to_string(single_int_auto_bounded->GetAnAcceptingIntRandom());
+          cached_bounded_values_[it.first] = new Solver::Value(single_int_auto_bounded);
+        }
+      }
 		}
   // }
   return results;
