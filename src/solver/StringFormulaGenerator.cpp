@@ -340,7 +340,21 @@ void StringFormulaGenerator::visitEq(Eq_ptr eq_term) {
 			auto right_var = right_formula->GetVariableAtIndex(0);
 			formula->SetVariableCoefficient(right_var,2);
 			constraint_information_->add_string_constraint(eq_term);
-		} else {
+		} else if(StringFormula::Type::CHARAT == left_formula->GetType() && StringFormula::Type::CHARAT == right_formula->GetType()
+              && (left_formula->GetConstant() != right_formula->GetConstant())) {
+
+      // e.g., charAt(h,0) = charAt(l,2)
+      // both constants should be integers!
+      formula = left_formula->clone();
+      formula->MergeVariables(right_formula);
+      formula->SetType(StringFormula::Type::EQ_CHARAT);
+      auto right_var = right_formula->GetVariableAtIndex(0);
+      if(right_var != left_formula->GetVariableAtIndex(0)) {
+        formula->SetVariableCoefficient(right_var,2);  
+      }
+      formula->SetConstant2(right_formula->GetConstant());
+      constraint_information_->add_string_constraint(eq_term);
+    } else {
       formula = left_formula->clone();
       formula->MergeVariables(right_formula);
       formula->SetType(StringFormula::Type::NONRELATIONAL);
@@ -431,7 +445,21 @@ void StringFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
 			auto right_var = right_formula->GetVariableAtIndex(0);
 			formula->SetVariableCoefficient(right_var,2);
 			constraint_information_->add_string_constraint(not_eq_term);
-		} else {
+		} else if(StringFormula::Type::CHARAT == left_formula->GetType() && StringFormula::Type::CHARAT == right_formula->GetType()
+              && (left_formula->GetConstant() != right_formula->GetConstant())) {
+      // e.g., charAt(h,0) = charAt(l,2)
+      // both constants should be integers!
+      formula = left_formula->clone();
+      formula->MergeVariables(right_formula);
+      formula->SetType(StringFormula::Type::NOTEQ_CHARAT);
+      auto right_var = right_formula->GetVariableAtIndex(0);
+
+      if(right_var != left_formula->GetVariableAtIndex(0)) {
+        formula->SetVariableCoefficient(right_var,2);  
+      }
+      formula->SetConstant2(right_formula->GetConstant());
+      constraint_information_->add_string_constraint(not_eq_term);
+    } else {
 			formula = left_formula->clone();
 			formula->MergeVariables(right_formula);
 			formula->SetType(StringFormula::Type::NONRELATIONAL);
