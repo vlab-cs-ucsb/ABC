@@ -75,6 +75,9 @@ public:
   BinaryIntAutomaton_ptr Difference(BinaryIntAutomaton_ptr);
   BinaryIntAutomaton_ptr Exists(std::string var_name);
   BinaryIntAutomaton_ptr GetBinaryAutomatonFor(std::string var_name);
+
+  BinaryIntAutomaton_ptr ChangeIndicesMap(ArithmeticFormula_ptr new_formula);
+
   BinaryIntAutomaton_ptr GetPositiveValuesFor(std::string var_name);
   BinaryIntAutomaton_ptr GetNegativeValuesFor(std::string var_name);
   BinaryIntAutomaton_ptr TrimLeadingZeros();

@@ -345,19 +345,53 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Complement() {
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr other_auto) {
-  auto intersect_dfa = Automaton::DFAIntersect(this->dfa_, other_auto->dfa_);
+ //  auto intersect_dfa = Automaton::DFAIntersect(this->dfa_, other_auto->dfa_);
+ //  ArithmeticFormula_ptr intersect_formula = nullptr;
+ //  if(formula_ != nullptr && other_auto->formula_ != nullptr) {
+	// 	intersect_formula = formula_->Intersect(other_auto->formula_);
+	// } else if(formula_ != nullptr) {
+	// 	intersect_formula = formula_->clone();
+	// } else {
+	// 	intersect_formula = nullptr;
+	// }
+ //  intersect_formula->ResetCoefficients();
+ //  intersect_formula->SetType(ArithmeticFormula::Type::INTERSECT);
+ //  auto intersect_auto = new BinaryIntAutomaton(intersect_dfa, intersect_formula, is_natural_number_);
+
+ //  DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << other_auto->id_ << ")";
+ //  return intersect_auto;
+
+
+  BinaryIntAutomaton_ptr left_auto = nullptr, right_auto = nullptr;
+  if(this->is_natural_number_ != other_auto->is_natural_number_) {
+    LOG(FATAL) << "Numbers don't match";
+  }
+  auto left_num_tracks = this->GetFormula()->GetNumberOfVariables();
+  auto right_num_tracks = other_auto->GetFormula()->GetNumberOfVariables();
+  if(left_num_tracks > right_num_tracks) {
+    left_auto = this;
+    right_auto = other_auto->ChangeIndicesMap(this->formula_->clone());
+  } else if(left_num_tracks < right_num_tracks) {
+    left_auto = other_auto;
+    right_auto = this->ChangeIndicesMap(other_auto->formula_->clone());
+  } else {
+    left_auto = this;
+    right_auto = other_auto;
+  }
+
+  auto intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
   ArithmeticFormula_ptr intersect_formula = nullptr;
-  if(formula_ != nullptr && other_auto->formula_ != nullptr) {
-		intersect_formula = formula_->Intersect(other_auto->formula_);
-	} else if(formula_ != nullptr) {
-		intersect_formula = formula_->clone();
-	} else {
-		intersect_formula = nullptr;
-	}
+  if(left_auto->formula_ != nullptr && right_auto->formula_ != nullptr) {
+    intersect_formula = formula_->Intersect(right_auto->formula_);
+  } else if(left_auto->formula_ != nullptr) {
+    intersect_formula = formula_->clone();
+  } else {
+    intersect_formula = nullptr;
+  }
   intersect_formula->ResetCoefficients();
   intersect_formula->SetType(ArithmeticFormula::Type::INTERSECT);
   auto intersect_auto = new BinaryIntAutomaton(intersect_dfa, intersect_formula, is_natural_number_);
-
+  
   DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << other_auto->id_ << ")";
   return intersect_auto;
 }
@@ -406,6 +440,73 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::GetBinaryAutomatonFor(std::string var
   DVLOG(VLOG_LEVEL) << single_var_auto->id_ << " = [" << this->id_ << "]->GetBinaryAutomatonOf(" << var_name << ")";
   return single_var_auto;
 }
+
+BinaryIntAutomaton_ptr BinaryIntAutomaton::ChangeIndicesMap(ArithmeticFormula_ptr new_formula) {
+  BinaryIntAutomaton_ptr unmapped_auto = nullptr;
+
+  auto old_coeff_map = this->formula_->GetVariableCoefficientMap();
+  auto new_coeff_map = new_formula->GetVariableCoefficientMap();
+  int old_num_tracks = this->formula_->GetNumberOfVariables();
+  int new_num_tracks = new_formula->GetNumberOfVariables();
+
+  // if previously only one track, we need to add lambda (9th bdd variable)
+  // just make new auto and return that
+  if(old_num_tracks == 1) {
+    if(new_num_tracks == 1) {
+      auto ret_auto = this->clone();
+      ret_auto->SetFormula(new_formula);
+      return ret_auto;
+    }
+    // should ALWAYS have formula, but add check just to make sure
+    if(this->formula_ == nullptr || this->formula_->GetNumberOfVariables() == 0) {
+      LOG(FATAL) << "Can't remap indices! Automaton has no formula or formula has no variables!";
+    }
+//    std::string var_name = this->formula_->GetVariableAtIndex(0);
+    unmapped_auto = new BinaryIntAutomaton(this->dfa_,1,this->is_natural_number_);
+    unmapped_auto->SetFormula(this->formula_->clone());
+//    unmapped_auto->SetFormula(new_formula);
+//    return unmapped_auto;
+  } else {
+    unmapped_auto = this->clone();
+  }
+
+  // though we're remapping indices, we're not adding any new variables right now
+  // (this will be done during intersection
+  int* map = CreateBddVariableIndices(old_num_tracks);
+
+//  LOG(INFO) << "Old map:";
+//  for(auto iter : old_coeff_map) {
+//    LOG(INFO) << "  " << iter.first;
+//  }
+//
+//  LOG(INFO) << "New map:";
+//  for(auto iter : new_coeff_map) {
+//    LOG(INFO) << "  " << iter.first;
+//  }
+
+  for(auto iter : old_coeff_map) {
+
+    int old_index = unmapped_auto->formula_->GetVariableIndex(iter.first);
+    int new_index = new_formula->GetVariableIndex(iter.first);
+
+//    for(int i = 0; i < VAR_PER_TRACK; i++) {
+      map[old_index] = new_index;
+//    }
+  }
+
+//   for(int i = 0; i < old_num_tracks; i++) {
+//     LOG(INFO) << "map[" << i << "] = " << map[i];
+//   }
+
+  auto remapped_dfa = dfaCopy(unmapped_auto->dfa_);
+  dfaReplaceIndices(remapped_dfa,map);
+  delete[] map;
+  auto remapped_auto = new BinaryIntAutomaton(remapped_dfa,unmapped_auto->num_of_bdd_variables_,is_natural_number_);
+  remapped_auto->SetFormula(new_formula);
+  delete unmapped_auto;
+  return remapped_auto;
+}
+
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::GetPositiveValuesFor(std::string var_name) {
   std::vector<int> indexes;
