@@ -37,7 +37,7 @@ int Formula::GetVariableIndex(const std::size_t param_index) const {
     }
   }
 
-  LOG(FATAL)<< "Formula does not have param: " << param_index << ", " << str();
+  // LOG(FATAL)<< "Formula does not have param: " << param_index << ", " << str();
   return -1;
 }
 

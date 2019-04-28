@@ -878,11 +878,9 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
 
 	int num_tracks = formula->GetNumberOfVariables();
 	int left_track = formula->GetVariableIndex(1); // variable on the left of equality
-  int right_track = -1;
-  if(num_tracks > 1) {
-    right_track = formula->GetVariableIndex(2); // variable on the right of equality
-  } else {
-    right_track = left_track;
+  int right_track = formula->GetVariableIndex(2);;
+  if(right_track == -1) {
+    right_track = left_track; // variable on the right of equality
   }
 
 
@@ -982,11 +980,9 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
 
   int num_tracks = formula->GetNumberOfVariables();
   int left_track = formula->GetVariableIndex(1); // variable on the left of equality
-  int right_track = -1;
-  if(num_tracks > 1) {
-    right_track = formula->GetVariableIndex(2); // variable on the right of equality
-  } else {
-    right_track = left_track;
+  int right_track = formula->GetVariableIndex(2);;
+  if(right_track == -1) {
+    right_track = left_track; // variable on the right of equality
   }
 
 
