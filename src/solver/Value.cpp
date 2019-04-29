@@ -241,8 +241,16 @@ Value_ptr Value::intersect(Value_ptr other_value) const {
   } else if (Type::BOOL_CONSTANT == type and Type::BOOL_CONSTANT == other_value->type) {
   	intersection_value = new Value((bool)(bool_constant & other_value->bool_constant));
   } else {
-  	this->getIntAutomaton()->inspectAuto(false,true);
-    LOG(FATAL) << "cannot intersect types (implement me): " << *this << " & " << *other_value;
+    if(other_value == nullptr) {
+      LOG(FATAL) << "Cannot intersect types (implement me): " << *this << "&" << "nullptr";
+    } else {
+      LOG(FATAL) << "cannot intersect types (implement me): " << *this << " & " << *other_value;
+    }
+
+    
+    
+  	// this->getIntAutomaton()->inspectAuto(false,true);
+    // LOG(FATAL) << "cannot intersect types (implement me): " << *this << " & " << *other_value;
   }
   return intersection_value;
 }
