@@ -38,6 +38,7 @@
 #include "SemilinearSet.h"
 #include "UnaryAutomaton.h"
 #include "../utils/Serialize.h"
+#include "../solver/Value.h"
 
 namespace Vlab {
 namespace Theory {
@@ -95,7 +96,7 @@ public:
   BinaryIntAutomaton_ptr Difference(BinaryIntAutomaton_ptr);
   BinaryIntAutomaton_ptr Exists(std::string var_name);
   BinaryIntAutomaton_ptr GetBinaryAutomatonFor(std::string var_name);
-  BinaryIntAutomaton_ptr ChangeIndicesMap(ArithmeticFormula_ptr new_formula);
+  BinaryIntAutomaton_ptr ChangeIndicesMap(ArithmeticFormula_ptr new_formula, bool clone = true);
 
   BinaryIntAutomaton_ptr GetPositiveValuesFor(std::string var_name);
   BinaryIntAutomaton_ptr GetNegativeValuesFor(std::string var_name);

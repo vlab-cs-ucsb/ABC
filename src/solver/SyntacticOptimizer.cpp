@@ -923,6 +923,14 @@ void SyntacticOptimizer::visitGt(Gt_ptr gt_term) {
       delete gt_term;
     };
   }
+  else {
+    callback_ = [gt_term](Term_ptr & term) mutable {
+      term = new Lt(gt_term->right_term,gt_term->left_term);
+      gt_term->left_term = nullptr;
+      gt_term->right_term = nullptr;
+      delete gt_term;
+    };
+  }
   DVLOG(VLOG_LEVEL) << "post visit end: " << *gt_term << "@" << gt_term;
 }
 
@@ -972,6 +980,13 @@ void SyntacticOptimizer::visitGe(Ge_ptr ge_term) {
     DVLOG(VLOG_LEVEL) << "Applying 'contains' transformation: '" << *ge_term << "'";
     callback_ = [ge_term](Term_ptr & term) mutable {
       term = new Contains(ge_term->left_term, ge_term->right_term);
+      ge_term->left_term = nullptr;
+      ge_term->right_term = nullptr;
+      delete ge_term;
+    };
+  } else {
+    callback_ = [ge_term](Term_ptr & term) mutable {
+      term = new Le(ge_term->right_term,ge_term->left_term);
       ge_term->left_term = nullptr;
       ge_term->right_term = nullptr;
       delete ge_term;

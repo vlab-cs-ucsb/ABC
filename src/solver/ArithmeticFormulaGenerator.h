@@ -11,6 +11,7 @@
 #ifndef SOLVER_ARITHMETICFORMULAGENERATOR_H_
 #define SOLVER_ARITHMETICFORMULAGENERATOR_H_
 
+#include <chrono>
 #include <map>
 #include <iostream>
 #include <string>
@@ -23,6 +24,7 @@
 #include "../smt/typedefs.h"
 #include "../smt/Visitor.h"
 #include "../theory/ArithmeticFormula.h"
+#include "Value.h"
 #include "ConstraintInformation.h"
 #include "options/Solver.h"
 #include "SymbolTable.h"
@@ -32,6 +34,9 @@ namespace Solver {
 
 class ArithmeticFormulaGenerator: public SMT::Visitor {
 public:
+
+  std::chrono::duration<double> diff;
+
   ArithmeticFormulaGenerator(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr);
   virtual ~ArithmeticFormulaGenerator();
 

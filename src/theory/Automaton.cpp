@@ -15,6 +15,8 @@ const int Automaton::VLOG_LEVEL = 9;
 
 int Automaton::num_misses = 0;
 int Automaton::num_hits = 0;
+std::chrono::duration<double> Automaton::diff = std::chrono::steady_clock::now() - std::chrono::steady_clock::now();
+
 //std::map<std::pair<std::string,std::string>,DFA> Automaton::stupid_cache;
 std::map<std::string,DFA_ptr> Automaton::stupid_cache;
 
@@ -880,6 +882,7 @@ void Automaton::CleanUp() {
   LOG(INFO) << "num_hits    = " << num_hits;
   LOG(INFO) << "num_misses  = " << num_misses;
   LOG(INFO) << "hit ratio   = " << (double)num_hits / (double)(num_misses+num_hits);
+  LOG(INFO) << "ChangeMapIndices time = " << std::chrono::duration <long double, std::milli> (diff).count() << " ms";
 
 	for(auto &it : bdd_variable_indices) {
 		delete[] it.second;
@@ -2715,6 +2718,14 @@ void Automaton::add_print_label(std::ostream& out) {
 }
 
 void Automaton::toBDD(std::ostream& out) {
+
+//  BddDump(out,this->dfa_->bddm);
+//  for(int i = 0; i < this->dfa_->ns; i++) {
+//    out << this->dfa_->f[i] << ",";
+//  }
+//  out << "\n";
+//  return;
+
   Table *table = tableInit();
 
   /* remove all marks in a->bddm */
@@ -2787,6 +2798,39 @@ void Automaton::toBDD(std::ostream& out) {
   out << "}" << std::endl;
   tableFree(table);
 }
+
+void Automaton::BddDump(std::ostream& out, bdd_manager *bddm) {
+  int i;
+  for (i = 0; i < bdd_roots_length(bddm); i++)
+    BddDumpNode(out, bddm, BDD_ROOT(bddm, i));
+  for (i = 0; i < bdd_roots_length(bddm); i++)
+    BddReverseMarks(out, bddm, BDD_ROOT(bddm, i));
+}
+
+void Automaton::BddDumpNode(std::ostream& out, bdd_manager *bddm, bdd_ptr p) {
+  if ((signed) bdd_mark(bddm, p) >= 0) {
+    bdd_set_mark(bddm, p, ~bdd_mark(bddm, p));
+    if (!bdd_is_leaf(bddm, p)) {
+      //printf("%-3u: idx=%-3u lo=%-3u hi=%-3u\n",
+	     out << p << ": idx=" << bdd_ifindex(bddm, p) << " lo=" << bdd_else(bddm, p) << " hi=" << bdd_then(bddm, p) << "\n";
+      BddDumpNode(out, bddm, bdd_else(bddm, p));
+      BddDumpNode(out, bddm, bdd_then(bddm, p));
+    }
+    else
+      out << p << ": state=" << bdd_leaf_value(bddm,p) << "\n";
+  }
+}
+
+void Automaton::BddReverseMarks(std::ostream& out, bdd_manager *bddm, bdd_ptr p) {
+  if ((signed) bdd_mark(bddm, p) < 0) {
+    bdd_set_mark(bddm, p, ~bdd_mark(bddm, p));
+    if (!bdd_is_leaf(bddm, p)) {
+      BddReverseMarks(out, bddm, bdd_else(bddm, p));
+      BddReverseMarks(out, bddm, bdd_then(bddm, p));
+    }
+  }
+}
+
 
 void Automaton::exportDfa(std::string file_name) {
   char* file_name_ptr = &*file_name.begin();

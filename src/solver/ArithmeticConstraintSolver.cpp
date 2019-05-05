@@ -56,7 +56,11 @@ void ArithmeticConstraintSolver::end() {
 }
 
 void ArithmeticConstraintSolver::collect_arithmetic_constraint_info(Visitable_ptr node) {
+//  auto start = std::chrono::steady_clock::now();
+//  auto end = std::chrono::steady_clock::now();
+//  arithmetic_formula_generator_.diff = end-start;
   arithmetic_formula_generator_.start(node);
+//  diff2 += arithmetic_formula_generator_.diff;
   string_terms_map_ = arithmetic_formula_generator_.get_string_terms_map();
 }
 
@@ -82,7 +86,19 @@ void ArithmeticConstraintSolver::setCallbacks() {
         auto formula = arithmetic_formula_generator_.get_term_formula(term);
         if (formula != nullptr) {
           DVLOG(VLOG_LEVEL) << "Linear Arithmetic Equation: " << *formula << "@" << term;
+
+//          for(auto it : formula->GetVariableCoefficientMap()) {
+//            LOG(INFO) << it.first;
+//          }
+//          std::cin.get();
+          while(symbol_table_->values_lock_) std::this_thread::yield();
+          auto start = std::chrono::steady_clock::now();
+
           auto binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), use_unsigned_integers_);
+
+          auto end = std::chrono::steady_clock::now();
+          diff += end-start;
+
           auto result = new Value(binary_int_auto);
           set_term_value(term, result);
 
@@ -90,13 +106,15 @@ void ArithmeticConstraintSolver::setCallbacks() {
           if(term_group_name.empty()) {
             LOG(FATAL) << "Term has no group!";
           }
-//          LOG(INFO) << "symbol table intersect";
+
+
+        //  LOG(INFO) << "symbol table intersect";
 
 //          auto left_auto = symbol_table_->get_value(term_group_name)->getBinaryIntAutomaton();
 //          auto right_auto = binary_int_auto;
-//
+
 //          auto bdd_start = std::chrono::steady_clock::now();
-//
+
 //          std::string id1, id2;
 //          std::stringstream os1;
 //  //        {
@@ -105,7 +123,7 @@ void ArithmeticConstraintSolver::setCallbacks() {
 //  //        }
 //          left_auto->toBDD(os1);
 //          id1 = os1.str();
-//
+
 //          std::stringstream os2;
 //  //        {
 //  //          cereal::BinaryOutputArchive ar(os1);
@@ -113,49 +131,49 @@ void ArithmeticConstraintSolver::setCallbacks() {
 //  //        }
 //          right_auto->toBDD(os2);
 //          id2 = os2.str();
-//
+
 //  //        LOG(INFO) << id1.size();
-//
+
 //          auto bdd_end = std::chrono::steady_clock::now();
 //          diff2 += bdd_end-bdd_start;
-//
+
 //          std::string stupid_key1 = id1 + id2;
 //          std::string stupid_key2 = id2 + id1;
 //          Theory::DFA_ptr intersect_dfa = nullptr;
 //          Theory::BinaryIntAutomaton_ptr intersect_auto = nullptr;
-//
+
 //          if(stupid_cache.find(stupid_key1) != stupid_cache.end()) {
 //            auto cache_start = std::chrono::steady_clock::now();
-//
+
 //            intersect_dfa = dfaCopy(stupid_cache[stupid_key1]);
-//
-//
+
+
 //            auto new_formula = symbol_table_->get_value(term_group_name)->getBinaryIntAutomaton()->GetFormula()->Intersect(result->getBinaryIntAutomaton()->GetFormula());
 //            intersect_auto = new Theory::BinaryIntAutomaton(intersect_dfa,new_formula,false);
 //            symbol_table_->set_value(term_group_name,new Value(intersect_auto));
 //            dfa_hits++;
-//
-//
+
+
 //            auto cache_end = std::chrono::steady_clock::now();
 //            diff += cache_end - cache_start;
-//
+
 //          } else if (stupid_cache.find(stupid_key2) != stupid_cache.end()) {
 //            auto cache_start = std::chrono::steady_clock::now();
-//
+
 //            intersect_dfa = dfaCopy(stupid_cache[stupid_key2]);
-//
-//
+
+
 //            auto new_formula = symbol_table_->get_value(term_group_name)->getBinaryIntAutomaton()->GetFormula()->Intersect(result->getBinaryIntAutomaton()->GetFormula());
 //            intersect_auto = new Theory::BinaryIntAutomaton(intersect_dfa,new_formula,false);
 //            symbol_table_->set_value(term_group_name,new Value(intersect_auto));
 //            dfa_hits++;
-//
-//
+
+
 //            auto cache_end = std::chrono::steady_clock::now();
 //            diff += cache_end - cache_start;
-//
+
 //          } else {
-//
+
 //            symbol_table_->IntersectValue(term_group_name,result);
 //            auto cache_start = std::chrono::steady_clock::now();
 //            intersect_dfa = symbol_table_->get_value(term_group_name)->getBinaryIntAutomaton()->getDFA();
@@ -164,7 +182,8 @@ void ArithmeticConstraintSolver::setCallbacks() {
 //            diff += cache_end - cache_start;
 //            dfa_misses++;
 //          }
-          // symbol_table_->IntersectValue(term_group_name,result);
+
+          symbol_table_->IntersectValue(term_group_name,result);
           // once we solve an atomic linear inte  ger arithmetic constraint,
           // we delete its formula to avoid solving it again.
           // Atomic arithmetic constraints solved precisely,
@@ -468,9 +487,9 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 //    delete and_value;
   //LOG(INFO) << "***** SETTING VALUE OF " << group_name << " to " << is_satisfiable;
 
-  auto satisfiable_value = new Value(is_satisfiable);
-  symbol_table_->IntersectValue(group_name,satisfiable_value);
-  delete satisfiable_value;
+//  auto satisfiable_value = new Value(is_satisfiable);
+//  symbol_table_->IntersectValue(group_name,satisfiable_value);
+//  delete satisfiable_value;
   //}
   DVLOG(VLOG_LEVEL) << "post visit component end: " << *and_term << "@" << and_term;
 }
@@ -648,7 +667,7 @@ void ArithmeticConstraintSolver::postVisitAnd(And_ptr and_term) {
 //		has_arithmetic_formula = true;
 //		is_satisfiable = true;
 //	}
-
+return;
   //if (has_arithmetic_formula) {
   	for(auto group : arithmetic_formula_generator_.get_group_subgroups(group_name)) {
 			Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
@@ -815,11 +834,11 @@ bool ArithmeticConstraintSolver::set_term_value(Term_ptr term, Value_ptr value) 
   if (result.second == false) {
     LOG(FATAL)<< "Term automaton is already computed: " << *term << "@" << term;
   }
-  //std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
-  //if(!group_name.empty()) {
-  //  symbol_table_->set_value(group_name,value);
-  //  return true;
-  //}
+//   std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
+//   if(!group_name.empty()) {
+//    symbol_table_->set_value(group_name,value);
+//    return true;
+//   }
   return result.second;
 }
 

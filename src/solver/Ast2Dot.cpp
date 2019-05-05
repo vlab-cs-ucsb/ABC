@@ -46,12 +46,13 @@ void Ast2Dot::end() {
 }
 
 void Ast2Dot::add_edge(u_int64_t p, u_int64_t c) {
-  *m_out << "\"" << p << "\" -> \"" << c << "\";" << std::endl;
+//  *m_out << "\"" << p << "\" -> \"" << c << "\";" << std::endl;
 
 }
 
 void Ast2Dot::add_node(u_int64_t c, std::string label) {
-  *m_out << "\"" << c << "\" [label=\"" << label << "\"];" << std::endl;
+//  *m_out << "\"" << c << "\" [label=\"" << label << "\"];" << std::endl;
+  *m_out << label << " ";
 }
 
 void Ast2Dot::draw(std::string label, Visitable_ptr p) {
@@ -68,7 +69,8 @@ void Ast2Dot::draw(std::string label, Visitable_ptr p) {
 
 void Ast2Dot::draw_terminal(std::string label) {
   count++;
-  *m_out << "\"" << count << "\" [label=\"" << label << "\"];" << std::endl;
+//  *m_out << "\"" << count << "\" [label=\"" << label << "\"];" << std::endl;
+  *m_out << label << " ";
   add_edge(s.top(), count);
 }
 

@@ -18,6 +18,8 @@
 #include <utility>
 #include <vector>
 #include <glog/logging.h>
+#include <atomic>
+#include <thread>
 
 #include "../smt/ast.h"
 #include "../smt/typedefs.h"
@@ -47,6 +49,8 @@ using SymbolTable_ptr = SymbolTable*;
 
 class SymbolTable {
 public:
+  std::atomic<bool> values_lock_;
+
   SymbolTable(bool is_root = true);
   SymbolTable(const SymbolTable&);
   virtual ~SymbolTable();
@@ -105,8 +109,8 @@ public:
   void clear_variable_values();
 
 
-  bool set_value(std::string var_name, Value_ptr value);
-  bool set_value(SMT::Variable_ptr variable, Value_ptr value);
+  bool set_value(std::string var_name, Value_ptr value, bool clone = true);
+  bool set_value(SMT::Variable_ptr variable, Value_ptr value, bool clone = true);
   bool IntersectValue(std::string var_name, Value_ptr value);
   bool IntersectValue(SMT::Variable_ptr variable, Value_ptr value);
   bool UnionValue(std::string var_name, Value_ptr value);
@@ -153,6 +157,9 @@ public:
 
   std::map<char,char> GetCharacterMapping();
   void SetCharacterMapping(std::map<char,char>);
+
+  void LockValues() {values_lock_ = true;}
+  void UnlockValues() {values_lock_ = false;}
 
 private:
   std::string generate_internal_name(std::string, SMT::Variable::Type);
@@ -226,6 +233,8 @@ private:
   bool is_root_table_;
 
   std::map<std::string,int> variable_usage_;
+
+
 
   static const int VLOG_LEVEL;
   //int reuse; 

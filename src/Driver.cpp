@@ -22,6 +22,7 @@ Driver::Driver()
   cached_values_.clear();
   cached_bounded_values_.clear();
   rdx_ = new redox::Redox(std::cout,redox::log::Level::Off);
+  rdx_->noWait(true);
 
   if(!rdx_->connect("localhost", 6379)) {
     LOG(FATAL) << "Could not connect to redis server";
@@ -114,6 +115,7 @@ void Driver::ast2dot(std::string file_name) {
 
 void Driver::InitializeSolver() {
 
+  if(symbol_table_ != nullptr) delete symbol_table_;
 
 //	if(current_id_.empty()) {
 		symbol_table_ = new Solver::SymbolTable();
@@ -196,9 +198,9 @@ void Driver::Solve() {
   diff3 += constraint_solver->get_diff3();
   diff4 += constraint_solver->get_diff4();
 //  LOG(INFO) << "Done start";
-LOG(INFO) << "num_hits    = " << Solver::StringConstraintSolver::dfa_hits;
-LOG(INFO) << "num_misses  = " << Solver::StringConstraintSolver::dfa_misses;
-//LOG(INFO) << "hit ratio   = " << (double)Theory::Automaton::num_hits / (double)(Theory::Automaton::num_misses+Theory::Automaton::num_hits);
+// LOG(INFO) << "num_hits    = " << Solver::ArithmeticConstraintSolver::dfa_hits;
+// LOG(INFO) << "num_misses  = " << Solver::ArithmeticConstraintSolver::dfa_misses;
+// LOG(INFO) << "hit ratio   = " << (double)Theory::Automaton::num_hits / (double)(Theory::Automaton::num_misses+Theory::Automaton::num_hits);
   total_hits_ += constraint_solver->num_hits();
   total_misses_ += constraint_solver->num_misses();
   if(constraint_solver->num_hits() > 0) hit_statistics_.push_back(constraint_solver->hit_statistic());

@@ -167,6 +167,10 @@ void Value::setData(Theory::IntAutomaton_ptr data) {
   int_automaton = data;
 }
 
+void Value::setData(Theory::BinaryIntAutomaton_ptr data) {
+  binaryint_automaton = data;
+}
+
 void Value::setData(Theory::StringAutomaton_ptr data) {
   string_automaton = data;
 }

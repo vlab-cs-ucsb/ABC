@@ -18,6 +18,7 @@ SymbolTable::SymbolTable(bool is_root)
   : global_assertion_result_(true) {
   is_root_table_ = is_root;
   count_symbol_ = nullptr;
+  values_lock_ = false;
 }
 
 SymbolTable::SymbolTable(const SymbolTable &symbol_table) {
@@ -383,10 +384,6 @@ Value_ptr SymbolTable::get_value(Variable_ptr variable) {
   	int_formula->AddVariable(variable->getName(),1);
   	result = new Value(int_auto);
 
-  	for (auto iter : result->getIntAutomaton()->GetFormula()->GetVariableCoefficientMap()) {
-			LOG(INFO) << iter.first << "," << iter.second;
-		}
-
     DVLOG(VLOG_LEVEL) << "initialized variable as any integer: " << *variable;
   }
     break;
@@ -467,6 +464,9 @@ Value_ptr SymbolTable::get_projected_value_at_scope(Visitable_ptr scope, Variabl
 
 
 VariableValueMap& SymbolTable::get_values_at_scope(Visitable_ptr scope) {
+  while(values_lock_) {
+    std::this_thread::yield();
+  }
   return variable_value_table_[scope];
 }
 
@@ -488,11 +488,11 @@ void SymbolTable::clear_variable_values() {
 	variable_group_map_.clear();
 }
 
-bool SymbolTable::set_value(std::string var_name, Value_ptr value) {
-  return set_value(get_variable(var_name), value);
+bool SymbolTable::set_value(std::string var_name, Value_ptr value, bool clone) {
+  return set_value(get_variable(var_name), value, clone);
 }
 
-bool SymbolTable::set_value(Variable_ptr variable, Value_ptr value) {
+bool SymbolTable::set_value(Variable_ptr variable, Value_ptr value, bool clone) {
   // !! TODO Baki test representative and group variable behavior
   auto representative_variable = get_representative_variable_of_at_scope(top_scope(), variable);
   auto group_variable = get_group_variable_of(representative_variable);
@@ -500,9 +500,9 @@ bool SymbolTable::set_value(Variable_ptr variable, Value_ptr value) {
   auto it = current_scope_values.find(group_variable);
   if (it not_eq current_scope_values.end()) {
   	delete it->second;
-    it->second = value->clone();
+    it->second = clone? value->clone() : value;
   } else {
-    current_scope_values[group_variable] = value->clone();
+    current_scope_values[group_variable] = clone? value->clone() : value;
   }
   return value->is_satisfiable();
 }
@@ -529,8 +529,8 @@ bool SymbolTable::IntersectValue(Variable_ptr variable, Value_ptr value) {
     variable_new_value = value->clone();
   }
 
-  bool res = set_value(variable, variable_new_value);
-  delete variable_new_value;
+  bool res = set_value(variable, variable_new_value, false);
+//  delete variable_new_value;
   return res;
 }
 

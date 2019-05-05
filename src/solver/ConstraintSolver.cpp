@@ -39,6 +39,10 @@ ConstraintSolver::ConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_tab
 }
 
 ConstraintSolver::~ConstraintSolver() {
+  for(auto it = serializers_.begin(); it != serializers_.end(); it++) {
+    std::thread &t = *it;
+    t.join();
+  }
 }
 
 void ConstraintSolver::start() {
@@ -96,35 +100,6 @@ void ConstraintSolver::visitCommand(Command_ptr command) {
   LOG(ERROR)<< "'" << *command<< "' is not expected.";
 }
 
-/*
-void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
-  DVLOG(VLOG_LEVEL) << "visit: " << *assert_command;
-
-
-  check_and_visit(assert_command->term);
-
-  Value_ptr result = getTermValue(assert_command->term);
-  bool is_satisfiable = result->is_satisfiable();
-  symbol_table_->update_satisfiability_result(is_satisfiable);
-  if ((Term::Type::OR not_eq assert_command->term->type()) and (Term::Type::AND not_eq assert_command->term->type())) {
-
-    if (is_satisfiable) {
-      update_variables();
-    }
-  }
-  clearTermValuesAndLocalLetVars();
-
-//  auto key = Ast2Dot::toString(assert_command);
-//  auto &c = rdx_->commandSync<std::string>({"SET", key, "UNSAT"});
-//  if (c.ok()) {
-//    c.free();
-//  } else {
-//    LOG(FATAL) << "Failed to cache result";
-//  }
-}
-*/
-
-
 void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
   DVLOG(VLOG_LEVEL) << "visit: " << *assert_command;
@@ -133,44 +108,31 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
   bool has_cached_result = false;
 
   if(Option::Solver::INCREMENTAL == true) {
-
-
-
     key = Ast2Dot::toString(assert_command);
-//  std::cout << key << std::endl;
-//  LOG(INFO) << key;
-//  std::cin.get();
+    root_key_ = key;
+//    LOG(INFO) << key;
+//    std::cin.get();
+//    auto cache_start = std::chrono::steady_clock::now();
     auto &c = rdx_->commandSync<std::string>({"GET", key});
     if (c.ok()) {
-      //LOG(INFO) << "HIT";
       // has cached value
       cached_data = c.reply();
       has_cached_result = true;
       num_hits_++;
       hit_statistic_ = std::make_tuple<int, int>(1, 1);
-      // LOG(INFO) << "Got cached data!";
-
     } else {
-      // no cached value
       num_misses_++;
-      // LOG(INFO) << "Cache miss...";
     }
     c.free();
-
-    // LOG(INFO) << "First phase done";
-    // std::cin.get();
+//    auto cache_end = std::chrono::steady_clock::now();
+//    auto cache_time = cache_end-cache_start;
+//    diff += cache_time;
 
     // if we have cached result, import it and go from there
     if (has_cached_result) {
-
-//      LOG(INFO) << "GOT CACHED RESULT!";
-
-
       arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
       string_constraint_solver_.collect_string_constraint_info();
-      auto cache_start = std::chrono::steady_clock::now();
 
-//     LOG(INFO) << "Reading cached data...";
       std::stringstream is(cached_data);
 
       // if formula was UNSAT, we store a single 0 in cache
@@ -191,54 +153,6 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
       }
 
       symbol_table_->SetCharacterMapping(char_map);
-      int num_model_counters = 0;
-//      {
-//        cereal::BinaryInputArchive ar(is);
-//        ar(num_model_counters);
-//      }
-
-//      if (num_model_counters and symbol_table_->has_count_variable()) {
-//        std::string var_name = symbol_table_->get_count_variable()->getName();
-//        auto variable = symbol_table_->get_variable(var_name);
-//        auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(
-//          symbol_table_->top_scope(), variable);
-//        Solver::Value_ptr var_value = nullptr;
-//
-//
-//        {
-//          cereal::BinaryInputArchive ar(is);
-//
-//          SymbolicCounter sc1, sc2;
-//
-//          sc1.load(ar);
-//          sc2.load(ar);
-//          var_value = symbol_table_->get_projected_value_at_scope(symbol_table_->top_scope(), representative_variable);
-//          if (var_value == nullptr) {
-//            auto any_string = StringAutomaton::MakeAnyString();
-//            any_string->SetSymbolicCounter(sc1);
-//            var_value = new Value(any_string);
-//            symbol_table_->set_value(representative_variable, var_value);
-//            delete var_value;
-//            var_value = nullptr;
-//          } else {
-//            var_value->getStringAutomaton()->SetSymbolicCounter(sc1);
-//          }
-//
-//          var_value = symbol_table_->get_value_at_scope(symbol_table_->top_scope(), representative_variable);
-//          if (var_value == nullptr) {
-//            auto any_string = StringAutomaton::MakeAnyString();
-//            any_string->SetSymbolicCounter(sc2);
-//            var_value = new Value(any_string);
-//            symbol_table_->set_value(representative_variable, var_value);
-//            delete var_value;
-//            var_value = nullptr;
-//          } else {
-//            var_value->getStringAutomaton()->SetSymbolicCounter(sc2);
-//          }
-//        }
-//        // don't return early for attack synthesis
-//        //return;
-//      }
 
       // deserialize automata one by one until none left
       while (num_string_to_read-- > 0) {
@@ -251,7 +165,7 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
         std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
 
         auto import_value = new Value(import_auto);
-        symbol_table_->IntersectValue(rep_var,import_value);
+        symbol_table_->set_value(rep_var,import_value);
         delete import_value;
       }
       while (num_int_to_read-- > 0) {
@@ -264,32 +178,11 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
         std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
 
         auto import_value = new Value(import_auto);
-        symbol_table_->IntersectValue(rep_var,import_value);
+        symbol_table_->set_value(rep_var,import_value);
         delete import_value;
       }
-
-
-
-
-//    int num_model_counters = 0;
-//    {
-//      cereal::BinaryInputArchive ar(is);
-//      ar(num_model_counters);
-//      // if num_model_counters = 1, then only have projected
-//      // if 2, then have both projected & tuple model counters
-//      if(num_model_counters == 1) {
-//
-//      } else {
-//
-//      }
-//    }
-
-
-      auto cache_end = std::chrono::steady_clock::now();
-      auto cache_time = cache_end-cache_start;
-      diff = cache_time;
       return;
-    } //else {LOG(INFO) << "Nope";}
+    }
 
   } else {
     arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
@@ -311,153 +204,97 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
   }
   clearTermValuesAndLocalLetVars();
 
-  if(Option::Solver::INCREMENTAL == true) {
-
-    auto cache_start = std::chrono::steady_clock::now();
-
-    std::string temp = key;
-    key = Ast2Dot::toString(assert_command);
-//  LOG(INFO) << "KEY SIZE = " << key.length();
-    // if (temp != key) {
-    //   LOG(FATAL) << "NO MATCH!?";
-    // }
-    // LOG(INFO) << key;
-    // std::cin.get();
-    auto value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
-    std::stringstream os;
-
-    // if not satisfiable, just store a single 0 in cache
-    if (not symbol_table_->isSatisfiable()) {
-      os << "0";
-    } else {
-      // first serialize
-
-      int num_string_to_write = 0;
-      int num_int_to_write = 0;
-      for (auto iter : value_map) {
-        if (iter.second->getType() == Value::Type::STRING_AUTOMATON and
-            iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
-          if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
-            continue;
-          }
-          num_string_to_write++;
-        } else if (iter.second->getType() ==
-                   Value::Type::BINARYINT_AUTOMATON) {// and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
-          if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
-            continue;
-          }
-          num_int_to_write++;
-        }
-      }
-
-      {
-        cereal::BinaryOutputArchive ar(os);
-        ar(symbol_table_->GetCharacterMapping());
-        ar(num_string_to_write);
-        ar(num_int_to_write);
-      }
-
-//      LOG(INFO) << "num_string_to_write = " << num_string_to_write;
-//      LOG(INFO) << "num_int_to_write    = " << num_int_to_write;
-
-      // store model counters
-//      if (symbol_table_->has_count_variable()) {
-//        std::string var_name = symbol_table_->get_count_variable()->getName();
-//        auto variable = symbol_table_->get_variable(var_name);
-//        auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(
-//          symbol_table_->top_scope(), variable);
-//        Solver::Value_ptr var_value = nullptr;
+//  if(Option::Solver::INCREMENTAL == true) {
 //
 //
-//        {
-//          cereal::BinaryOutputArchive ar(os);
-//          ar(2);
 //
-//          var_value = symbol_table_->get_projected_value_at_scope(symbol_table_->top_scope(), representative_variable);
-//          if (var_value == nullptr) {
-//            auto any_string = StringAutomaton::MakeAnyString();
-//            var_value = new Value(any_string);
-//            var_value->getStringAutomaton()->SetSymbolicCounter();
-//            var_value->getStringAutomaton()->GetSymbolicCounter().save(ar);
-//            delete var_value;
-//          } else {
-//            var_value->getStringAutomaton()->SetSymbolicCounter();
-//            var_value->getStringAutomaton()->GetSymbolicCounter().save(ar);
+//    std::string temp = key;
+//    key = Ast2Dot::toString(assert_command);
+//    auto &value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
+//    std::stringstream os;
+//
+//    // if not satisfiable, just store a single 0 in cache
+//    if (not symbol_table_->isSatisfiable()) {
+//      os << "0";
+//    } else {
+//      // first serialize
+////      auto cache_start = std::chrono::steady_clock::now();
+//      int num_string_to_write = 0;
+//      int num_int_to_write = 0;
+//      for (auto iter : value_map) {
+//        if (iter.second->getType() == Value::Type::STRING_AUTOMATON and
+//            iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+//          if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
+//            continue;
 //          }
-//
-//          var_value = symbol_table_->get_value_at_scope(symbol_table_->top_scope(), representative_variable);
-//          if (var_value == nullptr) {
-//            auto any_string = StringAutomaton::MakeAnyString();
-//            var_value = new Value(any_string);
-//            var_value->getStringAutomaton()->SetSymbolicCounter();
-//            var_value->getStringAutomaton()->GetSymbolicCounter().save(ar);
-//            delete var_value;
-//          } else {
-//            var_value->getStringAutomaton()->SetSymbolicCounter();
-//            var_value->getStringAutomaton()->GetSymbolicCounter().save(ar);
+//          num_string_to_write++;
+//        } else if (iter.second->getType() ==
+//                   Value::Type::BINARYINT_AUTOMATON) {// and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+//          if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
+//            continue;
 //          }
-//        }
-//      } else {
-//        {
-//          cereal::BinaryOutputArchive ar(os);
-//          ar(0);
+//          num_int_to_write++;
 //        }
 //      }
+//
+//      {
+//        cereal::BinaryOutputArchive ar(os);
+//        ar(symbol_table_->GetCharacterMapping());
+//        ar(num_string_to_write);
+//        ar(num_int_to_write);
+//      }
+//
+//      // write strings
+//      for (auto iter : value_map) {
+//        if (iter.second->getType() == Value::Type::STRING_AUTOMATON and
+//            iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+//          auto export_auto = iter.second->getStringAutomaton();
+//          if (export_auto->GetFormula()->GetNumberOfVariables() == 0) {
+//            continue;
+//          }
+//
+//          {
+//            cereal::BinaryOutputArchive ar(os);
+//            export_auto->save(ar);
+//          }
+//        }
+//      }
+//
+//      // write ints
+//      for (auto iter : value_map) {
+//        if (iter.second->getType() ==
+//            Value::Type::BINARYINT_AUTOMATON) {// and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+//          auto export_auto = iter.second->getBinaryIntAutomaton();
+//          if (export_auto->GetFormula()->GetNumberOfVariables() == 0) {
+//            continue;
+//          }
+//
+//          {
+//            cereal::BinaryOutputArchive ar(os);
+//            export_auto->save(ar);
+//          }
+//        }
+//      }
+////      auto cache_end = std::chrono::steady_clock::now();
+////      auto cache_time = cache_end-cache_start;
+////      diff2 += cache_time;
+//
+//    }
+////    auto cache_start = std::chrono::steady_clock::now();
+//    // then send it to the cache
+//    auto &c2 = rdx_->commandSync<std::string>({"SET", key, os.str()});
+//    if (c2.ok()) {
+//      c2.free();
+//    } else {
+//      LOG(FATAL) << "Failed to cache result: " << c2.status();
+//    }
 
-      // write strings
-      for (auto iter : value_map) {
-        if (iter.second->getType() == Value::Type::STRING_AUTOMATON and
-            iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
-          auto export_auto = iter.second->getStringAutomaton();
-          if (export_auto->GetFormula()->GetNumberOfVariables() == 0) {
-            continue;
-          }
+//    auto cache_end = std::chrono::steady_clock::now();
+//    auto cache_time = cache_end-cache_start;
+//    diff += cache_time;
 
-          {
-            cereal::BinaryOutputArchive ar(os);
-            export_auto->save(ar);
-          }
-        }
-      }
+//  }
 
-      // write ints
-      for (auto iter : value_map) {
-        if (iter.second->getType() ==
-            Value::Type::BINARYINT_AUTOMATON) {// and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
-          auto export_auto = iter.second->getBinaryIntAutomaton();
-          if (export_auto->GetFormula()->GetNumberOfVariables() == 0) {
-            continue;
-          }
-
-          {
-            cereal::BinaryOutputArchive ar(os);
-            export_auto->save(ar);
-          }
-        }
-      }
-
-
-    }
-    // auto end = std::chrono::steady_clock::now();
-    // auto serialize_time = end - start;
-
-    // then send it to the cache
-//  LOG(INFO) << os.str();
-    auto &c2 = rdx_->commandSync<std::string>({"SET", key, os.str()});
-    if (c2.ok()) {
-      c2.free();
-    } else {
-      LOG(FATAL) << "Failed to cache result: " << c2.status();
-    }
-
-    auto cache_end = std::chrono::steady_clock::now();
-    auto cache_time = cache_end-cache_start;
-    diff = cache_time;
-
-  }
-
-
-//  LOG(INFO) << "done done";
 }
 
 
@@ -517,30 +354,16 @@ void ConstraintSolver::visitLet(Let_ptr let_term) {
 
 void ConstraintSolver::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "start visit and";
+
+  std::map<int,std::string> term_keys;
+
   bool is_satisfiable = true;
   bool is_component = constraint_information_->is_component(and_term);
 
-//  // auto start = std::chrono::steady_clock::now();
-//
-//
-//   if (is_component) {
-//     if (constraint_information_->has_arithmetic_constraint(and_term)) {
-//       arithmetic_constraint_solver_.start(and_term);
-//       is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
-//       DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *and_term << "@" << and_term;
-//     }
-//     if ((is_satisfiable or (!constraint_information_->has_arithmetic_constraint(and_term)))
-//     				and constraint_information_->has_string_constraint(and_term)) {
-//       string_constraint_solver_.start(and_term);
-//       is_satisfiable = string_constraint_solver_.get_term_value(and_term)->is_satisfiable();
-//       DVLOG(VLOG_LEVEL) << "String formulae solved: " << *and_term << "@" << and_term;
-//     }
-//
-//     DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *and_term << "@" << and_term;
-//   }
   auto cache_start = std::chrono::steady_clock::now();
   auto cache_end = std::chrono::steady_clock::now();
-  diff = cache_end-cache_start;
+  auto cache_start2 = std::chrono::steady_clock::now();
+  auto cache_end2 = std::chrono::steady_clock::now();
 
   std::stack<Term_ptr> terms_to_solve;
   std::string key, cached_data;
@@ -549,48 +372,112 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   if(Option::Solver::INCREMENTAL == true) {
 
 
-    key = Ast2Dot::toString(and_term);
-//   LOG(INFO) << key;
-//   std::cin.get();
-cache_start = std::chrono::steady_clock::now();
-    while (not has_cached_result and and_term->term_list->size() > 0) {
-      key = Ast2Dot::toString(and_term);
-      auto &c = rdx_->commandSync<std::string>({"GET", key});
-      if (c.ok()) {
-        // has cached value
-        cached_data = c.reply();
-        has_cached_result = true;
-        num_hits_++;
-        hit_statistic_ = std::make_tuple<int, int>(and_term->term_list->size(),
-                                                   and_term->term_list->size() + terms_to_solve.size() + 1);
 
-//         LOG(INFO) << "Got cached data!";
-      } else {
-        // no cached value
-        terms_to_solve.push(and_term->term_list->back());
-        and_term->term_list->pop_back();
-        num_misses_++;
-        // LOG(INFO) << "Cache miss...";
+
+
+    std::atomic<bool> has_result;
+    has_result = false;
+    std::atomic<int> count;
+    count = 0;
+    std::string success_key = "";
+
+    std::map<std::string,int> reverse_term_keys;
+
+    cache_start2 = std::chrono::steady_clock::now();
+
+    auto got_reply = [&](redox::Command<std::string>& c) {
+      if(has_result || cached_data.length() > 0 || success_key.length() > 0) return;
+      count++;
+      if(c.ok()) {
+        cached_data = c.reply();
+        success_key = c.cmd().substr(4);
+//        LOG(INFO) << count;
+//        LOG(INFO) << cached_data;
+//        LOG(INFO) << success_key;
+        has_result = true;
+        has_cached_result = true;
       }
-      c.free();
+    };
+
+    int max = and_term->term_list->size();
+    while (!has_result && and_term->term_list->size() > 0) {
+
+      key = Ast2Dot::toString(and_term);
+      reverse_term_keys[key] = and_term->term_list->size();
+      term_keys[and_term->term_list->size()] = key;
+      rdx_->command<std::string>({"GET", key},got_reply);
+      terms_to_solve.push(and_term->term_list->back());
+      and_term->term_list->pop_back();
     }
-cache_end = std::chrono::steady_clock::now();
-      diff += cache_end - cache_start;
-//LOG(INFO) << "Before collect and_term";
-    arithmetic_constraint_solver_.collect_arithmetic_constraint_info(and_term);
-    string_constraint_solver_.collect_string_constraint_info(and_term);
-//LOG(INFO) << "After collect and_term";
+
+    while(count < max && !has_result) std::this_thread::yield();
+
+    if(has_result) {
+      int num_terms_cached = reverse_term_keys[success_key];
+//      LOG(INFO) << num_terms_cached;
+
+      while(and_term->term_list->size() < num_terms_cached) {
+        and_term->term_list->push_back(terms_to_solve.top());
+        terms_to_solve.pop();
+      }
+      num_hits_++;
+      num_misses_ += max-num_terms_cached;
+      hit_statistic_ = std::make_tuple<int, int>(and_term->term_list->size(),
+                                                 and_term->term_list->size() + terms_to_solve.size() + 1);
+
+    } else {
+      num_misses_ += max;
+    }
+
+    cache_end2 = std::chrono::steady_clock::now();
+    diff2 += cache_end2 - cache_start2;
+//    while (not has_cached_result and and_term->term_list->size() > 0) {
+//
+//      key = Ast2Dot::toString(and_term);
+//      term_keys[and_term->term_list->size()] = key;
+//
+//
+//      auto &c = rdx_->commandSync<std::string>({"GET", key});
+//
+//      if (c.ok()) {
+//        // has cached value
+//        cached_data = c.reply();
+//        has_cached_result = true;
+//        num_hits_++;
+//        hit_statistic_ = std::make_tuple<int, int>(and_term->term_list->size(),
+//                                                   and_term->term_list->size() + terms_to_solve.size() + 1);
+//      } else {
+//        // no cached value
+//        terms_to_solve.push(and_term->term_list->back());
+//        and_term->term_list->pop_back();
+//        num_misses_++;
+//      }
+//      c.free();
+//
+//      cache_end2 = std::chrono::steady_clock::now();
+//    diff2 += cache_end2 - cache_start2;
+//    }
+
+
+
+
+    std::thread constraint_info_collector([this,and_term] {
+      arithmetic_constraint_solver_.collect_arithmetic_constraint_info(and_term);
+      string_constraint_solver_.collect_string_constraint_info(and_term);
+    });
+
+
 
     // if we have cached result, import it and go from there
     if (has_cached_result) {
 
-//      LOG(INFO) << "Got Sub-Cached result! (" << and_term->term_list->size() << ")";
+
+
+      cache_start2 = std::chrono::steady_clock::now();
+
       // first check if key has only 0 in it. if so, formula unsat
       if (cached_data.size() == 1) {
         Value_ptr result = new Value(is_satisfiable);
-//        if (not is_satisfiable) {
-//          LOG(INFO) << "NO SAT";
-//        }
 
         setTermValue(and_term, result);
         return;
@@ -598,7 +485,7 @@ cache_end = std::chrono::steady_clock::now();
 
       int num_string_to_read = 0;
       int num_int_to_read = 0;
-      // LOG(INFO) << "Reading cached data...";
+
       std::stringstream is(cached_data);
       std::map<char, char> char_mapping;
       // first get character mapping
@@ -608,33 +495,27 @@ cache_end = std::chrono::steady_clock::now();
         ar(num_string_to_read);
         ar(num_int_to_read);
       }
-
-//      LOG(INFO) << "num_str_to_read = " << num_string_to_read;
-//      LOG(INFO) << "num_int_to_read = " << num_int_to_read;
-
-
       symbol_table_->SetCharacterMapping(char_mapping);
       // deserialize automata one by one until none left
 
-//      LOG(INFO) << "Reading str...";
+      std::vector<Theory::BinaryIntAutomaton_ptr> autos_to_add;
 
-      while (num_string_to_read > 0) {
-        num_string_to_read--;
-        Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(nullptr, 0);
-        std::string var_name;
-        {
-          cereal::BinaryInputArchive ar(is);
-          import_auto->load(ar);
-        }
-
-        std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
-
-        auto import_value = new Value(import_auto);
-        symbol_table_->IntersectValue(rep_var,import_value);
-        delete import_value;
-
-      }
-
+//      while (num_string_to_read > 0) {
+//        num_string_to_read--;
+//        Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(nullptr, 0);
+//        std::string var_name;
+//        {
+//          cereal::BinaryInputArchive ar(is);
+//          import_auto->load(ar);
+//        }
+//
+//        std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
+//
+//        auto import_value = new Value(import_auto);
+//        symbol_table_->IntersectValue(rep_var,import_value);
+//        delete import_value;
+//
+//      }
       while (num_int_to_read-- > 0) {
         Theory::BinaryIntAutomaton_ptr import_auto = new Theory::BinaryIntAutomaton(nullptr, 0, false);
         std::string var_name;
@@ -642,16 +523,22 @@ cache_end = std::chrono::steady_clock::now();
           cereal::BinaryInputArchive ar(is);
           import_auto->load(ar);
         }
-
-        std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
-
-        auto import_value = new Value(import_auto);
-        symbol_table_->IntersectValue(rep_var,import_value);
-        delete import_value;
+        // can't add autos till other read is done (data race on symbol table)
+        autos_to_add.push_back(import_auto);
       }
 
-//
-//    std::cin.get();
+      // join the collector thread so we can set symbol table up
+      constraint_info_collector.join();
+
+
+      for(auto it : autos_to_add) {
+        std::string rep_var = it->GetFormula()->GetVariableAtIndex(0);
+        auto import_value = new Value(it);
+        it = nullptr;
+        symbol_table_->set_value(rep_var, import_value,false);
+      }
+    } else {
+      constraint_info_collector.join();
     }
 
 
@@ -674,15 +561,25 @@ cache_end = std::chrono::steady_clock::now();
 //        renamer.start(term, false);
       }
 
+//      cache_start = std::chrono::steady_clock::now();
+
+
+      cache_start = std::chrono::steady_clock::now();
+
       arithmetic_constraint_solver_.collect_arithmetic_constraint_info(term);
       string_constraint_solver_.collect_string_constraint_info(term);
+
+
+      cache_end = std::chrono::steady_clock::now();
+      diff += cache_end-cache_start;
+
+
+
 
       // solve term using normal constraint solving algorithm
       if (is_component) {
         if (constraint_information_->has_arithmetic_constraint(term)) {
-//          LOG(INFO) << "before";
           arithmetic_constraint_solver_.start(term);
-//          LOG(INFO) << "after";
           is_satisfiable = arithmetic_constraint_solver_.get_term_value(term)->is_satisfiable();
           DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *term << "@" << term;
         }
@@ -695,6 +592,8 @@ cache_end = std::chrono::steady_clock::now();
 
         DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *term << "@" << term;
       }
+
+
 
       // solve non-relational terms
       is_satisfiable = check_and_visit(term) and is_satisfiable;
@@ -713,107 +612,149 @@ cache_end = std::chrono::steady_clock::now();
         clearTermValuesAndLocalLetVars();
       }
 
-//      if (not is_satisfiable) {
-//        LOG(INFO) << "Not sat!";
-//      }
 
       // now we need to cache what we've got so far
 
-      cache_start = std::chrono::steady_clock::now();
 
-      key = Ast2Dot::toString(and_term);
 
-      auto value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
-      std::stringstream os;
 
-      // first serialize
-      int num_string_to_write = 0;
-      int num_int_to_write = 0;
-      for (auto iter : value_map) {
-        if (iter.second->getType() == Value::Type::STRING_AUTOMATON and
-            iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
-          if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
-            continue;
+
+
+      auto& value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
+
+
+      symbol_table_->LockValues();
+      bool is_done = terms_to_solve.empty();
+
+      key = term_keys[and_term->term_list->size()];
+      serializers_.push_back(std::thread([key,this,&value_map,is_done] {
+        std::vector<Theory::BinaryIntAutomaton_ptr>* stuff_to_store = new std::vector<Theory::BinaryIntAutomaton_ptr>();
+
+
+
+
+        // first serialize
+        int num_string_to_write = 0;
+        int num_int_to_write = 0;
+        for (auto iter : value_map) {
+          if (iter.second->getType() == Value::Type::STRING_AUTOMATON and
+              iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+            if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
+              continue;
+            }
+            num_string_to_write++;
+          } else if (iter.second->getType() ==
+                     Value::Type::BINARYINT_AUTOMATON) {// and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+            if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
+              continue;
+            }
+            num_int_to_write++;
+            stuff_to_store->push_back(iter.second->getBinaryIntAutomaton()->clone());
           }
-          num_string_to_write++;
-        } else if (iter.second->getType() ==
-                   Value::Type::BINARYINT_AUTOMATON) {// and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
-          if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
-            continue;
-          }
-          num_int_to_write++;
         }
-      }
+
+        this->symbol_table_->UnlockValues();
+
+
+        std::stringstream os;
+
+        {
+          cereal::BinaryOutputArchive ar(os);
+          ar(symbol_table_->GetCharacterMapping());
+          ar(num_string_to_write);
+          ar(num_int_to_write);
+        }
+
+        for(auto it : *stuff_to_store) {
+          auto export_auto = it;
+
+          {
+            cereal::BinaryOutputArchive ar(os);
+            export_auto->save(ar);
+          }
+          delete export_auto;
+          export_auto = nullptr;
+        }
+
+
+//        auto &c = rdx_->commandSync<std::string>({"SET", key, os.str()});
+//        if (c.ok()) {
+//          c.free();
+//        } else {
+//          LOG(FATAL) << "Failed to cache result";
+//        }
+
+        auto got_reply = [](redox::Command<std::string>& c) {
+          if(!c.ok()) return;
+          else return;
+        };
+        std::string data = os.str();
+        rdx_->command<std::string>({"SET",key,data}, got_reply);
+        if(is_done) {
+          if(!symbol_table_->isSatisfiable()) data = "0";
+          rdx_->command<std::string>({"SET",root_key_,data},got_reply);
+        }
+
+        delete stuff_to_store;
+      }));
 
       // character mapping first
       // then number of values
-      {
-        cereal::BinaryOutputArchive ar(os);
-        ar(symbol_table_->GetCharacterMapping());
-        ar(num_string_to_write);
-        ar(num_int_to_write);
-      }
 
-//    LOG(INFO) << "num_str_to_write = " << num_string_to_write;
-//    LOG(INFO) << "num_int_to_write = " << num_int_to_write;
 
       // then values
-      for (auto iter : value_map) {
-        if (iter.second->getType() == Value::Type::STRING_AUTOMATON and
-            iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
-          auto export_auto = iter.second->getStringAutomaton();
-          if (export_auto->GetFormula()->GetNumberOfVariables() == 0) {
-            continue;
-          }
-
-          {
-            cereal::BinaryOutputArchive ar(os);
-            export_auto->save(ar);
-          }
-        }
-
-
-
-        // then 0, to signify no model counters are added
-//      {
-//      cereal::BinaryOutputArchive ar(os);
-//      ar(0);
+//      for (auto iter : value_map) {
+//        if (iter.second->getType() == Value::Type::STRING_AUTOMATON and
+//            iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+//          auto export_auto = iter.second->getStringAutomaton();
+//          if (export_auto->GetFormula()->GetNumberOfVariables() == 0) {
+//            continue;
+//          }
+//
+//          {
+//            cereal::BinaryOutputArchive ar(os);
+//            export_auto->save(ar);
+//          }
+//        }
 //      }
-      }
 
 //    LOG(INFO) << "saved str, saving int now...";
 
-      for (auto iter : value_map) {
-        if (iter.second->getType() ==
-            Value::Type::BINARYINT_AUTOMATON) {// and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
-          auto export_auto = iter.second->getBinaryIntAutomaton();
-          if (export_auto->GetFormula()->GetNumberOfVariables() == 0) {
-            continue;
-          }
+//      for (auto iter : value_map) {
+//        if (iter.second->getType() ==
+//            Value::Type::BINARYINT_AUTOMATON) {// and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+//          auto export_auto = iter.second->getBinaryIntAutomaton();
+//          if (export_auto->GetFormula()->GetNumberOfVariables() == 0) {
+//            continue;
+//          }
+//
+//          {
+//            cereal::BinaryOutputArchive ar(os);
+//            export_auto->save(ar);
+//          }
+//        }
+//      }
 
-          {
-            cereal::BinaryOutputArchive ar(os);
-            export_auto->save(ar);
-          }
-        }
-      }
 
 
-      // auto end = std::chrono::steady_clock::now();
-      // auto serialize_time = end - start;
 
-      // then send it to the cache
-      auto &c = rdx_->commandSync<std::string>({"SET", key, os.str()});
-      if (c.ok()) {
-        c.free();
-      } else {
-        LOG(FATAL) << "Failed to cache result";
-      }
+//      cache_start2 = std::chrono::steady_clock::now();
 
-      cache_end = std::chrono::steady_clock::now();
-      diff += cache_end - cache_start;
-      diff2 += cache_end - cache_start;
-      // LOG(INFO) << "Cached term";
+
+
+
+//      auto got_reply = [](redox::Command<std::string>& c) {
+//        if(!c.ok()) return;
+//        else return;
+//      };
+//
+//      // then send it to the cache
+//
+//      rdx_->command<std::string>({"SET",key,os.str()}, got_reply);
+
+
+
+
     }
 
     if (is_component and is_satisfiable) {
@@ -829,16 +770,16 @@ cache_end = std::chrono::steady_clock::now();
     }
 
     Value_ptr result = new Value(is_satisfiable);
-//    if (not is_satisfiable) {
-//      LOG(INFO) << "NO SAT";
-//    }
-
     setTermValue(and_term, result);
+
+//    cache_end = std::chrono::steady_clock::now();
+//    diff += cache_end - cache_start;
 
   } else {
     bool is_satisfiable = true;
     bool is_component = constraint_information_->is_component(and_term);
 
+    cache_start2 = std::chrono::steady_clock::now();
      if (is_component) {
        if (constraint_information_->has_arithmetic_constraint(and_term)) {
          arithmetic_constraint_solver_.start(and_term);
@@ -854,7 +795,8 @@ cache_end = std::chrono::steady_clock::now();
 
        DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *and_term << "@" << and_term;
      }
-
+    cache_end2 = std::chrono::steady_clock::now();
+    diff2 += cache_end2-cache_start2;
 
     DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
 
@@ -897,72 +839,6 @@ cache_end = std::chrono::steady_clock::now();
     setTermValue(and_term, result);
   }
 }
-
-
-
-/*
-void ConstraintSolver::visitAnd(And_ptr and_term) {
-  bool is_satisfiable = true;
-  bool is_component = constraint_information_->is_component(and_term);
-
-   if (is_component) {
-     if (constraint_information_->has_arithmetic_constraint(and_term)) {
-       arithmetic_constraint_solver_.start(and_term);
-       is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
-       DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *and_term << "@" << and_term;
-     }
-     if ((is_satisfiable or (!constraint_information_->has_arithmetic_constraint(and_term)))
-     				and constraint_information_->has_string_constraint(and_term)) {
-       string_constraint_solver_.start(and_term);
-       is_satisfiable = string_constraint_solver_.get_term_value(and_term)->is_satisfiable();
-       DVLOG(VLOG_LEVEL) << "String formulae solved: " << *and_term << "@" << and_term;
-     }
-
-     DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *and_term << "@" << and_term;
-   }
-
-
-  DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
-
-  if (is_satisfiable) {
-     for (auto& term : *(and_term->term_list)) {
-       is_satisfiable = check_and_visit(term) and is_satisfiable;
-       if (not is_satisfiable) {
-       	clearTermValuesAndLocalLetVars();
-       	variable_path_table_.clear();
-       	break;
-       }
-       if (dynamic_cast<Or_ptr>(term) == nullptr) {
-         if (is_satisfiable) {
-           is_satisfiable = update_variables();
-           if(not is_satisfiable) {
-           	break;
-           }
-         }
-         clearTermValuesAndLocalLetVars();
-       }
-     }
-   }
-
-   DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
-
-   if (is_component and is_satisfiable) {
-     if (constraint_information_->has_arithmetic_constraint(and_term)) {
-       arithmetic_constraint_solver_.postVisitAnd(and_term);
-       is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
-     }
-
-     if (is_satisfiable and constraint_information_->has_string_constraint(and_term)) {
-       string_constraint_solver_.postVisitAnd(and_term);
-       is_satisfiable = string_constraint_solver_.get_term_value(and_term)->is_satisfiable();
-     }
-   }
-
-  Value_ptr result = new Value(is_satisfiable);
-
-  setTermValue(and_term, result);
-}
-*/
 
 /**
  * 1) Solve arithmetic constraints

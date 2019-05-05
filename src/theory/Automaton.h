@@ -27,10 +27,12 @@
 #include <utility>
 #include <vector>
 #include <queue>
+#include <chrono>
 
 #include <glog/logging.h>
 #include <mona/bdd.h>
 #include <mona/bdd_external.h>
+#include <mona/bdd_dump.h>
 #include <mona/dfa.h>
 #include <mona/mem.h>
 
@@ -238,6 +240,11 @@ public:
   // TODO merge toDot methods into one with options
   void ToDot(std::ostream& out = std::cout, bool print_sink = false);
   void toBDD(std::ostream& out = std::cout);
+
+  static void BddDump(std::ostream& out, bdd_manager *bddm);
+  static void BddDumpNode(std::ostream& out, bdd_manager *bddm, bdd_ptr p);
+  static void BddReverseMarks(std::ostream& out, bdd_manager *bddm, bdd_ptr p);
+
   void exportDfa(std::string file_name);
   DFA_ptr importDFA(std::string file_name);
   int inspectAuto(bool print_sink = false, bool force_mona_format = false);
@@ -252,6 +259,7 @@ public:
 	static std::map<std::string,DFA_ptr> stupid_cache;
 	static int num_misses;
 	static int num_hits;
+	static std::chrono::duration<double> diff;
 	static int var1,var2;
 
 protected:

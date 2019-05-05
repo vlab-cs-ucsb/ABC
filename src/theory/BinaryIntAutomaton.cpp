@@ -345,7 +345,12 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Complement() {
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr other_auto) {
+
+auto start = std::chrono::steady_clock::now();
+
   BinaryIntAutomaton_ptr left_auto = nullptr, right_auto = nullptr;
+  ArithmeticFormula_ptr intersect_formula = nullptr;
+
   if(this->is_natural_number_ != other_auto->is_natural_number_) {
     LOG(FATAL) << "Numbers don't match";
   }
@@ -354,76 +359,76 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr othe
   if(left_num_tracks > right_num_tracks) {
     left_auto = this;
     right_auto = other_auto->ChangeIndicesMap(this->formula_->clone());
+    intersect_formula = this->formula_->clone();
   } else if(left_num_tracks < right_num_tracks) {
     left_auto = other_auto;
     right_auto = this->ChangeIndicesMap(other_auto->formula_->clone());
+    intersect_formula = other_auto->formula_->clone();
   } else {
     left_auto = this;
     right_auto = other_auto;
+    intersect_formula = this->formula_->Intersect(other_auto->formula_);
   }
 
 
- std::string id1, id2;
+//  std::string id1, id2;
+//
+//  std::stringstream os1;
+//  //{
+//  //  cereal::BinaryOutputArchive ar(os1);
+//  //  Util::Serialize::save(ar,left_auto->dfa_);
+//  //}
+//  left_auto->toBDD(os1);
+//  id1 = os1.str();
+//
+//
+//
+//  std::stringstream os2;
+//  //{
+//  //  cereal::BinaryOutputArchive ar(os2);
+//  //  Util::Serialize::save(ar,right_auto->dfa_);
+//  //}
+//  right_auto->toBDD(os2);
+//  id2 = os2.str();
+////  right_auto->inspectAuto(false,true);
+////  right_auto->inspectBDD();
+////  LOG(INFO) << id2;
+////  std::cin.get();
+//  //std::pair<std::string,std::string> stupid_key1(id1,id2);
+//  //std::pair<std::string,std::string> stupid_key2(id2,id1);
+//  std::string stupid_key1 = id1 + id2;
+//  std::string stupid_key2 = id2 + id1;
+//  DFA_ptr intersect_dfa = nullptr;
+// //   LOG(FATAL) << "HERE";
+//  if(stupid_cache.find(stupid_key1) != stupid_cache.end()) {
+// //    std::stringstream is(stupid_cache[stupid_key1]);
+// //    {
+// //      cereal::BinaryInputArchive ar(is);
+// //      Util::Serialize::load(ar,intersect_dfa);
+// //    }
+//    intersect_dfa = dfaCopy(stupid_cache[stupid_key1]);
+//    num_hits++;
+//  } else if (stupid_cache.find(stupid_key2) != stupid_cache.end()) {
+// //    std::stringstream is(stupid_cache[stupid_key2]);
+// //    {
+// //      cereal::BinaryInputArchive ar(is);
+// //      Util::Serialize::load(ar,intersect_dfa);
+// //    }
+//    intersect_dfa = dfaCopy(stupid_cache[stupid_key2]);
+//    num_hits++;
+//  } else {
+//    intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
+// //    std::stringstream os;
+// //    {
+// //      cereal::BinaryOutputArchive ar(os);
+// //      Util::Serialize::save(ar,intersect_dfa);
+// //    }
+// //    stupid_cache[stupid_key1] = os.str();
+//    stupid_cache[stupid_key1] = dfaCopy(intersect_dfa);
+//    num_misses++;
+//  }
 
- std::stringstream os1;
- //{
- //  cereal::BinaryOutputArchive ar(os1);
- //  Util::Serialize::save(ar,left_auto->dfa_);
- //}
- left_auto->toBDD(os1);
- id1 = os1.str();
-
- std::stringstream os2;
- //{
- //  cereal::BinaryOutputArchive ar(os2);
- //  Util::Serialize::save(ar,right_auto->dfa_);
- //}
- right_auto->toBDD(os2);
- id2 = os2.str();
-
- //std::pair<std::string,std::string> stupid_key1(id1,id2);
- //std::pair<std::string,std::string> stupid_key2(id2,id1);
- std::string stupid_key1 = id1 + id2;
- std::string stupid_key2 = id2 + id1;
- DFA_ptr intersect_dfa = nullptr;
-//   LOG(FATAL) << "HERE";
- if(stupid_cache.find(stupid_key1) != stupid_cache.end()) {
-//    std::stringstream is(stupid_cache[stupid_key1]);
-//    {
-//      cereal::BinaryInputArchive ar(is);
-//      Util::Serialize::load(ar,intersect_dfa);
-//    }
-   intersect_dfa = dfaCopy(stupid_cache[stupid_key1]);
-   num_hits++;
- } else if (stupid_cache.find(stupid_key2) != stupid_cache.end()) {
-//    std::stringstream is(stupid_cache[stupid_key2]);
-//    {
-//      cereal::BinaryInputArchive ar(is);
-//      Util::Serialize::load(ar,intersect_dfa);
-//    }
-   intersect_dfa = dfaCopy(stupid_cache[stupid_key2]);
-   num_hits++;
- } else {
-   intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
-//    std::stringstream os;
-//    {
-//      cereal::BinaryOutputArchive ar(os);
-//      Util::Serialize::save(ar,intersect_dfa);
-//    }
-//    stupid_cache[stupid_key1] = os.str();
-   stupid_cache[stupid_key1] = dfaCopy(intersect_dfa);
-   num_misses++;
- }
-
-  // auto intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
-  ArithmeticFormula_ptr intersect_formula = nullptr;
-  if(left_auto->formula_ != nullptr && right_auto->formula_ != nullptr) {
-		intersect_formula = formula_->Intersect(right_auto->formula_);
-	} else if(left_auto->formula_ != nullptr) {
-		intersect_formula = formula_->clone();
-	} else {
-		intersect_formula = nullptr;
-	}
+  auto intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
   intersect_formula->ResetCoefficients();
   intersect_formula->SetType(ArithmeticFormula::Type::INTERSECT);
   auto intersect_auto = new BinaryIntAutomaton(intersect_dfa, intersect_formula, is_natural_number_);
@@ -451,6 +456,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr othe
 //  right_auto->inspectAuto(false,true);
 //  intersect_auto->inspectAuto(false,true);
 //  std::cin.get();
+
+  auto end = std::chrono::steady_clock::now();
+  diff += end-start;
 
   DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << right_auto->id_ << ")";
   return intersect_auto;
@@ -501,8 +509,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::GetBinaryAutomatonFor(std::string var
   return single_var_auto;
 }
 
-BinaryIntAutomaton_ptr BinaryIntAutomaton::ChangeIndicesMap(ArithmeticFormula_ptr new_formula) {
+BinaryIntAutomaton_ptr BinaryIntAutomaton::ChangeIndicesMap(ArithmeticFormula_ptr new_formula, bool clone) {
   BinaryIntAutomaton_ptr unmapped_auto = nullptr;
+//  auto start = std::chrono::steady_clock::now();
 
 	auto old_coeff_map = this->formula_->GetVariableCoefficientMap();
 	auto new_coeff_map = new_formula->GetVariableCoefficientMap();
@@ -515,6 +524,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::ChangeIndicesMap(ArithmeticFormula_pt
     if(new_num_tracks == 1) {
       auto ret_auto = this->clone();
       ret_auto->SetFormula(new_formula);
+
       return ret_auto;
     }
     // should ALWAYS have formula, but add check just to make sure
@@ -526,8 +536,10 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::ChangeIndicesMap(ArithmeticFormula_pt
 	  unmapped_auto->SetFormula(this->formula_->clone());
 //	  unmapped_auto->SetFormula(new_formula);
 //	  return unmapped_auto;
-	} else {
+	} else if(clone) {
 	  unmapped_auto = this->clone();
+	} else {
+	  unmapped_auto = this;
 	}
 
 	// though we're remapping indices, we're not adding any new variables right now
@@ -544,10 +556,14 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::ChangeIndicesMap(ArithmeticFormula_pt
 //	  LOG(INFO) << "  " << iter.first;
 //	}
 
+  bool replace = false;
+
 	for(auto iter : old_coeff_map) {
 
 		int old_index = unmapped_auto->formula_->GetVariableIndex(iter.first);
 		int new_index = new_formula->GetVariableIndex(iter.first);
+
+    if(old_index != new_index) replace = true;
 
 //		for(int i = 0; i < VAR_PER_TRACK; i++) {
 			map[old_index] = new_index;
@@ -558,13 +574,19 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::ChangeIndicesMap(ArithmeticFormula_pt
 //     LOG(INFO) << "map[" << i << "] = " << map[i];
 //   }
 
-	auto remapped_dfa = dfaCopy(unmapped_auto->dfa_);
-	dfaReplaceIndices(remapped_dfa,map);
+//	auto remapped_dfa = unmapped_auto->dfa_;//dfaCopy(unmapped_auto->dfa_);
+	if(replace) dfaReplaceIndices(unmapped_auto->dfa_,map);
+//	std::cin.get();
 	delete[] map;
-	auto remapped_auto = new BinaryIntAutomaton(remapped_dfa,unmapped_auto->num_of_bdd_variables_,is_natural_number_);
-	remapped_auto->SetFormula(new_formula);
-	delete unmapped_auto;
-	return remapped_auto;
+//	auto remapped_auto = new BinaryIntAutomaton(remapped_dfa,unmapped_auto->num_of_bdd_variables_,is_natural_number_);
+//	remapped_auto->SetFormula(new_formula);
+//	delete unmapped_auto;
+
+  unmapped_auto->SetFormula(new_formula);
+
+//  auto end = std::chrono::steady_clock::now();
+//  diff += end-start;
+	return unmapped_auto;
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::GetPositiveValuesFor(std::string var_name) {

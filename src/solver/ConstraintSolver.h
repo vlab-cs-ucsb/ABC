@@ -16,6 +16,8 @@
 #include <vector>
 #include <chrono>
 #include <tuple>
+#include <thread>
+#include <atomic>
 
 #include <glog/logging.h>
 #include <redox.hpp>
@@ -53,8 +55,8 @@ class ConstraintSolver: public SMT::Visitor {
   std::chrono::duration<double> diff;
   std::chrono::duration<double> diff2;
 
-  std::chrono::duration<double> get_diff3() { return this->string_constraint_solver_.diff;}
-  std::chrono::duration<double> get_diff4() { return this->string_constraint_solver_.diff2;}
+  std::chrono::duration<double> get_diff3() { return this->arithmetic_constraint_solver_.diff;}
+  std::chrono::duration<double> get_diff4() { return this->arithmetic_constraint_solver_.diff2;}
 
 
   ConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr, redox::Redox *);
@@ -169,7 +171,12 @@ class ConstraintSolver: public SMT::Visitor {
   int num_misses_;
   std::tuple<int,int> hit_statistic_;
 
+  std::vector<std::thread> serializers_;
+
   static bool many_vars;
+
+  std::string root_key_;
+  std::string last_serialized_data_;
 
  private:
   static const int VLOG_LEVEL;
