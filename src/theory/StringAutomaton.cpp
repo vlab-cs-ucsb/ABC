@@ -455,6 +455,10 @@ StringAutomaton_ptr StringAutomaton::MakeAutomaton(DFA_ptr dfa, Formula_ptr form
 }
 
 StringAutomaton_ptr StringAutomaton::MakeAutomaton(StringFormula_ptr formula) {
+
+//  auto start = std::chrono::steady_clock::now();
+
+
 	StringAutomaton_ptr result_auto = nullptr;
 
 	switch(formula->GetType()) {
@@ -494,6 +498,9 @@ StringAutomaton_ptr StringAutomaton::MakeAutomaton(StringFormula_ptr formula) {
 			LOG(FATAL) << "StringFormula type not supported";
 			break;
 	}
+
+//	auto end = std::chrono::steady_clock::now();
+//  diff += end-start;
 	return result_auto;
 }
 
@@ -954,8 +961,10 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
 	}
 
 	if(num_vars == 1) {
+
 		int num_tracks = formula->GetNumberOfVariables();
 		int left_track = formula->GetVariableIndex(1);
+
 		StringAutomaton_ptr string_auto,complement_auto;
 
 
@@ -964,9 +973,6 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
 //      LOG(INFO) << "Regex_string = {" << regex_string << "}";
       regex_string += "[^" + formula->GetConstant() + "].*";
       complement_auto = StringAutomaton::MakeRegexAuto(regex_string);
-//      complement_auto->inspectAuto(false,true);
-//      LOG(INFO) << "NOTEQ: " << formula->GetConstant() << "," << formula->GetConstant2();
-//      std::cin.get();
     } else if(formula->GetConstant() == "") {
 			complement_auto = StringAutomaton::MakeAnyStringLengthGreaterThan(0);
 		} else {
@@ -977,6 +983,8 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
 			delete t2;
 		}
 
+
+
 		formula->SetConstant("");
 		StringFormula_ptr temp_formula = new StringFormula();
 		temp_formula->SetType(StringFormula::Type::NOTEQ);
@@ -985,7 +993,10 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
 
     not_equality_auto = complement_auto->ChangeIndicesMap(formula);
 		delete complement_auto;
+
 		return not_equality_auto;
+
+
 	}
 
 
@@ -1538,18 +1549,24 @@ StringAutomaton_ptr StringAutomaton::Complement() {
 
 StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
   StringAutomaton_ptr left_auto = nullptr, right_auto = nullptr;
+  StringFormula_ptr intersect_formula = nullptr;
 
-  // make sure both automata have same number of tracks (TODO:if so, assume same mapping?)
-  //
-  if(this->num_tracks_ > other_auto->num_tracks_) {
+  auto start = std::chrono::steady_clock::now();
+
+  auto left_num_tracks = this->GetFormula()->GetNumberOfVariables();
+  auto right_num_tracks = other_auto->GetFormula()->GetNumberOfVariables();
+  if(left_num_tracks > right_num_tracks) {
     left_auto = this;
     right_auto = other_auto->ChangeIndicesMap(this->formula_->clone());
-  } else if(this->num_tracks_ < other_auto->num_tracks_) {
+    intersect_formula = this->formula_->clone();
+  } else if(left_num_tracks < right_num_tracks) {
     left_auto = other_auto;
     right_auto = this->ChangeIndicesMap(other_auto->formula_->clone());
+    intersect_formula = other_auto->formula_->clone();
   } else {
     left_auto = this;
     right_auto = other_auto;
+    intersect_formula = this->formula_->Intersect(other_auto->formula_);
   }
 
   // std::string id1, id2;
@@ -1604,15 +1621,12 @@ StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
   // 	num_misses++;
   // }
 
+
+
 	auto intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
-  StringFormula_ptr intersect_formula = nullptr;
-  if(left_auto->formula_ != nullptr && right_auto->formula_ != nullptr) {
-    intersect_formula = left_auto->formula_->Intersect(right_auto->formula_);
-  } else if(left_auto->formula_ != nullptr) {
-    intersect_formula = left_auto->formula_->clone();
-  } else {
-    intersect_formula = nullptr;
-  }
+  num_hits++;
+  auto end = std::chrono::steady_clock::now();
+  diff += end-start;
 
 	auto intersect_auto = new StringAutomaton(intersect_dfa,intersect_formula,left_auto->num_of_bdd_variables_);
 
@@ -1701,8 +1715,9 @@ StringAutomaton_ptr StringAutomaton::Concat(StringAutomaton_ptr other_auto) {
 //    return new StringAutomaton(concat_dfa_2,this->num_of_bdd_variables_);
 //  }
 
-  auto concat_dfa = StringAutomaton::concat(dfa_, other_auto->dfa_,this->num_of_bdd_variables_);
-  auto concat_auto = new StringAutomaton(concat_dfa,this->num_of_bdd_variables_);
+//  auto concat_dfa = StringAutomaton::concat(dfa_, other_auto->dfa_,this->num_of_bdd_variables_);
+//  auto concat_auto = new StringAutomaton(concat_dfa,this->num_of_bdd_variables_);
+  StringAutomaton_ptr concat_auto = static_cast<StringAutomaton_ptr>(Automaton::Concat(other_auto));
   return concat_auto;
 }
 
@@ -3609,7 +3624,9 @@ StringAutomaton_ptr StringAutomaton::ProjectKTrack(int k_track) {
  *
  * for strings, it gets tricky since tracks are interleaved... :(
  */
-StringAutomaton_ptr StringAutomaton::ChangeIndicesMap(StringFormula_ptr new_formula) {
+StringAutomaton_ptr StringAutomaton::ChangeIndicesMap(StringFormula_ptr new_formula, bool clone) {
+
+//  auto start = std::chrono::steady_clock::now();
   StringAutomaton_ptr unmapped_auto = nullptr;
 	auto old_coeff_map = this->formula_->GetVariableCoefficientMap();
 	auto new_coeff_map = new_formula->GetVariableCoefficientMap();
@@ -3622,6 +3639,8 @@ StringAutomaton_ptr StringAutomaton::ChangeIndicesMap(StringFormula_ptr new_form
     if(new_num_tracks == 1) {
       auto ret_auto = this->clone();
       ret_auto->SetFormula(new_formula);
+//      auto end = std::chrono::steady_clock::now();
+//      diff += end-start;
       return ret_auto;
     }
     // should ALWAYS have formula, but add check just to make sure
@@ -3636,8 +3655,10 @@ StringAutomaton_ptr StringAutomaton::ChangeIndicesMap(StringFormula_ptr new_form
 	  unmapped_auto->SetFormula(this->formula_->clone());
 //	  unmapped_auto->SetFormula(new_formula);
 //	  return unmapped_auto;
-	} else {
+	} else if(clone) {
 	  unmapped_auto = this->clone();
+	} else {
+	  unmapped_auto = this;
 	}
 
 	// though we're remapping indices, we're not adding any new variables right now
@@ -3654,10 +3675,14 @@ StringAutomaton_ptr StringAutomaton::ChangeIndicesMap(StringFormula_ptr new_form
 //	  LOG(INFO) << "  " << iter.first;
 //	}
 
+  bool replace = false;
+
 	for(auto iter : old_coeff_map) {
 
 		int old_index = unmapped_auto->formula_->GetVariableIndex(iter.first);
 		int new_index = new_formula->GetVariableIndex(iter.first);
+
+		if(old_index != new_index) replace = true;
 
 		for(int i = 0; i < VAR_PER_TRACK; i++) {
 			map[old_index+(i*old_num_tracks)] = new_index+(i*new_num_tracks);
@@ -3668,12 +3693,16 @@ StringAutomaton_ptr StringAutomaton::ChangeIndicesMap(StringFormula_ptr new_form
 //    LOG(INFO) << "map[" << i << "] = " << map[i];
 //  }
 
-	auto remapped_dfa = dfaCopy(unmapped_auto->dfa_);
-	dfaReplaceIndices(remapped_dfa,map);
+//	auto remapped_dfa = dfaCopy(unmapped_auto->dfa_);
+	if(replace) dfaReplaceIndices(unmapped_auto->dfa_,map);
 	delete[] map;
-	auto remapped_auto = new StringAutomaton(remapped_dfa,new_formula,unmapped_auto->num_of_bdd_variables_);
-	delete unmapped_auto;
-	return remapped_auto;
+
+	unmapped_auto->SetFormula(new_formula);
+
+//  auto end = std::chrono::steady_clock::now();
+//  diff += end-start;
+
+	return unmapped_auto;
 }
 
 void StringAutomaton::SetSymbolicCounter() {

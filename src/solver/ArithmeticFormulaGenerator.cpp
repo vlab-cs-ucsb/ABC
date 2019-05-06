@@ -155,7 +155,7 @@ void ArithmeticFormulaGenerator::visitAnd(And_ptr and_term) {
 //      constraint_information_->add_mixed_constraint(and_term);
 //    }
 //  }
-  if(subgroups_[current_group_].size() > 0 ) {
+  if(subgroups_[current_group_].size() >= 0 ) {
 		term_group_map_[and_term] = current_group_;
 		constraint_information_->add_arithmetic_constraint(and_term);
 	}
@@ -502,7 +502,6 @@ void ArithmeticFormulaGenerator::visitLen(Len_ptr len_term) {
   // not sure if this is a good idea, but it works for now...
   symbol_table_->add_variable(new Variable(name,Variable::Type::INT));
 
-
   auto formula = new ArithmeticFormula();
   formula->AddVariable(name, 1);
   formula->SetType(ArithmeticFormula::Type::VAR);
@@ -733,7 +732,7 @@ void ArithmeticFormulaGenerator::clear_term_formula(Term_ptr term) {
   if (it != term_formula_.end()) {
     delete it->second;
     term_formula_.erase(it);
-    term_group_map_.erase(term);
+//    term_group_map_.erase(term);
   }
 }
 
@@ -875,7 +874,7 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
   for (auto& el : term_group_map_) {
     if(term_formula_.find(el.first) != term_formula_.end()) {
       term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
-//      group_formula_[el.second]->MergeVariables(term_formula_[el.first]);
+      group_formula_[el.second]->MergeVariables(term_formula_[el.first]);
     }
   }
 
@@ -943,15 +942,15 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
     }
   }
 
-//	auto  &variable_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
-//  auto previous_var = symbol_table_->get_variable(current_group_);
-//  if(variable_values.find(previous_var) != variable_values.end()) {
-//    if(previous_var != nullptr) {
-//      auto previous_group_auto = variable_values[previous_var]->getBinaryIntAutomaton();
-//      auto remapped_auto = previous_group_auto->ChangeIndicesMap(group_formula_[current_group_]->clone(),false);
-//      variable_values[previous_var]->setData(remapped_auto);
-//    }
-//  }
+	auto  &variable_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
+  auto previous_var = symbol_table_->get_variable(current_group_);
+  if(variable_values.find(previous_var) != variable_values.end()) {
+    if(previous_var != nullptr) {
+      auto previous_group_auto = variable_values[previous_var]->getBinaryIntAutomaton();
+      auto remapped_auto = previous_group_auto->ChangeIndicesMap(group_formula_[current_group_]->clone(),false);
+      variable_values[previous_var]->setData(remapped_auto);
+    }
+  }
 //	auto end = std::chrono::steady_clock::now();
 //  diff += end-start;
   DVLOG(VLOG_LEVEL)<< "end setting int group for components";

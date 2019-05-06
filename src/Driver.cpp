@@ -115,8 +115,6 @@ void Driver::ast2dot(std::string file_name) {
 
 void Driver::InitializeSolver() {
 
-  if(symbol_table_ != nullptr) delete symbol_table_;
-
 //	if(current_id_.empty()) {
 		symbol_table_ = new Solver::SymbolTable();
 //		current_id_ = symbol_table_->get_var_name_for_node(script_,Vlab::SMT::TVariable::Type::NONE);
@@ -142,14 +140,14 @@ void Driver::InitializeSolver() {
   syntactic_optimizer.start();
 
 
-//  ast2dot(output_root + "/post_syntactic_optimizer.dot");
+  ast2dot(output_root + "/post_syntactic_optimizer.dot");
   int i = 0;
   if (Option::Solver::ENABLE_EQUIVALENCE_CLASSES) {
     Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
     do {
       equivalence_generator.start();
-//      ast2dot(output_root + "/post_eq" + std::to_string(i) + ".dot");
-//      i++;
+      //ast2dot(output_root + "/post_eq" + std::to_string(i) + ".dot");
+      i++;
     } while (equivalence_generator.has_constant_substitution());
   }
   auto start = std::chrono::steady_clock::now();
@@ -170,11 +168,13 @@ void Driver::InitializeSolver() {
     constraint_sorter.start();
   }
 
+  Solver::Renamer renamer(script_, symbol_table_);
+  renamer.start();
+
   /*
    * Variable and char renaming here?
    */
-  Solver::Renamer renamer(script_, symbol_table_);
-  renamer.start();
+
 
   auto end = std::chrono::steady_clock::now();
   auto time2 = end-start;
@@ -787,7 +787,10 @@ void Driver::reset() {
 	}
 	cached_bounded_values_.clear();
 
+
+
 	if(symbol_table_ != nullptr) {
+	  while(symbol_table_->values_lock_) std::this_thread::yield();
 	  delete symbol_table_;
 	  symbol_table_ = nullptr;
 	}

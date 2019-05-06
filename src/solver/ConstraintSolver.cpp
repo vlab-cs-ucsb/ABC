@@ -86,6 +86,8 @@ void ConstraintSolver::end() {
 		it.second = nullptr;
 	}
 	term_values_.clear();
+
+//	if(symbol_table_->values_lock_) std::this_thread::yield();
 	arithmetic_constraint_solver_.clear_term_values();
 	string_constraint_solver_.clear_term_values();
 }
@@ -130,10 +132,12 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
     // if we have cached result, import it and go from there
     if (has_cached_result) {
-      arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
-      string_constraint_solver_.collect_string_constraint_info();
+
 
       std::stringstream is(cached_data);
+
+      arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
+      string_constraint_solver_.collect_string_constraint_info();
 
       // if formula was UNSAT, we store a single 0 in cache
       if (cached_data.size() == 1) {
@@ -181,6 +185,7 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
         symbol_table_->set_value(rep_var,import_value);
         delete import_value;
       }
+      
       return;
     }
 
@@ -190,6 +195,7 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
   }
 
   check_and_visit(assert_command->term);
+
 
   Value_ptr result = getTermValue(assert_command->term);
   bool is_satisfiable = result->is_satisfiable();
@@ -203,6 +209,8 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
     }
   }
   clearTermValuesAndLocalLetVars();
+
+  
 
 //  if(Option::Solver::INCREMENTAL == true) {
 //
@@ -355,6 +363,8 @@ void ConstraintSolver::visitLet(Let_ptr let_term) {
 void ConstraintSolver::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "start visit and";
 
+  
+
   std::map<int,std::string> term_keys;
 
   bool is_satisfiable = true;
@@ -371,12 +381,11 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
   if(Option::Solver::INCREMENTAL == true) {
 
-
-
-
-
     std::atomic<bool> has_result;
+    std::atomic<bool> cmd_done;
     has_result = false;
+    cmd_done = false;
+
     std::atomic<int> count;
     count = 0;
     std::string success_key = "";
@@ -386,18 +395,17 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     cache_start2 = std::chrono::steady_clock::now();
 
     auto got_reply = [&](redox::Command<std::string>& c) {
-      if(has_result || cached_data.length() > 0 || success_key.length() > 0) return;
+      //if(has_result || cached_data.size() > 0 || success_key.length() > 0) return;
       count++;
       if(c.ok()) {
-        cached_data = c.reply();
-        success_key = c.cmd().substr(4);
-//        LOG(INFO) << count;
-//        LOG(INFO) << cached_data;
-//        LOG(INFO) << success_key;
         has_result = true;
+        cached_data = c.reply();
+        if(cached_data.size() > 1) success_key = c.cmd().substr(4);
         has_cached_result = true;
       }
+      cmd_done = true;
     };
+
 
     int max = and_term->term_list->size();
     while (!has_result && and_term->term_list->size() > 0) {
@@ -406,15 +414,26 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       reverse_term_keys[key] = and_term->term_list->size();
       term_keys[and_term->term_list->size()] = key;
       rdx_->command<std::string>({"GET", key},got_reply);
+      
+      while(cmd_done == false) std::this_thread::yield();
+      cmd_done = false;
+
       terms_to_solve.push(and_term->term_list->back());
       and_term->term_list->pop_back();
     }
 
     while(count < max && !has_result) std::this_thread::yield();
 
+
+    if (cached_data.size() == 1) {
+      Value_ptr result = new Value(false);
+      setTermValue(and_term, result);
+      
+      return;
+    }
+
     if(has_result) {
       int num_terms_cached = reverse_term_keys[success_key];
-//      LOG(INFO) << num_terms_cached;
 
       while(and_term->term_list->size() < num_terms_cached) {
         and_term->term_list->push_back(terms_to_solve.top());
@@ -422,15 +441,14 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       }
       num_hits_++;
       num_misses_ += max-num_terms_cached;
-      hit_statistic_ = std::make_tuple<int, int>(and_term->term_list->size(),
-                                                 and_term->term_list->size() + terms_to_solve.size() + 1);
+      hit_statistic_ = std::make_tuple(num_terms_cached,max);
 
     } else {
       num_misses_ += max;
     }
 
-    cache_end2 = std::chrono::steady_clock::now();
-    diff2 += cache_end2 - cache_start2;
+//    cache_end2 = std::chrono::steady_clock::now();
+//    diff2 += cache_end2 - cache_start2;
 //    while (not has_cached_result and and_term->term_list->size() > 0) {
 //
 //      key = Ast2Dot::toString(and_term);
@@ -460,7 +478,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
 
 
-
+    
     std::thread constraint_info_collector([this,and_term] {
       arithmetic_constraint_solver_.collect_arithmetic_constraint_info(and_term);
       string_constraint_solver_.collect_string_constraint_info(and_term);
@@ -473,12 +491,11 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
 
 
-      cache_start2 = std::chrono::steady_clock::now();
+//      cache_start2 = std::chrono::steady_clock::now();
 
       // first check if key has only 0 in it. if so, formula unsat
       if (cached_data.size() == 1) {
-        Value_ptr result = new Value(is_satisfiable);
-
+        Value_ptr result = new Value(false);
         setTermValue(and_term, result);
         return;
       }
@@ -486,6 +503,8 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       int num_string_to_read = 0;
       int num_int_to_read = 0;
 
+//      std::stringstream is (std::stringstream::in | std::stringstream::out | std::stringstream::binary);
+//      is.write(cached_data.data(),cached_data.length());
       std::stringstream is(cached_data);
       std::map<char, char> char_mapping;
       // first get character mapping
@@ -498,24 +517,21 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       symbol_table_->SetCharacterMapping(char_mapping);
       // deserialize automata one by one until none left
 
-      std::vector<Theory::BinaryIntAutomaton_ptr> autos_to_add;
+      std::vector<Theory::BinaryIntAutomaton_ptr> bin_autos_to_add;
+      std::vector<Theory::StringAutomaton_ptr> str_autos_to_add;
 
-//      while (num_string_to_read > 0) {
-//        num_string_to_read--;
-//        Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(nullptr, 0);
-//        std::string var_name;
-//        {
-//          cereal::BinaryInputArchive ar(is);
-//          import_auto->load(ar);
-//        }
-//
-//        std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
-//
-//        auto import_value = new Value(import_auto);
-//        symbol_table_->IntersectValue(rep_var,import_value);
-//        delete import_value;
-//
-//      }
+      while (num_string_to_read > 0) {
+        num_string_to_read--;
+        Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(nullptr, 0);
+        std::string var_name;
+        {
+          cereal::BinaryInputArchive ar(is);
+          import_auto->load(ar);
+        }
+
+        str_autos_to_add.push_back(import_auto);
+
+      }
       while (num_int_to_read-- > 0) {
         Theory::BinaryIntAutomaton_ptr import_auto = new Theory::BinaryIntAutomaton(nullptr, 0, false);
         std::string var_name;
@@ -524,14 +540,21 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
           import_auto->load(ar);
         }
         // can't add autos till other read is done (data race on symbol table)
-        autos_to_add.push_back(import_auto);
+        bin_autos_to_add.push_back(import_auto);
       }
 
       // join the collector thread so we can set symbol table up
       constraint_info_collector.join();
 
 
-      for(auto it : autos_to_add) {
+      for(auto it : str_autos_to_add) {
+        std::string rep_var = it->GetFormula()->GetVariableAtIndex(0);
+        auto import_value = new Value(it);
+        it = nullptr;
+        symbol_table_->set_value(rep_var, import_value,false);
+      }
+
+      for(auto it : bin_autos_to_add) {
         std::string rep_var = it->GetFormula()->GetVariableAtIndex(0);
         auto import_value = new Value(it);
         it = nullptr;
@@ -541,16 +564,17 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       constraint_info_collector.join();
     }
 
-
+    
 
     // at this point, we have the most updated values to start with
     // if terms_to_solve is empty, then we got the whole formula from the cache and we're done
     // otherwise, solve the rest and cache those values
-//    Renamer renamer(root_, symbol_table_,
-//                    symbol_table_->GetVariableMapping(),
-//                    symbol_table_->GetCharacterMapping());
+    Renamer renamer(root_, symbol_table_,
+                    symbol_table_->GetVariableMapping(),
+                    symbol_table_->GetCharacterMapping());
     while (not terms_to_solve.empty()) {
 
+ 
       // get the term to solve
       auto term = terms_to_solve.top();
       and_term->term_list->push_back(term);
@@ -558,7 +582,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
       // rename alphabet characters (from imported mapping, if any)
       if (has_cached_result) {
-//        renamer.start(term, false);
+        renamer.start(term, false);
       }
 
 //      cache_start = std::chrono::steady_clock::now();
@@ -570,9 +594,9 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       string_constraint_solver_.collect_string_constraint_info(term);
 
 
+
       cache_end = std::chrono::steady_clock::now();
       diff += cache_end-cache_start;
-
 
 
 
@@ -600,13 +624,13 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       if (not is_satisfiable) {
         clearTermValuesAndLocalLetVars();
         variable_path_table_.clear();
-        break;
+//        break;
       }
       if (dynamic_cast<Or_ptr>(term) == nullptr) {
         if (is_satisfiable) {
           is_satisfiable = update_variables();
           if (not is_satisfiable) {
-            break;
+//            break;
           }
         }
         clearTermValuesAndLocalLetVars();
@@ -621,140 +645,126 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
 
       auto& value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
-
+      auto tk = new std::map<int,std::string>(term_keys.begin(),term_keys.end());
+      auto revk = new std::map<std::string,int>(reverse_term_keys.begin(),reverse_term_keys.end());
 
       symbol_table_->LockValues();
       bool is_done = terms_to_solve.empty();
 
       key = term_keys[and_term->term_list->size()];
-      serializers_.push_back(std::thread([key,this,&value_map,is_done] {
-        std::vector<Theory::BinaryIntAutomaton_ptr>* stuff_to_store = new std::vector<Theory::BinaryIntAutomaton_ptr>();
+      serializers_.push_back(std::thread([this, revk, tk, key, &value_map,is_done,is_satisfiable, max] {
+        std::vector<Theory::BinaryIntAutomaton_ptr>* bin_stuff_to_store = new std::vector<Theory::BinaryIntAutomaton_ptr>();
+        std::vector<Theory::StringAutomaton_ptr>* str_stuff_to_store = new std::vector<Theory::StringAutomaton_ptr>();
 
-
-
+        
 
         // first serialize
         int num_string_to_write = 0;
         int num_int_to_write = 0;
-        for (auto iter : value_map) {
-          if (iter.second->getType() == Value::Type::STRING_AUTOMATON and
-              iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
-            if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
-              continue;
-            }
-            num_string_to_write++;
-          } else if (iter.second->getType() ==
-                     Value::Type::BINARYINT_AUTOMATON) {// and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
-            if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
-              continue;
-            }
-            num_int_to_write++;
-            stuff_to_store->push_back(iter.second->getBinaryIntAutomaton()->clone());
-          }
-        }
-
-        this->symbol_table_->UnlockValues();
-
 
         std::stringstream os;
 
-        {
-          cereal::BinaryOutputArchive ar(os);
-          ar(symbol_table_->GetCharacterMapping());
-          ar(num_string_to_write);
-          ar(num_int_to_write);
-        }
+        if(is_satisfiable) {
 
-        for(auto it : *stuff_to_store) {
-          auto export_auto = it;
+          for (auto iter : value_map) {
+            if(iter.second == nullptr) {
+              continue;
+            }
+            
+            if (iter.second->getType() == Value::Type::STRING_AUTOMATON and
+                iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+              if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
+                continue;
+              }
+              num_string_to_write++;
+              str_stuff_to_store->push_back(iter.second->getStringAutomaton()->clone());
+            } else if (iter.second->getType() ==
+                       Value::Type::BINARYINT_AUTOMATON) {// and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+              if (iter.second->getBinaryIntAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
+                continue;
+              }
+              num_int_to_write++;
+              bin_stuff_to_store->push_back(iter.second->getBinaryIntAutomaton()->clone());
+            }
+          }
+          this->symbol_table_->UnlockValues();
+
 
           {
             cereal::BinaryOutputArchive ar(os);
-            export_auto->save(ar);
+            ar(symbol_table_->GetCharacterMapping());
+            ar(num_string_to_write);
+            ar(num_int_to_write);
           }
-          delete export_auto;
-          export_auto = nullptr;
+
+          for(auto it : *str_stuff_to_store) {
+            auto export_auto = it;
+
+            {
+              cereal::BinaryOutputArchive ar(os);
+              export_auto->save(ar);
+            }
+            delete export_auto;
+            export_auto = nullptr;
+          }
+
+          for(auto it : *bin_stuff_to_store) {
+            auto export_auto = it;
+
+            {
+              cereal::BinaryOutputArchive ar(os);
+              export_auto->save(ar);
+            }
+            delete export_auto;
+            export_auto = nullptr;
+          }
+        } else {
+          this->symbol_table_->UnlockValues();
+          os << "0";
         }
 
 
-//        auto &c = rdx_->commandSync<std::string>({"SET", key, os.str()});
-//        if (c.ok()) {
-//          c.free();
-//        } else {
-//          LOG(FATAL) << "Failed to cache result";
-//        }
+
+        
+
+//        LOG(INFO) << "num int = " << num_int_to_write;
+//        LOG(INFO) << "num str = " << num_string_to_write;
+//        std::stringstream os(std::stringstream::in | std::stringstream::out | std::stringstream::binary);
+
 
         auto got_reply = [](redox::Command<std::string>& c) {
           if(!c.ok()) return;
           else return;
         };
-        std::string data = os.str();
-        rdx_->command<std::string>({"SET",key,data}, got_reply);
-        if(is_done) {
-          if(!symbol_table_->isSatisfiable()) data = "0";
-          rdx_->command<std::string>({"SET",root_key_,data},got_reply);
-        }
 
-        delete stuff_to_store;
+
+//        os.seekg(0,std::ios::end);
+//        int size = os.tellg();
+//        os.seekg(0, std::ios::beg);
+
+//        std::vector<char> memdata(size);
+//        os.read(&memdata[0],size);
+
+//        std::string data(memdata.begin(),memdata.end());
+
+
+
+        rdx_->command<std::string>({"SET",key,os.str()}, got_reply);
+        if(is_done || not is_satisfiable) {
+          rdx_->command<std::string>({"SET",root_key_,os.str()},got_reply);
+          for(int i = (*revk)[key]; i < max; i++) {
+            rdx_->command<std::string>({"SET",(*tk)[i],os.str()},got_reply);
+          }
+        } 
+
+        delete str_stuff_to_store;
+        delete bin_stuff_to_store;
+        delete revk;
+        delete tk;
       }));
 
-      // character mapping first
-      // then number of values
-
-
-      // then values
-//      for (auto iter : value_map) {
-//        if (iter.second->getType() == Value::Type::STRING_AUTOMATON and
-//            iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
-//          auto export_auto = iter.second->getStringAutomaton();
-//          if (export_auto->GetFormula()->GetNumberOfVariables() == 0) {
-//            continue;
-//          }
-//
-//          {
-//            cereal::BinaryOutputArchive ar(os);
-//            export_auto->save(ar);
-//          }
-//        }
-//      }
-
-//    LOG(INFO) << "saved str, saving int now...";
-
-//      for (auto iter : value_map) {
-//        if (iter.second->getType() ==
-//            Value::Type::BINARYINT_AUTOMATON) {// and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
-//          auto export_auto = iter.second->getBinaryIntAutomaton();
-//          if (export_auto->GetFormula()->GetNumberOfVariables() == 0) {
-//            continue;
-//          }
-//
-//          {
-//            cereal::BinaryOutputArchive ar(os);
-//            export_auto->save(ar);
-//          }
-//        }
-//      }
-
-
-
-
-//      cache_start2 = std::chrono::steady_clock::now();
-
-
-
-
-//      auto got_reply = [](redox::Command<std::string>& c) {
-//        if(!c.ok()) return;
-//        else return;
-//      };
-//
-//      // then send it to the cache
-//
-//      rdx_->command<std::string>({"SET",key,os.str()}, got_reply);
-
-
-
-
+      
+      if(not is_satisfiable) break;
     }
 
     if (is_component and is_satisfiable) {
@@ -772,8 +782,8 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     Value_ptr result = new Value(is_satisfiable);
     setTermValue(and_term, result);
 
-//    cache_end = std::chrono::steady_clock::now();
-//    diff += cache_end - cache_start;
+    cache_end2 = std::chrono::steady_clock::now();
+    diff2 += cache_end2 - cache_start2;
 
   } else {
     bool is_satisfiable = true;
@@ -783,7 +793,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
      if (is_component) {
        if (constraint_information_->has_arithmetic_constraint(and_term)) {
          arithmetic_constraint_solver_.start(and_term);
-         is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
+         is_satisfiable = true;//arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
          DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *and_term << "@" << and_term;
        }
        if ((is_satisfiable or (!constraint_information_->has_arithmetic_constraint(and_term)))
@@ -838,6 +848,8 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
     setTermValue(and_term, result);
   }
+  
+//  LOG(INFO) << "END and! " << is_satisfiable;
 }
 
 /**
@@ -846,6 +858,10 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
  * 3) Solve single-track strings and mixed constraints
  */
 void ConstraintSolver::visitOr(Or_ptr or_term) {
+
+  std::string old_root_key = root_key_;
+  root_key_ = Ast2Dot::toString(or_term);
+
   bool is_satisfiable = false;
   bool is_component = constraint_information_->is_component(or_term);
 
@@ -898,8 +914,11 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
     }
   }
 
+
+
   Value_ptr result = new Value(is_satisfiable);
   setTermValue(or_term, result);
+  root_key_ = old_root_key;
 
   DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
 }

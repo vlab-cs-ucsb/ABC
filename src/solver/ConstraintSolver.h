@@ -18,6 +18,7 @@
 #include <tuple>
 #include <thread>
 #include <atomic>
+#include <algorithm>
 
 #include <glog/logging.h>
 #include <redox.hpp>
@@ -55,8 +56,8 @@ class ConstraintSolver: public SMT::Visitor {
   std::chrono::duration<double> diff;
   std::chrono::duration<double> diff2;
 
-  std::chrono::duration<double> get_diff3() { return this->arithmetic_constraint_solver_.diff;}
-  std::chrono::duration<double> get_diff4() { return this->arithmetic_constraint_solver_.diff2;}
+  std::chrono::duration<double> get_diff3() { return this->string_constraint_solver_.diff;}
+  std::chrono::duration<double> get_diff4() { return this->string_constraint_solver_.diff2;}
 
 
   ConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr, redox::Redox *);

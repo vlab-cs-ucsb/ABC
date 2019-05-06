@@ -61,6 +61,8 @@ public:
     ar(num_tracks_);
     formula_->load(ar);
     Util::Serialize::load(ar,dfa_);
+    num_of_bdd_variables_ = formula_->GetNumberOfVariables() * (formula_->GetNumberOfVariables() == 1 ? 8 : 9);
+    
     if(dfa_ == nullptr) {
       LOG(INFO) << "Null!?";
     }
@@ -286,7 +288,7 @@ public:
   StringAutomaton_ptr GetKTrack(int track);
   StringAutomaton_ptr ProjectAwayVariable(std::string var_name);
   StringAutomaton_ptr ProjectKTrack(int track);
-  StringAutomaton_ptr ChangeIndicesMap(StringFormula_ptr new_formula);
+  StringAutomaton_ptr ChangeIndicesMap(StringFormula_ptr new_formula, bool clone = true);
 
   void SetSymbolicCounter() override;
   void SetSymbolicCounter(SymbolicCounter&);

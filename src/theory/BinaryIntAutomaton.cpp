@@ -346,14 +346,14 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Complement() {
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr other_auto) {
 
-auto start = std::chrono::steady_clock::now();
+
 
   BinaryIntAutomaton_ptr left_auto = nullptr, right_auto = nullptr;
   ArithmeticFormula_ptr intersect_formula = nullptr;
 
-  if(this->is_natural_number_ != other_auto->is_natural_number_) {
-    LOG(FATAL) << "Numbers don't match";
-  }
+//  if(this->is_natural_number_ != other_auto->is_natural_number_) {
+//    LOG(FATAL) << "Numbers don't match";
+//  }
   auto left_num_tracks = this->GetFormula()->GetNumberOfVariables();
   auto right_num_tracks = other_auto->GetFormula()->GetNumberOfVariables();
   if(left_num_tracks > right_num_tracks) {
@@ -399,6 +399,8 @@ auto start = std::chrono::steady_clock::now();
 //  std::string stupid_key1 = id1 + id2;
 //  std::string stupid_key2 = id2 + id1;
 //  DFA_ptr intersect_dfa = nullptr;
+//
+//
 // //   LOG(FATAL) << "HERE";
 //  if(stupid_cache.find(stupid_key1) != stupid_cache.end()) {
 // //    std::stringstream is(stupid_cache[stupid_key1]);
@@ -428,7 +430,10 @@ auto start = std::chrono::steady_clock::now();
 //    num_misses++;
 //  }
 
+
   auto intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
+
+
   intersect_formula->ResetCoefficients();
   intersect_formula->SetType(ArithmeticFormula::Type::INTERSECT);
   auto intersect_auto = new BinaryIntAutomaton(intersect_dfa, intersect_formula, is_natural_number_);
@@ -457,8 +462,7 @@ auto start = std::chrono::steady_clock::now();
 //  intersect_auto->inspectAuto(false,true);
 //  std::cin.get();
 
-  auto end = std::chrono::steady_clock::now();
-  diff += end-start;
+
 
   DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << right_auto->id_ << ")";
   return intersect_auto;

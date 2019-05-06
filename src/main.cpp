@@ -225,10 +225,11 @@ int main(const int argc, const char **argv) {
   int num_files = files.size();
   int i = 0;
 
+  int num_unsat = 0;
   int total_hits = 0;
   int total_misses = 0;
   for(auto iter : files) {
-//    LOG(INFO) << iter;
+    //LOG(INFO) << iter;
     file = new std::ifstream(iter);
     in = file;
 
@@ -239,21 +240,23 @@ int main(const int argc, const char **argv) {
 
     init_time += init_end-init_start;
 
-    driver.set_option(Vlab::Option::Name::INCREMENTAL);
+    //driver.set_option(Vlab::Option::Name::INCREMENTAL);
 
     if(driver.symbol_table_->has_count_variable() and count_variable.empty()) {
-
+      LOG(FATAL) << "WAT";
       count_variable = driver.symbol_table_->get_count_variable()->getName();
 //      LOG(INFO) << count_variable;
 //      std::cin.get();
     }
 
 //    if (i > 1200 or false and VLOG_IS_ON(30) and not output_root.empty()) {
-//      driver.ast2dot(output_root + "/optimized.dot");
+      driver.ast2dot(output_root + "/" + std::to_string(i) + ".dot");
 //   }
     driver.Solve();
+//    std::cin.get();
     if(not driver.is_sat()) {
-      LOG(INFO) << "UNSAT: " << iter;
+      //LOG(INFO) << "UNSAT: " << iter;
+      num_unsat++;
       // std::cin.get();
     } else {
 
@@ -280,6 +283,10 @@ int main(const int argc, const char **argv) {
     if(i % 100 == 0) {
       LOG(INFO) << i << " constraints done";
     }
+//    if(i % 1000 == 0) {
+//      driver.print_statistics();
+//    }
+//    if(i == 1000) break;
 //    driver.stats();
     count_variable = "";
   }
@@ -296,6 +303,8 @@ int main(const int argc, const char **argv) {
   driver.print_statistics();
   LOG(INFO)<< "arith time: " << std::chrono::duration <long double, std::milli> (driver.diff3).count() << " ms";
   LOG(INFO)<< "bdd   time:" << std::chrono::duration <long double, std::milli> (driver.diff4).count() << " ms";
+  
+  LOG(INFO) << "num unsat: " << num_unsat;
   return 3;
   // driver.reset();
   // delete file;

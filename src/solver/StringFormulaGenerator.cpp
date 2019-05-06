@@ -29,7 +29,7 @@ StringFormulaGenerator::StringFormulaGenerator(Script_ptr script, SymbolTable_pt
 
 
 	current_group_ = symbol_table_->get_var_name_for_node(root_, Variable::Type::STRING);
-//  subgroups_[current_group_] = std::set<std::string>();
+  subgroups_[current_group_] = std::set<std::string>();
 //
 //	auto variables = symbol_table_->get_variables();
 //	for(auto& iter : variables) {
@@ -162,7 +162,6 @@ void StringFormulaGenerator::visitAnd(And_ptr and_term) {
   if(has_string_formula and subgroups_[current_group_].size() > 0 ) {
 		term_group_map_[and_term] = current_group_;
 		constraint_information_->add_string_constraint(and_term);
-		LOG(INFO) << "String constraint added!";
 	}
   if (has_mixed_constraint_) {
 		constraint_information_->add_mixed_constraint(and_term);
@@ -1619,7 +1618,6 @@ void StringFormulaGenerator::delete_term_formula(Term_ptr term) {
 
 void StringFormulaGenerator::set_group_mappings() {
   DVLOG(VLOG_LEVEL)<< "start setting string group for components";
-	return;
 	//TODO: Is this necessary?
 //  for (auto& el : term_group_map_) {
 //  	// only subgroups have formulas
@@ -1627,7 +1625,12 @@ void StringFormulaGenerator::set_group_mappings() {
 //    	term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
 //    }
 //  }
+
+  std::map<Variable_ptr,Value_ptr> var_vals_to_add;
+  std::vector<Variable_ptr> var_vals_to_erase;
+
   for (auto& el: subgroups_) {
+
     symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
   }
   // get values of previous solve (if any)
@@ -1668,18 +1671,31 @@ void StringFormulaGenerator::set_group_mappings() {
       initial_auto = temp_auto;
 
       // remove previous variable value from symbol table's value map
-      delete variable_values[previous_group];
-      variable_values[previous_group] = nullptr;
-      variable_values.erase(previous_group);
+//      delete variable_values[previous_group];
+//      variable_values[previous_group] = nullptr;
+//      variable_values.erase(previous_group);
+      var_vals_to_erase.push_back(previous_group);
     }
 
     Value_ptr initial_value = new Value(initial_auto);
-    symbol_table_->set_value(group_iter.first,initial_value);
-    delete initial_value;
+    auto group_iter_var = symbol_table_->get_variable(group_iter.first);
+    //symbol_table_->set_value(group_iter.first,initial_value);
+//    variable_values[group_iter_var] = initial_value;
+    var_vals_to_add[group_iter_var] = initial_value;
+//    delete initial_value;
   }
 
-  for(auto iter : term_group_map_) {
-    //LOG(INFO) << *iter.first << "," << iter.second;
+  // make sure no data race
+  while(symbol_table_->values_lock_) std::this_thread::yield();
+
+  for(auto it : var_vals_to_erase) {
+    delete variable_values[it];
+    variable_values[it] = nullptr;
+    variable_values.erase(it);
+  }
+
+  for(auto it : var_vals_to_add) {
+    symbol_table_->set_value(it.first,it.second, false);
   }
 
   DVLOG(VLOG_LEVEL) << "done setting string group for components";

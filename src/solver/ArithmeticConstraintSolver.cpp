@@ -102,10 +102,10 @@ void ArithmeticConstraintSolver::setCallbacks() {
           auto result = new Value(binary_int_auto);
           set_term_value(term, result);
 
-          auto term_group_name = arithmetic_formula_generator_.get_term_group_name(term);
-          if(term_group_name.empty()) {
-            LOG(FATAL) << "Term has no group!";
-          }
+          //auto term_group_name = arithmetic_formula_generator_.get_term_group_name(term);
+          //if(term_group_name.empty()) {
+          //  LOG(FATAL) << "Term has no group!";
+          //}
 
 
         //  LOG(INFO) << "symbol table intersect";
@@ -183,7 +183,8 @@ void ArithmeticConstraintSolver::setCallbacks() {
 //            dfa_misses++;
 //          }
 
-          symbol_table_->IntersectValue(term_group_name,result);
+          //symbol_table_->IntersectValue(term_group_name,result);
+//          std::cin.get();
           // once we solve an atomic linear inte  ger arithmetic constraint,
           // we delete its formula to avoid solving it again.
           // Atomic arithmetic constraints solved precisely,
@@ -487,8 +488,9 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 //    delete and_value;
   //LOG(INFO) << "***** SETTING VALUE OF " << group_name << " to " << is_satisfiable;
 
+//  is_satisfiable = symbol_table_->get_value(group_name) != nullptr ? is_satisfiable and symbol_table_->get_value(group_name)->is_satisfiable() : is_satisfiable;
 //  auto satisfiable_value = new Value(is_satisfiable);
-//  symbol_table_->IntersectValue(group_name,satisfiable_value);
+//  set_term_value(and_term, satisfiable_value);
 //  delete satisfiable_value;
   //}
   DVLOG(VLOG_LEVEL) << "post visit component end: " << *and_term << "@" << and_term;
@@ -667,7 +669,7 @@ void ArithmeticConstraintSolver::postVisitAnd(And_ptr and_term) {
 //		has_arithmetic_formula = true;
 //		is_satisfiable = true;
 //	}
-return;
+
   //if (has_arithmetic_formula) {
   	for(auto group : arithmetic_formula_generator_.get_group_subgroups(group_name)) {
 			Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
@@ -687,10 +689,14 @@ return;
 //    }
 //    delete and_value;
   	//LOG(INFO) << "Sat: " << is_satisfiable;
+    if(symbol_table_->get_value(group_name) != nullptr) {
+      is_satisfiable = is_satisfiable and symbol_table_->get_value(group_name)->is_satisfiable();
+    }
   	auto satisfiable_value = new Value(is_satisfiable);
-		symbol_table_->IntersectValue(group_name,satisfiable_value);
-		delete satisfiable_value;
-  //}
+		//symbol_table_->IntersectValue(group_name,satisfiable_value);
+		//delete satisfiable_value;
+    set_term_value(and_term,satisfiable_value);
+        //}
   DVLOG(VLOG_LEVEL) << "update result end: " << *and_term << "@" << and_term;
 }
 

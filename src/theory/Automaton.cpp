@@ -240,8 +240,8 @@ Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
 //		}
 //	}
 
-	LOG(INFO) << "Left num states = " << left_dfa->ns;
-	LOG(INFO) << "Right num states = " << right_dfa->ns;
+//	LOG(INFO) << "Left num states = " << left_dfa->ns;
+//	LOG(INFO) << "Right num states = " << right_dfa->ns;
 	for(int i = 0; i < left_dfa->ns; i++)
 //	for(int i = left_dfa->ns - 1; i >= 0; i--)
 	{
@@ -1565,7 +1565,6 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 	int sink = sink_state_left_auto;
 
 	if(sink_state_left_auto < 0 && sink_state_right_auto < 0) {
-	  LOG(INFO) << "NO SINK";
 		left_sink = right_sink = false;
 		sink = expected_num_of_states;
 		expected_num_of_states++;
@@ -1811,12 +1810,12 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 		statuses[sink] = '-';
 	}
 
-  LOG(INFO) << 1;
+//  LOG(INFO) << 1;
 
 	statuses[expected_num_of_states]='\0';
 	DFA_ptr concat_dfa = dfaMinimize(dfaBuild(statuses));
 	delete[] statuses; statuses = nullptr;
-  LOG(INFO) << 2;
+//  LOG(INFO) << 2;
 //	DFA_ptr tmp_dfa = dfaProject(concat_dfa, (unsigned) number_of_bdd_variables);
 //	dfaFree(concat_dfa);
 //	concat_dfa = dfaMinimize(tmp_dfa);

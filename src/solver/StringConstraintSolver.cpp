@@ -81,18 +81,26 @@ void StringConstraintSolver::setCallbacks() {
         auto formula = string_formula_generator_.get_term_formula(term);
         if (formula != nullptr && formula->GetType() != Theory::StringFormula::Type::NONRELATIONAL) {
           DVLOG(VLOG_LEVEL) << "Relational String Formula: " << *formula << "@" << term;
-          LOG(FATAL) << "HERE";
 //          for(auto it : formula->GetVariableCoefficientMap()) {
 //            LOG(INFO) << it.first;
 //          }
 //          LOG(INFO) << "";
+
+//          auto start = std::chrono::steady_clock::now();
+
           auto relational_str_auto = StringAutomaton::MakeAutomaton(formula->clone());
+
+//          if(Term::Type::NOTEQ == term->type()) {
+//            auto end = std::chrono::steady_clock::now();
+//            diff += end - start;
+//          }
+
           auto result = new Value(relational_str_auto);
           set_term_value(term, result);
-          auto term_group_name = string_formula_generator_.get_term_group_name(term);
-          if(term_group_name.empty()) {
-            LOG(FATAL) << "Term has no group!";
-          }
+//          auto term_group_name = string_formula_generator_.get_term_group_name(term);
+//          if(term_group_name.empty()) {
+//            LOG(FATAL) << "Term has no group!";
+//          }
           // LOG(INFO) << "symbol table intersect";
 //
 //
@@ -168,8 +176,8 @@ void StringConstraintSolver::setCallbacks() {
 //            diff += cache_end - cache_start;
 //            dfa_misses++;
 //          }
-
-           symbol_table_->IntersectValue(term_group_name,result);
+          while(symbol_table_->values_lock_) std::this_thread::yield();
+  //        symbol_table_->IntersectValue(term_group_name,result);
 //          symbol_table_->get_value(term_group_name)->getStringAutomaton()->inspectAuto(false,true);
 //          std::cin.get();
           // once we solve an atomic string constraint,
