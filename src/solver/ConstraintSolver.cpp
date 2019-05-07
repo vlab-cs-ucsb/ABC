@@ -363,9 +363,10 @@ void ConstraintSolver::visitLet(Let_ptr let_term) {
 void ConstraintSolver::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "start visit and";
 
-  
+
 
   std::map<int,std::string> term_keys;
+  std::map<std::string,int> reverse_term_keys;
 
   bool is_satisfiable = true;
   bool is_component = constraint_information_->is_component(and_term);
@@ -377,52 +378,54 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
   std::stack<Term_ptr> terms_to_solve;
   std::string key, cached_data;
-  bool has_cached_result = false;
+
 
   if(Option::Solver::INCREMENTAL == true) {
 
-    std::atomic<bool> has_result;
-    std::atomic<bool> cmd_done;
-    has_result = false;
-    cmd_done = false;
-
+    auto m_data = std::make_shared<std::mutex>();
+    auto alone = std::make_shared<std::atomic<bool>>(false);
     std::atomic<int> count;
     count = 0;
+    std::atomic<bool> has_cached_result;
+    has_cached_result = false;
+
     std::string success_key = "";
 
-    std::map<std::string,int> reverse_term_keys;
 
     cache_start2 = std::chrono::steady_clock::now();
 
-    auto got_reply = [&](redox::Command<std::string>& c) {
-      //if(has_result || cached_data.size() > 0 || success_key.length() > 0) return;
-      count++;
+    auto got_reply = [&,m_data,alone](redox::Command<std::string>& c) {
       if(c.ok()) {
-        has_result = true;
-        cached_data = c.reply();
-        if(cached_data.size() > 1) success_key = c.cmd().substr(4);
-        has_cached_result = true;
+        // if we have cahced data, we'll use it if we're the first one back from redis
+        std::unique_lock<std::mutex> lk(*m_data);
+        if(has_cached_result == false) {
+          cached_data = c.reply();
+          if(cached_data.size() > 1) success_key = c.cmd().substr(4);
+          has_cached_result = true;
+          *alone = true;
+        }
+        lk.unlock();
       }
-      cmd_done = true;
+      if(not (*alone)) {
+        count++;
+      }
     };
 
 
     int max = and_term->term_list->size();
-    while (!has_result && and_term->term_list->size() > 0) {
+    while (!has_cached_result && and_term->term_list->size() > 0) {
 
       key = Ast2Dot::toString(and_term);
       reverse_term_keys[key] = and_term->term_list->size();
       term_keys[and_term->term_list->size()] = key;
       rdx_->command<std::string>({"GET", key},got_reply);
-      
-      while(cmd_done == false) std::this_thread::yield();
-      cmd_done = false;
+
 
       terms_to_solve.push(and_term->term_list->back());
       and_term->term_list->pop_back();
     }
 
-    while(count < max && !has_result) std::this_thread::yield();
+    while(count < max && !has_cached_result) std::this_thread::yield();
 
 
     if (cached_data.size() == 1) {
@@ -432,7 +435,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       return;
     }
 
-    if(has_result) {
+    if(has_cached_result) {
       int num_terms_cached = reverse_term_keys[success_key];
 
       while(and_term->term_list->size() < num_terms_cached) {
@@ -588,35 +591,35 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 //      cache_start = std::chrono::steady_clock::now();
 
 
-      cache_start = std::chrono::steady_clock::now();
+      if(dynamic_cast<Or_ptr>(term) == nullptr) {
+        cache_start = std::chrono::steady_clock::now();
 
-      arithmetic_constraint_solver_.collect_arithmetic_constraint_info(term);
-      string_constraint_solver_.collect_string_constraint_info(term);
-
-
-
-      cache_end = std::chrono::steady_clock::now();
-      diff += cache_end-cache_start;
+        arithmetic_constraint_solver_.collect_arithmetic_constraint_info(term);
+        string_constraint_solver_.collect_string_constraint_info(term);
 
 
+        cache_end = std::chrono::steady_clock::now();
+        diff += cache_end - cache_start;
 
-      // solve term using normal constraint solving algorithm
-      if (is_component) {
-        if (constraint_information_->has_arithmetic_constraint(term)) {
-          arithmetic_constraint_solver_.start(term);
-          is_satisfiable = arithmetic_constraint_solver_.get_term_value(term)->is_satisfiable();
-          DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *term << "@" << term;
+
+
+        // solve term using normal constraint solving algorithm
+        if (is_component) {
+          if (constraint_information_->has_arithmetic_constraint(term)) {
+            arithmetic_constraint_solver_.start(term);
+            is_satisfiable = arithmetic_constraint_solver_.get_term_value(term)->is_satisfiable();
+            DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *term << "@" << term;
+          }
+          if ((is_satisfiable or (!constraint_information_->has_arithmetic_constraint(term)))
+              and constraint_information_->has_string_constraint(term)) {
+            string_constraint_solver_.start(term);
+            is_satisfiable = string_constraint_solver_.get_term_value(term)->is_satisfiable();
+            DVLOG(VLOG_LEVEL) << "String formulae solved: " << *term << "@" << term;
+          }
+
+          DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *term << "@" << term;
         }
-        if ((is_satisfiable or (!constraint_information_->has_arithmetic_constraint(term)))
-            and constraint_information_->has_string_constraint(term)) {
-          string_constraint_solver_.start(term);
-          is_satisfiable = string_constraint_solver_.get_term_value(term)->is_satisfiable();
-          DVLOG(VLOG_LEVEL) << "String formulae solved: " << *term << "@" << term;
-        }
-
-        DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *term << "@" << term;
       }
-
 
 
       // solve non-relational terms

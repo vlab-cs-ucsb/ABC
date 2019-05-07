@@ -240,7 +240,7 @@ int main(const int argc, const char **argv) {
 
     init_time += init_end-init_start;
 
-    //driver.set_option(Vlab::Option::Name::INCREMENTAL);
+    driver.set_option(Vlab::Option::Name::INCREMENTAL);
 
     if(driver.symbol_table_->has_count_variable() and count_variable.empty()) {
       LOG(FATAL) << "WAT";

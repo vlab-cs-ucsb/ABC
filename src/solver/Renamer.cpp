@@ -285,7 +285,7 @@ void Renamer::visitTermConstant(TermConstant_ptr term_constant) {
 ////
 ////
 //  // only for string constants atm?
-/*  
+
     auto current_scope = symbol_table_->top_scope();
   auto root_scope = root_;
   std::string value = term_constant->primitive->getData();
@@ -336,7 +336,7 @@ void Renamer::visitTermConstant(TermConstant_ptr term_constant) {
   }
 
   term_constant->primitive->setData(new_value);
-*/
+
 }
 
 void Renamer::visitIdentifier(Identifier_ptr identifier) {

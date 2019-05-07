@@ -140,7 +140,7 @@ void Driver::InitializeSolver() {
   syntactic_optimizer.start();
 
 
-  ast2dot(output_root + "/post_syntactic_optimizer.dot");
+//  ast2dot(output_root + "/post_syntactic_optimizer.dot");
   int i = 0;
   if (Option::Solver::ENABLE_EQUIVALENCE_CLASSES) {
     Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);

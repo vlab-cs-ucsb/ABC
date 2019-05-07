@@ -19,6 +19,7 @@
 #include <thread>
 #include <atomic>
 #include <algorithm>
+#include <mutex>
 
 #include <glog/logging.h>
 #include <redox.hpp>

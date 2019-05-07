@@ -1603,6 +1603,9 @@ std::string StringFormulaGenerator::generate_group_name(SMT::Term_ptr term, std:
 bool StringFormulaGenerator::set_term_formula(Term_ptr term, StringFormula_ptr formula) {
   auto result = term_formula_.insert(std::make_pair(term, formula));
   if (result.second == false) {
+    for(auto it : formula->GetVariableCoefficientMap()) {
+      LOG(INFO) << it.first << "," << it.second;
+    }
     LOG(FATAL)<< "formula is already computed for term: " << *term;
   }
   return result.second;
