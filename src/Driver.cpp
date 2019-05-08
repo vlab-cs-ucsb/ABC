@@ -133,12 +133,16 @@ void Driver::InitializeSolver() {
 
   std::string output_root {"./output"};
 
+  auto start = std::chrono::steady_clock::now();
   Solver::SyntacticProcessor syntactic_processor(script_);
   syntactic_processor.start();
 
   Solver::SyntacticOptimizer syntactic_optimizer(script_, symbol_table_);
   syntactic_optimizer.start();
 
+  auto end = std::chrono::steady_clock::now();
+  auto time2 = end-start;
+  diff4 += time2;
 
 //  ast2dot(output_root + "/post_syntactic_optimizer.dot");
   int i = 0;
@@ -150,7 +154,8 @@ void Driver::InitializeSolver() {
       i++;
     } while (equivalence_generator.has_constant_substitution());
   }
-  auto start = std::chrono::steady_clock::now();
+  
+  
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
 	dependency_slicer.start();
 
@@ -176,8 +181,6 @@ void Driver::InitializeSolver() {
    */
 
 
-  auto end = std::chrono::steady_clock::now();
-  auto time2 = end-start;
 
 //  LOG(INFO) << "Initalize time   : " << std::chrono::duration<long double, std::milli>(time2).count();
 }
@@ -196,7 +199,7 @@ void Driver::Solve() {
   diff += constraint_solver->diff;
   diff2 += constraint_solver->diff2;
   diff3 += constraint_solver->get_diff3();
-  diff4 += constraint_solver->get_diff4();
+  //diff4 += constraint_solver->get_diff4();
 //  LOG(INFO) << "Done start";
 // LOG(INFO) << "num_hits    = " << Solver::ArithmeticConstraintSolver::dfa_hits;
 // LOG(INFO) << "num_misses  = " << Solver::ArithmeticConstraintSolver::dfa_misses;

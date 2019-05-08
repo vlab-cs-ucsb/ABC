@@ -28,6 +28,7 @@
 #include <vector>
 #include <queue>
 #include <chrono>
+#include <redox.hpp>
 
 #include <glog/logging.h>
 #include <mona/bdd.h>
@@ -255,6 +256,7 @@ public:
   static void CleanUp();
 
 
+  static redox::Redox *rdx_;
 	//static std::map<std::pair<std::string,std::string>,DFA> stupid_cache;
 	static std::map<std::string,DFA_ptr> stupid_cache;
 	static int num_misses;

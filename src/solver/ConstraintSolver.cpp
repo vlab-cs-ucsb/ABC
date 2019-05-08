@@ -36,6 +36,7 @@ ConstraintSolver::ConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_tab
   diff2 = end-start;
 
   arithmetic_constraint_solver_.rdx_ = rdx_;
+  Automaton::rdx_ = rdx_;
 }
 
 ConstraintSolver::~ConstraintSolver() {
@@ -450,8 +451,8 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       num_misses_ += max;
     }
 
-//    cache_end2 = std::chrono::steady_clock::now();
-//    diff2 += cache_end2 - cache_start2;
+    cache_end2 = std::chrono::steady_clock::now();
+    diff2 += cache_end2 - cache_start2;
 //    while (not has_cached_result and and_term->term_list->size() > 0) {
 //
 //      key = Ast2Dot::toString(and_term);
@@ -598,8 +599,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         string_constraint_solver_.collect_string_constraint_info(term);
 
 
-        cache_end = std::chrono::steady_clock::now();
-        diff += cache_end - cache_start;
+
 
 
 
@@ -619,6 +619,9 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
           DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *term << "@" << term;
         }
+
+        cache_end = std::chrono::steady_clock::now();
+        diff += cache_end - cache_start;
       }
 
 
@@ -655,7 +658,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       bool is_done = terms_to_solve.empty();
 
       key = term_keys[and_term->term_list->size()];
-      serializers_.push_back(std::thread([this, revk, tk, key, &value_map,is_done,is_satisfiable, max] {
+      serializers_.push_back(std::thread([root_key_=root_key_,rdx_ = rdx_,symbol_table_=symbol_table_, revk, tk, key, &value_map,is_done,is_satisfiable, max] {
         std::vector<Theory::BinaryIntAutomaton_ptr>* bin_stuff_to_store = new std::vector<Theory::BinaryIntAutomaton_ptr>();
         std::vector<Theory::StringAutomaton_ptr>* str_stuff_to_store = new std::vector<Theory::StringAutomaton_ptr>();
 
@@ -690,7 +693,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
               bin_stuff_to_store->push_back(iter.second->getBinaryIntAutomaton()->clone());
             }
           }
-          this->symbol_table_->UnlockValues();
+
 
 
           {
@@ -699,6 +702,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
             ar(num_string_to_write);
             ar(num_int_to_write);
           }
+          symbol_table_->UnlockValues();
 
           for(auto it : *str_stuff_to_store) {
             auto export_auto = it;
@@ -722,7 +726,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
             export_auto = nullptr;
           }
         } else {
-          this->symbol_table_->UnlockValues();
+          symbol_table_->UnlockValues();
           os << "0";
         }
 
@@ -785,8 +789,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     Value_ptr result = new Value(is_satisfiable);
     setTermValue(and_term, result);
 
-    cache_end2 = std::chrono::steady_clock::now();
-    diff2 += cache_end2 - cache_start2;
+
 
   } else {
     bool is_satisfiable = true;

@@ -243,14 +243,13 @@ int main(const int argc, const char **argv) {
     driver.set_option(Vlab::Option::Name::INCREMENTAL);
 
     if(driver.symbol_table_->has_count_variable() and count_variable.empty()) {
-      LOG(FATAL) << "WAT";
       count_variable = driver.symbol_table_->get_count_variable()->getName();
 //      LOG(INFO) << count_variable;
 //      std::cin.get();
     }
 
 //    if (i > 1200 or false and VLOG_IS_ON(30) and not output_root.empty()) {
-      driver.ast2dot(output_root + "/" + std::to_string(i) + ".dot");
+//      driver.ast2dot(output_root + "/" + std::to_string(i) + ".dot");
 //   }
     driver.Solve();
 //    std::cin.get();

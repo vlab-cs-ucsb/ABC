@@ -1551,7 +1551,6 @@ StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
   StringAutomaton_ptr left_auto = nullptr, right_auto = nullptr;
   StringFormula_ptr intersect_formula = nullptr;
 
-  auto start = std::chrono::steady_clock::now();
 
   auto left_num_tracks = this->GetFormula()->GetNumberOfVariables();
   auto right_num_tracks = other_auto->GetFormula()->GetNumberOfVariables();
@@ -1624,9 +1623,7 @@ StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
 
 
 	auto intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
-  num_hits++;
-  auto end = std::chrono::steady_clock::now();
-  diff += end-start;
+
 
 	auto intersect_auto = new StringAutomaton(intersect_dfa,intersect_formula,left_auto->num_of_bdd_variables_);
 
@@ -1661,63 +1658,83 @@ StringAutomaton_ptr StringAutomaton::Difference(StringAutomaton_ptr other_auto) 
 
 StringAutomaton_ptr StringAutomaton::Concat(StringAutomaton_ptr other_auto) {
   CHECK_EQ(this->num_tracks_,other_auto->num_tracks_);
+  StringAutomaton_ptr left_auto = this, right_auto = other_auto;
 
-//  this->Minimize();
-//  other_auto->Minimize();
-//  if(other_auto->dfa_->ns >= 27) {
-//
-//    LOG(INFO) << "Left num states  = " << this->dfa_->ns;
-//    LOG(INFO) << "Right num states = " << other_auto->dfa_->ns;
-//    this->inspectAuto(false,true);
-//    other_auto->inspectAuto(false,true);
-//    std::cin.get();
-////    auto tat = StringAutomaton::MakeAnyStringLengthGreaterThan(0);
-//    DFA_ptr r_tat_dfa = Automaton::DFAReverse(dfa_,num_of_bdd_variables_);
-//    auto r_tat_auto = new StringAutomaton(r_tat_dfa,num_of_bdd_variables_);
-//    r_tat_auto->inspectAuto(false,true);
-//    std::cin.get();
-//
-//
-//    DFA_ptr reversed_dfa = Automaton::DFAReverse(other_auto->dfa_,other_auto->get_number_of_bdd_variables());
-//    auto s_auto = new StringAutomaton(reversed_dfa, num_of_bdd_variables_);
-//    s_auto->inspectAuto(false,true);
-//    std::cin.get();
-//
-//    StringAutomaton_ptr concat_auto = static_cast<StringAutomaton_ptr>(s_auto->Concat(r_tat_auto));
-//    concat_auto->inspectAuto(false,true);
-//    std::cin.get();
-//
-//    DFA_ptr reversed_concat_dfa = Automaton::DFAReverse(concat_auto->dfa_, concat_auto->num_of_bdd_variables_);
-//    StringAutomaton_ptr final_concat_auto = new StringAutomaton(reversed_concat_dfa, concat_auto->num_of_bdd_variables_);
-//    final_concat_auto->inspectAuto(false,true);
-//    std::cin.get();
-//
-//  }
-//  StringAutomaton_ptr concat_auto = static_cast<StringAutomaton_ptr>(Automaton::Concat(other_auto));
-//  if(concat_auto->IsEmptyLanguage()) {
-//    this->inspectAuto(false,true);
-//    other_auto->inspectAuto(false,true);
-//    std::cin.get();
-//  }
 
-//  if(other_auto->dfa_->ns >= 25) {
-//    this->inspectAuto(false,true);
-//    other_auto->inspectAuto(false,true);
-//    std::cin.get();
-//    StringAutomaton_ptr length_auto = StringAutomaton::MakeAnyStringLengthLessThanOrEqualTo(10);
-//    auto suffix_dfa = StringAutomaton::TrimPrefix(other_auto->dfa_,length_auto->dfa_, DEFAULT_NUM_OF_VARIABLES);
-//    auto prefix_dfa = StringAutomaton::TrimSuffix(other_auto->dfa_,suffix_dfa,DEFAULT_NUM_OF_VARIABLES);
-//    auto concat_dfa_1 = StringAutomaton::concat(dfa_,prefix_dfa,this->num_of_bdd_variables_);
-//    auto concat_dfa_2 = StringAutomaton::concat(concat_dfa_1, suffix_dfa,this->num_of_bdd_variables_);
-//    dfaFree(suffix_dfa);
-//    dfaFree(prefix_dfa);
-//    dfaFree(concat_dfa_1);
-//    return new StringAutomaton(concat_dfa_2,this->num_of_bdd_variables_);
-//  }
+  std::string id1, id2;
+
+  std::stringstream os1;
+  //{
+  // //  cereal::BinaryOutputArchive ar(os1);
+  // //  Util::Serialize::save(ar,left_auto->dfa_);
+  // //}
+  left_auto->toBDD(os1);
+  id1 = os1.str();
+
+  std::stringstream os2;
+  //{
+  //  cereal::BinaryOutputArchive ar(os2);
+  //  Util::Serialize::save(ar,right_auto->dfa_);
+  //}
+  right_auto->toBDD(os2);
+  id2 = os2.str();
+
+  //std::pair<std::string,std::string> stupid_key1(id1,id2);
+  //std::pair<std::string,std::string> stupid_key2(id2,id1);
+  std::string stupid_key1 = id1 + id2;
+
+
+  DFA_ptr concat_dfa = nullptr;
+
+  auto &c = rdx_->commandSync<std::string>({"GET", stupid_key1});
+
+  bool has_result = false;
+  std::string cached_data;
+  if(c.ok()) {
+    has_result = true;
+    cached_data = c.reply();
+  }
+  c.free();
+//  if(stupid_cache.find(stupid_key1) != stupid_cache.end()) {
+  if(has_result) {
+    std::stringstream is(cached_data);
+    {
+      cereal::BinaryInputArchive ar(is);
+      Util::Serialize::load(ar,concat_dfa);
+    }
+//  concat_dfa = dfaCopy(stupid_cache[stupid_key1]);
+    num_hits++;
+  } else {
+    concat_dfa = StringAutomaton::concat(dfa_, other_auto->dfa_,this->num_of_bdd_variables_);
+    std::stringstream os;
+    {
+      cereal::BinaryOutputArchive ar(os);
+      Util::Serialize::save(ar,concat_dfa);
+    }
+//    stupid_cache[stupid_key1] = dfaCopy(concat_dfa);
+    rdx_->command<std::string>({"SET", stupid_key1,os.str()});
+    num_misses++;
+  }
 
 //  auto concat_dfa = StringAutomaton::concat(dfa_, other_auto->dfa_,this->num_of_bdd_variables_);
-//  auto concat_auto = new StringAutomaton(concat_dfa,this->num_of_bdd_variables_);
-  StringAutomaton_ptr concat_auto = static_cast<StringAutomaton_ptr>(Automaton::Concat(other_auto));
+  auto concat_auto = new StringAutomaton(concat_dfa,this->num_of_bdd_variables_);
+
+
+
+//  if(not DFAIsEqual(concat_auto_0->dfa_,concat_auto->dfa_)) {
+//    LOG(INFO) << dfa_->ns << "," << other_auto->dfa_->ns;
+//    this->inspectAuto(false,true);
+//    other_auto->inspectAuto(false,true);
+//
+//    concat_auto_0->inspectAuto(false,true);
+//    concat_auto->inspectAuto(false,true);
+//
+//
+//
+//    LOG(FATAL) << "SHOULD BE EMPTY";
+//  }
+//  delete concat_auto_0;
+
   return concat_auto;
 }
 

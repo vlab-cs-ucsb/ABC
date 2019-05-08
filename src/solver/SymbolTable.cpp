@@ -64,6 +64,9 @@ SymbolTable::SymbolTable(const SymbolTable &symbol_table) {
 }
 
 SymbolTable::~SymbolTable() {
+
+  while(values_lock_) std::this_thread::yield();
+
 	for (auto& map_pair : variable_value_table_) {
     for (auto& value_pair : map_pair.second) {
     	delete value_pair.second;

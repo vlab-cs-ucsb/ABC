@@ -16,6 +16,7 @@ const int Automaton::VLOG_LEVEL = 9;
 int Automaton::num_misses = 0;
 int Automaton::num_hits = 0;
 std::chrono::duration<double> Automaton::diff = std::chrono::steady_clock::now() - std::chrono::steady_clock::now();
+redox::Redox* Automaton::rdx_ = nullptr;
 
 //std::map<std::pair<std::string,std::string>,DFA> Automaton::stupid_cache;
 std::map<std::string,DFA_ptr> Automaton::stupid_cache;
@@ -216,6 +217,7 @@ Automaton_ptr Automaton::Difference(Automaton_ptr other_automaton) {
 }
 
 Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
+  LOG(FATAL) << "Dont use me, broken; use stringautomaton concat method";
 	if(this->num_of_bdd_variables_ != other_automaton->num_of_bdd_variables_) {
 		LOG(FATAL) << "number of variables does not match between both automaton!";
 	}
@@ -225,7 +227,10 @@ Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
 	DFA_ptr tmp_dfa;
 	DFA_ptr left_dfa = this->dfa_, right_dfa = other_automaton->dfa_;
 
-	if (DFAIsMinimizedOnlyAcceptingEmptyInput(left_dfa)) {
+  if(DFAIsMinimizedEmtpy(left_dfa) or DFAIsMinimizedEmtpy(right_dfa)) {
+    LOG(INFO) << "Its true!";
+    return MakeAutomaton(DFAMakePhi(num_of_bdd_variables_),this->GetFormula()->clone() ,num_of_bdd_variables_);
+  } if (DFAIsMinimizedOnlyAcceptingEmptyInput(left_dfa)) {
 		return other_automaton->clone();
 	} else if (DFAIsMinimizedOnlyAcceptingEmptyInput(right_dfa)) {
 		return this->clone();
@@ -248,6 +253,9 @@ Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
 
 		if(left_dfa->f[i] == 1) {
 			next_state = i;
+			if(num_of_bdd_variables_ == 0) {
+			  LOG(FATAL) << "WAT";
+			}
 			DFA_ptr d = DFAConcat(left_dfa, other_automaton->dfa_,num_of_bdd_variables_);
 			if(initial_dfa == nullptr) {
 				initial_dfa = d;
@@ -264,7 +272,6 @@ Automaton_ptr Automaton::Concat(Automaton_ptr other_automaton) {
 //		tmp_dfa = initial_dfa;
 //		initial_dfa = DFAUnion(tmp_dfa,other_automaton->dfa_);
 //		delete tmp_dfa;
-//		delete left_dfa; left_dfa = nullptr;
 //	}
 
 	//DFA_ptr concat_dfa = Automaton::DFAConcat(this->dfa_,other_automaton->dfa_,num_of_bdd_variables_);
@@ -892,19 +899,21 @@ void Automaton::CleanUp() {
 }
 
 bool Automaton::DFAIsMinimizedEmtpy(const DFA_ptr minimized_dfa) {
-    return (minimized_dfa->ns == 1 && minimized_dfa->f[minimized_dfa->s] == -1)? true : false;
+    return (minimized_dfa->ns == 1 && minimized_dfa->f[minimized_dfa->s] != 1)? true : false;
 }
 
 // TODO implement general is empty function
 bool Automaton::DFAIsEmpty(const DFA_ptr dfa) {
-  bool result = false;
+  //bool result = true;
   for (int s = 0; s < dfa->ns; ++s) {
     if (DFAIsAcceptingState(dfa, s)) {
+      return false;
       // check if the accepting state is reachable
-      LOG(FATAL) << "Not implemented";
+//      LOG(FATAL) << "Not implemented";
     }
   }
-  return result;
+  return true;
+  //return result;
 }
 
 bool Automaton::DFAIsMinimizedOnlyAcceptingEmptyInput(const DFA_ptr minimized_dfa) {
@@ -1547,7 +1556,6 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 	tmp_num_of_variables = number_of_bdd_variables;
 	//int both_extrabit = tmp_num_of_variables++;
 	int suffix_extrabit_0 = tmp_num_of_variables++;
-	int suffix_extrabit_1 = tmp_num_of_variables++;
 	//tmp_num_of_variables = number_of_bdd_variables + 1; // add one extra bit
 
 
@@ -1629,7 +1637,6 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 			}
 
       current_exception.push_back('1');
-      current_exception.push_back('X');
 
 			//current_exception.push_back('1'); // new path
 			current_exception.push_back('\0');
@@ -1664,7 +1671,6 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 			}
 
       current_exception.push_back('0');
-      current_exception.push_back('X');
 			//current_exception.push_back('0'); // add extra bit, '0' is used for the exceptions coming from left auto
 			current_exception.push_back('\0');
 			exceptions_left_auto[current_exception] = to_state;
@@ -1750,14 +1756,6 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 							}
 						}
 
-						if(i < right_dfa->ns/2) {
-						  current_exception.push_back('X');
-						  current_exception.push_back('0');
-						} else {
-						  current_exception.push_back('X');
-						  current_exception.push_back('1');
-						}
-
 						//current_exception.push_back('0'); // old value
 						current_exception.push_back('\0');
 
@@ -1832,12 +1830,6 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
   concat_dfa = dfaMinimize(tmp_dfa);
   dfaFree(tmp_dfa);
 
-//  if(right_dfa->ns == 27) dfaRightQuotient(concat_dfa,(unsigned)suffix_extrabit_1);
-  tmp_dfa = dfaProject(concat_dfa, (unsigned)suffix_extrabit_1);
-  dfaFree(concat_dfa);
-  concat_dfa = dfaMinimize(tmp_dfa);
-  dfaFree(tmp_dfa);
-
 	if (left_hand_side_accepts_emtpy_input) {
 		tmp_dfa = concat_dfa;
 		concat_dfa = DFAUnion(tmp_dfa,dfa2);
@@ -1853,6 +1845,8 @@ DFA_ptr Automaton::DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int n
 
   return concat_dfa;
 }
+
+
 
 int* Automaton::GetBddVariableIndices(const int number_of_bdd_variables) {
   auto it = bdd_variable_indices.find(number_of_bdd_variables);
@@ -2718,7 +2712,7 @@ void Automaton::add_print_label(std::ostream& out) {
 
 void Automaton::toBDD(std::ostream& out) {
 
-//  BddDump(out,this->dfa_->bddm);
+//  Automaton::BddDump(out,this->dfa_->bddm);
 //  for(int i = 0; i < this->dfa_->ns; i++) {
 //    out << this->dfa_->f[i] << ",";
 //  }
