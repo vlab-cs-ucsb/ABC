@@ -81,100 +81,59 @@ void StringConstraintSolver::setCallbacks() {
         auto formula = string_formula_generator_.get_term_formula(term);
         if (formula != nullptr && formula->GetType() != Theory::StringFormula::Type::NONRELATIONAL) {
           DVLOG(VLOG_LEVEL) << "Relational String Formula: " << *formula << "@" << term;
-//          for(auto it : formula->GetVariableCoefficientMap()) {
-//            LOG(INFO) << it.first;
-//          }
-//          LOG(INFO) << "";
+          StringAutomaton_ptr relational_str_auto = nullptr;
 
           auto start = std::chrono::steady_clock::now();
 
-          auto relational_str_auto = StringAutomaton::MakeAutomaton(formula->clone());
+          std::stringstream os1;
+          {
+            cereal::BinaryOutputArchive ar(os1);
+            formula->save(ar);
+          }
+          std::string key = os1.str();
+          bool has_result = false;
+          std::string cached_data;
+
+          auto &c = rdx_->commandSync<std::string>({"GET", key});
+          if(c.ok()) {
+            has_result = true;
+            cached_data = c.reply();
+          }
+          c.free();
+
+          if(has_result) {
+            std::stringstream is(cached_data);
+            DFA* relational_dfa = nullptr;
+            {
+              cereal::BinaryInputArchive ar(is);
+              Util::Serialize::load(ar,relational_dfa);
+            }
+            int num_vars = formula->GetNumberOfVariables();
+            relational_str_auto = new StringAutomaton(relational_dfa,formula,num_vars == 1? 8 : num_vars * 9);
+            Automaton::num_hits++;
+          } else {
+            relational_str_auto = StringAutomaton::MakeAutomaton(formula->clone());
+            std::stringstream os;
+            {
+              cereal::BinaryOutputArchive ar(os);
+              Util::Serialize::save(ar, relational_str_auto->getDFA());
+            }
+            rdx_->command<std::string>({"SET", key,os.str()});
+            Automaton::num_misses++;
+          }
 
           auto end = std::chrono::steady_clock::now();
           diff += end - start;
 
 
+          //relational_str_auto = StringAutomaton::MakeAutomaton(formula->clone());
           auto result = new Value(relational_str_auto);
-          set_term_value(term, result);
+          //set_term_value(term, result);
           auto term_group_name = string_formula_generator_.get_term_group_name(term);
           if(term_group_name.empty()) {
             LOG(FATAL) << "Term has no group!";
           }
-          // LOG(INFO) << "symbol table intersect";
-//
-//
-//          auto left_auto = symbol_table_->get_value(term_group_name)->getStringAutomaton();
-//          auto right_auto = relational_str_auto;
-//
-//          auto bdd_start = std::chrono::steady_clock::now();
-//
-//          std::string id1, id2;
-//          std::stringstream os1;
-//  //        {
-//  //          cereal::BinaryOutputArchive ar(os1);
-//  //          Util::Serialize::save(ar, left_auto->getDFA());
-//  //        }
-//          left_auto->toBDD(os1);
-//          id1 = os1.str();
-//
-//          std::stringstream os2;
-//  //        {
-//  //          cereal::BinaryOutputArchive ar(os1);
-//  //          Util::Serialize::save(ar, right_auto->getDFA());
-//  //        }
-//          right_auto->toBDD(os2);
-//          id2 = os2.str();
-//
-//  //        LOG(INFO) << id1.size();
-//
-//          auto bdd_end = std::chrono::steady_clock::now();
-//          diff2 += bdd_end-bdd_start;
-//
-//          std::string stupid_key1 = id1 + id2;
-//          std::string stupid_key2 = id2 + id1;
-//          Theory::DFA_ptr intersect_dfa = nullptr;
-//          Theory::StringAutomaton_ptr intersect_auto = nullptr;
-//
-//          if(stupid_cache.find(stupid_key1) != stupid_cache.end()) {
-//            auto cache_start = std::chrono::steady_clock::now();
-//
-//            intersect_dfa = dfaCopy(stupid_cache[stupid_key1]);
-//
-//
-//            auto new_formula = symbol_table_->get_value(term_group_name)->getStringAutomaton()->GetFormula()->Intersect(result->getStringAutomaton()->GetFormula());
-//            intersect_auto = new Theory::StringAutomaton(intersect_dfa,new_formula,false);
-//            symbol_table_->set_value(term_group_name,new Value(intersect_auto));
-//            dfa_hits++;
-//
-//
-//            auto cache_end = std::chrono::steady_clock::now();
-//            diff += cache_end - cache_start;
-//
-//          } else if (stupid_cache.find(stupid_key2) != stupid_cache.end()) {
-//            auto cache_start = std::chrono::steady_clock::now();
-//
-//            intersect_dfa = dfaCopy(stupid_cache[stupid_key2]);
-//
-//
-//            auto new_formula = symbol_table_->get_value(term_group_name)->getStringAutomaton()->GetFormula()->Intersect(result->getStringAutomaton()->GetFormula());
-//            intersect_auto = new Theory::StringAutomaton(intersect_dfa,new_formula,false);
-//            symbol_table_->set_value(term_group_name,new Value(intersect_auto));
-//            dfa_hits++;
-//
-//
-//            auto cache_end = std::chrono::steady_clock::now();
-//            diff += cache_end - cache_start;
-//
-//          } else {
-//
-//            symbol_table_->IntersectValue(term_group_name,result);
-//            auto cache_start = std::chrono::steady_clock::now();
-//            intersect_dfa = symbol_table_->get_value(term_group_name)->getStringAutomaton()->getDFA();
-//            stupid_cache[stupid_key1] = dfaCopy(intersect_dfa);
-//            auto cache_end = std::chrono::steady_clock::now();
-//            diff += cache_end - cache_start;
-//            dfa_misses++;
-//          }
+
           while(symbol_table_->values_lock_) std::this_thread::yield();
           symbol_table_->IntersectValue(term_group_name,result);
 //          symbol_table_->get_value(term_group_name)->getStringAutomaton()->inspectAuto(false,true);

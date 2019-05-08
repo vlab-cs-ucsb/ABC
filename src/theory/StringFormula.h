@@ -49,12 +49,16 @@ class StringFormula : public Formula {
   void save(Archive& ar) const {
     ar(type_);
     ar(variable_coefficient_map_);
+    ar(constant_);
+    ar(constant2_);
   }
 
   template <class Archive>
   void load(Archive& ar) {
     ar(type_);
     ar(variable_coefficient_map_);
+    ar(constant_);
+    ar(constant2_);
   }
 
   virtual std::string str() const;

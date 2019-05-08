@@ -11,9 +11,11 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <redox.hpp>
 
 #include <glog/logging.h>
 
+#include "../utils/Serialize.h"
 #include "../smt/ast.h"
 #include "../smt/Visitor.h"
 #include "../theory/StringAutomaton.h"
@@ -65,6 +67,7 @@ class StringConstraintSolver: public AstTraverser {
   std::chrono::duration<double> diff2;
 	static int dfa_misses;
 	static int dfa_hits;
+  redox::Redox* rdx_;
 
  protected:
   void visitOr(SMT::Or_ptr);

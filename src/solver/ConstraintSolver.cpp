@@ -36,6 +36,7 @@ ConstraintSolver::ConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_tab
   diff2 = end-start;
 
   arithmetic_constraint_solver_.rdx_ = rdx_;
+  string_constraint_solver_.rdx_ = rdx_;
   Automaton::rdx_ = rdx_;
 }
 
