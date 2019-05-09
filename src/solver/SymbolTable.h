@@ -156,7 +156,9 @@ public:
   std::string GetMappedVariableName(std::string);
 
   std::map<char,char> GetCharacterMapping();
+  std::map<char,char> GetReverseCharacterMapping();
   void SetCharacterMapping(std::map<char,char>);
+
 
   void LockValues() {values_lock_ = true;}
   void UnlockValues() {values_lock_ = false;}
@@ -222,6 +224,7 @@ private:
   std::map<std::string,std::string> reverse_variable_mapping_;
 
   std::map<char,char> character_mapping_;
+  std::map<char,char> reverse_character_mapping_;
 
   std::set<std::string> last_constraints;
 

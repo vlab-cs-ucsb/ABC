@@ -228,6 +228,11 @@ int main(const int argc, const char **argv) {
   int num_unsat = 0;
   int total_hits = 0;
   int total_misses = 0;
+
+  driver.set_option(Vlab::Option::Name::FULL_FORMULA_CACHING);
+//  driver.set_option(Vlab::Option::Name::SUB_FORMULA_CACHING);
+//  driver.set_option(Vlab::Option::Name::AUTOMATA_CACHING);
+
   for(auto iter : files) {
     //LOG(INFO) << iter;
     file = new std::ifstream(iter);
@@ -239,8 +244,6 @@ int main(const int argc, const char **argv) {
     init_end = std::chrono::steady_clock::now();
 
     init_time += init_end-init_start;
-
-    driver.set_option(Vlab::Option::Name::INCREMENTAL);
 
     if(driver.symbol_table_->has_count_variable() and count_variable.empty()) {
       count_variable = driver.symbol_table_->get_count_variable()->getName();
@@ -254,9 +257,9 @@ int main(const int argc, const char **argv) {
     driver.Solve();
 //    std::cin.get();
     if(not driver.is_sat()) {
-      //LOG(INFO) << "UNSAT: " << iter;
+      LOG(INFO) << "UNSAT: " << iter;
       num_unsat++;
-      // std::cin.get();
+       std::cin.get();
     } else {
 
       count_start = std::chrono::steady_clock::now();

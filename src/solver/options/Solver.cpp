@@ -22,7 +22,9 @@ bool Solver::ENABLE_LEN_IMPLICATIONS = false;
 bool Solver::ENABLE_SORTING_HEURISTICS = true;
 bool Solver::FORCE_DNF_FORMULA = false;
 bool Solver::COUNT_BOUND_EXACT = false;
-bool Solver::INCREMENTAL = false;
+bool Solver::FULL_FORMULA_CACHING = false;
+bool Solver::SUB_FORMULA_CACHING = false;
+bool Solver::AUTOMATA_CACHING = false;
 
 std::string Solver::OUTPUT_PATH         = ".";
 std::string Solver::SCRIPT_PATH         = ".";

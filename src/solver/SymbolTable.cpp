@@ -838,8 +838,15 @@ std::map<char,char> SymbolTable::GetCharacterMapping() {
   return character_mapping_;
 }
 
+std::map<char,char> SymbolTable::GetReverseCharacterMapping() {
+  return reverse_character_mapping_;
+}
+
 void SymbolTable::SetCharacterMapping(std::map<char,char> mapping) {
   character_mapping_ = mapping;
+  for(auto it : mapping) {
+    reverse_character_mapping_[it.second] = it.first;
+  }
 }
 
 

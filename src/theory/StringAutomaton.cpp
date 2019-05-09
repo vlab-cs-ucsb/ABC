@@ -456,10 +456,20 @@ StringAutomaton_ptr StringAutomaton::MakeAutomaton(DFA_ptr dfa, Formula_ptr form
 
 StringAutomaton_ptr StringAutomaton::MakeAutomaton(StringFormula_ptr formula) {
 
-//  auto start = std::chrono::steady_clock::now();
+  StringAutomaton_ptr result_auto = nullptr;
+  DFA_ptr result_dfa = nullptr;
+  std::string key;
 
+  if(Option::Solver::AUTOMATA_CACHING) {
 
-	StringAutomaton_ptr result_auto = nullptr;
+    key = GenerateKey(formula);
+    result_dfa = LoadDFA(key);
+    if(result_dfa != nullptr) {
+      int num_vars = formula->GetNumberOfVariables();
+      return new StringAutomaton(result_dfa, formula, num_vars *VAR_PER_TRACK);
+    }
+  }
+
 
 	switch(formula->GetType()) {
 		case StringFormula::Type::EQ:
@@ -499,8 +509,10 @@ StringAutomaton_ptr StringAutomaton::MakeAutomaton(StringFormula_ptr formula) {
 			break;
 	}
 
-//	auto end = std::chrono::steady_clock::now();
-//  diff += end-start;
+	if (Option::Solver::AUTOMATA_CACHING) {
+    StoreDFA(key,result_auto->getDFA());
+  }
+
 	return result_auto;
 }
 
@@ -1552,6 +1564,16 @@ StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
   StringFormula_ptr intersect_formula = nullptr;
 
 
+//  for(auto it : formula_->GetVariableCoefficientMap()) {
+//    LOG(INFO) << it.first << "," << it.second;
+//  }
+//
+//  LOG(INFO) << "--";
+//
+//  for(auto it : other_auto->formula_->GetVariableCoefficientMap()) {
+//    LOG(INFO) << it.first << "," << it.second;
+//  }
+
   auto left_num_tracks = this->GetFormula()->GetNumberOfVariables();
   auto right_num_tracks = other_auto->GetFormula()->GetNumberOfVariables();
   if(left_num_tracks > right_num_tracks) {
@@ -1567,60 +1589,16 @@ StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
     right_auto = other_auto;
     intersect_formula = this->formula_->Intersect(other_auto->formula_);
   }
-
-  // std::string id1, id2;
-
-  // std::stringstream os1;
-  // //{
-  // // //  cereal::BinaryOutputArchive ar(os1);
-  // // //  Util::Serialize::save(ar,left_auto->dfa_);
-  // // //}
-  // left_auto->toBDD(os1);
-  // id1 = os1.str();
-
-  // std::stringstream os2;
-  // //{
-  // //  cereal::BinaryOutputArchive ar(os2);
-  // //  Util::Serialize::save(ar,right_auto->dfa_);
-  // //}
-  // right_auto->toBDD(os2);
-  // id2 = os2.str();
- 
-  // //std::pair<std::string,std::string> stupid_key1(id1,id2);
-  // //std::pair<std::string,std::string> stupid_key2(id2,id1);
-  // std::string stupid_key1 = id1 + id2;
-  // std::string stupid_key2 = id2 + id1;
-  // DFA_ptr intersect_dfa = nullptr;
-  // //   LOG(FATAL) << "HERE";
-  // if(stupid_cache.find(stupid_key1) != stupid_cache.end()) {
-  // //    std::stringstream is(stupid_cache[stupid_key1]);
-  // //    {
-  // //      cereal::BinaryInputArchive ar(is);
-  // //      Util::Serialize::load(ar,intersect_dfa);
-  // //    }
-  // 	intersect_dfa = dfaCopy(stupid_cache[stupid_key1]);
-  // 	num_hits++;
-  // } else if (stupid_cache.find(stupid_key2) != stupid_cache.end()) {
-  // //    std::stringstream is(stupid_cache[stupid_key2]);
-  // //    {
-  // //      cereal::BinaryInputArchive ar(is);
-  // //      Util::Serialize::load(ar,intersect_dfa);
-  // //    }
-  // 	intersect_dfa = dfaCopy(stupid_cache[stupid_key2]);
- 	// num_hits++;
-  // } else {
- 	// intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
-  // //    std::stringstream os;
-  // //    {
-  // //      cereal::BinaryOutputArchive ar(os);
-  // //      Util::Serialize::save(ar,intersect_dfa);
-  // //    }
-  // //    stupid_cache[stupid_key1] = os.str();
-  // 	stupid_cache[stupid_key1] = dfaCopy(intersect_dfa);
-  // 	num_misses++;
-  // }
-
-
+//LOG(INFO) << "AFTER";
+//  for(auto it : left_auto->formula_->GetVariableCoefficientMap()) {
+//    LOG(INFO) << it.first << "," << it.second;
+//  }
+//
+//  LOG(INFO) << "--";
+//
+//  for(auto it : right_auto->formula_->GetVariableCoefficientMap()) {
+//    LOG(INFO) << it.first << "," << it.second;
+//  }
 
 	auto intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
 
@@ -1659,81 +1637,24 @@ StringAutomaton_ptr StringAutomaton::Difference(StringAutomaton_ptr other_auto) 
 StringAutomaton_ptr StringAutomaton::Concat(StringAutomaton_ptr other_auto) {
   CHECK_EQ(this->num_tracks_,other_auto->num_tracks_);
   StringAutomaton_ptr left_auto = this, right_auto = other_auto;
-
-
-  std::string id1, id2;
-
-  std::stringstream os1;
-  //{
-  // //  cereal::BinaryOutputArchive ar(os1);
-  // //  Util::Serialize::save(ar,left_auto->dfa_);
-  // //}
-  left_auto->toBDD(os1);
-  id1 = os1.str();
-
-  std::stringstream os2;
-  //{
-  //  cereal::BinaryOutputArchive ar(os2);
-  //  Util::Serialize::save(ar,right_auto->dfa_);
-  //}
-  right_auto->toBDD(os2);
-  id2 = os2.str();
-
-  //std::pair<std::string,std::string> stupid_key1(id1,id2);
-  //std::pair<std::string,std::string> stupid_key2(id2,id1);
-  std::string stupid_key1 = id1 + id2;
-
-
   DFA_ptr concat_dfa = nullptr;
+  std::string key;
 
-  auto &c = rdx_->commandSync<std::string>({"GET", stupid_key1});
-
-  bool has_result = false;
-  std::string cached_data;
-  if(c.ok()) {
-    has_result = true;
-    cached_data = c.reply();
-  }
-  c.free();
-//  if(stupid_cache.find(stupid_key1) != stupid_cache.end()) {
-  if(has_result) {
-    std::stringstream is(cached_data);
-    {
-      cereal::BinaryInputArchive ar(is);
-      Util::Serialize::load(ar,concat_dfa);
+  if(Option::Solver::AUTOMATA_CACHING) {
+    key = GenerateKey("CONCAT", left_auto, right_auto);
+    concat_dfa = LoadDFA(key);
+    if(concat_dfa != nullptr) {
+      return new StringAutomaton(concat_dfa,this->num_of_bdd_variables_);
     }
-//  concat_dfa = dfaCopy(stupid_cache[stupid_key1]);
-    num_hits++;
-  } else {
-    concat_dfa = StringAutomaton::concat(dfa_, other_auto->dfa_,this->num_of_bdd_variables_);
-    std::stringstream os;
-    {
-      cereal::BinaryOutputArchive ar(os);
-      Util::Serialize::save(ar,concat_dfa);
-    }
-//    stupid_cache[stupid_key1] = dfaCopy(concat_dfa);
-    rdx_->command<std::string>({"SET", stupid_key1,os.str()});
-    num_misses++;
   }
 
-//  auto concat_dfa = StringAutomaton::concat(dfa_, other_auto->dfa_,this->num_of_bdd_variables_);
+  concat_dfa = StringAutomaton::concat(dfa_, other_auto->dfa_,this->num_of_bdd_variables_);
+
+  if(Option::Solver::AUTOMATA_CACHING) {
+    StoreDFA(key,concat_dfa);
+  }
+
   auto concat_auto = new StringAutomaton(concat_dfa,this->num_of_bdd_variables_);
-
-
-
-//  if(not DFAIsEqual(concat_auto_0->dfa_,concat_auto->dfa_)) {
-//    LOG(INFO) << dfa_->ns << "," << other_auto->dfa_->ns;
-//    this->inspectAuto(false,true);
-//    other_auto->inspectAuto(false,true);
-//
-//    concat_auto_0->inspectAuto(false,true);
-//    concat_auto->inspectAuto(false,true);
-//
-//
-//
-//    LOG(FATAL) << "SHOULD BE EMPTY";
-//  }
-//  delete concat_auto_0;
 
   return concat_auto;
 }
@@ -2734,10 +2655,25 @@ StringAutomaton_ptr StringAutomaton::Begins(StringAutomaton_ptr search_auto) {
   StringAutomaton_ptr begins_auto = nullptr, any_string_auto = nullptr,
           tmp_auto_1 = nullptr;
 
+  std::string key;
+  if(Option::Solver::AUTOMATA_CACHING) {
+    key = GenerateKey("BEGINS", this, search_auto);
+    DFA_ptr begins_dfa = LoadDFA(key);
+    if(begins_dfa != nullptr) {
+      auto formula = this->GetFormula()->Intersect(search_auto->GetFormula());
+      return new StringAutomaton(begins_dfa,formula,this->num_of_bdd_variables_);
+    }
+  }
+
   any_string_auto = StringAutomaton::MakeAnyString();
   tmp_auto_1 = search_auto->Concat(any_string_auto);
 
   begins_auto = this->Intersect(tmp_auto_1);
+
+  if(Option::Solver::AUTOMATA_CACHING) {
+    StoreDFA(key,begins_auto->getDFA());
+  }
+
   delete tmp_auto_1;
   delete any_string_auto;
   DVLOG(VLOG_LEVEL) << begins_auto->id_ << " = [" << this->id_ << "]->begins(" << search_auto->id_ << ")";
@@ -3677,7 +3613,6 @@ StringAutomaton_ptr StringAutomaton::ChangeIndicesMap(StringFormula_ptr new_form
 	} else {
 	  unmapped_auto = this;
 	}
-
 	// though we're remapping indices, we're not adding any new variables right now
 	// (this will be done during intersection
 	int* map = CreateBddVariableIndices(unmapped_auto->num_tracks_*VAR_PER_TRACK);
@@ -3699,10 +3634,11 @@ StringAutomaton_ptr StringAutomaton::ChangeIndicesMap(StringFormula_ptr new_form
 		int old_index = unmapped_auto->formula_->GetVariableIndex(iter.first);
 		int new_index = new_formula->GetVariableIndex(iter.first);
 
-		if(old_index != new_index) replace = true;
+
 
 		for(int i = 0; i < VAR_PER_TRACK; i++) {
 			map[old_index+(i*old_num_tracks)] = new_index+(i*new_num_tracks);
+			if(old_index+(i*old_num_tracks) != new_index+(i*new_num_tracks)) replace = true;
 		}
 	}
 
@@ -3711,7 +3647,9 @@ StringAutomaton_ptr StringAutomaton::ChangeIndicesMap(StringFormula_ptr new_form
 //  }
 
 //	auto remapped_dfa = dfaCopy(unmapped_auto->dfa_);
-	if(replace) dfaReplaceIndices(unmapped_auto->dfa_,map);
+	if(replace) {
+	  dfaReplaceIndices(unmapped_auto->dfa_,map);
+	}
 	delete[] map;
 
 	unmapped_auto->SetFormula(new_formula);
@@ -5547,6 +5485,71 @@ DFA_ptr StringAutomaton::PreConcatPrefix(DFA_ptr concat_dfa, DFA_ptr suffix_dfa,
 DFA_ptr StringAutomaton::PreConcatSuffix(DFA_ptr concat_dfa, DFA_ptr prefix_dfa, int var) {
   return TrimPrefix(concat_dfa,prefix_dfa,var);
 }
+
+std::string StringAutomaton::GenerateKey(StringFormula_ptr op_formula) {
+  std::stringstream os1;
+  {
+    cereal::BinaryOutputArchive ar(os1);
+    op_formula->save(ar);
+  }
+  return os1.str();
+}
+
+std::string StringAutomaton::GenerateKey(std::string op, StringAutomaton_ptr unary_op_auto) {
+  std::stringstream os1;
+  unary_op_auto->toBDD(os1);
+  std::string id = os1.str();
+  return op + ":" + id;
+}
+
+std::string StringAutomaton::GenerateKey(std::string op, StringAutomaton_ptr first_auto, StringAutomaton_ptr second_auto) {
+  std::string id1, id2;
+
+  std::stringstream os1;
+  first_auto->toBDD(os1);
+  id1 = os1.str();
+
+  std::stringstream os2;
+  second_auto->toBDD(os2);
+  id2 = os2.str();
+
+  return op + ":" + id1 + "," + id2;
+}
+
+DFA_ptr StringAutomaton::LoadDFA(std::string key) {
+  auto &c = rdx_->commandSync<std::string>({"GET", key});
+
+  DFA_ptr result_dfa = nullptr;
+  bool has_result = false;
+  std::string cached_data;
+  if (c.ok()) {
+    has_result = true;
+    cached_data = c.reply();
+  }
+  c.free();
+  if (has_result) {
+    std::stringstream is(cached_data);
+    {
+      cereal::BinaryInputArchive ar(is);
+      Util::Serialize::load(ar, result_dfa);
+    }
+    num_hits++;
+  }
+  return result_dfa;
+}
+
+bool StringAutomaton::StoreDFA(std::string key, DFA_ptr dfa) {
+  std::stringstream os;
+  {
+    cereal::BinaryOutputArchive ar(os);
+    Util::Serialize::save(ar, dfa);
+  }
+  rdx_->command<std::string>({"SET", key, os.str()});
+  num_misses++;
+  return true;
+}
+
+
 
 bool StringAutomaton::HasExceptionToValidStateFrom(int state, std::vector<char>& exception) {
 	int sink_state = this->GetSinkState();

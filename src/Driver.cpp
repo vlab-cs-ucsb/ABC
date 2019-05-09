@@ -37,7 +37,6 @@ Driver::Driver()
 }
 
 Driver::~Driver() {
-  //if(symbol_table_ != nullptr) delete symbol_table_;
   if(script_ != nullptr) delete script_;
   for(auto& it : incremental_states_) {
     if(it.second != nullptr) {
@@ -61,6 +60,7 @@ Driver::~Driver() {
   delete constraint_information_;
   Theory::Automaton::CleanUp();
 
+  rdx_->disconnect();
   delete rdx_;
 }
 
@@ -115,14 +115,8 @@ void Driver::ast2dot(std::string file_name) {
 
 void Driver::InitializeSolver() {
 
-//	if(current_id_.empty()) {
-		symbol_table_ = new Solver::SymbolTable();
-//		current_id_ = symbol_table_->get_var_name_for_node(script_,Vlab::SMT::TVariable::Type::NONE);
-//		incremental_states_[current_id_] = symbol_table_;
-		symbol_table_->push_scope(script_);
-//	} else {
-//		symbol_table_ = incremental_states_[current_id_];
-//	}
+  symbol_table_ = new Solver::SymbolTable();
+//  symbol_table_->push_scope(script_);
 
 
 
@@ -173,39 +167,24 @@ void Driver::InitializeSolver() {
     constraint_sorter.start();
   }
 
-  Solver::Renamer renamer(script_, symbol_table_);
-  renamer.start();
+  if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
+    Solver::Renamer renamer(script_, symbol_table_);
+    renamer.start();
+  }
 
-  /*
-   * Variable and char renaming here?
-   */
-
-
-
-//  LOG(INFO) << "Initalize time   : " << std::chrono::duration<long double, std::milli>(time2).count();
 }
 
 void Driver::Solve() {
-//  TODO move arithmetic formula generation and string relation generation here to guide constraint solving better
-//
-//  Solver::ArithmeticFormulaGenerator arithmetic_formula_generator(script_, symbol_table_, constraint_information_);
-//  arithmetic_formula_generator.start();
-
-
-  auto start = std::chrono::steady_clock::now();
   Solver::ConstraintSolver* constraint_solver = new Solver::ConstraintSolver(script_, symbol_table_, constraint_information_, rdx_);
   constraint_solver->start();
-  auto end = std::chrono::steady_clock::now();
   diff += constraint_solver->diff;
   diff2 += constraint_solver->diff2;
   diff3 += constraint_solver->get_diff3();
   //diff4 += constraint_solver->get_diff4();
-//  LOG(INFO) << "Done start";
-// LOG(INFO) << "num_hits    = " << Solver::ArithmeticConstraintSolver::dfa_hits;
-// LOG(INFO) << "num_misses  = " << Solver::ArithmeticConstraintSolver::dfa_misses;
-// LOG(INFO) << "hit ratio   = " << (double)Theory::Automaton::num_hits / (double)(Theory::Automaton::num_misses+Theory::Automaton::num_hits);
+
   total_hits_ += constraint_solver->num_hits();
   total_misses_ += constraint_solver->num_misses();
+
   if(constraint_solver->num_hits() > 0) hit_statistics_.push_back(constraint_solver->hit_statistic());
 //  LOG(INFO) << "almost...";
 //  if(symbol_table_->top_scope() != script_) {
@@ -233,10 +212,6 @@ void Driver::Solve() {
 
 
   delete constraint_solver;
-  Option::Solver::INCREMENTAL = false;
-//  LOG(INFO) << "Done solve";
-//  LOG(INFO) << getSatisfyingVariables().size();
-//  LOG(INFO) << "Driver::Solve() time   : " << std::chrono::duration<long double, std::milli>(time2).count();
 }
 
 bool Driver::is_sat() {
@@ -684,7 +659,15 @@ std::map<std::string, std::string> Driver::getSatisfyingExamples() {
     	auto string_formula = string_auto->GetFormula();
     	for(auto it : string_formula->GetVariableCoefficientMap()) {
     		auto single_string_auto = string_auto->GetAutomatonForVariable(it.first);
-    		results[it.first] = single_string_auto->GetAnAcceptingString();
+    		std::string accepted_string = single_string_auto->GetAnAcceptingString();
+    		// if we normalized characters, map them back to original character
+    		if(Option::Solver::SUB_FORMULA_CACHING) {
+    		  auto char_mapping = symbol_table_->GetReverseCharacterMapping();
+    		  for(int i = 0; i < accepted_string.length(); i++) {
+    		    accepted_string[i] = char_mapping[accepted_string[i]];
+    		  }
+    		}
+    		results[it.first] = accepted_string;
     		delete single_string_auto;
     	}
 
@@ -714,7 +697,16 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandom() {
 				auto string_formula = string_auto->GetFormula();
 				for(auto it : string_formula->GetVariableCoefficientMap()) {
 					auto single_string_auto = string_auto->GetAutomatonForVariable(it.first);
-					results[it.first] = single_string_auto->GetAnAcceptingStringRandom();
+					std::string accepted_string = single_string_auto->GetAnAcceptingStringRandom();
+          // if we normalized characters, map them back to original character
+          if(Option::Solver::SUB_FORMULA_CACHING) {
+            auto char_mapping = symbol_table_->GetReverseCharacterMapping();
+            for(int i = 0; i < accepted_string.length(); i++) {
+              accepted_string[i] = char_mapping[accepted_string[i]];
+            }
+          }
+
+					results[it.first] = accepted_string;
 					cached_values_[it.first] = new Solver::Value(single_string_auto);
 				}
 			}
@@ -751,7 +743,16 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandomBounded(co
             single_string_auto_bounded = nullptr;
             continue;
           }
-					results[it.first] = single_string_auto_bounded->GetAnAcceptingStringRandom();
+					std::string accepted_string = single_string_auto_bounded->GetAnAcceptingStringRandom();
+          // if we normalized characters, map them back to original character
+          if(Option::Solver::SUB_FORMULA_CACHING) {
+            auto char_mapping = symbol_table_->GetReverseCharacterMapping();
+            for(int i = 0; i < accepted_string.length(); i++) {
+              accepted_string[i] = char_mapping[accepted_string[i]];
+            }
+          }
+
+					results[it.first] = accepted_string;
 					cached_bounded_values_[it.first] = new Solver::Value(single_string_auto_bounded);
 				}
 			}
@@ -767,6 +768,15 @@ std::string Driver::getMutatedModel(std::string var_name, std::string model) {
 
   if(var_value == nullptr || var_value->getType() != Vlab::Solver::Value::Type::STRING_AUTOMATON) {
     return model;
+  }
+
+  // if we unnormalized the characters, remap them to their normalized form
+  // if we normalized characters, map them back to original character
+  if(Option::Solver::SUB_FORMULA_CACHING) {
+    auto char_mapping = symbol_table_->GetCharacterMapping();
+    for(int i = 0; i < model.length(); i++) {
+      model[i] = char_mapping[model[i]];
+    }
   }
 
   if(var_value->getStringAutomaton()->GetNumTracks() > 1) {
@@ -860,9 +870,16 @@ void Driver::set_option(const Option::Name option) {
     case Option::Name::COUNT_BOUND_EXACT:
     	Option::Solver::COUNT_BOUND_EXACT = true;
     	break;
-		case Option::Name::INCREMENTAL:
-			Option::Solver::INCREMENTAL = true;
-			break;
+    case Option::Name::FULL_FORMULA_CACHING:
+      Option::Solver::FULL_FORMULA_CACHING = true;
+      break;
+    case Option::Name::SUB_FORMULA_CACHING:
+      Option::Solver::SUB_FORMULA_CACHING = true;
+      break;
+    case Option::Name::AUTOMATA_CACHING:
+      Option::Solver::AUTOMATA_CACHING = true;
+      break;
+
     default:
       LOG(ERROR)<< "option is not recognized: " << static_cast<int>(option);
       break;
@@ -898,14 +915,14 @@ void Driver::set_option(const Option::Name option, const std::string value) {
 
 void Driver::loadID(std::string id) {
 
-  reset();
-  std::stringstream is;
-  is << id;
-Option::Solver::INCREMENTAL = true;
-  Parse(&is);
-  InitializeSolver();
-  Solve();
-Option::Solver::INCREMENTAL = false;
+//  reset();
+//  std::stringstream is;
+//  is << id;
+//Option::Solver::INCREMENTAL = true;
+//  Parse(&is);
+//  InitializeSolver();
+//  Solve();
+//Option::Solver::INCREMENTAL = false;
 //	if(incremental_states_.find(id) != incremental_states_.end()) {
 //    current_id_ = id;
 //    symbol_table_ = incremental_states_[current_id_];
@@ -960,7 +977,7 @@ void Driver::destroyID(std::string id) {
 void Driver::saveStateAndBranch() {
 
 //  reset();
-  Option::Solver::INCREMENTAL = true;
+//  Option::Solver::INCREMENTAL = true;
 
 //  static int counter = 0;
 //  if(current_id_.empty()) {
@@ -1011,9 +1028,9 @@ void Driver::print_statistics() {
   LOG(INFO) << "avg hit size                     = " << average_hit_size;
   LOG(INFO) << "avg formula size                 = " << average_formula_size;
 
-  LOG(INFO) << "num_hits    = " << Solver::ArithmeticConstraintSolver::dfa_hits;
-  LOG(INFO) << "num_misses  = " << Solver::ArithmeticConstraintSolver::dfa_misses;
-  LOG(INFO) << "hit ratio   = " << (double)Solver::ArithmeticConstraintSolver::dfa_hits / (double)(Solver::ArithmeticConstraintSolver::dfa_misses+Solver::ArithmeticConstraintSolver::dfa_hits);
+  LOG(INFO) << "automata num_hits    = " << Solver::ArithmeticConstraintSolver::dfa_hits;
+  LOG(INFO) << "automata num_misses  = " << Solver::ArithmeticConstraintSolver::dfa_misses;
+  LOG(INFO) << "automata hit ratio   = " << (double)Solver::ArithmeticConstraintSolver::dfa_hits / (double)(Solver::ArithmeticConstraintSolver::dfa_misses+Solver::ArithmeticConstraintSolver::dfa_hits);
 
 }
 

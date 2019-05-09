@@ -370,66 +370,66 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr othe
     intersect_formula = this->formula_->Intersect(other_auto->formula_);
   }
 
+/*
+  std::string id1, id2;
 
-//  std::string id1, id2;
-//
-//  std::stringstream os1;
-//  //{
-//  //  cereal::BinaryOutputArchive ar(os1);
-//  //  Util::Serialize::save(ar,left_auto->dfa_);
-//  //}
-//  left_auto->toBDD(os1);
-//  id1 = os1.str();
-//
-//
-//
-//  std::stringstream os2;
-//  //{
-//  //  cereal::BinaryOutputArchive ar(os2);
-//  //  Util::Serialize::save(ar,right_auto->dfa_);
-//  //}
-//  right_auto->toBDD(os2);
-//  id2 = os2.str();
-////  right_auto->inspectAuto(false,true);
-////  right_auto->inspectBDD();
-////  LOG(INFO) << id2;
-////  std::cin.get();
-//  //std::pair<std::string,std::string> stupid_key1(id1,id2);
-//  //std::pair<std::string,std::string> stupid_key2(id2,id1);
-//  std::string stupid_key1 = id1 + id2;
-//  std::string stupid_key2 = id2 + id1;
-//  DFA_ptr intersect_dfa = nullptr;
-//
-//
-// //   LOG(FATAL) << "HERE";
-//  if(stupid_cache.find(stupid_key1) != stupid_cache.end()) {
-// //    std::stringstream is(stupid_cache[stupid_key1]);
-// //    {
-// //      cereal::BinaryInputArchive ar(is);
-// //      Util::Serialize::load(ar,intersect_dfa);
-// //    }
-//    intersect_dfa = dfaCopy(stupid_cache[stupid_key1]);
-//    num_hits++;
-//  } else if (stupid_cache.find(stupid_key2) != stupid_cache.end()) {
-// //    std::stringstream is(stupid_cache[stupid_key2]);
-// //    {
-// //      cereal::BinaryInputArchive ar(is);
-// //      Util::Serialize::load(ar,intersect_dfa);
-// //    }
-//    intersect_dfa = dfaCopy(stupid_cache[stupid_key2]);
-//    num_hits++;
-//  } else {
-//    intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
-// //    std::stringstream os;
-// //    {
-// //      cereal::BinaryOutputArchive ar(os);
-// //      Util::Serialize::save(ar,intersect_dfa);
-// //    }
-// //    stupid_cache[stupid_key1] = os.str();
-//    stupid_cache[stupid_key1] = dfaCopy(intersect_dfa);
-//    num_misses++;
-//  }
+  std::stringstream os1;
+  //{
+  //  cereal::BinaryOutputArchive ar(os1);
+  //  Util::Serialize::save(ar,left_auto->dfa_);
+  //}
+  left_auto->toBDD(os1);
+  id1 = os1.str();
 
+
+
+  std::stringstream os2;
+  //{
+  //  cereal::BinaryOutputArchive ar(os2);
+  //  Util::Serialize::save(ar,right_auto->dfa_);
+  //}
+  right_auto->toBDD(os2);
+  id2 = os2.str();
+//  right_auto->inspectAuto(false,true);
+//  right_auto->inspectBDD();
+//  LOG(INFO) << id2;
+//  std::cin.get();
+  //std::pair<std::string,std::string> stupid_key1(id1,id2);
+  //std::pair<std::string,std::string> stupid_key2(id2,id1);
+  std::string stupid_key1 = id1 + id2;
+  std::string stupid_key2 = id2 + id1;
+  DFA_ptr intersect_dfa = nullptr;
+
+
+ //   LOG(FATAL) << "HERE";
+
+  auto &c = rdx_->commandSync<std::string>({"GET", stupid_key1});
+
+  bool has_result = false;
+  std::string cached_data;
+  if (c.ok()) {
+    has_result = true;
+    cached_data = c.reply();
+  }
+  c.free();
+  if (has_result) {
+    std::stringstream is(cached_data);
+    {
+      cereal::BinaryInputArchive ar(is);
+      Util::Serialize::load(ar, intersect_dfa);
+    }
+    num_hits++;
+  } else {
+    intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
+    std::stringstream os;
+    {
+      cereal::BinaryOutputArchive ar(os);
+      Util::Serialize::save(ar, intersect_dfa);
+    }
+    rdx_->command<std::string>({"SET", stupid_key1, os.str()});
+    num_misses++;
+  }
+*/
 
   auto intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
 

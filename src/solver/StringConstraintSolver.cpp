@@ -83,61 +83,67 @@ void StringConstraintSolver::setCallbacks() {
           DVLOG(VLOG_LEVEL) << "Relational String Formula: " << *formula << "@" << term;
           StringAutomaton_ptr relational_str_auto = nullptr;
 
-          auto start = std::chrono::steady_clock::now();
 
-          std::stringstream os1;
-          {
-            cereal::BinaryOutputArchive ar(os1);
-            formula->save(ar);
-          }
-          std::string key = os1.str();
-          bool has_result = false;
-          std::string cached_data;
 
-          auto &c = rdx_->commandSync<std::string>({"GET", key});
-          if(c.ok()) {
-            has_result = true;
-            cached_data = c.reply();
-          }
-          c.free();
-
-          if(has_result) {
-            std::stringstream is(cached_data);
-            DFA* relational_dfa = nullptr;
-            {
-              cereal::BinaryInputArchive ar(is);
-              Util::Serialize::load(ar,relational_dfa);
-            }
-            int num_vars = formula->GetNumberOfVariables();
-            relational_str_auto = new StringAutomaton(relational_dfa,formula,num_vars == 1? 8 : num_vars * 9);
-            Automaton::num_hits++;
-          } else {
+//          auto start = std::chrono::steady_clock::now();
+//          if(Option::Solver::SUB_FORMULA_CACHING) {
+//            std::stringstream os1;
+//            {
+//              cereal::BinaryOutputArchive ar(os1);
+//              formula->save(ar);
+//            }
+//            std::string key = os1.str();
+//            bool has_result = false;
+//            std::string cached_data;
+//
+//            auto &c = rdx_->commandSync<std::string>({"GET", key});
+//            if (c.ok()) {
+//              has_result = true;
+//              cached_data = c.reply();
+//            }
+//            c.free();
+//
+//            if (has_result) {
+//              std::stringstream is(cached_data);
+//              DFA *relational_dfa = nullptr;
+//              {
+//                cereal::BinaryInputArchive ar(is);
+//                Util::Serialize::load(ar, relational_dfa);
+//              }
+//              int num_vars = formula->GetNumberOfVariables();
+//              relational_str_auto = new StringAutomaton(relational_dfa, formula, num_vars == 1 ? 8 : num_vars * 9);
+//              //Automaton::num_hits++;
+//            } else {
+//              relational_str_auto = StringAutomaton::MakeAutomaton(formula->clone());
+//              std::stringstream os;
+//              {
+//                cereal::BinaryOutputArchive ar(os);
+//                Util::Serialize::save(ar, relational_str_auto->getDFA());
+//              }
+//              rdx_->command<std::string>({"SET", key, os.str()});
+//              //Automaton::num_misses++;
+//            }
+//          } else {
             relational_str_auto = StringAutomaton::MakeAutomaton(formula->clone());
-            std::stringstream os;
-            {
-              cereal::BinaryOutputArchive ar(os);
-              Util::Serialize::save(ar, relational_str_auto->getDFA());
-            }
-            rdx_->command<std::string>({"SET", key,os.str()});
-            Automaton::num_misses++;
-          }
+//          }
 
-          auto end = std::chrono::steady_clock::now();
-          diff += end - start;
+//          auto end = std::chrono::steady_clock::now();
+//          diff += end - start;
 
-
-          //relational_str_auto = StringAutomaton::MakeAutomaton(formula->clone());
           auto result = new Value(relational_str_auto);
-          //set_term_value(term, result);
-          auto term_group_name = string_formula_generator_.get_term_group_name(term);
-          if(term_group_name.empty()) {
-            LOG(FATAL) << "Term has no group!";
+          if(Option::Solver::SUB_FORMULA_CACHING) {
+            auto term_group_name = string_formula_generator_.get_term_group_name(term);
+            if(term_group_name.empty()) {
+              LOG(FATAL) << "Term has no group!";
+            }
+
+            while(symbol_table_->values_lock_) std::this_thread::yield();
+            symbol_table_->IntersectValue(term_group_name,result);
+          } else {
+            set_term_value(term, result);
           }
 
-          while(symbol_table_->values_lock_) std::this_thread::yield();
-          symbol_table_->IntersectValue(term_group_name,result);
-//          symbol_table_->get_value(term_group_name)->getStringAutomaton()->inspectAuto(false,true);
-//          std::cin.get();
+
           // once we solve an atomic string constraint,
           // we delete its formula to avoid solving it again.
           // Atomic string constraints solved precisely,
@@ -216,7 +222,9 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
 				if(term_group_name.empty()) {
 					LOG(FATAL) << "Term has no group!";
 				}
-				symbol_table_->IntersectValue(term_group_name,param);
+				if(not Option::Solver::SUB_FORMULA_CACHING) {
+          symbol_table_->IntersectValue(term_group_name, param);
+        }
 				is_satisfiable = symbol_table_->get_value(term_group_name)->is_satisfiable();
       }
       clear_term_value(term);

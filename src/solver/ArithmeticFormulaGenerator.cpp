@@ -155,10 +155,18 @@ void ArithmeticFormulaGenerator::visitAnd(And_ptr and_term) {
 //      constraint_information_->add_mixed_constraint(and_term);
 //    }
 //  }
-  if(subgroups_[current_group_].size() >= 0 ) {
-		term_group_map_[and_term] = current_group_;
-		constraint_information_->add_arithmetic_constraint(and_term);
-	}
+  if(Option::Solver::SUB_FORMULA_CACHING) {
+    if(subgroups_[current_group_].size() > 0 ) {
+      term_group_map_[and_term] = current_group_;
+      constraint_information_->add_arithmetic_constraint(and_term);
+    }
+  } else {
+    if(subgroups_[current_group_].size() >= 0 ) {
+      term_group_map_[and_term] = current_group_;
+      constraint_information_->add_arithmetic_constraint(and_term);
+    }
+  }
+
   if (has_mixed_constraint_) {
 		constraint_information_->add_mixed_constraint(and_term);
 	}
@@ -732,7 +740,9 @@ void ArithmeticFormulaGenerator::clear_term_formula(Term_ptr term) {
   if (it != term_formula_.end()) {
     delete it->second;
     term_formula_.erase(it);
-//    term_group_map_.erase(term);
+//    if(not Option::Solver::SUB_FORMULA_CACHING) {
+//      term_group_map_.erase(term);
+//    }
   }
 }
 
@@ -873,7 +883,7 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
   DVLOG(VLOG_LEVEL)<< "start setting int group for components";
   for (auto& el : term_group_map_) {
     if(term_formula_.find(el.first) != term_formula_.end()) {
-      term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
+      //term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
       group_formula_[el.second]->MergeVariables(term_formula_[el.first]);
     }
   }
@@ -944,6 +954,7 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
 
 	auto  &variable_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
   auto previous_var = symbol_table_->get_variable(current_group_);
+  while(symbol_table_->values_lock_) std::this_thread::yield();
   if(variable_values.find(previous_var) != variable_values.end()) {
     if(previous_var != nullptr) {
       auto previous_group_auto = variable_values[previous_var]->getBinaryIntAutomaton();

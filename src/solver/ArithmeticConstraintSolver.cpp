@@ -91,7 +91,8 @@ void ArithmeticConstraintSolver::setCallbacks() {
 //            LOG(INFO) << it.first;
 //          }
 //          std::cin.get();
-          while(symbol_table_->values_lock_) std::this_thread::yield();
+
+
           auto start = std::chrono::steady_clock::now();
 
           auto binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), use_unsigned_integers_);
@@ -100,90 +101,20 @@ void ArithmeticConstraintSolver::setCallbacks() {
           diff += end-start;
 
           auto result = new Value(binary_int_auto);
-          set_term_value(term, result);
 
-          //auto term_group_name = arithmetic_formula_generator_.get_term_group_name(term);
-          //if(term_group_name.empty()) {
-          //  LOG(FATAL) << "Term has no group!";
-          //}
-
-
-        //  LOG(INFO) << "symbol table intersect";
-
-//          auto left_auto = symbol_table_->get_value(term_group_name)->getBinaryIntAutomaton();
-//          auto right_auto = binary_int_auto;
-
-//          auto bdd_start = std::chrono::steady_clock::now();
-
-//          std::string id1, id2;
-//          std::stringstream os1;
-//  //        {
-//  //          cereal::BinaryOutputArchive ar(os1);
-//  //          Util::Serialize::save(ar, left_auto->getDFA());
-//  //        }
-//          left_auto->toBDD(os1);
-//          id1 = os1.str();
-
-//          std::stringstream os2;
-//  //        {
-//  //          cereal::BinaryOutputArchive ar(os1);
-//  //          Util::Serialize::save(ar, right_auto->getDFA());
-//  //        }
-//          right_auto->toBDD(os2);
-//          id2 = os2.str();
-
-//  //        LOG(INFO) << id1.size();
-
-//          auto bdd_end = std::chrono::steady_clock::now();
-//          diff2 += bdd_end-bdd_start;
-
-//          std::string stupid_key1 = id1 + id2;
-//          std::string stupid_key2 = id2 + id1;
-//          Theory::DFA_ptr intersect_dfa = nullptr;
-//          Theory::BinaryIntAutomaton_ptr intersect_auto = nullptr;
-
-//          if(stupid_cache.find(stupid_key1) != stupid_cache.end()) {
-//            auto cache_start = std::chrono::steady_clock::now();
-
-//            intersect_dfa = dfaCopy(stupid_cache[stupid_key1]);
+          if(Option::Solver::SUB_FORMULA_CACHING) {
+            auto term_group_name = arithmetic_formula_generator_.get_term_group_name(term);
+            if(term_group_name.empty()) {
+              LOG(FATAL) << "Term has no group!";
+            }
+//            while(symbol_table_->values_lock_) std::this_thread::yield();
+            symbol_table_->IntersectValue(term_group_name,result);
+          }
+          else {
+            set_term_value(term, result);
+          }
 
 
-//            auto new_formula = symbol_table_->get_value(term_group_name)->getBinaryIntAutomaton()->GetFormula()->Intersect(result->getBinaryIntAutomaton()->GetFormula());
-//            intersect_auto = new Theory::BinaryIntAutomaton(intersect_dfa,new_formula,false);
-//            symbol_table_->set_value(term_group_name,new Value(intersect_auto));
-//            dfa_hits++;
-
-
-//            auto cache_end = std::chrono::steady_clock::now();
-//            diff += cache_end - cache_start;
-
-//          } else if (stupid_cache.find(stupid_key2) != stupid_cache.end()) {
-//            auto cache_start = std::chrono::steady_clock::now();
-
-//            intersect_dfa = dfaCopy(stupid_cache[stupid_key2]);
-
-
-//            auto new_formula = symbol_table_->get_value(term_group_name)->getBinaryIntAutomaton()->GetFormula()->Intersect(result->getBinaryIntAutomaton()->GetFormula());
-//            intersect_auto = new Theory::BinaryIntAutomaton(intersect_dfa,new_formula,false);
-//            symbol_table_->set_value(term_group_name,new Value(intersect_auto));
-//            dfa_hits++;
-
-
-//            auto cache_end = std::chrono::steady_clock::now();
-//            diff += cache_end - cache_start;
-
-//          } else {
-
-//            symbol_table_->IntersectValue(term_group_name,result);
-//            auto cache_start = std::chrono::steady_clock::now();
-//            intersect_dfa = symbol_table_->get_value(term_group_name)->getBinaryIntAutomaton()->getDFA();
-//            stupid_cache[stupid_key1] = dfaCopy(intersect_dfa);
-//            auto cache_end = std::chrono::steady_clock::now();
-//            diff += cache_end - cache_start;
-//            dfa_misses++;
-//          }
-
-          //symbol_table_->IntersectValue(term_group_name,result);
 //          std::cin.get();
           // once we solve an atomic linear inte  ger arithmetic constraint,
           // we delete its formula to avoid solving it again.
@@ -294,163 +225,12 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 				if(term_group_name.empty()) {
 					LOG(FATAL) << "Term has no group!";
 				}
-				//LOG(INFO) << "------------ " << *term << " has group name " << term_group_name;
 
+        if(not Option::Solver::SUB_FORMULA_CACHING) {
+				  symbol_table_->IntersectValue(term_group_name,param);
+				}
 
-//        auto left_auto = symbol_table_->get_value(term_group_name)->getBinaryIntAutomaton();
-//        auto right_auto = param->getBinaryIntAutomaton();
-//
-//        auto bdd_start = std::chrono::steady_clock::now();
-//
-//
-//        std::string id1, id2;
-//        std::stringstream os1;
-////        {
-////          cereal::BinaryOutputArchive ar(os1);
-////          Util::Serialize::save(ar, left_auto->getDFA());
-////        }
-//        left_auto->toBDD(os1);
-//        id1 = os1.str();
-//
-//        std::stringstream os2;
-////        {
-////          cereal::BinaryOutputArchive ar(os1);
-////          Util::Serialize::save(ar, right_auto->getDFA());
-////        }
-//        right_auto->toBDD(os2);
-//        id2 = os2.str();
-//
-////        LOG(INFO) << id1.size();
-//
-//        auto bdd_end = std::chrono::steady_clock::now();
-//        diff2 += bdd_end-bdd_start;
-//
-//        std::string stupid_key1 = id1 + id2;
-//        std::string stupid_key2 = id2 + id1;
-//        Theory::DFA_ptr intersect_dfa = nullptr;
-//        Theory::BinaryIntAutomaton_ptr intersect_auto = nullptr;
-//
-//
-////        std::string cached_data;
-////        auto &c = rdx_->commandSync<std::string>({"GET", id1});
-////        if(c.ok()) {
-////
-////          auto cache_start = std::chrono::steady_clock::now();
-////
-////          cached_data = c.reply();
-////          std::stringstream is(cached_data);
-////          Theory::BinaryIntAutomaton_ptr import_auto = new Theory::BinaryIntAutomaton(nullptr, 0, true);
-////          {
-////            cereal::BinaryInputArchive ar(is);
-////            import_auto->load(ar);
-////          }
-////
-////          auto cache_end = std::chrono::steady_clock::now();
-////          diff += cache_end - cache_start;
-////
-////          auto val = new Value(import_auto);
-////          symbol_table_->set_value(term_group_name,val);
-////          dfa_hits++;
-////          delete val;
-////
-////
-////
-////        } else {
-////
-////          auto &c2 = rdx_->commandSync<std::string>({"GET", id2});
-////
-////          if(c2.ok()) {
-////            auto cache_start = std::chrono::steady_clock::now();
-////
-////            cached_data = c2.reply();
-////            std::stringstream is(cached_data);
-////            Theory::BinaryIntAutomaton_ptr import_auto = new Theory::BinaryIntAutomaton(nullptr, 0, true);
-////            {
-////              cereal::BinaryInputArchive ar(is);
-////              import_auto->load(ar);
-////            }
-////
-////            auto cache_end = std::chrono::steady_clock::now();
-////            diff += cache_end - cache_start;
-////
-////            auto val = new Value(import_auto);
-////            symbol_table_->set_value(term_group_name, val);
-////            dfa_hits++;
-////            delete val;
-////
-////
-////          } else {
-////            symbol_table_->IntersectValue(term_group_name,param);
-////
-////            std::stringstream os;
-////            {
-////              cereal::BinaryOutputArchive ar(os);
-////              symbol_table_->get_value(term_group_name)->getBinaryIntAutomaton()->save(ar);
-////            }
-////
-////            auto &c2 = rdx_->commandSync<std::string>({"SET", id1, os.str()});
-////            if (c2.ok()) {
-////              c2.free();
-////            } else {
-////              LOG(FATAL) << "Failed to cache result: " << c2.status();
-////            }
-////
-////            dfa_misses++;
-////          }
-////
-////          c2.free();
-////        }
-////
-////        c.free();
-//
-//
-////        std::hash<std::string> hasher;
-////
-////        size_t hash1 = hasher(id1+id2);
-////        size_t hash2 = hasher(id2+id1);
-////
-//        if(stupid_cache.find(stupid_key1) != stupid_cache.end()) {
-//          auto cache_start = std::chrono::steady_clock::now();
-//
-//          intersect_dfa = dfaCopy(stupid_cache[stupid_key1]);
-//
-//
-//          auto new_formula = symbol_table_->get_value(term_group_name)->getBinaryIntAutomaton()->GetFormula()->Intersect(param->getBinaryIntAutomaton()->GetFormula());
-//          intersect_auto = new Theory::BinaryIntAutomaton(intersect_dfa,new_formula,false);
-//          symbol_table_->set_value(term_group_name,new Value(intersect_auto));
-//          dfa_hits++;
-//
-//
-//          auto cache_end = std::chrono::steady_clock::now();
-//          diff += cache_end - cache_start;
-//
-//        } else if (stupid_cache.find(stupid_key2) != stupid_cache.end()) {
-//          auto cache_start = std::chrono::steady_clock::now();
-//
-//          intersect_dfa = dfaCopy(stupid_cache[stupid_key2]);
-//
-//
-//          auto new_formula = symbol_table_->get_value(term_group_name)->getBinaryIntAutomaton()->GetFormula()->Intersect(param->getBinaryIntAutomaton()->GetFormula());
-//          intersect_auto = new Theory::BinaryIntAutomaton(intersect_dfa,new_formula,false);
-//          symbol_table_->set_value(term_group_name,new Value(intersect_auto));
-//          dfa_hits++;
-//
-//
-//          auto cache_end = std::chrono::steady_clock::now();
-//          diff += cache_end - cache_start;
-//
-//        } else {
-//          symbol_table_->IntersectValue(term_group_name,param);
-//          auto cache_start = std::chrono::steady_clock::now();
-//          intersect_dfa = symbol_table_->get_value(term_group_name)->getBinaryIntAutomaton()->getDFA();
-//          stupid_cache[stupid_key1] = dfaCopy(intersect_dfa);
-//          auto cache_end = std::chrono::steady_clock::now();
-//          diff += cache_end - cache_start;
-//          dfa_misses++;
-//        }
-
-          symbol_table_->IntersectValue(term_group_name,param);
-          is_satisfiable = symbol_table_->get_value(term_group_name)->is_satisfiable();
+        is_satisfiable = symbol_table_->get_value(term_group_name)->is_satisfiable();
       }
 			clear_term_value(term);
 			if (not is_satisfiable) {
@@ -488,10 +268,15 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 //    delete and_value;
   //LOG(INFO) << "***** SETTING VALUE OF " << group_name << " to " << is_satisfiable;
 
-//  is_satisfiable = symbol_table_->get_value(group_name) != nullptr ? is_satisfiable and symbol_table_->get_value(group_name)->is_satisfiable() : is_satisfiable;
-//  auto satisfiable_value = new Value(is_satisfiable);
-//  set_term_value(and_term, satisfiable_value);
-//  delete satisfiable_value;
+  is_satisfiable = symbol_table_->get_value(group_name) != nullptr ? is_satisfiable and symbol_table_->get_value(group_name)->is_satisfiable() : is_satisfiable;
+
+  if(not is_satisfiable) {
+
+    auto satisfiable_value = new Value(is_satisfiable);
+    clear_term_value(and_term);
+    set_term_value(and_term, satisfiable_value);
+  }
+  //delete satisfiable_value;
   //}
   DVLOG(VLOG_LEVEL) << "post visit component end: " << *and_term << "@" << and_term;
 }

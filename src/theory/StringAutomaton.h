@@ -29,6 +29,7 @@
 #include "IntAutomaton.h"
 #include "StringFormula.h"
 #include "../utils/Serialize.h"
+#include "../solver/options/Solver.h"
 
 namespace Vlab {
 namespace Theory {
@@ -327,6 +328,15 @@ public:
 
 	static DFA_ptr PreConcatPrefix(DFA_ptr concat_dfa, DFA_ptr suffix_dfa, int var);
 	static DFA_ptr PreConcatSuffix(DFA_ptr concat_dfa, DFA_ptr prefix_dfa, int var);
+
+  static std::string GenerateKey(StringFormula_ptr op_formula);
+  static std::string GenerateKey(std::string op, StringAutomaton_ptr);
+  static std::string GenerateKey(std::string op, StringAutomaton_ptr, StringAutomaton_ptr);
+
+	static DFA_ptr LoadDFA(std::string op);
+
+	static bool StoreDFA(std::string key, DFA_ptr);
+
 
 protected:
   bool HasExceptionToValidStateFrom(int state, std::vector<char>& exception);

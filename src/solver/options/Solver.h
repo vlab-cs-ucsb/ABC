@@ -32,7 +32,9 @@ enum class Name: int {
   DISABLE_SORTING_HEURISTICS,
 	FORCE_DNF_FORMULA,
 	COUNT_BOUND_EXACT,
-	INCREMENTAL,
+	FULL_FORMULA_CACHING,
+	SUB_FORMULA_CACHING,
+	AUTOMATA_CACHING,
   REGEX_FLAG,
   OUTPUT_PATH,
   SCRIPT_PATH,
@@ -49,7 +51,9 @@ public:
   static bool ENABLE_SORTING_HEURISTICS;
   static bool FORCE_DNF_FORMULA;
   static bool COUNT_BOUND_EXACT;
-  static bool INCREMENTAL;
+  static bool FULL_FORMULA_CACHING;
+	static bool SUB_FORMULA_CACHING;
+	static bool AUTOMATA_CACHING;
   static std::string OUTPUT_PATH;
   static std::string SCRIPT_PATH;
 };
