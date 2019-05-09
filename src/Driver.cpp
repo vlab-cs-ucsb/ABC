@@ -121,7 +121,7 @@ void Driver::ast2dot(std::string file_name) {
 void Driver::InitializeSolver() {
 
   symbol_table_ = new Solver::SymbolTable();
-//  symbol_table_->push_scope(script_);
+  symbol_table_->push_scope(script_);
 
 
 
