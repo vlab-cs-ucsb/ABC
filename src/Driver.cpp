@@ -21,11 +21,14 @@ Driver::Driver()
   incremental_states_.clear();
   cached_values_.clear();
   cached_bounded_values_.clear();
-  rdx_ = new redox::Redox(std::cout,redox::log::Level::Off);
-  rdx_->noWait(true);
+  
+  if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING || Option::Solver::AUTOMATA_CACHING) {
+    rdx_ = new redox::Redox(std::cout,redox::log::Level::Off);
+    rdx_->noWait(true);
 
-  if(!rdx_->connect("localhost", 6379)) {
-    LOG(FATAL) << "Could not connect to redis server";
+    if(!rdx_->connect("localhost", 6379)) {
+      LOG(FATAL) << "Could not connect to redis server";
+    }
   }
   total_hits_ = 0;
   total_misses_ = 0;
@@ -60,8 +63,10 @@ Driver::~Driver() {
   delete constraint_information_;
   Theory::Automaton::CleanUp();
 
-  rdx_->disconnect();
-  delete rdx_;
+  if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING || Option::Solver::AUTOMATA_CACHING) {
+    rdx_->disconnect();
+    delete rdx_;
+  }
 }
 
 void Driver::InitializeLogger(int log_level) {
