@@ -191,8 +191,10 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
       
       return;
     }
-    arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
-    string_constraint_solver_.collect_string_constraint_info();
+    if(Option::Solver::FULL_FORMULA_CACHING) {
+      arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
+      string_constraint_solver_.collect_string_constraint_info();
+    }
   } else {
     arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
     string_constraint_solver_.collect_string_constraint_info();

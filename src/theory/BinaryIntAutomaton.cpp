@@ -351,9 +351,18 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr othe
   BinaryIntAutomaton_ptr left_auto = nullptr, right_auto = nullptr;
   ArithmeticFormula_ptr intersect_formula = nullptr;
 
-//  if(this->is_natural_number_ != other_auto->is_natural_number_) {
-//    LOG(FATAL) << "Numbers don't match";
-//  }
+/*
+  for(auto it : this->formula_->GetVariableCoefficientMap()) {
+    LOG(INFO) << it.first << "," << it.second;
+  }
+  LOG(INFO) << "--";
+  for(auto it : other_auto->GetFormula()->GetVariableCoefficientMap()) {
+    LOG(INFO) << it.first << "," << it.second;
+  }
+  if(this->is_natural_number_ != other_auto->is_natural_number_) {
+    LOG(FATAL) << "Numbers don't match";
+  }
+*/
   auto left_num_tracks = this->GetFormula()->GetNumberOfVariables();
   auto right_num_tracks = other_auto->GetFormula()->GetNumberOfVariables();
   if(left_num_tracks > right_num_tracks) {
@@ -550,15 +559,15 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::ChangeIndicesMap(ArithmeticFormula_pt
 	// (this will be done during intersection
 	int* map = CreateBddVariableIndices(old_num_tracks);
 
-//	LOG(INFO) << "Old map:";
-//	for(auto iter : old_coeff_map) {
-//	  LOG(INFO) << "  " << iter.first;
-//	}
-//
-//	LOG(INFO) << "New map:";
-//	for(auto iter : new_coeff_map) {
-//	  LOG(INFO) << "  " << iter.first;
-//	}
+	LOG(INFO) << "Old map:";
+	for(auto iter : old_coeff_map) {
+	  LOG(INFO) << "  " << iter.first;
+	}
+
+	LOG(INFO) << "New map:";
+	for(auto iter : new_coeff_map) {
+	  LOG(INFO) << "  " << iter.first;
+	}
 
   bool replace = false;
 

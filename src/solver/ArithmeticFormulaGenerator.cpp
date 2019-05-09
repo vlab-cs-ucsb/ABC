@@ -740,7 +740,7 @@ void ArithmeticFormulaGenerator::clear_term_formula(Term_ptr term) {
   if (it != term_formula_.end()) {
     delete it->second;
     term_formula_.erase(it);
-//    if(not Option::Solver::SUB_FORMULA_CACHING) {
+//    if(Option::Solver::SUB_FORMULA_CACHING) {
 //      term_group_map_.erase(term);
 //    }
   }
@@ -883,7 +883,7 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
   DVLOG(VLOG_LEVEL)<< "start setting int group for components";
   for (auto& el : term_group_map_) {
     if(term_formula_.find(el.first) != term_formula_.end()) {
-      //term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
+      term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
       group_formula_[el.second]->MergeVariables(term_formula_[el.first]);
     }
   }
