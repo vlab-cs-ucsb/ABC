@@ -559,15 +559,15 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::ChangeIndicesMap(ArithmeticFormula_pt
 	// (this will be done during intersection
 	int* map = CreateBddVariableIndices(old_num_tracks);
 
-	LOG(INFO) << "Old map:";
-	for(auto iter : old_coeff_map) {
-	  LOG(INFO) << "  " << iter.first;
-	}
-
-	LOG(INFO) << "New map:";
-	for(auto iter : new_coeff_map) {
-	  LOG(INFO) << "  " << iter.first;
-	}
+//	LOG(INFO) << "Old map:";
+//	for(auto iter : old_coeff_map) {
+//	  LOG(INFO) << "  " << iter.first;
+//	}
+//
+//	LOG(INFO) << "New map:";
+//	for(auto iter : new_coeff_map) {
+//	  LOG(INFO) << "  " << iter.first;
+//	}
 
   bool replace = false;
 

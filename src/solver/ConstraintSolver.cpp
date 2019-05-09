@@ -117,6 +117,7 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 //    LOG(INFO) << key;
 //    std::cin.get();
 //    auto cache_start = std::chrono::steady_clock::now();
+
     auto &c = rdx_->commandSync<std::string>({"GET", key});
     if (c.ok()) {
       // has cached value
@@ -127,7 +128,9 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
     } else {
       num_misses_++;
     }
+
     c.free();
+
 //    auto cache_end = std::chrono::steady_clock::now();
 //    auto cache_time = cache_end-cache_start;
 //    diff += cache_time;
@@ -378,7 +381,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     auto alone = std::make_shared<std::atomic<bool>>(false);
     std::atomic<int> count;
     count = 0;
-    std::atomic<bool> has_cached_result;
+    std::atomic<bool> has_cached_result(false);
     has_cached_result = false;
 
     std::string success_key = "";

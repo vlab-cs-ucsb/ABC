@@ -22,14 +22,14 @@ Driver::Driver()
   cached_values_.clear();
   cached_bounded_values_.clear();
   
-  if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING || Option::Solver::AUTOMATA_CACHING) {
+//  if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING || Option::Solver::AUTOMATA_CACHING) {
     rdx_ = new redox::Redox(std::cout,redox::log::Level::Off);
     rdx_->noWait(true);
 
     if(!rdx_->connect("localhost", 6379)) {
       LOG(FATAL) << "Could not connect to redis server";
     }
-  }
+//  }
   total_hits_ = 0;
   total_misses_ = 0;
 
@@ -63,10 +63,10 @@ Driver::~Driver() {
   delete constraint_information_;
   Theory::Automaton::CleanUp();
 
-  if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING || Option::Solver::AUTOMATA_CACHING) {
-    rdx_->disconnect();
-    delete rdx_;
-  }
+//  if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING || Option::Solver::AUTOMATA_CACHING) {
+//    rdx_->disconnect();
+//    delete rdx_;
+//  }
 }
 
 void Driver::InitializeLogger(int log_level) {
@@ -653,6 +653,7 @@ std::map<SMT::Variable_ptr, Solver::Value_ptr> Driver::getSatisfyingVariables() 
 
 std::map<std::string, std::string> Driver::getSatisfyingExamples() {
   std::map<std::string, std::string> results;
+//  LOG(INFO) << "num sat: " << getSatisfyingVariables().size();
   for (auto& variable_entry : getSatisfyingVariables()) {
     if (Solver::Value::Type::BINARYINT_AUTOMATON == variable_entry.second->getType()) {
       std::map<std::string, int> values = variable_entry.second->getBinaryIntAutomaton()->GetAnAcceptingIntForEachVar();

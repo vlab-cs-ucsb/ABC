@@ -94,11 +94,55 @@ void ArithmeticConstraintSolver::setCallbacks() {
 
 
           auto start = std::chrono::steady_clock::now();
+          BinaryIntAutomaton_ptr binary_int_auto = nullptr;
 
-          auto binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), use_unsigned_integers_);
+          if(Option::Solver::AUTOMATA_CACHING) {
+            std::stringstream os1;
+            {
+              cereal::BinaryOutputArchive ar(os1);
+              formula->save(ar);
+            }
 
-          auto end = std::chrono::steady_clock::now();
-          diff += end-start;
+
+            std::string key = os1.str();
+            DFA_ptr result_dfa = nullptr;
+            bool has_result = false;
+            std::string cached_data;
+            auto &c = rdx_->commandSync<std::string>({"GET", key});
+            if (c.ok()) {
+              has_result = true;
+              cached_data = c.reply();
+            }
+            c.free();
+            if (has_result) {
+              std::stringstream is(cached_data);
+              {
+                cereal::BinaryInputArchive ar(is);
+                Util::Serialize::load(ar, result_dfa);
+              }
+              Automaton::num_hits++;
+              binary_int_auto = new BinaryIntAutomaton(result_dfa,formula->clone(),use_unsigned_integers_);
+            }
+
+            if(not has_result){
+              binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), use_unsigned_integers_);
+              std::stringstream os;
+              {
+                cereal::BinaryOutputArchive ar(os);
+                Util::Serialize::save(ar, binary_int_auto->getDFA());
+              }
+              rdx_->command<std::string>({"SET", key, os.str()});
+              Automaton::num_misses++;
+            }
+
+
+          } else {
+            binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), use_unsigned_integers_);
+          }
+
+
+
+
 
           auto result = new Value(binary_int_auto);
 
@@ -107,7 +151,7 @@ void ArithmeticConstraintSolver::setCallbacks() {
             if(term_group_name.empty()) {
               LOG(FATAL) << "Term has no group!";
             }
-//            while(symbol_table_->values_lock_) std::this_thread::yield();
+            while(symbol_table_->values_lock_) std::this_thread::yield();
             symbol_table_->IntersectValue(term_group_name,result);
           }
           else {
