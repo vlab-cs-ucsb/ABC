@@ -26,7 +26,7 @@ Driver::Driver()
     rdx_ = new redox::Redox(std::cout,redox::log::Level::Off);
     rdx_->noWait(true);
 
-    if(!rdx_->connectUnix()) {
+    if(!rdx_->connect("localhost", 6379)) {
       LOG(FATAL) << "Could not connect to redis server";
     }
 //  }
