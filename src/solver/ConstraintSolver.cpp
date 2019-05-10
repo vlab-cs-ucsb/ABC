@@ -619,7 +619,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       symbol_table_->LockValues();
       bool is_done = terms_to_solve.empty();
       key = term_keys[and_term->term_list->size()];
-      serializers_.push_back(std::thread([root_key_=root_key_,rdx_ = rdx_,symbol_table_=symbol_table_, revk, tk, key, &value_map,is_done,is_satisfiable, max] {
+  //    serializers_.push_back(std::thread([root_key_=root_key_,rdx_ = rdx_,symbol_table_=symbol_table_, revk, tk, key, &value_map,is_done,is_satisfiable, max] {
         std::vector<Theory::BinaryIntAutomaton_ptr>* bin_stuff_to_store = new std::vector<Theory::BinaryIntAutomaton_ptr>();
         std::vector<Theory::StringAutomaton_ptr>* str_stuff_to_store = new std::vector<Theory::StringAutomaton_ptr>();
 
@@ -709,7 +709,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         delete bin_stuff_to_store;
         //delete revk;
         //delete tk;
-      }));
+//      }));
 
       
       if(not is_satisfiable) {
