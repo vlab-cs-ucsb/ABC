@@ -26,7 +26,7 @@ Driver::Driver()
     rdx_ = new redox::Redox(std::cout,redox::log::Level::Off);
     rdx_->noWait(true);
 
-    if(!rdx_->connect("localhost", 6379)) {
+    if(!rdx_->connectUnix()) {
       LOG(FATAL) << "Could not connect to redis server";
     }
 //  }
@@ -667,14 +667,19 @@ std::map<std::string, std::string> Driver::getSatisfyingExamples() {
     		auto single_string_auto = string_auto->GetAutomatonForVariable(it.first);
     		std::string accepted_string = single_string_auto->GetAnAcceptingString();
     		// if we normalized characters, map them back to original character
-    		if(Option::Solver::SUB_FORMULA_CACHING) {
-    		  auto char_mapping = symbol_table_->GetReverseCharacterMapping();
+    		
+        if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
+    		  auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
+          auto char_mapping = symbol_table_->GetReverseCharacterMapping();
     		  for(int i = 0; i < accepted_string.length(); i++) {
     		    accepted_string[i] = char_mapping[accepted_string[i]];
     		  }
-    		}
-    		results[it.first] = accepted_string;
-    		delete single_string_auto;
+    		  results[reverse_var_mapping[it.first]] = accepted_string;
+          delete single_string_auto;
+        } else {
+    		  results[it.first] = accepted_string;
+    		  delete single_string_auto;
+        }
     	}
 
 
@@ -705,15 +710,18 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandom() {
 					auto single_string_auto = string_auto->GetAutomatonForVariable(it.first);
 					std::string accepted_string = single_string_auto->GetAnAcceptingStringRandom();
           // if we normalized characters, map them back to original character
-          if(Option::Solver::SUB_FORMULA_CACHING) {
+          if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
+    		    auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
             auto char_mapping = symbol_table_->GetReverseCharacterMapping();
             for(int i = 0; i < accepted_string.length(); i++) {
               accepted_string[i] = char_mapping[accepted_string[i]];
             }
+    		    results[reverse_var_mapping[it.first]] = accepted_string;
+            delete single_string_auto;
+          } else {
+    		    results[it.first] = accepted_string;
+    		    delete single_string_auto;
           }
-
-					results[it.first] = accepted_string;
-					cached_values_[it.first] = new Solver::Value(single_string_auto);
 				}
 			}
 		}
@@ -751,15 +759,18 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandomBounded(co
           }
 					std::string accepted_string = single_string_auto_bounded->GetAnAcceptingStringRandom();
           // if we normalized characters, map them back to original character
-          if(Option::Solver::SUB_FORMULA_CACHING) {
+          if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
+    		    auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
             auto char_mapping = symbol_table_->GetReverseCharacterMapping();
             for(int i = 0; i < accepted_string.length(); i++) {
               accepted_string[i] = char_mapping[accepted_string[i]];
             }
+    		    results[reverse_var_mapping[it.first]] = accepted_string;
+            delete single_string_auto_bounded;
+          } else {
+    		    results[it.first] = accepted_string;
+    		    delete single_string_auto_bounded;
           }
-
-					results[it.first] = accepted_string;
-					cached_bounded_values_[it.first] = new Solver::Value(single_string_auto_bounded);
 				}
 			}
 		}
@@ -768,6 +779,10 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandomBounded(co
 }
 
 std::string Driver::getMutatedModel(std::string var_name, std::string model) {
+  if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
+    auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
+    var_name = reverse_var_mapping[var_name];
+  }
   auto var_value = (cached_bounded_values_.find(var_name) != cached_bounded_values_.end()) ?
                             cached_bounded_values_[var_name] : symbol_table_->get_value(var_name);
 
@@ -778,7 +793,7 @@ std::string Driver::getMutatedModel(std::string var_name, std::string model) {
 
   // if we unnormalized the characters, remap them to their normalized form
   // if we normalized characters, map them back to original character
-  if(Option::Solver::SUB_FORMULA_CACHING) {
+  if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
     auto char_mapping = symbol_table_->GetCharacterMapping();
     for(int i = 0; i < model.length(); i++) {
       model[i] = char_mapping[model[i]];

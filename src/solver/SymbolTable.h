@@ -153,6 +153,7 @@ public:
   // for root scope only?
   void SetVariableMapping(std::map<std::string,std::string>);
   std::map<std::string,std::string> GetVariableMapping();
+  std::map<std::string,std::string> GetReverseVariableMapping() {return reverse_variable_mapping_;}
   std::string GetMappedVariableName(std::string);
 
   std::map<char,char> GetCharacterMapping();
