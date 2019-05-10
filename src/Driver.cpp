@@ -26,7 +26,7 @@ Driver::Driver()
     rdx_ = new redox::Redox(std::cout,redox::log::Level::Off);
     rdx_->noWait(true);
 
-    if(!rdx_->connect("localhost", 6379)) {
+    if(!rdx_->connectUnix()) {
       LOG(FATAL) << "Could not connect to redis server";
     }
 //  }
@@ -469,9 +469,15 @@ void Driver::GetModels(const unsigned long bound,const unsigned long num_models)
 }
 
 Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsigned long bound) {
+  std::string normalized_var_name = var_name;
+  if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
+    auto var_mapping = symbol_table_->GetReverseVariableMapping();
+    normalized_var_name = var_mapping[var_name];
+  }
+
   Theory::BigInteger projected_count, tuple_count, result_count;
-  projected_count = GetModelCounterForVariable(var_name,true).Count(bound, bound);
-  tuple_count = GetModelCounterForVariable(var_name,false).Count(bound, bound);
+  projected_count = GetModelCounterForVariable(normalized_var_name,true).Count(bound, bound);
+  tuple_count = GetModelCounterForVariable(normalized_var_name,false).Count(bound, bound);
 
 
   if(tuple_count == 0) {
