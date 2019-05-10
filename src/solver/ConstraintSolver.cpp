@@ -555,7 +555,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
 //      cache_start = std::chrono::steady_clock::now();
 
-
       if(dynamic_cast<Or_ptr>(term) == nullptr) {
         cache_start = std::chrono::steady_clock::now();
 
@@ -588,7 +587,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
       }
 
-
       // solve non-relational terms
       is_satisfiable = check_and_visit(term) and is_satisfiable;
 
@@ -607,7 +605,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         clearTermValuesAndLocalLetVars();
       }
 
-
       // now we need to cache what we've got so far
 
 
@@ -621,7 +618,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
       symbol_table_->LockValues();
       bool is_done = terms_to_solve.empty();
-
       key = term_keys[and_term->term_list->size()];
       serializers_.push_back(std::thread([root_key_=root_key_,rdx_ = rdx_,symbol_table_=symbol_table_, revk, tk, key, &value_map,is_done,is_satisfiable, max] {
         std::vector<Theory::BinaryIntAutomaton_ptr>* bin_stuff_to_store = new std::vector<Theory::BinaryIntAutomaton_ptr>();
@@ -636,7 +632,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         std::stringstream os;
 
         if(is_satisfiable) {
-
+          std::cout << "SAT" << std::endl;
           for (auto iter : value_map) {
             if(iter.second == nullptr) {
               continue;
@@ -691,6 +687,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
             export_auto = nullptr;
           }
         } else {
+          std::cout << "NOTSAT" << std::endl;
           symbol_table_->UnlockValues();
           os << "0";
         }
@@ -715,7 +712,9 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       }));
 
       
-      if(not is_satisfiable) break;
+      if(not is_satisfiable) {
+        while(symbol_table_->values_lock_) std::this_thread::yield;
+      }
     }
 
     if (is_component and is_satisfiable) {
