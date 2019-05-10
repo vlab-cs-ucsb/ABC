@@ -616,8 +616,8 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
 
       auto& value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
-      auto tk = new std::map<int,std::string>(term_keys.begin(),term_keys.end());
-      auto revk = new std::map<std::string,int>(reverse_term_keys.begin(),reverse_term_keys.end());
+      auto tk = std::make_shared<std::map<int,std::string>>(term_keys.begin(),term_keys.end());
+      auto revk = std::make_shared<std::map<std::string,int>>(reverse_term_keys.begin(),reverse_term_keys.end());
 
       symbol_table_->LockValues();
       bool is_done = terms_to_solve.empty();
@@ -710,8 +710,8 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
         delete str_stuff_to_store;
         delete bin_stuff_to_store;
-        delete revk;
-        delete tk;
+        //delete revk;
+        //delete tk;
       }));
 
       
