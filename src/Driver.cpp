@@ -471,8 +471,10 @@ void Driver::GetModels(const unsigned long bound,const unsigned long num_models)
 Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsigned long bound) {
   std::string normalized_var_name = var_name;
   if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
-    auto var_mapping = symbol_table_->GetReverseVariableMapping();
-    normalized_var_name = var_mapping[var_name];
+    auto var_mapping = symbol_table_->GetVariableMapping();
+    if(var_mapping.find(normalized_var_name) != var_mapping.end()) {
+      normalized_var_name = var_mapping[var_name];
+    }
   }
 
   Theory::BigInteger projected_count, tuple_count, result_count;

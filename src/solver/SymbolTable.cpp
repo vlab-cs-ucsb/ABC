@@ -152,6 +152,9 @@ Variable_ptr SymbolTable::get_variable(std::string name) {
 //    original_name = reverse_variable_mapping_[name];
 //  }
   auto it = variables_.find(original_name);
+  //for(auto it : variable_mapping_) {
+  //  LOG(INFO) << it.first << "," << it.second;
+  //}
   CHECK(it != variables_.end()) << "Variable is not found: " << name << " (original name = " << original_name << ")";
 //  LOG(INFO) << name << ", original = " << original_name;
 //  LOG(INFO) << name << " found! Returning " << it->second;
@@ -784,7 +787,12 @@ void SymbolTable::SetVariableMapping(std::map<std::string,std::string> variable_
   variables_.clear();
 
   for(auto it : original_variables_) {
-    std::string name = variable_mapping[it.first];
+    std::string name = it.first;
+    if(variable_mapping.find(it.first) != variable_mapping.end()) {
+      name = variable_mapping[it.first];  
+    } else {
+      variable_mapping[name] = name;
+    }
     Variable_ptr variable = new Variable(name,it.second->getType());
     variables_.insert(std::make_pair(name,variable));
   }
