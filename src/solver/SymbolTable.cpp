@@ -95,11 +95,20 @@ SymbolTable::~SymbolTable() {
   }
   equivalence_classes.clear();
 
-  if(is_root_table_) {
+  //if(is_root_table_) {
     for (auto &entry : variables_) {
       delete entry.second;
+      entry.second = nullptr;
     }
+    variables_.clear();
+  if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
+    for(auto &entry : original_variables_) {
+      delete entry.second;
+      entry.second = nullptr;
+    }
+    original_variables_.clear();
   }
+  //}
 
   if(count_symbol_ != nullptr) {
   	delete count_symbol_;

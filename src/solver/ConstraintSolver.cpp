@@ -379,8 +379,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
     auto m_data = std::make_shared<std::mutex>();
     auto alone = std::make_shared<std::atomic<bool>>(false);
-    std::atomic<int> count;
-    count = 0;
+    auto count = std::make_shared<std::atomic<int>>(0);
     std::atomic<bool> has_cached_result(false);
     has_cached_result = false;
 
@@ -389,7 +388,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
 //    cache_start2 = std::chrono::steady_clock::now();
 
-    auto got_reply = [&,m_data,alone](redox::Command<std::string>& c) {
+    auto got_reply = [&cached_data,&has_cached_result,&success_key,count,m_data,alone](redox::Command<std::string>& c) {
       if(c.ok()) {
         // if we have cahced data, we'll use it if we're the first one back from redis
         m_data->lock();
@@ -397,19 +396,19 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
           cached_data = c.reply();
           if(cached_data.size() > 1) success_key = c.cmd().substr(4);
 
-          *alone = true;
+          //*alone = true;
           has_cached_result = true;
         }
         m_data->unlock();
       }
       m_data->lock();
-      if(not (*alone)) {
-        count++;
-      }
+      //if(not (*alone)) {
+        (*count)++;
+      //}
       m_data->unlock();
     };
 
-
+    int num_sent = 0;
     int max = and_term->term_list->size();
     while (!has_cached_result && and_term->term_list->size() > 0) {
 
@@ -417,16 +416,27 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       reverse_term_keys[key] = and_term->term_list->size();
       term_keys[and_term->term_list->size()] = key;
       rdx_->command<std::string>({"GET", key},got_reply);
-
+      num_sent++;
 
       terms_to_solve.push(and_term->term_list->back());
       and_term->term_list->pop_back();
     }
 
-    while(count < max && !has_cached_result) std::this_thread::yield();
+    while(*count < max && !has_cached_result) std::this_thread::yield();
 
 
     if (cached_data.size() == 1) {
+      /*
+      is_satisfiable = false;
+      std::stringstream os;
+      os << "0";
+      key = term_keys[and_term->term_list->size()];
+      for(int i = reverse_term_keys[key]; i < max; i++) {
+        
+      rdx_->command<std::string>({"SET",term_keys[i],os.str()});
+      }
+      */
+      while(*count < num_sent) std::this_thread::yield();
       Value_ptr result = new Value(false);
       setTermValue(and_term, result);
       
@@ -619,7 +629,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       symbol_table_->LockValues();
       bool is_done = terms_to_solve.empty();
       key = term_keys[and_term->term_list->size()];
-  //    serializers_.push_back(std::thread([root_key_=root_key_,rdx_ = rdx_,symbol_table_=symbol_table_, revk, tk, key, &value_map,is_done,is_satisfiable, max] {
+      serializers_.push_back(std::thread([root_key_=root_key_,rdx_ = rdx_,symbol_table_=symbol_table_, revk, tk, key, &value_map,is_done,is_satisfiable, max] {
         std::vector<Theory::BinaryIntAutomaton_ptr>* bin_stuff_to_store = new std::vector<Theory::BinaryIntAutomaton_ptr>();
         std::vector<Theory::StringAutomaton_ptr>* str_stuff_to_store = new std::vector<Theory::StringAutomaton_ptr>();
 
@@ -632,7 +642,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         std::stringstream os;
 
         if(is_satisfiable) {
-          std::cout << "SAT" << std::endl;
           for (auto iter : value_map) {
             if(iter.second == nullptr) {
               continue;
@@ -687,7 +696,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
             export_auto = nullptr;
           }
         } else {
-          std::cout << "NOTSAT" << std::endl;
           symbol_table_->UnlockValues();
           os << "0";
         }
@@ -709,7 +717,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         delete bin_stuff_to_store;
         //delete revk;
         //delete tk;
-//      }));
+      }));
 
       
       if(not is_satisfiable) {

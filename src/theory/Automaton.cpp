@@ -2725,9 +2725,6 @@ void Automaton::toBDD(std::ostream& out) {
   bdd_prepare_apply1(this->dfa_->bddm);
 
   /* build table of tuples (idx,lo,hi) */
-  for (int i = 0; i < this->dfa_->ns; i++) {
-    _export(this->dfa_->bddm, this->dfa_->q[i], table);
-  }
 
   /* renumber lo/hi pointers to new table ordering */
   for (unsigned i = 0; i < table->noelems; i++) {
@@ -2735,24 +2732,30 @@ void Automaton::toBDD(std::ostream& out) {
       table->elms[i].lo = bdd_mark(this->dfa_->bddm, table->elms[i].lo) - 1;
       table->elms[i].hi = bdd_mark(this->dfa_->bddm, table->elms[i].hi) - 1;
     }
+    out << table->elms[i].idx << "," << table->elms[i].lo << ","  << table->elms[i].hi << ";";
   }
 
+  for (int i = 0; i < this->dfa_->ns; i++) {
+    _export(this->dfa_->bddm, this->dfa_->q[i], table);
+    out << "{" << this->dfa_->f[i] << "|<" << i << "> " << i << "}";
+    if ((unsigned) (i + 1) < table->noelems) {
+      out << "|";
+    }
+    out << " s1:" << i << " -> " << bdd_mark(this->dfa_->bddm, this->dfa_->q[i]) - 1 << " [style=bold];\n";
+  }
 //  out << dfa_->ns << dfa_->s;
 //  for(int i = 0; i < this->dfa_->ns; i++) {
 //    out << dfa_->f[i] << (bdd_mark(dfa_->bddm, dfa_->q[i]) - 1);
 //  }
 //
-//  for(int i = 0; i < table->noelems; i++) {
-//    out << table->elms[i].idx << table->elms[i].lo << table->elms[i].hi;
-//  }
 
-  out << "digraph MONA_DFA_BDD {\n"
-          "  center = true;\n"
-          "  size = \"100.5,70.5\"\n"
+//  out << "digraph MONA_DFA_BDD {\n"
+//          "  center = true;\n"
+//          "  size = \"100.5,70.5\"\n"
 //      "  orientation = landscape;\n"
-          "  node [shape=record];\n"
-          "   s1 [shape=record,label=\"";
-
+//          "  node [shape=record];\n"
+//          "   s1 [shape=record,label=\"";
+/*
   for (int i = 0; i < this->dfa_->ns; i++) {
     out << "{" << this->dfa_->f[i] << "|<" << i << "> " << i << "}";
     if ((unsigned) (i + 1) < table->noelems) {
@@ -2788,6 +2791,7 @@ void Automaton::toBDD(std::ostream& out) {
       out << " " << i << " -> " << hi << " [style=filled];\n";
     }
   }
+  */
   out << "}" << std::endl;
   tableFree(table);
 }
