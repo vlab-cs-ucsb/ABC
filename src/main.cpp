@@ -261,7 +261,7 @@ int main(const int argc, const char **argv) {
       num_unsat++;
 //       std::cin.get();
     } else {
-      LOG(INFO) << "count = " << driver.CountVariable("h",4);
+      //LOG(INFO) << "count = " << driver.CountVariable("h",4);
       count_start = std::chrono::steady_clock::now();
 //      auto mc1 = driver.GetModelCounterForVariable(count_variable,false);
 //      auto mc2 = driver.GetModelCounterForVariable(count_variable,true);

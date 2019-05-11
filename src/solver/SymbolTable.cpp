@@ -94,14 +94,15 @@ SymbolTable::~SymbolTable() {
     delete eq;
   }
   equivalence_classes.clear();
-
+/*
   //if(is_root_table_) {
     for (auto &entry : variables_) {
       delete entry.second;
       entry.second = nullptr;
     }
     variables_.clear();
-  if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
+  
+    if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
     for(auto &entry : original_variables_) {
       delete entry.second;
       entry.second = nullptr;
@@ -109,7 +110,7 @@ SymbolTable::~SymbolTable() {
     original_variables_.clear();
   }
   //}
-
+*/
   if(count_symbol_ != nullptr) {
   	delete count_symbol_;
   }
@@ -807,11 +808,13 @@ void SymbolTable::SetVariableMapping(std::map<std::string,std::string> variable_
     variables_.insert(std::make_pair(name,variable));
 
 
+    
     if(variable_value_table_[top_scope()].find(original_variables_[it.first]) != variable_value_table_[top_scope()].end()) {
       auto var_val = variable_value_table_[top_scope()][original_variables_[it.first]];
       variable_value_table_[top_scope()].erase(original_variables_[it.first]);
       variable_value_table_[top_scope()].insert(std::make_pair(variable,var_val));
     }
+   
   }
 
   if(count_symbol_ != nullptr) {
@@ -824,9 +827,12 @@ void SymbolTable::SetVariableMapping(std::map<std::string,std::string> variable_
   for(auto equiv_iter : variable_equivalence_table_) {
     for (auto equiv_table : equiv_iter.second) {
       auto equiv_class_vars = equiv_table.second->get_variables();
+      std::set<Variable_ptr> vars;
       for(auto it : equiv_class_vars) {
-        it = variables_[variable_mapping[it->getName()]];
+        vars.insert(variables_[variable_mapping[it->getName()]]);
       }
+      equiv_class_vars = vars;
+      
       if(equiv_table.second->representative_variable_ != nullptr) {
         equiv_table.second->representative_variable_ = variables_[variable_mapping[equiv_table.second->representative_variable_->getName()]];
       }
