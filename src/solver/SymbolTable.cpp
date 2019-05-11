@@ -795,6 +795,7 @@ void SymbolTable::SetVariableMapping(std::map<std::string,std::string> variable_
   original_variables_ = variables_;
   variables_.clear();
 
+
   for(auto it : original_variables_) {
     std::string name = it.first;
     if(variable_mapping.find(it.first) != variable_mapping.end()) {
@@ -804,11 +805,38 @@ void SymbolTable::SetVariableMapping(std::map<std::string,std::string> variable_
     }
     Variable_ptr variable = new Variable(name,it.second->getType());
     variables_.insert(std::make_pair(name,variable));
+
+
+    if(variable_value_table_[top_scope()].find(original_variables_[it.first]) != variable_value_table_[top_scope()].end()) {
+      auto var_val = variable_value_table_[top_scope()][original_variables_[it.first]];
+      variable_value_table_[top_scope()].erase(original_variables_[it.first]);
+      variable_value_table_[top_scope()].insert(std::make_pair(variable,var_val));
+    }
   }
 
   if(count_symbol_ != nullptr) {
     count_symbol_->setData(variable_mapping[count_symbol_->getData()]);
   }
+
+  EquivClassTable new_variable_equivalence_table_;
+
+
+  for(auto equiv_iter : variable_equivalence_table_) {
+    for (auto equiv_table : equiv_iter.second) {
+      auto equiv_class_vars = equiv_table.second->get_variables();
+      for(auto it : equiv_class_vars) {
+        it = variables_[variable_mapping[it->getName()]];
+      }
+      if(equiv_table.second->representative_variable_ != nullptr) {
+        equiv_table.second->representative_variable_ = variables_[variable_mapping[equiv_table.second->representative_variable_->getName()]];
+      }
+      new_variable_equivalence_table_[equiv_iter.first][variables_[variable_mapping[equiv_table.first->getName()]]] = equiv_table.second;
+
+    }
+  }
+
+  variable_equivalence_table_ = new_variable_equivalence_table_;
+
 
   // store original map
   variable_mapping_ = variable_mapping;
@@ -860,6 +888,30 @@ std::map<char,char> SymbolTable::GetReverseCharacterMapping() {
 }
 
 void SymbolTable::SetCharacterMapping(std::map<char,char> mapping) {
+
+//  if(mapping.size() > 0) {
+//    for (auto &it : variable_value_table_[top_scope()]) {
+//      if (it.second->getType() == Value::Type::STRING_AUTOMATON) {
+//        auto str_auto = it.second->getStringAutomaton();
+//        if (not str_auto->IsAcceptingSingleString()) {
+//          LOG(FATAL) << "Can't remap characters to string auto";
+//        }
+//
+//        std::string str = str_auto->GetAnAcceptingString();
+//        for (int i = 0; i < str.length(); i++) {
+//          if (mapping.find(str[i]) == mapping.end()) {
+//            int pos = mapping.size() + 48;
+//            mapping[str[i]] = (char) pos;
+//          }
+//          str[i] = mapping[str[i]];
+//        }
+//        delete it.second;
+//        it.second = new Value(Theory::StringAutomaton::MakeString(str));
+//      }
+//    }
+//  }
+
+
   character_mapping_ = mapping;
   for(auto it : mapping) {
     reverse_character_mapping_[it.second] = it.first;

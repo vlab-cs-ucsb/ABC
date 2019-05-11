@@ -56,13 +56,14 @@ class EquivalenceClass {
 
 
   friend std::ostream& operator<<(std::ostream& os, const EquivalenceClass& equiv_class);
+  SMT::Variable_ptr representative_variable_;
  protected:
   SMT::Variable::Type type_;
 
   /**
    * at least one variable is selected as a representative
    */
-  SMT::Variable_ptr representative_variable_;
+
 
   /**
    * a representative term can be representative variable or a constant term or an unclassified term

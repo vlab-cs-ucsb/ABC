@@ -54,8 +54,14 @@ void StringConstraintSolver::end() {
 }
 
 void StringConstraintSolver::collect_string_constraint_info(Visitable_ptr node) {
+
+  if(Or_ptr or_term = dynamic_cast<Or_ptr>(node)) {
+    if(Option::Solver::SUB_FORMULA_CACHING)
+      string_formula_generator_.no_visit_or = true;
+  }
   string_formula_generator_.start(node);
   integer_terms_map_ = string_formula_generator_.get_integer_terms_map();
+  string_formula_generator_.no_visit_or = false;
 }
 
 void StringConstraintSolver::collect_string_constraint_info() {

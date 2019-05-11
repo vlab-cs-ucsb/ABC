@@ -29,6 +29,8 @@ ArithmeticFormulaGenerator::ArithmeticFormulaGenerator(Script_ptr script, Symbol
       constraint_information_(constraint_information),
       has_mixed_constraint_{false} {
 
+  no_visit_or = false;
+
 
   current_group_ = symbol_table_->get_var_name_for_node(root_, Variable::Type::INT);
 //  if(symbol_table_->get_variable_unsafe(current_group_) == nullptr) {
@@ -182,6 +184,8 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
     subgroups_[current_group_] = std::set<std::string>();
     has_mixed_constraint_ = false;
   }
+
+  if(!no_visit_or)
   visit_children_of(or_term);
   DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
 

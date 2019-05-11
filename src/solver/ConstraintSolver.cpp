@@ -137,11 +137,9 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
     // if we have cached result, import it and go from there
     if (has_cached_result) {
-
       std::stringstream is(cached_data);
 
-      arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
-      string_constraint_solver_.collect_string_constraint_info();
+
 
       // if formula was UNSAT, we store a single 0 in cache
       if (cached_data.size() == 1) {
@@ -162,7 +160,10 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
         ar(num_int_to_read);
       }
 
-      symbol_table_->SetCharacterMapping(char_map);
+//      symbol_table_->SetCharacterMapping(char_map);
+
+      arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
+      string_constraint_solver_.collect_string_constraint_info();
 
       // deserialize automata one by one until none left
       while (num_string_to_read-- > 0) {
@@ -239,6 +240,10 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
           if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
             continue;
           }
+//          auto equiv_class = symbol_table_->get_equivalence_class_of(iter.first);
+//          if(equiv_class != nullptr && equiv_class->has_constant()) {
+//            continue;
+//          }
           num_string_to_write++;
         } else if (iter.second->getType() ==
                    Value::Type::BINARYINT_AUTOMATON) {// and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
@@ -264,6 +269,10 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
           if (export_auto->GetFormula()->GetNumberOfVariables() == 0) {
             continue;
           }
+//          auto equiv_class = symbol_table_->get_equivalence_class_of(iter.first);
+//          if(equiv_class != nullptr && equiv_class->has_constant()) {
+//            continue;
+//          }
 
           {
             cereal::BinaryOutputArchive ar(os);
@@ -472,6 +481,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
       // first check if key has only 0 in it. if so, formula unsat
       if (cached_data.size() == 1) {
+        LOG(INFO) << "NOT SAT";
         Value_ptr result = new Value(false);
         setTermValue(and_term, result);
         return;
@@ -488,7 +498,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         ar(num_string_to_read);
         ar(num_int_to_read);
       }
-      symbol_table_->SetCharacterMapping(char_mapping);
+//      symbol_table_->SetCharacterMapping(char_mapping);
       // deserialize automata one by one until none left
 
       std::vector<Theory::BinaryIntAutomaton_ptr> bin_autos_to_add;
@@ -542,9 +552,9 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     // at this point, we have the most updated values to start with
     // if terms_to_solve is empty, then we got the whole formula from the cache and we're done
     // otherwise, solve the rest and cache those values
-    Renamer renamer(root_, symbol_table_,
-                    symbol_table_->GetVariableMapping(),
-                    symbol_table_->GetCharacterMapping());
+//    Renamer renamer(root_, symbol_table_,
+//                    symbol_table_->GetVariableMapping(),
+//                    symbol_table_->GetCharacterMapping());
     while (not terms_to_solve.empty()) {
 
  
@@ -554,9 +564,9 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       terms_to_solve.pop();
 
       // rename alphabet characters (from imported mapping, if any)
-      if (has_cached_result) {
-        renamer.start(term, false);
-      }
+//      if (has_cached_result) {
+//        renamer.start(term, false);
+//      }
 
 //      cache_start = std::chrono::steady_clock::now();
 
@@ -593,6 +603,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       is_satisfiable = check_and_visit(term) and is_satisfiable;
 
       if (not is_satisfiable) {
+        LOG(INFO) << "NOT SAT";
         clearTermValuesAndLocalLetVars();
         variable_path_table_.clear();
 //        break;
@@ -641,6 +652,10 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
             if (iter.second->getType() == Value::Type::STRING_AUTOMATON and
                 iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
               if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
+                continue;
+              }
+              auto equiv_class = symbol_table_->get_equivalence_class_of(iter.first);
+              if(equiv_class != nullptr && equiv_class->has_constant()) {
                 continue;
               }
               num_string_to_write++;
@@ -702,7 +717,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
           for(int i = (*revk)[key]; i < max; i++) {
             rdx_->command<std::string>({"SET",(*tk)[i],os.str()},got_reply);
           }
-        } 
+        }
 
         delete str_stuff_to_store;
         delete bin_stuff_to_store;
@@ -714,6 +729,8 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         while(symbol_table_->values_lock_) std::this_thread::yield;
       }
     }
+    while(symbol_table_->values_lock_) std::this_thread::yield;
+
     if (is_component and is_satisfiable) {
       if (constraint_information_->has_arithmetic_constraint(and_term)) {
         arithmetic_constraint_solver_.postVisitAnd(and_term);
@@ -730,7 +747,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
   } else {
     bool is_satisfiable = true;
-    bool is_component = constraint_information_->is_component(and_term);
+    bool is_component = true;//constraint_information_->is_component(and_term);
 
 //    cache_start2 = std::chrono::steady_clock::now();
      if (is_component) {
@@ -800,38 +817,20 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
  * 3) Solve single-track strings and mixed constraints
  */
 void ConstraintSolver::visitOr(Or_ptr or_term) {
-
   std::string old_root_key = root_key_;
   root_key_ = Ast2Dot::toString(or_term);
 
   bool is_satisfiable = false;
   bool is_component = true;//constraint_information_->is_component(or_term);
 
-//  if (is_component) {
-//    if (constraint_information_->has_arithmetic_constraint(or_term)) {
-//      arithmetic_constraint_solver_.start(or_term);
-//      is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
-//      DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *or_term << "@" << or_term;
-//    }
-//    if ((is_satisfiable or !constraint_information_->has_arithmetic_constraint(or_term))
-//    				and constraint_information_->has_string_constraint(or_term)) {
-//      string_constraint_solver_.start(or_term);
-//      is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
-//      DVLOG(VLOG_LEVEL) << "String formulae solved: " << *or_term << "@" << or_term;
-//    }
-//
-//    DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *or_term << "@" << or_term;
-//  }
 
-  DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
-
-  //if (constraint_information_->has_mixed_constraint(or_term)) {
-  if(true) {
+  if(Option::Solver::SUB_FORMULA_CACHING) {
     for (auto& term : *(or_term->term_list)) {
       symbol_table_->push_scope(term);
       bool is_scope_satisfiable = check_and_visit(term);
 
       if (dynamic_cast<And_ptr>(term) == nullptr) {
+
         if (is_scope_satisfiable) {
           update_variables();
         } else {
@@ -839,30 +838,123 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
         }
         clearTermValuesAndLocalLetVars();
       }
+
       is_satisfiable = is_satisfiable or is_scope_satisfiable;
       symbol_table_->pop_scope();
     }
-  }
 
-  if (is_component and is_satisfiable) {
+    arithmetic_constraint_solver_.collect_arithmetic_constraint_info(or_term);
+    string_constraint_solver_.collect_string_constraint_info(or_term);
+
     if (constraint_information_->has_arithmetic_constraint(or_term)) {
-      arithmetic_constraint_solver_.postVisitOr(or_term);
+      arithmetic_constraint_solver_.start(or_term);
       is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+      DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *or_term << "@" << or_term;
     }
-
-    if (is_satisfiable and constraint_information_->has_string_constraint(or_term)) {
-      string_constraint_solver_.postVisitOr(or_term);
+    if ((is_satisfiable or !constraint_information_->has_arithmetic_constraint(or_term))
+        and constraint_information_->has_string_constraint(or_term)) {
+      string_constraint_solver_.start(or_term);
       is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+      DVLOG(VLOG_LEVEL) << "String formulae solved: " << *or_term << "@" << or_term;
     }
+
+//    for(auto &term : *(or_term->term_list)) {
+//      if(dynamic_cast<And_ptr>(term) == nullptr) {
+//
+//
+//        if (constraint_information_->has_arithmetic_constraint(term)) {
+//          arithmetic_constraint_solver_.start(term);
+//          is_satisfiable = arithmetic_constraint_solver_.get_term_value(term)->is_satisfiable();
+//        }
+//        if ((is_satisfiable or !constraint_information_->has_arithmetic_constraint(term))
+//                and constraint_information_->has_string_constraint(term)) {
+//          string_constraint_solver_.start(term);
+//          is_satisfiable = string_constraint_solver_.get_term_value(term)->is_satisfiable();
+//        }
+//
+//      }
+//    }
+
+    if (is_component and is_satisfiable) {
+      if (constraint_information_->has_arithmetic_constraint(or_term)) {
+        arithmetic_constraint_solver_.postVisitOr(or_term);
+        is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+      }
+
+      if (is_satisfiable and constraint_information_->has_string_constraint(or_term)) {
+        string_constraint_solver_.postVisitOr(or_term);
+        is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+      }
+    }
+
+
+
+    Value_ptr result = new Value(is_satisfiable);
+    setTermValue(or_term, result);
+    root_key_ = old_root_key;
+
+    DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
+
+  } else {
+
+
+    if (is_component && !Option::Solver::SUB_FORMULA_CACHING) {
+      if (constraint_information_->has_arithmetic_constraint(or_term)) {
+        arithmetic_constraint_solver_.start(or_term);
+        is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+        DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *or_term << "@" << or_term;
+      }
+      if ((is_satisfiable or !constraint_information_->has_arithmetic_constraint(or_term))
+          and constraint_information_->has_string_constraint(or_term)) {
+        string_constraint_solver_.start(or_term);
+        is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+        DVLOG(VLOG_LEVEL) << "String formulae solved: " << *or_term << "@" << or_term;
+      }
+
+      DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *or_term << "@" << or_term;
+    }
+
+    DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
+
+    //if (constraint_information_->has_mixed_constraint(or_term)) {
+    if (true) {
+      for (auto &term : *(or_term->term_list)) {
+        symbol_table_->push_scope(term);
+        bool is_scope_satisfiable = check_and_visit(term);
+
+        if (dynamic_cast<And_ptr>(term) == nullptr) {
+          if (is_scope_satisfiable) {
+            update_variables();
+          } else {
+            variable_path_table_.clear();
+          }
+          clearTermValuesAndLocalLetVars();
+        }
+        is_satisfiable = is_satisfiable or is_scope_satisfiable;
+        symbol_table_->pop_scope();
+      }
+    }
+
+
+    if (is_component and is_satisfiable) {
+      if (constraint_information_->has_arithmetic_constraint(or_term)) {
+        arithmetic_constraint_solver_.postVisitOr(or_term);
+        is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+      }
+
+      if (is_satisfiable and constraint_information_->has_string_constraint(or_term)) {
+        string_constraint_solver_.postVisitOr(or_term);
+        is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+      }
+    }
+
+
+    Value_ptr result = new Value(is_satisfiable);
+    setTermValue(or_term, result);
+    root_key_ = old_root_key;
+
+    DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
   }
-
-
-
-  Value_ptr result = new Value(is_satisfiable);
-  setTermValue(or_term, result);
-  root_key_ = old_root_key;
-
-  DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
 }
 
 void ConstraintSolver::visitNot(Not_ptr not_term) {

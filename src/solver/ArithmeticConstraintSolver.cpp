@@ -56,12 +56,17 @@ void ArithmeticConstraintSolver::end() {
 }
 
 void ArithmeticConstraintSolver::collect_arithmetic_constraint_info(Visitable_ptr node) {
+  if(Or_ptr or_term = dynamic_cast<Or_ptr>(node)) {
+    if(Option::Solver::SUB_FORMULA_CACHING)
+      arithmetic_formula_generator_.no_visit_or = true;
+  }
 //  auto start = std::chrono::steady_clock::now();
 //  auto end = std::chrono::steady_clock::now();
 //  arithmetic_formula_generator_.diff = end-start;
   arithmetic_formula_generator_.start(node);
 //  diff2 += arithmetic_formula_generator_.diff;
   string_terms_map_ = arithmetic_formula_generator_.get_string_terms_map();
+  arithmetic_formula_generator_.no_visit_or = false;
 }
 
 void ArithmeticConstraintSolver::collect_arithmetic_constraint_info() {
