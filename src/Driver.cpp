@@ -143,13 +143,13 @@ void Driver::InitializeSolver() {
   auto time2 = end-start;
   diff4 += time2;
 
-//  ast2dot(output_root + "/post_syntactic_optimizer.dot");
+  //ast2dot(output_root + "/post_syntactic_optimizer.dot");
   int i = 0;
   if (Option::Solver::ENABLE_EQUIVALENCE_CLASSES) {
     Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
     do {
       equivalence_generator.start();
-//      ast2dot(output_root + "/post_eq" + std::to_string(i) + ".dot");
+      //ast2dot(output_root + "/post_eq" + std::to_string(i) + ".dot");
       i++;
     } while (equivalence_generator.has_constant_substitution());
   }

@@ -230,8 +230,8 @@ int main(const int argc, const char **argv) {
   int total_misses = 0;
 
 //  driver.set_option(Vlab::Option::Name::FULL_FORMULA_CACHING);
-  driver.set_option(Vlab::Option::Name::SUB_FORMULA_CACHING);
-  driver.set_option(Vlab::Option::Name::AUTOMATA_CACHING);
+//  driver.set_option(Vlab::Option::Name::SUB_FORMULA_CACHING);
+//  driver.set_option(Vlab::Option::Name::AUTOMATA_CACHING);
 
   for(auto iter : files) {
     LOG(INFO) << iter;
@@ -252,7 +252,8 @@ int main(const int argc, const char **argv) {
     }
 
 //    if (i > 1200 or false and VLOG_IS_ON(30) and not output_root.empty()) {
-      //driver.ast2dot(output_root + "/" + std::to_string(i) + ".dot");
+//    if(i > 10000)  
+    driver.ast2dot(output_root + "/" + std::to_string(i) + ".dot");
 //   }
     driver.Solve();
 //    std::cin.get();

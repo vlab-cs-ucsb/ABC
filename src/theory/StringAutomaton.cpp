@@ -1619,7 +1619,21 @@ StringAutomaton_ptr StringAutomaton::Union(StringAutomaton_ptr other_auto) {
 
   StringAutomaton_ptr left_auto = nullptr, right_auto = nullptr, union_auto = nullptr;
   StringFormula_ptr union_formula = nullptr;
+/*
+  formula_->MergeVariables(other_auto->formula_);
+  auto merged_formula = formula_->clone();
+  if(formula_->GetNumberOfVariables() != merged_formula->GetNumberOfVariables()) {
+    left_auto = this->ChangeIndicesMap(merged_formula->clone());
+  } else {
+    left_auto = this;
+  }
 
+  if(other_auto->formula_->GetNumberOfVariables() != merged_formula->GetNumberOfVariables()) {
+    right_auto = other_auto->ChangeIndicesMap(merged_formula->clone());
+  } else {
+    right_auto = other_auto;
+  }
+*/
   auto left_num_tracks = this->GetFormula()->GetNumberOfVariables();
   auto right_num_tracks = other_auto->GetFormula()->GetNumberOfVariables();
   if(left_num_tracks > right_num_tracks) {
@@ -1634,9 +1648,7 @@ StringAutomaton_ptr StringAutomaton::Union(StringAutomaton_ptr other_auto) {
     left_auto = this;
     right_auto = other_auto;
     union_formula = this->formula_->Union(other_auto->formula_);
-  }
-	
-  
+  } 
   
   auto union_dfa = Automaton::DFAUnion(left_auto->dfa_, right_auto->dfa_);
 	union_auto = new StringAutomaton(union_dfa,union_formula,this->num_of_bdd_variables_);

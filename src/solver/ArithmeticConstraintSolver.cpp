@@ -226,7 +226,13 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 	for (auto iter = variable_value_map.begin(); iter != variable_value_map.end();) {
 		if(Value::Type::INT_CONSTANT == iter->second->getType() || Value::Type::BOOL_CONSTANT == iter->second->getType()) {
 			//has_arithmetic_formula = true;
-			auto variable_group = arithmetic_formula_generator_.get_variable_group_name(iter->first);
+			
+      auto vv = symbol_table_->GetVariableMapping();
+      Variable_ptr new_var = iter->first;
+      if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING) {
+        new_var = symbol_table_->get_variable(vv[iter->first->getName()]);
+      }
+      auto variable_group = arithmetic_formula_generator_.get_variable_group_name(new_var);
 			auto group_formula = arithmetic_formula_generator_.get_group_formula(variable_group);
 			if(group_formula == nullptr) {
 				iter++;
@@ -238,14 +244,14 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 			} else {
 				constant = iter->second->getIntConstant();
 			}
-			auto bin_auto = BinaryIntAutomaton::MakeAutomaton(constant,iter->first->getName(),group_formula->clone(),not use_unsigned_integers_);
+			auto bin_auto = BinaryIntAutomaton::MakeAutomaton(constant,new_var->getName(),group_formula->clone(),not use_unsigned_integers_);
 			auto bin_value = new Value(bin_auto);
 //			LOG(INFO) << "Before value: " << symbol_table_->get_value(variable_group)->is_satisfiable();
 			symbol_table_->IntersectValue(variable_group,bin_value);
 //			LOG(INFO) << "After value: " << symbol_table_->get_value(variable_group)->is_satisfiable();
 //			std::cin.get();
 			is_satisfiable = is_satisfiable and symbol_table_->get_value(variable_group)->is_satisfiable();
-			LOG(INFO) << "Set " << variable_group << " val to bin id " << symbol_table_->get_value(variable_group)->getBinaryIntAutomaton()->getId();
+			//LOG(INFO) << "Set " << variable_group << " val to bin id " << symbol_table_->get_value(variable_group)->getBinaryIntAutomaton()->getId();
 			delete bin_value;
 			delete iter->second;iter->second = nullptr;
 			iter = variable_value_map.erase(iter);
@@ -318,7 +324,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 //    delete and_value;
   //LOG(INFO) << "***** SETTING VALUE OF " << group_name << " to " << is_satisfiable;
 
-//  is_satisfiable = symbol_table_->get_value(group_name) != nullptr ? is_satisfiable and symbol_table_->get_value(group_name)->is_satisfiable() : is_satisfiable;
+  is_satisfiable = symbol_table_->get_value(group_name) != nullptr ? is_satisfiable and symbol_table_->get_value(group_name)->is_satisfiable() : is_satisfiable;
 //
 //  if(not is_satisfiable) {
 //
@@ -351,41 +357,43 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(or_term);
   // must be a group formula, or else would not be visiting this or_term
   auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
-
+/*
   // propagate equivalence class values for constants
-//  for (auto term : *(or_term->term_list)) {
-//  	auto& variable_value_map = symbol_table_->get_values_at_scope(term);
-//  	symbol_table_->push_scope(term);
-//  	for (auto iter = variable_value_map.begin(); iter != variable_value_map.end();) {
-//  		if(Value::Type::INT_CONSTANT == iter->second->getType() || Value::Type::BOOL_CONSTANT == iter->second->getType()) {
-//  			//has_arithmetic_formula = true;
-//  			auto variable_group = arithmetic_formula_generator_.get_variable_group_name(iter->first);
-//  			auto group_formula = arithmetic_formula_generator_.get_group_formula(variable_group);
-//  			if(group_formula == nullptr) {
-//  				LOG(FATAL) << "Uhhhh";
-//  			}
-//  			int constant = 0;
-//  			if(Value::Type::BOOL_CONSTANT == iter->second->getType()) {
-//  				constant = (iter->second->getBoolConstant()) ? 1 : 0;
-//  			} else {
-//  				constant = iter->second->getIntConstant();
-//  			}
-//  			auto bin_auto = BinaryIntAutomaton::MakeAutomaton(constant,iter->first->getName(),group_formula,not use_unsigned_integers_);
-//  			auto bin_value = new Value(bin_auto);
-//  			LOG(INFO) << "Before value: " << symbol_table_->get_value(variable_group)->is_satisfiable();
-//  			symbol_table_->IntersectValue(variable_group,bin_value);
-//  			LOG(INFO) << "After value: " << symbol_table_->get_value(variable_group)->is_satisfiable();
-//  			std::cin.get();
-//  			delete bin_value;
-//  			delete iter->second;iter->second = nullptr;
-//  			iter = variable_value_map.erase(iter);
-//  		} else {
-//  			iter++;
-//  		}
-//  	}
-//  	symbol_table_->pop_scope();
-//  }
-
+  for (auto term : *(or_term->term_list)) {
+  	auto& variable_value_map = symbol_table_->get_values_at_scope(term);
+  	symbol_table_->push_scope(term);
+  	for (auto iter = variable_value_map.begin(); iter != variable_value_map.end();) {
+  		if(Value::Type::INT_CONSTANT == iter->second->getType() || Value::Type::BOOL_CONSTANT == iter->second->getType()) {
+  			//has_arithmetic_formula = true;
+  			auto variable_group = arithmetic_formula_generator_.get_variable_group_name(iter->first);
+  			auto group_formula = arithmetic_formula_generator_.get_group_formula(variable_group);
+  			if(group_formula == nullptr) {
+ 				  iter++;
+          continue;
+          LOG(FATAL) << "Uhhhh";
+  			}
+  			int constant = 0;
+  			if(Value::Type::BOOL_CONSTANT == iter->second->getType()) {
+  				constant = (iter->second->getBoolConstant()) ? 1 : 0;
+  			} else {
+  				constant = iter->second->getIntConstant();
+  			}
+  			auto bin_auto = BinaryIntAutomaton::MakeAutomaton(constant,iter->first->getName(),group_formula,not use_unsigned_integers_);
+  			auto bin_value = new Value(bin_auto);
+  			LOG(INFO) << "Before value: " << symbol_table_->get_value(variable_group)->is_satisfiable();
+  			symbol_table_->IntersectValue(variable_group,bin_value);
+  			LOG(INFO) << "After value: " << symbol_table_->get_value(variable_group)->is_satisfiable();
+  			std::cin.get();
+  			delete bin_value;
+  			delete iter->second;iter->second = nullptr;
+  			iter = variable_value_map.erase(iter);
+  		} else {
+  			iter++;
+  		}
+  	}
+  	symbol_table_->pop_scope();
+  }
+*/
 	for (auto term : *(or_term->term_list)) {
 		auto formula = arithmetic_formula_generator_.get_term_formula(term);
 

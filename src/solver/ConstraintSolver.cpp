@@ -818,15 +818,14 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
   root_key_ = Ast2Dot::toString(or_term);
 
   bool is_satisfiable = false;
-  bool is_component = true;//constraint_information_->is_component(or_term);
+  bool is_component = constraint_information_->is_component(or_term);
 
 
   if(Option::Solver::SUB_FORMULA_CACHING) {
     
     
     for (auto& term : *(or_term->term_list)) {
-      
-      symbol_table_->push_scope(term);
+     /*
       if(dynamic_cast<And_ptr>(term) == nullptr) {
         arithmetic_constraint_solver_.collect_arithmetic_constraint_info(term);
         string_constraint_solver_.collect_string_constraint_info(term);
@@ -840,6 +839,8 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
           is_satisfiable = string_constraint_solver_.get_term_value(term)->is_satisfiable();
         }
       }
+      */
+      symbol_table_->push_scope(term);
       bool is_scope_satisfiable = check_and_visit(term);
       if (dynamic_cast<And_ptr>(term) == nullptr) {
 
@@ -857,6 +858,17 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
 
     arithmetic_constraint_solver_.collect_arithmetic_constraint_info(or_term);
     string_constraint_solver_.collect_string_constraint_info(or_term);
+      if (constraint_information_->has_arithmetic_constraint(or_term)) {
+        arithmetic_constraint_solver_.start(or_term);
+        is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+        DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *or_term << "@" << or_term;
+      }
+      if ((is_satisfiable or !constraint_information_->has_arithmetic_constraint(or_term))
+          and constraint_information_->has_string_constraint(or_term)) {
+        string_constraint_solver_.start(or_term);
+        is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+        DVLOG(VLOG_LEVEL) << "String formulae solved: " << *or_term << "@" << or_term;
+      }
 
 
 //    for(auto &term : *(or_term->term_list)) {
@@ -1110,7 +1122,7 @@ void ConstraintSolver::visitNotEq(NotEq_ptr not_eq_term) {
   // which is prohibitively expensive
   if(QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term)) {
     if(TermConstant_ptr right_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term)) {
-    	LOG(FATAL) << "WTF";
+    	//LOG(FATAL) << "WTF";
     	StringAutomaton_ptr temp,con;
       Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
 

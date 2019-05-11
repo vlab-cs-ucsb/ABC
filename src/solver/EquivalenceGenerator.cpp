@@ -111,7 +111,7 @@ void EquivalenceGenerator::visitAnd(And_ptr and_term) {
 void EquivalenceGenerator::visitOr(Or_ptr or_term) {
   for (auto term : *(or_term->term_list)) {
   	if(term->type() == Term::Type::AND) {
-			symbol_table_->push_scope(term, false);
+			symbol_table_->push_scope(term,false);
 			visit(term);
 			symbol_table_->pop_scope();
   	}

@@ -822,12 +822,13 @@ void SymbolTable::SetVariableMapping(std::map<std::string,std::string> variable_
       variable_value_table_[(*it2)].insert(std::make_pair(variables_[name],val));
     }
   }
-     
+    /* 
     if(variable_value_table_[top_scope()].find(original_variables_[it.first]) != variable_value_table_[top_scope()].end()) {
       auto var_val = variable_value_table_[top_scope()][original_variables_[it.first]];
       variable_value_table_[top_scope()].erase(original_variables_[it.first]);
       variable_value_table_[top_scope()].insert(std::make_pair(variable,var_val));
     }
+    */
    
   }
 

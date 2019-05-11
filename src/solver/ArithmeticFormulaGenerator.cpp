@@ -138,11 +138,11 @@ void ArithmeticFormulaGenerator::visitAnd(And_ptr and_term) {
   visit_children_of(and_term);
   DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 
-//  if (not constraint_information_->is_component(and_term)) {
-////    current_group_ = "";
-//    has_mixed_constraint_ = false;
-//    return;
-//  }
+  if (not constraint_information_->is_component(and_term)) {
+    current_group_ = "";
+    has_mixed_constraint_ = false;
+    return;
+  }
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *and_term << "@" << and_term;
 
@@ -191,11 +191,11 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
 
   // @deprecated check, all or terms must be a component
   // will be removed after careful testing
-//  if (not constraint_information_->is_component(or_term)) {
-//    current_group_ = "";
-//    has_mixed_constraint_ = false;
-//    return;
-//  }
+  if (not constraint_information_->is_component(or_term)) {
+    current_group_ = "";
+    has_mixed_constraint_ = false;
+    return;
+  }
 
   /**
    * If an or term does not have a child that has arithmetic formula, but we end up being here:
@@ -884,14 +884,14 @@ void ArithmeticFormulaGenerator::delete_term_formula(Term_ptr term) {
 }
 
 void ArithmeticFormulaGenerator::set_group_mappings() {
-
-//  for (auto& el : term_group_map_) {
-//  	// only subgroups have formulas
-//    if(subgroups_.find(el.second) == subgroups_.end()) {
-//    	term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
-//    }
-//  }
-
+/*
+  for (auto& el : term_group_map_) {
+  	// only subgroups have formulas
+    if(subgroups_.find(el.second) == subgroups_.end()) {
+    	term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
+    }
+  }
+*/
 
 
   std::map<Variable_ptr,Value_ptr> var_vals_to_add;
