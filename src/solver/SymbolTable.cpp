@@ -796,6 +796,7 @@ void SymbolTable::SetVariableMapping(std::map<std::string,std::string> variable_
   original_variables_ = variables_;
   variables_.clear();
 
+  
 
   for(auto it : original_variables_) {
     std::string name = it.first;
@@ -807,8 +808,21 @@ void SymbolTable::SetVariableMapping(std::map<std::string,std::string> variable_
     Variable_ptr variable = new Variable(name,it.second->getType());
     variables_.insert(std::make_pair(name,variable));
 
-
+   
+  for (auto it2 = scope_stack_.rbegin(); it2 != scope_stack_.rend(); it2++) {
     
+    auto prev_var = original_variables_[it.first];
+
+    auto entry = variable_value_table_[(*it2)].find(prev_var);
+    if (entry != variable_value_table_[(*it2)].end()) {
+      
+      auto val = entry->second;
+      entry->second = nullptr;
+      variable_value_table_[(*it2)].erase(entry);
+      variable_value_table_[(*it2)].insert(std::make_pair(variables_[name],val));
+    }
+  }
+     
     if(variable_value_table_[top_scope()].find(original_variables_[it.first]) != variable_value_table_[top_scope()].end()) {
       auto var_val = variable_value_table_[top_scope()][original_variables_[it.first]];
       variable_value_table_[top_scope()].erase(original_variables_[it.first]);
@@ -823,32 +837,39 @@ void SymbolTable::SetVariableMapping(std::map<std::string,std::string> variable_
 
   EquivClassTable new_variable_equivalence_table_;
 
-
-  for(auto equiv_iter : variable_equivalence_table_) {
-    for (auto equiv_table : equiv_iter.second) {
-      auto equiv_class_vars = equiv_table.second->get_variables();
+  for(auto &equiv_iter : variable_equivalence_table_) {
+    for (auto &equiv_table : equiv_iter.second) {
+      auto new_equiv = equiv_table.second->clone();
       std::set<Variable_ptr> vars;
-      for(auto it : equiv_class_vars) {
+      for(auto& it : new_equiv->get_variables()) {
         vars.insert(variables_[variable_mapping[it->getName()]]);
       }
-      equiv_class_vars = vars;
-      
-      if(equiv_table.second->representative_variable_ != nullptr) {
-        equiv_table.second->representative_variable_ = variables_[variable_mapping[equiv_table.second->representative_variable_->getName()]];
-      }
-      new_variable_equivalence_table_[equiv_iter.first][variables_[variable_mapping[equiv_table.first->getName()]]] = equiv_table.second;
+      new_equiv->representative_variable_ = variables_[variable_mapping[new_equiv->representative_variable_->getName()]];
 
+      new_variable_equivalence_table_[equiv_iter.first][variables_[variable_mapping_[equiv_table.first->getName()]]] = new_equiv;
     }
   }
 
-  variable_equivalence_table_ = new_variable_equivalence_table_;
 
+  std::set<EquivalenceClass_ptr> equivalence_classes;
+  for (auto& map_pair : variable_equivalence_table_) {
+    for (auto& value_pair : map_pair.second) {
+      equivalence_classes.insert(value_pair.second);
+    }
+  }
+
+  variable_equivalence_table_.clear();
+  for (auto& eq : equivalence_classes) {
+    delete eq;
+  }
+  equivalence_classes.clear();
 
   // store original map
   variable_mapping_ = variable_mapping;
   // store reverse map (for easy var lookup)
   for(auto map_it : variable_mapping) {
-//    for(auto map_it : term_it.second) {
+//      LOG(INFO) << map_it.first << " -> " << map_it.second;
+    //    for(auto map_it : term_it.second) {
 //      if(map_it.first == count_symbol_->getData()) {
 //        LOG(INFO) << map_it.first << " -> " << map_it.second;
 //        std::cin.get();

@@ -234,7 +234,7 @@ int main(const int argc, const char **argv) {
   driver.set_option(Vlab::Option::Name::AUTOMATA_CACHING);
 
   for(auto iter : files) {
-    //LOG(INFO) << iter;
+    LOG(INFO) << iter;
     file = new std::ifstream(iter);
     in = file;
 
@@ -252,7 +252,7 @@ int main(const int argc, const char **argv) {
     }
 
 //    if (i > 1200 or false and VLOG_IS_ON(30) and not output_root.empty()) {
-      driver.ast2dot(output_root + "/" + std::to_string(i) + ".dot");
+      //driver.ast2dot(output_root + "/" + std::to_string(i) + ".dot");
 //   }
     driver.Solve();
 //    std::cin.get();

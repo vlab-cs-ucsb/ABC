@@ -32,7 +32,7 @@ ArithmeticFormulaGenerator::ArithmeticFormulaGenerator(Script_ptr script, Symbol
   no_visit_or = false;
 
 
-  current_group_ = symbol_table_->get_var_name_for_node(root_, Variable::Type::INT);
+//  current_group_ = symbol_table_->get_var_name_for_node(root_, Variable::Type::INT);
 //  if(symbol_table_->get_variable_unsafe(current_group_) == nullptr) {
 //    symbol_table_->add_variable(new Variable(current_group_, Variable::Type::NONE));
 //  } else {
@@ -43,7 +43,7 @@ ArithmeticFormulaGenerator::ArithmeticFormulaGenerator(Script_ptr script, Symbol
 //  auto end = std::chrono::steady_clock::now();
 //  diff = end-start;
 
-  subgroups_[current_group_] = std::set<std::string>();
+//  subgroups_[current_group_] = std::set<std::string>();
 //
 //	auto variables = symbol_table_->get_variables();
 //	for(auto& iter : variables) {
@@ -905,14 +905,14 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
   auto  &variable_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
   // update groups and their values in symbol table
   for(auto group_iter : group_formula_) {
-    //LOG(INFO) << "Group: " << group_iter.first;
+//    LOG(INFO) << "Group: " << group_iter.first;
     if(symbol_table_->get_variable_unsafe(group_iter.first) == nullptr) {
       symbol_table_->add_variable(new Variable(group_iter.first, Variable::Type::NONE));
     }
 
     std::set<Variable_ptr> previous_group_variables;
     for (const auto& var_entry : group_iter.second->GetVariableCoefficientMap()) {
-      //LOG(INFO) << "--> " << var_entry.first;
+//      LOG(INFO) << "--> " << var_entry.first;
       Variable_ptr variable = symbol_table_->get_variable(var_entry.first);
       Variable_ptr group_variable = symbol_table_->get_group_variable_of(variable);
 
@@ -922,9 +922,10 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
       }
       // update variable group mapping in symbol table
       symbol_table_->set_variable_group_mapping(var_entry.first, group_iter.first);
+//      LOG(INFO) << "setting mapping " << var_entry.first << " -> " << group_iter.first;
     }
 
-    //LOG(INFO) << "# previous group vars: " << previous_group_variables.size();
+//    LOG(INFO) << "# previous group vars: " << previous_group_variables.size();
 
     BinaryIntAutomaton_ptr initial_auto = BinaryIntAutomaton::MakeAnyInt(group_iter.second->clone(),not Option::Solver::USE_SIGNED_INTEGERS);
 //	  initial_auto->GetFormula()->SetType(StringFormula::Type::NA);
@@ -934,7 +935,7 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
 //      } else {
 //        LOG(INFO) << "Found value for " << previous_group->getName() << " with type " << variable_values[previous_group]->str();
 //      }
-      //LOG(INFO) << "--> previous group = " << previous_group->getName();
+//      LOG(INFO) << "--> previous group = " << previous_group->getName();
       BinaryIntAutomaton_ptr previous_group_auto = variable_values[previous_group]->getBinaryIntAutomaton();
       BinaryIntAutomaton_ptr remapped_auto = previous_group_auto->ChangeIndicesMap(group_iter.second->clone());
 

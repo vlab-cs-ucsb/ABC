@@ -1615,10 +1615,31 @@ StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
 }
 
 StringAutomaton_ptr StringAutomaton::Union(StringAutomaton_ptr other_auto) {
-	CHECK_EQ(this->num_tracks_,other_auto->num_tracks_);
-	auto union_dfa = Automaton::DFAUnion(this->dfa_, other_auto->dfa_);
-	auto union_formula = this->formula_->Union(other_auto->formula_);
-	auto union_auto = new StringAutomaton(union_dfa,union_formula,this->num_of_bdd_variables_);
+  
+
+  StringAutomaton_ptr left_auto = nullptr, right_auto = nullptr, union_auto = nullptr;
+  StringFormula_ptr union_formula = nullptr;
+
+  auto left_num_tracks = this->GetFormula()->GetNumberOfVariables();
+  auto right_num_tracks = other_auto->GetFormula()->GetNumberOfVariables();
+  if(left_num_tracks > right_num_tracks) {
+    left_auto = this;
+    right_auto = other_auto->ChangeIndicesMap(this->formula_->clone());
+    union_formula = this->formula_->clone();
+  } else if(left_num_tracks < right_num_tracks) {
+    left_auto = other_auto;
+    right_auto = this->ChangeIndicesMap(other_auto->formula_->clone());
+    union_formula = other_auto->formula_->clone();
+  } else {
+    left_auto = this;
+    right_auto = other_auto;
+    union_formula = this->formula_->Union(other_auto->formula_);
+  }
+	
+  
+  
+  auto union_dfa = Automaton::DFAUnion(left_auto->dfa_, right_auto->dfa_);
+	union_auto = new StringAutomaton(union_dfa,union_formula,this->num_of_bdd_variables_);
 
 	DVLOG(VLOG_LEVEL) << union_auto->id_ << " = [" << this->id_ << "]->union(" << other_auto->id_ << ")";
 	return union_auto;
