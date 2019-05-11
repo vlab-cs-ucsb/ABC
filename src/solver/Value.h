@@ -44,7 +44,6 @@ class Value {
   Value();
   Value(bool data);
   Value(int data);
-  Value(std::string data);
   Value(Theory::BoolAutomaton_ptr data);
   Value(Theory::IntAutomaton_ptr data);
   Value(Theory::BinaryIntAutomaton_ptr data);
@@ -59,7 +58,6 @@ class Value {
 
   void setData(bool data);
   void setData(int data);
-  void setData(std::string data);
   void setData(Theory::BoolAutomaton_ptr data);
   void setData(Theory::IntAutomaton_ptr data);
   void setData(Theory::BinaryIntAutomaton_ptr data);
@@ -67,7 +65,6 @@ class Value {
 
   bool getBoolConstant() const;
   int getIntConstant() const;
-  std::string getStringConstant() const;
   Theory::BoolAutomaton_ptr getBoolAutomaton() const;
   Theory::IntAutomaton_ptr getIntAutomaton() const;
   Theory::BinaryIntAutomaton_ptr getBinaryIntAutomaton() const;
@@ -105,7 +102,6 @@ class Value {
   union {
     bool bool_constant;
     int int_constant;
-    std::string string_constant;
     Theory::BoolAutomaton_ptr bool_automaton;
     Theory::IntAutomaton_ptr int_automaton;
     Theory::BinaryIntAutomaton_ptr binaryint_automaton;

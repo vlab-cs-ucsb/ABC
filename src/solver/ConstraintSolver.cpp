@@ -746,13 +746,13 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
   } else {
     bool is_satisfiable = true;
-    bool is_component = true;//constraint_information_->is_component(and_term);
+    bool is_component = constraint_information_->is_component(and_term);
 
 //    cache_start2 = std::chrono::steady_clock::now();
      if (is_component) {
        if (constraint_information_->has_arithmetic_constraint(and_term)) {
          arithmetic_constraint_solver_.start(and_term);
-         is_satisfiable = true;//arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
+         is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
          DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *and_term << "@" << and_term;
        }
        if ((is_satisfiable or (!constraint_information_->has_arithmetic_constraint(and_term)))

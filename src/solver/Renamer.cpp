@@ -43,7 +43,7 @@ void Renamer::start(Term_ptr term, bool store_mapping) {
 void Renamer::end() {
   // add mapping to symbol table
   symbol_table_->SetVariableMapping(variable_mapping_);
-  symbol_table_->SetCharacterMapping(alphabet_mapping_);
+  //symbol_table_->SetCharacterMapping(alphabet_mapping_);
 }
 
 void Renamer::visitScript(Script_ptr script) {

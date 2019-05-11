@@ -63,10 +63,10 @@ Driver::~Driver() {
   delete constraint_information_;
   Theory::Automaton::CleanUp();
 
-//  if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING || Option::Solver::AUTOMATA_CACHING) {
-//    rdx_->disconnect();
-//    delete rdx_;
-//  }
+  if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING || Option::Solver::AUTOMATA_CACHING) {
+    rdx_->disconnect();
+    delete rdx_;
+  }
 }
 
 void Driver::InitializeLogger(int log_level) {
@@ -171,12 +171,12 @@ void Driver::InitializeSolver() {
     Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
     constraint_sorter.start();
   }
-
+/*
   if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
     Solver::Renamer renamer(script_, symbol_table_);
     renamer.start();
   }
-
+*/
 }
 
 void Driver::Solve() {
@@ -676,18 +676,18 @@ std::map<std::string, std::string> Driver::getSatisfyingExamples() {
     		std::string accepted_string = single_string_auto->GetAnAcceptingString();
     		// if we normalized characters, map them back to original character
     		
-        if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
-    		  auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
-          auto char_mapping = symbol_table_->GetReverseCharacterMapping();
-    		  for(int i = 0; i < accepted_string.length(); i++) {
-    		    accepted_string[i] = char_mapping[accepted_string[i]];
-    		  }
-    		  results[reverse_var_mapping[it.first]] = accepted_string;
-          delete single_string_auto;
-        } else {
+        //if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
+    		//  auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
+        //  auto char_mapping = symbol_table_->GetReverseCharacterMapping();
+    		//  for(int i = 0; i < accepted_string.length(); i++) {
+    		//    accepted_string[i] = char_mapping[accepted_string[i]];
+    		//  }
+    		//  results[reverse_var_mapping[it.first]] = accepted_string;
+        //  delete single_string_auto;
+        //} else {
     		  results[it.first] = accepted_string;
     		  delete single_string_auto;
-        }
+        //}
     	}
 
 
@@ -718,18 +718,18 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandom() {
 					auto single_string_auto = string_auto->GetAutomatonForVariable(it.first);
 					std::string accepted_string = single_string_auto->GetAnAcceptingStringRandom();
           // if we normalized characters, map them back to original character
-          if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
-    		    auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
-            auto char_mapping = symbol_table_->GetReverseCharacterMapping();
-            for(int i = 0; i < accepted_string.length(); i++) {
-              accepted_string[i] = char_mapping[accepted_string[i]];
-            }
-    		    results[reverse_var_mapping[it.first]] = accepted_string;
-            delete single_string_auto;
-          } else {
+          //if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
+    		  // auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
+          //  auto char_mapping = symbol_table_->GetReverseCharacterMapping();
+          //  for(int i = 0; i < accepted_string.length(); i++) {
+          //    accepted_string[i] = char_mapping[accepted_string[i]];
+          // }
+    		  //  results[reverse_var_mapping[it.first]] = accepted_string;
+          //  delete single_string_auto;
+          //} else {
     		    results[it.first] = accepted_string;
     		    delete single_string_auto;
-          }
+          //}
 				}
 			}
 		}
@@ -767,18 +767,18 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandomBounded(co
           }
 					std::string accepted_string = single_string_auto_bounded->GetAnAcceptingStringRandom();
           // if we normalized characters, map them back to original character
-          if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
-    		    auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
-            auto char_mapping = symbol_table_->GetReverseCharacterMapping();
-            for(int i = 0; i < accepted_string.length(); i++) {
-              accepted_string[i] = char_mapping[accepted_string[i]];
-            }
-    		    results[reverse_var_mapping[it.first]] = accepted_string;
-            delete single_string_auto_bounded;
-          } else {
+          //if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
+    		  //  auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
+          //  auto char_mapping = symbol_table_->GetReverseCharacterMapping();
+          //  for(int i = 0; i < accepted_string.length(); i++) {
+          //    accepted_string[i] = char_mapping[accepted_string[i]];
+          //  }
+    		  //  results[reverse_var_mapping[it.first]] = accepted_string;
+          //  delete single_string_auto_bounded;
+          //} else {
     		    results[it.first] = accepted_string;
     		    delete single_string_auto_bounded;
-          }
+          //}
 				}
 			}
 		}
