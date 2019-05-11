@@ -2711,87 +2711,142 @@ void Automaton::add_print_label(std::ostream& out) {
 }
 
 void Automaton::toBDD(std::ostream& out) {
-
-//  Automaton::BddDump(out,this->dfa_->bddm);
-//  for(int i = 0; i < this->dfa_->ns; i++) {
-//    out << this->dfa_->f[i] << ",";
+//
+////  Automaton::BddDump(out,this->dfa_->bddm);
+////  for(int i = 0; i < this->dfa_->ns; i++) {
+////    out << this->dfa_->f[i] << ",";
+////  }
+////  out << "\n";
+////  return;
+//
+//  Table *table = tableInit();
+//
+//  /* remove all marks in a->bddm */
+//  bdd_prepare_apply1(this->dfa_->bddm);
+//
+//  /* build table of tuples (idx,lo,hi) */
+//
+//  /* renumber lo/hi pointers to new table ordering */
+//  for (unsigned i = 0; i < table->noelems; i++) {
+//    if (table->elms[i].idx != -1) {
+//      table->elms[i].lo = bdd_mark(this->dfa_->bddm, table->elms[i].lo) - 1;
+//      table->elms[i].hi = bdd_mark(this->dfa_->bddm, table->elms[i].hi) - 1;
+//    }
+//    out << table->elms[i].idx << "," << table->elms[i].lo << ","  << table->elms[i].hi << ";";
 //  }
-//  out << "\n";
-//  return;
-
-  Table *table = tableInit();
+//
+//  for (int i = 0; i < this->dfa_->ns; i++) {
+//    _export(this->dfa_->bddm, this->dfa_->q[i], table);
+//    out << "{" << this->dfa_->f[i] << "|<" << i << "> " << i << "}";
+//    if ((unsigned) (i + 1) < table->noelems) {
+//      out << "|";
+//    }
+//    out << " s1:" << i << " -> " << bdd_mark(this->dfa_->bddm, this->dfa_->q[i]) - 1 << " [style=bold];\n";
+//  }
+////  out << dfa_->ns << dfa_->s;
+////  for(int i = 0; i < this->dfa_->ns; i++) {
+////    out << dfa_->f[i] << (bdd_mark(dfa_->bddm, dfa_->q[i]) - 1);
+////  }
+////
+//
+////  out << "digraph MONA_DFA_BDD {\n"
+////          "  center = true;\n"
+////          "  size = \"100.5,70.5\"\n"
+////      "  orientation = landscape;\n"
+////          "  node [shape=record];\n"
+////          "   s1 [shape=record,label=\"";
+///*
+//  for (int i = 0; i < this->dfa_->ns; i++) {
+//    out << "{" << this->dfa_->f[i] << "|<" << i << "> " << i << "}";
+//    if ((unsigned) (i + 1) < table->noelems) {
+//      out << "|";
+//    }
+//  }
+//  out << "\"];" << std::endl;
+//
+//  out << "  node [shape = circle];";
+//  for (unsigned i = 0; i < table->noelems; i++) {
+//    if (table->elms[i].idx != -1) {
+//      out << " " << i << " [label=\"" << table->elms[i].idx << "\"];";
+//    }
+//  }
+//
+//  out << "\n  node [shape = box];";
+//  for (unsigned i = 0; i < table->noelems; i++) {
+//    if (table->elms[i].idx == -1) {
+//      out << " " << i << " [label=\"" << table->elms[i].lo << "\"];";
+//    }
+//  }
+//  out << std::endl;
+//
+//  for (int i = 0; i < this->dfa_->ns; i++) {
+//    out << " s1:" << i << " -> " << bdd_mark(this->dfa_->bddm, this->dfa_->q[i]) - 1 << " [style=bold];\n";
+//  }
+//
+//  for (unsigned i = 0; i < table->noelems; i++) {
+//    if (table->elms[i].idx != -1) {
+//      int lo = table->elms[i].lo;
+//      int hi = table->elms[i].hi;
+//      out << " " << i << " -> " << lo << " [style=dashed];\n";
+//      out << " " << i << " -> " << hi << " [style=filled];\n";
+//    }
+//  }
+//  */
+//  out << "}" << std::endl;
+//  tableFree(table);
+Table *table = tableInit();
 
   /* remove all marks in a->bddm */
   bdd_prepare_apply1(this->dfa_->bddm);
 
   /* build table of tuples (idx,lo,hi) */
-
-  /* renumber lo/hi pointers to new table ordering */
-  for (unsigned i = 0; i < table->noelems; i++) {
-    if (table->elms[i].idx != -1) {
-      table->elms[i].lo = bdd_mark(this->dfa_->bddm, table->elms[i].lo) - 1;
-      table->elms[i].hi = bdd_mark(this->dfa_->bddm, table->elms[i].hi) - 1;
-    }
-    out << table->elms[i].idx << "," << table->elms[i].lo << ","  << table->elms[i].hi << ";";
-  }
-
   for (int i = 0; i < this->dfa_->ns; i++) {
     _export(this->dfa_->bddm, this->dfa_->q[i], table);
     out << "{" << this->dfa_->f[i] << "|<" << i << "> " << i << "}";
-    if ((unsigned) (i + 1) < table->noelems) {
-      out << "|";
-    }
     out << " s1:" << i << " -> " << bdd_mark(this->dfa_->bddm, this->dfa_->q[i]) - 1 << " [style=bold];\n";
-  }
-//  out << dfa_->ns << dfa_->s;
-//  for(int i = 0; i < this->dfa_->ns; i++) {
-//    out << dfa_->f[i] << (bdd_mark(dfa_->bddm, dfa_->q[i]) - 1);
-//  }
-//
-
-//  out << "digraph MONA_DFA_BDD {\n"
-//          "  center = true;\n"
-//          "  size = \"100.5,70.5\"\n"
-//      "  orientation = landscape;\n"
-//          "  node [shape=record];\n"
-//          "   s1 [shape=record,label=\"";
-/*
-  for (int i = 0; i < this->dfa_->ns; i++) {
-    out << "{" << this->dfa_->f[i] << "|<" << i << "> " << i << "}";
     if ((unsigned) (i + 1) < table->noelems) {
       out << "|";
     }
   }
   out << "\"];" << std::endl;
-
-  out << "  node [shape = circle];";
+  /* renumber lo/hi pointers to new table ordering */
   for (unsigned i = 0; i < table->noelems; i++) {
     if (table->elms[i].idx != -1) {
-      out << " " << i << " [label=\"" << table->elms[i].idx << "\"];";
+      table->elms[i].lo = bdd_mark(this->dfa_->bddm, table->elms[i].lo) - 1;
+      table->elms[i].hi = bdd_mark(this->dfa_->bddm, table->elms[i].hi) - 1;
+      out << " " << i << " [label=\"" << table->elms[i].idx << "," << table->elms[i].lo << "," << table->elms[i].hi << "\"];";
     }
+
   }
 
-  out << "\n  node [shape = box];";
-  for (unsigned i = 0; i < table->noelems; i++) {
-    if (table->elms[i].idx == -1) {
-      out << " " << i << " [label=\"" << table->elms[i].lo << "\"];";
-    }
-  }
-  out << std::endl;
 
-  for (int i = 0; i < this->dfa_->ns; i++) {
-    out << " s1:" << i << " -> " << bdd_mark(this->dfa_->bddm, this->dfa_->q[i]) - 1 << " [style=bold];\n";
-  }
 
-  for (unsigned i = 0; i < table->noelems; i++) {
-    if (table->elms[i].idx != -1) {
-      int lo = table->elms[i].lo;
-      int hi = table->elms[i].hi;
-      out << " " << i << " -> " << lo << " [style=dashed];\n";
-      out << " " << i << " -> " << hi << " [style=filled];\n";
-    }
-  }
-  */
+
+
+//  out << "  node [shape = circle];";
+//  for (unsigned i = 0; i < table->noelems; i++) {
+//    if (table->elms[i].idx != -1) {
+//      out << " " << i << " [label=\"" << table->elms[i].idx << "\"];";
+//    }
+//  }
+//
+//  out << "\n  node [shape = box];";
+//  for (unsigned i = 0; i < table->noelems; i++) {
+//    if (table->elms[i].idx == -1) {
+//      out << " " << i << " [label=\"" << table->elms[i].lo << "\"];";
+//    }
+//  }
+//  out << std::endl;
+//
+//
+//  for (unsigned i = 0; i < table->noelems; i++) {
+//    if (table->elms[i].idx != -1) {
+//      int lo = table->elms[i].lo;
+//      int hi = table->elms[i].hi;
+//      out << " " << i << " -> " << lo << " [style=dashed];\n";
+//      out << " " << i << " -> " << hi << " [style=filled];\n";
+//    }
+//  }
   out << "}" << std::endl;
   tableFree(table);
 }

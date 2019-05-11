@@ -234,7 +234,7 @@ int main(const int argc, const char **argv) {
   driver.set_option(Vlab::Option::Name::AUTOMATA_CACHING);
 
   for(auto iter : files) {
-    //LOG(INFO) << iter;
+    LOG(INFO) << iter;
     file = new std::ifstream(iter);
     in = file;
 
@@ -259,7 +259,7 @@ int main(const int argc, const char **argv) {
     if(not driver.is_sat()) {
       LOG(INFO) << "UNSAT: " << iter;
       num_unsat++;
-       std::cin.get();
+//       std::cin.get();
     } else {
 
       count_start = std::chrono::steady_clock::now();

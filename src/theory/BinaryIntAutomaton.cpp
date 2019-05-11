@@ -42,7 +42,7 @@ BinaryIntAutomaton::BinaryIntAutomaton(const BinaryIntAutomaton& other)
 }
 
 BinaryIntAutomaton::~BinaryIntAutomaton() {
-  delete formula_;
+  if(formula_ != nullptr) delete formula_;
 }
 
 BinaryIntAutomaton_ptr BinaryIntAutomaton::clone() const {
@@ -545,8 +545,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::ChangeIndicesMap(ArithmeticFormula_pt
 	    LOG(FATAL) << "Can't remap indices! Automaton has no formula or formula has no variables!";
 	  }
 //	  std::string var_name = this->formula_->GetVariableAtIndex(0);
-	  unmapped_auto = new BinaryIntAutomaton(this->dfa_,1,this->is_natural_number_);
-	  unmapped_auto->SetFormula(this->formula_->clone());
+//	  unmapped_auto = new BinaryIntAutomaton(this->dfa_,1,this->is_natural_number_);
+//	  unmapped_auto->SetFormula(this->formula_->clone());
+    unmapped_auto = this->clone();
 //	  unmapped_auto->SetFormula(new_formula);
 //	  return unmapped_auto;
 	} else if(clone) {

@@ -130,11 +130,11 @@ void StringFormulaGenerator::visitAnd(And_ptr and_term) {
   visit_children_of(and_term);
   DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 
-  if (not constraint_information_->is_component(and_term)) {
-    current_group_ = "";
-    has_mixed_constraint_ = false;
-    return;
-  }
+//  if (not constraint_information_->is_component(and_term)) {
+//    current_group_ = "";
+//    has_mixed_constraint_ = false;
+//    return;
+//  }
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *and_term << "@" << and_term;
 
@@ -183,11 +183,11 @@ void StringFormulaGenerator::visitOr(Or_ptr or_term) {
 
   // @deprecated check, all or terms must be a component
   // will be removed after careful testing
-  if (not constraint_information_->is_component(or_term)) {
-    current_group_ = "";
-    has_mixed_constraint_ = false;
-    return;
-  }
+//  if (not constraint_information_->is_component(or_term)) {
+//    current_group_ = "";
+//    has_mixed_constraint_ = false;
+//    return;
+//  }
 
 
   /**

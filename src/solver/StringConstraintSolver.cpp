@@ -514,6 +514,7 @@ void StringConstraintSolver::clear_term_value(Term_ptr term) {
   auto it = term_values_.find(term);
   if (it != term_values_.end()) {
     delete it->second;
+    it->second = nullptr;
     term_values_.erase(it);
   }
 }

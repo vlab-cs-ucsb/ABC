@@ -364,7 +364,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   std::map<std::string,int> reverse_term_keys;
 
   bool is_satisfiable = true;
-  bool is_component = constraint_information_->is_component(and_term);
+  bool is_component = true;//constraint_information_->is_component(and_term);
 
   auto cache_start = std::chrono::steady_clock::now();
   auto cache_end = std::chrono::steady_clock::now();
@@ -384,7 +384,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     has_cached_result = false;
 
     std::string success_key = "";
-
 
 //    cache_start2 = std::chrono::steady_clock::now();
 
@@ -424,7 +423,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
     while(*count < max && !has_cached_result) std::this_thread::yield();
 
-
     if (cached_data.size() == 1) {
       /*
       is_satisfiable = false;
@@ -442,7 +440,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       
       return;
     }
-
     if(has_cached_result) {
       int num_terms_cached = reverse_term_keys[success_key];
 
@@ -460,7 +457,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
 //    cache_end2 = std::chrono::steady_clock::now();
 //    diff2 += cache_end2 - cache_start2;
-
 
 
     
@@ -497,7 +493,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
       std::vector<Theory::BinaryIntAutomaton_ptr> bin_autos_to_add;
       std::vector<Theory::StringAutomaton_ptr> str_autos_to_add;
-
       while (num_string_to_read > 0) {
         num_string_to_read--;
         Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(nullptr, 0);
@@ -533,6 +528,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       }
 
       for(auto it : bin_autos_to_add) {
+
         std::string rep_var = it->GetFormula()->GetVariableAtIndex(0);
         auto import_value = new Value(it);
         it = nullptr;
@@ -541,7 +537,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     } else {
       constraint_info_collector.join();
     }
-
     
 
     // at this point, we have the most updated values to start with
@@ -576,7 +571,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         cache_end = std::chrono::steady_clock::now();
         diff += cache_end - cache_start;
 
-
         // solve term using normal constraint solving algorithm
         if (is_component) {
           if (constraint_information_->has_arithmetic_constraint(term)) {
@@ -594,9 +588,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
           DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *term << "@" << term;
         }
 
-
       }
-
       // solve non-relational terms
       is_satisfiable = check_and_visit(term) and is_satisfiable;
 
@@ -614,7 +606,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         }
         clearTermValuesAndLocalLetVars();
       }
-
       // now we need to cache what we've got so far
 
 
@@ -718,28 +709,23 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         //delete revk;
         //delete tk;
       }));
-
       
       if(not is_satisfiable) {
         while(symbol_table_->values_lock_) std::this_thread::yield;
       }
     }
-
     if (is_component and is_satisfiable) {
       if (constraint_information_->has_arithmetic_constraint(and_term)) {
         arithmetic_constraint_solver_.postVisitAnd(and_term);
         is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
       }
-
       if (is_satisfiable and constraint_information_->has_string_constraint(and_term)) {
         string_constraint_solver_.postVisitAnd(and_term);
         is_satisfiable = string_constraint_solver_.get_term_value(and_term)->is_satisfiable();
       }
     }
-
     Value_ptr result = new Value(is_satisfiable);
     setTermValue(and_term, result);
-
 
 
   } else {
@@ -819,23 +805,23 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
   root_key_ = Ast2Dot::toString(or_term);
 
   bool is_satisfiable = false;
-  bool is_component = constraint_information_->is_component(or_term);
+  bool is_component = true;//constraint_information_->is_component(or_term);
 
-  if (is_component) {
-    if (constraint_information_->has_arithmetic_constraint(or_term)) {
-      arithmetic_constraint_solver_.start(or_term);
-      is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
-      DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *or_term << "@" << or_term;
-    }
-    if ((is_satisfiable or !constraint_information_->has_arithmetic_constraint(or_term))
-    				and constraint_information_->has_string_constraint(or_term)) {
-      string_constraint_solver_.start(or_term);
-      is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
-      DVLOG(VLOG_LEVEL) << "String formulae solved: " << *or_term << "@" << or_term;
-    }
-
-    DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *or_term << "@" << or_term;
-  }
+//  if (is_component) {
+//    if (constraint_information_->has_arithmetic_constraint(or_term)) {
+//      arithmetic_constraint_solver_.start(or_term);
+//      is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+//      DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *or_term << "@" << or_term;
+//    }
+//    if ((is_satisfiable or !constraint_information_->has_arithmetic_constraint(or_term))
+//    				and constraint_information_->has_string_constraint(or_term)) {
+//      string_constraint_solver_.start(or_term);
+//      is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+//      DVLOG(VLOG_LEVEL) << "String formulae solved: " << *or_term << "@" << or_term;
+//    }
+//
+//    DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *or_term << "@" << or_term;
+//  }
 
   DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
 

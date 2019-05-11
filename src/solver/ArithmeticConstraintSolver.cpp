@@ -96,49 +96,49 @@ void ArithmeticConstraintSolver::setCallbacks() {
           auto start = std::chrono::steady_clock::now();
           BinaryIntAutomaton_ptr binary_int_auto = nullptr;
 
-          if(Option::Solver::AUTOMATA_CACHING) {
-            std::stringstream os1;
-            {
-              cereal::BinaryOutputArchive ar(os1);
-              formula->save(ar);
-            }
-
-
-            std::string key = os1.str();
-            DFA_ptr result_dfa = nullptr;
-            bool has_result = false;
-            std::string cached_data;
-            auto &c = rdx_->commandSync<std::string>({"GET", key});
-            if (c.ok()) {
-              has_result = true;
-              cached_data = c.reply();
-            }
-            c.free();
-            if (has_result) {
-              std::stringstream is(cached_data);
-              {
-                cereal::BinaryInputArchive ar(is);
-                Util::Serialize::load(ar, result_dfa);
-              }
-              Automaton::num_hits++;
-              binary_int_auto = new BinaryIntAutomaton(result_dfa,formula->clone(),use_unsigned_integers_);
-            }
-
-            if(not has_result){
-              binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), use_unsigned_integers_);
-              std::stringstream os;
-              {
-                cereal::BinaryOutputArchive ar(os);
-                Util::Serialize::save(ar, binary_int_auto->getDFA());
-              }
-              rdx_->command<std::string>({"SET", key, os.str()});
-              Automaton::num_misses++;
-            }
-
-
-          } else {
+//          if(Option::Solver::AUTOMATA_CACHING) {
+//            std::stringstream os1;
+//            {
+//              cereal::BinaryOutputArchive ar(os1);
+//              formula->save(ar);
+//            }
+//
+//
+//            std::string key = os1.str();
+//            DFA_ptr result_dfa = nullptr;
+//            bool has_result = false;
+//            std::string cached_data;
+//            auto &c = rdx_->commandSync<std::string>({"GET", key});
+//            if (c.ok()) {
+//              has_result = true;
+//              cached_data = c.reply();
+//            }
+//            c.free();
+//            if (has_result) {
+//              std::stringstream is(cached_data);
+//              {
+//                cereal::BinaryInputArchive ar(is);
+//                Util::Serialize::load(ar, result_dfa);
+//              }
+//              Automaton::num_hits++;
+//              binary_int_auto = new BinaryIntAutomaton(result_dfa,formula->clone(),use_unsigned_integers_);
+//            }
+//
+//            if(not has_result){
+//              binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), use_unsigned_integers_);
+//              std::stringstream os;
+//              {
+//                cereal::BinaryOutputArchive ar(os);
+//                Util::Serialize::save(ar, binary_int_auto->getDFA());
+//              }
+//              rdx_->command<std::string>({"SET", key, os.str()});
+//              Automaton::num_misses++;
+//            }
+//
+//
+//          } else {
             binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), use_unsigned_integers_);
-          }
+//          }
 
 
 
@@ -240,6 +240,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 //			LOG(INFO) << "After value: " << symbol_table_->get_value(variable_group)->is_satisfiable();
 //			std::cin.get();
 			is_satisfiable = is_satisfiable and symbol_table_->get_value(variable_group)->is_satisfiable();
+			LOG(INFO) << "Set " << variable_group << " val to bin id " << symbol_table_->get_value(variable_group)->getBinaryIntAutomaton()->getId();
 			delete bin_value;
 			delete iter->second;iter->second = nullptr;
 			iter = variable_value_map.erase(iter);
@@ -312,14 +313,17 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 //    delete and_value;
   //LOG(INFO) << "***** SETTING VALUE OF " << group_name << " to " << is_satisfiable;
 
-  is_satisfiable = symbol_table_->get_value(group_name) != nullptr ? is_satisfiable and symbol_table_->get_value(group_name)->is_satisfiable() : is_satisfiable;
-
-  if(not is_satisfiable) {
-
-    auto satisfiable_value = new Value(is_satisfiable);
-    clear_term_value(and_term);
-    set_term_value(and_term, satisfiable_value);
-  }
+//  is_satisfiable = symbol_table_->get_value(group_name) != nullptr ? is_satisfiable and symbol_table_->get_value(group_name)->is_satisfiable() : is_satisfiable;
+//
+//  if(not is_satisfiable) {
+//
+//    auto satisfiable_value = new Value(is_satisfiable);
+//    clear_term_value(and_term);
+//    set_term_value(and_term, satisfiable_value);
+//  }
+  auto satisfiable_value = new Value(is_satisfiable);
+  symbol_table_->IntersectValue(group_name,satisfiable_value);
+  delete satisfiable_value;
   //delete satisfiable_value;
   //}
   DVLOG(VLOG_LEVEL) << "post visit component end: " << *and_term << "@" << and_term;
@@ -449,6 +453,7 @@ void ArithmeticConstraintSolver::postVisitAnd(And_ptr and_term) {
   bool has_arithmetic_formula = false;
 
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(and_term);
+//  LOG(INFO) << "Group name for AND " << and_term << " = " << group_name;
   Value_ptr and_value = nullptr;
 
   for (auto term : *(and_term->term_list)) {
@@ -518,13 +523,17 @@ void ArithmeticConstraintSolver::postVisitAnd(And_ptr and_term) {
 //    }
 //    delete and_value;
   	//LOG(INFO) << "Sat: " << is_satisfiable;
-    if(symbol_table_->get_value(group_name) != nullptr) {
-      is_satisfiable = is_satisfiable and symbol_table_->get_value(group_name)->is_satisfiable();
-    }
-  	auto satisfiable_value = new Value(is_satisfiable);
-		//symbol_table_->IntersectValue(group_name,satisfiable_value);
-		//delete satisfiable_value;
-    set_term_value(and_term,satisfiable_value);
+//    if(symbol_table_->get_value(group_name) != nullptr) {
+//      is_satisfiable = is_satisfiable and symbol_table_->get_value(group_name)->is_satisfiable();
+//    }
+//  	auto satisfiable_value = new Value(is_satisfiable);
+//		//symbol_table_->IntersectValue(group_name,satisfiable_value);
+//		//delete satisfiable_value;
+//    set_term_value(and_term,satisfiable_value);
+auto satisfiable_value = new Value(is_satisfiable);
+	symbol_table_->IntersectValue(group_name,satisfiable_value);
+//	LOG(INFO) << "Intersecting value for group name = " << group_name;
+	delete satisfiable_value;
         //}
   DVLOG(VLOG_LEVEL) << "update result end: " << *and_term << "@" << and_term;
 }
@@ -580,6 +589,7 @@ void ArithmeticConstraintSolver::postVisitOr(Or_ptr or_term) {
 				}
 				is_satisfiable = or_values[group]->is_satisfiable() or is_satisfiable;
 				symbol_table_->clear_value(subgroup_variable,term);
+//				LOG(INFO) << "Clearing value for : " << subgroup_variable->getName();
 			}
 		}
     symbol_table_->pop_scope();
@@ -646,13 +656,14 @@ std::string ArithmeticConstraintSolver::get_int_variable_name(SMT::Term_ptr term
 }
 
 Value_ptr ArithmeticConstraintSolver::get_term_value(Term_ptr term) {
-
+  std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
+//  LOG(INFO) << "Getting value for group name = " << group_name;
   auto it = term_values_.find(term);
   if (it != term_values_.end()) {
     return it->second;
   }
 
-  std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
+
 
   if (not group_name.empty()) {
     return symbol_table_->get_value(group_name);
@@ -685,6 +696,7 @@ bool ArithmeticConstraintSolver::set_group_value(Term_ptr term, Value_ptr value)
 void ArithmeticConstraintSolver::clear_term_values() {
   for (auto& entry : term_values_) {
     delete entry.second;
+    entry.second = nullptr;
   }
 
   term_values_.clear();
