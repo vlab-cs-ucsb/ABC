@@ -603,7 +603,6 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       is_satisfiable = check_and_visit(term) and is_satisfiable;
 
       if (not is_satisfiable) {
-        LOG(INFO) << "NOT SAT";
         clearTermValuesAndLocalLetVars();
         variable_path_table_.clear();
 //        break;
