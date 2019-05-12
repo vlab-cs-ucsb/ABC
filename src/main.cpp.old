@@ -18,8 +18,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <experimental/filesystem>
-#include <algorithm>
 
 #include <glog/logging.h>
 #include <glog/vlog_is_on.h>
@@ -29,7 +27,8 @@
 #include "smt/ast.h"
 #include "solver/Value.h"
 #include "theory/BinaryIntAutomaton.h"
-#include "theory/StringAutomaton.h"
+#include "theory/MultiTrackAutomaton.h"
+#include "theory/StringRelation.h"
 #include "utils/RegularExpression.h"
 
 //static const std::string get_default_output_dir();
@@ -38,7 +37,6 @@
 std::vector<unsigned long> parse_count_bounds(std::string);
 
 int main(const int argc, const char **argv) {
-  google::InstallFailureSignalHandler();
 
   std::istream* in = &std::cin;
   std::ifstream* file = nullptr;
@@ -47,7 +45,7 @@ int main(const int argc, const char **argv) {
 //  std::string output_root = get_default_output_dir();
 //  std::string log_root = get_default_log_dir();
 
-  std::string output_root = {"./output"};
+  std::string output_root {"./output"};
   std::string log_root {"./log"};
 
   FLAGS_log_dir = log_root;
@@ -61,13 +59,12 @@ int main(const int argc, const char **argv) {
   std::vector<unsigned long> str_bounds;
   std::vector<unsigned long> int_bounds;
   std::string count_variable {""};
-  unsigned long num_models = 0;
 
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == std::string("-i") or argv[i] == std::string("--input-file")) {
       file_name = argv[i + 1];
-      // file = new std::ifstream(file_name);
-      // in = file;
+      file = new std::ifstream(file_name);
+      in = file;
       ++i;
     } else if (argv[i] == std::string("--use-unsigned")) {
       driver.set_option(Vlab::Option::Name::USE_UNSIGNED_INTEGERS);
@@ -95,10 +92,6 @@ int main(const int argc, const char **argv) {
       driver.set_option(Vlab::Option::Name::ENABLE_SORTING_HEURISTICS);
     } else if (argv[i] == std::string("--disable-sorting")) {
       driver.set_option(Vlab::Option::Name::DISABLE_SORTING_HEURISTICS);
-    } else if (argv[i] == std::string("--force-dnf-formula")) {
-    	driver.set_option(Vlab::Option::Name::FORCE_DNF_FORMULA);
-    } else if (argv[i] == std::string("--count-bound-exact")) {
-    	driver.set_option(Vlab::Option::Name::COUNT_BOUND_EXACT);
     } else if (argv[i] == std::string("-bs") or argv[i] == std::string("--bound-str")) {
       std::string bounds_str {argv[i + 1]};
       str_bounds = parse_count_bounds(bounds_str);
@@ -112,9 +105,6 @@ int main(const int argc, const char **argv) {
       str_bounds = parse_count_bounds(bounds_str);
       int_bounds = str_bounds;
       ++i;
-    } else if (argv[i] == std::string("--get-models")) {
-    	num_models = std::stoi(argv[i+1]);
-    	++i;
     } else if (argv[i] == std::string("--count-variable")) {
       count_variable = argv[i + 1];
       ++i;
@@ -139,7 +129,6 @@ int main(const int argc, const char **argv) {
       std::cout << std::setw(col) << "-bi or --bound-int <values>" << ": model count integer bit length bound e.g., -bs 10 or a set of bounds e.g., -bi \"4,8,16\"" << std::endl;
       std::cout << std::setw(col) << "-bv or --bound-var <values>" << ": model count integer bit length bound e.g., -b 10 or a set of bounds e.g., -b \"4,8,16\"" << std::endl;
       std::cout << std::setw(col) << "--count-variable <name>" << ": model counts projected variable instead of tuples e.g., --count-variable x" << std::endl;
-      std::cout << std::setw(col) << "--count-bound-exact" << ": model counts solutions of length exactly equal to given bound" << std::endl;
       std::cout << std::setw(col) << "--use-unsigned" << ": allows only positive integers" << std::endl;
       std::cout << std::setw(col) << "--use-signed" << ": allows positive and negative integers" << std::endl;
       std::cout << std::setw(col) << "--use-multitrack" << ": uses multitrack automata for strings" << std::endl;
@@ -162,15 +151,6 @@ int main(const int argc, const char **argv) {
     }
   }
 
-  std::vector<std::string> files;
-  for(const auto & entry : std::experimental::filesystem::directory_iterator(file_name)) {
-    files.push_back(entry.path());
-  }
-
-  file = new std::ifstream(files[0]);
-  in = file;
-
-  std::sort(files.begin(),files.end());
 
   google::InitGoogleLogging(argv[0]);
 
@@ -189,171 +169,36 @@ int main(const int argc, const char **argv) {
   }
 
   driver.test();
-//   driver.Parse(in);
+  driver.Parse(in);
 
-// #ifndef NDEBUG
-//   if (VLOG_IS_ON(30) and not output_root.empty()) {
-//     driver.ast2dot(output_root + "/parser_out.dot");
-//   }
-// #endif
-
-  auto start = std::chrono::steady_clock::now();
-//   driver.InitializeSolver();
-
-//   if(driver.symbol_table_->has_count_variable() and count_variable.empty()) {
-//     count_variable = driver.symbol_table_->get_count_variable()->getName();
-//   }
-
-// #ifndef NDEBUG
-//   if (VLOG_IS_ON(30) and not output_root.empty()) {
-//     driver.ast2dot(output_root + "/optimized.dot");
-//   }
-// #endif
-
-
-//   driver.Solve();
-  auto end = std::chrono::steady_clock::now();
-  auto init_start = std::chrono::steady_clock::now();
-  auto init_end = std::chrono::steady_clock::now();
-  auto init_time = init_end-init_start;
-  auto count_start = std::chrono::steady_clock::now();
-  auto count_end = std::chrono::steady_clock::now();
-  auto count_time = count_end-count_end;
-  auto mc_time = count_end-count_end;
-
-
-  int num_files = files.size();
-  int i = 0;
-
-  int num_unsat = 0;
-  int total_hits = 0;
-  int total_misses = 0;
-
-//  driver.set_option(Vlab::Option::Name::FULL_FORMULA_CACHING);
-  driver.set_option(Vlab::Option::Name::SUB_FORMULA_CACHING);
-  driver.set_option(Vlab::Option::Name::AUTOMATA_CACHING);
-
-  for(auto iter : files) {
-    LOG(INFO) << iter;
-    file = new std::ifstream(iter);
-    in = file;
-
-    init_start = std::chrono::steady_clock::now();
-    driver.Parse(in);
-    driver.InitializeSolver();
-    init_end = std::chrono::steady_clock::now();
-
-    init_time += init_end-init_start;
-
-    if(driver.symbol_table_->has_count_variable() and count_variable.empty()) {
-      count_variable = driver.symbol_table_->get_count_variable()->getName();
-//      LOG(INFO) << count_variable;
-//      std::cin.get();
-    }
-
-//    if (i > 1200 or false and VLOG_IS_ON(30) and not output_root.empty()) {
-//    if(i > 10000)  
-    driver.ast2dot(output_root + "/" + std::to_string(i) + ".dot");
-//   }
-    driver.Solve();
-//    std::cin.get();
-    if(not driver.is_sat()) {
-      LOG(INFO) << "UNSAT: " << iter;
-      num_unsat++;
-//       std::cin.get();
-    } else {
-      //LOG(INFO) << "count = " << driver.CountVariable("h",4);
-      count_start = std::chrono::steady_clock::now();
-//      auto mc1 = driver.GetModelCounterForVariable(count_variable,false);
-//      auto mc2 = driver.GetModelCounterForVariable(count_variable,true);
-      count_end = std::chrono::steady_clock::now();
-      mc_time += count_end-count_start;
-
-      count_start = std::chrono::steady_clock::now();
-//      auto count1 = mc1.Count(50,50);
-//      auto count2 = mc2.Count(50,50);
-      count_end = std::chrono::steady_clock::now();
-      count_time += count_end-count_start;
-
-
-//      auto count_result = driver.CountStrs(4);
-//      LOG(INFO) << count_result;
-    }
-    driver.reset();
-    delete file;
-    i++;
-
-    if(i % 100 == 0) {
-      LOG(INFO) << i << " constraints done";
-    }
-//    if(i % 1000 == 0) {
-//      driver.print_statistics();
-//    }
-//    if(i == 1000) break;
-//    driver.stats();
-    count_variable = "";
+#ifndef NDEBUG
+  if (VLOG_IS_ON(30)) {
+    driver.ast2dot(output_root + "/parser_out.dot");
   }
+#endif
+  auto start = std::chrono::steady_clock::now();
+  driver.InitializeSolver();
 
-  end = std::chrono::steady_clock::now();
-  auto solving_time = end - start;
-  LOG(INFO)<< "total time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
-  LOG(INFO)<< "init  time: " << std::chrono::duration <long double, std::milli> (init_time).count() << " ms";
-  LOG(INFO)<< "cache time: " << std::chrono::duration <long double, std::milli> (driver.diff).count() << " ms";
-  LOG(INFO)<< "cache2 time:" << std::chrono::duration <long double, std::milli> (driver.diff2).count() << " ms";
-  LOG(INFO) << "";
-  LOG(INFO)<< "count time: " << std::chrono::duration <long double, std::milli> (count_time).count() << " ms";
-  LOG(INFO)<< "mc    time: " << std::chrono::duration <long double, std::milli> (mc_time).count() << " ms";
-  driver.print_statistics();
-  LOG(INFO)<< "arith time: " << std::chrono::duration <long double, std::milli> (driver.diff3).count() << " ms";
-  LOG(INFO)<< "bdd   time:" << std::chrono::duration <long double, std::milli> (driver.diff4).count() << " ms";
-  
-  LOG(INFO) << "num unsat: " << num_unsat;
-  return 3;
-  // driver.reset();
-  // delete file;
-  // file = new std::ifstream(files[1]);
-  // in = file;
-
-  // LOG(INFO) << "Solving second...";
-
-  // driver.Parse(in);
-  // driver.InitializeSolver();
-
-  #ifndef NDEBUG
-  if (VLOG_IS_ON(30) and not output_root.empty()) {
+#ifndef NDEBUG
+  if (VLOG_IS_ON(30)) {
     driver.ast2dot(output_root + "/optimized.dot");
   }
 #endif
-
-  // driver.Solve();?
-
-
-  LOG(INFO)<< "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
-  LOG(INFO) << "Solved! solver_id = " << driver.getCurrentID();
-
-  std::cout << (driver.is_sat() ? "sat" : "unsat") << std::endl;
-
+  driver.Solve();
+  auto end = std::chrono::steady_clock::now();
+  auto solving_time = end - start;
+  LOG(INFO) << "Done solving";
 
   if (driver.is_sat()) {
     if (VLOG_IS_ON(30)) {
-//      for(auto& var_value : driver.getSatisfyingExamplesRandomBounded(4)) {
-//        LOG(INFO) << "Original string: " << var_value.first << " = " << var_value.second;
-//        for(int i = 0; i < 10; i++) {
-//          std::string mutated_string = driver.getMutatedModel(var_value.first, var_value.second);
-//          LOG(INFO) << "Mutated  string: " << var_value.first << " = " << mutated_string;
-//        }
-//      }
-//      for (auto& variable_entry : driver.getSatisfyingVariables()) {
-//        variable_entry.second->getStringAutomaton()->inspectAuto(false, true);
-//      }
-      //      unsigned index = 0;
-//      for (auto& variable_entry : driver.getSatisfyingVariables()) {
-//        if (variable_entry.second == nullptr) {
-//          // part of multitrack/binaryint
-//          continue;
-//        }
-//        std::stringstream ss;
-//        ss << output_root << "/result_";
+       //      unsigned index = 0;
+      for (auto& variable_entry : driver.getSatisfyingVariables()) {
+        if (variable_entry.second == nullptr) {
+          // part of multitrack/binaryint
+          continue;
+        }
+        std::stringstream ss;
+        ss << output_root << "/result_";
 //
 //        bool print_auto = true;
 //        switch (variable_entry.second->getType()) {
@@ -410,29 +255,20 @@ int main(const int argc, const char **argv) {
 //          print_auto = false;
 //          break;
 //        }
-//
-//        if (print_auto) {
-//          std::string out_file = ss.str();
-//          std::ofstream outfile(out_file.c_str());
-//          if (!outfile.good()) {
-//            std::cout << "cannot open file: " << file_name << std::endl;
-//            exit(2);
-//          }
-//          driver.printResult(variable_entry.second, outfile);
-//        }
-//      }
+
+        //if (print_auto) {
+          std::string out_file = ss.str();
+          std::ofstream outfile(out_file.c_str());
+          if (!outfile.good()) {
+            std::cout << "cannot open file: " << file_name << std::endl;
+            exit(2);
+          }
+          driver.printResult(variable_entry.second, outfile);
+        //}
+      }
     }
 
-//    LOG(INFO)<< "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
-    if(num_models > 0) {
-    	start = std::chrono::steady_clock::now();
-    	driver.GetModels(0,num_models);
-    	end = std::chrono::steady_clock::now();
-    	auto count_time = end-start;
-    	LOG(INFO) << "report get_models: " << num_models << " time: "
-    	                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
-    }
-
+    LOG(INFO)<< "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
     if(not count_variable.empty()) {
       LOG(INFO) << "report var: " << count_variable;
       for (auto b : int_bounds) {
@@ -442,15 +278,29 @@ int main(const int argc, const char **argv) {
         auto count_time = end - start;
         LOG(INFO) << "report bound: " << b << " count: " << count_result << " time: "
                   << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
-      }
-      for (auto b : str_bounds) {
-        start = std::chrono::steady_clock::now();
-        auto count_result = driver.CountVariable(count_variable, b);
-        end = std::chrono::steady_clock::now();
-        auto count_time = end - start;
-        LOG(INFO) << "report bound: " << b << " count: " << count_result << " time: "
-                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
 
+//        auto mc = driver.GetModelCounterForVariable(count_variable);
+//
+//        std::cout << std::endl << mc << std::endl;
+//        mc.Count(b, b);
+//         std::stringstream os;
+//         {
+//           cereal::BinaryOutputArchive ar(os);
+//           mc.save(ar);
+//         }
+//
+//         std::string test = os.str();
+//         std::stringstream is(test);
+//
+//         Vlab::Solver::ModelCounter mcc;
+//
+//         {
+//          cereal::BinaryInputArchive ar2(is);
+//          mcc.load(ar2);
+//        }
+//
+//        std::cout << std::endl << mcc << std::endl;
+//        mcc.Count(b, b);
       }
     } else {
       for (auto b : int_bounds) {

@@ -869,7 +869,7 @@ void SymbolTable::SetVariableMapping(std::map<std::string,std::string> variable_
   variable_mapping_ = variable_mapping;
   // store reverse map (for easy var lookup)
   for(auto map_it : variable_mapping) {
-//      LOG(INFO) << map_it.first << " -> " << map_it.second;
+      LOG(INFO) << map_it.first << " -> " << map_it.second;
     //    for(auto map_it : term_it.second) {
 //      if(map_it.first == count_symbol_->getData()) {
 //        LOG(INFO) << map_it.first << " -> " << map_it.second;
@@ -917,27 +917,29 @@ std::map<char,char> SymbolTable::GetReverseCharacterMapping() {
 
 void SymbolTable::SetCharacterMapping(std::map<char,char> mapping) {
 
-//  if(mapping.size() > 0) {
-//    for (auto &it : variable_value_table_[top_scope()]) {
-//      if (it.second->getType() == Value::Type::STRING_AUTOMATON) {
-//        auto str_auto = it.second->getStringAutomaton();
-//        if (not str_auto->IsAcceptingSingleString()) {
-//          LOG(FATAL) << "Can't remap characters to string auto";
-//        }
-//
-//        std::string str = str_auto->GetAnAcceptingString();
-//        for (int i = 0; i < str.length(); i++) {
-//          if (mapping.find(str[i]) == mapping.end()) {
-//            int pos = mapping.size() + 48;
-//            mapping[str[i]] = (char) pos;
-//          }
-//          str[i] = mapping[str[i]];
-//        }
-//        delete it.second;
-//        it.second = new Value(Theory::StringAutomaton::MakeString(str));
-//      }
-//    }
-//  }
+  if(mapping.size() > 0) {
+    for (auto &it : variable_value_table_[top_scope()]) {
+      if (it.second->getType() == Value::Type::STRING_AUTOMATON) {
+        auto str_auto = it.second->getStringAutomaton();
+        if (not str_auto->IsAcceptingSingleString()) {
+          LOG(FATAL) << "Can't remap characters to string auto";
+        }
+
+        std::string str = str_auto->GetAnAcceptingString();
+        for (int i = 0; i < str.length(); i++) {
+          if (mapping.find(str[i]) == mapping.end()) {
+            int pos = mapping.size() + 48;
+            mapping[str[i]] = (char) pos;
+          }
+          str[i] = mapping[str[i]];
+        }
+        auto formula = str_auto->GetFormula()->clone();
+        delete it.second;
+        it.second = new Value(Theory::StringAutomaton::MakeString(str));
+        it.second->getStringAutomaton()->SetFormula(formula);
+      }
+    }
+  }
 
 
   character_mapping_ = mapping;

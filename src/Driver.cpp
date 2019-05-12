@@ -25,8 +25,8 @@ Driver::Driver()
 //  if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING || Option::Solver::AUTOMATA_CACHING) {
     rdx_ = new redox::Redox(std::cout,redox::log::Level::Off);
     rdx_->noWait(true);
-
-    if(!rdx_->connect("localhost", 6379)) {
+    if(!rdx_->connectUnix()) {
+//    if(!rdx_->connect("localhost", 6379)) {
       LOG(FATAL) << "Could not connect to redis server";
     }
 //  }
@@ -678,10 +678,10 @@ std::map<std::string, std::string> Driver::getSatisfyingExamples() {
     		
         if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
     		  auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
-        //  auto char_mapping = symbol_table_->GetReverseCharacterMapping();
-    		//  for(int i = 0; i < accepted_string.length(); i++) {
-    		//    accepted_string[i] = char_mapping[accepted_string[i]];
-    		//  }
+          auto char_mapping = symbol_table_->GetReverseCharacterMapping();
+    		  for(int i = 0; i < accepted_string.length(); i++) {
+    		    accepted_string[i] = char_mapping[accepted_string[i]];
+    		  }
     		  results[reverse_var_mapping[it.first]] = accepted_string;
           delete single_string_auto;
         } else {
@@ -720,10 +720,10 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandom() {
           // if we normalized characters, map them back to original character
           if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
     		   auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
-          //  auto char_mapping = symbol_table_->GetReverseCharacterMapping();
-          //  for(int i = 0; i < accepted_string.length(); i++) {
-          //    accepted_string[i] = char_mapping[accepted_string[i]];
-          // }
+            auto char_mapping = symbol_table_->GetReverseCharacterMapping();
+            for(int i = 0; i < accepted_string.length(); i++) {
+              accepted_string[i] = char_mapping[accepted_string[i]];
+           }
     		    results[reverse_var_mapping[it.first]] = accepted_string;
             delete single_string_auto;
           } else {
@@ -769,10 +769,10 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandomBounded(co
           // if we normalized characters, map them back to original character
           if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
     		    auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
-          //  auto char_mapping = symbol_table_->GetReverseCharacterMapping();
-          //  for(int i = 0; i < accepted_string.length(); i++) {
-          //    accepted_string[i] = char_mapping[accepted_string[i]];
-          //  }
+            auto char_mapping = symbol_table_->GetReverseCharacterMapping();
+            for(int i = 0; i < accepted_string.length(); i++) {
+              accepted_string[i] = char_mapping[accepted_string[i]];
+            }
     		    results[reverse_var_mapping[it.first]] = accepted_string;
             delete single_string_auto_bounded;
           } else {
