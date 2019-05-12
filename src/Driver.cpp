@@ -25,8 +25,8 @@ Driver::Driver()
 //  if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING || Option::Solver::AUTOMATA_CACHING) {
     rdx_ = new redox::Redox(std::cout,redox::log::Level::Off);
     rdx_->noWait(true);
-    if(!rdx_->connectUnix()) {
-//    if(!rdx_->connect("localhost", 6379)) {
+//    if(!rdx_->connectUnix()) {
+    if(!rdx_->connect("localhost", 6379)) {
       LOG(FATAL) << "Could not connect to redis server";
     }
 //  }
