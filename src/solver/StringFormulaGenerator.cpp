@@ -158,7 +158,7 @@ void StringFormulaGenerator::visitAnd(And_ptr and_term) {
 				or has_string_formula;
 	}
 
-  if(has_string_formula and subgroups_[current_group_].size() >= 0 ) {
+  if(has_string_formula and subgroups_[current_group_].size() > 0 ) {
 		term_group_map_[and_term] = current_group_;
 		constraint_information_->add_string_constraint(and_term);
 	}
@@ -315,15 +315,15 @@ void StringFormulaGenerator::visitEq(Eq_ptr eq_term) {
 			formula->SetVariableCoefficient(left_var,2);
 			formula->SetConstant(left_formula->GetConstant());
 			constraint_information_->add_string_constraint(eq_term);
-//    } else if(StringFormula::Type::VAR == left_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
-//						&& (StringFormula::Type::STRING_CONSTANT == right_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == right_formula->GetType())) {
-//			formula = left_formula->clone();
-//			formula->MergeVariables(right_formula);
-//			formula->SetType(StringFormula::Type::EQ);
-//			auto left_var = left_formula->GetVariableAtIndex(0);
-//			formula->SetVariableCoefficient(left_var,1);
-//			formula->SetConstant(right_formula->GetConstant());
-//			constraint_information_->add_string_constraint(eq_term);
+    } else if(StringFormula::Type::VAR == left_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
+						&& (StringFormula::Type::STRING_CONSTANT == right_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == right_formula->GetType())) {
+			formula = left_formula->clone();
+			formula->MergeVariables(right_formula);
+			formula->SetType(StringFormula::Type::EQ);
+			auto left_var = left_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(left_var,1);
+			formula->SetConstant(right_formula->GetConstant());
+			constraint_information_->add_string_constraint(eq_term);
 		}	else if(StringFormula::Type::VAR == right_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
 							&& (StringFormula::Type::STRING_CONSTANT == left_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == left_formula->GetType())) {
 			formula = right_formula->clone();
@@ -412,15 +412,15 @@ void StringFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
 			formula->SetVariableCoefficient(left_var,2);
 			formula->SetConstant(left_formula->GetConstant());
 			constraint_information_->add_string_constraint(not_eq_term);
-		//} else if(StringFormula::Type::VAR == left_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
-	//					&& (StringFormula::Type::STRING_CONSTANT == right_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == right_formula->GetType())) {
-		//	formula = left_formula->clone();
-			//formula->MergeVariables(right_formula);
-			//formula->SetType(StringFormula::Type::NOTEQ);
-			//auto left_var = left_formula->GetVariableAtIndex(0);
-			//formula->SetVariableCoefficient(left_var,1);
-			//formula->SetConstant(right_formula->GetConstant());
-			//constraint_information_->add_string_constraint(not_eq_term);
+		} else if(StringFormula::Type::VAR == left_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
+						&& (StringFormula::Type::STRING_CONSTANT == right_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == right_formula->GetType())) {
+			formula = left_formula->clone();
+			formula->MergeVariables(right_formula);
+			formula->SetType(StringFormula::Type::NOTEQ);
+			auto left_var = left_formula->GetVariableAtIndex(0);
+			formula->SetVariableCoefficient(left_var,1);
+			formula->SetConstant(right_formula->GetConstant());
+			constraint_information_->add_string_constraint(not_eq_term);
 		}	else if(StringFormula::Type::VAR == right_formula->GetType() //&& right_formula->GetConstant() == constraint_information_->most_common_string
 							&& (StringFormula::Type::STRING_CONSTANT == left_formula->GetType() || StringFormula::Type::REGEX_CONSTANT == left_formula->GetType())) {
 			formula = right_formula->clone();
@@ -1668,7 +1668,7 @@ void StringFormulaGenerator::set_group_mappings() {
     }
     
 
-    if(Option::Solver::SUB_FORMULA_CACHING && previous_group_variables.empty()) continue;
+//    if(Option::Solver::SUB_FORMULA_CACHING && previous_group_variables.empty()) continue;
     
     //LOG(INFO) << "# previous group vars: " << previous_group_variables.size();
     StringAutomaton_ptr initial_auto = StringAutomaton::MakeAnyStringUnaligned(group_iter.second->clone());

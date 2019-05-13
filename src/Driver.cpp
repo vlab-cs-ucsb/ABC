@@ -492,6 +492,7 @@ Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsig
 }
 
 Theory::BigInteger Driver::CountInts(const unsigned long bound) {
+  while(symbol_table_->values_lock_) std::this_thread::yield;
   return GetModelCounter().CountInts(bound);
 }
 

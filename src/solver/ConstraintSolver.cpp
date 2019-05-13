@@ -373,7 +373,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
   std::map<std::string,int> reverse_term_keys;
 
   bool is_satisfiable = true;
-  bool is_component = true;//constraint_information_->is_component(and_term);
+  bool is_component = constraint_information_->is_component(and_term);
 
   auto cache_start = std::chrono::steady_clock::now();
   auto cache_end = std::chrono::steady_clock::now();

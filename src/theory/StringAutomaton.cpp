@@ -875,7 +875,7 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
 		int num_tracks = formula->GetNumberOfVariables();
 		int left_track = formula->GetVariableIndex(1);
 		StringAutomaton_ptr string_auto;
-		string_auto = StringAutomaton::MakeRegexAuto(formula->GetConstant());
+		string_auto = StringAutomaton::MakeString(formula->GetConstant());
 
     if(formula->GetType() == StringFormula::Type::EQ_CHARAT) {
       std::string regex_string = std::string(std::stoi(formula->GetConstant2()),'.');
