@@ -105,36 +105,36 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
       if (Option::Solver::USE_MULTITRACK_AUTO) {
       	if (QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(left_id->term_list->front())) {
 					if (QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->right_term)) {
-//						std::string left_name = left_variable->getVarName();
-//						std::string right_name = right_variable->getVarName();
-//						auto left_formula = constraint_information_->get_var_formula(left_name);
-//						auto right_formula = constraint_information_->get_var_formula(right_name);
-//						if(left_formula == nullptr) {
-//							LOG(FATAL) << "LEFT FORMULA NULL";
-//						}
-//						if(right_formula == nullptr) {
-//							LOG(FATAL) << "RIGHT FORMULA NULL";
-//						}
-//						auto formula = left_formula->clone();
-//						formula->MergeVariables(right_formula);
-//						// only add begins term if it doesn't cause too many variables in one string formula
-//						if(formula->GetNumberOfVariables() <= 7) {
-//							if(left_formula != right_formula) {
-//								delete left_formula;
-//								delete right_formula;
-//							} else {
-//								delete left_formula;
-//							}
-//							for(auto iter : formula->GetVariableCoefficientMap()) {
-//								constraint_information_->set_var_formula(iter.first,formula);
-//							}
+						std::string left_name = left_variable->getVarName();
+						std::string right_name = right_variable->getVarName();
+						auto left_formula = constraint_information_->get_var_formula(left_name);
+						auto right_formula = constraint_information_->get_var_formula(right_name);
+						if(left_formula == nullptr) {
+							LOG(FATAL) << "LEFT FORMULA NULL";
+						}
+						if(right_formula == nullptr) {
+							LOG(FATAL) << "RIGHT FORMULA NULL";
+						}
+						auto formula = left_formula->clone();
+						formula->MergeVariables(right_formula);
+						// only add begins term if it doesn't cause too many variables in one string formula
+						if(formula->GetNumberOfVariables() <= 7) {
+							if(left_formula != right_formula) {
+								delete left_formula;
+								delete right_formula;
+							} else {
+								delete left_formula;
+							}
+							for(auto iter : formula->GetVariableCoefficientMap()) {
+								constraint_information_->set_var_formula(iter.first,formula);
+							}
 							Term_ptr implication_term_begins = new Begins(left_variable->clone(), left_id->term_list->front()->clone());
 							current_and_->term_list->push_back(implication_term_begins);
-//						} else {
-//							DVLOG(VLOG_LEVEL) << "Can't add begins implication, would cause too many variables in one formula";
-//
-//							delete formula;
-//						}
+						} else {
+							DVLOG(VLOG_LEVEL) << "Can't add begins implication, would cause too many variables in one formula";
+
+							delete formula;
+						}
 					}
 				}
       }
@@ -148,38 +148,36 @@ void ImplicationRunner::visitEq(Eq_ptr eq_term) {
       if (Option::Solver::USE_MULTITRACK_AUTO) {
         if (QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term)) {
           if (QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(right_id->term_list->front())) {
-            Term_ptr implication_term_begins = new Begins(left_variable->clone(), right_variable->clone());
-					  current_and_->term_list->push_back(implication_term_begins);
-//          	std::string left_name = left_variable->getVarName();
-//						std::string right_name = right_variable->getVarName();
-//
-//						auto left_formula = constraint_information_->get_var_formula(left_name);
-//						auto right_formula = constraint_information_->get_var_formula(right_name);
-//						if(left_formula == nullptr) {
-//							LOG(FATAL) << "LEFT FORMULA NULL";
-//						}
-//						if(right_formula == nullptr) {
-//							LOG(FATAL) << "RIGHT FORMULA NULL";
-//						}
-//						auto formula = left_formula->clone();
-//						formula->MergeVariables(right_formula);
-//						// only add begins term if it doesn't cause too many variables in one string formula
-//						if(formula->GetNumberOfVariables() <= 7) {
-//							if(left_formula != right_formula) {
-//								delete left_formula;
-//								delete right_formula;
-//							} else {
-//								delete left_formula;
-//							}
-//							for(auto iter : formula->GetVariableCoefficientMap()) {
-//								constraint_information_->set_var_formula(iter.first,formula);
-//							}
-//							Term_ptr implication_term_begins = new Begins(left_variable->clone(), right_variable->clone());
-//							current_and_->term_list->push_back(implication_term_begins);
-//						} else {
-//							DVLOG(VLOG_LEVEL) << "Can't add begins implication, would cause too many variables in one formula";
-//							delete formula;
-//						}
+          	std::string left_name = left_variable->getVarName();
+						std::string right_name = right_variable->getVarName();
+
+						auto left_formula = constraint_information_->get_var_formula(left_name);
+						auto right_formula = constraint_information_->get_var_formula(right_name);
+						if(left_formula == nullptr) {
+							LOG(FATAL) << "LEFT FORMULA NULL";
+						}
+						if(right_formula == nullptr) {
+							LOG(FATAL) << "RIGHT FORMULA NULL";
+						}
+						auto formula = left_formula->clone();
+						formula->MergeVariables(right_formula);
+						// only add begins term if it doesn't cause too many variables in one string formula
+						if(formula->GetNumberOfVariables() <= 7) {
+							if(left_formula != right_formula) {
+								delete left_formula;
+								delete right_formula;
+							} else {
+								delete left_formula;
+							}
+							for(auto iter : formula->GetVariableCoefficientMap()) {
+								constraint_information_->set_var_formula(iter.first,formula);
+							}
+							Term_ptr implication_term_begins = new Begins(left_variable->clone(), right_variable->clone());
+							current_and_->term_list->push_back(implication_term_begins);
+						} else {
+							DVLOG(VLOG_LEVEL) << "Can't add begins implication, would cause too many variables in one formula";
+							delete formula;
+						}
           }
         }
       }
@@ -346,7 +344,7 @@ void ImplicationRunner::CollectHeuristicInfo(Eq_ptr eq_term) {
 				variable_formulas[len_var->getVarName()] = f;
 			}
 			variables_to_expand.insert(len_var->getVarName());
-			
+
 		}
 	}
 }
@@ -435,8 +433,16 @@ void ImplicationRunner::AddLengthHeuristic(And_ptr and_term) {
 			}
 			TermList_ptr inner_term_list = new TermList();
 			QualIdentifier_ptr qualid = new QualIdentifier(new Identifier(new Primitive(coeff_iter.first,Primitive::Type::SYMBOL)));
-			Len_ptr len_term = new Len(qualid);
-			inner_term_list->push_back(len_term);
+
+			auto var = symbol_table_->get_variable(coeff_iter.first);
+			if(Variable::Type::STRING == var->getType()) {
+				Len_ptr len_term = new Len(qualid);
+				inner_term_list->push_back(len_term);
+			} else {
+        inner_term_list->push_back(qualid);
+			}
+
+
 			if(coeff_iter.second < 0) {
 				TermConstant_ptr term_constant = new TermConstant(new Primitive(std::to_string(coeff_iter.second*(-1)),Primitive::Type::NUMERAL));
 				UMinus_ptr uminus_term = new UMinus(term_constant);
@@ -455,10 +461,11 @@ void ImplicationRunner::AddLengthHeuristic(And_ptr and_term) {
 			TermConstant_ptr term_constant = new TermConstant(new Primitive(std::to_string(constant*(-1)),Primitive::Type::NUMERAL));
 			UMinus_ptr uminus_term = new UMinus(term_constant);
 			term_list->push_back(uminus_term);
-		} else {
+		} else if (constant > 0){
 			TermConstant_ptr term_constant = new TermConstant(new Primitive(std::to_string(constant),Primitive::Type::NUMERAL));
 			term_list->push_back(term_constant);
 		}
+
 		Plus_ptr plus_term = new Plus(term_list);
 		Eq_ptr eq_term = new Eq(new TermConstant(new Primitive("0",Primitive::Type::NUMERAL)),plus_term);
 

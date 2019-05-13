@@ -230,8 +230,8 @@ int main(const int argc, const char **argv) {
   int total_misses = 0;
 
 //  driver.set_option(Vlab::Option::Name::FULL_FORMULA_CACHING);
-  driver.set_option(Vlab::Option::Name::SUB_FORMULA_CACHING);
-  driver.set_option(Vlab::Option::Name::AUTOMATA_CACHING);
+//  driver.set_option(Vlab::Option::Name::SUB_FORMULA_CACHING);
+//  driver.set_option(Vlab::Option::Name::AUTOMATA_CACHING);
 
   for(auto iter : files) {
     //if(i < 4300) {

@@ -1655,17 +1655,21 @@ void StringFormulaGenerator::set_group_mappings() {
 
       // if group variable in variable_values, then a previous value was computed;
       if(variable_values.find(group_variable) != variable_values.end()) {
-        group_iter.second->MergeVariables(variable_values[group_variable]->getStringAutomaton()->GetFormula());
-        for(auto vv : variable_values[group_variable]->getStringAutomaton()->GetFormula()->GetVariableCoefficientMap()) {
-          symbol_table_->set_variable_group_mapping(vv.first,group_iter.first);
-        }
         previous_group_variables.insert(group_variable);
+        if(Option::Solver::SUB_FORMULA_CACHING) {
+          group_iter.second->MergeVariables(variable_values[group_variable]->getStringAutomaton()->GetFormula());
+          for(auto vv : variable_values[group_variable]->getStringAutomaton()->GetFormula()->GetVariableCoefficientMap()) {
+            symbol_table_->set_variable_group_mapping(vv.first,group_iter.first);
+          }
+        }
       }
       // update variable group mapping in symbol table
       symbol_table_->set_variable_group_mapping(var_entry.first, group_iter.first);
     }
     
-    if(previous_group_variables.empty()) continue;
+
+    if(Option::Solver::SUB_FORMULA_CACHING && previous_group_variables.empty()) continue;
+    
     //LOG(INFO) << "# previous group vars: " << previous_group_variables.size();
     StringAutomaton_ptr initial_auto = StringAutomaton::MakeAnyStringUnaligned(group_iter.second->clone());
 	initial_auto->GetFormula()->SetType(StringFormula::Type::NA);
