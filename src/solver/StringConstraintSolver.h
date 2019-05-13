@@ -61,6 +61,9 @@ class StringConstraintSolver: public AstTraverser {
   bool has_integer_terms(SMT::Term_ptr term);
   SMT::TermList& get_integer_terms_in(SMT::Term_ptr term);
   std::map<SMT::Term_ptr, SMT::TermList>& get_integer_terms_map();
+  void push_generator(SMT::Term_ptr);
+  void pop_generators(int,SMT::Term_ptr);
+
 
   static std::map<std::string,Theory::DFA_ptr> stupid_cache;
   std::chrono::duration<double> diff;
@@ -69,12 +72,14 @@ class StringConstraintSolver: public AstTraverser {
 	static int dfa_hits;
   redox::Redox* rdx_;
 
+
  protected:
   void visitOr(SMT::Or_ptr);
 
   SymbolTable_ptr symbol_table_;
   ConstraintInformation_ptr constraint_information_;
-  StringFormulaGenerator string_formula_generator_;
+  std::shared_ptr<StringFormulaGenerator> string_formula_generator_;
+  std::vector<std::pair<SMT::Term_ptr,std::shared_ptr<StringFormulaGenerator>>> generator_stack_;
 
   /**
    * To keep single automaton for each variable we use a map

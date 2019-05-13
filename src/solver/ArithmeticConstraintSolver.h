@@ -62,6 +62,9 @@ class ArithmeticConstraintSolver : public AstTraverser {
   bool has_string_terms(SMT::Term_ptr term);
   SMT::TermList& get_string_terms_in(SMT::Term_ptr term);
   std::map<SMT::Term_ptr, SMT::TermList>& get_string_terms_map();
+  
+  void push_generator(SMT::Term_ptr);
+  void pop_generators(int, SMT::Term_ptr);
 
   static std::map<std::string,Theory::DFA_ptr> stupid_cache;
   std::chrono::duration<double> diff;
@@ -76,7 +79,8 @@ class ArithmeticConstraintSolver : public AstTraverser {
   bool use_unsigned_integers_;
   SymbolTable_ptr symbol_table_;
   ConstraintInformation_ptr constraint_information_;
-  ArithmeticFormulaGenerator arithmetic_formula_generator_;
+  std::shared_ptr<ArithmeticFormulaGenerator> arithmetic_formula_generator_;
+  std::vector<std::pair<SMT::Term_ptr,std::shared_ptr<ArithmeticFormulaGenerator>>> generator_stack_;
 
   /**
    * To keep single automaton for each variable we use a map

@@ -869,7 +869,7 @@ void SymbolTable::SetVariableMapping(std::map<std::string,std::string> variable_
   variable_mapping_ = variable_mapping;
   // store reverse map (for easy var lookup)
   for(auto map_it : variable_mapping) {
-      LOG(INFO) << map_it.first << " -> " << map_it.second;
+//      LOG(INFO) << map_it.first << " -> " << map_it.second;
     //    for(auto map_it : term_it.second) {
 //      if(map_it.first == count_symbol_->getData()) {
 //        LOG(INFO) << map_it.first << " -> " << map_it.second;

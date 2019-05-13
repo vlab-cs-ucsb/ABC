@@ -176,7 +176,6 @@ void Driver::InitializeSolver() {
     Solver::Renamer renamer(script_, symbol_table_);
     renamer.start();
   }
-
 }
 
 void Driver::Solve() {
@@ -214,7 +213,6 @@ void Driver::Solve() {
 		iter.second = nullptr;
 	}
 	cached_bounded_values_.clear();
-
 
   delete constraint_solver;
 }

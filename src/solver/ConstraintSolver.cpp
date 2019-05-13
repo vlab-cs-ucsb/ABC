@@ -645,16 +645,15 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
             if(iter.second == nullptr) {
               continue;
             }
-            
             if (iter.second->getType() == Value::Type::STRING_AUTOMATON and
                 iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
               if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
                 continue;
               }
-              auto equiv_class = symbol_table_->get_equivalence_class_of(iter.first);
-              if(equiv_class != nullptr && equiv_class->has_constant()) {
-                continue;
-              }
+              //auto equiv_class = symbol_table_->get_equivalence_class_of(iter.first);
+              //if(equiv_class != nullptr && equiv_class->has_constant()) {
+              //  continue;
+              //}
               num_string_to_write++;
               str_stuff_to_store->push_back(iter.second->getStringAutomaton()->clone());
             } else if (iter.second->getType() ==
@@ -666,6 +665,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
               bin_stuff_to_store->push_back(iter.second->getBinaryIntAutomaton()->clone());
             }
           }
+
 
 
 
@@ -708,7 +708,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
           else return;
         };
 
-        rdx_->command<std::string>({"SET",key,os.str()}, got_reply);
+        rdx_->command<std::string>({"SET",key,os.str()},got_reply);
         if(is_done || not is_satisfiable) {
           rdx_->command<std::string>({"SET",root_key_,os.str()},got_reply);
           for(int i = (*revk)[key]; i < max; i++) {
@@ -825,21 +825,9 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
     
     
     for (auto& term : *(or_term->term_list)) {
-     /*
-      if(dynamic_cast<And_ptr>(term) == nullptr) {
-        arithmetic_constraint_solver_.collect_arithmetic_constraint_info(term);
-        string_constraint_solver_.collect_string_constraint_info(term);
-        if (constraint_information_->has_arithmetic_constraint(term)) {
-          arithmetic_constraint_solver_.start(term);
-          is_satisfiable = arithmetic_constraint_solver_.get_term_value(term)->is_satisfiable();
-        }
-        if ((is_satisfiable or !constraint_information_->has_arithmetic_constraint(term))
-            and constraint_information_->has_string_constraint(term)) {
-          string_constraint_solver_.start(term);
-          is_satisfiable = string_constraint_solver_.get_term_value(term)->is_satisfiable();
-        }
-      }
-      */
+
+      string_constraint_solver_.push_generator(term);
+      arithmetic_constraint_solver_.push_generator(term);
       symbol_table_->push_scope(term);
       bool is_scope_satisfiable = check_and_visit(term);
       if (dynamic_cast<And_ptr>(term) == nullptr) {
@@ -855,39 +843,9 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
       is_satisfiable = is_satisfiable or is_scope_satisfiable;
       symbol_table_->pop_scope();
     }
-
-    arithmetic_constraint_solver_.collect_arithmetic_constraint_info(or_term);
-    string_constraint_solver_.collect_string_constraint_info(or_term);
-      if (constraint_information_->has_arithmetic_constraint(or_term)) {
-        arithmetic_constraint_solver_.start(or_term);
-        is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
-        DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *or_term << "@" << or_term;
-      }
-      if ((is_satisfiable or !constraint_information_->has_arithmetic_constraint(or_term))
-          and constraint_information_->has_string_constraint(or_term)) {
-        string_constraint_solver_.start(or_term);
-        is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
-        DVLOG(VLOG_LEVEL) << "String formulae solved: " << *or_term << "@" << or_term;
-      }
-
-
-//    for(auto &term : *(or_term->term_list)) {
-//      if(dynamic_cast<And_ptr>(term) == nullptr) {
-//
-//
-//        if (constraint_information_->has_arithmetic_constraint(term)) {
-//          arithmetic_constraint_solver_.start(term);
-//          is_satisfiable = arithmetic_constraint_solver_.get_term_value(term)->is_satisfiable();
-//        }
-//        if ((is_satisfiable or !constraint_information_->has_arithmetic_constraint(term))
-//                and constraint_information_->has_string_constraint(term)) {
-//          string_constraint_solver_.start(term);
-//          is_satisfiable = string_constraint_solver_.get_term_value(term)->is_satisfiable();
-//        }
-//
-//      }
-//    }
-
+    string_constraint_solver_.pop_generators(or_term->term_list->size(),or_term);
+    arithmetic_constraint_solver_.pop_generators(or_term->term_list->size(),or_term);
+    /*
     if (is_component and is_satisfiable) {
       if (constraint_information_->has_arithmetic_constraint(or_term)) {
         arithmetic_constraint_solver_.postVisitOr(or_term);
@@ -899,7 +857,7 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
         is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
       }
     }
-
+*/
 
 
     Value_ptr result = new Value(is_satisfiable);

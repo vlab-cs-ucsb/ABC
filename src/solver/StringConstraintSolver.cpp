@@ -23,10 +23,10 @@ StringConstraintSolver::StringConstraintSolver(Script_ptr script, SymbolTable_pt
                                                        ConstraintInformation_ptr constraint_information)
     : AstTraverser(script),
       symbol_table_(symbol_table),
-      constraint_information_(constraint_information),
-      string_formula_generator_(script, symbol_table, constraint_information) {
+      constraint_information_(constraint_information) {
   setCallbacks();
-
+  
+  string_formula_generator_ = std::make_shared<StringFormulaGenerator>(script, symbol_table, constraint_information);
   auto start = std::chrono::steady_clock::now();
   auto end = std::chrono::steady_clock::now();
   diff = end-start;
@@ -50,23 +50,23 @@ void StringConstraintSolver::start() {
 }
 
 void StringConstraintSolver::end() {
-  string_formula_generator_.end();
+  string_formula_generator_->end();
 }
 
 void StringConstraintSolver::collect_string_constraint_info(Visitable_ptr node) {
 
-  if(Or_ptr or_term = dynamic_cast<Or_ptr>(node)) {
-    if(Option::Solver::SUB_FORMULA_CACHING)
-      string_formula_generator_.no_visit_or = true;
-  }
-  string_formula_generator_.start(node);
-  integer_terms_map_ = string_formula_generator_.get_integer_terms_map();
-  string_formula_generator_.no_visit_or = false;
+  //if(Or_ptr or_term = dynamic_cast<Or_ptr>(node)) {
+  //  if(Option::Solver::SUB_FORMULA_CACHING)
+  //    string_formula_generator_->no_visit_or = true;
+  //}
+  string_formula_generator_->start(node);
+  integer_terms_map_ = string_formula_generator_->get_integer_terms_map();
+  string_formula_generator_->no_visit_or = false;
 }
 
 void StringConstraintSolver::collect_string_constraint_info() {
-  string_formula_generator_.start();
-  integer_terms_map_ = string_formula_generator_.get_integer_terms_map();
+  string_formula_generator_->start();
+  integer_terms_map_ = string_formula_generator_->get_integer_terms_map();
 }
 
 /**
@@ -84,7 +84,7 @@ void StringConstraintSolver::setCallbacks() {
       case Term::Type::LE:
       case Term::Type::BEGINS:
       case Term::Type::NOTBEGINS: {
-        auto formula = string_formula_generator_.get_term_formula(term);
+        auto formula = string_formula_generator_->get_term_formula(term);
         if (formula != nullptr && formula->GetType() != Theory::StringFormula::Type::NONRELATIONAL) {
           DVLOG(VLOG_LEVEL) << "Relational String Formula: " << *formula << "@" << term;
           StringAutomaton_ptr relational_str_auto = nullptr;
@@ -138,7 +138,7 @@ void StringConstraintSolver::setCallbacks() {
 
           auto result = new Value(relational_str_auto);
           if(Option::Solver::SUB_FORMULA_CACHING) {
-            auto term_group_name = string_formula_generator_.get_term_group_name(term);
+            auto term_group_name = string_formula_generator_->get_term_group_name(term);
             if(term_group_name.empty()) {
               LOG(FATAL) << "Term has no group!";
             }
@@ -154,7 +154,7 @@ void StringConstraintSolver::setCallbacks() {
           // we delete its formula to avoid solving it again.
           // Atomic string constraints solved precisely,
           // mixed constraints handled without resolving this part
-          string_formula_generator_.clear_term_formula(term);
+          string_formula_generator_->clear_term_formula(term);
         }
         break;
       }
@@ -203,12 +203,12 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
   bool is_satisfiable = true;
   bool has_string_formula = false;
 
-  std::string group_name = string_formula_generator_.get_term_group_name(and_term);
+  std::string group_name = string_formula_generator_->get_term_group_name(and_term);
   Value_ptr and_value = nullptr;
 
 
   for (auto term : *(and_term->term_list)) {
-    auto formula = string_formula_generator_.get_term_formula(term);
+    auto formula = string_formula_generator_->get_term_formula(term);
     // Do not visit child or terms here, handle them in POSTVISIT AND
     if (formula != nullptr and (dynamic_cast<Or_ptr>(term) == nullptr)) {
       has_string_formula = true;
@@ -224,7 +224,7 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
 //          delete old_value;
 //          is_satisfiable = and_value->is_satisfiable();
 //        }
-      	auto term_group_name = string_formula_generator_.get_term_group_name(term);
+      	auto term_group_name = string_formula_generator_->get_term_group_name(term);
 				if(term_group_name.empty()) {
 					LOG(FATAL) << "Term has no group!";
 				}
@@ -288,8 +288,8 @@ void StringConstraintSolver::visitOr(Or_ptr or_term) {
   DVLOG(VLOG_LEVEL) << "visit children of component start: " << *or_term << "@" << or_term;
   bool is_satisfiable = false;
   bool has_string_formula = false;
-  std::string group_name = string_formula_generator_.get_term_group_name(or_term);
-  auto group_formula = string_formula_generator_.get_group_formula(group_name);
+  std::string group_name = string_formula_generator_->get_term_group_name(or_term);
+  auto group_formula = string_formula_generator_->get_group_formula(group_name);
 
   // propagate equivalence class values for constants
 	for (auto term : *(or_term->term_list)) {
@@ -298,8 +298,8 @@ void StringConstraintSolver::visitOr(Or_ptr or_term) {
 		for (auto iter = variable_value_map.begin(); iter != variable_value_map.end();) {
 			if(Value::Type::STRING_AUTOMATON == iter->second->getType() and iter->second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
 				//has_string_formula = true;
-				auto variable_group = string_formula_generator_.get_variable_group_name(iter->first);
-				auto group_formula = string_formula_generator_.get_group_formula(variable_group);
+				auto variable_group = string_formula_generator_->get_variable_group_name(iter->first);
+				auto group_formula = string_formula_generator_->get_group_formula(variable_group);
 				if(group_formula == nullptr) {
 					iter++;
 					continue;
@@ -320,7 +320,7 @@ void StringConstraintSolver::visitOr(Or_ptr or_term) {
 
 
   for (auto term : *(or_term->term_list)) {
-    auto formula = string_formula_generator_.get_term_formula(term);
+    auto formula = string_formula_generator_->get_term_formula(term);
     // Do not visit child and terms here, handle them in POSTVISIT OR
     if (formula != nullptr and (dynamic_cast<And_ptr>(term) == nullptr)) {
 			has_string_formula = true;
@@ -329,7 +329,7 @@ void StringConstraintSolver::visitOr(Or_ptr or_term) {
 			auto param = get_term_value(term);
 			is_satisfiable = param->is_satisfiable() or is_satisfiable;
 			if (is_satisfiable) {
-				auto term_group_name = string_formula_generator_.get_term_group_name(term);
+				auto term_group_name = string_formula_generator_->get_term_group_name(term);
 				if(term_group_name.empty()) {
 					LOG(FATAL) << "Term has no group!";
 				}
@@ -361,11 +361,11 @@ void StringConstraintSolver::postVisitAnd(And_ptr and_term) {
 
   bool is_satisfiable = true;
   bool has_string_formula = false;
-  std::string group_name = string_formula_generator_.get_term_group_name(and_term);
+  std::string group_name = string_formula_generator_->get_term_group_name(and_term);
   Value_ptr and_value = nullptr;
 
   for (auto term : *(and_term->term_list)) {
-    auto formula = string_formula_generator_.get_term_formula(term);
+    auto formula = string_formula_generator_->get_term_formula(term);
     /**
      * In previous visit, automata for string constraints are created and
      * formulae for them are deleted.
@@ -383,7 +383,7 @@ void StringConstraintSolver::postVisitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "update result start: " << *and_term << "@" << and_term;
 
 
-	for(auto group : string_formula_generator_.get_group_subgroups(group_name)) {
+	for(auto group : string_formula_generator_->get_group_subgroups(group_name)) {
 		Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
 		Value_ptr subgroup_value = symbol_table_->get_value(subgroup_variable);
 		is_satisfiable = subgroup_value->is_satisfiable() and is_satisfiable;
@@ -400,7 +400,7 @@ void StringConstraintSolver::postVisitOr(Or_ptr or_term) {
   bool is_satisfiable = false;
   bool has_string_formula = false;
 
-  std::string group_name = string_formula_generator_.get_term_group_name(or_term);
+  std::string group_name = string_formula_generator_->get_term_group_name(or_term);
   std::map<std::string,Value_ptr> or_values;
 
   for (auto term : *(or_term->term_list)) {
@@ -413,7 +413,7 @@ void StringConstraintSolver::postVisitOr(Or_ptr or_term) {
      * grabs them from symbol table
      */
   	symbol_table_->push_scope(term);
-  	for(auto group : string_formula_generator_.get_group_subgroups(group_name)) {
+  	for(auto group : string_formula_generator_->get_group_subgroups(group_name)) {
   		Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
   		Value_ptr subgroup_scope_value = symbol_table_->get_value_at_scope(term,subgroup_variable);
   		if(subgroup_scope_value != nullptr) {
@@ -480,7 +480,7 @@ Value_ptr StringConstraintSolver::get_term_value(Term_ptr term) {
   if (it != term_values_.end()) {
     return it->second;
   }
-  std::string group_name = string_formula_generator_.get_term_group_name(term);
+  std::string group_name = string_formula_generator_->get_term_group_name(term);
 
   if (not group_name.empty()) {
     return symbol_table_->get_value(group_name);
@@ -501,7 +501,7 @@ bool StringConstraintSolver::set_term_value(Term_ptr term, Value_ptr value) {
 }
 
 bool StringConstraintSolver::set_group_value(Term_ptr term, Value_ptr value) {
-  std::string group_name = string_formula_generator_.get_term_group_name(term);
+  std::string group_name = string_formula_generator_->get_term_group_name(term);
   return symbol_table_->set_value(group_name, value);
 }
 
@@ -535,6 +535,83 @@ TermList& StringConstraintSolver::get_integer_terms_in(Term_ptr term) {
 
 std::map<SMT::Term_ptr, SMT::TermList>& StringConstraintSolver::get_integer_terms_map() {
   return integer_terms_map_;
+}
+
+void StringConstraintSolver::push_generator(Term_ptr scope) {
+  generator_stack_.push_back(std::make_pair(scope,string_formula_generator_));
+  string_formula_generator_ = std::make_shared<StringFormulaGenerator>(root_,symbol_table_,constraint_information_);
+  //string_formula_generator_.current_group_ = symbol_table_->get_var_name_for_node(scope,Variable::Type::STRING); 
+}
+
+void StringConstraintSolver::pop_generators(int num_to_merge, Term_ptr t) {
+  std::map<std::string,Value_ptr> or_values;
+  bool is_satisfiable =false; 
+  bool has_string_formula = false;
+  while(num_to_merge-- > 0) {
+    auto &it = generator_stack_.back();
+    auto generator = it.second;
+    auto term_scope = it.first;
+    generator_stack_.pop_back();
+
+    std::string group_name = string_formula_generator_->current_group_;
+    //LOG(INFO) << "Term group name for " << *term_scope << " is " << group_name;	
+    //LOG(INFO) << "has " << string_formula_generator_->get_group_subgroups(group_name).size() << " subgroups";
+    //symbol_table_->push_scope(term_scope); 
+    for(auto group : string_formula_generator_->get_group_subgroups(group_name)) {
+  		Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
+  		Value_ptr subgroup_scope_value = symbol_table_->get_value_at_scope(term_scope,subgroup_variable);
+  		if(subgroup_scope_value != nullptr) {
+  			//LOG(INFO) << "penut butter";
+        has_string_formula = true;
+  			if(or_values.find(group) == or_values.end()) {
+  				or_values[group] = subgroup_scope_value->clone();
+  			} else {
+  				auto old_value = or_values[group];
+  				or_values[group] = or_values[group]->union_(subgroup_scope_value);
+  				delete old_value;
+  			}
+  			is_satisfiable = or_values[group]->is_satisfiable() or is_satisfiable;
+  			symbol_table_->clear_value(subgroup_variable,term_scope);
+  		}
+      //LOG(INFO) << "jelly";
+  	}
+    //symbol_table_->pop_scope();
+    string_formula_generator_ = generator;
+  }
+  if (has_string_formula) {
+  	for(auto& iter : or_values) {
+  		symbol_table_->IntersectValue(iter.first,iter.second);
+  		is_satisfiable = symbol_table_->get_value(iter.first)->is_satisfiable() and is_satisfiable;
+  		if(not is_satisfiable) {
+  			break;
+  		}
+      auto group_auto = symbol_table_->get_value(iter.first)->getStringAutomaton();
+      //for(auto it : group_auto->GetFormula()->GetVariableCoefficientMap()) {
+      //  symbol_table_->set_variable_group_mapping(it.first,iter.first);
+      //}
+      //LOG(INFO) << "before set group formula";
+      //string_formula_generator_->get_group_formula(iter.first)->MergeVariables(group_auto->GetFormula());
+      //LOG(INFO) << "after set group formula";
+      //for(auto it : iter.second->getStringAutomaton()->GetFormula()->GetVariableCoefficientMap()) {
+      //  symbol_table_->set_variable_group_mapping(it.first,iter.first);
+      //}
+  	}
+
+  	for(auto &iter : or_values) {
+  		delete iter.second;
+  		iter.second = nullptr;
+  	}
+    //if(is_satisfiable) {
+    // string_formula_generator_->start(t);
+      
+    //}
+  	//auto satisfiable_value = new Value(is_satisfiable);
+		//symbol_table_->IntersectValue(group_name,satisfiable_value);
+		//delete satisfiable_value;
+  }
+  if(!is_satisfiable) LOG(FATAL) << "BAD";
+
+  
 }
 
 } /* namespace Solver */

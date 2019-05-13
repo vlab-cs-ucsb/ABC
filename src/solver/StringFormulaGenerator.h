@@ -122,6 +122,7 @@ class StringFormulaGenerator: public SMT::Visitor {
 
   bool no_visit_or;
 
+  std::string current_group_;
 protected:
   void add_string_variables(std::string group_name, SMT::Term_ptr term);
   std::string generate_group_name(SMT::Term_ptr term, std::string var_name);
@@ -134,7 +135,6 @@ protected:
   SymbolTable_ptr symbol_table_;
   ConstraintInformation_ptr constraint_information_;
   bool has_mixed_constraint_;
-  std::string current_group_;
 
   std::map<SMT::Term_ptr, Theory::StringFormula_ptr> term_formula_;
 

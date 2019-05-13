@@ -234,6 +234,10 @@ int main(const int argc, const char **argv) {
   driver.set_option(Vlab::Option::Name::AUTOMATA_CACHING);
 
   for(auto iter : files) {
+    //if(i < 4300) {
+    //  i++;
+    //  continue;
+    //}
     LOG(INFO) << iter;
     file = new std::ifstream(iter);
     in = file;

@@ -122,7 +122,6 @@ void StringFormulaGenerator::visitLet(Let_ptr let_term) {
 void StringFormulaGenerator::visitAnd(And_ptr and_term) {
   DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
   if (constraint_information_->is_component(and_term) and current_group_.empty()) {
-//    LOG(INFO) << "Current group empty!";
     current_group_ = symbol_table_->get_var_name_for_node(and_term, Variable::Type::STRING);
     subgroups_[current_group_] = std::set<std::string>();
     has_mixed_constraint_ = false;
@@ -159,7 +158,7 @@ void StringFormulaGenerator::visitAnd(And_ptr and_term) {
 				or has_string_formula;
 	}
 
-  if(has_string_formula and subgroups_[current_group_].size() > 0 ) {
+  if(has_string_formula and subgroups_[current_group_].size() >= 0 ) {
 		term_group_map_[and_term] = current_group_;
 		constraint_information_->add_string_constraint(and_term);
 	}
@@ -1508,7 +1507,7 @@ std::string StringFormulaGenerator::get_variable_group_name(Variable_ptr variabl
 }
 
 std::set<std::string> StringFormulaGenerator::get_group_subgroups(std::string group_name) {
-	if(subgroups_.find(group_name) == subgroups_.end()) {
+  if(subgroups_.find(group_name) == subgroups_.end()) {
 		return std::set<std::string>();
 	}
 	return subgroups_[group_name];
@@ -1643,30 +1642,35 @@ void StringFormulaGenerator::set_group_mappings() {
   auto  &variable_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
   // update groups and their values in symbol table
   for(auto group_iter : group_formula_) {
-//    LOG(INFO) << "Group: " << group_iter.first;
+    //LOG(INFO) << "Group: " << group_iter.first;
     if(symbol_table_->get_variable_unsafe(group_iter.first) == nullptr) {
       symbol_table_->add_variable(new Variable(group_iter.first, Variable::Type::NONE));
     }
 
     std::set<Variable_ptr> previous_group_variables;
     for (const auto& var_entry : group_iter.second->GetVariableCoefficientMap()) {
-//      LOG(INFO) << "--> " << var_entry.first;
+      //LOG(INFO) << "--> " << var_entry.first;
       Variable_ptr variable = symbol_table_->get_variable(var_entry.first);
       Variable_ptr group_variable = symbol_table_->get_group_variable_of(variable);
 
       // if group variable in variable_values, then a previous value was computed;
       if(variable_values.find(group_variable) != variable_values.end()) {
+        group_iter.second->MergeVariables(variable_values[group_variable]->getStringAutomaton()->GetFormula());
+        for(auto vv : variable_values[group_variable]->getStringAutomaton()->GetFormula()->GetVariableCoefficientMap()) {
+          symbol_table_->set_variable_group_mapping(vv.first,group_iter.first);
+        }
         previous_group_variables.insert(group_variable);
       }
       // update variable group mapping in symbol table
       symbol_table_->set_variable_group_mapping(var_entry.first, group_iter.first);
     }
-
-//    LOG(INFO) << "# previous group vars: " << previous_group_variables.size();
+    
+    if(previous_group_variables.empty()) continue;
+    //LOG(INFO) << "# previous group vars: " << previous_group_variables.size();
     StringAutomaton_ptr initial_auto = StringAutomaton::MakeAnyStringUnaligned(group_iter.second->clone());
 	initial_auto->GetFormula()->SetType(StringFormula::Type::NA);
     for(auto previous_group: previous_group_variables) {
-//      LOG(INFO) << "--> previous group = " << previous_group->getName();
+      //LOG(INFO) << "--> previous group = " << previous_group->getName();
       StringAutomaton_ptr previous_group_auto = variable_values[previous_group]->getStringAutomaton();
       StringAutomaton_ptr remapped_auto = previous_group_auto->ChangeIndicesMap(group_iter.second->clone());
       StringAutomaton_ptr temp_auto = initial_auto->Intersect(remapped_auto);

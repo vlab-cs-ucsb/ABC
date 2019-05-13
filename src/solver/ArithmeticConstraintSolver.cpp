@@ -25,10 +25,10 @@ ArithmeticConstraintSolver::ArithmeticConstraintSolver(Script_ptr script, Symbol
     : AstTraverser(script),
       use_unsigned_integers_ { not use_signed_integers },
       symbol_table_(symbol_table),
-      constraint_information_(constraint_information),
-      arithmetic_formula_generator_(script, symbol_table, constraint_information) {
+      constraint_information_(constraint_information) {
   setCallbacks();
 
+  arithmetic_formula_generator_ = std::make_shared<ArithmeticFormulaGenerator>(script, symbol_table, constraint_information);
   auto start = std::chrono::steady_clock::now();
   auto end = std::chrono::steady_clock::now();
   diff = end-start;
@@ -52,26 +52,26 @@ void ArithmeticConstraintSolver::start() {
 }
 
 void ArithmeticConstraintSolver::end() {
-  arithmetic_formula_generator_.end();
+  arithmetic_formula_generator_->end();
 }
 
 void ArithmeticConstraintSolver::collect_arithmetic_constraint_info(Visitable_ptr node) {
-  if(Or_ptr or_term = dynamic_cast<Or_ptr>(node)) {
-    if(Option::Solver::SUB_FORMULA_CACHING)
-      arithmetic_formula_generator_.no_visit_or = true;
-  }
+//  if(Or_ptr or_term = dynamic_cast<Or_ptr>(node)) {
+//    if(Option::Solver::SUB_FORMULA_CACHING)
+//      arithmetic_formula_generator_->no_visit_or = true;
+//  }
 //  auto start = std::chrono::steady_clock::now();
 //  auto end = std::chrono::steady_clock::now();
 //  arithmetic_formula_generator_.diff = end-start;
-  arithmetic_formula_generator_.start(node);
+  arithmetic_formula_generator_->start(node);
 //  diff2 += arithmetic_formula_generator_.diff;
-  string_terms_map_ = arithmetic_formula_generator_.get_string_terms_map();
-  arithmetic_formula_generator_.no_visit_or = false;
+  string_terms_map_ = arithmetic_formula_generator_->get_string_terms_map();
+  arithmetic_formula_generator_->no_visit_or = false;
 }
 
 void ArithmeticConstraintSolver::collect_arithmetic_constraint_info() {
-  arithmetic_formula_generator_.start();
-  string_terms_map_ = arithmetic_formula_generator_.get_string_terms_map();
+  arithmetic_formula_generator_->start();
+  string_terms_map_ = arithmetic_formula_generator_->get_string_terms_map();
 }
 
 /**
@@ -88,7 +88,7 @@ void ArithmeticConstraintSolver::setCallbacks() {
       case Term::Type::LT:
       case Term::Type::LE:
       case Term::Type::QUALIDENTIFIER: {
-        auto formula = arithmetic_formula_generator_.get_term_formula(term);
+        auto formula = arithmetic_formula_generator_->get_term_formula(term);
         if (formula != nullptr) {
           DVLOG(VLOG_LEVEL) << "Linear Arithmetic Equation: " << *formula << "@" << term;
 
@@ -152,7 +152,7 @@ void ArithmeticConstraintSolver::setCallbacks() {
           auto result = new Value(binary_int_auto);
 
           if(Option::Solver::SUB_FORMULA_CACHING) {
-            auto term_group_name = arithmetic_formula_generator_.get_term_group_name(term);
+            auto term_group_name = arithmetic_formula_generator_->get_term_group_name(term);
             if(term_group_name.empty()) {
               LOG(FATAL) << "Term has no group!";
             }
@@ -169,7 +169,7 @@ void ArithmeticConstraintSolver::setCallbacks() {
           // we delete its formula to avoid solving it again.
           // Atomic arithmetic constraints solved precisely,
           // mixed constraints handled without resolving arithmetic part
-          arithmetic_formula_generator_.clear_term_formula(term);
+          arithmetic_formula_generator_->clear_term_formula(term);
         }
         break;
       }
@@ -219,7 +219,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
   bool is_satisfiable = true;
   bool has_arithmetic_formula = false;
 
-  std::string group_name = arithmetic_formula_generator_.get_term_group_name(and_term);
+  std::string group_name = arithmetic_formula_generator_->get_term_group_name(and_term);
   Value_ptr and_value = nullptr;
 
   auto& variable_value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
@@ -232,8 +232,8 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
       if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING) {
         new_var = symbol_table_->get_variable(vv[iter->first->getName()]);
       }
-      auto variable_group = arithmetic_formula_generator_.get_variable_group_name(new_var);
-			auto group_formula = arithmetic_formula_generator_.get_group_formula(variable_group);
+      auto variable_group = arithmetic_formula_generator_->get_variable_group_name(new_var);
+			auto group_formula = arithmetic_formula_generator_->get_group_formula(variable_group);
 			if(group_formula == nullptr) {
 				iter++;
 				continue;
@@ -261,7 +261,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 	}
 
 	for (auto term : *(and_term->term_list)) {
-		auto formula = arithmetic_formula_generator_.get_term_formula(term);
+		auto formula = arithmetic_formula_generator_->get_term_formula(term);
 		// Do not visit child or terms here, handle them in POSTVISIT AND
 		if (formula != nullptr and (dynamic_cast<Or_ptr>(term) == nullptr)) {
 			has_arithmetic_formula = true;
@@ -277,7 +277,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 //          delete old_value;
 //          is_satisfiable = and_value->is_satisfiable();
 //        }
-				auto term_group_name = arithmetic_formula_generator_.get_term_group_name(term);
+				auto term_group_name = arithmetic_formula_generator_->get_term_group_name(term);
 				if(term_group_name.empty()) {
 					LOG(FATAL) << "Term has no group!";
 				}
@@ -354,9 +354,9 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
   DVLOG(VLOG_LEVEL) << "visit children of component start: " << *or_term << "@" << or_term;
   bool is_satisfiable = false;
   bool has_arithmetic_formula = false;
-  std::string group_name = arithmetic_formula_generator_.get_term_group_name(or_term);
+  std::string group_name = arithmetic_formula_generator_->get_term_group_name(or_term);
   // must be a group formula, or else would not be visiting this or_term
-  auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
+  auto group_formula = arithmetic_formula_generator_->get_group_formula(group_name);
 /*
   // propagate equivalence class values for constants
   for (auto term : *(or_term->term_list)) {
@@ -395,7 +395,7 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
   }
 */
 	for (auto term : *(or_term->term_list)) {
-		auto formula = arithmetic_formula_generator_.get_term_formula(term);
+		auto formula = arithmetic_formula_generator_->get_term_formula(term);
 
 		// Do not visit child and terms here, handle them in POSTVISIT OR
 		if (formula != nullptr and (dynamic_cast<And_ptr>(term) == nullptr)) {
@@ -412,7 +412,7 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
 //					or_value = or_value->union_(param);
 //					delete old_value;
 //				}
-				auto term_group_name = arithmetic_formula_generator_.get_term_group_name(term);
+				auto term_group_name = arithmetic_formula_generator_->get_term_group_name(term);
 				if(term_group_name.empty()) {
 					LOG(FATAL) << "Term has no group!";
 				}
@@ -465,12 +465,12 @@ void ArithmeticConstraintSolver::postVisitAnd(And_ptr and_term) {
   bool is_satisfiable = true;
   bool has_arithmetic_formula = false;
 
-  std::string group_name = arithmetic_formula_generator_.get_term_group_name(and_term);
+  std::string group_name = arithmetic_formula_generator_->get_term_group_name(and_term);
 //  LOG(INFO) << "Group name for AND " << and_term << " = " << group_name;
   Value_ptr and_value = nullptr;
 
   for (auto term : *(and_term->term_list)) {
-    auto formula = arithmetic_formula_generator_.get_term_formula(term);
+    auto formula = arithmetic_formula_generator_->get_term_formula(term);
     /**
      * In previous visit, automata for arithmetic constraints are created and
      * formulae for them are deleted.
@@ -518,7 +518,7 @@ void ArithmeticConstraintSolver::postVisitAnd(And_ptr and_term) {
 //	}
 
   //if (has_arithmetic_formula) {
-  	for(auto group : arithmetic_formula_generator_.get_group_subgroups(group_name)) {
+  	for(auto group : arithmetic_formula_generator_->get_group_subgroups(group_name)) {
 			Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
 			Value_ptr subgroup_value = symbol_table_->get_value(subgroup_variable);
 			if(!subgroup_value->is_satisfiable()) {
@@ -557,11 +557,11 @@ void ArithmeticConstraintSolver::postVisitOr(Or_ptr or_term) {
   bool is_satisfiable = false;
   bool has_arithmetic_formula = false;
 
-  std::string group_name = arithmetic_formula_generator_.get_term_group_name(or_term);
+  std::string group_name = arithmetic_formula_generator_->get_term_group_name(or_term);
   std::map<std::string,Value_ptr> or_values;
 
   for (auto term : *(or_term->term_list)) {
-    auto formula = arithmetic_formula_generator_.get_term_formula(term);
+    auto formula = arithmetic_formula_generator_->get_term_formula(term);
     /**
      * In previous visit, automata for arithmetic constraints are created and
      * formulae for them are deleted.
@@ -588,7 +588,7 @@ void ArithmeticConstraintSolver::postVisitOr(Or_ptr or_term) {
 //      symbol_table_->pop_scope();
 
     symbol_table_->push_scope(term);
-    for(auto group : arithmetic_formula_generator_.get_group_subgroups(group_name)) {
+    for(auto group : arithmetic_formula_generator_->get_group_subgroups(group_name)) {
 			Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
 			Value_ptr subgroup_scope_value = symbol_table_->get_value_at_scope(term,subgroup_variable);
 			if(subgroup_scope_value != nullptr) {
@@ -669,7 +669,7 @@ std::string ArithmeticConstraintSolver::get_int_variable_name(SMT::Term_ptr term
 }
 
 Value_ptr ArithmeticConstraintSolver::get_term_value(Term_ptr term) {
-  std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
+  std::string group_name = arithmetic_formula_generator_->get_term_group_name(term);
 //  LOG(INFO) << "Getting value for group name = " << group_name;
   auto it = term_values_.find(term);
   if (it != term_values_.end()) {
@@ -702,7 +702,7 @@ bool ArithmeticConstraintSolver::set_term_value(Term_ptr term, Value_ptr value) 
 }
 
 bool ArithmeticConstraintSolver::set_group_value(Term_ptr term, Value_ptr value) {
-  std::string group_name = arithmetic_formula_generator_.get_term_group_name(term);
+  std::string group_name = arithmetic_formula_generator_->get_term_group_name(term);
   return symbol_table_->set_value(group_name, value);
 }
 
@@ -738,5 +738,67 @@ std::map<SMT::Term_ptr, SMT::TermList>& ArithmeticConstraintSolver::get_string_t
   return string_terms_map_;
 }
 
+void ArithmeticConstraintSolver::push_generator(Term_ptr scope) {
+  generator_stack_.push_back(std::make_pair(scope,arithmetic_formula_generator_));
+  arithmetic_formula_generator_ = std::make_shared<ArithmeticFormulaGenerator>(root_,symbol_table_,constraint_information_);
+}
+
+void ArithmeticConstraintSolver::pop_generators(int num_to_merge, Term_ptr t) {
+  std::map<std::string,Value_ptr> or_values;
+  bool is_satisfiable =false; 
+  bool has_string_formula = true;
+  while(num_to_merge-- > 0) {
+    auto &it = generator_stack_.back();
+    auto generator = it.second;
+    auto term_scope = it.first;
+    generator_stack_.pop_back();
+
+    std::string group_name = arithmetic_formula_generator_->get_term_group_name(term_scope);
+  	
+    symbol_table_->push_scope(term_scope); 
+    for(auto group : arithmetic_formula_generator_->get_group_subgroups(group_name)) {
+  		Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
+  		Value_ptr subgroup_scope_value = symbol_table_->get_value_at_scope(term_scope,subgroup_variable);
+  		if(subgroup_scope_value != nullptr) {
+        has_string_formula = true;
+  			if(or_values.find(group) == or_values.end()) {
+  				or_values[group] = subgroup_scope_value->clone();
+  			} else {
+  				auto old_value = or_values[group];
+  				or_values[group] = or_values[group]->union_(subgroup_scope_value);
+  				delete old_value;
+  			}
+  			is_satisfiable = or_values[group]->is_satisfiable() or is_satisfiable;
+  			symbol_table_->clear_value(subgroup_variable,term_scope);
+  		}
+  	}
+    symbol_table_->pop_scope();
+    arithmetic_formula_generator_ = generator;
+  }
+  if (has_string_formula) {
+  	for(auto& iter : or_values) {
+  		symbol_table_->IntersectValue(iter.first,iter.second);
+  		is_satisfiable = symbol_table_->get_value(iter.first)->is_satisfiable() and is_satisfiable;
+  		if(not is_satisfiable) {
+  			break;
+  		}
+  	}
+
+  	for(auto &iter : or_values) {
+  		delete iter.second;
+  		iter.second = nullptr;
+  	}
+
+    if(is_satisfiable) {
+      arithmetic_formula_generator_->start(t);
+    }
+  	//auto satisfiable_value = new Value(is_satisfiable);
+		//symbol_table_->IntersectValue(group_name,satisfiable_value);
+		//delete satisfiable_value;
+  }
+ 
+}
+
 } /* namespace Solver */
+
 } /* namespace Vlab */
