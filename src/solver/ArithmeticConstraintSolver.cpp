@@ -151,7 +151,7 @@ void ArithmeticConstraintSolver::setCallbacks() {
 
           auto result = new Value(binary_int_auto);
 
-          if(Option::Solver::SUB_FORMULA_CACHING) {
+          if(true) {
             auto term_group_name = arithmetic_formula_generator_->get_term_group_name(term);
             if(term_group_name.empty()) {
               LOG(FATAL) << "Term has no group!";
@@ -794,8 +794,11 @@ void ArithmeticConstraintSolver::pop_generators(int num_to_merge, Term_ptr t) {
   	//auto satisfiable_value = new Value(is_satisfiable);
 		//symbol_table_->IntersectValue(group_name,satisfiable_value);
 		//delete satisfiable_value;
+		set_term_value(t,new Value(is_satisfiable));
+		if(!is_satisfiable) LOG(FATAL) << "BAD";
   }
- 
+
+
 }
 
 } /* namespace Solver */

@@ -229,16 +229,16 @@ int main(const int argc, const char **argv) {
   int total_hits = 0;
   int total_misses = 0;
 
-//  driver.set_option(Vlab::Option::Name::FULL_FORMULA_CACHING);
-  driver.set_option(Vlab::Option::Name::SUB_FORMULA_CACHING);
-  driver.set_option(Vlab::Option::Name::AUTOMATA_CACHING);
+  driver.set_option(Vlab::Option::Name::FULL_FORMULA_CACHING);
+//  driver.set_option(Vlab::Option::Name::SUB_FORMULA_CACHING);
+//  driver.set_option(Vlab::Option::Name::AUTOMATA_CACHING);
 
   for(auto iter : files) {
-    //if(i < 4300) {
-    //  i++;
-    //  continue;
-    //}
-    //LOG(INFO) << iter;
+//    if(i < 10900) {
+//      i++;
+//      continue;
+//    }
+//    LOG(INFO) << iter;
     file = new std::ifstream(iter);
     in = file;
 
@@ -257,7 +257,7 @@ int main(const int argc, const char **argv) {
 
 //    if (i > 1200 or false and VLOG_IS_ON(30) and not output_root.empty()) {
 //    if(i > 10000)  
-    //driver.ast2dot(output_root + "/" + std::to_string(i) + ".dot");
+//    driver.ast2dot(output_root + "/" + std::to_string(i) + ".dot");
 //   }
     driver.Solve();
 //    std::cin.get();
@@ -269,7 +269,7 @@ int main(const int argc, const char **argv) {
       count_start = std::chrono::steady_clock::now();
 //      auto cc = driver.CountInts(32);
       auto cc = driver.CountVariable(count_variable,50);
-
+//      LOG(INFO) << cc;
 //      auto mc1 = driver.GetModelCounterForVariable(count_variable,false);
 //      auto mc2 = driver.GetModelCounterForVariable(count_variable,true);
       count_end = std::chrono::steady_clock::now();

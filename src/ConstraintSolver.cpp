@@ -195,13 +195,13 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
       
       return;
     }
-    if(Option::Solver::FULL_FORMULA_CACHING) {
-//      arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
-//      string_constraint_solver_.collect_string_constraint_info();
-    }
+    //if(Option::Solver::FULL_FORMULA_CACHING) {
+    //  arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
+    //  string_constraint_solver_.collect_string_constraint_info();
+    //}
   } else {
-//    arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
-//    string_constraint_solver_.collect_string_constraint_info();
+    //arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
+    //string_constraint_solver_.collect_string_constraint_info();
   }
 
   check_and_visit(assert_command->term);
@@ -220,7 +220,7 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
   }
   clearTermValuesAndLocalLetVars();
 
-
+  
 
   if(Option::Solver::FULL_FORMULA_CACHING and not Option::Solver::SUB_FORMULA_CACHING) {
     std::string temp = key;
@@ -439,18 +439,18 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       os << "0";
       key = term_keys[and_term->term_list->size()];
       for(int i = reverse_term_keys[key]; i < max; i++) {
-
+        
       rdx_->command<std::string>({"SET",term_keys[i],os.str()});
       }
       */
       while(*count < num_sent) std::this_thread::yield();
       Value_ptr result = new Value(false);
       setTermValue(and_term, result);
-
+      
       return;
     }
     if(has_cached_result) {
-
+      
       int num_terms_cached = reverse_term_keys[success_key];
 
       while(and_term->term_list->size() < num_terms_cached) {
@@ -517,7 +517,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 
       }
       while (num_int_to_read-- > 0) {
-        Theory::BinaryIntAutomaton_ptr import_auto = new Theory::BinaryIntAutomaton(nullptr, 0, not Vlab::Option::Solver::USE_SIGNED_INTEGERS);
+        Theory::BinaryIntAutomaton_ptr import_auto = new Theory::BinaryIntAutomaton(nullptr, 0, false);
         std::string var_name;
         {
           cereal::BinaryInputArchive ar(is);
@@ -548,7 +548,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     } else {
       constraint_info_collector.join();
     }
-
+   
 
     // at this point, we have the most updated values to start with
     // if terms_to_solve is empty, then we got the whole formula from the cache and we're done
@@ -558,7 +558,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
 //                    symbol_table_->GetCharacterMapping());
     while (not terms_to_solve.empty()) {
 
-
+ 
       // get the term to solve
       auto term = terms_to_solve.top();
       and_term->term_list->push_back(term);
@@ -597,7 +597,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
           DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *term << "@" << term;
         }
 
-      }
+      } 
       // solve non-relational terms
       is_satisfiable = check_and_visit(term) and is_satisfiable;
       if (not is_satisfiable) {
@@ -632,7 +632,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         std::vector<Theory::BinaryIntAutomaton_ptr>* bin_stuff_to_store = new std::vector<Theory::BinaryIntAutomaton_ptr>();
         std::vector<Theory::StringAutomaton_ptr>* str_stuff_to_store = new std::vector<Theory::StringAutomaton_ptr>();
 
-
+        
 
         // first serialize
         int num_string_to_write = 0;
@@ -721,7 +721,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
         //delete revk;
         //delete tk;
       }));
-
+      
       if(not is_satisfiable) {
         while(symbol_table_->values_lock_) std::this_thread::yield;
       }
@@ -746,27 +746,13 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
     bool is_satisfiable = true;
     bool is_component = constraint_information_->is_component(and_term);
 
-
-    while(not and_term->term_list->empty()) {
-      terms_to_solve.push(and_term->term_list->back());
-      and_term->term_list->pop_back();
-    }
-
-    arithmetic_constraint_solver_.collect_arithmetic_constraint_info(and_term);
-    string_constraint_solver_.collect_string_constraint_info(and_term);
-
-    while(not terms_to_solve.empty()) {
-
-      auto term = terms_to_solve.top();
-      and_term->term_list->push_back(term);
-      terms_to_solve.pop();
-
-
+     
+    for(auto& term : *(and_term->term_list)) {
       if(dynamic_cast<Or_ptr>(term) == nullptr) {
-
+        
         arithmetic_constraint_solver_.collect_arithmetic_constraint_info(term);
         string_constraint_solver_.collect_string_constraint_info(term);
-
+        
         if (is_component) {
           if (constraint_information_->has_arithmetic_constraint(term)) {
             arithmetic_constraint_solver_.start(term);
@@ -836,17 +822,17 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
   bool is_component = constraint_information_->is_component(or_term);
 
 
+  //if(Option::Solver::SUB_FORMULA_CACHING) {
   if(true) {
-
-
+    
     for (auto& term : *(or_term->term_list)) {
 
       string_constraint_solver_.push_generator(term);
       arithmetic_constraint_solver_.push_generator(term);
-
-//      if(dynamic_cast<And_ptr>(term) == nullptr) {
-//        LOG(FATAL) << "Should have an and term here!";
-//      }
+      
+      if(dynamic_cast<And_ptr>(term) != nullptr) {
+        LOG(FATAL) << "Should have an and term here!";
+      }
 
       symbol_table_->push_scope(term);
       bool is_scope_satisfiable = check_and_visit(term);
@@ -866,16 +852,20 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
 
     string_constraint_solver_.pop_generators(or_term->term_list->size(),or_term);
     arithmetic_constraint_solver_.pop_generators(or_term->term_list->size(),or_term);
+    /*
+    if (is_component and is_satisfiable) {
+      if (constraint_information_->has_arithmetic_constraint(or_term)) {
+        arithmetic_constraint_solver_.postVisitOr(or_term);
+        is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+      }
 
-    if (constraint_information_->has_arithmetic_constraint(or_term)) {
-      is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
-      DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *or_term << "@" << or_term;
+      if (is_satisfiable and constraint_information_->has_string_constraint(or_term)) {
+        string_constraint_solver_.postVisitOr(or_term);
+        is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
+      }
     }
-    if ((is_satisfiable or !constraint_information_->has_arithmetic_constraint(or_term))
-        and constraint_information_->has_string_constraint(or_term)) {
-      is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
-      DVLOG(VLOG_LEVEL) << "String formulae solved: " << *or_term << "@" << or_term;
-    }
+*/
+
 
     Value_ptr result = new Value(is_satisfiable);
     setTermValue(or_term, result);
@@ -1283,12 +1273,12 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
   // if we're only concerned with counting the query variable, then
   // we don't need to update "macro" variables (spurious variables taht are defined once through
   // equality and substituted elsewhere)
-  if(concat_term->term_list->size() <= 10) {
+  //if(concat_term->term_list->size() <= 10) {
     path_trace_.push_back(concat_term);
-  } else if(symbol_table_->has_count_variable()) {
-    many_vars = true;
-  }
-
+  //} else if(symbol_table_->has_count_variable()) {
+  //  many_vars = true;
+  //}
+/*
   if(concat_term->term_list->at(0)->type() != Term::Type::TERMCONSTANT and concat_term->term_list->size() <= 10) {
       many_vars = true;
       for(auto iter = concat_term->term_list->rbegin(); iter != concat_term->term_list->rend(); iter++) {
@@ -1303,6 +1293,7 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
         }
       }
     } else {
+*/      
       for (auto& term_ptr : *(concat_term->term_list)) {
         visit(term_ptr);
         param = getTermValue(term_ptr);
@@ -1315,11 +1306,11 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
         }
 
       }
-    }
-  if(concat_term->term_list->size() <= 10) {
+//    }
+//  if(concat_term->term_list->size() <= 10) {
     path_trace_.pop_back();
-  }
-  many_vars = false;
+//  }
+//  many_vars = false;
   setTermValue(concat_term, result);
 }
 

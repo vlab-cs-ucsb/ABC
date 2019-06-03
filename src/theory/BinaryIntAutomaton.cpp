@@ -379,7 +379,7 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr othe
     intersect_formula = this->formula_->Intersect(other_auto->formula_);
   }
 
-
+/*
   std::string id1, id2;
 
   std::stringstream os1;
@@ -438,9 +438,9 @@ BinaryIntAutomaton_ptr BinaryIntAutomaton::Intersect(BinaryIntAutomaton_ptr othe
     rdx_->command<std::string>({"SET", stupid_key1, os.str()});
     num_misses++;
   }
+*/
 
-
-//  auto intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
+  auto intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
 
 
   intersect_formula->ResetCoefficients();

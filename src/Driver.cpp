@@ -477,18 +477,18 @@ Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsig
 
   Theory::BigInteger projected_count, tuple_count, result_count;
   projected_count = GetModelCounterForVariable(normalized_var_name,true).Count(bound, bound);
-  tuple_count = GetModelCounterForVariable(normalized_var_name,false).Count(bound, bound);
+//  tuple_count = GetModelCounterForVariable(normalized_var_name,false).Count(bound, bound);
 
 
-  if(tuple_count == 0) {
-    result_count = projected_count;
-  } else if(projected_count == 0) {
-    result_count = tuple_count;
-  } else {
-    result_count = (projected_count < tuple_count) ? projected_count : tuple_count;
-  }
+//  if(tuple_count == 0) {
+//    result_count = projected_count;
+//  } else if(projected_count == 0) {
+//    result_count = tuple_count;
+//  } else {
+//    result_count = (projected_count < tuple_count) ? projected_count : tuple_count;
+//  }
 
-	return result_count;
+	return projected_count;
 }
 
 Theory::BigInteger Driver::CountInts(const unsigned long bound) {

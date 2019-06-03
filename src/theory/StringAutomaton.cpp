@@ -887,23 +887,23 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
     }
 
 		formula->SetConstant("");
-//		if(num_tracks == 1) {
-//			equality_auto = new StringAutomaton(dfaCopy(string_auto->getDFA()),num_tracks,DEFAULT_NUM_OF_VARIABLES);
-//		} else {
-//			equality_auto = new StringAutomaton(string_auto->getDFA(),left_track,num_tracks,DEFAULT_NUM_OF_VARIABLES);
-//		}
-//		equality_auto->SetFormula(formula);
-//		delete string_auto;
-//		return equality_auto;
-    formula->SetConstant("");
-		StringFormula_ptr temp_formula = new StringFormula();
-		temp_formula->SetType(StringFormula::Type::EQ);
-    temp_formula->AddVariable(formula->GetVariableAtIndex(left_track),1);
-    string_auto->SetFormula(temp_formula);
-
-    equality_auto = string_auto->ChangeIndicesMap(formula);
+		if(num_tracks == 1) {
+			equality_auto = new StringAutomaton(dfaCopy(string_auto->getDFA()),num_tracks,DEFAULT_NUM_OF_VARIABLES);
+		} else {
+			equality_auto = new StringAutomaton(string_auto->getDFA(),left_track,num_tracks,DEFAULT_NUM_OF_VARIABLES);
+		}
+		equality_auto->SetFormula(formula);
 		delete string_auto;
 		return equality_auto;
+//    formula->SetConstant("");
+//		StringFormula_ptr temp_formula = new StringFormula();
+//		temp_formula->SetType(StringFormula::Type::EQ);
+//    temp_formula->AddVariable(formula->GetVariableAtIndex(left_track),1);
+//    string_auto->SetFormula(temp_formula);
+//
+//    equality_auto = string_auto->ChangeIndicesMap(formula);
+//		delete string_auto;
+//		return equality_auto;
 	}
 
 	int num_tracks = formula->GetNumberOfVariables();
@@ -928,10 +928,10 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
 //    equality_auto = new StringAutomaton(equality_dfa,formula,num_tracks*VAR_PER_TRACK);
 	} else if(formula->GetConstant() != "") {
 		// if string is not empty, eq is of form X = Y.c
-    int nnum = num_tracks;
-    num_tracks = 2;
-    left_track = 0;
-    right_track = 1;
+//    int nnum = num_tracks;
+//    num_tracks = 2;
+//    left_track = 0;
+//    right_track = 1;
     int temp_left = num_tracks;
     int temp_right = right_track;
     int temp_num_tracks = num_tracks+1;
@@ -946,15 +946,15 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
     equality_auto = temp_auto->ProjectKTrack(num_tracks);
     delete temp_auto;
 
-    equality_auto->SetFormula(temp_formula);
-    temp_auto = equality_auto->ChangeIndicesMap(formula);
-    delete equality_auto;
-    equality_auto = temp_auto;
+    equality_auto->SetFormula(formula);
+//    temp_auto = equality_auto->ChangeIndicesMap(formula);
+//    delete equality_auto;
+//    equality_auto = temp_auto;
   } else {
-    auto equality_dfa = MakeBinaryRelationDfa(StringFormula::Type::EQ, VAR_PER_TRACK, 2, 0, 1);
-    auto temp_auto = new StringAutomaton(equality_dfa,temp_formula,2*VAR_PER_TRACK);
-    equality_auto = temp_auto->ChangeIndicesMap(formula);
-    delete temp_auto;
+    auto equality_dfa = MakeBinaryRelationDfa(StringFormula::Type::EQ, VAR_PER_TRACK, num_tracks, left_track, right_track);
+    equality_auto = new StringAutomaton(equality_dfa,formula,num_tracks*VAR_PER_TRACK);
+//    equality_auto = temp_auto->ChangeIndicesMap(formula);
+//    delete temp_auto;
   }
 
 	DVLOG(VLOG_LEVEL) << equality_auto->id_ << " = MakeEquality(" << formula->str() << ")";
@@ -998,15 +998,23 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
 
 
 		formula->SetConstant("");
-		StringFormula_ptr temp_formula = new StringFormula();
-		temp_formula->SetType(StringFormula::Type::NOTEQ);
-    temp_formula->AddVariable(formula->GetVariableAtIndex(left_track),1);
-    complement_auto->SetFormula(temp_formula);
-
-    not_equality_auto = complement_auto->ChangeIndicesMap(formula);
+		if(num_tracks == 1) {
+			not_equality_auto = new StringAutomaton(dfaCopy(complement_auto->getDFA()),num_tracks,DEFAULT_NUM_OF_VARIABLES);
+		} else {
+			not_equality_auto = new StringAutomaton(complement_auto->getDFA(),left_track,num_tracks,DEFAULT_NUM_OF_VARIABLES);
+		}
+		not_equality_auto->SetFormula(formula);
 		delete complement_auto;
-
 		return not_equality_auto;
+//		StringFormula_ptr temp_formula = new StringFormula();
+//		temp_formula->SetType(StringFormula::Type::NOTEQ);
+//    temp_formula->AddVariable(formula->GetVariableAtIndex(left_track),1);
+//    complement_auto->SetFormula(temp_formula);
+//
+//    not_equality_auto = complement_auto->ChangeIndicesMap(formula);
+//		delete complement_auto;
+//
+//		return not_equality_auto;
 
 
 	}
@@ -1035,10 +1043,10 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
     delete temp_auto;
 	} else if(formula->GetConstant() != "") {
 		// if string is not empty, eq is of form X = Y.c
-    int nnum = num_tracks;
-    num_tracks = 2;
-    left_track = 0;
-    right_track = 1;
+//    int nnum = num_tracks;
+//    num_tracks = 2;
+//    left_track = 0;
+//    right_track = 1;
 
     int temp_left = num_tracks;
     int temp_right = right_track;
@@ -1054,18 +1062,18 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
 
     not_equality_auto = temp_auto->ProjectKTrack(num_tracks);
     delete temp_auto;
-    not_equality_auto->SetFormula(temp_formula);
-
-    temp_auto = not_equality_auto->ChangeIndicesMap(formula);
-    delete not_equality_auto;
-    not_equality_auto = temp_auto;
+    not_equality_auto->SetFormula(formula);
+//
+//    temp_auto = not_equality_auto->ChangeIndicesMap(formula);
+//    delete not_equality_auto;
+//    not_equality_auto = temp_auto;
   } else {
     //auto not_equality_dfa = MakeBinaryRelationDfa(StringFormula::Type::NOTEQ, VAR_PER_TRACK, num_tracks, left_track, right_track);
 
-    auto not_equality_dfa = MakeBinaryRelationDfa(StringFormula::Type::NOTEQ, VAR_PER_TRACK, 2, 0, 1);
-    auto temp_auto = new StringAutomaton(not_equality_dfa,temp_formula,2*VAR_PER_TRACK);
-    not_equality_auto = temp_auto->ChangeIndicesMap(formula);
-    delete temp_auto;
+    auto not_equality_dfa = MakeBinaryRelationDfa(StringFormula::Type::NOTEQ, VAR_PER_TRACK, num_tracks, left_track, right_track);
+    auto not_equality_auto = new StringAutomaton(not_equality_dfa,formula,num_tracks*VAR_PER_TRACK);
+//    not_equality_auto = temp_auto->ChangeIndicesMap(formula);
+//    delete temp_auto;
   }
 
   DVLOG(VLOG_LEVEL) << not_equality_auto->id_ << " = MakeNotEquality(" << formula->str() << ")";

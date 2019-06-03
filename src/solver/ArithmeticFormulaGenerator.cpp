@@ -919,7 +919,7 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
       // if group variable in variable_values, then a previous value was computed;
       if(variable_values.find(group_variable) != variable_values.end()) {
         previous_group_variables.insert(group_variable);
-        if(Option::Solver::SUB_FORMULA_CACHING) {
+        if(true) {
           group_iter.second->MergeVariables(variable_values[group_variable]->getBinaryIntAutomaton()->GetFormula());
           for(auto vv : variable_values[group_variable]->getBinaryIntAutomaton()->GetFormula()->GetVariableCoefficientMap()) {
             symbol_table_->set_variable_group_mapping(vv.first,group_iter.first);

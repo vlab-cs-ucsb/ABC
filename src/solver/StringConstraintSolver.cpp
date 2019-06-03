@@ -137,7 +137,7 @@ void StringConstraintSolver::setCallbacks() {
 //          diff += end - start;
 
           auto result = new Value(relational_str_auto);
-          if(Option::Solver::SUB_FORMULA_CACHING) {
+          if(true) {
             auto term_group_name = string_formula_generator_->get_term_group_name(term);
             if(term_group_name.empty()) {
               LOG(FATAL) << "Term has no group!";
@@ -608,8 +608,12 @@ void StringConstraintSolver::pop_generators(int num_to_merge, Term_ptr t) {
   	//auto satisfiable_value = new Value(is_satisfiable);
 		//symbol_table_->IntersectValue(group_name,satisfiable_value);
 		//delete satisfiable_value;
+		set_term_value(t,new Value(is_satisfiable));
+    if(!is_satisfiable) LOG(FATAL) << "BAD";
   }
-  if(!is_satisfiable) LOG(FATAL) << "BAD";
+
+
+
 
   
 }
