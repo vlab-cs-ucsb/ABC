@@ -27,9 +27,11 @@ public class DriverProxy {
 		LIMIT_LEN_IMPLICATIONS(10),
 		ENABLE_SORTING_HEURISTICS(11), 		// default option
 		DISABLE_SORTING_HEURISTICS(12), 
-		REGEX_FLAG(13),
-		OUTPUT_PATH(14), 					// not actively used through Java
-		SCRIPT_PATH(15);					// not actively used
+			FORCE_DNF_FORMULA(13),			
+			COUNT_BOUND_EXACT(14),
+		REGEX_FLAG(15),						
+		OUTPUT_PATH(16), 					// not actively used through Java
+		SCRIPT_PATH(17);					// not actively used
 
 		private final int value;
 
