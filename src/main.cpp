@@ -319,22 +319,34 @@ int main(const int argc, const char **argv) {
         
       }
     } else {
-      for (auto b : int_bounds) {
+      if(int_bounds.size() == 1 and str_bounds.size() == 1 and int_bounds[0] == str_bounds[0]) {
+        auto b = int_bounds[0];
         start = std::chrono::steady_clock::now();
-        auto count = driver.CountInts(b);
+        auto count = driver.Count(b,b);
         end = std::chrono::steady_clock::now();
         auto count_time = end - start;
         LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
                   << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+      } else {
+        for (auto b : int_bounds) {
+          start = std::chrono::steady_clock::now();
+          auto count = driver.CountInts(b);
+          end = std::chrono::steady_clock::now();
+          auto count_time = end - start;
+          LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
+                    << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+        }
+        for (auto b : str_bounds) {
+          start = std::chrono::steady_clock::now();
+          auto count = driver.CountStrs(b);
+          end = std::chrono::steady_clock::now();
+          auto count_time = end - start;
+          LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
+                    << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+        }
       }
-      for (auto b : str_bounds) {
-        start = std::chrono::steady_clock::now();
-        auto count = driver.CountStrs(b);
-        end = std::chrono::steady_clock::now();
-        auto count_time = end - start;
-        LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
-                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
-      }
+
+      
     }
   } else {
     LOG(INFO) << "report is_sat: UNSAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
