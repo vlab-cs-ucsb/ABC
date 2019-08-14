@@ -783,6 +783,18 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
         delete not_eq_term;
       };
     }
+  } else if(constant_term_checker_left.is_constant() and constant_term_checker_left.get_constant_as_string() == "true") {
+    callback_ = [not_eq_term] (Term_ptr & term) mutable {
+      term = new Not(not_eq_term->right_term);
+      not_eq_term->right_term = nullptr;
+      delete not_eq_term;
+    };
+  } else if(constant_term_checker_left.is_constant() and constant_term_checker_left.get_constant_as_string() == "false") {
+    callback_ = [not_eq_term] (Term_ptr & term) mutable {
+      term = not_eq_term->right_term;
+      not_eq_term->right_term = nullptr;
+      delete not_eq_term;
+    };
   } else if(constant_term_checker_right.is_constant() and (Term::Type::QUALIDENTIFIER == not_eq_term->left_term->type())) {
     auto var = symbol_table_->get_variable(not_eq_term->left_term);
     std::string constant = constant_term_checker_right.get_constant_as_string();
@@ -803,6 +815,18 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
         delete not_eq_term;
       };
     }
+  } else if(constant_term_checker_right.is_constant() and constant_term_checker_right.get_constant_as_string() == "true") {
+    callback_ = [not_eq_term] (Term_ptr & term) mutable {
+      term = new Not(not_eq_term->left_term);
+      not_eq_term->left_term = nullptr;
+      delete not_eq_term;
+    };
+  } else if(constant_term_checker_right.is_constant() and constant_term_checker_right.get_constant_as_string() == "false") {
+    callback_ = [not_eq_term] (Term_ptr & term) mutable {
+      term = not_eq_term->left_term;
+      not_eq_term->left_term = nullptr;
+      delete not_eq_term;
+    };
   }
 
   // check for equality with concat where prefix var is same on both sides
