@@ -1176,6 +1176,8 @@ void StringFormulaGenerator::visitTermConstant(TermConstant_ptr term_constant) {
       auto formula = new StringFormula();
 			formula->SetType(StringFormula::Type::INTEGER_CONSTANT);
 			formula->SetConstant(term_constant->getValue());
+      LOG(INFO) << "Constant = " << formula->GetConstant();
+      LOG(INFO) << "Constant = " << term_constant->getValue();
 			set_term_formula(term_constant, formula);
       break;
     }

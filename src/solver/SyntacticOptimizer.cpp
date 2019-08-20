@@ -1112,6 +1112,7 @@ void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {
     } else if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter)) {
       if (term_constant->getValue() == "") {
         delete term_constant;  // deallocate
+        // *iter = nullptr;
         concat_term->term_list->erase(iter);
         continue;  // iterator updated by erase
       } else {
@@ -1141,6 +1142,12 @@ void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {
   if (concat_term->term_list->size() == 1) {
     callback_ = [concat_term] (Term_ptr & term) mutable {
       term = concat_term->term_list->front();
+      concat_term->term_list->clear();
+      delete concat_term;
+    };
+  } else if(concat_term->term_list->size() == 0) {
+    callback_ = [this,concat_term] (Term_ptr & term) mutable {
+      term = generate_term_constant("",Primitive::Type::STRING);
       concat_term->term_list->clear();
       delete concat_term;
     };
@@ -1496,23 +1503,23 @@ void SyntacticOptimizer::visitCharAt(CharAt_ptr char_at_term) {
   visit_and_callback(char_at_term->subject_term);
   visit_and_callback(char_at_term->index_term);
 
-  DVLOG(VLOG_LEVEL) << "post visit start: " << *char_at_term << "@" << char_at_term;
-  Optimization::CharAtOptimization char_at_optimizer(char_at_term);
-  char_at_optimizer.start();
-  if (char_at_optimizer.is_optimizable()) {
-    std::string str_value = char_at_optimizer.get_char_at_result_as_string();
-    DVLOG(VLOG_LEVEL) << "Applying charAt transformation: '" << str_value << "'";
-    callback_ = [this, char_at_term, str_value](Term_ptr & term) mutable {
-      term = generate_term_constant(str_value, Primitive::Type::STRING);
-      delete char_at_term;
-    };
-  } else if (char_at_optimizer.is_index_updated()) {
-    // there is a possible change in concat term, re-process subtree
-    DVLOG(VLOG_LEVEL) << "char at optimization -> re visit term start" << *(char_at_term->subject_term);
-    visit_and_callback(char_at_term->subject_term);
-    DVLOG(VLOG_LEVEL) << "char at optimization -> re visit term end" << *(char_at_term->subject_term);
-  }
-  DVLOG(VLOG_LEVEL) << "post visit end: " << *char_at_term << "@" << char_at_term;
+  // DVLOG(VLOG_LEVEL) << "post visit start: " << *char_at_term << "@" << char_at_term;
+  // Optimization::CharAtOptimization char_at_optimizer(char_at_term);
+  // char_at_optimizer.start();
+  // if (char_at_optimizer.is_optimizable()) {
+  //   std::string str_value = char_at_optimizer.get_char_at_result_as_string();
+  //   DVLOG(VLOG_LEVEL) << "Applying charAt transformation: '" << str_value << "'";
+  //   callback_ = [this, char_at_term, str_value](Term_ptr & term) mutable {
+  //     term = generate_term_constant(str_value, Primitive::Type::STRING);
+  //     delete char_at_term;
+  //   };
+  // } else if (char_at_optimizer.is_index_updated()) {
+  //   // there is a possible change in concat term, re-process subtree
+  //   DVLOG(VLOG_LEVEL) << "char at optimization -> re visit term start" << *(char_at_term->subject_term);
+  //   visit_and_callback(char_at_term->subject_term);
+  //   DVLOG(VLOG_LEVEL) << "char at optimization -> re visit term end" << *(char_at_term->subject_term);
+  // }
+  // DVLOG(VLOG_LEVEL) << "post visit end: " << *char_at_term << "@" << char_at_term;
 }
 
 void SyntacticOptimizer::visitSubString(SubString_ptr sub_string_term) {

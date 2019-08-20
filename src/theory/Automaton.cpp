@@ -4953,6 +4953,7 @@ DFA_ptr Automaton::dfa_pre_replace_str(DFA* M1, DFA* M2, char *str, int var, int
   DFA *result=NULL;
   DFA *M3 = dfa_construct_string(str, var, indices);
   if((str ==NULL)||strlen(str)==0){
+  	LOG(INFO) << "HERE!";
     //printf("Replacement [%s]!\n", str);
     result = dfa_insert_everywhere(M1, M2, var, indices);
   }else {

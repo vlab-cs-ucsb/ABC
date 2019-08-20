@@ -835,7 +835,6 @@ void ConstraintSolver::visitIndexOf(IndexOf_ptr index_of_term) {
   } else {
     result = new Value(index_of_auto);
   }
-
   setTermValue(index_of_term, result);
 }
 

@@ -1868,13 +1868,17 @@ StringAutomaton_ptr StringAutomaton::CharAt(const int index) {
     auto charat_auto = StringAutomaton::MakePhi();
     DVLOG(VLOG_LEVEL) << charat_auto->id_ << " = [" << this->id_ << "]->charAt(" << index << ")";
     return charat_auto;
+  } else if(index == -1) {
+    auto charat_auto = StringAutomaton::MakeEmptyString();
+    DVLOG(VLOG_LEVEL) << charat_auto->id_ << " = [" << this->id_ << "]->charAt(" << index << ")";
+    return charat_auto;
   }
 
 
   std::set<int> states_at_index = getStatesReachableBy(index);
   unsigned max = states_at_index.size();
   if (max == 0) {
-    auto charat_auto = StringAutomaton::MakePhi();
+    auto charat_auto = StringAutomaton::MakeEmptyString();
     DVLOG(VLOG_LEVEL) << charat_auto->id_ << " = [" << this->id_ << "]->charAt(" << index << ")";
     return charat_auto;
   }
@@ -2329,14 +2333,12 @@ IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto, IntAu
   delete valid_lengths_auto;
   delete prefixes_auto;
 	delete length_auto;
-
   // if no valid lengths, then regardless of search_auto, automatically return -1
 	if(string_length_auto->IsEmptyLanguage() or from_index_auto->IsEmptyLanguage()) {
 	  delete string_length_auto;
 	  indexof_auto = IntAutomaton::makeInt(-1);
 	  return indexof_auto;
 	}
-
 	// if search auto has empty string, then remove it but remember to include the currently valid lengths as valid indices
 	if (search_param_auto->HasEmptyString()) {
     StringAutomaton_ptr non_empty_string = MakeAnyStringLengthGreaterThan(0);
@@ -2346,11 +2348,11 @@ IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto, IntAu
   }
 
 	StringAutomaton_ptr any_string_auto = StringAutomaton::MakeAnyString();
-	StringAutomaton_ptr contains_auto = any_string_auto->Contains(search_auto);
+	StringAutomaton_ptr contains_auto = any_string_auto->Contains(search_param_auto);
 	StringAutomaton_ptr difference_auto = any_string_auto->Difference(contains_auto);
 
 	StringAutomaton_ptr concat1_auto = string_length_auto->Concat(difference_auto);
-	StringAutomaton_ptr concat2_auto = search_auto->Concat(any_string_auto);
+	StringAutomaton_ptr concat2_auto = search_param_auto->Concat(any_string_auto);
 
 	auto prefix_suffix_auto = MakePrefixSuffix(0,1,2,3);
 	auto original_string_auto = new StringAutomaton(this->getDFA(),0,3,DEFAULT_NUM_OF_VARIABLES);
@@ -2369,14 +2371,12 @@ IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto, IntAu
 	delete temp_auto;
 
 	temp_auto = intersect_auto->GetKTrack(1);
-
 	// if no match is found, return -1 as the result
 	if(temp_auto->IsEmptyLanguage()) {
 	  indexof_auto = IntAutomaton::makeInt(-1);
 	} else {
     indexof_auto = temp_auto->Length();
   }
-
   // if search has empty string indexOf also returns the valid lengths from above
   if (search_has_empty_string) {
     IntAutomaton_ptr temp_int_auto = static_cast<IntAutomaton_ptr>(indexof_auto->Union(string_length_auto));
@@ -2384,7 +2384,6 @@ IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto, IntAu
     indexof_auto = temp_int_auto;
     delete search_param_auto; search_param_auto = nullptr; // search_param_auto auto is not the parameter search auto, it is updated, delete it
   }
-
 	delete temp_auto;
 	delete prefix_suffix_auto;
 	delete prefix_auto;
@@ -2392,19 +2391,18 @@ IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto, IntAu
 	delete contains_auto;
 	delete string_length_auto;
 	dfaFree(suffix_dfa);
-
   // additionally, if from_index_auto has -1, then result can have -1 as well
   if(from_index_auto->hasNegative1()) {
     indexof_auto->setMinus1(true);
   }
-
 //	this->inspectAuto(false,false);
 //  LOG(INFO) << "INDEXOF";
 //	indexof_auto->inspectAuto(false,false);
 //	std::cin.get();
 
   DVLOG(VLOG_LEVEL) << indexof_auto->getId() << " = [" << this->id_ << "]->indexOf(" << search_auto->id_ << "," << from_index_auto->getId() << ")";
-	return indexof_auto;
+	
+  return indexof_auto;
 
 }
 
@@ -3376,6 +3374,7 @@ StringAutomaton_ptr StringAutomaton::PreReplace(StringAutomaton_ptr searchAuto,
   dfaFree(dfa1);
   dfaFree(dfa2);
   // project away the extra bit
+
   result_dfa = DFAProjectAway(temp_dfa,var);
   dfaFree(temp_dfa);
   result_auto = new StringAutomaton(result_dfa,1,var);

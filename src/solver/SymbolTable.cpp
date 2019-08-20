@@ -300,9 +300,9 @@ Value_ptr SymbolTable::get_value(Variable_ptr variable) {
   	int_formula->AddVariable(variable->getName(),1);
   	result = new Value(int_auto);
 
-  	for (auto iter : result->getIntAutomaton()->GetFormula()->GetVariableCoefficientMap()) {
-			LOG(INFO) << iter.first << "," << iter.second;
-		}
+  // 	for (auto iter : result->getIntAutomaton()->GetFormula()->GetVariableCoefficientMap()) {
+		// 	LOG(INFO) << iter.first << "," << iter.second;
+		// }
 
     DVLOG(VLOG_LEVEL) << "initialized variable as any integer: " << *variable;
   }

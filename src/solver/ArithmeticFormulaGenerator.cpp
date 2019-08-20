@@ -612,6 +612,7 @@ void ArithmeticFormulaGenerator::visitTermConstant(TermConstant_ptr term_constan
   switch (term_constant->getValueType()) {
     case Primitive::Type::NUMERAL: {
       int constant = std::stoi(term_constant->getValue());
+      LOG(INFO) << "Constant = " << constant;
       //if(constant <= 300) {
         auto formula = new ArithmeticFormula();
         formula->SetConstant(constant);
