@@ -104,7 +104,6 @@ _project_dep = (
      'name'     : 'glog',
      'url'      : 'https://github.com/google/glog.git',
      'checkout' : False,     
-     'patch'    : os.path.abspath(os.path.join(ABC_PATH, 'external', 'glog', 'glog_abc_autotools.patch')),
      'path'     : os.path.abspath(os.path.join(TMP_PATH, 'glog')),
      'autogen'  : True,
      'autotools': True,
