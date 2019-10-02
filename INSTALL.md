@@ -3,7 +3,7 @@ Setup
 ABC is a C++ executable and a C++ shared library with JNI interfaces. You can 
 use it as a static or dynamic lib or you can run it from command line.
 
-###Download
+### Download
   
 ```
 $ cd <your home directory or a preferred directory>
@@ -11,7 +11,7 @@ $ git clone --recursive git@github.com:vlab-cs-ucsb/ABC.git ABC # or use https:/
 ```
 ABC testing depends on [googletest and googlemock](https://github.com/google/googletest) as subprojects. It is important to clone with ``--recursive`` option.
 
-###Easy(Automated) Setup
+### Easy(Automated) Setup
   - [ABC](https://vlab.cs.ucsb.edu/ABC/). Clone ABC source and run build script. It automatically tries to install required system packages and dependent projects; [Glog](https://github.com/google/glog) and [Mona](http://www.brics.dk/mona/). After installing dependencies, it installs ABC. If script does not work please try step-by-step guide or contact us. (That script is tested with Linux machines. You can still use build script in other posix systems if you resolve system dependencies manually.)
   
   ```
@@ -19,8 +19,8 @@ ABC testing depends on [googletest and googlemock](https://github.com/google/goo
   $ ./install-build-deps.py
   ```
 
-###Step-by-Step(Semi-automated) Setup
-####System Dependencies
+### Step-by-Step(Semi-automated) Setup
+#### System Dependencies
   - C++ compiler with C++14 support. Latest ABC compilation is tested with g++ 5.4.0 on Ubuntu 16.04.
   - [Git](https://git-scm.com/)
 
@@ -44,16 +44,14 @@ ABC testing depends on [googletest and googlemock](https://github.com/google/goo
     $ sudo apt install python
   ```
 
-####Project Dependencies
+#### Project Dependencies
   - [Glog](https://github.com/google/glog) logging library for C++. It is an autotools project. 
-  Please follow the instructions in their website if the below shortcut doesn't work for you. Don't forget to apply patch 
-  as below:
+  Please follow the instructions in their website if the below shortcut doesn't work for you.
 
   ```
   $ cd <your home directory or a preferred directory>
   $ git clone https://github.com/google/glog.git
   $ cd glog
-  $ git apply <ABC_ROOT_DIR>/external/glog/glog_abc_autotools.patch
   $ libtoolize && aclocal && automake --gnu --add-missing && autoreconf -ivf
   $ ./configure
   $ make all
@@ -80,7 +78,7 @@ ABC testing depends on [googletest and googlemock](https://github.com/google/goo
   You should have mona libraries installed at */usr/local/lib* and headers installed at */usr/local/include/mona/* after running above commands. 
 
 
-####ABC Installation
+#### ABC Installation
 
   - [ABC](https://vlab.cs.ucsb.edu/ABC/).
 

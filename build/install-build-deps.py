@@ -24,9 +24,9 @@ def platform_system():
     return platform.system()
     
 def get_current_os():
-    if re.match(r".*linux.*", platform_system(), re.IGNORECASE):
+    if re.match(r".*linux.*", platform_system(), re.IGNORECASE | re.DOTALL):
         return OSystem.linux
-    elif re.match(r".*darwin.*", platform_system(), re.IGNORECASE):
+    elif re.match(r".*darwin.*", platform_system(), re.IGNORECASE | re.DOTALL):
         return OSystem.osx
     else:
         print("'{}' is not supported to install package dependencies.".format(platform_system()))
@@ -48,7 +48,6 @@ if (CURRENT_OS == OSystem.linux):
       'build-essential',
       'autoconf',
       'automake',
-      'autoheader'
       'libtool',
       'intltool',
       'flex',
@@ -134,7 +133,7 @@ def package_installed(pkg):
         return False
 
     outString = out.decode(sys.getdefaultencoding()).strip()
-    return not re.match(r".*Installed: \(none\).*", outString, re.IGNORECASE)
+    return not re.match(r".*Installed: \(none\).*", outString, re.IGNORECASE | re.DOTALL)
     
 def is_xcode_installed():
     try:
@@ -143,7 +142,7 @@ def is_xcode_installed():
         return False
 
     outString = out.decode(sys.getdefaultencoding()).strip()
-    return re.match(r".+", outString, re.IGNORECASE)
+    return re.match(r".+", outString, re.IGNORECASE  | re.DOTALL)
     
 def is_project_installed(pkg):
     try:
@@ -152,7 +151,7 @@ def is_project_installed(pkg):
         return False
 
     outString = out.decode(sys.getdefaultencoding()).strip()
-    return re.match(r".*/usr/local/.*", outString, re.IGNORECASE)
+    return re.match(r".*/usr/local/.*", outString, re.IGNORECASE  | re.DOTALL)
 
 def runcmd(cmd, cwd=None, shell=False):
     print("{}\n".format(cmd))
