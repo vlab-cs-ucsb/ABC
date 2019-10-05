@@ -28,8 +28,8 @@ Download
 Latest version of ABC is available on GitHub: 
 https://github.com/vlab-cs-ucsb/ABC
 
-A Docker image of ABC (pre-built and ready to go!) is also available through DockerHub:
-TBD
+A Docker image of ABC (pre-built and ready to go!) is also available through DockerHub: vlabucsb/abc:ubuntu
+(No java)
 
 Setup
 ============
