@@ -9,7 +9,7 @@
 #define SOLVER_SYMBOLTABLE_H_
 
 #include <algorithm>
-#include <bits/functional_hash.h>
+// #include <bits/functional_hash.h>
 #include <iterator>
 #include <map>
 #include <set>

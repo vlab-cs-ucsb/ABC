@@ -37,12 +37,15 @@ AM_INIT_AUTOMAKE([subdir-objects])
 case $host_os in
   darwin* )
         JAVA_HEADERS="-I/System/Library/Frameworks/JavaVM.framework/Headers"
+        OS="darwin"
         ;;
   linux*)
         JAVA_HEADERS=
+        OS="linux"
         ;;
    *BSD*)
         JAVA_HEADERS=
+        OS=""
         ;;
     *)
         #Default Case
@@ -51,7 +54,7 @@ case $host_os in
 esac
 
 AC_SUBST([JAVA_HEADERS])
-
+AC_SUBST([OS])
 
 
 # Check for programs
