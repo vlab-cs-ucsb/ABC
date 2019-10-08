@@ -41,16 +41,16 @@ Usage
 #### C++
 You can link to dynamic library generated in your program. An example executable for abc is generated for you and install in your system. You can run abc executable at your home directory as:
   
-    abc -i  <input_file_path>
-    abc --help #lists available command line options
+    $ abc -i  <input_file_path>
+    $ abc --help #lists available command line options
 
 E.g.,
 
-    abc -i <abc source folder>/test/fixtures/solver/ConstraintSolver/test_visitBegins_01.smt2
+    $ abc -i <abc source folder>/test/fixtures/solver/ConstraintSolver/test_visitBegins_01.smt2
 
 For an example of model counting a string with bound <= 5:
 
-    abc -i <abc source folder>/test/fixtures/solver/ConstraintSolver/test_visitBegins_01.smt2 -v 0 -bs 5
+    $ abc -i <abc source folder>/test/fixtures/solver/ConstraintSolver/test_visitBegins_01.smt2 -v 0 -bs 5
 
 where -v 0 disables debugging output, and -bs 5 means count solutions with bound <= 5
 
