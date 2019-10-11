@@ -22,7 +22,7 @@
 #include <mutex>
 
 #include <glog/logging.h>
-#include <redox.hpp>
+//#include <redox.hpp>
 
 #include "../smt/ast.h"
 #include "../smt/typedefs.h"
@@ -54,14 +54,14 @@ class ConstraintSolver: public SMT::Visitor {
   typedef std::vector<std::vector<SMT::Term_ptr>> VariablePathTable;
  public:
 
-  std::chrono::duration<double> diff;
-  std::chrono::duration<double> diff2;
+//  std::chrono::duration<double> diff;
+//  std::chrono::duration<double> diff2;
+//
+//  std::chrono::duration<double> get_diff3() { return this->arithmetic_constraint_solver_.diff;}
+//  std::chrono::duration<double> get_diff4() { return this->arithmetic_constraint_solver_.diff2;}
 
-  std::chrono::duration<double> get_diff3() { return this->arithmetic_constraint_solver_.diff;}
-  std::chrono::duration<double> get_diff4() { return this->arithmetic_constraint_solver_.diff2;}
-
-
-  ConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr, redox::Redox *);
+  ConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr);
+//  ConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr, redox::Redox *);
   virtual ~ConstraintSolver();
 
   void start() override;
@@ -135,9 +135,9 @@ class ConstraintSolver: public SMT::Visitor {
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
 
-  int num_hits() {return num_hits_;}
-  int num_misses() {return num_misses_;}
-  std::tuple<int,int> hit_statistic() {return hit_statistic_;};
+//  int num_hits() {return num_hits_;}
+//  int num_misses() {return num_misses_;}
+//  std::tuple<int,int> hit_statistic() {return hit_statistic_;};
 
 
  protected:
@@ -167,18 +167,18 @@ class ConstraintSolver: public SMT::Visitor {
   // for relational variables that need to be updated
   std::vector<SMT::Variable_ptr> tagged_variables;
 
-  // redox client for redis cache
-  redox::Redox *rdx_;
-  int num_hits_;
-  int num_misses_;
-  std::tuple<int,int> hit_statistic_;
-
-  std::vector<std::thread> serializers_;
-
+//  // redox client for redis cache
+//  redox::Redox *rdx_;
+//  int num_hits_;
+//  int num_misses_;
+//  std::tuple<int,int> hit_statistic_;
+//
+//  std::vector<std::thread> serializers_;
+//
   static bool many_vars;
-
-  std::string root_key_;
-  std::string last_serialized_data_;
+//
+//  std::string root_key_;
+//  std::string last_serialized_data_;
 
  private:
   static const int VLOG_LEVEL;

@@ -21,14 +21,18 @@ Driver::Driver()
   incremental_states_.clear();
   cached_values_.clear();
   cached_bounded_values_.clear();
-  
+
+#ifdef USE_CACHE
+  LOG(INFO) << "USING CACHE";
 //  if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING || Option::Solver::AUTOMATA_CACHING) {
     rdx_ = new redox::Redox(std::cout,redox::log::Level::Off);
     rdx_->noWait(true);
+    LOG(INFO) << "ATTEMPTING CONNECT";
 //    if(!rdx_->connectUnix()) {
     if(!rdx_->connect("localhost", 6379)) {
       LOG(FATAL) << "Could not connect to redis server";
     }
+    LOG(INFO) << "Connected!";
 //  }
   total_hits_ = 0;
   total_misses_ = 0;
@@ -36,7 +40,9 @@ Driver::Driver()
   auto start = std::chrono::steady_clock::now();
   auto end = std::chrono::steady_clock::now();
   diff = end-start;
-
+  LOG(INFO) << "DONE";
+#endif
+  LOG(INFO) << "End of driver";
 }
 
 Driver::~Driver() {
@@ -172,35 +178,41 @@ void Driver::InitializeSolver() {
     constraint_sorter.start();
   }
 
+#ifdef USE_CACHE
   if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
     Solver::Renamer renamer(script_, symbol_table_);
     renamer.start();
   }
+#endif
 }
 
 void Driver::Solve() {
-  Solver::ConstraintSolver* constraint_solver = new Solver::ConstraintSolver(script_, symbol_table_, constraint_information_, rdx_);
+
+
+  Solver::ConstraintSolver* constraint_solver = nullptr;
+//  Solver::ConstraintSolver* constraint_solver = new Solver::ConstraintSolver(script_, symbol_table_, constraint_information_, rdx_);
+//  constraint_solver->start();
+
+#ifdef USE_CACHE
+  if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING || Option::Solver::AUTOMATA_CACHING) {
+    constraint_solver = new Solver::CachingConstraintSolver(script_, symbol_table_, constraint_information_, rdx_);
+  } else {
+    constraint_solver = new Solver::ConstraintSolver(script_, symbol_table_, constraint_information_);
+  }
+//  diff += constraint_solver->diff;
+//  diff2 += constraint_solver->diff2;
+//  diff3 += constraint_solver->get_diff3();
+//  //diff4 += constraint_solver->get_diff4();
+//
+//  total_hits_ += constraint_solver->num_hits();
+//  total_misses_ += constraint_solver->num_misses();
+//
+//  if(constraint_solver->num_hits() > 0) hit_statistics_.push_back(constraint_solver->hit_statistic());
+#else
+  constraint_solver = new Solver::ConstraintSolver(script_, symbol_table_, constraint_information_);
+#endif
+
   constraint_solver->start();
-  diff += constraint_solver->diff;
-  diff2 += constraint_solver->diff2;
-  diff3 += constraint_solver->get_diff3();
-  //diff4 += constraint_solver->get_diff4();
-
-  total_hits_ += constraint_solver->num_hits();
-  total_misses_ += constraint_solver->num_misses();
-
-  if(constraint_solver->num_hits() > 0) hit_statistics_.push_back(constraint_solver->hit_statistic());
-//  LOG(INFO) << "almost...";
-//  if(symbol_table_->top_scope() != script_) {
-//    // LOG(INFO) << "UPDATING SCOPE VALUES";
-//    auto values = symbol_table_->get_values_at_scope(script_);
-//    for(auto &var_iter : values) {
-//      bool rez = symbol_table_->IntersectValue(var_iter.first,var_iter.second);
-//      symbol_table_->update_satisfiability_result(rez);
-//    }
-//  }
-
-
 
   for(auto &iter : cached_values_) {
 		delete iter.second;
@@ -379,7 +391,7 @@ void Driver::GetModels(const unsigned long bound,const unsigned long num_models)
 		symbol_table_->set_value(var.first,new Solver::Value(union_val));
 	}
 	symbol_table_->pop_scope();
-	Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_, rdx_);
+	Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
 	constraint_solver.start();
 	if(symbol_table_->isSatisfiable()) {
 		LOG(INFO) << "SAT!";
@@ -449,7 +461,7 @@ void Driver::GetModels(const unsigned long bound,const unsigned long num_models)
 			symbol_table_->set_value(var.first,new Solver::Value(str_auto));
 		}
 		symbol_table_->pop_scope();
-		Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_, rdx_);
+		Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
 		constraint_solver.start();
 		if(symbol_table_->isSatisfiable()) {
 			sat++;
@@ -673,6 +685,8 @@ std::map<std::string, std::string> Driver::getSatisfyingExamples() {
     	for(auto it : string_formula->GetVariableCoefficientMap()) {
     		auto single_string_auto = string_auto->GetAutomatonForVariable(it.first);
     		std::string accepted_string = single_string_auto->GetAnAcceptingString();
+
+#ifdef USE_CACHE
     		// if we normalized characters, map them back to original character
     		
         if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
@@ -687,6 +701,10 @@ std::map<std::string, std::string> Driver::getSatisfyingExamples() {
     		  results[it.first] = accepted_string;
     		  delete single_string_auto;
         }
+#else
+          results[it.first] = accepted_string;
+    		  delete single_string_auto;
+#endif
     	}
 
 
@@ -716,6 +734,8 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandom() {
 				for(auto it : string_formula->GetVariableCoefficientMap()) {
 					auto single_string_auto = string_auto->GetAutomatonForVariable(it.first);
 					std::string accepted_string = single_string_auto->GetAnAcceptingStringRandom();
+
+#ifdef USE_CACHE
           // if we normalized characters, map them back to original character
           if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
     		   auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
@@ -729,6 +749,10 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandom() {
     		    results[it.first] = accepted_string;
     		    delete single_string_auto;
           }
+#else
+            results[it.first] = accepted_string;
+    		    delete single_string_auto;
+#endif
 				}
 			}
 		}
@@ -765,6 +789,8 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandomBounded(co
             continue;
           }
 					std::string accepted_string = single_string_auto_bounded->GetAnAcceptingStringRandom();
+
+#ifdef USE_CACHE
           // if we normalized characters, map them back to original character
           if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
     		    auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
@@ -778,6 +804,10 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandomBounded(co
     		    results[it.first] = accepted_string;
     		    delete single_string_auto_bounded;
           }
+#else
+            results[it.first] = accepted_string;
+    		    delete single_string_auto_bounded;
+#endif
 				}
 			}
 		}
@@ -786,10 +816,13 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandomBounded(co
 }
 
 std::string Driver::getMutatedModel(std::string var_name, std::string model) {
+#ifdef USE_CACHE
   if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
     auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
     var_name = reverse_var_mapping[var_name];
   }
+#endif
+
   auto var_value = (cached_bounded_values_.find(var_name) != cached_bounded_values_.end()) ?
                             cached_bounded_values_[var_name] : symbol_table_->get_value(var_name);
 
@@ -798,6 +831,7 @@ std::string Driver::getMutatedModel(std::string var_name, std::string model) {
     return model;
   }
 
+#ifdef USE_CACHE
   // if we unnormalized the characters, remap them to their normalized form
   // if we normalized characters, map them back to original character
   if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
@@ -806,6 +840,7 @@ std::string Driver::getMutatedModel(std::string var_name, std::string model) {
       model[i] = char_mapping[model[i]];
     }
   }
+#endif
 
   if(var_value->getStringAutomaton()->GetNumTracks() > 1) {
     auto var_projected_auto = var_value->getStringAutomaton()->GetAutomatonForVariable(var_name);
@@ -1029,6 +1064,7 @@ void Driver::saveStateAndBranch() {
 
 void Driver::print_statistics() {
 
+#ifdef USE_CACHE
   int full_formula_hits = 0;
   int total_hit_size = 0;
   int total_full_formula_size = 0;
@@ -1059,7 +1095,7 @@ void Driver::print_statistics() {
   LOG(INFO) << "automata num_hits    = " << Solver::ArithmeticConstraintSolver::dfa_hits;
   LOG(INFO) << "automata num_misses  = " << Solver::ArithmeticConstraintSolver::dfa_misses;
   LOG(INFO) << "automata hit ratio   = " << (double)Solver::ArithmeticConstraintSolver::dfa_hits / (double)(Solver::ArithmeticConstraintSolver::dfa_misses+Solver::ArithmeticConstraintSolver::dfa_hits);
-
+#endif
 }
 
 void Driver::test() {

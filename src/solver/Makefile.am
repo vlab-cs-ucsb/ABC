@@ -69,6 +69,12 @@ libabcsolver_la_SOURCES = \
   Renamer.cpp \
   Renamer.h
 
+if HAVE_CACHE
+libabcsolver_la_SOURCES += \
+  CachingConstraintSolver.cpp \
+  CachingConstraintSolver.h
+endif
+
 libabcsolver_la_LIBADD = \
 	../parser/libabcparser.la \
 	../theory/libabcautomaton.la \

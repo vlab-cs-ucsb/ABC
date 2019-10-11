@@ -22,7 +22,10 @@
 
 #include <glog/logging.h>
 
+#ifdef USE_CACHE
 #include <redox.hpp>
+#endif
+
 #include "boost/multiprecision/cpp_int.hpp"
 #include "Eigen/SparseCore"
 #include "cereal/archives/binary.hpp"
@@ -34,6 +37,7 @@
 #include "solver/Ast2Dot.h"
 #include "solver/ConstraintInformation.h"
 #include "solver/ConstraintSolver.h"
+#include "solver/CachingConstraintSolver.h"
 #include "solver/ConstraintSorter.h"
 #include "solver/DependencySlicer.h"
 #include "solver/EquivalenceGenerator.h"
@@ -152,12 +156,14 @@ protected:
    * Keeps bounded projected automata for variables
    */
   std::map<std::string, Solver::Value_ptr> cached_bounded_values_;
+
+#ifdef USE_CACHE
   redox::Redox *rdx_;
 
   int total_hits_;
   int total_misses_;
   std::vector<std::tuple<int,int>> hit_statistics_;
-
+#endif
   ;
 
 private:

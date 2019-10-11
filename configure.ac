@@ -89,6 +89,24 @@ AC_SUBST([LIBMONABDD])
 AC_CHECK_LIB([monamem], [mem_alloc], [LIBMONAMEM=-lmonamem], AC_MSG_ERROR(MONA MEM library not found))
 AC_SUBST([LIBMONAMEM])
 
+
+
+AC_CHECK_LIB([hiredis], [redisConnect])
+AS_IF([test "$ac_cv_lib_hiredis_redisConnect" = yes], [HAVE_HIREDIS=1], [HAVE_HIREDIS=0])
+AC_CHECK_LIB([ev], [ev_io_stop])
+AS_IF([test "$ac_cv_lib_ev_ev_io_stop" = yes], [HAVE_EV=1], [HAVE_EV=0])
+AC_CHECK_LIB([redox], [connect])
+AS_IF([test "$ac_cv_lib_redox_connect" = yes], [HAVE_REDOX=1], [HAVE_REDOX=0])
+
+AM_CONDITIONAL([HAVE_CACHE], [test "$HAVE_HIREDIS" -eq 1 -a "$HAVE_EV" -eq 1 -a "$HAVE_REDOX" -eq 1])
+
+AM_COND_IF([HAVE_CACHE],
+           [AC_DEFINE(USE_CACHE)],
+           [AC_MSG_NOTICE([no have cache])])
+
+AC_CHECK_LIB([stdc++fs], [main])
+
+
 #AC_LINK_IFELSE(
 #  [AC_LANG_PROGRAM([#include <boost/multiprecision/cpp_int.hpp>], 
 #    [boost::multiprecision::cpp_int dummy])],

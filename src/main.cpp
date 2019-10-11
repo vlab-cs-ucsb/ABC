@@ -38,6 +38,13 @@
 std::vector<unsigned long> parse_count_bounds(std::string);
 
 int main(const int argc, const char **argv) {
+
+#ifdef USE_CACHE
+  std::cout << "YES" << std::endl;
+#else
+  std::cout << "NO" << std::endl;
+#endif
+
   google::InstallFailureSignalHandler();
 
   std::istream* in = &std::cin;
@@ -257,9 +264,10 @@ int main(const int argc, const char **argv) {
 
 //    if (i > 1200 or false and VLOG_IS_ON(30) and not output_root.empty()) {
 //    if(i > 10000)  
-//    driver.ast2dot(output_root + "/" + std::to_string(i) + ".dot");
+    driver.ast2dot(output_root + "/" + std::to_string(i) + ".dot");
 //   }
     driver.Solve();
+    LOG(INFO) << "Done solving";
 //    std::cin.get();
     if(not driver.is_sat()) {
       LOG(INFO) << "UNSAT: " << iter;

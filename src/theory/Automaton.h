@@ -28,7 +28,10 @@
 #include <vector>
 #include <queue>
 #include <chrono>
+
+#ifdef USE_CACHE
 #include <redox.hpp>
+#endif
 
 #include <glog/logging.h>
 #include <mona/bdd.h>
@@ -48,6 +51,7 @@
 #include "Formula.h"
 #include "../utils/Serialize.h"
 #include <cereal/types/polymorphic.hpp>
+#include "StringFormula.h"
 
 namespace Vlab {
 namespace Theory {
@@ -255,8 +259,9 @@ public:
 
   static void CleanUp();
 
-
+#ifdef USE_CACHE
   static redox::Redox *rdx_;
+#endif
 	//static std::map<std::pair<std::string,std::string>,DFA> stupid_cache;
 	static std::map<std::string,DFA_ptr> stupid_cache;
 	static int num_misses;
@@ -265,6 +270,71 @@ public:
 	static int var1,var2;
 
 protected:
+
+#ifdef USE_CACHE
+static std::string GenerateKey(StringFormula_ptr op_formula) {
+  std::stringstream os1;
+  {
+    cereal::BinaryOutputArchive ar(os1);
+    op_formula->save(ar);
+  }
+  return os1.str();
+}
+
+static std::string GenerateKey(std::string op, Automaton_ptr unary_op_auto) {
+  std::stringstream os1;
+  unary_op_auto->toBDD(os1);
+  std::string id = os1.str();
+  return op + ":" + id;
+}
+
+static std::string GenerateKey(std::string op, Automaton_ptr first_auto, Automaton_ptr second_auto) {
+  std::string id1, id2;
+
+  std::stringstream os1;
+  first_auto->toBDD(os1);
+  id1 = os1.str();
+
+  std::stringstream os2;
+  second_auto->toBDD(os2);
+  id2 = os2.str();
+
+  return op + ":" + id1 + "," + id2;
+}
+
+static DFA_ptr LoadDFA(std::string key) {
+  auto &c = rdx_->commandSync<std::string>({"GET", key});
+
+  DFA_ptr result_dfa = nullptr;
+  bool has_result = false;
+  std::string cached_data;
+  if (c.ok()) {
+    has_result = true;
+    cached_data = c.reply();
+  }
+  c.free();
+  if (has_result) {
+    std::stringstream is(cached_data);
+    {
+      cereal::BinaryInputArchive ar(is);
+      Util::Serialize::load(ar, result_dfa);
+    }
+    num_hits++;
+  }
+  return result_dfa;
+}
+
+static bool StoreDFA(std::string key, DFA_ptr dfa) {
+  std::stringstream os;
+  {
+    cereal::BinaryOutputArchive ar(os);
+    Util::Serialize::save(ar, dfa);
+  }
+  rdx_->command<std::string>({"SET", key, os.str()});
+  num_misses++;
+  return true;
+}
+#endif
 
   /**
    * Checks if a minimized dfa accepts nothing
@@ -476,7 +546,6 @@ protected:
 	 * @return
 	 */
   static DFA_ptr DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int number_of_bdd_variables);
-
 
   bool isAcceptingSingleWord();
   // TODO update it to work for non-accepting inputs
