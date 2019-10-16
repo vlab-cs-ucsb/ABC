@@ -1,6 +1,6 @@
 ABC
 ============
-The Automata Based Counter ([ABC](https://vlab.cs.ucsb.edu/ABC/)) is a **string and numeric constriant** solver and
+The Automata Based Counter ([ABC](https://vlab.cs.ucsb.edu/ABC/)) is a **string and numeric constraint** solver and
 **model counter**. ABC provides solutions to systems of string and numeric constraints in the form of a deterministic
 finite automaton. In addition ABC produces symbolic representation of the number of strings and integers within a length
 bound, k, that satisfy a set of constraints. ABC can also output the number of satisfying solutions given a bound.
