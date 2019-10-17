@@ -102,10 +102,15 @@ AM_CONDITIONAL([HAVE_CACHE], [test "$HAVE_HIREDIS" -eq 1 -a "$HAVE_EV" -eq 1 -a 
 
 AM_COND_IF([HAVE_CACHE],
            [AC_DEFINE(USE_CACHE)],
-           [AC_MSG_NOTICE([no have cache])])
+           [AC_MSG_RESULT([Caching disabled: libraries not found])])
 
 AC_CHECK_LIB([stdc++fs], [main])
+AS_IF([test "$ac_cv_lib_stdc++fs_main" = yes], [HAVE_STDFS=1], [HAVE_STDFS=0])
+AM_CONDITIONAL([STDCFS], [test "$HAVE_STDFS" -eq 1])
 
+AM_COND_IF([STDCFS],
+           [AC_DEFINE(HAVE_EXP_FS)],
+           [AC_MSG_RESULT([stdc++fs library not found])])
 
 #AC_LINK_IFELSE(
 #  [AC_LANG_PROGRAM([#include <boost/multiprecision/cpp_int.hpp>], 

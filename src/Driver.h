@@ -22,9 +22,7 @@
 
 #include <glog/logging.h>
 
-#ifdef USE_CACHE
-#include <redox.hpp>
-#endif
+
 
 #include "boost/multiprecision/cpp_int.hpp"
 #include "Eigen/SparseCore"
@@ -37,7 +35,13 @@
 #include "solver/Ast2Dot.h"
 #include "solver/ConstraintInformation.h"
 #include "solver/ConstraintSolver.h"
+
+#ifdef USE_CACHE
+//#include <redox.hpp>
 #include "solver/CachingConstraintSolver.h"
+#include "solver/CacheManager.h"
+#endif
+
 #include "solver/ConstraintSorter.h"
 #include "solver/DependencySlicer.h"
 #include "solver/EquivalenceGenerator.h"
@@ -80,6 +84,8 @@ public:
   ~Driver();
 
   void InitializeLogger(int log_level);
+  void InitializeCache();
+
   // Error handling.
   void error(const Vlab::SMT::location& l, const std::string& m);
   void error(const std::string& m);
@@ -158,13 +164,14 @@ protected:
   std::map<std::string, Solver::Value_ptr> cached_bounded_values_;
 
 #ifdef USE_CACHE
-  redox::Redox *rdx_;
+//  redox::Redox *rdx_;
+  Solver::CacheManager_ptr cache_manager_;
 
   int total_hits_;
   int total_misses_;
   std::vector<std::tuple<int,int>> hit_statistics_;
 #endif
-  ;
+
 
 private:
   static bool IS_LOGGING_INITIALIZED;

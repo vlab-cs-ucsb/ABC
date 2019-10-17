@@ -29,9 +29,7 @@
 #include <queue>
 #include <chrono>
 
-#ifdef USE_CACHE
-#include <redox.hpp>
-#endif
+
 
 #include <glog/logging.h>
 #include <mona/bdd.h>
@@ -52,6 +50,11 @@
 #include "../utils/Serialize.h"
 #include <cereal/types/polymorphic.hpp>
 #include "StringFormula.h"
+
+#ifdef USE_CACHE
+//#include <redox.hpp>
+#include "../solver/CacheManager.h"
+#endif
 
 namespace Vlab {
 namespace Theory {
@@ -260,7 +263,8 @@ public:
   static void CleanUp();
 
 #ifdef USE_CACHE
-  static redox::Redox *rdx_;
+//  static redox::Redox *rdx_;
+  static Vlab::Solver::CacheManager* cache_manager_;
 #endif
 	//static std::map<std::pair<std::string,std::string>,DFA> stupid_cache;
 	static std::map<std::string,DFA_ptr> stupid_cache;
@@ -271,7 +275,7 @@ public:
 
 protected:
 
-#ifdef USE_CACHE
+//#ifdef USE_CACHE
 static std::string GenerateKey(StringFormula_ptr op_formula) {
   std::stringstream os1;
   {
@@ -301,40 +305,40 @@ static std::string GenerateKey(std::string op, Automaton_ptr first_auto, Automat
 
   return op + ":" + id1 + "," + id2;
 }
-
-static DFA_ptr LoadDFA(std::string key) {
-  auto &c = rdx_->commandSync<std::string>({"GET", key});
-
-  DFA_ptr result_dfa = nullptr;
-  bool has_result = false;
-  std::string cached_data;
-  if (c.ok()) {
-    has_result = true;
-    cached_data = c.reply();
-  }
-  c.free();
-  if (has_result) {
-    std::stringstream is(cached_data);
-    {
-      cereal::BinaryInputArchive ar(is);
-      Util::Serialize::load(ar, result_dfa);
-    }
-    num_hits++;
-  }
-  return result_dfa;
-}
-
-static bool StoreDFA(std::string key, DFA_ptr dfa) {
-  std::stringstream os;
-  {
-    cereal::BinaryOutputArchive ar(os);
-    Util::Serialize::save(ar, dfa);
-  }
-  rdx_->command<std::string>({"SET", key, os.str()});
-  num_misses++;
-  return true;
-}
-#endif
+//
+//static DFA_ptr LoadDFA(std::string key) {
+//  auto &c = rdx_->commandSync<std::string>({"GET", key});
+//
+//  DFA_ptr result_dfa = nullptr;
+//  bool has_result = false;
+//  std::string cached_data;
+//  if (c.ok()) {
+//    has_result = true;
+//    cached_data = c.reply();
+//  }
+//  c.free();
+//  if (has_result) {
+//    std::stringstream is(cached_data);
+//    {
+//      cereal::BinaryInputArchive ar(is);
+//      Util::Serialize::load(ar, result_dfa);
+//    }
+//    num_hits++;
+//  }
+//  return result_dfa;
+//}
+//
+//static bool StoreDFA(std::string key, DFA_ptr dfa) {
+//  std::stringstream os;
+//  {
+//    cereal::BinaryOutputArchive ar(os);
+//    Util::Serialize::save(ar, dfa);
+//  }
+//  rdx_->command<std::string>({"SET", key, os.str()});
+//  num_misses++;
+//  return true;
+//}
+//#endif
 
   /**
    * Checks if a minimized dfa accepts nothing

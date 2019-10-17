@@ -23,26 +23,8 @@ Driver::Driver()
   cached_bounded_values_.clear();
 
 #ifdef USE_CACHE
-  LOG(INFO) << "USING CACHE";
-//  if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING || Option::Solver::AUTOMATA_CACHING) {
-    rdx_ = new redox::Redox(std::cout,redox::log::Level::Off);
-    rdx_->noWait(true);
-    LOG(INFO) << "ATTEMPTING CONNECT";
-//    if(!rdx_->connectUnix()) {
-    if(!rdx_->connect("localhost", 6379)) {
-      LOG(FATAL) << "Could not connect to redis server";
-    }
-    LOG(INFO) << "Connected!";
-//  }
-  total_hits_ = 0;
-  total_misses_ = 0;
-
-  auto start = std::chrono::steady_clock::now();
-  auto end = std::chrono::steady_clock::now();
-  diff = end-start;
-  LOG(INFO) << "DONE";
+  cache_manager_ = new Solver::CacheManager();
 #endif
-  LOG(INFO) << "End of driver";
 }
 
 Driver::~Driver() {
@@ -69,10 +51,10 @@ Driver::~Driver() {
   delete constraint_information_;
   Theory::Automaton::CleanUp();
 
-  //if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING || Option::Solver::AUTOMATA_CACHING) {
-  //  rdx_->disconnect();
-  //  delete rdx_;
-  //}
+#ifdef USE_CACHE
+  delete cache_manager_;
+#endif
+
 }
 
 void Driver::InitializeLogger(int log_level) {
@@ -190,24 +172,13 @@ void Driver::Solve() {
 
 
   Solver::ConstraintSolver* constraint_solver = nullptr;
-//  Solver::ConstraintSolver* constraint_solver = new Solver::ConstraintSolver(script_, symbol_table_, constraint_information_, rdx_);
-//  constraint_solver->start();
 
 #ifdef USE_CACHE
-  if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING || Option::Solver::AUTOMATA_CACHING) {
-    constraint_solver = new Solver::CachingConstraintSolver(script_, symbol_table_, constraint_information_, rdx_);
+  if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING) {
+    constraint_solver = new Solver::CachingConstraintSolver(script_, symbol_table_, constraint_information_, cache_manager_);
   } else {
     constraint_solver = new Solver::ConstraintSolver(script_, symbol_table_, constraint_information_);
   }
-//  diff += constraint_solver->diff;
-//  diff2 += constraint_solver->diff2;
-//  diff3 += constraint_solver->get_diff3();
-//  //diff4 += constraint_solver->get_diff4();
-//
-//  total_hits_ += constraint_solver->num_hits();
-//  total_misses_ += constraint_solver->num_misses();
-//
-//  if(constraint_solver->num_hits() > 0) hit_statistics_.push_back(constraint_solver->hit_statistic());
 #else
   constraint_solver = new Solver::ConstraintSolver(script_, symbol_table_, constraint_information_);
 #endif

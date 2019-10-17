@@ -4,6 +4,10 @@
 
 #include "CachingConstraintSolver.h"
 
+#ifndef USE_CACHE
+#  error "This source should only be built if USE_CACHE is on!"
+#endif
+
 namespace Vlab {
 namespace Solver {
 
@@ -14,9 +18,10 @@ const int CachingConstraintSolver::VLOG_LEVEL = 11;
 
 CachingConstraintSolver::CachingConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_table,
                                    ConstraintInformation_ptr constraint_information,
-                                   redox::Redox *rdx)
+                                   CacheManager_ptr cache_manager)
     : ConstraintSolver(script, symbol_table,constraint_information),
-      rdx_(rdx) {
+      cache_manager_(cache_manager) {
+
 
   num_hits_ = 0;
   num_misses_ = 0;
@@ -25,9 +30,9 @@ CachingConstraintSolver::CachingConstraintSolver(Script_ptr script, SymbolTable_
   diff = end-start;
   diff2 = end-start;
 
-  arithmetic_constraint_solver_.rdx_ = rdx_;
-  string_constraint_solver_.rdx_ = rdx_;
-  Automaton::rdx_ = rdx_;
+//  arithmetic_constraint_solver_.cache_manager_ = cache_manager_;
+//  string_constraint_solver_.cache_manager_ = cache_manager_;
+  Automaton::cache_manager_ = cache_manager_;
 }
 
 CachingConstraintSolver::~CachingConstraintSolver() {
@@ -41,9 +46,6 @@ void CachingConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "start";
 
   auto start = std::chrono::steady_clock::now();
-
-//  arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
-//  string_constraint_solver_.collect_string_constraint_info();
 
   visit(root_);
 
@@ -81,99 +83,92 @@ void CachingConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
   std::string key, cached_data;
   bool has_cached_result = false;
-
-  if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING) {
-    key = Ast2Dot::toString(assert_command);
-    root_key_ = key;
+  key = Ast2Dot::toString(assert_command);
+  root_key_ = key;
 //    LOG(INFO) << key;
 //    std::cin.get();
 //    auto cache_start = std::chrono::steady_clock::now();
 
-    auto &c = rdx_->commandSync<std::string>({"GET", key});
-    if (c.ok()) {
-      // has cached value
-      cached_data = c.reply();
-      has_cached_result = true;
-      num_hits_++;
-      hit_statistic_ = std::make_tuple<int, int>(1, 1);
-    } else {
-      num_misses_++;
-    }
-LOG(INFO) << "HERE";
-    c.free();
+//    auto &c = rdx_->commandSync<std::string>({"GET", key});
+//    if (c.ok()) {
+//      // has cached value
+//      cached_data = c.reply();
+//      has_cached_result = true;
+//      num_hits_++;
+//      hit_statistic_ = std::make_tuple<int, int>(1, 1);
+//    } else {
+//      num_misses_++;
+//    }
+  has_cached_result = cache_manager_->Get(key,cached_data);
+//    c.free();
 
 //    auto cache_end = std::chrono::steady_clock::now();
 //    auto cache_time = cache_end-cache_start;
 //    diff += cache_time;
 
-    // if we have cached result, import it and go from there
-    if (has_cached_result) {
-      std::stringstream is(cached_data);
+  // if we have cached result, import it and go from there
+  if (has_cached_result) {
+    std::stringstream is(cached_data);
 
-
-
-      // if formula was UNSAT, we store a single 0 in cache
-      if (cached_data.size() == 1) {
+    // if formula was UNSAT, we store a single 0 in cache
+    if (cached_data.size() == 1) {
 //        LOG(INFO) << "UNSAT!";
 //        std::cin.get();
-        symbol_table_->update_satisfiability_result(false);
-        return;
-      }
+      symbol_table_->update_satisfiability_result(false);
+      return;
+    }
 
-      std::map<char, char> char_map;
+    std::map<char, char> char_map;
 
-      int num_string_to_read = 0;
-      int num_int_to_read = 0;
-      {
-        cereal::BinaryInputArchive ar(is);
-        ar(char_map);
-        ar(num_string_to_read);
-        ar(num_int_to_read);
-      }
+    int num_string_to_read = 0;
+    int num_int_to_read = 0;
+    {
+      cereal::BinaryInputArchive ar(is);
+      ar(char_map);
+      ar(num_string_to_read);
+      ar(num_int_to_read);
+    }
 
 //      symbol_table_->SetCharacterMapping(char_map);
 
-      arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
-      string_constraint_solver_.collect_string_constraint_info();
+    arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
+    string_constraint_solver_.collect_string_constraint_info();
 
-      // deserialize automata one by one until none left
-      while (num_string_to_read-- > 0) {
-        Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(nullptr, 0);
-        {
-          cereal::BinaryInputArchive ar(is);
-          import_auto->load(ar);
-        }
-
-        std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
-
-        auto import_value = new Value(import_auto);
-        symbol_table_->set_value(rep_var,import_value);
-        delete import_value;
-      }
-      while (num_int_to_read-- > 0) {
-        Theory::BinaryIntAutomaton_ptr import_auto = new Theory::BinaryIntAutomaton(nullptr, 0, true);
-        {
-          cereal::BinaryInputArchive ar(is);
-          import_auto->load(ar);
-        }
-
-        std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
-
-        auto import_value = new Value(import_auto);
-        symbol_table_->set_value(rep_var,import_value);
-        delete import_value;
+    // deserialize automata one by one until none left
+    while (num_string_to_read-- > 0) {
+      Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(nullptr, 0);
+      {
+        cereal::BinaryInputArchive ar(is);
+        import_auto->load(ar);
       }
 
-      return;
+      std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
+
+      auto import_value = new Value(import_auto);
+      symbol_table_->set_value(rep_var,import_value);
+      delete import_value;
     }
-    if(Option::Solver::FULL_FORMULA_CACHING) {
+    while (num_int_to_read-- > 0) {
+      Theory::BinaryIntAutomaton_ptr import_auto = new Theory::BinaryIntAutomaton(nullptr, 0, true);
+      {
+        cereal::BinaryInputArchive ar(is);
+        import_auto->load(ar);
+      }
+
+      std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
+
+      auto import_value = new Value(import_auto);
+      symbol_table_->set_value(rep_var,import_value);
+      delete import_value;
+    }
+
+    return;
+  }
+
+//  if(Option::Solver::FULL_FORMULA_CACHING) {
 //      arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
 //      string_constraint_solver_.collect_string_constraint_info();
-    }
-  } else {
-//    arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
-//    string_constraint_solver_.collect_string_constraint_info();
-  }
+//  }
 
 LOG(INFO) << "Before check_and_visit";
   check_and_visit(assert_command->term);
@@ -271,12 +266,13 @@ LOG(INFO) << "Before check_and_visit";
 
     }
     // then send it to the cache
-    auto &c2 = rdx_->commandSync<std::string>({"SET", key, os.str()});
-    if (c2.ok()) {
-      c2.free();
-    } else {
-      LOG(FATAL) << "Failed to cache result: " << c2.status();
-    }
+    cache_manager_->Set(key,os.str());
+//    auto &c2 = rdx_->commandSync<std::string>({"SET", key, os.str()});
+//    if (c2.ok()) {
+//      c2.free();
+//    } else {
+//      LOG(FATAL) << "Failed to cache result: " << c2.status();
+//    }
   }
 }
 
@@ -339,7 +335,8 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
       key = Ast2Dot::toString(and_term);
       reverse_term_keys[key] = and_term->term_list->size();
       term_keys[and_term->term_list->size()] = key;
-      rdx_->command<std::string>({"GET", key},got_reply);
+      cache_manager_->GetAsync(key,got_reply);
+//      rdx_->command<std::string>({"GET", key},got_reply);
       num_sent++;
 
       terms_to_solve.push(and_term->term_list->back());
@@ -544,7 +541,7 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
       symbol_table_->LockValues();
       bool is_done = terms_to_solve.empty();
       key = term_keys[and_term->term_list->size()];
-      serializers_.push_back(std::thread([root_key_=root_key_,rdx_ = rdx_,symbol_table_=symbol_table_, revk, tk, key, &value_map,is_done,is_satisfiable, max] {
+      serializers_.push_back(std::thread([root_key_=root_key_,cache_manager_=cache_manager_,symbol_table_=symbol_table_, revk, tk, key, &value_map,is_done,is_satisfiable, max] {
         std::vector<Theory::BinaryIntAutomaton_ptr>* bin_stuff_to_store = new std::vector<Theory::BinaryIntAutomaton_ptr>();
         std::vector<Theory::StringAutomaton_ptr>* str_stuff_to_store = new std::vector<Theory::StringAutomaton_ptr>();
 
@@ -624,11 +621,14 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
           else return;
         };
 
-        rdx_->command<std::string>({"SET",key,os.str()},got_reply);
+        cache_manager_->SetAsync(key,os.str(),got_reply);
+//        rdx_->command<std::string>({"SET",key,os.str()},got_reply);
         if(is_done || not is_satisfiable) {
-          rdx_->command<std::string>({"SET",root_key_,os.str()},got_reply);
+          cache_manager_->SetAsync(root_key_,os.str(),got_reply);
+//          rdx_->command<std::string>({"SET",root_key_,os.str()},got_reply);
           for(int i = (*revk)[key]; i < max; i++) {
-            rdx_->command<std::string>({"SET",(*tk)[i],os.str()},got_reply);
+            cache_manager_->SetAsync((*tk)[i],os.str(),got_reply);
+//            rdx_->command<std::string>({"SET",(*tk)[i],os.str()},got_reply);
           }
         }
 

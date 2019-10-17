@@ -72,7 +72,9 @@ libabcsolver_la_SOURCES = \
 if HAVE_CACHE
 libabcsolver_la_SOURCES += \
   CachingConstraintSolver.cpp \
-  CachingConstraintSolver.h
+  CachingConstraintSolver.h \
+  CacheManager.cpp \
+  CacheManager.h
 endif
 
 libabcsolver_la_LIBADD = \

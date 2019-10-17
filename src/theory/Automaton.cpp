@@ -18,7 +18,7 @@ int Automaton::num_hits = 0;
 std::chrono::duration<double> Automaton::diff = std::chrono::steady_clock::now() - std::chrono::steady_clock::now();
 
 #ifdef USE_CACHE
-redox::Redox* Automaton::rdx_ = nullptr;
+Solver::CacheManager* Automaton::cache_manager_ = nullptr;
 #endif
 
 //std::map<std::pair<std::string,std::string>,DFA> Automaton::stupid_cache;

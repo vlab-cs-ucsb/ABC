@@ -7,7 +7,7 @@
 
 #include "ConstraintSolver.h"
 #include "../theory/Automaton.h"
-#include <redox.hpp>
+#include "CacheManager.h"
 
 namespace Vlab {
 namespace Solver {
@@ -22,7 +22,7 @@ public:
   std::chrono::duration<double> get_diff4() { return this->arithmetic_constraint_solver_.diff2;}
 
 
-  CachingConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr, redox::Redox *);
+  CachingConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr, CacheManager_ptr);
   virtual ~CachingConstraintSolver();
 
   void start() override;
@@ -39,7 +39,7 @@ public:
 
 protected:
   // redox client for redis cache
-  redox::Redox *rdx_;
+  CacheManager *cache_manager_;
   int num_hits_;
   int num_misses_;
   std::tuple<int,int> hit_statistic_;

@@ -18,7 +18,11 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <experimental/filesystem>
+
+#ifdef HAVE_EXP_FS
+  #include <experimental/filesystem>
+#endif
+
 #include <algorithm>
 
 #include <glog/logging.h>
@@ -32,8 +36,6 @@
 #include "theory/StringAutomaton.h"
 #include "utils/RegularExpression.h"
 
-//static const std::string get_default_output_dir();
-//static const std::string get_default_log_dir();
 
 std::vector<unsigned long> parse_count_bounds(std::string);
 
@@ -49,12 +51,13 @@ int main(const int argc, const char **argv) {
 
   std::istream* in = &std::cin;
   std::ifstream* file = nullptr;
-  std::string file_name;
+  std::string file_name = "";
+  std::string dir_name = "";
 
 //  std::string output_root = get_default_output_dir();
 //  std::string log_root = get_default_log_dir();
 
-  std::string output_root = {"./output"};
+  std::string output_root = "";
   std::string log_root {"./log"};
 
   FLAGS_log_dir = log_root;
@@ -73,8 +76,13 @@ int main(const int argc, const char **argv) {
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == std::string("-i") or argv[i] == std::string("--input-file")) {
       file_name = argv[i + 1];
-      // file = new std::ifstream(file_name);
-      // in = file;
+      ++i;
+    } if (argv[i] == std::string("-id") or argv[i] == std::string("--input-dir")) {
+#ifndef HAVE_EXP_FS
+      std::cout << "WARNING: arg -id without stdc++fs; ignoring argument" << std::endl;
+#else
+      dir_name = argv[i + 1];
+#endif
       ++i;
     } else if (argv[i] == std::string("--use-unsigned")) {
       driver.set_option(Vlab::Option::Name::USE_UNSIGNED_INTEGERS);
@@ -137,11 +145,30 @@ int main(const int argc, const char **argv) {
       ++i;
     } else if (argv[i] == std::string("-e")) {
       experiment_mode = true;
+    } else if (argv[i] == std::string("--cache-fullformula")) {
+#ifndef USE_CACHE
+      std::cout << "WARNING: --cache-fullformula specified but cache is not enabled (argument ignored)" << std::endl;
+#else
+      driver.set_option(Vlab::Option::Name::FULL_FORMULA_CACHING);
+#endif
+    } else if (argv[i] == std::string("--cache-subformula")) {
+#ifndef USE_CACHE
+      std::cout << "WARNING: --cache-subformula specified but cache is not enabled (argument ignored)" << std::endl;
+#else
+      driver.set_option(Vlab::Option::Name::SUB_FORMULA_CACHING);
+#endif
+    } else if (argv[i] == std::string("--cache-automata")) {
+#ifndef USE_CACHE
+      std::cout << "WARNING: --cache-automata specified but cache is not enabled (argument ignored)" << std::endl;
+#else
+      driver.set_option(Vlab::Option::Name::AUTOMATA_CACHING);
+#endif
     } else if (argv[i] == std::string("-h") or argv[i] == std::string("--help")) {
       int col = 28;
       std::cout << std::left;
       std::cout << std::setw(col) << "-h or --help" << ": lists available options" << std::endl;
-      std::cout << std::setw(col) << "-i or --input-file <path>" << ": path to input constraint file" << std::endl;
+      std::cout << std::setw(col) << "-i or --input-file <path>" << ": path to input constraint file (if ran with -id, file will be added to input from directory)" << std::endl;
+      std::cout << std::setw(col) << "-id or --input-dir <path>" << ": path to directory containing input constraint files (requires building ABC with stdc++fs library)" << std::endl;
       std::cout << std::setw(col) << "-bs or --bound-str <values>" << ": model count string length bound e.g., -bs 10 or a set of bounds e.g., -bs \"4,8,16\"" << std::endl;
       std::cout << std::setw(col) << "-bi or --bound-int <values>" << ": model count integer bit length bound e.g., -bs 10 or a set of bounds e.g., -bi \"4,8,16\"" << std::endl;
       std::cout << std::setw(col) << "-bv or --bound-var <values>" << ": model count integer bit length bound e.g., -b 10 or a set of bounds e.g., -b \"4,8,16\"" << std::endl;
@@ -162,20 +189,28 @@ int main(const int argc, const char **argv) {
       std::cout << std::setw(col) << "--disable-sorting" << ": disables sorting heuristics for string constraints" << std::endl;
       std::cout << std::setw(col) << "--output-dir <dir>" << ": used for debugging outputs" << std::endl;
       std::cout << std::setw(col) << "--log-dir <dir>" << ": redirect logs from stderr to files and saves in the directory specified." << std::endl;
-      std::cout << std::setw(col) << "--v <value>" << ": sets verbose logging level, unless you build ABC with configure --disable-debug" << std::endl;
-
+      std::cout << std::setw(col) << "-v <value>" << ": sets verbose logging level, unless you build ABC with configure --disable-debug" << std::endl;
+      std::cout << std::setw(col) << "--cache-fullformula" << ": enables full formula caching (requires caching libraries)" << std::endl;
+      std::cout << std::setw(col) << "--cache-subformula" << ": enables sub formula caching (requires caching libraries)" << std::endl;
+      std::cout << std::setw(col) << "--cache-automata" << ": enables automata caching (requires caching libraries)" << std::endl;
       std::exit(0);
     } else {
     }
   }
 
+
   std::vector<std::string> files;
-  for(const auto & entry : std::experimental::filesystem::directory_iterator(file_name)) {
-    files.push_back(entry.path());
+  if(!file_name.empty()) {
+    files.push_back(file_name);
   }
 
-  file = new std::ifstream(files[0]);
-  in = file;
+#ifdef HAVE_EXP_FS
+  if(!dir_name.empty()) {
+    for(const auto & entry : std::experimental::filesystem::directory_iterator(dir_name)) {
+      files.push_back(entry.path());
+    }
+  }
+#endif
 
   std::sort(files.begin(),files.end());
 
@@ -196,27 +231,8 @@ int main(const int argc, const char **argv) {
   }
 
   driver.test();
-//   driver.Parse(in);
-
-// #ifndef NDEBUG
-//   if (VLOG_IS_ON(30) and not output_root.empty()) {
-//     driver.ast2dot(output_root + "/parser_out.dot");
-//   }
-// #endif
 
   auto start = std::chrono::steady_clock::now();
-//   driver.InitializeSolver();
-
-//   if(driver.symbol_table_->has_count_variable() and count_variable.empty()) {
-//     count_variable = driver.symbol_table_->get_count_variable()->getName();
-//   }
-
-// #ifndef NDEBUG
-//   if (VLOG_IS_ON(30) and not output_root.empty()) {
-//     driver.ast2dot(output_root + "/optimized.dot");
-//   }
-// #endif
-
 
 //   driver.Solve();
   auto end = std::chrono::steady_clock::now();
@@ -233,19 +249,8 @@ int main(const int argc, const char **argv) {
   int i = 0;
 
   int num_unsat = 0;
-  int total_hits = 0;
-  int total_misses = 0;
-
-  driver.set_option(Vlab::Option::Name::FULL_FORMULA_CACHING);
-//  driver.set_option(Vlab::Option::Name::SUB_FORMULA_CACHING);
-//  driver.set_option(Vlab::Option::Name::AUTOMATA_CACHING);
 
   for(auto iter : files) {
-//    if(i < 10900) {
-//      i++;
-//      continue;
-//    }
-//    LOG(INFO) << iter;
     file = new std::ifstream(iter);
     in = file;
 
@@ -258,54 +263,30 @@ int main(const int argc, const char **argv) {
 
     if(driver.symbol_table_->has_count_variable() and count_variable.empty()) {
       count_variable = driver.symbol_table_->get_count_variable()->getName();
-//      LOG(INFO) << count_variable;
-//      std::cin.get();
     }
 
-//    if (i > 1200 or false and VLOG_IS_ON(30) and not output_root.empty()) {
-//    if(i > 10000)  
-    driver.ast2dot(output_root + "/" + std::to_string(i) + ".dot");
-//   }
+    if(!output_root.empty() && VLOG_IS_ON(30)) {
+      driver.ast2dot(output_root + "/" + std::to_string(i) + ".dot");
+    }
+
     driver.Solve();
-    LOG(INFO) << "Done solving";
-//    std::cin.get();
+
     if(not driver.is_sat()) {
-      LOG(INFO) << "UNSAT: " << iter;
       num_unsat++;
-//       std::cin.get();
     } else {
       count_start = std::chrono::steady_clock::now();
-//      auto cc = driver.CountInts(32);
       auto cc = driver.CountVariable(count_variable,50);
-//      LOG(INFO) << cc;
-//      auto mc1 = driver.GetModelCounterForVariable(count_variable,false);
-//      auto mc2 = driver.GetModelCounterForVariable(count_variable,true);
+
       count_end = std::chrono::steady_clock::now();
       mc_time += count_end-count_start;
 
       count_start = std::chrono::steady_clock::now();
-//      auto count1 = mc1.Count(50,50);
-//      auto count2 = mc2.Count(50,50);
       count_end = std::chrono::steady_clock::now();
       count_time += count_end-count_start;
-
-
-//      auto count_result = driver.CountStrs(4);
-//      LOG(INFO) << count_result;
     }
     driver.reset();
     delete file;
     i++;
-
-    if(i % 100 == 0) {
-      LOG(INFO) << i << " constraints done";
-    }
-//    if(i % 1000 == 0) {
-//      driver.print_statistics();
-//    }
-//    if(i == 1000) break;
-//    driver.stats();
-    count_variable = "";
   }
 
   end = std::chrono::steady_clock::now();

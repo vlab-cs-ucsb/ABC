@@ -464,8 +464,7 @@ StringAutomaton_ptr StringAutomaton::MakeAutomaton(StringFormula_ptr formula) {
   if(Option::Solver::AUTOMATA_CACHING) {
 
     key = GenerateKey(formula);
-    result_dfa = LoadDFA(key);
-    if(result_dfa != nullptr) {
+    if(cache_manager_->LoadDFA(key,result_dfa)) {
       int num_vars = formula->GetNumberOfVariables();
       return new StringAutomaton(result_dfa, formula, num_vars *VAR_PER_TRACK);
     }
@@ -512,7 +511,7 @@ StringAutomaton_ptr StringAutomaton::MakeAutomaton(StringFormula_ptr formula) {
 
 #ifdef USE_CACHE
 	if (Option::Solver::AUTOMATA_CACHING) {
-    StoreDFA(key,result_auto->getDFA());
+    cache_manager_->StoreDFA(key,result_auto->getDFA());
   }
 #endif
 
@@ -1687,8 +1686,7 @@ StringAutomaton_ptr StringAutomaton::Concat(StringAutomaton_ptr other_auto) {
 #ifdef USE_CACHE
   if(Option::Solver::AUTOMATA_CACHING) {
     key = GenerateKey("CONCAT", left_auto, right_auto);
-    concat_dfa = LoadDFA(key);
-    if(concat_dfa != nullptr) {
+    if(cache_manager_->LoadDFA(key,concat_dfa)) {
       return new StringAutomaton(concat_dfa,this->num_of_bdd_variables_);
     }
   }
@@ -1698,7 +1696,7 @@ StringAutomaton_ptr StringAutomaton::Concat(StringAutomaton_ptr other_auto) {
 
 #ifdef USE_CACHE
   if(Option::Solver::AUTOMATA_CACHING) {
-    StoreDFA(key,concat_dfa);
+    cache_manager_->StoreDFA(key,concat_dfa);
   }
 #endif
 
@@ -2706,8 +2704,8 @@ StringAutomaton_ptr StringAutomaton::Begins(StringAutomaton_ptr search_auto) {
   std::string key;
   if(Option::Solver::AUTOMATA_CACHING) {
     key = GenerateKey("BEGINS", this, search_auto);
-    DFA_ptr begins_dfa = LoadDFA(key);
-    if(begins_dfa != nullptr) {
+    DFA_ptr begins_dfa = nullptr;
+    if(cache_manager_->LoadDFA(key,begins_dfa)) {
       auto formula = this->GetFormula()->Intersect(search_auto->GetFormula());
       return new StringAutomaton(begins_dfa,formula,this->num_of_bdd_variables_);
     }
@@ -2721,7 +2719,7 @@ StringAutomaton_ptr StringAutomaton::Begins(StringAutomaton_ptr search_auto) {
 
 #ifdef USE_CACHE
   if(Option::Solver::AUTOMATA_CACHING) {
-    StoreDFA(key,begins_auto->getDFA());
+    cache_manager_->StoreDFA(key,begins_auto->getDFA());
   }
 #endif
 
