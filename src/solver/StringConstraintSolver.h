@@ -64,15 +64,6 @@ class StringConstraintSolver: public AstTraverser {
   void push_generator(SMT::Term_ptr);
   void pop_generators(int,SMT::Term_ptr);
 
-
-  static std::map<std::string,Theory::DFA_ptr> stupid_cache;
-  std::chrono::duration<double> diff;
-  std::chrono::duration<double> diff2;
-	static int dfa_misses;
-	static int dfa_hits;
-  redox::Redox* rdx_;
-
-
  protected:
   void visitOr(SMT::Or_ptr);
 
@@ -89,6 +80,9 @@ class StringConstraintSolver: public AstTraverser {
   std::map<SMT::Term_ptr, SMT::TermList> integer_terms_map_;
 
  private:
+  void YieldWhileValuesLocked() {
+    while(symbol_table_->AreValuesLocked()) std::this_thread::yield;
+  }
   static const int VLOG_LEVEL;
 };
 

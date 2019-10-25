@@ -13,10 +13,6 @@ namespace Solver {
 using namespace SMT;
 using namespace Theory;
 
-int ArithmeticConstraintSolver::dfa_misses = 0;
-int ArithmeticConstraintSolver::dfa_hits = 0;
-std::map<std::string,DFA_ptr> ArithmeticConstraintSolver::stupid_cache;
-
 const int ArithmeticConstraintSolver::VLOG_LEVEL = 11;
 
 ArithmeticConstraintSolver::ArithmeticConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_table,
@@ -29,10 +25,6 @@ ArithmeticConstraintSolver::ArithmeticConstraintSolver(Script_ptr script, Symbol
   setCallbacks();
 
   arithmetic_formula_generator_ = std::make_shared<ArithmeticFormulaGenerator>(script, symbol_table, constraint_information);
-  auto start = std::chrono::steady_clock::now();
-  auto end = std::chrono::steady_clock::now();
-  diff = end-start;
-  diff2 = end-start;
 }
 
 ArithmeticConstraintSolver::~ArithmeticConstraintSolver() {
@@ -56,17 +48,8 @@ void ArithmeticConstraintSolver::end() {
 }
 
 void ArithmeticConstraintSolver::collect_arithmetic_constraint_info(Visitable_ptr node) {
-//  if(Or_ptr or_term = dynamic_cast<Or_ptr>(node)) {
-//    if(Option::Solver::SUB_FORMULA_CACHING)
-//      arithmetic_formula_generator_->no_visit_or = true;
-//  }
-//  auto start = std::chrono::steady_clock::now();
-//  auto end = std::chrono::steady_clock::now();
-//  arithmetic_formula_generator_.diff = end-start;
   arithmetic_formula_generator_->start(node);
-//  diff2 += arithmetic_formula_generator_.diff;
   string_terms_map_ = arithmetic_formula_generator_->get_string_terms_map();
-  arithmetic_formula_generator_->no_visit_or = false;
 }
 
 void ArithmeticConstraintSolver::collect_arithmetic_constraint_info() {
@@ -91,72 +74,15 @@ void ArithmeticConstraintSolver::setCallbacks() {
         auto formula = arithmetic_formula_generator_->get_term_formula(term);
         if (formula != nullptr) {
           DVLOG(VLOG_LEVEL) << "Linear Arithmetic Equation: " << *formula << "@" << term;
-
-//          for(auto it : formula->GetVariableCoefficientMap()) {
-//            LOG(INFO) << it.first;
-//          }
-//          std::cin.get();
-
-
-          auto start = std::chrono::steady_clock::now();
-          BinaryIntAutomaton_ptr binary_int_auto = nullptr;
-
-//          if(Option::Solver::AUTOMATA_CACHING) {
-//            std::stringstream os1;
-//            {
-//              cereal::BinaryOutputArchive ar(os1);
-//              formula->save(ar);
-//            }
-//
-//
-//            std::string key = os1.str();
-//            DFA_ptr result_dfa = nullptr;
-//            bool has_result = false;
-//            std::string cached_data;
-//            auto &c = rdx_->commandSync<std::string>({"GET", key});
-//            if (c.ok()) {
-//              has_result = true;
-//              cached_data = c.reply();
-//            }
-//            c.free();
-//            if (has_result) {
-//              std::stringstream is(cached_data);
-//              {
-//                cereal::BinaryInputArchive ar(is);
-//                Util::Serialize::load(ar, result_dfa);
-//              }
-//              Automaton::num_hits++;
-//              binary_int_auto = new BinaryIntAutomaton(result_dfa,formula->clone(),use_unsigned_integers_);
-//            }
-//
-//            if(not has_result){
-//              binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), use_unsigned_integers_);
-//              std::stringstream os;
-//              {
-//                cereal::BinaryOutputArchive ar(os);
-//                Util::Serialize::save(ar, binary_int_auto->getDFA());
-//              }
-//              rdx_->command<std::string>({"SET", key, os.str()});
-//              Automaton::num_misses++;
-//            }
-//
-//
-//          } else {
-            binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), use_unsigned_integers_);
-//          }
-
-
-
-
-
+          BinaryIntAutomaton_ptr binary_int_auto = BinaryIntAutomaton::MakeAutomaton(formula->clone(), use_unsigned_integers_);
           auto result = new Value(binary_int_auto);
 
-          if(true) {
+          if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING) {
             auto term_group_name = arithmetic_formula_generator_->get_term_group_name(term);
             if(term_group_name.empty()) {
               LOG(FATAL) << "Term has no group!";
             }
-            while(symbol_table_->values_lock_) std::this_thread::yield();
+            YieldWhileValuesLocked();
             symbol_table_->IntersectValue(term_group_name,result);
           }
           else {
@@ -164,7 +90,6 @@ void ArithmeticConstraintSolver::setCallbacks() {
           }
 
 
-//          std::cin.get();
           // once we solve an atomic linear inte  ger arithmetic constraint,
           // we delete its formula to avoid solving it again.
           // Atomic arithmetic constraints solved precisely,

@@ -28,43 +28,6 @@ ArithmeticFormulaGenerator::ArithmeticFormulaGenerator(Script_ptr script, Symbol
       symbol_table_(symbol_table),
       constraint_information_(constraint_information),
       has_mixed_constraint_{false} {
-
-  no_visit_or = false;
-
-
-//  current_group_ = symbol_table_->get_var_name_for_node(root_, Variable::Type::INT);
-//  if(symbol_table_->get_variable_unsafe(current_group_) == nullptr) {
-//    symbol_table_->add_variable(new Variable(current_group_, Variable::Type::NONE));
-//  } else {
-//    LOG(FATAL) << "Should not already have group var";
-//  }
-//
-//  auto start = std::chrono::steady_clock::now();
-//  auto end = std::chrono::steady_clock::now();
-//  diff = end-start;
-
-//  subgroups_[current_group_] = std::set<std::string>();
-//
-//	auto variables = symbol_table_->get_variables();
-//	for(auto& iter : variables) {
-//	  auto group_var = symbol_table_->get_group_variable_of(iter.second);
-//	  if(iter.second->getType() != Variable::Type::INT or group_var == iter.second) {
-//	    continue;
-//	  }
-//
-//  	auto group_value = symbol_table_->get_value(iter.first);
-//  	auto group_formula = group_value->getBinaryIntAutomaton()->GetFormula();
-//
-//  	if(group_formula != nullptr) {
-//  		subgroups_[current_group_].insert(group_var->getName());
-//  		variable_group_map_[iter.second->getName()] = group_var->getName();
-//  		if(group_formula_.find(group_var->getName()) == group_formula_.end()) {
-//				group_formula_[group_var->getName()] = group_formula->clone();
-//				group_formula_[group_var->getName()]->SetType(ArithmeticFormula::Type::NONE);
-//			}
-//  	}
-//	}
-
 }
 
 ArithmeticFormulaGenerator::~ArithmeticFormulaGenerator() {
@@ -79,14 +42,9 @@ ArithmeticFormulaGenerator::~ArithmeticFormulaGenerator() {
 
 void ArithmeticFormulaGenerator::start(Visitable_ptr node) {
   DVLOG(VLOG_LEVEL) << "Arithmetic constraint extraction starts at node: " << node;
-//  auto start = std::chrono::steady_clock::now();
-
   visit(node);
   set_group_mappings();
   end();
-
-//  auto end2 = std::chrono::steady_clock::now();
-//  diff += end2-start;
 }
 
 void ArithmeticFormulaGenerator::start() {
@@ -185,7 +143,6 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
     has_mixed_constraint_ = false;
   }
 
-  if(!no_visit_or)
   visit_children_of(or_term);
   DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
 
@@ -972,106 +929,16 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
   }
 
   // make sure no data race
-
-//  LOG(INFO) << "before";
-while(symbol_table_->values_lock_) std::this_thread::yield();
+  while(symbol_table_->values_lock_) std::this_thread::yield();
   for(auto it : var_vals_to_erase) {
     delete variable_values[it];
     variable_values[it] = nullptr;
     variable_values.erase(it);
   }
-//  LOG(INFO) << "after";
 
   for(auto it : var_vals_to_add) {
     symbol_table_->set_value(it.first,it.second, false);
   }
-
-//  auto start = std::chrono::steady_clock::now();
-//  DVLOG(VLOG_LEVEL)<< "start setting int group for components";
-//  for (auto& el : term_group_map_) {
-//    if(term_formula_.find(el.first) != term_formula_.end()) {
-//      term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
-//      group_formula_[el.second]->MergeVariables(term_formula_[el.first]);
-//    }
-//  }
-//
-//
-////  // add a variable entry to symbol table for each group
-////  // define a variable mapping for a group
-////  for (auto& el : group_formula_) {
-////    symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
-////    for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
-////      symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
-////    }
-////  }
-//
-//  // TODO: Do we really need this?
-////  for (auto& el : term_group_map_) {
-////		LOG(INFO) << *el.first << "@" << el.first;
-////		// only subgroups have formulas
-////		if(subgroups_.find(el.second) == subgroups_.end()) {
-////			LOG(INFO) << "group: " << el.second;
-////			term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
-////		}
-////		LOG(INFO) << "";
-////	}
-//
-////	for (auto& el: subgroups_) {
-////		symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
-////	}
-//	// add a variable entry to symbol table for each group
-////LOG(INFO) << 1;
-//
-//
-//  // define a variable mapping for a group
-//
-//  if(group_formula_.size() > 1) {
-//    LOG(FATAL) << "Failed invariant for having a single binary auto";
-//  }
-//
-//
-////LOG(INFO) << 2;
-//	for (auto group_iter : group_formula_) {
-////    if(symbol_table_->get_variable_unsafe(group_iter.first) == nullptr) {
-////      symbol_table_->add_variable(new Variable(group_iter.first, Variable::Type::NONE));
-////    }
-//
-//
-//    std::set<Variable_ptr> previous_group_variables;
-//    Variable_ptr previous_var = nullptr;
-////    LOG(INFO) << 3;
-//    for (const auto& var_entry : group_iter.second->GetVariableCoefficientMap()) {
-////      LOG(INFO) << "--> " << var_entry.first;
-////      Variable_ptr variable = symbol_table_->get_variable(var_entry.first);
-////      Variable_ptr group_variable = symbol_table_->get_group_variable_of(variable);
-////
-////      // if group variable in variable_values, then a previous value was computed;
-////      if(variable_values.find(group_variable) != variable_values.end()) {
-////        previous_group_variables.insert(group_variable);
-////        previous_var = group_variable;
-////      }
-//      // update variable group mapping in symbol table
-//      symbol_table_->set_variable_group_mapping(var_entry.first, current_group_);
-//    }
-//
-//    if(previous_group_variables.size() > 1) {
-//      LOG(FATAL) << "Should only be one binary auto for all int variables";
-//    }
-//  }
-//
-//	auto  &variable_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
-//  auto previous_var = symbol_table_->get_variable(current_group_);
-//  while(symbol_table_->values_lock_) std::this_thread::yield();
-//  if(variable_values.find(previous_var) != variable_values.end()) {
-//    if(previous_var != nullptr) {
-//      auto previous_group_auto = variable_values[previous_var]->getBinaryIntAutomaton();
-//      auto remapped_auto = previous_group_auto->ChangeIndicesMap(group_formula_[current_group_]->clone(),false);
-//      variable_values[previous_var]->setData(remapped_auto);
-//    }
-//  }
-////	auto end = std::chrono::steady_clock::now();
-////  diff += end-start;
-//  DVLOG(VLOG_LEVEL)<< "end setting int group for components";
 }
 
 } /* namespace Solver */

@@ -13,10 +13,6 @@ namespace Solver {
 using namespace SMT;
 using namespace Theory;
 
-int StringConstraintSolver::dfa_misses = 0;
-int StringConstraintSolver::dfa_hits = 0;
-std::map<std::string,DFA_ptr> StringConstraintSolver::stupid_cache;
-
 const int StringConstraintSolver::VLOG_LEVEL = 13;
 
 StringConstraintSolver::StringConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_table,
@@ -27,10 +23,6 @@ StringConstraintSolver::StringConstraintSolver(Script_ptr script, SymbolTable_pt
   setCallbacks();
   
   string_formula_generator_ = std::make_shared<StringFormulaGenerator>(script, symbol_table, constraint_information);
-  auto start = std::chrono::steady_clock::now();
-  auto end = std::chrono::steady_clock::now();
-  diff = end-start;
-  diff2 = end-start;
 }
 
 StringConstraintSolver::~StringConstraintSolver() {
@@ -54,14 +46,8 @@ void StringConstraintSolver::end() {
 }
 
 void StringConstraintSolver::collect_string_constraint_info(Visitable_ptr node) {
-
-  //if(Or_ptr or_term = dynamic_cast<Or_ptr>(node)) {
-  //  if(Option::Solver::SUB_FORMULA_CACHING)
-  //    string_formula_generator_->no_visit_or = true;
-  //}
   string_formula_generator_->start(node);
   integer_terms_map_ = string_formula_generator_->get_integer_terms_map();
-  string_formula_generator_->no_visit_or = false;
 }
 
 void StringConstraintSolver::collect_string_constraint_info() {
@@ -87,63 +73,17 @@ void StringConstraintSolver::setCallbacks() {
         auto formula = string_formula_generator_->get_term_formula(term);
         if (formula != nullptr && formula->GetType() != Theory::StringFormula::Type::NONRELATIONAL) {
           DVLOG(VLOG_LEVEL) << "Relational String Formula: " << *formula << "@" << term;
-          StringAutomaton_ptr relational_str_auto = nullptr;
-
-
-
-//          auto start = std::chrono::steady_clock::now();
-//          if(Option::Solver::SUB_FORMULA_CACHING) {
-//            std::stringstream os1;
-//            {
-//              cereal::BinaryOutputArchive ar(os1);
-//              formula->save(ar);
-//            }
-//            std::string key = os1.str();
-//            bool has_result = false;
-//            std::string cached_data;
-//
-//            auto &c = rdx_->commandSync<std::string>({"GET", key});
-//            if (c.ok()) {
-//              has_result = true;
-//              cached_data = c.reply();
-//            }
-//            c.free();
-//
-//            if (has_result) {
-//              std::stringstream is(cached_data);
-//              DFA *relational_dfa = nullptr;
-//              {
-//                cereal::BinaryInputArchive ar(is);
-//                Util::Serialize::load(ar, relational_dfa);
-//              }
-//              int num_vars = formula->GetNumberOfVariables();
-//              relational_str_auto = new StringAutomaton(relational_dfa, formula, num_vars == 1 ? 8 : num_vars * 9);
-//              //Automaton::num_hits++;
-//            } else {
-//              relational_str_auto = StringAutomaton::MakeAutomaton(formula->clone());
-//              std::stringstream os;
-//              {
-//                cereal::BinaryOutputArchive ar(os);
-//                Util::Serialize::save(ar, relational_str_auto->getDFA());
-//              }
-//              rdx_->command<std::string>({"SET", key, os.str()});
-//              //Automaton::num_misses++;
-//            }
-//          } else {
-            relational_str_auto = StringAutomaton::MakeAutomaton(formula->clone());
-//          }
-
-//          auto end = std::chrono::steady_clock::now();
-//          diff += end - start;
+          StringAutomaton_ptr relational_str_auto = StringAutomaton::MakeAutomaton(formula->clone());
 
           auto result = new Value(relational_str_auto);
-          if(true) {
+
+          if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
             auto term_group_name = string_formula_generator_->get_term_group_name(term);
             if(term_group_name.empty()) {
               LOG(FATAL) << "Term has no group!";
             }
 
-            while(symbol_table_->values_lock_) std::this_thread::yield();
+            YieldWhileValuesLocked();
             symbol_table_->IntersectValue(term_group_name,result);
           } else {
             set_term_value(term, result);

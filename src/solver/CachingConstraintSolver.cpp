@@ -21,17 +21,6 @@ CachingConstraintSolver::CachingConstraintSolver(Script_ptr script, SymbolTable_
                                    CacheManager_ptr cache_manager)
     : ConstraintSolver(script, symbol_table,constraint_information),
       cache_manager_(cache_manager) {
-
-
-  num_hits_ = 0;
-  num_misses_ = 0;
-  auto start = std::chrono::steady_clock::now();
-  auto end = std::chrono::steady_clock::now();
-  diff = end-start;
-  diff2 = end-start;
-
-//  arithmetic_constraint_solver_.cache_manager_ = cache_manager_;
-//  string_constraint_solver_.cache_manager_ = cache_manager_;
   Automaton::cache_manager_ = cache_manager_;
 }
 
@@ -44,18 +33,8 @@ CachingConstraintSolver::~CachingConstraintSolver() {
 
 void CachingConstraintSolver::start() {
   DVLOG(VLOG_LEVEL) << "start";
-
-  auto start = std::chrono::steady_clock::now();
-
   visit(root_);
-
   end();
-
-  auto end = std::chrono::steady_clock::now();
-  auto time2 = end-start;
-
-//  LOG(INFO) << "solver.solve() time   : " << std::chrono::duration<long double, std::milli>(time2).count();
-
 }
 
 void CachingConstraintSolver::end() {
@@ -65,7 +44,6 @@ void CachingConstraintSolver::end() {
 	}
 	term_values_.clear();
 
-//	if(symbol_table_->values_lock_) std::this_thread::yield();
 	arithmetic_constraint_solver_.clear_term_values();
 	string_constraint_solver_.clear_term_values();
 }
@@ -85,26 +63,8 @@ void CachingConstraintSolver::visitAssert(Assert_ptr assert_command) {
   bool has_cached_result = false;
   key = Ast2Dot::toString(assert_command);
   root_key_ = key;
-//    LOG(INFO) << key;
-//    std::cin.get();
-//    auto cache_start = std::chrono::steady_clock::now();
 
-//    auto &c = rdx_->commandSync<std::string>({"GET", key});
-//    if (c.ok()) {
-//      // has cached value
-//      cached_data = c.reply();
-//      has_cached_result = true;
-//      num_hits_++;
-//      hit_statistic_ = std::make_tuple<int, int>(1, 1);
-//    } else {
-//      num_misses_++;
-//    }
   has_cached_result = cache_manager_->Get(key,cached_data);
-//    c.free();
-
-//    auto cache_end = std::chrono::steady_clock::now();
-//    auto cache_time = cache_end-cache_start;
-//    diff += cache_time;
 
   // if we have cached result, import it and go from there
   if (has_cached_result) {
@@ -112,8 +72,6 @@ void CachingConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
     // if formula was UNSAT, we store a single 0 in cache
     if (cached_data.size() == 1) {
-//        LOG(INFO) << "UNSAT!";
-//        std::cin.get();
       symbol_table_->update_satisfiability_result(false);
       return;
     }
@@ -128,8 +86,6 @@ void CachingConstraintSolver::visitAssert(Assert_ptr assert_command) {
       ar(num_string_to_read);
       ar(num_int_to_read);
     }
-
-//      symbol_table_->SetCharacterMapping(char_map);
 
     arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
     string_constraint_solver_.collect_string_constraint_info();
@@ -163,14 +119,11 @@ void CachingConstraintSolver::visitAssert(Assert_ptr assert_command) {
     }
 
     return;
+  } else {
+    arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
+    string_constraint_solver_.collect_string_constraint_info();
   }
 
-//  if(Option::Solver::FULL_FORMULA_CACHING) {
-//      arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
-//      string_constraint_solver_.collect_string_constraint_info();
-//  }
-
-LOG(INFO) << "Before check_and_visit";
   check_and_visit(assert_command->term);
 
 
@@ -212,8 +165,7 @@ LOG(INFO) << "Before check_and_visit";
             continue;
           }
           num_string_to_write++;
-        } else if (iter.second->getType() ==
-                   Value::Type::BINARYINT_AUTOMATON) {// and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+        } else if (iter.second->getType() == Value::Type::BINARYINT_AUTOMATON) {
           if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
             continue;
           }
@@ -250,8 +202,7 @@ LOG(INFO) << "Before check_and_visit";
 
       // write ints
       for (auto iter : value_map) {
-        if (iter.second->getType() ==
-            Value::Type::BINARYINT_AUTOMATON) {// and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+        if (iter.second->getType() == Value::Type::BINARYINT_AUTOMATON) {
           auto export_auto = iter.second->getBinaryIntAutomaton();
           if (export_auto->GetFormula()->GetNumberOfVariables() == 0) {
             continue;
@@ -265,14 +216,9 @@ LOG(INFO) << "Before check_and_visit";
       }
 
     }
+
     // then send it to the cache
     cache_manager_->Set(key,os.str());
-//    auto &c2 = rdx_->commandSync<std::string>({"SET", key, os.str()});
-//    if (c2.ok()) {
-//      c2.free();
-//    } else {
-//      LOG(FATAL) << "Failed to cache result: " << c2.status();
-//    }
   }
 }
 
@@ -286,11 +232,6 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
 
   bool is_satisfiable = true;
   bool is_component = constraint_information_->is_component(and_term);
-
-  auto cache_start = std::chrono::steady_clock::now();
-  auto cache_end = std::chrono::steady_clock::now();
-//  auto cache_start2 = std::chrono::steady_clock::now();
-//  auto cache_end2 = std::chrono::steady_clock::now();
 
   std::stack<Term_ptr> terms_to_solve;
   std::string key, cached_data;
@@ -306,7 +247,6 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
 
     std::string success_key = "";
 
-//    cache_start2 = std::chrono::steady_clock::now();
 
     auto got_reply = [&cached_data,&has_cached_result,&success_key,count,m_data,alone](redox::Command<std::string>& c) {
       if(c.ok()) {
@@ -336,7 +276,6 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
       reverse_term_keys[key] = and_term->term_list->size();
       term_keys[and_term->term_list->size()] = key;
       cache_manager_->GetAsync(key,got_reply);
-//      rdx_->command<std::string>({"GET", key},got_reply);
       num_sent++;
 
       terms_to_solve.push(and_term->term_list->back());
@@ -345,24 +284,15 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
 
     while(*count < max && !has_cached_result) std::this_thread::yield();
 
-    if (cached_data.size() == 1) {
-      /*
-      is_satisfiable = false;
-      std::stringstream os;
-      os << "0";
-      key = term_keys[and_term->term_list->size()];
-      for(int i = reverse_term_keys[key]; i < max; i++) {
-
-      rdx_->command<std::string>({"SET",term_keys[i],os.str()});
-      }
-      */
-      while(*count < num_sent) std::this_thread::yield();
-      Value_ptr result = new Value(false);
-      setTermValue(and_term, result);
-
-      return;
-    }
     if(has_cached_result) {
+      // first check if key has only 0 in it. if so, formula unsat
+      if (cached_data.size() == 1) {
+        while(*count < num_sent) std::this_thread::yield();
+        Value_ptr result = new Value(false);
+        setTermValue(and_term, result);
+
+        return;
+      }
 
       int num_terms_cached = reverse_term_keys[success_key];
 
@@ -370,17 +300,7 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
         and_term->term_list->push_back(terms_to_solve.top());
         terms_to_solve.pop();
       }
-      num_hits_++;
-      num_misses_ += max-num_terms_cached;
-      hit_statistic_ = std::make_tuple(num_terms_cached,max);
-
-    } else {
-      num_misses_ += max;
     }
-
-//    cache_end2 = std::chrono::steady_clock::now();
-//    diff2 += cache_end2 - cache_start2;
-
 
     std::thread constraint_info_collector([this,and_term] {
       arithmetic_constraint_solver_.collect_arithmetic_constraint_info(and_term);
@@ -391,15 +311,6 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
 
     // if we have cached result, import it and go from there
     if (has_cached_result) {
-
-
-      // first check if key has only 0 in it. if so, formula unsat
-      if (cached_data.size() == 1) {
-        LOG(INFO) << "NOT SAT";
-        Value_ptr result = new Value(false);
-        setTermValue(and_term, result);
-        return;
-      }
 
       int num_string_to_read = 0;
       int num_int_to_read = 0;
@@ -485,13 +396,8 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
 //      cache_start = std::chrono::steady_clock::now();
 
       if(dynamic_cast<Or_ptr>(term) == nullptr) {
-        cache_start = std::chrono::steady_clock::now();
         arithmetic_constraint_solver_.collect_arithmetic_constraint_info(term);
         string_constraint_solver_.collect_string_constraint_info(term);
-
-
-        cache_end = std::chrono::steady_clock::now();
-        diff += cache_end - cache_start;
 
         // solve term using normal constraint solving algorithm
         if (is_component) {
@@ -527,13 +433,8 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
         }
         clearTermValuesAndLocalLetVars();
       }
+
       // now we need to cache what we've got so far
-
-
-
-
-
-
       auto& value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
       auto tk = std::make_shared<std::map<int,std::string>>(term_keys.begin(),term_keys.end());
       auto revk = std::make_shared<std::map<std::string,int>>(reverse_term_keys.begin(),reverse_term_keys.end());
@@ -563,14 +464,9 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
               if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
                 continue;
               }
-              //auto equiv_class = symbol_table_->get_equivalence_class_of(iter.first);
-              //if(equiv_class != nullptr && equiv_class->has_constant()) {
-              //  continue;
-              //}
               num_string_to_write++;
               str_stuff_to_store->push_back(iter.second->getStringAutomaton()->clone());
-            } else if (iter.second->getType() ==
-                       Value::Type::BINARYINT_AUTOMATON) {// and iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+            } else if (iter.second->getType() == Value::Type::BINARYINT_AUTOMATON) {
               if (iter.second->getBinaryIntAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
                 continue;
               }
@@ -598,7 +494,6 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
               export_auto->save(ar);
             }
             delete export_auto;
-            export_auto = nullptr;
           }
 
           for(auto it : *bin_stuff_to_store) {
@@ -609,9 +504,9 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
               export_auto->save(ar);
             }
             delete export_auto;
-            export_auto = nullptr;
           }
         } else {
+          // unsat, just cache a "0" indicating unsat
           symbol_table_->UnlockValues();
           os << "0";
         }
@@ -622,27 +517,22 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
         };
 
         cache_manager_->SetAsync(key,os.str(),got_reply);
-//        rdx_->command<std::string>({"SET",key,os.str()},got_reply);
         if(is_done || not is_satisfiable) {
           cache_manager_->SetAsync(root_key_,os.str(),got_reply);
-//          rdx_->command<std::string>({"SET",root_key_,os.str()},got_reply);
           for(int i = (*revk)[key]; i < max; i++) {
             cache_manager_->SetAsync((*tk)[i],os.str(),got_reply);
-//            rdx_->command<std::string>({"SET",(*tk)[i],os.str()},got_reply);
           }
         }
 
         delete str_stuff_to_store;
         delete bin_stuff_to_store;
-        //delete revk;
-        //delete tk;
       }));
 
       if(not is_satisfiable) {
-        while(symbol_table_->values_lock_) std::this_thread::yield;
+        YieldWhileValuesLocked();
       }
     }
-    while(symbol_table_->values_lock_) std::this_thread::yield;
+    YieldWhileValuesLocked();
 
     if (is_component and is_satisfiable) {
       if (constraint_information_->has_arithmetic_constraint(and_term)) {
@@ -663,60 +553,44 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
     bool is_component = constraint_information_->is_component(and_term);
 
 
-    while(not and_term->term_list->empty()) {
-      terms_to_solve.push(and_term->term_list->back());
-      and_term->term_list->pop_back();
-    }
-
-    arithmetic_constraint_solver_.collect_arithmetic_constraint_info(and_term);
-    string_constraint_solver_.collect_string_constraint_info(and_term);
-
-    while(not terms_to_solve.empty()) {
-
-      auto term = terms_to_solve.top();
-      and_term->term_list->push_back(term);
-      terms_to_solve.pop();
-
-
-      if(dynamic_cast<Or_ptr>(term) == nullptr) {
-
-        arithmetic_constraint_solver_.collect_arithmetic_constraint_info(term);
-        string_constraint_solver_.collect_string_constraint_info(term);
-
-        if (is_component) {
-          if (constraint_information_->has_arithmetic_constraint(term)) {
-            arithmetic_constraint_solver_.start(term);
-            is_satisfiable = arithmetic_constraint_solver_.get_term_value(term)->is_satisfiable();
-            DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *term << "@" << term;
-          }
-          if ((is_satisfiable or (!constraint_information_->has_arithmetic_constraint(term)))
-                and constraint_information_->has_string_constraint(term)) {
-            string_constraint_solver_.start(term);
-            is_satisfiable = string_constraint_solver_.get_term_value(term)->is_satisfiable();
-            DVLOG(VLOG_LEVEL) << "String formulae solved: " << *term << "@" << term;
-          }
-        }
+    if (is_component) {
+      if (constraint_information_->has_arithmetic_constraint(and_term)) {
+        arithmetic_constraint_solver_.start(and_term);
+        is_satisfiable = arithmetic_constraint_solver_.get_term_value(and_term)->is_satisfiable();
+        DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *and_term << "@" << and_term;
+      }
+      if ((is_satisfiable or (!constraint_information_->has_arithmetic_constraint(and_term)))
+              and constraint_information_->has_string_constraint(and_term)) {
+        string_constraint_solver_.start(and_term);
+        is_satisfiable = string_constraint_solver_.get_term_value(and_term)->is_satisfiable();
+        DVLOG(VLOG_LEVEL) << "String formulae solved: " << *and_term << "@" << and_term;
       }
 
-      is_satisfiable = check_and_visit(term) and is_satisfiable;
-      if(not is_satisfiable) {
-        clearTermValuesAndLocalLetVars();
-        variable_path_table_.clear();
-        break;
-      }
-
-      if(dynamic_cast<Or_ptr>(term) == nullptr) {
-        if(is_satisfiable) {
-          is_satisfiable = update_variables();
-          if(not is_satisfiable) {
-            break;
-          }
-        }
-        clearTermValuesAndLocalLetVars();
-      }
+      DVLOG(VLOG_LEVEL) << "Multi-track solving done: " << *and_term << "@" << and_term;
     }
 
     DVLOG(VLOG_LEVEL) << "visit children start: " << *and_term << "@" << and_term;
+
+    //if (is_satisfiable and (constraint_information_->has_mixed_constraint(and_term) or (not is_component))) {
+    if (is_satisfiable) {
+      for (auto& term : *(and_term->term_list)) {
+        is_satisfiable = check_and_visit(term) and is_satisfiable;
+        if (not is_satisfiable) {
+          clearTermValuesAndLocalLetVars();
+          variable_path_table_.clear();
+          break;
+        }
+        if (dynamic_cast<Or_ptr>(term) == nullptr) {
+          if (is_satisfiable) {
+            is_satisfiable = update_variables();
+            if(not is_satisfiable) {
+              break;
+            }
+          }
+          clearTermValuesAndLocalLetVars();
+        }
+      }
+    }
 
     DVLOG(VLOG_LEVEL) << "visit children end: " << *and_term << "@" << and_term;
 
@@ -733,7 +607,6 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
     }
 
     Value_ptr result = new Value(is_satisfiable);
-
     setTermValue(and_term, result);
   }
 
@@ -752,17 +625,13 @@ void CachingConstraintSolver::visitOr(Or_ptr or_term) {
   bool is_component = constraint_information_->is_component(or_term);
 
 
-  if(true) {
+  if(Option::Solver::SUB_FORMULA_CACHING) {
 
 
     for (auto& term : *(or_term->term_list)) {
 
       string_constraint_solver_.push_generator(term);
       arithmetic_constraint_solver_.push_generator(term);
-
-//      if(dynamic_cast<And_ptr>(term) == nullptr) {
-//        LOG(FATAL) << "Should have an and term here!";
-//      }
 
       symbol_table_->push_scope(term);
       bool is_scope_satisfiable = check_and_visit(term);
@@ -800,16 +669,17 @@ void CachingConstraintSolver::visitOr(Or_ptr or_term) {
     DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
 
   } else {
+    bool is_satisfiable = false;
+    bool is_component = constraint_information_->is_component(or_term);
 
-
-    if (is_component && !Option::Solver::SUB_FORMULA_CACHING) {
+    if (is_component) {
       if (constraint_information_->has_arithmetic_constraint(or_term)) {
         arithmetic_constraint_solver_.start(or_term);
         is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
         DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *or_term << "@" << or_term;
       }
       if ((is_satisfiable or !constraint_information_->has_arithmetic_constraint(or_term))
-          and constraint_information_->has_string_constraint(or_term)) {
+              and constraint_information_->has_string_constraint(or_term)) {
         string_constraint_solver_.start(or_term);
         is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
         DVLOG(VLOG_LEVEL) << "String formulae solved: " << *or_term << "@" << or_term;
@@ -821,8 +691,8 @@ void CachingConstraintSolver::visitOr(Or_ptr or_term) {
     DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
 
     //if (constraint_information_->has_mixed_constraint(or_term)) {
-    if (true) {
-      for (auto &term : *(or_term->term_list)) {
+    if(true) {
+      for (auto& term : *(or_term->term_list)) {
         symbol_table_->push_scope(term);
         bool is_scope_satisfiable = check_and_visit(term);
 
@@ -839,7 +709,6 @@ void CachingConstraintSolver::visitOr(Or_ptr or_term) {
       }
     }
 
-
     if (is_component and is_satisfiable) {
       if (constraint_information_->has_arithmetic_constraint(or_term)) {
         arithmetic_constraint_solver_.postVisitOr(or_term);
@@ -852,10 +721,8 @@ void CachingConstraintSolver::visitOr(Or_ptr or_term) {
       }
     }
 
-
     Value_ptr result = new Value(is_satisfiable);
     setTermValue(or_term, result);
-    root_key_ = old_root_key;
 
     DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
   }

@@ -15,13 +15,6 @@ namespace Solver {
 class CachingConstraintSolver: public Solver::ConstraintSolver {
 public:
 
-  std::chrono::duration<double> diff;
-  std::chrono::duration<double> diff2;
-
-  std::chrono::duration<double> get_diff3() { return this->arithmetic_constraint_solver_.diff;}
-  std::chrono::duration<double> get_diff4() { return this->arithmetic_constraint_solver_.diff2;}
-
-
   CachingConstraintSolver(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr, CacheManager_ptr);
   virtual ~CachingConstraintSolver();
 
@@ -33,16 +26,9 @@ public:
   void visitAnd(SMT::And_ptr) override;
   void visitOr(SMT::Or_ptr) override;
 
-  int num_hits() {return num_hits_;}
-  int num_misses() {return num_misses_;}
-  std::tuple<int,int> hit_statistic() {return hit_statistic_;};
-
 protected:
   // redox client for redis cache
   CacheManager *cache_manager_;
-  int num_hits_;
-  int num_misses_;
-  std::tuple<int,int> hit_statistic_;
 
   std::vector<std::thread> serializers_;
 
@@ -50,6 +36,10 @@ protected:
   std::string last_serialized_data_;
 
 private:
+  void YieldWhileValuesLocked() {
+    while(symbol_table_->AreValuesLocked()) std::this_thread::yield;
+  }
+
   static const int VLOG_LEVEL;
 
 };

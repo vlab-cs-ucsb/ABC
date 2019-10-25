@@ -35,8 +35,6 @@ namespace Solver {
 class ArithmeticFormulaGenerator: public SMT::Visitor {
 public:
 
-  std::chrono::duration<double> diff;
-
   ArithmeticFormulaGenerator(SMT::Script_ptr, SymbolTable_ptr, ConstraintInformation_ptr);
   virtual ~ArithmeticFormulaGenerator();
 
@@ -123,7 +121,6 @@ public:
   std::string get_variable_group_name(SMT::Variable_ptr variable);
 	std::set<std::string> get_group_subgroups(std::string group_name);
 
-	bool no_visit_or;
 protected:
   void add_int_variables(std::string group_name, SMT::Term_ptr term);
   std::string generate_group_name(SMT::Term_ptr term, std::string var_name);

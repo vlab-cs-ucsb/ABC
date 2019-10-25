@@ -49,7 +49,6 @@ using SymbolTable_ptr = SymbolTable*;
 
 class SymbolTable {
 public:
-  std::atomic<bool> values_lock_;
 
   SymbolTable(bool is_root = true);
   SymbolTable(const SymbolTable&);
@@ -163,6 +162,7 @@ public:
 
   void LockValues() {values_lock_ = true;}
   void UnlockValues() {values_lock_ = false;}
+  bool AreValuesLocked() {return values_lock_;}
 
 private:
   std::string generate_internal_name(std::string, SMT::Variable::Type);
@@ -238,6 +238,7 @@ private:
 
   std::map<std::string,int> variable_usage_;
 
+  std::atomic<bool> values_lock_;
 
 
   static const int VLOG_LEVEL;

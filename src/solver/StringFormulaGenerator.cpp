@@ -26,42 +26,6 @@ StringFormulaGenerator::StringFormulaGenerator(Script_ptr script, SymbolTable_pt
       symbol_table_(symbol_table),
       constraint_information_(constraint_information),
       has_mixed_constraint_{false} {
-  no_visit_or = false;
-
-//	current_group_ = symbol_table_->get_var_name_for_node(root_, Variable::Type::STRING);
-//  subgroups_[current_group_] = std::set<std::string>();
-//
-//	auto variables = symbol_table_->get_variables();
-//	for(auto& iter : variables) {
-//	  auto group_var = symbol_table_->get_group_variable_of(iter.second);
-//	  if(iter.second->getType() != Variable::Type::STRING or group_var == iter.second) {
-//	    continue;
-//	  }
-//
-//  	auto group_value = symbol_table_->get_value(iter.first);
-//  	auto group_formula = group_value->getStringAutomaton()->GetFormula();
-//
-//  	if(group_formula != nullptr) {
-//  		subgroups_[current_group_].insert(group_var->getName());
-//  		variable_group_map_[iter.second->getName()] = group_var->getName();
-//  		if(group_formula_.find(group_var->getName()) == group_formula_.end()) {
-//				group_formula_[group_var->getName()] = group_formula->clone();
-//				group_formula_[group_var->getName()]->SetType(StringFormula::Type::NONE);
-//			}
-//  	}
-//	}
-//
-//	//LOG(INFO) << "Imported " << group_formula_.size() << " groups from last solve";
-//	for(auto it : group_formula_) {
-//	  //LOG(INFO) << "Imported group = " << it.first;
-//	  for(auto var : it.second->GetVariableCoefficientMap()) {
-//	    //LOG(INFO) << "--> " << var.first;
-//	  }
-//	}
-//
-//	DVLOG(VLOG_LEVEL) << "Done importing";
-//	std::cin.get();
-
 }
 
 StringFormulaGenerator::~StringFormulaGenerator() {
@@ -178,8 +142,7 @@ void StringFormulaGenerator::visitOr(Or_ptr or_term) {
     has_mixed_constraint_ = false;
   }
 
-  if(!no_visit_or)
-    visit_children_of(or_term);
+	visit_children_of(or_term);
   DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
 
   // @deprecated check, all or terms must be a component
@@ -1672,7 +1635,7 @@ void StringFormulaGenerator::set_group_mappings() {
     
     //LOG(INFO) << "# previous group vars: " << previous_group_variables.size();
     StringAutomaton_ptr initial_auto = StringAutomaton::MakeAnyStringUnaligned(group_iter.second->clone());
-	initial_auto->GetFormula()->SetType(StringFormula::Type::NA);
+		initial_auto->GetFormula()->SetType(StringFormula::Type::NA);
     for(auto previous_group: previous_group_variables) {
       //LOG(INFO) << "--> previous group = " << previous_group->getName();
       StringAutomaton_ptr previous_group_auto = variable_values[previous_group]->getStringAutomaton();
