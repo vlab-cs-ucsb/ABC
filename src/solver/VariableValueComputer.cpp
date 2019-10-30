@@ -975,6 +975,7 @@ void VariableValueComputer::visitCharAt(CharAt_ptr char_at_term) {
 
   if (child_term == char_at_term->subject_term)
   {
+    LOG(INFO) << "IN SUBJECT TERM";
     Value_ptr index_value = getTermPostImage(char_at_term->index_term);
     if (Value::Type::INT_CONSTANT == index_value->getType()) {
       child_value = new Value(child_post_value->getStringAutomaton()
@@ -986,15 +987,19 @@ void VariableValueComputer::visitCharAt(CharAt_ptr char_at_term) {
   }
   else
   {
+    LOG(INFO) << "IN INDEX TERM";
     Value_ptr subject_value = getTermPostImage(char_at_term->subject_term);
-    Theory::IntAutomaton_ptr indexes_auto = subject_value->getStringAutomaton()->IndexOf(subject_value->getStringAutomaton());
+    Theory::IntAutomaton_ptr indexes_auto = subject_value->getStringAutomaton()->IndexOf(term_value->getStringAutomaton());
     if (Value::Type::INT_CONSTANT == child_post_value->getType())
     {
+      LOG(INFO) << " 1st IF";
       child_value = new Value(indexes_auto->intersect(child_post_value->getIntConstant()));
     }
     else
     {
+      LOG(INFO) << "1st ELSE";
       child_value = new Value(indexes_auto->intersect(child_post_value->getIntAutomaton()));
+
     }
     delete indexes_auto;
   }
@@ -1264,14 +1269,38 @@ void VariableValueComputer::visitToInt(ToInt_ptr to_int_term) {
   if (Value::Type::INT_CONSTANT == term_value->getType()) {
     std::stringstream ss;
     ss << term_value->getIntConstant();
-    auto str_auto = Theory::StringAutomaton::MakeString(ss.str());
-    child_pre_auto = child_post_value->getStringAutomaton()->Intersect(str_auto);
-    delete str_auto;
+    // if -1, then we can't refine child term (anything non-numeric maps to -1)
+    if(term_value->getIntConstant() == -1) {
+      child_pre_auto = Theory::StringAutomaton::MakeAnyString();
+    } else {
+      // can start any number of leading zeros
+      auto regex_auto = Theory::StringAutomaton::MakeRegexAuto("0*");
+      auto str_auto = Theory::StringAutomaton::MakeString(ss.str());
+      auto concat_auto = regex_auto->Concat(str_auto);
+      child_pre_auto = child_post_value->getStringAutomaton()->Intersect(concat_auto);
+      delete str_auto;
+      delete regex_auto;
+      delete concat_auto;
+    }
   } else {
-    auto unary_auto = term_value->getIntAutomaton()->toUnaryAutomaton();
-    auto str_auto = unary_auto->toStringAutomaton();
-    child_pre_auto = child_post_value->getStringAutomaton()->Intersect(str_auto);
-    delete unary_auto;
+    // if -1, then we can't refine child term (anything non-numeric maps to -1)
+    if(term_value->getIntAutomaton()->hasNegative1()) {
+      child_pre_auto = Theory::StringAutomaton::MakeAnyString();
+    } else {
+      auto unary_auto = term_value->getIntAutomaton()->toUnaryAutomaton();
+//      unary_auto->inspectAuto(false, true);
+      auto str_auto = unary_auto->toStringAutomaton();
+//      str_auto->inspectAuto(false, true);
+      // can start any number of leading zeros
+      auto regex_auto = Theory::StringAutomaton::MakeRegexAuto("0*");
+      auto concat_auto = regex_auto->Concat(str_auto);
+      child_pre_auto = child_post_value->getStringAutomaton()->Intersect(concat_auto);
+//      child_pre_auto->inspectAuto(false, true);
+      delete unary_auto;
+      delete regex_auto;
+      delete concat_auto;
+      delete str_auto;
+    }
   }
 
   child_value = new Value(child_pre_auto);
@@ -1400,13 +1429,18 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 //      std::cin.get();
     }
       break;
+    case Value::Type::INT_CONSTANT:
     case Value::Type::INT_AUTOMATON:
     {
       //TODO !!!! improve mixing constraints by design
     	Variable_ptr variable = symbol_table->get_variable(qi_term->getVarName());
     	auto variable_value = symbol_table->get_value(variable);
       if(Value::Type::BINARYINT_AUTOMATON == variable_value->getType()) {
-
+        if(Value::Type::INT_CONSTANT == term_pre_value->getType()) {
+          int constant = term_pre_value->getIntConstant();
+          delete term_pre_value;
+          term_pre_value = new Value(Theory::IntAutomaton::makeInt(constant));
+        }
       	auto unary_auto = term_pre_value->getIntAutomaton()->toUnaryAutomaton();
       	auto term_binary_auto = unary_auto->toBinaryIntAutomaton(qi_term->getVarName(),
 																																 variable_value->getIntAutomaton()->GetFormula()->clone(),
@@ -1419,6 +1453,7 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
     }
       break;
     default:
+      LOG(INFO) << term_pre_value << " " << *term_pre_value;
       LOG(FATAL) << "handle case";
       break;
   }

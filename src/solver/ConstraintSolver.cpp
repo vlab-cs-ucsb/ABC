@@ -404,7 +404,13 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
       and Value::Type::INT_CONSTANT == param_right->getType()) {
     result = new Value(param_left->getIntConstant() == param_right->getIntConstant());
   } else {
+//    LOG(INFO) << "Before intersect!";
+//    std::cin.get();
+//    param_left->getStringAutomaton()->inspectAuto(false,true);
+//    param_right->getStringAutomaton()->inspectAuto(false,true);
     result = param_left->intersect(param_right);
+//    result->getStringAutomaton()->inspectAuto(false,true);
+//    std::cin.get();
   }
   setTermValue(eq_term, result);
 }
@@ -677,6 +683,7 @@ void ConstraintSolver::visitContains(Contains_ptr contains_term) {
   Value_ptr result = nullptr, param_subject = getTermValue(contains_term->subject_term), param_search = getTermValue(
       contains_term->search_term);
   result = new Value(param_subject->getStringAutomaton()->Contains(param_search->getStringAutomaton()));
+
   setTermValue(contains_term, result);
 }
 
@@ -871,6 +878,9 @@ void ConstraintSolver::visitCharAt(CharAt_ptr char_at_term) {
     LOG(FATAL)<< "Handle this case";
   }
 
+//  result->getStringAutomaton()->inspectAuto(false,true);
+//  std::cin.get();
+
   setTermValue(char_at_term, result);
 }
 
@@ -1022,6 +1032,9 @@ void ConstraintSolver::visitToString(ToString_ptr to_string_term) {
     delete unary_auto;
   }
 
+//  result->getStringAutomaton()->inspectAuto(false,true);
+//  std::cin.get();
+
   setTermValue(to_string_term, result);
 }
 
@@ -1030,14 +1043,20 @@ void ConstraintSolver::visitToInt(ToInt_ptr to_int_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *to_int_term;
 
   Value_ptr param = getTermValue(to_int_term->subject_term);
-  Theory::IntAutomaton_ptr int_auto = param->getStringAutomaton()->ParseToIntAutomaton();
 
+  Theory::IntAutomaton_ptr int_auto = param->getStringAutomaton()->ParseToIntAutomaton();
+//  param->getStringAutomaton()->inspectAuto(false,true);
+//  int_auto->inspectAuto(false,true);
+//  std::cin.get();
   Value_ptr result = nullptr;
   if (int_auto->isAcceptingSingleInt()) {
     result = new Value(int_auto->getAnAcceptingInt());
   } else {
     result = new Value(int_auto);
   }
+
+//  int_auto->inspectAuto(false,true);
+//  std::cin.get();
 
   setTermValue(to_int_term, result);
 }

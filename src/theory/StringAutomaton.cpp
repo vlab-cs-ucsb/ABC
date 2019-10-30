@@ -1898,7 +1898,12 @@ StringAutomaton_ptr StringAutomaton::CharAt(const int index) {
 
   paths state_paths = nullptr, pp = nullptr;
   trace_descr tp = nullptr;
+  bool any_accept = false;
   for (int s : states_at_index) {
+    // if any state is accepting, then make sure we add the empty string in the final automaton
+    if(this->dfa_->f[s] == 1) {
+      any_accept = true;
+    }
     state_paths = pp = make_paths(this->dfa_->bddm, this->dfa_->q[s]);
     while (pp) {
       if (pp->to != (unsigned)sink_state) {
@@ -1933,6 +1938,9 @@ StringAutomaton_ptr StringAutomaton::CharAt(const int index) {
   }
 
   char statuses[3] = {'-', '+', '-'};
+  if(any_accept) {
+    statuses[0] = '+';
+  }
   dfaSetup(3, number_of_variables, indices);
   // 0 -> 1
   dfaAllocExceptions(exceptions.size());
@@ -1961,11 +1969,25 @@ StringAutomaton_ptr StringAutomaton::CharAt(const int index) {
   }
 
   DVLOG(VLOG_LEVEL) << charat_auto->id_ << " = [" << this->id_ << "]->CharAt(" << index << ")";
+//  charat_auto->inspectAuto(false,true);
+//  LOG(INFO) << "charAt1";
+//  std::cin.get();
   return charat_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::CharAt(IntAutomaton_ptr index_auto) {
   CHECK_EQ(this->num_tracks_,1);
+
+
+  auto int0 = IntAutomaton::makeInt(0);
+  auto int1 = IntAutomaton::makeInt(1);
+  auto int01 = int0->union_(int1);
+  auto substr = this->SubString(index_auto,1);
+//  substr->inspectAuto(false,true);
+//  LOG(INFO) << "charAt";
+//  std::cin.get();
+  return substr;
+
 
   // if index auto is negative 1, then just return empty string
   if(index_auto->hasNegative1() and index_auto->isAcceptingSingleInt()) {
@@ -1998,7 +2020,24 @@ StringAutomaton_ptr StringAutomaton::CharAt(IntAutomaton_ptr index_auto) {
 
   const int number_of_exceptions = exceptions.size();
   dfaSetup(3, number_of_variables, GetBddVariableIndices(number_of_variables));
-  char statuses[3] { '-', '+', '-' };
+  char statuses[4] { '-', '+', '-', '\0'};
+
+  // if index_auto contains 0 or is out of range,
+  LOG(INFO) << "Num exceptions = " << number_of_exceptions;
+  LOG(INFO) << "Num variables = " << number_of_variables;
+  LOG(INFO) << 1;
+  DFA_ptr suffix_dfa = StringAutomaton::PreConcatSuffix(index_auto->getDFA(),this->getDFA(),index_auto->get_number_of_bdd_variables());
+  LOG(INFO) << 2;
+  bool first_if = index_auto->IsInitialStateAccepting();
+  LOG(INFO) << 3;
+  bool second_if = !Automaton::DFAIsMinimizedEmtpy(suffix_dfa);
+  LOG(INFO) << 4;
+
+  if(first_if || second_if) {
+    LOG(INFO) << "first if || second if = true";
+    statuses[0] = '+';
+  }
+  LOG(INFO) << 5;
   //state 0
   dfaAllocExceptions(number_of_exceptions);
   for (std::string exception : exceptions) {
@@ -2032,6 +2071,17 @@ StringAutomaton_ptr StringAutomaton::SubString(const int start) {
   substring_auto = suffixes_auto->Prefixes();
   delete suffixes_auto;
   DVLOG(VLOG_LEVEL) << substring_auto->id_ << " = [" << this->id_ << "]->subString(" << start << ")";
+  return substring_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::SubString(IntAutomaton_ptr start_auto) {
+  CHECK_EQ(this->num_tracks_,1);
+
+  StringAutomaton_ptr substring_auto = nullptr, suffixes_auto = nullptr;
+  suffixes_auto = this->SuffixesAtIndex(start_auto);
+  substring_auto = suffixes_auto->Prefixes();
+  delete suffixes_auto;
+  DVLOG(VLOG_LEVEL) << substring_auto->id_ << " = [" << this->id_ << "]->subString(" << start_auto->getId() << ")";
   return substring_auto;
 }
 
@@ -2328,11 +2378,13 @@ IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto, IntAu
 	StringAutomaton_ptr prefixes_auto = this->Prefixes();
 	IntAutomaton_ptr length_auto = prefixes_auto->Length();
 	IntAutomaton_ptr valid_lengths_auto = static_cast<IntAutomaton_ptr>(length_auto->Intersect(from_index_auto));
+	auto temp_this_auto = this;//->SubString(valid_lengths_auto);
 	// string_length_auto will have only lengths <= this->length
 	StringAutomaton_ptr string_length_auto = new StringAutomaton(dfaCopy(valid_lengths_auto->getDFA()),DEFAULT_NUM_OF_VARIABLES);
-  delete valid_lengths_auto;
+//  delete valid_lengths_auto;
   delete prefixes_auto;
 	delete length_auto;
+
   // if no valid lengths, then regardless of search_auto, automatically return -1
 	if(string_length_auto->IsEmptyLanguage() or from_index_auto->IsEmptyLanguage()) {
 	  delete string_length_auto;
@@ -2347,30 +2399,50 @@ IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto, IntAu
     search_has_empty_string = true;
   }
 
+	this->inspectAuto(false,false);
+
+
+
 	StringAutomaton_ptr any_string_auto = StringAutomaton::MakeAnyString();
 	StringAutomaton_ptr contains_auto = any_string_auto->Contains(search_param_auto);
 	StringAutomaton_ptr difference_auto = any_string_auto->Difference(contains_auto);
 
-	StringAutomaton_ptr concat1_auto = string_length_auto->Concat(difference_auto);
+  // we first want to capture the first instance of search_param_auto after string_length_auto
+  // starting from the valid indices, we can either see search_param, or -(sigma* search_param sigma*) followed by search_param, then
+
+	StringAutomaton_ptr concat1_auto = string_length_auto->Concat(search_param_auto->Union(difference_auto->Concat(search_param_auto)))->Concat(difference_auto);
 	StringAutomaton_ptr concat2_auto = search_param_auto->Concat(any_string_auto);
 
-	auto prefix_suffix_auto = MakePrefixSuffix(0,1,2,3);
-	auto original_string_auto = new StringAutomaton(this->getDFA(),0,3,DEFAULT_NUM_OF_VARIABLES);
-	auto prefix_auto = new StringAutomaton(concat1_auto->getDFA(),1,3,DEFAULT_NUM_OF_VARIABLES);
-	DFA_ptr suffix_dfa = PrependLambda(concat2_auto->getDFA(),DEFAULT_NUM_OF_VARIABLES);
-	auto suffix_auto = new StringAutomaton(suffix_dfa,2,3,VAR_PER_TRACK);
+	auto m1 = MakePrefixSuffix(temp_this_auto->getDFA(),concat1_auto->getDFA(),any_string_auto->getDFA(),num_of_bdd_variables_);
 
-	auto intersect_auto = prefix_suffix_auto->Intersect(original_string_auto);
-	auto temp_auto = intersect_auto;
+	// c1 has the first instance of search_param, followed by stuff that is guaranteed NOT to be search param
+	auto c1 = m1->GetKTrack(1);
 
-	intersect_auto = temp_auto->Intersect(prefix_auto);
-	delete temp_auto;
-	temp_auto = intersect_auto;
+	c1->inspectAuto(false,true);
 
-	intersect_auto = temp_auto->Intersect(suffix_auto);
-	delete temp_auto;
+  // temp_auto will be the prefix whos length corresponds valid indexes + length_from_index_to_search_param
+	auto temp_auto = c1->PreConcatLeft(search_param_auto->Concat(difference_auto));
 
-	temp_auto = intersect_auto->GetKTrack(1);
+
+//
+//	auto prefix_suffix_auto = MakePrefixSuffix(0,1,2,3);
+//	auto original_string_auto = new StringAutomaton(temp_this_auto->getDFA(),0,3,DEFAULT_NUM_OF_VARIABLES);
+//	auto prefix_auto = new StringAutomaton(concat1_auto->getDFA(),1,3,DEFAULT_NUM_OF_VARIABLES);
+//	DFA_ptr suffix_dfa = PrependLambda(concat2_auto->getDFA(),DEFAULT_NUM_OF_VARIABLES);
+//	auto suffix_auto = new StringAutomaton(suffix_dfa,2,3,VAR_PER_TRACK);
+//
+//	auto intersect_auto = prefix_suffix_auto->Intersect(original_string_auto);
+//	auto temp_auto = intersect_auto;
+//
+//	intersect_auto = temp_auto->Intersect(prefix_auto);
+//	delete temp_auto;
+//	temp_auto = intersect_auto;
+//
+//	intersect_auto = temp_auto->Intersect(suffix_auto);
+//	delete temp_auto;
+//
+//	temp_auto = intersect_auto->GetKTrack(1);
+
 	// if no match is found, return -1 as the result
 	if(temp_auto->IsEmptyLanguage()) {
 	  indexof_auto = IntAutomaton::makeInt(-1);
@@ -2385,20 +2457,20 @@ IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto, IntAu
     delete search_param_auto; search_param_auto = nullptr; // search_param_auto auto is not the parameter search auto, it is updated, delete it
   }
 	delete temp_auto;
-	delete prefix_suffix_auto;
-	delete prefix_auto;
-	delete suffix_auto;
-	delete contains_auto;
-	delete string_length_auto;
-	dfaFree(suffix_dfa);
+//	delete prefix_suffix_auto;
+//	delete prefix_auto;
+//	delete suffix_auto;
+//	delete contains_auto;
+//	delete string_length_auto;
+//	dfaFree(suffix_dfa);
   // additionally, if from_index_auto has -1, then result can have -1 as well
   if(from_index_auto->hasNegative1()) {
     indexof_auto->setMinus1(true);
   }
-//	this->inspectAuto(false,false);
-//  LOG(INFO) << "INDEXOF";
-//	indexof_auto->inspectAuto(false,false);
-//	std::cin.get();
+
+  LOG(INFO) << "INDEXOF; " << (indexof_auto->hasNegative1() ? " has neg 1 " : " no neg 1");
+	indexof_auto->inspectAuto(false,false);
+	std::cin.get();
 
   DVLOG(VLOG_LEVEL) << indexof_auto->getId() << " = [" << this->id_ << "]->indexOf(" << search_auto->id_ << "," << from_index_auto->getId() << ")";
 	
@@ -2566,24 +2638,69 @@ StringAutomaton_ptr StringAutomaton::ToLowerCase() {
   return lower_case_auto;
 }
 
-StringAutomaton_ptr StringAutomaton::Trim() {
+StringAutomaton_ptr StringAutomaton::Trim(char c) {
 	CHECK_EQ(this->num_tracks_,1);
-  DFA_ptr trimmed_prefix_dfa = nullptr, trimmed_dfa = nullptr;
-  StringAutomaton_ptr trimmed_auto = nullptr, trim_auto = nullptr;
+  StringAutomaton_ptr trimmed_auto = nullptr;
 
-  std::string trim_regex = "' '*";
-  trim_auto = StringAutomaton::MakeRegexAuto(trim_regex, num_of_bdd_variables_);
-  trimmed_prefix_dfa = StringAutomaton::TrimPrefix(this->dfa_,trim_auto->getDFA(),num_of_bdd_variables_);
-  trimmed_dfa = StringAutomaton::TrimSuffix(trimmed_prefix_dfa, trim_auto->getDFA(), num_of_bdd_variables_);
-  delete trim_auto;
-  dfaFree(trimmed_prefix_dfa);
-
-  trimmed_auto = new StringAutomaton(trimmed_dfa, num_of_bdd_variables_);
+  auto trim_left = this->TrimPrefix(c);
+  trimmed_auto = trim_left->TrimSuffix(c);
+  delete trim_left;
 
   DVLOG(VLOG_LEVEL) << trimmed_auto->id_ << " = [" << this->id_ << "]->trim()";
 
   return trimmed_auto;
 }
+
+StringAutomaton_ptr StringAutomaton::TrimPrefix(char c) {
+  std::string trim_regex(1,c);
+  auto trim_auto = StringAutomaton::MakeRegexAuto(trim_regex);
+  auto prefix_auto = trim_auto->Repeat(0);
+	auto refine_auto = trim_auto->Repeat(1);
+	delete trim_auto;
+
+	auto any_string_auto = StringAutomaton::MakeAnyString();
+	auto begins_auto = any_string_auto->Begins(refine_auto);
+	auto suffix_auto = any_string_auto->Difference(begins_auto);
+
+	delete any_string_auto;
+	delete begins_auto;
+
+	auto prefix_suffix_auto = StringAutomaton::MakePrefixSuffix(this->getDFA(),prefix_auto->getDFA(),suffix_auto->getDFA(),this->num_of_bdd_variables_);
+	delete prefix_auto;
+	delete suffix_auto;
+	delete refine_auto;
+
+	auto result_auto = prefix_suffix_auto->GetKTrack(2);
+	delete prefix_suffix_auto;
+
+	return result_auto;
+}
+
+StringAutomaton_ptr StringAutomaton::TrimSuffix(char c) {
+  std::string trim_regex(1,c);
+  auto trim_auto = StringAutomaton::MakeRegexAuto(trim_regex);
+  auto suffix_auto = trim_auto->Repeat(0);
+	auto refine_auto = trim_auto->Repeat(1);
+	delete trim_auto;
+
+	auto any_string_auto = StringAutomaton::MakeAnyString();
+	auto ends_auto = any_string_auto->Ends(refine_auto);
+	auto prefix_auto = any_string_auto->Difference(ends_auto);
+
+	delete any_string_auto;
+	delete ends_auto;
+
+	auto prefix_suffix_auto = StringAutomaton::MakePrefixSuffix(this->getDFA(),prefix_auto->getDFA(),suffix_auto->getDFA(),this->num_of_bdd_variables_);
+	delete prefix_auto;
+	delete suffix_auto;
+	delete refine_auto;
+
+	auto result_auto = prefix_suffix_auto->GetKTrack(1);
+	delete prefix_suffix_auto;
+
+	return result_auto;
+}
+
 
 StringAutomaton_ptr StringAutomaton::Replace(StringAutomaton_ptr search_auto,
 		StringAutomaton_ptr replace_auto) {
@@ -2751,6 +2868,11 @@ UnaryAutomaton_ptr StringAutomaton::ToUnaryAutomaton() {
 
 IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
 	CHECK_EQ(this->num_tracks_,1);
+  std::string valid_digits = "[0-9]*";
+  auto valid_digits_auto = StringAutomaton::MakeRegexAuto(valid_digits);
+  auto restricted_to_digits_auto = this->Intersect(valid_digits_auto);
+  DFA_ptr dfa = restricted_to_digits_auto->getDFA();
+
   IntAutomaton_ptr int_auto = nullptr;
   if (this->isCyclic()) {
     int_auto = IntAutomaton::makeIntGreaterThanOrEqual(0);
@@ -2762,7 +2884,7 @@ IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
     paths_to_state.push_back("");
 
     std::stack<StatePaths> dfs_stack;
-    dfs_stack.push(std::make_pair(this->dfa_->s, paths_to_state));
+    dfs_stack.push(std::make_pair(dfa->s, paths_to_state));
 
     paths state_paths = nullptr, pp = nullptr;
     trace_descr tp = nullptr;
@@ -2775,10 +2897,6 @@ IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
     std::vector<char> decoded_exception;
     std::vector<int> int_values;
 
-    if (IsAcceptingState(this->dfa_->s)) {
-      int_values.push_back(0);
-    }
-
     const int *indices = GetBddVariableIndices(num_of_bdd_variables_);
 
     while (not dfs_stack.empty()) {
@@ -2786,7 +2904,7 @@ IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
       current_state = current_state_info.first;
       paths_to_state = current_state_info.second;
 
-      state_paths = pp = make_paths(dfa_->bddm, dfa_->q[current_state]);
+      state_paths = pp = make_paths(dfa->bddm, dfa->q[current_state]);
       while (pp) {
         if (pp->to != (unsigned)sink_state) {
           for (int j = 0; j < num_of_bdd_variables_; j++) {
@@ -2818,7 +2936,8 @@ IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
       for (auto& entry : current_paths_to_state) {
         if (IsAcceptingState(entry.first)) {
           for (auto str_value : entry.second) {
-            int_values.push_back(str_value.length());
+//            LOG(INFO) << "Found int: " << str_value << " = " << std::stoi(str_value);
+            int_values.push_back(std::stoi(str_value));
           }
         }
         dfs_stack.push(std::make_pair(entry.first, entry.second));
@@ -2831,6 +2950,9 @@ IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
 
     int_auto = IntAutomaton::makeInts(int_values);
   }
+
+  delete valid_digits_auto;
+  delete restricted_to_digits_auto;
 
   DVLOG(VLOG_LEVEL) << int_auto->getId() << " = [" << this->id_ << "]->parseToIntAutomaton()";
   return int_auto;
@@ -3215,6 +3337,14 @@ StringAutomaton_ptr StringAutomaton::RestrictAtIndexTo(
   delete t1;
   delete t2;
   restricted_auto = t3;
+
+//  LOG(INFO) << "restricted!";
+//  std::cin.get();
+//  restricted_auto->inspectAuto(false,true);
+//  this->inspectAuto(false,true);
+//  index_auto->inspectAuto(false,true);
+//  sub_string_auto->inspectAuto(false,true);
+//  std::cin.get();
 
   // StringAutomaton_ptr any_string = StringAutomaton::MakeAnyString();
   // tmp_auto_1 = length_string_auto->Concat(sub_string_auto);
@@ -5128,6 +5258,39 @@ StringAutomaton_ptr StringAutomaton::MakePrefixSuffix(int left_track, int prefix
   return result_auto;
 }
 
+StringAutomaton_ptr StringAutomaton::MakePrefixSuffix(DFA_ptr left_dfa, DFA_ptr prefix_dfa, DFA_ptr suffix_dfa, int var) {
+	StringAutomaton_ptr prefix_suffix_auto = MakePrefixSuffix(0,1,2,3);
+	StringAutomaton_ptr temp_auto = nullptr;
+
+	if(left_dfa != nullptr) {
+		auto left_auto = new StringAutomaton(left_dfa,0,3,var);
+  	temp_auto = prefix_suffix_auto->Intersect(left_auto);
+  	delete prefix_suffix_auto;
+  	delete left_auto;
+  	prefix_suffix_auto = temp_auto;
+  }
+
+  if(prefix_dfa != nullptr) {
+  	auto prefix_auto = new StringAutomaton(prefix_dfa,1,3,var);
+		temp_auto = prefix_suffix_auto->Intersect(prefix_auto);
+  	delete prefix_suffix_auto;
+  	delete prefix_auto;
+  	prefix_suffix_auto = temp_auto;
+  }
+
+  if(suffix_dfa != nullptr) {
+  	DFA_ptr temp_dfa = PrependLambda(suffix_dfa,var);
+  	auto suffix_auto = new StringAutomaton(temp_dfa,2,3,VAR_PER_TRACK);
+		dfaFree(temp_dfa);
+		temp_auto = prefix_suffix_auto->Intersect(suffix_auto);
+  	delete prefix_suffix_auto;
+  	delete suffix_auto;
+  	prefix_suffix_auto = temp_auto;
+  }
+
+	return prefix_suffix_auto;
+}
+
 // TODO: Formulas and intersection? What do?
 StringAutomaton_ptr StringAutomaton::MakeConcatExtraTrack(int left_track, int right_track, int num_tracks, std::string str_constant) {
   StringAutomaton_ptr any_string_auto = StringAutomaton::MakeAnyString();
@@ -5564,104 +5727,47 @@ DFA_ptr StringAutomaton::TrimLambdaSuffix(DFA_ptr dfa, int var, bool project_bit
   return result_dfa;
 }
 
-DFA_ptr StringAutomaton::TrimPrefix(DFA_ptr subject_dfa, DFA_ptr trim_dfa, int var) {
-  DFA_ptr temp_dfa = nullptr, result_dfa = nullptr;
-  StringAutomaton_ptr temp_multi = nullptr, subject_multi = nullptr,
-                          trim_multi = nullptr, intersect_multi = nullptr;
-  StringAutomaton_ptr result_string_auto = nullptr;
+DFA_ptr StringAutomaton::GetPrefixDFA(DFA_ptr subject_dfa, DFA_ptr suffix_dfa, int var) {
+  StringAutomaton_ptr prefix_suffix_auto = StringAutomaton::MakePrefixSuffix(subject_dfa,nullptr,suffix_dfa,var);
+  StringAutomaton_ptr prefix_auto = prefix_suffix_auto->GetKTrack(1);
+  DFA_ptr prefix_dfa = dfaCopy(prefix_auto->getDFA());
 
-  // (x,x,lambda) until track 2 is lambda
-  // (x,lambda,x) until end
-  temp_multi = MakePrefixSuffix(0,1,2,3);
-  subject_multi = new StringAutomaton(subject_dfa,0,3, DEFAULT_NUM_OF_VARIABLES);
-  trim_multi = new StringAutomaton(trim_dfa,1,3, DEFAULT_NUM_OF_VARIABLES);
+  delete prefix_suffix_auto;
+  delete prefix_auto;
 
-  intersect_multi = temp_multi->Intersect(subject_multi);
-  delete temp_multi;
-  delete subject_multi;
-
-  temp_multi = intersect_multi;
-  intersect_multi = temp_multi->Intersect(trim_multi);
-  delete temp_multi;
-  delete trim_multi;
-
-  // 3rd track has lambda prefix, so get it (automatically removes lambda prefix/suffix)
-  result_string_auto = intersect_multi->GetKTrack(2);
-  result_dfa = dfaCopy(result_string_auto->getDFA());
-  delete intersect_multi;
-  delete result_string_auto;
-
-  return result_dfa;
+  return prefix_dfa;
 }
 
-DFA_ptr StringAutomaton::TrimSuffix(DFA_ptr subject_dfa, DFA_ptr trim_dfa, int var) {
-  DFA_ptr temp_dfa = nullptr, result_dfa = nullptr;
-  StringAutomaton_ptr temp_multi = nullptr, subject_multi = nullptr,
-                          trim_multi = nullptr, intersect_multi = nullptr;
-  StringAutomaton_ptr result_string_auto = nullptr;
+DFA_ptr StringAutomaton::GetSuffixDFA(DFA_ptr subject_dfa, DFA_ptr prefix_dfa, int var) {
+  StringAutomaton_ptr prefix_suffix_auto = StringAutomaton::MakePrefixSuffix(subject_dfa,prefix_dfa,nullptr,var);
+  StringAutomaton_ptr suffix_auto = prefix_suffix_auto->GetKTrack(2);
+  DFA_ptr suffix_dfa = dfaCopy(suffix_auto->getDFA());
 
-  // (x,x,lambda) until track 2 is lambda
-  // (x,lambda,x) until end
-  temp_multi = MakePrefixSuffix(0,1,2,3);
-  subject_multi = new StringAutomaton(subject_dfa,0,3,DEFAULT_NUM_OF_VARIABLES);
-  // gotta prepend trim_dfa first, to go on track 3
-  temp_dfa = PrependLambda(trim_dfa,var);
-  trim_multi = new StringAutomaton(temp_dfa,2,3,VAR_PER_TRACK);
-  dfaFree(temp_dfa);
+  delete prefix_suffix_auto;
+  delete suffix_auto;
 
-  intersect_multi = temp_multi->Intersect(subject_multi);
-  delete temp_multi;
-  delete subject_multi;
-
-  temp_multi = intersect_multi;
-  intersect_multi = temp_multi->Intersect(trim_multi);
-  delete temp_multi;
-  delete trim_multi;
-
-  result_string_auto = intersect_multi->GetKTrack(1);
-  result_dfa = dfaCopy(result_string_auto->getDFA());
-  delete intersect_multi;
-  delete result_string_auto;
-
-  return result_dfa;
+  return suffix_dfa;
 }
+
+
 
 DFA_ptr StringAutomaton::concat(DFA_ptr prefix_dfa, DFA_ptr suffix_dfa, int var) {
-  DFA_ptr temp_dfa = nullptr, result_dfa = nullptr;
-  StringAutomaton_ptr temp_multi = nullptr, prefix_multi = nullptr,
-                          suffix_multi = nullptr, intersect_multi = nullptr;
-  StringAutomaton_ptr result_string_auto = nullptr;
+  StringAutomaton_ptr prefix_suffix_auto = StringAutomaton::MakePrefixSuffix(nullptr,prefix_dfa,suffix_dfa,var);
+  StringAutomaton_ptr concat_auto = prefix_suffix_auto->GetKTrack(0);
+  DFA_ptr concat_dfa = dfaCopy(concat_auto->getDFA());
 
-  // (x,x,lambda) until track 2 is lambda
-  // (x,lambda,x) until end
-//  LOG(FATAL) << "HERE";
+  delete prefix_suffix_auto;
+  delete concat_auto;
 
-  temp_multi = MakePrefixSuffix(0,1,2,3);
-  prefix_multi = new StringAutomaton(prefix_dfa,1,3,var);
-  temp_dfa = PrependLambda(suffix_dfa,var);
-  suffix_multi = new StringAutomaton(temp_dfa,2,3,VAR_PER_TRACK);
-  dfaFree(temp_dfa);
-  intersect_multi = temp_multi->Intersect(prefix_multi);
-  delete temp_multi;
-  delete prefix_multi;
-  temp_multi = intersect_multi;
-  intersect_multi = temp_multi->Intersect(suffix_multi);
-  delete temp_multi;
-  delete suffix_multi;
-	result_string_auto = intersect_multi->GetKTrack(0);
-	result_dfa = dfaCopy(result_string_auto->getDFA());
-
-  delete intersect_multi;
-  delete result_string_auto;
-  return result_dfa;
+  return concat_dfa;
 }
 
 DFA_ptr StringAutomaton::PreConcatPrefix(DFA_ptr concat_dfa, DFA_ptr suffix_dfa, int var) {
-  return TrimSuffix(concat_dfa,suffix_dfa,var);
+  return GetPrefixDFA(concat_dfa,suffix_dfa,var);
 }
 
 DFA_ptr StringAutomaton::PreConcatSuffix(DFA_ptr concat_dfa, DFA_ptr prefix_dfa, int var) {
-  return TrimPrefix(concat_dfa,prefix_dfa,var);
+  return GetSuffixDFA(concat_dfa,prefix_dfa,var);
 }
 
 bool StringAutomaton::HasExceptionToValidStateFrom(int state, std::vector<char>& exception) {

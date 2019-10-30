@@ -1649,8 +1649,21 @@ void SyntacticOptimizer::visitToInt(ToInt_ptr to_int_term) {
   string_constant_checker.start(to_int_term->subject_term);
   if (string_constant_checker.is_constant_string()) {
     std::string data = string_constant_checker.get_constant_string();
-    std::transform(data.begin(), data.end(), data.begin(), ::tolower);
-    DVLOG(VLOG_LEVEL) << "Applying toint transformation.";
+    bool is_num = !data.empty();
+    for(auto c : data) {
+      if(!is_num || !std::isdigit(c)) {
+        is_num = false;
+        break;
+      }
+    }
+
+//    std::transform(data.begin(), data.end(), data.begin(), ::tolower);
+    if(!is_num) {
+      data = "-1";
+    } else {
+      data = std::to_string(std::stoi(data));
+    }
+    DVLOG(VLOG_LEVEL) << "Applying toint transformation: result = " << data;
     callback_ = [this, to_int_term, data](Term_ptr & term) mutable {
       term = generate_term_constant(data, Primitive::Type::NUMERAL);
       delete to_int_term;

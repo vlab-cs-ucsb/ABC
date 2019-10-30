@@ -818,6 +818,10 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
     }
   }
 
+  DFA_ptr tmp_dfa = dfaMinimize(unary_dfa);
+  dfaFree(unary_dfa);
+  unary_dfa = tmp_dfa;
+
   //delete[] indices; indices = nullptr;
   delete[] statuses;
 
