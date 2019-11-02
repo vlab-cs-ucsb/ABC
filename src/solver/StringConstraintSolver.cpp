@@ -140,7 +140,7 @@ void StringConstraintSolver::visitAnd(And_ptr and_term) {
 //          and_value = param->clone();
 //        } else {
 //          auto old_value = and_value;
-//          and_value = and_value->intersect(param);
+//          and_value = and_value->Intersect(param);
 //          delete old_value;
 //          is_satisfiable = and_value->is_satisfiable();
 //        }

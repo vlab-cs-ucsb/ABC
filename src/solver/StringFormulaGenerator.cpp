@@ -1054,11 +1054,11 @@ void StringFormulaGenerator::visitCharAt(CharAt_ptr char_at_term) {
 		set_term_formula(char_at_term,formula);
 		constraint_information_->add_mixed_constraint(char_at_term);
 	} else {
-		auto formula = right_formula->clone();
-		formula->SetType(StringFormula::Type::NONRELATIONAL);
-		delete_term_formula(char_at_term->index_term);
-		set_term_formula(char_at_term,formula);
-		constraint_information_->add_mixed_constraint(char_at_term);
+//		auto formula = right_formula->clone();
+//		formula->SetType(StringFormula::Type::NONRELATIONAL);
+//		delete_term_formula(char_at_term->index_term);
+//		set_term_formula(char_at_term,formula);
+//		constraint_information_->add_mixed_constraint(char_at_term);
 	}
 
   DVLOG(VLOG_LEVEL) << "post visit end: " << *char_at_term << "@" << char_at_term;

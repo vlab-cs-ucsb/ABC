@@ -404,7 +404,7 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
       and Value::Type::INT_CONSTANT == param_right->getType()) {
     result = new Value(param_left->getIntConstant() == param_right->getIntConstant());
   } else {
-//    LOG(INFO) << "Before intersect!";
+//    LOG(INFO) << "Before Intersect!";
 //    std::cin.get();
 //    param_left->getStringAutomaton()->inspectAuto(false,true);
 //    param_right->getStringAutomaton()->inspectAuto(false,true);

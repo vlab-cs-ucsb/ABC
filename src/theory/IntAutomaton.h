@@ -60,13 +60,13 @@ public:
 
   void setMinus1(bool has_minus_one);
   bool hasNegative1();
-  IntAutomaton_ptr complement();
-  IntAutomaton_ptr union_(int value);
-  IntAutomaton_ptr union_(IntAutomaton_ptr other_auto);
-  IntAutomaton_ptr intersect(int value);
-  IntAutomaton_ptr intersect(IntAutomaton_ptr other_auto);
-  IntAutomaton_ptr difference(int value);
-  IntAutomaton_ptr difference(IntAutomaton_ptr other_auto);
+  IntAutomaton_ptr Complement();
+  IntAutomaton_ptr Union(int value);
+  IntAutomaton_ptr Union(IntAutomaton_ptr other_auto);
+  IntAutomaton_ptr Intersect(int value);
+  IntAutomaton_ptr Intersect(IntAutomaton_ptr other_auto);
+  IntAutomaton_ptr Difference(int value);
+  IntAutomaton_ptr Difference(IntAutomaton_ptr other_auto);
   IntAutomaton_ptr uminus();
 
   IntAutomaton_ptr plus(int value);

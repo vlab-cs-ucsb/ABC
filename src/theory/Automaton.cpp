@@ -2897,7 +2897,7 @@ void Automaton::getUpperCaseCharsHelper(char** result, char* transitions, int* i
 		result[*indexInResult] = (char*) malloc((var+2)*(sizeof(char)));
 		for (i = 0; i < var; i++)
 			result[*indexInResult][i] = transitions[i];
-		// only difference between capital and small is bit number 2
+		// only Difference between capital and small is bit number 2
 		result[*indexInResult][2] = '0';
 		// extrabit should be 1 since we may already have same small letter originally with 0
 		result[*indexInResult][var] = '1';//extrabit
@@ -2947,7 +2947,7 @@ void Automaton::getLowerUpperCaseCharsPrePostHelper(char** result, char* transit
 		result[*indexInResult] = (char*) malloc((var+2)*(sizeof(char)));
 		for (i = 0; i < var; i++)
 			result[*indexInResult][i] = transitions[i];
-		// only difference between capital and small is bit number 2
+		// only Difference between capital and small is bit number 2
 		if (!preImage){
 			if (lowerCase)
 				result[*indexInResult][2] = '1';
@@ -2962,7 +2962,7 @@ void Automaton::getLowerUpperCaseCharsPrePostHelper(char** result, char* transit
 			result[*indexInResult] = (char*) malloc((var+2)*(sizeof(char)));
 			for (i = 0; i < var; i++)
 				result[*indexInResult][i] = transitions[i];
-			// only difference between capital and small is bit number 2
+			// only Difference between capital and small is bit number 2
 			if (lowerCase)
 				result[*indexInResult][2] = '1';
 			else

@@ -1206,7 +1206,7 @@ StringAutomaton_ptr StringAutomaton::Complement() {
 //	StringAutomaton_ptr any_string = StringAutomaton::MakeAnyString();
 //
 //	dfaNegation(current_dfa);
-//	complement_dfa = dfaProduct(any_string->dfa_, current_dfa, dfaAND); // this is to handle case where we complement an automaton that has empty language (/#/ in regex notation)
+//	complement_dfa = dfaProduct(any_string->dfa_, current_dfa, dfaAND); // this is to handle case where we Complement an automaton that has empty language (/#/ in regex notation)
 //	delete any_string; any_string = nullptr;
 //	dfaFree(current_dfa); current_dfa = nullptr;
 //
@@ -1981,7 +1981,7 @@ StringAutomaton_ptr StringAutomaton::CharAt(IntAutomaton_ptr index_auto) {
 
   auto int0 = IntAutomaton::makeInt(0);
   auto int1 = IntAutomaton::makeInt(1);
-  auto int01 = int0->union_(int1);
+  auto int01 = int0->Union(int1);
   auto substr = this->SubString(index_auto,1);
 //  substr->inspectAuto(false,true);
 //  LOG(INFO) << "charAt";
@@ -2289,68 +2289,8 @@ StringAutomaton_ptr StringAutomaton::SubStringFirstOf(
   return substring_auto;
 }
 
-/**
- * TODO check if any 255 transition goes to a valid state at the end
- * TODO Add support when search auto is not a singleton
- */
 IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto) {
 	CHECK_EQ(this->num_tracks_,1);
-	/*
-  StringAutomaton_ptr contains_auto = nullptr, difference_auto = nullptr,
-      index_of_auto = nullptr, search_param_auto = search_auto;
-  IntAutomaton_ptr length_auto = nullptr;
-
-  bool has_negative_1 = false;
-  bool search_has_empty_string = false;
-
-  if (search_param_auto->HasEmptyString()) {
-    StringAutomaton_ptr non_empty_string = MakeAnyStringLengthGreaterThan(0);
-    search_param_auto = search_param_auto->Intersect(non_empty_string);
-    delete non_empty_string; non_empty_string = nullptr;
-    search_has_empty_string = true;
-  }
-
-  contains_auto = this->Contains(search_param_auto);
-  if (contains_auto->IsEmptyLanguage()) {
-    delete contains_auto;
-    // if search has empty string indexOf also returns 0
-    if (search_has_empty_string) {
-      length_auto = IntAutomaton::makeZero();
-      length_auto->setMinus1(true);
-      delete search_param_auto; search_param_auto = nullptr; // search_param_auto auto is not the parameter search auto, it is updated, delete it
-    } else {
-      length_auto = IntAutomaton::makeInt(-1);
-    }
-
-    DVLOG(VLOG_LEVEL) << length_auto->getId() << " = [" << this->id_ << "]->indexOf(" << search_auto->id_  << ")";
-    return length_auto;
-  }
-
-  // check for the cases where string does not contain the search char, return -1 in that case
-  difference_auto = this->Difference(contains_auto);
-  if (not difference_auto->IsEmptyLanguage()) {
-    has_negative_1 = true;
-  }
-  delete difference_auto;
-  index_of_auto = contains_auto->IndexOfHelper(search_param_auto);
-  delete contains_auto; contains_auto = nullptr;
-
-  length_auto = index_of_auto->Length();
-  length_auto->setMinus1(has_negative_1);
-  delete index_of_auto; index_of_auto = nullptr;
-
-  // if search has empty string indexOf also returns 0
-  if (search_has_empty_string) {
-    if (not length_auto->hasZero()) {
-      IntAutomaton_ptr tmp = length_auto;
-      IntAutomaton_ptr zero_int = IntAutomaton::makeZero();
-      length_auto = static_cast<IntAutomaton_ptr>(tmp->Union(zero_int));
-      delete tmp; tmp = nullptr;
-      delete zero_int;
-    }
-    delete search_param_auto; search_param_auto = nullptr; // search_param_auto auto is not the parameter search auto, it is updated, delete it
-  }
-*/
 
   IntAutomaton_ptr from_index_auto = IntAutomaton::makeInt(0);
   IntAutomaton_ptr indexof_auto = this->IndexOf(search_auto,from_index_auto);
@@ -2373,24 +2313,26 @@ IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto, IntAu
 	IntAutomaton_ptr indexof_auto = nullptr;
 	StringAutomaton_ptr search_param_auto = search_auto;
 	bool search_has_empty_string = false;
+	bool negative_index = false;
 
 	// make sure from_index_auto is restricted to [0,|this->length|]
 	StringAutomaton_ptr prefixes_auto = this->Prefixes();
 	IntAutomaton_ptr length_auto = prefixes_auto->Length();
-	IntAutomaton_ptr valid_lengths_auto = static_cast<IntAutomaton_ptr>(length_auto->Intersect(from_index_auto));
-	auto temp_this_auto = this;//->SubString(valid_lengths_auto);
+
+	IntAutomaton_ptr invalid_lengths_auto = from_index_auto->Difference(length_auto);
+	IntAutomaton_ptr valid_lengths_auto = from_index_auto->Intersect(length_auto);
+
 	// string_length_auto will have only lengths <= this->length
 	StringAutomaton_ptr string_length_auto = new StringAutomaton(dfaCopy(valid_lengths_auto->getDFA()),DEFAULT_NUM_OF_VARIABLES);
-//  delete valid_lengths_auto;
-  delete prefixes_auto;
-	delete length_auto;
 
-  // if no valid lengths, then regardless of search_auto, automatically return -1
-	if(string_length_auto->IsEmptyLanguage() or from_index_auto->IsEmptyLanguage()) {
-	  delete string_length_auto;
-	  indexof_auto = IntAutomaton::makeInt(-1);
-	  return indexof_auto;
+	// if from_index_auto is longer than length auto, then we also return -1
+	if(not invalid_lengths_auto->IsEmptyLanguage() || from_index_auto->hasNegative1() || valid_lengths_auto->IsEmptyLanguage()) {
+		negative_index = true;
 	}
+	delete invalid_lengths_auto; invalid_lengths_auto = nullptr;
+	delete prefixes_auto; prefixes_auto = nullptr;
+	delete length_auto; length_auto = nullptr;
+
 	// if search auto has empty string, then remove it but remember to include the currently valid lengths as valid indices
 	if (search_param_auto->HasEmptyString()) {
     StringAutomaton_ptr non_empty_string = MakeAnyStringLengthGreaterThan(0);
@@ -2399,78 +2341,51 @@ IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto, IntAu
     search_has_empty_string = true;
   }
 
-	this->inspectAuto(false,false);
+  auto any_string_auto = StringAutomaton::MakeAnyString();
 
+  // check for the cases where this does not contain the search auto (at from_index)
+  // return -1 in these cases
+  auto suffixes_auto = this->SuffixesAtIndex(valid_lengths_auto);
+  auto contains_auto = any_string_auto->Contains(search_param_auto);
+  auto difference_auto = suffixes_auto->Difference(contains_auto);
+  if(not difference_auto->IsEmptyLanguage() && !search_param_auto->IsEmptyLanguage()) {
+    negative_index = true;
+  }
 
+  delete suffixes_auto;
+  delete contains_auto;
+  delete difference_auto;
 
-	StringAutomaton_ptr any_string_auto = StringAutomaton::MakeAnyString();
-	StringAutomaton_ptr contains_auto = any_string_auto->Contains(search_param_auto);
-	StringAutomaton_ptr difference_auto = any_string_auto->Difference(contains_auto);
+	// find all the places where search_param *could* be
+	// note that we could use suffixes_auto to find this, but that would mean an extra concat
+	// with valid_indexes_auto which could potentially be less precise
+  auto concat1_auto = string_length_auto->Concat(any_string_auto);
+	auto concat2_auto = search_param_auto->Concat(any_string_auto);
+  auto prefix_suffix_auto = MakePrefixSuffix(this->getDFA(),concat1_auto->getDFA(),concat2_auto->getDFA(),8);
+  auto temp_auto = prefix_suffix_auto->GetKTrack(1);
 
-  // we first want to capture the first instance of search_param_auto after string_length_auto
-  // starting from the valid indices, we can either see search_param, or -(sigma* search_param sigma*) followed by search_param, then
-
-	StringAutomaton_ptr concat1_auto = string_length_auto->Concat(search_param_auto->Union(difference_auto->Concat(search_param_auto)))->Concat(difference_auto);
-	StringAutomaton_ptr concat2_auto = search_param_auto->Concat(any_string_auto);
-
-	auto m1 = MakePrefixSuffix(temp_this_auto->getDFA(),concat1_auto->getDFA(),any_string_auto->getDFA(),num_of_bdd_variables_);
-
-	// c1 has the first instance of search_param, followed by stuff that is guaranteed NOT to be search param
-	auto c1 = m1->GetKTrack(1);
-
-	c1->inspectAuto(false,true);
-
-  // temp_auto will be the prefix whos length corresponds valid indexes + length_from_index_to_search_param
-	auto temp_auto = c1->PreConcatLeft(search_param_auto->Concat(difference_auto));
-
-
-//
-//	auto prefix_suffix_auto = MakePrefixSuffix(0,1,2,3);
-//	auto original_string_auto = new StringAutomaton(temp_this_auto->getDFA(),0,3,DEFAULT_NUM_OF_VARIABLES);
-//	auto prefix_auto = new StringAutomaton(concat1_auto->getDFA(),1,3,DEFAULT_NUM_OF_VARIABLES);
-//	DFA_ptr suffix_dfa = PrependLambda(concat2_auto->getDFA(),DEFAULT_NUM_OF_VARIABLES);
-//	auto suffix_auto = new StringAutomaton(suffix_dfa,2,3,VAR_PER_TRACK);
-//
-//	auto intersect_auto = prefix_suffix_auto->Intersect(original_string_auto);
-//	auto temp_auto = intersect_auto;
-//
-//	intersect_auto = temp_auto->Intersect(prefix_auto);
-//	delete temp_auto;
-//	temp_auto = intersect_auto;
-//
-//	intersect_auto = temp_auto->Intersect(suffix_auto);
-//	delete temp_auto;
-//
-//	temp_auto = intersect_auto->GetKTrack(1);
+  delete prefix_suffix_auto;
+  delete concat1_auto;
+  delete concat2_auto;
 
 	// if no match is found, return -1 as the result
-	if(temp_auto->IsEmptyLanguage()) {
+	if(temp_auto->IsEmptyLanguage() && !search_param_auto->IsEmptyLanguage()) {
 	  indexof_auto = IntAutomaton::makeInt(-1);
 	} else {
     indexof_auto = temp_auto->Length();
+    indexof_auto->setMinus1(negative_index);
   }
+
   // if search has empty string indexOf also returns the valid lengths from above
   if (search_has_empty_string) {
-    IntAutomaton_ptr temp_int_auto = static_cast<IntAutomaton_ptr>(indexof_auto->Union(string_length_auto));
+    IntAutomaton_ptr temp_int_auto = indexof_auto->Union(valid_lengths_auto);
     delete indexof_auto;
     indexof_auto = temp_int_auto;
     delete search_param_auto; search_param_auto = nullptr; // search_param_auto auto is not the parameter search auto, it is updated, delete it
   }
-	delete temp_auto;
-//	delete prefix_suffix_auto;
-//	delete prefix_auto;
-//	delete suffix_auto;
-//	delete contains_auto;
-//	delete string_length_auto;
-//	dfaFree(suffix_dfa);
-  // additionally, if from_index_auto has -1, then result can have -1 as well
-  if(from_index_auto->hasNegative1()) {
-    indexof_auto->setMinus1(true);
-  }
 
-  LOG(INFO) << "INDEXOF; " << (indexof_auto->hasNegative1() ? " has neg 1 " : " no neg 1");
-	indexof_auto->inspectAuto(false,false);
-	std::cin.get();
+  delete valid_lengths_auto;
+	delete temp_auto;
 
   DVLOG(VLOG_LEVEL) << indexof_auto->getId() << " = [" << this->id_ << "]->indexOf(" << search_auto->id_ << "," << from_index_auto->getId() << ")";
 	
@@ -2483,6 +2398,7 @@ IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto, IntAu
  * TODO Add support when search auto is not a singleton, see test case 09
  */
 IntAutomaton_ptr StringAutomaton::LastIndexOf(StringAutomaton_ptr search_auto) {
+  LOG(FATAL) << "Not yet implemented";
 	CHECK_EQ(this->num_tracks_,1);
   StringAutomaton_ptr contains_auto = nullptr, difference_auto = nullptr,
       last_index_of_auto = nullptr, search_param_auto = search_auto;
@@ -3014,50 +2930,56 @@ StringAutomaton_ptr StringAutomaton::RestrictIndexOfTo(int index,StringAutomaton
 }
 
 StringAutomaton_ptr StringAutomaton::RestrictIndexOfTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto) {
-	CHECK_EQ(this->num_tracks_,1);
-  StringAutomaton_ptr restricted_auto = nullptr, contains_auto = nullptr,
-          not_contains_length_auto = nullptr, not_contains_subject_auto = nullptr,
-          tmp_auto_1 = nullptr, tmp_auto_2 = nullptr;
-
-	// if index_auto is -1, then no match was found, OR the original index was out of bounds
-
-  bool has_negative_1 = index_auto->hasNegative1();
-
-  StringAutomaton_ptr length_string_auto = new StringAutomaton(index_auto->getDFA(),index_auto->get_number_of_bdd_variables());
-//  UnaryAutomaton_ptr unary_auto = index_auto->toUnaryAutomaton();
-//	StringAutomaton_ptr length_string_auto = unary_auto->toStringAutomaton();
-//	delete unary_auto;
-  StringAutomaton_ptr any_string = StringAutomaton::MakeAnyString();
-
-  contains_auto = any_string->Contains(search_auto);
-  if (index_auto->hasNegative1()) {
-    not_contains_subject_auto = this->Difference(contains_auto);
-  }
-
-  not_contains_length_auto = length_string_auto->Difference(contains_auto);
-  delete contains_auto; contains_auto = nullptr;
-  length_string_auto->dfa_ = nullptr;
-  delete length_string_auto; length_string_auto = nullptr;
-
-  tmp_auto_1 = not_contains_length_auto->Concat(search_auto);
-  tmp_auto_2 = tmp_auto_1->Concat(any_string);
-  delete not_contains_length_auto; not_contains_length_auto = nullptr;
-  delete tmp_auto_1; tmp_auto_1 = nullptr;
-  delete any_string; any_string = nullptr;
-
-  restricted_auto = this->Intersect(tmp_auto_2);
-  delete tmp_auto_2; tmp_auto_2 = nullptr;
-
-  if (not_contains_subject_auto not_eq nullptr) {
-    tmp_auto_1 = restricted_auto;
-    restricted_auto = tmp_auto_1->Union(not_contains_subject_auto);
-    delete tmp_auto_1; tmp_auto_1 = nullptr;
-    delete not_contains_subject_auto; not_contains_subject_auto = nullptr;
-  }
+  IntAutomaton_ptr from_index_auto = IntAutomaton::makeInt(0);
+  StringAutomaton_ptr restricted_auto = this->RestrictIndexOfTo(index_auto, from_index_auto, search_auto);
+  delete from_index_auto;
 
   DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictIndexOfTo(" << index_auto->getId() << ", " << search_auto->id_ << ")";
-
   return restricted_auto;
+//	CHECK_EQ(this->num_tracks_,1);
+//  StringAutomaton_ptr restricted_auto = nullptr, contains_auto = nullptr,
+//          not_contains_length_auto = nullptr, not_contains_subject_auto = nullptr,
+//          tmp_auto_1 = nullptr, tmp_auto_2 = nullptr;
+//
+//	// if index_auto is -1, then no match was found, OR the original index was out of bounds
+//
+//  bool has_negative_1 = index_auto->hasNegative1();
+//
+//  StringAutomaton_ptr length_string_auto = new StringAutomaton(index_auto->getDFA(),index_auto->get_number_of_bdd_variables());
+////  UnaryAutomaton_ptr unary_auto = index_auto->toUnaryAutomaton();
+////	StringAutomaton_ptr length_string_auto = unary_auto->toStringAutomaton();
+////	delete unary_auto;
+//  StringAutomaton_ptr any_string = StringAutomaton::MakeAnyString();
+//
+//  contains_auto = any_string->Contains(search_auto);
+//  if (index_auto->hasNegative1()) {
+//    not_contains_subject_auto = this->Difference(contains_auto);
+//  }
+//
+//  not_contains_length_auto = length_string_auto->Difference(contains_auto);
+//  delete contains_auto; contains_auto = nullptr;
+//  length_string_auto->dfa_ = nullptr;
+//  delete length_string_auto; length_string_auto = nullptr;
+//
+//  tmp_auto_1 = not_contains_length_auto->Concat(search_auto);
+//  tmp_auto_2 = tmp_auto_1->Concat(any_string);
+//  delete not_contains_length_auto; not_contains_length_auto = nullptr;
+//  delete tmp_auto_1; tmp_auto_1 = nullptr;
+//  delete any_string; any_string = nullptr;
+//
+//  restricted_auto = this->Intersect(tmp_auto_2);
+//  delete tmp_auto_2; tmp_auto_2 = nullptr;
+//
+//  if (not_contains_subject_auto not_eq nullptr) {
+//    tmp_auto_1 = restricted_auto;
+//    restricted_auto = tmp_auto_1->Union(not_contains_subject_auto);
+//    delete tmp_auto_1; tmp_auto_1 = nullptr;
+//    delete not_contains_subject_auto; not_contains_subject_auto = nullptr;
+//  }
+//
+//  DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictIndexOfTo(" << index_auto->getId() << ", " << search_auto->id_ << ")";
+//
+//  return restricted_auto;
 }
 
 
@@ -3093,10 +3015,23 @@ StringAutomaton_ptr StringAutomaton::RestrictIndexOfTo(int index, IntAutomaton_p
 StringAutomaton_ptr StringAutomaton::RestrictIndexOfTo(IntAutomaton_ptr index_auto, IntAutomaton_ptr from_index_auto, StringAutomaton_ptr search_auto) {
   StringAutomaton_ptr restricted_auto = nullptr;
 
-//  LOG(INFO) << index_auto->hasNegative1() << "," << from_index_auto->hasNegative1();
+
+//  this->inspectAuto(false,false);
+//  LOG(INFO) << "indexof_auto has negative 1? " << index_auto->hasNegative1();
 //  index_auto->inspectAuto(false,false);
-//  from_index_auto->inspectAuto(false,false);
+//  search_auto->inspectAuto(false,false);
 //  std::cin.get();
+
+  auto search_param_auto = search_auto;
+  bool search_has_empty_string = false;
+
+  // if search_auto has empty string, then subject auto (this) gets left unchanged
+  if (search_param_auto->HasEmptyString()) {
+    StringAutomaton_ptr non_empty_string = MakeAnyStringLengthGreaterThan(0);
+    search_param_auto = search_param_auto->Intersect(non_empty_string);
+    delete non_empty_string; non_empty_string = nullptr;
+    search_has_empty_string = true;
+  }
 
   // if index_auto is -1, then either from_index_auto is out of range, or there was no match
   StringAutomaton_ptr prefixes_auto = this->Prefixes();
@@ -3106,57 +3041,90 @@ StringAutomaton_ptr StringAutomaton::RestrictIndexOfTo(IntAutomaton_ptr index_au
 	// string_length_auto will have only lengths <= this->length
 	StringAutomaton_ptr string_length_auto = new StringAutomaton(dfaCopy(valid_lengths_auto->getDFA()),DEFAULT_NUM_OF_VARIABLES);
   StringAutomaton_ptr string_index_auto = new StringAutomaton(dfaCopy(valid_index_auto->getDFA()),DEFAULT_NUM_OF_VARIABLES);
-  delete valid_index_auto;
-  delete valid_lengths_auto;
   delete prefixes_auto;
 	delete length_auto;
 
-  /*
-   * if string_length_auto and string_index_auto both empty, then return this->clone
-   * if index_auto has -1,
-   */
   StringAutomaton_ptr temp_auto = nullptr, temp2_auto = nullptr, temp3_auto = nullptr;
   StringAutomaton_ptr negative1_auto = nullptr;
   StringAutomaton_ptr any_string_auto = StringAutomaton::MakeAnyString();
-  StringAutomaton_ptr contains_auto = any_string_auto->Contains(search_auto);
+  StringAutomaton_ptr contains_auto = any_string_auto->Contains(search_param_auto);
   StringAutomaton_ptr not_contains_auto = any_string_auto->Difference(contains_auto);
   StringAutomaton_ptr not_contains_at_index_auto = string_length_auto->Concat(not_contains_auto);
 
 
-  // if index_auto has -1, then this_auto does not contain search_auto at from_index_auto,
-  // or from_index_auto is out of range
+  /*
+   * If search_auto is a singleton, then we can restrict auto precisely; otherwise we must overapproximate
+   * i.e., if not singleton, can't restrict subject_auto (this) to not have search_auto
+   *       between from_index_auto and index_auto
+   * Note that since we made search_param
+   */
+  if(search_param_auto->IsAcceptingSingleString()) {
+    temp_auto = not_contains_at_index_auto->Concat(any_string_auto);
+    restricted_auto = this->Intersect(temp_auto);
+  } else {
+    restricted_auto = this->clone();
+  }
+
+
+  temp_auto = string_index_auto->Concat(search_param_auto);
+  auto any_after_param_auto = temp_auto->Concat(any_string_auto);
+  delete temp_auto;
+
+  temp_auto = restricted_auto->Intersect(any_after_param_auto);
+  delete any_after_param_auto;
+  delete restricted_auto;
+  restricted_auto = temp_auto;
+
+  /*
+   * If index_auto has -1, then
+   *   1. subject_auto (this) does not contain search_auto after from_index_auto
+   *      (if index_auto is empty language)
+   *      (can only precisely restrict if search_param is a single value)
+   *   2. subject_auto contains search_auto at index_auto
+   *      (if index_auto is not empty language)
+   *   3. subject_auto remains unchanged
+   *      (if from_index_auto has negative 1)
+   *
+   */
+
   if(index_auto->hasNegative1()) {
-    negative1_auto = this->Intersect(not_contains_at_index_auto);
-    // from_index_auto is out of range if it has -1 or no valid lengths
-    if(from_index_auto->hasNegative1() or string_index_auto->IsEmptyLanguage()) {
-      temp_auto = negative1_auto->Union(this);
+    // case 1 from above
+    if(search_param_auto->IsAcceptingSingleString()) {
+      negative1_auto = this->Intersect(not_contains_at_index_auto);
+      temp_auto = restricted_auto->Union(negative1_auto);
       delete negative1_auto;
-      negative1_auto = temp_auto;
+      delete restricted_auto;
+      restricted_auto = temp_auto;
+    }
+
+    // continuation of case 1, but for empty string (subject can't be longer than from_index
+    if(search_has_empty_string) {
+      auto prefixes_of_valid_indices = string_index_auto->Prefixes();
+      auto restricted_to_under_equal_length = prefixes_of_valid_indices->Intersect(this);
+      temp_auto = restricted_auto->Union(restricted_to_under_equal_length);
+      delete prefixes_of_valid_indices;
+      delete restricted_to_under_equal_length;
+      delete restricted_auto;
+      restricted_auto = temp_auto;
+    }
+
+    // case 3 from above
+    if(from_index_auto->hasNegative1() || string_index_auto->IsEmptyLanguage()) {
+      temp_auto = restricted_auto->Union(this);
+      delete restricted_auto;
+      restricted_auto = temp_auto;
     }
   }
 
-  // from 0...from_index-1, can contain anything in the original automata
-  // from_index...index-1, cannot contain search_auto
-  // at index, next character sequence must be search_auto
-  // index+search_auto.length...end, anything from original automata
+  // if search has empty string and string_index_auto isn't only negative 1, then subject_auto
+  // must be at least as long as string_index_auto
+  if (search_has_empty_string && !string_index_auto->IsEmptyLanguage()) {
+    auto valid_lengths_after_index = string_index_auto->Concat(any_string_auto);
+    auto restricted_to_greater_lengths_auto = this->Intersect(valid_lengths_after_index);
+    temp_auto = restricted_auto->Union(restricted_to_greater_lengths_auto);
 
-  temp_auto = not_contains_at_index_auto->Concat(any_string_auto);
-  temp2_auto = string_index_auto->Concat(search_auto);
-  temp3_auto = temp2_auto->Concat(any_string_auto);
-  delete temp2_auto; temp2_auto = nullptr;
-
-  temp2_auto = temp_auto->Intersect(temp3_auto);
-  delete temp_auto; temp_auto = nullptr;
-  delete temp3_auto; temp3_auto = nullptr;
-
-  restricted_auto = this->Intersect(temp2_auto);
-  delete temp2_auto; temp2_auto = nullptr;
-
-  // if there were any negatives, take care of them
-  if(negative1_auto not_eq nullptr) {
-    temp_auto = restricted_auto->Union(negative1_auto);
+		delete restricted_to_greater_lengths_auto;
     delete restricted_auto;
-    delete negative1_auto;
     restricted_auto = temp_auto;
   }
 
@@ -3164,6 +3132,8 @@ StringAutomaton_ptr StringAutomaton::RestrictIndexOfTo(IntAutomaton_ptr index_au
   delete contains_auto;
   delete not_contains_auto;
   delete not_contains_at_index_auto;
+  delete valid_index_auto;
+  delete valid_lengths_auto;
 
 //  LOG(INFO) << "RESTRICTED AUTO";
 //  restricted_auto->inspectAuto(false,false);
@@ -3187,6 +3157,7 @@ StringAutomaton_ptr StringAutomaton::RestrictLastIndexOfTo(int index,
 StringAutomaton_ptr StringAutomaton::RestrictLastIndexOfTo(
 		IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto) {
 	CHECK_EQ(this->num_tracks_,1);
+	LOG(FATAL) << "FIX ME";
   StringAutomaton_ptr restricted_auto = nullptr, contains_auto = nullptr,
           not_contains_auto = nullptr, not_contains_subject_auto = nullptr,
           tmp_auto_1 = nullptr, tmp_auto_2 = nullptr;
@@ -3372,7 +3343,7 @@ StringAutomaton_ptr StringAutomaton::RestrictAtIndexTo(
   delete length_string_auto; length_string_auto = nullptr;
 
 
-  DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictIndexTo(" << index_auto->getId() << ", " << sub_string_auto->id_ << ")";
+  DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictAtIndexTo(" << index_auto->getId() << ", " << sub_string_auto->id_ << ")";
 
   return restricted_auto;
 }

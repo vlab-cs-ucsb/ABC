@@ -13,7 +13,7 @@ namespace Solver {
 using namespace SMT;
 
 const int VariableValueComputer::VLOG_LEVEL = 12;
-// TODO intersect with result post
+// TODO Intersect with result post
 VariableValueComputer::VariableValueComputer(SymbolTable_ptr symbol_table, VariablePathTable& variable_path_table, const TermValueMap& post_images)
         : is_satisfiable_{true}, symbol_table(symbol_table), variable_path_table (variable_path_table),
           post_images (post_images), current_path (nullptr) {
@@ -890,9 +890,16 @@ void VariableValueComputer::visitIndexOf(IndexOf_ptr index_of_term) {
   Value_ptr param_search = getTermPostImage(index_of_term->search_term);
   Value_ptr from_index = nullptr;
   if(index_of_term->from_index != nullptr) {
-    Value_ptr from_index = getTermPostImage(index_of_term->from_index);
+    LOG(INFO) << "index_of_term has from_index";
+    from_index = getTermPostImage(index_of_term->from_index);
+    if(from_index == nullptr) {
+      LOG(INFO) << "from_index = nullptr";
+    }else {
+      LOG(INFO) << "from_index NOT nuyllptr";
+    }
+  } else {
+    LOG(INFO) << "NO FROM INDEX";
   }
-
 
   if (Value::Type::INT_CONSTANT == term_value->getType()) {
 
@@ -989,16 +996,22 @@ void VariableValueComputer::visitCharAt(CharAt_ptr char_at_term) {
   {
     LOG(INFO) << "IN INDEX TERM";
     Value_ptr subject_value = getTermPostImage(char_at_term->subject_term);
+    term_value->getStringAutomaton()->inspectAuto(false,false);
+
     Theory::IntAutomaton_ptr indexes_auto = subject_value->getStringAutomaton()->IndexOf(term_value->getStringAutomaton());
+    indexes_auto->inspectAuto(false,true);
     if (Value::Type::INT_CONSTANT == child_post_value->getType())
     {
       LOG(INFO) << " 1st IF";
-      child_value = new Value(indexes_auto->intersect(child_post_value->getIntConstant()));
+      child_value = new Value(indexes_auto->Intersect(child_post_value->getIntConstant()));
     }
     else
     {
       LOG(INFO) << "1st ELSE";
-      child_value = new Value(indexes_auto->intersect(child_post_value->getIntAutomaton()));
+      child_value = new Value(indexes_auto->Intersect(child_post_value->getIntAutomaton()));
+      child_value->getIntAutomaton()->inspectAuto(false,true);
+      LOG(INFO) << child_value->getIntAutomaton()->hasNegative1();
+    std::cin.get();
 
     }
     delete indexes_auto;
@@ -1240,9 +1253,9 @@ void VariableValueComputer::visitToString(ToString_ptr to_string_term) {
   } else {
     Theory::IntAutomaton_ptr child_pre_auto = nullptr;
     if (Value::Type::INT_CONSTANT == child_post_value->getType()) {
-      child_pre_auto = int_auto->intersect(child_post_value->getIntConstant());
+      child_pre_auto = int_auto->Intersect(child_post_value->getIntConstant());
     } else {
-      child_pre_auto = int_auto->intersect(child_post_value->getIntAutomaton());
+      child_pre_auto = int_auto->Intersect(child_post_value->getIntAutomaton());
     }
     child_value = new Value(child_pre_auto);
   }

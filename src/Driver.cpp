@@ -945,7 +945,7 @@ void Driver::test() {
 
 
 //  Theory::StringAutomaton_ptr a1 = Theory::StringAutomaton::makeString("Hi,");
-  //make_string->complement()->toDotAscii();
+  //make_string->Complement()->toDotAscii();
 
 //  Theory::StringAutomaton_ptr a2 = Theory::StringAutomaton::makeString("World");
 
@@ -964,7 +964,7 @@ void Driver::test() {
 
 //  Theory::StringAutomaton_ptr empty_string = Theory::StringAutomaton::makeEmptyString();
 
-//  Theory::StringAutomaton_ptr result = a1->union_(any_string);
+//  Theory::StringAutomaton_ptr result = a1->Union(any_string);
   //result->toDotAscii();
 
 //  Theory::StringAutomaton_ptr prefs = a1->prefixes();
@@ -976,8 +976,8 @@ void Driver::test() {
 //  Theory::StringAutomaton_ptr length_auto = Theory::StringAutomaton::makeLengthRange(0,4);
   //length_auto->toDotAscii();
 
-  //Theory::StringAutomaton_ptr test_auto = a6->union_(a5->union_(a4->union_(a3->union_(a1->concatenate(char_range_closure)->concatenate(a2)))));
-//  Theory::StringAutomaton_ptr test_auto = a5->union_(a4->union_(a3->union_(a1->concatenate(char_range)->concatenate(a2))));
+  //Theory::StringAutomaton_ptr test_auto = a6->union_(a5->union_(a4->Union(a3->Union(a1->concatenate(char_range_closure)->concatenate(a2)))));
+//  Theory::StringAutomaton_ptr test_auto = a5->union_(a4->Union(a3->Union(a1->concatenate(char_range)->concatenate(a2))));
 
   //Theory::StringAutomaton_ptr result_auto = test_auto->charAt(5);
 //  Theory::StringAutomaton_ptr result_auto = test_auto->suffixesFromIndex(12);
