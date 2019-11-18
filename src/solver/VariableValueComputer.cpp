@@ -890,15 +890,7 @@ void VariableValueComputer::visitIndexOf(IndexOf_ptr index_of_term) {
   Value_ptr param_search = getTermPostImage(index_of_term->search_term);
   Value_ptr from_index = nullptr;
   if(index_of_term->from_index != nullptr) {
-    LOG(INFO) << "index_of_term has from_index";
     from_index = getTermPostImage(index_of_term->from_index);
-    if(from_index == nullptr) {
-      LOG(INFO) << "from_index = nullptr";
-    }else {
-      LOG(INFO) << "from_index NOT nuyllptr";
-    }
-  } else {
-    LOG(INFO) << "NO FROM INDEX";
   }
 
   if (Value::Type::INT_CONSTANT == term_value->getType()) {
@@ -982,7 +974,6 @@ void VariableValueComputer::visitCharAt(CharAt_ptr char_at_term) {
 
   if (child_term == char_at_term->subject_term)
   {
-    LOG(INFO) << "IN SUBJECT TERM";
     Value_ptr index_value = getTermPostImage(char_at_term->index_term);
     if (Value::Type::INT_CONSTANT == index_value->getType()) {
       child_value = new Value(child_post_value->getStringAutomaton()
@@ -994,24 +985,16 @@ void VariableValueComputer::visitCharAt(CharAt_ptr char_at_term) {
   }
   else
   {
-    LOG(INFO) << "IN INDEX TERM";
     Value_ptr subject_value = getTermPostImage(char_at_term->subject_term);
-    term_value->getStringAutomaton()->inspectAuto(false,false);
 
     Theory::IntAutomaton_ptr indexes_auto = subject_value->getStringAutomaton()->IndexOf(term_value->getStringAutomaton());
-    indexes_auto->inspectAuto(false,true);
     if (Value::Type::INT_CONSTANT == child_post_value->getType())
     {
-      LOG(INFO) << " 1st IF";
       child_value = new Value(indexes_auto->Intersect(child_post_value->getIntConstant()));
     }
     else
     {
-      LOG(INFO) << "1st ELSE";
       child_value = new Value(indexes_auto->Intersect(child_post_value->getIntAutomaton()));
-      child_value->getIntAutomaton()->inspectAuto(false,true);
-      LOG(INFO) << child_value->getIntAutomaton()->hasNegative1();
-    std::cin.get();
 
     }
     delete indexes_auto;
@@ -1440,6 +1423,8 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 //      string_auto->inspectAuto(false,true);
 //      symbol_table->get_value(qi_term->getVarName())->getStringAutomaton()->inspectAuto(false,true);
 //      std::cin.get();
+
+      
     }
       break;
     case Value::Type::INT_CONSTANT:

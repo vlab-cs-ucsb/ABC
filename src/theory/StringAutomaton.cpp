@@ -1864,6 +1864,9 @@ StringAutomaton_ptr StringAutomaton::SubStrings() {
 
 StringAutomaton_ptr StringAutomaton::CharAt(const int index) {
   CHECK_EQ(this->num_tracks_,1);
+
+//  return this->CharAt(IntAutomaton::makeInt(index));
+
   if (this->IsEmptyLanguage()) {
     auto charat_auto = StringAutomaton::MakePhi();
     DVLOG(VLOG_LEVEL) << charat_auto->id_ << " = [" << this->id_ << "]->charAt(" << index << ")";
@@ -1978,89 +1981,75 @@ StringAutomaton_ptr StringAutomaton::CharAt(const int index) {
 StringAutomaton_ptr StringAutomaton::CharAt(IntAutomaton_ptr index_auto) {
   CHECK_EQ(this->num_tracks_,1);
 
-
-  auto int0 = IntAutomaton::makeInt(0);
-  auto int1 = IntAutomaton::makeInt(1);
-  auto int01 = int0->Union(int1);
-  auto substr = this->SubString(index_auto,1);
-//  substr->inspectAuto(false,true);
-//  LOG(INFO) << "charAt";
-//  std::cin.get();
-  return substr;
+  auto charat_auto = this->SubString(index_auto,1);
+  return charat_auto;
 
 
   // if index auto is negative 1, then just return empty string
-  if(index_auto->hasNegative1() and index_auto->isAcceptingSingleInt()) {
-    return StringAutomaton::MakeEmptyString();
-  }
-
-  StringAutomaton_ptr prefixes_auto = this->Prefixes();
-  StringAutomaton_ptr string_length_auto = new StringAutomaton(index_auto->getDFA(),index_auto->get_number_of_bdd_variables());
-  StringAutomaton_ptr any_char_auto = StringAutomaton::MakeAnyChar();
-  StringAutomaton_ptr tmp_length_auto = string_length_auto->Concat(any_char_auto);
-  string_length_auto->dfa_ = nullptr; //TODO avoid this in the future by better using unary auto instead of int auto
-  delete string_length_auto;
-  delete any_char_auto;
-  StringAutomaton_ptr charat_indexes_auto = prefixes_auto->Intersect(tmp_length_auto);
-  delete prefixes_auto;
-  delete tmp_length_auto;
-
-  const int number_of_variables = charat_indexes_auto->num_of_bdd_variables_;
-
-  std::set<std::string> exceptions;
-  for (int s = 0; s < charat_indexes_auto->dfa_->ns; ++s) {
-    for (int next : charat_indexes_auto->getNextStates(s)) {
-      if (charat_indexes_auto->IsAcceptingState(next)) {
-        // extract transitions
-        auto transitions = Automaton::DFAGetTransitionsFromTo(charat_indexes_auto->dfa_, s, next, number_of_variables);
-        exceptions.insert(transitions.begin(), transitions.end());
-      }
-    }
-  }
-
-  const int number_of_exceptions = exceptions.size();
-  dfaSetup(3, number_of_variables, GetBddVariableIndices(number_of_variables));
-  char statuses[4] { '-', '+', '-', '\0'};
-
-  // if index_auto contains 0 or is out of range,
-  LOG(INFO) << "Num exceptions = " << number_of_exceptions;
-  LOG(INFO) << "Num variables = " << number_of_variables;
-  LOG(INFO) << 1;
-  DFA_ptr suffix_dfa = StringAutomaton::PreConcatSuffix(index_auto->getDFA(),this->getDFA(),index_auto->get_number_of_bdd_variables());
-  LOG(INFO) << 2;
-  bool first_if = index_auto->IsInitialStateAccepting();
-  LOG(INFO) << 3;
-  bool second_if = !Automaton::DFAIsMinimizedEmtpy(suffix_dfa);
-  LOG(INFO) << 4;
-
-  if(first_if || second_if) {
-    LOG(INFO) << "first if || second if = true";
-    statuses[0] = '+';
-  }
-  LOG(INFO) << 5;
-  //state 0
-  dfaAllocExceptions(number_of_exceptions);
-  for (std::string exception : exceptions) {
-    dfaStoreException(1, &exception[0]);
-  }
-  dfaStoreState(2);
-
-  //state 1
-  dfaAllocExceptions(0);
-  dfaStoreState(2);
-
-  //state 2
-  dfaAllocExceptions(0);
-  dfaStoreState(2);
-
-  DFA_ptr result_dfa = dfaBuild(statuses);
-
-  StringAutomaton_ptr charat_auto = new StringAutomaton(dfaMinimize(result_dfa), number_of_variables);
-  dfaFree(result_dfa); result_dfa = nullptr;
-
-
-  DVLOG(VLOG_LEVEL) << charat_auto->id_ << " = [" << this->id_ << "]->CharAt(" << index_auto->getId() << ")";
-  return charat_auto;
+//  if(index_auto->hasNegative1() and index_auto->isAcceptingSingleInt()) {
+//    return StringAutomaton::MakeEmptyString();
+//  }
+//
+//  StringAutomaton_ptr prefixes_auto = this->Prefixes();
+//  StringAutomaton_ptr string_length_auto = new StringAutomaton(index_auto->getDFA(),index_auto->get_number_of_bdd_variables());
+//  StringAutomaton_ptr any_char_auto = StringAutomaton::MakeAnyChar();
+//  StringAutomaton_ptr tmp_length_auto = string_length_auto->Concat(any_char_auto);
+//  string_length_auto->dfa_ = nullptr; //TODO avoid this in the future by better using unary auto instead of int auto
+//  delete string_length_auto;
+//  delete any_char_auto;
+//  StringAutomaton_ptr charat_indexes_auto = prefixes_auto->Intersect(tmp_length_auto);
+//  delete prefixes_auto;
+//  delete tmp_length_auto;
+//
+//  const int number_of_variables = charat_indexes_auto->num_of_bdd_variables_;
+//
+//  std::set<std::string> exceptions;
+//  for (int s = 0; s < charat_indexes_auto->dfa_->ns; ++s) {
+//    for (int next : charat_indexes_auto->getNextStates(s)) {
+//      if (charat_indexes_auto->IsAcceptingState(next)) {
+//        // extract transitions
+//        auto transitions = Automaton::DFAGetTransitionsFromTo(charat_indexes_auto->dfa_, s, next, number_of_variables);
+//        exceptions.insert(transitions.begin(), transitions.end());
+//      }
+//    }
+//  }
+//
+//  const int number_of_exceptions = exceptions.size();
+//  dfaSetup(3, number_of_variables, GetBddVariableIndices(number_of_variables));
+//  char statuses[4] { '-', '+', '-', '\0'};
+//
+//  // if index_auto contains 0 or is out of range,
+//  DFA_ptr suffix_dfa = StringAutomaton::PreConcatSuffix(index_auto->getDFA(),this->getDFA(),index_auto->get_number_of_bdd_variables());
+//  bool first_if = index_auto->IsInitialStateAccepting();
+//  bool second_if = !Automaton::DFAIsMinimizedEmtpy(suffix_dfa);
+//
+//  if(first_if || second_if) {
+//    statuses[0] = '+';
+//  }
+//
+//  //state 0
+//  dfaAllocExceptions(number_of_exceptions);
+//  for (std::string exception : exceptions) {
+//    dfaStoreException(1, &exception[0]);
+//  }
+//  dfaStoreState(2);
+//
+//  //state 1
+//  dfaAllocExceptions(0);
+//  dfaStoreState(2);
+//
+//  //state 2
+//  dfaAllocExceptions(0);
+//  dfaStoreState(2);
+//
+//  DFA_ptr result_dfa = dfaBuild(statuses);
+//
+//  StringAutomaton_ptr charat_auto = new StringAutomaton(dfaMinimize(result_dfa), number_of_variables);
+//  dfaFree(result_dfa); result_dfa = nullptr;
+//
+//
+//  DVLOG(VLOG_LEVEL) << charat_auto->id_ << " = [" << this->id_ << "]->CharAt(" << index_auto->getId() << ")";
+//  return charat_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::SubString(const int start) {
@@ -2158,8 +2147,6 @@ StringAutomaton_ptr StringAutomaton::SubString(IntAutomaton_ptr start_auto, IntA
     ret_auto = temp_auto;
   }
 
-//  ret_auto->inspectAuto(false,false);
-//  std::cin.get();
 
   DVLOG(VLOG_LEVEL) << ret_auto->id_ << " = [" << this->id_ << "]->subString(" << start_auto->getId() << "," << length_auto->getId() << ")";
   return ret_auto;
@@ -2168,7 +2155,6 @@ StringAutomaton_ptr StringAutomaton::SubString(IntAutomaton_ptr start_auto, IntA
 /**
  * @param length_auto is the length of the substring
  * @param search_auto is the strings that cannot appear in the result
- * TODO if search auto contains empty string handle it as a special case
  */
 StringAutomaton_ptr StringAutomaton::SubString(IntAutomaton_ptr length_auto, StringAutomaton_ptr search_auto) {
   CHECK_EQ(this->num_tracks_,1);
@@ -2344,11 +2330,12 @@ IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto, IntAu
   auto any_string_auto = StringAutomaton::MakeAnyString();
 
   // check for the cases where this does not contain the search auto (at from_index)
-  // return -1 in these cases
+  // return -1 in these cases (only precise if search_param_auto is a single value; otherwise, we must overapproximate)
   auto suffixes_auto = this->SuffixesAtIndex(valid_lengths_auto);
   auto contains_auto = any_string_auto->Contains(search_param_auto);
   auto difference_auto = suffixes_auto->Difference(contains_auto);
-  if(not difference_auto->IsEmptyLanguage() && !search_param_auto->IsEmptyLanguage()) {
+
+  if(!search_param_auto->IsAcceptingSingleString() || (not difference_auto->IsEmptyLanguage() && !search_param_auto->IsEmptyLanguage())) {
     negative_index = true;
   }
 
@@ -2398,7 +2385,7 @@ IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto, IntAu
  * TODO Add support when search auto is not a singleton, see test case 09
  */
 IntAutomaton_ptr StringAutomaton::LastIndexOf(StringAutomaton_ptr search_auto) {
-  LOG(FATAL) << "Not yet implemented";
+  LOG(FATAL) << "Not yet implemented: William Eiers - weiers@ucsb.edu";
 	CHECK_EQ(this->num_tracks_,1);
   StringAutomaton_ptr contains_auto = nullptr, difference_auto = nullptr,
       last_index_of_auto = nullptr, search_param_auto = search_auto;
@@ -2785,8 +2772,18 @@ UnaryAutomaton_ptr StringAutomaton::ToUnaryAutomaton() {
 IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
 	CHECK_EQ(this->num_tracks_,1);
   std::string valid_digits = "[0-9]*";
+  bool has_negative_one = false;
+
   auto valid_digits_auto = StringAutomaton::MakeRegexAuto(valid_digits);
   auto restricted_to_digits_auto = this->Intersect(valid_digits_auto);
+
+  auto non_digits_auto = this->Difference(valid_digits_auto);
+  if(!non_digits_auto->IsEmptyLanguage()) {
+    has_negative_one = true;
+  }
+  delete non_digits_auto;
+  non_digits_auto = nullptr;
+
   DFA_ptr dfa = restricted_to_digits_auto->getDFA();
 
   IntAutomaton_ptr int_auto = nullptr;
@@ -2795,7 +2792,7 @@ IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
   } else if (this->IsEmptyLanguage()) {
     int_auto = IntAutomaton::makePhi();
   } else {
-    using StatePaths = std::pair<int, std::vector<std::string>>;
+  	using StatePaths = std::pair<int, std::vector<std::string>>;
     std::vector<std::string> paths_to_state;
     paths_to_state.push_back("");
 
@@ -2805,7 +2802,7 @@ IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
     paths state_paths = nullptr, pp = nullptr;
     trace_descr tp = nullptr;
     int current_state;
-    int sink_state = this->GetSinkState();
+    int sink_state = restricted_to_digits_auto->GetSinkState();
 
 
     std::map<int, std::vector<std::string>> current_paths_to_state; // <to state, paths>
@@ -2850,9 +2847,8 @@ IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
       }
 
       for (auto& entry : current_paths_to_state) {
-        if (IsAcceptingState(entry.first)) {
+        if (restricted_to_digits_auto->IsAcceptingState(entry.first)) {
           for (auto str_value : entry.second) {
-//            LOG(INFO) << "Found int: " << str_value << " = " << std::stoi(str_value);
             int_values.push_back(std::stoi(str_value));
           }
         }
@@ -2863,12 +2859,13 @@ IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
       state_paths = pp = nullptr;
       current_paths_to_state.clear();
     }
-
     int_auto = IntAutomaton::makeInts(int_values);
   }
 
   delete valid_digits_auto;
   delete restricted_to_digits_auto;
+
+  int_auto->setMinus1(int_auto->hasNegative1() || has_negative_one);
 
   DVLOG(VLOG_LEVEL) << int_auto->getId() << " = [" << this->id_ << "]->parseToIntAutomaton()";
   return int_auto;
@@ -3341,6 +3338,8 @@ StringAutomaton_ptr StringAutomaton::RestrictAtIndexTo(
 
   //length_string_auto->dfa_ = nullptr; // it is index_auto's dfa
   delete length_string_auto; length_string_auto = nullptr;
+
+
 
 
   DVLOG(VLOG_LEVEL) << restricted_auto->id_ << " = [" << this->id_ << "]->restrictAtIndexTo(" << index_auto->getId() << ", " << sub_string_auto->id_ << ")";

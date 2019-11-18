@@ -1343,6 +1343,8 @@ void SyntacticOptimizer::visitBegins(Begins_ptr begins_term) {
     if (constant_term_checker.get_constant_string() == "") {
       add_callback_to_replace_with_bool(begins_term, true);
     }
+  } else if (Ast2Dot::isEquivalent(begins_term->subject_term, begins_term->search_term)) {
+    add_callback_to_replace_with_bool(begins_term, true);
   }
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *begins_term << "@" << begins_term;
@@ -1373,6 +1375,8 @@ void SyntacticOptimizer::visitNotBegins(NotBegins_ptr not_begins_term) {
     if (constant_term_checker.get_constant_string() == "") {
       add_callback_to_replace_with_bool(not_begins_term, false);
     }
+  } else if (Ast2Dot::isEquivalent(not_begins_term->subject_term, not_begins_term->search_term)) {
+    add_callback_to_replace_with_bool(not_begins_term, false);
   }
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *not_begins_term << "@" << not_begins_term;

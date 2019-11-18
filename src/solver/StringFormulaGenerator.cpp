@@ -774,33 +774,41 @@ void StringFormulaGenerator::visitLe(Le_ptr le_term) {
 }
 
 void StringFormulaGenerator::visitConcat(Concat_ptr concat_term) {
-	 visit_children_of(concat_term);
-	 DVLOG(VLOG_LEVEL) << "visit: " << *concat_term;
+  visit_children_of(concat_term);
+  DVLOG(VLOG_LEVEL) << "visit: " << *concat_term;
 
-	 StringFormula_ptr concat_formula = nullptr;
-	 if(concat_term->term_list->size() == 2 and concat_term->term_list->at(0)->type() == Term::Type::QUALIDENTIFIER
-			 	 	 and concat_term->term_list->at(1)->type() == Term::Type::TERMCONSTANT) {
-		 auto left_formula = get_term_formula(concat_term->term_list->at(0));
-		 auto right_formula = get_term_formula(concat_term->term_list->at(1));
-		 concat_formula = left_formula->clone();
-		 concat_formula->SetConstant(right_formula->GetConstant());
-		 concat_formula->SetType(StringFormula::Type::CONCAT_VAR_CONSTANT);
-		 delete_term_formula(concat_term->term_list->at(0));
-		 delete_term_formula(concat_term->term_list->at(1));
-		 constraint_information_->add_string_constraint(concat_term);
-	 } else {
-		 for(auto &iter : *concat_term->term_list) {
-			 if(concat_formula == nullptr) {
-				 concat_formula = get_term_formula(iter)->clone();
-			 } else {
-				 concat_formula->MergeVariables(get_term_formula(iter));
-				 delete_term_formula(iter);
-			 }
-		 }
-		 concat_formula->SetType(StringFormula::Type::NONRELATIONAL);
-		 constraint_information_->add_mixed_constraint(concat_term);
-	 }
-	 set_term_formula(concat_term,concat_formula);
+  StringFormula_ptr concat_formula = nullptr;
+  if(concat_term->term_list->size() == 2 and concat_term->term_list->at(0)->type() == Term::Type::QUALIDENTIFIER
+         and concat_term->term_list->at(1)->type() == Term::Type::TERMCONSTANT) {
+    auto left_formula = get_term_formula(concat_term->term_list->at(0));
+    auto right_formula = get_term_formula(concat_term->term_list->at(1));
+    concat_formula = left_formula->clone();
+    concat_formula->SetConstant(right_formula->GetConstant());
+    concat_formula->SetType(StringFormula::Type::CONCAT_VAR_CONSTANT);
+    delete_term_formula(concat_term->term_list->at(0));
+    delete_term_formula(concat_term->term_list->at(1));
+    constraint_information_->add_string_constraint(concat_term);
+  } else {
+    for(auto &iter : *concat_term->term_list) {
+      if(get_term_formula(iter) == nullptr) {
+        continue;
+      }
+
+      if(concat_formula == nullptr) {
+        concat_formula = get_term_formula(iter)->clone();
+      } else {
+        concat_formula->MergeVariables(get_term_formula(iter));
+        delete_term_formula(iter);
+      }
+    }
+
+    if(concat_formula == nullptr) {
+      concat_formula = new StringFormula();
+    }
+    concat_formula->SetType(StringFormula::Type::NONRELATIONAL);
+    constraint_information_->add_mixed_constraint(concat_term);
+  }
+  set_term_formula(concat_term,concat_formula);
 }
 
 
@@ -1176,8 +1184,6 @@ void StringFormulaGenerator::visitTermConstant(TermConstant_ptr term_constant) {
       auto formula = new StringFormula();
 			formula->SetType(StringFormula::Type::INTEGER_CONSTANT);
 			formula->SetConstant(term_constant->getValue());
-      LOG(INFO) << "Constant = " << formula->GetConstant();
-      LOG(INFO) << "Constant = " << term_constant->getValue();
 			set_term_formula(term_constant, formula);
       break;
     }

@@ -1,4 +1,5 @@
 #include "ImplicationRunner.h"
+#include "SyntacticOptimizer.h"
 
 namespace Vlab {
 namespace Solver {
@@ -28,7 +29,8 @@ void ImplicationRunner::start() {
 }
 
 void ImplicationRunner::end() {
-
+	SyntacticOptimizer syntactic_optimizer(root_, symbol_table_);
+  syntactic_optimizer.start();
 }
 
 void ImplicationRunner::setCallbacks() {
