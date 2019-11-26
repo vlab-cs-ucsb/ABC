@@ -44,7 +44,6 @@ void ModelCounter::add_symbolic_counter(const Theory::SymbolicCounter& counter) 
 
 Theory::BigInteger ModelCounter::CountInts(const unsigned long bound) {
   Theory::BigInteger result(1);
-
   for (int i : constant_ints_) {
     Theory::BigInteger value(i);
     auto shift = bound;
@@ -71,18 +70,19 @@ Theory::BigInteger ModelCounter::CountInts(const unsigned long bound) {
   }
 
   if (unconstraint_int_vars_ > 0) {
-   if (use_signed_integers_) {
-     result = result
-            * boost::multiprecision::pow(
-                (boost::multiprecision::pow(
-                    boost::multiprecision::cpp_int(2),
-                    (2 * bound)) - 1),
-                unconstraint_int_vars_);
-   } else {
+//   if (use_signed_integers_) {
+//     result = result
+//            * boost::multiprecision::pow(
+//                (boost::multiprecision::pow(
+//                    boost::multiprecision::cpp_int(2),
+//                    (bound+1)) - 1),
+//                unconstraint_int_vars_);
+//     LOG(INFO) << result << " (signed)";
+//   } else {
      result = result
          * boost::multiprecision::pow(boost::multiprecision::cpp_int(2),
-                                      (unconstraint_int_vars_ * bound));
-   }
+                                      (unconstraint_int_vars_ * (bound + (use_signed_integers_ ? 1 : 0))));
+//   }
   }
 
   return result;

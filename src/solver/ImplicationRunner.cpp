@@ -29,8 +29,8 @@ void ImplicationRunner::start() {
 }
 
 void ImplicationRunner::end() {
-	SyntacticOptimizer syntactic_optimizer(root_, symbol_table_);
-  syntactic_optimizer.start();
+//	SyntacticOptimizer syntactic_optimizer(root_, symbol_table_);
+//  syntactic_optimizer.start();
 }
 
 void ImplicationRunner::setCallbacks() {
