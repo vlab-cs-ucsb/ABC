@@ -1110,6 +1110,14 @@ class TermConstant : public Term {
  */
 class Sort : public Visitable {
  public:
+  enum class Type
+    : int {
+      NONE = 0,
+    BOOL,
+    INT,
+    STRING
+  };
+
   Sort(Identifier_ptr);
   Sort(Identifier_ptr, SortList_ptr);
   Sort(TVariable_ptr);

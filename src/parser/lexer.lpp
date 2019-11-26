@@ -41,6 +41,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 %}
 
 ";"[^\n]*\n         { loc.lines (yyleng); loc.step ();            }
+";"[^\n]*         { loc.lines (yyleng); loc.step ();            }
 \n                  { loc.lines (yyleng); loc.step ();            }
 \r                  { loc.lines (yyleng); loc.step ();            }
 [ \t]               { loc.step ();                                }
@@ -193,7 +194,12 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 <START_STRING>{
   \\[xX][0-9A-Fa-f][0-9A-Fa-f] { std::string byte = std::string(yytext).substr(2,4);quoted_value << (char)(int)strtol(byte.c_str(),NULL,16); }
   \\\"              { quoted_value << '"';      }
+  \\v              { quoted_value << '\v';      }
+  \\f              { quoted_value << '\f';      }
+  \\n              { quoted_value << '\n';      }
   \\\\              { quoted_value << '\\';     }
+  \\t              { quoted_value << '\t';      }
+  \\r              { quoted_value << '\r';      }
   [^\"\n]           { quoted_value << yytext;   }
   \n                { quoted_value << '\n';     }
   \"                { yy_pop_state(); return Parser::make_STRING (quoted_value.str(), loc); }
@@ -217,6 +223,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 }
 
 .                   { LexerError("invalid character");            }
+
 <<EOF>>             { return Parser::make_END             (loc);  }
 
 %%

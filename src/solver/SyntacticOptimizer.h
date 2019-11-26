@@ -24,6 +24,7 @@
 #include "../smt/Visitor.h"
 #include "../utils/RegularExpression.h"
 #include "Ast2Dot.h"
+#include "AstSortComputer.h";
 #include "optimization/CharAtOptimization.h"
 #include "optimization/ConstantTermChecker.h"
 #include "optimization/ConstantTermOptimization.h"
@@ -39,6 +40,10 @@ namespace Solver {
 // 'not' operation (add more optimization for not)
 class SyntacticOptimizer: public SMT::Visitor {
 public:
+
+  bool ss_flag = false;
+  std::vector<SMT::Term_ptr> ss_terms;
+
   SyntacticOptimizer(SMT::Script_ptr, SymbolTable_ptr);
   virtual ~SyntacticOptimizer();
 
@@ -139,6 +144,8 @@ protected:
   bool match_suffix(SMT::Term_ptr, SMT::Term_ptr);
 
   void record_ite_relation(SMT::Term_ptr);
+
+  std::vector<SMT::Term_ptr> ite_terms_;
 
   SMT::Script_ptr root_;
   SymbolTable_ptr symbol_table_;
