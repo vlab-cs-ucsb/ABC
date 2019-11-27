@@ -75,13 +75,13 @@ void Driver::InitializeSolver() {
   initializer.start();
 
   std::string output_root {"./output"};
-   ast2dot(output_root + "/post_initializer.dot");
+//   ast2dot(output_root + "/post_initializer.dot");
   // std::cin.get();
 
   Solver::SyntacticProcessor syntactic_processor(script_);
   syntactic_processor.start();
 
-  ast2dot(output_root + "/post_syntactic_processor.dot");
+//  ast2dot(output_root + "/post_syntactic_processor.dot");
   // std::cin.get();
 
   Solver::SyntacticOptimizer syntactic_optimizer(script_, symbol_table_);

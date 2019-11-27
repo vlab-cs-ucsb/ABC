@@ -126,6 +126,7 @@ protected:
   bool check_and_process_for_contains_transformation(SMT::Term_ptr&, SMT::Term_ptr&, int compare_value);
   SMT::SubString::Mode check_and_process_subString(SMT::SubString_ptr sub_string_term, SMT::Term_ptr &index_term);
   SMT::SubString::Mode check_and_process_subString(SMT::SubString_ptr sub_string_term, SMT::Term_ptr &start_index_term, SMT::Term_ptr &end_index_term );
+
   SMT::Let_ptr generateLetTermFor(SMT::SubString_ptr sub_string_term, SMT::SubString::Mode local_substring_mode, SMT::LastIndexOf_ptr last_index_of_term, SMT::Term_ptr &index_term);
   SMT::Let_ptr generateLetTermFor(SMT::SubString_ptr sub_string_term, SMT::SubString::Mode local_substring_mode, SMT::IndexOf_ptr index_of_term, SMT::Term_ptr &index_term);
   int check_and_process_index_operation(SMT::Term_ptr current_term, SMT::Term_ptr subject_term, SMT::Term_ptr &index_term);

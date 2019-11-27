@@ -2305,8 +2305,17 @@ IntAutomaton_ptr StringAutomaton::IndexOf(StringAutomaton_ptr search_auto, IntAu
 	StringAutomaton_ptr prefixes_auto = this->Prefixes();
 	IntAutomaton_ptr length_auto = prefixes_auto->Length();
 
-	IntAutomaton_ptr invalid_lengths_auto = from_index_auto->Difference(length_auto);
+	auto tt = new StringAutomaton(dfaCopy(from_index_auto->getDFA()),DEFAULT_NUM_OF_VARIABLES);
+	auto tt1 = StringAutomaton::MakeAnyStringLengthGreaterThan(0);
+	auto tt2 = tt->Concat(tt1);
+	StringAutomaton_ptr invalid_lengths_auto = this->Difference(tt2);
+  delete tt;
+  delete tt1;
+  delete tt2;
+
 	IntAutomaton_ptr valid_lengths_auto = from_index_auto->Intersect(length_auto);
+
+
 
 	// string_length_auto will have only lengths <= this->length
 	StringAutomaton_ptr string_length_auto = new StringAutomaton(dfaCopy(valid_lengths_auto->getDFA()),DEFAULT_NUM_OF_VARIABLES);
