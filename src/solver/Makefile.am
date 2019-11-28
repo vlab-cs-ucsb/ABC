@@ -14,6 +14,8 @@ libabcsolver_la_SOURCES = \
   AstTraverser.h \
   Ast2Dot.cpp \
   Ast2Dot.h \
+  AstSortComputer.cpp \
+  AstSortComputer.h \
   Value.cpp \
   Value.h \
   SymbolTable.cpp \

@@ -45,6 +45,9 @@ using TermChildrenTable = std::map<SMT::Visitable_ptr, std::set<std::string>>;
 
 class SymbolTable {
 public:
+
+  std::map<std::string,SMT::Variable_ptr> ss_term_vars;
+
   SymbolTable();
   virtual ~SymbolTable();
 

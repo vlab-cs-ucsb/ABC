@@ -258,7 +258,11 @@ void SubstringOptimization::visitTermConstant(TermConstant_ptr term_constant) {
     std::string str_value = string_constant_checker.get_constant_string();
     if (has_end_index_) {
       if (has_constant_end_index_ and str_value.length() >= start_index_) { // can do substring
+        if(end_index_ == -1) {
+          value_ = "";
+        } else {
           value_ = str_value.substr(start_index_, end_index_);
+        }
         is_optimized_ = true;
       } else if (has_constant_end_index_ and str_value.length() < start_index_) { // can get rid of that string
         term_constant->primitive->setData("");
