@@ -2790,6 +2790,11 @@ IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
   if(!non_digits_auto->IsEmptyLanguage()) {
     has_negative_one = true;
   }
+
+
+  if(this->HasEmptyString()) {
+    has_negative_one = true;
+  }
   delete non_digits_auto;
   non_digits_auto = nullptr;
 

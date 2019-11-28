@@ -1028,8 +1028,19 @@ void ConstraintSolver::visitToString(ToString_ptr to_string_term) {
     result = new Value(StringAutomaton::MakeString(ss.str()));
   } else {
     auto unary_auto = param->getIntAutomaton()->toUnaryAutomaton();
-    result = new Value(unary_auto->toStringAutomaton());
+    auto str_auto = unary_auto->toStringAutomaton();
+
     delete unary_auto;
+
+    // if param has negative one, then also return empty string
+    if(param->getIntAutomaton()->hasNegative1()) {
+      auto empty_string_auto = Theory::StringAutomaton::MakeEmptyString();
+      auto temp_auto = str_auto->Union(empty_string_auto);
+      delete str_auto;
+      delete empty_string_auto;
+      str_auto = temp_auto;
+    }
+    result = new Value(str_auto);
   }
 
 //  result->getStringAutomaton()->inspectAuto(false,true);

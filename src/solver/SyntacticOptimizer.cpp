@@ -2037,6 +2037,9 @@ void SyntacticOptimizer::visitToString(ToString_ptr to_string_term) {
   if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(to_string_term->subject_term)) {
     if (Primitive::Type::NUMERAL == term_constant->getValueType()) {
       std::string str_value = term_constant->getValue();
+      if(str_value == "-1") {
+        str_value = "";
+      }
       DVLOG(VLOG_LEVEL) << "Applying 'toString' transformation: '" << str_value << "'";
       callback_ = [this, to_string_term, str_value](Term_ptr & term) mutable {
         term = generate_term_constant(str_value, Primitive::Type::STRING);

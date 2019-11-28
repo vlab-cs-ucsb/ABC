@@ -19,7 +19,7 @@ bool Solver::ENABLE_EQUIVALENCE_CLASSES = true;
 bool Solver::ENABLE_DEPENDENCY_ANALYSIS = true;
 bool Solver::ENABLE_IMPLICATIONS = true;
 bool Solver::ENABLE_LEN_IMPLICATIONS = true;
-bool Solver::ENABLE_SORTING_HEURISTICS = false;
+bool Solver::ENABLE_SORTING_HEURISTICS = true;
 bool Solver::FORCE_DNF_FORMULA = false;
 bool Solver::COUNT_BOUND_EXACT = false;
 

@@ -1442,7 +1442,8 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
       	auto unary_auto = term_pre_value->getIntAutomaton()->toUnaryAutomaton();
       	auto term_binary_auto = unary_auto->toBinaryIntAutomaton(qi_term->getVarName(),
 																																 variable_value->getIntAutomaton()->GetFormula()->clone(),
-																																 false);
+																																 term_pre_value->getIntAutomaton()->hasNegative1());
+
 				delete unary_auto;
 				delete term_pre_value;
 				term_pre_value = new Value(term_binary_auto);
