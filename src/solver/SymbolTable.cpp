@@ -242,12 +242,20 @@ Variable_ptr SymbolTable::get_representative_variable_of_at_scope(Visitable_ptr 
   return variable;
 }
 
+void SymbolTable::set_variable_group_mapping(std::string variable_name, std::string group_name) {
+  auto variable = get_variable_unsafe(variable_name);
+  auto group = get_variable_unsafe(group_name);
+  if (variable == nullptr || group == nullptr) {
+    LOG(FATAL) << "COULD NOT FIND VARIABLES";
+  }
+  variable_group_map_[variable] = group;
+}
+
 void SymbolTable::add_variable_group_mapping(std::string variable_name, std::string group_name) {
   auto variable = get_variable_unsafe(variable_name);
   if (variable not_eq nullptr) {
-    return add_variable_group_mapping(get_variable(variable_name), get_variable(group_name));
+    add_variable_group_mapping(get_variable(variable_name), get_variable(group_name));
   }
-  return;
 }
 
 void SymbolTable::add_variable_group_mapping(Variable_ptr variable, Variable_ptr group_variable) {

@@ -108,7 +108,8 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
     add_callback_to_replace_with_bool(and_term, true);
   } else if (and_term->term_list->size() == 1) {
     auto child_term = and_term->term_list->front();
-    if (dynamic_cast<And_ptr>(child_term) or dynamic_cast<Or_ptr>(child_term)) {
+    // simplify, but always make sure there is at least one AND at top scope
+    if (dynamic_cast<And_ptr>(child_term) or (dynamic_cast<Or_ptr>(child_term) && symbol_table_->top_scope() != root_)) {
       callback_ = [and_term, child_term](Term_ptr & term) mutable {
         and_term->term_list->clear();
         delete and_term;

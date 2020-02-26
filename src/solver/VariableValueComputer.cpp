@@ -1419,6 +1419,8 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
         string_auto->SetFormula(formula);
       } else if (Theory::StringFormula::Type::VAR != formula->GetType()) {
       	LOG(FATAL) << "fix me";
+      } else {
+        LOG(FATAL) << "WAT";
       }
 //      string_auto->inspectAuto(false,true);
 //      symbol_table->get_value(qi_term->getVarName())->getStringAutomaton()->inspectAuto(false,true);

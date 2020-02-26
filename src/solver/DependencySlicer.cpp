@@ -155,6 +155,8 @@ void DependencySlicer::visitOr(Or_ptr or_term) {
   ReMapTerms(or_term->term_list, or_term);
 }
 
+
+/*
 void DependencySlicer::visitEq(Eq_ptr eq_term) {
 	visit(eq_term->left_term);
 	visit(eq_term->right_term);
@@ -333,12 +335,14 @@ void DependencySlicer::visitIn(In_ptr in_term) {
 	visit(in_term->left_term);
 	visit(in_term->right_term);
 
-	if(QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(in_term->left_term)) {
-		if(TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(in_term->right_term)) {
-			constraint_information_->add_var_constraint(symbol_table_->get_variable(left_variable),in_term);
-		}
-	}
+//	if(QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(in_term->left_term)) {
+//		if(TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(in_term->right_term)) {
+//			constraint_information_->add_var_constraint(symbol_table_->get_variable(left_variable),in_term);
+//		}
+//	}
 }
+
+*/
 
 /**
  * TODO handle local scopes

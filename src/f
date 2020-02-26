@@ -1,0 +1,344 @@
+I0217 18:07:05.131610 19352 Initializer.cpp:34] action:<String>
+I0217 18:07:05.131645 19352 Initializer.cpp:34] resource:<String>
+I0217 18:07:05.131696 19352 SyntacticProcessor.cpp:96] post visit start: and@0x209cc80
+I0217 18:07:05.131702 19352 SyntacticProcessor.cpp:104] Check and apply associativity: and
+I0217 18:07:05.131709 19352 SyntacticProcessor.cpp:127] post visit end: and@0x209cc80
+I0217 18:07:05.131728 19352 SyntacticProcessor.cpp:376] pre visit start: =@0x209d050
+I0217 18:07:05.131742 19352 SyntacticProcessor.cpp:406] pre visit end: eq@deleted
+I0217 18:07:05.131745 19352 SyntacticProcessor.cpp:96] post visit start: and@0x209b920
+I0217 18:07:05.131747 19352 SyntacticProcessor.cpp:104] Check and apply associativity: and
+I0217 18:07:05.131750 19352 SyntacticProcessor.cpp:127] post visit end: and@0x209b920
+I0217 18:07:05.131753 19352 SyntacticProcessor.cpp:172] pre visit start: not@0x209ba50
+I0217 18:07:05.131757 19352 SyntacticProcessor.cpp:274] Transforming operation: (not (in ...)) to (notIn ...)
+I0217 18:07:05.131760 19352 SyntacticProcessor.cpp:281] pre visit end: not@<deleted>
+I0217 18:07:05.131763 19352 SyntacticProcessor.cpp:172] pre visit start: not@0x209bbb0
+I0217 18:07:05.131765 19352 SyntacticProcessor.cpp:274] Transforming operation: (not (in ...)) to (notIn ...)
+I0217 18:07:05.131768 19352 SyntacticProcessor.cpp:281] pre visit end: not@<deleted>
+I0217 18:07:05.131770 19352 SyntacticProcessor.cpp:96] post visit start: and@0x209ba70
+I0217 18:07:05.131772 19352 SyntacticProcessor.cpp:104] Check and apply associativity: and
+I0217 18:07:05.131775 19352 SyntacticProcessor.cpp:127] post visit end: and@0x209ba70
+I0217 18:07:05.131778 19352 SyntacticProcessor.cpp:149] post visit start: or@0x209bc10
+I0217 18:07:05.131780 19352 SyntacticProcessor.cpp:150] Check and apply associativity: or
+I0217 18:07:05.131783 19352 SyntacticProcessor.cpp:164] post visit end: or@0x209bc10
+I0217 18:07:05.131784 19352 SyntacticProcessor.cpp:96] post visit start: and@0x209d080
+I0217 18:07:05.131788 19352 SyntacticProcessor.cpp:104] Check and apply associativity: and
+I0217 18:07:05.131803 19352 SyntacticProcessor.cpp:127] post visit end: and@0x209d080
+I0217 18:07:05.131809 19352 SyntacticOptimizer.cpp:28] Start SyntacticOptimizer
+I0217 18:07:05.131832 19352 SyntacticOptimizer.cpp:67] visit children start: and@0x209d080
+I0217 18:07:05.131837 19352 SyntacticOptimizer.cpp:2443] post visit start: literal@0x209cc10
+I0217 18:07:05.131856 19352 SyntacticOptimizer.cpp:2446] post visit end: literal@0x209cc10
+I0217 18:07:05.131860 19352 SyntacticOptimizer.cpp:1534] post visit start: in@0x209cc30
+I0217 18:07:05.131875 19352 SyntacticOptimizer.cpp:1544] post visit end: in@0x209cc30
+I0217 18:07:05.131881 19352 SyntacticOptimizer.cpp:2443] post visit start: literal@0x209cd70
+I0217 18:07:05.131891 19352 SyntacticOptimizer.cpp:2446] post visit end: literal@0x209cd70
+I0217 18:07:05.131893 19352 SyntacticOptimizer.cpp:1534] post visit start: in@0x209cd90
+I0217 18:07:05.131906 19352 SyntacticOptimizer.cpp:1544] post visit end: in@0x209cd90
+I0217 18:07:05.131909 19352 SyntacticOptimizer.cpp:130] visit children start: or@0x209bc10
+I0217 18:07:05.131914 19352 SyntacticOptimizer.cpp:67] visit children start: and@0x209b920
+I0217 18:07:05.131917 19352 SyntacticOptimizer.cpp:2443] post visit start: literal@0x209cee0
+I0217 18:07:05.131922 19352 SyntacticOptimizer.cpp:2446] post visit end: literal@0x209cee0
+I0217 18:07:05.131923 19352 SyntacticOptimizer.cpp:1534] post visit start: in@0x209cf00
+I0217 18:07:05.131933 19352 SyntacticOptimizer.cpp:1544] post visit end: in@0x209cf00
+I0217 18:07:05.131937 19352 SyntacticOptimizer.cpp:2443] post visit start: literal@0x209d000
+I0217 18:07:05.131944 19352 SyntacticOptimizer.cpp:2446] post visit end: literal@0x209d000
+I0217 18:07:05.131947 19352 SyntacticOptimizer.cpp:1534] post visit start: in@0x209d020
+I0217 18:07:05.131958 19352 SyntacticOptimizer.cpp:1544] post visit end: in@0x209d020
+I0217 18:07:05.131963 19352 SyntacticOptimizer.cpp:126] visit children end: and@0x209b920
+I0217 18:07:05.131969 19352 SyntacticOptimizer.cpp:67] visit children start: and@0x209ba70
+I0217 18:07:05.131974 19352 SyntacticOptimizer.cpp:2443] post visit start: literal@0x209b9f0
+I0217 18:07:05.131979 19352 SyntacticOptimizer.cpp:2446] post visit end: literal@0x209b9f0
+I0217 18:07:05.131981 19352 SyntacticOptimizer.cpp:1551] post visit start: notIn@0x209d050
+I0217 18:07:05.132000 19352 SyntacticOptimizer.cpp:1577] post visit end: notIn@0x209d050
+I0217 18:07:05.132005 19352 SyntacticOptimizer.cpp:2443] post visit start: literal@0x209b9f0
+I0217 18:07:05.132010 19352 SyntacticOptimizer.cpp:2446] post visit end: literal@0x209b9f0
+I0217 18:07:05.132012 19352 SyntacticOptimizer.cpp:1534] post visit start: in@0x209cc60
+I0217 18:07:05.132023 19352 SyntacticOptimizer.cpp:1544] post visit end: in@0x209cc60
+I0217 18:07:05.132026 19352 SyntacticOptimizer.cpp:2443] post visit start: literal@0x209bb50
+I0217 18:07:05.132031 19352 SyntacticOptimizer.cpp:2446] post visit end: literal@0x209bb50
+I0217 18:07:05.132033 19352 SyntacticOptimizer.cpp:1551] post visit start: notIn@0x209caa0
+I0217 18:07:05.132046 19352 SyntacticOptimizer.cpp:1577] post visit end: notIn@0x209caa0
+I0217 18:07:05.132050 19352 SyntacticOptimizer.cpp:2443] post visit start: literal@0x209bb50
+I0217 18:07:05.132055 19352 SyntacticOptimizer.cpp:2446] post visit end: literal@0x209bb50
+I0217 18:07:05.132057 19352 SyntacticOptimizer.cpp:1534] post visit start: in@0x209d050
+I0217 18:07:05.132069 19352 SyntacticOptimizer.cpp:1544] post visit end: in@0x209d050
+I0217 18:07:05.132072 19352 SyntacticOptimizer.cpp:126] visit children end: and@0x209ba70
+I0217 18:07:05.132076 19352 SyntacticOptimizer.cpp:186] visit children end: or@0x209bc10
+I0217 18:07:05.132078 19352 SyntacticOptimizer.cpp:126] visit children end: and@0x209d080
+I0217 18:07:05.132081 19352 SyntacticOptimizer.cpp:36] SyntacticOptimizer is finished!
+I0217 18:07:05.132088 19352 EquivalenceGenerator.cpp:36] Starting the EquivalenceGenerator
+I0217 18:07:05.132108 19352 DependencySlicer.cpp:22] Starting the Dependency Slicer
+I0217 18:07:05.132313 19352 DependencySlicer.cpp:374] re-mapping child terms to: and@0x209b920
+I0217 18:07:05.132377 19352 DependencySlicer.cpp:374] re-mapping child terms to: and@0x209ba70
+I0217 18:07:05.132388 19352 DependencySlicer.cpp:374] re-mapping child terms to: or@0x209bc10
+I0217 18:07:05.132575 19352 DependencySlicer.cpp:46] #components: 4
+I0217 18:07:05.132591 19352 DependencySlicer.cpp:48] and@0x209b920
+I0217 18:07:05.132594 19352 DependencySlicer.cpp:48] and@0x209ba70
+I0217 18:07:05.132597 19352 DependencySlicer.cpp:48] or@0x209bc10
+I0217 18:07:05.132599 19352 DependencySlicer.cpp:48] and@0x209d080
+I0217 18:07:05.132612 19352 ImplicationRunner.cpp:22] Starting the Implication Runner
+I0217 18:07:05.132647 19352 FormulaOptimizer.cpp:47] visit children start: and@0x209d080
+I0217 18:07:05.132694 19352 FormulaOptimizer.cpp:65] visit children start: or@0x209bc10
+I0217 18:07:05.132717 19352 FormulaOptimizer.cpp:47] visit children start: and@0x209b920
+I0217 18:07:05.132737 19352 FormulaOptimizer.cpp:59] visit children end: and@0x209b920
+I0217 18:07:05.132750 19352 FormulaOptimizer.cpp:47] visit children start: and@0x209ba70
+I0217 18:07:05.132767 19352 FormulaOptimizer.cpp:59] visit children end: and@0x209ba70
+I0217 18:07:05.132772 19352 FormulaOptimizer.cpp:80] visit children end: or@0x209bc10
+I0217 18:07:05.132776 19352 FormulaOptimizer.cpp:59] visit children end: and@0x209d080
+I0217 18:07:05.132900 19352 Counter.cpp:37] action : 3
+I0217 18:07:05.132906 19352 Counter.cpp:37] resource : 3
+I0217 18:07:05.133080 19352 ConstraintSorter.cpp:141] 0x209cf00 -> l:1 r:0 l: action:<String> r:
+I0217 18:07:05.133085 19352 ConstraintSorter.cpp:141] 0x209d020 -> l:1 r:0 l: resource:<String> r:
+I0217 18:07:05.133090 19352 ConstraintSorter.cpp:145] resource:<String> -> l:2 r:0 l: 0x209cd90 0x209d020 r:
+I0217 18:07:05.133095 19352 ConstraintSorter.cpp:145] action:<String> -> l:2 r:0 l: 0x209cc30 0x209cf00 r:
+I0217 18:07:05.133134 19352 ConstraintSorter.cpp:141] 0x209cc60 -> l:1 r:0 l: action:<String> r:
+I0217 18:07:05.133139 19352 ConstraintSorter.cpp:141] 0x209d050 -> l:1 r:0 l: resource:<String> r:
+I0217 18:07:05.133149 19352 ConstraintSorter.cpp:145] resource:<String> -> l:3 r:0 l: 0x209cd90 0x209cc60 0x209d050 r:
+I0217 18:07:05.133153 19352 ConstraintSorter.cpp:145] action:<String> -> l:3 r:0 l: 0x209cc30 0x209d050 0x209cc60 r:
+I0217 18:07:05.133162 19352 ConstraintSorter.cpp:141] 0x209cc30 -> l:1 r:0 l: action:<String> r:
+I0217 18:07:05.133181 19352 ConstraintSorter.cpp:141] 0x209cd90 -> l:1 r:0 l: resource:<String> r:
+I0217 18:07:05.133184 19352 ConstraintSorter.cpp:141] 0x209bc10 -> l:0 r:0 l: r:
+I0217 18:07:05.133208 19352 ConstraintSorter.cpp:145] resource:<String> -> l:3 r:0 l: 0x209cd90 0x7f74def55c28 0x209bc10 r:
+I0217 18:07:05.133213 19352 ConstraintSorter.cpp:145] action:<String> -> l:3 r:0 l: 0x209cc30 0x209bc10 0x7f74def55c28 r:
+I0217 18:07:05.133481 19352 ConstraintSolver.cpp:34] start
+I0217 18:07:05.133486 19352 ArithmeticFormulaGenerator.cpp:52] Arithmetic constraint extraction starts at root
+I0217 18:07:05.133492 19352 ArithmeticFormulaGenerator.cpp:90] visit children start: and@0x209d080
+I0217 18:07:05.133527 19352 ArithmeticFormulaGenerator.cpp:131] visit children start: or@0x209bc10
+I0217 18:07:05.133532 19352 ArithmeticFormulaGenerator.cpp:90] visit children start: and@0x209b920
+I0217 18:07:05.133534 19352 ArithmeticFormulaGenerator.cpp:97] visit children end: and@0x209b920
+I0217 18:07:05.133536 19352 ArithmeticFormulaGenerator.cpp:105] post visit start: and@0x209b920
+I0217 18:07:05.133541 19352 ArithmeticFormulaGenerator.cpp:126] post visit end: and@0x209b920
+I0217 18:07:05.133544 19352 ArithmeticFormulaGenerator.cpp:90] visit children start: and@0x209ba70
+I0217 18:07:05.133546 19352 ArithmeticFormulaGenerator.cpp:97] visit children end: and@0x209ba70
+I0217 18:07:05.133549 19352 ArithmeticFormulaGenerator.cpp:105] post visit start: and@0x209ba70
+I0217 18:07:05.133551 19352 ArithmeticFormulaGenerator.cpp:126] post visit end: and@0x209ba70
+I0217 18:07:05.133554 19352 ArithmeticFormulaGenerator.cpp:138] visit children end: or@0x209bc10
+I0217 18:07:05.133558 19352 ArithmeticFormulaGenerator.cpp:163] post visit start: or@0x209bc10
+I0217 18:07:05.133559 19352 ArithmeticFormulaGenerator.cpp:183] post visit end: or@0x209bc10
+I0217 18:07:05.133561 19352 ArithmeticFormulaGenerator.cpp:97] visit children end: and@0x209d080
+I0217 18:07:05.133564 19352 ArithmeticFormulaGenerator.cpp:105] post visit start: and@0x209d080
+I0217 18:07:05.133566 19352 ArithmeticFormulaGenerator.cpp:126] post visit end: and@0x209d080
+I0217 18:07:05.133569 19352 ArithmeticFormulaGenerator.cpp:822] start setting int group for components
+I0217 18:07:05.133581 19352 ArithmeticFormulaGenerator.cpp:867] end setting int group for components
+I0217 18:07:05.133602 19352 StringFormulaGenerator.cpp:50] String constraint extraction starts at root
+I0217 18:07:05.133605 19352 StringFormulaGenerator.cpp:88] visit children start: and@0x209d080
+I0217 18:07:05.133612 19352 StringFormulaGenerator.cpp:1420] visit: qid
+I0217 18:07:05.133635 19352 StringFormulaGenerator.cpp:1432] visit: literal
+I0217 18:07:05.133644 19352 StringFormulaGenerator.cpp:988] post visit start: in@0x209cc30
+I0217 18:07:05.133759 19352 StringFormulaGenerator.cpp:1005] post visit end: in@0x209cc30
+I0217 18:07:05.133764 19352 StringFormulaGenerator.cpp:1420] visit: qid
+I0217 18:07:05.133769 19352 StringFormulaGenerator.cpp:1432] visit: literal
+I0217 18:07:05.133774 19352 StringFormulaGenerator.cpp:988] post visit start: in@0x209cd90
+I0217 18:07:05.133796 19352 StringFormulaGenerator.cpp:1005] post visit end: in@0x209cd90
+I0217 18:07:05.133801 19352 StringFormulaGenerator.cpp:208] visit children start: or@0x209bc10
+I0217 18:07:05.133805 19352 StringFormulaGenerator.cpp:88] visit children start: and@0x209b920
+I0217 18:07:05.133807 19352 StringFormulaGenerator.cpp:1420] visit: qid
+I0217 18:07:05.133812 19352 StringFormulaGenerator.cpp:1432] visit: literal
+I0217 18:07:05.133816 19352 StringFormulaGenerator.cpp:988] post visit start: in@0x209cf00
+I0217 18:07:05.133826 19352 StringFormulaGenerator.cpp:1005] post visit end: in@0x209cf00
+I0217 18:07:05.133832 19352 StringFormulaGenerator.cpp:1420] visit: qid
+I0217 18:07:05.133837 19352 StringFormulaGenerator.cpp:1432] visit: literal
+I0217 18:07:05.133841 19352 StringFormulaGenerator.cpp:988] post visit start: in@0x209d020
+I0217 18:07:05.133848 19352 StringFormulaGenerator.cpp:1005] post visit end: in@0x209d020
+I0217 18:07:05.133895 19352 StringFormulaGenerator.cpp:161] visit children end: and@0x209b920
+I0217 18:07:05.133899 19352 StringFormulaGenerator.cpp:170] post visit start: and@0x209b920
+I0217 18:07:05.133922 19352 StringFormulaGenerator.cpp:203] post visit end: and@0x209b920
+I0217 18:07:05.133925 19352 StringFormulaGenerator.cpp:88] visit children start: and@0x209ba70
+I0217 18:07:05.133929 19352 StringFormulaGenerator.cpp:1420] visit: qid
+I0217 18:07:05.133935 19352 StringFormulaGenerator.cpp:1432] visit: literal
+I0217 18:07:05.133939 19352 StringFormulaGenerator.cpp:988] post visit start: in@0x209cc60
+I0217 18:07:05.133949 19352 StringFormulaGenerator.cpp:1005] post visit end: in@0x209cc60
+I0217 18:07:05.133952 19352 StringFormulaGenerator.cpp:1420] visit: qid
+I0217 18:07:05.133956 19352 StringFormulaGenerator.cpp:1432] visit: literal
+I0217 18:07:05.133960 19352 StringFormulaGenerator.cpp:988] post visit start: in@0x209d050
+I0217 18:07:05.133967 19352 StringFormulaGenerator.cpp:1005] post visit end: in@0x209d050
+I0217 18:07:05.133985 19352 StringFormulaGenerator.cpp:161] visit children end: and@0x209ba70
+I0217 18:07:05.133989 19352 StringFormulaGenerator.cpp:170] post visit start: and@0x209ba70
+I0217 18:07:05.133997 19352 StringFormulaGenerator.cpp:203] post visit end: and@0x209ba70
+I0217 18:07:05.134001 19352 StringFormulaGenerator.cpp:220] visit children end: or@0x209bc10
+I0217 18:07:05.134004 19352 StringFormulaGenerator.cpp:247] post visit start: or@0x209bc10
+I0217 18:07:05.134009 19352 StringFormulaGenerator.cpp:365] post visit end: or@0x209bc10
+I0217 18:07:05.134024 19352 StringFormulaGenerator.cpp:161] visit children end: and@0x209d080
+I0217 18:07:05.134028 19352 StringFormulaGenerator.cpp:170] post visit start: and@0x209d080
+I0217 18:07:05.134034 19352 StringFormulaGenerator.cpp:203] post visit end: and@0x209d080
+I0217 18:07:05.134038 19352 StringFormulaGenerator.cpp:1691] start setting string group for components
+I0217 18:07:05.134227 19352 StringAutomaton.cpp:173] 1 = [0]->clone()
+I0217 18:07:05.134234 19352 Automaton.cpp:97] [0]->IsEmptyLanguage() false
+I0217 18:07:05.134279 19352 StringFormulaGenerator.cpp:1731] end setting string group for components
+I0217 18:07:05.134285 19352 ConstraintSolver.cpp:74] visit: assert
+I0217 18:07:05.134290 19352 StringConstraintSolver.cpp:32] String constraint solving starts at node: 0x209d080
+I0217 18:07:05.134294 19352 StringConstraintSolver.cpp:121] visit children of component start: and@0x209d080
+I0217 18:07:05.134299 19352 StringConstraintSolver.cpp:162] visit children of component end: and@0x209d080
+I0217 18:07:05.134302 19352 StringConstraintSolver.cpp:164] post visit component start: and@0x209d080
+I0217 18:07:05.134321 19352 StringConstraintSolver.cpp:194] post visit component end: and@0x209d080
+I0217 18:07:05.134333 19352 ConstraintSolver.cpp:156] String formulae solved: and@0x209d080
+I0217 18:07:05.134336 19352 ConstraintSolver.cpp:159] Multi-track solving done: and@0x209d080
+I0217 18:07:05.134338 19352 ConstraintSolver.cpp:162] visit children start: and@0x209d080
+I0217 18:07:05.134344 19352 ConstraintSolver.cpp:1151] visit: qid = action
+I0217 18:07:05.134431 19352 StringAutomaton.cpp:3640] No sink found while getting single track from multi-track, returning any string
+I0217 18:07:05.134449 19352 StringAutomaton.cpp:253] 2 = MakeAnyString()
+I0217 18:07:05.134457 19352 StringAutomaton.cpp:3569] 2 = [1]->GetAutomatonForVariable(action)
+I0217 18:07:05.134502 19352 ConstraintSolver.cpp:1180] visit: literal
+I0217 18:07:05.134529 19352 StringAutomaton.cpp:240] 3 = MakeString("A")
+I0217 18:07:05.134546 19352 StringAutomaton.cpp:240] 4 = MakeString("D")
+I0217 18:07:05.134567 19352 StringAutomaton.cpp:1320] 5 = [3]->union(4)
+I0217 18:07:05.134572 19352 StringAutomaton.cpp:312] 5 = MakeRegexAuto(A|D)
+I0217 18:07:05.134582 19352 ConstraintSolver.cpp:640] visit: in
+I0217 18:07:05.134598 19352 StringAutomaton.cpp:1310] 6 = [2]->Intersect(5)
+I0217 18:07:05.134601 19352 Automaton.cpp:97] [6]->IsEmptyLanguage() false
+I0217 18:07:05.134606 19352 VariableValueComputer.cpp:28] Variable value computation start
+I0217 18:07:05.134621 19352 StringAutomaton.cpp:173] 7 = [6]->clone()
+I0217 18:07:05.134625 19352 VariableValueComputer.cpp:642] pop: in
+I0217 18:07:05.134631 19352 StringAutomaton.cpp:173] 8 = [7]->clone()
+I0217 18:07:05.134635 19352 VariableValueComputer.cpp:1399] pop: qid = action
+I0217 18:07:05.134646 19352 StringAutomaton.cpp:1278] 2 , 1
+I0217 18:07:05.134793 19352 StringAutomaton.cpp:1310] 10 = [1]->Intersect(9)
+I0217 18:07:05.134805 19352 StringAutomaton.cpp:173] 11 = [10]->clone()
+I0217 18:07:05.134809 19352 Automaton.cpp:97] [10]->IsEmptyLanguage() false
+I0217 18:07:05.134815 19352 VariableValueComputer.cpp:54] end variable value computation
+I0217 18:07:05.134835 19352 ConstraintSolver.cpp:1151] visit: qid = resource
+I0217 18:07:05.134925 19352 StringAutomaton.cpp:3640] No sink found while getting single track from multi-track, returning any string
+I0217 18:07:05.134933 19352 StringAutomaton.cpp:253] 12 = MakeAnyString()
+I0217 18:07:05.134939 19352 StringAutomaton.cpp:3569] 12 = [11]->GetAutomatonForVariable(resource)
+I0217 18:07:05.134948 19352 ConstraintSolver.cpp:1180] visit: literal
+I0217 18:07:05.134975 19352 StringAutomaton.cpp:240] 13 = MakeString("foo")
+I0217 18:07:05.134994 19352 StringAutomaton.cpp:240] 14 = MakeString("bar")
+I0217 18:07:05.135013 19352 StringAutomaton.cpp:1320] 15 = [13]->union(14)
+I0217 18:07:05.135018 19352 StringAutomaton.cpp:312] 15 = MakeRegexAuto(foo|bar)
+I0217 18:07:05.135022 19352 ConstraintSolver.cpp:640] visit: in
+I0217 18:07:05.135040 19352 StringAutomaton.cpp:1310] 16 = [12]->Intersect(15)
+I0217 18:07:05.135044 19352 Automaton.cpp:97] [16]->IsEmptyLanguage() false
+I0217 18:07:05.135064 19352 VariableValueComputer.cpp:28] Variable value computation start
+I0217 18:07:05.135071 19352 StringAutomaton.cpp:173] 17 = [16]->clone()
+I0217 18:07:05.135076 19352 VariableValueComputer.cpp:642] pop: in
+I0217 18:07:05.135097 19352 StringAutomaton.cpp:173] 18 = [17]->clone()
+I0217 18:07:05.135100 19352 VariableValueComputer.cpp:1399] pop: qid = resource
+I0217 18:07:05.135110 19352 StringAutomaton.cpp:1278] 2 , 1
+I0217 18:07:05.135251 19352 StringAutomaton.cpp:1310] 20 = [11]->Intersect(19)
+I0217 18:07:05.135269 19352 StringAutomaton.cpp:173] 21 = [20]->clone()
+I0217 18:07:05.135273 19352 Automaton.cpp:97] [20]->IsEmptyLanguage() false
+I0217 18:07:05.135278 19352 VariableValueComputer.cpp:54] end variable value computation
+I0217 18:07:05.135288 19352 StringConstraintSolver.cpp:32] String constraint solving starts at node: 0x209bc10
+I0217 18:07:05.135290 19352 StringConstraintSolver.cpp:207] visit children of component start: or@0x209bc10
+I0217 18:07:05.135308 19352 StringConstraintSolver.cpp:271] visit children of component end: or@0x209bc10
+I0217 18:07:05.135311 19352 StringConstraintSolver.cpp:273] post visit component start: or@0x209bc10
+I0217 18:07:05.135320 19352 StringConstraintSolver.cpp:284] post visit component end: or@0x209bc10
+I0217 18:07:05.135326 19352 ConstraintSolver.cpp:222] String formulae solved: or@0x209bc10
+I0217 18:07:05.135329 19352 ConstraintSolver.cpp:225] Multi-track solving done: or@0x209bc10
+I0217 18:07:05.135332 19352 ConstraintSolver.cpp:228] visit children start: or@0x209bc10
+I0217 18:07:05.135335 19352 StringConstraintSolver.cpp:32] String constraint solving starts at node: 0x209b920
+I0217 18:07:05.135339 19352 StringConstraintSolver.cpp:121] visit children of component start: and@0x209b920
+I0217 18:07:05.135341 19352 StringConstraintSolver.cpp:162] visit children of component end: and@0x209b920
+I0217 18:07:05.135344 19352 StringConstraintSolver.cpp:164] post visit component start: and@0x209b920
+I0217 18:07:05.135355 19352 StringConstraintSolver.cpp:194] post visit component end: and@0x209b920
+I0217 18:07:05.135361 19352 ConstraintSolver.cpp:156] String formulae solved: and@0x209b920
+I0217 18:07:05.135366 19352 ConstraintSolver.cpp:159] Multi-track solving done: and@0x209b920
+I0217 18:07:05.135370 19352 ConstraintSolver.cpp:162] visit children start: and@0x209b920
+I0217 18:07:05.135387 19352 StringAutomaton.cpp:240] 22 = MakeString("D")
+I0217 18:07:05.135398 19352 StringAutomaton.cpp:240] 23 = MakeString("E")
+I0217 18:07:05.135409 19352 StringAutomaton.cpp:240] 24 = MakeString("F")
+I0217 18:07:05.135418 19352 StringAutomaton.cpp:1320] 25 = [23]->union(24)
+I0217 18:07:05.135428 19352 StringAutomaton.cpp:1320] 26 = [22]->union(25)
+I0217 18:07:05.135432 19352 StringAutomaton.cpp:312] 26 = MakeRegexAuto(D|E|F)
+I0217 18:07:05.135440 19352 StringAutomaton.cpp:1278] 2 , 1
+I0217 18:07:05.135524 19352 StringAutomaton.cpp:1310] 28 = [21]->Intersect(27)
+I0217 18:07:05.135543 19352 StringAutomaton.cpp:173] 29 = [28]->clone()
+I0217 18:07:05.135546 19352 Automaton.cpp:97] [28]->IsEmptyLanguage() false
+I0217 18:07:05.135629 19352 StringAutomaton.cpp:298] 30 = MakeCharRange('a', 'z')
+I0217 18:07:05.135655 19352 StringAutomaton.cpp:298] 31 = MakeCharRange('0', '9')
+I0217 18:07:05.135666 19352 StringAutomaton.cpp:1320] 32 = [30]->union(31)
+I0217 18:07:05.135776 19352 StringAutomaton.cpp:1472] 33 = [32]->closure()
+I0217 18:07:05.135793 19352 StringAutomaton.cpp:240] 34 = MakeString(":")
+I0217 18:07:05.135800 19352 StringAutomaton.cpp:409] 35 = MakeAnyStringLengthEqualTo(1)
+I0217 18:07:05.135803 19352 StringAutomaton.cpp:305] 35 = MakeAnyChar()
+I0217 18:07:05.135820 19352 StringAutomaton.cpp:1472] 36 = [35]->closure()
+I0217 18:07:05.139961 19352 StringAutomaton.cpp:1310] 39 = [37]->Intersect(38)
+I0217 18:07:05.140098 19352 StringAutomaton.cpp:1310] 41 = [39]->Intersect(40)
+I0217 18:07:05.143944 19352 StringAutomaton.cpp:1310] 46 = [44]->Intersect(45)
+I0217 18:07:05.144093 19352 StringAutomaton.cpp:1310] 48 = [46]->Intersect(47)
+I0217 18:07:05.144965 19352 StringAutomaton.cpp:312] 50 = MakeRegexAuto(([a-z0-9]+):.+)
+I0217 18:07:05.144980 19352 StringAutomaton.cpp:1278] 2 , 1
+I0217 18:07:05.145154 19352 StringAutomaton.cpp:1310] 52 = [29]->Intersect(51)
+I0217 18:07:05.145172 19352 StringAutomaton.cpp:173] 53 = [52]->clone()
+I0217 18:07:05.145177 19352 Automaton.cpp:97] [52]->IsEmptyLanguage() true
+I0217 18:07:05.145202 19352 ConstraintSolver.cpp:185] visit children end: and@0x209b920
+I0217 18:07:05.145224 19352 StringConstraintSolver.cpp:32] String constraint solving starts at node: 0x209ba70
+I0217 18:07:05.145227 19352 StringConstraintSolver.cpp:121] visit children of component start: and@0x209ba70
+I0217 18:07:05.145232 19352 StringConstraintSolver.cpp:162] visit children of component end: and@0x209ba70
+I0217 18:07:05.145234 19352 StringConstraintSolver.cpp:164] post visit component start: and@0x209ba70
+I0217 18:07:05.145247 19352 StringConstraintSolver.cpp:194] post visit component end: and@0x209ba70
+I0217 18:07:05.145254 19352 ConstraintSolver.cpp:156] String formulae solved: and@0x209ba70
+I0217 18:07:05.145257 19352 ConstraintSolver.cpp:159] Multi-track solving done: and@0x209ba70
+I0217 18:07:05.145259 19352 ConstraintSolver.cpp:162] visit children start: and@0x209ba70
+I0217 18:07:05.145278 19352 StringAutomaton.cpp:240] 54 = MakeString("D")
+I0217 18:07:05.145289 19352 StringAutomaton.cpp:240] 55 = MakeString("E")
+I0217 18:07:05.145299 19352 StringAutomaton.cpp:240] 56 = MakeString("F")
+I0217 18:07:05.145309 19352 StringAutomaton.cpp:1320] 57 = [55]->union(56)
+I0217 18:07:05.145319 19352 StringAutomaton.cpp:1320] 58 = [54]->union(57)
+I0217 18:07:05.145325 19352 StringAutomaton.cpp:1251] 59 = [58]->Complement()
+I0217 18:07:05.145329 19352 StringAutomaton.cpp:312] 59 = MakeRegexAuto(~(D|E|F))
+I0217 18:07:05.145339 19352 StringAutomaton.cpp:1278] 2 , 1
+I0217 18:07:05.145453 19352 StringAutomaton.cpp:1310] 61 = [21]->Intersect(60)
+I0217 18:07:05.145473 19352 StringAutomaton.cpp:173] 62 = [61]->clone()
+I0217 18:07:05.145476 19352 Automaton.cpp:97] [61]->IsEmptyLanguage() false
+I0217 18:07:05.145546 19352 StringAutomaton.cpp:298] 63 = MakeCharRange('a', 'z')
+I0217 18:07:05.145575 19352 StringAutomaton.cpp:298] 64 = MakeCharRange('0', '9')
+I0217 18:07:05.145586 19352 StringAutomaton.cpp:1320] 65 = [63]->union(64)
+I0217 18:07:05.145668 19352 StringAutomaton.cpp:1472] 66 = [65]->closure()
+I0217 18:07:05.145680 19352 StringAutomaton.cpp:240] 67 = MakeString(":")
+I0217 18:07:05.145686 19352 StringAutomaton.cpp:409] 68 = MakeAnyStringLengthEqualTo(1)
+I0217 18:07:05.145689 19352 StringAutomaton.cpp:305] 68 = MakeAnyChar()
+I0217 18:07:05.145705 19352 StringAutomaton.cpp:1472] 69 = [68]->closure()
+I0217 18:07:05.149029 19352 StringAutomaton.cpp:1310] 72 = [70]->Intersect(71)
+I0217 18:07:05.149152 19352 StringAutomaton.cpp:1310] 74 = [72]->Intersect(73)
+I0217 18:07:05.153057 19352 StringAutomaton.cpp:1310] 79 = [77]->Intersect(78)
+I0217 18:07:05.153249 19352 StringAutomaton.cpp:1310] 81 = [79]->Intersect(80)
+I0217 18:07:05.154229 19352 StringAutomaton.cpp:1251] 84 = [83]->Complement()
+I0217 18:07:05.154235 19352 StringAutomaton.cpp:312] 84 = MakeRegexAuto(~(([a-z0-9]+):.+))
+I0217 18:07:05.154247 19352 StringAutomaton.cpp:1278] 2 , 1
+I0217 18:07:05.154455 19352 StringAutomaton.cpp:1310] 86 = [62]->Intersect(85)
+I0217 18:07:05.154475 19352 StringAutomaton.cpp:173] 87 = [86]->clone()
+I0217 18:07:05.154479 19352 Automaton.cpp:97] [86]->IsEmptyLanguage() false
+I0217 18:07:05.154486 19352 ConstraintSolver.cpp:185] visit children end: and@0x209ba70
+I0217 18:07:05.154492 19352 StringConstraintSolver.cpp:288] collect child results start: and@0x209ba70
+I0217 18:07:05.154498 19352 StringConstraintSolver.cpp:309] collect child results end: and@0x209ba70
+I0217 18:07:05.154500 19352 StringConstraintSolver.cpp:311] update result start: and@0x209ba70
+I0217 18:07:05.154511 19352 Automaton.cpp:97] [87]->IsEmptyLanguage() false
+I0217 18:07:05.154520 19352 StringConstraintSolver.cpp:322] update result end: and@0x209ba70
+I0217 18:07:05.154527 19352 StringConstraintSolver.cpp:326] collect child results start: or@0x209bc10
+I0217 18:07:05.154532 19352 StringConstraintSolver.cpp:350] TERM: and , 0x209b920
+I0217 18:07:05.154537 19352 StringConstraintSolver.cpp:352]   Group: __vlab__str__0x209d080__vlab__str__0x209d080
+I0217 18:07:05.154543 19352 StringConstraintSolver.cpp:356]     GOT SUBGROUP VALUE
+I0217 18:07:05.154572 19352 StringAutomaton.cpp:173] 88 = [53]->clone()
+I0217 18:07:05.154587 19352 Automaton.cpp:97] [88]->IsEmptyLanguage() true
+I0217 18:07:05.154592 19352 StringConstraintSolver.cpp:350] TERM: and , 0x209ba70
+I0217 18:07:05.154597 19352 StringConstraintSolver.cpp:352]   Group: __vlab__str__0x209d080__vlab__str__0x209d080
+I0217 18:07:05.154601 19352 StringConstraintSolver.cpp:356]     GOT SUBGROUP VALUE
+I0217 18:07:05.154631 19352 StringAutomaton.cpp:1320] 89 = [88]->union(87)
+I0217 18:07:05.154639 19352 Automaton.cpp:97] [89]->IsEmptyLanguage() false
+I0217 18:07:05.154642 19352 StringConstraintSolver.cpp:384] collect child results end: or@0x209bc10
+I0217 18:07:05.154644 19352 StringConstraintSolver.cpp:386] update result start: or@0x209bc10
+I0217 18:07:05.154646 19352 StringConstraintSolver.cpp:397] 1
+I0217 18:07:05.154649 19352 StringConstraintSolver.cpp:399] 1.5
+I0217 18:07:05.154706 19352 StringAutomaton.cpp:1310] 90 = [21]->Intersect(89)
+I0217 18:07:05.154721 19352 StringAutomaton.cpp:173] 91 = [90]->clone()
+I0217 18:07:05.154724 19352 Automaton.cpp:97] [90]->IsEmptyLanguage() false
+I0217 18:07:05.154728 19352 StringConstraintSolver.cpp:401] 1.6
+I0217 18:07:05.154734 19352 Automaton.cpp:97] [91]->IsEmptyLanguage() false
+I0217 18:07:05.154737 19352 StringConstraintSolver.cpp:403] 1.7
+I0217 18:07:05.154740 19352 StringConstraintSolver.cpp:407] 1.8
+I0217 18:07:05.154742 19352 StringConstraintSolver.cpp:409] 2
+I0217 18:07:05.154747 19352 StringConstraintSolver.cpp:414] 3
+I0217 18:07:05.154752 19352 StringConstraintSolver.cpp:419] update result end: or@0x209bc10
+I0217 18:07:05.154767 19352 ConstraintSolver.cpp:264] visit children end: or@0x209bc10
+I0217 18:07:05.154772 19352 ConstraintSolver.cpp:185] visit children end: and@0x209d080
+I0217 18:07:05.154775 19352 StringConstraintSolver.cpp:288] collect child results start: and@0x209d080
+I0217 18:07:05.154781 19352 StringConstraintSolver.cpp:309] collect child results end: and@0x209d080
+I0217 18:07:05.154783 19352 StringConstraintSolver.cpp:311] update result start: and@0x209d080
+I0217 18:07:05.154791 19352 Automaton.cpp:97] [91]->IsEmptyLanguage() false
+I0217 18:07:05.154798 19352 StringConstraintSolver.cpp:322] update result end: and@0x209d080
+I0217 18:07:05.154889 19352 main.cpp:204] Done solving
+sat
+I0217 18:07:05.154904 19352 main.cpp:292] report is_sat: SAT time: 23.4113 ms
+I0217 18:07:05.155434 19352 SymbolicCounter.cpp:81] Count(6) = 2
+I0217 18:07:05.155458 19352 main.cpp:344] report bound: 6 count: 2 time: 0.542437 ms
+I0217 18:07:05.155465 19352 main.cpp:356] done.

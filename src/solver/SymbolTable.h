@@ -88,6 +88,7 @@ public:
   void add_variable_equiv_class_mapping(SMT::Variable_ptr, EquivalenceClass_ptr);
   SMT::Variable_ptr get_representative_variable_of_at_scope(SMT::Visitable_ptr scope, SMT::Variable_ptr);
 
+  void set_variable_group_mapping(std::string variable_name, std::string group_name);
   void add_variable_group_mapping(std::string variable_name, std::string group_name);
   void add_variable_group_mapping(SMT::Variable_ptr, SMT::Variable_ptr);
   SMT::Variable_ptr get_group_variable_of(SMT::Variable_ptr);
