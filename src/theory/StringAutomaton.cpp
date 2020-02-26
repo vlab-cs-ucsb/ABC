@@ -771,7 +771,7 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
 		int num_tracks = formula->GetNumberOfVariables();
 		int left_track = formula->GetVariableIndex(1);
 		StringAutomaton_ptr string_auto;
-		string_auto = StringAutomaton::MakeRegexAuto(formula->GetConstant());
+		string_auto = StringAutomaton::MakeString(formula->GetConstant());
 
 		formula->SetConstant("");
 		if(num_tracks == 1) {
