@@ -63,6 +63,8 @@ int main(const int argc, const char **argv) {
   std::string count_variable = "";
   unsigned long num_models = 0;
 
+  bool count_tuple = false;
+
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == std::string("-i") or argv[i] == std::string("--input-file")) {
       file_name = argv[i + 1];
@@ -98,7 +100,9 @@ int main(const int argc, const char **argv) {
     } else if (argv[i] == std::string("--force-dnf-formula")) {
     	driver.set_option(Vlab::Option::Name::FORCE_DNF_FORMULA);
     } else if (argv[i] == std::string("--count-bound-exact")) {
-    	driver.set_option(Vlab::Option::Name::COUNT_BOUND_EXACT);
+      driver.set_option(Vlab::Option::Name::COUNT_BOUND_EXACT);
+    } else if (argv[i] == std::string("--count-tuple")) {
+      count_tuple = true;
     } else if (argv[i] == std::string("-bs") or argv[i] == std::string("--bound-str")) {
       std::string bounds_str {argv[i + 1]};
       str_bounds = parse_count_bounds(bounds_str);
@@ -304,6 +308,18 @@ int main(const int argc, const char **argv) {
 
     if(count_variables.empty()) count_variables.push_back("");
 
+
+    if (count_tuple) {
+      for (auto b : str_bounds) {
+        start = std::chrono::steady_clock::now();
+        auto count = driver.CountStrs(b);
+        end = std::chrono::steady_clock::now();
+        auto count_time = end - start;
+        LOG(INFO) << "report (TUPLE) bound: " << b << " count: " << count << " time: "
+                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+      }
+    }
+
     for(auto count_var : count_variables) {
       count_variable = count_var;
       if (not count_variable.empty()) {
@@ -325,7 +341,7 @@ int main(const int argc, const char **argv) {
                     << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
 
         }
-      } else {
+      } else if (not count_tuple) {
         if (int_bounds.size() == 1 and str_bounds.size() == 1 and int_bounds[0] == str_bounds[0]) {
           auto b = int_bounds[0];
           start = std::chrono::steady_clock::now();
