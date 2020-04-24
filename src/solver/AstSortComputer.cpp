@@ -321,6 +321,10 @@ void AstSortComputer::visitReOpt(ReOpt_ptr re_opt_term) {
 
 }
 
+void AstSortComputer::visitReLoop(ReLoop_ptr re_loop_term) {
+
+}
+
 void AstSortComputer::visitToRegex(ToRegex_ptr to_regex_term) {
 
 }

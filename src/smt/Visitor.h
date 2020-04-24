@@ -71,6 +71,7 @@ public:
   virtual void visitReStar(ReStar_ptr) = 0;
   virtual void visitRePlus(RePlus_ptr) = 0;
   virtual void visitReOpt(ReOpt_ptr) = 0;
+  virtual void visitReLoop(ReLoop_ptr) = 0;
   virtual void visitToRegex(ToRegex_ptr) = 0;
   virtual void visitUnknownTerm(Unknown_ptr) = 0;
   virtual void visitAsQualIdentifier(AsQualIdentifier_ptr) = 0;

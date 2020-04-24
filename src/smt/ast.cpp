@@ -1893,6 +1893,41 @@ void ReOpt::visit_children(Visitor_ptr v) {
   v->visit(term);
 }
 
+ReLoop::ReLoop(Term_ptr term, Term_ptr lower, Term_ptr upper)
+    : Term(Term::Type::RELOOP),
+      term(term), lower(lower), upper(upper) {
+  if(upper == nullptr) {
+    this->upper = new TermConstant(new Primitive("", Primitive::Type::STRING));
+  }
+}
+
+ReLoop::ReLoop(const ReLoop& other)
+    : Term(other.type_) {
+  term = other.term->clone();
+}
+
+ReLoop_ptr ReLoop::clone() const {
+  return new ReLoop(*this);
+}
+
+ReLoop::~ReLoop() {
+  delete term;
+}
+
+std::string ReLoop::str() const {
+  return "re.Loop";
+}
+
+void ReLoop::accept(Visitor_ptr v) {
+  v->visitReLoop(this);
+}
+
+void ReLoop::visit_children(Visitor_ptr v) {
+  v->visit(term);
+  v->visit(lower);
+  v->visit(upper);
+}
+
 ToRegex::ToRegex(Term_ptr term)
     : Term(Term::Type::TOREGEX),
       term(term) {
@@ -2529,6 +2564,7 @@ TermConstant_ptr ReRangeToRegex(Term_ptr left, Term_ptr right) {
   LOG(FATAL) << "handle re.range operation";
   return nullptr;
 }
+
 
 Or_ptr TransformIteToOr(Term_ptr ite_condition, Term_ptr ite_then_branch, Term_ptr ite_else_branch) {
   DVLOG(VLOG_LEVEL) << "Parser converts 'ite' term to 'or' term";

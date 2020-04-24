@@ -1136,6 +1136,10 @@ void ConstraintSolver::visitRePlus(RePlus_ptr re_plus_term) {
 void ConstraintSolver::visitReOpt(ReOpt_ptr re_opt_term) {
 }
 
+void ConstraintSolver::visitReLoop(ReLoop_ptr re_loop_term) {
+
+}
+
 void ConstraintSolver::visitUnknownTerm(Unknown_ptr unknown_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *unknown_term;
   LOG(WARNING)<< "operation is not known, over-approximate params: " << *(unknown_term->term);

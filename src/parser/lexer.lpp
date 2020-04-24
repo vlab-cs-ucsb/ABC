@@ -142,6 +142,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "re.+"              { return Parser::make_RE_PLUS         (loc);  }
 "re.opt"            { return Parser::make_RE_OPT          (loc);  }
 "re.range"          { return Parser::make_RE_RANGE        (loc);  }
+"re.loop"           { return Parser::make_RE_LOOP         (loc);  }
 
 
 "re.all"            { return Parser::make_RE_ALL          (loc);  }

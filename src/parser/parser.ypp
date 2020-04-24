@@ -106,6 +106,7 @@
   RE_PLUS              "re.+"
   RE_OPT               "re.opt"
   RE_RANGE             "re.range"
+  RE_LOOP              "re.loop"
   TO_REGEX             "str.to.re"  
   RE_ALLCHAR           "re.allchar"
   RE_ALL               "re.all"
@@ -302,6 +303,8 @@ term                  :
                       | "(" RE_PLUS term ")"                                            { $$ = new RePlus($3); }
                       | "(" RE_OPT term ")"                                             { $$ = new ReOpt($3); }
                       | "(" RE_RANGE term term ")"                                      { $$ = ReRangeToRegex($3, $4);}
+                      | "(" RE_LOOP term term ")"                                  { $$ = new ReLoop($3, $4);}
+                      | "(" RE_LOOP term term term ")"                                  { $$ = new ReLoop($3, $4, $5);}
                       | "(" TO_REGEX term ")"                                           { $$ = new ToRegex($3); }
                       | "(" qual_identifier term_list_ ")"                              { $$ = new UnknownTerm($2, $3); }
                       | qual_identifier                                                 { $$ = $1; }

@@ -1408,6 +1408,9 @@ void StringFormulaGenerator::visitRePlus(RePlus_ptr re_plus_term) {
 void StringFormulaGenerator::visitReOpt(ReOpt_ptr re_opt_term) {
 }
 
+void StringFormulaGenerator::visitReLoop(ReLoop_ptr re_loop_term) {
+}
+
 void StringFormulaGenerator::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 

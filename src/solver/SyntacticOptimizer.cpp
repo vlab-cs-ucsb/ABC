@@ -2409,6 +2409,35 @@ void SyntacticOptimizer::visitReOpt(ReOpt_ptr re_opt_term) {
   DVLOG(VLOG_LEVEL) << "post visit end: " << *re_opt_term << "@" << re_opt_term;
 }
 
+void SyntacticOptimizer::visitReLoop(ReLoop_ptr re_loop_term) {
+  visit_and_callback(re_loop_term->term);
+  visit_and_callback(re_loop_term->lower);
+  visit_and_callback(re_loop_term->upper);
+
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *re_loop_term << "@" << re_loop_term;
+
+  auto regex_term = dynamic_cast<TermConstant_ptr>(re_loop_term->term);
+  auto lower_term = dynamic_cast<TermConstant_ptr>(re_loop_term->lower);
+  auto upper_term = dynamic_cast<TermConstant_ptr>(re_loop_term->upper);
+
+  if(regex_term != nullptr && lower_term != nullptr && upper_term != nullptr) {
+    std::string value = "(" + regex_term->getValue() + ")" +
+        "{" + lower_term->getValue() + "," + upper_term->getValue() + "}";
+    regex_term->primitive->setData(value);
+    regex_term->primitive->setType(Primitive::Type::REGEX);
+  } else {
+    LOG(FATAL) << "Unexpected term as a parameter to 're.loop'";
+  }
+
+  callback_ = [re_loop_term] (Term_ptr & term) mutable {
+    term = re_loop_term->term;
+    re_loop_term->term = nullptr;
+    delete re_loop_term;
+  };
+
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *re_loop_term << "@" << re_loop_term;
+}
+
 void SyntacticOptimizer::visitToRegex(ToRegex_ptr to_regex_term) {
   visit_and_callback(to_regex_term->term);
 

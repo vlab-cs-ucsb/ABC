@@ -1359,6 +1359,9 @@ void VariableValueComputer::visitRePlus(RePlus_ptr re_plus_term) {
 void VariableValueComputer::visitReOpt(ReOpt_ptr re_opt_term) {
 }
 
+void VariableValueComputer::visitReLoop(ReLoop_ptr re_loop_term) {
+}
+
 void VariableValueComputer::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 

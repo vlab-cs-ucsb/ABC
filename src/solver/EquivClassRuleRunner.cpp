@@ -312,6 +312,10 @@ void EquivClassRuleRunner::visitRePlus(RePlus_ptr re_plus_term) {
 void EquivClassRuleRunner::visitReOpt(ReOpt_ptr re_opt_term) {
 }
 
+void EquivClassRuleRunner::visitReLoop(ReLoop_ptr re_loop_term) {
+
+}
+
 void EquivClassRuleRunner::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 

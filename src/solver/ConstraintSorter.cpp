@@ -551,6 +551,10 @@ void ConstraintSorter::visitRePlus(RePlus_ptr re_plus_term) {
 void ConstraintSorter::visitReOpt(ReOpt_ptr re_opt_term) {
 }
 
+void ConstraintSorter::visitReLoop(ReLoop_ptr re_loop_term) {
+
+}
+
 void ConstraintSorter::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 

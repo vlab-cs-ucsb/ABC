@@ -226,6 +226,9 @@ void ConstraintQuerier::visitRePlus(RePlus_ptr re_plus_term) {
 void ConstraintQuerier::visitReOpt(ReOpt_ptr re_opt_term) {
 }
 
+void ConstraintQuerier::visitReLoop(ReLoop_ptr re_loop_term) {
+}
+
 void ConstraintQuerier::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 

@@ -245,6 +245,9 @@ void ConstantTermChecker::visitRePlus(RePlus_ptr re_plus_term) {
 void ConstantTermChecker::visitReOpt(ReOpt_ptr re_opt_term) {
 }
 
+void ConstantTermChecker::visitReLoop(ReLoop_ptr re_loop_term) {
+}
+
 void ConstantTermChecker::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 
