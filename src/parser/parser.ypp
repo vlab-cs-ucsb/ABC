@@ -303,7 +303,9 @@ term                  :
                       | "(" RE_PLUS term ")"                                            { $$ = new RePlus($3); }
                       | "(" RE_OPT term ")"                                             { $$ = new ReOpt($3); }
                       | "(" RE_RANGE term term ")"                                      { $$ = ReRangeToRegex($3, $4);}
-                      | "(" RE_LOOP term term ")"                                  { $$ = new ReLoop($3, $4);}
+                      | "(" "(" "_" RE_LOOP term ")" term ")"                                { $$ = new ReLoop($7, $5);}
+                      | "(" "(" "_" RE_LOOP term term ")" term ")"                           { $$ = new ReLoop($8, $5, $6);}
+                      | "(" RE_LOOP term term ")"                                       { $$ = new ReLoop($3, $4);}
                       | "(" RE_LOOP term term term ")"                                  { $$ = new ReLoop($3, $4, $5);}
                       | "(" TO_REGEX term ")"                                           { $$ = new ToRegex($3); }
                       | "(" qual_identifier term_list_ ")"                              { $$ = new UnknownTerm($2, $3); }
