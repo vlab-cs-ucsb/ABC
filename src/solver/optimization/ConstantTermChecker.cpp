@@ -269,6 +269,7 @@ void ConstantTermChecker::visitTermConstant(TermConstant_ptr term_constant) {
     string_value_ = term_constant->getValue(); 
   } else if (Primitive::Type::REGEX == term_constant->getValueType()) {
     std::string data = term_constant->getValue();
+
     Util::RegularExpression regular_expression (data);
     if (regular_expression.is_constant_string()) {
       term_constant->primitive->setType(Primitive::Type::STRING);

@@ -223,6 +223,8 @@ class Term : public Visitable {
     REPLUS,
     REOPT,
     RELOOP,
+    RECOMP,
+    REDIFF,
     TOREGEX,
     UNKNOWN,
     ASQUALIDENTIFIER,
@@ -987,6 +989,35 @@ class ReLoop : public Term {
   Term_ptr term;
   Term_ptr lower;
   Term_ptr upper;
+};
+
+class ReComp : public Term {
+ public:
+  ReComp(Term_ptr);
+  ReComp(const ReComp&);
+  virtual ReComp_ptr clone() const override;
+  virtual ~ReComp();
+
+  virtual std::string str() const override;
+  virtual void accept(Visitor_ptr) override;
+  virtual void visit_children(Visitor_ptr) override;
+
+  Term_ptr term;
+};
+
+class ReDiff : public Term {
+ public:
+  ReDiff(Term_ptr, Term_ptr);
+  ReDiff(const ReDiff&);
+  virtual ReDiff_ptr clone() const override;
+  virtual ~ReDiff();
+
+  virtual std::string str() const override;
+  virtual void accept(Visitor_ptr) override;
+  virtual void visit_children(Visitor_ptr) override;
+
+  Term_ptr left_term;
+  Term_ptr right_term;
 };
 
 class ToRegex : public Term {

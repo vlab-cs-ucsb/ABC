@@ -2280,7 +2280,11 @@ void SyntacticOptimizer::visitReUnion(ReUnion_ptr re_union_term) {
   for (auto term : *(re_union_term->term_list)) {
     if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(term)) {
       if (Primitive::Type::STRING == term_constant->getValueType() or Primitive::Type::REGEX == term_constant->getValueType()) {
-        child_regex = new Util::RegularExpression(term_constant->getValue());
+        if(Primitive::Type::STRING == term_constant->getValueType()) {
+          child_regex = new Util::RegularExpression(Util::RegularExpression::escape_raw_string(term_constant->getValue()));
+        } else {
+          child_regex = new Util::RegularExpression(term_constant->getValue());
+        }
         tmp_regex = union_regex;
         union_regex = Util::RegularExpression::makeUnion(tmp_regex->clone(), child_regex->clone());
         delete tmp_regex; delete child_regex;
@@ -2293,6 +2297,7 @@ void SyntacticOptimizer::visitReUnion(ReUnion_ptr re_union_term) {
   }
 
   auto regex_term_constant = generate_term_constant(union_regex->str(), Primitive::Type::REGEX);
+
   delete union_regex;
   callback_ = [regex_term_constant, re_union_term] (Term_ptr & term) mutable {
     term = regex_term_constant;
@@ -2301,46 +2306,99 @@ void SyntacticOptimizer::visitReUnion(ReUnion_ptr re_union_term) {
   DVLOG(VLOG_LEVEL) << "post visit end: " << *re_union_term << "@" << re_union_term;
 }
 
+//void SyntacticOptimizer::visitReInter(ReInter_ptr re_inter_term) {
+//  for (auto& term_ptr : *(re_inter_term->term_list)) {
+//    visit_and_callback(term_ptr);
+//  }
+//
+//  DVLOG(VLOG_LEVEL) << "post visit start: " << *re_inter_term << "@" << re_inter_term;
+//  TermConstant_ptr intersection_regex_term_constant = nullptr;
+//
+//  for (auto iter = re_inter_term->term_list->begin(); iter != re_inter_term->term_list->end();) {
+//    if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter)) {
+//      if(term_constant->getValueType() == Primitive::Type::STRING) {
+//        LOG(INFO) << term_constant->getValue() << "        STRING";
+//      }
+//      if (intersection_regex_term_constant == nullptr) {
+//        intersection_regex_term_constant = term_constant;
+//
+//        std::string value = "";
+////        if(term_constant->getValueType() == Primitive::Type::STRING) {
+////          value = Util::RegularExpression::escape_raw_string(term_constant->getValue());
+////        } else {
+//          value = term_constant->getValue();
+////        }
+//
+//        if (*(value.begin()) != '(' or *(value.end() - 1) != ')') {
+//          value = "(" + value + ")";
+//          intersection_regex_term_constant->primitive->setData(value);
+//        }
+//      } else {
+//        std::stringstream ss;
+//        ss << intersection_regex_term_constant->getValue() << "&";
+//
+//        std::string value = "";
+////        if(term_constant->getValueType() == Primitive::Type::STRING) {
+////          value = Util::RegularExpression::escape_raw_string(term_constant->getValue());
+////        } else {
+//          value = term_constant->getValue();
+////        }
+//
+//        if (*(value.begin()) != '(' or *(value.end() - 1) != ')') {
+//          ss << "(" << value << ")";
+//        } else {
+//          ss << value;
+//        }
+//        intersection_regex_term_constant->primitive->setData("(" + ss.str() + ")");
+//        delete term_constant;  // deallocate
+//        re_inter_term->term_list->erase(iter);
+//        continue;
+//      }
+//    } else {
+//      LOG(FATAL)<< "un-expected term as a parameter to 're.inter'";
+//    }
+//    iter++;
+//  }
+//
+//  callback_ = [re_inter_term] (Term_ptr & term) mutable {
+//    term = re_inter_term->term_list->front();
+//    re_inter_term->term_list->clear();
+//    delete re_inter_term;
+//  };
+//  DVLOG(VLOG_LEVEL) << "post visit end: " << *re_inter_term << "@" << re_inter_term;
+//}
+
 void SyntacticOptimizer::visitReInter(ReInter_ptr re_inter_term) {
   for (auto& term_ptr : *(re_inter_term->term_list)) {
     visit_and_callback(term_ptr);
   }
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *re_inter_term << "@" << re_inter_term;
-  TermConstant_ptr intersection_regex_term_constant = nullptr;
-
-  for (auto iter = re_inter_term->term_list->begin(); iter != re_inter_term->term_list->end();) {
-    if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter)) {
-      if (intersection_regex_term_constant == nullptr) {
-        intersection_regex_term_constant = term_constant;
-        std::string value = term_constant->getValue();
-        if (*(value.begin()) != '(' or *(value.end() - 1) != ')') {
-          value = "(" + value + ")";
-          intersection_regex_term_constant->primitive->setData(value);
-        }
-      } else {
-        std::stringstream ss;
-        ss << intersection_regex_term_constant->getValue() << "&";
-        std::string value = term_constant->getValue();
-        if (*(value.begin()) != '(' or *(value.end() - 1) != ')') {
-          ss << "(" << value << ")";
+  Util::RegularExpression_ptr inter_regex = Util::RegularExpression::makeAnyString();
+  Util::RegularExpression_ptr child_regex = nullptr, tmp_regex = nullptr;
+  for (auto term : *(re_inter_term->term_list)) {
+    if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(term)) {
+      if (Primitive::Type::STRING == term_constant->getValueType() or Primitive::Type::REGEX == term_constant->getValueType()) {
+        if(Primitive::Type::STRING == term_constant->getValueType()) {
+          child_regex = new Util::RegularExpression(Util::RegularExpression::escape_raw_string(term_constant->getValue()));
         } else {
-          ss << value;
+          child_regex = new Util::RegularExpression(term_constant->getValue());
         }
-        intersection_regex_term_constant->primitive->setData("(" + ss.str() + ")");
-        delete term_constant;  // deallocate
-        re_inter_term->term_list->erase(iter);
-        continue;
+        tmp_regex = inter_regex;
+        inter_regex = Util::RegularExpression::makeIntersection(tmp_regex->clone(), child_regex->clone());
+        delete tmp_regex; delete child_regex;
+      } else {
+        LOG(FATAL) << "un-expected constant as a parameter to 're.inter'";
       }
     } else {
       LOG(FATAL)<< "un-expected term as a parameter to 're.inter'";
     }
-    iter++;
   }
 
-  callback_ = [re_inter_term] (Term_ptr & term) mutable {
-    term = re_inter_term->term_list->front();
-    re_inter_term->term_list->clear();
+  auto regex_term_constant = generate_term_constant(inter_regex->str(), Primitive::Type::REGEX);
+  delete inter_regex;
+  callback_ = [regex_term_constant, re_inter_term] (Term_ptr & term) mutable {
+    term = regex_term_constant;
     delete re_inter_term;
   };
   DVLOG(VLOG_LEVEL) << "post visit end: " << *re_inter_term << "@" << re_inter_term;
@@ -2351,7 +2409,12 @@ void SyntacticOptimizer::visitReStar(ReStar_ptr re_star_term) {
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *re_star_term << "@" << re_star_term;
   if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(re_star_term->term)) {
-    std::string value = term_constant->getValue();
+    std::string value = "";
+    if(term_constant->getValueType() == Primitive::Type::STRING) {
+      value = Util::RegularExpression::escape_raw_string(term_constant->getValue());
+    } else {
+      value = term_constant->getValue();
+    }
     value = "(" + value + ")*";
     term_constant->primitive->setData(value);
     term_constant->primitive->setType(Primitive::Type::REGEX);
@@ -2372,7 +2435,12 @@ void SyntacticOptimizer::visitRePlus(RePlus_ptr re_plus_term) {
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *re_plus_term << "@" << re_plus_term;
   if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(re_plus_term->term)) {
-    std::string value = term_constant->getValue();
+    std::string value = "";
+    if(term_constant->getValueType() == Primitive::Type::STRING) {
+      value = Util::RegularExpression::escape_raw_string(term_constant->getValue());
+    } else {
+      value = term_constant->getValue();
+    }
     value = "(" + value + ")+";
     term_constant->primitive->setData(value);
     term_constant->primitive->setType(Primitive::Type::REGEX);
@@ -2393,7 +2461,12 @@ void SyntacticOptimizer::visitReOpt(ReOpt_ptr re_opt_term) {
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *re_opt_term << "@" << re_opt_term;
   if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(re_opt_term->term)) {
-    std::string value = term_constant->getValue();
+    std::string value = "";
+    if(term_constant->getValueType() == Primitive::Type::STRING) {
+      value = Util::RegularExpression::escape_raw_string(term_constant->getValue());
+    } else {
+      value = term_constant->getValue();
+    }
     value = "(" + value + ")?";
     term_constant->primitive->setData(value);
     term_constant->primitive->setType(Primitive::Type::REGEX);
@@ -2421,8 +2494,14 @@ void SyntacticOptimizer::visitReLoop(ReLoop_ptr re_loop_term) {
   auto upper_term = dynamic_cast<TermConstant_ptr>(re_loop_term->upper);
 
   if(regex_term != nullptr && lower_term != nullptr && upper_term != nullptr) {
-    std::string value = "(" + regex_term->getValue() + ")" +
-        "{" + lower_term->getValue() + "," + upper_term->getValue() + "}";
+    std::string value = "";
+    if(regex_term->getValueType() == Primitive::Type::STRING) {
+      std::string value = "(" + Util::RegularExpression::escape_raw_string(regex_term->getValue()) + ")" +
+          "{" + lower_term->getValue() + "," + upper_term->getValue() + "}";
+    } else {
+      std::string value = "(" + regex_term->getValue() + ")" +
+          "{" + lower_term->getValue() + "," + upper_term->getValue() + "}";
+    }
     regex_term->primitive->setData(value);
     regex_term->primitive->setType(Primitive::Type::REGEX);
   } else {
@@ -2438,15 +2517,88 @@ void SyntacticOptimizer::visitReLoop(ReLoop_ptr re_loop_term) {
   DVLOG(VLOG_LEVEL) << "post visit end: " << *re_loop_term << "@" << re_loop_term;
 }
 
+void SyntacticOptimizer::visitReComp(ReComp_ptr re_comp_term) {
+  visit_and_callback(re_comp_term->term);
+
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *re_comp_term << "@" << re_comp_term;
+
+  auto regex_term = dynamic_cast<TermConstant_ptr>(re_comp_term->term);
+
+  if(regex_term != nullptr) {
+    std::string value = "";
+    if(regex_term->getValueType() == Primitive::Type::STRING) {
+      value = "~(" + Util::RegularExpression::escape_raw_string(regex_term->getValue()) + ")";
+    } else {
+      value = "~(" + regex_term->getValue() + ")";
+    }
+    regex_term->primitive->setData(value);
+    regex_term->primitive->setType(Primitive::Type::REGEX);
+  } else {
+    LOG(FATAL) << "Unexpected term as a paramter to 're.comp'";
+  }
+
+  callback_ = [re_comp_term] (Term_ptr & term) mutable {
+    term = re_comp_term->term;
+    re_comp_term->term = nullptr;
+    delete re_comp_term;
+  };
+
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *re_comp_term << "@" << re_comp_term;
+}
+
+void SyntacticOptimizer::visitReDiff(ReDiff_ptr re_diff_term) {
+  visit_and_callback(re_diff_term->left_term);
+  visit_and_callback(re_diff_term->right_term);
+
+
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *re_diff_term << "@" << re_diff_term;
+
+  auto left_regex_term = dynamic_cast<TermConstant_ptr>(re_diff_term->left_term);
+  auto right_regex_term = dynamic_cast<TermConstant_ptr>(re_diff_term->right_term);
+
+  if(left_regex_term != nullptr && right_regex_term != nullptr) {
+    std::string left = left_regex_term->getValue();
+    std::string right = right_regex_term->getValue();
+
+    if(left_regex_term->getValueType() == Primitive::Type::STRING) {
+      left = Util::RegularExpression::escape_raw_string(left);
+    }
+
+    if(right_regex_term->getValueType() == Primitive::Type::STRING) {
+      right = Util::RegularExpression::escape_raw_string(right);
+    }
+
+    std::string value = "((" + left + ")"
+                       + "&~(" + right + "))";
+
+    left_regex_term->primitive->setData(value);
+    left_regex_term->primitive->setType(Primitive::Type::REGEX);
+  } else {
+    LOG(FATAL) << "Unexpected term as a paramter to 're.comp'";
+  }
+
+  callback_ = [re_diff_term] (Term_ptr & term) mutable {
+    term = re_diff_term->left_term;
+    re_diff_term->left_term = nullptr;
+    delete re_diff_term;
+  };
+
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *re_diff_term << "@" << re_diff_term;
+}
+
 void SyntacticOptimizer::visitToRegex(ToRegex_ptr to_regex_term) {
   visit_and_callback(to_regex_term->term);
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *to_regex_term << "@" << to_regex_term;
   if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(to_regex_term->term)) {
     if (Primitive::Type::STRING == term_constant->getValueType()) {
-      DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *to_regex_term << "'";
+      DVLOG(VLOG_LEVEL) << "Transforming operation: '" << *to_regex_term << "'";//      }
       std::string data = term_constant->getValue();
-      term_constant->primitive->setData(Util::RegularExpression::escape_raw_string(data));
+      if(data.empty()) {
+        term_constant->primitive->setData("~(.+)");
+      } else {
+        term_constant->primitive->setData(Util::RegularExpression::escape_raw_string(data));
+      }
       term_constant->primitive->setType(Primitive::Type::REGEX);
       callback_ = [to_regex_term] (Term_ptr & term) mutable {
         term = to_regex_term->term;
@@ -2520,10 +2672,19 @@ void SyntacticOptimizer::visit_and_callback(Term_ptr & term) {
 
 void SyntacticOptimizer::append_constant(TermConstant_ptr left_constant, TermConstant_ptr right_constant) {
   std::stringstream ss;
-  ss << left_constant->getValue() << right_constant->getValue();
+
+  if(Primitive::Type::REGEX == left_constant->getValueType() && Primitive::Type::STRING == right_constant->getValueType()) {
+    ss << left_constant->getValue() << Util::RegularExpression::escape_raw_string(right_constant->getValue());
+  } else if(Primitive::Type::STRING == left_constant->getValueType() && Primitive::Type::REGEX == right_constant->getValueType()) {
+    ss << Util::RegularExpression::escape_raw_string(left_constant->getValue()) << right_constant->getValue();
+  } else {
+    ss << left_constant->getValue() << right_constant->getValue();
+  }
+
+//  ss << left_constant->getValue() << right_constant->getValue();
   left_constant->primitive->setData(ss.str());
   if (Primitive::Type::REGEX == left_constant->getValueType()
-      or Primitive::Type::REGEX == right_constant->getValueType()) {
+            or Primitive::Type::REGEX == right_constant->getValueType()) {
     left_constant->primitive->setType(Primitive::Type::REGEX);
   }
 }
@@ -2640,9 +2801,10 @@ bool SyntacticOptimizer::check_and_process_for_contains_transformation(Term_ptr 
     expected_constant_term = dynamic_cast<TermConstant_ptr>(right_term);
   }
 
+
   if (expected_constant_term == nullptr or Primitive::Type::NUMERAL != expected_constant_term->getValueType()) {
     return false;
-  } else if (compare_value != std::stoi(expected_constant_term->getValue())) {
+  } else if (compare_value != std::stol(expected_constant_term->getValue())) {
     return false;
   }
 

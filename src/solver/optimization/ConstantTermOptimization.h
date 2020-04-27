@@ -86,6 +86,8 @@ class ConstantTermOptimization: public SMT::Visitor {
   void visitRePlus(SMT::RePlus_ptr) override;
   void visitReOpt(SMT::ReOpt_ptr) override;
   void visitReLoop(SMT::ReLoop_ptr) override;
+  void visitReComp(SMT::ReComp_ptr) override {};
+  void visitReDiff(SMT::ReDiff_ptr) override {};
   void visitToRegex(SMT::ToRegex_ptr) override;
   void visitUnknownTerm(SMT::Unknown_ptr) override;
   void visitAsQualIdentifier(SMT::AsQualIdentifier_ptr) override;
