@@ -2458,7 +2458,6 @@ void SyntacticOptimizer::visitRePlus(RePlus_ptr re_plus_term) {
 
 void SyntacticOptimizer::visitReOpt(ReOpt_ptr re_opt_term) {
   visit_and_callback(re_opt_term->term);
-
   DVLOG(VLOG_LEVEL) << "post visit start: " << *re_opt_term << "@" << re_opt_term;
   if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(re_opt_term->term)) {
     std::string value = "";
@@ -2486,7 +2485,6 @@ void SyntacticOptimizer::visitReLoop(ReLoop_ptr re_loop_term) {
   visit_and_callback(re_loop_term->term);
   visit_and_callback(re_loop_term->lower);
   visit_and_callback(re_loop_term->upper);
-
   DVLOG(VLOG_LEVEL) << "post visit start: " << *re_loop_term << "@" << re_loop_term;
 
   auto regex_term = dynamic_cast<TermConstant_ptr>(re_loop_term->term);
@@ -2496,10 +2494,10 @@ void SyntacticOptimizer::visitReLoop(ReLoop_ptr re_loop_term) {
   if(regex_term != nullptr && lower_term != nullptr && upper_term != nullptr) {
     std::string value = "";
     if(regex_term->getValueType() == Primitive::Type::STRING) {
-      std::string value = "(" + Util::RegularExpression::escape_raw_string(regex_term->getValue()) + ")" +
+      value = "(" + Util::RegularExpression::escape_raw_string(regex_term->getValue()) + ")" +
           "{" + lower_term->getValue() + "," + upper_term->getValue() + "}";
     } else {
-      std::string value = "(" + regex_term->getValue() + ")" +
+      value = "(" + regex_term->getValue() + ")" +
           "{" + lower_term->getValue() + "," + upper_term->getValue() + "}";
     }
     regex_term->primitive->setData(value);
