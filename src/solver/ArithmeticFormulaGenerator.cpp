@@ -929,7 +929,7 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
   }
 
   // make sure no data race
-  while(symbol_table_->values_lock_) std::this_thread::yield();
+  while(symbol_table_->AreValuesLocked()) std::this_thread::yield();
   for(auto it : var_vals_to_erase) {
     delete variable_values[it];
     variable_values[it] = nullptr;
