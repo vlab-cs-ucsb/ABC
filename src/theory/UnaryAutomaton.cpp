@@ -320,17 +320,24 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
 
     if (is_visited[curr_state]) { // cycle over approximate rest, an algorithm can be found to map between encodings (from semilinear set to string encoding)
       std::string value_str = std::to_string(value);
-      std::string regex_str = "[0-9]{" + std::to_string(value_str.length()) + ",}";
-      tmp_1_auto = StringAutomaton::MakeRegexAuto(regex_str);
-      tmp_2_auto = result_auto;
-      result_auto = static_cast<StringAutomaton_ptr>(tmp_2_auto->Concat(tmp_1_auto));
-      delete tmp_1_auto;
-      delete tmp_2_auto;
+      if(value_str.length() > 1) {
+        std::string regex_str = "[1-9][0-9]{" + std::to_string(value_str.length() - 1) + ",}";
+
+        tmp_1_auto = StringAutomaton::MakeRegexAuto(regex_str);
+        tmp_2_auto = result_auto;
+        result_auto = static_cast<StringAutomaton_ptr>(tmp_2_auto->Union(tmp_1_auto));
+        delete tmp_1_auto;
+        delete tmp_2_auto;
+      } else {
+        delete result_auto;
+        std::string regex_str = "([0-9])|([1-9][0-9]*)";
+        result_auto = StringAutomaton::MakeRegexAuto(regex_str);
+      }
       break;
     }
 
     if (IsAcceptingState(curr_state)) {
-      tmp_1_auto = StringAutomaton::MakeAnyStringLengthEqualTo(value);
+      tmp_1_auto = StringAutomaton::MakeString(std::to_string(value));
       tmp_2_auto = result_auto;
       result_auto = static_cast<StringAutomaton_ptr>(tmp_2_auto->Union(tmp_1_auto));
       delete tmp_1_auto;
@@ -342,6 +349,7 @@ StringAutomaton_ptr UnaryAutomaton::toStringAutomaton() {
         work_list.push(next_state);
       }
     }
+    is_visited[curr_state] = true;
   }
 
   DVLOG(VLOG_LEVEL)  << result_auto->getId() << " = [" << this->id_ << "]->toStringAutomaton()";

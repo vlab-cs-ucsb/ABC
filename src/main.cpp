@@ -38,6 +38,7 @@
 
 
 std::vector<unsigned long> parse_count_bounds(std::string);
+std::vector<std::string> parse_count_vars(std::string);
 
 int main(const int argc, const char **argv) {
 
@@ -65,13 +66,16 @@ int main(const int argc, const char **argv) {
   FLAGS_logtostderr = 1;
 
   Vlab::Driver driver;
-  driver.set_option(Vlab::Option::Name::REGEX_FLAG, 0x000e);
+  driver.set_option(Vlab::Option::Name::REGEX_FLAG, 0x000f);
 
   bool experiment_mode = false;
   std::vector<unsigned long> str_bounds;
   std::vector<unsigned long> int_bounds;
-  std::string count_variable {""};
+  std::vector<std::string> count_variables;
+  std::string count_variable = "";
   unsigned long num_models = 0;
+
+  bool count_tuple = false;
 
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == std::string("-i") or argv[i] == std::string("--input-file")) {
@@ -113,7 +117,9 @@ int main(const int argc, const char **argv) {
     } else if (argv[i] == std::string("--force-dnf-formula")) {
     	driver.set_option(Vlab::Option::Name::FORCE_DNF_FORMULA);
     } else if (argv[i] == std::string("--count-bound-exact")) {
-    	driver.set_option(Vlab::Option::Name::COUNT_BOUND_EXACT);
+      driver.set_option(Vlab::Option::Name::COUNT_BOUND_EXACT);
+    } else if (argv[i] == std::string("--count-tuple")) {
+      count_tuple = true;
     } else if (argv[i] == std::string("-bs") or argv[i] == std::string("--bound-str")) {
       std::string bounds_str {argv[i + 1]};
       str_bounds = parse_count_bounds(bounds_str);
@@ -131,7 +137,8 @@ int main(const int argc, const char **argv) {
     	num_models = std::stoi(argv[i+1]);
     	++i;
     } else if (argv[i] == std::string("--count-variable")) {
-      count_variable = argv[i + 1];
+      std::string count_vars {argv[i+1]};
+      count_variables = parse_count_vars(count_vars);
       ++i;
     } else if (argv[i] == std::string("--output-dir")) {
       output_root = argv[i + 1];
@@ -291,19 +298,19 @@ int main(const int argc, const char **argv) {
 
   end = std::chrono::steady_clock::now();
   auto solving_time = end - start;
-  LOG(INFO)<< "total time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
-  LOG(INFO)<< "init  time: " << std::chrono::duration <long double, std::milli> (init_time).count() << " ms";
-  LOG(INFO)<< "cache time: " << std::chrono::duration <long double, std::milli> (driver.diff).count() << " ms";
-  LOG(INFO)<< "cache2 time:" << std::chrono::duration <long double, std::milli> (driver.diff2).count() << " ms";
-  LOG(INFO) << "";
-  LOG(INFO)<< "count time: " << std::chrono::duration <long double, std::milli> (count_time).count() << " ms";
-  LOG(INFO)<< "mc    time: " << std::chrono::duration <long double, std::milli> (mc_time).count() << " ms";
-  driver.print_statistics();
-  LOG(INFO)<< "arith time: " << std::chrono::duration <long double, std::milli> (driver.diff3).count() << " ms";
-  LOG(INFO)<< "bdd   time:" << std::chrono::duration <long double, std::milli> (driver.diff4).count() << " ms";
-  
-  LOG(INFO) << "num unsat: " << num_unsat;
-  return 3;
+//  LOG(INFO)<< "total time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
+//  LOG(INFO)<< "init  time: " << std::chrono::duration <long double, std::milli> (init_time).count() << " ms";
+//  LOG(INFO)<< "cache time: " << std::chrono::duration <long double, std::milli> (driver.diff).count() << " ms";
+//  LOG(INFO)<< "cache2 time:" << std::chrono::duration <long double, std::milli> (driver.diff2).count() << " ms";
+//  LOG(INFO) << "";
+//  LOG(INFO)<< "count time: " << std::chrono::duration <long double, std::milli> (count_time).count() << " ms";
+//  LOG(INFO)<< "mc    time: " << std::chrono::duration <long double, std::milli> (mc_time).count() << " ms";
+//  driver.print_statistics();
+//  LOG(INFO)<< "arith time: " << std::chrono::duration <long double, std::milli> (driver.diff3).count() << " ms";
+//  LOG(INFO)<< "bdd   time:" << std::chrono::duration <long double, std::milli> (driver.diff4).count() << " ms";
+//
+//  LOG(INFO) << "num unsat: " << num_unsat;
+//  return 3;
   // driver.reset();
   // delete file;
   // file = new std::ifstream(files[1]);
@@ -318,13 +325,13 @@ int main(const int argc, const char **argv) {
   if (VLOG_IS_ON(30) and not output_root.empty()) {
     driver.ast2dot(output_root + "/optimized.dot");
   }
-#endif
+  #endif
 
   // driver.Solve();?
 
 
   LOG(INFO)<< "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
-  LOG(INFO) << "Solved! solver_id = " << driver.getCurrentID();
+//  LOG(INFO) << "Solved! solver_id = " << driver.getCurrentID();
 
   std::cout << (driver.is_sat() ? "sat" : "unsat") << std::endl;
 
@@ -428,41 +435,101 @@ int main(const int argc, const char **argv) {
     	                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
     }
 
-    if(not count_variable.empty()) {
-      LOG(INFO) << "report var: " << count_variable;
-      for (auto b : int_bounds) {
-        start = std::chrono::steady_clock::now();
-        auto count_result = driver.CountVariable(count_variable, b);
-        end = std::chrono::steady_clock::now();
-        auto count_time = end - start;
-        LOG(INFO) << "report bound: " << b << " count: " << count_result << " time: "
-                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
-      }
-      for (auto b : str_bounds) {
-        start = std::chrono::steady_clock::now();
-        auto count_result = driver.CountVariable(count_variable, b);
-        end = std::chrono::steady_clock::now();
-        auto count_time = end - start;
-        LOG(INFO) << "report bound: " << b << " count: " << count_result << " time: "
-                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+//<<<<<<< HEAD
+//    if(not count_variable.empty()) {
+//      LOG(INFO) << "report var: " << count_variable;
+//      for (auto b : int_bounds) {
+//        start = std::chrono::steady_clock::now();
+//        auto count_result = driver.CountVariable(count_variable, b);
+//        end = std::chrono::steady_clock::now();
+//        auto count_time = end - start;
+//        LOG(INFO) << "report bound: " << b << " count: " << count_result << " time: "
+//                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+//      }
+//      for (auto b : str_bounds) {
+//        start = std::chrono::steady_clock::now();
+//        auto count_result = driver.CountVariable(count_variable, b);
+//        end = std::chrono::steady_clock::now();
+//        auto count_time = end - start;
+//        LOG(INFO) << "report bound: " << b << " count: " << count_result << " time: "
+//                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+//
+//      }
+//    } else {
+//      for (auto b : int_bounds) {
+//        start = std::chrono::steady_clock::now();
+//        auto count = driver.CountInts(b);
+//        end = std::chrono::steady_clock::now();
+//        auto count_time = end - start;
+//        LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
+//                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+//      }
+//=======
+    if(count_variables.empty()) count_variables.push_back("");
 
-      }
-    } else {
-      for (auto b : int_bounds) {
-        start = std::chrono::steady_clock::now();
-        auto count = driver.CountInts(b);
-        end = std::chrono::steady_clock::now();
-        auto count_time = end - start;
-        LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
-                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
-      }
+
+    if (count_tuple) {
+//>>>>>>> master
       for (auto b : str_bounds) {
         start = std::chrono::steady_clock::now();
         auto count = driver.CountStrs(b);
         end = std::chrono::steady_clock::now();
         auto count_time = end - start;
-        LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
+        LOG(INFO) << "report (TUPLE) bound: " << b << " count: " << count << " time: "
                   << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+      }
+    }
+
+    for(auto count_var : count_variables) {
+      count_variable = count_var;
+      if (not count_variable.empty()) {
+        LOG(INFO) << "report var: " << count_variable;
+        for (auto b : int_bounds) {
+          start = std::chrono::steady_clock::now();
+          auto count_result = driver.CountVariable(count_variable, b);
+          end = std::chrono::steady_clock::now();
+          auto count_time = end - start;
+          LOG(INFO) << "report bound: " << b << " count: " << count_result << " time: "
+                    << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+        }
+        for (auto b : str_bounds) {
+          start = std::chrono::steady_clock::now();
+          auto count_result = driver.CountVariable(count_variable, b);
+          end = std::chrono::steady_clock::now();
+          auto count_time = end - start;
+          LOG(INFO) << "report bound: " << b << " count: " << count_result << " time: "
+                    << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+
+        }
+      } else if (not count_tuple) {
+        if (int_bounds.size() == 1 and str_bounds.size() == 1 and int_bounds[0] == str_bounds[0]) {
+          auto b = int_bounds[0];
+          start = std::chrono::steady_clock::now();
+          auto count = driver.Count(b, b);
+          end = std::chrono::steady_clock::now();
+          auto count_time = end - start;
+          LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
+                    << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+        } else {
+          for (auto b : int_bounds) {
+            start = std::chrono::steady_clock::now();
+            auto count = driver.CountInts(b);
+            end = std::chrono::steady_clock::now();
+            auto count_time = end - start;
+            LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
+                      << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+          }
+          for (auto b : str_bounds) {
+            start = std::chrono::steady_clock::now();
+            auto count = driver.CountStrs(b);
+            end = std::chrono::steady_clock::now();
+            auto count_time = end - start;
+            LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
+                      << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+          }
+        }
+
+
       }
     }
   } else {
@@ -487,6 +554,16 @@ std::vector<unsigned long> parse_count_bounds(std::string bounds_str) {
     bounds.push_back(std::stoul(tok));
   }
   return bounds;
+}
+
+std::vector<std::string> parse_count_vars(std::string count_vars) {
+  std::vector<std::string> vars;
+  std::stringstream ss(count_vars);
+  std::string tok;
+  while (getline(ss, tok, ',')) {
+    vars.push_back(tok);
+  }
+  return vars;
 }
 
 //static const std::string get_env_value(const char name[]) {

@@ -9,7 +9,7 @@
 #define SOLVER_SYMBOLTABLE_H_
 
 #include <algorithm>
-#include <bits/functional_hash.h>
+// #include <bits/functional_hash.h>
 #include <iterator>
 #include <map>
 #include <set>
@@ -52,6 +52,8 @@ public:
 
   SymbolTable(bool is_root = true);
   SymbolTable(const SymbolTable&);
+  std::map<std::string,SMT::Variable_ptr> ss_term_vars;
+
   virtual ~SymbolTable();
 
   virtual SymbolTable_ptr clone() const;
@@ -239,7 +241,6 @@ private:
   std::map<std::string,int> variable_usage_;
 
   std::atomic<bool> values_lock_;
-
 
   static const int VLOG_LEVEL;
   //int reuse; 

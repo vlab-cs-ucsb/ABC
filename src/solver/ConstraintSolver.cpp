@@ -414,7 +414,13 @@ void ConstraintSolver::visitEq(Eq_ptr eq_term) {
       and Value::Type::INT_CONSTANT == param_right->getType()) {
     result = new Value(param_left->getIntConstant() == param_right->getIntConstant());
   } else {
+//    LOG(INFO) << "Before Intersect!";
+//    std::cin.get();
+//    param_left->getStringAutomaton()->inspectAuto(false,true);
+//    param_right->getStringAutomaton()->inspectAuto(false,true);
     result = param_left->intersect(param_right);
+//    result->getStringAutomaton()->inspectAuto(false,true);
+//    std::cin.get();
   }
   setTermValue(eq_term, result);
 }
@@ -697,6 +703,7 @@ void ConstraintSolver::visitLen(Len_ptr len_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *len_term;
   Value_ptr result = nullptr, param = getTermValue(len_term->term);
   Theory::IntAutomaton_ptr int_auto = param->getStringAutomaton()->Length();
+
   if (int_auto->isAcceptingSingleInt()) {
     result = new Value(int_auto->getAnAcceptingInt());
     delete int_auto;
@@ -714,6 +721,7 @@ void ConstraintSolver::visitContains(Contains_ptr contains_term) {
   Value_ptr result = nullptr, param_subject = getTermValue(contains_term->subject_term), param_search = getTermValue(
       contains_term->search_term);
   result = new Value(param_subject->getStringAutomaton()->Contains(param_search->getStringAutomaton()));
+
   setTermValue(contains_term, result);
 }
 
@@ -850,7 +858,21 @@ void ConstraintSolver::visitIndexOf(IndexOf_ptr index_of_term) {
   Value_ptr result = nullptr, param_left = getTermValue(index_of_term->subject_term), param_right = getTermValue(
       index_of_term->search_term);
 
-  Theory::IntAutomaton_ptr index_of_auto = param_left->getStringAutomaton()->IndexOf(param_right->getStringAutomaton());
+  Theory::IntAutomaton_ptr index_of_auto = nullptr;
+  if(index_of_term->from_index != nullptr) {
+    Value_ptr param_from_index = getTermValue(index_of_term->from_index);
+    if(Value::Type::INT_AUTOMATON == param_from_index->getType()) {
+      index_of_auto = param_left->getStringAutomaton()->IndexOf(param_right->getStringAutomaton(),param_from_index->getIntAutomaton());
+    } else if(Value::Type::INT_CONSTANT == param_from_index->getType()) {
+      index_of_auto = param_left->getStringAutomaton()->IndexOf(param_right->getStringAutomaton(),param_from_index->getIntConstant());
+    } else {
+      LOG(FATAL) << "handle more cases here";
+    }
+  } else {
+    index_of_auto = param_left->getStringAutomaton()->IndexOf(param_right->getStringAutomaton());
+  }
+
+
   if (index_of_auto->isAcceptingSingleInt()) {
     result = new Value(index_of_auto->getAnAcceptingInt());
     delete index_of_auto;
@@ -858,7 +880,6 @@ void ConstraintSolver::visitIndexOf(IndexOf_ptr index_of_term) {
   } else {
     result = new Value(index_of_auto);
   }
-
   setTermValue(index_of_term, result);
 }
 
@@ -896,94 +917,164 @@ void ConstraintSolver::visitCharAt(CharAt_ptr char_at_term) {
     LOG(FATAL)<< "Handle this case";
   }
 
+//  result->getStringAutomaton()->inspectAuto(false,true);
+//  std::cin.get();
+
   setTermValue(char_at_term, result);
 }
 
-/**
- * TODO instead of having optional substring parameters,
- * add new substring terms to ast (indexof, lastindexof as well)
- * Below code should go inside a SubStringHelper class
- */
 void ConstraintSolver::visitSubString(SubString_ptr sub_string_term) {
   visit_children_of(sub_string_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *sub_string_term;
   Value_ptr result = nullptr, param_subject = getTermValue(sub_string_term->subject_term), param_start_index =
-      getTermValue(sub_string_term->start_index_term), param_end_index = nullptr;
-  int start_index_value = 0;
-  // First calculate substring from start to end index
+      getTermValue(sub_string_term->start_index_term);
+
+  Value_ptr param_end_index = nullptr;
+  if(sub_string_term->end_index_term != nullptr) {
+    param_end_index = getTermValue(sub_string_term->end_index_term);
+//<<<<<<< HEAD
+//    Theory::StringAutomaton_ptr sub_str_start_auto = substring_auto;
+//    substring_auto = nullptr;
+//
+//    // Based on the type handle it;
+//    // TODO need to generalize the cases below, a substringhelper class can be used
+//
+//    if (Value::Type::BINARYINT_AUTOMATON == param_end_index->getType()) {
+//      auto bin_end_index_auto = param_end_index->getBinaryIntAutomaton();
+//      // if end index is a variable (TODO make sure it is always a variable)
+//      QualIdentifier_ptr index_var = dynamic_cast<QualIdentifier_ptr>(sub_string_term->end_index_term);
+//
+//      Optimization::ConstraintQuerier query;
+//      // checks if the integer parameter is an index of operation (currently works for indexof only)
+//      if (index_var and bin_end_index_auto->GetFormula()->HasRelationToMixedTerm(index_var->getVarName())) {
+//        auto relation = bin_end_index_auto->GetFormula()->GetRelationToMixedTerm(index_var->getVarName());
+//        if (relation.first == Theory::ArithmeticFormula::Type::EQ and
+//            query.is_param_equal_to(sub_string_term->subject_term, relation.second, 1)) {
+//          // Refactor below flow into a function
+//          auto positive_bin_end_index_var_auto = bin_end_index_auto->GetPositiveValuesFor(index_var->getVarName());
+//          auto bin_end_index_var_auto = positive_bin_end_index_var_auto->GetBinaryAutomatonFor(index_var->getVarName());
+//          delete positive_bin_end_index_var_auto;
+//          positive_bin_end_index_var_auto = nullptr;
+//          auto unary_end_index_var_auto = bin_end_index_var_auto->ToUnaryAutomaton();
+//          delete bin_end_index_var_auto;
+//          bin_end_index_var_auto = nullptr;
+//          auto string_len_end_index_auto = unary_end_index_var_auto->toIntAutomaton(param_subject->getStringAutomaton()->get_number_of_bdd_variables(), false);
+//          delete unary_end_index_var_auto;
+//          unary_end_index_var_auto = nullptr;
+//
+//          // TODO more cases here to handle
+//          auto string_search_term = query.get_parameter(relation.second, 2);
+//          auto string_search_term_value = getTermValue(string_search_term);
+//          if (string_search_term_value == nullptr) {
+//            visit(string_search_term); // generate automata for it
+//            string_search_term_value = getTermValue(string_search_term);
+//          }
+//
+//          // if there is an additional from index parameter, we need to consider it
+//          // I guess the best way to handle it is to add a substring variable from from
+//          // index and then to implement the rest
+//          substring_auto = sub_str_start_auto->SubString(string_len_end_index_auto, string_search_term_value->getStringAutomaton());
+//          delete string_len_end_index_auto;
+//          string_len_end_index_auto = nullptr;
+//        }
+//      }
+//    } else if(Value::Type::INT_CONSTANT == param_start_index->getType()) {
+//      int end_index_value = param_end_index->getIntConstant();
+//      substring_auto = sub_str_start_auto->SubString(0,end_index_value-start_index_value);
+//    } else {
+//      LOG(INFO) << *param_end_index;
+//      LOG(FATAL) << "implement and fix me";
+//    }
+//  } else {
+//    //LOG(FATAL) << "implement me";
+//=======
+  }
+
   Theory::StringAutomaton_ptr substring_auto = nullptr;
-  if (Value::Type::INT_CONSTANT == param_start_index->getType()) {
-    start_index_value = param_start_index->getIntConstant();
-    if (start_index_value == 0) {
-      substring_auto = param_subject->getStringAutomaton()->clone();
-    }
-    else if (start_index_value > 0) {
-      substring_auto = param_subject->getStringAutomaton()->SubString(start_index_value);
-    } else {
-      LOG(FATAL) << "substring start index can't be negative, handle case";
-    }
+  if(Value::Type::INT_CONSTANT == param_start_index->getType() and param_end_index == nullptr) {
+    substring_auto = param_subject->getStringAutomaton()->SubString(param_start_index->getIntConstant());
+  } else if(Value::Type::INT_AUTOMATON == param_start_index->getType() and Value::Type::INT_AUTOMATON == param_end_index->getType()) {
+    substring_auto = param_subject->getStringAutomaton()->SubString(param_start_index->getIntAutomaton(),param_end_index->getIntAutomaton());
+  } else if(Value::Type::INT_CONSTANT == param_start_index->getType() and Value::Type::INT_AUTOMATON == param_end_index->getType()) {
+    substring_auto = param_subject->getStringAutomaton()->SubString(param_start_index->getIntConstant(),param_end_index->getIntAutomaton());
+  } else if(Value::Type::INT_AUTOMATON == param_start_index->getType() and Value::Type::INT_CONSTANT == param_end_index->getType()) {
+    substring_auto = param_subject->getStringAutomaton()->SubString(param_start_index->getIntAutomaton(),param_end_index->getIntConstant());
+  } else if(Value::Type::INT_CONSTANT == param_start_index->getType() and Value::Type::INT_CONSTANT == param_end_index->getType()) {
+    substring_auto = param_subject->getStringAutomaton()->SubString(param_start_index->getIntConstant(),param_end_index->getIntConstant());
   } else {
     LOG(FATAL) << "add more cases here";
+//>>>>>>> master
   }
 
-  // If there is an end index handle it
-  if (sub_string_term->end_index_term) {
-    param_end_index = getTermValue(sub_string_term->end_index_term);
-    Theory::StringAutomaton_ptr sub_str_start_auto = substring_auto;
-    substring_auto = nullptr;
-
-    // Based on the type handle it;
-    // TODO need to generalize the cases below, a substringhelper class can be used
-
-    if (Value::Type::BINARYINT_AUTOMATON == param_end_index->getType()) {
-      auto bin_end_index_auto = param_end_index->getBinaryIntAutomaton();
-      // if end index is a variable (TODO make sure it is always a variable)
-      QualIdentifier_ptr index_var = dynamic_cast<QualIdentifier_ptr>(sub_string_term->end_index_term);
-
-      Optimization::ConstraintQuerier query;
-      // checks if the integer parameter is an index of operation (currently works for indexof only)
-      if (index_var and bin_end_index_auto->GetFormula()->HasRelationToMixedTerm(index_var->getVarName())) {
-        auto relation = bin_end_index_auto->GetFormula()->GetRelationToMixedTerm(index_var->getVarName());
-        if (relation.first == Theory::ArithmeticFormula::Type::EQ and
-            query.is_param_equal_to(sub_string_term->subject_term, relation.second, 1)) {
-          // Refactor below flow into a function
-          auto positive_bin_end_index_var_auto = bin_end_index_auto->GetPositiveValuesFor(index_var->getVarName());
-          auto bin_end_index_var_auto = positive_bin_end_index_var_auto->GetBinaryAutomatonFor(index_var->getVarName());
-          delete positive_bin_end_index_var_auto;
-          positive_bin_end_index_var_auto = nullptr;
-          auto unary_end_index_var_auto = bin_end_index_var_auto->ToUnaryAutomaton();
-          delete bin_end_index_var_auto;
-          bin_end_index_var_auto = nullptr;
-          auto string_len_end_index_auto = unary_end_index_var_auto->toIntAutomaton(param_subject->getStringAutomaton()->get_number_of_bdd_variables(), false);
-          delete unary_end_index_var_auto;
-          unary_end_index_var_auto = nullptr;
-
-          // TODO more cases here to handle
-          auto string_search_term = query.get_parameter(relation.second, 2);
-          auto string_search_term_value = getTermValue(string_search_term);
-          if (string_search_term_value == nullptr) {
-            visit(string_search_term); // generate automata for it
-            string_search_term_value = getTermValue(string_search_term);
-          }
-
-          // if there is an additional from index parameter, we need to consider it
-          // I guess the best way to handle it is to add a substring variable from from
-          // index and then to implement the rest
-          substring_auto = sub_str_start_auto->SubString(string_len_end_index_auto, string_search_term_value->getStringAutomaton());
-          delete string_len_end_index_auto;
-          string_len_end_index_auto = nullptr;
-        }
-      }
-    } else if(Value::Type::INT_CONSTANT == param_start_index->getType()) {
-      int end_index_value = param_end_index->getIntConstant();
-      substring_auto = sub_str_start_auto->SubString(0,end_index_value-start_index_value);
-    } else {
-      LOG(INFO) << *param_end_index;
-      LOG(FATAL) << "implement and fix me";
-    }
-  } else {
-    //LOG(FATAL) << "implement me";
-  }
+//  int start_index_value = 0;
+//  // First calculate substring from start to end index
+//  //Theory::StringAutomaton_ptr substring_auto = param_subject->getStringAutomaton()->clone();
+//  Theory::IntAutomaton_ptr start_index_auto = nullptr;
+//  if (Value::Type::INT_CONSTANT == param_start_index->getType()) {
+//    start_index_value = param_start_index->getIntConstant();
+//  } else {
+//    LOG(FATAL) << "add more cases here";
+//  }
+//
+//  // If there is an end index handle it
+//  if (sub_string_term->end_index_term) {
+//    param_end_index = getTermValue(sub_string_term->end_index_term);
+//    Theory::StringAutomaton_ptr sub_str_start_auto = substring_auto;
+//    substring_auto = nullptr;
+//
+//    // Based on the type handle it;
+//    // TODO need to generalize the cases below, a substringhelper class can be used
+//    if (Value::Type::BINARYINT_AUTOMATON == param_end_index->getType()) {
+//      auto bin_end_index_auto = param_end_index->getBinaryIntAutomaton();
+//      // if end index is a variable (TODO make sure it is always a variable)
+//      QualIdentifier_ptr index_var = dynamic_cast<QualIdentifier_ptr>(sub_string_term->end_index_term);
+//
+//      Optimization::ConstraintQuerier query;
+//      // checks if the integer parameter is an index of operation (currently works for indexof only)
+//      if (index_var and bin_end_index_auto->GetFormula()->HasRelationToMixedTerm(index_var->getVarName())) {
+//        auto relation = bin_end_index_auto->GetFormula()->GetRelationToMixedTerm(index_var->getVarName());
+//        if (relation.first == Theory::ArithmeticFormula::Type::EQ and
+//            query.is_param_equal_to(sub_string_term->subject_term, relation.second, 1)) {
+//          // Refactor below flow into a function
+//          auto positive_bin_end_index_var_auto = bin_end_index_auto->GetPositiveValuesFor(index_var->getVarName());
+//          auto bin_end_index_var_auto = positive_bin_end_index_var_auto->GetBinaryAutomatonFor(index_var->getVarName());
+//          delete positive_bin_end_index_var_auto;
+//          positive_bin_end_index_var_auto = nullptr;
+//          auto unary_end_index_var_auto = bin_end_index_var_auto->ToUnaryAutomaton();
+//          delete bin_end_index_var_auto;
+//          bin_end_index_var_auto = nullptr;
+//          auto string_len_end_index_auto = unary_end_index_var_auto->toIntAutomaton(param_subject->getStringAutomaton()->get_number_of_bdd_variables(), false);
+//          delete unary_end_index_var_auto;
+//          unary_end_index_var_auto = nullptr;
+//
+//          // TODO more cases here to handle
+//          auto string_search_term = query.get_parameter(relation.second, 2);
+//          auto string_search_term_value = getTermValue(string_search_term);
+//          if (string_search_term_value == nullptr) {
+//            visit(string_search_term); // generate automata for it
+//            string_search_term_value = getTermValue(string_search_term);
+//          }
+//
+//          // if there is an additional from index parameter, we need to consider it
+//          // I guess the best way to handle it is to add a substring variable from from
+//          // index and then to implement the rest
+//          substring_auto = sub_str_start_auto->SubString(string_len_end_index_auto, string_search_term_value->getStringAutomaton());
+//          delete string_len_end_index_auto;
+//          string_len_end_index_auto = nullptr;
+//        }
+//      }
+//    } else if(Value::Type::INT_AUTOMATON == param_end_index->getType()) {
+//      Theory::IntAutomaton_ptr param_end_index_auto = param_end_index->getIntAutomaton();
+//      substring_auto = sub_str_start_auto->SubString(start_index_value,param_end_index_auto);
+//    } else if(Value::Type::INT_CONSTANT == param_start_index->getType()) {
+//      int end_index_value = param_end_index->getIntConstant();
+//      substring_auto = sub_str_start_auto->SubString(start_index_value,end_index_value);
+//    } else {
+//      LOG(FATAL) << "implement and fix me";
+//    }
+//  } else {
+//    LOG(FATAL) << "implement me";
+//  }
 
   CHECK_NOTNULL(substring_auto);
   result = new Value(substring_auto);
@@ -1033,9 +1124,23 @@ void ConstraintSolver::visitToString(ToString_ptr to_string_term) {
     result = new Value(StringAutomaton::MakeString(ss.str()));
   } else {
     auto unary_auto = param->getIntAutomaton()->toUnaryAutomaton();
-    result = new Value(unary_auto->toStringAutomaton());
+    auto str_auto = unary_auto->toStringAutomaton();
+
     delete unary_auto;
+
+    // if param has negative one, then also return empty string
+    if(param->getIntAutomaton()->hasNegative1()) {
+      auto empty_string_auto = Theory::StringAutomaton::MakeEmptyString();
+      auto temp_auto = str_auto->Union(empty_string_auto);
+      delete str_auto;
+      delete empty_string_auto;
+      str_auto = temp_auto;
+    }
+    result = new Value(str_auto);
   }
+
+//  result->getStringAutomaton()->inspectAuto(false,true);
+//  std::cin.get();
 
   setTermValue(to_string_term, result);
 }
@@ -1045,14 +1150,20 @@ void ConstraintSolver::visitToInt(ToInt_ptr to_int_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *to_int_term;
 
   Value_ptr param = getTermValue(to_int_term->subject_term);
-  Theory::IntAutomaton_ptr int_auto = param->getStringAutomaton()->ParseToIntAutomaton();
 
+  Theory::IntAutomaton_ptr int_auto = param->getStringAutomaton()->ParseToIntAutomaton();
+//  param->getStringAutomaton()->inspectAuto(false,true);
+//  int_auto->inspectAuto(false,true);
+//  std::cin.get();
   Value_ptr result = nullptr;
   if (int_auto->isAcceptingSingleInt()) {
     result = new Value(int_auto->getAnAcceptingInt());
   } else {
     result = new Value(int_auto);
   }
+
+//  int_auto->inspectAuto(false,true);
+//  std::cin.get();
 
   setTermValue(to_int_term, result);
 }
@@ -1129,10 +1240,18 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
     result = new Value(variable_value->getStringAutomaton()->GetAutomatonForVariable(variable->getName()));
   } else if (Value::Type::BINARYINT_AUTOMATON == variable_value->getType()) {
   	// TODO baki: added for charat may need to fix it
-    auto var_auto = variable_value->getBinaryIntAutomaton()->GetBinaryAutomatonFor(variable->getName());
-    auto unary_auto = var_auto->ToUnaryAutomaton();
-    result = new Value(unary_auto->toIntAutomaton(8));
+//<<<<<<< HEAD
+//    auto var_auto = variable_value->getBinaryIntAutomaton()->GetBinaryAutomatonFor(variable->getName());
+//    auto unary_auto = var_auto->ToUnaryAutomaton();
+//    result = new Value(unary_auto->toIntAutomaton(8));
+//=======
+    auto var_auto = variable_value->getBinaryIntAutomaton()->GetBinaryAutomatonFor(qi_term->getVarName());
+    auto positive_var_auto = var_auto->GetPositiveValuesFor(qi_term->getVarName());
+    auto unary_auto = positive_var_auto->ToUnaryAutomaton();
+    result = new Value(unary_auto->toIntAutomaton(8,var_auto->HasNegative1()));
+//>>>>>>> master
     delete var_auto;
+    delete positive_var_auto;
     delete unary_auto;
   } else
   {
@@ -1320,8 +1439,10 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
   auto arithmetic_result = arithmetic_constraint_solver_.get_term_value(term);
   for (auto& string_term : arithmetic_constraint_solver_.get_string_terms_in(term)) {
     visit(string_term);
+
     auto string_term_result = getTermValue(string_term);
     is_satisfiable = string_term_result->is_satisfiable();
+    
     if (not is_satisfiable) {
       auto binary_auto = arithmetic_result->getBinaryIntAutomaton();
       arithmetic_result = new Value(
@@ -1396,6 +1517,7 @@ bool ConstraintSolver::process_mixed_integer_string_constraints_in(Term_ptr term
       arithmetic_constraint_solver_.set_group_value(term, arithmetic_result);
       break;
     }
+
   }
   if(delete_extra_arithmetic_result) {
 		delete arithmetic_result;

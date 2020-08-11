@@ -389,16 +389,22 @@ Value_ptr SymbolTable::get_value(Variable_ptr variable) {
 //    LOG(FATAL) << "bool variables are not supported explicitly yet: " << *variable;
 //    break;
   case Variable::Type::INT: {
-  	auto int_auto = Theory::IntAutomaton::makeAnyInt();
-  	// int auto should always have formula
-  	// TODO: Remove check after testing
-  	auto int_formula = int_auto->GetFormula();
-  	if(int_formula == nullptr) {
-  		LOG(FATAL) << "Int auto has no formula...";
-  	}
+//  	auto int_auto = Theory::IntAutomaton::makeAnyInt();
+//  	// int auto should always have formula
+//  	// TODO: Remove check after testing
+//  	auto int_formula = int_auto->GetFormula();
+    auto int_formula = new Theory::ArithmeticFormula();
+//  	if(int_formula == nullptr) {
+//  		LOG(FATAL) << "Int auto has no formula...";
+//  	}
   	int_formula->SetType(Theory::ArithmeticFormula::Type::VAR);
   	int_formula->AddVariable(variable->getName(),1);
+  	auto int_auto = Theory::BinaryIntAutomaton::MakeAnyInt(int_formula,false);
   	result = new Value(int_auto);
+
+  // 	for (auto iter : result->getIntAutomaton()->GetFormula()->GetVariableCoefficientMap()) {
+		// 	LOG(INFO) << iter.first << "," << iter.second;
+		// }
 
     DVLOG(VLOG_LEVEL) << "initialized variable as any integer: " << *variable;
   }
@@ -947,7 +953,6 @@ void SymbolTable::SetCharacterMapping(std::map<char,char> mapping) {
     reverse_character_mapping_[it.second] = it.first;
   }
 }
-
 
 std::string SymbolTable::generate_internal_name(std::string name, Variable::Type type) {
   std::stringstream ss;

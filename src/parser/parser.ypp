@@ -77,7 +77,8 @@
   LEN                  "len"
   CONTAINS             "contains"
   NOTCONTAINS          "notContains"
-  PREFIXOF               "prefixof"
+  PREFIXOF             "prefixof"
+  SUFFIXOF             "suffixof"
   BEGINS               "begins"
   NOTBEGINS            "notBegins"
   ENDS                 "ends"
@@ -106,6 +107,8 @@
   RE_OPT               "re.opt"
   RE_RANGE             "re.range"
   TO_REGEX             "str.to.re"  
+  RE_ALLCHAR           "re.allchar"
+  RE_ALL               "re.all"
 
   TBOOL                 "TBool"
   TINT                  "TInt"
@@ -269,6 +272,7 @@ term                  :
                       | "(" CONTAINS term term ")"                                      { $$ = new Contains($3, $4); }
                       | "(" NOTCONTAINS term term ")"                                   { $$ = new NotContains($3, $4); }
                       | "(" PREFIXOF term term ")"                                      { $$ = new Begins($4, $3); }
+                      | "(" SUFFIXOF term term ")"                                      { $$ = new Ends($4, $3); }
                       | "(" BEGINS term term ")"                                        { $$ = new Begins($3, $4); }
                       | "(" NOTBEGINS term term ")"                                     { $$ = new NotBegins($3, $4); }
                       | "(" ENDS term term ")"                                          { $$ = new Ends($3, $4); }
@@ -415,6 +419,8 @@ spec_constant         :
                       | DECIMAL             { $$ = new Primitive($1, Primitive::Type::DECIMAL); }
                       | STRING              { $$ = new Primitive($1, Primitive::Type::STRING); }
                       | REGEX               { $$ = new Primitive($1, Primitive::Type::REGEX); }
+                      | RE_ALLCHAR          { $$ = new Primitive(".", Primitive::Type::REGEX); }
+                      | RE_ALL              { $$ = new Primitive(".*", Primitive::Type::REGEX); }
                       ;
 
 

@@ -59,7 +59,7 @@ void Formula::SetVariableCoefficient(std::string variable_name, int coeff) {
 
 std::string Formula::GetVariableAtIndex(const std::size_t index) const {
 	if (index >= variable_coefficient_map_.size()) {
-		LOG(FATAL) << "Index out of range";
+		LOG(FATAL) << "Index out of range : " << index;
 	}
 	auto it = variable_coefficient_map_.begin();
 	std::advance(it, index);

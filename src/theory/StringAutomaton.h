@@ -184,6 +184,7 @@ public:
    * @param start
    * @param end
    * @param number_of_bdd_variables
+   *
    * @return
    */
   static StringAutomaton_ptr MakeAnyStringWithLengthInRange(const int start, const int end, const int number_of_bdd_variables = StringAutomaton::DEFAULT_NUM_OF_VARIABLES);
@@ -223,6 +224,7 @@ public:
 
   StringAutomaton_ptr Suffixes();
   StringAutomaton_ptr SuffixesAtIndex(int index);
+  StringAutomaton_ptr SuffixesAtIndex(IntAutomaton_ptr indices_auto);
   StringAutomaton_ptr SuffixesFromIndex(int start);
   StringAutomaton_ptr SuffixesFromTo(int start, int end);
   StringAutomaton_ptr Prefixes();
@@ -232,25 +234,30 @@ public:
 
   StringAutomaton_ptr CharAt(const int index);
   StringAutomaton_ptr CharAt(IntAutomaton_ptr index_auto);
+
   StringAutomaton_ptr SubString(const int start);
-  /**
-   * TODO decide on substring second param; which one is better:
-   * end index, or length of substring
-   */
-  StringAutomaton_ptr SubString(const int start, const int end);
+  StringAutomaton_ptr SubString(IntAutomaton_ptr start_auto);
+  StringAutomaton_ptr SubString(const int start, const int n);
+  StringAutomaton_ptr SubString(int start, IntAutomaton_ptr length_auto);
+  StringAutomaton_ptr SubString(IntAutomaton_ptr start_auto, int n);
+  StringAutomaton_ptr SubString(IntAutomaton_ptr start_auto, IntAutomaton_ptr length_auto);
+
   StringAutomaton_ptr SubString(IntAutomaton_ptr length_auto, StringAutomaton_ptr search_auto);
-  StringAutomaton_ptr SubString(int start, IntAutomaton_ptr end_auto);
   StringAutomaton_ptr SubStringLastOf(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr SubStringFirstOf(StringAutomaton_ptr search_auto);
 
   IntAutomaton_ptr IndexOf(StringAutomaton_ptr search_auto);
+  IntAutomaton_ptr IndexOf(StringAutomaton_ptr search_auto, int from_index);
+  IntAutomaton_ptr IndexOf(StringAutomaton_ptr search_auto, IntAutomaton_ptr from_index_auto);
   IntAutomaton_ptr LastIndexOf(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr Contains(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr Begins(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr Ends(StringAutomaton_ptr search_auto);
   StringAutomaton_ptr ToUpperCase();
   StringAutomaton_ptr ToLowerCase();
-  StringAutomaton_ptr Trim();
+  StringAutomaton_ptr Trim(char c = ' ');
+  StringAutomaton_ptr TrimPrefix(char c = ' ');
+  StringAutomaton_ptr TrimSuffix(char c = ' ');
 
   StringAutomaton_ptr Replace(StringAutomaton_ptr search_auto, StringAutomaton_ptr replace_auto);
 
@@ -261,8 +268,15 @@ public:
   IntAutomaton_ptr Length();
   StringAutomaton_ptr RestrictLengthTo(int length);
   StringAutomaton_ptr RestrictLengthTo(IntAutomaton_ptr length_auto);
+
   StringAutomaton_ptr RestrictIndexOfTo(int index, StringAutomaton_ptr search_auto);
   StringAutomaton_ptr RestrictIndexOfTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto);
+
+  StringAutomaton_ptr RestrictIndexOfTo(int index, int from_index, StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr RestrictIndexOfTo(IntAutomaton_ptr index_auto, int from_index, StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr RestrictIndexOfTo(int index, IntAutomaton_ptr from_index_auto, StringAutomaton_ptr search_auto);
+  StringAutomaton_ptr RestrictIndexOfTo(IntAutomaton_ptr index_auto, IntAutomaton_ptr from_index_auto, StringAutomaton_ptr search_auto);
+
   StringAutomaton_ptr RestrictLastIndexOfTo(int index, StringAutomaton_ptr search_auto);
   StringAutomaton_ptr RestrictLastIndexOfTo(IntAutomaton_ptr index_auto, StringAutomaton_ptr search_auto);
   StringAutomaton_ptr RestrictLastOccuranceOf(StringAutomaton_ptr search_auto);
@@ -312,7 +326,9 @@ public:
 	static DFA_ptr MakeBinaryRelationDfa(StringFormula::Type type, int bits_per_var, int num_tracks, int left_track, int right_track);
 	static DFA_ptr MakeBinaryAlignedDfa(int left_track, int right_track, int total_tracks);
 	static DFA_ptr MakeRelationalCharAtDfa(StringFormula_ptr formula, int bits_per_var, int num_tracks, int left_track, int right_track);
+	static DFA_ptr MakeRelationalLenDfa(StringFormula_ptr formula, int bits_per_var, int num_tracks, int left_track, int right_track);
 	static StringAutomaton_ptr MakePrefixSuffix(int left_track, int prefix_track, int suffix_track, int num_tracks);
+	static StringAutomaton_ptr MakePrefixSuffix(DFA_ptr left_dfa, DFA_ptr prefix_dfa, DFA_ptr suffix_dfa, int var);
   static StringAutomaton_ptr MakeConcatExtraTrack(int left_track, int right_track, int num_tracks, std::string str_constant);
 
 
@@ -322,8 +338,8 @@ public:
 	static DFA_ptr PrependLambda(DFA_ptr dfa, int var);
 	static DFA_ptr TrimLambdaPrefix(DFA_ptr dfa, int var, bool project_bit = true);
 	static DFA_ptr TrimLambdaSuffix(DFA_ptr dfa, int var, bool project_bit = true);
-	static DFA_ptr TrimPrefix(DFA_ptr subject_dfa, DFA_ptr trim_dfa, int var);
-	static DFA_ptr TrimSuffix(DFA_ptr subject_dfa, DFA_ptr trim_dfa, int var);
+	static DFA_ptr GetPrefixDFA(DFA_ptr subject_dfa, DFA_ptr suffix_dfa, int var);
+	static DFA_ptr GetSuffixDFA(DFA_ptr subject_dfa, DFA_ptr prefix_dfa, int var);
 	static DFA_ptr concat(DFA_ptr prefix_dfa, DFA_ptr suffix_dfa, int var);
 
 	static DFA_ptr PreConcatPrefix(DFA_ptr concat_dfa, DFA_ptr suffix_dfa, int var);

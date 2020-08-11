@@ -127,22 +127,21 @@ void Driver::InitializeSolver() {
   Solver::SyntacticOptimizer syntactic_optimizer(script_, symbol_table_);
   syntactic_optimizer.start();
 
-  auto end = std::chrono::steady_clock::now();
-  auto time2 = end-start;
-  diff4 += time2;
-
   //ast2dot(output_root + "/post_syntactic_optimizer.dot");
   int i = 0;
+
   if (Option::Solver::ENABLE_EQUIVALENCE_CLASSES) {
     Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
     do {
       equivalence_generator.start();
-      //ast2dot(output_root + "/post_eq" + std::to_string(i) + ".dot");
-      i++;
+//      std::string filename = output_root + "/post_equivalence_" + std::to_string(count) + ".dot";
+//      ast2dot(filename);
+//      count++;
+      //std::cin.get();
     } while (equivalence_generator.has_constant_substitution());
   }
-  
-  
+
+//   ast2dot(output_root + "/post_equivalence.dot");
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
 	dependency_slicer.start();
 
@@ -169,8 +168,6 @@ void Driver::InitializeSolver() {
 }
 
 void Driver::Solve() {
-
-
   Solver::ConstraintSolver* constraint_solver = nullptr;
 
 #ifdef USE_CACHE
@@ -198,6 +195,12 @@ void Driver::Solve() {
 	cached_bounded_values_.clear();
 
   delete constraint_solver;
+//=======
+//  Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
+//  constraint_solver.start();
+//  is_model_counter_cached_ = false;
+//  model_counter_ = Solver::ModelCounter();
+//>>>>>>> master
 }
 
 bool Driver::is_sat() {
@@ -563,6 +566,8 @@ void Driver::SetModelCounterForVariable(const std::string var_name, bool project
 void Driver::SetModelCounter() {
   model_counter_.set_use_sign_integers(Option::Solver::USE_SIGNED_INTEGERS);
   int num_bin_var = 0;
+  int num_str_var = 0;
+
   for (const auto &variable_entry : getSatisfyingVariables()) {
     if (variable_entry.second == nullptr) {
       continue;
@@ -585,6 +590,12 @@ void Driver::SetModelCounter() {
         break;
       case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
 				auto string_auto = variable_entry.second->getStringAutomaton();
+        auto formula = string_auto->GetFormula();
+        for (auto& el : formula->GetVariableCoefficientMap()) {
+          if (symbol_table_->get_variable_unsafe(el.first) != nullptr) {
+            ++num_str_var;
+          }
+        }
 				model_counter_.add_symbolic_counter(string_auto->GetSymbolicCounter());
       }
       	break;
@@ -603,6 +614,13 @@ void Driver::SetModelCounter() {
                                                                                             SMT::Variable::Type::INT);
   int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables - num_bin_var;
   model_counter_.set_num_of_unconstraint_int_vars(number_of_untracked_int_variables);
+
+  int number_of_str_variables = symbol_table_->get_num_of_variables(SMT::Variable::Type::STRING);
+  int number_of_substituted_str_variables = symbol_table_->get_num_of_substituted_variables(script_,
+                                                                                            SMT::Variable::Type::STRING);
+  int number_of_untracked_str_variables = number_of_str_variables - number_of_substituted_str_variables - num_str_var;
+  model_counter_.set_num_of_unconstraint_str_vars(number_of_untracked_str_variables);
+
   is_model_counter_cached_ = true;
 }
 
@@ -1251,7 +1269,7 @@ void Driver::test() {
 
 
 //  Theory::StringAutomaton_ptr a1 = Theory::StringAutomaton::makeString("Hi,");
-  //make_string->complement()->toDotAscii();
+  //make_string->Complement()->toDotAscii();
 
 //  Theory::StringAutomaton_ptr a2 = Theory::StringAutomaton::makeString("World");
 
@@ -1270,7 +1288,7 @@ void Driver::test() {
 
 //  Theory::StringAutomaton_ptr empty_string = Theory::StringAutomaton::makeEmptyString();
 
-//  Theory::StringAutomaton_ptr result = a1->union_(any_string);
+//  Theory::StringAutomaton_ptr result = a1->Union(any_string);
   //result->toDotAscii();
 
 //  Theory::StringAutomaton_ptr prefs = a1->prefixes();
@@ -1282,8 +1300,8 @@ void Driver::test() {
 //  Theory::StringAutomaton_ptr length_auto = Theory::StringAutomaton::makeLengthRange(0,4);
   //length_auto->toDotAscii();
 
-  //Theory::StringAutomaton_ptr test_auto = a6->union_(a5->union_(a4->union_(a3->union_(a1->concatenate(char_range_closure)->concatenate(a2)))));
-//  Theory::StringAutomaton_ptr test_auto = a5->union_(a4->union_(a3->union_(a1->concatenate(char_range)->concatenate(a2))));
+  //Theory::StringAutomaton_ptr test_auto = a6->union_(a5->union_(a4->Union(a3->Union(a1->concatenate(char_range_closure)->concatenate(a2)))));
+//  Theory::StringAutomaton_ptr test_auto = a5->union_(a4->Union(a3->Union(a1->concatenate(char_range)->concatenate(a2))));
 
   //Theory::StringAutomaton_ptr result_auto = test_auto->charAt(5);
 //  Theory::StringAutomaton_ptr result_auto = test_auto->suffixesFromIndex(12);

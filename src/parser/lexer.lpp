@@ -41,6 +41,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 %}
 
 ";"[^\n]*\n         { loc.lines (yyleng); loc.step ();            }
+";"[^\n]*         { loc.lines (yyleng); loc.step ();            }
 \n                  { loc.lines (yyleng); loc.step ();            }
 \r                  { loc.lines (yyleng); loc.step ();            }
 [ \t]               { loc.step ();                                }
@@ -87,10 +88,12 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "BeginsWith"        { return Parser::make_BEGINS          (loc);  }
 "startsWith"        { return Parser::make_BEGINS          (loc);  }
 "StartsWith"        { return Parser::make_BEGINS          (loc);  }
+"startsWith"        { return Parser::make_BEGINS          (loc);  }
 "notBegins"         { return Parser::make_NOTBEGINS       (loc);  }
 "ends"              { return Parser::make_ENDS            (loc);  }
 "endsWith"          { return Parser::make_ENDS            (loc);  }
 "EndsWith"          { return Parser::make_ENDS            (loc);  }
+"endsWith"          { return Parser::make_ENDS            (loc);  }
 "notEnds"           { return Parser::make_NOTENDS         (loc);  }
 "indexOf"           { return Parser::make_INDEXOF         (loc);  }
 "Indexof"           { return Parser::make_INDEXOF         (loc);  }
@@ -126,7 +129,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "str.replace"       { return Parser::make_REPLACE         (loc);  }
 "str.substr"        { return Parser::make_SUBSTRINGLENGTH (loc);  }
 "str.prefixof"      { return Parser::make_PREFIXOF          (loc);  }
-"str.suffixof"      { return Parser::make_ENDS            (loc);  }
+"str.suffixof"      { return Parser::make_SUFFIXOF            (loc);  }
 "str.to.int"        { return Parser::make_TOINT           (loc);  }
 "int.to.str"        { return Parser::make_TOSTRING        (loc);  }
 "str.at"            { return Parser::make_CHARAT          (loc);  }
@@ -142,7 +145,9 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "re.opt"            { return Parser::make_RE_OPT          (loc);  }
 "re.range"          { return Parser::make_RE_RANGE        (loc);  }
 
-"re.allchar"        { }
+
+"re.all"            { return Parser::make_RE_ALL          (loc);  }
+"re.allchar"        { return Parser::make_RE_ALLCHAR      (loc);  }
 "re.nostr"          { }
 "re.or"             { return Parser::make_OR              (loc);  }
 
@@ -191,7 +196,12 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 <START_STRING>{
   \\[xX][0-9A-Fa-f][0-9A-Fa-f] { std::string byte = std::string(yytext).substr(2,4);quoted_value << (char)(int)strtol(byte.c_str(),NULL,16); }
   \\\"              { quoted_value << '"';      }
+  \\v              { quoted_value << '\v';      }
+  \\f              { quoted_value << '\f';      }
+  \\n              { quoted_value << '\n';      }
   \\\\              { quoted_value << '\\';     }
+  \\t              { quoted_value << '\t';      }
+  \\r              { quoted_value << '\r';      }
   [^\"\n]           { quoted_value << yytext;   }
   \n                { quoted_value << '\n';     }
   \"                { yy_pop_state(); return Parser::make_STRING (quoted_value.str(), loc); }
@@ -215,6 +225,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 }
 
 .                   { LexerError("invalid character");            }
+
 <<EOF>>             { return Parser::make_END             (loc);  }
 
 %%

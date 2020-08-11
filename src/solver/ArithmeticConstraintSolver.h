@@ -85,7 +85,7 @@ class ArithmeticConstraintSolver : public AstTraverser {
 
  private:
   void YieldWhileValuesLocked() {
-    while(symbol_table_->AreValuesLocked()) std::this_thread::yield;
+    while(symbol_table_->AreValuesLocked()) std::this_thread::yield();
   }
   static const int VLOG_LEVEL;
 };

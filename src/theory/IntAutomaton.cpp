@@ -190,7 +190,7 @@ IntAutomaton_ptr IntAutomaton::makeIntGreaterThan(int value, int num_of_variable
   }
   else{
     IntAutomaton_ptr less_than_or_equal = IntAutomaton::makeIntLessThanOrEqual(value);
-    int_auto = less_than_or_equal->complement();
+    int_auto = less_than_or_equal->Complement();
     delete less_than_or_equal;
   }
 
@@ -207,7 +207,7 @@ IntAutomaton_ptr IntAutomaton::makeIntGreaterThanOrEqual(int value, int num_of_v
   }
   else{
     IntAutomaton_ptr less_auto = IntAutomaton::makeIntLessThan(value);
-    int_auto = less_auto->complement();
+    int_auto = less_auto->Complement();
     delete less_auto;
   }
 
@@ -257,7 +257,7 @@ void IntAutomaton::setMinus1(bool has_minus_one) {
 bool IntAutomaton::hasNegative1() {
   return has_negative_1;
 }
-IntAutomaton_ptr IntAutomaton::complement() {
+IntAutomaton_ptr IntAutomaton::Complement() {
   DFA_ptr complement_dfa = nullptr, minimized_dfa = nullptr, current_dfa = dfaCopy(dfa_);
   IntAutomaton_ptr complement_auto = nullptr;
   IntAutomaton_ptr any_int = IntAutomaton::makeAnyInt();
@@ -281,7 +281,7 @@ IntAutomaton_ptr IntAutomaton::complement() {
   return complement_auto;
 }
 
-IntAutomaton_ptr IntAutomaton::union_(int value) {
+IntAutomaton_ptr IntAutomaton::Union(int value) {
   IntAutomaton_ptr union_auto = nullptr, int_auto = nullptr;
   if (value == -1) {
     union_auto = this->clone();
@@ -289,13 +289,13 @@ IntAutomaton_ptr IntAutomaton::union_(int value) {
     DVLOG(VLOG_LEVEL) << union_auto->id_ << " = [" << this->id_ << "]->union(-1)";
   } else {
     int_auto = IntAutomaton::makeInt(value);
-    union_auto = this->union_(int_auto);
+    union_auto = this->Union(int_auto);
     delete int_auto; int_auto = nullptr;
   }
   return union_auto;
 }
 
-IntAutomaton_ptr IntAutomaton::union_(IntAutomaton_ptr other_auto) {
+IntAutomaton_ptr IntAutomaton::Union(IntAutomaton_ptr other_auto) {
   DFA_ptr union_dfa = nullptr;
   IntAutomaton_ptr union_auto = nullptr;
 
@@ -309,15 +309,15 @@ IntAutomaton_ptr IntAutomaton::union_(IntAutomaton_ptr other_auto) {
   return union_auto;
 }
 
-IntAutomaton_ptr IntAutomaton::intersect(int value) {
+IntAutomaton_ptr IntAutomaton::Intersect(int value) {
   IntAutomaton_ptr intersect_auto = nullptr, int_auto = nullptr;
   int_auto = IntAutomaton::makeInt(value);
-  intersect_auto = this->intersect(int_auto);
+  intersect_auto = this->Intersect(int_auto);
   delete int_auto;
   return intersect_auto;
 }
 
-IntAutomaton_ptr IntAutomaton::intersect(IntAutomaton_ptr other_auto) {
+IntAutomaton_ptr IntAutomaton::Intersect(IntAutomaton_ptr other_auto) {
   DFA_ptr intersect_dfa = nullptr;
   IntAutomaton_ptr intersect_auto = nullptr;
 
@@ -326,29 +326,29 @@ IntAutomaton_ptr IntAutomaton::intersect(IntAutomaton_ptr other_auto) {
   intersect_auto = new IntAutomaton(intersect_dfa, num_of_bdd_variables_);
   intersect_auto->has_negative_1 = this->has_negative_1 and other_auto->has_negative_1;
 
-  DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->intersect(" << other_auto->id_ << ")";
+  DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << other_auto->id_ << ")";
 
   return intersect_auto;
 }
 
-IntAutomaton_ptr IntAutomaton::difference(int value) {
+IntAutomaton_ptr IntAutomaton::Difference(int value) {
   IntAutomaton_ptr difference_auto = nullptr, int_auto = nullptr;
   int_auto = IntAutomaton::makeInt(value);
-  difference_auto = this->difference(int_auto);
+  difference_auto = this->Difference(int_auto);
   delete int_auto;
   return difference_auto;
 }
 
-IntAutomaton_ptr IntAutomaton::difference(IntAutomaton_ptr other_auto) {
+IntAutomaton_ptr IntAutomaton::Difference(IntAutomaton_ptr other_auto) {
   IntAutomaton_ptr difference_auto = nullptr, complement_auto = nullptr;
 
-  complement_auto = other_auto->complement();
-  difference_auto = this->intersect(complement_auto);
-  // negative one handled in complement and intersect
+  complement_auto = other_auto->Complement();
+  difference_auto = this->Intersect(complement_auto);
+  // negative one handled in Complement and Intersect
 
   delete complement_auto; complement_auto = nullptr;
 
-  DVLOG(VLOG_LEVEL) << difference_auto->id_ << " = [" << this->id_ << "]->difference(" << other_auto->id_ << ")";
+  DVLOG(VLOG_LEVEL) << difference_auto->id_ << " = [" << this->id_ << "]->Difference(" << other_auto->id_ << ")";
 
   return difference_auto;
 }
@@ -368,7 +368,7 @@ IntAutomaton_ptr IntAutomaton::uminus() {
   }
 
   tmp_auto_1 = IntAutomaton::makeIntGreaterThan(0);
-  tmp_auto_2 = this->intersect(tmp_auto_1);
+  tmp_auto_2 = this->Intersect(tmp_auto_1);
   delete tmp_auto_1;
   if (not tmp_auto_2->isEmptyLanguage()) {
     u_minus_auto->has_negative_1 = true;
@@ -394,13 +394,13 @@ IntAutomaton_ptr IntAutomaton::plus(IntAutomaton_ptr other_auto) {
           left_auto = this, right_auto = other_auto;
   if (has_negative_1) {
     add_minus_auto = other_auto->minus(1);
-    right_auto = other_auto->union_(add_minus_auto);
+    right_auto = other_auto->Union(add_minus_auto);
     delete add_minus_auto; add_minus_auto = nullptr;
   }
 
   if (other_auto->has_negative_1) {
     add_minus_auto = this->minus(1);
-    left_auto = other_auto->union_(add_minus_auto);
+    left_auto = other_auto->Union(add_minus_auto);
     delete add_minus_auto; add_minus_auto = nullptr;
   }
 
@@ -465,7 +465,7 @@ IntAutomaton_ptr IntAutomaton::minus(IntAutomaton_ptr other_auto) {
 
   if (other_auto->has_negative_1) {
     add_plus_auto = this->plus(1);
-    left_auto = this->union_(add_plus_auto);
+    left_auto = this->Union(add_plus_auto);
     delete add_plus_auto;
   }
 
@@ -601,7 +601,7 @@ bool IntAutomaton::isLessThanOrEqual(IntAutomaton_ptr other_auto) {
 
 IntAutomaton_ptr IntAutomaton::restrictTo(IntAutomaton_ptr other_value) {
   IntAutomaton_ptr restricted_auto = nullptr;
-  restricted_auto = this->intersect(other_value);
+  restricted_auto = this->Intersect(other_value);
 
   DVLOG(VLOG_LEVEL) << this->id_ << " = [" << this->id_ << "]->restrict(" << other_value->id_ << ")";
   return restricted_auto;
@@ -817,6 +817,10 @@ UnaryAutomaton_ptr IntAutomaton::toUnaryAutomaton() {
       }
     }
   }
+
+  DFA_ptr tmp_dfa = dfaMinimize(unary_dfa);
+  dfaFree(unary_dfa);
+  unary_dfa = tmp_dfa;
 
   //delete[] indices; indices = nullptr;
   delete[] statuses;
@@ -1077,7 +1081,7 @@ IntAutomaton_ptr IntAutomaton::__plus(IntAutomaton_ptr other_auto) {
   concat_auto = new IntAutomaton(concat_dfa, num_of_variables);
   if (has_empty_string) {
     IntAutomaton_ptr tmp_auto = concat_auto;
-    concat_auto = tmp_auto->union_(this);
+    concat_auto = tmp_auto->Union(this);
     delete tmp_auto;
     if (delete_other_auto) {
       delete other_auto;

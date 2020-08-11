@@ -13,7 +13,7 @@ namespace Solver {
 using namespace SMT;
 
 const int VariableValueComputer::VLOG_LEVEL = 12;
-// TODO intersect with result post
+// TODO Intersect with result post
 VariableValueComputer::VariableValueComputer(SymbolTable_ptr symbol_table, VariablePathTable& variable_path_table, const TermValueMap& post_images)
         : is_satisfiable_{true}, symbol_table(symbol_table), variable_path_table (variable_path_table),
           post_images (post_images), current_path (nullptr) {
@@ -872,8 +872,11 @@ void VariableValueComputer::visitIndexOf(IndexOf_ptr index_of_term) {
   popTerm(index_of_term);
   Term_ptr child_term = current_path->back();
 
-  if (child_term == index_of_term->search_term) {
-    return; // indexOf operation does not have any restriction on right hand side
+  if (child_term == index_of_term->search_term or child_term == index_of_term->from_index) {
+    // indexOf operation does not have any restriction on right hand side
+    // technically, from_index should be restricted as well if the result of indexOf is -1
+    // but for now we overapproximate
+    return;
   }
 
   Value_ptr child_value = getTermPreImage(child_term);
@@ -885,13 +888,34 @@ void VariableValueComputer::visitIndexOf(IndexOf_ptr index_of_term) {
   Value_ptr term_value = getTermPreImage(index_of_term);
   Value_ptr child_post_value = getTermPostImage(child_term);
   Value_ptr param_search = getTermPostImage(index_of_term->search_term);
+  Value_ptr from_index = nullptr;
+  if(index_of_term->from_index != nullptr) {
+    from_index = getTermPostImage(index_of_term->from_index);
+  }
 
   if (Value::Type::INT_CONSTANT == term_value->getType()) {
-    child_value = new Value(child_post_value->getStringAutomaton()
-            ->RestrictIndexOfTo(term_value->getIntConstant(), param_search->getStringAutomaton()));
+
+    if(from_index != nullptr and Value::Type::INT_CONSTANT == from_index->getType()) {
+      child_value = new Value(child_post_value->getStringAutomaton()
+                                ->RestrictIndexOfTo(term_value->getIntConstant(), from_index->getIntConstant(), param_search->getStringAutomaton()));
+    } else if(from_index != nullptr and Value::Type::INT_AUTOMATON == from_index->getType()) {
+      child_value = new Value(child_post_value->getStringAutomaton()
+                                ->RestrictIndexOfTo(term_value->getIntConstant(), from_index->getIntAutomaton(), param_search->getStringAutomaton()));
+    } else {
+      child_value = new Value(child_post_value->getStringAutomaton()
+                                ->RestrictIndexOfTo(term_value->getIntConstant(), param_search->getStringAutomaton()));
+    }
   } else {
-    child_value = new Value(child_post_value->getStringAutomaton()
-                ->RestrictIndexOfTo(term_value->getIntAutomaton(), param_search->getStringAutomaton()));
+    if(from_index != nullptr and Value::Type::INT_CONSTANT == from_index->getType()) {
+      child_value = new Value(child_post_value->getStringAutomaton()
+                                ->RestrictIndexOfTo(term_value->getIntAutomaton(), from_index->getIntConstant(), param_search->getStringAutomaton()));
+    } else if(from_index != nullptr and Value::Type::INT_AUTOMATON == from_index->getType()) {
+      child_value = new Value(child_post_value->getStringAutomaton()
+                                ->RestrictIndexOfTo(term_value->getIntAutomaton(), from_index->getIntAutomaton(), param_search->getStringAutomaton()));
+    } else {
+      child_value = new Value(child_post_value->getStringAutomaton()
+                                ->RestrictIndexOfTo(term_value->getIntAutomaton(), param_search->getStringAutomaton()));
+    }
   }
 
   setTermPreImage(child_term, child_value);
@@ -962,14 +986,16 @@ void VariableValueComputer::visitCharAt(CharAt_ptr char_at_term) {
   else
   {
     Value_ptr subject_value = getTermPostImage(char_at_term->subject_term);
-    Theory::IntAutomaton_ptr indexes_auto = subject_value->getStringAutomaton()->IndexOf(subject_value->getStringAutomaton());
+
+    Theory::IntAutomaton_ptr indexes_auto = subject_value->getStringAutomaton()->IndexOf(term_value->getStringAutomaton());
     if (Value::Type::INT_CONSTANT == child_post_value->getType())
     {
-      child_value = new Value(indexes_auto->intersect(child_post_value->getIntConstant()));
+      child_value = new Value(indexes_auto->Intersect(child_post_value->getIntConstant()));
     }
     else
     {
-      child_value = new Value(indexes_auto->intersect(child_post_value->getIntAutomaton()));
+      child_value = new Value(indexes_auto->Intersect(child_post_value->getIntAutomaton()));
+
     }
     delete indexes_auto;
   }
@@ -978,8 +1004,12 @@ void VariableValueComputer::visitCharAt(CharAt_ptr char_at_term) {
   visit(child_term);
 }
 
+
 /**
- * TODO check if we can do preimage with endswith ??
+ * (str.substr s i n)
+ * s: string
+ * i: starting index
+ * n: length of substring
  */
 void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
   DVLOG(VLOG_LEVEL) << "pop: " << *sub_string_term;
@@ -989,8 +1019,7 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
   if (child_term == sub_string_term->start_index_term or
           child_term == sub_string_term->end_index_term) {
     // TODO !!! need to implement logic here
-    // assume string is constant and indexes are symbolic??
-    //    LOG(FATAL) << "implement me";
+    // even if indices are symbolic, do we need to update?
     return; // subString operation does not have any restriction on indexes
   }
 
@@ -1000,24 +1029,46 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
     return;
   }
 
-  // TODO baki implement the rest of the logic based on the latest results
   // consider multi-track int and string automata
   Theory::StringAutomaton_ptr child_pre_auto = nullptr;
   Value_ptr term_value = getTermPreImage(sub_string_term);
   Value_ptr child_post_value = getTermPostImage(child_term);
   Value_ptr start_index_value = getTermPostImage(sub_string_term->start_index_term);
-  Value_ptr end_index_value = nullptr;
+  Value_ptr end_index_value = nullptr;//getTermPostImage(sub_string_term->end_index_term);
+
+//<<<<<<< HEAD
+//  if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
+//    child_value = new Value(child_post_value->getStringAutomaton()
+//            ->RestrictFromIndexToEndTo(start_index_value->getIntConstant(), term_value->getStringAutomaton()));
+//  }
+//  setTermPreImage(child_term, child_value);
+//  visit(child_term);
+//  return;
+//=======
+
+//  // result of substring
+// term_value->getStringAutomaton()->inspectAuto(false, false);
+//  // subject auto
+// child_post_value->getStringAutomaton()->inspectAuto(false, false);
+//  end_index_value->getIntAutomaton()->inspectAuto(false,true);
+// std::cin.get();
 
   if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
     child_value = new Value(child_post_value->getStringAutomaton()
-            ->RestrictFromIndexToEndTo(start_index_value->getIntConstant(), term_value->getStringAutomaton()));
+            ->RestrictAtIndexTo(start_index_value->getIntConstant(), term_value->getStringAutomaton()));
+  } else {
+    child_value = new Value(child_post_value->getStringAutomaton()
+            ->RestrictAtIndexTo(start_index_value->getIntAutomaton(), term_value->getStringAutomaton()));
   }
-  setTermPreImage(child_term, child_value);
-  visit(child_term);
-  return;
+
+//  child_value->getStringAutomaton()->inspectAuto(false,false);
+//  std::cin.get();
+
+//>>>>>>> master
   /*
   switch (sub_string_term->getMode()) {
     case SubString::Mode::FROMINDEX: {
+      LOG(INFO) << "FROMINDEX";
       if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
         child_value = new Value(child_post_value->getStringAutomaton()
                 ->RestrictFromIndexToEndTo(start_index_value->getIntConstant(), term_value->getStringAutomaton()));
@@ -1028,6 +1079,7 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
       break;
     }
     case SubString::Mode::FROMFIRSTOF: {
+    LOG(INFO) << "FROMFIRSTOF";
       Value_ptr index_value = getTermPostImage(sub_string_term->start_index_term);
       Theory::StringAutomaton_ptr any_string_not_contains_search = index_value->getStringAutomaton()->GetAnyStringNotContainsMe();
       Theory::StringAutomaton_ptr general_pre_substring = any_string_not_contains_search->Concat(term_value->getStringAutomaton());
@@ -1039,11 +1091,13 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
       break;
     }
     case SubString::Mode::FROMLASTOF: {
+    LOG(INFO) << "FROMLASTOF";
       child_value = new Value(child_post_value->getStringAutomaton()
               ->Ends(term_value->getStringAutomaton()));
       break;
     }
     case SubString::Mode::FROMINDEXTOINDEX: {
+    LOG(INFO) << "FROMINDEXTOINDEX";
 //      end_index_value = getTermPostImage(sub_string_term->end_index_term);
       //term_value already contains end index
       if (Value::Type::INT_CONSTANT == start_index_value->getType()) {
@@ -1056,34 +1110,42 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
       break;
     }
     case SubString::Mode::FROMINDEXTOFIRSTOF: {
+    LOG(INFO) << "FROMINDEXTOFIRSTOF";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMINDEXTOLASTOF: {
+    LOG(INFO) << "FROMINDEXTOLASTOF";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMFIRSTOFTOINDEX: {
+    LOG(INFO) << "FROMFIRSTOFTOINDEX";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMFIRSTOFTOFIRSTOF: {
+    LOG(INFO) << "FROMFIRSTOFTOFIRSTOF";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMFIRSTOFTOLASTOF: {
+    LOG(INFO) << "FROMFIRSTOFTOLASTOF";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMLASTOFTOINDEX: {
+    LOG(INFO) << "FROMLASTOFTOINDEX";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMLASTOFTOFIRSTOF: {
+    LOG(INFO) << "FROMLASTOFTOFIRSTOF";
       LOG(FATAL)<< "implement me";
       break;
     }
     case SubString::Mode::FROMLASTOFTOLASTOF: {
+    LOG(INFO) << "FROMLASTOFTOLASTOF";
       LOG(FATAL)<< "implement me";
       break;
     }
@@ -1091,10 +1153,14 @@ void VariableValueComputer::visitSubString(SubString_ptr sub_string_term) {
       LOG(FATAL)<< "Undefined subString semantic";
       break;
   }
+   */
+
+//  child_value->getStringAutomaton()->inspectAuto(false,false);
+//  std::cin.get();
 
   setTermPreImage(child_term, child_value);
   visit(child_term);
-  */
+//  */
 }
 
 /**
@@ -1180,9 +1246,9 @@ void VariableValueComputer::visitToString(ToString_ptr to_string_term) {
   } else {
     Theory::IntAutomaton_ptr child_pre_auto = nullptr;
     if (Value::Type::INT_CONSTANT == child_post_value->getType()) {
-      child_pre_auto = int_auto->intersect(child_post_value->getIntConstant());
+      child_pre_auto = int_auto->Intersect(child_post_value->getIntConstant());
     } else {
-      child_pre_auto = int_auto->intersect(child_post_value->getIntAutomaton());
+      child_pre_auto = int_auto->Intersect(child_post_value->getIntAutomaton());
     }
     child_value = new Value(child_pre_auto);
   }
@@ -1209,14 +1275,38 @@ void VariableValueComputer::visitToInt(ToInt_ptr to_int_term) {
   if (Value::Type::INT_CONSTANT == term_value->getType()) {
     std::stringstream ss;
     ss << term_value->getIntConstant();
-    auto str_auto = Theory::StringAutomaton::MakeString(ss.str());
-    child_pre_auto = child_post_value->getStringAutomaton()->Intersect(str_auto);
-    delete str_auto;
+    // if -1, then we can't refine child term (anything non-numeric maps to -1)
+    if(term_value->getIntConstant() == -1) {
+      child_pre_auto = Theory::StringAutomaton::MakeAnyString();
+    } else {
+      // can start any number of leading zeros
+      auto regex_auto = Theory::StringAutomaton::MakeRegexAuto("0*");
+      auto str_auto = Theory::StringAutomaton::MakeString(ss.str());
+      auto concat_auto = regex_auto->Concat(str_auto);
+      child_pre_auto = child_post_value->getStringAutomaton()->Intersect(concat_auto);
+      delete str_auto;
+      delete regex_auto;
+      delete concat_auto;
+    }
   } else {
-    auto unary_auto = term_value->getIntAutomaton()->toUnaryAutomaton();
-    auto str_auto = unary_auto->toStringAutomaton();
-    child_pre_auto = child_post_value->getStringAutomaton()->Intersect(str_auto);
-    delete unary_auto;
+    // if -1, then we can't refine child term (anything non-numeric maps to -1)
+    if(term_value->getIntAutomaton()->hasNegative1()) {
+      child_pre_auto = Theory::StringAutomaton::MakeAnyString();
+    } else {
+      auto unary_auto = term_value->getIntAutomaton()->toUnaryAutomaton();
+//      unary_auto->inspectAuto(false, true);
+      auto str_auto = unary_auto->toStringAutomaton();
+//      str_auto->inspectAuto(false, true);
+      // can start any number of leading zeros
+      auto regex_auto = Theory::StringAutomaton::MakeRegexAuto("0*");
+      auto concat_auto = regex_auto->Concat(str_auto);
+      child_pre_auto = child_post_value->getStringAutomaton()->Intersect(concat_auto);
+//      child_pre_auto->inspectAuto(false, true);
+      delete unary_auto;
+      delete regex_auto;
+      delete concat_auto;
+      delete str_auto;
+    }
   }
 
   child_value = new Value(child_pre_auto);
@@ -1345,17 +1435,26 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 //      string_auto->inspectAuto(false,true);
 //      symbol_table->get_value(qi_term->getVarName())->getStringAutomaton()->inspectAuto(false,true);
 //      std::cin.get();
+
+      
     }
       break;
+    case Value::Type::INT_CONSTANT:
     case Value::Type::INT_AUTOMATON:
     {
       //TODO !!!! improve mixing constraints by design
     	auto variable_value = symbol_table->get_value(variable);
       if(Value::Type::BINARYINT_AUTOMATON == variable_value->getType()) {
+        if(Value::Type::INT_CONSTANT == term_pre_value->getType()) {
+          int constant = term_pre_value->getIntConstant();
+          delete term_pre_value;
+          term_pre_value = new Value(Theory::IntAutomaton::makeInt(constant));
+        }
       	auto unary_auto = term_pre_value->getIntAutomaton()->toUnaryAutomaton();
       	auto term_binary_auto = unary_auto->toBinaryIntAutomaton(variable->getName(),
 																																 variable_value->getIntAutomaton()->GetFormula()->clone(),
-																																 false);
+																																 term_pre_value->getIntAutomaton()->hasNegative1());
+
 				delete unary_auto;
 				delete term_pre_value;
 				term_pre_value = new Value(term_binary_auto);
@@ -1364,6 +1463,7 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
     }
       break;
     default:
+      LOG(INFO) << term_pre_value << " " << *term_pre_value;
       LOG(FATAL) << "handle case";
       break;
   }

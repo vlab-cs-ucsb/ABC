@@ -198,7 +198,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 //          and_value = param->clone();
 //        } else {
 //          auto old_value = and_value;
-//          and_value = and_value->intersect(param);
+//          and_value = and_value->Intersect(param);
 //          delete old_value;
 //          is_satisfiable = and_value->is_satisfiable();
 //        }
@@ -333,7 +333,7 @@ void ArithmeticConstraintSolver::visitOr(Or_ptr or_term) {
 //					or_value = param->clone();
 //				} else {
 //					auto old_value = or_value;
-//					or_value = or_value->union_(param);
+//					or_value = or_value->Union(param);
 //					delete old_value;
 //				}
 				auto term_group_name = arithmetic_formula_generator_->get_term_group_name(term);
@@ -411,7 +411,7 @@ void ArithmeticConstraintSolver::postVisitAnd(And_ptr and_term) {
 //          and_value = param->clone();
 //        } else {
 //          auto old_value = and_value;
-//          and_value = and_value->intersect(param);
+//          and_value = and_value->Intersect(param);
 //          delete old_value;
 //          is_satisfiable = and_value->is_satisfiable();
 //        }
@@ -503,7 +503,7 @@ void ArithmeticConstraintSolver::postVisitOr(Or_ptr or_term) {
 //          or_value = param->clone();
 //        } else {
 //          auto old_value = or_value;
-//          or_value = or_value->union_(param);
+//          or_value = or_value->Union(param);
 //          delete old_value;
 //          is_satisfiable = or_value->is_satisfiable();
 //        }
