@@ -587,6 +587,16 @@ void AstTraverser::visitReOpt(ReOpt_ptr re_opt_term) {
   }
 }
 
+void AstTraverser::visitReLoop(ReLoop_ptr re_loop_term) {
+  if (term_pre_callback_ and term_pre_callback_(re_loop_term)) {
+    visit(re_loop_term->term);
+  }
+
+  if (term_post_callback_) {
+    term_post_callback_(re_loop_term);
+  }
+}
+
 void AstTraverser::visitToRegex(ToRegex_ptr to_regex_term) {
   if (term_pre_callback_ and term_pre_callback_(to_regex_term)) {
     visit(to_regex_term->term);

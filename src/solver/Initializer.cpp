@@ -267,6 +267,9 @@ void Initializer::visitRePlus(RePlus_ptr re_plus_term) {
 void Initializer::visitReOpt(ReOpt_ptr re_opt_term) {
 }
 
+void Initializer::visitReLoop(ReLoop_ptr re_loop_term) {
+}
+
 void Initializer::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 

@@ -223,6 +223,9 @@ void ConstantTermOptimization::visitRePlus(RePlus_ptr re_plus_term) {
 void ConstantTermOptimization::visitReOpt(ReOpt_ptr re_opt_term) {
 }
 
+void ConstantTermOptimization::visitReLoop(ReLoop_ptr re_loop_term) {
+}
+
 void ConstantTermOptimization::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 

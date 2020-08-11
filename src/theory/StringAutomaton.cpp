@@ -532,8 +532,34 @@ StringAutomaton_ptr StringAutomaton::MakeBegins(StringFormula_ptr formula) {
 	std::string left_data,right_data;
 	TransitionVector tv;
 
+  
+  auto coeff_map = formula->GetVariableCoefficientMap();
+	int num_vars = 0;
+	for(auto it : coeff_map) {
+		if(it.second != 0) {
+			num_vars++;
+		}
+	}
+
+	if(num_vars == 1) {
+		int num_tracks = formula->GetNumberOfVariables();
+		int left_track = formula->GetVariableIndex(1);
+		StringAutomaton_ptr string_auto;
+		string_auto = StringAutomaton::MakeRegexAuto(formula->GetConstant()+".*");
+
+		formula->SetConstant("");
+		if(num_tracks == 1) {
+			result_auto = new StringAutomaton(dfaCopy(string_auto->getDFA()),num_tracks,DEFAULT_NUM_OF_VARIABLES);
+		} else {
+			result_auto = new StringAutomaton(string_auto->getDFA(),left_track,num_tracks,DEFAULT_NUM_OF_VARIABLES);
+		}
+		result_auto->SetFormula(formula);
+		delete string_auto;
+		return result_auto;
+	}
+
 	left_track = formula->GetVariableIndex(1);
-	right_track = formula->GetVariableIndex(2);
+  right_track = formula->GetVariableIndex(2);
 
 	int var = VAR_PER_TRACK;
 	int len = num_tracks * var;
@@ -699,6 +725,31 @@ StringAutomaton_ptr StringAutomaton::MakeNotBegins(StringFormula_ptr formula) {
 			left_track,right_track;
 	std::string left_data,right_data;
 	TransitionVector tv;
+  
+  auto coeff_map = formula->GetVariableCoefficientMap();
+	int num_vars = 0;
+	for(auto it : coeff_map) {
+		if(it.second != 0) {
+			num_vars++;
+		}
+	}
+
+	if(num_vars == 1) {
+		int num_tracks = formula->GetNumberOfVariables();
+		int left_track = formula->GetVariableIndex(1);
+		StringAutomaton_ptr string_auto;
+		string_auto = StringAutomaton::MakeRegexAuto("~(" + formula->GetConstant()+".*)");
+
+		formula->SetConstant("");
+		if(num_tracks == 1) {
+			result_auto = new StringAutomaton(dfaCopy(string_auto->getDFA()),num_tracks,DEFAULT_NUM_OF_VARIABLES);
+		} else {
+			result_auto = new StringAutomaton(string_auto->getDFA(),left_track,num_tracks,DEFAULT_NUM_OF_VARIABLES);
+		}
+		result_auto->SetFormula(formula);
+		delete string_auto;
+		return result_auto;
+	}
 
   // notbegins w/ substring term
   if(formula->GetConstant() != "" and formula->GetConstant2() != "") {
@@ -885,6 +936,7 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
 		StringAutomaton_ptr string_auto;
 		string_auto = StringAutomaton::MakeString(formula->GetConstant());
 //<<<<<<< HEAD
+//<<<<<<< HEAD
 
     if(formula->GetType() == StringFormula::Type::EQ_CHARAT) {
       std::string regex_string = std::string(std::stoi(formula->GetConstant2()),'.');
@@ -896,6 +948,8 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
     }
 //=======
 //>>>>>>> master
+//=======
+//>>>>>>> policy
 
 		formula->SetConstant("");
 		if(num_tracks == 1) {
@@ -1617,7 +1671,34 @@ StringAutomaton_ptr StringAutomaton::Complement() {
 }
 
 StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
+//<<<<<<< HEAD
   StringAutomaton_ptr left_auto = nullptr, right_auto = nullptr;
+//=======
+	// if both autos are same size, we're good. Otherwise, if one auto has one track
+	// put it in a multi-track with the correct track.
+//  if(this->num_tracks_ != other_auto->num_tracks_) {
+////    LOG(INFO) << this->num_tracks_ << " , " << other_auto->num_tracks_;
+//    StringAutomaton_ptr small_auto, big_auto;
+//		if(this->num_tracks_ == 1 && other_auto->num_tracks_ != 1 && !this->formula_->IsConstant()) {
+//			small_auto = this;
+//			big_auto = other_auto;
+//		} else if(other_auto->num_tracks_ == 1 && !other_auto->formula_->IsConstant()) {
+//			small_auto = other_auto;
+//			big_auto = this;
+//		} else {
+//			LOG(FATAL) << "Intersection between incompatible StringAutomata";
+//		}
+//
+//		std::string variable_name = small_auto->formula_->GetVariableAtIndex(0);
+//    int index = big_auto->formula_->GetVariableIndex(variable_name);
+//    auto relation_other_auto = new StringAutomaton(small_auto->dfa_,index,big_auto->num_tracks_,small_auto->num_of_bdd_variables_);
+//    relation_other_auto->SetFormula(big_auto->GetFormula()->clone());
+//    auto intersect_auto = big_auto->Intersect(relation_other_auto);
+//    delete relation_other_auto;
+//    return intersect_auto;
+//  }
+//	auto intersect_dfa = Automaton::DFAIntersect(this->dfa_, other_auto->dfa_);
+//>>>>>>> policy
   StringFormula_ptr intersect_formula = nullptr;
 
 

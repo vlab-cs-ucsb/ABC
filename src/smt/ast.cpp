@@ -1893,6 +1893,104 @@ void ReOpt::visit_children(Visitor_ptr v) {
   v->visit(term);
 }
 
+ReLoop::ReLoop(Term_ptr term, Term_ptr lower, Term_ptr upper)
+    : Term(Term::Type::RELOOP),
+      term(term), lower(lower), upper(upper) {
+  if(upper == nullptr) {
+    this->upper = new TermConstant(new Primitive("", Primitive::Type::STRING));
+  }
+}
+
+ReLoop::ReLoop(const ReLoop& other)
+    : Term(other.type_) {
+  term = other.term->clone();
+}
+
+ReLoop_ptr ReLoop::clone() const {
+  return new ReLoop(*this);
+}
+
+ReLoop::~ReLoop() {
+  delete term;
+}
+
+std::string ReLoop::str() const {
+  return "re.Loop";
+}
+
+void ReLoop::accept(Visitor_ptr v) {
+  v->visitReLoop(this);
+}
+
+void ReLoop::visit_children(Visitor_ptr v) {
+  v->visit(term);
+  v->visit(lower);
+  v->visit(upper);
+}
+
+ReComp::ReComp(Term_ptr term)
+    : Term(Term::Type::RECOMP),
+      term(term) {
+}
+
+ReComp::ReComp(const ReComp& other)
+    : Term(other.type_) {
+  term = other.term->clone();
+}
+
+ReComp_ptr ReComp::clone() const {
+  return new ReComp(*this);
+}
+
+ReComp::~ReComp() {
+  delete term;
+}
+
+std::string ReComp::str() const {
+  return "re.comp";
+}
+
+void ReComp::accept(Visitor_ptr v) {
+  v->visitReComp(this);
+}
+
+void ReComp::visit_children(Visitor_ptr v) {
+  v->visit(term);
+}
+
+ReDiff::ReDiff(Term_ptr left_term, Term_ptr right_term)
+    : Term(Term::Type::REDIFF),
+      left_term(left_term), right_term(right_term) {
+}
+
+ReDiff::ReDiff(const ReDiff& other)
+    : Term(other.type_) {
+  left_term = other.left_term->clone();
+  right_term = other.right_term->clone();
+}
+
+ReDiff_ptr ReDiff::clone() const {
+  return new ReDiff(*this);
+}
+
+ReDiff::~ReDiff() {
+  delete left_term;
+  delete right_term;
+}
+
+std::string ReDiff::str() const {
+  return "re.diff";
+}
+
+void ReDiff::accept(Visitor_ptr v) {
+  v->visitReDiff(this);
+}
+
+void ReDiff::visit_children(Visitor_ptr v) {
+  v->visit(left_term);
+  v->visit(right_term);
+}
+
 ToRegex::ToRegex(Term_ptr term)
     : Term(Term::Type::TOREGEX),
       term(term) {
@@ -2529,6 +2627,7 @@ TermConstant_ptr ReRangeToRegex(Term_ptr left, Term_ptr right) {
   LOG(FATAL) << "handle re.range operation";
   return nullptr;
 }
+
 
 Or_ptr TransformIteToOr(Term_ptr ite_condition, Term_ptr ite_then_branch, Term_ptr ite_else_branch) {
   DVLOG(VLOG_LEVEL) << "Parser converts 'ite' term to 'or' term";

@@ -1369,6 +1369,9 @@ void VariableValueComputer::visitRePlus(RePlus_ptr re_plus_term) {
 void VariableValueComputer::visitReOpt(ReOpt_ptr re_opt_term) {
 }
 
+void VariableValueComputer::visitReLoop(ReLoop_ptr re_loop_term) {
+}
+
 void VariableValueComputer::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 
@@ -1431,6 +1434,8 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
         string_auto->SetFormula(formula);
       } else if (Theory::StringFormula::Type::VAR != formula->GetType()) {
       	LOG(FATAL) << "fix me";
+      } else {
+        LOG(FATAL) << "WAT";
       }
 //      string_auto->inspectAuto(false,true);
 //      symbol_table->get_value(qi_term->getVarName())->getStringAutomaton()->inspectAuto(false,true);

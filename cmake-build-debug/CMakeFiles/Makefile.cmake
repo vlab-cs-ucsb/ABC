@@ -7,6 +7,7 @@ set(CMAKE_DEPENDS_GENERATOR "Unix Makefiles")
 # The top level Makefile was generated from the following files:
 set(CMAKE_MAKEFILE_DEPENDS
   "CMakeCache.txt"
+<<<<<<< HEAD
   "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/CMakeCCompiler.cmake.in"
   "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/CMakeCCompilerABI.c"
   "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/CMakeCInformation.cmake"
@@ -85,6 +86,21 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/Compiler/zOS-CXX-DetermineCompiler.cmake"
   "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/Internal/FeatureTesting.cmake"
   "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/Platform/Linux-Determine-CXX.cmake"
+=======
+  "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/CMakeCInformation.cmake"
+  "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/CMakeCXXInformation.cmake"
+  "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/CMakeCommonLanguageInclude.cmake"
+  "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/CMakeExtraGeneratorDetermineCompilerMacrosAndIncludeDirs.cmake"
+  "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/CMakeFindCodeBlocks.cmake"
+  "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/CMakeGenericSystem.cmake"
+  "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/CMakeLanguageInformation.cmake"
+  "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/CMakeSystemSpecificInformation.cmake"
+  "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/CMakeSystemSpecificInitialize.cmake"
+  "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/Compiler/CMakeCommonCompilerMacros.cmake"
+  "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/Compiler/GNU-C.cmake"
+  "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/Compiler/GNU-CXX.cmake"
+  "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/Compiler/GNU.cmake"
+>>>>>>> policy
   "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/Platform/Linux-GNU-C.cmake"
   "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/Platform/Linux-GNU-CXX.cmake"
   "/home/will/clion-2018.1.1/bin/cmake/share/cmake-3.10/Modules/Platform/Linux-GNU.cmake"
@@ -95,8 +111,11 @@ set(CMAKE_MAKEFILE_DEPENDS
   "CMakeFiles/3.10.3/CMakeCCompiler.cmake"
   "CMakeFiles/3.10.3/CMakeCXXCompiler.cmake"
   "CMakeFiles/3.10.3/CMakeSystem.cmake"
+<<<<<<< HEAD
   "CMakeFiles/feature_tests.c"
   "CMakeFiles/feature_tests.cxx"
+=======
+>>>>>>> policy
   )
 
 # The corresponding makefile is:
@@ -107,11 +126,14 @@ set(CMAKE_MAKEFILE_OUTPUTS
 
 # Byproducts of CMake generate step:
 set(CMAKE_MAKEFILE_PRODUCTS
+<<<<<<< HEAD
   "CMakeFiles/3.10.3/CMakeSystem.cmake"
   "CMakeFiles/3.10.3/CMakeCCompiler.cmake"
   "CMakeFiles/3.10.3/CMakeCXXCompiler.cmake"
   "CMakeFiles/3.10.3/CMakeCCompiler.cmake"
   "CMakeFiles/3.10.3/CMakeCXXCompiler.cmake"
+=======
+>>>>>>> policy
   "CMakeFiles/CMakeDirectoryInformation.cmake"
   )
 

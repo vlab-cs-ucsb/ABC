@@ -296,6 +296,10 @@ void Ast2Dot::visitReOpt(ReOpt_ptr re_opt_term) {
   visitTerm(re_opt_term);
 }
 
+void Ast2Dot::visitReLoop(ReLoop_ptr re_loop_term) {
+  visitTerm(re_loop_term);
+}
+
 void Ast2Dot::visitToRegex(ToRegex_ptr to_regex_term) {
   visitTerm(to_regex_term);
 }

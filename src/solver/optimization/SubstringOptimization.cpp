@@ -239,6 +239,9 @@ void SubstringOptimization::visitRePlus(RePlus_ptr re_plus_term) {
 void SubstringOptimization::visitReOpt(ReOpt_ptr re_opt_term) {
 }
 
+void SubstringOptimization::visitReLoop(ReLoop_ptr re_loop_term) {
+}
+
 void SubstringOptimization::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 

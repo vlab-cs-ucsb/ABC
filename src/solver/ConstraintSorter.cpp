@@ -690,6 +690,10 @@ void ConstraintSorter::visitRePlus(RePlus_ptr re_plus_term) {
 void ConstraintSorter::visitReOpt(ReOpt_ptr re_opt_term) {
 }
 
+void ConstraintSorter::visitReLoop(ReLoop_ptr re_loop_term) {
+
+}
+
 void ConstraintSorter::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 
@@ -814,6 +818,17 @@ ConstraintSorter::TermNode_ptr ConstraintSorter::process_child_nodes(TermNode_pt
 }
 
 void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
+//<<<<<<< HEAD
+//=======
+	// if no count variable, just sort based on number of total variables in each term
+	if(ConstraintSorter::TermNode::count_var.empty()) {
+		std::stable_sort(term_node_list.begin(), term_node_list.end(),
+							[](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
+								return (left_node->numOfTotalVars() > right_node->numOfTotalVars());
+							});
+		return;
+	}
+//>>>>>>> policy
 
 //  LOG(INFO) << "-- Before size = " << term_node_list.size();
 

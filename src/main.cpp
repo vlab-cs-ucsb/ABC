@@ -436,6 +436,7 @@ int main(const int argc, const char **argv) {
     }
 
 //<<<<<<< HEAD
+//<<<<<<< HEAD
 //    if(not count_variable.empty()) {
 //      LOG(INFO) << "report var: " << count_variable;
 //      for (auto b : int_bounds) {
@@ -465,11 +466,16 @@ int main(const int argc, const char **argv) {
 //                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
 //      }
 //=======
+//=======
+//>>>>>>> policy
     if(count_variables.empty()) count_variables.push_back("");
 
 
     if (count_tuple) {
-//>>>>>>> master
+//<<<<<<< HEAD
+////>>>>>>> master
+//=======
+//>>>>>>> policy
       for (auto b : str_bounds) {
         start = std::chrono::steady_clock::now();
         auto count = driver.CountStrs(b);

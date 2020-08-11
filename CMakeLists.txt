@@ -2088,4 +2088,8 @@ add_executable(ABC
         test/theory/ArithmeticFormulaTest.cpp
         test/theory/ArithmeticFormulaTest.h
         test/theory/BinaryIntAutomatonTest.cpp
+<<<<<<< HEAD
         test/theory/BinaryIntAutomatonTest.h)
+=======
+        test/theory/BinaryIntAutomatonTest.h)
+>>>>>>> policy

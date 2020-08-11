@@ -245,6 +245,9 @@ void ConstantTermChecker::visitRePlus(RePlus_ptr re_plus_term) {
 void ConstantTermChecker::visitReOpt(ReOpt_ptr re_opt_term) {
 }
 
+void ConstantTermChecker::visitReLoop(ReLoop_ptr re_loop_term) {
+}
+
 void ConstantTermChecker::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 
@@ -266,6 +269,7 @@ void ConstantTermChecker::visitTermConstant(TermConstant_ptr term_constant) {
     string_value_ = term_constant->getValue(); 
   } else if (Primitive::Type::REGEX == term_constant->getValueType()) {
     std::string data = term_constant->getValue();
+
     Util::RegularExpression regular_expression (data);
     if (regular_expression.is_constant_string()) {
       term_constant->primitive->setType(Primitive::Type::STRING);

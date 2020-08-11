@@ -589,6 +589,9 @@ void ArithmeticFormulaGenerator::visitRePlus(RePlus_ptr re_plus_term) {
 void ArithmeticFormulaGenerator::visitReOpt(ReOpt_ptr re_opt_term) {
 }
 
+void ArithmeticFormulaGenerator::visitReLoop(ReLoop_ptr re_loop_term) {
+}
+
 void ArithmeticFormulaGenerator::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 

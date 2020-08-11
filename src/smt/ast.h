@@ -223,6 +223,9 @@ class Term : public Visitable {
     RESTAR,
     REPLUS,
     REOPT,
+    RELOOP,
+    RECOMP,
+    REDIFF,
     TOREGEX,
     UNKNOWN,
     ASQUALIDENTIFIER,
@@ -973,6 +976,51 @@ class ReOpt : public Term {
   Term_ptr term;
 };
 
+class ReLoop : public Term {
+ public:
+  ReLoop(Term_ptr, Term_ptr, Term_ptr = nullptr);
+  ReLoop(const ReLoop&);
+  virtual ReLoop_ptr clone() const override;
+  virtual ~ReLoop();
+
+  virtual std::string str() const override;
+  virtual void accept(Visitor_ptr) override;
+  virtual void visit_children(Visitor_ptr) override;
+
+  Term_ptr term;
+  Term_ptr lower;
+  Term_ptr upper;
+};
+
+class ReComp : public Term {
+ public:
+  ReComp(Term_ptr);
+  ReComp(const ReComp&);
+  virtual ReComp_ptr clone() const override;
+  virtual ~ReComp();
+
+  virtual std::string str() const override;
+  virtual void accept(Visitor_ptr) override;
+  virtual void visit_children(Visitor_ptr) override;
+
+  Term_ptr term;
+};
+
+class ReDiff : public Term {
+ public:
+  ReDiff(Term_ptr, Term_ptr);
+  ReDiff(const ReDiff&);
+  virtual ReDiff_ptr clone() const override;
+  virtual ~ReDiff();
+
+  virtual std::string str() const override;
+  virtual void accept(Visitor_ptr) override;
+  virtual void visit_children(Visitor_ptr) override;
+
+  Term_ptr left_term;
+  Term_ptr right_term;
+};
+
 class ToRegex : public Term {
  public:
   ToRegex(Term_ptr);
@@ -1315,6 +1363,7 @@ class Variable : public TVariable {
  */
 
 TermConstant_ptr ReRangeToRegex(Term_ptr left, Term_ptr right);
+
 SMT::Or_ptr TransformIteToOr(SMT::Term_ptr ite_condition, SMT::Term_ptr ite_then_branch, SMT::Term_ptr ite_else_branch);
 TermList_ptr CreateTermList(int, ...);
 

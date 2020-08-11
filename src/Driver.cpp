@@ -170,6 +170,7 @@ void Driver::InitializeSolver() {
 void Driver::Solve() {
   Solver::ConstraintSolver* constraint_solver = nullptr;
 
+//<<<<<<< HEAD
 #ifdef USE_CACHE
   if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING) {
     constraint_solver = new Solver::CachingConstraintSolver(script_, symbol_table_, constraint_information_, cache_manager_);
@@ -201,6 +202,15 @@ void Driver::Solve() {
 //  is_model_counter_cached_ = false;
 //  model_counter_ = Solver::ModelCounter();
 //>>>>>>> master
+//=======
+//  Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
+//  constraint_solver.start();
+//
+//
+//
+//  is_model_counter_cached_ = false;
+//  model_counter_ = Solver::ModelCounter();
+//>>>>>>> policy
 }
 
 bool Driver::is_sat() {
@@ -569,6 +579,7 @@ void Driver::SetModelCounter() {
   int num_str_var = 0;
 
   for (const auto &variable_entry : getSatisfyingVariables()) {
+
     if (variable_entry.second == nullptr) {
       continue;
     }
@@ -591,6 +602,7 @@ void Driver::SetModelCounter() {
       case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
 				auto string_auto = variable_entry.second->getStringAutomaton();
         auto formula = string_auto->GetFormula();
+        if(formula->GetNumberOfVariables() == 0) break; // don't count non-variable automata
         for (auto& el : formula->GetVariableCoefficientMap()) {
           if (symbol_table_->get_variable_unsafe(el.first) != nullptr) {
             ++num_str_var;

@@ -251,6 +251,12 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
         }
         clearTermValuesAndLocalLetVars();
       }
+
+      if(!is_scope_satisfiable) {
+        auto val = new Value(is_scope_satisfiable);
+        string_constraint_solver_.set_term_value(term,val);
+      }
+
       is_satisfiable = is_satisfiable or is_scope_satisfiable;
       symbol_table_->pop_scope();
     }
@@ -659,6 +665,21 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
 }
 
 void ConstraintSolver::visitIn(In_ptr in_term) {
+//  if(symbol_table_->top_scope() == root_) {
+//    auto left_var = dynamic_cast<QualIdentifier_ptr>(in_term->left_term);
+//    auto right_constant = dynamic_cast<TermConstant_ptr>(in_term->right_term);
+//    Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
+//    auto temp = StringAutomaton::MakeRegexAuto(right_constant->getValue());
+//    auto formula = new Theory::StringFormula();
+//    formula->AddVariable(left_var->getVarName(), 1);
+//    formula->SetType(Theory::StringFormula::Type::VAR);
+//    temp->SetFormula(formula);
+//    Value_ptr val = new Value(temp);
+//    bool result1 = symbol_table_->IntersectValue(var, val);
+//    setTermValue(in_term, new Value(result1));
+//    return;
+//  }
+
   visit_children_of(in_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *in_term;
 
@@ -1209,6 +1230,10 @@ void ConstraintSolver::visitRePlus(RePlus_ptr re_plus_term) {
 }
 
 void ConstraintSolver::visitReOpt(ReOpt_ptr re_opt_term) {
+}
+
+void ConstraintSolver::visitReLoop(ReLoop_ptr re_loop_term) {
+
 }
 
 void ConstraintSolver::visitUnknownTerm(Unknown_ptr unknown_term) {

@@ -216,6 +216,9 @@ void CharAtOptimization::visitRePlus(RePlus_ptr re_plus_term) {
 void CharAtOptimization::visitReOpt(ReOpt_ptr re_opt_term) {
 }
 
+void CharAtOptimization::visitReLoop(ReLoop_ptr re_loop_term) {
+}
+
 void CharAtOptimization::visitToRegex(ToRegex_ptr to_regex_term) {
 }
 
