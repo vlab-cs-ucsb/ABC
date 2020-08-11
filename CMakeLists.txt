@@ -1991,6 +1991,10 @@ add_executable(ABC
         src/solver/AstTraverser.h
         src/solver/ConstraintInformation.cpp
         src/solver/ConstraintInformation.h
+        src/solver/CachingConstraintSolver.cpp
+        src/solver/CachingConstraintSolver.h
+        src/solver/CacheManager.cpp
+        src/solver/CacheManager.h
         src/solver/ConstraintSolver.cpp
         src/solver/ConstraintSolver.h
         src/solver/ConstraintSorter.cpp
@@ -2013,6 +2017,8 @@ add_executable(ABC
         src/solver/Initializer.h
         src/solver/ModelCounter.cpp
         src/solver/ModelCounter.h
+        src/solver/Renamer.cpp
+        src/solver/Renamer.h
         src/solver/StringConstraintSolver.cpp
         src/solver/StringConstraintSolver.h
         src/solver/StringFormulaGenerator.cpp
@@ -2088,8 +2094,4 @@ add_executable(ABC
         test/theory/ArithmeticFormulaTest.cpp
         test/theory/ArithmeticFormulaTest.h
         test/theory/BinaryIntAutomatonTest.cpp
-<<<<<<< HEAD
         test/theory/BinaryIntAutomatonTest.h)
-=======
-        test/theory/BinaryIntAutomatonTest.h)
->>>>>>> policy

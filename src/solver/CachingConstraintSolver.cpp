@@ -65,7 +65,6 @@ void CachingConstraintSolver::visitAssert(Assert_ptr assert_command) {
   root_key_ = key;
 
   has_cached_result = cache_manager_->Get(key,cached_data);
-
   // if we have cached result, import it and go from there
   if (has_cached_result) {
     std::stringstream is(cached_data);
@@ -120,8 +119,8 @@ void CachingConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
     return;
   } else {
-    arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
-    string_constraint_solver_.collect_string_constraint_info();
+//    arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
+//    string_constraint_solver_.collect_string_constraint_info();
   }
 
   check_and_visit(assert_command->term);
@@ -302,6 +301,8 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
       }
     }
 
+    LOG(INFO) << "Sending kids";
+
     std::thread constraint_info_collector([this,and_term] {
       arithmetic_constraint_solver_.collect_arithmetic_constraint_info(and_term);
       string_constraint_solver_.collect_string_constraint_info(and_term);
@@ -373,6 +374,7 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
       constraint_info_collector.join();
     }
 
+    LOG(INFO) << "Got KIDS";
 
     // at this point, we have the most updated values to start with
     // if terms_to_solve is empty, then we got the whole formula from the cache and we're done

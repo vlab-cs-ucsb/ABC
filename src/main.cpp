@@ -84,6 +84,7 @@ int main(const int argc, const char **argv) {
     } if (argv[i] == std::string("-id") or argv[i] == std::string("--input-dir")) {
 #ifndef HAVE_EXP_FS
       std::cout << "WARNING: arg -id without stdc++fs; ignoring argument" << std::endl;
+
 #else
       dir_name = argv[i + 1];
 #endif
@@ -213,6 +214,7 @@ int main(const int argc, const char **argv) {
 
 #ifdef HAVE_EXP_FS
   if(!dir_name.empty()) {
+    LOG(INFO) << dir_name;
     for(const auto & entry : std::experimental::filesystem::directory_iterator(dir_name)) {
       files.push_back(entry.path());
     }
@@ -252,52 +254,53 @@ int main(const int argc, const char **argv) {
   auto mc_time = count_end-count_end;
 
 
-  int num_files = files.size();
-  int i = 0;
-
-  int num_unsat = 0;
-
-  for(auto iter : files) {
-    file = new std::ifstream(iter);
-    in = file;
-
-    init_start = std::chrono::steady_clock::now();
-    driver.Parse(in);
-    driver.InitializeSolver();
-    init_end = std::chrono::steady_clock::now();
-
-    init_time += init_end-init_start;
-
-    if(driver.symbol_table_->has_count_variable() and count_variable.empty()) {
-      count_variable = driver.symbol_table_->get_count_variable()->getName();
-    }
-
-    if(!output_root.empty() && VLOG_IS_ON(30)) {
-      driver.ast2dot(output_root + "/" + std::to_string(i) + ".dot");
-    }
-
-    driver.Solve();
-
-    if(not driver.is_sat()) {
-      num_unsat++;
-    } else {
-      count_start = std::chrono::steady_clock::now();
-      auto cc = driver.CountVariable(count_variable,50);
-
-      count_end = std::chrono::steady_clock::now();
-      mc_time += count_end-count_start;
-
-      count_start = std::chrono::steady_clock::now();
-      count_end = std::chrono::steady_clock::now();
-      count_time += count_end-count_start;
-    }
-    driver.reset();
-    delete file;
-    i++;
-  }
-
-  end = std::chrono::steady_clock::now();
-  auto solving_time = end - start;
+//  int num_files = files.size();
+//  int i = 0;
+//
+//  int num_unsat = 0;
+//
+//  for(auto iter : files) {
+//    file = new std::ifstream(iter);
+//    in = file;
+//
+//    init_start = std::chrono::steady_clock::now();
+//    driver.Parse(in);
+//    driver.InitializeSolver();
+//    init_end = std::chrono::steady_clock::now();
+//
+//    init_time += init_end-init_start;
+//
+//    if(driver.symbol_table_->has_count_variable() and count_variable.empty()) {
+//      count_variable = driver.symbol_table_->get_count_variable()->getName();
+//    }
+//
+//    if(!output_root.empty() && VLOG_IS_ON(30)) {
+//      driver.ast2dot(output_root + "/" + std::to_string(i) + ".dot");
+//    }
+//
+//    driver.Solve();
+//
+//    if(not driver.is_sat()) {
+//      num_unsat++;
+//    } else {
+//      count_start = std::chrono::steady_clock::now();
+//      auto cc = driver.CountVariable(count_variable,50);
+//      std::cout << cc << std::endl;
+//      count_end = std::chrono::steady_clock::now();
+//      mc_time += count_end-count_start;
+//
+//      count_start = std::chrono::steady_clock::now();
+//      count_end = std::chrono::steady_clock::now();
+//      count_time += count_end-count_start;
+//    }
+//    driver.reset();
+//    delete file;
+//    i++;
+//    std::cin.get();
+//  }
+//
+//  end = std::chrono::steady_clock::now();
+//  auto solving_time = end - start;
 //  LOG(INFO)<< "total time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
 //  LOG(INFO)<< "init  time: " << std::chrono::duration <long double, std::milli> (init_time).count() << " ms";
 //  LOG(INFO)<< "cache time: " << std::chrono::duration <long double, std::milli> (driver.diff).count() << " ms";
@@ -318,17 +321,25 @@ int main(const int argc, const char **argv) {
 
   // LOG(INFO) << "Solving second...";
 
-  // driver.Parse(in);
-  // driver.InitializeSolver();
+  file = new std::ifstream(file_name);
+  in = file;
 
+  start = std::chrono::steady_clock::now();
+  LOG(INFO) << 1;
+  driver.Parse(in);
+  LOG(INFO) << 12;
+  driver.InitializeSolver();
+LOG(INFO) << 2;
   #ifndef NDEBUG
   if (VLOG_IS_ON(30) and not output_root.empty()) {
     driver.ast2dot(output_root + "/optimized.dot");
   }
   #endif
-
-  // driver.Solve();?
-
+LOG(INFO) << 3;
+  driver.Solve();
+LOG(INFO) << 4;
+  end = std::chrono::steady_clock::now();
+  auto solving_time = end - start;
 
   LOG(INFO)<< "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
 //  LOG(INFO) << "Solved! solver_id = " << driver.getCurrentID();
@@ -426,14 +437,14 @@ int main(const int argc, const char **argv) {
     }
 
 //    LOG(INFO)<< "report is_sat: SAT time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
-    if(num_models > 0) {
-    	start = std::chrono::steady_clock::now();
-    	driver.GetModels(0,num_models);
-    	end = std::chrono::steady_clock::now();
-    	auto count_time = end-start;
-    	LOG(INFO) << "report get_models: " << num_models << " time: "
-    	                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
-    }
+//    if(num_models > 0) {
+//    	start = std::chrono::steady_clock::now();
+//    	driver.GetModels(0,num_models);
+//    	end = std::chrono::steady_clock::now();
+//    	auto count_time = end-start;
+//    	LOG(INFO) << "report get_models: " << num_models << " time: "
+//    	                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+//    }
 
 //<<<<<<< HEAD
 //<<<<<<< HEAD

@@ -417,9 +417,57 @@ CMakeFiles/ABC.dir/src/solver/ConstraintInformation.cpp.o.provides: CMakeFiles/A
 CMakeFiles/ABC.dir/src/solver/ConstraintInformation.cpp.o.provides.build: CMakeFiles/ABC.dir/src/solver/ConstraintInformation.cpp.o
 
 
+CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.o: CMakeFiles/ABC.dir/flags.make
+CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.o: ../src/solver/CachingConstraintSolver.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.o -c /home/will/vlab/projects/ABC/src/solver/CachingConstraintSolver.cpp
+
+CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/will/vlab/projects/ABC/src/solver/CachingConstraintSolver.cpp > CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.i
+
+CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/will/vlab/projects/ABC/src/solver/CachingConstraintSolver.cpp -o CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.s
+
+CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.o.requires:
+
+.PHONY : CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.o.requires
+
+CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.o.provides: CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.o.requires
+	$(MAKE) -f CMakeFiles/ABC.dir/build.make CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.o.provides.build
+.PHONY : CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.o.provides
+
+CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.o.provides.build: CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.o
+
+
+CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.o: CMakeFiles/ABC.dir/flags.make
+CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.o: ../src/solver/CacheManager.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.o -c /home/will/vlab/projects/ABC/src/solver/CacheManager.cpp
+
+CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/will/vlab/projects/ABC/src/solver/CacheManager.cpp > CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.i
+
+CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/will/vlab/projects/ABC/src/solver/CacheManager.cpp -o CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.s
+
+CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.o.requires:
+
+.PHONY : CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.o.requires
+
+CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.o.provides: CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.o.requires
+	$(MAKE) -f CMakeFiles/ABC.dir/build.make CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.o.provides.build
+.PHONY : CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.o.provides
+
+CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.o.provides.build: CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.o
+
+
 CMakeFiles/ABC.dir/src/solver/ConstraintSolver.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/solver/ConstraintSolver.cpp.o: ../src/solver/ConstraintSolver.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/ABC.dir/src/solver/ConstraintSolver.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/ABC.dir/src/solver/ConstraintSolver.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/ConstraintSolver.cpp.o -c /home/will/vlab/projects/ABC/src/solver/ConstraintSolver.cpp
 
 CMakeFiles/ABC.dir/src/solver/ConstraintSolver.cpp.i: cmake_force
@@ -443,7 +491,7 @@ CMakeFiles/ABC.dir/src/solver/ConstraintSolver.cpp.o.provides.build: CMakeFiles/
 
 CMakeFiles/ABC.dir/src/solver/ConstraintSorter.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/solver/ConstraintSorter.cpp.o: ../src/solver/ConstraintSorter.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/ABC.dir/src/solver/ConstraintSorter.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object CMakeFiles/ABC.dir/src/solver/ConstraintSorter.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/ConstraintSorter.cpp.o -c /home/will/vlab/projects/ABC/src/solver/ConstraintSorter.cpp
 
 CMakeFiles/ABC.dir/src/solver/ConstraintSorter.cpp.i: cmake_force
@@ -467,7 +515,7 @@ CMakeFiles/ABC.dir/src/solver/ConstraintSorter.cpp.o.provides.build: CMakeFiles/
 
 CMakeFiles/ABC.dir/src/solver/Counter.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/solver/Counter.cpp.o: ../src/solver/Counter.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/ABC.dir/src/solver/Counter.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object CMakeFiles/ABC.dir/src/solver/Counter.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/Counter.cpp.o -c /home/will/vlab/projects/ABC/src/solver/Counter.cpp
 
 CMakeFiles/ABC.dir/src/solver/Counter.cpp.i: cmake_force
@@ -491,7 +539,7 @@ CMakeFiles/ABC.dir/src/solver/Counter.cpp.o.provides.build: CMakeFiles/ABC.dir/s
 
 CMakeFiles/ABC.dir/src/solver/DependencySlicer.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/solver/DependencySlicer.cpp.o: ../src/solver/DependencySlicer.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object CMakeFiles/ABC.dir/src/solver/DependencySlicer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building CXX object CMakeFiles/ABC.dir/src/solver/DependencySlicer.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/DependencySlicer.cpp.o -c /home/will/vlab/projects/ABC/src/solver/DependencySlicer.cpp
 
 CMakeFiles/ABC.dir/src/solver/DependencySlicer.cpp.i: cmake_force
@@ -515,7 +563,7 @@ CMakeFiles/ABC.dir/src/solver/DependencySlicer.cpp.o.provides.build: CMakeFiles/
 
 CMakeFiles/ABC.dir/src/solver/EquivalenceClass.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/solver/EquivalenceClass.cpp.o: ../src/solver/EquivalenceClass.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object CMakeFiles/ABC.dir/src/solver/EquivalenceClass.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building CXX object CMakeFiles/ABC.dir/src/solver/EquivalenceClass.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/EquivalenceClass.cpp.o -c /home/will/vlab/projects/ABC/src/solver/EquivalenceClass.cpp
 
 CMakeFiles/ABC.dir/src/solver/EquivalenceClass.cpp.i: cmake_force
@@ -539,7 +587,7 @@ CMakeFiles/ABC.dir/src/solver/EquivalenceClass.cpp.o.provides.build: CMakeFiles/
 
 CMakeFiles/ABC.dir/src/solver/EquivalenceGenerator.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/solver/EquivalenceGenerator.cpp.o: ../src/solver/EquivalenceGenerator.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building CXX object CMakeFiles/ABC.dir/src/solver/EquivalenceGenerator.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building CXX object CMakeFiles/ABC.dir/src/solver/EquivalenceGenerator.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/EquivalenceGenerator.cpp.o -c /home/will/vlab/projects/ABC/src/solver/EquivalenceGenerator.cpp
 
 CMakeFiles/ABC.dir/src/solver/EquivalenceGenerator.cpp.i: cmake_force
@@ -563,7 +611,7 @@ CMakeFiles/ABC.dir/src/solver/EquivalenceGenerator.cpp.o.provides.build: CMakeFi
 
 CMakeFiles/ABC.dir/src/solver/EquivClassRuleRunner.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/solver/EquivClassRuleRunner.cpp.o: ../src/solver/EquivClassRuleRunner.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building CXX object CMakeFiles/ABC.dir/src/solver/EquivClassRuleRunner.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building CXX object CMakeFiles/ABC.dir/src/solver/EquivClassRuleRunner.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/EquivClassRuleRunner.cpp.o -c /home/will/vlab/projects/ABC/src/solver/EquivClassRuleRunner.cpp
 
 CMakeFiles/ABC.dir/src/solver/EquivClassRuleRunner.cpp.i: cmake_force
@@ -587,7 +635,7 @@ CMakeFiles/ABC.dir/src/solver/EquivClassRuleRunner.cpp.o.provides.build: CMakeFi
 
 CMakeFiles/ABC.dir/src/solver/FormulaOptimizer.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/solver/FormulaOptimizer.cpp.o: ../src/solver/FormulaOptimizer.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building CXX object CMakeFiles/ABC.dir/src/solver/FormulaOptimizer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building CXX object CMakeFiles/ABC.dir/src/solver/FormulaOptimizer.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/FormulaOptimizer.cpp.o -c /home/will/vlab/projects/ABC/src/solver/FormulaOptimizer.cpp
 
 CMakeFiles/ABC.dir/src/solver/FormulaOptimizer.cpp.i: cmake_force
@@ -611,7 +659,7 @@ CMakeFiles/ABC.dir/src/solver/FormulaOptimizer.cpp.o.provides.build: CMakeFiles/
 
 CMakeFiles/ABC.dir/src/solver/ImplicationRunner.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/solver/ImplicationRunner.cpp.o: ../src/solver/ImplicationRunner.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building CXX object CMakeFiles/ABC.dir/src/solver/ImplicationRunner.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building CXX object CMakeFiles/ABC.dir/src/solver/ImplicationRunner.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/ImplicationRunner.cpp.o -c /home/will/vlab/projects/ABC/src/solver/ImplicationRunner.cpp
 
 CMakeFiles/ABC.dir/src/solver/ImplicationRunner.cpp.i: cmake_force
@@ -635,7 +683,7 @@ CMakeFiles/ABC.dir/src/solver/ImplicationRunner.cpp.o.provides.build: CMakeFiles
 
 CMakeFiles/ABC.dir/src/solver/Initializer.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/solver/Initializer.cpp.o: ../src/solver/Initializer.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building CXX object CMakeFiles/ABC.dir/src/solver/Initializer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building CXX object CMakeFiles/ABC.dir/src/solver/Initializer.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/Initializer.cpp.o -c /home/will/vlab/projects/ABC/src/solver/Initializer.cpp
 
 CMakeFiles/ABC.dir/src/solver/Initializer.cpp.i: cmake_force
@@ -659,7 +707,7 @@ CMakeFiles/ABC.dir/src/solver/Initializer.cpp.o.provides.build: CMakeFiles/ABC.d
 
 CMakeFiles/ABC.dir/src/solver/ModelCounter.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/solver/ModelCounter.cpp.o: ../src/solver/ModelCounter.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building CXX object CMakeFiles/ABC.dir/src/solver/ModelCounter.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building CXX object CMakeFiles/ABC.dir/src/solver/ModelCounter.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/ModelCounter.cpp.o -c /home/will/vlab/projects/ABC/src/solver/ModelCounter.cpp
 
 CMakeFiles/ABC.dir/src/solver/ModelCounter.cpp.i: cmake_force
@@ -681,9 +729,33 @@ CMakeFiles/ABC.dir/src/solver/ModelCounter.cpp.o.provides: CMakeFiles/ABC.dir/sr
 CMakeFiles/ABC.dir/src/solver/ModelCounter.cpp.o.provides.build: CMakeFiles/ABC.dir/src/solver/ModelCounter.cpp.o
 
 
+CMakeFiles/ABC.dir/src/solver/Renamer.cpp.o: CMakeFiles/ABC.dir/flags.make
+CMakeFiles/ABC.dir/src/solver/Renamer.cpp.o: ../src/solver/Renamer.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building CXX object CMakeFiles/ABC.dir/src/solver/Renamer.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/Renamer.cpp.o -c /home/will/vlab/projects/ABC/src/solver/Renamer.cpp
+
+CMakeFiles/ABC.dir/src/solver/Renamer.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ABC.dir/src/solver/Renamer.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/will/vlab/projects/ABC/src/solver/Renamer.cpp > CMakeFiles/ABC.dir/src/solver/Renamer.cpp.i
+
+CMakeFiles/ABC.dir/src/solver/Renamer.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ABC.dir/src/solver/Renamer.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/will/vlab/projects/ABC/src/solver/Renamer.cpp -o CMakeFiles/ABC.dir/src/solver/Renamer.cpp.s
+
+CMakeFiles/ABC.dir/src/solver/Renamer.cpp.o.requires:
+
+.PHONY : CMakeFiles/ABC.dir/src/solver/Renamer.cpp.o.requires
+
+CMakeFiles/ABC.dir/src/solver/Renamer.cpp.o.provides: CMakeFiles/ABC.dir/src/solver/Renamer.cpp.o.requires
+	$(MAKE) -f CMakeFiles/ABC.dir/build.make CMakeFiles/ABC.dir/src/solver/Renamer.cpp.o.provides.build
+.PHONY : CMakeFiles/ABC.dir/src/solver/Renamer.cpp.o.provides
+
+CMakeFiles/ABC.dir/src/solver/Renamer.cpp.o.provides.build: CMakeFiles/ABC.dir/src/solver/Renamer.cpp.o
+
+
 CMakeFiles/ABC.dir/src/solver/StringConstraintSolver.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/solver/StringConstraintSolver.cpp.o: ../src/solver/StringConstraintSolver.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building CXX object CMakeFiles/ABC.dir/src/solver/StringConstraintSolver.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building CXX object CMakeFiles/ABC.dir/src/solver/StringConstraintSolver.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/StringConstraintSolver.cpp.o -c /home/will/vlab/projects/ABC/src/solver/StringConstraintSolver.cpp
 
 CMakeFiles/ABC.dir/src/solver/StringConstraintSolver.cpp.i: cmake_force
@@ -707,7 +779,7 @@ CMakeFiles/ABC.dir/src/solver/StringConstraintSolver.cpp.o.provides.build: CMake
 
 CMakeFiles/ABC.dir/src/solver/StringFormulaGenerator.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/solver/StringFormulaGenerator.cpp.o: ../src/solver/StringFormulaGenerator.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building CXX object CMakeFiles/ABC.dir/src/solver/StringFormulaGenerator.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Building CXX object CMakeFiles/ABC.dir/src/solver/StringFormulaGenerator.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/StringFormulaGenerator.cpp.o -c /home/will/vlab/projects/ABC/src/solver/StringFormulaGenerator.cpp
 
 CMakeFiles/ABC.dir/src/solver/StringFormulaGenerator.cpp.i: cmake_force
@@ -731,7 +803,7 @@ CMakeFiles/ABC.dir/src/solver/StringFormulaGenerator.cpp.o.provides.build: CMake
 
 CMakeFiles/ABC.dir/src/solver/SymbolTable.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/solver/SymbolTable.cpp.o: ../src/solver/SymbolTable.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building CXX object CMakeFiles/ABC.dir/src/solver/SymbolTable.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Building CXX object CMakeFiles/ABC.dir/src/solver/SymbolTable.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/SymbolTable.cpp.o -c /home/will/vlab/projects/ABC/src/solver/SymbolTable.cpp
 
 CMakeFiles/ABC.dir/src/solver/SymbolTable.cpp.i: cmake_force
@@ -755,7 +827,7 @@ CMakeFiles/ABC.dir/src/solver/SymbolTable.cpp.o.provides.build: CMakeFiles/ABC.d
 
 CMakeFiles/ABC.dir/src/solver/SyntacticOptimizer.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/solver/SyntacticOptimizer.cpp.o: ../src/solver/SyntacticOptimizer.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building CXX object CMakeFiles/ABC.dir/src/solver/SyntacticOptimizer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Building CXX object CMakeFiles/ABC.dir/src/solver/SyntacticOptimizer.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/SyntacticOptimizer.cpp.o -c /home/will/vlab/projects/ABC/src/solver/SyntacticOptimizer.cpp
 
 CMakeFiles/ABC.dir/src/solver/SyntacticOptimizer.cpp.i: cmake_force
@@ -779,7 +851,7 @@ CMakeFiles/ABC.dir/src/solver/SyntacticOptimizer.cpp.o.provides.build: CMakeFile
 
 CMakeFiles/ABC.dir/src/solver/SyntacticProcessor.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/solver/SyntacticProcessor.cpp.o: ../src/solver/SyntacticProcessor.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Building CXX object CMakeFiles/ABC.dir/src/solver/SyntacticProcessor.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_34) "Building CXX object CMakeFiles/ABC.dir/src/solver/SyntacticProcessor.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/SyntacticProcessor.cpp.o -c /home/will/vlab/projects/ABC/src/solver/SyntacticProcessor.cpp
 
 CMakeFiles/ABC.dir/src/solver/SyntacticProcessor.cpp.i: cmake_force
@@ -803,7 +875,7 @@ CMakeFiles/ABC.dir/src/solver/SyntacticProcessor.cpp.o.provides.build: CMakeFile
 
 CMakeFiles/ABC.dir/src/solver/Value.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/solver/Value.cpp.o: ../src/solver/Value.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Building CXX object CMakeFiles/ABC.dir/src/solver/Value.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_35) "Building CXX object CMakeFiles/ABC.dir/src/solver/Value.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/Value.cpp.o -c /home/will/vlab/projects/ABC/src/solver/Value.cpp
 
 CMakeFiles/ABC.dir/src/solver/Value.cpp.i: cmake_force
@@ -827,7 +899,7 @@ CMakeFiles/ABC.dir/src/solver/Value.cpp.o.provides.build: CMakeFiles/ABC.dir/src
 
 CMakeFiles/ABC.dir/src/solver/VariableValueComputer.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/solver/VariableValueComputer.cpp.o: ../src/solver/VariableValueComputer.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Building CXX object CMakeFiles/ABC.dir/src/solver/VariableValueComputer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_36) "Building CXX object CMakeFiles/ABC.dir/src/solver/VariableValueComputer.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/solver/VariableValueComputer.cpp.o -c /home/will/vlab/projects/ABC/src/solver/VariableValueComputer.cpp
 
 CMakeFiles/ABC.dir/src/solver/VariableValueComputer.cpp.i: cmake_force
@@ -851,7 +923,7 @@ CMakeFiles/ABC.dir/src/solver/VariableValueComputer.cpp.o.provides.build: CMakeF
 
 CMakeFiles/ABC.dir/src/theory/options/Theory.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/theory/options/Theory.cpp.o: ../src/theory/options/Theory.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_34) "Building CXX object CMakeFiles/ABC.dir/src/theory/options/Theory.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_37) "Building CXX object CMakeFiles/ABC.dir/src/theory/options/Theory.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/theory/options/Theory.cpp.o -c /home/will/vlab/projects/ABC/src/theory/options/Theory.cpp
 
 CMakeFiles/ABC.dir/src/theory/options/Theory.cpp.i: cmake_force
@@ -875,7 +947,7 @@ CMakeFiles/ABC.dir/src/theory/options/Theory.cpp.o.provides.build: CMakeFiles/AB
 
 CMakeFiles/ABC.dir/src/theory/ArithmeticFormula.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/theory/ArithmeticFormula.cpp.o: ../src/theory/ArithmeticFormula.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_35) "Building CXX object CMakeFiles/ABC.dir/src/theory/ArithmeticFormula.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_38) "Building CXX object CMakeFiles/ABC.dir/src/theory/ArithmeticFormula.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/theory/ArithmeticFormula.cpp.o -c /home/will/vlab/projects/ABC/src/theory/ArithmeticFormula.cpp
 
 CMakeFiles/ABC.dir/src/theory/ArithmeticFormula.cpp.i: cmake_force
@@ -899,7 +971,7 @@ CMakeFiles/ABC.dir/src/theory/ArithmeticFormula.cpp.o.provides.build: CMakeFiles
 
 CMakeFiles/ABC.dir/src/theory/Automaton.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/theory/Automaton.cpp.o: ../src/theory/Automaton.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_36) "Building CXX object CMakeFiles/ABC.dir/src/theory/Automaton.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_39) "Building CXX object CMakeFiles/ABC.dir/src/theory/Automaton.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/theory/Automaton.cpp.o -c /home/will/vlab/projects/ABC/src/theory/Automaton.cpp
 
 CMakeFiles/ABC.dir/src/theory/Automaton.cpp.i: cmake_force
@@ -923,7 +995,7 @@ CMakeFiles/ABC.dir/src/theory/Automaton.cpp.o.provides.build: CMakeFiles/ABC.dir
 
 CMakeFiles/ABC.dir/src/theory/BinaryIntAutomaton.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/theory/BinaryIntAutomaton.cpp.o: ../src/theory/BinaryIntAutomaton.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_37) "Building CXX object CMakeFiles/ABC.dir/src/theory/BinaryIntAutomaton.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_40) "Building CXX object CMakeFiles/ABC.dir/src/theory/BinaryIntAutomaton.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/theory/BinaryIntAutomaton.cpp.o -c /home/will/vlab/projects/ABC/src/theory/BinaryIntAutomaton.cpp
 
 CMakeFiles/ABC.dir/src/theory/BinaryIntAutomaton.cpp.i: cmake_force
@@ -947,7 +1019,7 @@ CMakeFiles/ABC.dir/src/theory/BinaryIntAutomaton.cpp.o.provides.build: CMakeFile
 
 CMakeFiles/ABC.dir/src/theory/BinaryState.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/theory/BinaryState.cpp.o: ../src/theory/BinaryState.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_38) "Building CXX object CMakeFiles/ABC.dir/src/theory/BinaryState.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_41) "Building CXX object CMakeFiles/ABC.dir/src/theory/BinaryState.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/theory/BinaryState.cpp.o -c /home/will/vlab/projects/ABC/src/theory/BinaryState.cpp
 
 CMakeFiles/ABC.dir/src/theory/BinaryState.cpp.i: cmake_force
@@ -971,7 +1043,7 @@ CMakeFiles/ABC.dir/src/theory/BinaryState.cpp.o.provides.build: CMakeFiles/ABC.d
 
 CMakeFiles/ABC.dir/src/theory/BoolAutomaton.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/theory/BoolAutomaton.cpp.o: ../src/theory/BoolAutomaton.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_39) "Building CXX object CMakeFiles/ABC.dir/src/theory/BoolAutomaton.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_42) "Building CXX object CMakeFiles/ABC.dir/src/theory/BoolAutomaton.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/theory/BoolAutomaton.cpp.o -c /home/will/vlab/projects/ABC/src/theory/BoolAutomaton.cpp
 
 CMakeFiles/ABC.dir/src/theory/BoolAutomaton.cpp.i: cmake_force
@@ -995,7 +1067,7 @@ CMakeFiles/ABC.dir/src/theory/BoolAutomaton.cpp.o.provides.build: CMakeFiles/ABC
 
 CMakeFiles/ABC.dir/src/theory/DAGraph.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/theory/DAGraph.cpp.o: ../src/theory/DAGraph.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_40) "Building CXX object CMakeFiles/ABC.dir/src/theory/DAGraph.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_43) "Building CXX object CMakeFiles/ABC.dir/src/theory/DAGraph.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/theory/DAGraph.cpp.o -c /home/will/vlab/projects/ABC/src/theory/DAGraph.cpp
 
 CMakeFiles/ABC.dir/src/theory/DAGraph.cpp.i: cmake_force
@@ -1019,7 +1091,7 @@ CMakeFiles/ABC.dir/src/theory/DAGraph.cpp.o.provides.build: CMakeFiles/ABC.dir/s
 
 CMakeFiles/ABC.dir/src/theory/DAGraphNode.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/theory/DAGraphNode.cpp.o: ../src/theory/DAGraphNode.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_41) "Building CXX object CMakeFiles/ABC.dir/src/theory/DAGraphNode.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_44) "Building CXX object CMakeFiles/ABC.dir/src/theory/DAGraphNode.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/theory/DAGraphNode.cpp.o -c /home/will/vlab/projects/ABC/src/theory/DAGraphNode.cpp
 
 CMakeFiles/ABC.dir/src/theory/DAGraphNode.cpp.i: cmake_force
@@ -1043,7 +1115,7 @@ CMakeFiles/ABC.dir/src/theory/DAGraphNode.cpp.o.provides.build: CMakeFiles/ABC.d
 
 CMakeFiles/ABC.dir/src/theory/Formula.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/theory/Formula.cpp.o: ../src/theory/Formula.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_42) "Building CXX object CMakeFiles/ABC.dir/src/theory/Formula.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_45) "Building CXX object CMakeFiles/ABC.dir/src/theory/Formula.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/theory/Formula.cpp.o -c /home/will/vlab/projects/ABC/src/theory/Formula.cpp
 
 CMakeFiles/ABC.dir/src/theory/Formula.cpp.i: cmake_force
@@ -1067,7 +1139,7 @@ CMakeFiles/ABC.dir/src/theory/Formula.cpp.o.provides.build: CMakeFiles/ABC.dir/s
 
 CMakeFiles/ABC.dir/src/theory/Graph.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/theory/Graph.cpp.o: ../src/theory/Graph.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_43) "Building CXX object CMakeFiles/ABC.dir/src/theory/Graph.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_46) "Building CXX object CMakeFiles/ABC.dir/src/theory/Graph.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/theory/Graph.cpp.o -c /home/will/vlab/projects/ABC/src/theory/Graph.cpp
 
 CMakeFiles/ABC.dir/src/theory/Graph.cpp.i: cmake_force
@@ -1091,7 +1163,7 @@ CMakeFiles/ABC.dir/src/theory/Graph.cpp.o.provides.build: CMakeFiles/ABC.dir/src
 
 CMakeFiles/ABC.dir/src/theory/GraphNode.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/theory/GraphNode.cpp.o: ../src/theory/GraphNode.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_44) "Building CXX object CMakeFiles/ABC.dir/src/theory/GraphNode.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_47) "Building CXX object CMakeFiles/ABC.dir/src/theory/GraphNode.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/theory/GraphNode.cpp.o -c /home/will/vlab/projects/ABC/src/theory/GraphNode.cpp
 
 CMakeFiles/ABC.dir/src/theory/GraphNode.cpp.i: cmake_force
@@ -1115,7 +1187,7 @@ CMakeFiles/ABC.dir/src/theory/GraphNode.cpp.o.provides.build: CMakeFiles/ABC.dir
 
 CMakeFiles/ABC.dir/src/theory/IntAutomaton.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/theory/IntAutomaton.cpp.o: ../src/theory/IntAutomaton.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_45) "Building CXX object CMakeFiles/ABC.dir/src/theory/IntAutomaton.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_48) "Building CXX object CMakeFiles/ABC.dir/src/theory/IntAutomaton.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/theory/IntAutomaton.cpp.o -c /home/will/vlab/projects/ABC/src/theory/IntAutomaton.cpp
 
 CMakeFiles/ABC.dir/src/theory/IntAutomaton.cpp.i: cmake_force
@@ -1139,7 +1211,7 @@ CMakeFiles/ABC.dir/src/theory/IntAutomaton.cpp.o.provides.build: CMakeFiles/ABC.
 
 CMakeFiles/ABC.dir/src/theory/SemilinearSet.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/theory/SemilinearSet.cpp.o: ../src/theory/SemilinearSet.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_46) "Building CXX object CMakeFiles/ABC.dir/src/theory/SemilinearSet.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_49) "Building CXX object CMakeFiles/ABC.dir/src/theory/SemilinearSet.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/theory/SemilinearSet.cpp.o -c /home/will/vlab/projects/ABC/src/theory/SemilinearSet.cpp
 
 CMakeFiles/ABC.dir/src/theory/SemilinearSet.cpp.i: cmake_force
@@ -1163,7 +1235,7 @@ CMakeFiles/ABC.dir/src/theory/SemilinearSet.cpp.o.provides.build: CMakeFiles/ABC
 
 CMakeFiles/ABC.dir/src/theory/StringAutomaton.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/theory/StringAutomaton.cpp.o: ../src/theory/StringAutomaton.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_47) "Building CXX object CMakeFiles/ABC.dir/src/theory/StringAutomaton.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_50) "Building CXX object CMakeFiles/ABC.dir/src/theory/StringAutomaton.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/theory/StringAutomaton.cpp.o -c /home/will/vlab/projects/ABC/src/theory/StringAutomaton.cpp
 
 CMakeFiles/ABC.dir/src/theory/StringAutomaton.cpp.i: cmake_force
@@ -1187,7 +1259,7 @@ CMakeFiles/ABC.dir/src/theory/StringAutomaton.cpp.o.provides.build: CMakeFiles/A
 
 CMakeFiles/ABC.dir/src/theory/StringEncoding.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/theory/StringEncoding.cpp.o: ../src/theory/StringEncoding.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_48) "Building CXX object CMakeFiles/ABC.dir/src/theory/StringEncoding.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_51) "Building CXX object CMakeFiles/ABC.dir/src/theory/StringEncoding.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/theory/StringEncoding.cpp.o -c /home/will/vlab/projects/ABC/src/theory/StringEncoding.cpp
 
 CMakeFiles/ABC.dir/src/theory/StringEncoding.cpp.i: cmake_force
@@ -1211,7 +1283,7 @@ CMakeFiles/ABC.dir/src/theory/StringEncoding.cpp.o.provides.build: CMakeFiles/AB
 
 CMakeFiles/ABC.dir/src/theory/StringFormula.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/theory/StringFormula.cpp.o: ../src/theory/StringFormula.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_49) "Building CXX object CMakeFiles/ABC.dir/src/theory/StringFormula.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_52) "Building CXX object CMakeFiles/ABC.dir/src/theory/StringFormula.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/theory/StringFormula.cpp.o -c /home/will/vlab/projects/ABC/src/theory/StringFormula.cpp
 
 CMakeFiles/ABC.dir/src/theory/StringFormula.cpp.i: cmake_force
@@ -1235,7 +1307,7 @@ CMakeFiles/ABC.dir/src/theory/StringFormula.cpp.o.provides.build: CMakeFiles/ABC
 
 CMakeFiles/ABC.dir/src/theory/SymbolicCounter.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/theory/SymbolicCounter.cpp.o: ../src/theory/SymbolicCounter.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_50) "Building CXX object CMakeFiles/ABC.dir/src/theory/SymbolicCounter.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_53) "Building CXX object CMakeFiles/ABC.dir/src/theory/SymbolicCounter.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/theory/SymbolicCounter.cpp.o -c /home/will/vlab/projects/ABC/src/theory/SymbolicCounter.cpp
 
 CMakeFiles/ABC.dir/src/theory/SymbolicCounter.cpp.i: cmake_force
@@ -1259,7 +1331,7 @@ CMakeFiles/ABC.dir/src/theory/SymbolicCounter.cpp.o.provides.build: CMakeFiles/A
 
 CMakeFiles/ABC.dir/src/theory/UnaryAutomaton.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/theory/UnaryAutomaton.cpp.o: ../src/theory/UnaryAutomaton.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_51) "Building CXX object CMakeFiles/ABC.dir/src/theory/UnaryAutomaton.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_54) "Building CXX object CMakeFiles/ABC.dir/src/theory/UnaryAutomaton.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/theory/UnaryAutomaton.cpp.o -c /home/will/vlab/projects/ABC/src/theory/UnaryAutomaton.cpp
 
 CMakeFiles/ABC.dir/src/theory/UnaryAutomaton.cpp.i: cmake_force
@@ -1283,7 +1355,7 @@ CMakeFiles/ABC.dir/src/theory/UnaryAutomaton.cpp.o.provides.build: CMakeFiles/AB
 
 CMakeFiles/ABC.dir/src/utils/Cmd.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/utils/Cmd.cpp.o: ../src/utils/Cmd.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_52) "Building CXX object CMakeFiles/ABC.dir/src/utils/Cmd.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_55) "Building CXX object CMakeFiles/ABC.dir/src/utils/Cmd.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/utils/Cmd.cpp.o -c /home/will/vlab/projects/ABC/src/utils/Cmd.cpp
 
 CMakeFiles/ABC.dir/src/utils/Cmd.cpp.i: cmake_force
@@ -1307,7 +1379,7 @@ CMakeFiles/ABC.dir/src/utils/Cmd.cpp.o.provides.build: CMakeFiles/ABC.dir/src/ut
 
 CMakeFiles/ABC.dir/src/utils/List.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/utils/List.cpp.o: ../src/utils/List.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_53) "Building CXX object CMakeFiles/ABC.dir/src/utils/List.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_56) "Building CXX object CMakeFiles/ABC.dir/src/utils/List.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/utils/List.cpp.o -c /home/will/vlab/projects/ABC/src/utils/List.cpp
 
 CMakeFiles/ABC.dir/src/utils/List.cpp.i: cmake_force
@@ -1331,7 +1403,7 @@ CMakeFiles/ABC.dir/src/utils/List.cpp.o.provides.build: CMakeFiles/ABC.dir/src/u
 
 CMakeFiles/ABC.dir/src/utils/Math.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/utils/Math.cpp.o: ../src/utils/Math.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_54) "Building CXX object CMakeFiles/ABC.dir/src/utils/Math.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_57) "Building CXX object CMakeFiles/ABC.dir/src/utils/Math.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/utils/Math.cpp.o -c /home/will/vlab/projects/ABC/src/utils/Math.cpp
 
 CMakeFiles/ABC.dir/src/utils/Math.cpp.i: cmake_force
@@ -1355,7 +1427,7 @@ CMakeFiles/ABC.dir/src/utils/Math.cpp.o.provides.build: CMakeFiles/ABC.dir/src/u
 
 CMakeFiles/ABC.dir/src/utils/Program.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/utils/Program.cpp.o: ../src/utils/Program.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_55) "Building CXX object CMakeFiles/ABC.dir/src/utils/Program.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_58) "Building CXX object CMakeFiles/ABC.dir/src/utils/Program.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/utils/Program.cpp.o -c /home/will/vlab/projects/ABC/src/utils/Program.cpp
 
 CMakeFiles/ABC.dir/src/utils/Program.cpp.i: cmake_force
@@ -1379,7 +1451,7 @@ CMakeFiles/ABC.dir/src/utils/Program.cpp.o.provides.build: CMakeFiles/ABC.dir/sr
 
 CMakeFiles/ABC.dir/src/utils/RegularExpression.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/utils/RegularExpression.cpp.o: ../src/utils/RegularExpression.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_56) "Building CXX object CMakeFiles/ABC.dir/src/utils/RegularExpression.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_59) "Building CXX object CMakeFiles/ABC.dir/src/utils/RegularExpression.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/utils/RegularExpression.cpp.o -c /home/will/vlab/projects/ABC/src/utils/RegularExpression.cpp
 
 CMakeFiles/ABC.dir/src/utils/RegularExpression.cpp.i: cmake_force
@@ -1403,7 +1475,7 @@ CMakeFiles/ABC.dir/src/utils/RegularExpression.cpp.o.provides.build: CMakeFiles/
 
 CMakeFiles/ABC.dir/src/utils/Serialize.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/utils/Serialize.cpp.o: ../src/utils/Serialize.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_57) "Building CXX object CMakeFiles/ABC.dir/src/utils/Serialize.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_60) "Building CXX object CMakeFiles/ABC.dir/src/utils/Serialize.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/utils/Serialize.cpp.o -c /home/will/vlab/projects/ABC/src/utils/Serialize.cpp
 
 CMakeFiles/ABC.dir/src/utils/Serialize.cpp.i: cmake_force
@@ -1427,7 +1499,7 @@ CMakeFiles/ABC.dir/src/utils/Serialize.cpp.o.provides.build: CMakeFiles/ABC.dir/
 
 CMakeFiles/ABC.dir/src/Driver.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/Driver.cpp.o: ../src/Driver.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_58) "Building CXX object CMakeFiles/ABC.dir/src/Driver.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_61) "Building CXX object CMakeFiles/ABC.dir/src/Driver.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/Driver.cpp.o -c /home/will/vlab/projects/ABC/src/Driver.cpp
 
 CMakeFiles/ABC.dir/src/Driver.cpp.i: cmake_force
@@ -1451,7 +1523,7 @@ CMakeFiles/ABC.dir/src/Driver.cpp.o.provides.build: CMakeFiles/ABC.dir/src/Drive
 
 CMakeFiles/ABC.dir/src/main.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/main.cpp.o: ../src/main.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_59) "Building CXX object CMakeFiles/ABC.dir/src/main.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_62) "Building CXX object CMakeFiles/ABC.dir/src/main.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/main.cpp.o -c /home/will/vlab/projects/ABC/src/main.cpp
 
 CMakeFiles/ABC.dir/src/main.cpp.i: cmake_force
@@ -1475,7 +1547,7 @@ CMakeFiles/ABC.dir/src/main.cpp.o.provides.build: CMakeFiles/ABC.dir/src/main.cp
 
 CMakeFiles/ABC.dir/src/vlab_cs_ucsb_edu_DriverProxy.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/src/vlab_cs_ucsb_edu_DriverProxy.cpp.o: ../src/vlab_cs_ucsb_edu_DriverProxy.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_60) "Building CXX object CMakeFiles/ABC.dir/src/vlab_cs_ucsb_edu_DriverProxy.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_63) "Building CXX object CMakeFiles/ABC.dir/src/vlab_cs_ucsb_edu_DriverProxy.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/src/vlab_cs_ucsb_edu_DriverProxy.cpp.o -c /home/will/vlab/projects/ABC/src/vlab_cs_ucsb_edu_DriverProxy.cpp
 
 CMakeFiles/ABC.dir/src/vlab_cs_ucsb_edu_DriverProxy.cpp.i: cmake_force
@@ -1499,7 +1571,7 @@ CMakeFiles/ABC.dir/src/vlab_cs_ucsb_edu_DriverProxy.cpp.o.provides.build: CMakeF
 
 CMakeFiles/ABC.dir/test/helper/FileHelper.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/test/helper/FileHelper.cpp.o: ../test/helper/FileHelper.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_61) "Building CXX object CMakeFiles/ABC.dir/test/helper/FileHelper.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_64) "Building CXX object CMakeFiles/ABC.dir/test/helper/FileHelper.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/test/helper/FileHelper.cpp.o -c /home/will/vlab/projects/ABC/test/helper/FileHelper.cpp
 
 CMakeFiles/ABC.dir/test/helper/FileHelper.cpp.i: cmake_force
@@ -1523,7 +1595,7 @@ CMakeFiles/ABC.dir/test/helper/FileHelper.cpp.o.provides.build: CMakeFiles/ABC.d
 
 CMakeFiles/ABC.dir/test/theory/mock/MockBinaryIntAutomaton.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/test/theory/mock/MockBinaryIntAutomaton.cpp.o: ../test/theory/mock/MockBinaryIntAutomaton.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_62) "Building CXX object CMakeFiles/ABC.dir/test/theory/mock/MockBinaryIntAutomaton.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_65) "Building CXX object CMakeFiles/ABC.dir/test/theory/mock/MockBinaryIntAutomaton.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/test/theory/mock/MockBinaryIntAutomaton.cpp.o -c /home/will/vlab/projects/ABC/test/theory/mock/MockBinaryIntAutomaton.cpp
 
 CMakeFiles/ABC.dir/test/theory/mock/MockBinaryIntAutomaton.cpp.i: cmake_force
@@ -1547,7 +1619,7 @@ CMakeFiles/ABC.dir/test/theory/mock/MockBinaryIntAutomaton.cpp.o.provides.build:
 
 CMakeFiles/ABC.dir/test/theory/ArithmeticFormulaTest.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/test/theory/ArithmeticFormulaTest.cpp.o: ../test/theory/ArithmeticFormulaTest.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_63) "Building CXX object CMakeFiles/ABC.dir/test/theory/ArithmeticFormulaTest.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_66) "Building CXX object CMakeFiles/ABC.dir/test/theory/ArithmeticFormulaTest.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/test/theory/ArithmeticFormulaTest.cpp.o -c /home/will/vlab/projects/ABC/test/theory/ArithmeticFormulaTest.cpp
 
 CMakeFiles/ABC.dir/test/theory/ArithmeticFormulaTest.cpp.i: cmake_force
@@ -1571,7 +1643,7 @@ CMakeFiles/ABC.dir/test/theory/ArithmeticFormulaTest.cpp.o.provides.build: CMake
 
 CMakeFiles/ABC.dir/test/theory/BinaryIntAutomatonTest.cpp.o: CMakeFiles/ABC.dir/flags.make
 CMakeFiles/ABC.dir/test/theory/BinaryIntAutomatonTest.cpp.o: ../test/theory/BinaryIntAutomatonTest.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_64) "Building CXX object CMakeFiles/ABC.dir/test/theory/BinaryIntAutomatonTest.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_67) "Building CXX object CMakeFiles/ABC.dir/test/theory/BinaryIntAutomatonTest.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ABC.dir/test/theory/BinaryIntAutomatonTest.cpp.o -c /home/will/vlab/projects/ABC/test/theory/BinaryIntAutomatonTest.cpp
 
 CMakeFiles/ABC.dir/test/theory/BinaryIntAutomatonTest.cpp.i: cmake_force
@@ -1610,6 +1682,8 @@ ABC_OBJECTS = \
 "CMakeFiles/ABC.dir/src/solver/Ast2Dot.cpp.o" \
 "CMakeFiles/ABC.dir/src/solver/AstTraverser.cpp.o" \
 "CMakeFiles/ABC.dir/src/solver/ConstraintInformation.cpp.o" \
+"CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.o" \
+"CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.o" \
 "CMakeFiles/ABC.dir/src/solver/ConstraintSolver.cpp.o" \
 "CMakeFiles/ABC.dir/src/solver/ConstraintSorter.cpp.o" \
 "CMakeFiles/ABC.dir/src/solver/Counter.cpp.o" \
@@ -1621,6 +1695,7 @@ ABC_OBJECTS = \
 "CMakeFiles/ABC.dir/src/solver/ImplicationRunner.cpp.o" \
 "CMakeFiles/ABC.dir/src/solver/Initializer.cpp.o" \
 "CMakeFiles/ABC.dir/src/solver/ModelCounter.cpp.o" \
+"CMakeFiles/ABC.dir/src/solver/Renamer.cpp.o" \
 "CMakeFiles/ABC.dir/src/solver/StringConstraintSolver.cpp.o" \
 "CMakeFiles/ABC.dir/src/solver/StringFormulaGenerator.cpp.o" \
 "CMakeFiles/ABC.dir/src/solver/SymbolTable.cpp.o" \
@@ -1678,6 +1753,8 @@ ABC: CMakeFiles/ABC.dir/src/solver/ArithmeticFormulaGenerator.cpp.o
 ABC: CMakeFiles/ABC.dir/src/solver/Ast2Dot.cpp.o
 ABC: CMakeFiles/ABC.dir/src/solver/AstTraverser.cpp.o
 ABC: CMakeFiles/ABC.dir/src/solver/ConstraintInformation.cpp.o
+ABC: CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.o
+ABC: CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.o
 ABC: CMakeFiles/ABC.dir/src/solver/ConstraintSolver.cpp.o
 ABC: CMakeFiles/ABC.dir/src/solver/ConstraintSorter.cpp.o
 ABC: CMakeFiles/ABC.dir/src/solver/Counter.cpp.o
@@ -1689,6 +1766,7 @@ ABC: CMakeFiles/ABC.dir/src/solver/FormulaOptimizer.cpp.o
 ABC: CMakeFiles/ABC.dir/src/solver/ImplicationRunner.cpp.o
 ABC: CMakeFiles/ABC.dir/src/solver/Initializer.cpp.o
 ABC: CMakeFiles/ABC.dir/src/solver/ModelCounter.cpp.o
+ABC: CMakeFiles/ABC.dir/src/solver/Renamer.cpp.o
 ABC: CMakeFiles/ABC.dir/src/solver/StringConstraintSolver.cpp.o
 ABC: CMakeFiles/ABC.dir/src/solver/StringFormulaGenerator.cpp.o
 ABC: CMakeFiles/ABC.dir/src/solver/SymbolTable.cpp.o
@@ -1729,7 +1807,7 @@ ABC: CMakeFiles/ABC.dir/test/theory/ArithmeticFormulaTest.cpp.o
 ABC: CMakeFiles/ABC.dir/test/theory/BinaryIntAutomatonTest.cpp.o
 ABC: CMakeFiles/ABC.dir/build.make
 ABC: CMakeFiles/ABC.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_65) "Linking CXX executable ABC"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/will/vlab/projects/ABC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_68) "Linking CXX executable ABC"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/ABC.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -1752,6 +1830,8 @@ CMakeFiles/ABC.dir/requires: CMakeFiles/ABC.dir/src/solver/ArithmeticFormulaGene
 CMakeFiles/ABC.dir/requires: CMakeFiles/ABC.dir/src/solver/Ast2Dot.cpp.o.requires
 CMakeFiles/ABC.dir/requires: CMakeFiles/ABC.dir/src/solver/AstTraverser.cpp.o.requires
 CMakeFiles/ABC.dir/requires: CMakeFiles/ABC.dir/src/solver/ConstraintInformation.cpp.o.requires
+CMakeFiles/ABC.dir/requires: CMakeFiles/ABC.dir/src/solver/CachingConstraintSolver.cpp.o.requires
+CMakeFiles/ABC.dir/requires: CMakeFiles/ABC.dir/src/solver/CacheManager.cpp.o.requires
 CMakeFiles/ABC.dir/requires: CMakeFiles/ABC.dir/src/solver/ConstraintSolver.cpp.o.requires
 CMakeFiles/ABC.dir/requires: CMakeFiles/ABC.dir/src/solver/ConstraintSorter.cpp.o.requires
 CMakeFiles/ABC.dir/requires: CMakeFiles/ABC.dir/src/solver/Counter.cpp.o.requires
@@ -1763,6 +1843,7 @@ CMakeFiles/ABC.dir/requires: CMakeFiles/ABC.dir/src/solver/FormulaOptimizer.cpp.
 CMakeFiles/ABC.dir/requires: CMakeFiles/ABC.dir/src/solver/ImplicationRunner.cpp.o.requires
 CMakeFiles/ABC.dir/requires: CMakeFiles/ABC.dir/src/solver/Initializer.cpp.o.requires
 CMakeFiles/ABC.dir/requires: CMakeFiles/ABC.dir/src/solver/ModelCounter.cpp.o.requires
+CMakeFiles/ABC.dir/requires: CMakeFiles/ABC.dir/src/solver/Renamer.cpp.o.requires
 CMakeFiles/ABC.dir/requires: CMakeFiles/ABC.dir/src/solver/StringConstraintSolver.cpp.o.requires
 CMakeFiles/ABC.dir/requires: CMakeFiles/ABC.dir/src/solver/StringFormulaGenerator.cpp.o.requires
 CMakeFiles/ABC.dir/requires: CMakeFiles/ABC.dir/src/solver/SymbolTable.cpp.o.requires

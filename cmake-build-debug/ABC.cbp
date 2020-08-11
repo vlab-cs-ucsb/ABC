@@ -5818,6 +5818,18 @@
 		<Unit filename="/home/will/vlab/projects/ABC/src/solver/AstTraverser.h">
 			<Option target="ABC"/>
 		</Unit>
+		<Unit filename="/home/will/vlab/projects/ABC/src/solver/CacheManager.cpp">
+			<Option target="ABC"/>
+		</Unit>
+		<Unit filename="/home/will/vlab/projects/ABC/src/solver/CacheManager.h">
+			<Option target="ABC"/>
+		</Unit>
+		<Unit filename="/home/will/vlab/projects/ABC/src/solver/CachingConstraintSolver.cpp">
+			<Option target="ABC"/>
+		</Unit>
+		<Unit filename="/home/will/vlab/projects/ABC/src/solver/CachingConstraintSolver.h">
+			<Option target="ABC"/>
+		</Unit>
 		<Unit filename="/home/will/vlab/projects/ABC/src/solver/ConstraintInformation.cpp">
 			<Option target="ABC"/>
 		</Unit>
@@ -5888,6 +5900,12 @@
 			<Option target="ABC"/>
 		</Unit>
 		<Unit filename="/home/will/vlab/projects/ABC/src/solver/ModelCounter.h">
+			<Option target="ABC"/>
+		</Unit>
+		<Unit filename="/home/will/vlab/projects/ABC/src/solver/Renamer.cpp">
+			<Option target="ABC"/>
+		</Unit>
+		<Unit filename="/home/will/vlab/projects/ABC/src/solver/Renamer.h">
 			<Option target="ABC"/>
 		</Unit>
 		<Unit filename="/home/will/vlab/projects/ABC/src/solver/StringConstraintSolver.cpp">

@@ -12,15 +12,20 @@ namespace Vlab {
 namespace Solver {
 
 CacheManager::CacheManager() {
+  LOG(INFO) << 10;
   if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING || Option::Solver::AUTOMATA_CACHING) {
     rdx_ = new redox::Redox(std::cout,redox::log::Level::Off);
     rdx_->noWait(true);
+    LOG(INFO) << 11;
     if(!rdx_->connect("localhost", 6379)) {
       LOG(FATAL) << "Could not connect to redis server";
     }
+    LOG(INFO) << 12;
   } else {
+    LOG(INFO) << 13;
     rdx_ = nullptr;
   }
+  LOG(INFO) << 14;
 }
 
 CacheManager::~CacheManager() {

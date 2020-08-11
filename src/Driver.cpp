@@ -21,10 +21,6 @@ Driver::Driver()
   incremental_states_.clear();
   cached_values_.clear();
   cached_bounded_values_.clear();
-
-#ifdef USE_CACHE
-  cache_manager_ = new Solver::CacheManager();
-#endif
 }
 
 Driver::~Driver() {
@@ -107,6 +103,10 @@ void Driver::ast2dot(std::string file_name) {
 }
 
 void Driver::InitializeSolver() {
+
+  #ifdef USE_CACHE
+    cache_manager_ = new Solver::CacheManager();
+  #endif
 
   symbol_table_ = new Solver::SymbolTable();
   symbol_table_->push_scope(script_);
