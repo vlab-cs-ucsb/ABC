@@ -889,10 +889,10 @@ std::ostream& operator<<(std::ostream& os, const Automaton& automaton) {
 }
 
 void Automaton::CleanUp() {
-  LOG(INFO) << "num_hits    = " << num_hits;
-  LOG(INFO) << "num_misses  = " << num_misses;
-  LOG(INFO) << "hit ratio   = " << (double)num_hits / (double)(num_misses+num_hits);
-  LOG(INFO) << "ChangeMapIndices time = " << std::chrono::duration <long double, std::milli> (diff).count() << " ms";
+//  LOG(INFO) << "num_hits    = " << num_hits;
+//  LOG(INFO) << "num_misses  = " << num_misses;
+//  LOG(INFO) << "hit ratio   = " << (double)num_hits / (double)(num_misses+num_hits);
+//  LOG(INFO) << "ChangeMapIndices time = " << std::chrono::duration <long double, std::milli> (diff).count() << " ms";
 
 	for(auto &it : bdd_variable_indices) {
 		delete[] it.second;

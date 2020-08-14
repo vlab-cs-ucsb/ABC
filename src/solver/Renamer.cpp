@@ -280,7 +280,7 @@ void Renamer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 }
 
 void Renamer::visitTermConstant(TermConstant_ptr term_constant) {
-
+  return;
     //
 ////
 ////

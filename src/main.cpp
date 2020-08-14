@@ -42,11 +42,11 @@ std::vector<std::string> parse_count_vars(std::string);
 
 int main(const int argc, const char **argv) {
 
-#ifdef USE_CACHE
-  std::cout << "YES" << std::endl;
-#else
-  std::cout << "NO" << std::endl;
-#endif
+//#ifdef USE_CACHE
+//  std::cout << "YES" << std::endl;
+//#else
+//  std::cout << "NO" << std::endl;
+//#endif
 
   google::InstallFailureSignalHandler();
 
@@ -325,19 +325,14 @@ int main(const int argc, const char **argv) {
   in = file;
 
   start = std::chrono::steady_clock::now();
-  LOG(INFO) << 1;
   driver.Parse(in);
-  LOG(INFO) << 12;
   driver.InitializeSolver();
-LOG(INFO) << 2;
   #ifndef NDEBUG
   if (VLOG_IS_ON(30) and not output_root.empty()) {
     driver.ast2dot(output_root + "/optimized.dot");
   }
   #endif
-LOG(INFO) << 3;
   driver.Solve();
-LOG(INFO) << 4;
   end = std::chrono::steady_clock::now();
   auto solving_time = end - start;
 

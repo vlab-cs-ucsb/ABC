@@ -25,10 +25,10 @@ CachingConstraintSolver::CachingConstraintSolver(Script_ptr script, SymbolTable_
 }
 
 CachingConstraintSolver::~CachingConstraintSolver() {
-  for(auto it = serializers_.begin(); it != serializers_.end(); it++) {
-    std::thread &t = *it;
-    t.join();
-  }
+//  for(auto it = serializers_.begin(); it != serializers_.end(); it++) {
+//    std::thread &t = *it;
+//    t.join();
+//  }
 }
 
 void CachingConstraintSolver::start() {
@@ -116,6 +116,8 @@ void CachingConstraintSolver::visitAssert(Assert_ptr assert_command) {
       symbol_table_->set_value(rep_var,import_value);
       delete import_value;
     }
+
+//    LOG(FATAL) << "GOT IT!";
 
     return;
   } else {
@@ -301,18 +303,16 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
       }
     }
 
-    LOG(INFO) << "Sending kids";
-
     std::thread constraint_info_collector([this,and_term] {
       arithmetic_constraint_solver_.collect_arithmetic_constraint_info(and_term);
       string_constraint_solver_.collect_string_constraint_info(and_term);
     });
 
+    constraint_info_collector.join();
 
 
     // if we have cached result, import it and go from there
     if (has_cached_result) {
-
       int num_string_to_read = 0;
       int num_int_to_read = 0;
 
@@ -353,7 +353,7 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
       }
 
       // join the collector thread so we can set symbol table up
-      constraint_info_collector.join();
+//      constraint_info_collector.join();
 
 
       for(auto it : str_autos_to_add) {
@@ -371,10 +371,8 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
         symbol_table_->set_value(rep_var, import_value,false);
       }
     } else {
-      constraint_info_collector.join();
+//      constraint_info_collector.join();
     }
-
-    LOG(INFO) << "Got KIDS";
 
     // at this point, we have the most updated values to start with
     // if terms_to_solve is empty, then we got the whole formula from the cache and we're done
@@ -441,9 +439,20 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
       auto tk = std::make_shared<std::map<int,std::string>>(term_keys.begin(),term_keys.end());
       auto revk = std::make_shared<std::map<std::string,int>>(reverse_term_keys.begin(),reverse_term_keys.end());
 
+//      for(auto iter : value_map) {
+//        if(iter.second->getType() == Value::Type::STRING_AUTOMATON) {
+//          LOG(INFO) << "--- STR AUTO ---";
+//          for(auto var_map : iter.second->getStringAutomaton()->GetFormula()->GetVariableCoefficientMap()) {
+//            LOG(INFO) << "  " << var_map.first;
+//          }
+//        }
+//      }
+//      std::cin.get();
+
       symbol_table_->LockValues();
       bool is_done = terms_to_solve.empty();
       key = term_keys[and_term->term_list->size()];
+
       serializers_.push_back(std::thread([root_key_=root_key_,cache_manager_=cache_manager_,symbol_table_=symbol_table_, revk, tk, key, &value_map,is_done,is_satisfiable, max] {
         std::vector<Theory::BinaryIntAutomaton_ptr>* bin_stuff_to_store = new std::vector<Theory::BinaryIntAutomaton_ptr>();
         std::vector<Theory::StringAutomaton_ptr>* str_stuff_to_store = new std::vector<Theory::StringAutomaton_ptr>();
@@ -463,7 +472,7 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
             }
             if (iter.second->getType() == Value::Type::STRING_AUTOMATON and
                 iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
-              if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
+              if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() <= 1) {
                 continue;
               }
               num_string_to_write++;
@@ -492,6 +501,9 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
             auto export_auto = it;
 
             {
+//              LOG(INFO) << "SAVING: ";
+//              LOG(INFO) << export_auto->GetFormula()->str();
+
               cereal::BinaryOutputArchive ar(os);
               export_auto->save(ar);
             }
@@ -529,6 +541,15 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
         delete str_stuff_to_store;
         delete bin_stuff_to_store;
       }));
+
+//      serializers_.back().join();
+//      serializers_.pop_back();
+
+      for(auto it = serializers_.begin(); it != serializers_.end(); it++) {
+        std::thread &t = *it;
+        t.join();
+      }
+      serializers_.clear();
 
       if(not is_satisfiable) {
         YieldWhileValuesLocked();

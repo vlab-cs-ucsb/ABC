@@ -161,8 +161,8 @@ void Driver::InitializeSolver() {
 
 #ifdef USE_CACHE
   if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
-    Solver::Renamer renamer(script_, symbol_table_);
-    renamer.start();
+//    Solver::Renamer renamer(script_, symbol_table_);
+//    renamer.start();
   }
 #endif
 }
@@ -506,6 +506,8 @@ Solver::ModelCounter& Driver::GetModelCounterForVariable(const std::string var_n
 
   auto variable = symbol_table_->get_variable(var_name);
   auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(), variable);
+
+//  LOG(INFO) << var_name << " , " << variable->getName() << "," << representative_variable->getName();
 
 //  auto it = variable_model_counter_.find(representative_variable);
 //  if (it == variable_model_counter_.end()) {
