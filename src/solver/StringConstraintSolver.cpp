@@ -21,7 +21,7 @@ StringConstraintSolver::StringConstraintSolver(Script_ptr script, SymbolTable_pt
       symbol_table_(symbol_table),
       constraint_information_(constraint_information) {
   setCallbacks();
-  
+
   string_formula_generator_ = std::make_shared<StringFormulaGenerator>(script, symbol_table, constraint_information);
 }
 
@@ -369,13 +369,13 @@ void StringConstraintSolver::postVisitOr(Or_ptr or_term) {
      * grabs them from symbol table
      */
 //<<<<<<< HEAD
-  	symbol_table_->push_scope(term);
-  	for(auto group : string_formula_generator_->get_group_subgroups(group_name)) {
+//  	symbol_table_->push_scope(term);
+//  	for(auto group : string_formula_generator_->get_group_subgroups(group_name)) {
 //=======
 
 
 //  	LOG(INFO) << "TERM: " << *term << " , " << term;
-//  	for(auto group : string_formula_generator_.get_group_subgroups(group_name)) {
+  	for(auto group : string_formula_generator_->get_group_subgroups(group_name)) {
 //  	  LOG(INFO) << "  Group: " << group;
 //>>>>>>> policy
   		Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
@@ -443,6 +443,8 @@ void StringConstraintSolver::postVisitOr(Or_ptr or_term) {
 		symbol_table_->IntersectValue(group_name,satisfiable_value);
 		delete satisfiable_value;
   }
+
+
   DVLOG(VLOG_LEVEL) << "update result end: " << *or_term << "@" << or_term;
 }
 
@@ -521,12 +523,12 @@ std::map<SMT::Term_ptr, SMT::TermList>& StringConstraintSolver::get_integer_term
 void StringConstraintSolver::push_generator(Term_ptr scope) {
   generator_stack_.push_back(std::make_pair(scope,string_formula_generator_));
   string_formula_generator_ = std::make_shared<StringFormulaGenerator>(root_,symbol_table_,constraint_information_);
-  //string_formula_generator_.current_group_ = symbol_table_->get_var_name_for_node(scope,Variable::Type::STRING); 
+  //string_formula_generator_.current_group_ = symbol_table_->get_var_name_for_node(scope,Variable::Type::STRING);
 }
 
 void StringConstraintSolver::pop_generators(int num_to_merge, Term_ptr t) {
   std::map<std::string,Value_ptr> or_values;
-  bool is_satisfiable =false; 
+  bool is_satisfiable =false;
   bool has_string_formula = false;
   while(num_to_merge-- > 0) {
     auto &it = generator_stack_.back();
@@ -534,10 +536,10 @@ void StringConstraintSolver::pop_generators(int num_to_merge, Term_ptr t) {
     auto term_scope = it.first;
     generator_stack_.pop_back();
 
-    std::string group_name = string_formula_generator_->current_group_;
-    //LOG(INFO) << "Term group name for " << *term_scope << " is " << group_name;	
+    std::string group_name = "";//string_formula_generator_->current_group_;
+    //LOG(INFO) << "Term group name for " << *term_scope << " is " << group_name;
     //LOG(INFO) << "has " << string_formula_generator_->get_group_subgroups(group_name).size() << " subgroups";
-    //symbol_table_->push_scope(term_scope); 
+    //symbol_table_->push_scope(term_scope);
     for(auto group : string_formula_generator_->get_group_subgroups(group_name)) {
   		Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
   		Value_ptr subgroup_scope_value = symbol_table_->get_value_at_scope(term_scope,subgroup_variable);
@@ -584,7 +586,7 @@ void StringConstraintSolver::pop_generators(int num_to_merge, Term_ptr t) {
   	}
     //if(is_satisfiable) {
     // string_formula_generator_->start(t);
-      
+
     //}
   	//auto satisfiable_value = new Value(is_satisfiable);
 		//symbol_table_->IntersectValue(group_name,satisfiable_value);
@@ -596,7 +598,7 @@ void StringConstraintSolver::pop_generators(int num_to_merge, Term_ptr t) {
 
 
 
-  
+
 }
 
 } /* namespace Solver */

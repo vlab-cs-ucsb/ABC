@@ -73,7 +73,16 @@ void ConstraintSolver::end() {
 void ConstraintSolver::visitScript(Script_ptr script) {
   symbol_table_->push_scope(script);
   Visitor::visit_children_of(script);
+
+  auto var = symbol_table_->get_variable("resource");
+
+//  symbol_table_->get_value_at_scope(script,var)->getStringAutomaton()->inspectAuto(false,true);
+//  std::cin.get();
+//  symbol_table_->get_value("resource")->getStringAutomaton()->inspectAuto(false,true);
   symbol_table_->pop_scope();  // global scope, it is reachable via script pointer all the time
+//  symbol_table_->get_value("resource")->getStringAutomaton()->inspectAuto(false,true);
+
+//  symbol_table_->get_value_at_scope(script,symbol_table_->get_variable("resource"))->getStringAutomaton()->inspectAuto(false,true);
 }
 
 void ConstraintSolver::visitCommand(Command_ptr command) {
@@ -1262,7 +1271,7 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 
   Value_ptr result = nullptr;
   if (Value::Type::STRING_AUTOMATON == variable_value->getType()) {
-    result = new Value(variable_value->getStringAutomaton()->GetAutomatonForVariable(variable->getName()));
+    result = new Value(variable_value->getStringAutomaton()->GetAutomatonForVariable(qi_term->getVarName()));
   } else if (Value::Type::BINARYINT_AUTOMATON == variable_value->getType()) {
   	// TODO baki: added for charat may need to fix it
 //<<<<<<< HEAD

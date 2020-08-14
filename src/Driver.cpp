@@ -106,11 +106,10 @@ void Driver::InitializeSolver() {
 
   #ifdef USE_CACHE
     cache_manager_ = new Solver::CacheManager();
+    Theory::Automaton::cache_manager_ = cache_manager_;
   #endif
 
   symbol_table_ = new Solver::SymbolTable();
-  symbol_table_->push_scope(script_);
-
 
 
   constraint_information_ = new Solver::ConstraintInformation();
@@ -169,7 +168,6 @@ void Driver::InitializeSolver() {
 
 void Driver::Solve() {
   Solver::ConstraintSolver* constraint_solver = nullptr;
-
 //<<<<<<< HEAD
 #ifdef USE_CACHE
   if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING) {
@@ -196,6 +194,7 @@ void Driver::Solve() {
 	cached_bounded_values_.clear();
 
   delete constraint_solver;
+
 //=======
 //  Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
 //  constraint_solver.start();
@@ -464,12 +463,12 @@ void Driver::GetModels(const unsigned long bound,const unsigned long num_models)
 
 Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsigned long bound) {
   std::string normalized_var_name = var_name;
-  if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
-    auto var_mapping = symbol_table_->GetVariableMapping();
-    if(var_mapping.find(normalized_var_name) != var_mapping.end()) {
-      normalized_var_name = var_mapping[var_name];
-    }
-  }
+//  if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
+//    auto var_mapping = symbol_table_->GetVariableMapping();
+//    if(var_mapping.find(normalized_var_name) != var_mapping.end()) {
+//      normalized_var_name = var_mapping[var_name];
+//    }
+//  }
 
   Theory::BigInteger projected_count, tuple_count, result_count;
   projected_count = GetModelCounterForVariable(normalized_var_name,true).Count(bound, bound);
@@ -488,24 +487,24 @@ Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsig
 }
 
 Theory::BigInteger Driver::CountInts(const unsigned long bound) {
-  while(symbol_table_->AreValuesLocked()) std::this_thread::yield;
+//  while(symbol_table_->AreValuesLocked()) std::this_thread::yield;
   return GetModelCounter().CountInts(bound);
 }
 
 Theory::BigInteger Driver::CountStrs(const unsigned long bound) {
-  while(symbol_table_->AreValuesLocked()) std::this_thread::yield;
+//  while(symbol_table_->AreValuesLocked()) std::this_thread::yield;
   return GetModelCounter().CountStrs(bound);
 }
 
 Theory::BigInteger Driver::Count(const unsigned long int_bound, const unsigned long str_bound) {
-  while(symbol_table_->AreValuesLocked()) std::this_thread::yield;
+//  while(symbol_table_->AreValuesLocked()) std::this_thread::yield;
   return CountInts(int_bound) * CountStrs(str_bound);
 }
 
 Solver::ModelCounter& Driver::GetModelCounterForVariable(const std::string var_name, bool project) {
 
   auto variable = symbol_table_->get_variable(var_name);
-  auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(), variable);
+  auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(script_, variable);
 
 //  LOG(INFO) << var_name << " , " << variable->getName() << "," << representative_variable->getName();
 
@@ -526,13 +525,13 @@ Solver::ModelCounter& Driver::GetModelCounter() {
 
 void Driver::SetModelCounterForVariable(const std::string var_name, bool project) {
   auto variable = symbol_table_->get_variable(var_name);
-  auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(), variable);
+  auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(script_, variable);
   Solver::Value_ptr var_value = nullptr;
 
   if(project) {
-  	var_value = symbol_table_->get_projected_value_at_scope(symbol_table_->top_scope(), representative_variable);
+  	var_value = symbol_table_->get_projected_value_at_scope(script_, representative_variable);
   } else {
-  	var_value = symbol_table_->get_value_at_scope(symbol_table_->top_scope(), representative_variable);
+  	var_value = symbol_table_->get_value_at_scope(script_, representative_variable);
   }
 
   // test get_models
@@ -624,7 +623,7 @@ void Driver::SetModelCounter() {
   }
 
   int number_of_int_variables = symbol_table_->get_num_of_variables(SMT::Variable::Type::INT);
-  int number_of_substituted_int_variables = symbol_table_->get_num_of_substituted_variables(symbol_table_->top_scope(),
+  int number_of_substituted_int_variables = symbol_table_->get_num_of_substituted_variables(script_,
                                                                                             SMT::Variable::Type::INT);
   int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables - num_bin_var;
   model_counter_.set_num_of_unconstraint_int_vars(number_of_untracked_int_variables);
@@ -672,7 +671,7 @@ void Driver::printResult(Solver::Value_ptr value, std::ostream& out) {
 }
 
 std::map<SMT::Variable_ptr, Solver::Value_ptr> Driver::getSatisfyingVariables() const {
-  return symbol_table_->get_values_at_scope(symbol_table_->top_scope());
+  return symbol_table_->get_values_at_scope(script_);
 }
 
 std::map<std::string, std::string> Driver::getSatisfyingExamples() {
@@ -691,25 +690,25 @@ std::map<std::string, std::string> Driver::getSatisfyingExamples() {
     		auto single_string_auto = string_auto->GetAutomatonForVariable(it.first);
     		std::string accepted_string = single_string_auto->GetAnAcceptingString();
 
-#ifdef USE_CACHE
-    		// if we normalized characters, map them back to original character
-    		
-        if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
-    		  auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
-          auto char_mapping = symbol_table_->GetReverseCharacterMapping();
-    		  for(int i = 0; i < accepted_string.length(); i++) {
-    		    accepted_string[i] = char_mapping[accepted_string[i]];
-    		  }
-    		  results[reverse_var_mapping[it.first]] = accepted_string;
-          delete single_string_auto;
-        } else {
-    		  results[it.first] = accepted_string;
-    		  delete single_string_auto;
-        }
-#else
-          results[it.first] = accepted_string;
-    		  delete single_string_auto;
-#endif
+//#ifdef USE_CACHE
+//    		// if we normalized characters, map them back to original character
+//
+//        if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
+//    		  auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
+//          auto char_mapping = symbol_table_->GetReverseCharacterMapping();
+//    		  for(int i = 0; i < accepted_string.length(); i++) {
+//    		    accepted_string[i] = char_mapping[accepted_string[i]];
+//    		  }
+//    		  results[reverse_var_mapping[it.first]] = accepted_string;
+//          delete single_string_auto;
+//        } else {
+//    		  results[it.first] = accepted_string;
+//    		  delete single_string_auto;
+//        }
+//#else
+//          results[it.first] = accepted_string;
+//    		  delete single_string_auto;
+//#endif
     	}
 
 
@@ -740,24 +739,24 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandom() {
 					auto single_string_auto = string_auto->GetAutomatonForVariable(it.first);
 					std::string accepted_string = single_string_auto->GetAnAcceptingStringRandom();
 
-#ifdef USE_CACHE
-          // if we normalized characters, map them back to original character
-          if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
-    		   auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
-            auto char_mapping = symbol_table_->GetReverseCharacterMapping();
-            for(int i = 0; i < accepted_string.length(); i++) {
-              accepted_string[i] = char_mapping[accepted_string[i]];
-           }
-    		    results[reverse_var_mapping[it.first]] = accepted_string;
-            delete single_string_auto;
-          } else {
-    		    results[it.first] = accepted_string;
-    		    delete single_string_auto;
-          }
-#else
-            results[it.first] = accepted_string;
-    		    delete single_string_auto;
-#endif
+//#ifdef USE_CACHE
+//          // if we normalized characters, map them back to original character
+//          if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
+//    		   auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
+//            auto char_mapping = symbol_table_->GetReverseCharacterMapping();
+//            for(int i = 0; i < accepted_string.length(); i++) {
+//              accepted_string[i] = char_mapping[accepted_string[i]];
+//           }
+//    		    results[reverse_var_mapping[it.first]] = accepted_string;
+//            delete single_string_auto;
+//          } else {
+//    		    results[it.first] = accepted_string;
+//    		    delete single_string_auto;
+//          }
+//#else
+//            results[it.first] = accepted_string;
+//    		    delete single_string_auto;
+//#endif
 				}
 			}
 		}
@@ -795,24 +794,24 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandomBounded(co
           }
 					std::string accepted_string = single_string_auto_bounded->GetAnAcceptingStringRandom();
 
-#ifdef USE_CACHE
-          // if we normalized characters, map them back to original character
-          if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
-    		    auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
-            auto char_mapping = symbol_table_->GetReverseCharacterMapping();
-            for(int i = 0; i < accepted_string.length(); i++) {
-              accepted_string[i] = char_mapping[accepted_string[i]];
-            }
-    		    results[reverse_var_mapping[it.first]] = accepted_string;
-            delete single_string_auto_bounded;
-          } else {
-    		    results[it.first] = accepted_string;
-    		    delete single_string_auto_bounded;
-          }
-#else
-            results[it.first] = accepted_string;
-    		    delete single_string_auto_bounded;
-#endif
+//#ifdef USE_CACHE
+//          // if we normalized characters, map them back to original character
+//          if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
+//    		    auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
+//            auto char_mapping = symbol_table_->GetReverseCharacterMapping();
+//            for(int i = 0; i < accepted_string.length(); i++) {
+//              accepted_string[i] = char_mapping[accepted_string[i]];
+//            }
+//    		    results[reverse_var_mapping[it.first]] = accepted_string;
+//            delete single_string_auto_bounded;
+//          } else {
+//    		    results[it.first] = accepted_string;
+//    		    delete single_string_auto_bounded;
+//          }
+//#else
+//            results[it.first] = accepted_string;
+//    		    delete single_string_auto_bounded;
+//#endif
 				}
 			}
 		}
@@ -821,12 +820,12 @@ std::map<std::string, std::string> Driver::getSatisfyingExamplesRandomBounded(co
 }
 
 std::string Driver::getMutatedModel(std::string var_name, std::string model) {
-#ifdef USE_CACHE
-  if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
-    auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
-    var_name = reverse_var_mapping[var_name];
-  }
-#endif
+//#ifdef USE_CACHE
+//  if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
+//    auto reverse_var_mapping = symbol_table_->GetReverseVariableMapping();
+//    var_name = reverse_var_mapping[var_name];
+//  }
+//#endif
 
   auto var_value = (cached_bounded_values_.find(var_name) != cached_bounded_values_.end()) ?
                             cached_bounded_values_[var_name] : symbol_table_->get_value(var_name);
@@ -836,16 +835,16 @@ std::string Driver::getMutatedModel(std::string var_name, std::string model) {
     return model;
   }
 
-#ifdef USE_CACHE
-  // if we unnormalized the characters, remap them to their normalized form
-  // if we normalized characters, map them back to original character
-  if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
-    auto char_mapping = symbol_table_->GetCharacterMapping();
-    for(int i = 0; i < model.length(); i++) {
-      model[i] = char_mapping[model[i]];
-    }
-  }
-#endif
+//#ifdef USE_CACHE
+//  // if we unnormalized the characters, remap them to their normalized form
+//  // if we normalized characters, map them back to original character
+//  if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
+//    auto char_mapping = symbol_table_->GetCharacterMapping();
+//    for(int i = 0; i < model.length(); i++) {
+//      model[i] = char_mapping[model[i]];
+//    }
+//  }
+//#endif
 
   if(var_value->getStringAutomaton()->GetNumTracks() > 1) {
     auto var_projected_auto = var_value->getStringAutomaton()->GetAutomatonForVariable(var_name);
@@ -871,7 +870,7 @@ void Driver::reset() {
 
 
 	if(symbol_table_ != nullptr) {
-	  while(symbol_table_->AreValuesLocked()) std::this_thread::yield;
+//	  while(symbol_table_->AreValuesLocked()) std::this_thread::yield;
 	  delete symbol_table_;
 	  symbol_table_ = nullptr;
 	}

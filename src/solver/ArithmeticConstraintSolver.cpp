@@ -152,10 +152,10 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 		if(Value::Type::INT_CONSTANT == iter->second->getType() || Value::Type::BOOL_CONSTANT == iter->second->getType()) {
 			//has_arithmetic_formula = true;
 			
-      auto vv = symbol_table_->GetVariableMapping();
+//      auto vv = symbol_table_->GetVariableMapping();
       Variable_ptr new_var = iter->first;
       if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING) {
-        new_var = symbol_table_->get_variable(vv[iter->first->getName()]);
+//        new_var = symbol_table_->get_variable(vv[iter->first->getName()]);
       }
       auto variable_group = arithmetic_formula_generator_->get_variable_group_name(new_var);
 			auto group_formula = arithmetic_formula_generator_->get_group_formula(variable_group);

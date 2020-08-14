@@ -932,16 +932,16 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
   }
 
   // make sure no data race
-  while(symbol_table_->AreValuesLocked()) std::this_thread::yield();
+//  while(symbol_table_->AreValuesLocked()) std::this_thread::yield();
   for(auto it : var_vals_to_erase) {
     delete variable_values[it];
     variable_values[it] = nullptr;
     variable_values.erase(it);
   }
 
-  for(auto it : var_vals_to_add) {
-    symbol_table_->set_value(it.first,it.second, false);
-  }
+//  for(auto it : var_vals_to_add) {
+//    symbol_table_->set_value(it.first,it.second, false);
+//  }
 }
 
 } /* namespace Solver */

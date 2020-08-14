@@ -98,6 +98,13 @@ void CachingConstraintSolver::visitAssert(Assert_ptr assert_command) {
       }
 
       std::string rep_var = import_auto->GetFormula()->GetVariableAtIndex(0);
+      LOG(INFO) << "Loading auto with:";
+      for(auto var_iter : import_auto->GetFormula()->GetVariableCoefficientMap()) {
+        LOG(INFO) << "  " << var_iter.first;
+      }
+      LOG(INFO) << "";
+
+      import_auto->GetAutomatonForVariable("action")->inspectAuto(false,true);
 
       auto import_value = new Value(import_auto);
       symbol_table_->set_value(rep_var,import_value);
@@ -176,7 +183,7 @@ void CachingConstraintSolver::visitAssert(Assert_ptr assert_command) {
 
       {
         cereal::BinaryOutputArchive ar(os);
-        ar(symbol_table_->GetCharacterMapping());
+//        ar(symbol_table_->GetCharacterMapping());
         ar(num_string_to_write);
         ar(num_int_to_write);
       }
@@ -305,7 +312,7 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
 
     std::thread constraint_info_collector([this,and_term] {
       arithmetic_constraint_solver_.collect_arithmetic_constraint_info(and_term);
-      string_constraint_solver_.collect_string_constraint_info(and_term);
+//      string_constraint_solver_.collect_string_constraint_info(and_term);
     });
 
     constraint_info_collector.join();
@@ -358,17 +365,21 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
 
       for(auto it : str_autos_to_add) {
         std::string rep_var = it->GetFormula()->GetVariableAtIndex(0);
+        LOG(INFO) << "Loading auto with:";
+        for(auto var_iter : it->GetFormula()->GetVariableCoefficientMap()) {
+          LOG(INFO) << "  " << var_iter.first;
+        }
         auto import_value = new Value(it);
         it = nullptr;
-        symbol_table_->set_value(rep_var, import_value,false);
+//        symbol_table_->set_value(rep_var, import_value,false);
       }
-
+      LOG(INFO) << "";
       for(auto it : bin_autos_to_add) {
 
         std::string rep_var = it->GetFormula()->GetVariableAtIndex(0);
         auto import_value = new Value(it);
         it = nullptr;
-        symbol_table_->set_value(rep_var, import_value,false);
+//        symbol_table_->set_value(rep_var, import_value,false);
       }
     } else {
 //      constraint_info_collector.join();
@@ -397,7 +408,7 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
 
       if(dynamic_cast<Or_ptr>(term) == nullptr) {
         arithmetic_constraint_solver_.collect_arithmetic_constraint_info(term);
-        string_constraint_solver_.collect_string_constraint_info(term);
+//        string_constraint_solver_.collect_string_constraint_info(term);
 
         // solve term using normal constraint solving algorithm
         if (is_component) {
@@ -439,17 +450,24 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
       auto tk = std::make_shared<std::map<int,std::string>>(term_keys.begin(),term_keys.end());
       auto revk = std::make_shared<std::map<std::string,int>>(reverse_term_keys.begin(),reverse_term_keys.end());
 
-//      for(auto iter : value_map) {
-//        if(iter.second->getType() == Value::Type::STRING_AUTOMATON) {
-//          LOG(INFO) << "--- STR AUTO ---";
-//          for(auto var_map : iter.second->getStringAutomaton()->GetFormula()->GetVariableCoefficientMap()) {
-//            LOG(INFO) << "  " << var_map.first;
-//          }
-//        }
-//      }
+      for(auto iter : value_map) {
+        if(iter.second->getType() == Value::Type::STRING_AUTOMATON) {
+          LOG(INFO) << "--- STR AUTO ; name = " << iter.first->str();
+          for(auto var_map : iter.second->getStringAutomaton()->GetFormula()->GetVariableCoefficientMap()) {
+            LOG(INFO) << "  " << var_map.first;
+          }
+//          iter.second->getStringAutomaton()->inspectAuto(false,true);
+        }
+      }
 //      std::cin.get();
 
-      symbol_table_->LockValues();
+
+
+//      value_map[symbol_table_->get_variable("resource")]->getStringAutomaton()->inspectAuto(false,true);
+//
+//      std::cin.get();
+
+//      symbol_table_->LockValues();
       bool is_done = terms_to_solve.empty();
       key = term_keys[and_term->term_list->size()];
 
@@ -472,7 +490,7 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
             }
             if (iter.second->getType() == Value::Type::STRING_AUTOMATON and
                 iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
-              if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() <= 1) {
+              if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
                 continue;
               }
               num_string_to_write++;
@@ -491,11 +509,11 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
 
           {
             cereal::BinaryOutputArchive ar(os);
-            ar(symbol_table_->GetCharacterMapping());
+//            ar(symbol_table_->GetCharacterMapping());
             ar(num_string_to_write);
             ar(num_int_to_write);
           }
-          symbol_table_->UnlockValues();
+//          symbol_table_->UnlockValues();
 
           for(auto it : *str_stuff_to_store) {
             auto export_auto = it;
@@ -521,7 +539,7 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
           }
         } else {
           // unsat, just cache a "0" indicating unsat
-          symbol_table_->UnlockValues();
+//          symbol_table_->UnlockValues();
           os << "0";
         }
 
@@ -653,7 +671,7 @@ void CachingConstraintSolver::visitOr(Or_ptr or_term) {
 
     for (auto& term : *(or_term->term_list)) {
 
-      string_constraint_solver_.push_generator(term);
+//      string_constraint_solver_.push_generator(term);
       arithmetic_constraint_solver_.push_generator(term);
 
       symbol_table_->push_scope(term);
@@ -672,7 +690,7 @@ void CachingConstraintSolver::visitOr(Or_ptr or_term) {
       symbol_table_->pop_scope();
     }
 
-    string_constraint_solver_.pop_generators(or_term->term_list->size(),or_term);
+//    string_constraint_solver_.pop_generators(or_term->term_list->size(),or_term);
     arithmetic_constraint_solver_.pop_generators(or_term->term_list->size(),or_term);
 
     if (constraint_information_->has_arithmetic_constraint(or_term)) {

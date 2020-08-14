@@ -308,8 +308,36 @@ StringAutomaton_ptr StringAutomaton::MakeAnyChar(const int number_of_bdd_variabl
 }
 
 StringAutomaton_ptr StringAutomaton::MakeRegexAuto(const std::string regex, const int number_of_bdd_variables) {
+
+#ifdef USE_CACHE
+
+  std::string key;
+  DFA_ptr result_dfa = nullptr;
+  StringFormula_ptr temp_formula = nullptr;
+
+  if(Option::Solver::AUTOMATA_CACHING) {
+    temp_formula = new StringFormula();
+    temp_formula->SetType(StringFormula::Type::REGEX_CONSTANT);
+    temp_formula->SetConstant(regex);
+    key = GenerateKey(temp_formula);
+    if(cache_manager_->LoadDFA(key,result_dfa)) {
+      int num_vars = temp_formula->GetNumberOfVariables();
+      return new StringAutomaton(result_dfa, temp_formula, num_vars *VAR_PER_TRACK);
+    }
+  }
+#endif
+
   Util::RegularExpression regular_expression (regex);
   StringAutomaton_ptr regex_auto = StringAutomaton::MakeRegexAuto(&regular_expression, number_of_bdd_variables);
+
+#ifdef USE_CACHE
+	if (Option::Solver::AUTOMATA_CACHING) {
+	  cache_manager_->StoreDFA(key,regex_auto->getDFA());
+    delete temp_formula;
+	  temp_formula = nullptr;
+  }
+#endif
+
   DVLOG(VLOG_LEVEL) << regex_auto->id_ << " = MakeRegexAuto(" << regex << ")";
 
   return regex_auto;
@@ -319,6 +347,8 @@ StringAutomaton_ptr StringAutomaton::MakeRegexAuto(Util::RegularExpression_ptr r
   StringAutomaton_ptr regex_auto = nullptr;
   StringAutomaton_ptr regex_expr1_auto = nullptr;
   StringAutomaton_ptr regex_expr2_auto = nullptr;
+
+
 
   switch (regular_expression->type()) {
   case Util::RegularExpression::Type::UNION:

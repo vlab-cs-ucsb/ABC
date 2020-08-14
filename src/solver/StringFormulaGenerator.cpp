@@ -526,50 +526,50 @@ void StringFormulaGenerator::visitEq(Eq_ptr eq_term) {
     constraint_information_->add_mixed_constraint(eq_term);
   }
 
-  StringFormula_ptr temp_formula = new StringFormula();
-
-  auto subgroups = get_group_subgroups(current_group_);
-  for(auto it : subgroups) {
-//    LOG(INFO) << "subgroup: " << it;
-    auto f = get_group_formula(it);
-    temp_formula->MergeVariables(f);
-//    LOG(INFO) << "formula: ";
-//    for(auto var : f->GetVariableCoefficientMap()) {
-//      LOG(INFO) << "  " << var.first;
+//  StringFormula_ptr temp_formula = new StringFormula();
+//
+//  auto subgroups = get_group_subgroups(current_group_);
+//  for(auto it : subgroups) {
+////    LOG(INFO) << "subgroup: " << it;
+//    auto f = get_group_formula(it);
+//    temp_formula->MergeVariables(f);
+////    LOG(INFO) << "formula: ";
+////    for(auto var : f->GetVariableCoefficientMap()) {
+////      LOG(INFO) << "  " << var.first;
+////    }
+//  }
+//
+//  if(temp_formula->GetNumberOfVariables() <= 6) {
+//    std::string temp_subgroup_name = generate_group_name(eq_term,current_group_);
+//    for(auto &sg_it : subgroups) {
+//      auto f = get_group_formula(sg_it);
+//
+//      for(auto var_iter : f->GetVariableCoefficientMap()) {
+//        variable_group_map_[var_iter.first] = temp_subgroup_name;
+//      }
+//
+//      for(auto &term_group_iter : term_group_map_) {
+//        if(term_group_iter.second == sg_it) {
+//          term_group_iter.second = temp_subgroup_name;
+//        }
+//      }
+//
+//      auto formula_iter = group_formula_.find(sg_it);
+//      if(StringFormula::Type::NONE == formula_iter->second->GetType() ||
+//              StringFormula::Type::VAR == formula_iter->second->GetType()) {
+//        delete formula_iter->second; formula_iter->second = nullptr;
+//        group_formula_.erase(formula_iter);
+//        subgroups_[current_group_].erase(sg_it);
+//      }
 //    }
-  }
-
-  if(temp_formula->GetNumberOfVariables() <= 6) {
-    std::string temp_subgroup_name = generate_group_name(eq_term,current_group_);
-    for(auto &sg_it : subgroups) {
-      auto f = get_group_formula(sg_it);
-
-      for(auto var_iter : f->GetVariableCoefficientMap()) {
-        variable_group_map_[var_iter.first] = temp_subgroup_name;
-      }
-
-      for(auto &term_group_iter : term_group_map_) {
-        if(term_group_iter.second == sg_it) {
-          term_group_iter.second = temp_subgroup_name;
-        }
-      }
-
-      auto formula_iter = group_formula_.find(sg_it);
-      if(StringFormula::Type::NONE == formula_iter->second->GetType() ||
-              StringFormula::Type::VAR == formula_iter->second->GetType()) {
-        delete formula_iter->second; formula_iter->second = nullptr;
-        group_formula_.erase(formula_iter);
-        subgroups_[current_group_].erase(sg_it);
-      }
-    }
-
-    subgroups_[current_group_].insert(temp_subgroup_name);
-    group_formula_[temp_subgroup_name] = temp_formula;
-  } else {
-    LOG(FATAL) << "Too big!";
-    delete temp_formula;
-    temp_formula = nullptr;
-  }
+//
+//    subgroups_[current_group_].insert(temp_subgroup_name);
+//    group_formula_[temp_subgroup_name] = temp_formula;
+//  } else {
+//    LOG(FATAL) << "Too big!";
+//    delete temp_formula;
+//    temp_formula = nullptr;
+//  }
 
   DVLOG(VLOG_LEVEL) << "post visit end: " << *eq_term << "@" << eq_term;
 }
@@ -674,50 +674,50 @@ void StringFormulaGenerator::visitNotEq(NotEq_ptr not_eq_term) {
 		constraint_information_->add_mixed_constraint(not_eq_term);
 	}
 
-	StringFormula_ptr temp_formula = new StringFormula();
-
-  auto subgroups = get_group_subgroups(current_group_);
-  for(auto it : subgroups) {
-//    LOG(INFO) << "subgroup: " << it;
-    auto f = get_group_formula(it);
-    temp_formula->MergeVariables(f);
-//    LOG(INFO) << "formula: ";
-//    for(auto var : f->GetVariableCoefficientMap()) {
-//      LOG(INFO) << "  " << var.first;
+//	StringFormula_ptr temp_formula = new StringFormula();
+//
+//  auto subgroups = get_group_subgroups(current_group_);
+//  for(auto it : subgroups) {
+////    LOG(INFO) << "subgroup: " << it;
+//    auto f = get_group_formula(it);
+//    temp_formula->MergeVariables(f);
+////    LOG(INFO) << "formula: ";
+////    for(auto var : f->GetVariableCoefficientMap()) {
+////      LOG(INFO) << "  " << var.first;
+////    }
+//  }
+//
+//  if(temp_formula->GetNumberOfVariables() <= 6) {
+//    std::string temp_subgroup_name = generate_group_name(not_eq_term,current_group_);
+//    for(auto &sg_it : subgroups) {
+//      auto f = get_group_formula(sg_it);
+//
+//      for(auto var_iter : f->GetVariableCoefficientMap()) {
+//        variable_group_map_[var_iter.first] = temp_subgroup_name;
+//      }
+//
+//      for(auto &term_group_iter : term_group_map_) {
+//        if(term_group_iter.second == sg_it) {
+//          term_group_iter.second = temp_subgroup_name;
+//        }
+//      }
+//
+//      auto formula_iter = group_formula_.find(sg_it);
+//      if(StringFormula::Type::NONE == formula_iter->second->GetType() ||
+//              StringFormula::Type::VAR == formula_iter->second->GetType()) {
+//        delete formula_iter->second; formula_iter->second = nullptr;
+//        group_formula_.erase(formula_iter);
+//        subgroups_[current_group_].erase(sg_it);
+//      }
 //    }
-  }
-
-  if(temp_formula->GetNumberOfVariables() <= 6) {
-    std::string temp_subgroup_name = generate_group_name(not_eq_term,current_group_);
-    for(auto &sg_it : subgroups) {
-      auto f = get_group_formula(sg_it);
-
-      for(auto var_iter : f->GetVariableCoefficientMap()) {
-        variable_group_map_[var_iter.first] = temp_subgroup_name;
-      }
-
-      for(auto &term_group_iter : term_group_map_) {
-        if(term_group_iter.second == sg_it) {
-          term_group_iter.second = temp_subgroup_name;
-        }
-      }
-
-      auto formula_iter = group_formula_.find(sg_it);
-      if(StringFormula::Type::NONE == formula_iter->second->GetType() ||
-              StringFormula::Type::VAR == formula_iter->second->GetType()) {
-        delete formula_iter->second; formula_iter->second = nullptr;
-        group_formula_.erase(formula_iter);
-        subgroups_[current_group_].erase(sg_it);
-      }
-    }
-
-    subgroups_[current_group_].insert(temp_subgroup_name);
-    group_formula_[temp_subgroup_name] = temp_formula;
-  } else {
-    LOG(FATAL) << "Too big!";
-    delete temp_formula;
-    temp_formula = nullptr;
-  }
+//
+//    subgroups_[current_group_].insert(temp_subgroup_name);
+//    group_formula_[temp_subgroup_name] = temp_formula;
+//  } else {
+//    LOG(FATAL) << "Too big!";
+//    delete temp_formula;
+//    temp_formula = nullptr;
+//  }
 
 	DVLOG(VLOG_LEVEL) << "post visit end: " << *not_eq_term << "@" << not_eq_term;
 }
@@ -1313,50 +1313,50 @@ void StringFormulaGenerator::visitIn(In_ptr in_term) {
     constraint_information_->add_mixed_constraint(in_term);
   }
 
-  StringFormula_ptr temp_formula = new StringFormula();
-
-  auto subgroups = get_group_subgroups(current_group_);
-  for(auto it : subgroups) {
-//    LOG(INFO) << "subgroup: " << it;
-    auto f = get_group_formula(it);
-    temp_formula->MergeVariables(f);
-//    LOG(INFO) << "formula: ";
-//    for(auto var : f->GetVariableCoefficientMap()) {
-//      LOG(INFO) << "  " << var.first;
+//  StringFormula_ptr temp_formula = new StringFormula();
+//
+//  auto subgroups = get_group_subgroups(current_group_);
+//  for(auto it : subgroups) {
+////    LOG(INFO) << "subgroup: " << it;
+//    auto f = get_group_formula(it);
+//    temp_formula->MergeVariables(f);
+////    LOG(INFO) << "formula: ";
+////    for(auto var : f->GetVariableCoefficientMap()) {
+////      LOG(INFO) << "  " << var.first;
+////    }
+//  }
+//
+//  if(temp_formula->GetNumberOfVariables() <= 6) {
+//    std::string temp_subgroup_name = generate_group_name(in_term,current_group_);
+//    for(auto &sg_it : subgroups) {
+//      auto f = get_group_formula(sg_it);
+//
+//      for(auto var_iter : f->GetVariableCoefficientMap()) {
+//        variable_group_map_[var_iter.first] = temp_subgroup_name;
+//      }
+//
+//      for(auto &term_group_iter : term_group_map_) {
+//        if(term_group_iter.second == sg_it) {
+//          term_group_iter.second = temp_subgroup_name;
+//        }
+//      }
+//
+//      auto formula_iter = group_formula_.find(sg_it);
+//      if(StringFormula::Type::NONE == formula_iter->second->GetType() ||
+//              StringFormula::Type::VAR == formula_iter->second->GetType()) {
+//        delete formula_iter->second; formula_iter->second = nullptr;
+//        group_formula_.erase(formula_iter);
+//        subgroups_[current_group_].erase(sg_it);
+//      }
 //    }
-  }
-
-  if(temp_formula->GetNumberOfVariables() <= 6) {
-    std::string temp_subgroup_name = generate_group_name(in_term,current_group_);
-    for(auto &sg_it : subgroups) {
-      auto f = get_group_formula(sg_it);
-
-      for(auto var_iter : f->GetVariableCoefficientMap()) {
-        variable_group_map_[var_iter.first] = temp_subgroup_name;
-      }
-
-      for(auto &term_group_iter : term_group_map_) {
-        if(term_group_iter.second == sg_it) {
-          term_group_iter.second = temp_subgroup_name;
-        }
-      }
-
-      auto formula_iter = group_formula_.find(sg_it);
-      if(StringFormula::Type::NONE == formula_iter->second->GetType() ||
-              StringFormula::Type::VAR == formula_iter->second->GetType()) {
-        delete formula_iter->second; formula_iter->second = nullptr;
-        group_formula_.erase(formula_iter);
-        subgroups_[current_group_].erase(sg_it);
-      }
-    }
-
-    subgroups_[current_group_].insert(temp_subgroup_name);
-    group_formula_[temp_subgroup_name] = temp_formula;
-  } else {
-    LOG(FATAL) << "Too big!";
-    delete temp_formula;
-    temp_formula = nullptr;
-  }
+//
+//    subgroups_[current_group_].insert(temp_subgroup_name);
+//    group_formula_[temp_subgroup_name] = temp_formula;
+//  } else {
+//    LOG(FATAL) << "Too big!";
+//    delete temp_formula;
+//    temp_formula = nullptr;
+//  }
 
   DVLOG(VLOG_LEVEL) << "post visit end: " << *in_term << "@" << in_term;
 }
@@ -2119,132 +2119,182 @@ void StringFormulaGenerator::set_group_mappings() {
 //  }
 
   DVLOG(VLOG_LEVEL)<< "start setting string group for components";
-	//TODO: Is this necessary?
-  //for (auto& el : term_group_map_) {
+  for (auto& el : term_group_map_) {
+  	//LOG(INFO) << *el.first << "@" << el.first;
   	// only subgroups have formulas
-//<<<<<<< HEAD
-    //if(subgroups_.find(el.second) == subgroups_.end()) {
-    //	term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
-    //}
-  //}
-
-  std::map<Variable_ptr,Value_ptr> var_vals_to_add;
-  std::vector<Variable_ptr> var_vals_to_erase;
-
+    if(subgroups_.find(el.second) == subgroups_.end()) {
+    	//LOG(INFO) << "group: " << el.second;
+    	term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
+    }
+    //LOG(INFO) << "";
+  }
+//  LOG(INFO) << 1;
   for (auto& el: subgroups_) {
-
+  	symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
+  }
+//  LOG(INFO) << 2;
+  // add a variable entry to symbol table for each group
+  // define a variable mapping for a group
+  for (auto& el : group_formula_) {
+//  	LOG(INFO) << "Formula : " << el.first;
+//  	LOG(INFO) << "  has size: " << el.second->GetVariableCoefficientMap().size();
     symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
-  }
-  // get values of previous solve (if any)
-  auto  &variable_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
-  // update groups and their values in symbol table
-  for(auto group_iter : group_formula_) {
-    //LOG(INFO) << "Group: " << group_iter.first;
-    if(symbol_table_->get_variable_unsafe(group_iter.first) == nullptr) {
-      symbol_table_->add_variable(new Variable(group_iter.first, Variable::Type::NONE));
+    auto init_val = StringAutomaton::MakeAnyStringUnaligned(el.second->clone());
+//    LOG(INFO) << el.second->GetNumberOfVariables();
+    Value_ptr val = new Value(init_val);
+    symbol_table_->push_scope(root_);
+    symbol_table_->set_value(el.first,val);
+    delete val;
+		symbol_table_->pop_scope();
+
+    //LOG(INFO) << "Group " << el.first << " Initial Value: " << symbol_table_->get_value_at_scope(root_,symbol_table_->get_variable(el.first));
+    for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
+    	//val->getStringAutomaton()->inspectAuto(false,true);
+//    	LOG(INFO) << "Setting Mapping: " << var_entry.first << " -> " << el.first;
+      symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
+//      LOG(INFO) << "-- " << var_entry.first;
     }
 
-    std::set<Variable_ptr> previous_group_variables;
-    for (const auto& var_entry : group_iter.second->GetVariableCoefficientMap()) {
-      //LOG(INFO) << "--> " << var_entry.first;
-      Variable_ptr variable = symbol_table_->get_variable(var_entry.first);
-      Variable_ptr group_variable = symbol_table_->get_group_variable_of(variable);
-
-      // if group variable in variable_values, then a previous value was computed;
-      if(variable_values.find(group_variable) != variable_values.end()) {
-        previous_group_variables.insert(group_variable);
-        if(true) {
-          group_iter.second->MergeVariables(variable_values[group_variable]->getStringAutomaton()->GetFormula());
-          for(auto vv : variable_values[group_variable]->getStringAutomaton()->GetFormula()->GetVariableCoefficientMap()) {
-            symbol_table_->set_variable_group_mapping(vv.first,group_iter.first);
-          }
-        }
-      }
-      // update variable group mapping in symbol table
-      symbol_table_->set_variable_group_mapping(var_entry.first, group_iter.first);
-    }
-
-
-//    if(Option::Solver::SUB_FORMULA_CACHING && previous_group_variables.empty()) continue;
-
-    //LOG(INFO) << "# previous group vars: " << previous_group_variables.size();
-    StringAutomaton_ptr initial_auto = StringAutomaton::MakeAnyStringUnaligned(group_iter.second->clone());
-		initial_auto->GetFormula()->SetType(StringFormula::Type::NA);
-    for(auto previous_group: previous_group_variables) {
-      //LOG(INFO) << "--> previous group = " << previous_group->getName();
-      StringAutomaton_ptr previous_group_auto = variable_values[previous_group]->getStringAutomaton();
-      StringAutomaton_ptr remapped_auto = previous_group_auto->ChangeIndicesMap(group_iter.second->clone());
-      StringAutomaton_ptr temp_auto = initial_auto->Intersect(remapped_auto);
-	    //temp_auto->GetFormula()->SetType(StringFormula::Type::NA);
-      //temp_auto->inspectAuto(false,true);
-      delete initial_auto;
-      delete remapped_auto;
-      initial_auto = temp_auto;
-
-      // remove previous variable value from symbol table's value map
-//      delete variable_values[previous_group];
-//      variable_values[previous_group] = nullptr;
-//      variable_values.erase(previous_group);
-      var_vals_to_erase.push_back(previous_group);
-//=======
-//    if(subgroups_.find(el.second) == subgroups_.end()) {
-//    	//LOG(INFO) << "group: " << el.second;
-//    	term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
-//    }
-//    //LOG(INFO) << "";
-//  }
-////  LOG(INFO) << 1;
-//  for (auto& el: subgroups_) {
-//  	symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
-//  }
-////  LOG(INFO) << 2;
-//  // add a variable entry to symbol table for each group
-//  // define a variable mapping for a group
-//  for (auto& el : group_formula_) {
-////  	LOG(INFO) << "Formula : " << el.first;
-////  	LOG(INFO) << "  has size: " << el.second->GetVariableCoefficientMap().size();
-//    symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
-//    auto init_val = StringAutomaton::MakeAnyStringUnaligned(el.second->clone());
-////    LOG(INFO) << el.second->GetNumberOfVariables();
-//    Value_ptr val = new Value(init_val);
-//    symbol_table_->push_scope(root_);
-//    symbol_table_->set_value(el.first,val);
-//    delete val;
-//		symbol_table_->pop_scope();
-//
-//    //LOG(INFO) << "Group " << el.first << " Initial Value: " << symbol_table_->get_value_at_scope(root_,symbol_table_->get_variable(el.first));
-//    for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
-//    	//val->getStringAutomaton()->inspectAuto(false,true);
-////    	LOG(INFO) << "Setting Mapping: " << var_entry.first << " -> " << el.first;
-//      symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
-////      LOG(INFO) << "-- " << var_entry.first;
-//>>>>>>> policy
-    }
-
-    Value_ptr initial_value = new Value(initial_auto);
-    auto group_iter_var = symbol_table_->get_variable(group_iter.first);
-    //symbol_table_->set_value(group_iter.first,initial_value);
-//    variable_values[group_iter_var] = initial_value;
-    var_vals_to_add[group_iter_var] = initial_value;
-//    delete initial_value;
+    //LOG(INFO) << "";
   }
 
-  // make sure no data race
-  while(symbol_table_->AreValuesLocked()) std::this_thread::yield();
-
-  for(auto it : var_vals_to_erase) {
-    delete variable_values[it];
-    variable_values[it] = nullptr;
-    variable_values.erase(it);
-  }
-
-  for(auto it : var_vals_to_add) {
-    symbol_table_->set_value(it.first,it.second, false);
-  }
-
-  DVLOG(VLOG_LEVEL) << "done setting string group for components";
-//  std::cin.get();
+  DVLOG(VLOG_LEVEL)<< "end setting string group for components";
+  //std::cin.get();
 }
+
+//void StringFormulaGenerator::set_group_mappings() {
+////  LOG(INFO) << "# subgroups = " << subgroups_.size();
+////  for(auto it : subgroups_) {
+////    LOG(INFO) << "  " << it.first;
+////  }
+//
+//  DVLOG(VLOG_LEVEL)<< "start setting string group for components";
+//	//TODO: Is this necessary?
+//  //for (auto& el : term_group_map_) {
+//  	// only subgroups have formulas
+////<<<<<<< HEAD
+//    //if(subgroups_.find(el.second) == subgroups_.end()) {
+//    //	term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
+//    //}
+//  //}
+//
+//  std::map<Variable_ptr,Value_ptr> var_vals_to_add;
+//  std::vector<Variable_ptr> var_vals_to_erase;
+//
+//  for (auto& el: subgroups_) {
+//
+//    symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
+//  }
+//  // get values of previous solve (if any)
+//  auto  &variable_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
+//  // update groups and their values in symbol table
+//  for(auto group_iter : group_formula_) {
+//    //LOG(INFO) << "Group: " << group_iter.first;
+//    if(symbol_table_->get_variable_unsafe(group_iter.first) == nullptr) {
+//      symbol_table_->add_variable(new Variable(group_iter.first, Variable::Type::NONE));
+//    }
+//
+//    std::set<Variable_ptr> previous_group_variables;
+//    for (const auto& var_entry : group_iter.second->GetVariableCoefficientMap()) {
+//      //LOG(INFO) << "--> " << var_entry.first;
+//      Variable_ptr variable = symbol_table_->get_variable(var_entry.first);
+//      Variable_ptr group_variable = symbol_table_->get_group_variable_of(variable);
+//
+//      // if group variable in variable_values, then a previous value was computed;
+//      if(variable_values.find(group_variable) != variable_values.end()) {
+//        previous_group_variables.insert(group_variable);
+//        if(true) {
+//          group_iter.second->MergeVariables(variable_values[group_variable]->getStringAutomaton()->GetFormula());
+//          for(auto vv : variable_values[group_variable]->getStringAutomaton()->GetFormula()->GetVariableCoefficientMap()) {
+//            symbol_table_->set_variable_group_mapping(vv.first,group_iter.first);
+//          }
+//        }
+//      }
+//      // update variable group mapping in symbol table
+//      symbol_table_->set_variable_group_mapping(var_entry.first, group_iter.first);
+//    }
+//
+//
+////    if(Option::Solver::SUB_FORMULA_CACHING && previous_group_variables.empty()) continue;
+//
+//    //LOG(INFO) << "# previous group vars: " << previous_group_variables.size();
+//    StringAutomaton_ptr initial_auto = StringAutomaton::MakeAnyStringUnaligned(group_iter.second->clone());
+//		initial_auto->GetFormula()->SetType(StringFormula::Type::NA);
+//    for(auto previous_group: previous_group_variables) {
+//      //LOG(INFO) << "--> previous group = " << previous_group->getName();
+//      StringAutomaton_ptr previous_group_auto = variable_values[previous_group]->getStringAutomaton();
+//      StringAutomaton_ptr remapped_auto = previous_group_auto->ChangeIndicesMap(group_iter.second->clone());
+//      StringAutomaton_ptr temp_auto = initial_auto->Intersect(remapped_auto);
+//	    //temp_auto->GetFormula()->SetType(StringFormula::Type::NA);
+//      //temp_auto->inspectAuto(false,true);
+//      delete initial_auto;
+//      delete remapped_auto;
+//      initial_auto = temp_auto;
+//
+//      // remove previous variable value from symbol table's value map
+////      delete variable_values[previous_group];
+////      variable_values[previous_group] = nullptr;
+////      variable_values.erase(previous_group);
+//      var_vals_to_erase.push_back(previous_group);
+////=======
+////    if(subgroups_.find(el.second) == subgroups_.end()) {
+////    	//LOG(INFO) << "group: " << el.second;
+////    	term_formula_[el.first]->MergeVariables(group_formula_[el.second]);
+////    }
+////    //LOG(INFO) << "";
+////  }
+//////  LOG(INFO) << 1;
+////  for (auto& el: subgroups_) {
+////  	symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
+////  }
+//////  LOG(INFO) << 2;
+////  // add a variable entry to symbol table for each group
+////  // define a variable mapping for a group
+////  for (auto& el : group_formula_) {
+//////  	LOG(INFO) << "Formula : " << el.first;
+//////  	LOG(INFO) << "  has size: " << el.second->GetVariableCoefficientMap().size();
+////    symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
+////    auto init_val = StringAutomaton::MakeAnyStringUnaligned(el.second->clone());
+//////    LOG(INFO) << el.second->GetNumberOfVariables();
+////    Value_ptr val = new Value(init_val);
+////    symbol_table_->push_scope(root_);
+////    symbol_table_->set_value(el.first,val);
+////    delete val;
+////		symbol_table_->pop_scope();
+////
+////    //LOG(INFO) << "Group " << el.first << " Initial Value: " << symbol_table_->get_value_at_scope(root_,symbol_table_->get_variable(el.first));
+////    for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
+////    	//val->getStringAutomaton()->inspectAuto(false,true);
+//////    	LOG(INFO) << "Setting Mapping: " << var_entry.first << " -> " << el.first;
+////      symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
+//////      LOG(INFO) << "-- " << var_entry.first;
+////>>>>>>> policy
+//    }
+//
+//    Value_ptr initial_value = new Value(initial_auto);
+//    auto group_iter_var = symbol_table_->get_variable(group_iter.first);
+//    //symbol_table_->set_value(group_iter.first,initial_value);
+////    variable_values[group_iter_var] = initial_value;
+//    var_vals_to_add[group_iter_var] = initial_value;
+////    delete initial_value;
+//  }
+//
+//  // make sure no data race
+//  while(symbol_table_->AreValuesLocked()) std::this_thread::yield();
+//
+//  for(auto it : var_vals_to_erase) {
+//    delete variable_values[it];
+//    variable_values[it] = nullptr;
+//    variable_values.erase(it);
+//  }
+//
+//  for(auto it : var_vals_to_add) {
+//    symbol_table_->set_value(it.first,it.second, false);
+//  }
+//
+//  DVLOG(VLOG_LEVEL) << "done setting string group for components";
+////  std::cin.get();
+//}
 
 } /* namespace Solver */
 } /* namespace Vlab */

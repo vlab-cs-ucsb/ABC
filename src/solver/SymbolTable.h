@@ -84,7 +84,7 @@ public:
   int get_total_count(SMT::Variable_ptr);
   void reset_count();
 
-  /*Added function to keep track of the amount of reuse 
+  /*Added function to keep track of the amount of reuse
   int getReuse();
   void incrementReuse();
   */
@@ -216,7 +216,7 @@ private:
     * string names of a terms children, mainly for ANDS
     */
   TermChildrenTable term_children_table_;
-  
+
 
   std::map<SMT::Visitable_ptr,std::pair<SMT::Visitable_ptr, SMT::Visitable_ptr>> ite_conditions_;
 
@@ -233,7 +233,7 @@ private:
 
   /**
    * Count variable for kaluza tests
-   */ 
+   */
   SMT::Primitive_ptr count_symbol_;
 
   bool is_root_table_;
@@ -243,7 +243,7 @@ private:
   std::atomic<bool> values_lock_;
 
   static const int VLOG_LEVEL;
-  //int reuse; 
+  //int reuse;
 
 };
 

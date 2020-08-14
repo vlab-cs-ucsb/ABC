@@ -101,7 +101,7 @@ SymbolTable::~SymbolTable() {
       entry.second = nullptr;
     }
     variables_.clear();
-  
+
     if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
     for(auto &entry : original_variables_) {
       delete entry.second;
@@ -797,44 +797,44 @@ void SymbolTable::reset_variable_usage() {
 }
 
 void SymbolTable::SetVariableMapping(std::map<std::string,std::string> variable_mapping) {
-
+  return;
   original_variables_ = variables_;
   variables_.clear();
 
-  
+
 
   for(auto it : original_variables_) {
     std::string name = it.first;
     if(variable_mapping.find(it.first) != variable_mapping.end()) {
-      name = variable_mapping[it.first];  
+      name = variable_mapping[it.first];
     } else {
       variable_mapping[name] = name;
     }
     Variable_ptr variable = new Variable(name,it.second->getType());
     variables_.insert(std::make_pair(name,variable));
 
-   
+
   for (auto it2 = scope_stack_.rbegin(); it2 != scope_stack_.rend(); it2++) {
-    
+
     auto prev_var = original_variables_[it.first];
 
     auto entry = variable_value_table_[(*it2)].find(prev_var);
     if (entry != variable_value_table_[(*it2)].end()) {
-      
+
       auto val = entry->second;
       entry->second = nullptr;
       variable_value_table_[(*it2)].erase(entry);
       variable_value_table_[(*it2)].insert(std::make_pair(variables_[name],val));
     }
   }
-    /* 
+    /*
     if(variable_value_table_[top_scope()].find(original_variables_[it.first]) != variable_value_table_[top_scope()].end()) {
       auto var_val = variable_value_table_[top_scope()][original_variables_[it.first]];
       variable_value_table_[top_scope()].erase(original_variables_[it.first]);
       variable_value_table_[top_scope()].insert(std::make_pair(variable,var_val));
     }
     */
-   
+
   }
 
   if(count_symbol_ != nullptr) {
