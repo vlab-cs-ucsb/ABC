@@ -95,6 +95,7 @@
   TRIM                 "trim"
   TOSTRING             "toString"
   TOINT                "toInt"
+  IS_DIGIT              "is_digit"
   REPLACE              "replace"
   COUNT                "count"
   ITE                  "ite"
@@ -290,6 +291,7 @@ term                  :
                       | "(" TRIM term term ")"                                          { $$ = new Trim($3); }
                       | "(" TOSTRING term ")"                                           { $$ = new ToString($3); }
                       | "(" TOINT term ")"                                              { $$ = new ToInt($3); }
+                      | "(" IS_DIGIT term ")"                                              { $$ = new In($3,new TermConstant(new Primitive("[0-9]", Primitive::Type::REGEX))); }
                       | "(" REPLACE term term term ")"                                  { $$ = new Replace($3, $4, $5); }
                       | "(" COUNT term term ")"                                         { $$ = new Count($3, $4); }
                   /*    | "(" ITE term term term ")"                                      { $$ = TransformIteToOr($3, $4, $5); } */

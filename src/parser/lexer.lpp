@@ -130,6 +130,7 @@ KEYWORD        :[a-zA-Z0-9._+\-*=%?!$_~&^<>@]+
 "str.suffixof"      { return Parser::make_SUFFIXOF            (loc);  }
 "str.to.int"        { return Parser::make_TOINT           (loc);  }
 "int.to.str"        { return Parser::make_TOSTRING        (loc);  }
+"is_digit"      { return Parser::make_IS_DIGIT        (loc);  }
 "str.at"            { return Parser::make_CHARAT          (loc);  }
 
 "str.in.re"         { return Parser::make_IN              (loc);  }
