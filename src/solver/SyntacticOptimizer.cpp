@@ -1239,7 +1239,14 @@ void SyntacticOptimizer::visitGt(Gt_ptr gt_term) {
     bool result = (constant_term_checker_left.get_constant_int() > constant_term_checker_right.get_constant_int());
     add_callback_to_replace_with_bool(gt_term, result);
     return;
+  } else if (constant_term_checker_left.is_constant() && constant_term_checker_right.is_constant()) {
+    bool result = (constant_term_checker_left.get_constant_as_string() > constant_term_checker_right.get_constant_as_string());
+    add_callback_to_replace_with_bool(gt_term, result);
+    return;
   }
+//  else if(constant_term_checker_left.is_constant_string() && constant_term_checker_right.is_constant_string()) {
+//    bool resul
+//  }
 
   if (Ast2Dot::isEquivalent(gt_term->left_term, gt_term->right_term)) {
     add_callback_to_replace_with_bool(gt_term, false);
@@ -1315,6 +1322,10 @@ void SyntacticOptimizer::visitGe(Ge_ptr ge_term) {
     bool result = (constant_term_checker_left.get_constant_int() >= constant_term_checker_right.get_constant_int());
     add_callback_to_replace_with_bool(ge_term, result);
     return;
+  } else if (constant_term_checker_left.is_constant() && constant_term_checker_right.is_constant()) {
+    bool result = (constant_term_checker_left.get_constant_as_string() >= constant_term_checker_right.get_constant_as_string());
+    add_callback_to_replace_with_bool(ge_term, result);
+    return;
   }
 
   if (Ast2Dot::isEquivalent(ge_term->left_term, ge_term->right_term)) {
@@ -1387,6 +1398,10 @@ void SyntacticOptimizer::visitLt(Lt_ptr lt_term) {
     bool result = (constant_term_checker_left.get_constant_int() < constant_term_checker_right.get_constant_int());
     add_callback_to_replace_with_bool(lt_term, result);
     return;
+  } else if (constant_term_checker_left.is_constant() && constant_term_checker_right.is_constant()) {
+    bool result = (constant_term_checker_left.get_constant_as_string() < constant_term_checker_right.get_constant_as_string());
+    add_callback_to_replace_with_bool(lt_term, result);
+    return;
   }
 
   if (Ast2Dot::isEquivalent(lt_term->left_term, lt_term->right_term)) {
@@ -1430,6 +1445,10 @@ void SyntacticOptimizer::visitLe(Le_ptr le_term) {
 
   if (constant_term_checker_left.is_constant_int() && constant_term_checker_right.is_constant_int()) {
     bool result = (constant_term_checker_left.get_constant_int() <= constant_term_checker_right.get_constant_int());
+    add_callback_to_replace_with_bool(le_term, result);
+    return;
+  }else if (constant_term_checker_left.is_constant() && constant_term_checker_right.is_constant()) {
+    bool result = (constant_term_checker_left.get_constant_as_string() <= constant_term_checker_right.get_constant_as_string());
     add_callback_to_replace_with_bool(le_term, result);
     return;
   }
