@@ -192,6 +192,7 @@ bool EquivalenceGenerator::is_equiv_of_variables(SMT::Term_ptr left_term, SMT::T
  */
 bool EquivalenceGenerator::is_equiv_of_variable_and_constant(SMT::Term_ptr left_term, SMT::Term_ptr right_term) {
   Optimization::ConstantTermChecker constant_term_checker;
+  return false;
   if (QualIdentifier_ptr left_id = dynamic_cast<QualIdentifier_ptr>(left_term)) {
     constant_term_checker.start(right_term, Optimization::ConstantTermChecker::Mode::ONLY_TERM_CONSTANT);
     if (constant_term_checker.is_constant()) {

@@ -480,51 +480,137 @@ std::map<SMT::Term_ptr, SMT::TermList>& StringConstraintSolver::get_integer_term
 void StringConstraintSolver::push_generator(Term_ptr scope) {
   generator_stack_.push_back(std::make_pair(scope,string_formula_generator_));
   string_formula_generator_ = std::make_shared<StringFormulaGenerator>(root_,symbol_table_,constraint_information_);
-  //string_formula_generator_.current_group_ = symbol_table_->get_var_name_for_node(scope,Variable::Type::STRING); 
+  string_formula_generator_->current_group_ = symbol_table_->get_var_name_for_node(scope,Variable::Type::STRING);
 }
 
 void StringConstraintSolver::pop_generators(int num_to_merge, Term_ptr t) {
   std::map<std::string,Value_ptr> or_values;
   bool is_satisfiable =false; 
   bool has_string_formula = false;
+
+  // how the groups should look
+
+  auto t_term_generator = new StringFormulaGenerator(root_, symbol_table_, constraint_information_);
+  t_term_generator->start(t);
+  {
+    std::string group_name = t_term_generator->current_group_;
+    for(auto group : t_term_generator->get_group_subgroups(group_name)) {
+
+      LOG(INFO) << "subgroup: {";
+      LOG(INFO) << "  name: " << group;
+      auto group_formula = t_term_generator->get_group_formula(group);
+      or_values[group] = new Value(Theory::StringAutomaton::MakePhi(group_formula->clone()));
+      for(auto it : group_formula->GetVariableCoefficientMap()) {
+        LOG(INFO) << "    " << it.first;
+      }
+      LOG(INFO) << "}";
+    }
+  }
+
+std::cin.get();
+
+  // generators have groupings for separate subterms
+  // need to merge all subgroups together
+
+
+  // Have A_0
+  // for each generator, intersect results to create A_g = A_0 && A_g
+  // Union results together, result A_r = A_g || A_g' || A_g'' || ...
+
+
+  LOG(INFO) << "------ POPPING GENERATORS  -------";
   while(num_to_merge-- > 0) {
+    LOG(INFO) << "POP GEN";
     auto &it = generator_stack_.back();
     auto generator = it.second;
     auto term_scope = it.first;
     generator_stack_.pop_back();
 
+    std::map<std::string,Value_ptr> temp_or_values;
+    for(auto it : or_values) {
+      auto f = it.second->getStringAutomaton()->GetFormula();
+      temp_or_values[it.first] = new Value(Theory::StringAutomaton::MakeAnyStringAligned(f->clone()));
+    }
+
     std::string group_name = string_formula_generator_->current_group_;
-    //LOG(INFO) << "Term group name for " << *term_scope << " is " << group_name;	
-    //LOG(INFO) << "has " << string_formula_generator_->get_group_subgroups(group_name).size() << " subgroups";
-    //symbol_table_->push_scope(term_scope); 
+    LOG(INFO) << "Term group name for " << *term_scope << " is " << group_name;
+    LOG(INFO) << "has " << string_formula_generator_->get_group_subgroups(group_name).size() << " subgroups";
+//    symbol_table_->push_scope(term_scope);
     for(auto group : string_formula_generator_->get_group_subgroups(group_name)) {
   		Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
   		Value_ptr subgroup_scope_value = symbol_table_->get_value_at_scope(term_scope,subgroup_variable);
   		if(subgroup_scope_value != nullptr) {
-  			//LOG(INFO) << "penut butter";
-        has_string_formula = true;
-  			if(or_values.find(group) == or_values.end()) {
-  				or_values[group] = subgroup_scope_value->clone();
-  			} else {
-  				auto old_value = or_values[group];
-  				or_values[group] = or_values[group]->union_(subgroup_scope_value);
-  				delete old_value;
+
+
+  		  LOG(INFO) << "Group formula: {";
+  		  LOG(INFO) << "  group_name     = " << group;
+  		  LOG(INFO) << "  group_variable = " << subgroup_variable->getName();
+  			auto f = subgroup_scope_value->getStringAutomaton()->GetFormula();
+  			for(auto it : f->GetVariableCoefficientMap()) {
+  			  LOG(INFO) << "    " << it.first;
+  			  LOG(INFO) << "    (top level group var: " << symbol_table_->get_group_variable_of(symbol_table_->get_variable(it.first))->str();
   			}
-  			is_satisfiable = or_values[group]->is_satisfiable() or is_satisfiable;
+  			LOG(INFO) << "}";
+
+        // variables in this subgroup are guaranteed to be together in the above subgroup
+        // i.e., top-level subgroup will contain at least those variables from this lower-level subgroup, but possibly more
+        auto sample_var_name = f->GetVariableAtIndex(0);
+        auto sample_var = symbol_table_->get_variable(sample_var_name);
+        auto top_level_group_var = symbol_table_->get_group_variable_of(sample_var);
+        auto top_level_group_var_name = top_level_group_var->getName();
+
+        auto intersect_value = temp_or_values[top_level_group_var_name]->intersect(subgroup_scope_value);
+        delete temp_or_values[top_level_group_var_name];
+        temp_or_values[top_level_group_var_name] = intersect_value;
+
+  			has_string_formula = true;
+//  			if(or_values.find(group) == or_values.end()) {
+//  				or_values[group] = subgroup_scope_value->clone();
+//  			} else {
+//  				auto old_value = or_values[group];
+//  				or_values[group] = or_values[group]->union_(subgroup_scope_value);
+//  				delete old_value;
+//  			}
+  			is_satisfiable = or_values[top_level_group_var_name]->is_satisfiable() or is_satisfiable;
   			symbol_table_->clear_value(subgroup_variable,term_scope);
   		}
+
+
+
       //LOG(INFO) << "jelly";
   	}
-    //symbol_table_->pop_scope();
+
+  	// union temp_or_values with or_values
+    for(auto it: temp_or_values) {
+      auto union_value = or_values[it.first]->union_(it.second);
+      delete it.second; it.second = nullptr;
+      delete or_values[it.first];
+      or_values[it.first] = union_value;
+    }
+//    symbol_table_->pop_scope();
     string_formula_generator_ = generator;
   }
+
+  for(auto it : or_values) {
+    it.second->getStringAutomaton()->inspectAuto(false,true);
+  }
+
+
+
+  LOG(INFO) << "-----  DONE MERGING  -----";
+  std::cin.get();
+  LOG(INFO) << 1;
+
   if (has_string_formula) {
+LOG(INFO) << 2;
   	for(auto& iter : or_values) {
   		symbol_table_->IntersectValue(iter.first,iter.second);
   		is_satisfiable = symbol_table_->get_value(iter.first)->is_satisfiable() and is_satisfiable;
   		if(not is_satisfiable) {
   			break;
   		}
+LOG(INFO) << 3;
+
       auto group_auto = symbol_table_->get_value(iter.first)->getStringAutomaton();
       //for(auto it : group_auto->GetFormula()->GetVariableCoefficientMap()) {
       //  symbol_table_->set_variable_group_mapping(it.first,iter.first);
@@ -536,6 +622,7 @@ void StringConstraintSolver::pop_generators(int num_to_merge, Term_ptr t) {
       //  symbol_table_->set_variable_group_mapping(it.first,iter.first);
       //}
   	}
+LOG(INFO) << 4;
 
   	for(auto &iter : or_values) {
   		delete iter.second;
@@ -543,14 +630,20 @@ void StringConstraintSolver::pop_generators(int num_to_merge, Term_ptr t) {
   	}
     //if(is_satisfiable) {
     // string_formula_generator_->start(t);
-      
+LOG(INFO) << 5;
+
     //}
   	//auto satisfiable_value = new Value(is_satisfiable);
 		//symbol_table_->IntersectValue(group_name,satisfiable_value);
 		//delete satisfiable_value;
-		set_term_value(t,new Value(is_satisfiable));
-    if(!is_satisfiable) LOG(FATAL) << "BAD";
+//		set_term_value(t,new Value(is_satisfiable));
+//    if(!is_satisfiable) LOG(FATAL) << "BAD";
   }
+
+  set_term_value(t,new Value(is_satisfiable));
+//  if(!is_satisfiable) LOG(FATAL) << "BAD";
+LOG(INFO) << 6;
+
 
 
 

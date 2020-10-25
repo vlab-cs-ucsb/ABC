@@ -98,7 +98,8 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
     add_callback_to_replace_with_bool(and_term, true);
   } else if (and_term->term_list->size() == 1) {
     auto child_term = and_term->term_list->front();
-    if (dynamic_cast<And_ptr>(child_term) or dynamic_cast<Or_ptr>(child_term)) {
+    // simplify, but always make sure there is at least one AND at top scope
+    if (dynamic_cast<And_ptr>(child_term) or (dynamic_cast<Or_ptr>(child_term) && symbol_table_->top_scope() != root_)) {
       callback_ = [and_term, child_term](Term_ptr & term) mutable {
         and_term->term_list->clear();
         delete and_term;
@@ -147,6 +148,13 @@ void SyntacticOptimizer::visitOr(Or_ptr or_term) {
         term = child_term;
       };
     }
+//    else {
+//      callback_ = [or_term, child_term](Term_ptr & term) mutable {
+//        or_term->term_list->clear();
+//        delete or_term;
+//        term = child_term;
+//      };
+//    }
   }
 
   DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
@@ -657,22 +665,22 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
     }
     LOG(FATAL) << "Operation not supported";
   }
-  else if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type() and Term::Type::QUALIDENTIFIER == eq_term->right_term->type()) {
-  	auto count_var = symbol_table_->get_count_variable();
-		auto rep_count_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),count_var);
-
-  	auto left_var = symbol_table_->get_variable(eq_term->left_term);
-  	auto right_var = symbol_table_->get_variable(eq_term->right_term);
-
-  	if(left_var->getType() == Variable::Type::STRING and left_var->getName() == rep_count_var->getName()) {
-  		symbol_table_->increment_variable_usage(left_var->getName());
-  		symbol_table_->increment_variable_usage(right_var->getName());
-  	}
-  	else if(right_var->getType() == Variable::Type::STRING and right_var->getName() == rep_count_var->getName()) {
-			symbol_table_->increment_variable_usage(left_var->getName());
-  		symbol_table_->increment_variable_usage(right_var->getName());
-  	}
-  }
+//  else if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type() and Term::Type::QUALIDENTIFIER == eq_term->right_term->type()) {
+//  	auto count_var = symbol_table_->get_count_variable();
+//		auto rep_count_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),count_var);
+//
+//  	auto left_var = symbol_table_->get_variable(eq_term->left_term);
+//  	auto right_var = symbol_table_->get_variable(eq_term->right_term);
+//
+//  	if(left_var->getType() == Variable::Type::STRING and left_var->getName() == rep_count_var->getName()) {
+//  		symbol_table_->increment_variable_usage(left_var->getName());
+//  		symbol_table_->increment_variable_usage(right_var->getName());
+//  	}
+//  	else if(right_var->getType() == Variable::Type::STRING and right_var->getName() == rep_count_var->getName()) {
+//			symbol_table_->increment_variable_usage(left_var->getName());
+//  		symbol_table_->increment_variable_usage(right_var->getName());
+//  	}
+//  }
   else if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type()) {
     auto left_var = symbol_table_->get_variable(eq_term->left_term);
     if(left_var->getType() == Variable::Type::STRING) {

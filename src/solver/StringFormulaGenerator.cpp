@@ -972,10 +972,49 @@ void StringFormulaGenerator::visitConcat(Concat_ptr concat_term) {
 
 
 void StringFormulaGenerator::visitIn(In_ptr in_term) {
+
+  visit_children_of(in_term);
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *in_term << "@" << in_term;
+
+  auto left_formula = get_term_formula(in_term->left_term);
+  auto right_formula = get_term_formula(in_term->right_term);
+
+  if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
+    auto formula = left_formula->clone();
+    formula->MergeVariables(right_formula);
+    formula->SetType(StringFormula::Type::NONRELATIONAL);
+    delete_term_formula(in_term->left_term);
+    delete_term_formula(in_term->right_term);
+    set_term_formula(in_term, formula);
+    add_string_variables(current_group_, in_term);
+    has_mixed_constraint_ = true;
+    constraint_information_->add_mixed_constraint(in_term);
+  }
+
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *in_term << "@" << in_term;
 }
 
 
 void StringFormulaGenerator::visitNotIn(NotIn_ptr not_in_term) {
+  visit_children_of(not_in_term);
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *not_in_term << "@" << not_in_term;
+
+  auto left_formula = get_term_formula(not_in_term->left_term);
+  auto right_formula = get_term_formula(not_in_term->right_term);
+
+  if (left_formula not_eq nullptr and right_formula not_eq nullptr) {
+    auto formula = left_formula->clone();
+    formula->MergeVariables(right_formula);
+    formula->SetType(StringFormula::Type::NONRELATIONAL);
+    delete_term_formula(not_in_term->left_term);
+    delete_term_formula(not_in_term->right_term);
+    set_term_formula(not_in_term, formula);
+    add_string_variables(current_group_, not_in_term);
+    has_mixed_constraint_ = true;
+    constraint_information_->add_mixed_constraint(not_in_term);
+  }
+
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *not_in_term << "@" << not_in_term;
 }
 
 void StringFormulaGenerator::visitLen(Len_ptr len_term) {
@@ -1598,9 +1637,9 @@ void StringFormulaGenerator::set_group_mappings() {
   std::vector<Variable_ptr> var_vals_to_erase;
 
   for (auto& el: subgroups_) {
-
     symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
   }
+
   // get values of previous solve (if any)
   auto  &variable_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
   // update groups and their values in symbol table
@@ -1663,7 +1702,7 @@ void StringFormulaGenerator::set_group_mappings() {
   }
 
   // make sure no data race
-  while(symbol_table_->values_lock_) std::this_thread::yield();
+  while(symbol_table_->AreValuesLocked()) std::this_thread::yield();
 
   for(auto it : var_vals_to_erase) {
     delete variable_values[it];

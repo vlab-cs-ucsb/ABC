@@ -22,9 +22,7 @@ Driver::Driver()
   cached_values_.clear();
   cached_bounded_values_.clear();
 
-#ifdef USE_CACHE
-  cache_manager_ = new Solver::CacheManager();
-#endif
+
 }
 
 Driver::~Driver() {
@@ -108,6 +106,11 @@ void Driver::ast2dot(std::string file_name) {
 
 void Driver::InitializeSolver() {
 
+#ifdef USE_CACHE
+  cache_manager_ = new Solver::CacheManager();
+#endif
+
+
   symbol_table_ = new Solver::SymbolTable();
   symbol_table_->push_scope(script_);
 
@@ -160,12 +163,12 @@ void Driver::InitializeSolver() {
     constraint_sorter.start();
   }
 
-#ifdef USE_CACHE
-  if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
-    Solver::Renamer renamer(script_, symbol_table_);
-    renamer.start();
-  }
-#endif
+//#ifdef USE_CACHE
+//  if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
+//    Solver::Renamer renamer(script_, symbol_table_);
+//    renamer.start();
+//  }
+//#endif
 }
 
 void Driver::Solve() {
@@ -475,7 +478,7 @@ Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsig
 }
 
 Theory::BigInteger Driver::CountInts(const unsigned long bound) {
-  while(symbol_table_->values_lock_) std::this_thread::yield;
+  while(symbol_table_->AreValuesLocked()) std::this_thread::yield();
   return GetModelCounter().CountInts(bound);
 }
 
@@ -837,7 +840,7 @@ void Driver::reset() {
 
 
 	if(symbol_table_ != nullptr) {
-	  while(symbol_table_->values_lock_) std::this_thread::yield();
+	  while(symbol_table_->AreValuesLocked()) std::this_thread::yield();
 	  delete symbol_table_;
 	  symbol_table_ = nullptr;
 	}
@@ -1035,38 +1038,38 @@ void Driver::saveStateAndBranch() {
 
 void Driver::print_statistics() {
 
-#ifdef USE_CACHE
-  int full_formula_hits = 0;
-  int total_hit_size = 0;
-  int total_full_formula_size = 0;
-
-  for(auto iter: hit_statistics_) {
-    int hit_size = std::get<0>(iter);
-    int full_size = std::get<1>(iter);
-    if(hit_size == full_size) {
-      full_formula_hits++;
-    }
-    total_hit_size += hit_size;
-    total_full_formula_size += full_size;
-  }
-
-  double average_ratio = double(total_hit_size) / double(total_full_formula_size);
-  double average_hit_size = double(total_hit_size) / double(hit_statistics_.size());
-  double average_formula_size = double(total_full_formula_size) / double(hit_statistics_.size());
-
-  LOG(INFO) << "";
-  LOG(INFO) << "--- cache statistics --- " << hit_statistics_.size();
-  LOG(INFO) << "num hits                         = " << total_hits_;
-  LOG(INFO) << "num misses                       = " << total_misses_;
-  LOG(INFO) << "num full formula hit             = " << full_formula_hits;
-  LOG(INFO) << "avg hit size / full formula size = " << average_ratio;
-  LOG(INFO) << "avg hit size                     = " << average_hit_size;
-  LOG(INFO) << "avg formula size                 = " << average_formula_size;
-
-  LOG(INFO) << "automata num_hits    = " << Solver::ArithmeticConstraintSolver::dfa_hits;
-  LOG(INFO) << "automata num_misses  = " << Solver::ArithmeticConstraintSolver::dfa_misses;
-  LOG(INFO) << "automata hit ratio   = " << (double)Solver::ArithmeticConstraintSolver::dfa_hits / (double)(Solver::ArithmeticConstraintSolver::dfa_misses+Solver::ArithmeticConstraintSolver::dfa_hits);
-#endif
+//#ifdef USE_CACHE
+//  int full_formula_hits = 0;
+//  int total_hit_size = 0;
+//  int total_full_formula_size = 0;
+//
+//  for(auto iter: hit_statistics_) {
+//    int hit_size = std::get<0>(iter);
+//    int full_size = std::get<1>(iter);
+//    if(hit_size == full_size) {
+//      full_formula_hits++;
+//    }
+//    total_hit_size += hit_size;
+//    total_full_formula_size += full_size;
+//  }
+//
+//  double average_ratio = double(total_hit_size) / double(total_full_formula_size);
+//  double average_hit_size = double(total_hit_size) / double(hit_statistics_.size());
+//  double average_formula_size = double(total_full_formula_size) / double(hit_statistics_.size());
+//
+//  LOG(INFO) << "";
+//  LOG(INFO) << "--- cache statistics --- " << hit_statistics_.size();
+//  LOG(INFO) << "num hits                         = " << total_hits_;
+//  LOG(INFO) << "num misses                       = " << total_misses_;
+//  LOG(INFO) << "num full formula hit             = " << full_formula_hits;
+//  LOG(INFO) << "avg hit size / full formula size = " << average_ratio;
+//  LOG(INFO) << "avg hit size                     = " << average_hit_size;
+//  LOG(INFO) << "avg formula size                 = " << average_formula_size;
+//
+//  LOG(INFO) << "automata num_hits    = " << Solver::ArithmeticConstraintSolver::dfa_hits;
+//  LOG(INFO) << "automata num_misses  = " << Solver::ArithmeticConstraintSolver::dfa_misses;
+//  LOG(INFO) << "automata hit ratio   = " << (double)Solver::ArithmeticConstraintSolver::dfa_hits / (double)(Solver::ArithmeticConstraintSolver::dfa_misses+Solver::ArithmeticConstraintSolver::dfa_hits);
+//#endif
 }
 
 void Driver::test() {

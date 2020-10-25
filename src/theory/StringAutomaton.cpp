@@ -965,7 +965,6 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
 
 StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula) {
 	StringAutomaton_ptr not_equality_auto = nullptr;
-
 	auto coeff_map = formula->GetVariableCoefficientMap();
 	int num_vars = 0;
 	for(auto it : coeff_map) {
@@ -998,7 +997,6 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
 		}
 
 
-
 		formula->SetConstant("");
 		if(num_tracks == 1) {
 			not_equality_auto = new StringAutomaton(dfaCopy(complement_auto->getDFA()),num_tracks,DEFAULT_NUM_OF_VARIABLES);
@@ -1021,9 +1019,6 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
 
 	}
 
-
-
-
   int num_tracks = formula->GetNumberOfVariables();
   int left_track = formula->GetVariableIndex(1); // variable on the left of equality
 	int right_track = formula->GetVariableIndex(2); // variable on the right of equality
@@ -1034,6 +1029,7 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
   temp_formula->AddVariable(formula->GetVariableAtIndex(right_track),2);
 
 	if(formula->GetType() == StringFormula::Type::NOTEQ_CHARAT) {
+
 		// if charAt() == charAt() and constants are the same (such as charAt(X,0) == charAt(Y,0))
     temp_formula->SetType(StringFormula::Type::NOTEQ_CHARAT);
     temp_formula->SetConstant(formula->GetConstant());
@@ -1044,6 +1040,7 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
 		not_equality_auto = temp_auto->ChangeIndicesMap(formula);
     delete temp_auto;
 	} else if(formula->GetConstant() != "") {
+
 		// if string is not empty, eq is of form X = Y.c
 //    int nnum = num_tracks;
 //    num_tracks = 2;
@@ -1073,11 +1070,10 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
     //auto not_equality_dfa = MakeBinaryRelationDfa(StringFormula::Type::NOTEQ, VAR_PER_TRACK, num_tracks, left_track, right_track);
 
     auto not_equality_dfa = MakeBinaryRelationDfa(StringFormula::Type::NOTEQ, VAR_PER_TRACK, num_tracks, left_track, right_track);
-    auto not_equality_auto = new StringAutomaton(not_equality_dfa,formula,num_tracks*VAR_PER_TRACK);
+    not_equality_auto = new StringAutomaton(not_equality_dfa,formula,num_tracks*VAR_PER_TRACK);
 //    not_equality_auto = temp_auto->ChangeIndicesMap(formula);
 //    delete temp_auto;
   }
-
   DVLOG(VLOG_LEVEL) << not_equality_auto->id_ << " = MakeNotEquality(" << formula->str() << ")";
   return not_equality_auto;
 }
