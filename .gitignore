@@ -13,6 +13,9 @@ m4/ltversion.m4
 m4/lt~obsolete.m4
 *.dot
 .idea*
+cmake*
+CMake*
+INSTALL
 
 *.pydevproject
 .metadata

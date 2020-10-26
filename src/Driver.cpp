@@ -397,9 +397,7 @@ Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsig
 }
 
 Theory::BigInteger Driver::CountInts(const unsigned long bound) {
-  auto i = GetModelCounter().CountInts(bound);
-  std::cout << i << std::endl;
-  return i;
+  return GetModelCounter().CountInts(bound);
 }
 
 Theory::BigInteger Driver::CountStrs(const unsigned long bound) {
@@ -731,6 +729,9 @@ void Driver::set_option(const Option::Name option) {
     	break;
     case Option::Name::COUNT_BOUND_EXACT:
     	Option::Solver::COUNT_BOUND_EXACT = true;
+    	break;
+    case Option::Name::USE_SINGLE_AUTO:
+    	Option::Solver::USE_SINGLE_AUTO = true;
     	break;
     default:
       LOG(ERROR)<< "option is not recognized: " << static_cast<int>(option);

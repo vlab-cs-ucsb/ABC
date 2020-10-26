@@ -318,11 +318,21 @@ void StringConstraintSolver::postVisitOr(Or_ptr or_term) {
 
   bool is_satisfiable = false;
   bool has_string_formula = false;
-
-  std::string group_name = string_formula_generator_.get_term_group_name(or_term);
   std::map<std::string,Value_ptr> or_values;
 
+  std::string group_name = string_formula_generator_.get_term_group_name(or_term);
+  for(auto group : string_formula_generator_.get_group_subgroups(group_name)) {
+    auto group_formula = string_formula_generator_.get_group_formula(group);
+    or_values[group] = new Value(Theory::StringAutomaton::MakePhi(group_formula->clone()));
+  }
+
   for (auto term : *(or_term->term_list)) {
+    std::map<std::string,Value_ptr> temp_or_values;
+    for(auto it : or_values) {
+      auto f = it.second->getStringAutomaton()->GetFormula();
+      temp_or_values[it.first] = new Value(Theory::StringAutomaton::MakeAnyStringAligned(f->clone()));
+    }
+
     //auto formula = string_formula_generator_.get_term_formula(term);
     /**
      * In previous visit, automata for arithmetic constraints are created and
@@ -331,24 +341,31 @@ void StringConstraintSolver::postVisitOr(Or_ptr or_term) {
      * need to visit them, a value is already computed for them,
      * grabs them from symbol table
      */
-  	symbol_table_->push_scope(term);
+
+//  	symbol_table_->push_scope(term);
   	for(auto group : string_formula_generator_.get_group_subgroups(group_name)) {
   		Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
   		Value_ptr subgroup_scope_value = symbol_table_->get_value_at_scope(term,subgroup_variable);
+
   		if(subgroup_scope_value != nullptr) {
   			has_string_formula = true;
-  			if(or_values.find(group) == or_values.end()) {
-  				or_values[group] = subgroup_scope_value->clone();
-  			} else {
-  				auto old_value = or_values[group];
-  				or_values[group] = or_values[group]->union_(subgroup_scope_value);
-  				delete old_value;
-  			}
-  			is_satisfiable = or_values[group]->is_satisfiable() or is_satisfiable;
+
+        auto intersect_value = temp_or_values[group]->intersect(subgroup_scope_value);
+        delete temp_or_values[group];
+        temp_or_values[group] = intersect_value;
+
+  			is_satisfiable = temp_or_values[group]->is_satisfiable() or is_satisfiable;
   			symbol_table_->clear_value(subgroup_variable,term);
   		}
   	}
-  	symbol_table_->pop_scope();
+
+  	for(auto it: temp_or_values) {
+      auto union_value = or_values[it.first]->union_(it.second);
+      delete it.second; it.second = nullptr;
+      delete or_values[it.first];
+      or_values[it.first] = union_value;
+    }
+//  	symbol_table_->pop_scope();
   }
 
   DVLOG(VLOG_LEVEL) << "collect child results end: " << *or_term << "@" << or_term;
@@ -362,7 +379,7 @@ void StringConstraintSolver::postVisitOr(Or_ptr or_term) {
    * 2) We are visited or term second time for some mixed constraints, for this we do an unnecessary
    *  intersection below with any string, we can avoid that with more checks later!!!
    */
-
+//  std::string group_name = string_formula_generator_.get_term_group_name(or_term);
   if (has_string_formula) {
   	for(auto& iter : or_values) {
   		symbol_table_->IntersectValue(iter.first,iter.second);

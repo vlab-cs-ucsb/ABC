@@ -101,6 +101,8 @@ int main(const int argc, const char **argv) {
     	driver.set_option(Vlab::Option::Name::FORCE_DNF_FORMULA);
     } else if (argv[i] == std::string("--count-bound-exact")) {
       driver.set_option(Vlab::Option::Name::COUNT_BOUND_EXACT);
+    } else if (argv[i] == std::string("--precise")) {
+      driver.set_option(Vlab::Option::Name::USE_SINGLE_AUTO);
     } else if (argv[i] == std::string("--count-tuple")) {
       count_tuple = true;
     } else if (argv[i] == std::string("-bs") or argv[i] == std::string("--bound-str")) {

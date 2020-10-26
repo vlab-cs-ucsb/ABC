@@ -145,6 +145,60 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
     return;
   }
 
+
+  /*
+   * EXPERIMENTAL: Put all in one
+   */
+
+  if(Option::Solver::USE_SINGLE_AUTO) {
+    ArithmeticFormula_ptr temp_formula = new ArithmeticFormula();
+
+//  LOG(INFO) << "--- GROUP: " << current_group_ << " ------";
+//  LOG(INFO) << "";
+    auto subgroups = get_group_subgroups(current_group_);
+    for (auto it : subgroups) {
+//    LOG(INFO) << "subgroup: " << it;
+      auto f = get_group_formula(it);
+      temp_formula->MergeVariables(f);
+//    LOG(INFO) << "formula: ";
+//    for(auto var : f->GetVariableCoefficientMap()) {
+//      LOG(INFO) << "  " << var.first;
+//    }
+    }
+
+    if (temp_formula->GetNumberOfVariables() <= 40) {
+      std::string temp_subgroup_name = generate_group_name(or_term, current_group_);
+      for (auto &sg_it : subgroups) {
+        auto f = get_group_formula(sg_it);
+
+        for (auto var_iter : f->GetVariableCoefficientMap()) {
+          variable_group_map_[var_iter.first] = temp_subgroup_name;
+        }
+
+        for (auto &term_group_iter : term_group_map_) {
+          if (term_group_iter.second == sg_it) {
+            term_group_iter.second = temp_subgroup_name;
+          }
+        }
+
+        auto formula_iter = group_formula_.find(sg_it);
+        if (ArithmeticFormula::Type::NONE == formula_iter->second->GetType() ||
+            ArithmeticFormula::Type::VAR == formula_iter->second->GetType()) {
+          delete formula_iter->second;
+          formula_iter->second = nullptr;
+          group_formula_.erase(formula_iter);
+          subgroups_[current_group_].erase(sg_it);
+        }
+      }
+
+      subgroups_[current_group_].insert(temp_subgroup_name);
+      group_formula_[temp_subgroup_name] = temp_formula;
+    } else {
+      LOG(FATAL) << "Too big!";
+      delete temp_formula;
+      temp_formula = nullptr;
+    }
+  }
   /**
    * If an or term does not have a child that has arithmetic formula, but we end up being here:
    * If or term does not have a group formula we are fine.
