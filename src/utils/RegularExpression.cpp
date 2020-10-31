@@ -607,7 +607,7 @@ RegularExpression_ptr RegularExpression::parseUnionExp() {
 
 RegularExpression_ptr RegularExpression::parseInterExp() {
   RegularExpression_ptr regex = parseConcatExp();
-  if (check(INTERSECTION) and match('|')) {
+  if (check(INTERSECTION) and match('&')) {
     regex = makeIntersection(regex, parseInterExp());
   }
   return regex;
@@ -615,7 +615,7 @@ RegularExpression_ptr RegularExpression::parseInterExp() {
 
 RegularExpression_ptr RegularExpression::parseConcatExp() {
   RegularExpression_ptr regex = parseRepeatExp();
-  if (more() and !peek(")|")) {
+  if (more() and !peek(")|") and (not check(INTERSECTION) or not peek(")&"))) {
     regex = makeConcatenation(regex, parseConcatExp());
   }
   return regex;

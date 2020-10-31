@@ -1644,19 +1644,22 @@ void StringFormulaGenerator::set_group_mappings() {
   auto  &variable_values = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
   // update groups and their values in symbol table
   for(auto group_iter : group_formula_) {
-    //LOG(INFO) << "Group: " << group_iter.first;
+    LOG(INFO) << "Group: " << group_iter.first;
     if(symbol_table_->get_variable_unsafe(group_iter.first) == nullptr) {
+    	LOG(INFO) << "ADDING VARIABLE : " << group_iter.first;
       symbol_table_->add_variable(new Variable(group_iter.first, Variable::Type::NONE));
     }
 
     std::set<Variable_ptr> previous_group_variables;
     for (const auto& var_entry : group_iter.second->GetVariableCoefficientMap()) {
-      //LOG(INFO) << "--> " << var_entry.first;
+      LOG(INFO) << "--> " << var_entry.first;
       Variable_ptr variable = symbol_table_->get_variable(var_entry.first);
+      LOG(INFO) << "--(variable)--> " << *variable;
       Variable_ptr group_variable = symbol_table_->get_group_variable_of(variable);
-
+LOG(INFO) << "--(group_variable)--> " << *group_variable;
       // if group variable in variable_values, then a previous value was computed;
       if(variable_values.find(group_variable) != variable_values.end()) {
+        LOG(INFO) << "FOUND";
         previous_group_variables.insert(group_variable);
         if(true) {
           group_iter.second->MergeVariables(variable_values[group_variable]->getStringAutomaton()->GetFormula());
@@ -1664,6 +1667,8 @@ void StringFormulaGenerator::set_group_mappings() {
             symbol_table_->set_variable_group_mapping(vv.first,group_iter.first);
           }
         }
+      } else {
+        LOG(INFO) << "NOT FOUND";
       }
       // update variable group mapping in symbol table
       symbol_table_->set_variable_group_mapping(var_entry.first, group_iter.first);

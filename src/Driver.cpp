@@ -586,6 +586,10 @@ void Driver::SetModelCounter() {
         break;
       case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
 				auto string_auto = variable_entry.second->getStringAutomaton();
+				LOG(INFO) << "Variable: " << *variable_entry.first;
+				for(auto it : string_auto->GetFormula()->GetVariableCoefficientMap()) {
+				  LOG(INFO) << "  " << it.first;
+				}
 				model_counter_.add_symbolic_counter(string_auto->GetSymbolicCounter());
       }
       	break;

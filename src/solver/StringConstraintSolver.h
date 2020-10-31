@@ -61,6 +61,8 @@ class StringConstraintSolver: public AstTraverser {
   bool has_integer_terms(SMT::Term_ptr term);
   SMT::TermList& get_integer_terms_in(SMT::Term_ptr term);
   std::map<SMT::Term_ptr, SMT::TermList>& get_integer_terms_map();
+
+  void reset_generator();
   void push_generator(SMT::Term_ptr);
   void pop_generators(int,SMT::Term_ptr);
 

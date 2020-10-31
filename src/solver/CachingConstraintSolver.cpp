@@ -336,6 +336,8 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
       and_term->term_list->push_back(term);
       terms_to_solve.pop();
 
+
+
       // rename alphabet characters (from imported mapping, if any)
 //      if (has_cached_result) {
 //        renamer.start(term, false);
@@ -381,6 +383,7 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
       }
 
       // now we need to cache what we've got so far
+      key = Ast2Dot::toString(and_term);
       auto &value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
 
       std::vector<Theory::StringAutomaton_ptr> str_stuff_to_store;
@@ -402,6 +405,7 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
             if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
               continue;
             }
+            LOG(INFO) << "Writing STR AUTO!";
             num_string_to_write++;
             str_stuff_to_store.push_back(iter.second->getStringAutomaton()->clone());
           } else if (iter.second->getType() == Value::Type::BINARYINT_AUTOMATON) {
@@ -443,6 +447,7 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
         cache_manager_->Set(key, os.str());
 
       } else {
+        LOG(INFO) << "UNSAT";
         // unsat, just cache a "0" indicating unsat and repeat for rest of terms
         // then breakout
         os << "0";
@@ -532,7 +537,7 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
     Value_ptr result = new Value(is_satisfiable);
     setTermValue(and_term, result);
   }
-
+std::cin.get();
 }
 
 
@@ -1029,17 +1034,26 @@ void CachingConstraintSolver::visitOr(Or_ptr or_term) {
 
   if(Option::Solver::SUB_FORMULA_CACHING) {
 
+    string_constraint_solver_.push_generator(or_term);
+    arithmetic_constraint_solver_.push_generator(or_term);
+
+    int num_unsat = 0;
 
     for (auto& term : *(or_term->term_list)) {
 
-      string_constraint_solver_.push_generator(term);
-      arithmetic_constraint_solver_.push_generator(term);
+
 
       symbol_table_->push_scope(term);
-      bool is_scope_satisfiable = check_and_visit(term);
-      if (dynamic_cast<And_ptr>(term) == nullptr) {
 
+      if (dynamic_cast<And_ptr>(term) == nullptr) {
         string_constraint_solver_.collect_string_constraint_info(term);
+        string_constraint_solver_.start(term);
+      }
+
+      bool is_scope_satisfiable = check_and_visit(term);
+      LOG(INFO) << is_scope_satisfiable;
+      std::cin.get();
+      if (dynamic_cast<And_ptr>(term) == nullptr) {
 
         if (is_scope_satisfiable) {
           update_variables();
@@ -1051,21 +1065,27 @@ void CachingConstraintSolver::visitOr(Or_ptr or_term) {
 
       is_satisfiable = is_satisfiable or is_scope_satisfiable;
       symbol_table_->pop_scope();
+
+      if(is_scope_satisfiable) {
+        string_constraint_solver_.push_generator(term);
+        arithmetic_constraint_solver_.push_generator(term);
+      } else {
+
+        num_unsat++;
+        string_constraint_solver_.reset_generator();
+      }
     }
 
-LOG(INFO) << 1;
 
-    string_constraint_solver_.pop_generators(or_term->term_list->size(),or_term);
-    arithmetic_constraint_solver_.pop_generators(or_term->term_list->size(),or_term);
+    string_constraint_solver_.pop_generators(or_term->term_list->size()-num_unsat,or_term);
+    arithmetic_constraint_solver_.pop_generators(or_term->term_list->size()-num_unsat,or_term);
 
-LOG(INFO) << 2;
 
     if (constraint_information_->has_arithmetic_constraint(or_term)) {
       is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
       DVLOG(VLOG_LEVEL) << "Arithmetic formulae solved: " << *or_term << "@" << or_term;
     }
 
-LOG(INFO) << 3;
 
     if ((is_satisfiable or !constraint_information_->has_arithmetic_constraint(or_term))
         and constraint_information_->has_string_constraint(or_term)) {
@@ -1073,7 +1093,6 @@ LOG(INFO) << 3;
       DVLOG(VLOG_LEVEL) << "String formulae solved: " << *or_term << "@" << or_term;
     }
 
-LOG(INFO) << 4;
 
     Value_ptr result = new Value(is_satisfiable);
     setTermValue(or_term, result);
