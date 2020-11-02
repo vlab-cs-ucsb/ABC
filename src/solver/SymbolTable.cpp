@@ -948,6 +948,21 @@ void SymbolTable::SetCharacterMapping(std::map<char,char> mapping) {
   }
 }
 
+void SymbolTable::SetScopeSatisfiability(SMT::Visitable_ptr scope, bool sat) {
+  scope_satisfiability_[scope] = sat;
+}
+
+bool SymbolTable::GetScopeSatisfiability(SMT::Visitable_ptr scope) {
+  auto it = scope_satisfiability_.find(scope);
+  if(it == scope_satisfiability_.end()) {
+    LOG(FATAL) << "Scope Satisfiability does not yet exist";
+  }
+  return it->second;
+}
+
+bool SymbolTable::ScopeSatisfiabilityExists(SMT::Visitable_ptr scope) {
+  return (scope_satisfiability_.find(scope) != scope_satisfiability_.end());
+}
 
 std::string SymbolTable::generate_internal_name(std::string name, Variable::Type type) {
   std::stringstream ss;

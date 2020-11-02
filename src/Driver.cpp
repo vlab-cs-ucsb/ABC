@@ -558,12 +558,11 @@ void Driver::SetModelCounterForVariable(const std::string var_name, bool project
     }
   }
 
-  /**
-   * TODO add string part as well
-   */
 void Driver::SetModelCounter() {
   model_counter_.set_use_sign_integers(Option::Solver::USE_SIGNED_INTEGERS);
   int num_bin_var = 0;
+  int num_str_var = 0;
+
   for (const auto &variable_entry : getSatisfyingVariables()) {
     if (variable_entry.second == nullptr) {
       continue;
@@ -586,10 +585,12 @@ void Driver::SetModelCounter() {
         break;
       case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
 				auto string_auto = variable_entry.second->getStringAutomaton();
-				LOG(INFO) << "Variable: " << *variable_entry.first;
-				for(auto it : string_auto->GetFormula()->GetVariableCoefficientMap()) {
-				  LOG(INFO) << "  " << it.first;
-				}
+        auto formula = string_auto->GetFormula();
+        for (auto& el : formula->GetVariableCoefficientMap()) {
+          if (symbol_table_->get_variable_unsafe(el.first) != nullptr) {
+            ++num_str_var;
+          }
+        }
 				model_counter_.add_symbolic_counter(string_auto->GetSymbolicCounter());
       }
       	break;
@@ -604,10 +605,17 @@ void Driver::SetModelCounter() {
   }
 
   int number_of_int_variables = symbol_table_->get_num_of_variables(SMT::Variable::Type::INT);
-  int number_of_substituted_int_variables = symbol_table_->get_num_of_substituted_variables(symbol_table_->top_scope(),
+  int number_of_substituted_int_variables = symbol_table_->get_num_of_substituted_variables(script_,
                                                                                             SMT::Variable::Type::INT);
   int number_of_untracked_int_variables = number_of_int_variables - number_of_substituted_int_variables - num_bin_var;
   model_counter_.set_num_of_unconstraint_int_vars(number_of_untracked_int_variables);
+
+  int number_of_str_variables = symbol_table_->get_num_of_variables(SMT::Variable::Type::STRING);
+  int number_of_substituted_str_variables = symbol_table_->get_num_of_substituted_variables(script_,
+                                                                                            SMT::Variable::Type::STRING);
+  int number_of_untracked_str_variables = number_of_str_variables - number_of_substituted_str_variables - num_str_var;
+  model_counter_.set_num_of_unconstraint_str_vars(number_of_untracked_str_variables);
+
   is_model_counter_cached_ = true;
 }
 

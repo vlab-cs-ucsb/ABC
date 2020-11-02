@@ -164,6 +164,10 @@ public:
   void UnlockValues() {values_lock_ = false;}
   bool AreValuesLocked() {return values_lock_;}
 
+  void SetScopeSatisfiability(SMT::Visitable_ptr, bool);
+  bool GetScopeSatisfiability(SMT::Visitable_ptr);
+  bool ScopeSatisfiabilityExists(SMT::Visitable_ptr);
+
 private:
   std::string generate_internal_name(std::string, SMT::Variable::Type);
 
@@ -240,6 +244,12 @@ private:
 
   std::atomic<bool> values_lock_;
 
+  /*
+   * Hack for formula generators to not descend into unsat branches
+   * (Could happen due to the way subformula caching is implemented - multiple
+   * generators can be called on a single branch)
+   */
+  std::map<SMT::Visitable_ptr,bool> scope_satisfiability_;
 
   static const int VLOG_LEVEL;
   //int reuse; 

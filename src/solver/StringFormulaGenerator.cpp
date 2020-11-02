@@ -142,7 +142,14 @@ void StringFormulaGenerator::visitOr(Or_ptr or_term) {
     has_mixed_constraint_ = false;
   }
 
-	visit_children_of(or_term);
+  for (auto iter = or_term->term_list->begin(); iter != or_term->term_list->end();iter++) {
+    if(symbol_table_->ScopeSatisfiabilityExists(*iter) and not symbol_table_->GetScopeSatisfiability(*iter)) {
+      continue;
+    } else {
+      visit(*iter);
+    }
+  }
+//	visit_children_of(or_term);
   DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
 
   // @deprecated check, all or terms must be a component

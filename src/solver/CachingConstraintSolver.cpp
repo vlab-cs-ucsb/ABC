@@ -1070,7 +1070,7 @@ void CachingConstraintSolver::visitOr(Or_ptr or_term) {
         string_constraint_solver_.push_generator(term);
         arithmetic_constraint_solver_.push_generator(term);
       } else {
-
+        symbol_table_->SetScopeSatisfiability(term,false);
         num_unsat++;
         string_constraint_solver_.reset_generator();
       }
