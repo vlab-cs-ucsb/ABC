@@ -427,6 +427,32 @@ Solver::ModelCounter& Driver::GetModelCounter() {
   return model_counter_;
 }
 
+int Driver::GetNumIntVariables() {
+  auto variables = symbol_table_->get_variables();
+  int count = 0;
+
+  for(auto it : variables) {
+    if(SMT::Variable::Type::INT == it.second->getType()) {
+      count++;
+    }
+  }
+
+  return count;
+}
+
+int Driver::GetNumStrVariables() {
+  auto variables = symbol_table_->get_variables();
+  int count = 0;
+
+  for(auto it : variables) {
+    if(SMT::Variable::Type::STRING == it.second->getType()) {
+      count++;
+    }
+  }
+
+  return count;
+}
+
 void Driver::SetModelCounterForVariable(const std::string var_name, bool project) {
   auto variable = symbol_table_->get_variable(var_name);
   auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(script_, variable);

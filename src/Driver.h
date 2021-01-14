@@ -87,6 +87,9 @@ public:
   Solver::ModelCounter& GetModelCounterForVariable(const std::string var_name, bool project = true);
   Solver::ModelCounter& GetModelCounter();
 
+  int GetNumIntVariables();
+  int GetNumStrVariables();
+
   void printResult(Solver::Value_ptr value, std::ostream& out);
   void inspectResult(Solver::Value_ptr value, std::string file_name);
   std::map<SMT::Variable_ptr, Solver::Value_ptr> getSatisfyingVariables() const;

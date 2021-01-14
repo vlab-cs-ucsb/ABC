@@ -312,13 +312,25 @@ int main(const int argc, const char **argv) {
 
 
     if (count_tuple) {
-      for (auto b : str_bounds) {
-        start = std::chrono::steady_clock::now();
-        auto count = driver.CountStrs(b);
-        end = std::chrono::steady_clock::now();
-        auto count_time = end - start;
-        LOG(INFO) << "report (TUPLE) bound: " << b << " count: " << count << " time: "
-                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+      if(driver.GetNumIntVariables() > 0) {
+        for (auto b : int_bounds) {
+          start = std::chrono::steady_clock::now();
+          auto count = driver.CountInts(b);
+          end = std::chrono::steady_clock::now();
+          auto count_time = end - start;
+          LOG(INFO) << "report (TUPLE) bound: " << b << " count: " << count << " time: "
+                    << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+        }
+      }
+      if(driver.GetNumStrVariables() > 0) {
+        for (auto b : str_bounds) {
+          start = std::chrono::steady_clock::now();
+          auto count = driver.CountStrs(b);
+          end = std::chrono::steady_clock::now();
+          auto count_time = end - start;
+          LOG(INFO) << "report (TUPLE) bound: " << b << " count: " << count << " time: "
+                    << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+        }
       }
     }
 
@@ -353,21 +365,25 @@ int main(const int argc, const char **argv) {
           LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
                     << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
         } else {
-          for (auto b : int_bounds) {
-            start = std::chrono::steady_clock::now();
-            auto count = driver.CountInts(b);
-            end = std::chrono::steady_clock::now();
-            auto count_time = end - start;
-            LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
-                      << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+          if(driver.GetNumIntVariables() > 0) {
+            for (auto b : int_bounds) {
+              start = std::chrono::steady_clock::now();
+              auto count = driver.CountInts(b);
+              end = std::chrono::steady_clock::now();
+              auto count_time = end - start;
+              LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
+                        << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+            }
           }
-          for (auto b : str_bounds) {
-            start = std::chrono::steady_clock::now();
-            auto count = driver.CountStrs(b);
-            end = std::chrono::steady_clock::now();
-            auto count_time = end - start;
-            LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
-                      << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+          if(driver.GetNumStrVariables() > 0) {
+            for (auto b : str_bounds) {
+              start = std::chrono::steady_clock::now();
+              auto count = driver.CountStrs(b);
+              end = std::chrono::steady_clock::now();
+              auto count_time = end - start;
+              LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
+                        << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+            }
           }
         }
 
