@@ -3706,87 +3706,158 @@ StringAutomaton_ptr StringAutomaton::ChangeIndicesMap(StringFormula_ptr new_form
 }
 
 void StringAutomaton::SetSymbolicCounter() {
+LOG(INFO) << 1;
 	// normal symbolic counter for single-track
 	if(num_tracks_ == 1) {
 		Automaton::SetSymbolicCounter();
 		return;
 	}
 
+  auto f1 = new StringFormula();
+  f1->SetType(StringFormula::Type::NOTEQ);
+  f1->AddVariable("x0",1);
+  f1->AddVariable("y0",2);
+
+  auto a1 = MakeAutomaton(f1);
+
+  auto f2 = new StringFormula();
+  f2->SetType(StringFormula::Type::NOTEQ);
+  f2->AddVariable("x1",1);
+  f2->AddVariable("y1",2);
+
+  auto f3 = f2->clone();
+  f3->MergeVariables(f1);
+
+  auto a2 = MakeAutomaton(f2);
+
+  a1 = a1->ChangeIndicesMap(f3->clone());
+  a2 = a2->ChangeIndicesMap(f3->clone());
+
+  auto a3 = a1->Union(a2);
+  LOG(INFO) << a3->num_tracks_;
+  std::cin.get();
+
+
+  DFA_ptr original_dfa = nullptr, temp_dfa = nullptr,trimmed_dfa = nullptr;
+  original_dfa = this->dfa_;
+  {
+    int var = VAR_PER_TRACK;
+    int len = var * num_tracks_;
+    int* mindices = GetBddVariableIndices(len);
+    dfaSetup(3,len,mindices);
+    std::vector<char> lambda(len,'1');
+    lambda.push_back('\0');
+
+    dfaAllocExceptions(1);
+    dfaStoreException(1,&lambda[0]);
+    dfaStoreState(0);
+
+    dfaAllocExceptions(0);
+    dfaStoreState(2);
+
+    dfaAllocExceptions(0);
+    dfaStoreState(2);
+
+    // union to get states going to lambda state
+    // then intersect to only get those
+
+    auto mydfa = dfaBuild("++-");
+    auto mindfa = dfaMinimize(mydfa);
+
+    trimmed_dfa = DFAIntersect(this->dfa_, mindfa);
+  }
+
+
+
+
+
+
+
+
+
 
 	// remove last lambda loop
-	DFA_ptr original_dfa = nullptr, temp_dfa = nullptr,trimmed_dfa = nullptr;
-	original_dfa = this->dfa_;
-	trace_descr tp;
-	paths state_paths,pp;
-	int sink = find_sink(original_dfa);
-	if(sink < 0) {
-		LOG(FATAL) << "Cant count, no sink!";
-	}
-	int var = VAR_PER_TRACK;
-	int len = var * num_tracks_;
-	int* mindices = GetBddVariableIndices(len);
-	char* statuses = new char[original_dfa->ns+1];
-	std::vector<std::pair<std::vector<char>,int>> state_exeps;
-	std::vector<bool> lambda_states(original_dfa->ns,false);
-	dfaSetup(original_dfa->ns,len,mindices);
-	for(int i = 0; i < original_dfa->ns; i++) {
-		statuses[i] = '-';
-		state_paths = pp = make_paths(original_dfa->bddm, original_dfa->q[i]);
-		while(pp) {
-			if(pp->to == sink) {
-				pp = pp->next;
-				continue;
-			}
-
-			std::vector<char> exep(len,'X');
-			for(int j = 0; j < len; j++) {
-				for(tp = pp->trace; tp && (tp->index != mindices[j]); tp= tp->next);
-				if(tp) {
-					if(tp->value) exep[j] = '1';
-					else exep[j] = '0';
-				}
-				else exep[j] = 'X';
-			}
-
-			// if lambda and loops back, dont add it
-			bool is_lambda = true;
-			for(int k = 0; k < len; k++) {
-				if(exep[k] != '1' && exep[k] != 'X') {
-					is_lambda = false;
-					break;
-				}
-			}
-
-			if(is_lambda) {
-				lambda_states[pp->to] = true;
-				if(!lambda_states[i] || i == pp->to) {
-					statuses[i] = '+';
-				}
-			} else {
-				exep.push_back('\0');
-				state_exeps.push_back(std::make_pair(exep,pp->to));
-			}
-			pp = pp->next;
-		}
-		kill_paths(state_paths);
-		dfaAllocExceptions(state_exeps.size());
-		for(int k = 0; k < state_exeps.size(); k++) {
-			dfaStoreException(state_exeps[k].second, &state_exeps[k].first[0]);
-		}
-		dfaStoreState(sink);
-		state_exeps.clear();
-	}
-	statuses[original_dfa->ns] = '\0';
-	temp_dfa = dfaBuild(statuses);
-	trimmed_dfa = dfaMinimize(temp_dfa);
-	dfaFree(temp_dfa);
-	//delete[] mindices;
-	delete[] statuses;
-
+//	DFA_ptr original_dfa = nullptr, temp_dfa = nullptr,trimmed_dfa = nullptr;
+//	original_dfa = this->dfa_;
+//	trace_descr tp;
+//	paths state_paths,pp;
+//	int sink = find_sink(original_dfa);
+//	if(sink < 0) {
+//		LOG(FATAL) << "Cant count, no sink!";
+//	}
+//	int var = VAR_PER_TRACK;
+//	int len = var * num_tracks_;
+//	int* mindices = GetBddVariableIndices(len);
+//	char* statuses = new char[original_dfa->ns+1];
+//	std::vector<std::pair<std::vector<char>,int>> state_exeps;
+//	std::vector<bool> lambda_states(original_dfa->ns,false);
+//	dfaSetup(original_dfa->ns,len,mindices);
+//LOG(INFO) << "num states = " << original_dfa->ns;
+//LOG(INFO) << 2;
+//	for(int i = 0; i < original_dfa->ns; i++) {
+//		statuses[i] = '-';
+////		LOG(INFO) << "Before pp";
+//		state_paths = pp = make_paths(original_dfa->bddm, original_dfa->q[i]);
+////		LOG(INFO) << "After pp";
+//		while(pp) {
+//		  LOG(INFO) << "state_exeps.size() = " << state_exeps.size();
+//			if(pp->to == sink) {
+//				pp = pp->next;
+//				continue;
+//			}
+//
+//			std::vector<char> exep(len,'X');
+//			for(int j = 0; j < len; j++) {
+//				for(tp = pp->trace; tp && (tp->index != mindices[j]); tp= tp->next);
+//				if(tp) {
+//					if(tp->value) exep[j] = '1';
+//					else exep[j] = '0';
+//				}
+//				else exep[j] = 'X';
+//			}
+//
+//			// if lambda and loops back, dont add it
+//			bool is_lambda = true;
+//			for(int k = 0; k < len; k++) {
+//				if(exep[k] != '1' && exep[k] != 'X') {
+//					is_lambda = false;
+//					break;
+//				}
+//			}
+//
+//			if(is_lambda) {
+//				lambda_states[pp->to] = true;
+//				if(!lambda_states[i] || i == pp->to) {
+//					statuses[i] = '+';
+//				}
+//			} else {
+//				exep.push_back('\0');
+//				state_exeps.push_back(std::make_pair(exep,pp->to));
+//			}
+//			pp = pp->next;
+//		}
+//		kill_paths(state_paths);
+//		LOG(INFO) << "state_exeps.size() = " << state_exeps.size();
+//		dfaAllocExceptions(state_exeps.size());
+//		for(int k = 0; k < state_exeps.size(); k++) {
+//			dfaStoreException(state_exeps[k].second, &state_exeps[k].first[0]);
+//		}
+//		dfaStoreState(sink);
+//		state_exeps.clear();
+//	}
+//LOG(INFO) << 3;
+//	statuses[original_dfa->ns] = '\0';
+//	temp_dfa = dfaBuild(statuses);
+//	trimmed_dfa = dfaMinimize(temp_dfa);
+//	dfaFree(temp_dfa);
+//	//delete[] mindices;
+//	delete[] statuses;
+//LOG(INFO) << 4;
 	this->dfa_ = trimmed_dfa;
 	Automaton::SetSymbolicCounter();
 	this->dfa_ = original_dfa;
 	dfaFree(trimmed_dfa);
+LOG(INFO) << 5;
 }
 
 void StringAutomaton::SetSymbolicCounter(SymbolicCounter & sc) {

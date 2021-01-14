@@ -148,13 +148,14 @@ void SyntacticOptimizer::visitOr(Or_ptr or_term) {
         term = child_term;
       };
     }
-//    else {
-//      callback_ = [or_term, child_term](Term_ptr & term) mutable {
-//        or_term->term_list->clear();
-//        delete or_term;
-//        term = child_term;
-//      };
-//    }
+    else {
+      // optimize away OR terms if only a single child; no need to merge scopes
+      callback_ = [or_term, child_term](Term_ptr & term) mutable {
+        or_term->term_list->clear();
+        delete or_term;
+        term = child_term;
+      };
+    }
   }
 
   DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
@@ -1899,6 +1900,109 @@ void SyntacticOptimizer::visitReOpt(ReOpt_ptr re_opt_term) {
     delete re_opt_term;
   };
   DVLOG(VLOG_LEVEL) << "post visit end: " << *re_opt_term << "@" << re_opt_term;
+}
+
+void SyntacticOptimizer::visitReLoop(ReLoop_ptr re_loop_term) {
+  visit_and_callback(re_loop_term->term);
+  visit_and_callback(re_loop_term->lower);
+  visit_and_callback(re_loop_term->upper);
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *re_loop_term << "@" << re_loop_term;
+
+  auto regex_term = dynamic_cast<TermConstant_ptr>(re_loop_term->term);
+  auto lower_term = dynamic_cast<TermConstant_ptr>(re_loop_term->lower);
+  auto upper_term = dynamic_cast<TermConstant_ptr>(re_loop_term->upper);
+
+  if(regex_term != nullptr && lower_term != nullptr && upper_term != nullptr) {
+    std::string value = "";
+    if(regex_term->getValueType() == Primitive::Type::STRING) {
+      value = "(" + Util::RegularExpression::escape_raw_string(regex_term->getValue()) + ")" +
+          "{" + lower_term->getValue() + "," + upper_term->getValue() + "}";
+    } else {
+      value = "(" + regex_term->getValue() + ")" +
+          "{" + lower_term->getValue() + "," + upper_term->getValue() + "}";
+    }
+    regex_term->primitive->setData(value);
+    regex_term->primitive->setType(Primitive::Type::REGEX);
+  } else {
+    LOG(FATAL) << "Unexpected term as a parameter to 're.loop'";
+  }
+
+  callback_ = [re_loop_term] (Term_ptr & term) mutable {
+    term = re_loop_term->term;
+    re_loop_term->term = nullptr;
+    delete re_loop_term;
+  };
+
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *re_loop_term << "@" << re_loop_term;
+}
+
+void SyntacticOptimizer::visitReComp(ReComp_ptr re_comp_term) {
+  visit_and_callback(re_comp_term->term);
+
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *re_comp_term << "@" << re_comp_term;
+
+  auto regex_term = dynamic_cast<TermConstant_ptr>(re_comp_term->term);
+
+  if(regex_term != nullptr) {
+    std::string value = "";
+    if(regex_term->getValueType() == Primitive::Type::STRING) {
+      value = "~(" + Util::RegularExpression::escape_raw_string(regex_term->getValue()) + ")";
+    } else {
+      value = "~(" + regex_term->getValue() + ")";
+    }
+    regex_term->primitive->setData(value);
+    regex_term->primitive->setType(Primitive::Type::REGEX);
+  } else {
+    LOG(FATAL) << "Unexpected term as a paramter to 're.comp'";
+  }
+
+  callback_ = [re_comp_term] (Term_ptr & term) mutable {
+    term = re_comp_term->term;
+    re_comp_term->term = nullptr;
+    delete re_comp_term;
+  };
+
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *re_comp_term << "@" << re_comp_term;
+}
+
+void SyntacticOptimizer::visitReDiff(ReDiff_ptr re_diff_term) {
+  visit_and_callback(re_diff_term->left_term);
+  visit_and_callback(re_diff_term->right_term);
+
+
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *re_diff_term << "@" << re_diff_term;
+
+  auto left_regex_term = dynamic_cast<TermConstant_ptr>(re_diff_term->left_term);
+  auto right_regex_term = dynamic_cast<TermConstant_ptr>(re_diff_term->right_term);
+
+  if(left_regex_term != nullptr && right_regex_term != nullptr) {
+    std::string left = left_regex_term->getValue();
+    std::string right = right_regex_term->getValue();
+
+    if(left_regex_term->getValueType() == Primitive::Type::STRING) {
+      left = Util::RegularExpression::escape_raw_string(left);
+    }
+
+    if(right_regex_term->getValueType() == Primitive::Type::STRING) {
+      right = Util::RegularExpression::escape_raw_string(right);
+    }
+
+    std::string value = "((" + left + ")"
+                       + "&~(" + right + "))";
+
+    left_regex_term->primitive->setData(value);
+    left_regex_term->primitive->setType(Primitive::Type::REGEX);
+  } else {
+    LOG(FATAL) << "Unexpected term as a paramter to 're.comp'";
+  }
+
+  callback_ = [re_diff_term] (Term_ptr & term) mutable {
+    term = re_diff_term->left_term;
+    re_diff_term->left_term = nullptr;
+    delete re_diff_term;
+  };
+
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *re_diff_term << "@" << re_diff_term;
 }
 
 void SyntacticOptimizer::visitToRegex(ToRegex_ptr to_regex_term) {

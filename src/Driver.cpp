@@ -69,12 +69,16 @@ void Driver::error(const std::string& m) {
 }
 
 int Driver::Parse(std::istream* in) {
-  reset();
+//  reset();
+LOG(INFO) << 1.1;
   SMT::Scanner scanner(in);
+LOG(INFO) << 1.2;
   //  scanner.set_debug(trace_scanning);
   SMT::Parser parser(script_, scanner);
+LOG(INFO) << 1.3;
   //  parser.set_debug_level (trace_parsing);
   int res = parser.parse();
+LOG(INFO) << 1.4;
   CHECK_EQ(0, res)<< "Syntax error";
 
   // auto &c = rdx_->commandSync<std::string>({"FLUSHDB"});
@@ -105,7 +109,7 @@ void Driver::ast2dot(std::string file_name) {
 }
 
 void Driver::InitializeSolver() {
-
+LOG(INFO) << 1;
 #ifdef USE_CACHE
   cache_manager_ = new Solver::CacheManager();
 #endif
@@ -114,7 +118,7 @@ void Driver::InitializeSolver() {
   symbol_table_ = new Solver::SymbolTable();
   symbol_table_->push_scope(script_);
 
-
+LOG(INFO) << 2;
 
   constraint_information_ = new Solver::ConstraintInformation();
 
@@ -133,7 +137,7 @@ void Driver::InitializeSolver() {
   auto end = std::chrono::steady_clock::now();
   auto time2 = end-start;
   diff4 += time2;
-
+LOG(INFO) << 3;
   //ast2dot(output_root + "/post_syntactic_optimizer.dot");
   int i = 0;
   if (Option::Solver::ENABLE_EQUIVALENCE_CLASSES) {
@@ -162,7 +166,7 @@ void Driver::InitializeSolver() {
     Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
     constraint_sorter.start();
   }
-
+LOG(INFO) << 4;
 //#ifdef USE_CACHE
 //  if(Option::Solver::SUB_FORMULA_CACHING || Option::Solver::FULL_FORMULA_CACHING) {
 //    Solver::Renamer renamer(script_, symbol_table_);
@@ -175,7 +179,7 @@ void Driver::Solve() {
 
 
   Solver::ConstraintSolver* constraint_solver = nullptr;
-
+LOG(INFO) << 5;
 #ifdef USE_CACHE
   if(Option::Solver::FULL_FORMULA_CACHING || Option::Solver::SUB_FORMULA_CACHING) {
     constraint_solver = new Solver::CachingConstraintSolver(script_, symbol_table_, constraint_information_, cache_manager_);
@@ -185,7 +189,7 @@ void Driver::Solve() {
 #else
   constraint_solver = new Solver::ConstraintSolver(script_, symbol_table_, constraint_information_);
 #endif
-
+LOG(INFO) << 6;
   constraint_solver->start();
 
   for(auto &iter : cached_values_) {

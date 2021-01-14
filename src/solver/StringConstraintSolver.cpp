@@ -508,9 +508,17 @@ void StringConstraintSolver::pop_generators(int num_to_merge, Term_ptr t) {
   bool is_satisfiable =false; 
   bool has_string_formula = false;
 
-  //generator_stack_.push_back(std::make_pair(t,string_formula_generator_));
-  string_formula_generator_ = generator_stack_.front().second;
-  generator_stack_.erase(generator_stack_.begin());
+  // we push or_term onto stack, then each child term
+  // e.g., if an or_term has 2 children, or_term generator should be at last_pos - 3
+  int t_term_stack_pos = generator_stack_.size() - (num_to_merge+1);
+  auto t_term_gen_pair = generator_stack_.at(t_term_stack_pos);
+
+  if(t_term_gen_pair.first != t) {
+    LOG(FATAL) << "t_term does not match t!";
+  }
+
+  string_formula_generator_ = t_term_gen_pair.second;
+  generator_stack_.erase(generator_stack_.begin() + t_term_stack_pos);
 
   // how the groups should look
 //  LOG(INFO) << "BEFORE";
@@ -637,7 +645,7 @@ void StringConstraintSolver::pop_generators(int num_to_merge, Term_ptr t) {
 //  				or_values[group] = or_values[group]->union_(subgroup_scope_value);
 //  				delete old_value;
 //  			}
-  			is_satisfiable = or_values[top_level_group_var_name]->is_satisfiable() or is_satisfiable;
+  			is_satisfiable = temp_or_values[top_level_group_var_name]->is_satisfiable() or is_satisfiable;
   			symbol_table_->clear_value(subgroup_variable,term_scope);
   		}
 
@@ -676,7 +684,7 @@ void StringConstraintSolver::pop_generators(int num_to_merge, Term_ptr t) {
 //  }
 
 
-//  LOG(INFO) << "-----  DONE MERGING  -----";
+  LOG(INFO) << "-----  DONE MERGING  -----";
 //  std::cin.get();
 //  LOG(INFO) << 1;
 
@@ -691,7 +699,7 @@ void StringConstraintSolver::pop_generators(int num_to_merge, Term_ptr t) {
   		}
 //LOG(INFO) << 3;
 
-      auto group_auto = symbol_table_->get_value(iter.first)->getStringAutomaton();
+//      auto group_auto = symbol_table_->get_value(iter.first)->getStringAutomaton();
       //for(auto it : group_auto->GetFormula()->GetVariableCoefficientMap()) {
       //  symbol_table_->set_variable_group_mapping(it.first,iter.first);
       //}
@@ -742,7 +750,8 @@ void StringConstraintSolver::pop_generators(int num_to_merge, Term_ptr t) {
 
 
 
-  
+  LOG(INFO) << "EXITING MERGE";
+//  std::cin.get();
 }
 
 } /* namespace Solver */

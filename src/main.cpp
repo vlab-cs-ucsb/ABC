@@ -206,7 +206,7 @@ int main(const int argc, const char **argv) {
     }
   }
 
-
+LOG(INFO) << 0.1;
   std::vector<std::string> files;
   if(!file_name.empty()) {
     files.push_back(file_name);
@@ -224,7 +224,7 @@ int main(const int argc, const char **argv) {
   std::sort(files.begin(),files.end());
 
   google::InitGoogleLogging(argv[0]);
-
+LOG(INFO) << 0.2;
   /* log test start */
 //  DLOG(INFO)<< "debug log start";
 //  LOG(INFO)<< "production log";
@@ -242,7 +242,7 @@ int main(const int argc, const char **argv) {
   driver.test();
 
   auto start = std::chrono::steady_clock::now();
-
+LOG(INFO) << 0.3;
 //   driver.Solve();
   auto end = std::chrono::steady_clock::now();
   auto init_start = std::chrono::steady_clock::now();
@@ -325,12 +325,15 @@ int main(const int argc, const char **argv) {
   in = file;
 
   start = std::chrono::steady_clock::now();
+LOG(INFO) << 0.4;
   driver.Parse(in);
+LOG(INFO) << 0.5;
   #ifndef NDEBUG
   if (VLOG_IS_ON(30) and not output_root.empty()) {
     driver.ast2dot(output_root + "/parsed.dot");
   }
   #endif
+LOG(INFO) << 0.6;
   driver.InitializeSolver();
   #ifndef NDEBUG
   if (VLOG_IS_ON(30) and not output_root.empty()) {

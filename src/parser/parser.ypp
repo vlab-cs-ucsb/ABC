@@ -77,7 +77,8 @@
   LEN                  "len"
   CONTAINS             "contains"
   NOTCONTAINS          "notContains"
-  PREFIXOF               "prefixof"
+  PREFIXOF             "prefixof"
+  SUFFIXOF             "suffixof"
   BEGINS               "begins"
   NOTBEGINS            "notBegins"
   ENDS                 "ends"
@@ -105,7 +106,12 @@
   RE_PLUS              "re.+"
   RE_OPT               "re.opt"
   RE_RANGE             "re.range"
-  TO_REGEX             "str.to.re"  
+  RE_LOOP              "re.loop"
+  RE_COMP              "re.comp"
+  RE_DIFF              "re.diff"
+  TO_REGEX             "str.to.re"
+  RE_ALLCHAR           "re.allchar"
+  RE_ALL               "re.all"
 
   TBOOL                 "TBool"
   TINT                  "TInt"
@@ -179,11 +185,11 @@ script                :
                         command_list                                                      { script = new Script($1); }
                       ;
 
-command_list          : 
+command_list          :
                         command_list command                                              { $1 -> push_back($2); $$ = $1; }
                       | /* empty */                                                       { $$ = new CommandList(); }
                       ;
-                      
+
 command               :
                         "(" "set-logic" SYMBOL ")"                                        { $$ = new SetLogic(new Primitive($3, Primitive::Type::SYMBOL)); }
                       | "(" "set-option" option ")"                                       { $$ = new Command(); }
@@ -192,7 +198,7 @@ command               :
                       | "(" "define-sort" SYMBOL "(" symbol_list ")" sort ")"             { $$ = new Command(); }
                       | "(" "declare-fun" SYMBOL "(" sort_list ")" sort ")"               { $$ = new DeclareFun(new Primitive($3, Primitive::Type::SYMBOL), $5, $7);}
                       | "(" "declare-fun" SYMBOL sort ")"                                 { $$ = new DeclareFun(new Primitive($3, Primitive::Type::SYMBOL), nullptr, $4);}
-                      | "(" "define-fun" SYMBOL "(" sorted_var_list ")" sort term ")"     { $$ = new Command(); }                
+                      | "(" "define-fun" SYMBOL "(" sorted_var_list ")" sort term ")"     { $$ = new Command(); }
                       | "(" "push" NUMERAL ")"                                            { $$ = new Command(); }
                       | "(" "pop" NUMERAL ")"                                             { $$ = new Command(); }
                       | "(" "assert" term ")"                                             { $$ = new Assert($3); }
@@ -200,21 +206,21 @@ command               :
                       | "(" "check-sat" SYMBOL ")"                                        { $$ = new CheckSat(new Primitive($3, Primitive::Type::SYMBOL)); }
                       | "(" "check-sat-and-count" NUMERAL ")"                             { $$ = new CheckSatAndCount(new Primitive($3, Primitive::Type::NUMERAL)); }
                       | "(" "check-sat-and-count" NUMERAL SYMBOL ")"                      { $$ = new CheckSatAndCount(new Primitive($3, Primitive::Type::NUMERAL), new Primitive($4, Primitive::Type::SYMBOL)); }
-                      | "(" "get-assertions" ")"                                          { $$ = new Command(); } 
+                      | "(" "get-assertions" ")"                                          { $$ = new Command(); }
                       | "(" "get-model" ")"                                               { $$ = new Command(); }
-                      | "(" "get-proof" ")"                                               { $$ = new Command(); } 
-                      | "(" "get-unsat-core" ")"                                          { $$ = new Command(); }   
+                      | "(" "get-proof" ")"                                               { $$ = new Command(); }
+                      | "(" "get-unsat-core" ")"                                          { $$ = new Command(); }
                       | "(" "get-value" term_list_ ")"                                    { $$ = new Command(); }
-                      | "(" "get-assignment" ")"                                          { $$ = new Command(); } 
-                      | "(" "get-option" KEYWORD ")"                                      { $$ = new Command(); } 
-                      | "(" "get-info" info_flag ")"                                      { $$ = new Command(); }  
-                      | "(" "exit" ")"                                                    { $$ = new Command(); } 
+                      | "(" "get-assignment" ")"                                          { $$ = new Command(); }
+                      | "(" "get-option" KEYWORD ")"                                      { $$ = new Command(); }
+                      | "(" "get-info" info_flag ")"                                      { $$ = new Command(); }
+                      | "(" "exit" ")"                                                    { $$ = new Command(); }
                       ;
 
 option                :
                         attribute           { std::cout << "attribute" << std::endl; } /* option rule is not implemented fully, see smtlib V2 specs for details */
                       ;
-                      
+
 info_flag             :
                         KEYWORD             { std::cout << $1 << std::endl; } /* info_flag rule is not implemented fully, see smtlibV2 specs for details */
                       ;
@@ -249,7 +255,7 @@ term                  :
                       | "(" "let" "(" var_binding_list_ ")" term ")"                    { $$ = new Let($4, $6); }
                       | "(" IMPLIES term term ")"                                       { $$ = new Or(CreateTermList(2, new Not($3), $4)); }
                       | "(" AND term_list_ ")"                                          { $$ = new And($3); }
-                      | "(" OR term_list_ ")"                                           { $$ = new Or($3); }  
+                      | "(" OR term_list_ ")"                                           { $$ = new Or($3); }
                       | "(" NOT term ")"                                                { $$ = new Not($3); }
                       | "(" MINUS term ")"                                              { $$ = new UMinus($3); }
                       | "(" MINUS term term ")"                                         { $$ = new Minus($3, $4); }
@@ -269,6 +275,7 @@ term                  :
                       | "(" CONTAINS term term ")"                                      { $$ = new Contains($3, $4); }
                       | "(" NOTCONTAINS term term ")"                                   { $$ = new NotContains($3, $4); }
                       | "(" PREFIXOF term term ")"                                      { $$ = new Begins($4, $3); }
+                      | "(" SUFFIXOF term term ")"                                      { $$ = new Ends($4, $3); }
                       | "(" BEGINS term term ")"                                        { $$ = new Begins($3, $4); }
                       | "(" NOTBEGINS term term ")"                                     { $$ = new NotBegins($3, $4); }
                       | "(" ENDS term term ")"                                          { $$ = new Ends($3, $4); }
@@ -276,7 +283,7 @@ term                  :
                       | "(" INDEXOF term term ")"                                       { $$ = new IndexOf($3, $4); }
                       | "(" INDEXOF term term term ")"                                  { $$ = new IndexOf($3, $4, $5); }
                       | "(" LASTINDEXOF term term ")"                                   { $$ = new LastIndexOf($3, $4); }
-                      | "(" LASTINDEXOF term term term ")"                              { $$ = new LastIndexOf($3, $4, $5); } 
+                      | "(" LASTINDEXOF term term term ")"                              { $$ = new LastIndexOf($3, $4, $5); }
                       | "(" CHARAT term term ")"                                        { $$ = new CharAt($3, $4); }
                       | "(" SUBSTRING term term ")"                                     { $$ = new SubString($3, $4); }
                       | "(" SUBSTRING term term term ")"                                { $$ = new SubString($3, $4, $5); }
@@ -289,7 +296,7 @@ term                  :
                       | "(" REPLACE term term term ")"                                  { $$ = new Replace($3, $4, $5); }
                       | "(" COUNT term term ")"                                         { $$ = new Count($3, $4); }
                   /*    | "(" ITE term term term ")"                                      { $$ = TransformIteToOr($3, $4, $5); } */
-                      | "(" ITE term term term ")"                                      { $$ = new Ite($3, $4, $5); }                      
+                      | "(" ITE term term term ")"                                      { $$ = new Ite($3, $4, $5); }
                       | "(" RE_CONCAT term_list_ ")"                                    { $$ = new ReConcat($3); }
                       | "(" RE_OR term_list_ ")"                                        { $$ = new Or($3); }
                       | "(" RE_UNION term_list_ ")"                                     { $$ = new ReUnion($3); }
@@ -298,6 +305,12 @@ term                  :
                       | "(" RE_PLUS term ")"                                            { $$ = new RePlus($3); }
                       | "(" RE_OPT term ")"                                             { $$ = new ReOpt($3); }
                       | "(" RE_RANGE term term ")"                                      { $$ = ReRangeToRegex($3, $4);}
+                      | "(" "(" "_" RE_LOOP term ")" term ")"                           { $$ = new ReLoop($7, $5);}
+                      | "(" "(" "_" RE_LOOP term term ")" term ")"                      { $$ = new ReLoop($8, $5, $6);}
+                      | "(" RE_LOOP term term ")"                                       { $$ = new ReLoop($3, $4);}
+                      | "(" RE_LOOP term term term ")"                                  { $$ = new ReLoop($3, $4, $5);}
+                      | "(" RE_COMP term ")"                                            { $$ = new ReComp($3);}
+                      | "(" RE_DIFF term term ")"                                       { $$ = new ReDiff($3,$4);}
                       | "(" TO_REGEX term ")"                                           { $$ = new ToRegex($3); }
                       | "(" qual_identifier term_list_ ")"                              { $$ = new UnknownTerm($2, $3); }
                       | qual_identifier                                                 { $$ = $1; }
@@ -326,19 +339,19 @@ var_binding_list_     :
 var_binding           :
                         "(" SYMBOL  term ")"                                            { $$ = new VarBinding(new Primitive($2, Primitive::Type::SYMBOL), $3); }
                       ;
-                      
+
 qual_identifier       :
                         "(" "as" identifier sort ")"                                    { $$ = new AsQualIdentifier($3, $4); }
                       | identifier                                                      { $$ = new QualIdentifier($1); }
                       ;
 
 term_constant         :
-                        spec_constant                                                   { $$ = new TermConstant($1); }  
+                        spec_constant                                                   { $$ = new TermConstant($1); }
                       ;
 
 /* Attributes */
 attribute_list_       :
-                        attribute_list_ attribute                                       { $1->push_back($2); $$ = $1; }  
+                        attribute_list_ attribute                                       { $1->push_back($2); $$ = $1; }
                       | attribute                                                       { $$ = new AttributeList(); $$->push_back($1); }
                       ;
 
@@ -351,7 +364,7 @@ attribute_value       :
                         "(" s_expr_list ")"
                       | SYMBOL              { std::cout << $1 << std::endl; }
                       | spec_constant
-                      ; 
+                      ;
 
 /* Sorts */
 
@@ -359,16 +372,16 @@ sort_list             :
                         sort_list_                                                      { $$ = $1; }
                       | /* empty */                                                     { $$ = nullptr; }
                       ;
-                      
+
 sort_list_            :
                         sort_list_ sort                                                 { $1->push_back($2); $$ = $1; }
                       | sort                                                            { $$ = new SortList(); $$->push_back($1); }
-                      ; 
+                      ;
 
 sort                  :
                         "(" identifier sort_list_ ")"                                   { $$ = new Sort($2, $3); }
                       | identifier                                                      { $$ = new Sort($1); }
-                      | t_variable                                                      { $$ = new Sort($1); } 
+                      | t_variable                                                      { $$ = new Sort($1); }
                       ;
 
 t_variable              :
@@ -381,7 +394,7 @@ t_variable              :
 /* Identifiers */
 identifier            :
                         "(" "_" SYMBOL numeral_list_ ")"                                { $$ = new Identifier(new Primitive("_", Primitive::Type::SYMBOL), new Primitive($3, Primitive::Type::SYMBOL), $4); }
-                      | SYMBOL                                                          { $$ = new Identifier(new Primitive($1, Primitive::Type::SYMBOL)); } 
+                      | SYMBOL                                                          { $$ = new Identifier(new Primitive($1, Primitive::Type::SYMBOL)); }
                       ;
 
 numeral_list_         :
@@ -390,12 +403,12 @@ numeral_list_         :
                       ;
 
 /* S-expressions */
-s_expr_list           : 
+s_expr_list           :
                         s_expr_list_        {  }
                       | /* empty */         {  }
                       ;
 
-s_expr_list_          : 
+s_expr_list_          :
                         s_expr_list_ s_expr {  }
                       | s_expr              {  }
                       ;
@@ -415,6 +428,8 @@ spec_constant         :
                       | DECIMAL             { $$ = new Primitive($1, Primitive::Type::DECIMAL); }
                       | STRING              { $$ = new Primitive($1, Primitive::Type::STRING); }
                       | REGEX               { $$ = new Primitive($1, Primitive::Type::REGEX); }
+                      | RE_ALLCHAR          { $$ = new Primitive(".", Primitive::Type::REGEX); }
+                      | RE_ALL              { $$ = new Primitive(".*", Primitive::Type::REGEX); }
                       ;
 
 

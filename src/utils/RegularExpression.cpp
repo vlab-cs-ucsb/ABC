@@ -286,17 +286,17 @@ std::string RegularExpression::escape_raw_string(std::string input) {
   std::string special = ".+*?(){}[]\"|\\";
   for (auto c : input) {
     if (special.find(c) != std::string::npos) {
-      ss << "\\";
+      ss << R"(\)";
     } else if (((DEFAULT & INTERSECTION) != 0) and c == '&') {
-      ss << "\\";
+      ss << R"(\)";
     } else if (((DEFAULT & COMPLEMENT) != 0) and c == '~') {
-      ss << "\\";
+      ss << R"(\)";
     } else if (((DEFAULT & EMPTY) != 0) and c == '#') {
-      ss << "\\";
+      ss << R"(\)";
     } else if (((DEFAULT & ANYSTRING) != 0) and c == '@') {
-      ss << "\\";
+      ss << R"(\)";
     } else if ((((DEFAULT & INTERVAL) != 0) or ((DEFAULT & AUTOMATON) != 0)) and (c == '<' or c == '>')) {
-      ss << "\\";
+      ss << R"(\)";
     }
     ss << c;
   }
@@ -424,6 +424,14 @@ RegularExpression_ptr RegularExpression::makeIntersection(RegularExpression_ptr 
     delete exp2;
   } else if (exp1->type_ == Type::EMPTY or exp2->type_ == Type::EMPTY) {  // optimize
     regex = RegularExpression::makeEmpty();
+    delete exp1;
+    delete exp2;
+  } else if (exp1->type_ == Type::ANYSTRING) {  // optimize
+    regex = exp2->clone();
+    delete exp1;
+    delete exp2;
+  } else if (exp2->type_ == Type::ANYSTRING) {  // optimize
+    regex = exp1->clone();
     delete exp1;
     delete exp2;
   } else {

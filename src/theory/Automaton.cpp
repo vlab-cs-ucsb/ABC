@@ -2252,6 +2252,7 @@ std::set<int> Automaton::getStatesReachableBy(int min_walk, int max_walk) {
 }
 
 void Automaton::SetSymbolicCounter() {
+LOG(INFO) << 1;
   std::vector<Eigen::Triplet<BigInteger>> entries;
   const int sink_state = GetSinkState();
   unsigned left, right, index;
@@ -2291,6 +2292,7 @@ void Automaton::SetSymbolicCounter() {
       }
     }
   }
+LOG(INFO) << 2;
   Eigen::SparseMatrix<BigInteger> count_matrix (this->dfa_->ns + 1, this->dfa_->ns + 1);
   count_matrix.setFromTriplets(entries.begin(), entries.end());
   decide_counting_schema(count_matrix);
@@ -2299,6 +2301,7 @@ void Automaton::SetSymbolicCounter() {
   counter_.set_transition_count_matrix(count_matrix);
   counter_.set_initialization_vector(count_matrix.innerVector(count_matrix.cols()-1));
   is_counter_cached_ = true;
+LOG(INFO) << 3;
 }
 
 /**

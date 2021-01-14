@@ -265,6 +265,8 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
 
     // if we have cached result, import it and go from there
     if (has_cached_result) {
+//      LOG(INFO) << "AND_TERM HAS CAHCED, #cihld = " << and_term->term_list->size();
+//      std::cin.get();
 
       int num_string_to_read = 0;
       int num_int_to_read = 0;
@@ -406,6 +408,8 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
               continue;
             }
             LOG(INFO) << "Writing STR AUTO!";
+//            iter.second->getStringAutomaton()->inspectAuto(false,true);
+//            std::cin.get();
             num_string_to_write++;
             str_stuff_to_store.push_back(iter.second->getStringAutomaton()->clone());
           } else if (iter.second->getType() == Value::Type::BINARYINT_AUTOMATON) {
@@ -447,7 +451,6 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
         cache_manager_->Set(key, os.str());
 
       } else {
-        LOG(INFO) << "UNSAT";
         // unsat, just cache a "0" indicating unsat and repeat for rest of terms
         // then breakout
         os << "0";
@@ -537,7 +540,7 @@ void CachingConstraintSolver::visitAnd(And_ptr and_term) {
     Value_ptr result = new Value(is_satisfiable);
     setTermValue(and_term, result);
   }
-std::cin.get();
+//std::cin.get();
 }
 
 
@@ -1025,6 +1028,7 @@ std::cin.get();
  * 3) Solve single-track strings and mixed constraints
  */
 void CachingConstraintSolver::visitOr(Or_ptr or_term) {
+
   std::string old_root_key = root_key_;
   root_key_ = Ast2Dot::toString(or_term);
 
@@ -1034,10 +1038,91 @@ void CachingConstraintSolver::visitOr(Or_ptr or_term) {
 
   if(Option::Solver::SUB_FORMULA_CACHING) {
 
+    std::string cached_data = "";
+    std::string key = Ast2Dot::toString(or_term);
+    bool has_cached_result = cache_manager_->Get(key,cached_data);
+
+    // dont subformula cache like with AND terms; only cache entire term
+    if(has_cached_result) {
+//      LOG(INFO) << "HAS CACHED RESULT";
+//      std::cin.get();
+
+      // a single 0 indicates unsat
+      if(cached_data.size() == 1) {
+        Value_ptr result = new Value(false);
+        setTermValue(or_term, result);
+        return;
+      }
+
+      // should arith/string solvers collect string constraints?
+      // should not be need since it will be under an AND (which means arith/string solvers
+      // already collected necessary info on variables)
+
+      int num_string_to_read = 0;
+      int num_int_to_read = 0;
+
+      std::stringstream is(cached_data);
+      std::map<char, char> char_mapping;
+      {
+        cereal::BinaryInputArchive ar(is);
+        ar(char_mapping);
+        ar(num_string_to_read);
+        ar(num_int_to_read);
+      }
+//      symbol_table_->SetCharacterMapping(char_mapping);
+      // deserialize automata one by one until none left
+
+      std::vector<Theory::BinaryIntAutomaton_ptr> bin_autos_to_add;
+      std::vector<Theory::StringAutomaton_ptr> str_autos_to_add;
+      while (num_string_to_read > 0) {
+        num_string_to_read--;
+        Theory::StringAutomaton_ptr import_auto = new Theory::StringAutomaton(nullptr, 0);
+        std::string var_name;
+        {
+          cereal::BinaryInputArchive ar(is);
+          import_auto->load(ar);
+        }
+
+        str_autos_to_add.push_back(import_auto);
+
+      }
+      while (num_int_to_read-- > 0) {
+        Theory::BinaryIntAutomaton_ptr import_auto = new Theory::BinaryIntAutomaton(nullptr, 0, not Vlab::Option::Solver::USE_SIGNED_INTEGERS);
+        std::string var_name;
+        {
+          cereal::BinaryInputArchive ar(is);
+          import_auto->load(ar);
+        }
+        // can't add autos till other read is done (data race on symbol table)
+        bin_autos_to_add.push_back(import_auto);
+      }
+
+      for(auto it : str_autos_to_add) {
+        std::string rep_var = it->GetFormula()->GetVariableAtIndex(0);
+        auto import_value = new Value(it);
+        it = nullptr;
+        symbol_table_->set_value(rep_var, import_value,false);
+      }
+
+      for(auto it : bin_autos_to_add) {
+
+        std::string rep_var = it->GetFormula()->GetVariableAtIndex(0);
+        auto import_value = new Value(it);
+        it = nullptr;
+        symbol_table_->set_value(rep_var, import_value,false);
+      }
+
+      Value_ptr result = new Value(true);
+      setTermValue(or_term, result);
+      return;
+    }
+
     string_constraint_solver_.push_generator(or_term);
     arithmetic_constraint_solver_.push_generator(or_term);
 
     int num_unsat = 0;
+
+    DVLOG(VLOG_LEVEL) << "visit children start: " << *or_term << "@" << or_term;
 
     for (auto& term : *(or_term->term_list)) {
 
@@ -1051,8 +1136,6 @@ void CachingConstraintSolver::visitOr(Or_ptr or_term) {
       }
 
       bool is_scope_satisfiable = check_and_visit(term);
-      LOG(INFO) << is_scope_satisfiable;
-      std::cin.get();
       if (dynamic_cast<And_ptr>(term) == nullptr) {
 
         if (is_scope_satisfiable) {
@@ -1067,19 +1150,27 @@ void CachingConstraintSolver::visitOr(Or_ptr or_term) {
       symbol_table_->pop_scope();
 
       if(is_scope_satisfiable) {
+//        LOG(INFO) << "\n>>>>> SCOPE SAT\n";
         string_constraint_solver_.push_generator(term);
         arithmetic_constraint_solver_.push_generator(term);
       } else {
+//        LOG(INFO) << "\n>>>>> SCOPE UNSAT\n";
         symbol_table_->SetScopeSatisfiability(term,false);
         num_unsat++;
         string_constraint_solver_.reset_generator();
       }
+//      std::cin.get();
     }
+
+    DVLOG(VLOG_LEVEL) << "visit children end: " << *or_term << "@" << or_term;
+
+    DVLOG(VLOG_LEVEL) << "post visit start: " << *or_term << "@" << or_term;
 
 
     string_constraint_solver_.pop_generators(or_term->term_list->size()-num_unsat,or_term);
     arithmetic_constraint_solver_.pop_generators(or_term->term_list->size()-num_unsat,or_term);
 
+    DVLOG(VLOG_LEVEL) << "post visit end: " << *or_term << "@" << or_term;
 
     if (constraint_information_->has_arithmetic_constraint(or_term)) {
       is_satisfiable = arithmetic_constraint_solver_.get_term_value(or_term)->is_satisfiable();
@@ -1091,6 +1182,78 @@ void CachingConstraintSolver::visitOr(Or_ptr or_term) {
         and constraint_information_->has_string_constraint(or_term)) {
       is_satisfiable = string_constraint_solver_.get_term_value(or_term)->is_satisfiable();
       DVLOG(VLOG_LEVEL) << "String formulae solved: " << *or_term << "@" << or_term;
+    }
+
+    // store results in cache
+    key = Ast2Dot::toString(or_term);
+    auto &value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
+
+    std::vector<Theory::StringAutomaton_ptr> str_stuff_to_store;
+    std::vector<Theory::BinaryIntAutomaton_ptr> bin_stuff_to_store;
+
+    // first serialize
+    int num_string_to_write = 0;
+    int num_int_to_write = 0;
+
+    std::stringstream os;
+
+    if (is_satisfiable) {
+      for (auto iter : value_map) {
+        if (iter.second == nullptr) {
+          continue;
+        }
+        if (iter.second->getType() == Value::Type::STRING_AUTOMATON and
+            iter.second->getStringAutomaton()->GetFormula()->GetType() != Theory::StringFormula::Type::NA) {
+          if (iter.second->getStringAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
+            continue;
+          }
+          LOG(INFO) << "Writing STR AUTO!";
+//            iter.second->getStringAutomaton()->inspectAuto(false,true);
+//            std::cin.get();
+          num_string_to_write++;
+          str_stuff_to_store.push_back(iter.second->getStringAutomaton()->clone());
+        } else if (iter.second->getType() == Value::Type::BINARYINT_AUTOMATON) {
+          if (iter.second->getBinaryIntAutomaton()->GetFormula()->GetNumberOfVariables() == 0) {
+            continue;
+          }
+          num_int_to_write++;
+          bin_stuff_to_store.push_back(iter.second->getBinaryIntAutomaton()->clone());
+        }
+      }
+
+      {
+        cereal::BinaryOutputArchive ar(os);
+        ar(symbol_table_->GetCharacterMapping());
+        ar(num_string_to_write);
+        ar(num_int_to_write);
+      }
+
+      for (auto it : str_stuff_to_store) {
+        auto export_auto = it;
+
+        {
+          cereal::BinaryOutputArchive ar(os);
+          export_auto->save(ar);
+        }
+        delete export_auto;
+      }
+
+      for (auto it : bin_stuff_to_store) {
+        auto export_auto = it;
+
+        {
+          cereal::BinaryOutputArchive ar(os);
+          export_auto->save(ar);
+        }
+        delete export_auto;
+      }
+
+      cache_manager_->Set(key, os.str());
+
+    } else {
+      // unsat, just cache a "0" indicating unsat
+      os << "0";
+      cache_manager_->Set(key, os.str());
     }
 
 
