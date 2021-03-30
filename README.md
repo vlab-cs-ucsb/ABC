@@ -10,8 +10,7 @@ Publications
 
 ABC algorithmic details:
 ------------
-- **ASE'19**, (Accepted, to appear in proceedings) [Subformula Caching for Model Counting and Quantitative Program Analysis](). William Eiers, Seemanta Saha, Tegan Brennan, Tevfik Bultan.
-[Download experimental data and results]().
+- **ASE'19**, [Subformula Caching for Model Counting and Quantitative Program Analysis](https://vlab.cs.ucsb.edu/papers/ase2019_counting_caching_cr.pdf). William Eiers, Seemanta Saha, Tegan Brennan, Tevfik Bultan.
 
 - **FSE'18**, [Parameterized Model Counting for String and Numeric Constraints](https://dl.acm.org/citation.cfm?doid=3236024.3236064).  Abdulbaki Aydin, William Eiers, Lucas Bang, Tegan Brennan, Miroslav Gavrilov, Tevfik Bultan, Fang Yu.
 
@@ -21,7 +20,11 @@ ABC algorithmic details:
 ABC use cases:
 ------------
 
-- **FSE'16** [String Analysis for Side Channels with Segmented Oracles](http://www.cs.ucsb.edu/~baki/publications/fse16.pdf). Lucas Bang, Abdulbaki Aydin, Quoc-Sang Phan, Corina S. Pasareanu, and Tevfik Bultan. 
+- **JPF'19**, [Incremental Attack Synthesis](https://vlab.cs.ucsb.edu/papers/jpf2019.pdf). Seemanta Saha, William Eiers, Ismet Burak Kadron, Lucas Bang, Tevfik Bultan. 
+
+- **JPF'18**, [Attack Synthesis for Strings using Meta-Heuristics](https://vlab.cs.ucsb.edu/papers/jpf2018.pdf). Seemanta Saha, Ismet Burak Kadron, William Eiers, Lucas Bang, Tevfik Bultan.
+
+- **FSE'16**, [String Analysis for Side Channels with Segmented Oracles](http://www.cs.ucsb.edu/~baki/publications/fse16.pdf). Lucas Bang, Abdulbaki Aydin, Quoc-Sang Phan, Corina S. Pasareanu, and Tevfik Bultan. 
 
 Download
 ============
