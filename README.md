@@ -24,6 +24,8 @@ ABC use cases:
 
 - **JPF'18**, [Attack Synthesis for Strings using Meta-Heuristics](https://vlab.cs.ucsb.edu/papers/jpf2018.pdf). Seemanta Saha, Ismet Burak Kadron, William Eiers, Lucas Bang, Tevfik Bultan.
 
+- **FSE'17**, [Constraint Normalization and Parameterized Caching for Quantitative Program Analysis](https://sites.cs.ucsb.edu/~bultan/publications/fse17.pdf). Tegan Brennan, Nestan Tsiskaridze, Nicolás Rosner, Abdulbaki Aydın and Tevfik Bultan. 
+
 - **FSE'16**, [String Analysis for Side Channels with Segmented Oracles](http://www.cs.ucsb.edu/~baki/publications/fse16.pdf). Lucas Bang, Abdulbaki Aydin, Quoc-Sang Phan, Corina S. Pasareanu, and Tevfik Bultan. 
 
 Download
