@@ -21,7 +21,7 @@ ABC testing depends on [googletest and googlemock](https://github.com/google/goo
 
 ### Step-by-Step(Semi-automated) Setup
 #### System Dependencies
-  - C++ compiler with C++14 support. Latest ABC compilation is tested with g++ 5.4.0 on Ubuntu 16.04.
+  - C++ compiler with C++14 support. Latest ABC compilation is tested with g++ 7.5.0 on Ubuntu 20.04.
   - [Git](https://git-scm.com/)
 
   ```
@@ -38,36 +38,22 @@ ABC testing depends on [googletest and googlemock](https://github.com/google/goo
     $ sudo apt install flex bison
   ```
 
-  - Python (optional). A short installation script is written in pyhton.
+  - Python (optional). A short installation script is written in python.
     
   ```
     $ sudo apt install python
   ```
 
 #### Project Dependencies
-  - [Glog](https://github.com/google/glog) logging library for C++. It is an autotools project. 
-  Please follow the instructions in their website if the below shortcut doesn't work for you.
-
-  ```
-  $ cd <your home directory or a preferred directory>
-  $ git clone https://github.com/google/glog.git
-  $ cd glog
-  $ libtoolize && aclocal && automake --gnu --add-missing && autoreconf -ivf
-  $ ./configure
-  $ make all
-  $ sudo make install
-  $ sudo ldconfig
+  - [Glog](https://github.com/google/glog) logging library for C++. The project supports Bazel, CMake, and vcpkg build systems. Please follow the instructions in their website and make sure to install the built files after making Glog.
   
-  ```
-  You should have glog libraries installed at */usr/local/lib* and headers installed at */usr/local/include/glog/* after running above commands. 
-
   - [Mona](http://www.brics.dk/mona/) is used for symbolic representation of automata. Don't forget to apply patch as below: 
 
   ```sh
     $ cd <your home directory or a preferred directory>
     $ git clone https://github.com/cs-au-dk/MONA.git
     $ cd MONA
-    $ git apply <ABC_ROOT_DIR>/external/mona/mona_abc.patch
+    $ git apply --whitespace=nowarn <ABC_ROOT_DIR>/external/mona/mona_abc.patch
     $ libtoolize && aclocal && automake --gnu --add-missing && autoreconf -ivf
     $ ./configure
     $ make all
