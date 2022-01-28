@@ -653,13 +653,13 @@ ConstraintSorter::TermNode_ptr ConstraintSorter::process_child_nodes(TermNode_pt
 
 void ConstraintSorter::sort_terms(std::vector<TermNode_ptr>& term_node_list) {
 	// if no count variable, just sort based on number of total variables in each term
-	if(ConstraintSorter::TermNode::count_var.empty()) {
-		std::stable_sort(term_node_list.begin(), term_node_list.end(),
-							[](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
-								return (left_node->numOfTotalVars() > right_node->numOfTotalVars());
-							});
-		return;
-	}
+	// if(ConstraintSorter::TermNode::count_var.empty()) {
+	// 	std::stable_sort(term_node_list.begin(), term_node_list.end(),
+	// 						[](TermNode_ptr left_node, TermNode_ptr right_node) -> bool {
+	// 							return (left_node->numOfTotalVars() < right_node->numOfTotalVars());
+	// 						});
+	// 	return;
+	// }
 
 	// otherwise, sort based on count variable
   std::vector<TermNode_ptr> sorted_term_node_list;

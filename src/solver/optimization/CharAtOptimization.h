@@ -76,6 +76,9 @@ public:
   void visitTrim(SMT::Trim_ptr) override;
   void visitToString(SMT::ToString_ptr) override;
   void visitToInt(SMT::ToInt_ptr) override;
+  void visitIsDigit(SMT::IsDigit_ptr) override {};
+  void visitToCode(SMT::ToCode_ptr) override {};
+  void visitFromCode(SMT::FromCode_ptr) override {};
   void visitReplace(SMT::Replace_ptr) override;
   void visitCount(SMT::Count_ptr) override;
   void visitIte(SMT::Ite_ptr) override;

@@ -17,6 +17,8 @@ const int StringFormula::VLOG_LEVEL = 15;
 
 StringFormula::StringFormula()
     : type_(Type::NONE) {
+  constant_ = "";
+  regex_constant_ = false;
 }
 
 StringFormula::~StringFormula() {
@@ -197,6 +199,15 @@ bool StringFormula::IsConstant() const {
     }
   }
   return true;
+}
+
+bool StringFormula::HasRegexConstant() const {
+  return regex_constant_;
+}
+
+void StringFormula::SetRegexConstant(std::string constant) {
+  constant_ = constant;
+  regex_constant_ = true;
 }
 
 bool StringFormula::HasRelationToMixedTerm(const std::string var_name) const {

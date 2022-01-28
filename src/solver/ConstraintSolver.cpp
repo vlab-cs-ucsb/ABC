@@ -14,6 +14,7 @@ using namespace SMT;
 using namespace Theory;
 
 const int ConstraintSolver::VLOG_LEVEL = 11;
+bool ConstraintSolver::many_vars = false;
 
 ConstraintSolver::ConstraintSolver(Script_ptr script, SymbolTable_ptr symbol_table,
                                    ConstraintInformation_ptr constraint_information)
@@ -35,7 +36,6 @@ void ConstraintSolver::start() {
   arithmetic_constraint_solver_.collect_arithmetic_constraint_info();
   string_constraint_solver_.collect_string_constraint_info();
   visit(root_);
-
   end();
 }
 
@@ -47,6 +47,9 @@ void ConstraintSolver::start(int iteration_count) {
   for (iteration_count_ = 0; iteration_count_ < iteration_count; ++iteration_count_) {
     visit(root_);
   }
+  
+  
+
   end();
 }
 
@@ -85,6 +88,7 @@ void ConstraintSolver::visitAssert(Assert_ptr assert_command) {
     }
   }
   clearTermValuesAndLocalLetVars();
+
 }
 
 void ConstraintSolver::visitTerm(Term_ptr term) {
@@ -94,6 +98,24 @@ void ConstraintSolver::visitExclamation(Exclamation_ptr exclamation_term) {
 }
 
 void ConstraintSolver::visitExists(Exists_ptr exists_term) {
+  DVLOG(VLOG_LEVEL) << "visit children start: " << *exists_term << "@" << exists_term;
+  auto is_satisfiable = check_and_visit(exists_term->term);
+  DVLOG(VLOG_LEVEL) << "visit children end: " << *exists_term << "@" << exists_term;
+
+  DVLOG(VLOG_LEVEL) << "temp variable projection start: " << *exists_term << "@" << exists_term;
+  for(auto sorted_var : *exists_term->sorted_var_list) {
+    auto sorted_var_name = sorted_var->symbol->getData();
+    symbol_table_->project_variable_all_scopes(sorted_var_name);
+    string_constraint_solver_.project_variable(sorted_var_name);
+  }
+  DVLOG(VLOG_LEVEL) << "temp variable projection end: " << *exists_term << "@" << exists_term;
+
+  if(constraint_information_->has_string_constraint(exists_term->term)) {
+    is_satisfiable = is_satisfiable and string_constraint_solver_.get_term_value(exists_term->term);
+  }
+
+  Value_ptr result = new Value(is_satisfiable);
+  setTermValue(exists_term,result);
 }
 
 void ConstraintSolver::visitForAll(ForAll_ptr for_all_term) {
@@ -170,7 +192,7 @@ void ConstraintSolver::visitAnd(And_ptr and_term) {
       	variable_path_table_.clear();
       	break;
       }
-      if (dynamic_cast<Or_ptr>(term) == nullptr) {
+      if (dynamic_cast<Or_ptr>(term) == nullptr and  (dynamic_cast<Exists_ptr>(term) == nullptr)) {
         if (is_satisfiable) {
           is_satisfiable = update_variables();
           if(not is_satisfiable) {
@@ -233,7 +255,7 @@ void ConstraintSolver::visitOr(Or_ptr or_term) {
       symbol_table_->push_scope(term);
       bool is_scope_satisfiable = check_and_visit(term);
 
-      if (dynamic_cast<And_ptr>(term) == nullptr) {
+      if (dynamic_cast<And_ptr>(term) == nullptr and  (dynamic_cast<Exists_ptr>(term) == nullptr)) {
         if (is_scope_satisfiable) {
           update_variables();
         } else {
@@ -608,39 +630,65 @@ void ConstraintSolver::visitConcat(Concat_ptr concat_term) {
   DVLOG(VLOG_LEVEL) << "visit: " << *concat_term << " ...";
 
   Value_ptr result = nullptr, concat_value = nullptr, param = nullptr;
-	path_trace_.push_back(concat_term);
 
-	for (auto& term_ptr : *(concat_term->term_list)) {
-		visit(term_ptr);
-		param = getTermValue(term_ptr);
-		if (result == nullptr) {
-			result = param->clone();
-		} else {
-			concat_value = result->concat(param);
-			delete result;
-			result = concat_value;
-		}
+	if(Option::Solver::CONCAT_COLLAPSE_HEURISTIC) {
+    if(concat_term->term_list->size() <= 10) {
+      path_trace_.push_back(concat_term);
+    } else {
+      many_vars = true;
+    }      
+    for (auto& term_ptr : *(concat_term->term_list)) {
+      visit(term_ptr);
+      param = getTermValue(term_ptr);
+      if (result == nullptr) {
+        result = param->clone();
+      } else {
+        concat_value = result->concat(param);
+        delete result;
+        result = concat_value;
+      }
+    }
+    if(concat_term->term_list->size() <= 10) {
+      path_trace_.pop_back();
+    }
+    many_vars = false;
+  } else {
+    path_trace_.push_back(concat_term);
+    for (auto& term_ptr : *(concat_term->term_list)) {
+      visit(term_ptr);
+      param = getTermValue(term_ptr);
 
-	}
-	path_trace_.pop_back();
-  setTermValue(concat_term, result);
+      if (result == nullptr) {
+        result = param->clone();
+      } else {
+        concat_value = result->concat(param);
+        delete result;
+        result = concat_value;
+      }
+
+    }
+    path_trace_.pop_back();
+  }
+
+	setTermValue(concat_term, result);
 }
 
 void ConstraintSolver::visitIn(In_ptr in_term) {
 //  if(symbol_table_->top_scope() == root_) {
-//    auto left_var = dynamic_cast<QualIdentifier_ptr>(in_term->left_term);
-//    auto right_constant = dynamic_cast<TermConstant_ptr>(in_term->right_term);
-//    Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
-//    auto temp = StringAutomaton::MakeRegexAuto(right_constant->getValue());
-//    auto formula = new Theory::StringFormula();
-//    formula->AddVariable(left_var->getVarName(), 1);
-//    formula->SetType(Theory::StringFormula::Type::VAR);
-//    temp->SetFormula(formula);
-//    Value_ptr val = new Value(temp);
-//    bool result1 = symbol_table_->IntersectValue(var, val);
-//    setTermValue(in_term, new Value(result1));
-//    return;
-//  }
+  if(Term::Type::QUALIDENTIFIER == in_term->left_term->type() && Term::Type::TERMCONSTANT == in_term->right_term->type()) {
+    auto left_var = dynamic_cast<QualIdentifier_ptr>(in_term->left_term);
+    auto right_constant = dynamic_cast<TermConstant_ptr>(in_term->right_term);
+    Variable_ptr var = symbol_table_->get_variable(left_var->getVarName());
+    auto temp = StringAutomaton::MakeRegexAuto(right_constant->getValue());
+    auto formula = new Theory::StringFormula();
+    formula->AddVariable(left_var->getVarName(), 1);
+    formula->SetType(Theory::StringFormula::Type::VAR);
+    temp->SetFormula(formula);
+    Value_ptr val = new Value(temp);
+    bool result1 = symbol_table_->IntersectValue(var, val);
+    setTermValue(in_term, new Value(result1));
+    return;
+  }
 
   visit_children_of(in_term);
   DVLOG(VLOG_LEVEL) << "visit: " << *in_term;
@@ -1115,6 +1163,18 @@ void ConstraintSolver::visitCount(Count_ptr count_term) {
 void ConstraintSolver::visitIte(Ite_ptr ite_term) {
 }
 
+void ConstraintSolver::visitIsDigit(IsDigit_ptr is_digit_term) {
+  LOG(FATAL) << "IMPLEMENT ME";
+}
+
+void ConstraintSolver::visitToCode(ToCode_ptr to_code_term) {
+  LOG(FATAL) << "IMPLEMENT ME";
+}
+
+void ConstraintSolver::visitFromCode(FromCode_ptr from_code_term) {
+  LOG(FATAL) << "IMPLEMENT ME";
+}
+
 void ConstraintSolver::visitReConcat(ReConcat_ptr re_concat_term) {
 }
 
@@ -1167,6 +1227,8 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
   Value_ptr result = nullptr;
   if (Value::Type::STRING_AUTOMATON == variable_value->getType()) {
     result = new Value(variable_value->getStringAutomaton()->GetAutomatonForVariable(qi_term->getVarName()));
+    // result->getStringAutomaton()->inspectAuto(true,false);
+    // std::cin.get();
   } else if (Value::Type::BINARYINT_AUTOMATON == variable_value->getType()) {
   	// TODO baki: added for charat may need to fix it
     auto var_auto = variable_value->getBinaryIntAutomaton()->GetBinaryAutomatonFor(qi_term->getVarName());
@@ -1183,7 +1245,13 @@ void ConstraintSolver::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 
 
   setTermValue(qi_term, result);
-	setVariablePath(qi_term);
+  if(Option::Solver::CONCAT_COLLAPSE_HEURISTIC) {
+    if(!many_vars) {
+      setVariablePath(qi_term);
+    }
+  } else {
+    setVariablePath(qi_term);
+  }
 }
 
 void ConstraintSolver::visitTermConstant(TermConstant_ptr term_constant) {
@@ -1327,7 +1395,7 @@ void ConstraintSolver::visit_children_of(Term_ptr term) {
 }
 
 bool ConstraintSolver::check_and_visit(Term_ptr term) {
-  if ((Term::Type::OR not_eq term->type()) and (Term::Type::AND not_eq term->type())) {
+  if ((Term::Type::OR not_eq term->type()) and (Term::Type::AND not_eq term->type()) and (Term::Type::EXISTS not_eq term->type())) {
     if (constraint_information_->has_arithmetic_constraint(term)) {  // if arithmetic constraint and has string terms
       bool is_satisfiable = true;
       if (arithmetic_constraint_solver_.has_string_terms(term)) {

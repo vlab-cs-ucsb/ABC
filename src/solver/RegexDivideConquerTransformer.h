@@ -1,41 +1,41 @@
 /*
- * Ast2Dot.h
+ * EquivClassRuleRunner.h
  *
- *  Created on: Nov 23, 2014
- *      Author: baki
+  *  Created on: May 4, 2015
+ *      Author: baki, tegan
+ *   Copyright: Copyright 2015 The ABC Authors. All rights reserved.
+ *              Use of this source code is governed license that can
+ *              be found in the COPYING file.
  */
 
-#ifndef SOLVER_AST2DOT_H_
-#define SOLVER_AST2DOT_H_
+#ifndef SOLVER_EQUIVCLASSRULERUNNER_H_
+#define SOLVER_EQUIVCLASSRULERUNNER_H_
 
-#include <cstdlib>
-#include <fstream>
 #include <iostream>
-#include <stack>
+#include <map>
 #include <string>
-#include <sstream>
-#include <sys/types.h>
+
+#include <glog/logging.h>
 
 #include "../smt/ast.h"
 #include "../smt/typedefs.h"
 #include "../smt/Visitor.h"
+#include "EquivalenceClass.h"
+#include "SymbolTable.h"
+#include "SyntacticOptimizer.h"
+#include "SyntacticProcessor.h"
+#include "Value.h"
 
 namespace Vlab {
 namespace Solver {
 
-class Ast2Dot: public SMT::Visitor {
-public:
-  Ast2Dot(std::ostream* out = &std::cout);
-  ~Ast2Dot();
-
-  void add_edge(u_int64_t p, u_int64_t c);
-  void add_node(u_int64_t c, std::string label);
-  void draw(std::string label, SMT::Visitable_ptr p);
-  void draw_terminal(std::string label);
-
-  void start(SMT::Visitable_ptr);
+class RegexDivideConquerTransformer: public SMT::Visitor {
+ public:
+  RegexDivideConquerTransformer(SMT::Script_ptr, SymbolTable_ptr);
+  virtual ~RegexDivideConquerTransformer();
   void start() override;
   void end() override;
+
   void visitScript(SMT::Script_ptr) override;
   void visitCommand(SMT::Command_ptr) override;
   void visitAssert(SMT::Assert_ptr) override;
@@ -89,7 +89,7 @@ public:
   void visitReStar(SMT::ReStar_ptr) override;
   void visitRePlus(SMT::RePlus_ptr) override;
   void visitReOpt(SMT::ReOpt_ptr) override;
-  void visitReLoop(SMT::ReLoop_ptr) override;
+  void visitReLoop(SMT::ReLoop_ptr) override {};
   void visitReComp(SMT::ReComp_ptr) override {};
   void visitReDiff(SMT::ReDiff_ptr) override {};
   void visitToRegex(SMT::ToRegex_ptr) override;
@@ -109,19 +109,18 @@ public:
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
 
-  static int inspectAST(SMT::Visitable_ptr node);
-  static std::string toString(SMT::Visitable_ptr node);
-  static bool isEquivalent(SMT::Visitable_ptr x, SMT::Visitable_ptr y);
 
-private:
-  std::ostream* m_out; //file for writting output
-  u_int64_t count; //used to give each node a uniq id
-  std::stack<u_int64_t> s; //stack for tracking parent/child pairs
-  static int name_counter;
+ protected:
+  void visit_and_callback(SMT::Term_ptr&);
+  std::function<void(SMT::Term_ptr&)> callback_;
 
+  SMT::Script_ptr root;
+  SymbolTable_ptr symbol_table_;
+ private:
+  static const int VLOG_LEVEL;
 };
 
 } /* namespace Solver */
 } /* namespace Vlab */
 
-#endif /* SOLVER_AST2DOT_H_ */
+#endif /* SOLVER_EQUIVCLASSRULERUNNER_H_ */

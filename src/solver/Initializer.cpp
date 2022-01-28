@@ -16,6 +16,7 @@ const int Initializer::VLOG_LEVEL = 19;
 
 Initializer::Initializer(Script_ptr script, SymbolTable_ptr symbol_table)
         : root_(script), symbol_table_(symbol_table) {
+  local_var_search_ = false;
 }
 
 Initializer::~Initializer() {
@@ -47,6 +48,8 @@ void Initializer::visitScript(Script_ptr script) {
       delete (*iter);
       iter = commands->erase(iter);
     } else {
+      // local_var_search_ = true;
+      // visit(*iter);
       iter++;
     }
   }
@@ -122,7 +125,7 @@ void Initializer::visitCommand(Command_ptr command) {
 }
 
 void Initializer::visitAssert(Assert_ptr assert_command) {
-//  visit_children_of(assert_command);
+ visit_children_of(assert_command);
 }
 
 void Initializer::visitTerm(Term_ptr term) {
@@ -132,6 +135,13 @@ void Initializer::visitExclamation(Exclamation_ptr exclamation_term) {
 }
 
 void Initializer::visitExists(Exists_ptr exists_term) {
+  // auto term_name = "";//symbol_table_->get_var_name_for_node(exists_term,Variable::Type::STRING);
+  // for(auto sorted_iter : *exists_term->sorted_var_list) {
+  //   Variable_ptr variable = new Variable(
+  //     new Primitive(term_name + sorted_iter->symbol->getData(), sorted_iter->symbol->getType()),
+  //     sorted_iter->sort->var_type->getType());
+  //   symbol_table_->add_sorted_variable(variable);
+  // }
 }
 
 void Initializer::visitForAll(ForAll_ptr for_all_term) {
@@ -141,12 +151,15 @@ void Initializer::visitLet(Let_ptr let_term) {
 }
 
 void Initializer::visitAnd(And_ptr and_term) {
+  visit_children_of(and_term);
 }
 
 void Initializer::visitOr(Or_ptr or_term) {
+  visit_children_of(or_term);
 }
 
 void Initializer::visitNot(Not_ptr not_term) {
+  visit_children_of(not_term);
 }
 
 void Initializer::visitUMinus(UMinus_ptr u_minus_term) {
@@ -165,9 +178,11 @@ void Initializer::visitDiv(Div_ptr div_term) {
 }
 
 void Initializer::visitEq(Eq_ptr eq_term) {
+  visit_children_of(eq_term);
 }
 
 void Initializer::visitNotEq(NotEq_ptr not_eq_term) {
+  visit_children_of(not_eq_term);
 }
 
 void Initializer::visitGt(Gt_ptr gt_term) {
@@ -211,7 +226,6 @@ void Initializer::visitEnds(Ends_ptr ends_term) {
 
 void Initializer::visitNotEnds(NotEnds_ptr not_ends_term) {
 }
-
 
 void Initializer::visitIndexOf(IndexOf_ptr index_of_term) {
 }
@@ -289,7 +303,9 @@ void Initializer::visitIdentifier(Identifier_ptr identifier) {
 }
 
 void Initializer::visitPrimitive(Primitive_ptr primitive) {
-  primitives_.push(primitive);
+  // if(not local_var_search_) {
+    primitives_.push(primitive);
+  // }
 }
 
 void Initializer::visitTVariable(TVariable_ptr t_variable) {
@@ -308,7 +324,9 @@ void Initializer::visitVariable(Variable_ptr variable) {
 }
 
 void Initializer::visitSort(Sort_ptr sort) {
-  sorts_.push(sort);
+  // if(not local_var_search_) {
+    sorts_.push(sort);
+  // }
 }
 
 void Initializer::visitAttribute(Attribute_ptr attribute) {

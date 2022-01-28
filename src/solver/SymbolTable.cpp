@@ -415,6 +415,41 @@ void SymbolTable::clear_variable_values() {
 	variable_group_map_.clear();
 }
 
+void SymbolTable::project_variable_all_scopes(std::string var_name) {
+  auto variable = get_variable(var_name);
+  for (auto scope : scopes_) {
+
+    auto var_value = get_value_at_scope(scope,variable);
+
+    if(var_value != nullptr and var_value->getType() == Value::Type::STRING_AUTOMATON) {
+      auto var_auto = var_value->getStringAutomaton();
+      auto var_formula = var_auto->GetFormula();
+
+      if(var_formula->GetNumberOfVariables() > 1) {
+        auto projected_var_auto = var_auto->ProjectAwayVariable(var_name);
+        delete var_auto;
+        var_value->setData(projected_var_auto);
+      }
+    }
+  }
+}
+
+void SymbolTable::project_variable_at_scope(Visitable_ptr scope, std::string var_name) {
+  auto variable = get_variable(var_name);
+  auto var_value = get_value_at_scope(scope,variable);
+
+  if(var_value != nullptr and var_value->getType() == Value::Type::STRING_AUTOMATON) {
+    auto var_auto = var_value->getStringAutomaton();
+    auto var_formula = var_auto->GetFormula();
+
+    if(var_formula->GetNumberOfVariables() > 1) {
+      auto projected_var_auto = var_auto->ProjectAwayVariable(var_name);
+      delete var_auto;
+      var_value->setData(projected_var_auto);
+    }
+  }
+}
+
 bool SymbolTable::set_value(std::string var_name, Value_ptr value) {
   return set_value(get_variable(var_name), value);
 }
@@ -700,6 +735,130 @@ int SymbolTable::get_variable_usage(std::string var_name) {
 
 void SymbolTable::reset_variable_usage() {
 	variable_usage_.clear();
+}
+
+void SymbolTable::set_variable_concat(std::string var_name, bool status) {
+  variable_concat_[var_name] = status;
+}
+
+
+bool SymbolTable::get_variable_concat(std::string var_name) {
+  if(variable_concat_.find(var_name) != variable_concat_.end()) {
+    return variable_concat_[var_name];
+  }
+  return false;
+}
+
+void SymbolTable::reset_variable_concat() {
+  variable_concat_.clear();
+}
+
+bool SymbolTable::is_macro_variable(std::string var_name) {
+  if(get_variable_usage(var_name) == 1 and get_variable_concat(var_name)) {
+    return true;
+  }
+  return false;
+}
+
+void SymbolTable::add_sorted_variable(Variable_ptr sorted_var) {
+  // according to SMT standard, repeat declarations get overshadowed
+  if(get_variable_unsafe(sorted_var->getName()) == nullptr) {
+    LOG(INFO) << "ADDING VARIABLE: " << sorted_var->getName();
+    add_variable(sorted_var);
+    temp_sorted_vars_.insert(sorted_var->getName());
+  } else {
+    LOG(INFO) << "SORTED VAR (" << sorted_var->getName() << ") ALREADY DECLARED";
+  }
+
+}
+
+bool SymbolTable::is_sorted_variable(Variable_ptr var) {
+  if(temp_sorted_vars_.find(var->getName()) != temp_sorted_vars_.end()) {
+    return true;
+  }
+  return false;
+}
+
+void SymbolTable::remove_sorted_variables() {
+  LOG(FATAL) << "IMPLEMENT ME";
+}
+
+void SymbolTable::add_regex_prefix_var() {
+  std::string regex_prefix_var_name = "z" + generate_internal_name("_PREFIX", Variable::Type::STRING);
+  add_variable(new Variable(regex_prefix_var_name, Variable::Type::STRING));
+}
+
+
+std::string SymbolTable::get_regex_prefix_var_name() {
+  return "z" + generate_internal_name("_PREFIX", Variable::Type::STRING);
+}
+
+void SymbolTable::add_regex_suffix_var() {
+  std::string regex_suffix_var_name = generate_internal_name("_SUFFIX", Variable::Type::STRING);
+  add_variable(new Variable(regex_suffix_var_name, Variable::Type::STRING));
+}
+
+std::string SymbolTable::get_regex_suffix_var_name() {
+  return generate_internal_name("_SUFFIX", Variable::Type::STRING);
+}
+
+void SymbolTable::set_regex_split_var(std::string name) {
+  regex_split_variable_ = name;
+}
+
+std::string SymbolTable::get_regex_split_var_name() {
+  return regex_split_variable_;
+}
+
+
+
+bool SymbolTable::has_regex_prefix_transformation(Visitable_ptr scope, Visitable_ptr term) {
+  if(regex_prefix_reverse_mapping_.find(term) != regex_prefix_reverse_mapping_.end()) {
+    return true;
+  }
+
+  if(regex_prefix_table_.find(scope) != regex_prefix_table_.end()) {
+    if(auto and_term = dynamic_cast<And_ptr>(term)) {
+      for(auto it : *and_term->term_list) {
+        if(regex_prefix_reverse_mapping_.find(it) != regex_prefix_reverse_mapping_.end()) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+std::string SymbolTable::get_regex_prefix_transformation(Visitable_ptr scope, Visitable_ptr term) {
+  if(regex_prefix_reverse_mapping_.find(term) != regex_prefix_reverse_mapping_.end()) {
+    return regex_prefix_reverse_mapping_[term];
+  }
+
+  if(regex_prefix_table_.find(scope) != regex_prefix_table_.end()) {
+    if(auto and_term = dynamic_cast<And_ptr>(term)) {
+      for(auto it : *and_term->term_list) {
+        if(regex_prefix_reverse_mapping_.find(it) != regex_prefix_reverse_mapping_.end()) {
+          return regex_prefix_reverse_mapping_[it];
+        }
+      }
+    }
+  }
+
+  LOG(FATAL) << "SHOULD NOT BE HERE - term  has no associated prefix mapping!";
+}
+
+void SymbolTable::add_regex_prefix_transformation(Visitable_ptr scope, Visitable_ptr term, std::string prefix) {
+  if(regex_prefix_table_.find(scope) == regex_prefix_table_.end()) {
+    regex_prefix_table_[scope] = RegexPrefixMap();
+  }
+
+  if(regex_prefix_table_[scope].find(prefix) == regex_prefix_table_[scope].end()) {
+    regex_prefix_table_[scope][prefix] = std::set<Visitable_ptr>();
+  }
+
+  regex_prefix_table_[scope][prefix].insert(term);
+  regex_prefix_reverse_mapping_[term] = prefix;
 }
 
 std::string SymbolTable::generate_internal_name(std::string name, Variable::Type type) {

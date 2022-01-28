@@ -40,7 +40,9 @@ using GroupMap = std::map<SMT::Variable_ptr, SMT::Variable_ptr>;
 using VariableValueMap = std::map<SMT::Variable_ptr, Value_ptr>;
 using VariableValueTable = std::map<SMT::Visitable_ptr, VariableValueMap>;
 using TermChildrenTable = std::map<SMT::Visitable_ptr, std::set<std::string>>;
-
+using RegexPrefixMap = std::map<std::string, std::set<SMT::Visitable_ptr>>;
+using RegexPrefixTable = std::map<SMT::Visitable_ptr, RegexPrefixMap>;
+using RegexPrefixReverseMap = std::map<SMT::Visitable_ptr, std::string>;
 
 
 class SymbolTable {
@@ -100,6 +102,8 @@ public:
   VariableValueMap& get_values_at_scope(SMT::Visitable_ptr scope);
   void clear_variable_values();
 
+  void project_variable_all_scopes(std::string var_name);
+  void project_variable_at_scope(SMT::Visitable_ptr, std::string var_name);
 
   bool set_value(std::string var_name, Value_ptr value);
   bool set_value(SMT::Variable_ptr variable, Value_ptr value);
@@ -141,6 +145,28 @@ public:
   int get_variable_usage(std::string);
   void reset_variable_usage();
 
+  void set_variable_concat(std::string, bool);
+  bool get_variable_concat(std::string);
+  void reset_variable_concat();
+
+  bool is_macro_variable(std::string);
+
+  void add_sorted_variable(SMT::Variable_ptr);
+  bool is_sorted_variable(SMT::Variable_ptr);
+  void remove_sorted_variables();
+
+  void add_regex_prefix_var();
+  std::string get_regex_prefix_var_name();
+  void add_regex_suffix_var();
+  std::string get_regex_suffix_var_name();
+  
+  void set_regex_split_var(std::string);
+  std::string get_regex_split_var_name();
+
+  bool has_regex_prefix_transformation(SMT::Visitable_ptr, SMT::Visitable_ptr);
+  std::string get_regex_prefix_transformation(SMT::Visitable_ptr, SMT::Visitable_ptr);
+  void add_regex_prefix_transformation(SMT::Visitable_ptr scope, SMT::Visitable_ptr term, std::string prefix);
+
 private:
   std::string generate_internal_name(std::string, SMT::Variable::Type);
 
@@ -149,6 +175,11 @@ private:
    * Name to variable map
    */
   VariableMap variables_;
+
+  /**
+   * For temp sorted variables
+   */
+  std::set<std::string> temp_sorted_vars_;
 
   /**
    * There is a global scope
@@ -187,6 +218,21 @@ private:
     * string names of a terms children, mainly for ANDS
     */
   TermChildrenTable term_children_table_;
+
+  /*
+   *
+   */
+  RegexPrefixTable regex_prefix_table_;
+
+  /*
+   *
+   */
+  RegexPrefixReverseMap regex_prefix_reverse_mapping_;
+
+  /*
+   *
+   */
+  std::string regex_split_variable_;
   
 
   std::map<SMT::Visitable_ptr,std::pair<SMT::Visitable_ptr, SMT::Visitable_ptr>> ite_conditions_;
@@ -203,6 +249,8 @@ private:
    *
    */
   std::map<std::string,int> variable_usage_;
+
+  std::map<std::string,bool> variable_concat_;
 
   static const int VLOG_LEVEL;
   //int reuse; 

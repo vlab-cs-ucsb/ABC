@@ -38,6 +38,7 @@
 #include "solver/Initializer.h"
 #include "solver/ModelCounter.h"
 #include "solver/options/Solver.h"
+#include "solver/RegexDivideConquer.h"
 #include "solver/SymbolTable.h"
 #include "solver/SyntacticOptimizer.h"
 #include "solver/SyntacticProcessor.h"
@@ -51,6 +52,9 @@
 #include "theory/Formula.h"
 #include "theory/SymbolicCounter.h"
 #include "utils/Serialize.h"
+
+#include "solver/NormalizationConstraintSorter.h"
+#include "solver/NormalizationRenamer.h"
 
 namespace Vlab {
 namespace SMT {
@@ -77,8 +81,6 @@ public:
   void Solve();
   bool is_sat();
 
-  void GetModels(const unsigned long bound,const unsigned long num_models);
-
   Theory::BigInteger CountVariable(const std::string var_name, const unsigned long bound);
   Theory::BigInteger CountInts(const unsigned long bound);
   Theory::BigInteger CountStrs(const unsigned long bound);
@@ -86,6 +88,9 @@ public:
 
   Solver::ModelCounter& GetModelCounterForVariable(const std::string var_name, bool project = true);
   Solver::ModelCounter& GetModelCounter();
+
+  int GetNumIntVariables();
+  int GetNumStrVariables();
 
   void printResult(Solver::Value_ptr value, std::ostream& out);
   void inspectResult(Solver::Value_ptr value, std::string file_name);
@@ -131,6 +136,9 @@ protected:
    * Keeps bounded projected automata for variables
    */
   std::map<std::string, Solver::Value_ptr> cached_bounded_values_;
+
+
+  int bound_decrease_;
 
 private:
   static bool IS_LOGGING_INITIALIZED;

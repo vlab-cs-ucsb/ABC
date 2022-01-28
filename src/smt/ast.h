@@ -216,6 +216,9 @@ class Term : public Visitable {
     REPLACE,
     COUNT,
     ITE,
+    ISDIGIT,
+    TOCODE,
+    FROMCODE,
     RECONCAT,
     REUNION,
     REINTER,
@@ -888,6 +891,48 @@ class Ite : public Term {
   Term_ptr cond;
   Term_ptr then_branch;
   Term_ptr else_branch;
+};
+
+class IsDigit : public Term {
+ public:
+  IsDigit(Term_ptr);
+  IsDigit(const IsDigit&);
+  virtual IsDigit_ptr clone() const override;
+  virtual ~IsDigit();
+
+  virtual std::string str() const override;
+  virtual void accept(Visitor_ptr) override;
+  virtual void visit_children(Visitor_ptr) override;
+
+  Term_ptr term;
+};
+
+class ToCode : public Term {
+ public:
+  ToCode(Term_ptr);
+  ToCode(const ToCode&);
+  virtual ToCode_ptr clone() const override;
+  virtual ~ToCode();
+
+  virtual std::string str() const override;
+  virtual void accept(Visitor_ptr) override;
+  virtual void visit_children(Visitor_ptr) override;
+
+  Term_ptr term;
+};
+
+class FromCode : public Term {
+ public:
+  FromCode(Term_ptr);
+  FromCode(const FromCode&);
+  virtual FromCode_ptr clone() const override;
+  virtual ~FromCode();
+
+  virtual std::string str() const override;
+  virtual void accept(Visitor_ptr) override;
+  virtual void visit_children(Visitor_ptr) override;
+
+  Term_ptr term;
 };
 
 class ReConcat : public Term {

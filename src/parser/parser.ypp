@@ -98,6 +98,9 @@
   REPLACE              "replace"
   COUNT                "count"
   ITE                  "ite"
+  IS_DIGIT             "str.is_digit"
+  TO_CODE              "str.to_code"
+  FROM_CODE            "str.from_code"
   RE_CONCAT            "re.++"
   RE_OR                "re.or"
   RE_UNION             "re.union"
@@ -105,6 +108,7 @@
   RE_STAR              "re.*"
   RE_PLUS              "re.+"
   RE_OPT               "re.opt"
+  RE_REPEAT            "re.^"
   RE_RANGE             "re.range"
   RE_LOOP              "re.loop"
   RE_COMP              "re.comp"
@@ -112,6 +116,7 @@
   TO_REGEX             "str.to.re"  
   RE_ALLCHAR           "re.allchar"
   RE_ALL               "re.all"
+  RE_NOSTR             "re.nostr"
 
   TBOOL                 "TBool"
   TINT                  "TInt"
@@ -295,8 +300,10 @@ term                  :
                       | "(" TOINT term ")"                                              { $$ = new ToInt($3); }
                       | "(" REPLACE term term term ")"                                  { $$ = new Replace($3, $4, $5); }
                       | "(" COUNT term term ")"                                         { $$ = new Count($3, $4); }
-                  /*    | "(" ITE term term term ")"                                      { $$ = TransformIteToOr($3, $4, $5); } */
-                      | "(" ITE term term term ")"                                      { $$ = new Ite($3, $4, $5); }                      
+                      | "(" ITE term term term ")"                                      { $$ = new Ite($3, $4, $5); }                     
+                      | "(" IS_DIGIT term ")"                                           { $$ = new IsDigit($3);}
+                      | "(" TO_CODE term ")"                                            { $$ = new ToCode($3);}
+                      | "(" FROM_CODE term ")"                                          { $$ = new FromCode($3);} 
                       | "(" RE_CONCAT term_list_ ")"                                    { $$ = new ReConcat($3); }
                       | "(" RE_OR term_list_ ")"                                        { $$ = new Or($3); }
                       | "(" RE_UNION term_list_ ")"                                     { $$ = new ReUnion($3); }
@@ -305,8 +312,9 @@ term                  :
                       | "(" RE_PLUS term ")"                                            { $$ = new RePlus($3); }
                       | "(" RE_OPT term ")"                                             { $$ = new ReOpt($3); }
                       | "(" RE_RANGE term term ")"                                      { $$ = ReRangeToRegex($3, $4);}
-                      | "(" "(" "_" RE_LOOP term ")" term ")"                           { $$ = new ReLoop($7, $5);}
-                      | "(" "(" "_" RE_LOOP term term ")" term ")"                      { $$ = new ReLoop($8, $5, $6);}
+                      | "(" "(" "_" RE_REPEAT term ")" term ")"                         { $$ = new ReLoop($7, $5);}
+                      | "(" "(" "_" RE_LOOP   term ")" term ")"                         { $$ = new ReLoop($7, $5);}
+                      | "(" "(" "_" RE_LOOP   term term ")" term ")"                    { $$ = new ReLoop($8, $5, $6);}
                       | "(" RE_LOOP term term ")"                                       { $$ = new ReLoop($3, $4);}
                       | "(" RE_LOOP term term term ")"                                  { $$ = new ReLoop($3, $4, $5);}
                       | "(" RE_COMP term ")"                                            { $$ = new ReComp($3);}
@@ -430,6 +438,7 @@ spec_constant         :
                       | REGEX               { $$ = new Primitive($1, Primitive::Type::REGEX); }
                       | RE_ALLCHAR          { $$ = new Primitive(".", Primitive::Type::REGEX); }
                       | RE_ALL              { $$ = new Primitive(".*", Primitive::Type::REGEX); }
+                      | RE_NOSTR            { $$ = new Primitive("~(.*)", Primitive::Type::REGEX); }
                       ;
 
 

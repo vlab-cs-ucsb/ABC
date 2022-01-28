@@ -56,6 +56,9 @@ class StringFormula : public Formula {
   void SetConstant(std::string constant);
   bool IsConstant() const;
 
+  bool HasRegexConstant() const;
+  void SetRegexConstant(std::string constant);
+
   bool HasRelationToMixedTerm(const std::string var_name) const;
   void AddRelationToMixedTerm(const std::string var_name, const StringFormula::Type relation, const SMT::Term_ptr term);
   std::pair<StringFormula::Type, SMT::Term_ptr> GetRelationToMixedTerm(const std::string var_name) const;
@@ -71,6 +74,7 @@ protected:
 
   StringFormula::Type type_;
   std::string constant_;
+  bool regex_constant_;
 
   // TODO a quick solution for a restricted set of cases in mixed constraints
   // generalize it as much as possible

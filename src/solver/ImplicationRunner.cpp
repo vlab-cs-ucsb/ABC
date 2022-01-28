@@ -294,7 +294,9 @@ void ImplicationRunner::CollectHeuristicInfo(Eq_ptr eq_term) {
 					// if variable already exists, increment its coefficient
 					if(var_coeffs.find(last_var->getVarName()) == var_coeffs.end()) {
 						f->AddVariable(last_var->getVarName(),1);
-					} else {
+          } else if (last_var->getVarName() == left_var->getVarName()) {
+            f->SetVariableCoefficient(last_var->getVarName(),var_coeffs[last_var->getVarName()]-1);
+          } else {
 						f->SetVariableCoefficient(last_var->getVarName(),var_coeffs[last_var->getVarName()]+1);
 					}
 				}
@@ -318,6 +320,68 @@ void ImplicationRunner::CollectHeuristicInfo(Eq_ptr eq_term) {
 			} else {
 				variable_formulas[left_var->getVarName()] = f;
 			}
+		}
+	} else if(Concat_ptr left_id = dynamic_cast<Concat_ptr>(eq_term->left_term)) {
+		if(Concat_ptr right_id = dynamic_cast<Concat_ptr>(eq_term->right_term)) {
+			Theory::ArithmeticFormula_ptr f = new Theory::ArithmeticFormula();
+
+			for(auto iter : *left_id->term_list) {
+				auto var_coeffs = f->GetVariableCoefficientMap();
+				if(TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(iter)) {
+					// if constant, sub from current constant (if no constant in formula yet, GetConstant returns 0)
+					int constant =  f->GetConstant() - term_constant->getValue().length();
+					f->SetConstant(constant);
+				} else if(QualIdentifier_ptr last_var = dynamic_cast<QualIdentifier_ptr>(iter)) {
+					// add variable, to formula
+					// if variable already exists, increment its coefficient
+					if(var_coeffs.find(last_var->getVarName()) == var_coeffs.end()) {
+						f->AddVariable(last_var->getVarName(),-1);
+          // } else if (last_var->getVarName() == left_var->getVarName()) {
+          //   f->SetVariableCoefficient(last_var->getVarName(),var_coeffs[last_var->getVarName()]-1);
+          } else {
+						f->SetVariableCoefficient(last_var->getVarName(),var_coeffs[last_var->getVarName()]-1);
+					}
+				}
+			}
+
+			for(auto iter : *right_id->term_list) {
+				auto var_coeffs = f->GetVariableCoefficientMap();
+				if(TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(iter)) {
+					// if constant, add to current constant (if no constant in formula yet, GetConstant returns 0)
+					int constant = term_constant->getValue().length() + f->GetConstant();
+					f->SetConstant(constant);
+				} else if(QualIdentifier_ptr last_var = dynamic_cast<QualIdentifier_ptr>(iter)) {
+					// add variable, to formula
+					// if variable already exists, increment its coefficient
+					if(var_coeffs.find(last_var->getVarName()) == var_coeffs.end()) {
+						f->AddVariable(last_var->getVarName(),1);
+          } else if (last_var->getVarName() == left_var->getVarName()) {
+            f->SetVariableCoefficient(last_var->getVarName(),var_coeffs[last_var->getVarName()]-1);
+          } else {
+						f->SetVariableCoefficient(last_var->getVarName(),var_coeffs[last_var->getVarName()]+1);
+					}
+				}
+			}
+
+
+
+			f->SetType(Theory::ArithmeticFormula::Type::EQ);
+			if(formula == nullptr) {
+				formula = f->clone();
+			} else {
+				auto new_formula = formula->Add(f);
+				delete formula;
+				formula = new_formula;
+			}
+
+			// if(variable_formulas.find(left_var->getVarName()) != variable_formulas.end()) {
+			// 	auto new_formula = variable_formulas[left_var->getVarName()]->Subtract(f);
+			// 	delete variable_formulas[left_var->getVarName()];
+			// 	variable_formulas[left_var->getVarName()] = new_formula;
+			// 	delete f;
+			// } else {
+			// 	variable_formulas[left_var->getVarName()] = f;
+			// }
 		}
 	} else if(Len_ptr len_term = dynamic_cast<Len_ptr>(eq_term->left_term)) {
 		if(QualIdentifier_ptr len_var = dynamic_cast<QualIdentifier_ptr>(len_term->term)) {
@@ -420,7 +484,7 @@ void ImplicationRunner::AddLengthHeuristic(And_ptr and_term) {
 			}
 		}
 
-		if(num_vars > 10) {
+		if(num_vars > 5) {
 			DVLOG(VLOG_LEVEL) << "Too many variables to implement length heuristic";
 			continue;
 		} else if(num_vars == 0 || (num_vars == 1 && variable_formulas[iter]->GetVariableCoefficient(iter) != 0)) {

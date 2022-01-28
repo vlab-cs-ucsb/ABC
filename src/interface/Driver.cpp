@@ -17,6 +17,7 @@ Driver::Driver()
       symbol_table_(nullptr),
       constraint_information_(nullptr),
       is_model_counter_cached_ { false } {
+  bound_decrease_ = 0;
 }
 
 Driver::~Driver() {
@@ -41,9 +42,7 @@ void Driver::error(const std::string& m) {
 
 int Driver::Parse(std::istream* in) {
   SMT::Scanner scanner(in);
-  //  scanner.set_debug(trace_scanning);
   SMT::Parser parser(script_, scanner);
-  //  parser.set_debug_level (trace_parsing);
   int res = parser.parse();
   CHECK_EQ(0, res)<< "Syntax error";
   
@@ -75,69 +74,58 @@ void Driver::InitializeSolver() {
   initializer.start();
 
   std::string output_root {"./output"};
-//   ast2dot(output_root + "/post_initializer.dot");
-  // std::cin.get();
 
   Solver::SyntacticProcessor syntactic_processor(script_);
   syntactic_processor.start();
 
-//  ast2dot(output_root + "/post_syntactic_processor.dot");
-  // std::cin.get();
-
-  Solver::SyntacticOptimizer syntactic_optimizer(script_, symbol_table_);
+  // last parameter is if we try to optimized ite terms 
+  Solver::SyntacticOptimizer syntactic_optimizer(script_, symbol_table_, not Option::Solver::ENABLE_EQUIVALENCE_CLASSES);
   syntactic_optimizer.start();
-
-//  ast2dot(output_root + "/post_syntactic_optimizer.dot");
-  //std::cin.get();
 
   int count = 0;
   if (Option::Solver::ENABLE_EQUIVALENCE_CLASSES) {
     Solver::EquivalenceGenerator equivalence_generator(script_, symbol_table_);
     do {
       equivalence_generator.start();
-//      std::string filename = output_root + "/post_equivalence_" + std::to_string(count) + ".dot";
-//      ast2dot(filename);
-//      count++;
-      //std::cin.get();
     } while (equivalence_generator.has_constant_substitution());
-  }
 
-//   ast2dot(output_root + "/post_equivalence.dot");
+    // optimize ite now that equivalences have been propagated
+    
+    Solver::SyntacticOptimizer syntactic_optimizer2(script_, symbol_table_, true);
+    syntactic_optimizer2.start();
+
+    Solver::EquivalenceGenerator equivalence_generator2(script_, symbol_table_);
+    do {
+      equivalence_generator2.start();
+    } while (equivalence_generator2.has_constant_substitution());
+
+    Solver::SyntacticProcessor syntactic_processor2(script_);
+    syntactic_processor2.start();
+  } else {
+
+  }
 
   Solver::DependencySlicer dependency_slicer(script_, symbol_table_, constraint_information_);
 	dependency_slicer.start();
 
-	//ast2dot(output_root + "/post_dependency_slicer.dot");
-
   if (Option::Solver::ENABLE_IMPLICATIONS) {
     Solver::ImplicationRunner implication_runner(script_, symbol_table_, constraint_information_);
     implication_runner.start();
-    //ast2dot(output_root + "/post_implication_runner.dot");
   }
 
   Solver::FormulaOptimizer formula_optimizer(script_, symbol_table_);
   formula_optimizer.start();
 
-  //ast2dot(output_root + "/post_formula_optimizer.dot");
-	//std::cin.get();
-
   if (Option::Solver::ENABLE_SORTING_HEURISTICS) {
     Solver::ConstraintSorter constraint_sorter(script_, symbol_table_);
     constraint_sorter.start();
   }
+
 }
 
 void Driver::Solve() {
-//  TODO move arithmetic formula generation and string relation generation here to guide constraint solving better
-//
-//  Solver::ArithmeticFormulaGenerator arithmetic_formula_generator(script_, symbol_table_, constraint_information_);
-//  arithmetic_formula_generator.start();
-
   Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
   constraint_solver.start();
-
-
-
   is_model_counter_cached_ = false;
   model_counter_ = Solver::ModelCounter();
 }
@@ -146,263 +134,19 @@ bool Driver::is_sat() {
   return symbol_table_->isSatisfiable();
 }
 
-void Driver::GetModels(const unsigned long bound,const unsigned long num_models) {
-
-	LOG(FATAL) << "IMPLEMENT ME";
-
-	//LOG(INFO) << "Numver of satisfying variables: " << getSatisfyingVariables().size();
-	std::map<std::string,std::vector<std::string>> variable_values;
-	std::map<SMT::Variable_ptr,Solver::Value_ptr> var_vals;
-
-	std::string var_name("var_8");
-	auto v8 = symbol_table_->get_variable(var_name);
-	auto v8_rep = symbol_table_->get_representative_variable_of_at_scope(script_, v8);
-	auto v8_all_solutions = symbol_table_->get_projected_value_at_scope(script_,v8_rep);
-
-	auto v8_n_solutions = v8_all_solutions->getStringAutomaton()->GetModelsWithinBound(num_models,-1);
-	LOG(INFO) << 0;
-	Theory::StringAutomaton_ptr union_auto = nullptr, t1_auto = nullptr, t2_auto = nullptr;
-	for(int i = 0; i < v8_n_solutions["var_8"].size(); i++) {
-		t1_auto = Theory::StringAutomaton::MakeString(v8_n_solutions["var_8"][i]);
-		if(union_auto == nullptr) {
-			union_auto = t1_auto;
-		} else {
-			t2_auto = union_auto->Union(t1_auto);
-			delete union_auto;
-			delete t1_auto;
-			union_auto = t2_auto;
-		}
-	}
-
-	var_name = "var_7";
-	auto v7_var = symbol_table_->get_variable(var_name);
-	auto v7_rep = symbol_table_->get_representative_variable_of_at_scope(script_,v7_var);
-	auto v7_all_solutions_val = symbol_table_->get_projected_value_at_scope(script_,v7_rep);
-
-	var_name = "var_6";
-	auto v6_var = symbol_table_->get_variable(var_name);
-	auto v6_rep = symbol_table_->get_representative_variable_of_at_scope(script_,v6_var);
-	auto v6_all_solutions_val = symbol_table_->get_projected_value_at_scope(script_,v6_rep);
-
-	Theory::StringAutomaton_ptr prefix_suffix_auto = Theory::StringAutomaton::MakePrefixSuffix(0,1,2,3);
-	auto prefix_multi = new Theory::StringAutomaton(v6_all_solutions_val->getStringAutomaton()->getDFA(),1,3,8);
-	auto temp_dfa = Theory::StringAutomaton::PrependLambda(v7_all_solutions_val->getStringAutomaton()->getDFA(),8);
-	auto suffix_multi = new Theory::StringAutomaton(temp_dfa,2,3,9);
-	dfaFree(temp_dfa);
-
-	auto intersect_multi = prefix_suffix_auto->Intersect(prefix_multi);
-	delete prefix_suffix_auto;
-	delete prefix_multi;
-	prefix_suffix_auto = intersect_multi;
-
-	intersect_multi = prefix_suffix_auto->Intersect(suffix_multi);
-	delete prefix_suffix_auto;
-	delete suffix_multi;
-
-	auto v8_multi = new Theory::StringAutomaton(union_auto->getDFA(),0,3,8);
-	auto v8_v7_v6_auto = intersect_multi->Intersect(v8_multi);
-	delete intersect_multi;
-	delete v8_multi;
-
-
-	auto v8_v7_v6_solutions = v8_v7_v6_auto->GetModelsWithinBound(num_models,-1);
-	for(int k = 0; k < v8_v7_v6_solutions["var_8"].size();k++) {
-		LOG(INFO) << "v8=" << v8_v7_v6_solutions["var_8"][k];
-		LOG(INFO) << "v6=" << v8_v7_v6_solutions["var_6"][k];
-		LOG(INFO) << "v7=" << v8_v7_v6_solutions["var_7"][k];
-		std::cin.get();
-	}
-
-
-//	temp_multi = MakePrefixSuffix(0,1,2,3);
-//	prefix_multi = new StringAutomaton(prefix_dfa,1,3,var);
-//	temp_dfa = PrependLambda(suffix_dfa,var);
-//	suffix_multi = new StringAutomaton(temp_dfa,2,3,VAR_PER_TRACK);
-//	dfaFree(temp_dfa);
-//	intersect_multi = temp_multi->Intersect(prefix_multi);
-//	delete temp_multi;
-//	delete prefix_multi;
-//	temp_multi = intersect_multi;
-//	intersect_multi = temp_multi->Intersect(suffix_multi);
-//	delete temp_multi;
-//	delete suffix_multi;
-
-	auto start = std::chrono::steady_clock::now();
-	int count = 0;
-	for (const auto &variable_entry : getSatisfyingVariables()) {
-		if (variable_entry.second == nullptr or variable_values.find(variable_entry.first->getName()) != variable_values.end()) {
-			continue;
-		}
-		count++;
-		//LOG(INFO) << "Var name: " << variable_entry.first->getName();
-		switch (variable_entry.second->getType()) {
-
-//			case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
-//				auto binary_auto = variable_entry.second->getBinaryIntAutomaton();
-//				auto formula = binary_auto->GetFormula();
-//				model_counter_.add_symbolic_counter(binary_auto->GetSymbolicCounter());
-//				//LOG(INFO) << "Binary int with " << formula->GetNumberOfVariables() << " variables";
-//				//binary_auto->inspectAuto(false,true);
-//				//std::cin.get();
-//				auto res = binary_auto->GetModelsWithinBound(num_models,-1);
-//				for(auto iter : res) {
-////					LOG(INFO) << "Setting " << iter.first;
-//					variable_values[iter.first] = iter.second;
-//				}
-//
-//			}
-			case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
-				auto string_auto = variable_entry.second->getStringAutomaton();
-				model_counter_.add_symbolic_counter(string_auto->GetSymbolicCounter());
-				//LOG(INFO) << "String int with " << string_auto->GetNumTracks() << " variables";
-				auto res = string_auto->GetModelsWithinBound(num_models,-1);
-				for(auto iter : res) {
-					//LOG(INFO) << "Setting " << iter.first;
-					variable_values[iter.first] = iter.second;
-				}
-				//string_auto->inspectAuto(false,true);
-				//std::cin.get();
-			}
-				break;
-//			case Vlab::Solver::Value::Type::INT_AUTOMATON: {
-//				auto int_auto = variable_entry.second->getIntAutomaton();
-//				model_counter_.add_symbolic_counter(int_auto->GetSymbolicCounter());
-//				int_auto->GetModelsWithinBound(num_models,-1);
-//			}
-//				break;
-			default:
-				break;
-		}
-	}
-	//LOG(INFO) << "NUM SAT VAR: " << count;
-
-	auto end = std::chrono::steady_clock::now();
-	auto t1 = end-start;
-	int sat = 0;
-
-	LOG(INFO) << "Getting models took " << std::chrono::duration<long double, std::milli>(t1).count() << " ms";
-
-	start = std::chrono::steady_clock::now();
-	symbol_table_->clear_variable_values();
-	symbol_table_->push_scope(script_);
-	for(auto var : variable_values) {
-		Theory::StringAutomaton_ptr union_val = nullptr,temp = nullptr;
-		for(auto str_val : var.second) {
-			temp = Theory::StringAutomaton::MakeString(str_val);
-			if(union_val == nullptr) {
-				union_val = temp;
-			} else {
-				auto res = union_val->Union(temp);
-				delete union_val;
-				delete temp;
-				union_val = res;
-			}
-		}
-		Theory::StringFormula_ptr str_formula = union_val->GetFormula();
-		str_formula->AddVariable(var.first,1);
-		str_formula->SetType(Theory::StringFormula::Type::VAR);
-		symbol_table_->set_value(var.first,new Solver::Value(union_val));
-	}
-	symbol_table_->pop_scope();
-	Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
-	constraint_solver.start();
-	if(symbol_table_->isSatisfiable()) {
-		LOG(INFO) << "SAT!";
-	}
-	end = std::chrono::steady_clock::now();
-
-
-	variable_values.clear();
-	for (const auto &variable_entry : getSatisfyingVariables()) {
-		if (variable_entry.second == nullptr or variable_values.find(variable_entry.first->getName()) != variable_values.end()) {
-			continue;
-		}
-		count++;
-		//LOG(INFO) << "Var name: " << variable_entry.first->getName();
-		switch (variable_entry.second->getType()) {
-
-//			case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
-//				auto binary_auto = variable_entry.second->getBinaryIntAutomaton();
-//				auto formula = binary_auto->GetFormula();
-//				model_counter_.add_symbolic_counter(binary_auto->GetSymbolicCounter());
-//				//LOG(INFO) << "Binary int with " << formula->GetNumberOfVariables() << " variables";
-//				//binary_auto->inspectAuto(false,true);
-//				//std::cin.get();
-//				auto res = binary_auto->GetModelsWithinBound(num_models,-1);
-//				for(auto iter : res) {
-////					LOG(INFO) << "Setting " << iter.first;
-//					variable_values[iter.first] = iter.second;
-//				}
-//
-//			}
-			case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
-				auto string_auto = variable_entry.second->getStringAutomaton();
-				model_counter_.add_symbolic_counter(string_auto->GetSymbolicCounter());
-				//LOG(INFO) << "String int with " << string_auto->GetNumTracks() << " variables";
-				auto res = string_auto->GetModelsWithinBound(num_models,-1);
-				for(auto iter : res) {
-					//LOG(INFO) << "Setting " << iter.first;
-					variable_values[iter.first] = iter.second;
-				}
-				//string_auto->inspectAuto(false,true);
-				//std::cin.get();
-			}
-				break;
-//			case Vlab::Solver::Value::Type::INT_AUTOMATON: {
-//				auto int_auto = variable_entry.second->getIntAutomaton();
-//				model_counter_.add_symbolic_counter(int_auto->GetSymbolicCounter());
-//				int_auto->GetModelsWithinBound(num_models,-1);
-//			}
-//				break;
-			default:
-				break;
-		}
-	}
-
-
-	start = std::chrono::steady_clock::now();
-	for(int model_index = 0; model_index < num_models; model_index++) {
-		symbol_table_->clear_variable_values();
-		symbol_table_->push_scope(script_);
-
-		for(auto var : variable_values) {
-			int safety_index = (model_index >= var.second.size()) ? var.second.size()-1 : model_index;
-			Theory::StringAutomaton_ptr str_auto = Theory::StringAutomaton::MakeString(var.second[safety_index]);
-			Theory::StringFormula_ptr str_formula = str_auto->GetFormula();
-			str_formula->AddVariable(var.first,1);
-			str_formula->SetType(Theory::StringFormula::Type::VAR);
-			symbol_table_->set_value(var.first,new Solver::Value(str_auto));
-		}
-		symbol_table_->pop_scope();
-		Solver::ConstraintSolver constraint_solver(script_, symbol_table_, constraint_information_);
-		constraint_solver.start();
-		if(symbol_table_->isSatisfiable()) {
-			sat++;
-		}
-		//LOG(INFO) << "sat? " << symbol_table_->isSatisfiable();
-		//std::cin.get();
-	}
-	end = std::chrono::steady_clock::now();
-	auto t2 = end-start;
-
-	LOG(INFO) << "Checking models took " << std::chrono::duration<long double, std::milli>(t1).count() << " ms";
-	LOG(INFO) << "num sat  : " << sat;
-	LOG(INFO) << "num unsat: " << num_models - sat;
-
-}
-
+/*
+ * TODO: Fix issue when bound is small and counting a single variable, tuple count to returns 0 but projected count is nonzero
+ */
 Theory::BigInteger Driver::CountVariable(const std::string var_name, const unsigned long bound) {
   Theory::BigInteger projected_count, tuple_count;
   tuple_count = GetModelCounterForVariable(var_name,false).Count(bound, bound);
   projected_count = GetModelCounterForVariable(var_name,true).Count(bound, bound);
-
-	return (projected_count < tuple_count) ? projected_count : tuple_count;
+  return (projected_count < tuple_count) ? projected_count : tuple_count;
+  // return GetModelCounterForVariable(var_name,true).Count(bound, bound);
 }
 
 Theory::BigInteger Driver::CountInts(const unsigned long bound) {
-  auto i = GetModelCounter().CountInts(bound);
-  std::cout << i << std::endl;
-  return i;
+  return GetModelCounter().CountInts(bound);
 }
 
 Theory::BigInteger Driver::CountStrs(const unsigned long bound) {
@@ -430,6 +174,32 @@ Solver::ModelCounter& Driver::GetModelCounter() {
     SetModelCounter();
   }
   return model_counter_;
+}
+
+int Driver::GetNumIntVariables() {
+  auto variables = symbol_table_->get_variables();
+  int count = 0;
+
+  for(auto it : variables) {
+    if(SMT::Variable::Type::INT == it.second->getType()) {
+      count++;
+    }
+  }
+
+  return count;
+}
+
+int Driver::GetNumStrVariables() {
+  auto variables = symbol_table_->get_variables();
+  int count = 0;
+
+  for(auto it : variables) {
+    if(SMT::Variable::Type::STRING == it.second->getType()) {
+      count++;
+    }
+  }
+
+  return count;
 }
 
 void Driver::SetModelCounterForVariable(const std::string var_name, bool project) {
@@ -489,10 +259,10 @@ void Driver::SetModelCounter() {
   int num_str_var = 0;
 
   for (const auto &variable_entry : getSatisfyingVariables()) {
-
-    if (variable_entry.second == nullptr) {
+    if (variable_entry.second == nullptr || symbol_table_->is_sorted_variable(variable_entry.first)) {
       continue;
     }
+    // LOG(INFO) << *variable_entry.first;
     switch (variable_entry.second->getType()) {
       case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
         auto binary_auto = variable_entry.second->getBinaryIntAutomaton();
@@ -511,13 +281,24 @@ void Driver::SetModelCounter() {
         break;
       case Vlab::Solver::Value::Type::STRING_AUTOMATON: {
 				auto string_auto = variable_entry.second->getStringAutomaton();
-        auto formula = string_auto->GetFormula();
-        if(formula->GetNumberOfVariables() == 0) break; // don't count non-variable automata
+        auto formula = string_auto->GetFormula()->clone();
+
+        // string_auto->inspectAuto(false,false);
+
         for (auto& el : formula->GetVariableCoefficientMap()) {
           if (symbol_table_->get_variable_unsafe(el.first) != nullptr) {
+            auto v = symbol_table_->get_variable(el.first);
+            if(symbol_table_->is_sorted_variable(v)) {
+
+              string_auto = string_auto->ProjectAwayVariable(el.first);
+            }
             ++num_str_var;
           }
         }
+
+        // string_auto->inspectAuto(false,false);
+
+
 				model_counter_.add_symbolic_counter(string_auto->GetSymbolicCounter());
       }
       	break;
@@ -737,6 +518,18 @@ void Driver::set_option(const Option::Name option) {
     case Option::Name::COUNT_BOUND_EXACT:
     	Option::Solver::COUNT_BOUND_EXACT = true;
     	break;
+    case Option::Name::USE_SINGLE_AUTO:
+    	Option::Solver::USE_SINGLE_AUTO = true;
+    	break;
+    case Option::Name::USE_REGEX_SPLITTER:
+    	Option::Solver::USE_REGEX_SPLITTER = true;
+    	break;
+    case Option::Name::USE_PREFIX_SHORTENER:
+    	Option::Solver::USE_PREFIX_SHORTENER = true;
+    	break;
+    case Option::Name::CONCAT_COLLAPSE_HEURISTIC:
+      Option::Solver::CONCAT_COLLAPSE_HEURISTIC = true;
+      break;
     default:
       LOG(ERROR)<< "option is not recognized: " << static_cast<int>(option);
       break;

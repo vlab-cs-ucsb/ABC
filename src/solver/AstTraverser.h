@@ -74,6 +74,9 @@ public:
   void visitReplace(SMT::Replace_ptr) override;
   void visitCount(SMT::Count_ptr) override;
   void visitIte(SMT::Ite_ptr) override;
+  void visitIsDigit(SMT::IsDigit_ptr) override {};
+  void visitToCode(SMT::ToCode_ptr) override {};
+  void visitFromCode(SMT::FromCode_ptr) override {};
   void visitReConcat(SMT::ReConcat_ptr) override;
   void visitReUnion(SMT::ReUnion_ptr) override;
   void visitReInter(SMT::ReInter_ptr) override;

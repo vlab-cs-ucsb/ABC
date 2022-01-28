@@ -1,41 +1,29 @@
-/*
- * Ast2Dot.h
- *
- *  Created on: Nov 23, 2014
- *      Author: baki
- */
+#ifndef SOLVER_NORMALIZATIONCONSTRAINTSORTER_H_
+#define SOLVER_NORMALIZATIONCONSTRAINTSORTER_H_
 
-#ifndef SOLVER_AST2DOT_H_
-#define SOLVER_AST2DOT_H_
-
-#include <cstdlib>
-#include <fstream>
 #include <iostream>
-#include <stack>
-#include <string>
 #include <sstream>
-#include <sys/types.h>
+#include <vector>
+#include <queue>
+#include <stack>
+#include <map>
+#include <algorithm>
 
-#include "../smt/ast.h"
-#include "../smt/typedefs.h"
-#include "../smt/Visitor.h"
+#include <glog/logging.h>
+#include "smt/ast.h"
+#include "SymbolTable.h"
+#include "Counter.h"
 
 namespace Vlab {
 namespace Solver {
-
-class Ast2Dot: public SMT::Visitor {
+// TODO fix sorting algorithm based on latest updates
+class NormalizationConstraintSorter: public SMT::Visitor {
 public:
-  Ast2Dot(std::ostream* out = &std::cout);
-  ~Ast2Dot();
-
-  void add_edge(u_int64_t p, u_int64_t c);
-  void add_node(u_int64_t c, std::string label);
-  void draw(std::string label, SMT::Visitable_ptr p);
-  void draw_terminal(std::string label);
-
-  void start(SMT::Visitable_ptr);
+  NormalizationConstraintSorter(SMT::Script_ptr, SymbolTable_ptr);
+  virtual ~NormalizationConstraintSorter();
   void start() override;
   void end() override;
+
   void visitScript(SMT::Script_ptr) override;
   void visitCommand(SMT::Command_ptr) override;
   void visitAssert(SMT::Assert_ptr) override;
@@ -89,7 +77,7 @@ public:
   void visitReStar(SMT::ReStar_ptr) override;
   void visitRePlus(SMT::RePlus_ptr) override;
   void visitReOpt(SMT::ReOpt_ptr) override;
-  void visitReLoop(SMT::ReLoop_ptr) override;
+  void visitReLoop(SMT::ReLoop_ptr) override {};
   void visitReComp(SMT::ReComp_ptr) override {};
   void visitReDiff(SMT::ReDiff_ptr) override {};
   void visitToRegex(SMT::ToRegex_ptr) override;
@@ -108,20 +96,96 @@ public:
   void visitIdentifier(SMT::Identifier_ptr) override;
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
+protected:
+  class VariableNode;
+  class TermNode;
+  typedef VariableNode* VariableNode_ptr;
+  typedef TermNode* TermNode_ptr;
 
-  static int inspectAST(SMT::Visitable_ptr node);
-  static std::string toString(SMT::Visitable_ptr node);
-  static bool isEquivalent(SMT::Visitable_ptr x, SMT::Visitable_ptr y);
+  VariableNode_ptr get_variable_node(SMT::Variable_ptr);
+  TermNode_ptr process_child_nodes(TermNode_ptr, TermNode_ptr);
+  void sort_terms(std::vector<TermNode_ptr>& term_list);
+  bool has_shared_variables(TermNode_ptr, TermNode_ptr);
+
+  SMT::Script_ptr root;
+  SymbolTable_ptr symbol_table;
+  TermNode_ptr term_node;
+
+  std::vector<TermNode_ptr> dependency_node_list;
+  std::map<SMT::Variable_ptr, VariableNode_ptr> variable_nodes;
+
+  class TermNode {
+  public:
+    enum class Type : unsigned char {
+      STRING,
+      INT,
+      BOOL,
+      NONE
+    };
+    TermNode();
+    TermNode(SMT::Term_ptr node);
+    ~TermNode();
+    std::string str();
+    int num_ops;
+
+    void setType(TermNode::Type type);
+    TermNode::Type getType();
+
+    void setNode(SMT::Term_ptr node);
+    SMT::Term_ptr getNode();
+    void addVariableNode(VariableNode_ptr variable, bool is_left_side);
+    void addVariableNodes(std::vector<VariableNode_ptr>&, bool is_left_side);
+    std::vector<VariableNode_ptr>& getLeftNodes();
+    std::vector<VariableNode_ptr>& getRightNodes();
+    std::vector<VariableNode_ptr>& getAllNodes();
+    void shiftToLeft();
+    void shiftToRight();
+    void addMeToChildVariableNodes();
+    int numOfTotalVars();
+    int numOfLeftVars();
+    int numOfRightVars();
+    void updateSymbolicVariableInfo();
+    bool hasSymbolicVarOnLeft();
+    bool hasSymbolicVarOnRight();
+    bool hasSymbolicVar();
+    int getDepth();
+    void setDepth(int);
+
+    static std::string count_var;
+  protected:
+    SMT::Term_ptr _node;
+    bool _has_symbolic_var_on_left;
+    bool _has_symbolic_var_on_right;
+    TermNode::Type _type;
+    std::vector<SMT::Term_ptr> _next_node_list;
+    std::vector<VariableNode_ptr> _all_child_node_list;
+    std::vector<VariableNode_ptr> _left_child_node_list;
+    std::vector<VariableNode_ptr> _right_child_node_list;
+    int _depth;
+  private:
+    void merge_vectors(std::vector<VariableNode_ptr>&, std::vector<VariableNode_ptr>&);
+  };
+
+  class VariableNode {
+  public:
+    VariableNode(SMT::Variable_ptr variable);
+    ~VariableNode();
+    std::string str();
+
+    SMT::Variable_ptr getVariable();
+    void addTermNode(TermNode_ptr node, bool is_left_side);
+  protected:
+    SMT::Variable_ptr variable;
+    std::vector<TermNode_ptr> all_var_appearance_list;
+    std::vector<TermNode_ptr> left_side_var_appearance_list;
+    std::vector<TermNode_ptr> right_side_var_appearance_list;
+  };
 
 private:
-  std::ostream* m_out; //file for writting output
-  u_int64_t count; //used to give each node a uniq id
-  std::stack<u_int64_t> s; //stack for tracking parent/child pairs
-  static int name_counter;
-
+  static const int VLOG_LEVEL;
 };
 
 } /* namespace Solver */
 } /* namespace Vlab */
 
-#endif /* SOLVER_AST2DOT_H_ */
+#endif /* SOLVER_NORMALIZATIONCONSTRAINTSORTER_H_ */

@@ -14,6 +14,10 @@ const int StringAutomaton::VLOG_LEVEL = 8;
 bool StringAutomaton::debug = false;
 
 StringAutomaton::TransitionTable StringAutomaton::TRANSITION_TABLE;
+StringAutomaton::RegexAutoCache StringAutomaton::REGEX_AUTO_CACHE;
+
+int StringAutomaton::num_hits = 0;
+int StringAutomaton::num_misses = 0;
 
 StringAutomaton::StringAutomaton(const DFA_ptr dfa, const int number_of_bdd_variables)
 		:	Automaton(Automaton::Type::MULTITRACK, dfa, number_of_bdd_variables),
@@ -315,6 +319,14 @@ StringAutomaton_ptr StringAutomaton::MakeRegexAuto(const std::string regex, cons
 }
 
 StringAutomaton_ptr StringAutomaton::MakeRegexAuto(Util::RegularExpression_ptr regular_expression, const int number_of_bdd_variables) {
+  
+  // std::string regex_string = regular_expression->str();
+  // if(REGEX_AUTO_CACHE.find(regex_string) != REGEX_AUTO_CACHE.end()) {
+  //   num_hits++;
+  //   return REGEX_AUTO_CACHE[regex_string]->clone();
+  // }
+  // num_misses++;
+  
   StringAutomaton_ptr regex_auto = nullptr;
   StringAutomaton_ptr regex_expr1_auto = nullptr;
   StringAutomaton_ptr regex_expr2_auto = nullptr;
@@ -399,6 +411,8 @@ StringAutomaton_ptr StringAutomaton::MakeRegexAuto(Util::RegularExpression_ptr r
     LOG(FATAL) << "Unsupported regular expression" << *regular_expression;
     break;
   }
+
+  // REGEX_AUTO_CACHE[regex_string] = regex_auto->clone();
 
   return regex_auto;
 }
@@ -849,19 +863,39 @@ StringAutomaton_ptr StringAutomaton::MakeEquality(StringFormula_ptr formula) {
 		equality_auto = new StringAutomaton(equality_dfa,formula,num_tracks*VAR_PER_TRACK);
 	} else if(formula->GetConstant() != "") {
 		// if string is not empty, eq is of form X = Y.c
-    int temp_left = num_tracks;
-    int temp_right = right_track;
-    int temp_num_tracks = num_tracks+1;
+    // int temp_left = num_tracks;
+    // int temp_right = right_track;
+    // int temp_num_tracks = num_tracks+1;
 
-    StringAutomaton_ptr concat_auto = StringAutomaton::MakeConcatExtraTrack(temp_left,temp_right,temp_num_tracks,formula->GetConstant());
-    DFA_ptr eq_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::EQ, VAR_PER_TRACK, num_tracks+1, left_track, temp_left);
-    StringAutomaton_ptr eq_auto = new StringAutomaton(eq_dfa,num_tracks+1,(num_tracks+1)*VAR_PER_TRACK);
-    auto temp_auto = concat_auto->Intersect(eq_auto);
-    delete eq_auto;
-    delete concat_auto;
-    equality_auto = temp_auto->ProjectKTrack(num_tracks);
+    // StringAutomaton_ptr concat_auto = StringAutomaton::MakeConcatExtraTrack(temp_left,temp_right,temp_num_tracks,formula->GetConstant());
+    // DFA_ptr eq_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::EQ, VAR_PER_TRACK, num_tracks+1, left_track, temp_left);
+    // StringAutomaton_ptr eq_auto = new StringAutomaton(eq_dfa,num_tracks+1,(num_tracks+1)*VAR_PER_TRACK);
+    // auto temp_auto = concat_auto->Intersect(eq_auto);
+    // delete eq_auto;
+    // delete concat_auto;
+    // equality_auto = temp_auto->ProjectKTrack(num_tracks);
+    // delete temp_auto;
+    // equality_auto->SetFormula(formula);
+    int suffix_track = num_tracks;
+    auto prefix_suffix_auto = StringAutomaton::MakePrefixSuffix(left_track,right_track,num_tracks,num_tracks+1);
+    StringAutomaton_ptr const_string_auto = nullptr;
+    if(formula->HasRegexConstant()) {
+      const_string_auto = StringAutomaton::MakeRegexAuto(formula->GetConstant());
+    } else {
+      const_string_auto = StringAutomaton::MakeString(formula->GetConstant());
+    }
+    auto temp_dfa = StringAutomaton::PrependLambda(const_string_auto->getDFA(),DEFAULT_NUM_OF_VARIABLES);
+    auto temp_auto = new StringAutomaton(temp_dfa,num_tracks,num_tracks+1,VAR_PER_TRACK);
+    dfaFree(temp_dfa);
+    delete const_string_auto;
+
+    auto intersect_auto = prefix_suffix_auto->Intersect(temp_auto);
+    delete prefix_suffix_auto;
     delete temp_auto;
+
+    equality_auto = intersect_auto->ProjectKTrack(num_tracks);
     equality_auto->SetFormula(formula);
+    delete intersect_auto;
   } else {
     auto equality_dfa = MakeBinaryRelationDfa(StringFormula::Type::EQ, VAR_PER_TRACK, num_tracks, left_track, right_track);
     equality_auto = new StringAutomaton(equality_dfa,formula,num_tracks*VAR_PER_TRACK);
@@ -925,7 +959,7 @@ StringAutomaton_ptr StringAutomaton::MakeNotEquality(	StringFormula_ptr formula)
     int temp_right = right_track;
     int temp_num_tracks = num_tracks+1;
 
-    StringAutomaton_ptr concat_auto = StringAutomaton::MakeConcatExtraTrack(temp_left,temp_right,temp_num_tracks,formula->GetConstant());
+    StringAutomaton_ptr concat_auto = StringAutomaton::MakeConcatExtraTrack(temp_left,temp_right,temp_num_tracks,formula->GetConstant(), formula->HasRegexConstant());
     DFA_ptr eq_dfa = StringAutomaton::MakeBinaryRelationDfa(StringFormula::Type::NOTEQ, VAR_PER_TRACK, num_tracks+1, left_track, temp_left);
     StringAutomaton_ptr eq_auto = new StringAutomaton(eq_dfa,num_tracks+1,(num_tracks+1)*VAR_PER_TRACK);
     auto temp_auto = concat_auto->Intersect(eq_auto);
@@ -1019,17 +1053,19 @@ StringAutomaton_ptr StringAutomaton::MakeLessThanOrEqual(StringFormula_ptr formu
 	}
 
 	if(num_vars == 1) {
-		std::string var_name = formula->GetVariableAtIndex(0);
-		int var_coeff = formula->GetVariableCoefficient(var_name);
-		if(var_coeff == 1) {
-			// var on left
-			left_track = formula->GetVariableIndex(var_coeff);
-			right_track = num_tracks;
-		} else {
-			// var on right
-			left_track = num_tracks;
-			right_track = formula->GetVariableIndex(var_coeff);
-		}
+		// std::string var_name = formula->GetVariableAtIndex(0);
+		// int var_coeff = formula->GetVariableCoefficient(var_name);
+		// if(var_coeff == 1) {
+		// 	// var on left
+		// 	left_track = formula->GetVariableIndex(var_coeff);
+		// 	right_track = num_tracks;
+		// } else {
+		// 	// var on right
+		// 	left_track = num_tracks;
+		// 	right_track = formula->GetVariableIndex(var_coeff);
+		// }
+    left_track = formula->GetVariableIndex(1);
+    right_track = num_tracks;
 		constant_string_auto = StringAutomaton::MakeString(formula->GetConstant());
 		num_tracks++;
 	} else {
@@ -1139,24 +1175,27 @@ StringAutomaton_ptr StringAutomaton::MakeGreaterThanOrEqual(StringFormula_ptr fo
 	}
 
 	if(num_vars == 1) {
-		std::string var_name = formula->GetVariableAtIndex(0);
-		int var_coeff = formula->GetVariableCoefficient(var_name);
-		if(var_coeff == 1) {
-			// var on left
-			left_track = formula->GetVariableIndex(var_coeff);
-			right_track = num_tracks;
-		} else {
-			// var on right
-			left_track = num_tracks;
-			right_track = formula->GetVariableIndex(var_coeff);
-		}
+		// std::string var_name = formula->GetVariableAtIndex(0);
+    // LOG(INFO) << "var_name = " << var_name;
+		// int var_coeff = formula->GetVariableCoefficient(var_name);
+    // LOG(INFO) << "var_coeff = " << var_coeff;
+		// if(var_coeff == 1) {
+		// 	// var on left
+		// 	left_track = formula->GetVariableIndex(var_coeff);
+		// 	right_track = num_tracks;
+		// } else {
+		// 	// var on right
+		// 	left_track = num_tracks;
+		// 	right_track = formula->GetVariableIndex(var_coeff);
+		// }
+    left_track = formula->GetVariableIndex(1);
+    right_track = num_tracks;
 		constant_string_auto = StringAutomaton::MakeString(formula->GetConstant());
 		num_tracks++;
 	} else {
 		left_track = formula->GetVariableIndex(1);
 		right_track = formula->GetVariableIndex(2);
 	}
-
 
 	if(formula->GetType() == StringFormula::Type::GE_CHARAT) {
 		result_dfa = StringAutomaton::MakeRelationalCharAtDfa(formula,VAR_PER_TRACK,num_tracks,left_track,right_track);
@@ -1271,41 +1310,123 @@ StringAutomaton_ptr StringAutomaton::Complement() {
 //	return complement_auto;
 }
 
+// StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
+// 	// if both autos are same size, we're good. Otherwise, if one auto has one track
+// 	// put it in a multi-track with the correct track.
+//   if(this->num_tracks_ != other_auto->num_tracks_) {
+//     StringAutomaton_ptr small_auto, big_auto;
+// 		if(this->num_tracks_ == 1 && other_auto->num_tracks_ != 1 && !this->formula_->IsConstant()) {
+// 			small_auto = this;
+// 			big_auto = other_auto;
+// 		} else if(other_auto->num_tracks_ == 1 && !other_auto->formula_->IsConstant()) {
+// 			small_auto = other_auto;
+// 			big_auto = this;
+// 		} else {
+// 			LOG(FATAL) << "Intersection between incompatible StringAutomata";
+// 		}
+
+//     // safety check
+//     auto small_formula = small_auto->GetFormula();
+//     auto small_formula_coeff_map = small_formula->GetVariableCoefficientMap();
+//     if(small_formula_coeff_map.size() != 1) {
+//       LOG(FATAL) << "Formulas dont match up in intersection!";
+//     }
+
+// 		std::string variable_name = small_auto->formula_->GetVariableAtIndex(0);
+//     int index = big_auto->formula_->GetVariableIndex(variable_name);
+//     auto relation_other_auto = new StringAutomaton(small_auto->dfa_,index,big_auto->num_tracks_,small_auto->num_of_bdd_variables_);
+//     relation_other_auto->SetFormula(big_auto->GetFormula()->clone());
+//     auto intersect_auto = big_auto->Intersect(relation_other_auto);
+//     delete relation_other_auto;
+//     return intersect_auto;
+//   }
+// 	auto intersect_dfa = Automaton::DFAIntersect(this->dfa_, other_auto->dfa_);
+//   StringFormula_ptr intersect_formula = nullptr;
+//   if(formula_ != nullptr && other_auto->formula_ != nullptr) {
+//     intersect_formula = formula_->Intersect(other_auto->formula_);
+//   } else if(formula_ != nullptr) {
+//     intersect_formula = formula_->clone();
+//   } else {
+//     intersect_formula = nullptr;
+//   }
+
+// 	auto intersect_auto = new StringAutomaton(intersect_dfa,intersect_formula,this->num_of_bdd_variables_);
+
+//   DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << other_auto->id_ << ")";
+// 	return intersect_auto;
+// }
+
 StringAutomaton_ptr StringAutomaton::Intersect(StringAutomaton_ptr other_auto) {
-	// if both autos are same size, we're good. Otherwise, if one auto has one track
-	// put it in a multi-track with the correct track.
-  if(this->num_tracks_ != other_auto->num_tracks_) {
-//    LOG(INFO) << this->num_tracks_ << " , " << other_auto->num_tracks_;
-    StringAutomaton_ptr small_auto, big_auto;
-		if(this->num_tracks_ == 1 && other_auto->num_tracks_ != 1 && !this->formula_->IsConstant()) {
-			small_auto = this;
-			big_auto = other_auto;
-		} else if(other_auto->num_tracks_ == 1 && !other_auto->formula_->IsConstant()) {
-			small_auto = other_auto;
-			big_auto = this;
-		} else {
-			LOG(FATAL) << "Intersection between incompatible StringAutomata";
-		}
-
-		std::string variable_name = small_auto->formula_->GetVariableAtIndex(0);
-    int index = big_auto->formula_->GetVariableIndex(variable_name);
-    auto relation_other_auto = new StringAutomaton(small_auto->dfa_,index,big_auto->num_tracks_,small_auto->num_of_bdd_variables_);
-    relation_other_auto->SetFormula(big_auto->GetFormula()->clone());
-    auto intersect_auto = big_auto->Intersect(relation_other_auto);
-    delete relation_other_auto;
-    return intersect_auto;
-  }
-	auto intersect_dfa = Automaton::DFAIntersect(this->dfa_, other_auto->dfa_);
+  StringAutomaton_ptr left_auto = nullptr, right_auto = nullptr;
   StringFormula_ptr intersect_formula = nullptr;
-  if(formula_ != nullptr && other_auto->formula_ != nullptr) {
-    intersect_formula = formula_->Intersect(other_auto->formula_);
-  } else if(formula_ != nullptr) {
-    intersect_formula = formula_->clone();
-  } else {
-    intersect_formula = nullptr;
-  }
 
-	auto intersect_auto = new StringAutomaton(intersect_dfa,intersect_formula,this->num_of_bdd_variables_);
+
+//  for(auto it : formula_->GetVariableCoefficientMap()) {
+//    LOG(INFO) << it.first << "," << it.second;
+//  }
+//
+//  LOG(INFO) << "--";
+//
+//  for(auto it : other_auto->formula_->GetVariableCoefficientMap()) {
+//    LOG(INFO) << it.first << "," << it.second;
+//  }
+
+  auto left_num_tracks = this->GetFormula()->GetNumberOfVariables();
+  auto right_num_tracks = other_auto->GetFormula()->GetNumberOfVariables();
+  if(left_num_tracks > right_num_tracks) {
+    // LOG(INFO) << 1;
+
+    // LOG(INFO) << this->GetNumTracks() << "," << other_auto->GetNumTracks();
+    // LOG(INFO) << this->get_number_of_bdd_variables() << ":" << other_auto->get_number_of_bdd_variables();
+
+    // if(this->num_tracks_ != other_auto->num_tracks_) {
+    //   LOG(INFO) << "YOO";
+    //   std::string var = other_auto->GetFormula()->GetVariableAtIndex(0);
+
+    //   int track = this->GetFormula()->GetVariableIndex(var);
+    //   LOG(INFO) << var << " on track " << track;
+    //   auto multi_auto = new StringAutomaton(other_auto->getDFA(),track,left_num_tracks,other_auto->get_number_of_bdd_variables());
+    //   right_auto = multi_auto;
+
+    // } else {
+      right_auto = other_auto->ChangeIndicesMap(this->formula_->clone());
+    // }
+
+
+    left_auto = this;
+    // right_auto = other_auto->ChangeIndicesMap(this->formula_->clone());
+    intersect_formula = this->formula_->clone();
+  } else if(left_num_tracks < right_num_tracks) {
+    // LOG(INFO) << 2;
+    left_auto = other_auto;
+    right_auto = this->ChangeIndicesMap(other_auto->formula_->clone());
+    intersect_formula = other_auto->formula_->clone();
+  } else {
+    // LOG(INFO) << 3;
+    left_auto = this;
+    right_auto = other_auto;
+    intersect_formula = this->formula_->Intersect(other_auto->formula_);
+  }
+//LOG(INFO) << "AFTER";
+//  for(auto it : left_auto->formula_->GetVariableCoefficientMap()) {
+//    LOG(INFO) << it.first << "," << it.second;
+//  }
+//
+//  LOG(INFO) << "--";
+//
+//  for(auto it : right_auto->formula_->GetVariableCoefficientMap()) {
+//    LOG(INFO) << it.first << "," << it.second;
+//  }
+
+	auto intersect_dfa = Automaton::DFAIntersect(left_auto->dfa_, right_auto->dfa_);
+
+
+	auto intersect_auto = new StringAutomaton(intersect_dfa,intersect_formula,left_auto->num_of_bdd_variables_);
+
+  if(right_auto != other_auto) {
+    delete right_auto;
+    right_auto = nullptr;
+  }
 
   DVLOG(VLOG_LEVEL) << intersect_auto->id_ << " = [" << this->id_ << "]->Intersect(" << other_auto->id_ << ")";
 	return intersect_auto;
@@ -1335,9 +1456,9 @@ StringAutomaton_ptr StringAutomaton::Concat(StringAutomaton_ptr other_auto) {
   CHECK_EQ(this->num_tracks_,other_auto->num_tracks_);
 //  this->Minimize();
 //  other_auto->Minimize();
-//  StringAutomaton_ptr concat_auto = static_cast<StringAutomaton_ptr>(Automaton::Concat(other_auto));
-  auto concat_dfa = StringAutomaton::concat(dfa_, other_auto->dfa_,this->num_of_bdd_variables_);
-  auto concat_auto = new StringAutomaton(concat_dfa,this->num_of_bdd_variables_);
+  StringAutomaton_ptr concat_auto = static_cast<StringAutomaton_ptr>(Automaton::Concat(other_auto));
+  // auto concat_dfa = StringAutomaton::concat(dfa_, other_auto->dfa_,this->num_of_bdd_variables_);
+  // auto concat_auto = new StringAutomaton(concat_dfa,this->num_of_bdd_variables_);
   return concat_auto;
 }
 
@@ -1488,6 +1609,8 @@ StringAutomaton_ptr StringAutomaton::KleeneClosure() {
   return kleene_closure_auto;
 }
 
+
+// character version?
 StringAutomaton_ptr StringAutomaton::Repeat(unsigned min) {
 	CHECK_EQ(this->num_tracks_,1);
   StringAutomaton_ptr repeated_auto = nullptr;
@@ -1511,24 +1634,82 @@ StringAutomaton_ptr StringAutomaton::Repeat(unsigned min) {
 
 StringAutomaton_ptr StringAutomaton::Repeat(unsigned min, unsigned max) {
 	CHECK_EQ(this->num_tracks_,1);
-  StringAutomaton_ptr repeated_auto = nullptr;
+ 
+  StringAutomaton_ptr repeated_auto = nullptr, temp_auto = nullptr, repeated_plus_i_auto = nullptr;
+  StringAutomaton_ptr union_auto = nullptr;
 
-  if (min == 0) {
-    repeated_auto = this->KleeneClosure();
-  } else {
-    repeated_auto = this->Closure();
+  if(min == max && min >= 4) {
+    int left = min/2;
+    int right = min-min/2;
+
+    auto left_auto = this->Repeat(left,left);
+    auto right_auto = this->Repeat(right,right);
+
+    auto result_auto = left_auto->Concat(right_auto);
+    delete left_auto;
+    delete right_auto;
+    return result_auto;
   }
 
-  StringAutomaton_ptr range_auto = StringAutomaton::MakeAnyStringWithLengthInRange(min, max);
-  StringAutomaton_ptr tmp_auto = repeated_auto;
-  repeated_auto = tmp_auto->Intersect(range_auto);
-  delete range_auto; range_auto = nullptr;
-  delete tmp_auto; tmp_auto = nullptr;
+  if(min < 0) {
+    LOG(FATAL) << "Invalid range for re.loop; min must be at least 0";
+  } else if(min > max) {
+    return StringAutomaton::MakePhi();  
+  } else {
+    repeated_auto = StringAutomaton::MakeEmptyString();
+    
+    for(int i = 0; i < min; i++) {
+      temp_auto = repeated_auto->Concat(this);
+      delete repeated_auto;
+      repeated_auto = temp_auto;
+      temp_auto = nullptr;
+    }
+  }
+
+  if(min == max) {
+    return repeated_auto;
+  }
+
+  union_auto = repeated_auto->clone();
+  for(int i = min; i < max; i++) {
+    temp_auto = repeated_auto->Concat(this);
+    delete repeated_auto; 
+    repeated_auto = temp_auto;
+
+    temp_auto = union_auto;
+    union_auto = temp_auto->Union(repeated_auto);
+    delete temp_auto; 
+    temp_auto = nullptr;
+  }
+
+  delete repeated_auto;
+  repeated_auto = union_auto;
 
   DVLOG(VLOG_LEVEL) << repeated_auto->id_ << " = [" << this->id_ << "]->repeat(" << min << ", " << max << ")";
 
   return repeated_auto;
 }
+
+// StringAutomaton_ptr StringAutomaton::Repeat(unsigned min, unsigned max) {
+// 	CHECK_EQ(this->num_tracks_,1);
+//   StringAutomaton_ptr repeated_auto = nullptr;
+
+//   if (min == 0) {
+//     repeated_auto = this->KleeneClosure();
+//   } else {
+//     repeated_auto = this->Closure();
+//   }
+
+//   StringAutomaton_ptr range_auto = StringAutomaton::MakeAnyStringWithLengthInRange(min, max);
+//   StringAutomaton_ptr tmp_auto = repeated_auto;
+//   repeated_auto = tmp_auto->Intersect(range_auto);
+//   delete range_auto; range_auto = nullptr;
+//   delete tmp_auto; tmp_auto = nullptr;
+
+//   DVLOG(VLOG_LEVEL) << repeated_auto->id_ << " = [" << this->id_ << "]->repeat(" << min << ", " << max << ")";
+
+//   return repeated_auto;
+// }
 
 StringAutomaton_ptr StringAutomaton::Suffixes() {
 	CHECK_EQ(this->num_tracks_,1);
@@ -2853,9 +3034,9 @@ IntAutomaton_ptr StringAutomaton::ParseToIntAutomaton() {
   DFA_ptr dfa = restricted_to_digits_auto->getDFA();
 
   IntAutomaton_ptr int_auto = nullptr;
-  if (this->isCyclic()) {
+  if (restricted_to_digits_auto->isCyclic()) {
     int_auto = IntAutomaton::makeIntGreaterThanOrEqual(0);
-  } else if (this->IsEmptyLanguage()) {
+  } else if (restricted_to_digits_auto->IsEmptyLanguage()) {
     int_auto = IntAutomaton::makePhi();
   } else {
   	using StatePaths = std::pair<int, std::vector<std::string>>;
@@ -3592,10 +3773,19 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 		return result_auto;
 	}
 
+  // auto temp_dfa = StringAutomaton::MakeAnyStringLengthLessThan(3)->getDFA();
+  // auto temp_auto = new StringAutomaton(temp_dfa,1,3,8);
+  
+  // auto temp_dfa_2 = StringAutomaton::MakeRegexAuto("(abcd|cdad)")->getDFA();
+  // auto temp_auto_2 = new StringAutomaton(temp_dfa_2,0,3,8);
+
+  // temp_auto = temp_auto->Intersect(temp_auto_2);
+  
+  // res = temp_auto->getDFA();
+
 	// k_track needs to be mapped to indices 0-(VAR_PER_TRACK-1)
 	// while all others need to be pushed back by VAR_PER_TRACK, then
 	// interleaved with 1 less than current number of tracks
-
 
 	int* map = CreateBddVariableIndices(this->num_tracks_*VAR_PER_TRACK);
 	std::vector<int> indices;
@@ -3612,7 +3802,7 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 		}
 	}
 
-	for(int i = 0; i < this->num_tracks_; ++i) {
+	for(int i = 0; i < this->num_tracks_; i++) {
 		if(i != k_track) {
 			for(int j = 0; j < VAR_PER_TRACK; ++j) {
 				indices.push_back(i+this->num_tracks_*j);
@@ -3625,18 +3815,32 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 		_map.push_back(map[i]);
 	}
 
+  
+
   auto result = Automaton::DFAProjectAway(res,_map,indices);
 
+  
+
   if(find_sink(result) != -1) {
-		// trim prefix first, then suffix
-		temp = TrimLambdaSuffix(result,VAR_PER_TRACK,false);
+    // LOG(INFO) << "GETTING TRACK " << k_track;
+    // result_auto = new StringAutomaton(result,VAR_PER_TRACK);
+    // result_auto->inspectAuto(true,true);
+
+    // trim prefix first, then suffix
+		temp = TrimLambdaPrefix(result,VAR_PER_TRACK,false);
 		dfaFree(result);
 		result = temp;
-		temp = TrimLambdaPrefix(result, VAR_PER_TRACK);
+		
+    // result_auto = new StringAutomaton(result,VAR_PER_TRACK);
+    // result_auto->inspectAuto(true,true);
+    
+    temp = TrimLambdaSuffix(result, VAR_PER_TRACK);
 		dfaFree(result);
 		result = temp;
     result_auto = new StringAutomaton(result,DEFAULT_NUM_OF_VARIABLES);
-	} else {
+    // result_auto->inspectAuto(true,true);
+    // std::cin.get();
+  } else {
 		DVLOG(VLOG_LEVEL) << "No sink found while getting single track from multi-track, returning any string";
 		dfaFree(result);
 		result_auto = StringAutomaton::MakeAnyString();
@@ -3644,7 +3848,7 @@ StringAutomaton_ptr StringAutomaton::GetKTrack(int k_track) {
 
   //LOG(INFO) << "Done";
 	delete[] map;
-	return result_auto;
+  return result_auto;
 }
 
 StringAutomaton_ptr StringAutomaton::ProjectAwayVariable(std::string var_name) {
@@ -3689,7 +3893,7 @@ StringAutomaton_ptr StringAutomaton::ProjectKTrack(int k_track) {
   for(int i = 0; i < this->num_tracks_*VAR_PER_TRACK; i++) {
   	_map.push_back(map[i]);
   }
-  for(int i = 0; i < VAR_PER_TRACK; i++) {
+  for(int i = 0; i < VAR_PER_TRACK ; i++) {
   	indices.push_back(k_track+num_tracks_*i);
   }
 
@@ -3703,12 +3907,12 @@ StringAutomaton_ptr StringAutomaton::ProjectKTrack(int k_track) {
 }
 
 void StringAutomaton::SetSymbolicCounter() {
+
 	// normal symbolic counter for single-track
 	if(num_tracks_ == 1) {
 		Automaton::SetSymbolicCounter();
 		return;
 	}
-
 
 	// remove last lambda loop
 	DFA_ptr original_dfa = nullptr, temp_dfa = nullptr,trimmed_dfa = nullptr;
@@ -3726,7 +3930,9 @@ void StringAutomaton::SetSymbolicCounter() {
 	std::vector<std::pair<std::vector<char>,int>> state_exeps;
 	std::vector<bool> lambda_states(original_dfa->ns,false);
 	dfaSetup(original_dfa->ns,len,mindices);
+
 	for(int i = 0; i < original_dfa->ns; i++) {
+    // LOG(INFO) << "state = " << i;
 		statuses[i] = '-';
 		state_paths = pp = make_paths(original_dfa->bddm, original_dfa->q[i]);
 		while(pp) {
@@ -3784,6 +3990,7 @@ void StringAutomaton::SetSymbolicCounter() {
 	Automaton::SetSymbolicCounter();
 	this->dfa_ = original_dfa;
 	dfaFree(trimmed_dfa);
+
 }
 
 std::vector<std::string> StringAutomaton::GetAnAcceptingStringForEachTrack() {
@@ -5328,9 +5535,14 @@ StringAutomaton_ptr StringAutomaton::MakePrefixSuffix(DFA_ptr left_dfa, DFA_ptr 
 }
 
 // TODO: Formulas and intersection? What do?
-StringAutomaton_ptr StringAutomaton::MakeConcatExtraTrack(int left_track, int right_track, int num_tracks, std::string str_constant) {
-  StringAutomaton_ptr any_string_auto = StringAutomaton::MakeAnyString();
-  StringAutomaton_ptr const_string_auto = StringAutomaton::MakeString(str_constant);
+StringAutomaton_ptr StringAutomaton::MakeConcatExtraTrack(int left_track, int right_track, int num_tracks, std::string str_constant, bool is_regex) {
+  // StringAutomaton_ptr any_string_auto = StringAutomaton::MakeAnyString();
+  StringAutomaton_ptr const_string_auto = nullptr;
+  if(is_regex) {
+    const_string_auto = StringAutomaton::MakeRegexAuto(str_constant);
+  } else {
+    const_string_auto = StringAutomaton::MakeString(str_constant);
+  }
   auto temp_dfa = StringAutomaton::PrependLambda(const_string_auto->getDFA(),DEFAULT_NUM_OF_VARIABLES);
 
   delete const_string_auto;
@@ -5338,14 +5550,14 @@ StringAutomaton_ptr StringAutomaton::MakeConcatExtraTrack(int left_track, int ri
   auto temp_auto = new StringAutomaton(temp_dfa,num_tracks,num_tracks+1,VAR_PER_TRACK);
   dfaFree(temp_dfa);
   // has any-string on correct track
-  auto any_string_extended_auto = new StringAutomaton(any_string_auto->getDFA(),right_track,num_tracks+1,DEFAULT_NUM_OF_VARIABLES);
-  delete any_string_auto;
+  // auto any_string_extended_auto = new StringAutomaton(any_string_auto->getDFA(),right_track,num_tracks+1,DEFAULT_NUM_OF_VARIABLES);
+  // delete any_string_auto;
   auto prefix_suffix_auto = StringAutomaton::MakePrefixSuffix(left_track,right_track,num_tracks,num_tracks+1);
 
-  //auto intersect_auto = prefix_suffix_auto;
-  auto intersect_auto = prefix_suffix_auto->Intersect(any_string_extended_auto);
-  delete prefix_suffix_auto;
-  delete any_string_extended_auto;
+  auto intersect_auto = prefix_suffix_auto;
+  // auto intersect_auto = prefix_suffix_auto->Intersect(any_string_extended_auto);
+  // delete prefix_suffix_auto;
+  // delete any_string_extended_auto;
 
   auto result_auto = intersect_auto->Intersect(temp_auto);
   delete intersect_auto;
@@ -5366,6 +5578,9 @@ bool StringAutomaton::IsExepEqualChar(std::vector<char> exep, std::vector<char> 
   }
   return true;
 }
+
+// 1 0 X 0 1 1 0 0 
+// 1 0 0 0 1 1 0 0
 
 bool StringAutomaton::IsExepIncludeChar(std::vector<char> exep, std::vector<char> cvec, int var) {
   for(int i = 0; i < var; i++) {
@@ -5602,7 +5817,7 @@ DFA_ptr StringAutomaton::TrimLambdaPrefix(DFA_ptr dfa, int var, bool project_bit
         }
       }
 
-      if (!IsExepEqualChar(exep, lambda_vec,var)) {
+      if (!IsExepIncludeChar(exep, lambda_vec,var)) {
         std::vector<char> extra_bit_value = GetBinaryFormat(i, num_bits); // i = current state
         std::vector<char> v = exep;
         v.insert(v.end(), extra_bit_value.begin(), extra_bit_value.end());
@@ -5708,6 +5923,12 @@ DFA_ptr StringAutomaton::TrimLambdaSuffix(DFA_ptr dfa, int var, bool project_bit
   for(int i = 0; i < dfa->ns; i++) {
     state_paths = pp = make_paths(dfa->bddm, dfa->q[i]);
     statuses[i] = '-';
+
+    if(dfa->f[i] == 1) {
+      statuses[i] = '+';
+    }
+    // LOG(INFO) << "state = " << i;
+
     while (pp) {
       if (pp->to != sink) {
         std::vector<char> exep(var,'X');
@@ -5722,17 +5943,44 @@ DFA_ptr StringAutomaton::TrimLambdaSuffix(DFA_ptr dfa, int var, bool project_bit
             exep[j] = 'X';
         }
 
-        bool is_lam = IsExepEqualChar(exep,lambda_vec,var);
-        if (is_lam && i == pp->to) {
+        bool has_lam = IsExepIncludeChar(exep,lambda_vec,var);
+        
+        // LOG(INFO) << std::string(exep.begin(),exep.end());
+        // LOG(INFO) << "includes,is lambda?  " << IsExepIncludeChar(exep,lambda_vec,var) << "," << IsExepEqualChar(exep,lambda_vec,var);
+        // LOG(INFO) << "";
 
-        }
-        else {
+        if(has_lam) {
+          statuses[i] = '+';
+          if(!IsExepEqualChar(exep,lambda_vec,var)) {
+            
+            std::vector<std::string> expanded_exeps = Automaton::ExpandException(std::string(exep.begin(),exep.end()));
+            
+            for(auto it : expanded_exeps) {
+              std::vector<char> expanded_exep(it.begin(),it.end());
+              if(!IsExepEqualChar(expanded_exep,lambda_vec,var)) {
+                expanded_exep.push_back('\0');
+                state_exeps.push_back(std::make_pair(expanded_exep, pp->to));
+              }
+            }
+          } 
+          // else if(i == 0 && dfa->f[i] == 1) {
+          //   statuses[i] = '+';
+          // } 
+        } else {
           exep.push_back('\0');
           state_exeps.push_back(std::make_pair(exep, pp->to));
-          if(is_lam && dfa->f[pp->to] == 1) {
-            statuses[i] = '+';
-          }
         }
+        
+        // if (is_lam && i == pp->to) {
+
+        // }
+        // else {
+        //   exep.push_back('\0');
+        //   state_exeps.push_back(std::make_pair(exep, pp->to));
+        //   if(is_lam && dfa->f[pp->to] == 1) {
+        //     statuses[i] = '+';
+        //   }
+        // }
       }
       pp = pp->next;
     }
@@ -5804,6 +6052,95 @@ DFA_ptr StringAutomaton::PreConcatPrefix(DFA_ptr concat_dfa, DFA_ptr suffix_dfa,
 
 DFA_ptr StringAutomaton::PreConcatSuffix(DFA_ptr concat_dfa, DFA_ptr prefix_dfa, int var) {
   return GetSuffixDFA(concat_dfa,prefix_dfa,var);
+}
+
+StringAutomaton_ptr StringAutomaton::ChangeIndicesMap(StringFormula_ptr new_formula, bool clone) {
+
+//  auto start = std::chrono::steady_clock::now();
+  StringAutomaton_ptr unmapped_auto = nullptr;
+	auto old_coeff_map = this->formula_->GetVariableCoefficientMap();
+	auto new_coeff_map = new_formula->GetVariableCoefficientMap();
+	int old_num_tracks = this->num_tracks_;
+	int new_num_tracks = new_formula->GetNumberOfVariables();
+
+	// if previously only one track, we need to add lambda (9th bdd variable)
+	// just make new auto and return that
+	if(old_num_tracks == 1) {
+    if(new_num_tracks == 1) {
+      auto ret_auto = this->clone();
+      ret_auto->SetFormula(new_formula);
+//      auto end = std::chrono::steady_clock::now();
+//      diff += end-start;
+      return ret_auto;
+    }
+    // should ALWAYS have formula, but add check just to make sure
+	  if(this->formula_ == nullptr || this->formula_->GetNumberOfVariables() == 0) {
+	    LOG(FATAL) << "Can't remap indices! Automaton has no formula or formula has no variables!";
+	  }
+//	  std::string var_name = this->formula_->GetVariableAtIndex(0);
+	  unmapped_auto = new StringAutomaton(this->dfa_,
+	                                           0,
+	                                           1,
+	                                           DEFAULT_NUM_OF_VARIABLES);
+	  unmapped_auto->SetFormula(this->formula_->clone());
+//	  unmapped_auto->SetFormula(new_formula);
+//	  return unmapped_auto;
+	} else if(clone) {
+	  unmapped_auto = this->clone();
+	} else {
+	  unmapped_auto = this;
+	}
+	// though we're remapping indices, we're not adding any new variables right now
+	// (this will be done during intersection
+	int* map = CreateBddVariableIndices(unmapped_auto->num_tracks_*VAR_PER_TRACK);
+
+//	LOG(INFO) << "Old map:";
+//	for(auto iter : old_coeff_map) {
+//	  LOG(INFO) << "  " << iter.first;
+//	}
+//
+//	LOG(INFO) << "New map:";
+//	for(auto iter : new_coeff_map) {
+//	  LOG(INFO) << "  " << iter.first;
+//	}
+
+  bool replace = false;
+
+	for(auto iter : old_coeff_map) {
+
+		int old_index = unmapped_auto->formula_->GetVariableIndex(iter.first);
+		int new_index = new_formula->GetVariableIndex(iter.first);
+
+
+
+		for(int i = 0; i < VAR_PER_TRACK; i++) {
+			map[old_index+(i*old_num_tracks)] = new_index+(i*new_num_tracks);
+			if(old_index+(i*old_num_tracks) != new_index+(i*new_num_tracks)) replace = true;
+		}
+	}
+
+//  for(int i = 0; i < this->num_tracks_*VAR_PER_TRACK; i++) {
+//    LOG(INFO) << "map[" << i << "] = " << map[i];
+//  }
+
+//	auto remapped_dfa = dfaCopy(unmapped_auto->dfa_);
+	if(replace) {
+	  dfaReplaceIndices(unmapped_auto->dfa_,map);
+	}
+	delete[] map;
+
+	unmapped_auto->SetFormula(new_formula);
+
+//  auto end = std::chrono::steady_clock::now();
+//  diff += end-start;
+
+	return unmapped_auto;
+}
+
+void StringAutomaton::PrintRegexCacheStatistics() {
+  LOG(INFO) << "hits:      " << num_hits;
+  LOG(INFO) << "misses:    " << num_misses;
+  LOG(INFO) << "hit ratio: " << num_hits / float(num_hits+num_misses);
 }
 
 bool StringAutomaton::HasExceptionToValidStateFrom(int state, std::vector<char>& exception) {

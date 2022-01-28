@@ -80,6 +80,9 @@ public:
   void visitReplace(SMT::Replace_ptr) override;
   void visitCount(SMT::Count_ptr) override;
   void visitIte(SMT::Ite_ptr) override;
+  void visitIsDigit(SMT::IsDigit_ptr) override {};
+  void visitToCode(SMT::ToCode_ptr) override {};
+  void visitFromCode(SMT::FromCode_ptr) override {};
   void visitReConcat(SMT::ReConcat_ptr) override;
   void visitReUnion(SMT::ReUnion_ptr) override;
   void visitReInter(SMT::ReInter_ptr) override;
@@ -111,6 +114,7 @@ protected:
   SymbolTable_ptr symbol_table_;
   std::stack<SMT::Primitive_ptr> primitives_;
   std::stack<SMT::Sort_ptr> sorts_;
+  bool local_var_search_;
 private:
   static const int VLOG_LEVEL;
 };

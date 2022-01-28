@@ -22,6 +22,11 @@ bool Solver::ENABLE_LEN_IMPLICATIONS = true;
 bool Solver::ENABLE_SORTING_HEURISTICS = true;
 bool Solver::FORCE_DNF_FORMULA = false;
 bool Solver::COUNT_BOUND_EXACT = false;
+bool Solver::USE_SINGLE_AUTO = false;
+bool Solver::USE_REGEX_SPLITTER = false;
+bool Solver::USE_PREFIX_SHORTENER = false;
+bool Solver::CONCAT_COLLAPSE_HEURISTIC = false;
+
 
 std::string Solver::OUTPUT_PATH         = ".";
 std::string Solver::SCRIPT_PATH         = ".";

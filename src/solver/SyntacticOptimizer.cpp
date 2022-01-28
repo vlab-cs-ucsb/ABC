@@ -15,9 +15,10 @@ using namespace SMT;
 unsigned SyntacticOptimizer::name_counter = 0;
 const int SyntacticOptimizer::VLOG_LEVEL = 18;
 
-SyntacticOptimizer::SyntacticOptimizer(Script_ptr script, SymbolTable_ptr symbol_table)
+SyntacticOptimizer::SyntacticOptimizer(Script_ptr script, SymbolTable_ptr symbol_table, bool transform_ite)
     : root_(script),
-      symbol_table_(symbol_table) {
+      symbol_table_(symbol_table),
+      transform_ite_(transform_ite) {
 }
 
 SyntacticOptimizer::~SyntacticOptimizer() {
@@ -25,6 +26,8 @@ SyntacticOptimizer::~SyntacticOptimizer() {
 
 void SyntacticOptimizer::start() {
   symbol_table_->reset_variable_usage();
+  symbol_table_->reset_variable_concat();
+
   DVLOG(VLOG_LEVEL) << "Start SyntacticOptimizer";
   symbol_table_->push_scope(root_,false);
   visit(root_);
@@ -55,6 +58,7 @@ void SyntacticOptimizer::visitExclamation(Exclamation_ptr exclamation_term) {
 }
 
 void SyntacticOptimizer::visitExists(Exists_ptr exists_term) {
+  visit_and_callback(exists_term->term);
 }
 
 void SyntacticOptimizer::visitForAll(ForAll_ptr for_all_term) {
@@ -69,14 +73,65 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
   std::vector<TermList> or_term_lists;
   int pos = 0;
   for (auto iter = and_term->term_list->begin(); iter != and_term->term_list->end();) {
-  	visit_and_callback(*iter);
+  	
+    if(Ite_ptr ite_term = dynamic_cast<Ite_ptr>(*iter)) {
+      if(transform_ite_) {
+        Term_ptr true_condition = ite_term->cond->clone();
+        visit_and_callback(true_condition);
+        Term_ptr false_condition = new Not(true_condition->clone());
+        visit_and_callback(false_condition); // push down the negation
+        
+        for(auto it : *and_term->term_list) {
+          // LOG(INFO) << it->str();
+          bool first = check_condition_against_term(true_condition,it);
+          bool second = check_condition_against_term(false_condition,it);
+          
+          Term_ptr t = new Not(it->clone());
+          visit_and_callback(t);
+
+          bool first2 = check_condition_against_term(true_condition,t);
+          bool second2 = check_condition_against_term(false_condition,t);
+          
+          if(first and second) {
+            break;
+          } else if(first and not second) {
+            *iter = ite_term->then_branch;
+            ite_term->then_branch = nullptr;
+            delete ite_term; ite_term = nullptr;
+            break;
+          } else if(not first and second) {
+            *iter = ite_term->else_branch;
+            ite_term->else_branch = nullptr;
+            delete ite_term; ite_term = nullptr;
+            break;
+          }
+
+          if(first2 and not second2) {
+            *iter = ite_term->else_branch;
+            ite_term->else_branch = nullptr;
+            delete ite_term; ite_term = nullptr;
+            break;
+          } else if(not first2 and second2) {
+            *iter = ite_term->then_branch;
+            ite_term->then_branch = nullptr;
+            delete ite_term; ite_term = nullptr;
+            break;
+          }
+          
+        }
+        delete true_condition;
+        delete false_condition;
+      }
+    }
+    
+    visit_and_callback(*iter);
   	if (!ite_terms_.empty()) {
   	  if(dynamic_cast<Or_ptr>(*iter) != nullptr) {
         LOG(FATAL) << "ite_terms should be empty if child is or_term!";
       }
 
       and_term->term_list->insert(and_term->term_list->end(),ite_terms_.begin(),ite_terms_.end());
-      iter = and_term->term_list->begin() + pos;
+      iter = and_term->term_list->begin() + pos - 1;
       ite_terms_.clear();
   	}
 
@@ -687,6 +742,12 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
 //  	}
 //  }
 
+  if(Term::Type::QUALIDENTIFIER == eq_term->right_term->type() && Term::Type::QUALIDENTIFIER != eq_term->left_term->type()) {
+    auto temp = eq_term->left_term;
+    eq_term->left_term = eq_term->right_term;
+    eq_term->right_term = temp;
+  }
+
   // if EQ is of the form X = Y / C, where C is constant, transform to X * C = Y
   if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type() && Term::Type::DIV == eq_term->right_term->type()) {
     Div_ptr div_term = dynamic_cast<Div_ptr>(eq_term->right_term);
@@ -712,9 +773,11 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
   // check for equality with concat where prefix var is same on both sides
   if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type() && Term::Type::CONCAT == eq_term->right_term->type()) {
     Concat_ptr concat_term = dynamic_cast<Concat_ptr>(eq_term->right_term);
+    QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term);
+    
     if(Term::Type::QUALIDENTIFIER == concat_term->term_list->at(0)->type()) {
-      QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term);
       QualIdentifier_ptr right_var = dynamic_cast<QualIdentifier_ptr>(concat_term->term_list->at(0));
+      
       // if same variable, replace term
       if(left_var->getVarName() == right_var->getVarName()) {
         callback_ = [this, eq_term](Term_ptr & term) mutable {
@@ -725,14 +788,27 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
           concat_term->term_list->at(0) = nullptr;
           concat_term->term_list->erase(concat_term->term_list->begin());
         };
+        
         return;
+      } else {
+        symbol_table_->increment_variable_usage(left_var->getVarName());
+        
+        for(auto it : *concat_term->term_list) {
+          if(QualIdentifier_ptr qualid = dynamic_cast<QualIdentifier_ptr>(it)) {
+            symbol_table_->set_variable_concat(qualid->getVarName(),true);
+          }
+        }
       }
+    } else {
+      symbol_table_->increment_variable_usage(left_var->getVarName());
     }
   } else if(Term::Type::QUALIDENTIFIER == eq_term->right_term->type() && Term::Type::CONCAT == eq_term->left_term->type()) {
     Concat_ptr concat_term = dynamic_cast<Concat_ptr>(eq_term->left_term);
+    QualIdentifier_ptr right_var = dynamic_cast<QualIdentifier_ptr>(eq_term->right_term);
+
     if(Term::Type::QUALIDENTIFIER == concat_term->term_list->at(0)->type()) {
-      QualIdentifier_ptr right_var = dynamic_cast<QualIdentifier_ptr>(eq_term->right_term);
       QualIdentifier_ptr left_var = dynamic_cast<QualIdentifier_ptr>(concat_term->term_list->at(0));
+      
       // if same variable, replace term
       if(left_var->getVarName() == right_var->getVarName()) {
         callback_ = [this, eq_term](Term_ptr & term) mutable {
@@ -743,8 +819,19 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
           concat_term->term_list->at(0) = nullptr;
           concat_term->term_list->erase(concat_term->term_list->begin());
         };
+
         return;
+      } else {
+        symbol_table_->increment_variable_usage(right_var->getVarName());
+        
+        for(auto it : *concat_term->term_list) {
+          if(QualIdentifier_ptr qualid = dynamic_cast<QualIdentifier_ptr>(it)) {
+            symbol_table_->set_variable_concat(qualid->getVarName(),true);
+          }
+        }
       }
+    } else {
+      symbol_table_->increment_variable_usage(right_var->getVarName());
     }
   }
   else if(CharAt_ptr charat_term = dynamic_cast<CharAt_ptr>(eq_term->left_term)) {
@@ -886,10 +973,10 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
 //    else if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type() and Term::Type::QUALIDENTIFIER == eq_term->right_term->type()) {
 //    auto count_var = symbol_table_->get_count_variable();
 //    auto rep_count_var = symbol_table_->get_representative_variable_of_at_scope(symbol_table_->top_scope(),count_var);
-//
+
 //    auto left_var = symbol_table_->get_variable(eq_term->left_term);
 //    auto right_var = symbol_table_->get_variable(eq_term->right_term);
-//
+
 //    if(left_var->getType() == Variable::Type::STRING and left_var->getName() == rep_count_var->getName()) {
 //      symbol_table_->increment_variable_usage(left_var->getName());
 //      symbol_table_->increment_variable_usage(right_var->getName());
@@ -899,30 +986,38 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
 //      symbol_table_->increment_variable_usage(right_var->getName());
 //    }
 //  }
-//  else if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type()) {
-//    auto left_var = symbol_table_->get_variable(eq_term->left_term);
-//    if(left_var->getType() == Variable::Type::STRING) {
-//      symbol_table_->increment_variable_usage(left_var->getName());
-//    }
-//  }
-//  else if(Term::Type::QUALIDENTIFIER == eq_term->right_term->type()) {
-//    auto right_var = symbol_table_->get_variable(eq_term->right_term);
-//    if(right_var->getType() == Variable::Type::STRING) {
-//      symbol_table_->increment_variable_usage(right_var->getName());
-//    }
-//  }
-//  // else if(Term::Type::TERMCONSTANT != eq_term->right_term->type() and Term::Type::QUALIDENTIFIER != eq_term->right_term->type()
-//  // 								and Term::Type::QUALIDENTIFIER == eq_term->left_term->type()) {
-//  // 	auto left_var = symbol_table_->get_variable(eq_term->left_term);
-//  // 	symbol_table_->increment_variable_usage(left_var->getName());
-//  // }
-//  else if(Len_ptr len_term = dynamic_cast<Len_ptr>(eq_term->left_term)) {
-//    QualIdentifier_ptr qualid_term = dynamic_cast<QualIdentifier_ptr>(len_term->term);
-//    if(qualid_term != nullptr) {
-//      auto left_var = symbol_table_->get_variable(qualid_term);
-//      symbol_table_->increment_variable_usage(left_var->getName());
-//    }
-//  }
+ 
+ else if(Term::Type::TERMCONSTANT != eq_term->right_term->type() and Term::Type::QUALIDENTIFIER != eq_term->right_term->type()
+ 								and Term::Type::QUALIDENTIFIER == eq_term->left_term->type()) {
+ 	auto left_var = symbol_table_->get_variable(eq_term->left_term);
+ 	symbol_table_->increment_variable_usage(left_var->getName());
+ }
+ else if(Len_ptr len_term = dynamic_cast<Len_ptr>(eq_term->left_term)) {
+   QualIdentifier_ptr qualid_term = dynamic_cast<QualIdentifier_ptr>(len_term->term);
+   if(qualid_term != nullptr) {
+     auto left_var = symbol_table_->get_variable(qualid_term);
+     symbol_table_->increment_variable_usage(left_var->getName());
+   }
+ }
+ else if(Len_ptr len_term = dynamic_cast<Len_ptr>(eq_term->right_term)) {
+   QualIdentifier_ptr qualid_term = dynamic_cast<QualIdentifier_ptr>(len_term->term);
+   if(qualid_term != nullptr) {
+     auto right_var = symbol_table_->get_variable(qualid_term);
+     symbol_table_->increment_variable_usage(right_var->getName());
+   }
+ }
+ else if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type()) {
+   auto left_var = symbol_table_->get_variable(eq_term->left_term);
+   if(left_var->getType() == Variable::Type::STRING) {
+     symbol_table_->increment_variable_usage(left_var->getName());
+   }
+ }
+ else if(Term::Type::QUALIDENTIFIER == eq_term->right_term->type()) {
+   auto right_var = symbol_table_->get_variable(eq_term->right_term);
+   if(right_var->getType() == Variable::Type::STRING) {
+     symbol_table_->increment_variable_usage(right_var->getName());
+   }
+ }
 
   if (Ast2Dot::isEquivalent(eq_term->left_term, eq_term->right_term)) {
     add_callback_to_replace_with_bool(eq_term, true);
@@ -935,7 +1030,11 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
 //        LOG(INFO) << "+++++++ eq +++++++";
 //        Ast2Dot::inspectAST(term);
       	symbol_table_->remove_unsorted_constraint(eq_term);
-        term = new In(eq_term->left_term, eq_term->right_term);
+        if(Term::Type::TERMCONSTANT == eq_term->left_term->type()) {
+          term = new In(eq_term->right_term, eq_term->left_term);
+        } else {
+          term = new In(eq_term->left_term, eq_term->right_term);
+        }
         symbol_table_->add_unsorted_constraint(term);
         eq_term->left_term = nullptr;
         eq_term->right_term = nullptr;
@@ -988,6 +1087,14 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
   visit_and_callback(not_eq_term->left_term);
   visit_and_callback(not_eq_term->right_term);
   DVLOG(VLOG_LEVEL) << "post visit start: " << *not_eq_term << "@" << not_eq_term;
+  
+  if(Term::Type::QUALIDENTIFIER == not_eq_term->right_term->type() && Term::Type::QUALIDENTIFIER != not_eq_term->left_term->type()) {
+    auto temp = not_eq_term->left_term;
+    not_eq_term->left_term = not_eq_term->right_term;
+    not_eq_term->right_term = temp;
+  }
+  
+  
   bool match_p = match_prefix(not_eq_term->left_term, not_eq_term->right_term);
   if (!match_p) {
     add_callback_to_replace_with_bool(not_eq_term, true);  //there is no constraint on the variable!
@@ -1250,7 +1357,11 @@ void SyntacticOptimizer::visitGt(Gt_ptr gt_term) {
       add_callback_to_replace_with_bool(gt_term, false);
     } else {
       callback_ = [gt_term](Term_ptr & term) mutable {
-        term = new In(gt_term->left_term, gt_term->right_term);
+        if(Term::Type::TERMCONSTANT == gt_term->right_term->type()) {
+          term = new In(gt_term->left_term, gt_term->right_term);
+        } else {
+          term = new In(gt_term->right_term, gt_term->left_term);
+        }
         gt_term->left_term = nullptr;
         gt_term->right_term = nullptr;
         delete gt_term;
@@ -1326,7 +1437,11 @@ void SyntacticOptimizer::visitGe(Ge_ptr ge_term) {
       add_callback_to_replace_with_bool(ge_term, true);
     } else {
       callback_ = [ge_term](Term_ptr & term) mutable {
-        term = new In(ge_term->left_term, ge_term->right_term);
+        if(Term::Type::TERMCONSTANT == ge_term->right_term->type()) {
+          term = new In(ge_term->left_term, ge_term->right_term);
+        } else {
+          term = new In(ge_term->right_term, ge_term->left_term);
+        }
         ge_term->left_term = nullptr;
         ge_term->right_term = nullptr;
         delete ge_term;
@@ -1398,7 +1513,11 @@ void SyntacticOptimizer::visitLt(Lt_ptr lt_term) {
       add_callback_to_replace_with_bool(lt_term, false);
     } else {
       callback_ = [lt_term](Term_ptr & term) mutable {
-        term = new In(lt_term->left_term, lt_term->right_term);
+        if(Term::Type::TERMCONSTANT == lt_term->right_term->type()) {
+          term = new In(lt_term->left_term, lt_term->right_term);
+        } else {
+          term = new In(lt_term->right_term, lt_term->left_term);
+        }
         lt_term->left_term = nullptr;
         lt_term->right_term = nullptr;
         delete lt_term;
@@ -1443,7 +1562,11 @@ void SyntacticOptimizer::visitLe(Le_ptr le_term) {
       add_callback_to_replace_with_bool(le_term, true);
     } else {
       callback_ = [le_term](Term_ptr & term) mutable {
-        term = new In(le_term->left_term, le_term->right_term);
+        if(Term::Type::TERMCONSTANT == le_term->right_term->type()) {
+          term = new In(le_term->left_term, le_term->right_term);
+        } else {
+          term = new In(le_term->right_term, le_term->left_term);
+        }
         le_term->left_term = nullptr;
         le_term->right_term = nullptr;
         delete le_term;
@@ -1530,17 +1653,52 @@ void SyntacticOptimizer::visitConcat(Concat_ptr concat_term) {
 void SyntacticOptimizer::visitIn(In_ptr in_term) {
   visit_and_callback(in_term->left_term);
   visit_and_callback(in_term->right_term);
-
+  
   DVLOG(VLOG_LEVEL) << "post visit start: " << *in_term << "@" << in_term;
+  
+  if(ToRegex_ptr to_regex_term = dynamic_cast<ToRegex_ptr>(in_term->right_term)) {
+    if(Term::Type::CONCAT == to_regex_term->term->type()) {
+      callback_ = [to_regex_term, in_term](Term_ptr & term) {
+        Eq_ptr eq_term = new Eq(in_term->left_term, to_regex_term->term);
+        to_regex_term->term = nullptr;
+        delete to_regex_term;
+        in_term->left_term = nullptr;
+        in_term->right_term = nullptr;
+        delete in_term;
+        term = eq_term;
+      };
+      DVLOG(VLOG_LEVEL) << "post visit end: " << *in_term << "@" << in_term;
+      return;
+    }
+  }
+  
   if (Ast2Dot::isEquivalent(in_term->left_term, in_term->right_term)) {
     add_callback_to_replace_with_bool(in_term, true);
-  } else if (check_and_process_constant_string( { in_term->left_term, in_term->right_term })) {
-  	callback_ = [in_term] (Term_ptr & term) mutable {
-      term = new Eq(in_term->left_term, in_term->right_term);
-      in_term->left_term = nullptr; in_term->right_term = nullptr;
-      delete in_term;
-    };
-  }
+  // } else if (check_and_process_constant_string( { in_term->left_term, in_term->right_term })) {
+  // 	callback_ = [in_term] (Term_ptr & term) mutable {
+  //     term = new Eq(in_term->left_term, in_term->right_term);
+  //     in_term->left_term = nullptr; in_term->right_term = nullptr;
+  //     delete in_term;
+  //   };
+  } else if (Term::Type::TERMCONSTANT != in_term->left_term->type() and Term::Type::TERMCONSTANT == in_term->right_term->type()) {
+    // optimize when regular expression is the empty language (return false)
+    TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(in_term->right_term);
+    if(Primitive::Type::REGEX == term_constant->getValueType()) {
+      Util::RegularExpression_ptr regex = new Util::RegularExpression(term_constant->getValue());
+      if(regex->type() == Util::RegularExpression::Type::EMPTY) {
+        add_callback_to_replace_with_bool(in_term, false);
+      }
+    }
+  } else if (Term::Type::TERMCONSTANT != in_term->right_term->type() and Term::Type::TERMCONSTANT == in_term->left_term->type()) {
+    // optimize when regular expression is the empty language (return false)
+    TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(in_term->left_term);
+    if(Primitive::Type::REGEX == term_constant->getValueType()) {
+      Util::RegularExpression_ptr regex = new Util::RegularExpression(term_constant->getValue());
+      if(regex->type() == Util::RegularExpression::Type::EMPTY) {
+        add_callback_to_replace_with_bool(in_term, false);
+      }
+    }
+  } 
   DVLOG(VLOG_LEVEL) << "post visit end: " << *in_term << "@" << in_term;
 }
 
@@ -1550,14 +1708,30 @@ void SyntacticOptimizer::visitNotIn(NotIn_ptr not_in_term) {
 
   DVLOG(VLOG_LEVEL) << "post visit start: " << *not_in_term << "@" << not_in_term;
 
+  if(ToRegex_ptr to_regex_term = dynamic_cast<ToRegex_ptr>(not_in_term->right_term)) {
+    if(Term::Type::CONCAT == to_regex_term->term->type()) {
+      callback_ = [to_regex_term, not_in_term](Term_ptr & term) {
+        NotEq_ptr not_eq_term = new NotEq(not_in_term->left_term, to_regex_term->term);
+        to_regex_term->term = nullptr;
+        delete to_regex_term;
+        not_in_term->left_term = nullptr;
+        not_in_term->right_term = nullptr;
+        delete not_in_term;
+        term = not_eq_term;
+      };
+      DVLOG(VLOG_LEVEL) << "post visit end: " << *not_in_term << "@" << not_in_term;
+      return;
+    }
+  }
+
   if (Ast2Dot::isEquivalent(not_in_term->left_term, not_in_term->right_term)) {
     add_callback_to_replace_with_bool(not_in_term, false);
-  } else if (check_and_process_constant_string( { not_in_term->left_term, not_in_term->right_term })) {
-    callback_ = [not_in_term] (Term_ptr & term) mutable {
-      term = new NotEq(not_in_term->left_term, not_in_term->right_term);
-      not_in_term->left_term = nullptr; not_in_term->right_term = nullptr;
-      delete not_in_term;
-    };
+  // } else if (check_and_process_constant_string( { not_in_term->left_term, not_in_term->right_term })) {
+  //   callback_ = [not_in_term] (Term_ptr & term) mutable {
+  //     term = new NotEq(not_in_term->left_term, not_in_term->right_term);
+  //     not_in_term->left_term = nullptr; not_in_term->right_term = nullptr;
+  //     delete not_in_term;
+  //   };
   } else if (TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(not_in_term->right_term)) {
     if (Primitive::Type::REGEX == term_constant->getValueType()) {
       std::string data = term_constant->getValue();
@@ -2104,6 +2278,12 @@ void SyntacticOptimizer::visitCount(Count_ptr count_term) {
 }
 
 void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {
+
+  // if transform_ite_ is true and we reach this point, then we couldn't optimize either branch away
+  if(not transform_ite_) {
+    return;
+  }
+
   visit_and_callback(ite_term->cond);
   visit_and_callback(ite_term->then_branch);
   visit_and_callback(ite_term->else_branch);
@@ -2151,7 +2331,29 @@ void SyntacticOptimizer::visitIte(Ite_ptr ite_term) {
 		} else {
 			false_cond = new Not(true_cond->clone());
 		}
-		// process then branch
+
+    // (ite P Q R)
+    // (P => Q) && (~P => R)
+    // (~P || Q) && (P || R)
+    // TermList_ptr left_term_list = new TermList();
+    // TermList_ptr right_term_list = new TermList();
+
+    // left_term_list->push_back(false_cond);
+    // left_term_list->push_back(ite_then_branch);
+
+    // right_term_list->push_back(true_cond);
+    // right_term_list->push_back(ite_else_branch);
+
+    // Or_ptr left_or = new Or(left_term_list);
+    // Or_ptr right_or = new Or(right_term_list);
+
+    // TermList_ptr and_term_list = new TermList();
+    // and_term_list->push_back(left_or);
+    // and_term_list->push_back(right_or);
+
+    // And_ptr and_term = new And(and_term_list);
+
+		// // process then branch
 		if (And_ptr then_branch = dynamic_cast<And_ptr>(ite_then_branch)) {
 			then_branch->term_list->insert(then_branch->term_list->begin(), true_cond);
 			then_branch_term = then_branch;
@@ -2525,9 +2727,9 @@ void SyntacticOptimizer::visitReComp(ReComp_ptr re_comp_term) {
   if(regex_term != nullptr) {
     std::string value = "";
     if(regex_term->getValueType() == Primitive::Type::STRING) {
-      value = "~(" + Util::RegularExpression::escape_raw_string(regex_term->getValue()) + ")";
+      value = "(~(" + Util::RegularExpression::escape_raw_string(regex_term->getValue()) + "))";
     } else {
-      value = "~(" + regex_term->getValue() + ")";
+      value = "(~(" + regex_term->getValue() + "))";
     }
     regex_term->primitive->setData(value);
     regex_term->primitive->setType(Primitive::Type::REGEX);
@@ -2604,7 +2806,13 @@ void SyntacticOptimizer::visitToRegex(ToRegex_ptr to_regex_term) {
         delete to_regex_term;
       };
     }
-  }
+  } else if(QualIdentifier_ptr qualid = dynamic_cast<QualIdentifier_ptr>(to_regex_term->term)) {
+    callback_ = [to_regex_term] (Term_ptr & term) mutable {
+      term = to_regex_term->term;
+      to_regex_term->term = nullptr;
+      delete to_regex_term;
+    };
+  } 
   DVLOG(VLOG_LEVEL) << "post visit end: " << *to_regex_term << "@" << to_regex_term;
 }
 
@@ -2687,6 +2895,221 @@ void SyntacticOptimizer::append_constant(TermConstant_ptr left_constant, TermCon
   }
 }
 
+// TODO: Currently only supports arithmetic types; expand to string constraints
+bool SyntacticOptimizer::check_condition_against_term(SMT::Term_ptr cond, SMT::Term_ptr term) {
+  // simple equivalence check, works regardless of term types
+  // if they match, term is assumed to be true (MUST BE UNDER AND) so cond must also be true (for sat)
+  if(Ast2Dot::toString(cond) == Ast2Dot::toString(term)) {
+    return true;
+  }
+  QualIdentifier_ptr cond_qualid = nullptr;
+  TermConstant_ptr cond_termconstant = nullptr;
+  bool is_cond_equality = true;
+
+  Theory::ArithmeticFormula_ptr left_formula = new Theory::ArithmeticFormula();
+  Theory::ArithmeticFormula_ptr right_formula = new Theory::ArithmeticFormula();
+  
+
+  // only check condition satisfiability for eq,neq conditions
+  // a more aggressive analysis is required for terms beyond those
+  if(Eq_ptr eq_cond_term = dynamic_cast<Eq_ptr>(cond)) {
+    if(Term::Type::QUALIDENTIFIER == eq_cond_term->left_term->type() and Term::Type::TERMCONSTANT == eq_cond_term->right_term->type()) {
+      cond_qualid = dynamic_cast<QualIdentifier_ptr>(eq_cond_term->left_term);
+      cond_termconstant = dynamic_cast<TermConstant_ptr>(eq_cond_term->right_term);
+      is_cond_equality = true;
+      left_formula->SetType(Theory::ArithmeticFormula::Type::EQ);
+    } else if(Term::Type::QUALIDENTIFIER == eq_cond_term->right_term->type() and Term::Type::TERMCONSTANT == eq_cond_term->left_term->type()) {
+      cond_qualid = dynamic_cast<QualIdentifier_ptr>(eq_cond_term->right_term);
+      cond_termconstant = dynamic_cast<TermConstant_ptr>(eq_cond_term->left_term);
+      is_cond_equality = true;
+      left_formula->SetType(Theory::ArithmeticFormula::Type::EQ);
+    } else {
+      return false;
+    }
+  } else if(NotEq_ptr not_eq_cond_term = dynamic_cast<NotEq_ptr>(cond)) {
+    if(Term::Type::QUALIDENTIFIER == not_eq_cond_term->left_term->type() and Term::Type::TERMCONSTANT == not_eq_cond_term->right_term->type()) {
+      cond_qualid = dynamic_cast<QualIdentifier_ptr>(not_eq_cond_term->left_term);
+      cond_termconstant = dynamic_cast<TermConstant_ptr>(not_eq_cond_term->right_term);
+      is_cond_equality = false;
+      left_formula->SetType(Theory::ArithmeticFormula::Type::NOTEQ);
+    } else if(Term::Type::QUALIDENTIFIER == not_eq_cond_term->right_term->type() and Term::Type::TERMCONSTANT == not_eq_cond_term->left_term->type()) {
+      cond_qualid = dynamic_cast<QualIdentifier_ptr>(not_eq_cond_term->right_term);
+      cond_termconstant = dynamic_cast<TermConstant_ptr>(not_eq_cond_term->left_term);
+      is_cond_equality = false;
+      left_formula->SetType(Theory::ArithmeticFormula::Type::NOTEQ);
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+  QualIdentifier_ptr term_qualid = nullptr;
+  TermConstant_ptr term_termconstant = nullptr;
+  Term::Type term_type;
+
+  // extract variable and constant from term for further processing
+  switch(term->type()) {
+    case Term::Type::EQ: {
+      term_type = Term::Type::EQ;
+      right_formula->SetType(Theory::ArithmeticFormula::Type::EQ);
+      Eq_ptr eq_term = dynamic_cast<Eq_ptr>(term);
+      if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type() and Term::Type::TERMCONSTANT == eq_term->right_term->type()) {
+        term_qualid = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term);
+        term_termconstant = dynamic_cast<TermConstant_ptr>(eq_term->right_term);
+      } else if(Term::Type::QUALIDENTIFIER == eq_term->right_term->type() and Term::Type::TERMCONSTANT == eq_term->left_term->type()) {
+        term_qualid = dynamic_cast<QualIdentifier_ptr>(eq_term->right_term);
+        term_termconstant = dynamic_cast<TermConstant_ptr>(eq_term->left_term);
+      } 
+      break;
+    }
+    case Term::Type::NOTEQ: {
+      term_type = Term::Type::NOTEQ;
+      right_formula->SetType(Theory::ArithmeticFormula::Type::NOTEQ);
+      NotEq_ptr not_eq_term = dynamic_cast<NotEq_ptr>(term);
+      if(Term::Type::QUALIDENTIFIER == not_eq_term->left_term->type() and Term::Type::TERMCONSTANT == not_eq_term->right_term->type()) {
+        term_qualid = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term);
+        term_termconstant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term);
+      } else if(Term::Type::QUALIDENTIFIER == not_eq_term->right_term->type() and Term::Type::TERMCONSTANT == not_eq_term->left_term->type()) {
+        term_qualid = dynamic_cast<QualIdentifier_ptr>(not_eq_term->right_term);
+        term_termconstant = dynamic_cast<TermConstant_ptr>(not_eq_term->left_term);
+      } 
+      break;
+    }
+    case Term::Type::LT: {
+      term_type = Term::Type::LT;
+      right_formula->SetType(Theory::ArithmeticFormula::Type::LT);
+      Lt_ptr lt_term = dynamic_cast<Lt_ptr>(term);
+      if(Term::Type::QUALIDENTIFIER == lt_term->left_term->type() and Term::Type::TERMCONSTANT == lt_term->right_term->type()) {
+        term_qualid = dynamic_cast<QualIdentifier_ptr>(lt_term->left_term);
+        term_termconstant = dynamic_cast<TermConstant_ptr>(lt_term->right_term);
+      } else if(Term::Type::QUALIDENTIFIER == lt_term->right_term->type() and Term::Type::TERMCONSTANT == lt_term->left_term->type()) {
+        term_qualid = dynamic_cast<QualIdentifier_ptr>(lt_term->right_term);
+        term_termconstant = dynamic_cast<TermConstant_ptr>(lt_term->left_term);
+        term_type = Term::Type::GT; // for consistency, var on left, constant on right
+        right_formula->SetType(Theory::ArithmeticFormula::Type::GT);
+      }
+      break;
+    }
+    case Term::Type::LE: {
+      term_type = Term::Type::LE;
+      right_formula->SetType(Theory::ArithmeticFormula::Type::LE);
+      Le_ptr le_term = dynamic_cast<Le_ptr>(term);
+      if(Term::Type::QUALIDENTIFIER == le_term->left_term->type() and Term::Type::TERMCONSTANT == le_term->right_term->type()) {
+        term_qualid = dynamic_cast<QualIdentifier_ptr>(le_term->left_term);
+        term_termconstant = dynamic_cast<TermConstant_ptr>(le_term->right_term);
+      } else if(Term::Type::QUALIDENTIFIER == le_term->right_term->type() and Term::Type::TERMCONSTANT == le_term->left_term->type()) {
+        term_qualid = dynamic_cast<QualIdentifier_ptr>(le_term->right_term);
+        term_termconstant = dynamic_cast<TermConstant_ptr>(le_term->left_term);
+        term_type = Term::Type::GE; // for consistency, var on left, constant on right
+        right_formula->SetType(Theory::ArithmeticFormula::Type::GE);
+      }
+      break;
+    }
+    case Term::Type::GT: {
+      term_type = Term::Type::GT;
+      right_formula->SetType(Theory::ArithmeticFormula::Type::GT);
+      Gt_ptr gt_term = dynamic_cast<Gt_ptr>(term);
+      if(Term::Type::QUALIDENTIFIER == gt_term->left_term->type() and Term::Type::TERMCONSTANT == gt_term->right_term->type()) {
+        term_qualid = dynamic_cast<QualIdentifier_ptr>(gt_term->left_term);
+        term_termconstant = dynamic_cast<TermConstant_ptr>(gt_term->right_term);
+      } else if(Term::Type::QUALIDENTIFIER == gt_term->right_term->type() and Term::Type::TERMCONSTANT == gt_term->left_term->type()) {
+        term_qualid = dynamic_cast<QualIdentifier_ptr>(gt_term->right_term);
+        term_termconstant = dynamic_cast<TermConstant_ptr>(gt_term->left_term);
+        term_type = Term::Type::LT; // for consistency, var on left, constant on right
+        right_formula->SetType(Theory::ArithmeticFormula::Type::LT);
+      }
+      break;
+    }
+    case Term::Type::GE: {
+      term_type = Term::Type::GE;
+      right_formula->SetType(Theory::ArithmeticFormula::Type::GE);
+      Ge_ptr ge_term = dynamic_cast<Ge_ptr>(term);
+      if(Term::Type::QUALIDENTIFIER == ge_term->left_term->type() and Term::Type::TERMCONSTANT == ge_term->right_term->type()) {
+        term_qualid = dynamic_cast<QualIdentifier_ptr>(ge_term->left_term);
+        term_termconstant = dynamic_cast<TermConstant_ptr>(ge_term->right_term);
+      } else if(Term::Type::QUALIDENTIFIER == ge_term->right_term->type() and Term::Type::TERMCONSTANT == ge_term->left_term->type()) {
+        term_qualid = dynamic_cast<QualIdentifier_ptr>(ge_term->right_term);
+        term_termconstant = dynamic_cast<TermConstant_ptr>(ge_term->left_term);
+        term_type = Term::Type::LE; // for consistency, var on left, constant on right
+        right_formula->SetType(Theory::ArithmeticFormula::Type::LE);
+      }
+      break;
+    }
+    default: {
+      break;
+    }
+  }
+  // sanity check and variables must match
+  if(term_qualid == nullptr or term_termconstant == nullptr or term_qualid->getVarName() != cond_qualid->getVarName()) {
+    return false;
+  }
+  // now do actual analysis
+  int cond_constant = std::stoi(cond_termconstant->getValue());
+  int term_constant = std::stoi(term_termconstant->getValue());
+
+
+  left_formula->AddVariable(cond_qualid->getVarName(),1);
+  left_formula->SetConstant(-1 * cond_constant);
+  right_formula->AddVariable(cond_qualid->getVarName(),1);
+  right_formula->SetConstant(-1 * term_constant);
+
+  Theory::BinaryIntAutomaton_ptr left_auto = Theory::BinaryIntAutomaton::MakeAutomaton(left_formula, not Option::Solver::USE_SIGNED_INTEGERS);
+  Theory::BinaryIntAutomaton_ptr right_auto = Theory::BinaryIntAutomaton::MakeAutomaton(right_formula, not Option::Solver::USE_SIGNED_INTEGERS);
+
+  Theory::BinaryIntAutomaton_ptr result_auto = left_auto->Intersect(right_auto);
+  bool result = not result_auto->IsEmptyLanguage();
+
+  delete left_auto;
+  delete right_auto;
+  delete result_auto;
+
+  return result;
+
+  switch(term_type) {
+    case Term::Type::EQ: {
+LOG(INFO) << "EQ";      
+      break;
+    }
+    case Term::Type::NOTEQ: {
+LOG(INFO) << "NOTEQ";
+      break;
+    }
+    case Term::Type::LT: {
+LOG(INFO) << "LT";
+      if(is_cond_equality and cond_constant < term_constant) {
+        return true;
+      }
+      break;
+    }
+    case Term::Type::LE: {
+LOG(INFO) << "LE";
+      if(is_cond_equality and cond_constant <= term_constant) {
+        return true;
+      }
+      break;
+    }
+    case Term::Type::GT: {
+LOG(INFO) << "GT";
+      if(is_cond_equality and cond_constant > term_constant) {
+        return true;
+      }
+      break;
+    }
+    case Term::Type::GE: {
+LOG(INFO) << "GE";
+      if(is_cond_equality and cond_constant >= term_constant) {
+        return true;
+      }
+      break;
+    }
+    default: {
+      break;
+    }
+  }
+  LOG(INFO) << 6;
+  return false;
+}
+
 bool SyntacticOptimizer::check_and_process_constant_string(std::initializer_list<SMT::Term_ptr> terms) {
   Optimization::ConstantTermChecker constant_term_checker;
   for (auto term : terms) {
@@ -2703,10 +3126,15 @@ bool SyntacticOptimizer::check_and_process_len_transformation(Term_ptr operation
                                                               Term_ptr & right_term) {
   // It may be better to solve arithmetic constraints with LIA for precision
 //  if (Option::Solver::LIA_ENGINE_ENABLED) {
-//    return false;
+   
+  // if(Term::Type::EQ == operation->type()) {
+  //   return __check_and_process_len_transformation(operation->type(), left_term, right_term)
+  //       || __check_and_process_len_transformation(syntactic_reverse_relation(operation->type()), right_term, left_term);
+  //  } else {
+     return false;
+  //  }
 //  }
-  return __check_and_process_len_transformation(operation->type(), left_term, right_term)
-      || __check_and_process_len_transformation(syntactic_reverse_relation(operation->type()), right_term, left_term);
+
 }
 
 bool SyntacticOptimizer::__check_and_process_len_transformation(Term::Type operation, Term_ptr & left_term,
@@ -2753,8 +3181,10 @@ bool SyntacticOptimizer::__check_and_process_len_transformation(Term::Type opera
           default:
             return false;
         }
+
         regex_template.replace(regex_template.find("%s"), 2, l_value);  // replace l
         regex_template.replace(regex_template.find("%s"), 2, r_value);  // replace r
+
         term_constant->primitive->setData(regex_template);
         term_constant->primitive->setType(Primitive::Type::REGEX);
         left_term = len_ptr->term;

@@ -65,6 +65,9 @@ public:
   virtual void visitReplace(Replace_ptr) = 0;
   virtual void visitCount(Count_ptr) = 0;
   virtual void visitIte(Ite_ptr) = 0;
+  virtual void visitIsDigit(IsDigit_ptr) = 0;
+  virtual void visitToCode(ToCode_ptr) = 0;
+  virtual void visitFromCode(FromCode_ptr) = 0;
   virtual void visitReConcat(ReConcat_ptr) = 0;
   virtual void visitReUnion(ReUnion_ptr) = 0;
   virtual void visitReInter(ReInter_ptr) = 0;

@@ -85,6 +85,9 @@ class StringFormulaGenerator: public SMT::Visitor {
   void visitReplace(SMT::Replace_ptr) override;
   void visitCount(SMT::Count_ptr) override;
   void visitIte(SMT::Ite_ptr) override;
+  void visitIsDigit(SMT::IsDigit_ptr) override {};
+  void visitToCode(SMT::ToCode_ptr) override {};
+  void visitFromCode(SMT::FromCode_ptr) override {};
   void visitReConcat(SMT::ReConcat_ptr) override;
   void visitReUnion(SMT::ReUnion_ptr) override;
   void visitReInter(SMT::ReInter_ptr) override;
@@ -122,6 +125,8 @@ class StringFormulaGenerator: public SMT::Visitor {
   std::string get_term_group_name(SMT::Term_ptr term);
   std::string get_variable_group_name(SMT::Variable_ptr variable);
   std::set<std::string> get_group_subgroups(std::string group_name);
+
+  void project_variable_from_formulas(std::string var);
 
 protected:
   void add_string_variables(std::string group_name, SMT::Term_ptr term);

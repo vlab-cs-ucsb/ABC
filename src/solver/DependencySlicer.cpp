@@ -95,6 +95,13 @@ void DependencySlicer::visitAssert(Assert_ptr assert_command) {
   visit_children_of(assert_command);
 }
 
+/*
+ * TODO: Handle properly (for now we just skip it)
+ */
+void DependencySlicer::visitExists(Exists_ptr exists_term) {
+  visit(exists_term->term);
+}
+
 void DependencySlicer::visitAnd(And_ptr and_term) {
   for (auto& term : *(and_term->term_list)) {
 		current_term_ = term;
@@ -107,14 +114,14 @@ void DependencySlicer::visitAnd(And_ptr and_term) {
   if (Option::Solver::ENABLE_DEPENDENCY_ANALYSIS and symbol_table_->top_scope() == root_) {
     auto components = GetComponentsFor(and_term->term_list);
     if (components.size() > 1) {  // and term breaks into multiple components
-      DVLOG(VLOG_LEVEL) << "Dividing into components: " << *and_term << "@" << and_term;
-      and_term->term_list->clear();
-      constraint_information_->remove_component(and_term);
-      for (auto sub_term_list : components) {
-        And_ptr and_component = new And(sub_term_list);
-        constraint_information_->add_component(and_component);
-        and_term->term_list->push_back(and_component);
-      }
+      // DVLOG(VLOG_LEVEL) << "Dividing into components: " << *and_term << "@" << and_term;
+      // and_term->term_list->clear();
+      // constraint_information_->remove_component(and_term);
+      // for (auto sub_term_list : components) {
+      //   And_ptr and_component = new And(sub_term_list);
+      //   constraint_information_->add_component(and_component);
+      //   and_term->term_list->push_back(and_component);
+      // }
     } else if (components.size() == 1) {
       // deallocate term list to avoid memory leak
       components[0]->clear();
@@ -156,138 +163,140 @@ void DependencySlicer::visitOr(Or_ptr or_term) {
 }
 
 
-/*
+
 void DependencySlicer::visitEq(Eq_ptr eq_term) {
 	visit(eq_term->left_term);
 	visit(eq_term->right_term);
 
-	if (Concat_ptr left_id = dynamic_cast<Concat_ptr>(eq_term->left_term)) {
-		if (Option::Solver::USE_MULTITRACK_AUTO) {
-			QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(left_id->term_list->front());
-			QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->right_term);
+// 	if (Concat_ptr left_id = dynamic_cast<Concat_ptr>(eq_term->left_term)) {
+// 		if (Option::Solver::USE_MULTITRACK_AUTO) {
+// 			QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(left_id->term_list->front());
+// 			QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->right_term);
 
-			if(right_variable not_eq nullptr) {
-				constraint_information_->add_var_constraint(symbol_table_->get_variable(right_variable),eq_term);
-			}
+// 			if(right_variable not_eq nullptr) {
+// 				constraint_information_->add_var_constraint(symbol_table_->get_variable(right_variable),eq_term);
+// 			}
 
-			if(left_variable not_eq nullptr and right_variable not_eq nullptr && Term::Type::TERMCONSTANT == left_id->term_list->at(1)->type()) {
-				std::string left_name = left_variable->getVarName();
-				std::string right_name = right_variable->getVarName();
-				auto left_formula = constraint_information_->get_var_formula(left_name);
-				auto right_formula = constraint_information_->get_var_formula(right_name);
-				auto formula = left_formula->clone();
-				formula->MergeVariables(right_formula);
-				delete left_formula;
-				delete right_formula;
-				for(auto iter : formula->GetVariableCoefficientMap()) {
-					constraint_information_->set_var_formula(iter.first,formula);
-				}
-			}
-		}
-		return;
-	}
+// 			if(left_variable not_eq nullptr and right_variable not_eq nullptr && Term::Type::TERMCONSTANT == left_id->term_list->at(1)->type()) {
+// 				std::string left_name = left_variable->getVarName();
+// 				std::string right_name = right_variable->getVarName();
+// 				auto left_formula = constraint_information_->get_var_formula(left_name);
+// 				auto right_formula = constraint_information_->get_var_formula(right_name);
+// 				auto formula = left_formula->clone();
+// 				formula->MergeVariables(right_formula);
+// 				delete left_formula;
+// 				delete right_formula;
+// 				for(auto iter : formula->GetVariableCoefficientMap()) {
+// 					constraint_information_->set_var_formula(iter.first,formula);
+// 				}
+// 			}
+// 		}
+// 		return;
+// 	}
 
-	if (Concat_ptr right_id = dynamic_cast<Concat_ptr>(eq_term->right_term)) {
-		if (Option::Solver::USE_MULTITRACK_AUTO) {
-			QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term);
-			QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(right_id->term_list->front());
-			QualIdentifier_ptr r2_variable = dynamic_cast<QualIdentifier_ptr>((*right_id->term_list)[1]);
-			if(left_variable not_eq nullptr) {
-				constraint_information_->add_var_constraint(symbol_table_->get_variable(left_variable),eq_term);
-			}
+// 	if (Concat_ptr right_id = dynamic_cast<Concat_ptr>(eq_term->right_term)) {
+// 		if (Option::Solver::USE_MULTITRACK_AUTO) {
+// 			QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(eq_term->left_term);
+// 			QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(right_id->term_list->front());
+// 			QualIdentifier_ptr r2_variable = dynamic_cast<QualIdentifier_ptr>((*right_id->term_list)[1]);
+// 			if(left_variable not_eq nullptr) {
+// 				constraint_information_->add_var_constraint(symbol_table_->get_variable(left_variable),eq_term);
+// 			}
 
-			if(left_variable not_eq nullptr and right_variable not_eq nullptr && Term::Type::TERMCONSTANT == right_id->term_list->at(1)->type()) {
-				std::string left_name = left_variable->getVarName();
-				std::string right_name = right_variable->getVarName();
-				auto left_formula = constraint_information_->get_var_formula(left_name);
-				auto right_formula = constraint_information_->get_var_formula(right_name);
-				auto formula = left_formula->clone();
-				formula->MergeVariables(right_formula);
-				delete left_formula;
-				delete right_formula;
-				for(auto iter : formula->GetVariableCoefficientMap()) {
-					constraint_information_->set_var_formula(iter.first,formula);
-				}
-			}
-//			else if(left_variable not_eq nullptr and right_variable not_eq nullptr and r2_variable not_eq nullptr) {
-//				constraint_information_->add_var_constraint(symbol_table_->get_variable(r2_variable),eq_term);
-//			}
-		}
-		return;
-	}
+// 			if(left_variable not_eq nullptr and right_variable not_eq nullptr && Term::Type::TERMCONSTANT == right_id->term_list->at(1)->type()) {
+// 				std::string left_name = left_variable->getVarName();
+// 				std::string right_name = right_variable->getVarName();
+// 				auto left_formula = constraint_information_->get_var_formula(left_name);
+// 				auto right_formula = constraint_information_->get_var_formula(right_name);
+// 				auto formula = left_formula->clone();
+// 				formula->MergeVariables(right_formula);
+// 				delete left_formula;
+// 				delete right_formula;
+// 				for(auto iter : formula->GetVariableCoefficientMap()) {
+// 					constraint_information_->set_var_formula(iter.first,formula);
+// 				}
+// 			}
+// //			else if(left_variable not_eq nullptr and right_variable not_eq nullptr and r2_variable not_eq nullptr) {
+// //				constraint_information_->add_var_constraint(symbol_table_->get_variable(r2_variable),eq_term);
+// //			}
+// 		}
+// 		return;
+// 	}
 }
 
 void DependencySlicer::visitNotEq(NotEq_ptr not_eq_term) {
 	visit(not_eq_term->left_term);
 	visit(not_eq_term->right_term);
-	if (Concat_ptr left_id = dynamic_cast<Concat_ptr>(not_eq_term->left_term)) {
-		if (Option::Solver::USE_MULTITRACK_AUTO) {
-			QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(left_id->term_list->front());
-			QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(not_eq_term->right_term);
-			if(left_variable not_eq nullptr and right_variable not_eq nullptr && Term::Type::TERMCONSTANT == left_id->term_list->at(1)->type()) {
-				std::string left_name = left_variable->getVarName();
-				std::string right_name = right_variable->getVarName();
-				auto left_formula = constraint_information_->get_var_formula(left_name);
-				auto right_formula = constraint_information_->get_var_formula(right_name);
-				auto formula = left_formula->clone();
-				formula->MergeVariables(right_formula);
-				delete left_formula;
-				delete right_formula;
-				for(auto iter : formula->GetVariableCoefficientMap()) {
-					constraint_information_->set_var_formula(iter.first,formula);
-				}
-			}
-		}
-		return;
-	}
-	if (Concat_ptr right_id = dynamic_cast<Concat_ptr>(not_eq_term->right_term)) {
-		if (Option::Solver::USE_MULTITRACK_AUTO) {
-			QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term);
-			QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(right_id->term_list->front());
-			if(left_variable not_eq nullptr and right_variable not_eq nullptr && Term::Type::TERMCONSTANT == right_id->term_list->at(1)->type()) {
-				std::string left_name = left_variable->getVarName();
-				std::string right_name = right_variable->getVarName();
-				auto left_formula = constraint_information_->get_var_formula(left_name);
-				auto right_formula = constraint_information_->get_var_formula(right_name);
-				auto formula = left_formula->clone();
-				formula->MergeVariables(right_formula);
-				delete left_formula;
-				delete right_formula;
-				for(auto iter : formula->GetVariableCoefficientMap()) {
-					constraint_information_->set_var_formula(iter.first,formula);
-				}
-			}
-		}
-		return;
-	}
+	// if (Concat_ptr left_id = dynamic_cast<Concat_ptr>(not_eq_term->left_term)) {
+	// 	if (Option::Solver::USE_MULTITRACK_AUTO) {
+	// 		QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(left_id->term_list->front());
+	// 		QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(not_eq_term->right_term);
+	// 		if(left_variable not_eq nullptr and right_variable not_eq nullptr && Term::Type::TERMCONSTANT == left_id->term_list->at(1)->type()) {
+	// 			std::string left_name = left_variable->getVarName();
+	// 			std::string right_name = right_variable->getVarName();
+	// 			auto left_formula = constraint_information_->get_var_formula(left_name);
+	// 			auto right_formula = constraint_information_->get_var_formula(right_name);
+	// 			auto formula = left_formula->clone();
+	// 			formula->MergeVariables(right_formula);
+	// 			delete left_formula;
+	// 			delete right_formula;
+	// 			for(auto iter : formula->GetVariableCoefficientMap()) {
+	// 				constraint_information_->set_var_formula(iter.first,formula);
+	// 			}
+	// 		}
+	// 	}
+	// 	return;
+	// }
+	// if (Concat_ptr right_id = dynamic_cast<Concat_ptr>(not_eq_term->right_term)) {
+	// 	if (Option::Solver::USE_MULTITRACK_AUTO) {
+	// 		QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term);
+	// 		QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(right_id->term_list->front());
+	// 		if(left_variable not_eq nullptr and right_variable not_eq nullptr && Term::Type::TERMCONSTANT == right_id->term_list->at(1)->type()) {
+	// 			std::string left_name = left_variable->getVarName();
+	// 			std::string right_name = right_variable->getVarName();
+	// 			auto left_formula = constraint_information_->get_var_formula(left_name);
+	// 			auto right_formula = constraint_information_->get_var_formula(right_name);
+	// 			auto formula = left_formula->clone();
+	// 			formula->MergeVariables(right_formula);
+	// 			delete left_formula;
+	// 			delete right_formula;
+	// 			for(auto iter : formula->GetVariableCoefficientMap()) {
+	// 				constraint_information_->set_var_formula(iter.first,formula);
+	// 			}
+	// 		}
+	// 	}
+	// 	return;
+	// }
 
-	if(QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term)) {
-		if(QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(not_eq_term->right_term)) {
-			std::string left_name = left_variable->getVarName();
-			std::string right_name = right_variable->getVarName();
-			auto left_formula = constraint_information_->get_var_formula(left_name);
-			auto right_formula = constraint_information_->get_var_formula(right_name);
-			if(left_formula == nullptr or right_formula == nullptr) {
-				return;
-			}
-			auto formula = left_formula->clone();
-			formula->MergeVariables(right_formula);
-			delete left_formula;
-			delete right_formula;
-			for(auto iter : formula->GetVariableCoefficientMap()) {
-				constraint_information_->set_var_formula(iter.first,formula);
-			}
-		}
-		else if(TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term)) {
-			if(constraint_information_->strings.find(term_constant->getValue()) == constraint_information_->strings.end()) {
-				constraint_information_->strings[term_constant->getValue()] = 0;
-			}
-			constraint_information_->strings[term_constant->getValue()] = constraint_information_->strings[term_constant->getValue()] + 1;
-			constraint_information_->add_var_constraint(symbol_table_->get_variable(left_variable),not_eq_term);
-		}
+	// if(QualIdentifier_ptr left_variable = dynamic_cast<QualIdentifier_ptr>(not_eq_term->left_term)) {
+	// 	if(QualIdentifier_ptr right_variable = dynamic_cast<QualIdentifier_ptr>(not_eq_term->right_term)) {
+	// 		std::string left_name = left_variable->getVarName();
+	// 		std::string right_name = right_variable->getVarName();
+	// 		auto left_formula = constraint_information_->get_var_formula(left_name);
+	// 		auto right_formula = constraint_information_->get_var_formula(right_name);
+	// 		if(left_formula == nullptr or right_formula == nullptr) {
+	// 			return;
+	// 		}
+	// 		auto formula = left_formula->clone();
+	// 		formula->MergeVariables(right_formula);
+	// 		delete left_formula;
+	// 		delete right_formula;
+	// 		for(auto iter : formula->GetVariableCoefficientMap()) {
+	// 			constraint_information_->set_var_formula(iter.first,formula);
+	// 		}
+	// 	}
+	// 	else if(TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(not_eq_term->right_term)) {
+	// 		if(constraint_information_->strings.find(term_constant->getValue()) == constraint_information_->strings.end()) {
+	// 			constraint_information_->strings[term_constant->getValue()] = 0;
+	// 		}
+	// 		constraint_information_->strings[term_constant->getValue()] = constraint_information_->strings[term_constant->getValue()] + 1;
+	// 		constraint_information_->add_var_constraint(symbol_table_->get_variable(left_variable),not_eq_term);
+	// 	}
 
-	}
+	// }
 }
+
+
 
 void DependencySlicer::visitBegins(Begins_ptr begins_term) {
 	visit(begins_term->subject_term);
@@ -342,7 +351,7 @@ void DependencySlicer::visitIn(In_ptr in_term) {
 //	}
 }
 
-*/
+
 
 /**
  * TODO handle local scopes

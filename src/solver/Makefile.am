@@ -67,7 +67,15 @@ libabcsolver_la_SOURCES = \
   ConstraintSolver.cpp \
   ConstraintSolver.h \
   ModelCounter.cpp \
-  ModelCounter.h
+  ModelCounter.h \
+  RegexDivideConquer.cpp \
+  RegexDivideConquer.h \
+  RegexDivideConquerTransformer.cpp \
+  RegexDivideConquerTransformer.h \
+  NormalizationConstraintSorter.cpp \
+  NormalizationConstraintSorter.h \
+  NormalizationRenamer.cpp \
+  NormalizationRenamer.h
 
 libabcsolver_la_LIBADD = \
 	../parser/libabcparser.la \

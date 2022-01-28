@@ -164,6 +164,7 @@ AC_CONFIG_FILES([ \
     src/utils/Makefile \
     src/theory/Makefile \
     src/solver/Makefile \
+    src/interface/Makefile \
     test/Makefile \
     test/helper/Makefile])
 #AC_CONFIG_SUBDIRS([lib/googletest/googletest lib/googletest/googlemock])

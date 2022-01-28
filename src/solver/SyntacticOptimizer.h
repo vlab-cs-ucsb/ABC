@@ -29,6 +29,7 @@
 #include "optimization/ConstantTermChecker.h"
 #include "optimization/ConstantTermOptimization.h"
 #include "optimization/SubstringOptimization.h"
+#include "theory/BinaryIntAutomaton.h"
 #include "SymbolTable.h"
 
 
@@ -44,7 +45,7 @@ public:
   bool ss_flag = false;
   std::vector<SMT::Term_ptr> ss_terms;
 
-  SyntacticOptimizer(SMT::Script_ptr, SymbolTable_ptr);
+  SyntacticOptimizer(SMT::Script_ptr, SymbolTable_ptr, bool transform_ite = false);
   virtual ~SyntacticOptimizer();
 
   void start() override;
@@ -94,6 +95,9 @@ public:
   void visitReplace(SMT::Replace_ptr) override;
   void visitCount(SMT::Count_ptr) override;
   void visitIte(SMT::Ite_ptr) override;
+  void visitIsDigit(SMT::IsDigit_ptr) override {};
+  void visitToCode(SMT::ToCode_ptr) override {};
+  void visitFromCode(SMT::FromCode_ptr) override {};
   void visitReConcat(SMT::ReConcat_ptr) override;
   void visitReUnion(SMT::ReUnion_ptr) override;
   void visitReInter(SMT::ReInter_ptr) override;
@@ -122,6 +126,7 @@ public:
 protected:
   void visit_and_callback(SMT::Term_ptr&);
   void append_constant(SMT::TermConstant_ptr, SMT::TermConstant_ptr);
+  bool check_condition_against_term(SMT::Term_ptr, SMT::Term_ptr);
   bool check_and_process_constant_string(std::initializer_list<SMT::Term_ptr> terms);
   bool check_and_process_len_transformation(SMT::Term_ptr, SMT::Term_ptr&, SMT::Term_ptr&);
   bool __check_and_process_len_transformation(SMT::Term::Type, SMT::Term_ptr&, SMT::Term_ptr&);
@@ -155,6 +160,7 @@ protected:
   SymbolTable_ptr symbol_table_;
   std::function<void(SMT::Term_ptr&)> callback_;
   static unsigned name_counter;
+  bool transform_ite_;
 private:
   static const int VLOG_LEVEL;
 };

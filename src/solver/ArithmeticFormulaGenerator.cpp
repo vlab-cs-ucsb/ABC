@@ -139,11 +139,11 @@ void ArithmeticFormulaGenerator::visitOr(Or_ptr or_term) {
 
   // @deprecated check, all or terms must be a component
   // will be removed after careful testing
-  if (not constraint_information_->is_component(or_term)) {
-    current_group_ = "";
-    has_mixed_constraint_ = false;
-    return;
-  }
+  // if (not constraint_information_->is_component(or_term)) {
+  //   current_group_ = "";
+  //   has_mixed_constraint_ = false;
+  //   return;
+  // }
 
   /**
    * If an or term does not have a child that has arithmetic formula, but we end up being here:

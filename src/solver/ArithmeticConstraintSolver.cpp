@@ -146,10 +146,7 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
 			}
 			auto bin_auto = BinaryIntAutomaton::MakeAutomaton(constant,iter->first->getName(),group_formula->clone(),not use_unsigned_integers_);
 			auto bin_value = new Value(bin_auto);
-//			LOG(INFO) << "Before value: " << symbol_table_->get_value(variable_group)->is_satisfiable();
 			symbol_table_->IntersectValue(variable_group,bin_value);
-//			LOG(INFO) << "After value: " << symbol_table_->get_value(variable_group)->is_satisfiable();
-//			std::cin.get();
 			is_satisfiable = is_satisfiable and symbol_table_->get_value(variable_group)->is_satisfiable();
 			delete bin_value;
 			delete iter->second;iter->second = nullptr;
@@ -431,12 +428,19 @@ void ArithmeticConstraintSolver::postVisitOr(Or_ptr or_term) {
   DVLOG(VLOG_LEVEL) << "collect child results start: " << *or_term << "@" << or_term;
 
   bool is_satisfiable = false;
-  bool has_arithmetic_formula = false;
+  bool has_arithmetic_formula = true;
 
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(or_term);
   std::map<std::string,Value_ptr> or_values;
 
   for (auto term : *(or_term->term_list)) {
+    symbol_table_->push_scope(term);
+    auto term_val = get_term_value(term);
+    if(term_val != nullptr && !term_val->is_satisfiable()) {
+      symbol_table_->pop_scope();
+      continue;
+    }
+    
     auto formula = arithmetic_formula_generator_.get_term_formula(term);
     /**
      * In previous visit, automata for arithmetic constraints are created and
@@ -445,25 +449,7 @@ void ArithmeticConstraintSolver::postVisitOr(Or_ptr or_term) {
      * need to visit them, a value is already computed for them,
      * grabs them from symbol table
      */
-//    if (formula != nullptr) {
-//      has_arithmetic_formula = true;
-//      symbol_table_->push_scope(term);
-//      auto param = get_term_value(term);
-//      is_satisfiable = param->is_satisfiable();
-//      if (is_satisfiable) {
-//        if (or_value == nullptr) {
-//          or_value = param->clone();
-//        } else {
-//          auto old_value = or_value;
-//          or_value = or_value->Union(param);
-//          delete old_value;
-//          is_satisfiable = or_value->is_satisfiable();
-//        }
-//      }
-//      clear_term_value(term);
-//      symbol_table_->pop_scope();
 
-    symbol_table_->push_scope(term);
     for(auto group : arithmetic_formula_generator_.get_group_subgroups(group_name)) {
 			Variable_ptr subgroup_variable = symbol_table_->get_variable(group);
 			Value_ptr subgroup_scope_value = symbol_table_->get_value_at_scope(term,subgroup_variable);
@@ -476,9 +462,21 @@ void ArithmeticConstraintSolver::postVisitOr(Or_ptr or_term) {
 					or_values[group] = or_values[group]->union_(subgroup_scope_value);
 					delete old_value;
 				}
-				is_satisfiable = or_values[group]->is_satisfiable() or is_satisfiable;
+				
 				symbol_table_->clear_value(subgroup_variable,term);
-			}
+			} else {
+        ArithmeticFormula_ptr group_formula = arithmetic_formula_generator_.get_group_formula(group);
+        BinaryIntAutomaton_ptr any_int_auto = BinaryIntAutomaton::MakeAnyInt(group_formula->clone(),not Option::Solver::USE_SIGNED_INTEGERS);
+        Value_ptr any_int_val = new Value(any_int_auto);
+  		  if(or_values.find(group) == or_values.end()) {
+          or_values[group] = any_int_val;
+  		  } else {
+  		    // should union, but union with any string is any string.
+  		    delete or_values[group];
+  		    or_values[group] = any_int_val;
+  		  }
+      }
+      is_satisfiable = or_values[group]->is_satisfiable() or is_satisfiable;
 		}
     symbol_table_->pop_scope();
 	}
@@ -495,12 +493,6 @@ void ArithmeticConstraintSolver::postVisitOr(Or_ptr or_term) {
    * 2) We are visited or term second time for some mixed constraints, for this we do an unnecessary
    *  intersection below with any string, we can avoid that with more checks later!!!
    */
-//  if (or_value == nullptr and (not has_arithmetic_formula)) {
-//    auto group_formula = arithmetic_formula_generator_.get_group_formula(group_name);
-//    or_value = new Value(Theory::BinaryIntAutomaton::MakeAnyInt(group_formula->clone(), use_unsigned_integers_));
-//    has_arithmetic_formula = true;
-//    is_satisfiable = true;
-//  }
 
   if (has_arithmetic_formula) {
 //    if (is_satisfiable) {

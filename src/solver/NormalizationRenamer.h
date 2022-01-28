@@ -1,41 +1,40 @@
-/*
- * Ast2Dot.h
- *
- *  Created on: Nov 23, 2014
- *      Author: baki
- */
+//
+// Created by will on 10/18/18.
+//
 
-#ifndef SOLVER_AST2DOT_H_
-#define SOLVER_AST2DOT_H_
+#ifndef SOLVER_NORMALIZATIONRENAMER_H
+#define SOLVER_NORMALIZATIONRENAMER_H
 
-#include <cstdlib>
-#include <fstream>
-#include <iostream>
-#include <stack>
-#include <string>
+#include <iterator>
 #include <sstream>
-#include <sys/types.h>
+#include <string>
+#include <vector>
+#include <set>
+#include <map>
+
+#include <glog/logging.h>
 
 #include "../smt/ast.h"
-#include "../smt/typedefs.h"
 #include "../smt/Visitor.h"
+#include "../smt/typedefs.h"
+#include "Ast2Dot.h"
+#include "AstTraverser.h"
+#include "options/Solver.h"
+#include "SymbolTable.h"
 
 namespace Vlab {
 namespace Solver {
 
-class Ast2Dot: public SMT::Visitor {
+class NormalizationRenamer : public SMT::Visitor {
 public:
-  Ast2Dot(std::ostream* out = &std::cout);
-  ~Ast2Dot();
-
-  void add_edge(u_int64_t p, u_int64_t c);
-  void add_node(u_int64_t c, std::string label);
-  void draw(std::string label, SMT::Visitable_ptr p);
-  void draw_terminal(std::string label);
-
-  void start(SMT::Visitable_ptr);
+  NormalizationRenamer(SMT::Script_ptr, SymbolTable_ptr);
+  NormalizationRenamer(SMT::Script_ptr, SymbolTable_ptr, std::map<std::string,std::string> var_mapping,
+                                            std::map<char,char> char_mapping);
+  virtual ~NormalizationRenamer();
   void start() override;
+  void start(SMT::Term_ptr term, bool store_mapping = true);
   void end() override;
+
   void visitScript(SMT::Script_ptr) override;
   void visitCommand(SMT::Command_ptr) override;
   void visitAssert(SMT::Assert_ptr) override;
@@ -89,7 +88,7 @@ public:
   void visitReStar(SMT::ReStar_ptr) override;
   void visitRePlus(SMT::RePlus_ptr) override;
   void visitReOpt(SMT::ReOpt_ptr) override;
-  void visitReLoop(SMT::ReLoop_ptr) override;
+  void visitReLoop(SMT::ReLoop_ptr) override {};
   void visitReComp(SMT::ReComp_ptr) override {};
   void visitReDiff(SMT::ReDiff_ptr) override {};
   void visitToRegex(SMT::ToRegex_ptr) override;
@@ -109,19 +108,21 @@ public:
   void visitPrimitive(SMT::Primitive_ptr) override;
   void visitVariable(SMT::Variable_ptr) override;
 
-  static int inspectAST(SMT::Visitable_ptr node);
-  static std::string toString(SMT::Visitable_ptr node);
-  static bool isEquivalent(SMT::Visitable_ptr x, SMT::Visitable_ptr y);
+protected:
+  char AddToMap(SMT::Visitable_ptr, char);
+
+  SMT::Script_ptr root_;
+  SymbolTable_ptr symbol_table_;
+  std::set<char> special_chars_ = {'.','+','?','*','-','|','(',')','[',']','{','}','#'};
+
+  std::map<std::string,std::string> variable_mapping_;
+  std::map<char,char> alphabet_mapping_;
 
 private:
-  std::ostream* m_out; //file for writting output
-  u_int64_t count; //used to give each node a uniq id
-  std::stack<u_int64_t> s; //stack for tracking parent/child pairs
-  static int name_counter;
-
+  static const int VLOG_LEVEL;
 };
 
 } /* namespace Solver */
 } /* namespace Vlab */
 
-#endif /* SOLVER_AST2DOT_H_ */
+#endif //ABC_NormalizationRENAMER_H

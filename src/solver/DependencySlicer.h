@@ -36,13 +36,14 @@ class DependencySlicer : public AstTraverser {
   void setCallbacks();
 
   void visitAssert(SMT::Assert_ptr) override;
+  void visitExists(SMT::Exists_ptr) override;
   void visitAnd(SMT::And_ptr) override;
   void visitOr(SMT::Or_ptr) override;
-//  void visitEq(SMT::Eq_ptr) override;
-//  void visitNotEq(SMT::NotEq_ptr) override;
-//  void visitBegins(SMT::Begins_ptr) override;
-//  void visitNotBegins(SMT::NotBegins_ptr) override;
-//  void visitIn(SMT::In_ptr) override;
+ void visitEq(SMT::Eq_ptr) override;
+ void visitNotEq(SMT::NotEq_ptr) override;
+ void visitBegins(SMT::Begins_ptr) override;
+ void visitNotBegins(SMT::NotBegins_ptr) override;
+ void visitIn(SMT::In_ptr) override;
   void visitQualIdentifier(SMT::QualIdentifier_ptr) override;
 
 

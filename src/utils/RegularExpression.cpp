@@ -134,8 +134,13 @@ RegularExpression::~RegularExpression() {
   exp2_ = nullptr;
 }
 
+
+/*
+ * EMPTY means empty language. should not be treated as "constant"
+ */
 bool RegularExpression::is_constant_string() const {
-  return (type_ == Type::STRING or type_ == Type::CHAR or type_ == Type::EMPTY);
+  // return (type_ == Type::STRING or type_ == Type::CHAR or type_ == Type::EMPTY);
+  return (type_ == Type::STRING or type_ == Type::CHAR);
 }
 
 std::string RegularExpression::constant_str() const {
@@ -146,9 +151,9 @@ std::string RegularExpression::constant_str() const {
     }
       ;
       break;
-    case Type::EMPTY:
-      ss << "";
-      break;
+    // case Type::EMPTY:
+    //   ss << "";
+    //   break;
     case Type::STRING: {
       ss << string_;
     }
@@ -350,7 +355,7 @@ RegularExpression_ptr RegularExpression::makeUnion(RegularExpression_ptr exp1, R
 
 RegularExpression_ptr RegularExpression::makeConcatenation(RegularExpression_ptr exp1, RegularExpression_ptr exp2) {
   RegularExpression_ptr regex = nullptr;
-  if ((exp1->type_ == Type::EMPTY or exp1->type_ == Type::EMPTY)) {
+  if ((exp1->type_ == Type::EMPTY or exp2->type_ == Type::EMPTY)) {
     regex = RegularExpression::makeEmpty();
     delete exp1;
     delete exp2;
@@ -476,7 +481,10 @@ RegularExpression_ptr RegularExpression::makeRepeatStar(RegularExpression_ptr ex
 
 RegularExpression_ptr RegularExpression::makeRepeatPlus(RegularExpression_ptr exp) {
   RegularExpression_ptr regex = new RegularExpression();
-  if (exp->type_ == Type::STRING and exp->string_ == "") {
+  if(exp->type_ == Type::EMPTY) {
+    regex->type_ = Type::EMPTY;
+    delete exp;
+  } else if (exp->type_ == Type::STRING and exp->string_ == "") {
     regex->type_ = Type::STRING;
     regex->string_ = "";
     delete exp;
@@ -489,7 +497,7 @@ RegularExpression_ptr RegularExpression::makeRepeatPlus(RegularExpression_ptr ex
 
 RegularExpression_ptr RegularExpression::makeRepeat(RegularExpression_ptr exp, unsigned long min) {
   RegularExpression_ptr regex = new RegularExpression();
-  if (exp->type_ == Type::STRING and exp->string_ == "") {  // optimize
+  if (min < 0 || (exp->type_ == Type::STRING and exp->string_ == "")) {  // optimize
     regex->type_ = Type::STRING;
     regex->string_ = "";
     delete exp;
@@ -523,6 +531,8 @@ RegularExpression_ptr RegularExpression::makeRepeat(RegularExpression_ptr exp, u
     }
     regex->string_ = ss.str();
     delete exp;
+  } else if (min > max) { // empty language when min is greater than max
+    regex->type_ = Type::EMPTY;
   } else {
     regex->type_ = Type::REPEAT_MINMAX;
     regex->exp1_ = exp;
@@ -536,6 +546,9 @@ RegularExpression_ptr RegularExpression::makeComplement(RegularExpression_ptr ex
   RegularExpression_ptr regex = nullptr;
   if (Type::COMPLEMENT == exp->type_) {  // optimize complement
     regex = exp->exp1_->clone();
+    delete exp;
+  } else if (Type::EMPTY == exp->type_) { // complement of empty language is any string
+    regex = makeAnyString();
     delete exp;
   } else {
     regex = new RegularExpression();
@@ -557,6 +570,8 @@ RegularExpression_ptr RegularExpression::makeCharRange(char from, char to) {
   if (from == to) {  // optimize
     regex->type_ = Type::CHAR;
     regex->character_ = from;
+  } else if (from > to) { // is empty set per smtlib standard
+    regex->type_ = Type::EMPTY;
   } else {
     regex->type_ = Type::CHAR_RANGE;
     regex->from_char_ = from;
@@ -693,7 +708,7 @@ RegularExpression_ptr RegularExpression::parseComplExp() {
 RegularExpression_ptr RegularExpression::parseCharClassExp() {
   if (match('[')) {
     bool negate = false;
-    if (match('^')) {
+    if (match('^') and !peek("-")) {
       negate = true;
     }
 
@@ -735,17 +750,17 @@ RegularExpression_ptr RegularExpression::parseSimpleExp() {
     return makeEmpty();
   } else if (check(ANYSTRING) and match('@')) {
     return makeAnyString();
-  } else if (match('"')) {
-    int start = (int) pos_;
-    while (more() and !peek("\"")) {
-      next();
-    }
+  // } else if (match('"')) {
+  //   int start = (int) pos_;
+  //   while (more() and !peek("\"")) {
+  //     next();
+  //   }
 
-    if (!match('"')) {
-      LOG(FATAL)<< "expected '\"' at position: " << pos_;
-    }
+  //   if (!match('"')) {
+  //     LOG(FATAL)<< "expected '\"' at position: " << pos_;
+  //   }
 
-    return RegularExpression::makeString(input_regex_string_.substr(start, (pos_ - 1 - start)));
+  //   return RegularExpression::makeString(input_regex_string_.substr(start, (pos_ - 1 - start)));
   } else if (match('(')) {
     if (match(')')) {
       return RegularExpression::makeString("");

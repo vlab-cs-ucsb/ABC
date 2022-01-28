@@ -32,9 +32,13 @@ enum class Name: int {
   DISABLE_SORTING_HEURISTICS,
 	FORCE_DNF_FORMULA,
 	COUNT_BOUND_EXACT,
+  USE_SINGLE_AUTO,
+  USE_REGEX_SPLITTER,
+  USE_PREFIX_SHORTENER,
   REGEX_FLAG,
   OUTPUT_PATH,
-  SCRIPT_PATH
+  SCRIPT_PATH,
+  CONCAT_COLLAPSE_HEURISTIC
 };
 
 class Solver {
@@ -48,6 +52,10 @@ public:
   static bool ENABLE_SORTING_HEURISTICS;
   static bool FORCE_DNF_FORMULA;
   static bool COUNT_BOUND_EXACT;
+  static bool USE_SINGLE_AUTO;
+  static bool USE_REGEX_SPLITTER;
+  static bool USE_PREFIX_SHORTENER;
+  static bool CONCAT_COLLAPSE_HEURISTIC;
   static std::string OUTPUT_PATH;
   static std::string SCRIPT_PATH;
 };

@@ -1414,6 +1414,8 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
     case Value::Type::STRING_AUTOMATON:
     {
       auto string_auto = term_pre_value->getStringAutomaton();
+      // string_auto->inspectAuto(true,false);
+      // std::cin.get();
       auto formula = string_auto->GetFormula();
       if (formula == nullptr || string_auto->GetNumTracks() == 1) {
         formula = new Theory::StringFormula();
@@ -1462,7 +1464,38 @@ void VariableValueComputer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
       break;
   }
 
+  // if(qi_term->getVarName() == "m") {
+  //   LOG(INFO) << "HERE 1";
+  //   Variable_ptr variable = symbol_table->get_variable(qi_term->getVarName());
+  //   Value_ptr variable_value = symbol_table->get_value(variable);
+
+  //   term_pre_value->getStringAutomaton()->inspectAuto(true,false);
+  //   variable_value->getStringAutomaton()->GetAutomatonForVariable("m")->inspectAuto(true,true);
+  //   // variable_value->getStringAutomaton()->inspectAuto(false,false);
+  // }
+
   is_satisfiable_ = symbol_table->IntersectValue(qi_term->getVarName(), term_pre_value) and is_satisfiable_;
+
+  // if(qi_term->getVarName() == "m") {
+  //   LOG(INFO) << "HERE 2";
+  //   Variable_ptr variable = symbol_table->get_variable(qi_term->getVarName());
+  //   Value_ptr variable_value = symbol_table->get_value(variable);
+
+  //   auto v = variable_value->getStringAutomaton()->GetAutomatonForVariable("m");
+  //   v->inspectAuto(true,false);
+
+    
+
+  //   for(auto i = 0; i < v->getDFA()->ns; i++) {
+  //     if(v->IsAcceptingState(i)) {
+  //       LOG(INFO) << "state " << i << " is accepting";
+  //     } else {
+  //       LOG(INFO) << "state " << i << " is NOT accepting";
+  //     }
+  //   }
+
+  //   std::cin.get();
+  // }
 }
 
 void VariableValueComputer::visitTermConstant(TermConstant_ptr term_constant) {

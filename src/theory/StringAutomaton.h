@@ -38,6 +38,8 @@ using StringAutomaton_ptr = StringAutomaton*;
 class StringAutomaton: public Automaton {
 	using TransitionVector = std::vector<std::pair<std::string,std::string>>;
 	using TransitionTable = std::map<std::pair<int,StringFormula::Type>,TransitionVector>;
+  using RegexAutoCache = std::map<std::string,StringAutomaton_ptr>;
+
 public:
 	StringAutomaton(const DFA_ptr, const int number_of_bdd_variables);
 	StringAutomaton(const DFA_ptr, const int number_of_tracks, const int number_of_bdd_variables);
@@ -303,8 +305,8 @@ public:
 	static DFA_ptr MakeRelationalLenDfa(StringFormula_ptr formula, int bits_per_var, int num_tracks, int left_track, int right_track);
 	static StringAutomaton_ptr MakePrefixSuffix(int left_track, int prefix_track, int suffix_track, int num_tracks);
 	static StringAutomaton_ptr MakePrefixSuffix(DFA_ptr left_dfa, DFA_ptr prefix_dfa, DFA_ptr suffix_dfa, int var);
-  static StringAutomaton_ptr MakeConcatExtraTrack(int left_track, int right_track, int num_tracks, std::string str_constant);
-
+  static StringAutomaton_ptr MakeConcatExtraTrack(int left_track, int right_track, int num_tracks, std::string str_constant, bool is_regex = false);
+  
 
 	static bool IsExepEqualChar(std::vector<char> exep, std::vector<char> cvec, int var);
 	static bool IsExepIncludeChar(std::vector<char> exep, std::vector<char> cvec, int var);
@@ -318,6 +320,9 @@ public:
 
 	static DFA_ptr PreConcatPrefix(DFA_ptr concat_dfa, DFA_ptr suffix_dfa, int var);
 	static DFA_ptr PreConcatSuffix(DFA_ptr concat_dfa, DFA_ptr prefix_dfa, int var);
+  StringAutomaton_ptr ChangeIndicesMap(StringFormula_ptr new_formula, bool clone = true);
+
+  static void PrintRegexCacheStatistics();
 
 protected:
   bool HasExceptionToValidStateFrom(int state, std::vector<char>& exception);
@@ -335,9 +340,12 @@ protected:
   int num_tracks_;
   StringFormula_ptr formula_;
   static TransitionTable TRANSITION_TABLE;
+  static RegexAutoCache REGEX_AUTO_CACHE;
   static const int VAR_PER_TRACK = 9;
   static const int DEFAULT_NUM_OF_VARIABLES = 8;
   static bool debug;
+  static int num_hits;
+  static int num_misses;
 
 private:
   StringAutomaton();

@@ -1701,6 +1701,96 @@ void Ite::visit_children(Visitor_ptr v) {
   v->visit(else_branch);
 }
 
+IsDigit::IsDigit(Term_ptr term)
+    : Term(Term::Type::ISDIGIT),
+      term(term) {
+}
+
+IsDigit::IsDigit(const IsDigit& other)
+    : Term(other.type_) {
+  term = other.term->clone();
+}
+
+IsDigit_ptr IsDigit::clone() const {
+  return new IsDigit(*this);
+}
+
+IsDigit::~IsDigit() {
+  delete term;
+}
+
+std::string IsDigit::str() const {
+  return "str.is_digit";
+}
+
+void IsDigit::accept(Visitor_ptr v) {
+  v->visitIsDigit(this);
+}
+
+void IsDigit::visit_children(Visitor_ptr v) {
+  v->visit(term);
+}
+
+ToCode::ToCode(Term_ptr term)
+    : Term(Term::Type::TOCODE),
+      term(term) {
+}
+
+ToCode::ToCode(const ToCode& other)
+    : Term(other.type_) {
+  term = other.term->clone();
+}
+
+ToCode_ptr ToCode::clone() const {
+  return new ToCode(*this);
+}
+
+ToCode::~ToCode() {
+  delete term;
+}
+
+std::string ToCode::str() const {
+  return "str.to_code";
+}
+
+void ToCode::accept(Visitor_ptr v) {
+  v->visitToCode(this);
+}
+
+void ToCode::visit_children(Visitor_ptr v) {
+  v->visit(term);
+}
+
+FromCode::FromCode(Term_ptr term)
+    : Term(Term::Type::FROMCODE),
+      term(term) {
+}
+
+FromCode::FromCode(const FromCode& other)
+    : Term(other.type_) {
+  term = other.term->clone();
+}
+
+FromCode_ptr FromCode::clone() const {
+  return new FromCode(*this);
+}
+
+FromCode::~FromCode() {
+  delete term;
+}
+
+std::string FromCode::str() const {
+  return "str.from_code";
+}
+
+void FromCode::accept(Visitor_ptr v) {
+  v->visitFromCode(this);
+}
+
+void FromCode::visit_children(Visitor_ptr v) {
+  v->visit(term);
+}
+
 ReConcat::ReConcat(TermList_ptr term_list)
     : Term(Term::Type::RECONCAT),
       term_list(term_list) {
@@ -2624,7 +2714,7 @@ TermConstant_ptr ReRangeToRegex(Term_ptr left, Term_ptr right) {
     ss << "[" << left_constant->getValue() << "-" << right_constant->getValue() << "]";
     return new TermConstant(new Primitive(ss.str(), Primitive::Type::REGEX));
   }
-  LOG(FATAL) << "handle re.range operation";
+  LOG(FATAL) << "Invalid operands in range constraint; both must be of string type (e.g., (re.range \"a\" \"d\"))";
   return nullptr;
 }
 

@@ -292,6 +292,9 @@ void EquivClassRuleRunner::visitCount(Count_ptr count_term) {
 }
 
 void EquivClassRuleRunner::visitIte(Ite_ptr ite_term) {
+  check_and_substitute_var(ite_term->cond);
+  check_and_substitute_var(ite_term->then_branch);
+  check_and_substitute_var(ite_term->else_branch);
 }
 
 void EquivClassRuleRunner::visitReConcat(ReConcat_ptr re_concat_term) {
