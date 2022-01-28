@@ -21,7 +21,7 @@ ABC testing depends on [googletest and googlemock](https://github.com/google/goo
 
 ### Step-by-Step(Semi-automated) Setup
 #### System Dependencies
-  - C++ compiler with C++14 support. Latest ABC compilation is tested with g++ 5.4.0 on Ubuntu 16.04.
+  - C++ compiler with C++14 support. Latest ABC compilation is tested with g++ 9.3.0 on Ubuntu 20.04.
   - [Git](https://git-scm.com/)
 
   ```
@@ -38,25 +38,23 @@ ABC testing depends on [googletest and googlemock](https://github.com/google/goo
     $ sudo apt install flex bison
   ```
 
-  - Python (optional). A short installation script is written in pyhton.
+  - Python (optional). A short installation script is written in python.
     
   ```
     $ sudo apt install python
   ```
 
 #### Project Dependencies
-  - [Glog](https://github.com/google/glog) logging library for C++. It is an autotools project. 
+  - [Glog](https://github.com/google/glog) logging library for C++. While it supports a variety of build systems, ABC is tested with the CMake build version. 
   Please follow the instructions in their website if the below shortcut doesn't work for you.
 
   ```
   $ cd <your home directory or a preferred directory>
   $ git clone https://github.com/google/glog.git
   $ cd glog
-  $ libtoolize && aclocal && automake --gnu --add-missing && autoreconf -ivf
-  $ ./configure
-  $ make all
-  $ sudo make install
-  $ sudo ldconfig
+  $ cmake -S . -B build -G "Unix Makefiles"
+  $ cmake --build build
+  $ sudo cmake --build build --target install
   
   ```
   You should have glog libraries installed at */usr/local/lib* and headers installed at */usr/local/include/glog/* after running above commands. 
