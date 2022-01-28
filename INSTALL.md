@@ -30,7 +30,7 @@ ABC testing depends on [googletest and googlemock](https://github.com/google/goo
   - ABC is an autotools project, you need to setup autotools in your system. Please make sure you have installed all the tools below.
 
   ```
-    $ sudo apt install build-essential autoconf automake libtool intltool
+    $ sudo apt install build-essential autoconf automake libtool intltool cmake
   ```
   - Lex and Yacc. ABC is tested with [Flex 2.6.0](https://www.gnu.org/software/flex/flex.html) and [Bison 3.0.4](https://www.gnu.org/software/bison/).
 
