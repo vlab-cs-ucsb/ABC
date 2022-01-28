@@ -1,7 +1,7 @@
-Setup
-============
-ABC is a C++ executable and a C++ shared library with JNI interfaces. You can 
-use it as a static or dynamic lib or you can run it from command line.
+# Setup
+
+[ABC](https://vlab.cs.ucsb.edu/ABC/) is a C++ executable and a C++ shared library with JNI interfaces. You can 
+use it as a static or dynamic library or you can run it from the command line.
 
 ### Download
   
@@ -9,17 +9,19 @@ use it as a static or dynamic lib or you can run it from command line.
 $ cd <your home directory or a preferred directory>
 $ git clone --recursive git@github.com:vlab-cs-ucsb/ABC.git ABC # or use https://github.com/vlab-cs-ucsb/ABC.git
 ```
-ABC testing depends on [googletest and googlemock](https://github.com/google/googletest) as subprojects. It is important to clone with ``--recursive`` option.
+ABC testing depends on [`googletest` and `googlemock`](https://github.com/google/googletest) as subprojects. It is important to clone with ``--recursive`` option.
 
-### Easy(Automated) Setup
-  - [ABC](https://vlab.cs.ucsb.edu/ABC/). Clone ABC source and run build script. It automatically tries to install required system packages and dependent projects; [Glog](https://github.com/google/glog) and [Mona](http://www.brics.dk/mona/). After installing dependencies, it installs ABC. If script does not work please try step-by-step guide or contact us. (That script is tested with Linux machines. You can still use build script in other posix systems if you resolve system dependencies manually.)
+### Easy (Automated) Setup
+Clone the ABC repository and run the build script. It automatically tries to install required system packages and dependencies, namely [Glog](https://github.com/google/glog) and [Mona](http://www.brics.dk/mona/). After installing dependencies, it installs ABC. 
+
+*This script has been tested on Linux. You can still use it on other POSIX systems if you resolve system packages and dependencies manually. If the script does not work, please try the step-by-step setup below or contact us.*
   
-  ```
-  $ cd ABC/build
-  $ ./install-build-deps.py
-  ```
+```
+$ cd ABC/build
+$ ./install-build-deps.py
+```
 
-### Step-by-Step(Semi-automated) Setup
+### Step-by-Step (Semi-automated) Setup
 #### System Dependencies
   - C++ compiler with C++14 support. Latest ABC compilation is tested with g++ 9.3.0 on Ubuntu 20.04.
   - [Git](https://git-scm.com/)
@@ -45,8 +47,10 @@ ABC testing depends on [googletest and googlemock](https://github.com/google/goo
   ```
 
 #### Project Dependencies
-  - [Glog](https://github.com/google/glog) logging library for C++. While it supports a variety of build systems, ABC is tested with the CMake build version. 
-  Please follow the instructions in their website if the below shortcut doesn't work for you.
+  - [Glog](https://github.com/google/glog), a logging library for C++. 
+  
+  *While it supports a variety of build systems, ABC has only been built with `cmake` as shown below. 
+  If the commands below don't work for you, please follow the build instructions on [Glog's GitHub](https://github.com/google/glog).*
 
   ```
   $ cd <your home directory or a preferred directory>
@@ -57,9 +61,9 @@ ABC testing depends on [googletest and googlemock](https://github.com/google/goo
   $ sudo cmake --build build --target install
   
   ```
-  You should have glog libraries installed at */usr/local/lib* and headers installed at */usr/local/include/glog/* after running above commands. 
+  You should have Glog libraries installed at `/usr/local/lib` and headers installed at `/usr/local/include/glog/` after running the commands above. 
 
-  - [Mona](http://www.brics.dk/mona/) is used for symbolic representation of automata. Don't forget to apply patch as below: 
+  - [Mona](http://www.brics.dk/mona/) is used for symbolic representation of automata. Don't forget to apply patch as shown below: 
 
   ```sh
     $ cd <your home directory or a preferred directory>
@@ -73,29 +77,24 @@ ABC testing depends on [googletest and googlemock](https://github.com/google/goo
     $ sudo ldconfig
 
   ``` 
-  You should have mona libraries installed at */usr/local/lib* and headers installed at */usr/local/include/mona/* after running above commands. 
+  You should have Mona libraries installed at `/usr/local/lib` and headers installed at `/usr/local/include/mona/` after running the commands above. 
 
 
 #### ABC Installation
+*If you want to use ABC with Java programs, make sure the `JAVA_HOME` environment variable is set and has a valid Java installation path before running `./configure`.*
 
-  - [ABC](https://vlab.cs.ucsb.edu/ABC/).
+```
+  $ cd <your home directory or a preferred directory>
+  $ git clone --recursive git@github.com:vlab-cs-ucsb/ABC.git ABC // or use https://github.com/vlab-cs-ucsb/ABC.git
+  $ cd ABC
+  $ ./autogen.sh
+  $ ./configure
+  $ make all
+  $ sudo make install
+  $ sudo ldconfig
+```
 
-  ```
-    $ cd <your home directory or a preferred directory>
-    $ git clone --recursive git@github.com:vlab-cs-ucsb/ABC.git ABC // or use https://github.com/vlab-cs-ucsb/ABC.git
-    $ cd ABC
-    $ ./autogen.sh
-    $ ./configure
-    $ make all
-    $ sudo make install
-    $ sudo ldconfig
-  ```
-
-  If you want to use *ABC* with *JAVA* programs, make sure **JAVA_HOME** environment variable is set and has a valid Java installation path before running *./configure* command. 
-
-
-  At this point you should have all necessary libraries installed at *__/usr/local/lib__* directory. You should also have all necessary header files at  
-  *__/usr/local/include/glog__*,  
-  *__/usr/local/include/mona__*,  
-  *__/usr/local/include/abc__*  
-  directories.
+At this point you should have all necessary libraries installed at `/usr/local/lib` directory. You should also have all necessary header files at  
+- `/usr/local/include/glog`,  
+- `/usr/local/include/mona`,  
+- `/usr/local/include/abc`  
