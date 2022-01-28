@@ -50,6 +50,7 @@ if (CURRENT_OS == OSystem.linux):
       'automake',
       'libtool',
       'intltool',
+      'cmake',
       'flex',
       'bison'
     )
@@ -104,8 +105,7 @@ _project_dep = (
      'url'      : 'https://github.com/google/glog.git',
      'checkout' : False,     
      'path'     : os.path.abspath(os.path.join(TMP_PATH, 'glog')),
-     'autogen'  : True,
-     'autotools': True,
+     'cmake'    : True,
      'install'  : True
  },
  {
@@ -240,6 +240,16 @@ def autotools(cwd, install=True, prefix=None):
             runcmd(cmd, cwd)
     return
 
+def cmake(cwd, install=True):
+    cmd = "cmake -S . -B build -G \"Unix Makefiles\""
+    runcmd(cmd,cwd)
+    cmd = "cmake --build build"
+    runcmd(cmd,cwd)
+    if (install):
+        cmd = 'sudo cmake --build build --target install'
+        runcmd(cmd,cwd)
+    return
+
 def invoke(func, args):
     return func(*args)
     
@@ -281,6 +291,7 @@ def install_dep_projects(prjlist):
             if 'autogen'   in prj and prj['autogen']   : autogen(prj['path'])
             if 'prefix'    in prj and prj['prefix']    : prefix = prj['prefix']     
             if 'autotools' in prj and prj['autotools'] : autotools(prj['path'], prj['install'], prefix)
+            if 'cmake'     in prj and prj['cmake']     : cmake(prj['path'], prj['install'])
         
 def build_abc():
     global ABC_PATH
