@@ -2828,8 +2828,8 @@ void SyntacticOptimizer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
 
 void SyntacticOptimizer::visitTermConstant(TermConstant_ptr term_constant) {
   DVLOG(VLOG_LEVEL) << "post visit start: " << *term_constant << "@" << term_constant;
-  Optimization::ConstantTermChecker string_constant_checker;
-  string_constant_checker.start(term_constant);
+  // Optimization::ConstantTermChecker string_constant_checker;
+  // string_constant_checker.start(term_constant);
   DVLOG(VLOG_LEVEL) << "post visit end: " << *term_constant << "@" << term_constant;
 
 }
