@@ -128,33 +128,33 @@ void ArithmeticConstraintSolver::visitAnd(And_ptr and_term) {
   std::string group_name = arithmetic_formula_generator_.get_term_group_name(and_term);
   Value_ptr and_value = nullptr;
 
-  auto& variable_value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
-	for (auto iter = variable_value_map.begin(); iter != variable_value_map.end();) {
-		if(Value::Type::INT_CONSTANT == iter->second->getType() || Value::Type::BOOL_CONSTANT == iter->second->getType()) {
-			//has_arithmetic_formula = true;
-			auto variable_group = arithmetic_formula_generator_.get_variable_group_name(iter->first);
-			auto group_formula = arithmetic_formula_generator_.get_group_formula(variable_group);
-			if(group_formula == nullptr) {
-				iter++;
-				continue;
-			}
-			int constant = 0;
-			if(Value::Type::BOOL_CONSTANT == iter->second->getType()) {
-				constant = (iter->second->getBoolConstant()) ? 1 : 0;
-			} else {
-				constant = iter->second->getIntConstant();
-			}
-			auto bin_auto = BinaryIntAutomaton::MakeAutomaton(constant,iter->first->getName(),group_formula->clone(),not use_unsigned_integers_);
-			auto bin_value = new Value(bin_auto);
-			symbol_table_->IntersectValue(variable_group,bin_value);
-			is_satisfiable = is_satisfiable and symbol_table_->get_value(variable_group)->is_satisfiable();
-			delete bin_value;
-			delete iter->second;iter->second = nullptr;
-			iter = variable_value_map.erase(iter);
-		} else {
-			iter++;
-		}
-	}
+  // auto& variable_value_map = symbol_table_->get_values_at_scope(symbol_table_->top_scope());
+	// for (auto iter = variable_value_map.begin(); iter != variable_value_map.end();) {
+	// 	if(Value::Type::INT_CONSTANT == iter->second->getType() || Value::Type::BOOL_CONSTANT == iter->second->getType()) {
+	// 		//has_arithmetic_formula = true;
+	// 		auto variable_group = arithmetic_formula_generator_.get_variable_group_name(iter->first);
+	// 		auto group_formula = arithmetic_formula_generator_.get_group_formula(variable_group);
+	// 		if(group_formula == nullptr) {
+	// 			iter++;
+	// 			continue;
+	// 		}
+	// 		int constant = 0;
+	// 		if(Value::Type::BOOL_CONSTANT == iter->second->getType()) {
+	// 			constant = (iter->second->getBoolConstant()) ? 1 : 0;
+	// 		} else {
+	// 			constant = iter->second->getIntConstant();
+	// 		}
+	// 		auto bin_auto = BinaryIntAutomaton::MakeAutomaton(constant,iter->first->getName(),group_formula->clone(),not use_unsigned_integers_);
+	// 		auto bin_value = new Value(bin_auto);
+	// 		symbol_table_->IntersectValue(variable_group,bin_value);
+	// 		is_satisfiable = is_satisfiable and symbol_table_->get_value(variable_group)->is_satisfiable();
+	// 		delete bin_value;
+	// 		delete iter->second;iter->second = nullptr;
+	// 		iter = variable_value_map.erase(iter);
+	// 	} else {
+	// 		iter++;
+	// 	}
+	// }
 
 	for (auto term : *(and_term->term_list)) {
 		auto formula = arithmetic_formula_generator_.get_term_formula(term);

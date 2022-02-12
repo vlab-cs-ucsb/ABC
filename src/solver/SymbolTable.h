@@ -167,6 +167,10 @@ public:
   std::string get_regex_prefix_transformation(SMT::Visitable_ptr, SMT::Visitable_ptr);
   void add_regex_prefix_transformation(SMT::Visitable_ptr scope, SMT::Visitable_ptr term, std::string prefix);
 
+  bool has_variable_binding(std::string);
+  SMT::Term_ptr get_variable_binding(std::string);
+  void add_variable_binding(std::string, SMT::Term_ptr);
+
 private:
   std::string generate_internal_name(std::string, SMT::Variable::Type);
 
@@ -251,6 +255,8 @@ private:
   std::map<std::string,int> variable_usage_;
 
   std::map<std::string,bool> variable_concat_;
+
+  std::map<std::string,SMT::Term_ptr> var_binding_mapping_;
 
   static const int VLOG_LEVEL;
   //int reuse; 

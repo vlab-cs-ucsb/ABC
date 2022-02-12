@@ -853,7 +853,7 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
 	// add a variable entry to symbol table for each group
 	// define a variable mapping for a group
 	for (auto& el : group_formula_) {
-		//LOG(INFO) << "Formula : " << el.first;
+		// LOG(INFO) << "Formula : " << el.first;
 		symbol_table_->add_variable(new Variable(el.first, Variable::Type::NONE));
     auto init_auto = BinaryIntAutomaton::MakeAnyInt(el.second->clone(),not Option::Solver::USE_SIGNED_INTEGERS);
     auto init_val = new Value(init_auto);
@@ -862,11 +862,14 @@ void ArithmeticFormulaGenerator::set_group_mappings() {
     delete init_val;
     symbol_table_->pop_scope();
     for (const auto& var_entry : el.second->GetVariableCoefficientMap()) {
+
 			symbol_table_->add_variable_group_mapping(var_entry.first, el.first);
-			//LOG(INFO) << "-- " << var_entry.first;
+			int index = el.second->GetVariableIndex(var_entry.first);
+      // LOG(INFO) << "-- " << var_entry.first << " at " << index << " (" << el.second->GetVariableAtIndex(index) << ")";
 		}
 		//LOG(INFO) << "";
 	}
+  // std::cin.get();
   DVLOG(VLOG_LEVEL)<< "end setting int group for components";
 }
 

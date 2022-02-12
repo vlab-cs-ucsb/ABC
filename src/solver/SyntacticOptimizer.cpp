@@ -65,6 +65,46 @@ void SyntacticOptimizer::visitForAll(ForAll_ptr for_all_term) {
 }
 
 void SyntacticOptimizer::visitLet(Let_ptr let_term) {
+  // Variable_ptr variable = new Variable(primitive, sort->var_type->getType());
+  //   symbol_table_->add_variable(variable);
+  for(auto var_binding_term : *(let_term->var_binding_list)) {
+    // switch(var_binding_term->term->type()) {
+    //   case Term::Type::PLUS:
+    //   case Term::Type::MINUS:
+    //   case Term::Type::TIMES:
+    //   case Term::Type::DIV:
+    //   case Term::Type::UMINUS: {
+    //     Variable_ptr variable = new Variable(var_binding_term->symbol->clone(),SMT::TVariable::Type::INT);
+    //     symbol_table_->add_variable(variable);
+    //     break;
+    //   }
+    //   default: {
+    //     Variable_ptr variable = new Variable(var_binding_term->symbol->clone(),SMT::TVariable::Type::BOOL);
+    //     symbol_table_->add_variable(variable);
+    //     break;
+    //   }
+    // }
+    visit(var_binding_term);
+  }
+
+  visit_and_callback(let_term->term);
+
+  // callback_ = [let_term](Term_ptr & term) mutable {
+  //   TermList_ptr term_list = new TermList();
+  //   for(auto var_binding_term : *(let_term->var_binding_list)) {
+  //     term_list->push_back(new Eq(new QualIdentifier(new Identifier(var_binding_term->symbol->clone())),var_binding_term->term->clone()));
+  //   }
+  //   term_list->push_back(let_term->term);
+  //   let_term->term = nullptr;
+  //   term = new And(term_list);
+  //   delete let_term;
+  // };
+
+  callback_ = [let_term](Term_ptr & term) mutable {
+    term = let_term->term;
+    let_term->term = nullptr;
+    delete let_term;
+  };
 }
 
 void SyntacticOptimizer::visitAnd(And_ptr and_term) {
@@ -540,6 +580,8 @@ void SyntacticOptimizer::visitPlus(Plus_ptr plus_term) {
   int constant_value = 0;
   int pos = 0;
 
+  TermList_ptr div_terms = new TermList();
+
   for (auto iter = plus_term->term_list->begin(); iter != plus_term->term_list->end();) {
     if (Term::Type::PLUS == (*iter)->type()) {
       Plus_ptr sub_plus_term = dynamic_cast<Plus_ptr>(*iter);
@@ -548,6 +590,11 @@ void SyntacticOptimizer::visitPlus(Plus_ptr plus_term) {
       sub_plus_term->term_list->clear();
       delete sub_plus_term;
       iter = plus_term->term_list->begin() + pos;  // insertion invalidates iter, reset it
+      continue;
+    } else if (Term::Type::DIV == (*iter)->type()) {
+      div_terms->push_back(*iter);
+      plus_term->term_list->erase(iter);
+      iter = plus_term->term_list->begin() + pos;
       continue;
     } else if (Term::Type::TERMCONSTANT == (*iter)->type()) {
       TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter);
@@ -584,7 +631,56 @@ void SyntacticOptimizer::visitPlus(Plus_ptr plus_term) {
     plus_term->term_list->push_back(generate_term_constant(std::to_string(constant_value), Primitive::Type::NUMERAL));
   }  // else initial constant value is zero, do not need to add it
 
-  if (plus_term->term_list->size() == 1) {
+  if(div_terms->size() > 0) {
+    callback_ = [plus_term, div_terms] (Term_ptr & term) mutable {
+      TermList_ptr div_times_termlist = new TermList();
+      
+      std::map<Term_ptr, Times_ptr> mult_map;
+      for(auto it : *div_terms) {
+        Div_ptr div_term = dynamic_cast<Div_ptr>(it);
+        mult_map[it] = new Times(new TermList());
+        mult_map[it]->term_list->push_back(div_term->term_list->at(0)->clone());
+      }
+
+      for(auto it : *div_terms) {
+        Div_ptr div_term = dynamic_cast<Div_ptr>(it);
+        for(auto map_it : mult_map) {
+          if(Ast2Dot::toString(div_term) != Ast2Dot::toString(map_it.first)) {
+            map_it.second->term_list->push_back(div_term->term_list->at(1)->clone());
+          }
+        }
+      }
+      
+      for(auto &iter : *div_terms) {
+        Div_ptr div_term = dynamic_cast<Div_ptr>(iter);
+        div_times_termlist->push_back(div_term->term_list->at(1)->clone());  
+
+        for(auto iter = plus_term->term_list->begin(); iter != plus_term->term_list->end(); iter++) {
+          TermList_ptr times_termlist = new TermList();
+          times_termlist->push_back(*iter);
+          times_termlist->push_back(div_term->term_list->at(1)->clone());
+
+          Times_ptr times_term = new Times(times_termlist);
+          *iter = times_term;
+        }
+      }
+      
+      for(auto &map_it : mult_map) {
+        plus_term->term_list->push_back(map_it.second->clone());
+        delete map_it.second;
+        map_it.second = nullptr;
+      }
+
+
+      Times_ptr div_times_term = new Times(div_times_termlist);
+      TermList_ptr div_termlist = new TermList();
+      div_termlist->push_back(plus_term);
+      div_termlist->push_back(div_times_term);
+      Div_ptr div_term = new Div(div_termlist);
+
+      term = div_term;
+    };
+  } else if (plus_term->term_list->size() == 1) {
     callback_ = [plus_term] (Term_ptr & term) mutable {
       term = plus_term->term_list->front();
       plus_term->term_list->clear();
@@ -604,14 +700,21 @@ void SyntacticOptimizer::visitTimes(Times_ptr times_term) {
 
   int constant_value = 1;
   int pos = 0;
+
+  TermList_ptr div_terms = new TermList();
   for (auto iter = times_term->term_list->begin(); iter != times_term->term_list->end();) {
     if (Term::Type::TIMES == (*iter)->type()) {
-      Plus_ptr sub_plus_term = dynamic_cast<Plus_ptr>(*iter);
+      Times_ptr sub_times_term = dynamic_cast<Times_ptr>(*iter);
       times_term->term_list->erase(iter);
-      times_term->term_list->insert(iter, sub_plus_term->term_list->begin(), sub_plus_term->term_list->end());
-      sub_plus_term->term_list->clear();
-      delete sub_plus_term;
+      times_term->term_list->insert(iter, sub_times_term->term_list->begin(), sub_times_term->term_list->end());
+      sub_times_term->term_list->clear();
+      delete sub_times_term;
       iter = times_term->term_list->begin() + pos;  // insertion invalidates iter, reset it
+      continue;
+    } else if (Term::Type::DIV == (*iter)->type()) {
+      div_terms->push_back(*iter);
+      times_term->term_list->erase(iter);
+      iter = times_term->term_list->begin() + pos;
       continue;
     } else if (Term::Type::TERMCONSTANT == (*iter)->type()) {
       TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(*iter);
@@ -654,7 +757,27 @@ void SyntacticOptimizer::visitTimes(Times_ptr times_term) {
     times_term->term_list->push_back(generate_term_constant("0", Primitive::Type::NUMERAL));
   }  // else initial constant value is 1, do not need to add it
 
-  if (times_term->term_list->size() == 1) {
+  if(div_terms->size() > 0) {
+    callback_ = [times_term, div_terms] (Term_ptr & term) mutable {
+      TermList_ptr div_times_termlist = new TermList();
+      for(auto &iter : *div_terms) {
+        Div_ptr div_term = dynamic_cast<Div_ptr>(iter);
+        times_term->term_list->push_back(div_term->term_list->at(0)->clone());
+        div_times_termlist->push_back(div_term->term_list->at(1)->clone());  
+        delete iter;
+      }
+      div_terms->clear();
+      delete div_terms;
+
+      Times_ptr div_times_term = new Times(div_times_termlist);
+      TermList_ptr div_termlist = new TermList();
+      div_termlist->push_back(times_term);
+      div_termlist->push_back(div_times_term);
+      Div_ptr div_term = new Div(div_termlist);
+
+      term = div_term;
+    };
+  } else if (times_term->term_list->size() == 1) {
     callback_ = [times_term] (Term_ptr & term) mutable {
       term = times_term->term_list->front();
       times_term->term_list->clear();
@@ -665,6 +788,31 @@ void SyntacticOptimizer::visitTimes(Times_ptr times_term) {
 }
 
 void SyntacticOptimizer::visitDiv(Div_ptr div_term) {
+  for (auto& term_ptr : *(div_term->term_list)) {
+    visit_and_callback(term_ptr);
+  }
+
+  DVLOG(VLOG_LEVEL) << "post visit start: " << *div_term << "@" << div_term;
+  
+  if(div_term->term_list->size() != 2) {
+    LOG(FATAL) << "div term must have two args";
+  }
+
+  if(Term::Type::DIV == div_term->term_list->at(0)->type()) {
+    callback_ = [div_term](Term_ptr & term) mutable {
+      Div_ptr sub_div_term = dynamic_cast<Div_ptr>(div_term->term_list->at(0));
+      Times_ptr times_term = new Times(new TermList());
+      times_term->term_list->push_back(div_term->term_list->at(1));
+      times_term->term_list->push_back(sub_div_term->term_list->at(1));
+      
+      sub_div_term->term_list->at(1) = times_term;
+      div_term->term_list->clear();
+      delete div_term;
+      term = sub_div_term;
+    };
+  }
+  
+  DVLOG(VLOG_LEVEL) << "post visit end: " << *div_term << "@" << div_term;
 }
 
 void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
@@ -749,23 +897,158 @@ void SyntacticOptimizer::visitEq(Eq_ptr eq_term) {
   }
 
   // if EQ is of the form X = Y / C, where C is constant, transform to X * C = Y
-  if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type() && Term::Type::DIV == eq_term->right_term->type()) {
+  // if(Term::Type::QUALIDENTIFIER == eq_term->left_term->type() && Term::Type::DIV == eq_term->right_term->type()) {
+  //   Div_ptr div_term = dynamic_cast<Div_ptr>(eq_term->right_term);
+  //   if(div_term->term_list->size() == 2) {
+  //     if(Term::Type::QUALIDENTIFIER == div_term->term_list->at(0)->type() 
+  //           && Term::Type::TERMCONSTANT == div_term->term_list->at(1)->type()) {
+  //       callback_ = [eq_term](Term_ptr & term) mutable {
+  //         Div_ptr div_term = dynamic_cast<Div_ptr>(eq_term->right_term);
+  //         TermList_ptr times_list = new TermList();
+  //         times_list->push_back(div_term->term_list->at(1)->clone());
+  //         times_list->push_back(eq_term->left_term->clone());
+  //         Times_ptr times_term = new Times(times_list);
+  //         QualIdentifier_ptr right_var = dynamic_cast<QualIdentifier_ptr>(div_term->term_list->at(0)->clone());
+  //         delete eq_term;
+  //         term = new Eq(right_var,times_term);
+  //       };
+  //       return;
+  //     }
+  //   }
+  //   LOG(FATAL) << "Operation not supported";
+  // }
+
+  // Y / C1 = X / C2
+  if(eq_term->left_term->type() == Term::Type::DIV and eq_term->right_term->type() == Term::Type::DIV) {
+    LOG(FATAL) << "IMPLEMENT ME";
+    Div_ptr left_div_term = dynamic_cast<Div_ptr>(eq_term->left_term);
+    Div_ptr right_div_term = dynamic_cast<Div_ptr>(eq_term->left_term);
+    if(left_div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == left_div_term->term_list->at(1)->type()
+          and right_div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == right_div_term->term_list->at(1)->type()) {
+      callback_ = [eq_term](Term_ptr & term) mutable {
+        Div_ptr left_div_term = dynamic_cast<Div_ptr>(eq_term->left_term);
+        Div_ptr right_div_term = dynamic_cast<Div_ptr>(eq_term->right_term);
+
+        TermList_ptr left_times_list = new TermList();
+        left_times_list->push_back(right_div_term->term_list->at(1)->clone());
+        left_times_list->push_back(left_div_term->term_list->at(0)->clone());
+        
+        TermList_ptr right_times_list = new TermList();
+        right_times_list->push_back(left_div_term->term_list->at(1)->clone());
+        right_times_list->push_back(right_div_term->term_list->at(0)->clone());
+
+        term = new Eq(new Times(left_times_list), new Times(right_times_list));
+        delete eq_term;
+      };
+      return;
+    }
+    LOG(FATAL) << "Operation not supported";
+  } else if(eq_term->left_term->type() == Term::Type::DIV) {  //    y/z = x
+    Div_ptr div_term = dynamic_cast<Div_ptr>(eq_term->left_term);
+    if(div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == div_term->term_list->at(1)->type()) {
+      callback_ = [eq_term](Term_ptr & term) mutable {
+        Div_ptr div_term = dynamic_cast<Div_ptr>(eq_term->left_term);
+
+        TermList_ptr times_list = new TermList();
+        times_list->push_back(new UMinus(div_term->term_list->at(1)->clone()));
+        times_list->push_back(eq_term->right_term->clone());
+        Times_ptr times_term = new Times(times_list);
+
+        TermList_ptr plus_list = new TermList();
+        plus_list->push_back(div_term->term_list->at(0)->clone());
+        plus_list->push_back(times_term);
+        Plus_ptr plus_term = new Plus(plus_list);
+
+        TermConstant_ptr zero_constant = new TermConstant(new Primitive("0",SMT::Primitive::Type::NUMERAL));
+        UMinus_ptr neg_denominator_term = new UMinus(div_term->term_list->at(1)->clone());
+        
+        // split on whether numerator is positive or negative
+        Ge_ptr numerator_ge_zero_term = new Ge(div_term->term_list->at(0)->clone(),zero_constant->clone());
+        Ge_ptr remainder_ge_zero_term = new Ge(plus_term->clone(),zero_constant->clone());
+        Lt_ptr remainder_lt_denominator_term = new Lt(plus_term->clone(),div_term->term_list->at(1)->clone());
+
+        Lt_ptr numerator_lt_zero_term = new Lt(div_term->term_list->at(0)->clone(),zero_constant->clone());
+        Gt_ptr remainder_gt_neg_denominator_term = new Gt(plus_term->clone(),neg_denominator_term);
+        Le_ptr remainder_le_zero_term = new Le(plus_term,zero_constant);
+
+        // result is OR of the AND of each case
+        TermList_ptr pos_and_termlist = new TermList();
+        pos_and_termlist->push_back(numerator_ge_zero_term);
+        pos_and_termlist->push_back(remainder_ge_zero_term);
+        pos_and_termlist->push_back(remainder_lt_denominator_term);
+        And_ptr pos_and_term = new And(pos_and_termlist);
+
+        TermList_ptr neg_and_termlist = new TermList();
+        neg_and_termlist->push_back(numerator_lt_zero_term);
+        neg_and_termlist->push_back(remainder_gt_neg_denominator_term);
+        neg_and_termlist->push_back(remainder_le_zero_term);
+        And_ptr neg_and_term = new And(neg_and_termlist);
+
+        TermList_ptr or_termlist = new TermList();
+        or_termlist->push_back(pos_and_term);
+        or_termlist->push_back(neg_and_term);
+        Or_ptr or_term = new Or(or_termlist);
+
+        term = or_term;
+        delete eq_term;
+      };
+      return;
+    }
+    LOG(FATAL) << "Operation not supported";
+  } else if(eq_term->right_term->type() == Term::Type::DIV) { //   x = y/z
     Div_ptr div_term = dynamic_cast<Div_ptr>(eq_term->right_term);
-    if(div_term->term_list->size() == 2) {
-      if(Term::Type::QUALIDENTIFIER == div_term->term_list->at(0)->type() 
-            && Term::Type::TERMCONSTANT == div_term->term_list->at(1)->type()) {
-        callback_ = [eq_term](Term_ptr & term) mutable {
-          Div_ptr div_term = dynamic_cast<Div_ptr>(eq_term->right_term);
-          TermList_ptr times_list = new TermList();
-          times_list->push_back(div_term->term_list->at(1)->clone());
-          times_list->push_back(eq_term->left_term->clone());
-          Times_ptr times_term = new Times(times_list);
-          QualIdentifier_ptr right_var = dynamic_cast<QualIdentifier_ptr>(div_term->term_list->at(0)->clone());
-          delete eq_term;
-          term = new Eq(right_var,times_term);
-        };
-        return;
-      }
+    if(div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == div_term->term_list->at(1)->type()) {
+      // can't just multiply both sides by the constant, need boundary constraints
+      // for x = y/z, create two constraints:
+      // y - zx >= 0
+      // y - zx < z
+      callback_ = [eq_term](Term_ptr & term) mutable {
+        Div_ptr div_term = dynamic_cast<Div_ptr>(eq_term->right_term);
+
+        TermList_ptr times_list = new TermList();
+        times_list->push_back(new UMinus(div_term->term_list->at(1)->clone()));
+        times_list->push_back(eq_term->left_term->clone());
+        Times_ptr times_term = new Times(times_list);
+
+        TermList_ptr plus_list = new TermList();
+        plus_list->push_back(div_term->term_list->at(0)->clone());
+        plus_list->push_back(times_term);
+        Plus_ptr plus_term = new Plus(plus_list);
+        
+        TermConstant_ptr zero_constant = new TermConstant(new Primitive("0",SMT::Primitive::Type::NUMERAL));
+        UMinus_ptr neg_denominator_term = new UMinus(div_term->term_list->at(1)->clone());
+        
+        // split on whether numerator is positive or negative
+        Ge_ptr numerator_ge_zero_term = new Ge(div_term->term_list->at(0)->clone(),zero_constant->clone());
+        Ge_ptr remainder_ge_zero_term = new Ge(plus_term->clone(),zero_constant->clone());
+        Lt_ptr remainder_lt_denominator_term = new Lt(plus_term->clone(),div_term->term_list->at(1)->clone());
+
+        Lt_ptr numerator_lt_zero_term = new Lt(div_term->term_list->at(0)->clone(),zero_constant->clone());
+        Gt_ptr remainder_gt_neg_denominator_term = new Gt(plus_term->clone(),neg_denominator_term);
+        Le_ptr remainder_le_zero_term = new Le(plus_term,zero_constant);
+
+        // result is OR of the AND of each case
+        TermList_ptr pos_and_termlist = new TermList();
+        pos_and_termlist->push_back(numerator_ge_zero_term);
+        pos_and_termlist->push_back(remainder_ge_zero_term);
+        pos_and_termlist->push_back(remainder_lt_denominator_term);
+        And_ptr pos_and_term = new And(pos_and_termlist);
+
+        TermList_ptr neg_and_termlist = new TermList();
+        neg_and_termlist->push_back(numerator_lt_zero_term);
+        neg_and_termlist->push_back(remainder_gt_neg_denominator_term);
+        neg_and_termlist->push_back(remainder_le_zero_term);
+        And_ptr neg_and_term = new And(neg_and_termlist);
+
+        TermList_ptr or_termlist = new TermList();
+        or_termlist->push_back(pos_and_term);
+        or_termlist->push_back(neg_and_term);
+        Or_ptr or_term = new Or(or_termlist);
+
+        term = or_term;
+        delete eq_term;
+      };
+      return;
     }
     LOG(FATAL) << "Operation not supported";
   }
@@ -1185,6 +1468,64 @@ void SyntacticOptimizer::visitNotEq(NotEq_ptr not_eq_term) {
     };
   }
 
+  if(not_eq_term->left_term->type() == Term::Type::DIV and not_eq_term->right_term->type() == Term::Type::DIV) {
+    LOG(FATAL) << "IMPLEMENT ME";
+    Div_ptr left_div_term = dynamic_cast<Div_ptr>(not_eq_term->left_term);
+    Div_ptr right_div_term = dynamic_cast<Div_ptr>(not_eq_term->left_term);
+    if(left_div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == left_div_term->term_list->at(1)->type()
+          and right_div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == right_div_term->term_list->at(1)->type()) {
+      callback_ = [not_eq_term](Term_ptr & term) mutable {
+        Div_ptr left_div_term = dynamic_cast<Div_ptr>(not_eq_term->left_term);
+        Div_ptr right_div_term = dynamic_cast<Div_ptr>(not_eq_term->right_term);
+
+        TermList_ptr left_times_list = new TermList();
+        left_times_list->push_back(right_div_term->term_list->at(1)->clone());
+        left_times_list->push_back(left_div_term->term_list->at(0)->clone());
+        
+        TermList_ptr right_times_list = new TermList();
+        right_times_list->push_back(left_div_term->term_list->at(1)->clone());
+        right_times_list->push_back(right_div_term->term_list->at(0)->clone());
+
+        term = new NotEq(new Times(left_times_list), new Times(right_times_list));
+        delete not_eq_term;
+      };
+      return;
+    }
+    LOG(FATAL) << "Operation not supported";
+  } else if(not_eq_term->left_term->type() == Term::Type::DIV) {
+    LOG(FATAL) << "IMPLEMENT ME";
+    Div_ptr div_term = dynamic_cast<Div_ptr>(not_eq_term->left_term);
+    if(div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == div_term->term_list->at(1)->type()) {
+      callback_ = [not_eq_term](Term_ptr & term) mutable {
+        Div_ptr div_term = dynamic_cast<Div_ptr>(not_eq_term->left_term);
+        TermList_ptr times_list = new TermList();
+        times_list->push_back(div_term->term_list->at(1)->clone());
+        times_list->push_back(not_eq_term->right_term->clone());
+        Times_ptr times_term = new Times(times_list);
+        term = new NotEq(div_term->term_list->at(0)->clone(),times_term);
+        delete not_eq_term;
+      };
+      return;
+    }
+    LOG(FATAL) << "Operation not supported";
+  } else if(not_eq_term->right_term->type() == Term::Type::DIV) {
+    LOG(FATAL) << "IMPLEMENT ME";
+    Div_ptr div_term = dynamic_cast<Div_ptr>(not_eq_term->right_term);
+    if(div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == div_term->term_list->at(1)->type()) {
+      callback_ = [not_eq_term](Term_ptr & term) mutable {
+        Div_ptr div_term = dynamic_cast<Div_ptr>(not_eq_term->right_term);
+        TermList_ptr times_list = new TermList();
+        times_list->push_back(div_term->term_list->at(1)->clone());
+        times_list->push_back(not_eq_term->left_term->clone());
+        Times_ptr times_term = new Times(times_list);
+        term = new NotEq(times_term,div_term->term_list->at(0)->clone());
+        delete not_eq_term;
+      };
+      return;
+    }
+    LOG(FATAL) << "Operation not supported";
+  }
+
   // check for equality with concat where prefix var is same on both sides
   if(Term::Type::QUALIDENTIFIER == not_eq_term->left_term->type() && Term::Type::CONCAT == not_eq_term->right_term->type()) {
     Concat_ptr concat_term = dynamic_cast<Concat_ptr>(not_eq_term->right_term);
@@ -1349,6 +1690,78 @@ void SyntacticOptimizer::visitGt(Gt_ptr gt_term) {
     return;
   }
 
+  if(gt_term->left_term->type() == Term::Type::DIV and gt_term->right_term->type() == Term::Type::DIV) {
+    LOG(FATAL) << "IMPLEMENT ME";
+    Div_ptr left_div_term = dynamic_cast<Div_ptr>(gt_term->left_term);
+    Div_ptr right_div_term = dynamic_cast<Div_ptr>(gt_term->left_term);
+    if(left_div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == left_div_term->term_list->at(1)->type()
+          and right_div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == right_div_term->term_list->at(1)->type()) {
+      callback_ = [gt_term](Term_ptr & term) mutable {
+        Div_ptr left_div_term = dynamic_cast<Div_ptr>(gt_term->left_term);
+        Div_ptr right_div_term = dynamic_cast<Div_ptr>(gt_term->right_term);
+
+        TermList_ptr left_times_list = new TermList();
+        left_times_list->push_back(right_div_term->term_list->at(1)->clone());
+        left_times_list->push_back(left_div_term->term_list->at(0)->clone());
+        
+        TermList_ptr right_times_list = new TermList();
+        right_times_list->push_back(left_div_term->term_list->at(1)->clone());
+        right_times_list->push_back(right_div_term->term_list->at(0)->clone());
+
+        term = new Gt(new Times(left_times_list), new Times(right_times_list));
+        delete gt_term;
+      };
+      return;
+    }
+    LOG(FATAL) << "Operation not supported";
+  } else if(gt_term->left_term->type() == Term::Type::DIV) {
+    Div_ptr div_term = dynamic_cast<Div_ptr>(gt_term->left_term);
+    if(div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == div_term->term_list->at(1)->type()) {
+      callback_ = [gt_term](Term_ptr & term) mutable {
+        Div_ptr div_term = dynamic_cast<Div_ptr>(gt_term->left_term);
+        TermList_ptr times_list = new TermList();
+        times_list->push_back(div_term->term_list->at(1)->clone());
+        times_list->push_back(gt_term->right_term->clone());
+        Times_ptr times_term = new Times(times_list);
+        TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(div_term->term_list->at(1));
+        int num = std::stoi(term_constant->getValue());
+        // if negative, flip inequality
+        if(num < 0) {
+          LOG(FATAL) << "1";
+          term = new Lt(div_term->term_list->at(0)->clone(),times_term);
+        } else {
+          term = new Gt(div_term->term_list->at(0)->clone(),times_term);
+        }
+        delete gt_term;
+      };
+      return;
+    }
+    LOG(FATAL) << "Operation not supported";
+  } else if(gt_term->right_term->type() == Term::Type::DIV) {
+    Div_ptr div_term = dynamic_cast<Div_ptr>(gt_term->right_term);
+    if(div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == div_term->term_list->at(1)->type()) {
+      callback_ = [gt_term](Term_ptr & term) mutable {
+        Div_ptr div_term = dynamic_cast<Div_ptr>(gt_term->right_term);
+        TermList_ptr times_list = new TermList();
+        times_list->push_back(div_term->term_list->at(1)->clone());
+        times_list->push_back(gt_term->left_term->clone());
+        Times_ptr times_term = new Times(times_list);
+        TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(div_term->term_list->at(1));
+        int num = std::stoi(term_constant->getValue());
+        // if negative, flip inequality
+        if(num < 0) {
+          LOG(FATAL) << "2";
+          term = new Lt(times_term, div_term->term_list->at(0)->clone());
+        } else {
+          term = new Gt(times_term, div_term->term_list->at(0)->clone());
+        }
+        delete gt_term;
+      };
+      return;
+    }
+    LOG(FATAL) << "Operation not supported";
+  }
+
   if (Ast2Dot::isEquivalent(gt_term->left_term, gt_term->right_term)) {
     add_callback_to_replace_with_bool(gt_term, false);
   } else if (check_and_process_len_transformation(gt_term, gt_term->left_term, gt_term->right_term)) {
@@ -1414,7 +1827,6 @@ void SyntacticOptimizer::visitGt(Gt_ptr gt_term) {
 void SyntacticOptimizer::visitGe(Ge_ptr ge_term) {
   visit_and_callback(ge_term->left_term);
   visit_and_callback(ge_term->right_term);
-
   DVLOG(VLOG_LEVEL) << "post visit start: " << *ge_term << "@" << ge_term;
 
   Optimization::ConstantTermChecker constant_term_checker_left;
@@ -1427,6 +1839,78 @@ void SyntacticOptimizer::visitGe(Ge_ptr ge_term) {
     bool result = (constant_term_checker_left.get_constant_int() >= constant_term_checker_right.get_constant_int());
     add_callback_to_replace_with_bool(ge_term, result);
     return;
+  }
+
+  if(ge_term->left_term->type() == Term::Type::DIV and ge_term->right_term->type() == Term::Type::DIV) {
+    LOG(FATAL) << "IMPLEMENT ME";
+    Div_ptr left_div_term = dynamic_cast<Div_ptr>(ge_term->left_term);
+    Div_ptr right_div_term = dynamic_cast<Div_ptr>(ge_term->left_term);
+    if(left_div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == left_div_term->term_list->at(1)->type()
+          and right_div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == right_div_term->term_list->at(1)->type()) {
+      callback_ = [ge_term](Term_ptr & term) mutable {
+        Div_ptr left_div_term = dynamic_cast<Div_ptr>(ge_term->left_term);
+        Div_ptr right_div_term = dynamic_cast<Div_ptr>(ge_term->right_term);
+
+        TermList_ptr left_times_list = new TermList();
+        left_times_list->push_back(right_div_term->term_list->at(1)->clone());
+        left_times_list->push_back(left_div_term->term_list->at(0)->clone());
+        
+        TermList_ptr right_times_list = new TermList();
+        right_times_list->push_back(left_div_term->term_list->at(1)->clone());
+        right_times_list->push_back(right_div_term->term_list->at(0)->clone());
+
+        term = new Ge(new Times(left_times_list), new Times(right_times_list));
+        delete ge_term;
+      };
+      return;
+    }
+    LOG(FATAL) << "Operation not supported";
+  } else if(ge_term->left_term->type() == Term::Type::DIV) {
+    Div_ptr div_term = dynamic_cast<Div_ptr>(ge_term->left_term);
+    if(div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == div_term->term_list->at(1)->type()) {
+      callback_ = [ge_term](Term_ptr & term) mutable {
+        Div_ptr div_term = dynamic_cast<Div_ptr>(ge_term->left_term);
+        TermList_ptr times_list = new TermList();
+        times_list->push_back(div_term->term_list->at(1)->clone());
+        times_list->push_back(ge_term->right_term->clone());
+        Times_ptr times_term = new Times(times_list);
+        TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(div_term->term_list->at(1));
+        int num = std::stoi(term_constant->getValue());
+        // if negative, flip inequality
+        if(num < 0) {
+          LOG(FATAL) << "3";
+          term = new Le(div_term->term_list->at(0)->clone(),times_term);
+        } else {
+          term = new Ge(div_term->term_list->at(0)->clone(),times_term);
+        }
+        delete ge_term;
+      };
+      return;
+    }
+    LOG(FATAL) << "Operation not supported";
+  } else if(ge_term->right_term->type() == Term::Type::DIV) {
+    Div_ptr div_term = dynamic_cast<Div_ptr>(ge_term->right_term);
+    if(div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == div_term->term_list->at(1)->type()) {
+      callback_ = [ge_term](Term_ptr & term) mutable {
+        Div_ptr div_term = dynamic_cast<Div_ptr>(ge_term->right_term);
+        TermList_ptr times_list = new TermList();
+        times_list->push_back(div_term->term_list->at(1)->clone());
+        times_list->push_back(ge_term->left_term->clone());
+        Times_ptr times_term = new Times(times_list);
+        TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(div_term->term_list->at(1));
+        int num = std::stoi(term_constant->getValue());
+        // if negative, flip inequality
+        if(num < 0) {
+          LOG(FATAL) << "4";
+          term = new Le(times_term, div_term->term_list->at(0)->clone());
+        } else {
+          term = new Ge(times_term, div_term->term_list->at(0)->clone());
+        }
+        delete ge_term;
+      };
+      return;
+    }
+    LOG(FATAL) << "Operation not supported";
   }
 
   if (Ast2Dot::isEquivalent(ge_term->left_term, ge_term->right_term)) {
@@ -1505,6 +1989,78 @@ void SyntacticOptimizer::visitLt(Lt_ptr lt_term) {
     return;
   }
 
+  if(lt_term->left_term->type() == Term::Type::DIV and lt_term->right_term->type() == Term::Type::DIV) {
+    LOG(FATAL) << "IMPLEMENT ME";
+    Div_ptr left_div_term = dynamic_cast<Div_ptr>(lt_term->left_term);
+    Div_ptr right_div_term = dynamic_cast<Div_ptr>(lt_term->left_term);
+    if(left_div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == left_div_term->term_list->at(1)->type()
+          and right_div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == right_div_term->term_list->at(1)->type()) {
+      callback_ = [lt_term](Term_ptr & term) mutable {
+        Div_ptr left_div_term = dynamic_cast<Div_ptr>(lt_term->left_term);
+        Div_ptr right_div_term = dynamic_cast<Div_ptr>(lt_term->right_term);
+
+        TermList_ptr left_times_list = new TermList();
+        left_times_list->push_back(right_div_term->term_list->at(1)->clone());
+        left_times_list->push_back(left_div_term->term_list->at(0)->clone());
+        
+        TermList_ptr right_times_list = new TermList();
+        right_times_list->push_back(left_div_term->term_list->at(1)->clone());
+        right_times_list->push_back(right_div_term->term_list->at(0)->clone());
+
+        term = new Lt(new Times(left_times_list), new Times(right_times_list));
+        delete lt_term;
+      };
+      return;
+    }
+    LOG(FATAL) << "Operation not supported";
+  } else if(lt_term->left_term->type() == Term::Type::DIV) {
+    Div_ptr div_term = dynamic_cast<Div_ptr>(lt_term->left_term);
+    if(div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == div_term->term_list->at(1)->type()) {
+      callback_ = [lt_term](Term_ptr & term) mutable {
+        Div_ptr div_term = dynamic_cast<Div_ptr>(lt_term->left_term);
+        TermList_ptr times_list = new TermList();
+        times_list->push_back(div_term->term_list->at(1)->clone());
+        times_list->push_back(lt_term->right_term->clone());
+        Times_ptr times_term = new Times(times_list);
+        TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(div_term->term_list->at(1));
+        int num = std::stoi(term_constant->getValue());
+        // if negative, flip inequality
+        if(num < 0) {
+          LOG(FATAL) << "5";
+          term = new Gt(div_term->term_list->at(0)->clone(),times_term);
+        } else {
+          term = new Lt(div_term->term_list->at(0)->clone(),times_term);
+        }
+        delete lt_term;
+      };
+      return;
+    }
+    LOG(FATAL) << "Operation not supported";
+  } else if(lt_term->right_term->type() == Term::Type::DIV) {
+    Div_ptr div_term = dynamic_cast<Div_ptr>(lt_term->right_term);
+    if(div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == div_term->term_list->at(1)->type()) {
+      callback_ = [lt_term](Term_ptr & term) mutable {
+        Div_ptr div_term = dynamic_cast<Div_ptr>(lt_term->right_term);
+        TermList_ptr times_list = new TermList();
+        times_list->push_back(div_term->term_list->at(1)->clone());
+        times_list->push_back(lt_term->left_term->clone());
+        Times_ptr times_term = new Times(times_list);
+        TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(div_term->term_list->at(1));
+        int num = std::stoi(term_constant->getValue());
+        // if negative, flip inequality
+        if(num < 0) {
+          LOG(FATAL) << "6";
+          term = new Gt(times_term, div_term->term_list->at(0)->clone());
+        } else {
+          term = new Lt(times_term, div_term->term_list->at(0)->clone());
+        }
+        delete lt_term;
+      };
+      return;
+    }
+    LOG(FATAL) << "Operation not supported";
+  }
+
   if (Ast2Dot::isEquivalent(lt_term->left_term, lt_term->right_term)) {
     add_callback_to_replace_with_bool(lt_term, false);
   } else if (check_and_process_len_transformation(lt_term, lt_term->left_term, lt_term->right_term)) {
@@ -1540,6 +2096,7 @@ void SyntacticOptimizer::visitLe(Le_ptr le_term) {
   visit_and_callback(le_term->left_term);
   visit_and_callback(le_term->right_term);
 
+
   DVLOG(VLOG_LEVEL) << "post visit start: " << *le_term << "@" << le_term;
 
   Optimization::ConstantTermChecker constant_term_checker_left;
@@ -1552,6 +2109,78 @@ void SyntacticOptimizer::visitLe(Le_ptr le_term) {
     bool result = (constant_term_checker_left.get_constant_int() <= constant_term_checker_right.get_constant_int());
     add_callback_to_replace_with_bool(le_term, result);
     return;
+  }
+  
+  if(le_term->left_term->type() == Term::Type::DIV and le_term->right_term->type() == Term::Type::DIV) {
+    LOG(FATAL) << "IMPLEMENT ME";
+    Div_ptr left_div_term = dynamic_cast<Div_ptr>(le_term->left_term);
+    Div_ptr right_div_term = dynamic_cast<Div_ptr>(le_term->left_term);
+    if(left_div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == left_div_term->term_list->at(1)->type()
+          and right_div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == right_div_term->term_list->at(1)->type()) {
+      callback_ = [le_term](Term_ptr & term) mutable {
+        Div_ptr left_div_term = dynamic_cast<Div_ptr>(le_term->left_term);
+        Div_ptr right_div_term = dynamic_cast<Div_ptr>(le_term->right_term);
+
+        TermList_ptr left_times_list = new TermList();
+        left_times_list->push_back(right_div_term->term_list->at(1)->clone());
+        left_times_list->push_back(left_div_term->term_list->at(0)->clone());
+        
+        TermList_ptr right_times_list = new TermList();
+        right_times_list->push_back(left_div_term->term_list->at(1)->clone());
+        right_times_list->push_back(right_div_term->term_list->at(0)->clone());
+
+        term = new Le(new Times(left_times_list), new Times(right_times_list));
+        delete le_term;
+      };
+      return;
+    }
+    LOG(FATAL) << "Operation not supported";
+  } else if(le_term->left_term->type() == Term::Type::DIV) {
+    Div_ptr div_term = dynamic_cast<Div_ptr>(le_term->left_term);
+    if(div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == div_term->term_list->at(1)->type()) {
+      callback_ = [le_term](Term_ptr & term) mutable {
+        Div_ptr div_term = dynamic_cast<Div_ptr>(le_term->left_term);
+        TermList_ptr times_list = new TermList();
+        times_list->push_back(div_term->term_list->at(1)->clone());
+        times_list->push_back(le_term->right_term->clone());
+        Times_ptr times_term = new Times(times_list);
+        TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(div_term->term_list->at(1));
+        int num = std::stoi(term_constant->getValue());
+        // if negative, flip inequality
+        if(num < 0) {
+          LOG(FATAL) << "7";
+          term = new Ge(div_term->term_list->at(0)->clone(),times_term);
+        } else {
+          term = new Le(div_term->term_list->at(0)->clone(),times_term);
+        }
+        delete le_term;
+      };
+      return;
+    }
+    LOG(FATAL) << "Operation not supported";
+  } else if(le_term->right_term->type() == Term::Type::DIV) {
+    Div_ptr div_term = dynamic_cast<Div_ptr>(le_term->right_term);
+    if(div_term->term_list->size() == 2 && Term::Type::TERMCONSTANT == div_term->term_list->at(1)->type()) {
+      callback_ = [le_term](Term_ptr & term) mutable {
+        Div_ptr div_term = dynamic_cast<Div_ptr>(le_term->right_term);
+        TermList_ptr times_list = new TermList();
+        times_list->push_back(div_term->term_list->at(1)->clone());
+        times_list->push_back(le_term->left_term->clone());
+        Times_ptr times_term = new Times(times_list);
+        TermConstant_ptr term_constant = dynamic_cast<TermConstant_ptr>(div_term->term_list->at(1));
+        int num = std::stoi(term_constant->getValue());
+        // if negative, flip inequality
+        if(num < 0) {
+          LOG(FATAL) << "8";
+          term = new Ge(times_term, div_term->term_list->at(0)->clone());
+        } else {
+          term = new Le(times_term, div_term->term_list->at(0)->clone());
+        }
+        delete le_term;
+      };
+      return;
+    }
+    LOG(FATAL) << "Operation not supported";
   }
 
   if (Ast2Dot::isEquivalent(le_term->left_term, le_term->right_term)) {
@@ -2824,6 +3453,13 @@ void SyntacticOptimizer::visitAsQualIdentifier(AsQualIdentifier_ptr as_qid_term)
 }
 
 void SyntacticOptimizer::visitQualIdentifier(QualIdentifier_ptr qi_term) {
+  if(symbol_table_->has_variable_binding(qi_term->identifier->symbol->getData())) {
+    auto replacement_term = symbol_table_->get_variable_binding(qi_term->identifier->symbol->getData());
+    callback_ = [qi_term, replacement_term] (Term_ptr & term) {
+      delete qi_term;
+      term = replacement_term;
+    };
+  }
 }
 
 void SyntacticOptimizer::visitTermConstant(TermConstant_ptr term_constant) {
@@ -2831,7 +3467,6 @@ void SyntacticOptimizer::visitTermConstant(TermConstant_ptr term_constant) {
   // Optimization::ConstantTermChecker string_constant_checker;
   // string_constant_checker.start(term_constant);
   DVLOG(VLOG_LEVEL) << "post visit end: " << *term_constant << "@" << term_constant;
-
 }
 
 void SyntacticOptimizer::visitIdentifier(Identifier_ptr identifier) {
@@ -2865,6 +3500,11 @@ void SyntacticOptimizer::visitSortedVar(SortedVar_ptr sorted_var) {
 }
 
 void SyntacticOptimizer::visitVarBinding(VarBinding_ptr var_binding) {
+  if(symbol_table_->has_variable_binding(var_binding->symbol->getData())) {
+    LOG(FATAL) << "Duplicate binding found...";
+  }
+
+  symbol_table_->add_variable_binding(var_binding->symbol->getData(),var_binding->term);
 }
 
 void SyntacticOptimizer::visit_and_callback(Term_ptr & term) {

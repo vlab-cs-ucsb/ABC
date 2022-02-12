@@ -861,6 +861,25 @@ void SymbolTable::add_regex_prefix_transformation(Visitable_ptr scope, Visitable
   regex_prefix_reverse_mapping_[term] = prefix;
 }
 
+bool SymbolTable::has_variable_binding(std::string symbol) {
+  if(var_binding_mapping_.find(symbol) == var_binding_mapping_.end()) {
+    return false;
+  }
+  return true;
+}
+
+SMT::Term_ptr SymbolTable::get_variable_binding(std::string symbol) {
+  if(not has_variable_binding(symbol)) {
+    LOG(FATAL) << "No variable binding found for symbol: " << symbol;
+  }
+
+  return var_binding_mapping_[symbol]->clone();
+}
+
+void SymbolTable::add_variable_binding(std::string symbol, SMT::Term_ptr term) {
+  var_binding_mapping_[symbol] = term->clone();
+}
+
 std::string SymbolTable::generate_internal_name(std::string name, Variable::Type type) {
   std::stringstream ss;
   ss << "__vlab__";
