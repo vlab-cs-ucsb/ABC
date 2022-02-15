@@ -226,6 +226,15 @@ int main(const int argc, const char **argv) {
         LOG(INFO) << "report (TUPLE) bound: " << b << " count: " << count << " time: "
                   << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
       }
+
+      for (auto b : int_bounds) {
+        start = std::chrono::steady_clock::now();
+        auto count = driver.CountInts(b);
+        end = std::chrono::steady_clock::now();
+        auto count_time = end - start;
+        LOG(INFO) << "report (TUPLE) bound: " << b << " count: " << count << " time: "
+                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+      }
     }
 
     for(auto count_var : count_variables) {
