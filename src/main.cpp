@@ -69,6 +69,8 @@ int main(const int argc, const char **argv) {
   unsigned long num_models = 0;
 
   bool count_tuple = false;
+  bool count_tuple_variables = false;
+  std::vector<std::string> count_tuple_variable_names;
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == std::string("-i") or argv[i] == std::string("--input-file")) {
       file_name = argv[i + 1];
@@ -111,6 +113,10 @@ int main(const int argc, const char **argv) {
       driver.set_option(Vlab::Option::Name::USE_PREFIX_SHORTENER);      
     } else if (argv[i] == std::string("--count-tuple")) {
       count_tuple = true;
+    } else if (argv[i] == std::string("--count-tuple-variables")) {
+      count_tuple_variables = true;
+      std::string count_vars {argv[i+1]};
+      count_tuple_variable_names = parse_count_vars(count_vars);
     } else if (argv[i] == std::string("--concat-collapse")) {
       driver.set_option(Vlab::Option::Name::CONCAT_COLLAPSE_HEURISTIC);
     } else if (argv[i] == std::string("-bs") or argv[i] == std::string("--bound-str")) {
@@ -236,6 +242,28 @@ int main(const int argc, const char **argv) {
                   << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
       }
     }
+
+    if (count_tuple_variables) {
+      for (auto b : str_bounds) {
+        start = std::chrono::steady_clock::now();
+        auto count = driver.CountStrs(b,count_tuple_variable_names);
+        end = std::chrono::steady_clock::now();
+        auto count_time = end - start;
+        LOG(INFO) << "report (TUPLE) bound: " << b << " count: " << count << " time: "
+                  << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+      }
+
+      // for (auto b : int_bounds) {
+      //   start = std::chrono::steady_clock::now();
+      //   auto count = driver.CountInts(b,count_tuple_variable_names);
+      //   end = std::chrono::steady_clock::now();
+      //   auto count_time = end - start;
+      //   LOG(INFO) << "report (TUPLE) bound: " << b << " count: " << count << " time: "
+      //             << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
+      // }
+      return 0;
+    }
+    
 
     for(auto count_var : count_variables) {
       count_variable = count_var;

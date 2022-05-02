@@ -83,7 +83,9 @@ public:
 
   Theory::BigInteger CountVariable(const std::string var_name, const unsigned long bound);
   Theory::BigInteger CountInts(const unsigned long bound);
+  Theory::BigInteger CountInts(const unsigned long bound, std::vector<std::string> count_tuple_variables);
   Theory::BigInteger CountStrs(const unsigned long bound);
+  Theory::BigInteger CountStrs(const unsigned long bound, std::vector<std::string> count_tuple_variables);
   Theory::BigInteger Count(const unsigned long int_bound, const unsigned long str_bound);
 
   Solver::ModelCounter& GetModelCounterForVariable(const std::string var_name, bool project = true);

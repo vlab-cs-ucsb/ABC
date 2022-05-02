@@ -149,8 +149,54 @@ Theory::BigInteger Driver::CountInts(const unsigned long bound) {
   return GetModelCounter().CountInts(bound);
 }
 
+Theory::BigInteger Driver::CountInts(const unsigned long bound, std::vector<std::string> count_tuple_variables) {
+  LOG(FATAL) << "Not yet implemented";
+  return GetModelCounter().CountInts(bound);
+}
+
 Theory::BigInteger Driver::CountStrs(const unsigned long bound) {
   return GetModelCounter().CountStrs(bound);
+}
+
+Theory::BigInteger Driver::CountStrs(const unsigned long bound, std::vector<std::string> count_tuple_variables) {
+  Theory::BigInteger projected_count, tuple_count;
+
+  if(count_tuple_variables.size() == 0) {
+    return CountStrs(bound);
+  } else if(count_tuple_variables.size() == 1) {
+    return CountVariable(count_tuple_variables[0],bound);
+  }
+
+  std::string v1 = count_tuple_variables[0];
+  std::string v2 = count_tuple_variables[1];
+  
+
+  auto variable = symbol_table_->get_variable(v1);
+  auto representative_variable = symbol_table_->get_representative_variable_of_at_scope(script_, variable);
+  Solver::Value_ptr var_value = symbol_table_->get_value_at_scope(script_,representative_variable);
+
+  auto str_auto = var_value->getStringAutomaton()->clone();
+  auto f = str_auto->GetFormula();
+
+  Theory::StringAutomaton_ptr temp_auto = nullptr;
+  for(auto it : f->GetVariableCoefficientMap()) {
+    if(it.first != v1 and it.first != v2) {
+      temp_auto = str_auto->ProjectAwayVariable(it.first);
+      delete str_auto;
+      str_auto = temp_auto;
+    }
+  }
+
+  // for(auto it : str_auto->GetFormula()->GetVariableCoefficientMap()) {
+  //   LOG(INFO) << it.first;
+  // }
+
+  // std::cin.get();
+
+  Solver::ModelCounter mc;
+  mc.add_symbolic_counter(str_auto->GetSymbolicCounter());
+  return mc.Count(bound,bound);
+
 }
 
 Theory::BigInteger Driver::Count(const unsigned long int_bound, const unsigned long str_bound) {
