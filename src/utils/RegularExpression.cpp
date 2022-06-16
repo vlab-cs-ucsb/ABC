@@ -337,6 +337,14 @@ RegularExpression_ptr RegularExpression::makeUnion(RegularExpression_ptr exp1, R
     regex->string_ = left;
     delete exp1;
     delete exp2;
+  } else if (exp1->type_ == Type::ANYSTRING) {  // optimize
+    regex = exp1->clone();
+    delete exp1;
+    delete exp2;
+  } else if (exp2->type_ == Type::ANYSTRING) {  // optimize
+    regex = exp2->clone();
+    delete exp1;
+    delete exp2;
   } else if (exp1->type_ == Type::EMPTY) {  // optimize
     regex = exp2->clone();
     delete exp1;
@@ -387,6 +395,10 @@ RegularExpression_ptr RegularExpression::makeConcatenation(RegularExpression_ptr
     regex->type_ = Type::CONCATENATION;
     regex->exp1_ = RegularExpression::concat_constants(exp1, exp2->exp1_);
     regex->exp2_ = exp2->exp2_->clone();
+    delete exp1;
+    delete exp2;
+  } else if(exp1->type() == Type::ANYSTRING and exp2->type() == Type::ANYSTRING) {
+    regex = makeAnyString();
     delete exp1;
     delete exp2;
   } else {
@@ -467,6 +479,9 @@ RegularExpression_ptr RegularExpression::makeRepeatStar(RegularExpression_ptr ex
   if (exp->type_ == Type::EMPTY) {  // optimize
     regex->type_ = Type::STRING;
     regex->string_ = "";
+    delete exp;
+  } else if (exp->type_ == Type::ANYSTRING) { // kleene star is idempotent (x** = x*)
+    regex->type_ = Type::ANYSTRING;
     delete exp;
   } else if (exp->type_ == Type::STRING and exp->string_ == "") {  // optimize
     regex->type_ = Type::STRING;

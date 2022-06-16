@@ -517,6 +517,16 @@ void Driver::reset() {
 //  LOG(INFO) << "Driver reseted.";
 }
 
+std::string Driver::GetRE(std::string re_var) {
+  auto var = symbol_table_->get_variable(re_var);
+  auto var_val = symbol_table_->get_value_at_scope(script_,var);
+  auto var_val_auto = var_val->getStringAutomaton();
+  Util::RegularExpression_ptr regex = var_val_auto->DFAToRE();
+
+  // SIMPLIFY HERE
+  return regex->str();
+}
+
 void Driver::set_option(const Option::Name option) {
   switch (option) {
     case Option::Name::USE_SIGNED_INTEGERS:
@@ -575,6 +585,9 @@ void Driver::set_option(const Option::Name option) {
     	break;
     case Option::Name::CONCAT_COLLAPSE_HEURISTIC:
       Option::Solver::CONCAT_COLLAPSE_HEURISTIC = true;
+      break;
+    case Option::Name::DFA_TO_RE:
+      Option::Solver::DFA_TO_RE = true;
       break;
     default:
       LOG(ERROR)<< "option is not recognized: " << static_cast<int>(option);

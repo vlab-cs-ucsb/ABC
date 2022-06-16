@@ -103,6 +103,7 @@ public:
 
   void reset();
 //	void solveAst();
+  std::string GetRE(std::string re_var);
 
   void set_option(const Option::Name option);
   void set_option(const Option::Name option, const int value);

@@ -36,6 +36,7 @@
 
 #include "../utils/Cmd.h"
 #include "../utils/Math.h"
+#include "../utils/RegularExpression.h"
 #include "../boost/multiprecision/cpp_int.hpp"
 #include "../Eigen/SparseCore"
 #include "Graph.h"
@@ -232,6 +233,8 @@ public:
   DFA_ptr importDFA(std::string file_name);
   int inspectAuto(bool print_sink = false, bool force_mona_format = false);
   int inspectBDD();
+
+  Util::RegularExpression_ptr DFAToRE();
 
   friend std::ostream& operator<<(std::ostream& os, const Automaton& automaton);
 
@@ -447,7 +450,6 @@ protected:
 	 * @return
 	 */
   static DFA_ptr DFAConcat(const DFA_ptr dfa1, const DFA_ptr dfa2, const int number_of_bdd_variables);
-
 
   bool isAcceptingSingleWord();
   // TODO update it to work for non-accepting inputs

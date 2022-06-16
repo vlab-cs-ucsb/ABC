@@ -67,6 +67,7 @@ int main(const int argc, const char **argv) {
   std::vector<std::string> count_variables;
   std::string count_variable = "";
   unsigned long num_models = 0;
+  std::string re_var = "";
 
   bool count_tuple = false;
   bool count_tuple_variables = false;
@@ -119,6 +120,10 @@ int main(const int argc, const char **argv) {
       count_tuple_variable_names = parse_count_vars(count_vars);
     } else if (argv[i] == std::string("--concat-collapse")) {
       driver.set_option(Vlab::Option::Name::CONCAT_COLLAPSE_HEURISTIC);
+    } else if (argv[i] == std::string("--dfa-to-re")) {
+      std::string var {argv[i+1]};
+      re_var = var;
+      driver.set_option(Vlab::Option::Name::DFA_TO_RE);
     } else if (argv[i] == std::string("-bs") or argv[i] == std::string("--bound-str")) {
       std::string bounds_str {argv[i + 1]};
       str_bounds = parse_count_bounds(bounds_str);
@@ -317,6 +322,13 @@ int main(const int argc, const char **argv) {
 
       }
     }
+
+    // regex from dfa stuff
+    if(Vlab::Option::Solver::DFA_TO_RE) {
+      std::string re_from_dfa = driver.GetRE(re_var);
+      LOG(INFO) << re_from_dfa;
+    }
+
   } else {
     LOG(INFO) << "report is_sat: unsat time: " << std::chrono::duration <long double, std::milli> (solving_time).count() << " ms";
     LOG(INFO) << "report count: 0 time: 0";

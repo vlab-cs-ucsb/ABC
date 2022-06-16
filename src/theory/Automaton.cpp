@@ -2782,6 +2782,250 @@ int Automaton::inspectBDD() {
   return std::system(dot_cmd.c_str());
 }
 
+Util::RegularExpression_ptr Automaton::DFAToRE() {
+  DFA_ptr dfa = this->dfa_;
+  int num_states = dfa->ns + 2; //new final state and initial state
+  int final_state = num_states-1;
+  int sink_state = find_sink(dfa);
+
+  // LOG(INFO) << sink_state;
+
+  Util::RegularExpression_ptr ** transition_table = new Util::RegularExpression_ptr*[num_states];
+  for(int i = 0; i < num_states; i++) {
+    transition_table[i] = new Util::RegularExpression_ptr[num_states];
+  }
+
+  // initialze array of regexes
+  
+  for(int i = 0; i < num_states; i++) {
+    for(int j = 0; j < num_states; j++) {
+      transition_table[i][j] = Util::RegularExpression::makeEmpty();
+    }
+  }
+
+  // eps to original start state
+  transition_table[0][1] = Util::RegularExpression::makeString(""); 
+  // add eps from old final states to new final state
+  for(int i = 0; i < dfa->ns; i++) {
+    if(dfa->f[i] == 1) {
+      transition_table[i+1][final_state] = Util::RegularExpression::makeString(""); // +1 for new initial state
+    }
+  }
+
+  for(int i = 0; i < dfa->ns; i++) {
+    if(i == sink_state) {
+      continue; // dont care about sink state
+    }
+
+    for(int j = 0; j < dfa->ns; j++) {
+      // dont care about sink state
+      if(j == sink_state) {
+        continue;
+      }
+      
+      // convert transition set into regex union
+      std::set<std::string> transitions = DFAGetTransitionsFromTo(dfa, i, j, this->num_of_bdd_variables_);
+      for(auto it : transitions) {
+        // LOG(INFO) << "transition = " << it;
+        // each transition can have X's for dont cares. we need to expand it to get all possible transitions
+        // if transition is all X, then we can just make a kleene star of anychar, instead of unioning all 256
+        // ascii chars
+        if(it.compare(0,8,"XXXXXXXX") == 0) {
+          // LOG(INFO) << "SAME";
+          auto tmp_regex = Util::RegularExpression::makeAnyString();
+          delete transition_table[i+1][j+1];
+          transition_table[i+1][j+1] = tmp_regex;
+        } else {
+          // LOG(INFO) << "NOT SAME";
+          auto it_vec = std::vector<char>(it.begin(),it.end());
+          it_vec.pop_back();
+          // for(auto ii : it_vec) {
+          //   LOG(INFO) << ii;
+          // }
+          
+          std::vector<char> decoded_transitions = decodeException(it_vec);
+          
+          for(auto decoded_it : decoded_transitions) {
+            //unsigned char ch = strtobin(&it[0],8);
+            std::string str;
+            //str += static_cast<char>(ch);
+            // LOG(INFO) << int(decoded_it);
+            str += static_cast<char>(decoded_it);
+            
+            // LOG(INFO) << str << " , " << decoded_it;
+
+            auto it_regex = Util::RegularExpression::makeString(str);
+            // LOG(INFO) << "it_regex = " << it_regex->str();
+            auto tmp_regex = Util::RegularExpression::makeUnion(transition_table[i+1][j+1]->clone(),it_regex->clone());
+            // LOG(INFO) << "tmp_regex = " << tmp_regex->str();
+            delete it_regex;
+            delete transition_table[i+1][j+1];
+            transition_table[i+1][j+1] = tmp_regex;
+          }
+        }
+      }
+    }
+  }
+
+// std::cin.get();
+
+  // for(int i = 0; i < num_states; i++) {
+  //   for(int j = 0; j < num_states; j++) {
+  //     std::string regex_str = transition_table[i][j]->str();
+  //     std::cout << i << "->" << j << " : " << regex_str << std::endl;
+  //   }
+  // }
+
+  std::vector<int> states_to_rip;
+  for(int i = 1; i < num_states-1; i++) {
+    if(i != sink_state+1) {
+      states_to_rip.push_back(i);
+    }
+  }
+
+  while(not states_to_rip.empty()) {
+
+    // find state with one incoming and one outgoing state
+    std::vector<int> inc_states;
+    std::vector<int> out_states;
+    int single_in_out_state = -1;
+    for(auto q_rip = states_to_rip.begin(); q_rip != states_to_rip.end(); q_rip++) {
+      inc_states.clear();
+      out_states.clear();
+      
+      for(auto q = 0; q < num_states; q++) {
+        if(q == *q_rip) {
+          continue;
+        }
+        auto inc_regex = transition_table[q][*q_rip];
+        if(inc_regex->type() != Util::RegularExpression::Type::EMPTY) {
+          inc_states.push_back(q);
+        }
+
+        auto out_regex = transition_table[*q_rip][q];
+        if(out_regex->type() != Util::RegularExpression::Type::EMPTY) {
+          out_states.push_back(q);
+        }
+      }
+
+      // found one, rip that state out first and remove from states to rip
+      if(inc_states.size() == 1 and out_states.size() == 1) {
+        single_in_out_state = *q_rip;
+        states_to_rip.erase(q_rip);
+        break;
+      }
+    }
+
+    int q_rip;
+    if(single_in_out_state >= 0) {
+      q_rip = single_in_out_state;
+    } else {
+      q_rip = states_to_rip.back();
+      states_to_rip.pop_back();
+    }
+
+    for(auto in_it : inc_states) {
+      for(auto out_it : out_states) {
+        Util::RegularExpression_ptr final_regex = nullptr;
+        
+        // construct regex for bypassing q_rip
+        auto in_regex = transition_table[in_it][q_rip]->clone();
+        auto out_regex = transition_table[q_rip][out_it]->clone();
+
+        auto self_regex = Util::RegularExpression::makeRepeatStar(transition_table[q_rip][q_rip]->clone());
+        auto tmp_concat_regex = Util::RegularExpression::makeConcatenation(in_regex,self_regex);
+        auto concat_regex = Util::RegularExpression::makeConcatenation(tmp_concat_regex,out_regex); // both get destroyed or used up
+
+        // add possible q_in -> q_out transition to regex
+        if(transition_table[in_it][out_it]->type() != Util::RegularExpression::Type::EMPTY) {
+          auto regex = transition_table[in_it][out_it]->clone();
+          final_regex = Util::RegularExpression::makeUnion(regex,concat_regex); // both get destroyed or used up
+        } else {
+          final_regex = concat_regex;
+        }
+
+        // remove/replace old transition
+        // delete transition_table[in_it][out_it];
+        transition_table[in_it][out_it] = final_regex;
+      }
+    }
+
+    // remove old transition
+    for(auto in_it : inc_states) {
+      for(auto out_it : out_states) {
+        delete transition_table[in_it][q_rip];
+        transition_table[in_it][q_rip] = Util::RegularExpression::makeEmpty();
+        delete transition_table[q_rip][out_it];
+        transition_table[q_rip][out_it] = Util::RegularExpression::makeEmpty();
+      }
+    }
+
+  }
+
+
+  // for(auto q_rip : rip_order) {
+    
+  //   // get incoming states and outgoing states
+  //   std::vector<int> inc_states;
+  //   std::vector<int> out_states;
+  //   for(auto q = 0; q < num_states-1; q++) {
+  //     auto inc_regex = transition_table[q][q_rip];
+  //     if(inc_regex->type() != Util::RegularExpression::Type::EMPTY) {
+  //       inc_states.push_back(q);
+  //     }
+
+  //     auto out_regex = transition_table[q_rip][q];
+  //     if(out_regex->type() != Util::RegularExpression::Type::EMPTY) {
+  //       out_states.push_back(q);
+  //     }
+  //   }
+
+  //   for(auto in_it : inc_states) {
+  //     for(auto out_it : out_states) {
+  //       Util::RegularExpression_ptr final_regex = nullptr;
+        
+  //       // construct regex for bypassing q_rip
+  //       auto in_regex = transition_table[in_it][q_rip]->clone();
+  //       auto out_regex = transition_table[q_rip][out_it]->clone();
+
+  //       LOG(INFO) << "in_regex  = " << in_regex->str();
+  //       LOG(INFO) << "out_regex = " << out_regex->str();
+
+  //       auto concat_regex = Util::RegularExpression::makeConcatenation(in_regex,out_regex); // both get destroyed or used up
+
+  //       // remove old transition
+  //       // delete transition_table[in_it][q_rip];
+  //       // transition_table[in_it][q_rip] = Util::RegularExpression::makeEmpty();
+  //       // delete transition_table[q_rip][out_it];
+  //       // transition_table[q_rip][out_it] = Util::RegularExpression::makeEmpty();
+        
+  //       // add possible q_in -> q_out transition to regex
+  //       if(transition_table[in_it][out_it]->type() != Util::RegularExpression::Type::EMPTY) {
+  //         auto regex = transition_table[in_it][out_it]->clone();
+  //         final_regex = Util::RegularExpression::makeUnion(regex,concat_regex); // both get destroyed or used up
+  //       } else {
+  //         final_regex = concat_regex;
+  //       }
+
+  //       // remove/replace old transition
+  //       // delete transition_table[in_it][out_it];
+  //       transition_table[in_it][out_it] = final_regex;
+  //     }
+  //   }
+  // }
+
+  // for(int i = 0; i < num_states; i++) {
+  //   for(int j = 0; j < num_states; j++) {
+  //     std::string regex_str = transition_table[i][j]->str();
+  //     std::cout << i << "->" << j << " : " << regex_str << std::endl;
+  //   }
+  // }
+
+  // LOG(INFO) << "result regex = " << transition_table[0][final_state]->str();
+
+  return transition_table[0][final_state];
+}
+
 void Automaton::getTransitionCharsHelper(pCharPair result[], char* transitions, int* indexInResult, int currentBit, int var){
   int i;
   boolean allX;

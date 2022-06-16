@@ -26,6 +26,7 @@ bool Solver::USE_SINGLE_AUTO = false;
 bool Solver::USE_REGEX_SPLITTER = false;
 bool Solver::USE_PREFIX_SHORTENER = false;
 bool Solver::CONCAT_COLLAPSE_HEURISTIC = false;
+bool Solver::DFA_TO_RE = false;
 
 
 std::string Solver::OUTPUT_PATH         = ".";

@@ -38,7 +38,8 @@ enum class Name: int {
   REGEX_FLAG,
   OUTPUT_PATH,
   SCRIPT_PATH,
-  CONCAT_COLLAPSE_HEURISTIC
+  CONCAT_COLLAPSE_HEURISTIC,
+  DFA_TO_RE
 };
 
 class Solver {
@@ -56,6 +57,7 @@ public:
   static bool USE_REGEX_SPLITTER;
   static bool USE_PREFIX_SHORTENER;
   static bool CONCAT_COLLAPSE_HEURISTIC;
+  static bool DFA_TO_RE;
   static std::string OUTPUT_PATH;
   static std::string SCRIPT_PATH;
 };
