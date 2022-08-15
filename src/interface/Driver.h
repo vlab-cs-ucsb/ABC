@@ -103,7 +103,7 @@ public:
 
   void reset();
 //	void solveAst();
-  std::string GetRE(std::string re_var);
+  std::vector<std::string> GetSimpleRegexes(std::string re_var, int num_regexes = 1);
 
   void set_option(const Option::Name option);
   void set_option(const Option::Name option, const int value);

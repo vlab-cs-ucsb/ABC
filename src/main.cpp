@@ -68,6 +68,7 @@ int main(const int argc, const char **argv) {
   std::string count_variable = "";
   unsigned long num_models = 0;
   std::string re_var = "";
+  std::string re_var_file = "";
 
   bool count_tuple = false;
   bool count_tuple_variables = false;
@@ -122,7 +123,8 @@ int main(const int argc, const char **argv) {
       driver.set_option(Vlab::Option::Name::CONCAT_COLLAPSE_HEURISTIC);
     } else if (argv[i] == std::string("--dfa-to-re")) {
       std::string var {argv[i+1]};
-      re_var = var;
+      re_var = var;            
+      re_var_file = std::string({argv[i+2]});
       driver.set_option(Vlab::Option::Name::DFA_TO_RE);
     } else if (argv[i] == std::string("-bs") or argv[i] == std::string("--bound-str")) {
       std::string bounds_str {argv[i + 1]};
@@ -325,8 +327,21 @@ int main(const int argc, const char **argv) {
 
     // regex from dfa stuff
     if(Vlab::Option::Solver::DFA_TO_RE) {
-      std::string re_from_dfa = driver.GetRE(re_var);
-      LOG(INFO) << re_from_dfa;
+      std::vector<std::string> re_from_dfa = driver.GetSimpleRegexes(re_var,1);
+      
+      std::ofstream of;
+      of.open(re_var_file.c_str(), std::ofstream::out | std::ofstream::trunc);
+      
+      if(not of) {
+        LOG(FATAL) << "DFA-TO-RE: Could not write to file; file name = " << file_name;
+      }
+
+      for(auto it : re_from_dfa) {
+        of << it;
+        of << '\n';
+      }
+      of.close();
+
     }
 
   } else {

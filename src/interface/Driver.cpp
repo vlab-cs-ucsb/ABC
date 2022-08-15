@@ -517,14 +517,22 @@ void Driver::reset() {
 //  LOG(INFO) << "Driver reseted.";
 }
 
-std::string Driver::GetRE(std::string re_var) {
+std::vector<std::string> Driver::GetSimpleRegexes(std::string re_var, int num_regexes) {
   auto var = symbol_table_->get_variable(re_var);
   auto var_val = symbol_table_->get_value_at_scope(script_,var);
   auto var_val_auto = var_val->getStringAutomaton();
-  Util::RegularExpression_ptr regex = var_val_auto->DFAToRE();
 
-  // SIMPLIFY HERE
-  return regex->str();
+  // var_val_auto->inspectAuto(false,false);
+
+  Util::RegularExpression_ptr regex = var_val_auto->DFAToRE();
+  std::vector<std::string> regex_strings;
+  
+  regex->simplify();
+  regex->set_escape(false);
+  regex_strings.push_back(regex->str());
+  regex->set_escape(true);
+
+  return regex_strings;
 }
 
 void Driver::set_option(const Option::Name option) {

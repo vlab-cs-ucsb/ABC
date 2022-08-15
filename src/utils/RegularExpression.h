@@ -168,6 +168,9 @@ public:
   char get_to_character();
   std::string get_string();
 
+  void simplify();
+  void set_escape(bool escape);
+
   friend std::ostream& operator<<(std::ostream& os, const RegularExpression& regex);
 private:
 
@@ -192,6 +195,7 @@ private:
   RegularExpression_ptr exp2_;
   std::string string_;
   std::string input_regex_string_;
+  static bool escape_;
 
   static const int VLOG_LEVEL;
 };

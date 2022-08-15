@@ -51,6 +51,8 @@ const int RegularExpression::ALL = 0xffff;
 const int RegularExpression::NONE = 0x0000;
 int RegularExpression::DEFAULT = 0x000f;
 
+bool RegularExpression::escape_ = true;
+
 RegularExpression::RegularExpression()
     : type_(Type::NONE),
       flags_(DEFAULT),
@@ -288,6 +290,10 @@ RegularExpression_ptr RegularExpression::clone() const {
  *
  */
 std::string RegularExpression::escape_raw_string(std::string input) {
+  if(not escape_) {
+    return input;
+  }
+
   std::stringstream ss;
   std::string special = ".+*?(){}[]\"|\\";
   for (auto c : input) {
@@ -877,6 +883,25 @@ char RegularExpression::get_to_character() {
 
 std::string RegularExpression::get_string() {
   return string_;
+}
+
+void RegularExpression::simplify() {
+
+  if(exp1_ != nullptr) {
+    exp1_->simplify();
+  }
+  if(exp2_ != nullptr) {
+    exp2_->simplify();
+  }
+
+  if(type_ == RegularExpression::Type::UNION) {
+    type_ = RegularExpression::Type::STRING;
+    string_ = "*";
+  }
+}
+
+void RegularExpression::set_escape(bool escape) {
+  escape_ = escape;
 }
 
 std::ostream& operator<<(std::ostream& os, const RegularExpression& regex) {
