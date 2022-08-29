@@ -885,18 +885,96 @@ std::string RegularExpression::get_string() {
   return string_;
 }
 
-void RegularExpression::simplify() {
+std::vector<std::string> RegularExpression::enumerate() {
+
+  std::vector<std::string> strings;  
+  std::vector<std::string> prefixes;
+  std::vector<std::string> suffixes;
+  if(type_ == RegularExpression::Type::STRING) {
+    strings.push_back(string_);
+    return strings;
+  }
 
   if(exp1_ != nullptr) {
+    prefixes = exp1_->enumerate();
+  }
+
+  if(exp2_ != nullptr) {
+    suffixes = exp2_->enumerate();
+  }
+
+  if(type_ == RegularExpression::Type::CONCATENATION) {
+    for(auto prefix_iter : prefixes) {
+      for(auto suffix_iter : suffixes) {
+        strings.push_back(prefix_iter + suffix_iter);
+      }
+    }
+  } else if(type_ == RegularExpression::Type::UNION) {
+    for(auto prefix_iter : prefixes) {
+      strings.push_back(prefix_iter);
+    }
+    for(auto suffix_iter : suffixes) {
+      strings.push_back(suffix_iter);
+    }
+  }
+
+  return strings;
+}
+
+void RegularExpression::simplify() {
+  static int depth = 0;
+
+  // if(exp1_ != nullptr and exp2_ != nullptr) {
+  //   if(type_ == RegularExpression::Type::CONCATENATION) {
+  //     LOG(INFO) << "concat: ";
+  //   } else if (type_ == RegularExpression::Type::UNION) {
+  //     LOG(INFO) << "union: ";
+  //   }
+  //   LOG(INFO) << "    (" << exp1_->str() << " , " << exp2_->str() << ")";  
+  // }
+
+  char anychar = '`';
+  std::string anystring = "~";
+
+  if(exp1_ != nullptr) {
+    depth++;
     exp1_->simplify();
+    depth--;
   }
   if(exp2_ != nullptr) {
+    depth++;
     exp2_->simplify();
+    depth--;
   }
 
   if(type_ == RegularExpression::Type::UNION) {
+
+    if(exp1_->type() == RegularExpression::Type::STRING && exp1_->get_string() == anystring 
+          || exp2_->type() == RegularExpression::Type::STRING && exp2_->get_string() == anystring) {
+      type_ = RegularExpression::Type::STRING;
+      string_ = anystring;
+    } else if(exp1_->type() == RegularExpression::Type::STRING && exp2_->type() == RegularExpression::Type::STRING) {
+      int len1 = exp1_->get_string().length();
+      int len2 = exp2_->get_string().length();
+      if(len1 < 5 and len2 < 5 and len1 == len2 
+            and exp1_->get_string().find(anystring) == std::string::npos 
+            and exp2_->get_string().find(anystring) == std::string::npos) {
+        type_ = RegularExpression::Type::STRING;
+        string_ = std::string(exp1_->get_string().length(),anychar);
+      } else if((len1 < 5 and len2 < 5 and len1 != len2) || depth >= 4) {
+        type_ = RegularExpression::Type::STRING;
+        string_ = anystring;
+      }
+    }
+
+    if(exp1_->get_string().length() == exp2_->get_string().length() 
+            && exp1_->type() == RegularExpression::Type::STRING && exp2_->type() == RegularExpression::Type::STRING) {
+      
+    }
+  } else if(type_ == RegularExpression::Type::CONCATENATION 
+          && exp1_->type() == RegularExpression::Type::STRING && exp2_->type() == RegularExpression::Type::STRING) {
     type_ = RegularExpression::Type::STRING;
-    string_ = "*";
+    string_ = exp1_->get_string() + exp2_->get_string();
   }
 }
 

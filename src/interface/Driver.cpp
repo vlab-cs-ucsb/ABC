@@ -526,11 +526,20 @@ std::vector<std::string> Driver::GetSimpleRegexes(std::string re_var, int num_re
 
   Util::RegularExpression_ptr regex = var_val_auto->DFAToRE();
   std::vector<std::string> regex_strings;
+
+  // LOG(INFO) << regex->str();
   
   regex->simplify();
-  regex->set_escape(false);
-  regex_strings.push_back(regex->str());
-  regex->set_escape(true);
+
+  regex_strings = regex->enumerate();
+  for(int i = 0; i < regex_strings.size(); i++) {
+    std::replace(regex_strings[i].begin(),regex_strings[i].end(),'`','?');
+    std::replace(regex_strings[i].begin(),regex_strings[i].end(),'~','*');
+  }
+
+  // regex->set_escape(false);
+  // regex_strings.push_back(regex->str());
+  // regex->set_escape(true);
 
   return regex_strings;
 }

@@ -168,6 +168,7 @@ public:
   char get_to_character();
   std::string get_string();
 
+  std::vector<std::string> enumerate();
   void simplify();
   void set_escape(bool escape);
 

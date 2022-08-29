@@ -16,6 +16,7 @@
 #include <sstream>
 #include <string>
 #include <utility>
+#include <algorithm>
 
 #include <glog/logging.h>
 

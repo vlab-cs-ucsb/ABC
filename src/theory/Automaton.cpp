@@ -2921,7 +2921,7 @@ Util::RegularExpression_ptr Automaton::DFAToRE() {
       q_rip = single_in_out_state;
     } else {
       q_rip = states_to_rip.back();
-      states_to_rip.pop_back();
+      states_to_rip.erase(states_to_rip.end()-1);
     }
 
     for(auto in_it : inc_states) {
