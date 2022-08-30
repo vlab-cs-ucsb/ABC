@@ -526,6 +526,15 @@ void ConstraintSolver::visitGt(Gt_ptr gt_term) {
     } else {
       LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *gt_term;
     }
+  } else if(Value::Type::STRING_AUTOMATON == param_left->getType()) {
+    if (Value::Type::STRING_AUTOMATON == param_right->getType()) {
+      if(not param_left->getStringAutomaton()->IsAcceptingSingleString() or not param_right->getStringAutomaton()->IsAcceptingSingleString()) {
+        LOG(FATAL) << "Unexpected comparison; both string automatons should be only accepting single strings";
+      }
+      result = new Value((param_left->getStringAutomaton()->GetAnAcceptingString() > param_right->getStringAutomaton()->GetAnAcceptingString()));
+    } else {
+      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *gt_term;
+    } 
   } else {
     LOG(FATAL) << "Unexpected left parameter: " << *param_left << " in " << *gt_term;
   }
@@ -557,6 +566,15 @@ void ConstraintSolver::visitGe(Ge_ptr ge_term) {
     } else {
       LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *ge_term;
     }
+  } else if(Value::Type::STRING_AUTOMATON == param_left->getType()) {
+    if (Value::Type::STRING_AUTOMATON == param_right->getType()) {
+      if(not param_left->getStringAutomaton()->IsAcceptingSingleString() or not param_right->getStringAutomaton()->IsAcceptingSingleString()) {
+        LOG(FATAL) << "Unexpected comparison; both string automatons should be only accepting single strings";
+      }
+      result = new Value((param_left->getStringAutomaton()->GetAnAcceptingString() >= param_right->getStringAutomaton()->GetAnAcceptingString()));
+    } else {
+      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *ge_term;
+    } 
   } else {
     LOG(FATAL) << "Unexpected left parameter: " << *param_left << " in " << *ge_term;
   }
@@ -588,9 +606,18 @@ void ConstraintSolver::visitLt(Lt_ptr lt_term) {
     } else {
       LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *lt_term;
     }
+  } else if(Value::Type::STRING_AUTOMATON == param_left->getType()) {
+    if (Value::Type::STRING_AUTOMATON == param_right->getType()) {
+      if(not param_left->getStringAutomaton()->IsAcceptingSingleString() or not param_right->getStringAutomaton()->IsAcceptingSingleString()) {
+        LOG(FATAL) << "Unexpected comparison; both string automatons should be only accepting single strings";
+      }
+      result = new Value((param_left->getStringAutomaton()->GetAnAcceptingString() < param_right->getStringAutomaton()->GetAnAcceptingString()));
+    } else {
+      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *lt_term;
+    } 
   } else {
     LOG(FATAL) << "Unexpected left parameter: " << *param_left << " in " << *lt_term;
-  }
+  } 
 
   setTermValue(lt_term, result);
 }
@@ -619,6 +646,15 @@ void ConstraintSolver::visitLe(Le_ptr le_term) {
     } else {
       LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *le_term;
     }
+  } else if(Value::Type::STRING_AUTOMATON == param_left->getType()) {
+    if (Value::Type::STRING_AUTOMATON == param_right->getType()) {
+      if(not param_left->getStringAutomaton()->IsAcceptingSingleString() or not param_right->getStringAutomaton()->IsAcceptingSingleString()) {
+        LOG(FATAL) << "Unexpected comparison; both string automatons should be only accepting single strings";
+      }
+      result = new Value((param_left->getStringAutomaton()->GetAnAcceptingString() <= param_right->getStringAutomaton()->GetAnAcceptingString()));
+    } else {
+      LOG(FATAL) << "Unexpected right parameter: " << *param_right << " in " << *le_term;
+    } 
   } else {
     LOG(FATAL) << "Unexpected left parameter: " << *param_left << " in " << *le_term;
   }
