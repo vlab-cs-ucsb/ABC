@@ -169,7 +169,7 @@ public:
   std::string get_string();
 
   std::vector<std::string> enumerate();
-  void simplify();
+  void simplify(int alpha, int omega, int depth);
   void set_escape(bool escape);
 
   friend std::ostream& operator<<(std::ostream& os, const RegularExpression& regex);

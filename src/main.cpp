@@ -72,6 +72,8 @@ int main(const int argc, const char **argv) {
 
   bool count_tuple = false;
   bool count_tuple_variables = false;
+  int alpha = 0;
+  int omega = 0;
   std::vector<std::string> count_tuple_variable_names;
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == std::string("-i") or argv[i] == std::string("--input-file")) {
@@ -125,7 +127,10 @@ int main(const int argc, const char **argv) {
       std::string var {argv[i+1]};
       re_var = var;            
       re_var_file = std::string({argv[i+2]});
+      alpha = std::stoi(argv[i+3]);
+      omega = std::stoi(argv[i+4]);
       driver.set_option(Vlab::Option::Name::DFA_TO_RE);
+      i += 4;
     } else if (argv[i] == std::string("-bs") or argv[i] == std::string("--bound-str")) {
       std::string bounds_str {argv[i + 1]};
       str_bounds = parse_count_bounds(bounds_str);
@@ -327,7 +332,7 @@ int main(const int argc, const char **argv) {
 
     // regex from dfa stuff
     if(Vlab::Option::Solver::DFA_TO_RE) {
-      std::vector<std::string> re_from_dfa = driver.GetSimpleRegexes(re_var,1);
+      std::vector<std::string> re_from_dfa = driver.GetSimpleRegexes(re_var,1,alpha,omega);
       
       std::ofstream of;
       of.open(re_var_file.c_str(), std::ofstream::out | std::ofstream::trunc);

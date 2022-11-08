@@ -517,7 +517,7 @@ void Driver::reset() {
 //  LOG(INFO) << "Driver reseted.";
 }
 
-std::vector<std::string> Driver::GetSimpleRegexes(std::string re_var, int num_regexes) {
+std::vector<std::string> Driver::GetSimpleRegexes(std::string re_var, int num_regexes, int alpha, int omega) {
   auto var = symbol_table_->get_variable(re_var);
   auto var_val = symbol_table_->get_value_at_scope(script_,var);
   auto var_val_auto = var_val->getStringAutomaton();
@@ -527,9 +527,14 @@ std::vector<std::string> Driver::GetSimpleRegexes(std::string re_var, int num_re
   Util::RegularExpression_ptr regex = var_val_auto->DFAToRE();
   std::vector<std::string> regex_strings;
 
-  // LOG(INFO) << regex->str();
+
+  //LOG(INFO) << "original:";
+  //LOG(INFO) << regex->str();
   
-  regex->simplify();
+  regex->simplify(alpha,omega,0);
+
+  //LOG(INFO) << "simplified:";
+  //LOG(INFO) << regex->str();
 
   regex_strings = regex->enumerate();
   for(int i = 0; i < regex_strings.size(); i++) {
