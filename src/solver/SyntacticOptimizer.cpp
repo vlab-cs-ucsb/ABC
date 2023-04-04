@@ -171,7 +171,7 @@ void SyntacticOptimizer::visitAnd(And_ptr and_term) {
       }
 
       and_term->term_list->insert(and_term->term_list->end(),ite_terms_.begin(),ite_terms_.end());
-      iter = and_term->term_list->begin() + pos - 1;
+      iter = and_term->term_list->begin() + pos;
       ite_terms_.clear();
   	}
 
