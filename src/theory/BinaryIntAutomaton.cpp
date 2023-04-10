@@ -756,6 +756,56 @@ std::map<std::string, int> BinaryIntAutomaton::GetAnAcceptingIntForEachVar() {
   return var_values;
 }
 
+BinaryIntAutomaton_ptr BinaryIntAutomaton::ProjectAwayVariable(std::string variable) {
+  if(formula_ == nullptr) {
+		LOG(FATAL) << "No Int formula!";
+	}
+
+  int track = formula_->GetVariableIndex(variable);
+  int k_track = track;
+  // LOG(INFO) << "projection away track " << track;
+	
+  int num_tracks = formula_->GetNumberOfVariables();
+  
+  std::vector<int> indices;
+  int *map = CreateBddVariableIndices(num_tracks);
+  for(int i = 0,k=0; i < this->num_of_bdd_variables_; i++) {
+    if(i == k_track) {
+        map[i] = num_tracks-1;
+        continue;
+    }
+    map[i] = k++;
+  }
+
+  std::vector<int> _map;
+  for(int i = 0; i < num_tracks; i++) {
+  	_map.push_back(map[i]);
+  }
+  for(int i = 0; i < 1 ; i++) {
+  	indices.push_back(k_track);
+  }
+
+  auto result_dfa = DFAProjectAway(dfa_,_map,indices);
+  
+  auto result_formula = formula_->clone();
+	result_formula->RemoveVariable(variable);
+
+  BinaryIntAutomaton_ptr result_auto = new BinaryIntAutomaton(result_dfa, result_formula, is_natural_number_);
+
+  
+  // auto anyint = MakeAnyInt(result_formula->clone(),is_natural_number_);
+  // auto r2 = result_auto->Intersect(anyint);
+  // delete result_auto;
+  // delete anyint;
+
+  // result_auto = r2;
+  
+  
+  
+  
+  return result_auto;
+}
+
 void BinaryIntAutomaton::decide_counting_schema(Eigen::SparseMatrix<BigInteger>& count_matrix) {
   if (is_natural_number_) {
     counter_.set_type(SymbolicCounter::Type::BINARYUNSIGNEDINT);

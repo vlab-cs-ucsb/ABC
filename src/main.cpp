@@ -300,6 +300,7 @@ int main(const int argc, const char **argv) {
         }
       } else if (not count_tuple) {
         if (int_bounds.size() == 1 and str_bounds.size() == 1 and int_bounds[0] == str_bounds[0]) {
+          
           auto b = int_bounds[0];
           start = std::chrono::steady_clock::now();
           auto count = driver.Count(b, b);
@@ -308,12 +309,13 @@ int main(const int argc, const char **argv) {
           LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
                     << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
         } else {
+          
           for (auto b : int_bounds) {
             start = std::chrono::steady_clock::now();
             auto count = driver.CountInts(b);
             end = std::chrono::steady_clock::now();
             auto count_time = end - start;
-            LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
+            LOG(INFO) << "report bound (integer): " << b << " count: " << count << " time: "
                       << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
           }
           for (auto b : str_bounds) {
@@ -321,7 +323,7 @@ int main(const int argc, const char **argv) {
             auto count = driver.CountStrs(b);
             end = std::chrono::steady_clock::now();
             auto count_time = end - start;
-            LOG(INFO) << "report bound: " << b << " count: " << count << " time: "
+            LOG(INFO) << "report bound (string): " << b << " count: " << count << " time: "
                       << std::chrono::duration<long double, std::milli>(count_time).count() << " ms";
           }
         }

@@ -305,20 +305,60 @@ void Driver::SetModelCounter() {
   int num_str_var = 0;
 
   for (const auto &variable_entry : getSatisfyingVariables()) {
+    // LOG(INFO) << *variable_entry.first;
     if (variable_entry.second == nullptr || symbol_table_->is_sorted_variable(variable_entry.first)) {
       continue;
     }
-    // LOG(INFO) << *variable_entry.first;
+
+    
+    // LOG(INFO) << "    IS VALID";
+    
     switch (variable_entry.second->getType()) {
       case Vlab::Solver::Value::Type::BINARYINT_AUTOMATON: {
         auto binary_auto = variable_entry.second->getBinaryIntAutomaton();
         auto formula = binary_auto->GetFormula();
+        bool has_actual_var = false;
+        
+        std::vector<std::string> vars_to_project;
+
+        // LOG(INFO) << "VARIABLE: " << variable_entry.first;
         for (auto& el : formula->GetVariableCoefficientMap()) {
+          // LOG(INFO) << "  has " << el.first << " at track " << formula->GetVariableIndex(el.first);
           if (symbol_table_->get_variable_unsafe(el.first) != nullptr) {
             ++num_bin_var;
+            has_actual_var = true;
+          } else {
+            vars_to_project.push_back(el.first);
           }
         }
-        model_counter_.add_symbolic_counter(binary_auto->GetSymbolicCounter());
+
+        // LOG(INFO) << "FOR VARIABLE: " << variable_entry.first;
+
+        // binary_auto->inspectAuto(false,true);
+
+
+        for(auto var : vars_to_project) {
+          // LOG(INFO) << "  projecting away " << var;
+          auto tmp = binary_auto;
+          tmp = binary_auto->ProjectAwayVariable(var);
+          delete binary_auto;
+          binary_auto = tmp;
+        }
+
+        variable_entry.second->setData(binary_auto);
+        // binary_auto->inspectAuto(false,true);
+
+        // LOG(INFO) << binary_auto->Count(50);
+
+        // LOG(INFO) << " IS EMPTY ? " << binary_auto->IsEmptyLanguage();
+
+        if(has_actual_var) {
+          // LOG(INFO) << "HAS ACTUAL VAR";
+          model_counter_.add_symbolic_counter(binary_auto->GetSymbolicCounter());
+          // LOG(INFO) << "countints = " << model_counter_.CountInts(5000);
+        } else {
+          // LOG(INFO) << "NO ACTUAL VAR";
+        }
       }
         break;
       case Vlab::Solver::Value::Type::INT_CONSTANT: {
