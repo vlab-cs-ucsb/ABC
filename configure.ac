@@ -83,6 +83,8 @@ LT_INIT
 AC_HAVE_LIBRARY([glog], [LIBGLOG=-lglog], AC_MSG_ERROR(Glog logging library not found))
 AC_SUBST([LIBGLOG])
 
+AC_DEFINE(GLOG_USE_GLOG_EXPORT)
+
 AC_CHECK_LIB([monadfa], [dfaFree], [LIBMONADFA=-lmonadfa], AC_MSG_ERROR(MONA DFA library not found))
 AC_SUBST([LIBMONADFA])
 

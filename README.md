@@ -10,7 +10,7 @@ Publications
 
 ABC algorithmic details:
 ------------
-- **ASE'19**, (Accepted, to appear in proceedings) [Subformula Caching for Model Counting and Quantitative Program Analysis](). William Eiers, Seemanta Saha, Tegan Brennan, Tevfik Bultan.
+- **ASE'19**, [Subformula Caching for Model Counting and Quantitative Program Analysis](). William Eiers, Seemanta Saha, Tegan Brennan, Tevfik Bultan.
 [Download experimental data and results]().
 
 - **FSE'18**, [Parameterized Model Counting for String and Numeric Constraints](https://dl.acm.org/citation.cfm?doid=3236024.3236064).  Abdulbaki Aydin, William Eiers, Lucas Bang, Tegan Brennan, Miroslav Gavrilov, Tevfik Bultan, Fang Yu.
@@ -20,6 +20,17 @@ ABC algorithmic details:
 
 ABC use cases:
 ------------
+- **ATVA' 23** [Better Predicates and Heuristics for Improved Commutativity Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-45332-8_5). Adam Chen, Parisa Fathololumi, Mihai Nicola, Jared Pincus, Tegan Brennan, Eric Koskinen.
+
+- **ISSTA' 23** [Quantitative Policy Repair for Access Control on the Cloud](https://dl.acm.org/doi/10.1145/3597926.3598078). William Eiers, Ganesh Sankaran, Tevfik Bultan.
+
+- **ISSTA' 23** [Rare Path Guided Fuzzing](https://dl.acm.org/doi/pdf/10.1145/3597926.3598136). Seemanta Saha, Laboni Sarker, Md Shafiuzzaman, Chaofan Shou, Albert Li, Ganesh Sankaran, Tevfik Bultan.
+
+- **ASE' 22** [Quacky: Quantitative Access Control Permissiveness Analyzer](https://dl.acm.org/doi/abs/10.1145/3551349.3559530). William Eiers, Ganesh Sankaran, Albert Li, Emily O'Mahoney, Benjamin Prince, Tevfik Bultan.
+
+- **ICSE' 22** [Quantifying Permissiveness of Access Control Policies](https://vlab.cs.ucsb.edu/papers/ICSE2022_access_control.pdf). William Eiers, Ganesh Sankaran, Albert Li, Emily O'Mahoney, Benjamin Prince, Tevfik Bultan.
+
+- **ICSE' 22** [PReach: A Heuristic for Probabilistic Reachability to Identify Hard to Reach Statements](https://vlab.cs.ucsb.edu/papers/ICSE2022_preach.pdf). Seemanta Saha, Mara Downing, Tegan Brennan, Tevfik Bultan.
 
 - **FSE'16** [String Analysis for Side Channels with Segmented Oracles](http://www.cs.ucsb.edu/~baki/publications/fse16.pdf). Lucas Bang, Abdulbaki Aydin, Quoc-Sang Phan, Corina S. Pasareanu, and Tevfik Bultan. 
 
