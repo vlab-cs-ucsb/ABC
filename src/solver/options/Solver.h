@@ -39,7 +39,8 @@ enum class Name: int {
   OUTPUT_PATH,
   SCRIPT_PATH,
   CONCAT_COLLAPSE_HEURISTIC,
-  DFA_TO_RE
+  DFA_TO_RE,
+  GET_NUM_RANDOM_MODELS
 };
 
 class Solver {
@@ -58,6 +59,7 @@ public:
   static bool USE_PREFIX_SHORTENER;
   static bool CONCAT_COLLAPSE_HEURISTIC;
   static bool DFA_TO_RE;
+  static bool GET_NUM_RANDOM_MODELS;
   static std::string OUTPUT_PATH;
   static std::string SCRIPT_PATH;
 };

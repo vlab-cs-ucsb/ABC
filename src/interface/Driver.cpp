@@ -589,6 +589,28 @@ std::vector<std::string> Driver::GetSimpleRegexes(std::string re_var, int num_re
   return regex_strings;
 }
 
+// NOTICE: RESTRICTS OUTPUT TO PRINTABLE ASCII
+std::vector<std::string> Driver::GetNumRandomModels(std::vector<std::string> model_variables, unsigned long num_random_models) {
+  std::vector<std::string> random_models;
+  auto var = symbol_table_->get_variable(model_variables[0]);
+  auto var_val = symbol_table_->get_value_at_scope(script_,var);
+  auto var_val_auto = var_val->getStringAutomaton();
+
+  auto projected_var_val_auto = var_val_auto->GetAutomatonForVariable(model_variables[0]);
+  auto regex_auto = Theory::StringAutomaton::MakeRegexAuto("[ -~]*");
+  auto restricted_auto = projected_var_val_auto->Intersect(regex_auto);
+
+  delete regex_auto;
+  delete projected_var_val_auto;
+
+  for(unsigned long i = 0; i < num_random_models; i++) {
+    std::string random_model = restricted_auto->GetAnAcceptingStringRandom();
+    random_models.push_back(random_model);
+  }
+  delete restricted_auto;
+  return random_models;
+}
+
 void Driver::set_option(const Option::Name option) {
   switch (option) {
     case Option::Name::USE_SIGNED_INTEGERS:
@@ -650,6 +672,9 @@ void Driver::set_option(const Option::Name option) {
       break;
     case Option::Name::DFA_TO_RE:
       Option::Solver::DFA_TO_RE = true;
+      break;
+    case Option::Name::GET_NUM_RANDOM_MODELS:
+      Option::Solver::GET_NUM_RANDOM_MODELS = true;
       break;
     default:
       LOG(ERROR)<< "option is not recognized: " << static_cast<int>(option);

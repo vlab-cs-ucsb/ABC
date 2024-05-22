@@ -27,6 +27,7 @@ bool Solver::USE_REGEX_SPLITTER = false;
 bool Solver::USE_PREFIX_SHORTENER = false;
 bool Solver::CONCAT_COLLAPSE_HEURISTIC = false;
 bool Solver::DFA_TO_RE = false;
+bool Solver::GET_NUM_RANDOM_MODELS = false;
 
 
 std::string Solver::OUTPUT_PATH         = ".";

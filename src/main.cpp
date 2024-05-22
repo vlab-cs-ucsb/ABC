@@ -72,6 +72,10 @@ int main(const int argc, const char **argv) {
   std::string re_var = "";
   std::string re_var_file = "";
 
+  std::vector<std::string> model_variables;
+  unsigned long num_random_models = 0;
+  std::string random_models_file = "";
+
   bool count_tuple = false;
   bool count_tuple_variables = false;
   int alpha = 0;
@@ -149,6 +153,13 @@ int main(const int argc, const char **argv) {
     } else if (argv[i] == std::string("--get-models")) {
     	num_models = std::stoi(argv[i+1]);
     	++i;
+    } else if (argv[i] == std::string("--get-num-random-models")) {
+      num_random_models = std::stoul(argv[i+1]);
+      std::string model_vars {argv[i+2]};
+      random_models_file = std::string({argv[i+3]});
+      model_variables = parse_count_vars(model_vars);
+      driver.set_option(Vlab::Option::Name::GET_NUM_RANDOM_MODELS);
+      i += 3;
     } else if (argv[i] == std::string("--count-variable")) {
       std::string count_vars {argv[i+1]};
       count_variables = parse_count_vars(count_vars);
@@ -351,6 +362,29 @@ int main(const int argc, const char **argv) {
       }
       of.close();
 
+    }
+
+    // get random models stuff
+    if(Vlab::Option::Solver::GET_NUM_RANDOM_MODELS) {
+      if(num_random_models <= 0 || model_variables.size() != 1) {
+        LOG(FATAL) << "Number of random models should be greater than zero and should a variable to get models from" << std::endl
+                   << "usage: --get-num-random-models <NUM_MODELS> <VARIABLE_NAME> <OUTFILE_NAME>";
+      }
+
+      std::vector<std::string> random_models = driver.GetNumRandomModels(model_variables,num_random_models);
+
+      std::ofstream of;
+      of.open(random_models_file.c_str(), std::ofstream::out | std::ofstream::trunc);
+      
+      if(not of) {
+        LOG(FATAL) << "GET-NUM-RANDOM-MODELS: Could not write to file; file name = " << random_models_file;
+      }
+
+      for(auto it : random_models) {
+        of << it;
+        of << '\n';
+      }
+      of.close();
     }
 
   } else {
