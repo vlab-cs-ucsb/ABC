@@ -590,23 +590,27 @@ std::vector<std::string> Driver::GetSimpleRegexes(std::string re_var, int num_re
 }
 
 // NOTICE: RESTRICTS OUTPUT TO PRINTABLE ASCII
-std::vector<std::string> Driver::GetNumRandomModels(std::vector<std::string> model_variables, unsigned long num_random_models) {
+std::vector<std::string> Driver::GetNumRandomModels(std::vector<std::string> model_variables, unsigned long num_random_models, int min, int max) {
   std::vector<std::string> random_models;
   auto var = symbol_table_->get_variable(model_variables[0]);
   auto var_val = symbol_table_->get_value_at_scope(script_,var);
   auto var_val_auto = var_val->getStringAutomaton();
 
   auto projected_var_val_auto = var_val_auto->GetAutomatonForVariable(model_variables[0]);
-  auto regex_auto = Theory::StringAutomaton::MakeRegexAuto("[ -~]*");
+  auto regex_auto = Theory::StringAutomaton::MakeRegexAuto("[ -~]{"+std::to_string(min)+","+std::to_string(max)+"}");
   auto restricted_auto = projected_var_val_auto->Intersect(regex_auto);
 
   delete regex_auto;
   delete projected_var_val_auto;
+  
 
-  for(unsigned long i = 0; i < num_random_models; i++) {
-    std::string random_model = restricted_auto->GetAnAcceptingStringRandom();
-    random_models.push_back(random_model);
+  if(not restricted_auto->IsEmptyLanguage()) {
+    for(unsigned long i = 0; i < num_random_models; i++) {
+      std::string random_model = restricted_auto->GetAnAcceptingStringRandom();
+      random_models.push_back(random_model);
+    }
   }
+
   delete restricted_auto;
   return random_models;
 }
