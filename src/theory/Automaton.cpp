@@ -762,7 +762,7 @@ std::vector<bool>* Automaton::getAnAcceptingWordRandom(std::function<bool(unsign
 	std::vector<bool>* path = new std::vector<bool>();
 
 	int k = 0;
-	double r = 1.25;
+	double r = 1.01;
 	double thresh = 0.15;
 	std::mt19937 rng;
 	rng.seed(std::random_device()());
