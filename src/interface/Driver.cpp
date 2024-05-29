@@ -615,6 +615,54 @@ std::vector<std::string> Driver::GetNumRandomModels(std::vector<std::string> mod
   return random_models;
 }
 
+// Measure distance between the dfa for the regex, and the dfa for the variable
+// ONLY PRINTABLE ASCII CHARACTERS AT THE MOMENT
+std::vector<Theory::BigInteger> Driver::MeasureDistance(std::string var_name, std::string var_regex, int bound) {
+  auto var = symbol_table_->get_variable(var_name);
+  auto var_val = symbol_table_->get_value_at_scope(script_,var);
+  auto var_val_auto = var_val->getStringAutomaton();
+
+  auto projected_var_val_auto = var_val_auto->GetAutomatonForVariable(var_name);
+  auto regex_auto = Theory::StringAutomaton::MakeRegexAuto(var_regex);
+
+  auto printable_ascii_auto = Theory::StringAutomaton::MakeRegexAuto("[ -~]*");
+  auto tmp = projected_var_val_auto->Intersect(printable_ascii_auto);
+  delete projected_var_val_auto;
+  projected_var_val_auto = tmp;
+  tmp = regex_auto->Intersect(printable_ascii_auto);
+  delete regex_auto;
+  regex_auto = tmp;
+  delete printable_ascii_auto;
+
+  auto comp_projected_var_val_auto = projected_var_val_auto->Complement();
+  auto comp_regex_auto = regex_auto->Complement();
+
+  auto r1_not_r2 = projected_var_val_auto->Intersect(comp_regex_auto);
+  auto not_r1_r2 = comp_projected_var_val_auto->Intersect(regex_auto);
+
+
+  Solver::ModelCounter mc1,mc2,mc3,mc4;
+  mc1.add_symbolic_counter(projected_var_val_auto->GetSymbolicCounter());
+  mc2.add_symbolic_counter(regex_auto->GetSymbolicCounter());
+  mc3.add_symbolic_counter(r1_not_r2->GetSymbolicCounter());
+  mc4.add_symbolic_counter(not_r1_r2->GetSymbolicCounter());
+
+  std::vector<Theory::BigInteger> results;
+  results.push_back(mc1.Count(bound,bound));
+  results.push_back(mc2.Count(bound,bound));
+  results.push_back(mc3.Count(bound,bound));
+  results.push_back(mc4.Count(bound,bound));
+
+  delete projected_var_val_auto;
+  delete regex_auto;
+  delete comp_projected_var_val_auto;
+  delete comp_regex_auto;
+  delete r1_not_r2;
+  delete not_r1_r2;
+
+  return results;
+}
+
 void Driver::set_option(const Option::Name option) {
   switch (option) {
     case Option::Name::USE_SIGNED_INTEGERS:
@@ -679,6 +727,9 @@ void Driver::set_option(const Option::Name option) {
       break;
     case Option::Name::GET_NUM_RANDOM_MODELS:
       Option::Solver::GET_NUM_RANDOM_MODELS = true;
+      break;
+    case Option::Name::COMPARE_REGEX_VARIABLE:
+      Option::Solver::COMPARE_REGEX_VARIABLE = true;
       break;
     default:
       LOG(ERROR)<< "option is not recognized: " << static_cast<int>(option);

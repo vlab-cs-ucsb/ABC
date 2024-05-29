@@ -77,6 +77,9 @@ int main(const int argc, const char **argv) {
   std::string random_models_file = "";
   int minrange = 0, maxrange = 0;
 
+  std::string regex_compare_variable = "";
+  std::string regex_compare_file = "";
+
   bool count_tuple = false;
   bool count_tuple_variables = false;
   int alpha = 0;
@@ -163,6 +166,11 @@ int main(const int argc, const char **argv) {
       model_variables = parse_count_vars(model_vars);
       driver.set_option(Vlab::Option::Name::GET_NUM_RANDOM_MODELS);
       i += 5;
+    } else if (argv[i] == std::string("--compare-regex")) {
+      regex_compare_variable = std::string({argv[i+1]});
+      regex_compare_file = std::string({argv[i+2]});
+      driver.set_option(Vlab::Option::Name::COMPARE_REGEX_VARIABLE);
+      i += 2;
     } else if (argv[i] == std::string("--count-variable")) {
       std::string count_vars {argv[i+1]};
       count_variables = parse_count_vars(count_vars);
@@ -388,6 +396,24 @@ int main(const int argc, const char **argv) {
         of << '\n';
       }
       of.close();
+    }
+    
+    if(Vlab::Option::Solver::COMPARE_REGEX_VARIABLE) {
+      auto regex_file = new std::ifstream(regex_compare_file);
+      if (not regex_file->good()) {
+        LOG(FATAL) << "COMPARE-REGEX: Cannot find input: " << regex_compare_file;
+      }
+
+      std::string line;
+      std::getline(*regex_file, line);
+
+      auto results = driver.MeasureDistance(regex_compare_variable, line, str_bounds[0]);
+      LOG(INFO) << "report baseline_regex: " << results[0];
+      LOG(INFO) << "report synthesized_regex: " << results[1];
+      LOG(INFO) << "report baseline_not_synthesized:" << results[2];
+      LOG(INFO) << "report not_baseline_synthesized:" << results[3];
+
+      delete regex_file;
     }
 
   } else {
