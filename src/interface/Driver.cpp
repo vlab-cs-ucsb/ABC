@@ -121,6 +121,9 @@ void Driver::InitializeSolver() {
     constraint_sorter.start();
   }
 
+  // Solver::NormalizationRenamer renamer(script_, symbol_table_);
+  // renamer.start();
+  
 }
 
 void Driver::Solve() {
@@ -659,6 +662,40 @@ std::vector<Theory::BigInteger> Driver::MeasureDistance(std::string var_name, st
   delete comp_regex_auto;
   delete r1_not_r2;
   delete not_r1_r2;
+
+  return results;
+}
+
+// 'qualitative' comparison results
+// ONLY FOR STRING AUTOMATON: ENFORCES ONLY PRINTABLE ASCII CHARACTERS
+std::vector<std::string> Driver::CompareRegexes(std::string var_name, std::string var_regex) {
+  auto var = symbol_table_->get_variable(var_name);
+  auto var_value = symbol_table_->get_value_at_scope(script_,var);
+  auto var_value_auto = var_value->getStringAutomaton();
+  auto projected_var_value_auto = var_value_auto->GetAutomatonForVariable(var_name);
+  auto printable_ascii_auto = Theory::StringAutomaton::MakeRegexAuto("[ -~]*");
+  auto tmp = projected_var_value_auto->Intersect(printable_ascii_auto);
+
+  delete projected_var_value_auto; projected_var_value_auto = nullptr;
+  delete printable_ascii_auto; printable_ascii_auto = nullptr;
+  var_value_auto = tmp;
+
+  auto regex_from_dfa = var_value_auto->DFAToRE();
+  auto regex_from_llm = new Util::RegularExpression(var_regex);
+  
+  std::vector<std::string> results;
+  results.push_back("report regex_from_dfa: " + regex_from_dfa->str() + '\n');
+  results.push_back("report regex_from_llm: " + regex_from_llm->str() + '\n');
+  results.push_back("report ops_regex_from_dfa: " + std::to_string(regex_from_dfa->ops()) + '\n');
+  results.push_back("report ops_regex_from_llm: " + std::to_string(regex_from_llm->ops()) + '\n');
+  results.push_back("report length_regex_from_dfa: " + std::to_string(regex_from_dfa->str().length()) + '\n');
+  results.push_back("report length_regex_from_llm: " + std::to_string(regex_from_llm->str().length()) + '\n');
+
+  delete regex_from_llm;
+  regex_from_llm = nullptr;
+
+  delete regex_from_dfa;
+  regex_from_dfa = nullptr;
 
   return results;
 }

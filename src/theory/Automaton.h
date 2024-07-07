@@ -236,6 +236,7 @@ public:
 
   Util::RegularExpression_ptr DFAToRE();
 
+
   friend std::ostream& operator<<(std::ostream& os, const Automaton& automaton);
 
   static void CleanUp();

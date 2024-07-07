@@ -413,6 +413,11 @@ int main(const int argc, const char **argv) {
       LOG(INFO) << "report baseline_not_synthesized:" << results[2];
       LOG(INFO) << "report not_baseline_synthesized:" << results[3];
 
+      auto qual_results = driver.CompareRegexes(regex_compare_variable, line);
+      for(auto q : qual_results) {
+        LOG(INFO) << q;
+      }
+
       delete regex_file;
     }
 

@@ -1034,6 +1034,68 @@ void RegularExpression::set_escape(bool escape) {
   escape_ = escape;
 }
 
+int RegularExpression::ops() {
+  switch(type_) {
+    case RegularExpression::Type::NONE:
+      return 0;
+      break;
+    case RegularExpression::Type::UNION:
+      return 1 + exp1_->ops() + exp2_->ops();
+      break;
+    case RegularExpression::Type::CONCATENATION:
+      return 1 + exp1_->ops() + exp2_->ops();
+      break;
+    case RegularExpression::Type::INTERSECTION:
+      return 1 + exp1_->ops() + exp2_->ops();
+      break;
+    case RegularExpression::Type::OPTIONAL:
+      return 1 + exp1_->ops();
+      break;
+    case RegularExpression::Type::REPEAT_STAR:
+      return 1 + exp1_->ops();
+      break;
+    case RegularExpression::Type::REPEAT_PLUS:
+      return 1 + exp1_->ops();
+      break;
+    case RegularExpression::Type::REPEAT_MIN:
+      return 1 + exp1_->ops();
+      break;
+    case RegularExpression::Type::REPEAT_MINMAX:
+      return 1 + exp1_->ops();
+      break;
+    case RegularExpression::Type::COMPLEMENT:
+      return 1 + exp1_->ops();
+      break;
+    case RegularExpression::Type::CHAR:
+      return 1;
+      break;
+    case RegularExpression::Type::CHAR_RANGE:
+      return 1;
+      break;
+    case RegularExpression::Type::ANYCHAR:
+      return 1;
+      break;
+    case RegularExpression::Type::EMPTY:
+      return 1;
+      break;
+    case RegularExpression::Type::STRING:
+      return 1;
+      break;
+    case RegularExpression::Type::ANYSTRING:
+      return 1;
+      break;
+    case RegularExpression::Type::AUTOMATON:
+      return 1;
+      break;
+    case RegularExpression::Type::INTERVAL:
+      return 1;
+      break;
+    default:
+      LOG(FATAL) << "can't determine number of obs for undefined type";
+      return 0;
+  }
+}
+
 std::ostream& operator<<(std::ostream& os, const RegularExpression& regex) {
   return os << regex.str();
 }

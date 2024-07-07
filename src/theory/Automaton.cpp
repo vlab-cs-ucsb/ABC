@@ -2836,28 +2836,16 @@ Util::RegularExpression_ptr Automaton::DFAToRE() {
           delete transition_table[i+1][j+1];
           transition_table[i+1][j+1] = tmp_regex;
         } else {
-          // LOG(INFO) << "NOT SAME";
           auto it_vec = std::vector<char>(it.begin(),it.end());
           it_vec.pop_back();
-          // for(auto ii : it_vec) {
-          //   LOG(INFO) << ii;
-          // }
-          
           std::vector<char> decoded_transitions = decodeException(it_vec);
           
           for(auto decoded_it : decoded_transitions) {
-            //unsigned char ch = strtobin(&it[0],8);
             std::string str;
-            //str += static_cast<char>(ch);
-            // LOG(INFO) << int(decoded_it);
             str += static_cast<char>(decoded_it);
             
-            // LOG(INFO) << str << " , " << decoded_it;
-
             auto it_regex = Util::RegularExpression::makeString(str);
-            // LOG(INFO) << "it_regex = " << it_regex->str();
             auto tmp_regex = Util::RegularExpression::makeUnion(transition_table[i+1][j+1]->clone(),it_regex->clone());
-            // LOG(INFO) << "tmp_regex = " << tmp_regex->str();
             delete it_regex;
             delete transition_table[i+1][j+1];
             transition_table[i+1][j+1] = tmp_regex;
@@ -3025,6 +3013,129 @@ Util::RegularExpression_ptr Automaton::DFAToRE() {
 
   return transition_table[0][final_state];
 }
+
+// Util::RegularExpression_ptr Automaton::DFA2Reg(const DFA_ptr dfa, const int number_of_bdd_variables) {
+
+  
+//   // convert dfa to table
+//   int num_states = dfa->ns + 2; // new initial and final state
+//   int to_state = -1;
+//   paths state_paths = nullptr, pp = nullptr;
+// 	trace_descr tp = nullptr;
+//   int* indices = Automaton::GetBddVariableIndices(number_of_bdd_variables);
+//   int sink = DFAGetSinkState(dfa);
+//   Util::RegularExpression_ptr dfa_table[num_states][num_states];
+//   for(int i = 0; i < num_states; i++) {
+//     for(int j = 0; j < num_states; j++) {
+//       dfa_table[i][j] = Util::RegularExpression::makeEmpty();
+//     }
+//   }
+
+//   // new initial state
+//   dfa_table[0][1] = Util::RegularExpression::makeString("");
+
+//   for(int i = 1; i < num_states-1; i++) {
+//     // if final, add empty string transition to new final state
+//     if(dfa->f[i-1] == 1) {
+//       dfa_table[i][num_states-1] = Util::RegularExpression::makeString("");
+//     }
+//     state_paths = pp = make_paths(dfa->bddm, dfa->q[i-1]);
+// 		while (pp) {
+// 			if (sink && pp->to == (unsigned)sink) {
+// 				pp = pp->next;
+// 				continue;
+// 			}
+// 			to_state = pp->to;
+// 			std::string current_exception = "";
+// 			for (int j = 0; j < number_of_bdd_variables; j++) {
+// 				for (tp = pp->trace; tp && (tp->index != (unsigned)indices[j]); tp = tp->next);
+// 				if (tp) {
+// 					if (tp->value) {
+// 						current_exception.push_back('1');
+// 					} else {
+// 						current_exception.push_back('0');
+// 					}
+// 				} else {
+// 					current_exception.push_back('X');
+// 				}
+// 			}
+
+//       // convert symbolic path to regex
+//       LOG(INFO) << current_exception;
+//       std::vector<std::string> transitions = Automaton::ExpandException(current_exception);
+//       // Util::RegularExpression_ptr current_regex = Util::RegularExpression::makeString(transitions[0]);
+//       for(int j = 0; j < transitions.size(); j++) {
+//         LOG(INFO) << " -> " << transitions[j];
+//         auto r1 = Util::RegularExpression::makeString(transitions[j]);
+//         auto r2 = dfa_table[i][to_state+1];
+//         dfa_table[i][to_state+1] = Util::RegularExpression::makeUnion(r1,r2);
+//         // delete r1; r1 = nullptr;
+//         // delete r2; r2 = nullptr;
+//       }
+//       // LOG(INFO) << dfa_table[i][to_state+1]->str();
+//       // std::cin.get();
+      
+//       tp = nullptr;
+// 			pp = pp->next;
+// 		}
+//   }
+
+//   LOG(INFO) << "---------------------";
+//   std::cin.get();
+
+//   // now that dfa is a table, apply extraction algo until 2 states left (initial and final)
+//   // since initial is guaranteed to be 0 and final is num_states-1, just iterate between them
+//   for(int i = 1; i < num_states-1; i++) {
+//     // loop through states from incoming transitions (q_in)
+//     for(int j = 0; j < num_states; j++) {
+//       if(i != j && dfa_table[j][i]->type() != Util::RegularExpression::Type::EMPTY) {
+//         // loop through states from outgoing transitions (q_out)
+//         for(int k = 0; k < num_states; k++) {
+//           if(i != k) {
+//             // gather transitions
+//             auto r_in = dfa_table[j][i];
+//             auto r_out = dfa_table[i][k];
+//             auto r_rip = dfa_table[i][i];
+//             auto r_dir = dfa_table[j][k];
+
+//             // remove transitions
+//             dfa_table[j][i] = Util::RegularExpression::makeEmpty();
+//             dfa_table[i][k] = Util::RegularExpression::makeEmpty();
+//             dfa_table[i][i] = Util::RegularExpression::makeEmpty();
+            
+//             // r_dir = r_dir + r_in . (r_rip)* . r_out
+//             auto r1 = Util::RegularExpression::makeRepeatStar(r_rip);
+//             // delete r_rip; r_rip = nullptr;
+
+//             auto r2 = Util::RegularExpression::makeConcatenation(r_in, r1);
+//             // delete r_in; r_in = nullptr;
+//             // delete r1; r1 = nullptr;
+
+//             auto r3 = Util::RegularExpression::makeConcatenation(r2,r_out);
+//             // delete r_out; r_out = nullptr;
+//             // delete r2; r2 = nullptr;
+
+//             auto r4 = Util::RegularExpression::makeUnion(r_dir, r3);
+//             // delete r_dir; r_dir = nullptr;
+//             // delete r3; r3 = nullptr;
+
+//             dfa_table[j][k] = r4;
+//           }
+//         }
+//       }
+//     }
+//   }
+
+//   // cleanup
+//   auto regex = dfa_table[0][num_states-1]->clone();
+//   for(int i = 0; i < num_states; i++) {
+//     for(int j = 0; j < num_states; j++) {
+//       delete dfa_table[i][j]; dfa_table[i][j] = nullptr;
+//     }
+//   }
+
+//   return regex;
+// }
 
 void Automaton::getTransitionCharsHelper(pCharPair result[], char* transitions, int* indexInResult, int currentBit, int var){
   int i;
