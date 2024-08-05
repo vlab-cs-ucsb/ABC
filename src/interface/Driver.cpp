@@ -643,18 +643,24 @@ std::vector<Theory::BigInteger> Driver::MeasureDistance(std::string var_name, st
   auto r1_not_r2 = projected_var_val_auto->Intersect(comp_regex_auto);
   auto not_r1_r2 = comp_projected_var_val_auto->Intersect(regex_auto);
 
+  auto jauto1 = projected_var_val_auto->Intersect(regex_auto);
+  auto jauto2 = projected_var_val_auto->Union(regex_auto);
 
-  Solver::ModelCounter mc1,mc2,mc3,mc4;
+  Solver::ModelCounter mc1,mc2,mc3,mc4,mc5,mc6;
   mc1.add_symbolic_counter(projected_var_val_auto->GetSymbolicCounter());
   mc2.add_symbolic_counter(regex_auto->GetSymbolicCounter());
   mc3.add_symbolic_counter(r1_not_r2->GetSymbolicCounter());
   mc4.add_symbolic_counter(not_r1_r2->GetSymbolicCounter());
+  mc5.add_symbolic_counter(jauto1->GetSymbolicCounter());
+  mc6.add_symbolic_counter(jauto2->GetSymbolicCounter());
 
   std::vector<Theory::BigInteger> results;
   results.push_back(mc1.Count(bound,bound));
   results.push_back(mc2.Count(bound,bound));
   results.push_back(mc3.Count(bound,bound));
   results.push_back(mc4.Count(bound,bound));
+  results.push_back(mc5.Count(bound,bound));
+  results.push_back(mc6.Count(bound,bound));
 
   delete projected_var_val_auto;
   delete regex_auto;
@@ -662,6 +668,8 @@ std::vector<Theory::BigInteger> Driver::MeasureDistance(std::string var_name, st
   delete comp_regex_auto;
   delete r1_not_r2;
   delete not_r1_r2;
+  delete jauto1;
+  delete jauto2;
 
   return results;
 }

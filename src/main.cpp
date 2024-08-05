@@ -412,6 +412,8 @@ int main(const int argc, const char **argv) {
       LOG(INFO) << "report synthesized_regex: " << results[1];
       LOG(INFO) << "report baseline_not_synthesized:" << results[2];
       LOG(INFO) << "report not_baseline_synthesized:" << results[3];
+      LOG(INFO) << "report jaccard index numerator: " << results[4];
+      LOG(INFO) << "report jaccard index denominator: " << results[5];
 
       auto qual_results = driver.CompareRegexes(regex_compare_variable, line);
       for(auto q : qual_results) {
