@@ -108,6 +108,7 @@ public:
   std::vector<std::string> GetNumRandomModels(std::vector<std::string> model_variables, unsigned long num_random_models, int min, int max);
   std::vector<Theory::BigInteger> MeasureDistance(std::string variable, std::string regex, int bound);
   std::vector<std::string> CompareRegexes(std::string variable, std::string regex);
+  std::string PrintRegex(std::string variable);
 
   void set_option(const Option::Name option);
   void set_option(const Option::Name option, const int value);

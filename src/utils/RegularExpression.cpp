@@ -732,7 +732,6 @@ RegularExpression_ptr RegularExpression::parseCharClassExp() {
     if (match('^') and !peek("-")) {
       negate = true;
     }
-
     RegularExpression_ptr regex = parseCharClasses();
     if (negate) {
       regex = makeIntersection(makeAnyChar(), makeComplement(regex));
@@ -758,7 +757,11 @@ RegularExpression_ptr RegularExpression::parseCharClasses() {
 RegularExpression_ptr RegularExpression::parseCharClass() {
   char c = parseCharExp();
   if (match('-')) {
-    return makeCharRange(c, parseCharExp());
+    if(peek("]")) {
+      return makeUnion(makeChar(c),makeChar('-'));
+    } else {
+      return makeCharRange(c, parseCharExp());
+    }
   } else {
     return makeChar(c);
   }

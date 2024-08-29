@@ -708,6 +708,27 @@ std::vector<std::string> Driver::CompareRegexes(std::string var_name, std::strin
   return results;
 }
 
+std::string Driver::PrintRegex(std::string var_name) {
+  auto var = symbol_table_->get_variable(var_name);
+  auto var_value = symbol_table_->get_value_at_scope(script_,var);
+  auto var_value_auto = var_value->getStringAutomaton();
+  auto projected_var_value_auto = var_value_auto->GetAutomatonForVariable(var_name);
+  auto printable_ascii_auto = Theory::StringAutomaton::MakeRegexAuto("[ -~]*");
+  auto tmp = projected_var_value_auto->Intersect(printable_ascii_auto);
+
+  delete projected_var_value_auto; projected_var_value_auto = nullptr;
+  delete printable_ascii_auto; printable_ascii_auto = nullptr;
+  var_value_auto = tmp;
+
+  auto regex_from_dfa = var_value_auto->DFAToRE();
+  std::string result = "report regex_from_dfa: " + regex_from_dfa->str() + '\n';
+
+  delete regex_from_dfa;
+  regex_from_dfa = nullptr;
+  
+  return result;
+}
+
 void Driver::set_option(const Option::Name option) {
   switch (option) {
     case Option::Name::USE_SIGNED_INTEGERS:
@@ -775,6 +796,9 @@ void Driver::set_option(const Option::Name option) {
       break;
     case Option::Name::COMPARE_REGEX_VARIABLE:
       Option::Solver::COMPARE_REGEX_VARIABLE = true;
+      break;
+    case Option::Name::PRINT_REGEX:
+      Option::Solver::PRINT_REGEX = true;
       break;
     default:
       LOG(ERROR)<< "option is not recognized: " << static_cast<int>(option);

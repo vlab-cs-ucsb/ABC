@@ -79,6 +79,7 @@ int main(const int argc, const char **argv) {
 
   std::string regex_compare_variable = "";
   std::string regex_compare_file = "";
+  std::string regex_print_variable = "";
 
   bool count_tuple = false;
   bool count_tuple_variables = false;
@@ -171,6 +172,10 @@ int main(const int argc, const char **argv) {
       regex_compare_file = std::string({argv[i+2]});
       driver.set_option(Vlab::Option::Name::COMPARE_REGEX_VARIABLE);
       i += 2;
+    } else if (argv[i] == std::string("--print-regex")) {
+      regex_print_variable = std::string({argv[i+1]});
+      driver.set_option(Vlab::Option::Name::PRINT_REGEX);
+      i += 1;
     } else if (argv[i] == std::string("--count-variable")) {
       std::string count_vars {argv[i+1]};
       count_variables = parse_count_vars(count_vars);
@@ -421,6 +426,11 @@ int main(const int argc, const char **argv) {
       }
 
       delete regex_file;
+    }
+
+    if(Vlab::Option::Solver::PRINT_REGEX) {
+      auto result = driver.PrintRegex(regex_print_variable);
+      LOG(INFO) << result;
     }
 
   } else {

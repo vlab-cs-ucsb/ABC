@@ -41,7 +41,8 @@ enum class Name: int {
   CONCAT_COLLAPSE_HEURISTIC,
   DFA_TO_RE,
   GET_NUM_RANDOM_MODELS,
-  COMPARE_REGEX_VARIABLE
+  COMPARE_REGEX_VARIABLE,
+  PRINT_REGEX
 };
 
 class Solver {
@@ -62,6 +63,7 @@ public:
   static bool DFA_TO_RE;
   static bool GET_NUM_RANDOM_MODELS;
   static bool COMPARE_REGEX_VARIABLE;
+  static bool PRINT_REGEX;
   static std::string OUTPUT_PATH;
   static std::string SCRIPT_PATH;
 };
