@@ -642,6 +642,35 @@ RegularExpression_ptr RegularExpression::makeInterval(unsigned long min, unsigne
   return regex;
 }
 
+RegularExpression_ptr RegularExpression::makeCharClass(char c) {
+  RegularExpression_ptr regex = nullptr;
+  switch(c) {
+    case 's': //\f\n\r\t\v
+      regex = makeUnion(makeChar('\t'),makeUnion(makeChar('\n'),
+                    makeUnion(makeChar('\f'),makeUnion(makeChar('\r'),
+                    makeUnion(makeChar('\v'),makeChar(' '))))));
+      break;
+    case 'S':
+      regex = makeIntersection(makeComplement(makeCharClass('s')),makeAnyChar());
+      break;
+    case 'd':
+      regex = makeCharRange('0','9');
+      break;
+    case 'D':
+      regex = makeIntersection(makeComplement(makeCharClass('d')),makeAnyChar());
+      break;
+    case 'w':
+      regex = makeUnion(makeCharRange('a','z'),
+                        makeUnion(makeCharRange('A','Z'),
+                        makeUnion(makeCharClass('d'),makeChar('_'))));
+      break;
+    case 'W':
+      regex = makeIntersection(makeComplement(makeCharClass('w')),makeAnyChar());
+    default:
+      LOG(FATAL) << "Error creating char class: Unknown: " << c;
+  }
+}
+
 RegularExpression_ptr RegularExpression::parseUnionExp() {
   RegularExpression_ptr regex = parseInterExp();
   if (match('|')) {
@@ -754,7 +783,14 @@ RegularExpression_ptr RegularExpression::parseCharClasses() {
   return regex;
 }
 
+// more testing needs to be done
 RegularExpression_ptr RegularExpression::parseCharClass() {
+  std::string ss = input_regex_string_.substr(pos_,2);
+  if(ss == "\\s" || ss == "\\S" || ss == "\\d" || ss == "\\D" || ss == "\\w") {
+    pos_+=2;
+    return makeCharClass(ss[1]);
+  }
+
   char c = parseCharExp();
   if (match('-')) {
     if(peek("]")) {

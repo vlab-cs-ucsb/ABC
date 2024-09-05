@@ -147,6 +147,7 @@ public:
   static RegularExpression_ptr makeAnyString();
   static RegularExpression_ptr makeAutomaton(std::string s);
   static RegularExpression_ptr makeInterval(unsigned long min, unsigned long max, unsigned digits);
+  static RegularExpression_ptr makeCharClass(char c);
   RegularExpression_ptr parseUnionExp();
   RegularExpression_ptr parseInterExp();
   RegularExpression_ptr parseConcatExp();
