@@ -251,7 +251,7 @@ std::string RegularExpression::str() const {
       ;
       break;
     case Type::ANYSTRING:
-      ss << '@';
+      ss << ".*";
       break;
     case Type::AUTOMATON:
       ss << '<' << string_ << '>';
@@ -666,15 +666,30 @@ RegularExpression_ptr RegularExpression::makeCharClass(char c) {
       break;
     case 'W':
       regex = makeIntersection(makeComplement(makeCharClass('w')),makeAnyChar());
+      break;
     default:
       LOG(FATAL) << "Error creating char class: Unknown: " << c;
   }
 }
 
 RegularExpression_ptr RegularExpression::parseUnionExp() {
+  // handle cases like /(|a)/ (should be empty string or 'a')
+  // also handles /(|)/ (should be empty string)
+  if(match('|')) {
+    if(not more() or peek(")")) {
+      return makeString("");
+    } else {
+      return makeUnion(makeString(""),parseUnionExp());
+    }
+  }
   RegularExpression_ptr regex = parseInterExp();
   if (match('|')) {
-    regex = makeUnion(regex, parseUnionExp());
+    // handle cases like /(a|)/ (should be a or empty string)
+    if(not more() or peek(")")) {
+      regex = makeUnion(regex,makeString(""));
+    } else {
+      regex = makeUnion(regex, parseUnionExp());
+    }
   }
   return regex;
 }
@@ -786,7 +801,7 @@ RegularExpression_ptr RegularExpression::parseCharClasses() {
 // more testing needs to be done
 RegularExpression_ptr RegularExpression::parseCharClass() {
   std::string ss = input_regex_string_.substr(pos_,2);
-  if(ss == "\\s" || ss == "\\S" || ss == "\\d" || ss == "\\D" || ss == "\\w") {
+  if(ss == "\\s" || ss == "\\S" || ss == "\\d" || ss == "\\D" || ss == "\\w" || ss == "\\W") {
     pos_+=2;
     return makeCharClass(ss[1]);
   }
