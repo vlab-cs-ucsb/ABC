@@ -107,6 +107,7 @@ public:
   std::vector<std::string> GetSimpleRegexes(std::string re_var, int num_regexes = 1, int alpha = 0, int omega = 0);
   std::vector<std::string> GetNumRandomModels(std::vector<std::string> model_variables, unsigned long num_random_models, int min, int max);
   std::vector<Theory::BigInteger> MeasureDistance(std::string variable, std::string regex, int bound);
+  std::vector<Theory::BigInteger> MeasureDistanceTwoRegex(std::string regex1, std::string regex2, int bound);
   std::vector<std::string> CompareRegexes(std::string variable, std::string regex);
   std::string PrintRegex(std::string variable);
 

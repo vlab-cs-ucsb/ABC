@@ -29,6 +29,7 @@ bool Solver::CONCAT_COLLAPSE_HEURISTIC = false;
 bool Solver::DFA_TO_RE = false;
 bool Solver::GET_NUM_RANDOM_MODELS = false;
 bool Solver::COMPARE_REGEX_VARIABLE = false;
+bool Solver::COMPARE_REGEXES = false;
 bool Solver::PRINT_REGEX = false;
 
 std::string Solver::OUTPUT_PATH         = ".";

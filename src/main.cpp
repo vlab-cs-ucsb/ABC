@@ -79,6 +79,7 @@ int main(const int argc, const char **argv) {
 
   std::string regex_compare_variable = "";
   std::string regex_compare_file = "";
+  std::string regex_compare_file_2 = "";
   std::string regex_print_variable = "";
 
   bool count_tuple = false;
@@ -136,7 +137,7 @@ int main(const int argc, const char **argv) {
       driver.set_option(Vlab::Option::Name::CONCAT_COLLAPSE_HEURISTIC);
     } else if (argv[i] == std::string("--dfa-to-re")) {
       std::string var {argv[i+1]};
-      re_var = var;            
+      re_var = var;
       re_var_file = std::string({argv[i+2]});
       alpha = std::stoi(argv[i+3]);
       omega = std::stoi(argv[i+4]);
@@ -171,6 +172,11 @@ int main(const int argc, const char **argv) {
       regex_compare_variable = std::string({argv[i+1]});
       regex_compare_file = std::string({argv[i+2]});
       driver.set_option(Vlab::Option::Name::COMPARE_REGEX_VARIABLE);
+      i += 2;
+    } else if(argv[i] == std::string("--compare-regexes")) {
+      regex_compare_file = std::string({argv[i+1]});
+      regex_compare_file_2 = std::string({argv[i+2]});
+      driver.set_option(Vlab::Option::Name::COMPARE_REGEXES);
       i += 2;
     } else if (argv[i] == std::string("--print-regex")) {
       regex_print_variable = std::string({argv[i+1]});
@@ -426,6 +432,26 @@ int main(const int argc, const char **argv) {
       }
 
       delete regex_file;
+    } else if(Vlab::Option::Solver::COMPARE_REGEXES) {
+      auto regex_file = new std::ifstream(regex_compare_file);
+      auto regex_file_2 = new std::ifstream(regex_compare_file_2);
+      if (not regex_file->good()) {
+        LOG(FATAL) << "COMPARE-REGEX: Cannot find input: " << regex_compare_file;
+      }
+      if (not regex_file_2->good()) {
+        LOG(FATAL) << "COMPARE-REGEX: Cannot find input: " << regex_compare_file_2;
+      }
+
+      std::string line, line2;
+      std::getline(*regex_file, line);
+      std::getline(*regex_file_2, line2);
+
+      auto results = driver.MeasureDistanceTwoRegex(line, line2, str_bounds[0]);
+      LOG(INFO) << "report jaccard index numerator: " << results[0];
+      LOG(INFO) << "report jaccard index denominator: " << results[1];
+
+      delete regex_file;
+      delete regex_file_2;
     }
 
     if(Vlab::Option::Solver::PRINT_REGEX) {

@@ -674,6 +674,29 @@ std::vector<Theory::BigInteger> Driver::MeasureDistance(std::string var_name, st
   return results;
 }
 
+std::vector<Theory::BigInteger> Driver::MeasureDistanceTwoRegex(std::string regex1, std::string regex2, int bound) {
+  auto regex_auto = Theory::StringAutomaton::MakeRegexAuto(regex1);
+  auto regex_auto_2 = Theory::StringAutomaton::MakeRegexAuto(regex2);
+  auto jauto1 = regex_auto->Intersect(regex_auto_2);
+  auto jauto2 = regex_auto->Union(regex_auto_2);
+
+  Solver::ModelCounter mc1,mc2;
+  mc1.add_symbolic_counter(jauto1->GetSymbolicCounter());
+  mc2.add_symbolic_counter(jauto2->GetSymbolicCounter());
+
+  std::vector<Theory::BigInteger> results;
+  results.push_back(mc1.Count(bound,bound));
+  results.push_back(mc2.Count(bound,bound));
+
+  delete regex_auto;
+  delete regex_auto_2;
+
+  delete jauto1;
+  delete jauto2;
+
+  return results;
+}
+
 // 'qualitative' comparison results
 // ONLY FOR STRING AUTOMATON: ENFORCES ONLY PRINTABLE ASCII CHARACTERS
 std::vector<std::string> Driver::CompareRegexes(std::string var_name, std::string var_regex) {
@@ -796,6 +819,9 @@ void Driver::set_option(const Option::Name option) {
       break;
     case Option::Name::COMPARE_REGEX_VARIABLE:
       Option::Solver::COMPARE_REGEX_VARIABLE = true;
+      break;
+    case Option::Name::COMPARE_REGEXES:
+      Option::Solver::COMPARE_REGEXES = true;
       break;
     case Option::Name::PRINT_REGEX:
       Option::Solver::PRINT_REGEX = true;
