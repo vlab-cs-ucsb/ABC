@@ -600,21 +600,20 @@ std::vector<std::string> Driver::GetNumRandomModels(std::vector<std::string> mod
   auto var_val_auto = var_val->getStringAutomaton();
 
   auto projected_var_val_auto = var_val_auto->GetAutomatonForVariable(model_variables[0]);
-  auto regex_auto = Theory::StringAutomaton::MakeRegexAuto("[ -~]{"+std::to_string(min)+","+std::to_string(max)+"}");
+  auto regex_auto = Theory::StringAutomaton::MakeRegexAuto("[ -~]*");
   auto restricted_auto = projected_var_val_auto->Intersect(regex_auto);
-
-  delete regex_auto;
-  delete projected_var_val_auto;
-  
+  auto regex = restricted_auto->DFAToRE();
 
   if(not restricted_auto->IsEmptyLanguage()) {
-    for(unsigned long i = 0; i < num_random_models; i++) {
-      std::string random_model = restricted_auto->GetAnAcceptingStringRandom();
+    for(int j = 0; j < num_random_models; j++) {
+      std::string random_model = regex->sample(regex);
       random_models.push_back(random_model);
     }
   }
 
+  delete regex_auto;
   delete restricted_auto;
+  delete projected_var_val_auto;
   return random_models;
 }
 
@@ -626,7 +625,8 @@ std::vector<Theory::BigInteger> Driver::MeasureDistance(std::string var_name, st
   auto var_val_auto = var_val->getStringAutomaton();
 
   auto projected_var_val_auto = var_val_auto->GetAutomatonForVariable(var_name);
-  auto regex_auto = Theory::StringAutomaton::MakeRegexAuto(var_regex);
+  Util::RegularExpression regex(var_regex, Util::RegularExpression::NONE);
+  auto regex_auto = Theory::StringAutomaton::MakeRegexAuto(&regex);
 
   auto printable_ascii_auto = Theory::StringAutomaton::MakeRegexAuto("[ -~]*");
   auto tmp = projected_var_val_auto->Intersect(printable_ascii_auto);
@@ -674,9 +674,11 @@ std::vector<Theory::BigInteger> Driver::MeasureDistance(std::string var_name, st
   return results;
 }
 
-std::vector<Theory::BigInteger> Driver::MeasureDistanceTwoRegex(std::string regex1, std::string regex2, int bound) {
-  auto regex_auto = Theory::StringAutomaton::MakeRegexAuto(regex1);
-  auto regex_auto_2 = Theory::StringAutomaton::MakeRegexAuto(regex2);
+std::vector<Theory::BigInteger> Driver::MeasureDistanceTwoRegex(std::string str_regex1, std::string str_regex2, int bound) {
+  Util::RegularExpression regex1(str_regex1, Util::RegularExpression::NONE);
+  auto regex_auto = Theory::StringAutomaton::MakeRegexAuto(&regex1);
+  Util::RegularExpression regex2(str_regex2, Util::RegularExpression::NONE);
+  auto regex_auto_2 = Theory::StringAutomaton::MakeRegexAuto(&regex2);
   auto jauto1 = regex_auto->Intersect(regex_auto_2);
   auto jauto2 = regex_auto->Union(regex_auto_2);
 

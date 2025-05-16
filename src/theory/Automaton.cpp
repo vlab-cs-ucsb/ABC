@@ -787,7 +787,7 @@ std::vector<bool>* Automaton::getAnAcceptingWordRandom(std::function<bool(unsign
 
 		do {
 			k = rand() % states.size();
-		} while(states[k].first == sink_state);
+		} while(states[k].first == sink_state || (states[k].first == state.first && states.size() > 1));
 		state = states[k];
 		path->insert(path->end(),state.second.begin(),state.second.end());
 	}

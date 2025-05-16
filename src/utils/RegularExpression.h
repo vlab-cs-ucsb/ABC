@@ -41,6 +41,10 @@
 #include <cstdlib>
 #include <sstream>
 #include <string>
+#include <set>
+#include <queue>
+#include <random>
+#include <ctime>
 
 #include <glog/logging.h>
 
@@ -169,6 +173,7 @@ public:
   char get_to_character();
   std::string get_string();
 
+  static std::string sample(RegularExpression_ptr regex);
   std::vector<std::string> enumerate();
   void simplify(int alpha, int omega, int depth);
   void set_escape(bool escape);

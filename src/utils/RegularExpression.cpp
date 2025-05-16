@@ -939,6 +939,67 @@ std::string RegularExpression::get_string() {
   return string_;
 }
 
+// randomly samples a string in the regex
+std::string RegularExpression::sample(RegularExpression_ptr regex) {
+  std::string s = "";
+  std::random_device rd;  // Obtain a random seed from the OS
+  std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
+  std::uniform_int_distribution<> distrib(0, 10); // Define the range
+  std::uniform_real_distribution<double> real_dist(0.0,1.0);
+  double thresh = 0.15;
+  double r = 1.01;
+
+  switch(regex->type_) {
+    case Type::UNION: {
+      // union can have child unions, queue to process them and get child unions
+      std::queue<RegularExpression_ptr> stuff_to_process;
+      std::vector<RegularExpression_ptr> sub_samples;
+      stuff_to_process.push(regex->exp1_);
+      stuff_to_process.push(regex->exp2_);
+
+      // collapse children union to get all possibilities
+      while(!stuff_to_process.empty()) {
+        auto reg_to_process = stuff_to_process.front();
+        stuff_to_process.pop();
+
+        if(reg_to_process->type() == Type::UNION) {
+          stuff_to_process.push(reg_to_process->exp1_);
+          stuff_to_process.push(reg_to_process->exp2_);
+        } else {
+          sub_samples.push_back(reg_to_process);
+        }
+      }
+
+      // randomly choose one to sample
+      std::uniform_int_distribution<> dist(0,sub_samples.size()-1);
+      std::string s = sample(sub_samples[dist(gen)]);
+      return s;
+      };
+      break;
+    case Type::CONCATENATION:
+      return sample(regex->exp1_) + sample(regex->exp2_);
+      break;
+    case Type::REPEAT_STAR: {
+      while(real_dist(gen) >= thresh) {
+        s += sample(regex->exp1_);
+        thresh *= r;
+      }
+      return s;
+    };
+      break;
+    case Type::CHAR:
+      return std::string(1, regex->character_);
+      break;
+    case Type::STRING:
+      return regex->string_;
+      break;
+    default:
+      LOG(FATAL) << "uh oh";
+      break;
+  }
+  return s;
+}
+
 std::vector<std::string> RegularExpression::enumerate() {
 
   std::vector<std::string> strings;  
