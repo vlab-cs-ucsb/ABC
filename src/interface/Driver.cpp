@@ -600,14 +600,14 @@ std::vector<std::string> Driver::GetNumRandomModels(std::vector<std::string> mod
   auto var_val_auto = var_val->getStringAutomaton();
 
   auto projected_var_val_auto = var_val_auto->GetAutomatonForVariable(model_variables[0]);
-  auto regex_auto = Theory::StringAutomaton::MakeRegexAuto("[ -~]*");
+  auto regex_auto = Theory::StringAutomaton::MakeRegexAuto("[ -~]{"+std::to_string(min)+",}");
   auto restricted_auto = projected_var_val_auto->Intersect(regex_auto);
   auto regex = restricted_auto->DFAToRE();
 
   if(not restricted_auto->IsEmptyLanguage()) {
-    for(int j = 0; j < num_random_models; j++) {
+	  for(int j = 0; j < num_random_models; j++) {
       std::string random_model = regex->sample(regex);
-      random_models.push_back(random_model);
+		  random_models.push_back(random_model);
     }
   }
 

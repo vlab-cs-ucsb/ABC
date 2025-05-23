@@ -946,7 +946,7 @@ std::string RegularExpression::sample(RegularExpression_ptr regex) {
   std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
   std::uniform_int_distribution<> distrib(0, 10); // Define the range
   std::uniform_real_distribution<double> real_dist(0.0,1.0);
-  double thresh = 0.15;
+  double thresh = 0.10;
   double r = 1.01;
 
   switch(regex->type_) {
