@@ -171,8 +171,36 @@ std::string RegularExpression::constant_str() const {
 std::string RegularExpression::str() const {
   std::stringstream ss;
   switch (type_) {
-    case Type::UNION:
-      ss << '(' << *exp1_ << '|' << *exp2_ << ')';
+    case Type::UNION: {
+      // ss << '(' << *exp1_ << '|' << *exp2_ << ')';
+      std::queue<RegularExpression_ptr> stuff_to_process;
+      std::vector<RegularExpression_ptr> sub_samples;
+      stuff_to_process.push(exp1_);
+      stuff_to_process.push(exp2_);
+
+      // collapse children union to get all possibilities
+      while(!stuff_to_process.empty()) {
+        auto reg_to_process = stuff_to_process.front();
+        stuff_to_process.pop();
+
+        if(reg_to_process->type() == Type::UNION) {
+          stuff_to_process.push(reg_to_process->exp1_);
+          stuff_to_process.push(reg_to_process->exp2_);
+        } else {
+          sub_samples.push_back(reg_to_process);
+        }
+      }
+
+      ss << '(';
+      for(int i = 0; i < sub_samples.size(); i++) {
+        ss << sub_samples[i]->str();
+        if(i != sub_samples.size()-1) {
+          ss << '|';
+        }
+      }
+      ss << ')';
+
+    };
       break;
     case Type::CONCATENATION:
       ss << *exp1_ << *exp2_;
@@ -899,6 +927,14 @@ RegularExpression_ptr RegularExpression::parseSimpleExp() {
 }
 
 char RegularExpression::parseCharExp() {
+  std::string ss = input_regex_string_.substr(pos_,2);
+  if(ss == "\\n") {
+    pos_+=2;
+    return '\n';
+  } else if(ss == "\\r") {
+    pos_ += 2;
+    return '\r';
+  }
   match('\\');
   return next();
 }
