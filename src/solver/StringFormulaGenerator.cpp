@@ -180,7 +180,7 @@ void StringFormulaGenerator::visitOr(Or_ptr or_term) {
       temp_formula->MergeVariables(f);
     }
 
-    if (temp_formula->GetNumberOfVariables() <= 6) {
+    if (temp_formula->GetNumberOfVariables() <= 7) {
       std::string temp_subgroup_name = generate_group_name(or_term, current_group_);
       for (auto &sg_it : subgroups) {
         auto f = get_group_formula(sg_it);
