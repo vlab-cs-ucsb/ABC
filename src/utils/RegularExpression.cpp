@@ -343,6 +343,49 @@ std::string RegularExpression::escape_raw_string(std::string input) {
   return ss.str();
 }
 
+// ASSUMES THE STRING IS RAW
+// E.g., if the string is '[\x21-\x73]' then it becomes '[~-!]'
+//       if the string is '[\\x21-\\x73]' it will not be converted (since its assumed that the '\' is being escaped)
+// Also assumes that it is in the range [\x00-\xFF]. Otherwise, will fail to convert and simply continue
+std::string RegularExpression::convert_hexchars_raw_string(std::string input) {
+  size_t pos = 0;
+  std::string nohex_regex = input;
+  while((pos = nohex_regex.find("\\x",pos)) != std::string::npos) {
+    // there could be a '\' before it. make sure the '\x' isnt being escaped
+    size_t first_backslash_pos = pos;
+    while(first_backslash_pos > 0 && nohex_regex[first_backslash_pos-1] == '\\') {
+      first_backslash_pos--;
+    }
+
+    // if theres an odd number of backslashes (so dist is even), we can replace
+    // e.g., the raw strings \x \\\x \\\\\x
+    size_t dist = pos - first_backslash_pos;
+    if(dist % 2 == 0) {
+      // make sure we can actually replace. if not, just skip
+      try {
+        size_t num_processed;
+        int num = std::stoi(nohex_regex.substr(pos+2),&num_processed,16);
+        // if we can convert to char do it. otherwise, parse error
+        if(num_processed == 2) {
+          char ascii_char = num;
+          std::string replace_string = std::string(1,ascii_char);
+          // 2 for the prefix '\x'
+          nohex_regex.replace(pos,2+num_processed,replace_string);
+        } else {
+          LOG(FATAL) << "Error while parsing regex. Invalid syntax: '" << nohex_regex.substr(pos) << "' in regex '" << input << "'";
+        }
+      } catch (const std::exception& e) {
+        // can't convert. parse error
+        LOG(FATAL) << "Error while parsing regex. Invalid syntax: '" << nohex_regex.substr(pos) << "' in regex '" << input << "'";
+      }
+    } else {
+      // false positive (escaped escape character)
+      pos++;
+    }
+  }
+  return nohex_regex;
+}
+
 RegularExpression_ptr RegularExpression::makeUnion(RegularExpression_ptr exp1, RegularExpression_ptr exp2) {
   bool is_left_constant = false;
   bool is_right_constant = false;
@@ -832,7 +875,17 @@ RegularExpression_ptr RegularExpression::parseCharClass() {
   if(ss == "\\s" || ss == "\\S" || ss == "\\d" || ss == "\\D" || ss == "\\w" || ss == "\\W") {
     pos_+=2;
     return makeCharClass(ss[1]);
-  }
+  } 
+  
+  // if(ss == "\\x") {
+  //   // hex, next two characters should be hexadecimal characters
+  //   pos_+=2; // increment internal indicator past '\x'
+  //   char c1 = next(); // first hex char
+  //   char c2 = next(); // second hex char
+  //   int value = std::stoi(std::string(1,c1)+std::string(1,c2),nullptr,16);
+  //   LOG(INFO) << c1 << c2 << " = " << value;
+  //   std::cin.get();
+  // }
 
   char c = parseCharExp();
   if (match('-')) {

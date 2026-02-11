@@ -625,7 +625,7 @@ std::vector<Theory::BigInteger> Driver::MeasureDistance(std::string var_name, st
   auto var_val_auto = var_val->getStringAutomaton();
 
   auto projected_var_val_auto = var_val_auto->GetAutomatonForVariable(var_name);
-  Util::RegularExpression regex(var_regex, Util::RegularExpression::NONE);
+  Util::RegularExpression regex(Util::RegularExpression::convert_hexchars_raw_string(var_regex), Util::RegularExpression::NONE);
   auto regex_auto = Theory::StringAutomaton::MakeRegexAuto(&regex);
 
   auto printable_ascii_auto = Theory::StringAutomaton::MakeRegexAuto("[ -~]*");
@@ -675,9 +675,9 @@ std::vector<Theory::BigInteger> Driver::MeasureDistance(std::string var_name, st
 }
 
 std::vector<Theory::BigInteger> Driver::MeasureDistanceTwoRegex(std::string str_regex1, std::string str_regex2, int bound) {
-  Util::RegularExpression regex1(str_regex1, Util::RegularExpression::NONE);
+  Util::RegularExpression regex1(Util::RegularExpression::convert_hexchars_raw_string(str_regex1), Util::RegularExpression::NONE);
   auto regex_auto = Theory::StringAutomaton::MakeRegexAuto(&regex1);
-  Util::RegularExpression regex2(str_regex2, Util::RegularExpression::NONE);
+  Util::RegularExpression regex2(Util::RegularExpression::convert_hexchars_raw_string(str_regex2), Util::RegularExpression::NONE);
   auto regex_auto_2 = Theory::StringAutomaton::MakeRegexAuto(&regex2);
   auto jauto1 = regex_auto->Intersect(regex_auto_2);
   auto jauto2 = regex_auto->Union(regex_auto_2);
@@ -714,7 +714,10 @@ std::vector<std::string> Driver::CompareRegexes(std::string var_name, std::strin
   var_value_auto = tmp;
 
   auto regex_from_dfa = var_value_auto->DFAToRE();
-  auto regex_from_llm = new Util::RegularExpression(var_regex);
+
+  // replace hex chars in raw string
+  std::string nohex_regex = Util::RegularExpression::convert_hexchars_raw_string(var_regex);
+  auto regex_from_llm = new Util::RegularExpression(nohex_regex);
   
   std::vector<std::string> results;
   results.push_back("report regex_from_dfa: " + regex_from_dfa->str() + '\n');

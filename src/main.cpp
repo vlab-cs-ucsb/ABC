@@ -417,6 +417,7 @@ int main(const int argc, const char **argv) {
 
       std::string line;
       std::getline(*regex_file, line);
+      line = Vlab::Util::RegularExpression::convert_hexchars_raw_string(line);
 
       auto results = driver.MeasureDistance(regex_compare_variable, line, str_bounds[0]);
       LOG(INFO) << "report baseline_regex: " << results[0];
